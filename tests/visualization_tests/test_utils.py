@@ -1,13 +1,18 @@
+import logging
 from typing import cast
 
 import pytest
+from pytest import LogCaptureFixture
 
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
+import optuna
+from optuna.distributions import FloatDistribution
 from optuna.study import create_study
 from optuna.trial import create_trial
+from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 from optuna.visualization import is_available
 from optuna.visualization._utils import _check_plot_args
+from optuna.visualization._utils import _filter_nonfinite
 from optuna.visualization._utils import _is_log_scale
 
 
@@ -18,7 +23,7 @@ def test_is_log_scale() -> None:
         create_trial(
             value=0.0,
             params={"param_linear": 1.0},
-            distributions={"param_linear": UniformDistribution(0.0, 3.0)},
+            distributions={"param_linear": FloatDistribution(0.0, 3.0)},
         )
     )
     study.add_trial(
@@ -26,8 +31,8 @@ def test_is_log_scale() -> None:
             value=2.0,
             params={"param_linear": 2.0, "param_log": 1e-3},
             distributions={
-                "param_linear": UniformDistribution(0.0, 3.0),
-                "param_log": LogUniformDistribution(1e-5, 1.0),
+                "param_linear": FloatDistribution(0.0, 3.0),
+                "param_log": FloatDistribution(1e-5, 1.0, log=True),
             },
         )
     )
@@ -59,3 +64,112 @@ def test_check_plot_args() -> None:
 
     with pytest.warns(UserWarning):
         _check_plot_args(study, lambda t: cast(float, t.value), "Objective Value")
+
+
+@pytest.mark.parametrize(
+    "value, expected", [(float("inf"), 1), (-float("inf"), 1), (float("nan"), 1), (0.0, 2)]
+)
+def test_filter_inf_trials(value: float, expected: int) -> None:
+
+    study = create_study()
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"x": 1.0},
+            distributions={"x": FloatDistribution(0.0, 1.0)},
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=value,
+            params={"x": 0.0},
+            distributions={"x": FloatDistribution(0.0, 1.0)},
+        )
+    )
+
+    trials = _filter_nonfinite(study.get_trials(states=(TrialState.COMPLETE,)))
+    assert len(trials) == expected
+    assert all([t.number == num for t, num in zip(trials, range(expected))])
+
+
+@pytest.mark.parametrize(
+    "value,objective_selected,expected",
+    [
+        (float("inf"), 0, 2),
+        (-float("inf"), 0, 2),
+        (float("nan"), 0, 2),
+        (0.0, 0, 3),
+        (float("inf"), 1, 1),
+        (-float("inf"), 1, 1),
+        (float("nan"), 1, 1),
+        (0.0, 1, 3),
+    ],
+)
+def test_filter_inf_trials_multiobjective(
+    value: float, objective_selected: int, expected: int
+) -> None:
+
+    study = create_study(directions=["minimize", "maximize"])
+    study.add_trial(
+        create_trial(
+            values=[0.0, 1.0],
+            params={"x": 1.0},
+            distributions={"x": FloatDistribution(0.0, 1.0)},
+        )
+    )
+    study.add_trial(
+        create_trial(
+            values=[0.0, value],
+            params={"x": 0.0},
+            distributions={"x": FloatDistribution(0.0, 1.0)},
+        )
+    )
+    study.add_trial(
+        create_trial(
+            values=[value, value],
+            params={"x": 0.0},
+            distributions={"x": FloatDistribution(0.0, 1.0)},
+        )
+    )
+
+    def _target(t: FrozenTrial) -> float:
+        return t.values[objective_selected]
+
+    trials = _filter_nonfinite(study.get_trials(states=(TrialState.COMPLETE,)), target=_target)
+    assert len(trials) == expected
+    assert all([t.number == num for t, num in zip(trials, range(expected))])
+
+
+@pytest.mark.parametrize("with_message", [True, False])
+def test_filter_inf_trials_message(caplog: LogCaptureFixture, with_message: bool) -> None:
+
+    study = create_study()
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"x": 1.0},
+            distributions={"x": FloatDistribution(0.0, 1.0)},
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=float("inf"),
+            params={"x": 0.0},
+            distributions={"x": FloatDistribution(0.0, 1.0)},
+        )
+    )
+
+    optuna.logging.enable_propagation()
+    _filter_nonfinite(study.get_trials(states=(TrialState.COMPLETE,)), with_message=with_message)
+    msg = "Trial 1 is omitted in visualization because its objective value is inf or nan."
+
+    if with_message:
+        assert msg in caplog.text
+        n_filtered_as_inf = 0
+        for record in caplog.records:
+            if record.msg == msg:
+                assert record.levelno == logging.WARNING
+                n_filtered_as_inf += 1
+        assert n_filtered_as_inf == 1
+    else:
+        assert msg not in caplog.text

@@ -224,12 +224,16 @@ def test_delete_study_command() -> None:
         # Create study.
         command = ["optuna", "create-study", "--storage", storage_url, "--study-name", study_name]
         subprocess.check_call(command)
-        assert study_name in {s.study_name: s for s in storage.get_all_study_summaries()}
+        assert study_name in {
+            s.study_name: s for s in storage.get_all_study_summaries(include_best_trial=True)
+        }
 
         # Delete study.
         command = ["optuna", "delete-study", "--storage", storage_url, "--study-name", study_name]
         subprocess.check_call(command)
-        assert study_name not in {s.study_name: s for s in storage.get_all_study_summaries()}
+        assert study_name not in {
+            s.study_name: s for s in storage.get_all_study_summaries(include_best_trial=True)
+        }
 
 
 @pytest.mark.skip_coverage
@@ -1030,7 +1034,7 @@ def test_ask(
 
     study_name = "test_study"
     search_space = (
-        '{"x": {"name": "UniformDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
+        '{"x": {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
@@ -1104,7 +1108,7 @@ def test_ask_flatten(
 
     study_name = "test_study"
     search_space = (
-        '{"x": {"name": "UniformDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
+        '{"x": {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
@@ -1226,7 +1230,7 @@ def test_ask_sampler_kwargs_without_sampler() -> None:
 
     study_name = "test_study"
     search_space = (
-        '{"x": {"name": "UniformDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
+        '{"x": {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
@@ -1271,7 +1275,7 @@ def test_create_study_and_ask(
 
     study_name = "test_study"
     search_space = (
-        '{"x": {"name": "UniformDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
+        '{"x": {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
@@ -1337,7 +1341,7 @@ def test_create_study_and_ask_with_inconsistent_directions(
 
     study_name = "test_study"
     search_space = (
-        '{"x": {"name": "UniformDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
+        '{"x": {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
@@ -1384,7 +1388,7 @@ def test_ask_with_both_direction_and_directions() -> None:
 
     study_name = "test_study"
     search_space = (
-        '{"x": {"name": "UniformDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
+        '{"x": {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
@@ -1496,3 +1500,45 @@ def test_tell() -> None:
         assert len(study.trials) == 1
         assert study.trials[0].state == TrialState.COMPLETE
         assert study.trials[0].values == [1.2]
+
+
+@pytest.mark.skip_coverage
+def test_tell_with_nan() -> None:
+    study_name = "test_study"
+
+    with tempfile.NamedTemporaryFile() as tf:
+        db_url = "sqlite:///{}".format(tf.name)
+
+        output: Any = subprocess.check_output(
+            [
+                "optuna",
+                "ask",
+                "--storage",
+                db_url,
+                "--study-name",
+                study_name,
+                "--format",
+                "json",
+            ]
+        )
+        output = output.decode("utf-8")
+        output = json.loads(output)
+        trial_number = output["number"]
+
+        subprocess.check_output(
+            [
+                "optuna",
+                "tell",
+                "--storage",
+                db_url,
+                "--trial-number",
+                str(trial_number),
+                "--values",
+                "nan",
+            ]
+        )
+
+        study = optuna.load_study(storage=db_url, study_name=study_name)
+        assert len(study.trials) == 1
+        assert study.trials[0].state == TrialState.FAIL
+        assert study.trials[0].values is None

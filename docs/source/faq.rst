@@ -257,7 +257,8 @@ The behavior when altered is defined by each sampler individually.
 How can I use two GPUs for evaluating two trials simultaneously?
 ----------------------------------------------------------------
 
-If your optimization target supports GPU (CUDA) acceleration and you want to specify which GPU is used, the easiest way is to set ``CUDA_VISIBLE_DEVICES`` environment variable:
+If your optimization target supports GPU (CUDA) acceleration and you want to specify which GPU is used in your script,
+``main.py``, the easiest way is to set ``CUDA_VISIBLE_DEVICES`` environment variable:
 
 .. code-block:: bash
 
@@ -265,13 +266,13 @@ If your optimization target supports GPU (CUDA) acceleration and you want to spe
     #
     # Specify to use the first GPU, and run an optimization.
     $ export CUDA_VISIBLE_DEVICES=0
-    $ optuna study optimize foo.py objective --study-name foo --storage sqlite:///example.db
+    $ python main.py
 
     # On another terminal.
     #
     # Specify to use the second GPU, and run another optimization.
     $ export CUDA_VISIBLE_DEVICES=1
-    $ optuna study optimize bar.py objective --study-name bar --storage sqlite:///example.db
+    $ python main.py
 
 Please refer to `CUDA C Programming Guide <https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars>`_ for further details.
 
@@ -508,7 +509,7 @@ The variations of parallelization are in the following three cases.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Parallelization can be achieved by setting the argument ``n_jobs`` in :func:`optuna.study.Study.optimize`.
-However, the python code will not be faster due to GIL because :func:`optuna.study.Study.optimize` with ``n_jobs!=1`` uses multi-threading. 
+However, the python code will not be faster due to GIL because :func:`optuna.study.Study.optimize` with ``n_jobs!=1`` uses multi-threading.
 
 While optimizing, it will be faster in limited situations, such as waiting for other server requests or C/C++ processing with numpy, etc., but it will not be faster in other cases.
 
@@ -533,6 +534,8 @@ This can be achieved by using client/server RDBs (such as PostgreSQL and MySQL).
 However, if you are in the environment where you can not install a client/server RDB, you can not run multi-processing parallelization with multiple nodes.
 
 For more information about 3., see TutorialEasyParallelization_.
+
+.. _heartbeat_monitoring:
 
 Can I monitor trials and make them failed automatically when they are killed unexpectedly?
 ------------------------------------------------------------------------------------------

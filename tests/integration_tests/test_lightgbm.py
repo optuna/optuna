@@ -120,7 +120,7 @@ def test_lightgbm_pruning_callback_with_interval(
 @pytest.mark.parametrize("cv", CV_FLAGS)
 def test_lightgbm_pruning_callback_errors(cv: bool) -> None:
 
-    # Unknown metric
+    # Unknown metric.
     study = optuna.create_study(pruner=DeterministicPruner(False))
     with pytest.raises(ValueError):
         study.optimize(
@@ -128,7 +128,7 @@ def test_lightgbm_pruning_callback_errors(cv: bool) -> None:
         )
 
     if not cv:
-        # Unknown validation name
+        # Unknown validation name.
         study = optuna.create_study(pruner=DeterministicPruner(False))
         with pytest.raises(ValueError):
             study.optimize(

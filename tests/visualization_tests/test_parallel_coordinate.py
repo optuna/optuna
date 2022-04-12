@@ -3,12 +3,13 @@ import math
 import pytest
 
 from optuna.distributions import CategoricalDistribution
-from optuna.distributions import LogUniformDistribution
+from optuna.distributions import FloatDistribution
 from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
 from optuna.trial import Trial
 from optuna.visualization import plot_parallel_coordinate
+from optuna.visualization._utils import COLOR_SCALE
 
 
 def test_target_is_none_and_study_is_multi_obj() -> None:
@@ -31,21 +32,21 @@ def test_plot_parallel_coordinate() -> None:
     figure = plot_parallel_coordinate(study)
     assert len(figure.data[0]["dimensions"]) == 3
     assert figure.data[0]["dimensions"][0]["label"] == "Objective Value"
-    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 2.0)
-    assert figure.data[0]["dimensions"][0]["values"] == (0.0, 2.0, 1.0)
+    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 1.0)
+    assert figure.data[0]["dimensions"][0]["values"] == (0.0, 1.0)
     assert figure.data[0]["dimensions"][1]["label"] == "param_a"
     assert figure.data[0]["dimensions"][1]["range"] == (1.0, 2.5)
     assert figure.data[0]["dimensions"][1]["values"] == (1.0, 2.5)
     assert figure.data[0]["dimensions"][2]["label"] == "param_b"
-    assert figure.data[0]["dimensions"][2]["range"] == (0.0, 2.0)
-    assert figure.data[0]["dimensions"][2]["values"] == (2.0, 0.0, 1.0)
+    assert figure.data[0]["dimensions"][2]["range"] == (1.0, 2.0)
+    assert figure.data[0]["dimensions"][2]["values"] == (2.0, 1.0)
 
     # Test with a trial to select parameter.
     figure = plot_parallel_coordinate(study, params=["param_a"])
     assert len(figure.data[0]["dimensions"]) == 2
     assert figure.data[0]["dimensions"][0]["label"] == "Objective Value"
-    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 2.0)
-    assert figure.data[0]["dimensions"][0]["values"] == (0.0, 2.0, 1.0)
+    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 1.0)
+    assert figure.data[0]["dimensions"][0]["values"] == (0.0, 1.0)
     assert figure.data[0]["dimensions"][1]["label"] == "param_a"
     assert figure.data[0]["dimensions"][1]["range"] == (1.0, 2.5)
     assert figure.data[0]["dimensions"][1]["values"] == (1.0, 2.5)
@@ -57,8 +58,8 @@ def test_plot_parallel_coordinate() -> None:
         )
     assert len(figure.data[0]["dimensions"]) == 2
     assert figure.data[0]["dimensions"][0]["label"] == "Objective Value"
-    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 2.0)
-    assert figure.data[0]["dimensions"][0]["values"] == (2.0, 0.0, 1.0)
+    assert figure.data[0]["dimensions"][0]["range"] == (1.0, 2.0)
+    assert figure.data[0]["dimensions"][0]["values"] == (2.0, 1.0)
     assert figure.data[0]["dimensions"][1]["label"] == "param_a"
     assert figure.data[0]["dimensions"][1]["range"] == (1.0, 2.5)
     assert figure.data[0]["dimensions"][1]["values"] == (1.0, 2.5)
@@ -67,14 +68,14 @@ def test_plot_parallel_coordinate() -> None:
     figure = plot_parallel_coordinate(study, target_name="Target Name")
     assert len(figure.data[0]["dimensions"]) == 3
     assert figure.data[0]["dimensions"][0]["label"] == "Target Name"
-    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 2.0)
-    assert figure.data[0]["dimensions"][0]["values"] == (0.0, 2.0, 1.0)
+    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 1.0)
+    assert figure.data[0]["dimensions"][0]["values"] == (0.0, 1.0)
     assert figure.data[0]["dimensions"][1]["label"] == "param_a"
     assert figure.data[0]["dimensions"][1]["range"] == (1.0, 2.5)
     assert figure.data[0]["dimensions"][1]["values"] == (1.0, 2.5)
     assert figure.data[0]["dimensions"][2]["label"] == "param_b"
-    assert figure.data[0]["dimensions"][2]["range"] == (0.0, 2.0)
-    assert figure.data[0]["dimensions"][2]["values"] == (2.0, 0.0, 1.0)
+    assert figure.data[0]["dimensions"][2]["range"] == (1.0, 2.0)
+    assert figure.data[0]["dimensions"][2]["values"] == (2.0, 1.0)
 
     # Test with wrong params that do not exist in trials
     with pytest.raises(ValueError, match="Parameter optuna does not exist in your study."):
@@ -189,8 +190,8 @@ def test_plot_parallel_coordinate_log_params() -> None:
             value=0.0,
             params={"param_a": 1e-6, "param_b": 10},
             distributions={
-                "param_a": LogUniformDistribution(1e-7, 1e-2),
-                "param_b": LogUniformDistribution(1, 1000),
+                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
+                "param_b": FloatDistribution(1, 1000, log=True),
             },
         )
     )
@@ -199,8 +200,8 @@ def test_plot_parallel_coordinate_log_params() -> None:
             value=1.0,
             params={"param_a": 2e-5, "param_b": 200},
             distributions={
-                "param_a": LogUniformDistribution(1e-7, 1e-2),
-                "param_b": LogUniformDistribution(1, 1000),
+                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
+                "param_b": FloatDistribution(1, 1000, log=True),
             },
         )
     )
@@ -209,8 +210,8 @@ def test_plot_parallel_coordinate_log_params() -> None:
             value=0.1,
             params={"param_a": 1e-4, "param_b": 30},
             distributions={
-                "param_a": LogUniformDistribution(1e-7, 1e-2),
-                "param_b": LogUniformDistribution(1, 1000),
+                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
+                "param_b": FloatDistribution(1, 1000, log=True),
             },
         )
     )
@@ -241,7 +242,7 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
             params={"category_a": "preferred", "param_b": 30},
             distributions={
                 "category_a": CategoricalDistribution(("preferred", "opt")),
-                "param_b": LogUniformDistribution(1, 1000),
+                "param_b": FloatDistribution(1, 1000, log=True),
             },
         )
     )
@@ -269,7 +270,7 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
             params={"category_a": "preferred", "param_b": 20},
             distributions={
                 "category_a": CategoricalDistribution(("preferred", "opt")),
-                "param_b": LogUniformDistribution(1, 1000),
+                "param_b": FloatDistribution(1, 1000, log=True),
             },
         )
     )
@@ -285,7 +286,7 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
 
 
 def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
-    # Test with sample from mulitiple distributions including categorical params
+    # Test with sample from multiple distributions including categorical params
     # that can be interpreted as numeric params.
     study_multi_distro_params = create_study()
     study_multi_distro_params.add_trial(
@@ -295,7 +296,7 @@ def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
             distributions={
                 "param_a": CategoricalDistribution(("preferred", "opt")),
                 "param_b": CategoricalDistribution((1, 2, 10)),
-                "param_c": LogUniformDistribution(1, 1000),
+                "param_c": FloatDistribution(1, 1000, log=True),
                 "param_d": CategoricalDistribution((1, -1, 2)),
             },
         )
@@ -308,7 +309,7 @@ def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
             distributions={
                 "param_a": CategoricalDistribution(("preferred", "opt")),
                 "param_b": CategoricalDistribution((1, 2, 10)),
-                "param_c": LogUniformDistribution(1, 1000),
+                "param_c": FloatDistribution(1, 1000, log=True),
                 "param_d": CategoricalDistribution((1, -1, 2)),
             },
         )
@@ -321,7 +322,7 @@ def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
             distributions={
                 "param_a": CategoricalDistribution(("preferred", "opt")),
                 "param_b": CategoricalDistribution((1, 2, 10)),
-                "param_c": LogUniformDistribution(1, 1000),
+                "param_c": FloatDistribution(1, 1000, log=True),
                 "param_d": CategoricalDistribution((1, -1, 2)),
             },
         )
@@ -334,7 +335,7 @@ def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
             distributions={
                 "param_a": CategoricalDistribution(("preferred", "opt")),
                 "param_b": CategoricalDistribution((1, 2, 10)),
-                "param_c": LogUniformDistribution(1, 1000),
+                "param_c": FloatDistribution(1, 1000, log=True),
                 "param_d": CategoricalDistribution((-1, 1, 2)),
             },
         )
@@ -361,3 +362,54 @@ def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
     assert figure.data[0]["dimensions"][4]["range"] == (0, 2)
     assert figure.data[0]["dimensions"][4]["values"] == (2, 0, 2, 1)
     assert figure.data[0]["dimensions"][4]["ticktext"] == (-1, 1, 2)
+
+
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+def test_color_map(direction: str) -> None:
+    study = prepare_study_with_trials(with_c_d=False, direction=direction)
+
+    # `target` is `None`.
+    line = plot_parallel_coordinate(study).data[0]["line"]
+    assert COLOR_SCALE == [v[1] for v in line["colorscale"]]
+    if direction == "minimize":
+        assert line["reversescale"]
+    else:
+        assert not line["reversescale"]
+
+    # When `target` is not `None`, `reversescale` is always `True`.
+    line = plot_parallel_coordinate(study, target=lambda t: t.number).data[0]["line"]
+    assert COLOR_SCALE == [v[1] for v in line["colorscale"]]
+    assert line["reversescale"]
+
+    # Multi-objective optimization.
+    study = prepare_study_with_trials(with_c_d=False, n_objectives=2, direction=direction)
+    line = plot_parallel_coordinate(study, target=lambda t: t.number).data[0]["line"]
+    assert COLOR_SCALE == [v[1] for v in line["colorscale"]]
+    assert line["reversescale"]
+
+
+def test_plot_parallel_coordinate_only_missing_params() -> None:
+    # All trials contain only a part of parameters,
+    # the plot returns an empty figure.
+    study = create_study()
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"param_a": 1e-6},
+            distributions={
+                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
+            },
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=1.0,
+            params={"param_b": 200},
+            distributions={
+                "param_b": FloatDistribution(1, 1000, log=True),
+            },
+        )
+    )
+
+    figure = plot_parallel_coordinate(study)
+    assert len(figure.data) == 0

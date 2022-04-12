@@ -1,6 +1,7 @@
 import math
 from typing import Any
 from typing import Callable
+from typing import Container
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -94,18 +95,12 @@ class TPESampler(BaseSampler):
         consider_prior:
             Enhance the stability of Parzen estimator by imposing a Gaussian prior when
             :obj:`True`. The prior is only effective if the sampling distribution is
-            either :class:`~optuna.distributions.UniformDistribution`,
-            :class:`~optuna.distributions.DiscreteUniformDistribution`,
-            :class:`~optuna.distributions.LogUniformDistribution`,
-            :class:`~optuna.distributions.IntUniformDistribution`,
-            or :class:`~optuna.distributions.IntLogUniformDistribution`.
+            either :class:`~optuna.distributions.FloatDistribution`,
+            or :class:`~optuna.distributions.IntDistribution`.
         prior_weight:
             The weight of the prior. This argument is used in
-            :class:`~optuna.distributions.UniformDistribution`,
-            :class:`~optuna.distributions.DiscreteUniformDistribution`,
-            :class:`~optuna.distributions.LogUniformDistribution`,
-            :class:`~optuna.distributions.IntUniformDistribution`,
-            :class:`~optuna.distributions.IntLogUniformDistribution`, and
+            :class:`~optuna.distributions.FloatDistribution`,
+            :class:`~optuna.distributions.IntDistribution`, and
             :class:`~optuna.distributions.CategoricalDistribution`.
         consider_magic_clip:
             Enable a heuristic to limit the smallest variances of Gaussians used in
@@ -588,7 +583,7 @@ def _get_observation_pairs(
         else:
             signs.append(-1)
 
-    states: Tuple[TrialState, ...]
+    states: Container[TrialState]
     if constant_liar:
         states = (TrialState.COMPLETE, TrialState.PRUNED, TrialState.RUNNING)
     else:
@@ -763,7 +758,7 @@ def _calculate_weights_below_for_multi_objective(
     indices: np.ndarray,
 ) -> np.ndarray:
     # Multi-objective TPE only sees the first parameter to determine the weights.
-    # In the call lf `sample_relative`, this logic makes sense because we only have the
+    # In the call of `sample_relative`, this logic makes sense because we only have the
     # intersection search space or group decomposed search space. This means one parameter
     # misses the one trial, then the other parameter must miss the trial, in this call of
     # `sample_relative`.

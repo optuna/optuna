@@ -3,6 +3,7 @@ from datetime import datetime
 import threading
 from typing import Any
 from typing import cast
+from typing import Container
 from typing import Dict
 from typing import Iterator
 from typing import List
@@ -150,19 +151,22 @@ class InMemoryStorage(BaseStorage):
             self._check_study_id(study_id)
             return self._studies[study_id].system_attrs
 
-    def get_all_study_summaries(self) -> List[StudySummary]:
+    def get_all_study_summaries(self, include_best_trial: bool) -> List[StudySummary]:
 
         with self._lock:
-            return [self._build_study_summary(study_id) for study_id in self._studies]
+            return [
+                self._build_study_summary(study_id, include_best_trial)
+                for study_id in self._studies
+            ]
 
-    def _build_study_summary(self, study_id: int) -> StudySummary:
+    def _build_study_summary(self, study_id: int, include_best_trial: bool = True) -> StudySummary:
         study = self._studies[study_id]
         return StudySummary(
             study_name=study.name,
             direction=None,
             directions=study.directions,
             best_trial=copy.deepcopy(self._get_trial(study.best_trial_id))
-            if study.best_trial_id is not None
+            if study.best_trial_id is not None and include_best_trial
             else None,
             user_attrs=copy.deepcopy(study.user_attrs),
             system_attrs=copy.deepcopy(study.system_attrs),
@@ -215,33 +219,6 @@ class InMemoryStorage(BaseStorage):
             datetime_start=datetime.now(),
             datetime_complete=None,
         )
-
-    def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
-
-        with self._lock:
-            trial = self._get_trial(trial_id)
-            self.check_trial_is_updatable(trial_id, trial.state)
-
-            trial = copy.copy(trial)
-            self.check_trial_is_updatable(trial_id, trial.state)
-
-            if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
-                return False
-
-            trial.state = state
-
-            if state == TrialState.RUNNING:
-                trial.datetime_start = datetime.now()
-
-            if state.is_finished():
-                trial.datetime_complete = datetime.now()
-                self._set_trial(trial_id, trial)
-                study_id = self._trial_id_to_study_id_and_number[trial_id][0]
-                self._update_cache(trial_id, study_id)
-            else:
-                self._set_trial(trial_id, trial)
-
-            return True
 
     def set_trial_param(
         self,
@@ -323,17 +300,33 @@ class InMemoryStorage(BaseStorage):
             distribution = trial.distributions[param_name]
             return distribution.to_internal_repr(trial.params[param_name])
 
-    def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
+    def set_trial_state_values(
+        self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
+    ) -> bool:
 
         with self._lock:
-            trial = self._get_trial(trial_id)
+            trial = copy.copy(self._get_trial(trial_id))
             self.check_trial_is_updatable(trial_id, trial.state)
 
-            trial = copy.copy(trial)
-            self.check_trial_is_updatable(trial_id, trial.state)
+            if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
+                return False
 
-            trial.values = values
-            self._set_trial(trial_id, trial)
+            trial.state = state
+            if values is not None:
+                trial.values = values
+
+            if state == TrialState.RUNNING:
+                trial.datetime_start = datetime.now()
+
+            if state.is_finished():
+                trial.datetime_complete = datetime.now()
+                self._set_trial(trial_id, trial)
+                study_id = self._trial_id_to_study_id_and_number[trial_id][0]
+                self._update_cache(trial_id, study_id)
+            else:
+                self._set_trial(trial_id, trial)
+
+            return True
 
     def _update_cache(self, trial_id: int, study_id: int) -> None:
 
@@ -428,7 +421,7 @@ class InMemoryStorage(BaseStorage):
         self,
         study_id: int,
         deepcopy: bool = True,
-        states: Optional[Tuple[TrialState, ...]] = None,
+        states: Optional[Container[TrialState]] = None,
     ) -> List[FrozenTrial]:
 
         with self._lock:

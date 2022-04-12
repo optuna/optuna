@@ -2,6 +2,7 @@ import abc
 from typing import Any
 from typing import Callable
 from typing import cast
+from typing import Container
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -294,8 +295,13 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_all_study_summaries(self) -> List[StudySummary]:
+    def get_all_study_summaries(self, include_best_trial: bool) -> List[StudySummary]:
         """Read a list of :class:`~optuna.study.StudySummary` objects.
+
+        Args:
+            include_best_trial:
+                If :obj:`True`, :obj:`~optuna.study.StudySummary` objects have the best trials in
+                the ``best_trial`` attribute. Otherwise, ``best_trial`` is :obj:`None`.
 
         Returns:
             A list of :class:`~optuna.study.StudySummary` objects.
@@ -324,31 +330,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         Raises:
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
-        """Update the state of a trial.
-
-        Args:
-            trial_id:
-                ID of the trial.
-            state:
-                New state of the trial.
-
-        Returns:
-            :obj:`True` if the state is successfully updated.
-            :obj:`False` if the state is kept the same.
-            The latter happens when this method tries to update the state of
-            :obj:`~optuna.trial.TrialState.RUNNING` trial to
-            :obj:`~optuna.trial.TrialState.RUNNING`.
-
-        Raises:
-            :exc:`KeyError`:
-                If no trial with the matching ``trial_id`` exists.
-            :exc:`RuntimeError`:
-                If the trial is already finished.
         """
         raise NotImplementedError
 
@@ -398,7 +379,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-    @abc.abstractmethod
     def get_trial_number_from_id(self, trial_id: int) -> int:
         """Read the trial number of a trial.
 
@@ -417,9 +397,8 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             :exc:`KeyError`:
                 If no trial with the matching ``trial_id`` exists.
         """
-        raise NotImplementedError
+        return self.get_trial(trial_id).number
 
-    @abc.abstractmethod
     def get_trial_param(self, trial_id: int, param_name: str) -> float:
         """Read the parameter of a trial.
 
@@ -437,19 +416,32 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
                 If no trial with the matching ``trial_id`` exists.
                 If no such parameter exists.
         """
-        raise NotImplementedError
+        trial = self.get_trial(trial_id)
+        return trial.distributions[param_name].to_internal_repr(trial.params[param_name])
 
     @abc.abstractmethod
-    def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
-        """Set return values of an objective function.
+    def set_trial_state_values(
+        self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
+    ) -> bool:
+        """Update the state and values of a trial.
 
-        This method overwrites any existing trial values.
+        Set return values of an objective function to values argument.
+        If values argument is not :obj:`None`, this method overwrites any existing trial values.
 
         Args:
             trial_id:
                 ID of the trial.
+            state:
+                New state of the trial.
             values:
                 Values of the objective function.
+
+        Returns:
+            :obj:`True` if the state is successfully updated.
+            :obj:`False` if the state is kept the same.
+            The latter happens when this method tries to update the state of
+            :obj:`~optuna.trial.TrialState.RUNNING` trial to
+            :obj:`~optuna.trial.TrialState.RUNNING`.
 
         Raises:
             :exc:`KeyError`:
@@ -551,7 +543,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         self,
         study_id: int,
         deepcopy: bool = True,
-        states: Optional[Tuple[TrialState, ...]] = None,
+        states: Optional[Container[TrialState]] = None,
     ) -> List[FrozenTrial]:
         """Read all trials in a study.
 
@@ -732,20 +724,16 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         """
         pass
 
-    def fail_stale_trials(self, study_id: int) -> List[int]:
-        """Fail stale trials.
-
-        The running trials whose heartbeat has not been updated for a long time will be failed,
-        that is, those states will be changed to :obj:`~optuna.trial.TrialState.FAIL`.
-        The grace period is ``2 * heartbeat_interval``.
+    def _get_stale_trial_ids(self, study_id: int) -> List[int]:
+        """Get the stale trial ids of the study.
 
         Args:
             study_id:
-                ID of the related study.
+                ID of the study.
         Returns:
-            List of trial IDs of the failed trials.
+            List of IDs of trials whose heartbeat has not been updated for a long time.
         """
-        pass
+        return []
 
     def is_heartbeat_enabled(self) -> bool:
         """Check whether the storage enables the heartbeat.

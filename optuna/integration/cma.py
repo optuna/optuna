@@ -1,11 +1,11 @@
 import math
 import random
 from typing import Any
+from typing import Container
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import Set
 
 import numpy
 
@@ -16,13 +16,8 @@ from optuna._deprecated import deprecated
 from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
-from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
-from optuna.distributions import IntLogUniformDistribution
-from optuna.distributions import IntUniformDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
 from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.study import StudyDirection
@@ -239,23 +234,13 @@ class PyCmaSampler(BaseSampler):
 
         x0: Dict[str, Any] = {}
         for name, distribution in search_space.items():
-            if isinstance(distribution, UniformDistribution):
-                x0[name] = numpy.mean([distribution.high, distribution.low])
-            elif isinstance(distribution, DiscreteUniformDistribution):
-                x0[name] = numpy.mean([distribution.high, distribution.low])
-            elif isinstance(distribution, FloatDistribution):
+            if isinstance(distribution, FloatDistribution):
                 if distribution.log:
                     log_high = math.log(distribution.high)
                     log_low = math.log(distribution.low)
                     x0[name] = math.exp(numpy.mean([log_high, log_low]))
                 else:
                     x0[name] = numpy.mean([distribution.high, distribution.low])
-            elif isinstance(distribution, IntUniformDistribution):
-                x0[name] = int(numpy.mean([distribution.high, distribution.low]))
-            elif isinstance(distribution, (LogUniformDistribution, IntLogUniformDistribution)):
-                log_high = math.log(distribution.high)
-                log_low = math.log(distribution.low)
-                x0[name] = math.exp(numpy.mean([log_high, log_low]))
             elif isinstance(distribution, CategoricalDistribution):
                 index = (len(distribution.choices) - 1) // 2
                 x0[name] = distribution.choices[index]
@@ -277,24 +262,7 @@ class PyCmaSampler(BaseSampler):
 
         sigma0s = []
         for name, distribution in search_space.items():
-            if isinstance(distribution, UniformDistribution):
-                sigma0s.append((distribution.high - distribution.low) / 6)
-            elif isinstance(distribution, DiscreteUniformDistribution):
-                sigma0s.append((distribution.high - distribution.low) / 6)
-            elif isinstance(distribution, FloatDistribution):
-                if distribution.log:
-                    log_high = math.log(distribution.high)
-                    log_low = math.log(distribution.low)
-                    sigma0s.append((log_high - log_low) / 6)
-                else:
-                    sigma0s.append((distribution.high - distribution.low) / 6)
-            elif isinstance(distribution, IntUniformDistribution):
-                sigma0s.append((distribution.high - distribution.low) / 6)
-            elif isinstance(distribution, (LogUniformDistribution, IntLogUniformDistribution)):
-                log_high = math.log(distribution.high)
-                log_low = math.log(distribution.low)
-                sigma0s.append((log_high - log_low) / 6)
-            elif isinstance(distribution, IntDistribution):
+            if isinstance(distribution, (IntDistribution, FloatDistribution)):
                 if distribution.log:
                     log_high = math.log(distribution.high)
                     log_low = math.log(distribution.low)
@@ -356,13 +324,6 @@ class _Optimizer(object):
                 # TODO(Yanase): Support one-hot representation.
                 lows.append(-0.5)
                 highs.append(len(dist.choices) - 0.5)
-            elif isinstance(dist, (UniformDistribution, LogUniformDistribution)):
-                lows.append(self._to_cma_params(search_space, param_name, dist.low))
-                highs.append(self._to_cma_params(search_space, param_name, dist.high) - _EPS)
-            elif isinstance(dist, DiscreteUniformDistribution):
-                r = dist.high - dist.low
-                lows.append(0 - 0.5 * dist.q)
-                highs.append(r + 0.5 * dist.q)
             elif isinstance(dist, FloatDistribution):
                 if dist.step is not None:
                     r = dist.high - dist.low
@@ -371,12 +332,6 @@ class _Optimizer(object):
                 else:
                     lows.append(self._to_cma_params(search_space, param_name, dist.low))
                     highs.append(self._to_cma_params(search_space, param_name, dist.high) - _EPS)
-            elif isinstance(dist, IntUniformDistribution):
-                lows.append(dist.low - 0.5 * dist.step)
-                highs.append(dist.high + 0.5 * dist.step)
-            elif isinstance(dist, IntLogUniformDistribution):
-                lows.append(self._to_cma_params(search_space, param_name, dist.low - 0.5))
-                highs.append(self._to_cma_params(search_space, param_name, dist.high + 0.5))
             elif isinstance(dist, IntDistribution):
                 if dist.log:
                     lows.append(self._to_cma_params(search_space, param_name, dist.low - 0.5))
@@ -476,7 +431,7 @@ class _Optimizer(object):
         self,
         trials: List[FrozenTrial],
         last_told: int = -1,
-        target_states: Optional[Set[TrialState]] = None,
+        target_states: Optional[Container[TrialState]] = None,
     ) -> List[FrozenTrial]:
 
         target_trials = [t for t in trials if t.number > last_told]
@@ -492,11 +447,8 @@ class _Optimizer(object):
     ) -> float:
 
         dist = search_space[param_name]
-        if isinstance(dist, (LogUniformDistribution, IntLogUniformDistribution)):
-            return math.log(optuna_param_value)
-        elif isinstance(dist, DiscreteUniformDistribution):
-            return optuna_param_value - dist.low
-        elif isinstance(dist, IntDistribution):
+
+        if isinstance(dist, IntDistribution):
             if dist.log:
                 return math.log(optuna_param_value)
         elif isinstance(dist, FloatDistribution):
@@ -514,15 +466,6 @@ class _Optimizer(object):
     ) -> Any:
 
         dist = search_space[param_name]
-        if isinstance(dist, UniformDistribution):
-            # Type of cma_param_value is np.floating, so cast it to Python's built-in float.
-            return float(cma_param_value)
-        if isinstance(dist, LogUniformDistribution):
-            return math.exp(cma_param_value)
-        if isinstance(dist, DiscreteUniformDistribution):
-            v = numpy.round(cma_param_value / dist.q) * dist.q + dist.low
-            # v may slightly exceed range due to round-off errors.
-            return float(min(max(v, dist.low), dist.high))
         if isinstance(dist, FloatDistribution):
             if dist.log:
                 return math.exp(cma_param_value)
@@ -531,15 +474,8 @@ class _Optimizer(object):
                 return float(min(max(v, dist.low), dist.high))
             else:
                 return float(cma_param_value)
-        if isinstance(dist, IntUniformDistribution):
-            r = numpy.round((cma_param_value - dist.low) / dist.step)
-            v = r * dist.step + dist.low
-            return int(v)
-        if isinstance(dist, IntLogUniformDistribution):
-            exp_value = math.exp(cma_param_value)
-            v = numpy.round(exp_value)
-            return int(min(max(v, dist.low), dist.high))
-        if isinstance(dist, IntDistribution):
+
+        elif isinstance(dist, IntDistribution):
             if dist.log:
                 exp_value = math.exp(cma_param_value)
                 v = numpy.round(exp_value)
@@ -549,7 +485,7 @@ class _Optimizer(object):
                 v = r * dist.step + dist.low
                 return int(v)
 
-        if isinstance(dist, CategoricalDistribution):
+        elif isinstance(dist, CategoricalDistribution):
             v = int(numpy.round(cma_param_value))
             return dist.choices[v]
         return cma_param_value
