@@ -107,6 +107,7 @@ def test_plot_slice_log_scale() -> None:
     assert len(figure.findobj(PathCollection)) == 1
     assert figure.xaxis.label.get_text() == "y_log"
     assert figure.xaxis.get_scale() == "log"
+    plt.savefig(BytesIO())
     figure = plot_slice(study, params=["x_linear"])
     assert len(figure.findobj(PathCollection)) == 1
     assert figure.xaxis.label.get_text() == "x_linear"
