@@ -18,19 +18,18 @@ def run(args: argparse.Namespace) -> None:
     problems_filename = os.path.join(args.out_dir, "problems.json")
     subprocess.check_call(f"echo >| {problems_filename}", shell=True)
 
-
     searchspace_datasets = [
-                            "nasbench201 cifar10",
-                            "nasbench201 cifar100",
-                            "nasbench201 ImageNet16-120",
-                            # "transbench101_micro class_scene",
-                            # "transbench101_micro class_object",
-                            # "transbench101_micro jigsaw",
-                            # "transbench101_micro room_layout",
-                            # "transbench101_micro segmentsemantic",
-                            # "transbench101_micro normal",
-                            # "transbench101_micro autoencoder",
-                            ]
+        "nasbench201 cifar10",
+        "nasbench201 cifar100",
+        "nasbench201 ImageNet16-120",
+        # "transbench101_micro class_scene",
+        # "transbench101_micro class_object",
+        # "transbench101_micro jigsaw",
+        # "transbench101_micro room_layout",
+        # "transbench101_micro segmentsemantic",
+        # "transbench101_micro normal",
+        # "transbench101_micro autoencoder",
+    ]
 
     for searchspace_dataset in searchspace_datasets:
 
@@ -53,15 +52,14 @@ def run(args: argparse.Namespace) -> None:
 
     for sampler, sampler_kwargs in zip(sampler_list, sampler_kwargs_list):
         # for pruner, pruner_kwargs in zip(pruner_list, pruner_kwargs_list):
-            name = f"{args.name_prefix}_{sampler}" # f"_{pruner}"
-            cmd = (
-                f"{kurobako_cmd} solver --name {name} optuna --loglevel debug "
-                f"--sampler {sampler} --sampler-kwargs {sampler_kwargs} "
-                # f"--pruner {pruner} --pruner-kwargs {pruner_kwargs} "
-                f"| tee -a {solvers_filename}"
-            )
-            subprocess.run(cmd, shell=True)
-
+        name = f"{args.name_prefix}_{sampler}"  # f"_{pruner}"
+        cmd = (
+            f"{kurobako_cmd} solver --name {name} optuna --loglevel debug "
+            f"--sampler {sampler} --sampler-kwargs {sampler_kwargs} "
+            # f"--pruner {pruner} --pruner-kwargs {pruner_kwargs} "
+            f"| tee -a {solvers_filename}"
+        )
+        subprocess.run(cmd, shell=True)
 
     # Create study.
     cmd = (
@@ -89,7 +87,6 @@ def run(args: argparse.Namespace) -> None:
     )
     subprocess.run(cmd, shell=True)
 
-    
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
