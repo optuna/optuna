@@ -413,7 +413,7 @@ class TrialValueModel(BaseModel):
     trial_value_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
     objective = Column(Integer, nullable=False)
-    value = Column(Float, nullable=True)
+    value = Column(Float, nullable=False)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("values", cascade="all, delete-orphan")
@@ -449,7 +449,7 @@ class TrialIntermediateValueModel(BaseModel):
     trial_intermediate_value_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
     step = Column(Integer, nullable=False)
-    intermediate_value = Column(Float, nullable=False)
+    intermediate_value = Column(Float, nullable=True)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("intermediate_values", cascade="all, delete-orphan")

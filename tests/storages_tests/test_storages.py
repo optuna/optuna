@@ -724,7 +724,6 @@ def test_set_trial_intermediate_value(storage_mode: str) -> None:
         assert storage.get_trial(trial_id_1).intermediate_values == {0: 0.3, 2: 0.4}
         assert storage.get_trial(trial_id_2).intermediate_values == {}
         assert storage.get_trial(trial_id_3).intermediate_values == {0: 0.1, 1: 0.4, 2: 0.5}
-        print(storage.get_trial(trial_id_4))
         assert np.isnan(storage.get_trial(trial_id_4).intermediate_values[0])
 
         # Test setting existing step.

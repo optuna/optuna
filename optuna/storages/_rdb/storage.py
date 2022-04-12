@@ -787,10 +787,10 @@ class RDBStorage(BaseStorage):
         # Floats can't be compared for equality because they are
         # approximate and not stored as exact values.
         # https://dev.mysql.com/doc/refman/8.0/en/problems-with-float.html
-        if np.isclose(value, _RDB_MIN_FLOAT) or np.isclose(value, _RDB_MAX_FLOAT):
-            return float(np.sign(value) * float("inf"))
-        elif value is None:
+        if value is None:
             return float("nan")
+        elif np.isclose(value, _RDB_MIN_FLOAT) or np.isclose(value, _RDB_MAX_FLOAT):
+            return float(np.sign(value) * float("inf"))
         return value
 
     @deprecated(
@@ -839,8 +839,7 @@ class RDBStorage(BaseStorage):
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
-        if value is not None:
-            value = self._ensure_numerical_limit(value)
+        value = self._ensure_numerical_limit(value)
 
         trial_value = models.TrialValueModel.find_by_trial_and_objective(trial, objective, session)
         if trial_value is None:
@@ -866,8 +865,7 @@ class RDBStorage(BaseStorage):
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
-        if intermediate_value is not None:
-            intermediate_value = self._ensure_numerical_limit(intermediate_value)
+        intermediate_value = self._ensure_numerical_limit(intermediate_value)
 
         trial_intermediate_value = models.TrialIntermediateValueModel.find_by_trial_and_step(
             trial, step, session
