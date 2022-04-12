@@ -7,9 +7,6 @@ def run(args: argparse.Namespace) -> None:
     kurobako_cmd = os.path.join(args.path_to_kurobako, "kurobako")
     subprocess.run(f"{kurobako_cmd} --version", shell=True)
 
-    if not (os.path.exists(args.data_dir) and os.path.isdir(args.data_dir)):
-        raise ValueError(f"Data directory {args.data_dir} cannot be found.")
-
     os.makedirs(args.out_dir, exist_ok=True)
     study_json_filename = os.path.join(args.out_dir, "studies.json")
     subprocess.check_call(f"echo >| {study_json_filename}", shell=True)
@@ -87,7 +84,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--path-to-kurobako", type=str, default="")
     parser.add_argument("--name-prefix", type=str, default="")
-    parser.add_argument("--n-runs", type=int, default=1)
+    parser.add_argument("--n-runs", type=int, default=10)
     parser.add_argument("--n-jobs", type=int, default=10)
     parser.add_argument("--sampler-list", type=str, default="RandomSampler TPESampler")
     parser.add_argument(
@@ -96,7 +93,6 @@ if __name__ == "__main__":
     parser.add_argument("--pruner-list", type=str, default="NopPruner")
     parser.add_argument("--pruner-kwargs-list", type=str, default="{}")
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--data-dir", type=str, default="data")
     parser.add_argument("--out-dir", type=str, default="out")
     args = parser.parse_args()
 
