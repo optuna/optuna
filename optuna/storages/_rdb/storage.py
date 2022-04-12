@@ -4,7 +4,6 @@ import copy
 from datetime import datetime
 import json
 import logging
-import math
 import os
 from typing import Any
 from typing import Callable
@@ -15,7 +14,6 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Set
-from typing import Union
 import uuid
 
 import alembic.command
@@ -770,19 +768,23 @@ class RDBStorage(BaseStorage):
         return param_value
 
     @staticmethod
+    def _ensure_not_nan(value: float) -> Optional[float]:
+        if np.isnan(value):
+            return None
+        else:
+            return value
+
+    @staticmethod
     def _ensure_numerical_limit(value: float) -> float:
 
         # Max and min trial values that can be stored are limited by
         # dialect. Most limiting one is MySQL which in current data
         # model will store floats as single precision (32 bit).
         # There is no support for +inf and -inf in this dialect.
-        if np.isnan(value):
-            return None
-        else:
-            return float(np.clip(value, _RDB_MIN_FLOAT, _RDB_MAX_FLOAT))
+        return float(np.clip(value, _RDB_MIN_FLOAT, _RDB_MAX_FLOAT))
 
     @staticmethod
-    def _lift_numerical_limit(value: float) -> float:
+    def _lift_numerical_limit(value: Optional[float]) -> float:
 
         # Floats can't be compared for equality because they are
         # approximate and not stored as exact values.
@@ -865,18 +867,20 @@ class RDBStorage(BaseStorage):
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
-        intermediate_value = self._ensure_numerical_limit(intermediate_value)
+        _intermediate_value = self._ensure_not_nan(intermediate_value)
+        if _intermediate_value is not None:
+            _intermediate_value = self._ensure_numerical_limit(_intermediate_value)
 
         trial_intermediate_value = models.TrialIntermediateValueModel.find_by_trial_and_step(
             trial, step, session
         )
         if trial_intermediate_value is None:
             trial_intermediate_value = models.TrialIntermediateValueModel(
-                trial_id=trial_id, step=step, intermediate_value=intermediate_value
+                trial_id=trial_id, step=step, intermediate_value=_intermediate_value
             )
             session.add(trial_intermediate_value)
         else:
-            trial_intermediate_value.intermediate_value = intermediate_value
+            trial_intermediate_value.intermediate_value = _intermediate_value
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
 
