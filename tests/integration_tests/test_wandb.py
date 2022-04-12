@@ -1,6 +1,7 @@
 import functools
 from typing import Any
 from typing import Callable
+from typing import Dict
 from typing import List
 from typing import Sequence
 from typing import Tuple
@@ -69,7 +70,7 @@ def test_run_initialized(wandb: mock.MagicMock) -> None:
     wandb.run = None
 
     study = optuna.create_study(direction="minimize")
-    _wrapped_func = wandbc.track_in_wandb(lambda t: 1.0)
+    _wrapped_func = wandbc.track_in_wandb()(lambda t: 1.0)
     wandb.init.reset_mock()
     trial = optuna.create_trial(value=1.0)
     _wrapped_func(trial)
@@ -95,11 +96,11 @@ def test_run_initialized(wandb: mock.MagicMock) -> None:
 @pytest.mark.parametrize("as_multirun", [True, False])
 def test_attributes_set_on_epoch(wandb: mock.MagicMock, as_multirun: bool) -> None:
 
-    # Vanilla update
     wandb.sdk.wandb_run.Run = mock.MagicMock
-    expected = {"direction": ["MINIMIZE"]}
+
+    expected_config: Dict[str, Any] = {"direction": ["MINIMIZE"]}
     trial_params = {"x": 1.1, "y": 2.2}
-    expected_with_params = {"direction": ["MINIMIZE"], "x": 1.1, "y": 2.2}
+    expected_config_with_params = {**expected_config, **trial_params}
 
     study = optuna.create_study(direction="minimize")
     wandbc = WeightsAndBiasesCallback(as_multirun=as_multirun)
@@ -110,9 +111,9 @@ def test_attributes_set_on_epoch(wandb: mock.MagicMock, as_multirun: bool) -> No
         wandb.run = None
         study.enqueue_trial(trial_params)
         study.optimize(_objective_func, n_trials=1, callbacks=[wandbc])
-        wandb.init().config.update.assert_called_once_with(expected_with_params)
+        wandb.init().config.update.assert_called_once_with(expected_config_with_params)
     else:
-        wandb.run.config.update.assert_called_once_with(expected)
+        wandb.run.config.update.assert_called_once_with(expected_config)
 
 
 @mock.patch("optuna.integration.wandb.wandb")
@@ -120,9 +121,10 @@ def test_attributes_set_on_epoch(wandb: mock.MagicMock, as_multirun: bool) -> No
 def test_multiobjective_attributes_set_on_epoch(wandb: mock.MagicMock, as_multirun: bool) -> None:
 
     wandb.sdk.wandb_run.Run = mock.MagicMock
+
+    expected_config: Dict[str, Any] = {"direction": ["MINIMIZE", "MAXIMIZE"]}
     trial_params = {"x": 1.1, "y": 2.2}
-    expected = {"direction": ["MINIMIZE", "MAXIMIZE"]}
-    expected_with_params = {"direction": ["MINIMIZE", "MAXIMIZE"], "x": 1.1, "y": 2.2}
+    expected_config_with_params = {**expected_config, **trial_params}
 
     study = optuna.create_study(directions=["minimize", "maximize"])
     wandbc = WeightsAndBiasesCallback(as_multirun=as_multirun)
@@ -134,9 +136,9 @@ def test_multiobjective_attributes_set_on_epoch(wandb: mock.MagicMock, as_multir
         wandb.run = None
         study.enqueue_trial(trial_params)
         study.optimize(_multiobjective_func, n_trials=1, callbacks=[wandbc])
-        wandb.init().config.update.assert_called_once_with(expected_with_params)
+        wandb.init().config.update.assert_called_once_with(expected_config_with_params)
     else:
-        wandb.run.config.update.assert_called_once_with(expected)
+        wandb.run.config.update.assert_called_once_with(expected_config)
 
 
 @mock.patch("optuna.integration.wandb.wandb")
@@ -152,7 +154,7 @@ def test_log_api_call_count(wandb: mock.MagicMock) -> None:
 
     wandbc = WeightsAndBiasesCallback(as_multirun=True)
     wandb.run.reset_mock()
-    _wrapped_logging_func = wandbc.track_in_wandb(
+    _wrapped_logging_func = wandbc.track_in_wandb()(
         functools.partial(logging_objective_func, log_func=wandb.run.log)
     )
 
@@ -174,9 +176,9 @@ def test_values_registered_on_epoch(
     wandb: mock.MagicMock, metric: str, as_multirun: bool, expected: List[str]
 ) -> None:
     def assert_call_args(log_func: mock.MagicMock, regular: bool) -> None:
-        kall = log_func.call_args
-        assert list(kall[0][0].keys()) == expected
-        assert kall[1] == {"step": 0 if regular else None}
+        call_args = log_func.call_args
+        assert list(call_args[0][0].keys()) == expected
+        assert call_args[1] == {"step": 0 if regular else None}
 
     wandb.sdk.wandb_run.Run = mock.MagicMock
 
@@ -202,7 +204,7 @@ def test_values_registered_on_epoch_with_logging(
 
     study = optuna.create_study()
     wandbc = WeightsAndBiasesCallback(metric_name=metric, as_multirun=True)
-    _wrapped_func = wandbc.track_in_wandb(
+    _wrapped_func = wandbc.track_in_wandb()(
         functools.partial(logging_objective_func, log_func=wandb.run.log)
     )
 
@@ -211,9 +213,9 @@ def test_values_registered_on_epoch_with_logging(
 
     logged_metric = wandb.run.log.mock_calls[0][1][0]
 
-    kall = wandb.run.log.call_args
-    assert list(kall[0][0].keys()) == expected
-    assert kall[1] == {"step": 0}
+    call_args = wandb.run.log.call_args
+    assert list(call_args[0][0].keys()) == expected
+    assert call_args[1] == {"step": 0}
     assert logged_metric == {"result": 0}
 
 
@@ -234,9 +236,9 @@ def test_multiobjective_values_registered_on_epoch(
     expected: List[str],
 ) -> None:
     def assert_call_args(log_func: mock.MagicMock, regular: bool) -> None:
-        kall = log_func.call_args
-        assert list(kall[0][0].keys()) == expected
-        assert kall[1] == {"step": 0 if regular else None}
+        call_args = log_func.call_args
+        assert list(call_args[0][0].keys()) == expected
+        assert call_args[1] == {"step": 0 if regular else None}
 
     wandb.sdk.wandb_run.Run = mock.MagicMock
 
@@ -266,7 +268,7 @@ def test_multiobjective_values_registered_on_epoch_with_logging(
 ) -> None:
 
     wandbc = WeightsAndBiasesCallback(as_multirun=True, metric_name=metrics)
-    _wrapped_func = wandbc.track_in_wandb(
+    _wrapped_func = wandbc.track_in_wandb()(
         functools.partial(logging_multiobjective_func, log_func=wandb.run.log)
     )
 
@@ -277,9 +279,9 @@ def test_multiobjective_values_registered_on_epoch_with_logging(
 
     logged_metrics = wandb.run.log.mock_calls[0][1][0]
 
-    kall = wandb.run.log.call_args
-    assert list(kall[0][0].keys()) == expected
-    assert kall[1] == {"step": 0}
+    call_args = wandb.run.log.call_args
+    assert list(call_args[0][0].keys()) == expected
+    assert call_args[1] == {"step": 0}
     assert logged_metrics == {"result0": 1, "result1": -1}
 
 

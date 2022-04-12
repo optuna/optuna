@@ -1,5 +1,6 @@
 import functools
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import Optional
 from typing import Sequence
@@ -102,9 +103,8 @@ class WeightsAndBiasesCallback(object):
                 )
             )
 
-        self._wandb_kwargs = wandb_kwargs or {}
-
         self._metric_name = metric_name
+        self._wandb_kwargs = wandb_kwargs or {}
         self._as_multirun = as_multirun
 
         if not self._as_multirun:
@@ -143,8 +143,7 @@ class WeightsAndBiasesCallback(object):
         step = trial.number if wandb.run else None
         run = wandb.run
 
-        # When an user doesn't use `track_in_wandb` decorator.
-        # Might create an extra run if an user logs in wandb but doesn't use the decorator.
+        # Might create extra runs if an user logs in wandb but doesn't use the decorator.
 
         if not run:
             run = self._initialize_run()
@@ -160,18 +159,42 @@ class WeightsAndBiasesCallback(object):
             run.config.update(attributes)
 
     @experimental("3.0.0")
-    def track_in_wandb(self, func: ObjectiveFuncType) -> ObjectiveFuncType:
-        @functools.wraps(func)
-        def wrapper(trial: optuna.trial.Trial) -> Union[float, Sequence[float]]:
+    def track_in_wandb(self) -> Callable:
+        """Decorator for using W&B for logging inside the objective function.
 
-            run = wandb.run  # Uses global run when `as_multirun` is set to False.
-            if not run:
-                run = self._initialize_run()
-                run.name = f"trial/{trial.number}/{run.name}"
+        The run is initialized with the same `wandb_kwargs` that are passed to the callback.
+        All the metrics from inside the objective function will be logged into the same run
+        which stores the parameters for a given trial.
 
-            return func(trial)
+        Usage:
+        ```
+        wandbc = WeightsandBiasesCallback()
 
-        return wrapper
+        @wandbc.track_in_wandb()
+        def objective_function(trial: optuna.trial.Trial) -> float:
+            accuracy = np.random.random()
+            wandb.log({"accuracy": accuracy})
+            return accuracy
+        ```
+
+        Returns:
+            ObjectiveFuncType: Objective function with W&B tracking enabled.
+        """
+
+        def decorator(func: ObjectiveFuncType) -> ObjectiveFuncType:
+            @functools.wraps(func)
+            def wrapper(trial: optuna.trial.Trial) -> Union[float, Sequence[float]]:
+
+                run = wandb.run  # Uses global run when `as_multirun` is set to False.
+                if not run:
+                    run = self._initialize_run()
+                    run.name = f"trial/{trial.number}/{run.name}"
+
+                return func(trial)
+
+            return wrapper
+
+        return decorator
 
     def _initialize_run(self) -> "wandb.sdk.wandb_run.Run":
         """Initializes Weights & Biases run."""
