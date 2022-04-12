@@ -166,16 +166,17 @@ class WeightsAndBiasesCallback(object):
         All the metrics from inside the objective function will be logged into the same run
         which stores the parameters for a given trial.
 
-        Usage:
-        ```
-        wandbc = WeightsandBiasesCallback()
+        Example:
 
-        @wandbc.track_in_wandb()
-        def objective_function(trial: optuna.trial.Trial) -> float:
-            accuracy = np.random.random()
-            wandb.log({"accuracy": accuracy})
-            return accuracy
-        ```
+            .. code::
+
+                wandbc = WeightsandBiasesCallback()
+
+                @wandbc.track_in_wandb()
+                def objective_function(trial: optuna.trial.Trial) -> float:
+                    accuracy = np.random.random()
+                    wandb.log({"accuracy": accuracy})
+                    return accuracy
 
         Returns:
             ObjectiveFuncType: Objective function with W&B tracking enabled.
