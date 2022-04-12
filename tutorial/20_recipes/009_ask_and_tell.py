@@ -162,7 +162,7 @@ for _ in range(n_trials):
 # For example,
 
 distributions = {
-    "C": optuna.distributions.LogUniformDistribution(1e-7, 10.0),
+    "C": optuna.distributions.FloatDistribution(1e-7, 10.0, log=True),
     "solver": optuna.distributions.CategoricalDistribution(("lbfgs", "saga")),
 }
 

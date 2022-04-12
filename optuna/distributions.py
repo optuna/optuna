@@ -135,14 +135,14 @@ class FloatDistribution(BaseDistribution):
         self, low: float, high: float, log: bool = False, step: Union[None, float] = None
     ) -> None:
 
+        if log and step is not None:
+            raise ValueError("The parameter `step` is not supported when `log` is true.")
+
         if low > high:
             raise ValueError(
                 "The `low` value must be smaller than or equal to the `high` value "
                 "(low={}, high={}).".format(low, high)
             )
-
-        if log and step is not None:
-            raise ValueError("The parameter `step` is not supported when `log` is true.")
 
         if log and low <= 0.0:
             raise ValueError(
@@ -326,6 +326,13 @@ class IntDistribution(BaseDistribution):
     """
 
     def __init__(self, low: int, high: int, log: bool = False, step: int = 1) -> None:
+
+        if log and step != 1:
+            raise ValueError(
+                "Samplers and other components in Optuna only accept step is 1 "
+                "when `log` argument is True."
+            )
+
         if low > high:
             raise ValueError(
                 "The `low` value must be smaller than or equal to the `high` value "
@@ -341,12 +348,6 @@ class IntDistribution(BaseDistribution):
         if step <= 0:
             raise ValueError(
                 "The `step` value must be non-zero positive value, but step={}.".format(step)
-            )
-
-        if log and step != 1:
-            raise ValueError(
-                "Samplers and other components in Optuna only accept step is 1 "
-                "when `log` argument is True."
             )
 
         self.log = log
@@ -511,12 +512,12 @@ class CategoricalDistribution(BaseDistribution):
 
 DISTRIBUTION_CLASSES = (
     IntDistribution,
+    IntLogUniformDistribution,
+    IntUniformDistribution,
     FloatDistribution,
     UniformDistribution,
     LogUniformDistribution,
     DiscreteUniformDistribution,
-    IntUniformDistribution,
-    IntLogUniformDistribution,
     CategoricalDistribution,
 )
 
@@ -552,32 +553,15 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
             low = json_dict["low"]
             high = json_dict["high"]
             step = json_dict.get("step")
-            log = json_dict.get("log")
+            log = json_dict.get("log", False)
 
             if json_dict["type"] == "float":
-                if log:
-                    if step is not None:
-                        raise ValueError(
-                            "The parameter `step` is not supported when `log` is true."
-                        )
-                    else:
-                        return LogUniformDistribution(low, high)
-                else:
-                    if step is not None:
-                        return DiscreteUniformDistribution(low, high, step)
-                    else:
-                        return UniformDistribution(low, high)
+                return FloatDistribution(low, high, log=log, step=step)
+
             else:
-                if log:
-                    if step is not None:
-                        return IntLogUniformDistribution(low, high, step)
-                    else:
-                        return IntLogUniformDistribution(low, high)
-                else:
-                    if step is not None:
-                        return IntUniformDistribution(low, high, step)
-                    else:
-                        return IntUniformDistribution(low, high)
+                if step is None:
+                    step = 1
+                return IntDistribution(low=low, high=high, log=log, step=step)
 
         raise ValueError("Unknown distribution type: {}".format(json_dict["type"]))
 
@@ -670,14 +654,71 @@ def _get_single_value(distribution: BaseDistribution) -> Union[int, float, Categ
         (
             FloatDistribution,
             IntDistribution,
-            UniformDistribution,
-            LogUniformDistribution,
-            DiscreteUniformDistribution,
-            IntUniformDistribution,
-            IntLogUniformDistribution,
         ),
     ):
         return distribution.low
     elif isinstance(distribution, CategoricalDistribution):
         return distribution.choices[0]
     assert False
+
+
+# TODO(himkt): Remove this method with the deletion of deprecated distributions.
+# https://github.com/optuna/optuna/issues/2941
+def _convert_old_distribution_to_new_distribution(
+    distribution: BaseDistribution,
+    suppress_warning: bool = False,
+) -> BaseDistribution:
+
+    new_distribution: BaseDistribution
+
+    # Float distributions.
+    if isinstance(distribution, UniformDistribution):
+        new_distribution = FloatDistribution(
+            low=distribution.low,
+            high=distribution.high,
+            log=False,
+            step=None,
+        )
+    elif isinstance(distribution, LogUniformDistribution):
+        new_distribution = FloatDistribution(
+            low=distribution.low,
+            high=distribution.high,
+            log=True,
+            step=None,
+        )
+    elif isinstance(distribution, DiscreteUniformDistribution):
+        new_distribution = FloatDistribution(
+            low=distribution.low,
+            high=distribution.high,
+            log=False,
+            step=distribution.q,
+        )
+
+    # Integer distributions.
+    elif isinstance(distribution, IntUniformDistribution):
+        new_distribution = IntDistribution(
+            low=distribution.low,
+            high=distribution.high,
+            log=False,
+            step=distribution.step,
+        )
+    elif isinstance(distribution, IntLogUniformDistribution):
+        new_distribution = IntDistribution(
+            low=distribution.low,
+            high=distribution.high,
+            log=True,
+            step=distribution.step,
+        )
+
+    # Categorical distribution.
+    else:
+        new_distribution = distribution
+
+    if new_distribution != distribution and not suppress_warning:
+        message = (
+            f"{distribution} is deprecated and internally converted to"
+            f" {new_distribution}. See https://github.com/optuna/optuna/issues/2941."
+        )
+        warnings.warn(message, FutureWarning)
+
+    return new_distribution

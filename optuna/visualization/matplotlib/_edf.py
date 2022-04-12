@@ -14,6 +14,7 @@ from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._utils import _check_plot_args
+from optuna.visualization._utils import _filter_nonfinite
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 
@@ -142,6 +143,7 @@ def _get_edf_plot(
             for study in studies
         )
     )
+    all_trials = _filter_nonfinite(all_trials, target, with_message=False)
 
     if len(all_trials) == 0:
         _logger.warning("There are no complete trials.")
@@ -160,14 +162,11 @@ def _get_edf_plot(
 
     # Draw multiple line plots.
     for i, study in enumerate(studies):
-        values = np.asarray(
-            [
-                target(trial)
-                for trial in study.get_trials(deepcopy=False)
-                if trial.state == TrialState.COMPLETE
-            ]
+        trials = _filter_nonfinite(
+            study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
         )
 
+        values = np.asarray([target(trial) for trial in trials])
         y_values = np.sum(values[:, np.newaxis] <= x_values, axis=0) / values.size
 
         ax.plot(x_values, y_values, color=cmap(i), alpha=0.7, label=study.study_name)

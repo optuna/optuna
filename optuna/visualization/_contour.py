@@ -9,7 +9,6 @@ from packaging import version
 
 from optuna.logging import get_logger
 from optuna.study import Study
-from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
@@ -144,11 +143,13 @@ def _get_contour_plot(
 
         param_values_range[p_name] = (min_value, max_value)
 
+    reverse_scale = _is_reverse_scale(study, target)
+
     if len(sorted_params) == 2:
         x_param = sorted_params[0]
         y_param = sorted_params[1]
         sub_plots = _generate_contour_subplot(
-            trials, x_param, y_param, study.directions[0], param_values_range, target, target_name
+            trials, x_param, y_param, reverse_scale, param_values_range, target, target_name
         )
         figure = go.Figure(data=sub_plots, layout=layout)
         figure.update_xaxes(title_text=x_param, range=param_values_range[x_param])
@@ -180,7 +181,7 @@ def _get_contour_plot(
                         trials,
                         x_param,
                         y_param,
-                        study.directions[0],
+                        reverse_scale,
                         param_values_range,
                         target,
                         target_name,
@@ -220,7 +221,7 @@ def _generate_contour_subplot(
     trials: List[FrozenTrial],
     x_param: str,
     y_param: str,
-    direction: StudyDirection,
+    reverse_scale: bool,
     param_values_range: Optional[Dict[str, Tuple[float, float]]] = None,
     target: Optional[Callable[[FrozenTrial], float]] = None,
     target_name: str = "Objective Value",
@@ -288,7 +289,7 @@ def _generate_contour_subplot(
         contours_coloring="heatmap",
         hoverinfo="none",
         line_smoothing=1.3,
-        reversescale=_is_reverse_scale(target, direction),
+        reversescale=reverse_scale,
     )
 
     scatter = go.Scatter(

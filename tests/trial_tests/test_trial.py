@@ -20,11 +20,8 @@ from optuna import samplers
 from optuna import storages
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
-from optuna.distributions import DiscreteUniformDistribution
-from optuna.distributions import IntLogUniformDistribution
-from optuna.distributions import IntUniformDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
+from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 from optuna.testing.integration import DeterministicPruner
 from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.testing.storage import STORAGE_MODES
@@ -198,7 +195,7 @@ def test_suggest_uniform(storage_mode: str) -> None:
     ) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = UniformDistribution(low=0.0, high=3.0)
+        distribution = FloatDistribution(low=0.0, high=3.0)
 
         assert trial._suggest("x", distribution) == 1.0  # Test suggesting a param.
         assert trial._suggest("x", distribution) == 1.0  # Test suggesting the same param.
@@ -211,10 +208,10 @@ def test_suggest_uniform(storage_mode: str) -> None:
 def test_suggest_loguniform(storage_mode: str) -> None:
 
     with pytest.raises(ValueError):
-        LogUniformDistribution(low=1.0, high=0.9)
+        FloatDistribution(low=1.0, high=0.9, log=True)
 
     with pytest.raises(ValueError):
-        LogUniformDistribution(low=0.0, high=0.9)
+        FloatDistribution(low=0.0, high=0.9, log=True)
 
     mock = Mock()
     mock.side_effect = [1.0, 2.0]
@@ -225,7 +222,7 @@ def test_suggest_loguniform(storage_mode: str) -> None:
     ) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = LogUniformDistribution(low=0.1, high=4.0)
+        distribution = FloatDistribution(low=0.1, high=4.0, log=True)
 
         assert trial._suggest("x", distribution) == 1.0  # Test suggesting a param.
         assert trial._suggest("x", distribution) == 1.0  # Test suggesting the same param.
@@ -246,7 +243,7 @@ def test_suggest_discrete_uniform(storage_mode: str) -> None:
     ) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = DiscreteUniformDistribution(low=0.0, high=3.0, q=1.0)
+        distribution = FloatDistribution(low=0.0, high=3.0, step=1.0)
 
         assert trial._suggest("x", distribution) == 1.0  # Test suggesting a param.
         assert trial._suggest("x", distribution) == 1.0  # Test suggesting the same param.
@@ -386,7 +383,7 @@ def test_suggest_int(storage_mode: str) -> None:
     ) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = IntUniformDistribution(low=0, high=3)
+        distribution = IntDistribution(low=0, high=3)
 
         assert trial._suggest("x", distribution) == 1  # Test suggesting a param.
         assert trial._suggest("x", distribution) == 1  # Test suggesting the same param.
@@ -466,7 +463,7 @@ def test_suggest_int_log(storage_mode: str) -> None:
     ) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = IntLogUniformDistribution(low=1, high=3)
+        distribution = IntDistribution(low=1, high=3, log=True)
 
         assert trial._suggest("x", distribution) == 1  # Test suggesting a param.
         assert trial._suggest("x", distribution) == 1  # Test suggesting the same param.
@@ -508,12 +505,12 @@ def test_distributions(storage_mode: str) -> None:
         study.optimize(objective, n_trials=1)
 
         assert study.best_trial.distributions == {
-            "a": UniformDistribution(low=0, high=10),
-            "b": LogUniformDistribution(low=0.1, high=10),
-            "c": DiscreteUniformDistribution(low=0, high=10, q=1),
-            "d": IntUniformDistribution(low=0, high=10),
+            "a": FloatDistribution(low=0, high=10),
+            "b": FloatDistribution(low=0.1, high=10, log=True),
+            "c": FloatDistribution(low=0, high=10, step=1),
+            "d": IntDistribution(low=0, high=10),
             "e": CategoricalDistribution(choices=("foo", "bar", "baz")),
-            "f": IntLogUniformDistribution(low=1, high=10),
+            "f": IntDistribution(low=1, high=10, log=True),
         }
 
 
@@ -530,8 +527,8 @@ def test_should_prune() -> None:
 def test_relative_parameters(storage_mode: str) -> None:
 
     relative_search_space = {
-        "x": UniformDistribution(low=5, high=6),
-        "y": UniformDistribution(low=5, high=6),
+        "x": FloatDistribution(low=5, high=6),
+        "y": FloatDistribution(low=5, high=6),
     }
     relative_params = {"x": 5.5, "y": 5.5, "z": 5.5}
 
@@ -546,7 +543,7 @@ def test_relative_parameters(storage_mode: str) -> None:
 
         # Suggested from `relative_params`.
         trial0 = create_trial()
-        distribution0 = UniformDistribution(low=0, high=100)
+        distribution0 = FloatDistribution(low=0, high=100)
         assert trial0._suggest("x", distribution0) == 5.5
 
         # Not suggested from `relative_params` (due to unknown parameter name).
@@ -556,24 +553,24 @@ def test_relative_parameters(storage_mode: str) -> None:
 
         # Not suggested from `relative_params` (due to incompatible value range).
         trial2 = create_trial()
-        distribution2 = UniformDistribution(low=0, high=5)
+        distribution2 = FloatDistribution(low=0, high=5)
         assert trial2._suggest("x", distribution2) != 5.5
 
         # Error (due to incompatible distribution class).
         trial3 = create_trial()
-        distribution3 = IntUniformDistribution(low=1, high=100)
+        distribution3 = IntDistribution(low=1, high=100)
         with pytest.raises(ValueError):
             trial3._suggest("y", distribution3)
 
         # Error ('z' is included in `relative_params` but not in `relative_search_space`).
         trial4 = create_trial()
-        distribution4 = UniformDistribution(low=0, high=10)
+        distribution4 = FloatDistribution(low=0, high=10)
         with pytest.raises(ValueError):
             trial4._suggest("z", distribution4)
 
         # Error (due to incompatible distribution class).
         trial5 = create_trial()
-        distribution5 = IntLogUniformDistribution(low=1, high=100)
+        distribution5 = IntDistribution(low=1, high=100, log=True)
         with pytest.raises(ValueError):
             trial5._suggest("y", distribution5)
 
@@ -651,7 +648,7 @@ def test_study_id() -> None:
 def test_create_trial(state: TrialState) -> None:
     value = 0.2
     params = {"x": 10}
-    distributions: Dict[str, BaseDistribution] = {"x": UniformDistribution(5, 12)}
+    distributions: Dict[str, BaseDistribution] = {"x": FloatDistribution(5, 12)}
     user_attrs = {"foo": "bar"}
     system_attrs = {"baz": "qux"}
     intermediate_values = {0: 0.0, 1: 0.1, 2: 0.1}
@@ -679,6 +676,74 @@ def test_create_trial(state: TrialState) -> None:
 
     with pytest.raises(ValueError):
         create_trial(state=state, value=value, values=(value,))
+
+
+# Deprecated distributions are internally converted to corresponding distributions.
+def test_create_trial_distribution_conversion() -> None:
+    fixed_params = {
+        "ud": 0,
+        "dud": 2,
+        "lud": 1,
+        "id": 0,
+        "idd": 2,
+        "ild": 1,
+    }
+
+    fixed_distributions = {
+        "ud": distributions.UniformDistribution(low=0, high=10),
+        "dud": distributions.DiscreteUniformDistribution(low=0, high=10, q=2),
+        "lud": distributions.LogUniformDistribution(low=1, high=10),
+        "id": distributions.IntUniformDistribution(low=0, high=10),
+        "idd": distributions.IntUniformDistribution(low=0, high=10, step=2),
+        "ild": distributions.IntLogUniformDistribution(low=1, high=10),
+    }
+
+    with pytest.warns(
+        FutureWarning,
+        match="See https://github.com/optuna/optuna/issues/2941",
+    ) as record:
+
+        trial = create_trial(params=fixed_params, distributions=fixed_distributions, value=1)
+        assert len(record) == 6
+
+    expected_distributions = {
+        "ud": distributions.FloatDistribution(low=0, high=10, log=False, step=None),
+        "dud": distributions.FloatDistribution(low=0, high=10, log=False, step=2),
+        "lud": distributions.FloatDistribution(low=1, high=10, log=True, step=None),
+        "id": distributions.IntDistribution(low=0, high=10, log=False, step=1),
+        "idd": distributions.IntDistribution(low=0, high=10, log=False, step=2),
+        "ild": distributions.IntDistribution(low=1, high=10, log=True, step=1),
+    }
+
+    assert trial.distributions == expected_distributions
+
+
+# It confirms that ask doesn't convert non-deprecated distributions.
+def test_create_trial_distribution_conversion_noop() -> None:
+    fixed_params = {
+        "ud": 0,
+        "dud": 2,
+        "lud": 1,
+        "id": 0,
+        "idd": 2,
+        "ild": 1,
+        "cd": "a",
+    }
+
+    fixed_distributions = {
+        "ud": distributions.FloatDistribution(low=0, high=10, log=False, step=None),
+        "dud": distributions.FloatDistribution(low=0, high=10, log=False, step=2),
+        "lud": distributions.FloatDistribution(low=1, high=10, log=True, step=None),
+        "id": distributions.IntDistribution(low=0, high=10, log=False, step=1),
+        "idd": distributions.IntDistribution(low=0, high=10, log=False, step=2),
+        "ild": distributions.IntDistribution(low=1, high=10, log=True, step=1),
+        "cd": distributions.CategoricalDistribution(choices=["a", "b", "c"]),
+    }
+
+    trial = create_trial(params=fixed_params, distributions=fixed_distributions, value=1)
+
+    # Check fixed_distributions doesn't change.
+    assert trial.distributions == fixed_distributions
 
 
 def test_suggest_with_multi_objectives() -> None:

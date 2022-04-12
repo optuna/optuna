@@ -385,15 +385,8 @@ class _CachedStorage(BaseStorage):
     def record_heartbeat(self, trial_id: int) -> None:
         self._backend.record_heartbeat(trial_id)
 
-    def fail_stale_trials(self, study_id: int) -> List[int]:
-        stale_trial_ids = self._backend._get_stale_trial_ids(study_id)
-        confirmed_stale_trial_ids = []
-
-        for trial_id in stale_trial_ids:
-            if self.set_trial_state_values(trial_id, state=TrialState.FAIL):
-                confirmed_stale_trial_ids.append(trial_id)
-
-        return confirmed_stale_trial_ids
+    def _get_stale_trial_ids(self, study_id: int) -> List[int]:
+        return self._backend._get_stale_trial_ids(study_id)
 
     def _is_heartbeat_supported(self) -> bool:
         return self._backend._is_heartbeat_supported()
