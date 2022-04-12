@@ -143,7 +143,7 @@ class WeightsAndBiasesCallback(object):
         step = trial.number if wandb.run else None
         run = wandb.run
 
-        # Might create extra runs if an user logs in wandb but doesn't use the decorator.
+        # Might create extra runs if a user logs in wandb but doesn't use the decorator.
 
         if not run:
             run = self._initialize_run()
