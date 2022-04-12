@@ -4,8 +4,9 @@ from typing import Callable
 from typing import Dict
 from typing import Optional
 from typing import Sequence
-from typing import Tuple
 from typing import Type
+from typing import Union
+
 import warnings
 
 from optuna import TrialPruned
