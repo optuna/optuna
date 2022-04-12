@@ -120,3 +120,9 @@ docs/source/tutorial/
 
 # asv
 .asv
+
+# kurobako benchmark
+out/
+nasbench_full.bin
+nasbench_full.tfrecord
+fcnet_tabular_benchmarks
