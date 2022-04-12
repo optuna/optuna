@@ -279,7 +279,7 @@ class MultiObjectiveStudy(object):
         timeout: Optional[int] = None,
         n_trials: Optional[int] = None,
         n_jobs: int = 1,
-        catch: Tuple[Type[Exception], ...] = (),
+        catch: Union[Sequence[Type[Exception]], Type[Exception]] = (),
         callbacks: Optional[List[CallbackFuncType]] = None,
         gc_after_trial: bool = True,
         show_progress_bar: bool = False,

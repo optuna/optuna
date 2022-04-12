@@ -301,7 +301,7 @@ class Study:
         n_trials: Optional[int] = None,
         timeout: Optional[float] = None,
         n_jobs: int = 1,
-        catch: Tuple[Type[Exception], ...] = (),
+        catch: Union[Sequence[Type[Exception]], Type[Exception]] = (),
         callbacks: Optional[List[Callable[["Study", FrozenTrial], None]]] = None,
         gc_after_trial: bool = False,
         show_progress_bar: bool = False,

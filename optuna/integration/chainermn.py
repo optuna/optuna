@@ -102,7 +102,7 @@ class ChainerMNStudy(object):
         func: Callable[["ChainerMNTrial", "CommunicatorBase"], float],
         n_trials: Optional[int] = None,
         timeout: Optional[float] = None,
-        catch: Tuple[Type[Exception], ...] = (),
+        catch: Union[Sequence[Type[Exception]], Type[Exception]] = (),
     ) -> None:
         """Optimize an objective function.
 
