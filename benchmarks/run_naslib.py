@@ -43,6 +43,8 @@ def run(args: argparse.Namespace) -> None:
     # Create solvers.
     sampler_list = args.sampler_list.split()
     sampler_kwargs_list = args.sampler_kwargs_list.split()
+    pruner_list = args.pruner_list.split()
+    pruner_kwargs_list = args.pruner_kwargs_list.split()
 
     if len(sampler_list) != len(sampler_kwargs_list):
         raise ValueError(
@@ -51,15 +53,15 @@ def run(args: argparse.Namespace) -> None:
         )
 
     for sampler, sampler_kwargs in zip(sampler_list, sampler_kwargs_list):
-        # for pruner, pruner_kwargs in zip(pruner_list, pruner_kwargs_list):
-        name = f"{args.name_prefix}_{sampler}"  # f"_{pruner}"
-        cmd = (
-            f"{kurobako_cmd} solver --name {name} optuna --loglevel debug "
-            f"--sampler {sampler} --sampler-kwargs {sampler_kwargs} "
-            # f"--pruner {pruner} --pruner-kwargs {pruner_kwargs} "
-            f"| tee -a {solvers_filename}"
-        )
-        subprocess.run(cmd, shell=True)
+        for pruner, pruner_kwargs in zip(pruner_list, pruner_kwargs_list):
+            name = f"{args.name_prefix}_{sampler}_{pruner}"
+            cmd = (
+                f"{kurobako_cmd} solver --name {name} optuna --loglevel debug "
+                f"--sampler {sampler} --sampler-kwargs {sampler_kwargs} "
+                f"--pruner {pruner} --pruner-kwargs {pruner_kwargs} "
+                f"| tee -a {solvers_filename}"
+            )
+            subprocess.run(cmd, shell=True)
 
     # Create study.
     cmd = (

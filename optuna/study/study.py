@@ -34,7 +34,6 @@ from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
-
 _dataframe = _LazyImport("optuna.study._dataframe")
 
 if TYPE_CHECKING:
@@ -45,7 +44,6 @@ ObjectiveFuncType = Callable[[trial_module.Trial], Union[float, Sequence[float]]
 
 
 _logger = logging.get_logger(__name__)
-
 
 class Study:
     """A study corresponds to an optimization task, i.e., a set of trials.

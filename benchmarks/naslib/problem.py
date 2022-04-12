@@ -43,10 +43,19 @@ class NASLibProblemFactory(problem.ProblemFactory):
             self._converter = lambda x: [int(z) for z in x]
         else:
             raise NotImplementedError(f"{self._search_space} is not supported")
+        
+        dummy = self._search_space.copy()
+        dummy.sample_random_architecture()
+        config_copy = config.copy()
+        del config_copy["direction"]
+        del config_copy["search_space"]
+        out = dummy.query(**config_copy)
+        steps = len(out) - 1
         return problem.ProblemSpec(
             name=f"{self._search_space}",
             params=params,
             values=[problem.Var("value")],
+            steps=steps
         )
 
     def create_problem(self, seed: int) -> problem.Problem:
@@ -94,13 +103,14 @@ class NASLibEvaluator(problem.Evaluator):
         self._config = config
         self._current_step = 0
         self._scale = scale
+        self._lc = self._search_space.query(**self._config)
 
     def current_step(self) -> int:
         return self._current_step
 
     def evaluate(self, next_step: int) -> List[float]:
-        self._current_step = 1
-        return [self._search_space.query(**self._config) * self._scale]
+        self._current_step = next_step
+        return [self._lc[next_step] * self._scale]
 
 
 if __name__ == "__main__":
@@ -121,7 +131,7 @@ if __name__ == "__main__":
         "LATENCY": "minimize",
     }
 
-    default_config = {"metric": "TEST_ACCURACY", "epoch": -1, "full_lc": False}
+    default_config = {"metric": "TEST_ACCURACY", "epoch": -1, "full_lc": True}
 
     if len(sys.argv) < 1 + 2:
         print("Usage: python3 nas_bench_suite/problems.py <search_space> <dataset> [<config>]")
