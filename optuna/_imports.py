@@ -77,9 +77,7 @@ class _DeferredImportExceptionContextManager(object):
         return self._deferred is None
 
     def check(self) -> None:
-        """Check whether the context manager has caught any exceptions.
-
-        """
+        """Check whether the context manager has caught any exceptions."""
         if self._deferred is not None:
             exc_value, message = self._deferred
             raise ImportError(message) from exc_value
