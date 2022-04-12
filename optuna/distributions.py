@@ -223,7 +223,7 @@ class LogUniformDistribution(FloatDistribution):
     Attributes:
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
-            and must be larger than 0. ``low`` must be less than or equal to ``high``.
+            ``low`` must be larger than 0. ``low`` must be less than or equal to ``high``.
         high:
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
             ``high`` must be greater than or equal to ``low``.
