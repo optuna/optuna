@@ -52,17 +52,6 @@ _RDB_MIN_FLOAT = np.finfo(np.float32).min
 _logger = optuna.logging.get_logger(__name__)
 
 
-def _ensure_not_nan(
-    value: Union[float, Sequence[float]]
-) -> Optional[Union[float, Sequence[float]]]:
-    # Ensure the value is not Nan, which is not supported by MySQL
-    # if Nan, change it the None
-    if isinstance(value, (tuple, list)):
-        return type(value)([None if math.isnan(v) else v for v in value])
-    else:
-        return None if math.isnan(value) else value
-
-
 @contextmanager
 def _create_scoped_session(
     scoped_session: orm.scoped_session,
@@ -787,7 +776,10 @@ class RDBStorage(BaseStorage):
         # dialect. Most limiting one is MySQL which in current data
         # model will store floats as single precision (32 bit).
         # There is no support for +inf and -inf in this dialect.
-        return float(np.clip(value, _RDB_MIN_FLOAT, _RDB_MAX_FLOAT))
+        if np.isnan(value):
+            return None
+        else:
+            return float(np.clip(value, _RDB_MIN_FLOAT, _RDB_MAX_FLOAT))
 
     @staticmethod
     def _lift_numerical_limit(value: float) -> float:
@@ -797,6 +789,8 @@ class RDBStorage(BaseStorage):
         # https://dev.mysql.com/doc/refman/8.0/en/problems-with-float.html
         if np.isclose(value, _RDB_MIN_FLOAT) or np.isclose(value, _RDB_MAX_FLOAT):
             return float(np.sign(value) * float("inf"))
+        elif value is None:
+            return float("nan")
         return value
 
     @deprecated(
@@ -806,7 +800,6 @@ class RDBStorage(BaseStorage):
     )
     def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
 
-        values = _ensure_not_nan(values)
         with _create_scoped_session(self.scoped_session) as session:
             trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
             self.check_trial_is_updatable(trial_id, trial.state)
@@ -862,7 +855,6 @@ class RDBStorage(BaseStorage):
         self, trial_id: int, step: int, intermediate_value: float
     ) -> None:
 
-        intermediate_value = _ensure_not_nan(intermediate_value)
         with _create_scoped_session(self.scoped_session, True) as session:
             self._set_trial_intermediate_value_without_commit(
                 session, trial_id, step, intermediate_value
