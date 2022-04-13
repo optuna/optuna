@@ -75,10 +75,12 @@ class WeightsAndBiasesCallback(object):
             wandb_kwargs = {"project": "my-project"}
             wandbc = WeightsAndBiasesCallback(wandb_kwargs=wandb_kwargs)
 
+
             @wandbc.track_in_wandb()
             def objective(trial):
                 x = trial.suggest_float("x", -10, 10)
                 return (x - 2) ** 2
+
 
             study = optuna.create_study(as_multirun=True)
             study.optimize(objective, n_trials=10, callbacks=[wandbc])
@@ -95,12 +97,14 @@ class WeightsAndBiasesCallback(object):
             wandb_kwargs = {"project": "my-project"}
             wandbc = WeightsAndBiasesCallback(wandb_kwargs=wandb_kwargs)
 
+
             @wandbc.track_in_wandb()
             def objective(trial):
                 x = trial.suggest_float("x", -10, 10)
                 loss = (x - 2) ** 2
                 wandb.log({"loss": loss})
                 return loss
+
 
             study = optuna.create_study()
             study.optimize(objective, n_trials=10, callbacks=[wandbc])
