@@ -1,9 +1,11 @@
+from io import BytesIO
 import itertools
 from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Tuple
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 from pytest import WarningsRecorder
@@ -63,10 +65,12 @@ def test_target_is_not_none_and_study_is_multi_obj() -> None:
     # Multiple sub-figures.
     study = prepare_study_with_trials(more_than_three=True, n_objectives=2, with_c_d=True)
     plot_contour(study, target=lambda t: t.values[0])
+    plt.savefig(BytesIO())
 
     # Single figure.
     study = prepare_study_with_trials(more_than_three=True, n_objectives=2, with_c_d=False)
     plot_contour(study, target=lambda t: t.values[0])
+    plt.savefig(BytesIO())
 
 
 @pytest.mark.parametrize(
@@ -86,6 +90,7 @@ def test_plot_contour(params: Optional[List[str]]) -> None:
     study_without_trials = prepare_study_with_trials(no_trials=True)
     figure = plot_contour(study_without_trials, params=params)
     assert len(figure.get_lines()) == 0
+    plt.savefig(BytesIO())
 
     # Test whether trials with `ValueError`s are ignored.
 
@@ -97,6 +102,7 @@ def test_plot_contour(params: Optional[List[str]]) -> None:
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_contour(study, params=params)
     assert len(figure.get_lines()) == 0
+    plt.savefig(BytesIO())
 
     # Test with some trials.
     study = prepare_study_with_trials()
@@ -106,6 +112,7 @@ def test_plot_contour(params: Optional[List[str]]) -> None:
         plot_contour(study, ["optuna", "Optuna"])
 
     figure = plot_contour(study, params=params)
+
     if params is not None and len(params) < 3:
         if len(params) <= 1:
             assert len(figure.get_lines()) == 0
@@ -119,6 +126,7 @@ def test_plot_contour(params: Optional[List[str]]) -> None:
         assert figure.shape == (len(params), len(params))
         for i in range(len(params)):
             assert figure[i][0].yaxis.label.get_text() == list(params)[i]
+    plt.savefig(BytesIO())
 
 
 @pytest.mark.parametrize(
@@ -139,6 +147,7 @@ def test_plot_contour_customized_target(params: List[str]) -> None:
         assert figure.shape == (len(params), len(params))
         for i in range(len(params)):
             assert figure[i][0].yaxis.label.get_text() == list(params)[i]
+    plt.savefig(BytesIO())
 
 
 @pytest.mark.parametrize(
@@ -158,6 +167,7 @@ def test_plot_contour_customized_target_name(params: List[str]) -> None:
         assert figure.shape == (len(params), len(params))
         for i in range(len(params)):
             assert figure[i][0].yaxis.label.get_text() == list(params)[i]
+    plt.savefig(BytesIO())
 
 
 def test_plot_contour_log_scale_and_str_category() -> None:
@@ -196,6 +206,7 @@ def test_plot_contour_log_scale_and_str_category() -> None:
         # Take 5% axis padding into account.
         np.testing.assert_allclose(plot.get_xlim(), expected[xrange], atol=5e-2)
         np.testing.assert_allclose(plot.get_ylim(), expected[yrange], atol=5e-2)
+    plt.savefig(BytesIO())
 
 
 def test_plot_contour_mixture_category_types() -> None:
@@ -225,6 +236,7 @@ def test_plot_contour_mixture_category_types() -> None:
     figure = plot_contour(study)
     assert figure.get_xlim() == (-0.05, 1.05)
     assert figure.get_ylim() == (100.95, 102.05)
+    plt.savefig(BytesIO())
 
 
 @pytest.mark.parametrize(
@@ -239,6 +251,7 @@ def test_generate_contour_plot_for_few_observations(params: List[str]) -> None:
     study = prepare_study_with_trials(less_than_two=True)
     figure = plot_contour(study, params)
     assert not figure.has_data()
+    plt.savefig(BytesIO())
 
 
 def all_equal(iterable: Iterable) -> bool:
@@ -289,6 +302,7 @@ def test_contour_subplots_have_correct_axis_labels_and_ranges() -> None:
         xlims = [ax.get_xlim() for ax in subplots[:, index]]
         assert all_equal(xlims)
         assert all(range_covers(param_range_with_padding, xlim) for xlim in xlims)
+    plt.savefig(BytesIO())
 
 
 @pytest.mark.parametrize("value", [float("inf"), -float("inf")])

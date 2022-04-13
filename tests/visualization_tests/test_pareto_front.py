@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 
 import optuna
-from optuna.distributions import UniformDistribution
+from optuna.distributions import FloatDistribution
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -352,7 +352,7 @@ def test_make_hovertext() -> None:
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 10},
-        distributions={"x": UniformDistribution(5, 12)},
+        distributions={"x": FloatDistribution(5, 12)},
         user_attrs={},
         system_attrs={},
         intermediate_values={},
@@ -384,7 +384,7 @@ def test_make_hovertext() -> None:
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 10},
-        distributions={"x": UniformDistribution(5, 12)},
+        distributions={"x": FloatDistribution(5, 12)},
         user_attrs={"a": 42, "b": 3.14},
         system_attrs={},
         intermediate_values={},
@@ -420,7 +420,7 @@ def test_make_hovertext() -> None:
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 10},
-        distributions={"x": UniformDistribution(5, 12)},
+        distributions={"x": FloatDistribution(5, 12)},
         user_attrs={"a": 42, "b": 3.14, "c": np.zeros(1), "d": np.nan},
         system_attrs={},
         intermediate_values={},

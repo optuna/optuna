@@ -1,9 +1,11 @@
+from io import BytesIO
+
 from matplotlib.collections import PathCollection
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
+from optuna.distributions import FloatDistribution
 from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
@@ -24,6 +26,7 @@ def test_plot_slice() -> None:
     study = prepare_study_with_trials(no_trials=True)
     figure = plot_slice(study)
     assert len(figure.findobj(PathCollection)) == 0
+    plt.savefig(BytesIO())
 
     study = prepare_study_with_trials(with_c_d=False)
 
@@ -33,6 +36,7 @@ def test_plot_slice() -> None:
     assert len(figure[0].findobj(PathCollection)) == 1
     assert len(figure[1].findobj(PathCollection)) == 1
     assert figure[0].yaxis.label.get_text() == "Objective Value"
+    plt.savefig(BytesIO())
 
     # Scatter plot data is available as PathCollection.
     data0 = figure[0].findobj(PathCollection)[0].get_offsets().data
@@ -47,6 +51,7 @@ def test_plot_slice() -> None:
 
     data0 = figure.findobj(PathCollection)[0].get_offsets().data
     assert np.allclose(data0, [[1.0, 0.0], [2.5, 1.0]])
+    plt.savefig(BytesIO())
 
     # Test with a customized target value.
     with pytest.warns(UserWarning):
@@ -56,6 +61,7 @@ def test_plot_slice() -> None:
 
     data0 = figure.findobj(PathCollection)[0].get_offsets().data
     assert np.allclose(data0, [[1.0, 2.0], [2.5, 1.0]])
+    plt.savefig(BytesIO())
 
     # Test with a customized target name.
     figure = plot_slice(study, target_name="Target Name")
@@ -63,6 +69,7 @@ def test_plot_slice() -> None:
     assert len(figure[0].findobj(PathCollection)) == 1
     assert len(figure[1].findobj(PathCollection)) == 1
     assert figure[0].yaxis.label.get_text() == "Target Name"
+    plt.savefig(BytesIO())
 
     # Test with wrong parameters.
     with pytest.raises(ValueError):
@@ -78,6 +85,7 @@ def test_plot_slice() -> None:
     figure = plot_slice(study)
     assert len(figure.get_lines()) == 0
     assert len(figure.findobj(PathCollection)) == 0
+    plt.savefig(BytesIO())
 
 
 def test_plot_slice_log_scale() -> None:
@@ -88,8 +96,8 @@ def test_plot_slice_log_scale() -> None:
             value=0.0,
             params={"x_linear": 1.0, "y_log": 1e-3},
             distributions={
-                "x_linear": UniformDistribution(0.0, 3.0),
-                "y_log": LogUniformDistribution(1e-5, 1.0),
+                "x_linear": FloatDistribution(0.0, 3.0),
+                "y_log": FloatDistribution(1e-5, 1.0, log=True),
             },
         )
     )
@@ -99,10 +107,12 @@ def test_plot_slice_log_scale() -> None:
     assert len(figure.findobj(PathCollection)) == 1
     assert figure.xaxis.label.get_text() == "y_log"
     assert figure.xaxis.get_scale() == "log"
+    plt.savefig(BytesIO())
     figure = plot_slice(study, params=["x_linear"])
     assert len(figure.findobj(PathCollection)) == 1
     assert figure.xaxis.label.get_text() == "x_linear"
     assert figure.xaxis.get_scale() == "linear"
+    plt.savefig(BytesIO())
 
     # Plot multiple parameters.
     figure = plot_slice(study)
@@ -113,3 +123,4 @@ def test_plot_slice_log_scale() -> None:
     assert figure[1].xaxis.label.get_text() == "y_log"
     assert figure[0].xaxis.get_scale() == "linear"
     assert figure[1].xaxis.get_scale() == "log"
+    plt.savefig(BytesIO())

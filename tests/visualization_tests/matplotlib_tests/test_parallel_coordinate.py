@@ -1,10 +1,10 @@
-import sys
+from io import BytesIO
 
 import matplotlib.pyplot as plt
 import pytest
 
 from optuna.distributions import CategoricalDistribution
-from optuna.distributions import LogUniformDistribution
+from optuna.distributions import FloatDistribution
 from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
@@ -25,19 +25,19 @@ def test_plot_parallel_coordinate() -> None:
     study = create_study()
     figure = plot_parallel_coordinate(study)
     assert len(figure.get_lines()) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
     study = prepare_study_with_trials(with_c_d=False)
 
     # Test with a trial.
     figure = plot_parallel_coordinate(study)
     assert len(figure.get_lines()) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
     # Test with a trial to select parameter.
     figure = plot_parallel_coordinate(study, params=["param_a"])
     assert len(figure.get_lines()) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
     # Test with a customized target value.
     with pytest.warns(UserWarning):
@@ -45,12 +45,12 @@ def test_plot_parallel_coordinate() -> None:
             study, params=["param_a"], target=lambda t: t.params["param_b"]
         )
     assert len(figure.get_lines()) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
     # Test with a customized target name.
     figure = plot_parallel_coordinate(study, target_name="Target Name")
     assert len(figure.get_lines()) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
     # Test with wrong params that do not exist in trials
     with pytest.raises(ValueError, match="Parameter optuna does not exist in your study."):
@@ -65,7 +65,7 @@ def test_plot_parallel_coordinate() -> None:
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_parallel_coordinate(study)
     assert len(figure.get_lines()) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
 
 def test_plot_parallel_coordinate_categorical_params() -> None:
@@ -93,7 +93,7 @@ def test_plot_parallel_coordinate_categorical_params() -> None:
     )
     figure = plot_parallel_coordinate(study_categorical_params)
     assert len(figure.get_lines()) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
 
 def test_plot_parallel_coordinate_categorical_numeric_params() -> None:
@@ -133,7 +133,7 @@ def test_plot_parallel_coordinate_categorical_numeric_params() -> None:
     )
     figure = plot_parallel_coordinate(study_categorical_params)
     assert len(figure.get_lines()) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
 
 def test_plot_parallel_coordinate_log_params() -> None:
@@ -144,8 +144,8 @@ def test_plot_parallel_coordinate_log_params() -> None:
             value=0.0,
             params={"param_a": 1e-6, "param_b": 10},
             distributions={
-                "param_a": LogUniformDistribution(1e-7, 1e-2),
-                "param_b": LogUniformDistribution(1, 1000),
+                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
+                "param_b": FloatDistribution(1, 1000, log=True),
             },
         )
     )
@@ -154,8 +154,8 @@ def test_plot_parallel_coordinate_log_params() -> None:
             value=1.0,
             params={"param_a": 2e-5, "param_b": 200},
             distributions={
-                "param_a": LogUniformDistribution(1e-7, 1e-2),
-                "param_b": LogUniformDistribution(1, 1000),
+                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
+                "param_b": FloatDistribution(1, 1000, log=True),
             },
         )
     )
@@ -164,14 +164,14 @@ def test_plot_parallel_coordinate_log_params() -> None:
             value=0.1,
             params={"param_a": 1e-4, "param_b": 30},
             distributions={
-                "param_a": LogUniformDistribution(1e-7, 1e-2),
-                "param_b": LogUniformDistribution(1, 1000),
+                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
+                "param_b": FloatDistribution(1, 1000, log=True),
             },
         )
     )
     figure = plot_parallel_coordinate(study_log_params)
     assert len(figure.get_lines()) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
 
 def test_plot_parallel_coordinate_unique_hyper_param() -> None:
@@ -184,7 +184,7 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
             params={"category_a": "preferred", "param_b": 30},
             distributions={
                 "category_a": CategoricalDistribution(("preferred", "opt")),
-                "param_b": LogUniformDistribution(1, 1000),
+                "param_b": FloatDistribution(1, 1000, log=True),
             },
         )
     )
@@ -192,7 +192,7 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
     # both hyperparameters contain unique values
     figure = plot_parallel_coordinate(study_categorical_params)
     assert len(figure.get_lines()) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
     study_categorical_params.add_trial(
         create_trial(
@@ -200,7 +200,7 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
             params={"category_a": "preferred", "param_b": 20},
             distributions={
                 "category_a": CategoricalDistribution(("preferred", "opt")),
-                "param_b": LogUniformDistribution(1, 1000),
+                "param_b": FloatDistribution(1, 1000, log=True),
             },
         )
     )
@@ -208,4 +208,4 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
     # still "category_a" contains unique suggested value during the optimization.
     figure = plot_parallel_coordinate(study_categorical_params)
     assert len(figure.get_lines()) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())

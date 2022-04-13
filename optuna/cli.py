@@ -773,7 +773,7 @@ class _Ask(_BaseCommand):
 
         if parsed_args.search_space is not None:
             # The search space is expected to be a JSON serialized string, e.g.
-            # '{"x": {"name": "UniformDistribution", "attributes": {"low": 0.0, "high": 1.0}},
+            # '{"x": {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}},
             #   "y": ...}'.
             search_space = {
                 name: optuna.distributions.json_to_distribution(json.dumps(dist))
@@ -837,7 +837,12 @@ class _Tell(_BaseCommand):
         parser.add_argument("--study-name", type=str, help="Name of study.")
         parser.add_argument("--trial-number", type=int, help="Trial number.")
         parser.add_argument("--values", type=float, nargs="+", help="Objective values.")
-        parser.add_argument("--state", type=str, default="complete", help="Trial state.")
+        parser.add_argument(
+            "--state",
+            type=str,
+            help="Trial state.",
+            choices=("complete", "pruned", "fail"),
+        )
         parser.add_argument(
             "--skip-if-finished",
             default=False,
@@ -861,7 +866,11 @@ class _Tell(_BaseCommand):
             study_name=parsed_args.study_name,
         )
 
-        state = TrialState[parsed_args.state.upper()]
+        if parsed_args.state is not None:
+            state: Optional[TrialState] = TrialState[parsed_args.state.upper()]
+        else:
+            state = None
+
         trial_number = parsed_args.trial_number
         values = parsed_args.values
 
