@@ -1,12 +1,15 @@
 from io import BytesIO
+from typing import List
 from typing import Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
+from optuna import Study
 from optuna.distributions import FloatDistribution
 from optuna.study import create_study
+from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
 from optuna.visualization.matplotlib import plot_edf
 
@@ -145,4 +148,20 @@ def test_nonfinite_multiobjective(objective: int, value: int) -> None:
 
     figure = plot_edf(study, target=lambda t: t.values[objective])
     assert all(np.isfinite(figure.get_lines()[0].get_xdata()))
+    plt.savefig(BytesIO())
+
+
+def test_inconsistent_number_of_trial_values() -> None:
+
+    studies: List[Study] = []
+    n_studies = 5
+
+    for i in range(n_studies):
+        study = prepare_study_with_trials()
+        if i % 2 == 0:
+            study.add_trial(create_trial(value=1.0))
+        studies.append(study)
+
+    figure = plot_edf(studies)
+    assert len(figure.get_lines()) == n_studies
     plt.savefig(BytesIO())
