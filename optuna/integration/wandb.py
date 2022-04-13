@@ -85,7 +85,7 @@ class WeightsAndBiasesCallback(object):
 
         Add additional logging to Weights & Biases.
 
-        ..code::
+        .. code::
 
             import optuna
             from optuna.integration.wandb import WeightsAndBiasesCallback
