@@ -14,11 +14,12 @@ from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._utils import _check_plot_args
+from optuna.visualization._utils import _filter_nonfinite
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 from optuna.visualization.matplotlib._utils import _is_categorical
 from optuna.visualization.matplotlib._utils import _is_log_scale
 from optuna.visualization.matplotlib._utils import _is_numerical
-from optuna.visualization._utils import _filter_nonfinite
+
 
 if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
