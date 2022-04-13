@@ -152,8 +152,8 @@ def _get_edf_plot(
         _logger.warning("There are no complete trials.")
         return go.Figure(data=[], layout=layout)
 
-    min_x_value = np.min(all_values)
-    max_x_value = np.max(all_values)
+    min_x_value = np.min(np.concatenate(all_values))
+    max_x_value = np.max(np.concatenate(all_values))
     x_values = np.linspace(min_x_value, max_x_value, 100)
 
     traces = []
