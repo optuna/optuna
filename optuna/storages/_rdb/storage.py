@@ -36,6 +36,7 @@ from optuna import version
 from optuna._deprecated import deprecated
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.storages._rdb import models
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
@@ -83,7 +84,7 @@ def _create_scoped_session(
         session.close()
 
 
-class RDBStorage(BaseStorage):
+class RDBStorage(BaseStorage, BaseHeartbeat):
     """Storage class for RDB backend.
 
     Note that library users can instantiate this class, but the attributes

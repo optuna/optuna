@@ -24,8 +24,9 @@ import optuna
 from optuna import exceptions
 from optuna import logging
 from optuna import progress_bar as pbar_module
-from optuna import storages
 from optuna import trial as trial_module
+from optuna.storages._heartbeat import BaseHeartbeat
+from optuna.storages._heartbeat import get_heartbeat
 from optuna.study._tell import _tell_with_warning
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -196,10 +197,9 @@ def _run_trial(
     thread: Optional[Thread] = None
 
     if study._storage.is_heartbeat_enabled():
+        heartbeat = get_heartbeat(study._storage)
         stop_event = Event()
-        thread = Thread(
-            target=_record_heartbeat, args=(trial._trial_id, study._storage, stop_event)
-        )
+        thread = Thread(target=_record_heartbeat, args=(trial._trial_id, heartbeat, stop_event))
         thread.start()
 
     try:
@@ -251,7 +251,7 @@ def _run_trial(
     return frozen_trial
 
 
-def _record_heartbeat(trial_id: int, storage: storages.BaseStorage, stop_event: Event) -> None:
+def _record_heartbeat(trial_id: int, storage: BaseHeartbeat, stop_event: Event) -> None:
     heartbeat_interval = storage.get_heartbeat_interval()
     assert heartbeat_interval is not None
     while True:

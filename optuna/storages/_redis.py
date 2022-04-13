@@ -19,6 +19,7 @@ from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna.storages import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
@@ -33,7 +34,7 @@ with try_import() as _imports:
 
 
 @experimental("1.4.0")
-class RedisStorage(BaseStorage):
+class RedisStorage(BaseStorage, BaseHeartbeat):
     """Storage class for Redis backend.
 
     Note that library users can instantiate this class, but the attributes

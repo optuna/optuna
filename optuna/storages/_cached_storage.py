@@ -14,6 +14,7 @@ from typing import Union
 import optuna
 from optuna import distributions
 from optuna.storages import BaseStorage
+from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.storages._rdb.storage import RDBStorage
 from optuna.storages._redis import RedisStorage
 from optuna.study._study_direction import StudyDirection
@@ -34,7 +35,7 @@ class _StudyInfo:
         self.name: Optional[str] = None
 
 
-class _CachedStorage(BaseStorage):
+class _CachedStorage(BaseStorage, BaseHeartbeat):
     """A wrapper class of storage backends.
 
     This class is used in :func:`~optuna.get_storage` function and automatically
