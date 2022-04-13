@@ -348,6 +348,7 @@ def test_nonfinite_removed(recwarn: WarningsRecorder, value: float) -> None:
     plot_contour(study)
     for record in recwarn.list:
         assert "No contour levels were found within the data range" not in str(record.message)
+    plt.savefig(BytesIO())
 
 
 @pytest.mark.parametrize("objective", (0, 1))
@@ -389,3 +390,4 @@ def test_nonfinite_multiobjective(recwarn: WarningsRecorder, objective: int, val
     plot_contour(study, target=lambda t: t.values[objective])
     for record in recwarn.list:
         assert "No contour levels were found within the data range" not in str(record.message)
+    plt.savefig(BytesIO())
