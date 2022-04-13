@@ -152,9 +152,12 @@ You'll find benchmark artifacts in `plots` and `report` directories.
 
 ## Performance Benchmarks with `naslib`
 
-This workflow allows to benchmark optimization algorithms available in Optuna with [`NASLib`](https://github.com/automl/NASLib). NASLib has an abstraction over a number of NAS benchmarks. Currently only NAS-Bench-201 is supported. We have yet to create a GitHub Actions script for this, but we can run this locally.
+This workflow allows to benchmark optimization algorithms available in Optuna with [`NASLib`](https://github.com/automl/NASLib). NASLib has an abstraction over a number of NAS benchmarks. Currently only NAS-Bench-201 is supported. This benchmark can be run on GitHub Actions or locally.
 
 
+### How to run on the GitHub Actions
+
+Please follow the same steps as in [Performance Benchmarks with `kurobako`](#performance-benchmarks-with-kurobako), except that you need to select `Performance benchmarks with naslib` in step 3.
 
 ### How to Run Locally
 
