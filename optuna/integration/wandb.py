@@ -67,7 +67,8 @@ class WeightsAndBiasesCallback(object):
 
         Weights & Biases logging in multirun mode.
 
-        ..code::
+        .. code::
+
             import optuna
             from optuna.integration.wandb import WeightsAndBiasesCallback
 
