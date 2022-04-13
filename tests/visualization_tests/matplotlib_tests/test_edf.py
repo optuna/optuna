@@ -164,3 +164,4 @@ def test_inconsistent_number_of_trial_values() -> None:
 
     figure = plot_edf(studies)
     assert len(figure.get_lines()) == n_studies
+    plt.savefig(BytesIO())
