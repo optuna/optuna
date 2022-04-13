@@ -38,7 +38,6 @@ class NASLibProblemFactory(problem.ProblemFactory):
         dummy.sample_random_architecture()
         config_copy = config.copy()
         del config_copy["direction"]
-        del config_copy["search_space"]
         out = dummy.query(**config_copy)
         steps = len(out) - 1
         return problem.ProblemSpec(
