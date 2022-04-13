@@ -1,4 +1,4 @@
-import sys
+from io import BytesIO
 
 import matplotlib.pyplot as plt
 import pytest
@@ -25,19 +25,19 @@ def test_plot_parallel_coordinate() -> None:
     study = create_study()
     figure = plot_parallel_coordinate(study)
     assert len(figure.get_lines()) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
     study = prepare_study_with_trials(with_c_d=False)
 
     # Test with a trial.
     figure = plot_parallel_coordinate(study)
     assert len(figure.get_lines()) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
     # Test with a trial to select parameter.
     figure = plot_parallel_coordinate(study, params=["param_a"])
     assert len(figure.get_lines()) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
     # Test with a customized target value.
     with pytest.warns(UserWarning):
@@ -45,12 +45,12 @@ def test_plot_parallel_coordinate() -> None:
             study, params=["param_a"], target=lambda t: t.params["param_b"]
         )
     assert len(figure.get_lines()) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
     # Test with a customized target name.
     figure = plot_parallel_coordinate(study, target_name="Target Name")
     assert len(figure.get_lines()) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
     # Test with wrong params that do not exist in trials
     with pytest.raises(ValueError, match="Parameter optuna does not exist in your study."):
@@ -65,7 +65,7 @@ def test_plot_parallel_coordinate() -> None:
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_parallel_coordinate(study)
     assert len(figure.get_lines()) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
 
 def test_plot_parallel_coordinate_categorical_params() -> None:
@@ -93,7 +93,7 @@ def test_plot_parallel_coordinate_categorical_params() -> None:
     )
     figure = plot_parallel_coordinate(study_categorical_params)
     assert len(figure.get_lines()) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
 
 def test_plot_parallel_coordinate_categorical_numeric_params() -> None:
@@ -133,7 +133,7 @@ def test_plot_parallel_coordinate_categorical_numeric_params() -> None:
     )
     figure = plot_parallel_coordinate(study_categorical_params)
     assert len(figure.get_lines()) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
 
 def test_plot_parallel_coordinate_log_params() -> None:
@@ -171,7 +171,7 @@ def test_plot_parallel_coordinate_log_params() -> None:
     )
     figure = plot_parallel_coordinate(study_log_params)
     assert len(figure.get_lines()) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
 
 def test_plot_parallel_coordinate_unique_hyper_param() -> None:
@@ -192,7 +192,7 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
     # both hyperparameters contain unique values
     figure = plot_parallel_coordinate(study_categorical_params)
     assert len(figure.get_lines()) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
     study_categorical_params.add_trial(
         create_trial(
@@ -208,4 +208,4 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
     # still "category_a" contains unique suggested value during the optimization.
     figure = plot_parallel_coordinate(study_categorical_params)
     assert len(figure.get_lines()) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
