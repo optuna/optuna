@@ -21,6 +21,7 @@ from optuna.visualization._utils import _is_log_scale
 from optuna.visualization._utils import _is_numerical
 from optuna.visualization._utils import _is_reverse_scale
 from optuna.visualization._utils import COLOR_SCALE
+from optuna.visualization._utils import _filter_nonfinite
 
 
 if _imports.is_successful():
@@ -100,7 +101,9 @@ def _get_parallel_coordinate_plot(
     layout = go.Layout(title="Parallel Coordinate Plot")
     reverse_scale = _is_reverse_scale(study, target)
 
-    trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
+    trials = _filter_nonfinite(
+        study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
+    )
 
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")

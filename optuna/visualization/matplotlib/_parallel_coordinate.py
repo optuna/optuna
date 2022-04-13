@@ -18,7 +18,7 @@ from optuna.visualization.matplotlib._matplotlib_imports import _imports
 from optuna.visualization.matplotlib._utils import _is_categorical
 from optuna.visualization.matplotlib._utils import _is_log_scale
 from optuna.visualization.matplotlib._utils import _is_numerical
-
+from optuna.visualization._utils import _filter_nonfinite
 
 if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
@@ -116,8 +116,9 @@ def _get_parallel_coordinate_plot(
     ax.spines["bottom"].set_visible(False)
 
     # Prepare data for plotting.
-    trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
-
+    trials = _filter_nonfinite(
+        study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
+    )
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
         return ax
