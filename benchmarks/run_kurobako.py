@@ -102,7 +102,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--sampler-kwargs-list",
         type=str,
-        default='{} {\\"multivariate\\":true\,\\"constant_liar\\":true}',  # NOQA: W605
+        default=r"{} {\"multivariate\":true\,\"constant_liar\":true}",
     )
     parser.add_argument("--pruner-list", type=str, default="NopPruner")
     parser.add_argument("--pruner-kwargs-list", type=str, default="{}")
