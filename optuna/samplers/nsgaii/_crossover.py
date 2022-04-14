@@ -9,13 +9,8 @@ import numpy as np
 
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
-from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
-from optuna.distributions import IntLogUniformDistribution
-from optuna.distributions import IntUniformDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.study import Study
 from optuna.study import StudyDirection
@@ -23,12 +18,7 @@ from optuna.trial import FrozenTrial
 
 
 _NUMERICAL_DISTRIBUTIONS = (
-    UniformDistribution,
-    LogUniformDistribution,
-    DiscreteUniformDistribution,
     FloatDistribution,
-    IntUniformDistribution,
-    IntLogUniformDistribution,
     IntDistribution,
 )
 
