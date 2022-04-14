@@ -233,13 +233,15 @@ class RedisStorage(BaseStorage):
                     )
                 )
 
-        with self._redis.pipeline() as pipe:
-            pipe.multi()
-            pipe.set(self._key_study_direction(study_id), pickle.dumps(directions))
-            study_summary = self._get_study_summary(study_id)
-            study_summary._directions = list(directions)
-            pipe.set(self._key_study_summary(study_id), pickle.dumps(study_summary))
-            pipe.execute()
+        queries: Mapping[Union[str, bytes], Union[bytes, float, int, str]]
+        queries = dict()
+
+        queries[self._key_study_direction(study_id)] = pickle.dumps(directions)
+        study_summary = self._get_study_summary(study_id)
+        study_summary._directions = list(directions)
+        queries[self._key_study_summary(study_id)] = pickle.dumps(study_summary)
+
+        self._redis.mset(queries)
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
 
@@ -534,14 +536,15 @@ class RedisStorage(BaseStorage):
 
     def _set_best_trial(self, study_id: int, trial_id: int) -> None:
 
-        with self._redis.pipeline() as pipe:
-            pipe.multi()
-            pipe.set(self._key_best_trial(study_id), pickle.dumps(trial_id))
+        queries: Mapping[Union[str, bytes], Union[bytes, float, int, str]]
+        queries = dict()
 
-            study_summary = self._get_study_summary(study_id)
-            study_summary.best_trial = self.get_trial(trial_id)
-            pipe.set(self._key_study_summary(study_id), pickle.dumps(study_summary))
-            pipe.execute()
+        queries[self._key_best_trial(study_id)] = pickle.dumps(trial_id)
+        study_summary = self._get_study_summary(study_id)
+        study_summary.best_trial = self.get_trial(trial_id)
+        queries[self._key_study_summary(study_id)] = pickle.dumps(study_summary)
+
+        self._redis.mset(queries)
 
     def _check_and_set_param_distribution(
         self,
