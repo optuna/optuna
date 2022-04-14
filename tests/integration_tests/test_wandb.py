@@ -204,12 +204,15 @@ def test_values_registered_on_epoch_with_logging(
 
     study = optuna.create_study()
     wandbc = WeightsAndBiasesCallback(metric_name=metric, as_multirun=True)
-    _wrapped_func = wandbc.track_in_wandb()(
-        functools.partial(logging_objective_func, log_func=wandb.run.log)
-    )
+
+    @wandbc.track_in_wandb()
+    def _decorated_objective(trial: optuna.trial.Trial) -> float:
+        result = _objective_func(trial)
+        wandb.run.log({"result": result})
+        return result
 
     study.enqueue_trial({"x": 2, "y": 25})
-    study.optimize(_wrapped_func, n_trials=1, callbacks=[wandbc])
+    study.optimize(_decorated_objective, n_trials=1, callbacks=[wandbc])
 
     logged_metric = wandb.run.log.mock_calls[0][1][0]
 
