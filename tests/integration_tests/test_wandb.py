@@ -1,6 +1,4 @@
-import functools
 from typing import Any
-from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Sequence
@@ -29,20 +27,6 @@ def _multiobjective_func(trial: optuna.trial.Trial) -> Tuple[float, float]:
     second_objective = (x - 2) ** 3 + (y - 25) ** 3
 
     return first_objective, second_objective
-
-
-def logging_objective_func(trial: optuna.trial.Trial, log_func: Callable) -> float:
-    result = _objective_func(trial)
-    log_func({"result": result})
-    return result
-
-
-def logging_multiobjective_func(
-    trial: optuna.trial.Trial, log_func: Callable
-) -> Tuple[float, float]:
-    result0, result1 = _multiobjective_func(trial)
-    log_func({"result0": result0, "result1": result1})
-    return result0, result1
 
 
 @mock.patch("optuna.integration.wandb.wandb")
@@ -148,17 +132,21 @@ def test_log_api_call_count(wandb: mock.MagicMock) -> None:
 
     study = optuna.create_study()
     wandbc = WeightsAndBiasesCallback()
+
+    @wandbc.track_in_wandb()
+    def _decorated_objective(trial: optuna.trial.Trial) -> float:
+        result = _objective_func(trial)
+        wandb.run.log({"result": result})
+        return result
+
     target_n_trials = 10
     study.optimize(_objective_func, n_trials=target_n_trials, callbacks=[wandbc])
     assert wandb.run.log.call_count == target_n_trials
 
     wandbc = WeightsAndBiasesCallback(as_multirun=True)
     wandb.run.reset_mock()
-    _wrapped_logging_func = wandbc.track_in_wandb()(
-        functools.partial(logging_objective_func, log_func=wandb.run.log)
-    )
 
-    study.optimize(_wrapped_logging_func, n_trials=target_n_trials, callbacks=[wandbc])
+    study.optimize(_decorated_objective, n_trials=target_n_trials, callbacks=[wandbc])
 
     assert wandb.run.log.call_count == 2 * target_n_trials
 
@@ -273,21 +261,26 @@ def test_multiobjective_values_registered_on_epoch_with_logging(
 ) -> None:
 
     wandbc = WeightsAndBiasesCallback(as_multirun=True, metric_name=metrics)
-    _wrapped_func = wandbc.track_in_wandb()(
-        functools.partial(logging_multiobjective_func, log_func=wandb.run.log)
-    )
+
+    @wandbc.track_in_wandb()
+    def _decorated_objective(trial: optuna.trial.Trial) -> Tuple[float, float]:
+        result0, result1 = _multiobjective_func(trial)
+        wandb.run.log({"result0": result0, "result1": result1})
+        return result0, result1
 
     study = optuna.create_study(directions=["minimize", "maximize"])
     study.enqueue_trial({"x": 2, "y": 24})
+    study.optimize(_decorated_objective, n_trials=1, callbacks=[wandbc])
 
-    study.optimize(_wrapped_func, n_trials=1, callbacks=[wandbc])
+    logged_in_decorator = wandb.run.log.mock_calls[0][1][0]
+    logged_in_callback = wandb.run.log.mock_calls[1][1][0]
 
-    logged_metrics = wandb.run.log.mock_calls[0][1][0]
+    assert len(wandb.run.log.mock_calls) == 2
+    assert list(logged_in_decorator) == ["result0", "result1"]
+    assert list(logged_in_callback) == expected
 
     call_args = wandb.run.log.call_args
-    assert list(call_args[0][0].keys()) == expected
     assert call_args[1] == {"step": 0}
-    assert logged_metrics == {"result0": 1, "result1": -1}
 
 
 @pytest.mark.parametrize("metrics", [["foo"], ["foo", "bar", "baz"]])
