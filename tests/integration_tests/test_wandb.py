@@ -214,12 +214,14 @@ def test_values_registered_on_epoch_with_logging(
     study.enqueue_trial({"x": 2, "y": 25})
     study.optimize(_decorated_objective, n_trials=1, callbacks=[wandbc])
 
-    logged_metric = wandb.run.log.mock_calls[0][1][0]
+    logged_in_decorator = wandb.run.log.mock_calls[0][1][0]
+    logged_in_callback = wandb.run.log.mock_calls[1][1][0]
+    assert len(wandb.run.log.mock_calls) == 2
+    assert list(logged_in_decorator) == ["result"]
+    assert list(logged_in_callback) == expected
 
     call_args = wandb.run.log.call_args
-    assert list(call_args[0][0].keys()) == expected
     assert call_args[1] == {"step": 0}
-    assert logged_metric == {"result": 0}
 
 
 @pytest.mark.parametrize(
