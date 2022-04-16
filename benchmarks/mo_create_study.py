@@ -10,7 +10,8 @@ import optuna
 optuna.logging.disable_default_handler()
 
 
-def create_study() -> optuna.Study:
+def create_study(seed: int) -> optuna.Study:
+    seed
 
     n_objectives = 2
     directions = ["minimize"] * n_objectives
