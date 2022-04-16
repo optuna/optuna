@@ -102,7 +102,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--sampler-kwargs-list",
         type=str,
-        default=r'{} \{"multivariate":true,"constant_liar":true\} {}',
+        default="{} {\\\"multivariate\\\":true\,\\\"constant_liar\\\":true} {}",
     )
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--data-dir", type=str, default="data")
