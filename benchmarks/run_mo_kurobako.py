@@ -92,7 +92,7 @@ if __name__ == "__main__":
         "--path-to-create-study", type=str, default="benchmarks/mo_create_study.py"
     )
     parser.add_argument("--name-prefix", type=str, default="")
-    parser.add_argument("--n-runs", type=int, default=1)
+    parser.add_argument("--n-runs", type=int, default=100)
     parser.add_argument("--n-jobs", type=int, default=8)
     parser.add_argument(
         "--sampler-list",
