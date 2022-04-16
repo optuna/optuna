@@ -93,7 +93,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--name-prefix", type=str, default="")
     parser.add_argument("--n-runs", type=int, default=100)
-    parser.add_argument("--n-jobs", type=int, default=8)
+    parser.add_argument("--n-jobs", type=int, default=10)
     parser.add_argument(
         "--sampler-list",
         type=str,
