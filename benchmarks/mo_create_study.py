@@ -27,14 +27,8 @@ def create_study(seed: int) -> optuna.Study:
     if sampler_cls is None:
         raise ValueError("Unknown sampler: {}.".format(sampler_name))
 
-    try:
-        # sampler_kwargs["seed"] = seed
-        json_str = json.dumps(sys.argv[2])
-        sampler_kwargs = json.loads(json_str)
-        sampler = sampler_cls(**sampler_kwargs)
-    except Exception:
-        # del sampler_kwargs["seed"]
-        sampler = sampler_cls()
+    sampler_kwargs = json.loads(sys.argv[2])
+    sampler = sampler_cls(**sampler_kwargs)
 
     return optuna.create_study(
         directions=directions,
