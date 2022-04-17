@@ -17,6 +17,7 @@ from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _check_plot_args
 from optuna.visualization._utils import _filter_nonfinite
+from optuna.visualization._utils import _get_skipped_trial_numbers
 from optuna.visualization._utils import _is_categorical
 from optuna.visualization._utils import _is_log_scale
 from optuna.visualization._utils import _is_numerical
@@ -124,12 +125,7 @@ def _get_parallel_coordinate_plot(
 
         target = _target
 
-    skipped_trial_ids = set()
-    for trial in trials:
-        for used_param in sorted_params:
-            if used_param not in trial.params.keys():
-                skipped_trial_ids.add(trial.number)
-                break
+    skipped_trial_ids = _get_skipped_trial_numbers(trials, sorted_params)
 
     objectives = tuple([target(t) for t in trials if t.number not in skipped_trial_ids])
 
