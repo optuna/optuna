@@ -1,7 +1,7 @@
 import math
 
 import pytest
-
+import itertools
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.study import create_study
@@ -413,3 +413,48 @@ def test_plot_parallel_coordinate_only_missing_params() -> None:
 
     figure = plot_parallel_coordinate(study)
     assert len(figure.data) == 0
+
+@pytest.mark.parametrize("value", [float("inf"), -float("inf"), float("nan")])
+def test_nonfinite_removed(value: float) -> None:
+
+    study = create_study()
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"param_a": 1e-6},
+            distributions={"param_a": FloatDistribution(0.0, 1.0)},
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=value,
+            params={"param_a": 0},
+            distributions={"param_a": FloatDistribution(0.0, 1.0)},
+        )
+    )
+
+    figure = plot_parallel_coordinate(study)
+    assert len(figure.data) == 1
+
+@pytest.mark.parametrize("objective", (0, 1))
+@pytest.mark.parametrize("value", (float("inf"), -float("inf"), float("nan")))
+def test_nonfinite_multiobjective(objective: int, value: float) -> None:
+
+    study = create_study(directions=["minimize", "maximize"])
+    study.add_trial(
+        create_trial(
+            values=[0.0, 1.0],
+            params={"param_a": 1e-6},
+            distributions={"param_a": FloatDistribution(0.0, 1.0)},
+        )
+    )
+    study.add_trial(
+        create_trial(
+            values=[value, value],
+            params={"param_a": 0},
+            distributions={"param_a": FloatDistribution(0.0, 1.0)},
+        )
+    )
+
+    figure = plot_parallel_coordinate(study, target=lambda t: t.values[objective])
+    assert len(figure.data) == 1
