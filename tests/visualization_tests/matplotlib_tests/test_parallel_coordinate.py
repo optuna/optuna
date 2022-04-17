@@ -234,6 +234,7 @@ def test_nonfinite_removed(value: float) -> None:
     assert len(figure.get_lines()) == 0
     plt.savefig(BytesIO())
 
+
 @pytest.mark.parametrize("objective", (0, 1))
 @pytest.mark.parametrize("value", (float("inf"), -float("inf"), float("nan")))
 def test_nonfinite_multiobjective(objective: int, value: float) -> None:
