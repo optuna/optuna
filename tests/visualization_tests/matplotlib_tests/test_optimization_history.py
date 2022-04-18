@@ -1,3 +1,6 @@
+from io import BytesIO
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
@@ -19,6 +22,7 @@ def test_plot_optimization_history(direction: str) -> None:
     study = create_study(direction=direction)
     figure = plot_optimization_history(study)
     assert len(figure.get_lines()) == 0
+    plt.savefig(BytesIO())
 
     def objective(trial: Trial) -> float:
 
@@ -44,6 +48,7 @@ def test_plot_optimization_history(direction: str) -> None:
     legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
     assert sorted(legend_texts) == ["Best Value", "Objective Value"]
     assert figure.get_ylabel() == "Objective Value"
+    plt.savefig(BytesIO())
 
     # Test customized target.
     with pytest.warns(UserWarning):
@@ -52,6 +57,7 @@ def test_plot_optimization_history(direction: str) -> None:
     xydata = figure.collections[0].get_offsets().data
     assert np.array_equal(xydata[:, 0], [0.0, 1.0, 2.0])
     assert np.array_equal(xydata[:, 1], [0.0, 1.0, 2.0])
+    plt.savefig(BytesIO())
 
     # Test customized target name.
     custom_target_name = "Target Name"
@@ -60,6 +66,7 @@ def test_plot_optimization_history(direction: str) -> None:
     legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
     assert sorted(legend_texts) == ["Best Value", custom_target_name]
     assert figure.get_ylabel() == custom_target_name
+    plt.savefig(BytesIO())
 
     # Ignore failed trials.
     def fail_objective(_: Trial) -> float:
@@ -70,6 +77,7 @@ def test_plot_optimization_history(direction: str) -> None:
 
     figure = plot_optimization_history(study)
     assert len(figure.get_lines()) == 0
+    plt.savefig(BytesIO())
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
@@ -80,6 +88,7 @@ def test_plot_optimization_history_with_multiple_studies(direction: str) -> None
     studies = [create_study(direction=direction) for _ in range(n_studies)]
     figure = plot_optimization_history(studies)
     assert len(figure.get_lines()) == 0
+    plt.savefig(BytesIO())
 
     def objective(trial: Trial) -> float:
 
@@ -111,6 +120,7 @@ def test_plot_optimization_history_with_multiple_studies(direction: str) -> None
     legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
     assert sorted(legend_texts) == sorted(expected_legend_texts)
     assert figure.get_ylabel() == "Objective Value"
+    plt.savefig(BytesIO())
 
     # Test customized target.
     with pytest.warns(UserWarning):
@@ -120,6 +130,7 @@ def test_plot_optimization_history_with_multiple_studies(direction: str) -> None
     xydata = figure.collections[0].get_offsets()
     assert np.array_equal(xydata[:, 0], [0.0, 1.0, 2.0])
     assert np.array_equal(xydata[:, 1], [0.0, 1.0, 2.0])
+    plt.savefig(BytesIO())
 
     # Test customized target name.
     custom_target_name = "Target Name"
@@ -131,6 +142,7 @@ def test_plot_optimization_history_with_multiple_studies(direction: str) -> None
     legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
     assert sorted(legend_texts) == sorted(expected_legend_texts)
     assert figure.get_ylabel() == custom_target_name
+    plt.savefig(BytesIO())
 
     # Ignore failed trials.
     def fail_objective(_: Trial) -> float:
@@ -142,6 +154,7 @@ def test_plot_optimization_history_with_multiple_studies(direction: str) -> None
 
     figure = plot_optimization_history(studies)
     assert len(figure.get_lines()) == 0
+    plt.savefig(BytesIO())
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
@@ -152,6 +165,7 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
     studies = [create_study(direction=direction) for _ in range(n_studies)]
     figure = plot_optimization_history(studies, error_bar=True)
     assert len(figure.get_lines()) == 0
+    plt.savefig(BytesIO())
 
     def objective(trial: Trial) -> float:
 
@@ -178,6 +192,7 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
         assert np.array_equal(ydata, [1.0, 2.0, 2.0])
     legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
     assert sorted(legend_texts) == ["Best Value", "Objective Value"]
+    plt.savefig(BytesIO())
 
     # Test customized target.
     with pytest.warns(UserWarning):
@@ -186,6 +201,7 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
     xydata = figure.collections[1].get_offsets()
     assert np.array_equal(xydata[:, 0], [0.0, 1.0, 2.0])
     assert np.array_equal(xydata[:, 1], [0.0, 1.0, 2.0])
+    plt.savefig(BytesIO())
 
     # Test customized target name.
     custom_target_name = "Target Name"
@@ -193,6 +209,7 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
     legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
     assert sorted(legend_texts) == ["Best Value", custom_target_name]
     assert figure.get_ylabel() == custom_target_name
+    plt.savefig(BytesIO())
 
     # Ignore failed trials.
     def fail_objective(_: Trial) -> float:
@@ -204,6 +221,7 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
 
     figure = plot_optimization_history(studies, error_bar=True)
     assert len(figure.get_lines()) == 0
+    plt.savefig(BytesIO())
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
@@ -217,10 +235,10 @@ def test_error_bar_in_optimization_history(direction: str) -> None:
         study.enqueue_trial({"x": x})
         study.optimize(objective, n_trials=1)
     figure = plot_optimization_history(studies, error_bar=True)
-
     mean = np.mean(suggested_params)
     std = np.std(suggested_params)
 
     np.testing.assert_almost_equal(figure.get_lines()[0].get_ydata(), mean)
     np.testing.assert_almost_equal(figure.get_lines()[1].get_ydata(), mean - std)
     np.testing.assert_almost_equal(figure.get_lines()[2].get_ydata(), mean + std)
+    plt.savefig(BytesIO())
