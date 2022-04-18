@@ -3,9 +3,8 @@ from typing import Sequence
 import numpy as np
 import pytest
 
-from optuna.distributions import FloatDistribution
 from optuna.study import create_study
-from optuna.trial import create_trial
+from optuna.testing.visualization import prepare_study_with_trials
 from optuna.visualization import plot_edf
 
 
@@ -78,22 +77,7 @@ def test_plot_optimization_history(direction: str) -> None:
 @pytest.mark.parametrize("value", [float("inf"), -float("inf"), float("nan")])
 def test_nonfinite_removed(value: int) -> None:
 
-    study = create_study()
-    study.add_trial(
-        create_trial(
-            value=0.0,
-            params={"x": 1.0},
-            distributions={"x": FloatDistribution(0.0, 1.0)},
-        )
-    )
-    study.add_trial(
-        create_trial(
-            value=value,
-            params={"x": 0.0},
-            distributions={"x": FloatDistribution(0.0, 1.0)},
-        )
-    )
-
+    study = prepare_study_with_trials(value_for_first_trial=value)
     figure = plot_edf(study)
     assert all(np.isfinite(figure.data[0]["x"]))
 
@@ -111,21 +95,6 @@ def test_nonfinite_removed(value: int) -> None:
 )
 def test_nonfinite_multiobjective(objective: int, value: int) -> None:
 
-    study = create_study(directions=["minimize", "maximize"])
-    study.add_trial(
-        create_trial(
-            values=[0.0, 1.0],
-            params={"x": 1.0},
-            distributions={"x": FloatDistribution(0.0, 1.0)},
-        )
-    )
-    study.add_trial(
-        create_trial(
-            values=[value, value],
-            params={"x": 0.0},
-            distributions={"x": FloatDistribution(0.0, 1.0)},
-        )
-    )
-
+    study = prepare_study_with_trials(n_objectives=2, value_for_first_trial=value)
     figure = plot_edf(study, target=lambda t: t.values[objective])
     assert all(np.isfinite(figure.data[0]["x"]))
