@@ -7,6 +7,7 @@ Under this directory, you will find scripts that we have prepared to measure Opt
 In this document, we explain how we measure the performance of Optuna using the scripts in this directory.
 The contents of this document are organized as follows.
 - [Performance Benchmarks with `kurobako`](#performance-benchmarks-with-kurobako)
+- [Performance Benchmarks with `bayesmark`](#performance-benchmarks-with-bayesmark)
 
 ## Performance Benchmarks with `kurobako`
 
@@ -94,3 +95,56 @@ Finally, you can run the script of `benchmarks/run_kurobako.py`.
           --out-dir "out"
 ```
 Please see `benchmarks/run_kurobako.py` to check the arguments and those default values.
+
+## Performance benchmarks with `bayesmark`
+
+This workflow allows to benchmark optimization algorithms available in Optuna with [`bayesmark`](https://github.com/uber/bayesmark). This is done by repeatedly performing hyperparameter search on set of `scikit-learn` models fitted to a list of [toy datasets](https://scikit-learn.org/stable/datasets/toy_dataset.html) and aggregating the results. Those are then compared to baseline provided by random sampler. This benchmark can be run with GitHub Actions or locally.
+
+### How to run on the GitHub Actions
+
+1. Follow points 1 and 2 from [Performance Benchmarks with `kurobako`](#performance-benchmarks-with-kurobako)
+2. In the left sidebar, click the `Performance benchmarks with bayesmark`
+3. Above the list of workflow runs, select `Run workflow`.
+![image](https://user-images.githubusercontent.com/37713008/156530602-480921f5-f55e-4c14-85d7-1f285ebd17ef.png)
+
+4. Here you can select branch to run benchmark from, as well as parameters. Click `Run workflow` to start the benchmark run.
+
+![image](https://user-images.githubusercontent.com/37713008/156531474-a92f48f6-ec02-4173-acb7-3b3a33a06ad3.png)
+
+5. After finishing the workflow, you can download the report and plots from `Artifacts`.
+![image](https://user-images.githubusercontent.com/37713008/156532316-0cd02246-3803-44af-bcd7-383e79e2fec8.png)
+
+`benchmark-report` contains markdown file with solver leaderboards for each problem. Basic information on benchmark setup is also available.
+![image](https://user-images.githubusercontent.com/37713008/156562609-6fcc72fe-541a-4053-8db0-370c5f2a12d8.png)
+
+`benchmark-plots` is a set of optimization history plots for each solved problem. Similarly to `kurobako`, each plot shows objective value as a function of finished trials. For each problem, average and median taken over `n_runs` is shown. If `Include warm-up steps in plots` checkbox was not selected in workflow config, first 10 trials will be excluded from visualizations.
+![image](https://user-images.githubusercontent.com/37713008/156562987-dbaba38c-755c-448a-bc45-7aefb3fd8efd.png)
+
+See [this doc](https://bayesmark.readthedocs.io/en/stable/scoring.html) for more information on `bayesmark` scoring.
+
+### How to run locally
+
+CI runs benchmarks on all model/dataset combination in parallel, hovever running benchmark on single problem locally is possoble. To do this, first install required Python packages.
+```bash
+pip install bayesmark matplotlib
+```
+
+Benchmark run can be started with
+```bash
+% python benchmarks/run_bayesmark.py \
+          --dataset iris \
+          --model kNN \
+          --budget 80 \
+          --repeat 10 \
+          --sampler-list TPESampler CmaEsSampler \
+          --sampler-kwargs-list {"multivariate":true,"constant_liar":true} {} \
+          --pruner-list NopPruner \
+          --pruner-kwargs-list {}
+```
+
+Allowed models are `[kNN, SVM, DT, RF, MLP-sgd, ada, linear]` and allowed datasets are `[breast, digits, iris, wine, diabetes]`. For more details on default parameters please refer to `benchmarks/run_bayesmark.py`. Markdown report can be generated after benchmark has been completed by running
+```bash
+% python benchmarks/report_bayesmark.py
+```
+
+You'll find benchmark artifacts in `plots` and `report` directories.
