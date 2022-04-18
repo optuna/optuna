@@ -309,39 +309,8 @@ def test_color_map(direction: str) -> None:
 @pytest.mark.parametrize("value", [float("inf"), -float("inf")])
 def test_nonfinite_removed(value: float) -> None:
 
-    study = create_study()
-    study.add_trial(
-        create_trial(
-            value=0.0,
-            params={"param_a": 1.0, "param_b": 0.0},
-            distributions={
-                "param_a": FloatDistribution(0.0, 1.0),
-                "param_b": FloatDistribution(0.0, 1.0),
-            },
-        )
-    )
-    study.add_trial(
-        create_trial(
-            value=0.0,
-            params={"param_a": 0.0, "param_b": 10.0},
-            distributions={
-                "param_a": FloatDistribution(0.0, 1.0),
-                "param_b": FloatDistribution(0.0, 10.0),
-            },
-        )
-    )
-    study.add_trial(
-        create_trial(
-            value=value,
-            params={"param_a": 0.0, "param_b": 1.0},
-            distributions={
-                "param_a": FloatDistribution(0.0, 1.0),
-                "param_b": FloatDistribution(0.0, 1.0),
-            },
-        )
-    )
-
-    figure = plot_contour(study)
+    study = prepare_study_with_trials(with_c_d=True, value_for_first_trial=value)
+    figure = plot_contour(study, params=["param_b", "param_d"])
     zvals = itertools.chain.from_iterable(figure.data[0]["z"])
     assert value not in zvals
 
@@ -350,38 +319,9 @@ def test_nonfinite_removed(value: float) -> None:
 @pytest.mark.parametrize("value", (float("inf"), -float("inf")))
 def test_nonfinite_multiobjective(objective: int, value: float) -> None:
 
-    study = create_study(directions=["minimize", "maximize"])
-    study.add_trial(
-        create_trial(
-            values=[0.0, 1.0],
-            params={"param_a": 1.0, "param_b": 0.0},
-            distributions={
-                "param_a": FloatDistribution(0.0, 1.0),
-                "param_b": FloatDistribution(0.0, 1.0),
-            },
-        )
+    study = prepare_study_with_trials(with_c_d=True, n_objectives=2, value_for_first_trial=value)
+    figure = plot_contour(
+        study, params=["param_b", "param_d"], target=lambda t: t.values[objective]
     )
-    study.add_trial(
-        create_trial(
-            values=[0.0, 1.0],
-            params={"param_a": 0.0, "param_b": 10.0},
-            distributions={
-                "param_a": FloatDistribution(0.0, 1.0),
-                "param_b": FloatDistribution(0.0, 10.0),
-            },
-        )
-    )
-    study.add_trial(
-        create_trial(
-            values=[value, value],
-            params={"param_a": 0.0, "param_b": 1.0},
-            distributions={
-                "param_a": FloatDistribution(0.0, 1.0),
-                "param_b": FloatDistribution(0.0, 1.0),
-            },
-        )
-    )
-
-    figure = plot_contour(study, target=lambda t: t.values[objective])
     zvals = itertools.chain.from_iterable(figure.data[0]["z"])
     assert value not in zvals

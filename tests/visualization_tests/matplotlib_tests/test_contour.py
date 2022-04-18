@@ -308,43 +308,12 @@ def test_contour_subplots_have_correct_axis_labels_and_ranges() -> None:
 @pytest.mark.parametrize("value", [float("inf"), -float("inf")])
 def test_nonfinite_removed(recwarn: WarningsRecorder, value: float) -> None:
 
-    study = create_study()
-    study.add_trial(
-        create_trial(
-            value=0.0,
-            params={"param_a": 1.0, "param_b": 0.0},
-            distributions={
-                "param_a": FloatDistribution(0.0, 1.0),
-                "param_b": FloatDistribution(0.0, 1.0),
-            },
-        )
-    )
-    study.add_trial(
-        create_trial(
-            value=1.0,
-            params={"param_a": 0.0, "param_b": 10.0},
-            distributions={
-                "param_a": FloatDistribution(0.0, 1.0),
-                "param_b": FloatDistribution(0.0, 10.0),
-            },
-        )
-    )
-    study.add_trial(
-        create_trial(
-            value=value,
-            params={"param_a": 0.0, "param_b": 1.0},
-            distributions={
-                "param_a": FloatDistribution(0.0, 1.0),
-                "param_b": FloatDistribution(0.0, 1.0),
-            },
-        )
-    )
-
     # To check if contour lines have been rendered (meaning +-inf trials were removed),
     # we should be looking if artists responsible for drawing them are preset in the final plot.
     # Turns out it's difficult to do reliably (No information which artists are responsible for
     # drawing contours) so instead we are checking for warning raised by matplotlib
     # when contour plot fails. TODO(xadrianzetx) Find a better way to test this.
+    study = prepare_study_with_trials(with_c_d=True, value_for_first_trial=value)
     plot_contour(study)
     for record in recwarn.list:
         assert "No contour levels were found within the data range" not in str(record.message)
@@ -355,38 +324,7 @@ def test_nonfinite_removed(recwarn: WarningsRecorder, value: float) -> None:
 @pytest.mark.parametrize("value", (float("inf"), -float("inf")))
 def test_nonfinite_multiobjective(recwarn: WarningsRecorder, objective: int, value: float) -> None:
 
-    study = create_study(directions=["minimize", "maximize"])
-    study.add_trial(
-        create_trial(
-            values=[1.0, 0.0],
-            params={"param_a": 1.0, "param_b": 0.0},
-            distributions={
-                "param_a": FloatDistribution(0.0, 1.0),
-                "param_b": FloatDistribution(0.0, 1.0),
-            },
-        )
-    )
-    study.add_trial(
-        create_trial(
-            values=[0.0, 1.0],
-            params={"param_a": 0.0, "param_b": 10.0},
-            distributions={
-                "param_a": FloatDistribution(0.0, 1.0),
-                "param_b": FloatDistribution(0.0, 10.0),
-            },
-        )
-    )
-    study.add_trial(
-        create_trial(
-            values=[value, value],
-            params={"param_a": 0.0, "param_b": 1.0},
-            distributions={
-                "param_a": FloatDistribution(0.0, 1.0),
-                "param_b": FloatDistribution(0.0, 1.0),
-            },
-        )
-    )
-
+    study = prepare_study_with_trials(with_c_d=True, n_objectives=2, value_for_first_trial=value)
     plot_contour(study, target=lambda t: t.values[objective])
     for record in recwarn.list:
         assert "No contour levels were found within the data range" not in str(record.message)
