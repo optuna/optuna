@@ -13,6 +13,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _check_plot_args
+from optuna.visualization._utils import _filter_nonfinite
 from optuna.visualization._utils import _get_param_values
 from optuna.visualization._utils import _is_log_scale
 from optuna.visualization._utils import _is_numerical
@@ -100,7 +101,9 @@ def _get_contour_plot(
 
     layout = go.Layout(title="Contour Plot")
 
-    trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
+    trials = _filter_nonfinite(
+        study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
+    )
 
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
