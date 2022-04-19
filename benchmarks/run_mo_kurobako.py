@@ -12,11 +12,13 @@ def run(args: argparse.Namespace) -> None:
 
     os.makedirs(args.out_dir, exist_ok=True)
     study_json_filename = os.path.join(args.out_dir, "studies.json")
-    subprocess.check_call(f"echo >| {study_json_filename}", shell=True)
     solvers_filename = os.path.join(args.out_dir, "solvers.json")
-    subprocess.check_call(f"echo >| {solvers_filename}", shell=True)
     problems_filename = os.path.join(args.out_dir, "problems.json")
-    subprocess.check_call(f"echo >| {problems_filename}", shell=True)
+    
+    # Ensure all files are empty.
+    for filename in [study_json_filename, solvers_filename, problems_filename]:
+        with open(filename, "w"):
+            pass
 
     # Create ZDT problems.
     cmd = f"{kurobako_cmd} problem-suite zdt | tee -a {problems_filename}"
@@ -44,14 +46,14 @@ def run(args: argparse.Namespace) -> None:
         name = f"{args.name_prefix}_{sampler}"
         python_command = f"{args.path_to_create_study} {sampler} {sampler_kwargs}"
         cmd = (
-            f"{kurobako_cmd} solver --name {name} command python {python_command}"
+            f"{kurobako_cmd} solver --name {name} command python3 {python_command}"
             f"| tee -a {solvers_filename}"
         )
         subprocess.run(cmd, shell=True)
 
     # Create study.
     cmd = (
-        f"{kurobako_cmd} studies --budget 80 "
+        f"{kurobako_cmd} studies --budget 120 "
         f"--solvers $(cat {solvers_filename}) --problems $(cat {problems_filename}) "
         f"--repeats {args.n_runs} --seed {args.seed} "
         f"> {study_json_filename}"
@@ -102,7 +104,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--sampler-kwargs-list",
         type=str,
-        default=r"{} {\"multivariate\":true\,\"constant_liar\":true} {}",
+        default=r"{} {\"multivariate\":true\,\"constant_liar\":true} {\"population_size\":20}",
     )
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--data-dir", type=str, default="data")

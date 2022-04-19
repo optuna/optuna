@@ -11,6 +11,7 @@ optuna.logging.disable_default_handler()
 
 
 def create_study(seed: int) -> optuna.Study:
+    # Avoid the fail by `flake8`.
     seed
 
     n_objectives = 2
