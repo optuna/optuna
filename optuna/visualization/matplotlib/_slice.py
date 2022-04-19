@@ -154,7 +154,7 @@ def _get_slice_plot(
             )
 
     axcb = fig.colorbar(sc, ax=axs)
-    axcb.set_label("#Trials")
+    axcb.set_label("Trial")
 
     return axs
 
