@@ -1,5 +1,6 @@
 from cmath import nan
 import math
+
 import numpy as np
 import pytest
 
