@@ -63,7 +63,8 @@ def plot_pareto_front(
             values. ``study.n_objectives`` must be eigher 2 or 3.
         target_names:
             Objective name list used as the axis titles. If :obj:`None` is specified,
-            "Objective {objective_index}" is used instead.
+            "Objective {objective_index}" is used instead. If ``targets`` is specified
+            for empty studies, ``target_name`` must be specified.
         include_dominated_trials:
             A flag to include all dominated trial's objective values.
         axis_order:
