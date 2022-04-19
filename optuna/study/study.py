@@ -95,7 +95,7 @@ class Study:
         """Return parameters of the best trial in the study.
 
         .. note::
-            A study must have exactly one direction.
+            This feature can only be used for single-objective optimization.
 
         Returns:
             A dictionary containing parameters of the best trial.
