@@ -166,7 +166,7 @@ def test_values_registered_on_epoch(
     def assert_call_args(log_func: mock.MagicMock, as_multirun: bool) -> None:
         call_args = log_func.call_args
         assert list(call_args[0][0].keys()) == expected
-        assert call_args[1] == {"step": 0 if regular else None}
+        assert call_args[1] == {"step": None if as_multirun else 0}
 
     wandb.sdk.wandb_run.Run = mock.MagicMock
 
