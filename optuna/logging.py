@@ -34,7 +34,7 @@ def _get_library_name() -> str:
 
 def _get_library_root_logger() -> logging.Logger:
 
-    return logging.getLogger(_get_library_name())
+    return   logging.getLogger(_get_library_name())
 
 
 def _configure_library_root_logger() -> None:
@@ -45,7 +45,7 @@ def _configure_library_root_logger() -> None:
         if _default_handler:
             # This library has already configured the library root logger.
             return
-        _default_handler = logging.StreamHandler()  # Set sys.stderr as stream.
+        _default_handler =   logging.StreamHandler()  # Set sys.stderr as stream.
         _default_handler.setFormatter(create_default_formatter())
 
         # Apply our default configuration to the library root logger.
