@@ -88,13 +88,14 @@ def test_attributes_set_on_epoch(wandb: mock.MagicMock, as_multirun: bool) -> No
 
     study = optuna.create_study(direction="minimize")
     wandbc = WeightsAndBiasesCallback(as_multirun=as_multirun)
+
+    if as_multirun:
+        wandb.run = None
+
     study.enqueue_trial(trial_params)
     study.optimize(_objective_func, n_trials=1, callbacks=[wandbc])
 
     if as_multirun:
-        wandb.run = None
-        study.enqueue_trial(trial_params)
-        study.optimize(_objective_func, n_trials=1, callbacks=[wandbc])
         wandb.init().config.update.assert_called_once_with(expected_config_with_params)
     else:
         wandb.run.config.update.assert_called_once_with(expected_config)
@@ -113,13 +114,13 @@ def test_multiobjective_attributes_set_on_epoch(wandb: mock.MagicMock, as_multir
     study = optuna.create_study(directions=["minimize", "maximize"])
     wandbc = WeightsAndBiasesCallback(as_multirun=as_multirun)
 
+    if as_multirun:
+        wandb.run = None
+
     study.enqueue_trial(trial_params)
     study.optimize(_multiobjective_func, n_trials=1, callbacks=[wandbc])
 
     if as_multirun:
-        wandb.run = None
-        study.enqueue_trial(trial_params)
-        study.optimize(_multiobjective_func, n_trials=1, callbacks=[wandbc])
         wandb.init().config.update.assert_called_once_with(expected_config_with_params)
     else:
         wandb.run.config.update.assert_called_once_with(expected_config)
@@ -228,10 +229,10 @@ def test_multiobjective_values_registered_on_epoch(
     as_multirun: bool,
     expected: List[str],
 ) -> None:
-    def assert_call_args(log_func: mock.MagicMock, regular: bool) -> None:
+    def assert_call_args(log_func: mock.MagicMock, as_multirun: bool) -> None:
         call_args = log_func.call_args
         assert list(call_args[0][0].keys()) == expected
-        assert call_args[1] == {"step": 0 if regular else None}
+        assert call_args[1] == {"step": None if as_multirun else 0}
 
     wandb.sdk.wandb_run.Run = mock.MagicMock
 
@@ -245,7 +246,7 @@ def test_multiobjective_values_registered_on_epoch(
     wandbc = WeightsAndBiasesCallback(metric_name=metrics, as_multirun=as_multirun)
 
     study.optimize(_multiobjective_func, n_trials=1, callbacks=[wandbc])
-    assert_call_args(log_func, bool(wandb.run))
+    assert_call_args(log_func, as_multirun)
 
 
 @pytest.mark.parametrize(
