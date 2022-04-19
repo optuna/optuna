@@ -4,6 +4,7 @@ from typing import Callable
 from typing import Dict
 from typing import Optional
 from typing import Sequence
+from typing import Tuple
 from typing import Type
 from typing import Union
 import warnings
@@ -102,7 +103,7 @@ class ChainerMNStudy(object):
         func: Callable[["ChainerMNTrial", "CommunicatorBase"], float],
         n_trials: Optional[int] = None,
         timeout: Optional[float] = None,
-        catch: Union[Sequence[Type[Exception]], Type[Exception]] = (),
+        catch: Union[Tuple[Type[Exception], ...], Type[Exception]] = (),
     ) -> None:
         """Optimize an objective function.
 
@@ -131,8 +132,11 @@ class ChainerMNStudy(object):
                     # `catch`) is in the rank-0 node, so other nodes simply ignore them.
                 except TrialPruned:
                     pass
-                except catch:
-                    pass
+                except Exception as e:
+                    if isinstance(e, catch):
+                        pass
+                    else:
+                        raise
                 finally:
                     has_next_trial = self.comm.mpi_comm.bcast(None)
 
