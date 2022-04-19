@@ -167,8 +167,8 @@ class Study:
         """Return the direction of the study.
 
         .. note::
-            A study must have exactly one direction.
-            If your study has multiple directions,
+            This feature can only be used for single-objective optimization.
+            If your study is multi-objective,
             use :attr:`~optuna.study.Study.directions` instead.
 
         Returns:
