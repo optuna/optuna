@@ -127,7 +127,7 @@ class Study:
 
         .. note::
             A study must have exactly one direction.
-            If your study has multiple directions,
+            If your study is multi-objective,,
             use :attr:`~optuna.study.Study.best_trials` instead.
 
         Returns:
