@@ -109,7 +109,7 @@ class Study:
         """Return the best objective value in the study.
 
         .. note::
-            A study must have exactly one direction.
+            This feature can only be used for single-objective optimization.
 
         Returns:
             A float representing the best objective value.
@@ -131,7 +131,7 @@ class Study:
             use :attr:`~optuna.study.Study.best_trials` instead.
 
         Returns:
-            A :class:`~optuna.trial.FrozenTrial` object of the best trial.
+            This feature can only be used for single-objective optimization.
 
         .. seealso::
             The :ref:`reuse_best_trial` tutorial provides a detailed example of how to use this
