@@ -179,7 +179,7 @@ def test_values_registered_on_epoch(
     study = optuna.create_study()
     wandbc = WeightsAndBiasesCallback(metric_name=metric, as_multirun=as_multirun)
     study.optimize(_objective_func, n_trials=1, callbacks=[wandbc])
-    assert_call_args(log_func, bool(wandb.run))
+    assert_call_args(log_func, as_multirun)
 
 
 @pytest.mark.parametrize("metric,expected", [("foo", ["x", "y", "foo", "trial_number"])])
