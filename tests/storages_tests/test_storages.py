@@ -13,6 +13,7 @@ from typing import Tuple
 from unittest.mock import Mock
 from unittest.mock import patch
 
+import numpy as np
 import pytest
 
 import optuna
@@ -710,6 +711,7 @@ def test_set_trial_intermediate_value(storage_mode: str) -> None:
         trial_id_1 = storage.create_new_trial(study_id)
         trial_id_2 = storage.create_new_trial(study_id)
         trial_id_3 = storage.create_new_trial(storage.create_new_study())
+        trial_id_4 = storage.create_new_trial(study_id)
 
         # Test setting new values.
         storage.set_trial_intermediate_value(trial_id_1, 0, 0.3)
@@ -718,6 +720,7 @@ def test_set_trial_intermediate_value(storage_mode: str) -> None:
         storage.set_trial_intermediate_value(trial_id_3, 1, 0.4)
         storage.set_trial_intermediate_value(trial_id_3, 2, 0.5)
         storage.set_trial_intermediate_value(trial_id_3, 3, float("inf"))
+        storage.set_trial_intermediate_value(trial_id_4, 0, float("nan"))
 
         assert storage.get_trial(trial_id_1).intermediate_values == {0: 0.3, 2: 0.4}
         assert storage.get_trial(trial_id_2).intermediate_values == {}
@@ -727,12 +730,13 @@ def test_set_trial_intermediate_value(storage_mode: str) -> None:
             2: 0.5,
             3: float("inf"),
         }
+        assert np.isnan(storage.get_trial(trial_id_4).intermediate_values[0])
 
         # Test setting existing step.
         storage.set_trial_intermediate_value(trial_id_1, 0, 0.2)
         assert storage.get_trial(trial_id_1).intermediate_values == {0: 0.2, 2: 0.4}
 
-        non_existent_trial_id = max(trial_id_1, trial_id_2, trial_id_3) + 1
+        non_existent_trial_id = max(trial_id_1, trial_id_2, trial_id_3, trial_id_4) + 1
         with pytest.raises(KeyError):
             storage.set_trial_intermediate_value(non_existent_trial_id, 0, 0.2)
 
