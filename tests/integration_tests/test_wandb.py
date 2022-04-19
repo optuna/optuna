@@ -163,7 +163,7 @@ def test_log_api_call_count(wandb: mock.MagicMock) -> None:
 def test_values_registered_on_epoch(
     wandb: mock.MagicMock, metric: str, as_multirun: bool, expected: List[str]
 ) -> None:
-    def assert_call_args(log_func: mock.MagicMock, regular: bool) -> None:
+    def assert_call_args(log_func: mock.MagicMock, as_multirun: bool) -> None:
         call_args = log_func.call_args
         assert list(call_args[0][0].keys()) == expected
         assert call_args[1] == {"step": 0 if regular else None}
