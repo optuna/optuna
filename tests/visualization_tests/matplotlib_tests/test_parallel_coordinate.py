@@ -214,21 +214,7 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
 @pytest.mark.parametrize("value", [float("inf"), -float("inf"), float("nan")])
 def test_nonfinite_removed(value: float) -> None:
 
-    study = create_study()
-    study.add_trial(
-        create_trial(
-            value=0.0,
-            params={"param_a": 1e-6},
-            distributions={"param_a": FloatDistribution(0.0, 1.0)},
-        )
-    )
-    study.add_trial(
-        create_trial(
-            value=value,
-            params={"param_a": 0},
-            distributions={"param_a": FloatDistribution(0.0, 1.0)},
-        )
-    )
+    study = prepare_study_with_trials(value_for_first_trial=value)
     plot_parallel_coordinate(study)
     plt.savefig(BytesIO())
 
