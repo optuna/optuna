@@ -38,7 +38,8 @@ class IntersectionSearchSpace(object):
 
         Args:
             study:
-                A study with completed trials.
+                A study with completed trials. The same study must be passed for one instance
+                of this class through its lifetime.
             ordered_dict:
                 A boolean flag determining the return type.
                 If :obj:`False`, the returned object will be a :obj:`dict`.
