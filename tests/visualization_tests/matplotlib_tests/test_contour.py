@@ -8,6 +8,7 @@ from typing import Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
+from pytest import WarningsRecorder
 
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
@@ -301,4 +302,30 @@ def test_contour_subplots_have_correct_axis_labels_and_ranges() -> None:
         xlims = [ax.get_xlim() for ax in subplots[:, index]]
         assert all_equal(xlims)
         assert all(range_covers(param_range_with_padding, xlim) for xlim in xlims)
+    plt.savefig(BytesIO())
+
+
+@pytest.mark.parametrize("value", [float("inf"), -float("inf")])
+def test_nonfinite_removed(recwarn: WarningsRecorder, value: float) -> None:
+
+    # To check if contour lines have been rendered (meaning +-inf trials were removed),
+    # we should be looking if artists responsible for drawing them are preset in the final plot.
+    # Turns out it's difficult to do reliably (No information which artists are responsible for
+    # drawing contours) so instead we are checking for warning raised by matplotlib
+    # when contour plot fails. TODO(xadrianzetx) Find a better way to test this.
+    study = prepare_study_with_trials(with_c_d=True, value_for_first_trial=value)
+    plot_contour(study)
+    for record in recwarn.list:
+        assert "No contour levels were found within the data range" not in str(record.message)
+    plt.savefig(BytesIO())
+
+
+@pytest.mark.parametrize("objective", (0, 1))
+@pytest.mark.parametrize("value", (float("inf"), -float("inf")))
+def test_nonfinite_multiobjective(recwarn: WarningsRecorder, objective: int, value: float) -> None:
+
+    study = prepare_study_with_trials(with_c_d=True, n_objectives=2, value_for_first_trial=value)
+    plot_contour(study, target=lambda t: t.values[objective])
+    for record in recwarn.list:
+        assert "No contour levels were found within the data range" not in str(record.message)
     plt.savefig(BytesIO())
