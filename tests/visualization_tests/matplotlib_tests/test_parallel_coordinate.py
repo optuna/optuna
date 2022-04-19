@@ -229,9 +229,7 @@ def test_nonfinite_removed(value: float) -> None:
             distributions={"param_a": FloatDistribution(0.0, 1.0)},
         )
     )
-
-    figure = plot_parallel_coordinate(study)
-    assert len(figure.get_lines()) == 0
+    plot_parallel_coordinate(study)
     plt.savefig(BytesIO())
 
 
@@ -255,6 +253,5 @@ def test_nonfinite_multiobjective(objective: int, value: float) -> None:
         )
     )
 
-    figure = plot_parallel_coordinate(study, target=lambda t: t.values[objective])
-    assert len(figure.get_lines()) == 0
+    plot_parallel_coordinate(study, target=lambda t: t.values[objective])
     plt.savefig(BytesIO())

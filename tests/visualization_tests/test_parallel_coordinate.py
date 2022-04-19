@@ -1,5 +1,6 @@
+from cmath import nan
 import math
-
+import numpy as np
 import pytest
 
 from optuna.distributions import CategoricalDistribution
@@ -435,7 +436,7 @@ def test_nonfinite_removed(value: float) -> None:
     )
 
     figure = plot_parallel_coordinate(study)
-    assert len(figure.data) == 1
+    assert all(np.isfinite(figure.data[0]["dimensions"][0]["values"]))
 
 
 @pytest.mark.parametrize("objective", (0, 1))
@@ -459,4 +460,4 @@ def test_nonfinite_multiobjective(objective: int, value: float) -> None:
     )
 
     figure = plot_parallel_coordinate(study, target=lambda t: t.values[objective])
-    assert len(figure.data) == 1
+    assert all(np.isfinite(figure.data[0]["dimensions"][0]["values"]))
