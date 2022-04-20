@@ -115,9 +115,7 @@ jobs:
           rm -fr cookies.txt confirm.txt
         }
         wget_gdrive 1sh8pEhdrgZ97-VFBVL94rI36gedExVgJ nb201_cifar10_full_training.pickle
-        cd ../../
-        pip install -e .
-        cd ..
+        cd ../../../
     
     - name: Cache nasbench201-cifar100 dataset
       id: cache-nb201-cifar100-dataset
@@ -142,9 +140,7 @@ jobs:
           rm -fr cookies.txt confirm.txt
         }
         wget_gdrive 1hV6-mCUKInIK1iqZ0jfBkcKaFmftlBtp nb201_cifar100_full_training.pickle
-        cd ../../
-        pip install -e .
-        cd ..
+        cd ../../../
 
     - name: Cache nasbench201-imagenet16 dataset
       id: cache-nb201-imagenet16-dataset
@@ -169,9 +165,7 @@ jobs:
           rm -fr cookies.txt confirm.txt
         }
         wget_gdrive 1FVCn54aQwD6X6NazaIZ_yjhj47mOGdIH nb201_ImageNet16_full_training.pickle
-        cd ../../
-        pip install -e .
-        cd ..
+        cd ../../../
 
 
     - name: Run performance benchmark
