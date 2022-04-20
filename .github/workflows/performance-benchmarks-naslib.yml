@@ -73,13 +73,13 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ./kurobako
-        key: kurobako-0-2-9-contramundum53
+        key: kurobako-0-2-10
 
     - name: Install kurobako CLI
       if: steps.cache-kurobako.outputs.cache-hit != 'true'
       run: |
 
-        curl -L https://github.com/optuna/kurobako/releases/download/0.2.9/kurobako-0.2.10.linux-amd64 -o kurobako
+        curl -L https://github.com/optuna/kurobako/releases/download/0.2.10/kurobako-0.2.10.linux-amd64 -o kurobako
         chmod +x kurobako
         ./kurobako -h
 
