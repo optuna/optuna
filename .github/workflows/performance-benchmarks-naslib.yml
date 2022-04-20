@@ -113,7 +113,7 @@ jobs:
         key: cache-nb201-cifar10
 
     - name: Download nasbench201-cifar10 dataset
-      if: steps.cache-nb201-cifar10.outputs.cache-hit != 'true'
+      if: steps.cache-nb201-cifar10-dataset.outputs.cache-hit != 'true'
       run: |
 
         cd NASLib/naslib/data
@@ -140,7 +140,7 @@ jobs:
         key: cache-nb201-cifar100
 
     - name: Download nasbench201-cifar100 dataset
-      if: steps.cache-nb201-cifar100.outputs.cache-hit != 'true'
+      if: steps.cache-nb201-cifar100-dataset.outputs.cache-hit != 'true'
       run: |
 
         cd NASLib/naslib/data
@@ -167,7 +167,7 @@ jobs:
         key: cache-nb201-imagenet16
 
     - name: Download nasbench201-imagenet16 dataset
-      if: steps.cache-nb201-imagenet16.outputs.cache-hit != 'true'
+      if: steps.cache-nb201-imagenet16-dataset.outputs.cache-hit != 'true'
       run: |
 
         cd NASLib/naslib/data
