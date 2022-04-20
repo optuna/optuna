@@ -86,29 +86,6 @@ class WeightsAndBiasesCallback(object):
             study.optimize(objective, n_trials=10, callbacks=[wandbc])
 
 
-        Add additional logging to Weights & Biases.
-
-        .. code::
-
-            import optuna
-            from optuna.integration.wandb import WeightsAndBiasesCallback
-            import wandb
-
-            wandb_kwargs = {"project": "my-project"}
-            wandbc = WeightsAndBiasesCallback(wandb_kwargs=wandb_kwargs)
-
-
-            @wandbc.track_in_wandb()
-            def objective(trial):
-                x = trial.suggest_float("x", -10, 10)
-                loss = (x - 2) ** 2
-                wandb.log({"loss": loss})
-                return loss
-
-
-            study = optuna.create_study()
-            study.optimize(objective, n_trials=10, callbacks=[wandbc])
-
     Args:
         metric_name:
             Name assigned to optimized metric. In case of multi-objective optimization,
@@ -211,6 +188,33 @@ class WeightsAndBiasesCallback(object):
         The run is initialized with the same ``wandb_kwargs`` that are passed to the callback.
         All the metrics from inside the objective function will be logged into the same run
         which stores the parameters for a given trial.
+
+        Example:
+
+            Add additional logging to Weights & Biases.
+
+            .. code::
+
+                import optuna
+                from optuna.integration.wandb import WeightsAndBiasesCallback
+                import wandb
+
+                wandb_kwargs = {"project": "my-project"}
+                wandbc = WeightsAndBiasesCallback(wandb_kwargs=wandb_kwargs)
+
+
+                @wandbc.track_in_wandb()
+                def objective(trial):
+                    x = trial.suggest_float("x", -10, 10)
+                    mlflow.log_param("power", 2)
+                    mlflow.log_metric("base of metric", x - 2)
+
+                    return (x - 2) ** 2
+
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=10, callbacks=[wandbc])
+
 
         Returns:
             ObjectiveFuncType: Objective function with W&B tracking enabled.
