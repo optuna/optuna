@@ -78,8 +78,20 @@ jobs:
     - name: Install kurobako CLI
       if: steps.cache-kurobako.outputs.cache-hit != 'true'
       run: |
-        curl -L https://github.com/optuna/kurobako/releases/download/0.2.9/kurobako-0.2.9.linux-amd64 -o kurobako
 
+        function wget_gdrive {
+
+          GDRIVE_FILE_ID=$1
+          DEST_PATH=$2
+
+          wget --save-cookies cookies.txt 'https://docs.google.com/uc?export=download&id='$GDRIVE_FILE_ID -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1/p' > confirm.txt
+          wget --load-cookies cookies.txt -O $DEST_PATH 'https://docs.google.com/uc?export=download&id='$GDRIVE_FILE_ID'&confirm='$(<confirm.txt)
+          rm -fr cookies.txt confirm.txt
+        }
+
+        # curl -L https://github.com/optuna/kurobako/releases/download/0.2.9/kurobako-0.2.9.linux-amd64 -o kurobako
+
+        wget_gdrive 1C2hrf9W2xLdO0WHk_7gQApaOHsHK6uM- kurobako
         chmod +x kurobako
         ./kurobako -h
 
@@ -154,7 +166,7 @@ jobs:
         
         key: cache-nb201-imagenet16
 
-    - name: Download nasbench201-cifar100 dataset
+    - name: Download nasbench201-imagenet16 dataset
       if: steps.cache-nb201-imagenet16.outputs.cache-hit != 'true'
       run: |
 
