@@ -55,7 +55,7 @@ def run(args: argparse.Namespace) -> None:
 
     # Create study.
     cmd = (
-        f"{kurobako_cmd} studies --budget 10 "
+        f"{kurobako_cmd} studies --budget 100 "
         f"--solvers $(cat {solvers_filename}) --problems $(cat {problems_filename}) "
         f"--repeats {args.n_runs} --seed {args.seed} "
         f"> {study_json_filename}"
