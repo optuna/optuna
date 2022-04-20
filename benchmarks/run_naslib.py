@@ -88,7 +88,9 @@ if __name__ == "__main__":
     parser.add_argument("--n-jobs", type=int, default=10)
     parser.add_argument("--sampler-list", type=str, default="RandomSampler TPESampler")
     parser.add_argument(
-        "--sampler-kwargs-list", type=str, default=r'{} {\"multivariate\":true\,\"constant_liar\":true}'
+        "--sampler-kwargs-list",
+        type=str,
+        default=r"{} {\"multivariate\":true\,\"constant_liar\":true}",
     )
     parser.add_argument("--pruner-list", type=str, default="NopPruner")
     parser.add_argument("--pruner-kwargs-list", type=str, default="{}")
