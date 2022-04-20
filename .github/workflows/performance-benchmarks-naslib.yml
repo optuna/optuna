@@ -180,7 +180,7 @@ jobs:
           --path-to-kurobako "." \
           --name-prefix "" \
           --n-runs ${{ github.event.inputs.n-runs }} \
-          --n-jobs 10 \
+          --n-jobs 6 \
           --sampler-list '${{ github.event.inputs.sampler-list }}' \
           --sampler-kwargs-list '${{ github.event.inputs.sampler-kwargs-list }}' \
           --pruner-list '${{ github.event.inputs.pruner-list }}' \
