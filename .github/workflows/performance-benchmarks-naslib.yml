@@ -73,7 +73,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ./kurobako
-        key: kurobako-0-2-9
+        key: kurobako-0-2-9-contramundum53
 
     - name: Install kurobako CLI
       if: steps.cache-kurobako.outputs.cache-hit != 'true'
