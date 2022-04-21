@@ -186,6 +186,9 @@ def test_get_study_id_from_trial_id(storage_mode: str) -> None:
         trial_id = storage.create_new_trial(study_id)
         assert storage.get_study_id_from_trial_id(trial_id) == study_id
 
+        with pytest.raises(KeyError):
+            storage.get_study_id_from_trial_id(trial_id + 1)
+
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_and_get_study_directions(storage_mode: str) -> None:
