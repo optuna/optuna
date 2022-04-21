@@ -224,6 +224,10 @@ def test_set_and_get_study_directions(storage_mode: str) -> None:
             # Test setting value.
             check_set_and_get(target)
 
+            # Test non-existent study.
+            with pytest.raises(KeyError):
+                storage.get_study_directions(study_id + 1)
+
             # Test overwriting value to the same direction.
             storage.set_study_directions(study_id, target)
 
