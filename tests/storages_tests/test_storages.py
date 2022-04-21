@@ -296,6 +296,10 @@ def test_set_and_get_study_system_attrs(storage_mode: str) -> None:
 
         # Non-existent study id.
         with pytest.raises(KeyError):
+            storage.get_study_system_attrs(study_id + 1)
+
+        # Non-existent study id.
+        with pytest.raises(KeyError):
             storage.set_study_system_attr(study_id + 1, "key", "value")
 
 
