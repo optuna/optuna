@@ -1,4 +1,4 @@
-name: Performance Benchmarks with naslib
+name: Performance Benchmarks with NASLib
 
 on:
   workflow_dispatch:
