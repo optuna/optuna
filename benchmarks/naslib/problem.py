@@ -51,7 +51,6 @@ class NASLibProblemFactory(problem.ProblemFactory):
 
 class NASLibProblem(problem.Problem):
     def __init__(self, search_space: Graph, converter: Any, direction: str, **config: Any) -> None:
-        """"""
         super().__init__()
         self._search_space = search_space
         self._config = config
