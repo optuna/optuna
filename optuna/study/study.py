@@ -322,9 +322,6 @@ class Study:
         SIGINT (Ctrl+C). If :obj:`n_jobs` is greater than one or if another signal than SIGINT
         is used, the interrupted trial state won't be properly updated.
 
-        .. note::
-            Nested invocation of ``optimize`` is not allowed.
-
         Example:
 
             .. testcode::
@@ -398,6 +395,9 @@ class Study:
                 when ``n_trials`` is :obj:`None``, ``timeout`` not is :obj:`None`, and
                 ``n_jobs`` :math:`\\ne 1`.
 
+        Raises:
+            RuntimeError:
+                If nested invocation of this method occurs.
         """
 
         _optimize(
