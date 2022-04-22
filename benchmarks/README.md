@@ -150,14 +150,14 @@ Allowed models are `[kNN, SVM, DT, RF, MLP-sgd, ada, linear]` and allowed datase
 You'll find benchmark artifacts in `plots` and `report` directories.
 
 
-## Performance Benchmarks with `naslib`
+## Performance Benchmarks with `NASLib`
 
 This workflow allows to benchmark optimization algorithms available in Optuna with [`NASLib`](https://github.com/automl/NASLib). NASLib has an abstraction over a number of NAS benchmarks. Currently only NAS-Bench-201 is supported. This benchmark can be run on GitHub Actions or locally.
 
 
 ### How to run on the GitHub Actions
 
-Please follow the same steps as in [Performance Benchmarks with `kurobako`](#performance-benchmarks-with-kurobako), except that you need to select `Performance benchmarks with naslib` in step 3.
+Please follow the same steps as in [Performance Benchmarks with `kurobako`](#performance-benchmarks-with-kurobako), except that you need to select `Performance benchmarks with NASLib` in step 3.
 
 ### How to Run Locally
 
@@ -167,7 +167,7 @@ In order to run NASLib benchmarks, you need the following dependencies:
 * [`kurobako-py`](https://github.com/optuna/kurobako-py)
 * `gnuplot`
 
-Please see each page for the detailed instructions. In short, `NASLib` can be installed by cloning the [Git repo](https://github.com/automl/NASLib), downloading all the data files under `NASLib/naslib/data/`, and running 
+Please see each page for the detailed instructions. In short, `NASLib` can be installed by cloning the [NASLib](https://github.com/automl/NASLib), downloading all the data files under `NASLib/naslib/data/` repository from GitHub, and running 
 ```
 $ pip3 install -e .
 ```

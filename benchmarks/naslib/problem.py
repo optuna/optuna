@@ -17,7 +17,8 @@ from naslib.search_spaces.core.graph import Graph  # NOQA
 from naslib.search_spaces.core.query_metrics import Metric  # NOQA
 import naslib.search_spaces.nasbench201.graph as nasbench201_graph  # NOQA
 from naslib.utils import get_dataset_api  # NOQA
-
+    sys.stdout.close()
+    sys.stdout = sys.__stdout__
 
 class NASLibProblemFactory(problem.ProblemFactory):
     def __init__(self, search_space: Graph, **config: Any) -> None:
@@ -28,11 +29,11 @@ class NASLibProblemFactory(problem.ProblemFactory):
         if isinstance(self._search_space, ss.NasBench201SearchSpace):
             params = [
                 problem.Var(f"x{i}", problem.CategoricalRange(nasbench201_graph.OP_NAMES))
-                for i in range(6)
+                for i in range(len(nasbench201_graph.EDGE_LIST))
             ]
             self._converter = lambda x: [int(z) for z in x]
         else:
-            raise NotImplementedError(f"{self._search_space} is not supported")
+            raise NotImplementedError(f"{self._search_space} is not supported.")
 
         dummy = self._search_space.copy()
         dummy.sample_random_architecture()
@@ -51,15 +52,6 @@ class NASLibProblemFactory(problem.ProblemFactory):
 class NASLibProblem(problem.Problem):
     def __init__(self, search_space: Graph, converter: Any, direction: str, **config: Any) -> None:
         """"""
-        # params
-        # metric      : Metric to query for
-        # dataset     : Dataset to query for
-        # epoch       : If specified, returns the metric of the arch at that epoch of training
-        # full_lc     : If true, returns the curve of the given metric in all epochs
-        # dataset_api : API to use for querying metrics
-        # hp          : Number of epochs the model was trained for. Value is in {1, 12, 90}
-        # is_random   : When True, the performance of a random architecture will be returned
-        #               When False, the performanceo of all trials will be averaged.
         super().__init__()
         self._search_space = search_space
         self._config = config
@@ -97,8 +89,6 @@ class NASLibEvaluator(problem.Evaluator):
 
 
 if __name__ == "__main__":
-    sys.stdout.close()
-    sys.stdout = sys.__stdout__
 
     optimize_direction = {
         "TRAIN_ACCURACY": "maximize",
@@ -116,6 +106,15 @@ if __name__ == "__main__":
 
     default_config = {"metric": "TEST_ACCURACY", "epoch": -1, "full_lc": True}
 
+        # config: arguments provided to `query` method of `search_space` in NASLib
+        # metric      : Metric to query for
+        # dataset     : Dataset to query for
+        # epoch       : If specified, returns the metric of the arch at that epoch of training
+        # full_lc     : If true, returns the curve of the given metric in all epochs
+        # dataset_api : API to use for querying metrics
+        # hp          : Number of epochs the model was trained for. Value is in {1, 12, 90}
+        # is_random   : When True, the performance of a random architecture will be returned
+        #               When False, the performanceo of all trials will be averaged.
     if len(sys.argv) < 1 + 2:
         print("Usage: python3 nas_bench_suite/problems.py <search_space> <dataset> [<config>]")
         print(
