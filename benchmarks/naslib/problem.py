@@ -15,12 +15,14 @@ sys.stdout = open(os.devnull, "w")  # Suppress output
 import naslib.search_spaces as ss  # NOQA
 from naslib.search_spaces.core.graph import Graph  # NOQA
 from naslib.search_spaces.core.query_metrics import Metric  # NOQA
-import naslib.search_spaces.nasbench201.graph as nasbench201_graph  # NOQA
 import naslib.search_spaces.nasbench201.conversions as nasbench201_conversion  # NOQA
+import naslib.search_spaces.nasbench201.graph as nasbench201_graph  # NOQA
 from naslib.utils import get_dataset_api  # NOQA
+
 
 sys.stdout.close()
 sys.stdout = sys.__stdout__
+
 
 class NASLibProblemFactory(problem.ProblemFactory):
     def __init__(self, search_space: Graph, **config: Any) -> None:
@@ -42,7 +44,7 @@ class NASLibProblemFactory(problem.ProblemFactory):
         config_copy = config.copy()
         del config_copy["direction"]
         out = dummy.query(**config_copy)
-        steps = len(out) - 1 # -1 because the zeroth step (untrained) is ignored
+        steps = len(out) - 1  # -1 because the zeroth step (untrained) is ignored
         return problem.ProblemSpec(
             name=f"{self._search_space}", params=params, values=[problem.Var("value")], steps=steps
         )
@@ -102,15 +104,19 @@ if __name__ == "__main__":
     search_spaces = {
         "nasbench201": ss.NasBench201SearchSpace(),
     }
-    
-    config = {"metric": Metric.TEST_ACCURACY, "epoch": -1, "full_lc": True, "direction": "maximize"}
+
+    config = {
+        "metric": Metric.TEST_ACCURACY,
+        "epoch": -1,
+        "full_lc": True,
+        "direction": "maximize",
+    }
     # config: arguments provided to `query` method of `search_space` in NASLib
     # metric      : Metric to query for
     # dataset     : Dataset to query for
     # epoch       : If specified, returns the metric of the arch at that epoch of training
     # full_lc     : If true, returns the curve of the given metric in all epochs
     # dataset_api : API to use for querying metrics
-
 
     search_space = search_spaces[search_space_name]
 

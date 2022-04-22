@@ -9,11 +9,13 @@ def run(args: argparse.Namespace) -> None:
 
     os.makedirs(args.out_dir, exist_ok=True)
     study_json_filename = os.path.join(args.out_dir, "studies.json")
-    subprocess.check_call(f"echo >| {study_json_filename}", shell=True)
     solvers_filename = os.path.join(args.out_dir, "solvers.json")
-    subprocess.check_call(f"echo >| {solvers_filename}", shell=True)
     problems_filename = os.path.join(args.out_dir, "problems.json")
-    subprocess.check_call(f"echo >| {problems_filename}", shell=True)
+
+    # Ensure all files are empty.
+    for filename in [study_json_filename, solvers_filename, problems_filename]:
+        with open(filename, "w"):
+            pass
 
     searchspace_datasets = [
         "nasbench201 cifar10",
