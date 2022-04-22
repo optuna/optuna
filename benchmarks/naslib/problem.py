@@ -110,12 +110,12 @@ if __name__ == "__main__":
         "full_lc": True,
         "direction": "maximize",
     }
-    # config: arguments provided to `query` method of `search_space` in NASLib
-    # metric      : Metric to query for
-    # dataset     : Dataset to query for
-    # epoch       : If specified, returns the metric of the arch at that epoch of training
-    # full_lc     : If true, returns the curve of the given metric in all epochs
-    # dataset_api : API to use for querying metrics
+    # config: arguments provided to `query` method of `search_space` in NASLib.
+    # metric      : Metric to query for.
+    # dataset     : Dataset to query for.
+    # epoch       : If specified, returns the metric of the arch at that epoch of training.
+    # full_lc     : If true, returns the curve of the given metric in all epochs.
+    # dataset_api : API to use for querying metrics.
 
     search_space = search_spaces[search_space_name]
 
