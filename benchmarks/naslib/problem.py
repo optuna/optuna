@@ -76,7 +76,6 @@ class NASLibEvaluator(problem.Evaluator):
         config: Dict[str, Any],
     ) -> None:
         self._search_space = search_space
-        # print(params, file=sys.stderr)
         self._search_space.set_spec(params)
         self._config = config
         self._current_step = 0
