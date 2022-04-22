@@ -515,7 +515,7 @@ class RedisStorage(BaseStorage):
 
             _direction = self.get_study_directions(study_id)
             if len(_direction) > 1:
-                raise ValueError(
+                raise RuntimeError(
                     "Best trial can be obtained only for single-objective optimization."
                 )
             direction = _direction[0]
