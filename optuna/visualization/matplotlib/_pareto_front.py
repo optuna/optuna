@@ -81,6 +81,7 @@ def plot_pareto_front(
             The argument to this function is :class:`~optuna.trial.FrozenTrial`.
             ``targets`` must be :obj:`None` or return 2 or 3 values.
             ``axis_order`` and ``targets`` cannot be used at the same time.
+            If your study has more than 4 objectives, ``targets`` must be specified.
 
             .. note::
                 Added in v3.0.0 as an experimental feature. The interface may change in newer
