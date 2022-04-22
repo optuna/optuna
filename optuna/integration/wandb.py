@@ -200,14 +200,13 @@ class WeightsAndBiasesCallback(object):
                 import wandb
 
                 wandb_kwargs = {"project": "my-project"}
-                wandbc = WeightsAndBiasesCallback(wandb_kwargs=wandb_kwargs)
+                wandbc = WeightsAndBiasesCallback(wandb_kwargs=wandb_kwargs, as_multirun=True)
 
 
                 @wandbc.track_in_wandb()
                 def objective(trial):
                     x = trial.suggest_float("x", -10, 10)
-                    mlflow.log_param("power", 2)
-                    mlflow.log_metric("base of metric", x - 2)
+                    wandb.log({"power": 2, "base of metric": x - 2})
 
                     return (x - 2) ** 2
 
