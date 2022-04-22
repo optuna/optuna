@@ -1473,11 +1473,13 @@ def test_get_stale_trial_ids(storage_mode: str) -> None:
 def test_read_trials_from_remote_storage(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
-        with pytest.raises(KeyError):
-            storage.read_trials_from_remote_storage(-1)
 
         study_id = storage.create_new_study()
         storage.read_trials_from_remote_storage(study_id)
+
+        # Non-existent study.
+        with pytest.raises(KeyError):
+            storage.read_trials_from_remote_storage(study_id + 1)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES_HEARTBEAT)
