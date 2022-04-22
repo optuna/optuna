@@ -126,12 +126,12 @@ class Study:
         """Return the best trial in the study.
 
         .. note::
-            A study must have exactly one direction.
-            If your study is multi-objective,,
+            This feature can only be used for single-objective optimization.
+            If your study is multi-objective,
             use :attr:`~optuna.study.Study.best_trials` instead.
 
         Returns:
-            This feature can only be used for single-objective optimization.
+            A :class:`~optuna.trial.FrozenTrial` object of the best trial.
 
         .. seealso::
             The :ref:`reuse_best_trial` tutorial provides a detailed example of how to use this
