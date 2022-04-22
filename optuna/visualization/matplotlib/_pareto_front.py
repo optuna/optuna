@@ -133,7 +133,8 @@ def plot_pareto_front(
         n_targets = len(study.directions)
     else:
         raise ValueError(
-            "If `targets` is specified for empty studies, `target_names` must be specified."
+            "If `targets` is specified for a study that does not contain any completed trial, "
+            "`target_names` must be specified."
         )
 
     if n_targets == 2:
