@@ -1064,7 +1064,14 @@ def test_get_best_trial(storage_mode: str) -> None:
         study_id = storage.create_new_study()
         storage.set_study_directions(study_id, (StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE))
         trial_id = storage.create_new_trial(study_id)
-        storage.set_trial_state_values(trial_id, TrialState.COMPLETE, values=(0.0, 0.1,))
+        storage.set_trial_state_values(
+            trial_id,
+            TrialState.COMPLETE,
+            values=(
+                0.0,
+                0.1,
+            ),
+        )
 
         # Study has more than one direction.
         with pytest.raises(RuntimeError):
