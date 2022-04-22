@@ -1551,3 +1551,22 @@ def test_pickle_storage(storage_mode: str) -> None:
             assert storage.engine != restored_storage.engine
             assert storage.scoped_session != restored_storage.scoped_session
             assert storage._version_manager != restored_storage._version_manager
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_check_trial_is_updatable(storage_mode: str) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        study_id = storage.create_new_study()
+        trial_id = storage.create_new_trial(study_id)
+
+        storage.check_trial_is_updatable(trial_id, TrialState.RUNNING)
+        storage.check_trial_is_updatable(trial_id, TrialState.WAITING)
+
+        with pytest.raises(RuntimeError):
+            storage.check_trial_is_updatable(trial_id, TrialState.FAIL)
+
+        with pytest.raises(RuntimeError):
+            storage.check_trial_is_updatable(trial_id, TrialState.PRUNED)
+
+        with pytest.raises(RuntimeError):
+            storage.check_trial_is_updatable(trial_id, TrialState.COMPLETE)
