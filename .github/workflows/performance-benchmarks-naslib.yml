@@ -185,7 +185,7 @@ jobs:
       with:
         name: benchmark-report
         path: |
-          out/result.json
+          out/results.json
           out/report.md
           out/**/*.png
 
