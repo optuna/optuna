@@ -155,7 +155,7 @@ def _generate_slice_subplot(
             "color": [t.number for t in trials if param in t.params],
             "colorscale": COLOR_SCALE,
             "colorbar": {
-                "title": "#Trials",
+                "title": "Trial",
                 "x": 1.0,  # Offset the colorbar position with a fixed width `xpad`.
                 "xpad": 40,
             },
