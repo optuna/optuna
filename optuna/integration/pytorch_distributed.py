@@ -1,4 +1,5 @@
 from datetime import datetime
+import functools
 import pickle
 from typing import Any
 from typing import Callable
@@ -22,6 +23,35 @@ with try_import() as _imports:
 _suggest_deprecated_msg = (
     "Use :func:`~optuna.integration.TorchDistributedTrial.suggest_float` instead."
 )
+
+
+def updates_state(f: Callable) -> Any:
+    @functools.wraps(f)
+    def wrapped(self, *args, **kwargs) -> Any:
+        def state() -> Sequence:
+            assert self._delegate is not None
+            return (
+                self._delegate.number,
+                self._delegate.params,
+                self._delegate.distributions,
+                self._delegate.user_attrs,
+                self._delegate.system_attrs,
+                self._delegate.datetime_start,
+            )
+
+        try:
+            return f(self, *args, **kwargs)
+        finally:
+            (
+                self._number,
+                self._params,
+                self._distributions,
+                self._user_attrs,
+                self._system_attrs,
+                self._datetime_start,
+            ) = self._call_and_communicate_obj(state)
+
+    return wrapped
 
 
 @experimental("2.6.0")
@@ -73,7 +103,16 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
             assert trial is None, "error message"
         self._delegate = trial
         self._device = device
+        self._params = {}
 
+        self._number = self._broadcast(getattr(self._delegate, "number", None))
+        self._params = self._broadcast(getattr(self._delegate, "params", None))
+        self._distributions = self._broadcast(getattr(self._delegate, "distributions", None))
+        self._user_attrs = self._broadcast(getattr(self._delegate, "user_attrs", None))
+        self._system_attrs = self._broadcast(getattr(self._delegate, "system_attrs", None))
+        self._datetime_start = self._broadcast(getattr(self._delegate, "datetime_start", None))
+
+    @updates_state
     def suggest_float(
         self,
         name: str,
@@ -91,20 +130,24 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         return self._call_and_communicate(func, torch.float)
 
     @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
+    @updates_state
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
 
         return self.suggest_float(name, low, high)
 
     @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
+    @updates_state
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
 
         return self.suggest_float(name, low, high, log=True)
 
     @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
+    @updates_state
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
 
         return self.suggest_float(name, low, high, step=q)
 
+    @updates_state
     def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
         def func() -> float:
 
@@ -113,6 +156,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
         return self._call_and_communicate(func, torch.int)
 
+    @updates_state
     def suggest_categorical(self, name: str, choices: Sequence["CategoricalChoiceType"]) -> Any:
         def func() -> CategoricalChoiceType:
 
@@ -121,6 +165,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
         return self._call_and_communicate_obj(func)
 
+    @updates_state
     def report(self, value: float, step: int) -> None:
         err = None
         if dist.get_rank() == 0:
@@ -136,6 +181,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         if err is not None:
             raise err
 
+    @updates_state
     def should_prune(self) -> bool:
         def func() -> bool:
 
@@ -147,6 +193,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         # due to the RuntimeError.
         return self._call_and_communicate(func, torch.uint8)
 
+    @updates_state
     def set_user_attr(self, key: str, value: Any) -> None:
         err = None
         if dist.get_rank() == 0:
@@ -162,6 +209,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         if err is not None:
             raise err
 
+    @updates_state
     def set_system_attr(self, key: str, value: Any) -> None:
         err = None
 
@@ -180,57 +228,27 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
     @property
     def number(self) -> int:
-        def func() -> int:
-
-            assert self._delegate is not None
-            return self._delegate.number
-
-        return self._call_and_communicate(func, torch.int)
+        return self._number
 
     @property
     def params(self) -> Dict[str, Any]:
-        def func() -> Dict[str, Any]:
-
-            assert self._delegate is not None
-            return self._delegate.params
-
-        return self._call_and_communicate_obj(func)
+        return self._params
 
     @property
     def distributions(self) -> Dict[str, BaseDistribution]:
-        def func() -> Dict[str, BaseDistribution]:
-
-            assert self._delegate is not None
-            return self._delegate.distributions
-
-        return self._call_and_communicate_obj(func)
+        return self._distributions
 
     @property
     def user_attrs(self) -> Dict[str, Any]:
-        def func() -> Dict[str, Any]:
-
-            assert self._delegate is not None
-            return self._delegate.user_attrs
-
-        return self._call_and_communicate_obj(func)
+        return self._user_attrs
 
     @property
     def system_attrs(self) -> Dict[str, Any]:
-        def func() -> Dict[str, Any]:
-
-            assert self._delegate is not None
-            return self._delegate.system_attrs
-
-        return self._call_and_communicate_obj(func)
+        return self._system_attrs
 
     @property
     def datetime_start(self) -> Optional[datetime]:
-        def func() -> Optional[datetime]:
-
-            assert self._delegate is not None
-            return self._delegate.datetime_start
-
-        return self._call_and_communicate_obj(func)
+        return self._datetime_start
 
     def _call_and_communicate(self, func: Callable, dtype: "torch.dtype") -> Any:
         buffer = torch.empty(1, dtype=dtype)
