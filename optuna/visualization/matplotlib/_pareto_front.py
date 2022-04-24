@@ -176,7 +176,7 @@ def _get_pareto_front_3d(info: _ParetoFrontInfo) -> "Axes":
             ys=[values[info.axis_order[1]] for _, values in info.infeasible_trials_with_values],
             zs=[values[info.axis_order[2]] for _, values in info.infeasible_trials_with_values],
             color="#cccccc",
-            label="Infeasible",
+            label="Infeasible Trial",
         )
 
     if info.non_best_trials_with_values is not None and len(info.non_best_trials_with_values) > 0:
