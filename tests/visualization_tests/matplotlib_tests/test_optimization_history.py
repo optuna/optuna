@@ -7,6 +7,7 @@ import pytest
 from optuna.study import create_study
 from optuna.trial import Trial
 from optuna.visualization.matplotlib import plot_optimization_history
+from optuna.visualization.matplotlib._matplotlib_imports import DEFAULT_FONT_SIZE
 
 
 def test_target_is_none_and_study_is_multi_obj() -> None:
@@ -48,6 +49,22 @@ def test_plot_optimization_history(direction: str) -> None:
     legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
     assert sorted(legend_texts) == ["Best Value", "Objective Value"]
     assert figure.get_ylabel() == "Objective Value"
+
+    # Check all the font sizes.
+    expected_fontsize = DEFAULT_FONT_SIZE
+
+    for tick in figure.xaxis.get_ticklabels():
+        assert tick.get_fontsize() == expected_fontsize
+
+    for tick in figure.yaxis.get_ticklabels():
+        assert tick.get_fontsize() == expected_fontsize
+
+    assert figure.xaxis.label.get_fontsize() == figure.yaxis.label.get_fontsize() == expected_fontsize
+    assert figure.title.get_fontsize() == expected_fontsize
+
+    for text in figure.get_legend().texts:
+        assert text.get_fontsize() == expected_fontsize
+
     plt.savefig(BytesIO())
 
     # Test customized target.

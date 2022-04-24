@@ -21,6 +21,7 @@ from optuna.visualization.matplotlib._matplotlib_imports import _imports
 if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
     from optuna.visualization.matplotlib._matplotlib_imports import plt
+    from optuna.visualization.matplotlib._matplotlib_imports import DEFAULT_FONT_SIZE
 
 _logger = get_logger(__name__)
 
@@ -110,9 +111,11 @@ def _get_optimization_history_plot(
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
 
     _, ax = plt.subplots()
-    ax.set_title("Optimization History Plot")
-    ax.set_xlabel("Trial")
-    ax.set_ylabel(target_name)
+    ax.set_title("Optimization History Plot", fontsize=DEFAULT_FONT_SIZE)
+    ax.set_xlabel("Trial", fontsize=DEFAULT_FONT_SIZE)
+    plt.xticks(fontsize=DEFAULT_FONT_SIZE)
+    plt.yticks(fontsize=DEFAULT_FONT_SIZE)
+    ax.set_ylabel(target_name, fontsize=DEFAULT_FONT_SIZE)
 
     if len(studies) == 0:
         _logger.warning("There are no studies.")
@@ -139,6 +142,7 @@ def _get_optimization_history_plot(
         ax = _get_optimization_histories(studies, target, target_name, ax)
 
     plt.legend(bbox_to_anchor=(1.05, 1.0), loc="upper left")
+    plt.rc('legend', fontsize=DEFAULT_FONT_SIZE)
     return ax
 
 

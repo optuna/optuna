@@ -46,6 +46,12 @@ def test_plot_optimization_history(direction: str) -> None:
     legend_texts = [x.name for x in figure.data]
     assert legend_texts == ["Objective Value", "Best Value"]
     assert figure.layout.yaxis.title.text == "Objective Value"
+    # if the font size is specified
+    font_size = figure.layout.font.size
+    if font_size is None:
+        # if not, use the default font size
+        font_size = figure.full_figure_for_development(warn=False).layout.font.size
+    assert font_size == 12
 
     # Test customized target.
     with pytest.warns(UserWarning):
