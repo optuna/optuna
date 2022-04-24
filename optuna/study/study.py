@@ -341,7 +341,7 @@ class Study:
                 The number of trials for each process. :obj:`None` represents no limit in terms of
                 the number of trials. The study continues to create trials until the number of
                 trial reaches ``n_trials``, ``timeout`` period elapses, :func:`~optuna.study.Study.stop`
-                is called or a termination signal such as SIGTERM or Ctrl+C is received.
+                is called, or a termination signal such as SIGTERM or Ctrl+C is received.
 
                 .. seealso::
                     :class:`optuna.study.MaxTrialsCallback` can ensure how many times trials
