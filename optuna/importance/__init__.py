@@ -5,6 +5,7 @@ from typing import Optional
 
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova import FanovaImportanceEvaluator
+from optuna.importance._mean_abs_shap import ShapleyImportanceEvaluator
 from optuna.importance._mean_decrease_impurity import MeanDecreaseImpurityImportanceEvaluator
 from optuna.study import Study
 from optuna.trial import FrozenTrial
@@ -14,6 +15,7 @@ __all__ = [
     "BaseImportanceEvaluator",
     "FanovaImportanceEvaluator",
     "MeanDecreaseImpurityImportanceEvaluator",
+    "ShapleyImportanceEvaluator",
     "get_param_importances",
 ]
 
