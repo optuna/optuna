@@ -59,18 +59,18 @@ jobs:
       env:
         OMP_NUM_THREADS: 1
       run: |
-        coverage run --source=optuna -m pytest tests -m "not skip_coverage" \
+        coverage run --source=optuna -m pytest --collect-only tests -m "not skip_coverage" \
             --ignore tests/integration_tests/test_pytorch_lightning.py
         coverage combine
-        coverage xml
+        pytest --cov=optuna --cov-report=xml --cov-append tests -m "not skip_coverage"
 
     - name: Multi-node tests
       env:
         OMP_NUM_THREADS: 1
       run: |
-        mpirun -n 2 -- coverage run -m pytest tests/integration_tests/test_chainermn.py
+        mpirun -n 2 -- coverage run -m pytest --collect-only tests/integration_tests/test_chainermn.py
         coverage combine --append
-        coverage xml
+        mpirun -n 2 -- pytest --cov=optuna --cov-report=xml --cov-append tests/integration_tests/test_chainermn.py
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
