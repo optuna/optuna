@@ -129,6 +129,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         "tests": [
             "fakeredis",
             "pytest",
+            "kaleido",
         ],
         "optional": [
             "matplotlib>=3.0.0",  # optuna/visualization/matplotlib
