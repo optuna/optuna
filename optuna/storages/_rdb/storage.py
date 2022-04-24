@@ -854,7 +854,7 @@ class RDBStorage(BaseStorage):
 
                 if state.is_finished():
                     trial.datetime_complete = datetime.now()
-        except IntegrityError:
+        except sqlalchemy_exc.IntegrityError:
             return False
         return True
 
