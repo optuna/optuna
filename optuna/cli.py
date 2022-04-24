@@ -312,7 +312,7 @@ class _StudySetUserAttribute(_BaseCommand):
             help="The name of the study to set the user attribute to.",
         )
         parser.add_argument("--key", "-k", required=True, help="Key of the user attribute.")
-        parser.add_argument("--value", "-v", required=True, help="Value to be set.")
+        parser.add_argument("--value", required=True, help="Value to be set.")
         return parser
 
     def take_action(self, parsed_args: Namespace) -> None:
