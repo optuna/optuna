@@ -22,8 +22,8 @@ import numpy as np
 import optuna
 from optuna import distributions
 from optuna import version
-from optuna._imports import _LazyImport
 from optuna._deprecated import deprecated
+from optuna._imports import _LazyImport
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.study._study_direction import StudyDirection
@@ -37,7 +37,6 @@ if TYPE_CHECKING:
     import alembic.config as alembic_config
     import alembic.migration as alembic_migration
     import alembic.script as alembic_script
-
     import sqlalchemy
     import sqlalchemy.exc as sqlalchemy_exc
     import sqlalchemy.orm as sqlalchemy_orm
