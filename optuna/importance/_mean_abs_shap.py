@@ -20,7 +20,7 @@ class ShapleyImportanceEvaluator(MeanDecreaseImpurityImportanceEvaluator):
     """Shapley (SHAP) parameter importance evaluator.
 
     This evaluator fits a random forest that predicts objective values given hyperparameter
-    configurations. Feature importances are then computed using the mean absolute SHAP value for each feature.
+    configurations. Feature importances are then computed using the mean absolute SHAP value.
 
     .. note::
 

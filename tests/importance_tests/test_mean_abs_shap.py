@@ -11,7 +11,7 @@ def objective(trial: Trial) -> float:
     return x1 + x2 * x3
 
 
-def test_mean_decrease_impurity_importance_evaluator_n_trees() -> None:
+def test_mean_abs_shap_importance_evaluator_n_trees() -> None:
     # Assumes that `seed` can be fixed to reproduce identical results.
 
     study = create_study(sampler=RandomSampler(seed=0))
@@ -26,7 +26,7 @@ def test_mean_decrease_impurity_importance_evaluator_n_trees() -> None:
     assert param_importance != param_importance_different_n_trees
 
 
-def test_mean_decrease_impurity_importance_evaluator_max_depth() -> None:
+def test_mean_abs_shap_importance_evaluator_max_depth() -> None:
     # Assumes that `seed` can be fixed to reproduce identical results.
 
     study = create_study(sampler=RandomSampler(seed=0))
@@ -41,7 +41,7 @@ def test_mean_decrease_impurity_importance_evaluator_max_depth() -> None:
     assert param_importance != param_importance_different_max_depth
 
 
-def test_mean_decrease_impurity_importance_evaluator_seed() -> None:
+def test_mean_abs_shap_importance_evaluator_seed() -> None:
     study = create_study(sampler=RandomSampler(seed=0))
     study.optimize(objective, n_trials=3)
 
@@ -57,7 +57,7 @@ def test_mean_decrease_impurity_importance_evaluator_seed() -> None:
     assert param_importance != param_importance_different_seed
 
 
-def test_mean_decrease_impurity_importance_evaluator_with_target() -> None:
+def test_mean_abs_shap_importance_evaluator_with_target() -> None:
     # Assumes that `seed` can be fixed to reproduce identical results.
 
     study = create_study(sampler=RandomSampler(seed=0))
