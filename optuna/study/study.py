@@ -339,7 +339,7 @@ class Study:
                 A callable that implements objective function.
             n_trials:
                 The number of trials for each process. :obj:`None` represents no limit in terms of
-                the number of trials. The Study continue to create trials until the number of
+                the number of trials. The study continues to create trials until the number of
                 trial reaches ``n_trials``, ``timeout`` period elapse, :func:`~optuna.study.Study.stop`
                 is called or a termination signal such as SIGTERM or Ctrl+C is received.
 
