@@ -128,7 +128,7 @@ def _get_pareto_front_2d(info: _ParetoFrontInfo) -> "Axes":
         ax.scatter(
             x=[values[info.axis_order[0]] for _, values in info.infeasible_trials_with_values],
             y=[values[info.axis_order[1]] for _, values in info.infeasible_trials_with_values],
-            color=cmap(1),
+            color="#cccccc",
             label="Infeasible",
         )
     if info.non_best_trials_with_values is not None and len(info.non_best_trials_with_values) > 0:
