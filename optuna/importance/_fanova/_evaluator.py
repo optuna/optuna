@@ -99,8 +99,6 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
         for trial in _filter_nonfinite(
             study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
         ):
-            if trial.state != TrialState.COMPLETE:
-                continue
             if any(name not in trial.params for name in distributions.keys()):
                 continue
             trials.append(trial)
