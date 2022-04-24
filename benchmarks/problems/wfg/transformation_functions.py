@@ -14,13 +14,13 @@ import numpy as np
 
 class BaseIdenticalTransformations(metaclass=abc.ABCMeta):
     @abc.abstractclassmethod
-    def __call__(self, y: np.ndarray) -> float:
+    def __call__(self, y: float) -> float:
         raise NotImplementedError
 
 
 class BaseBiasTransformation(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def __call__(self, y: np.ndarray) -> float:
+    def __call__(self, y: float) -> float:
 
         raise NotImplementedError
 

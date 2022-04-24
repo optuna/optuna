@@ -817,7 +817,7 @@ class WFGEvaluator(problem.Evaluator):
     def current_step(self) -> int:
         return self._current_step
 
-    def evaluate(self, next_step: int) -> list:
+    def evaluate(self, next_step: int) -> List[float]:
         self._current_step = 1
         v = self.wfg(self._x)
         v = v.tolist()
@@ -826,7 +826,7 @@ class WFGEvaluator(problem.Evaluator):
             raise ValueError
         if math.isnan(v[1]) or math.isinf(v[1]):
             raise ValueError
-        return v
+        return [v[0],v[1]]
 
 
 if __name__ == "__main__":
