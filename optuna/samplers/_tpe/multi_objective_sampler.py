@@ -1,10 +1,12 @@
 from typing import Callable
 from typing import Optional
+from typing import Sequence
 
 import numpy as np
 
 from optuna._deprecated import deprecated
 from optuna.samplers._tpe.sampler import TPESampler
+from optuna.trial import FrozenTrial
 
 
 EPS = 1e-12
@@ -62,6 +64,17 @@ class MOTPESampler(TPESampler):
             default, weights are automatically calculated by the MOTPE's default strategy.
         seed:
             Seed for random number generator.
+        constraints_func:
+            An optional function that computes the objective constraints. It must take a
+            :class:`~optuna.trial.FrozenTrial` and return the constraints. The return value must
+            be a sequence of :obj:`float` s. A value strictly larger than 0 means that a
+            constraints is violated. A value equal to or smaller than 0 is considered feasible.
+            If ``constraints_func`` returns more than one value for a trial, that trial is
+            considered feasible if and only if all values are equal to 0 or smaller.
+
+            The ``constraints_func`` will be evaluated after each successful trial.
+            The function won't be called when trials fail or they are pruned, but this behavior is
+            subject to change in the future releases.
 
     .. note::
         Initialization with Latin hypercube sampling may improve optimization performance.
@@ -104,6 +117,7 @@ class MOTPESampler(TPESampler):
         gamma: Callable[[int], int] = default_gamma,
         weights_above: Callable[[int], np.ndarray] = _default_weights_above,
         seed: Optional[int] = None,
+        constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
     ) -> None:
 
         super().__init__(
@@ -116,4 +130,5 @@ class MOTPESampler(TPESampler):
             gamma=gamma,
             weights=weights_above,
             seed=seed,
+            constraints_func=constraints_func,
         )

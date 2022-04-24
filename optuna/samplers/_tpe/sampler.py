@@ -29,6 +29,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
+_CONSTRAINTS_KEY = "tpe:constraints"
 EPS = 1e-12
 _logger = get_logger(__name__)
 
@@ -222,6 +223,7 @@ class TPESampler(BaseSampler):
         gamma: Callable[[int], int] = default_gamma,
         weights: Callable[[int], np.ndarray] = default_weights,
         seed: Optional[int] = None,
+        constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
         *,
         multivariate: bool = False,
         group: bool = False,
@@ -253,6 +255,7 @@ class TPESampler(BaseSampler):
         self._search_space_group: Optional[_SearchSpaceGroup] = None
         self._search_space = IntersectionSearchSpace(include_pruned=True)
         self._constant_liar = constant_liar
+        self._constraints_func = constraints_func
 
         if multivariate:
             warnings.warn(
@@ -276,6 +279,13 @@ class TPESampler(BaseSampler):
         if constant_liar:
             warnings.warn(
                 "``constant_liar`` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
+
+        if constraints_func is not None:
+            warnings.warn(
+                "The constraints_func option is an experimental feature."
                 " The interface can change in the future.",
                 ExperimentalWarning,
             )
@@ -353,7 +363,7 @@ class TPESampler(BaseSampler):
             return {}
 
         param_names = list(search_space.keys())
-        values, scores = _get_observation_pairs(
+        values, scores, _ = _get_observation_pairs(
             study, param_names, self._multivariate, self._constant_liar
         )
 
@@ -399,8 +409,12 @@ class TPESampler(BaseSampler):
         param_distribution: BaseDistribution,
     ) -> Any:
 
-        values, scores = _get_observation_pairs(
-            study, [param_name], self._multivariate, self._constant_liar
+        values, scores, constraints = _get_observation_pairs(
+            study,
+            [param_name],
+            self._multivariate,
+            self._constant_liar,
+            self._constraints_func is not None,
         )
 
         n = len(scores)
@@ -412,7 +426,28 @@ class TPESampler(BaseSampler):
                 study, trial, param_name, param_distribution
             )
 
-        indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n))
+        if self._constraints_func is not None:
+            # constraints_1d: 0 <=> feasible, >0 <=> infeasible
+            constraints_1d = np.maximum(np.array(constraints), 0).sum(1)
+            idx = constraints_1d.argsort()
+            if constraints_1d[idx[self._gamma(n)]] > 0:
+                # All trials in above are infeasible.
+                # Just use the result sorted by the sum of constraints values.
+                indices_below = idx[: self._gamma(n)]
+                indices_above = idx[self._gamma(n) :]
+            else:
+                # All trials in below are feasible.
+                # Select which ones to put in below by objective func.
+                (feasible_idx,) = (constraints_1d == 0).nonzero()
+                (infeasible_idx,) = (constraints_1d > 0).nonzero()
+                assert len(feasible_idx) >= self._gamma(n)
+                feasible_below, feasible_above = _split_observation_pairs(
+                    list(np.array(scores)[feasible_idx]), self._gamma(n)
+                )
+                indices_below = feasible_idx[feasible_below]
+                indices_above = np.concatenate([feasible_idx[feasible_above], infeasible_idx])
+        else:
+            indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n))
         # `None` items are intentionally converted to `nan` and then filtered out.
         # For `nan` conversion, the dtype must be float.
         config_values = {k: np.asarray(v, dtype=float) for k, v in values.items()}
@@ -423,6 +458,10 @@ class TPESampler(BaseSampler):
             weights_below = _calculate_weights_below_for_multi_objective(
                 config_values, scores, indices_below
             )
+            if self._constraints_func is not None:
+                # Set weights for infeasible indices to EPS.
+                below_infeasible_f = constraints_1d[indices_below] > 0
+                weights_below[below_infeasible_f] = EPS
             mpe_below = _ParzenEstimator(
                 below,
                 {param_name: param_distribution},
@@ -518,7 +557,26 @@ class TPESampler(BaseSampler):
         state: TrialState,
         values: Optional[Sequence[float]],
     ) -> None:
+        assert state in [TrialState.COMPLETE, TrialState.FAIL, TrialState.PRUNED]
+        if state == TrialState.COMPLETE and self._constraints_func is not None:
+            constraints = None
+            try:
+                con = self._constraints_func(trial)
+                if not isinstance(con, (tuple, list)):
+                    warnings.warn(
+                        f"Constraints should be a sequence of floats but got {type(con).__name__}."
+                    )
+                constraints = tuple(con)
+            except Exception:
+                raise
+            finally:
+                assert constraints is None or isinstance(constraints, tuple)
 
+                study._storage.set_trial_system_attr(
+                    trial._trial_id,
+                    _CONSTRAINTS_KEY,
+                    constraints,
+                )
         self._random_sampler.after_trial(study, trial, state, values)
 
 
@@ -554,7 +612,10 @@ def _get_observation_pairs(
     param_names: List[str],
     multivariate: bool,
     constant_liar: bool = False,  # TODO(hvy): Remove default value and fix unit tests.
-) -> Tuple[Dict[str, List[Optional[float]]], List[Tuple[float, List[float]]]]:
+    get_constraints: bool = False,
+) -> Tuple[
+    Dict[str, List[Optional[float]]], List[Tuple[float, List[float]]], Optional[List[Tuple[float]]]
+]:
     """Get observation pairs from the study.
 
     This function collects observation pairs from the complete or pruned trials of the study.
@@ -591,6 +652,7 @@ def _get_observation_pairs(
 
     scores = []
     values: Dict[str, List[Optional[float]]] = {param_name: [] for param_name in param_names}
+    constraints = [] if get_constraints else None
     for trial in study.get_trials(deepcopy=False, states=states):
         # If ``multivariate`` = True and ``group`` = True, we ignore the trials that are not
         # included in each subspace.
@@ -635,7 +697,10 @@ def _get_observation_pairs(
                 param_value = None
             values[param_name].append(param_value)
 
-    return values, scores
+        if get_constraints:
+            constraints.append(trial.system_attrs.get(_CONSTRAINTS_KEY))
+
+    return values, scores, constraints
 
 
 def _split_observation_pairs(
