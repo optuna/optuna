@@ -919,6 +919,7 @@ class _OptunaApp(App):
         assert len(stream_handlers) == 1
         stream_handler = stream_handlers[0]
         stream_handler.setFormatter(optuna.logging.create_default_formatter())
+        optuna.logging.set_verbosity(stream_handler.level)
 
     def clean_up(self, cmd: Command, result: int, err: Optional[Exception]) -> None:
 
