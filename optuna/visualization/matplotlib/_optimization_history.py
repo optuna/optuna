@@ -20,8 +20,8 @@ from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
-    from optuna.visualization.matplotlib._matplotlib_imports import plt
     from optuna.visualization.matplotlib._matplotlib_imports import DEFAULT_FONT_SIZE
+    from optuna.visualization.matplotlib._matplotlib_imports import plt
 
 _logger = get_logger(__name__)
 
@@ -142,7 +142,7 @@ def _get_optimization_history_plot(
         ax = _get_optimization_histories(studies, target, target_name, ax)
 
     plt.legend(bbox_to_anchor=(1.05, 1.0), loc="upper left")
-    plt.rc('legend', fontsize=DEFAULT_FONT_SIZE)
+    plt.rc("legend", fontsize=DEFAULT_FONT_SIZE)
     return ax
 
 

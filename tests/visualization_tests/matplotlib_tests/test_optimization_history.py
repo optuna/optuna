@@ -59,7 +59,9 @@ def test_plot_optimization_history(direction: str) -> None:
     for tick in figure.yaxis.get_ticklabels():
         assert tick.get_fontsize() == expected_fontsize
 
-    assert figure.xaxis.label.get_fontsize() == figure.yaxis.label.get_fontsize() == expected_fontsize
+    assert (
+        figure.xaxis.label.get_fontsize() == figure.yaxis.label.get_fontsize() == expected_fontsize
+    )
     assert figure.title.get_fontsize() == expected_fontsize
 
     for text in figure.get_legend().texts:

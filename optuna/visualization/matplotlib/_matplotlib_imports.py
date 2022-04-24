@@ -15,6 +15,7 @@ with try_import() as _imports:  # NOQA
     from matplotlib.colors import Colormap  # NOQA
     from matplotlib.contour import ContourSet  # NOQA
     from matplotlib.patches import Rectangle  # NOQA
+
     # The default font size of plotly.
     DEFAULT_FONT_SIZE = 12
 
