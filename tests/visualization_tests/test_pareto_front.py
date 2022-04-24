@@ -10,12 +10,14 @@ import numpy as np
 import pytest
 
 import optuna
-from optuna.distributions import UniformDistribution
+from optuna.distributions import FloatDistribution
+from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization import plot_pareto_front
 from optuna.visualization._pareto_front import _make_hovertext
 from optuna.visualization._plotly_imports import go
+from optuna.visualization._utils import COLOR_SCALE
 
 
 def _check_data(figure: "go.Figure", axis: str, expected: Sequence[int]) -> None:
@@ -350,7 +352,7 @@ def test_make_hovertext() -> None:
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 10},
-        distributions={"x": UniformDistribution(5, 12)},
+        distributions={"x": FloatDistribution(5, 12)},
         user_attrs={},
         system_attrs={},
         intermediate_values={},
@@ -382,7 +384,7 @@ def test_make_hovertext() -> None:
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 10},
-        distributions={"x": UniformDistribution(5, 12)},
+        distributions={"x": FloatDistribution(5, 12)},
         user_attrs={"a": 42, "b": 3.14},
         system_attrs={},
         intermediate_values={},
@@ -418,7 +420,7 @@ def test_make_hovertext() -> None:
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 10},
-        distributions={"x": UniformDistribution(5, 12)},
+        distributions={"x": FloatDistribution(5, 12)},
         user_attrs={"a": 42, "b": 3.14, "c": np.zeros(1), "d": np.nan},
         system_attrs={},
         intermediate_values={},
@@ -447,3 +449,14 @@ def test_make_hovertext() -> None:
         .strip()
         .replace("\n", "<br>")
     )
+
+
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+def test_color_map(direction: str) -> None:
+    study = prepare_study_with_trials(with_c_d=False, direction=direction, n_objectives=2)
+
+    # Since `plot_pareto_front`'s colormap depends on only trial.number,
+    # `reversecale` is not in the plot.
+    marker = plot_pareto_front(study).data[0]["marker"]
+    assert COLOR_SCALE == [v[1] for v in marker["colorscale"]]
+    assert "reversecale" not in marker

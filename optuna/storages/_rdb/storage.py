@@ -23,6 +23,7 @@ import optuna
 from optuna import distributions
 from optuna import version
 from optuna._imports import _LazyImport
+from optuna._deprecated import deprecated
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.study._study_direction import StudyDirection
@@ -165,6 +166,18 @@ class RDBStorage(BaseStorage):
     .. _pool_pre_ping:
         https://docs.sqlalchemy.org/en/13/core/engines.html#sqlalchemy.create_engine.params.
         pool_pre_ping
+
+    .. note::
+        Mainly in a cluster environment, running trials are often killed unexpectedly.
+        If you want to detect a failure of trials, please use the heartbeat
+        mechanism. Set ``heartbeat_interval``, ``grace_period``, and ``failed_trial_callback``
+        appropriately according to your use case. For more details, please refer to the
+        :ref:`tutorial <heartbeat_monitoring>` and `Example page
+        <https://github.com/optuna/optuna-examples/blob/main/pytorch/pytorch_checkpoint.py>`_.
+
+    .. seealso::
+        You can use :class:`~optuna.storages.RetryFailedTrialCallback` to automatically retry
+        failed trials detected by heartbeat.
 
     Raises:
         :exc:`ValueError`:
@@ -697,6 +710,11 @@ class RDBStorage(BaseStorage):
 
         return trial
 
+    @deprecated(
+        "3.0.0",
+        "5.0.0",
+        text="Use :func:`~optuna.storages.RDBStorage.set_trial_state_values` instead.",
+    )
     def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
 
         try:
@@ -801,6 +819,13 @@ class RDBStorage(BaseStorage):
         return param_value
 
     @staticmethod
+    def _ensure_not_nan(value: float) -> Optional[float]:
+        if np.isnan(value):
+            return None
+        else:
+            return value
+
+    @staticmethod
     def _ensure_numerical_limit(value: float) -> float:
 
         # Max and min trial values that can be stored are limited by
@@ -810,15 +835,22 @@ class RDBStorage(BaseStorage):
         return float(np.clip(value, _RDB_MIN_FLOAT, _RDB_MAX_FLOAT))
 
     @staticmethod
-    def _lift_numerical_limit(value: float) -> float:
+    def _lift_numerical_limit(value: Optional[float]) -> float:
 
         # Floats can't be compared for equality because they are
         # approximate and not stored as exact values.
         # https://dev.mysql.com/doc/refman/8.0/en/problems-with-float.html
-        if np.isclose(value, _RDB_MIN_FLOAT) or np.isclose(value, _RDB_MAX_FLOAT):
+        if value is None:
+            return float("nan")
+        elif np.isclose(value, _RDB_MIN_FLOAT) or np.isclose(value, _RDB_MAX_FLOAT):
             return float(np.sign(value) * float("inf"))
         return value
 
+    @deprecated(
+        "3.0.0",
+        "5.0.0",
+        text="Use :func:`~optuna.storages.RDBStorage.set_trial_state_values` instead.",
+    )
     def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
 
         with _create_scoped_session(self.scoped_session) as session:
@@ -826,6 +858,33 @@ class RDBStorage(BaseStorage):
             self.check_trial_is_updatable(trial_id, trial.state)
             for objective, v in enumerate(values):
                 self._set_trial_value_without_commit(session, trial_id, objective, v)
+
+    def set_trial_state_values(
+        self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
+    ) -> bool:
+
+        try:
+            with _create_scoped_session(self.scoped_session) as session:
+                trial = models.TrialModel.find_or_raise_by_id(trial_id, session, for_update=True)
+                self.check_trial_is_updatable(trial_id, trial.state)
+
+                if values is not None:
+                    for objective, v in enumerate(values):
+                        self._set_trial_value_without_commit(session, trial_id, objective, v)
+
+                if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
+                    return False
+
+                trial.state = state
+
+                if state == TrialState.RUNNING:
+                    trial.datetime_start = datetime.now()
+
+                if state.is_finished():
+                    trial.datetime_complete = datetime.now()
+        except IntegrityError:
+            return False
+        return True
 
     def _set_trial_value_without_commit(
         self, session: "sqlalchemy_orm.Session", trial_id: int, objective: int, value: float
@@ -865,7 +924,9 @@ class RDBStorage(BaseStorage):
 
         trial = optuna_rdb_models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
-        intermediate_value = self._ensure_numerical_limit(intermediate_value)
+        _intermediate_value = self._ensure_not_nan(intermediate_value)
+        if _intermediate_value is not None:
+            _intermediate_value = self._ensure_numerical_limit(_intermediate_value)
 
         trial_intermediate_value = (
             optuna_rdb_models.TrialIntermediateValueModel.find_by_trial_and_step(
@@ -874,11 +935,11 @@ class RDBStorage(BaseStorage):
         )
         if trial_intermediate_value is None:
             trial_intermediate_value = optuna_rdb_models.TrialIntermediateValueModel(
-                trial_id=trial_id, step=step, intermediate_value=intermediate_value
+                trial_id=trial_id, step=step, intermediate_value=_intermediate_value
             )
             session.add(trial_intermediate_value)
         else:
-            trial_intermediate_value.intermediate_value = intermediate_value
+            trial_intermediate_value.intermediate_value = _intermediate_value
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
 
@@ -1175,12 +1236,17 @@ class RDBStorage(BaseStorage):
             else:
                 heartbeat.heartbeat = session.execute(sqlalchemy.func.now()).scalar()
 
+    @deprecated(
+        "3.0.0",
+        "5.0.0",
+        text="Use :func:`~optuna.storages.fail_stale_trials` instead.",
+    )
     def fail_stale_trials(self, study_id: int) -> List[int]:
         stale_trial_ids = self._get_stale_trial_ids(study_id)
         confirmed_stale_trial_ids = []
 
         for trial_id in stale_trial_ids:
-            if self.set_trial_state(trial_id, TrialState.FAIL):
+            if self.set_trial_state_values(trial_id, state=TrialState.FAIL):
                 confirmed_stale_trial_ids.append(trial_id)
 
         return confirmed_stale_trial_ids

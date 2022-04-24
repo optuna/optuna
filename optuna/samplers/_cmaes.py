@@ -60,9 +60,10 @@ class CmaEsSampler(BaseSampler):
             study.optimize(objective, n_trials=20)
 
     Please note that this sampler does not support CategoricalDistribution.
-    However, :class:`~optuna.distributions.DiscreteUniformDistribution`
+    However, :class:`~optuna.distributions.FloatDistribution` with ``step``,
     (:func:`~optuna.trial.Trial.suggest_float`) and
-    Int(Log)Distribution (:func:`~optuna.trial.Trial.suggest_int`) are supported.
+    :class:`~optuna.distributions.IntDistribution` (:func:`~optuna.trial.Trial.suggest_int`)
+    are supported.
 
     If your search space contains categorical parameters, I recommend you
     to use :class:`~optuna.samplers.TPESampler` instead.
@@ -254,7 +255,7 @@ class CmaEsSampler(BaseSampler):
         # TODO(c-bata): Support WS-sep-CMA-ES.
         if source_trials is not None and use_separable_cma:
             raise ValueError(
-                "It is prohibited to pass `source_trials` argument when " "using separable CMA-ES."
+                "It is prohibited to pass `source_trials` argument when using separable CMA-ES."
             )
 
         # TODO(c-bata): Support BIPOP-CMA-ES.
@@ -286,11 +287,6 @@ class CmaEsSampler(BaseSampler):
             if not isinstance(
                 distribution,
                 (
-                    optuna.distributions.UniformDistribution,
-                    optuna.distributions.LogUniformDistribution,
-                    optuna.distributions.DiscreteUniformDistribution,
-                    optuna.distributions.IntUniformDistribution,
-                    optuna.distributions.IntLogUniformDistribution,
                     optuna.distributions.FloatDistribution,
                     optuna.distributions.IntDistribution,
                 ),

@@ -119,9 +119,22 @@ print("Number of finished trials: ", len(study.trials))
 
 
 ###################################################################################################
-# Check trials on pareto front visually
+# Check trials on Pareto front visually.
 optuna.visualization.plot_pareto_front(study, target_names=["FLOPS", "accuracy"])
 
+
+###################################################################################################
+# Fetch the list of trials on the Pareto front with :attr:`~optuna.study.Study.best_trials`.
+#
+# For example, the following code shows the number of trials on the Pareto front and picks the trial with the highest accuracy.
+
+print(f"Number of trials on the Pareto front: {len(study.best_trials)}")
+
+trial_with_highest_accuracy = max(study.best_trials, key=lambda t: t.values[1])
+print(f"Trial with highest accuracy: ")
+print(f"\tnumber: {trial_with_highest_accuracy.number}")
+print(f"\tparams: {trial_with_highest_accuracy.params}")
+print(f"\tvalues: {trial_with_highest_accuracy.values}")
 
 ###################################################################################################
 # Learn which hyperparameters are affecting the flops most with hyperparameter importance.

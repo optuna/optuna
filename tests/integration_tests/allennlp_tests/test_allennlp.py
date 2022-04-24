@@ -81,7 +81,7 @@ def test_build_params_when_optuna_and_environment_variable_both_exist() -> None:
     os.environ.pop("LEARNING_RATE")
     os.environ.pop("DROPOUT")
 
-    # Optuna trial overwrites a parameter specified by environment variable
+    # Optuna trial overwrites a parameter specified by environment variable.
     assert params["trainer"]["optimizer"]["lr"] == 1e-2
     path = params["model"]["text_field_embedder"]["token_embedders"]["token_characters"]["dropout"]
     assert path == 0.0

@@ -24,6 +24,7 @@ from optuna import study as study_module
 from optuna import TrialPruned
 from optuna._experimental import experimental
 from optuna._imports import try_import
+from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
@@ -492,7 +493,9 @@ class OptunaSearchCV(BaseEstimator):
             from sklearn.svm import SVC
 
             clf = SVC(gamma="auto")
-            param_distributions = {"C": optuna.distributions.LogUniformDistribution(1e-10, 1e10)}
+            param_distributions = {
+                "C": optuna.distributions.FloatDistribution(1e-10, 1e10, log=True)
+            }
             optuna_search = optuna.integration.OptunaSearchCV(clf, param_distributions)
             X, y = load_iris(return_X_y=True)
             optuna_search.fit(X, y)
@@ -513,11 +516,12 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def best_index_(self) -> int:
-        """Index which corresponds to the best candidate parameter setting."""
+        """Trial number which corresponds to the best candidate parameter setting.
 
-        df = self.trials_dataframe()
+        Retuned value is equivant to ``optuna_search.best_trial_.number``.
+        """
 
-        return df["value"].idxmin()
+        return self.best_trial_.number
 
     @property
     def best_params_(self) -> Dict[str, Any]:
@@ -695,6 +699,16 @@ class OptunaSearchCV(BaseEstimator):
 
         _imports.check()
 
+        if not isinstance(param_distributions, dict):
+            raise TypeError("param_distributions must be a dictionary.")
+
+        # TODO(himkt): Remove this method with the deletion of deprecated distributions.
+        # https://github.com/optuna/optuna/issues/2941
+        param_distributions = {
+            key: _convert_old_distribution_to_new_distribution(dist)
+            for key, dist in param_distributions.items()
+        }
+
         self.cv = cv
         self.enable_pruning = enable_pruning
         self.error_score = error_score
@@ -725,9 +739,6 @@ class OptunaSearchCV(BaseEstimator):
 
         if not hasattr(self.estimator, "fit"):
             raise ValueError("estimator must be a scikit-learn estimator.")
-
-        if type(self.param_distributions) is not dict:
-            raise ValueError("param_distributions must be a dictionary.")
 
         for name, distribution in self.param_distributions.items():
             if not isinstance(distribution, distributions.BaseDistribution):

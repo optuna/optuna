@@ -1,4 +1,5 @@
 from typing import Container
+from typing import List
 from typing import Optional
 
 import optuna
@@ -65,8 +66,15 @@ class RetryFailedTrialCallback:
     When a trial fails, this callback can be used with the :class:`optuna.storage` class to
     recreate the trial in :obj:`TrialState.WAITING` to queue up the trial to be run again.
 
-    This is helpful in environments where trials may fail due to external conditions, such as
-    being preempted by other processes.
+    The failed trial can be identified by the
+    :func:`~optuna.storages.RetryFailedTrialCallback.retried_trial_number` function.
+    Even if repetitive failure occurs (a retried trial fails again),
+    this method returns the number of the original trial.
+    To get a full list including the numbers of the retried trials as well as their original trial,
+    call the :func:`~optuna.storages.RetryFailedTrialCallback.retry_history` function.
+
+    This callback is helpful in environments where trials may fail due to external conditions,
+    such as being preempted by other processes.
 
     Usage:
 
@@ -86,6 +94,9 @@ class RetryFailedTrialCallback:
                 storage=storage,
             )
 
+    .. seealso::
+        See :class:`~optuna.storages.RDBStorage`.
+
     Args:
         max_retry:
             The max number of times a trial can be retried. Must be set to :obj:`None` or an
@@ -103,20 +114,11 @@ class RetryFailedTrialCallback:
         self._inherit_intermediate_values = inherit_intermediate_values
 
     def __call__(self, study: "optuna.study.Study", trial: FrozenTrial) -> None:
-        system_attrs = {"failed_trial": trial.number}
-
-        # Update the new object with the values in the trial.system_attrs.
-        # By doing this, if this failed try is already a rety, the 'failed_trial' value
-        # will be the first failed trial number.
-        system_attrs.update(trial.system_attrs)
-
-        retries = sum(
-            ("failed_trial", system_attrs["failed_trial"]) in t.system_attrs.items()
-            for t in study.trials
-        )
-
-        if self._max_retry is not None and retries + 1 > self._max_retry:
-            return
+        system_attrs = {"failed_trial": trial.number, "retry_history": [], **trial.system_attrs}
+        system_attrs["retry_history"].append(trial.number)  # type: ignore
+        if self._max_retry is not None:
+            if self._max_retry < len(system_attrs["retry_history"]):  # type: ignore
+                return
 
         study.add_trial(
             optuna.create_trial(
@@ -134,7 +136,7 @@ class RetryFailedTrialCallback:
     @staticmethod
     @experimental("2.8.0")
     def retried_trial_number(trial: FrozenTrial) -> Optional[int]:
-        """Return the number of the trial being retried.
+        """Return the number of the original trial being retried.
 
         Args:
             trial:
@@ -146,3 +148,21 @@ class RetryFailedTrialCallback:
         """
 
         return trial.system_attrs.get("failed_trial", None)
+
+    @staticmethod
+    @experimental("3.0.0")
+    def retry_history(trial: FrozenTrial) -> List[int]:
+        """Return the list of retried trial numbers with respect to the specified trial.
+
+        Args:
+            trial:
+                The trial object.
+
+        Returns:
+            A list of trial numbers in ascending order of the series of retried trials.
+            The first item of the list indicates the original trial which is identical
+            to the :func:`~optuna.storages.RetryFailedTrialCallback.retried_trial_number`,
+            and the last item is the one right before the specified trial in the retry series.
+            If the specified trial is not a retry of any trial, returns an empty list.
+        """
+        return trial.system_attrs.get("retry_history", [])

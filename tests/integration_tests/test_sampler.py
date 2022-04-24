@@ -91,7 +91,7 @@ def test_sample_independent(sampler_class: Callable[[], BaseSampler]) -> None:
     # Third trial.
     def objective2(trial: optuna.trial.Trial) -> float:
 
-        p1 = trial.suggest_float("p1", 50, 100, log=True)  # The range has been changed
+        p1 = trial.suggest_float("p1", 50, 100, log=True)  # The range has been changed.
         p3 = trial.suggest_float("p3", 0, 9, step=3)
         p5 = trial.suggest_float("p5", 0, 1)
 

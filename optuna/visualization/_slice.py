@@ -16,6 +16,7 @@ if _imports.is_successful():
     from optuna.visualization._plotly_imports import go
     from optuna.visualization._plotly_imports import make_subplots
     from optuna.visualization._plotly_imports import Scatter
+    from optuna.visualization._utils import COLOR_SCALE
 
 _logger = get_logger(__name__)
 
@@ -109,7 +110,7 @@ def _get_slice_plot(
 
     if n_params == 1:
         figure = go.Figure(
-            data=[_generate_slice_subplot(study, trials, sorted_params[0], target)], layout=layout
+            data=[_generate_slice_subplot(trials, sorted_params[0], target)], layout=layout
         )
         figure.update_xaxes(title_text=sorted_params[0])
         figure.update_yaxes(title_text=target_name)
@@ -120,7 +121,7 @@ def _get_slice_plot(
         figure.update_layout(layout)
         showscale = True  # showscale option only needs to be specified once.
         for i, param in enumerate(sorted_params):
-            trace = _generate_slice_subplot(study, trials, param, target)
+            trace = _generate_slice_subplot(trials, param, target)
             trace.update(marker={"showscale": showscale})  # showscale's default is True.
             if showscale:
                 showscale = False
@@ -138,7 +139,6 @@ def _get_slice_plot(
 
 
 def _generate_slice_subplot(
-    study: Study,
     trials: List[FrozenTrial],
     param: str,
     target: Optional[Callable[[FrozenTrial], float]],
@@ -158,9 +158,9 @@ def _generate_slice_subplot(
         marker={
             "line": {"width": 0.5, "color": "Grey"},
             "color": [t.number for t in trials if param in t.params],
-            "colorscale": "Blues",
+            "colorscale": COLOR_SCALE,
             "colorbar": {
-                "title": "#Trials",
+                "title": "Trial",
                 "x": 1.0,  # Offset the colorbar position with a fixed width `xpad`.
                 "xpad": 40,
             },
