@@ -349,7 +349,7 @@ class Study:
                     will be performed across all processes.
             timeout:
                 Stop study after the given number of second(s). :obj:`None` represents no limit in
-                terms of elapsed time. The Study continue to create trials until the number of
+                terms of elapsed time. The study continues to create trials until the number of
                 trials reaches ``n_trials``, ``timeout`` period elapses,
                 :func:`~optuna.study.Study.stop` is called or, a termination signal such as
                 SIGTERM or Ctrl+C is received.
