@@ -11,11 +11,13 @@ import pytest
 
 import optuna
 from optuna.distributions import UniformDistribution
+from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization import plot_pareto_front
 from optuna.visualization._pareto_front import _make_hovertext
 from optuna.visualization._plotly_imports import go
+from optuna.visualization._utils import COLOR_SCALE
 
 
 def _check_data(figure: "go.Figure", axis: str, expected: Sequence[int]) -> None:
@@ -447,3 +449,14 @@ def test_make_hovertext() -> None:
         .strip()
         .replace("\n", "<br>")
     )
+
+
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+def test_color_map(direction: str) -> None:
+    study = prepare_study_with_trials(with_c_d=False, direction=direction, n_objectives=2)
+
+    # Since `plot_pareto_front`'s colormap depends on only trial.number,
+    # `reversecale` is not in the plot.
+    marker = plot_pareto_front(study).data[0]["marker"]
+    assert COLOR_SCALE == [v[1] for v in marker["colorscale"]]
+    assert "reversecale" not in marker

@@ -1,11 +1,11 @@
 import math
 import random
 from typing import Any
+from typing import Container
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import Set
 
 import numpy
 
@@ -476,7 +476,7 @@ class _Optimizer(object):
         self,
         trials: List[FrozenTrial],
         last_told: int = -1,
-        target_states: Optional[Set[TrialState]] = None,
+        target_states: Optional[Container[TrialState]] = None,
     ) -> List[FrozenTrial]:
 
         target_trials = [t for t in trials if t.number > last_told]

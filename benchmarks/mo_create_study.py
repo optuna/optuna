@@ -1,3 +1,4 @@
+import json
 import sys
 
 from kurobako import solver
@@ -10,9 +11,11 @@ optuna.logging.disable_default_handler()
 
 
 def create_study(seed: int) -> optuna.Study:
+    # Avoid the fail by `flake8`.
+    seed
 
     n_objectives = 2
-    directions = ["minimize" for _ in range(n_objectives)]
+    directions = ["minimize"] * n_objectives
 
     sampler_name = sys.argv[1]
 
@@ -25,15 +28,8 @@ def create_study(seed: int) -> optuna.Study:
     if sampler_cls is None:
         raise ValueError("Unknown sampler: {}.".format(sampler_name))
 
-    # TODO(drumehiron): sampler_kwargs
-    # sampler_kwargs = json.loads(sys.argv[2])
-    # try:
-    #     sampler_kwargs["seed"] = seed
-    #     sampler = sampler_cls(**sampler_kwargs)
-    # except ValueError:
-    #     del sampler_kwargs["seed"]
-    #     sampler = sampler_cls(**sampler_kwargs)
-    sampler = sampler_cls()
+    sampler_kwargs = json.loads(sys.argv[2])
+    sampler = sampler_cls(**sampler_kwargs)
 
     return optuna.create_study(
         directions=directions,

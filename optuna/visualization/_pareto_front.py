@@ -33,6 +33,9 @@ def plot_pareto_front(
 ) -> "go.Figure":
     """Plot the Pareto front of a study.
 
+    .. seealso::
+        Please refer to :ref:`multi_objective` for the tutorial of the Pareto front visualization.
+
     Example:
 
         The following code snippet shows how to plot the Pareto front of a study.

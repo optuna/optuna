@@ -1,6 +1,8 @@
 import itertools
+from typing import Callable
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Union
 
 from matplotlib.collections import PathCollection
@@ -8,6 +10,7 @@ import numpy as np
 import pytest
 
 import optuna
+from optuna.trial import FrozenTrial
 from optuna.visualization.matplotlib import plot_pareto_front
 
 
@@ -22,9 +25,14 @@ def allclose_as_set(
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
 @pytest.mark.parametrize("axis_order", [None, [0, 1], [1, 0]])
+@pytest.mark.parametrize("targets", [None, lambda t: (t.values[0], t.values[1])])
 def test_plot_pareto_front_2d(
-    include_dominated_trials: bool, axis_order: Optional[List[int]]
+    include_dominated_trials: bool,
+    axis_order: Optional[List[int]],
+    targets: Optional[Callable[[FrozenTrial], Sequence[float]]],
 ) -> None:
+    if axis_order is not None and targets is not None:
+        pytest.skip("skip using both axis_order and targets")
     # Test with no trial.
     study = optuna.create_study(directions=["minimize", "minimize"])
     figure = plot_pareto_front(
@@ -45,6 +53,7 @@ def test_plot_pareto_front_2d(
         study=study,
         include_dominated_trials=include_dominated_trials,
         axis_order=axis_order,
+        targets=targets,
     )
     assert len(figure.get_lines()) == 0
 
@@ -68,12 +77,18 @@ def test_plot_pareto_front_2d(
     # Test with `target_names` argument.
     with pytest.raises(ValueError):
         plot_pareto_front(
-            study=study, target_names=[], include_dominated_trials=include_dominated_trials
+            study=study,
+            target_names=[],
+            include_dominated_trials=include_dominated_trials,
+            targets=targets,
         )
 
     with pytest.raises(ValueError):
         plot_pareto_front(
-            study=study, target_names=["Foo"], include_dominated_trials=include_dominated_trials
+            study=study,
+            target_names=["Foo"],
+            include_dominated_trials=include_dominated_trials,
+            targets=targets,
         )
 
     with pytest.raises(ValueError):
@@ -82,6 +97,7 @@ def test_plot_pareto_front_2d(
             target_names=["Foo", "Bar", "Baz"],
             include_dominated_trials=include_dominated_trials,
             axis_order=axis_order,
+            targets=targets,
         )
 
     target_names = ["Foo", "Bar"]
@@ -90,6 +106,7 @@ def test_plot_pareto_front_2d(
         target_names=target_names,
         include_dominated_trials=include_dominated_trials,
         axis_order=axis_order,
+        targets=targets,
     )
     assert len(figure.get_lines()) == 0
     if axis_order is None:
@@ -122,9 +139,14 @@ def test_plot_pareto_front_2d(
 @pytest.mark.parametrize(
     "axis_order", [None] + list(itertools.permutations(range(3), 3))  # type: ignore
 )
+@pytest.mark.parametrize("targets", [None, lambda t: (t.values[0], t.values[1], t.values[2])])
 def test_plot_pareto_front_3d(
-    include_dominated_trials: bool, axis_order: Optional[List[int]]
+    include_dominated_trials: bool,
+    axis_order: Optional[List[int]],
+    targets: Optional[Callable[[FrozenTrial], Sequence[float]]],
 ) -> None:
+    if axis_order is not None and targets is not None:
+        pytest.skip("skip using both axis_order and targets")
     # Test with no trial.
     study = optuna.create_study(directions=["minimize", "minimize", "minimize"])
     figure = plot_pareto_front(
@@ -147,6 +169,7 @@ def test_plot_pareto_front_3d(
         study=study,
         include_dominated_trials=include_dominated_trials,
         axis_order=axis_order,
+        targets=targets,
     )
     assert len(figure.get_lines()) == 0
 
@@ -172,6 +195,7 @@ def test_plot_pareto_front_3d(
             target_names=[],
             include_dominated_trials=include_dominated_trials,
             axis_order=axis_order,
+            targets=targets,
         )
 
     with pytest.raises(ValueError):
@@ -180,6 +204,7 @@ def test_plot_pareto_front_3d(
             target_names=["Foo"],
             include_dominated_trials=include_dominated_trials,
             axis_order=axis_order,
+            targets=targets,
         )
 
     with pytest.raises(ValueError):
@@ -188,6 +213,7 @@ def test_plot_pareto_front_3d(
             target_names=["Foo", "Bar"],
             include_dominated_trials=include_dominated_trials,
             axis_order=axis_order,
+            targets=targets,
         )
 
     with pytest.raises(ValueError):
@@ -196,10 +222,13 @@ def test_plot_pareto_front_3d(
             target_names=["Foo", "Bar", "Baz", "Qux"],
             include_dominated_trials=include_dominated_trials,
             axis_order=axis_order,
+            targets=targets,
         )
 
     target_names = ["Foo", "Bar", "Baz"]
-    figure = plot_pareto_front(study=study, target_names=target_names, axis_order=axis_order)
+    figure = plot_pareto_front(
+        study=study, target_names=target_names, axis_order=axis_order, targets=targets
+    )
 
     assert len(figure.get_lines()) == 0
 
@@ -301,4 +330,81 @@ def test_plot_pareto_front_invalid_axis_order(
             study=study,
             include_dominated_trials=include_dominated_trials,
             axis_order=invalid_axis_order,
+        )
+
+
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
+def test_plot_pareto_front_targets_without_target_names() -> None:
+    study = optuna.create_study(directions=["minimize", "minimize", "minimize"])
+    with pytest.raises(
+        ValueError,
+        match="If `targets` is specified for empty studies, `target_names` must be specified.",
+    ):
+        plot_pareto_front(
+            study=study,
+            target_names=None,
+            targets=lambda t: (t.values[0], t.values[1], t.values[2]),
+        )
+
+
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
+@pytest.mark.parametrize(
+    "targets",
+    [
+        lambda t: (t.values[0]),
+    ],
+)
+def test_plot_pareto_front_invalid_target_values(
+    targets: Optional[Callable[[FrozenTrial], Sequence[float]]]
+) -> None:
+    study = optuna.create_study(directions=["minimize", "minimize", "minimize", "minimize"])
+    study.optimize(lambda t: [0, 0, 0, 0], n_trials=3)
+    with pytest.raises(
+        ValueError,
+        match="targets` should return a sequence of target values. your `targets`"
+        " returns <class 'float'>",
+    ):
+        plot_pareto_front(
+            study=study,
+            targets=targets,
+        )
+
+
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
+@pytest.mark.parametrize(
+    "targets",
+    [
+        lambda t: (t.values[0],),
+        lambda t: (t.values[0], t.values[1], t.values[2], t.values[3]),
+    ],
+)
+def test_plot_pareto_front_n_targets_unsupported(
+    targets: Callable[[FrozenTrial], Sequence[float]]
+) -> None:
+    study = optuna.create_study(directions=["minimize", "minimize", "minimize", "minimize"])
+    study.optimize(lambda t: [0, 0, 0, 0], n_trials=3)
+    n_targets = len(targets(study.best_trials[0]))
+    with pytest.raises(
+        ValueError,
+        match="`plot_pareto_front` function only supports 2 or 3 targets."
+        " you used {} targets now.".format(n_targets),
+    ):
+        plot_pareto_front(
+            study=study,
+            targets=targets,
+        )
+
+
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
+def test_plot_pareto_front_using_axis_order_and_targets() -> None:
+    study = optuna.create_study(directions=["minimize", "minimize", "minimize"])
+    with pytest.raises(
+        ValueError,
+        match="Using both `targets` and `axis_order` is not supported."
+        " Use either `targets` or `axis_order`.",
+    ):
+        plot_pareto_front(
+            study=study,
+            axis_order=[0, 1, 2],
+            targets=lambda t: (t.values[0], t.values[1], t.values[2]),
         )

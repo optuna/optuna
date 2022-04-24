@@ -100,7 +100,7 @@ Examples can be found in [optuna/optuna-examples](https://github.com/optuna/optu
 
 * [AllenNLP](https://github.com/optuna/optuna-examples/tree/main/allennlp)
 * [Catalyst](https://github.com/optuna/optuna-examples/tree/main/pytorch/catalyst_simple.py)
-* [Catboost](https://github.com/optuna/optuna-examples/tree/main/catboost/catboost_simple.py)
+* [Catboost](https://github.com/optuna/optuna-examples/tree/main/catboost/catboost_pruning.py)
 * [Chainer](https://github.com/optuna/optuna-examples/tree/main/chainer/chainer_integration.py)
 * FastAI ([V1](https://github.com/optuna/optuna-examples/tree/main/fastai/fastaiv1_simple.py), [V2](https://github.com/optuna/optuna-examples/tree/main/fastai/fastaiv2_simple.py))
 * [Keras](https://github.com/optuna/optuna-examples/tree/main/keras/keras_integration.py)

@@ -14,22 +14,16 @@ def run(args: argparse.Namespace) -> None:
 
     os.makedirs(args.out_dir, exist_ok=True)
     study_json_filename = os.path.join(args.out_dir, "studies.json")
-    subprocess.check_call(f"echo >| {study_json_filename}", shell=True)
     solvers_filename = os.path.join(args.out_dir, "solvers.json")
-    subprocess.check_call(f"echo >| {solvers_filename}", shell=True)
     problems_filename = os.path.join(args.out_dir, "problems.json")
-    subprocess.check_call(f"echo >| {problems_filename}", shell=True)
+    
+    # Ensure all files are empty.
+    for filename in [study_json_filename, solvers_filename, problems_filename]:
+        with open(filename, "w"):
+            pass
 
     # # Create ZDT problems
     # cmd = f"{kurobako_cmd} problem-suite zdt | tee -a {problems_filename}"
-    # subprocess.run(cmd, shell=True)
-
-    # # Create Binh and Korn problem
-    # cmd = (
-    #     f"{kurobako_cmd} problem command "
-    #     f"python3 benchmarks/problem/binh_and_korn_problem.py"
-    #     f"| tee -a {problems_filename}"
-    # )
     # subprocess.run(cmd, shell=True)
 
     # Create WFG 1~9 problem
@@ -73,16 +67,16 @@ def run(args: argparse.Namespace) -> None:
 
     for sampler, sampler_kwargs in zip(sampler_list, sampler_kwargs_list):
         name = f"{args.name_prefix}_{sampler}"
-        python_command = f"benchmarks/mo_runner.py {sampler} {sampler_kwargs}"
+        python_command = f"{args.path_to_create_study} {sampler} {sampler_kwargs}"
         cmd = (
-            f"{kurobako_cmd} solver --name {name} command python {python_command}"
+            f"{kurobako_cmd} solver --name {name} command python3 {python_command}"
             f"| tee -a {solvers_filename}"
         )
         subprocess.run(cmd, shell=True)
 
     # Create study.
     cmd = (
-        f"{kurobako_cmd} studies --budget 300 "
+        f"{kurobako_cmd} studies --budget 120 "
         f"--solvers $(cat {solvers_filename}) --problems $(cat {problems_filename}) "
         f"--repeats {args.n_runs} --seed {args.seed} "
         f"> {study_json_filename}"
@@ -96,7 +90,7 @@ def run(args: argparse.Namespace) -> None:
     )
     subprocess.run(cmd, shell=True)
 
-    # Report
+    # Report.
     report_filename = os.path.join(args.out_dir, "report.md")
     cmd = f"cat {result_filename} | {kurobako_cmd} report > {report_filename}"
     subprocess.run(cmd, shell=True)
@@ -140,15 +134,22 @@ def run(args: argparse.Namespace) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--path-to-kurobako", type=str, default="")
+    parser.add_argument(
+        "--path-to-create-study", type=str, default="benchmarks/mo_create_study.py"
+    )
     parser.add_argument("--name-prefix", type=str, default="")
-    parser.add_argument("--n-runs", type=int, default=1)
-    parser.add_argument("--n-jobs", type=int, default=1)
+    parser.add_argument("--n-runs", type=int, default=100)
+    parser.add_argument("--n-jobs", type=int, default=10)
     parser.add_argument(
         "--sampler-list",
         type=str,
         default="RandomSampler TPESampler NSGAIISampler",
     )
-    parser.add_argument("--sampler-kwargs-list", type=str, default="{} {} {}")
+    parser.add_argument(
+        "--sampler-kwargs-list",
+        type=str,
+        default=r"{} {\"multivariate\":true\,\"constant_liar\":true} {\"population_size\":20}",
+    )
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--data-dir", type=str, default="data")
     parser.add_argument("--out-dir", type=str, default="out")

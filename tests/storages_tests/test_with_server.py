@@ -2,11 +2,15 @@ from multiprocessing import Pool
 import os
 from typing import Sequence
 from typing import Tuple
+from typing import Union
 
 import numpy as np
 import pytest
 
 import optuna
+from optuna.storages import RDBStorage
+from optuna.storages import RedisStorage
+from optuna.trial import TrialState
 
 
 _STUDY_NAME = "_test_multiprocess"
@@ -49,7 +53,7 @@ def storage_url() -> str:
 
 def _check_trials(trials: Sequence[optuna.trial.FrozenTrial]) -> None:
     # Check trial states.
-    assert all(trial.state == optuna.trial.TrialState.COMPLETE for trial in trials)
+    assert all(trial.state == TrialState.COMPLETE for trial in trials)
 
     # Check trial values and params.
     assert all("x" in trial.params for trial in trials)
@@ -115,11 +119,19 @@ def test_loaded_trials(storage_url: str) -> None:
 )
 def test_store_infinite_values(input: float, expected: float, storage_url: str) -> None:
 
-    storage = optuna.storages.RDBStorage(url=storage_url)
+    storage: Union[RDBStorage, RedisStorage]
+    if storage_url.startswith("redis"):
+        # Only RDB can convert max/min value to inf. It was introduced by
+        # https://github.com/optuna/optuna/pull/3238.
+        if input != float("inf") and input != -float("inf"):
+            pytest.skip("RedisStorage does not convert max/min to inf/-inf.")
+        storage = optuna.storages.RedisStorage(url=storage_url)
+    else:
+        storage = optuna.storages.RDBStorage(url=storage_url)
     study_id = storage.create_new_study()
     trial_id = storage.create_new_trial(study_id)
     storage.set_trial_intermediate_value(trial_id, 1, input)
-    storage.set_trial_values(trial_id, (input,))
+    storage.set_trial_state_values(trial_id, state=TrialState.COMPLETE, values=(input,))
     assert storage.get_trial(trial_id).value == expected
     assert storage.get_trial(trial_id).intermediate_values[1] == expected
 
