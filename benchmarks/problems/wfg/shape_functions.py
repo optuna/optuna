@@ -69,7 +69,7 @@ class ConcaveShapeFunction(BaseShapeFunction):
 
 
 class MixedConvexOrConcaveShapeFunction(BaseShapeFunction):
-    def __init__(self, n_objectives, alpha: float, n_segments: int) -> None:
+    def __init__(self, n_objectives: int, alpha: float, n_segments: int) -> None:
         super().__init__(n_objectives)
         self._alpha = alpha
         self._n_segments = n_segments
@@ -86,7 +86,7 @@ class MixedConvexOrConcaveShapeFunction(BaseShapeFunction):
 
 class DisconnectedShapeFunction(BaseShapeFunction):
     def __init__(
-        self, n_objectives, alpha: float, beta: float, n_disconnected_regions: int
+        self, n_objectives: int, alpha: float, beta: float, n_disconnected_regions: int
     ) -> None:
         super().__init__(n_objectives)
         self._alpha = alpha

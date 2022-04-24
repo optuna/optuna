@@ -1,11 +1,10 @@
-from typing import List
-
-import numpy as np
 import math
 import sys
+from typing import List
+from typing import Union
 
 from kurobako import problem
-
+import numpy as np
 import shape_functions
 import transformation_functions
 
@@ -87,37 +86,47 @@ class WFG1(object):
         self.domain = np.zeros((n, 2))
         self.domain[:, 1] = upper_bounds
 
+        shapes: List[shape_functions.BaseShapeFunction]
         shapes = [shape_functions.ConvexShapeFunction(M) for _ in range(M - 1)]
         shapes.append(shape_functions.MixedConvexOrConcaveShapeFunction(M, 1, 5))
 
-        t_1 = [lambda y: y for _ in range(k)]
-        for _ in range(n - k):
-            t_1.append(transformation_functions.LinearShiftTransformation(0.35))
+        transformations: List[List[transformation_functions.BaseTransformations]]
+        transformations = [[] for _ in range(4)]
 
-        t_2 = [lambda y: y for _ in range(k)]
+        transformations[0] = [transformation_functions.IdenticalTransformation() for _ in range(k)]
+        # transformations[0] = [lambda y: y for _ in range(k)]
         for _ in range(n - k):
-            t_2.append(transformation_functions.FlatRegionBiasTransformation(0.8, 0.75, 0.85))
+            transformations[0].append(transformation_functions.LinearShiftTransformation(0.35))
 
-        t_3 = [transformation_functions.PolynomialBiasTransformation(0.02) for _ in range(n)]
+        # transformations[1] = [lambda y: y for _ in range(k)]
+
+        transformations[1] = [transformation_functions.IdenticalTransformation() for _ in range(k)]
+        for _ in range(n - k):
+            transformations[1].append(
+                transformation_functions.FlatRegionBiasTransformation(0.8, 0.75, 0.85)
+            )
+
+        transformations[2] = [
+            transformation_functions.PolynomialBiasTransformation(0.02) for _ in range(n)
+        ]
 
         def _input_converter(i: int, y: np.ndarray) -> np.ndarray:
             indices = np.arange(i * k // (M - 1), (i + 1) * k // (M - 1))
             return y[indices]
 
-        t_4 = [
+        transformations[3] = [
             transformation_functions.WeightedSumReductionTransformation(
                 2 * np.arange(i * k // (M - 1) + 1, (i + 1) * k // (M - 1) + 1),
                 lambda y: _input_converter(i, y),
             )
             for i in range(M - 1)
         ]
-        t_4.append(
+        transformations[3].append(
             transformation_functions.WeightedSumReductionTransformation(
                 2 * np.arange(k, n) + 1,
                 lambda y: y[k:n],
             )
         )
-        transformations = [t_1, t_2, t_3, t_4]
 
         self.wfg = BaseWFG(S, A, upper_bounds, shapes, transformations)
 
@@ -157,20 +166,24 @@ class WFG2(object):
         self.domain = np.zeros((n, 2))
         self.domain[:, 1] = upper_bounds
 
+        shapes: List[shape_functions.BaseShapeFunction]
         shapes = [shape_functions.ConvexShapeFunction(M) for _ in range(M - 1)]
         shapes.append(shape_functions.DisconnectedShapeFunction(M, 1, 1, 5))
 
-        t_1 = [lambda y: y for _ in range(k)]
+        transformations: List[List[transformation_functions.BaseTransformations]]
+        transformations = [[] for _ in range(3)]
+
+        transformations[0] = [transformation_functions.IdenticalTransformation() for _ in range(k)]
         for _ in range(n - k):
-            t_1.append(transformation_functions.LinearShiftTransformation(0.35))
+            transformations[0].append(transformation_functions.LinearShiftTransformation(0.35))
 
         def _input_converter0(i: int, y: np.ndarray) -> np.ndarray:
             indices = [k + 2 * (i + 1 - k) - 2, k + 2 * (i - k + 1) - 1]
             return y[indices]
 
-        t_2 = [lambda y: y for _ in range(k)]
+        transformations[1] = [transformation_functions.IdenticalTransformation() for _ in range(k)]
         for i in range(k, n // 2):
-            t_2.append(
+            transformations[1].append(
                 transformation_functions.NonSeparableReductionTransformation(
                     2, lambda y: _input_converter0(i, y)
                 )
@@ -180,21 +193,21 @@ class WFG2(object):
             indices = np.arange(i * k // (M - 1), (i + 1) * k // (M - 1))
             return y[indices]
 
-        t_3 = [
+        transformations[2] = [
             transformation_functions.WeightedSumReductionTransformation(
                 np.ones(k // (M - 1)),
                 lambda y: _input_converter1(i, y),
             )
             for i in range(M - 1)
         ]
-        t_3.append(
+        transformations[2].append(
             transformation_functions.WeightedSumReductionTransformation(
                 np.ones(n // 2 - k),
                 lambda y: y[k : n // 2],
             )
         )
 
-        transformations = [t_1, t_2, t_3]
+        # transformations = [transformations[0], transformations[1], transformations[2]]
 
         self.wfg = BaseWFG(S, A, upper_bounds, shapes, transformations)
 
@@ -235,19 +248,23 @@ class WFG3(object):
         self.domain = np.zeros((n, 2))
         self.domain[:, 1] = upper_bounds
 
+        shapes: List[shape_functions.BaseShapeFunction]
         shapes = [shape_functions.LinearShapeFunction(M) for _ in range(M)]
 
-        t_1 = [lambda y: y for _ in range(k)]
+        transformations: List[List[transformation_functions.BaseTransformations]]
+        transformations = [[] for _ in range(3)]
+
+        transformations[0] = [transformation_functions.IdenticalTransformation() for _ in range(k)]
         for _ in range(n - k):
-            t_1.append(transformation_functions.LinearShiftTransformation(0.35))
+            transformations[0].append(transformation_functions.LinearShiftTransformation(0.35))
 
         def _input_converter0(i: int, y: np.ndarray) -> np.ndarray:
             indices = [k + 2 * (i + 1 - k) - 2, k + 2 * (i - k + 1) - 1]
             return y[indices]
 
-        t_2 = [lambda y: y for _ in range(k)]
+        transformations[1] = [transformation_functions.IdenticalTransformation() for _ in range(k)]
         for i in range(k, n // 2):
-            t_2.append(
+            transformations[1].append(
                 transformation_functions.NonSeparableReductionTransformation(
                     2, lambda y: _input_converter0(i, y)
                 )
@@ -257,21 +274,21 @@ class WFG3(object):
             indices = np.arange(i * k // (M - 1), (i + 1) * k // (M - 1))
             return y[indices]
 
-        t_3 = [
+        transformations[2] = [
             transformation_functions.WeightedSumReductionTransformation(
                 np.ones(k // (M - 1)),
                 lambda y: _input_converter1(i, y),
             )
             for i in range(M - 1)
         ]
-        t_3.append(
+        transformations[2].append(
             transformation_functions.WeightedSumReductionTransformation(
                 np.ones(n // 2 - k),
                 lambda y: y[k : n // 2],
             )
         )
 
-        transformations = [t_1, t_2, t_3]
+        # transformations = [transformations[0], transformations[1], transformations[2]]
 
         self.wfg = BaseWFG(S, A, upper_bounds, shapes, transformations)
 
@@ -310,9 +327,13 @@ class WFG4(object):
         self.domain = np.zeros((n, 2))
         self.domain[:, 1] = upper_bounds
 
+        shapes: List[shape_functions.BaseShapeFunction]
         shapes = [shape_functions.ConcaveShapeFunction(M) for _ in range(M)]
 
-        t_1 = [
+        transformations: List[List[transformation_functions.BaseTransformations]]
+        transformations = [[] for _ in range(2)]
+
+        transformations[0] = [
             transformation_functions.MultiModalShiftTransformation(30, 10, 0.35) for _ in range(n)
         ]
 
@@ -320,21 +341,21 @@ class WFG4(object):
             indices = np.arange(i * k // (M - 1), (i + 1) * k // (M - 1))
             return y[indices]
 
-        t_2 = []
+        # transformations[1] = []
         for i in range(M - 1):
-            t_2.append(
+            transformations[1].append(
                 transformation_functions.WeightedSumReductionTransformation(
                     np.ones(k // (M - 1)), lambda y: _input_converter(i, y)
                 )
             )
-        t_2.append(
+        transformations[1].append(
             transformation_functions.WeightedSumReductionTransformation(
                 np.ones(n - k),
                 lambda y: y[k:n],
             )
         )
 
-        transformations = [t_1, t_2]
+        # transformations = [transformations[0], transformations[1]]
 
         self.wfg = BaseWFG(S, A, upper_bounds, shapes, transformations)
 
@@ -373,9 +394,13 @@ class WFG5(object):
         self.domain = np.zeros((n, 2))
         self.domain[:, 1] = upper_bounds
 
+        shapes: List[shape_functions.BaseShapeFunction]
         shapes = [shape_functions.ConcaveShapeFunction(M) for _ in range(M)]
 
-        t_1 = [
+        transformations: List[List[transformation_functions.BaseTransformations]]
+        transformations = [[] for _ in range(2)]
+
+        transformations[0] = [
             transformation_functions.DeceptiveShiftTransformation(0.35, 0.001, 0.05)
             for _ in range(n)
         ]
@@ -384,21 +409,21 @@ class WFG5(object):
             indices = np.arange(i * k // (M - 1), (i + 1) * k // (M - 1))
             return y[indices]
 
-        t_2 = []
+        transformations[1] = []
         for i in range(M - 1):
-            t_2.append(
+            transformations[1].append(
                 transformation_functions.WeightedSumReductionTransformation(
                     np.ones(k // (M - 1)), lambda y: _input_converter(i, y)
                 )
             )
-        t_2.append(
+        transformations[1].append(
             transformation_functions.WeightedSumReductionTransformation(
                 np.ones(n - k),
                 lambda y: y[k:n],
             )
         )
 
-        transformations = [t_1, t_2]
+        # transformations = [transformations[0], transformations[1]]
 
         self.wfg = BaseWFG(S, A, upper_bounds, shapes, transformations)
 
@@ -437,31 +462,35 @@ class WFG6(object):
         self.domain = np.zeros((n, 2))
         self.domain[:, 1] = upper_bounds
 
+        shapes: List[shape_functions.BaseShapeFunction]
         shapes = [shape_functions.ConcaveShapeFunction(M) for _ in range(M)]
 
-        t_1 = [lambda y: y for _ in range(k)]
+        transformations: List[List[transformation_functions.BaseTransformations]]
+        transformations = [[] for _ in range(2)]
+
+        transformations[0] = [transformation_functions.IdenticalTransformation() for _ in range(k)]
         for _ in range(n - k):
-            t_1.append(transformation_functions.LinearShiftTransformation(0.35))
+            transformations[0].append(transformation_functions.LinearShiftTransformation(0.35))
 
         def _input_converter(i: int, y: np.ndarray) -> np.ndarray:
             indices = np.arange(i * k // (M - 1), (i + 1) * k // (M - 1))
             return y[indices]
 
-        t_2 = []
+        # transformations[1] = []
         for i in range(M - 1):
-            t_2.append(
+            transformations[1].append(
                 transformation_functions.NonSeparableReductionTransformation(
                     k // (M - 1), lambda y: _input_converter(i, y)
                 )
             )
-        t_2.append(
+        transformations[1].append(
             transformation_functions.NonSeparableReductionTransformation(
                 n - k,
                 lambda y: y[k:n],
             )
         )
 
-        transformations = [t_1, t_2]
+        # transformations = [transformations[0], transformations[1]]
 
         self.wfg = BaseWFG(S, A, upper_bounds, shapes, transformations)
 
@@ -500,12 +529,16 @@ class WFG7(object):
         self.domain = np.zeros((n, 2))
         self.domain[:, 1] = upper_bounds
 
+        shapes: List[shape_functions.BaseShapeFunction]
         shapes = [shape_functions.ConcaveShapeFunction(M) for _ in range(M)]
 
         def _input_converter0(i: int, y: np.ndarray) -> np.ndarray:
             return y[i:n]
 
-        t_1 = [
+        transformations: List[List[transformation_functions.BaseTransformations]]
+        transformations = [[] for _ in range(3)]
+
+        transformations[0] = [
             transformation_functions.ParameterDependentBiasTransformation(
                 np.ones(n - i),
                 lambda y: _input_converter0(i, y),
@@ -517,31 +550,31 @@ class WFG7(object):
             for i in range(k)
         ]
         for _ in range(n - k):
-            t_1.append(lambda y: y)
+            transformations[0].append(transformation_functions.IdenticalTransformation())
 
-        t_2 = [lambda y: y for _ in range(k)]
+        transformations[1] = [transformation_functions.IdenticalTransformation() for _ in range(k)]
         for _ in range(n - k):
-            t_2.append(transformation_functions.LinearShiftTransformation(0.35))
+            transformations[1].append(transformation_functions.LinearShiftTransformation(0.35))
 
         def _input_converter1(i: int, y: np.ndarray) -> np.ndarray:
             indices = np.arange(i * k // (M - 1), (i + 1) * k // (M - 1))
             return y[indices]
 
-        t_3 = []
+        transformations[2] = []
         for i in range(M - 1):
-            t_3.append(
+            transformations[2].append(
                 transformation_functions.WeightedSumReductionTransformation(
                     np.ones(k // (M - 1)), lambda y: _input_converter1(i, y)
                 )
             )
-        t_3.append(
+        transformations[2].append(
             transformation_functions.WeightedSumReductionTransformation(
                 np.ones(n - k),
                 lambda y: y[k:n],
             )
         )
 
-        transformations = [t_1, t_2, t_3]
+        # transformations = [transformations[0], transformations[1], transformations[2]]
 
         self.wfg = BaseWFG(S, A, upper_bounds, shapes, transformations)
 
@@ -580,14 +613,18 @@ class WFG8(object):
         self.domain = np.zeros((n, 2))
         self.domain[:, 1] = upper_bounds
 
+        shapes: List[shape_functions.BaseShapeFunction]
         shapes = [shape_functions.ConcaveShapeFunction(M) for _ in range(M)]
 
         def _input_converter0(i: int, y: np.ndarray) -> np.ndarray:
             return y[: i - 1]
 
-        t_1 = [lambda y: y for _ in range(k)]
+        transformations: List[List[transformation_functions.BaseTransformations]]
+        transformations = [[] for _ in range(3)]
+
+        transformations[0] = [transformation_functions.IdenticalTransformation() for _ in range(k)]
         for i in range(k, n):
-            t_1.append(
+            transformations[0].append(
                 transformation_functions.ParameterDependentBiasTransformation(
                     np.ones(i - 1),
                     lambda y: _input_converter0(i, y),
@@ -598,29 +635,29 @@ class WFG8(object):
                 )
             )
 
-        t_2 = [lambda y: y for _ in range(k)]
+        transformations[1] = [transformation_functions.IdenticalTransformation() for _ in range(k)]
         for _ in range(n - k):
-            t_2.append(transformation_functions.LinearShiftTransformation(0.35))
+            transformations[1].append(transformation_functions.LinearShiftTransformation(0.35))
 
         def _input_converter(i: int, y: np.ndarray) -> np.ndarray:
             indices = np.arange(i * k // (M - 1), (i + 1) * k // (M - 1))
             return y[indices]
 
-        t_3 = []
+        transformations[2] = []
         for i in range(M - 1):
-            t_3.append(
+            transformations[2].append(
                 transformation_functions.WeightedSumReductionTransformation(
                     np.ones(k // (M - 1)), lambda y: _input_converter(i, y)
                 )
             )
-        t_3.append(
+        transformations[2].append(
             transformation_functions.WeightedSumReductionTransformation(
                 np.ones(n - k),
                 lambda y: y[k:n],
             )
         )
 
-        transformations = [t_1, t_2, t_3]
+        # transformations = [transformations[0], transformations[1], transformations[2]]
 
         self.wfg = BaseWFG(S, A, upper_bounds, shapes, transformations)
 
@@ -659,12 +696,16 @@ class WFG9(object):
         self.domain = np.zeros((n, 2))
         self.domain[:, 1] = upper_bounds
 
+        shapes: List[shape_functions.BaseShapeFunction]
         shapes = [shape_functions.ConcaveShapeFunction(M) for _ in range(M)]
 
         def _input_converter0(i: int, y: np.ndarray) -> np.ndarray:
             return y[i:n]
 
-        t_1 = [
+        transformations: List[List[transformation_functions.BaseTransformations]]
+        transformations = [[] for _ in range(3)]
+
+        transformations[0] = [
             transformation_functions.ParameterDependentBiasTransformation(
                 np.ones(n - i),
                 lambda y: _input_converter0(i, y),
@@ -675,34 +716,36 @@ class WFG9(object):
             )
             for i in range(n - 1)
         ]
-        t_1.append(lambda y: y)
+        transformations[0].append(transformation_functions.IdenticalTransformation())
 
-        t_2 = [
+        transformations[1] = [
             transformation_functions.DeceptiveShiftTransformation(0.35, 0.001, 0.05)
             for _ in range(k)
         ]
         for _ in range(n - k):
-            t_2.append(transformation_functions.MultiModalShiftTransformation(30, 95, 0.35))
+            transformations[1].append(
+                transformation_functions.MultiModalShiftTransformation(30, 95, 0.35)
+            )
 
         def _input_converter(i: int, y: np.ndarray) -> np.ndarray:
             indices = np.arange(i * k // (M - 1), (i + 1) * k // (M - 1))
             return y[indices]
 
-        t_3 = []
+        transformations[2] = []
         for i in range(M - 1):
-            t_3.append(
+            transformations[2].append(
                 transformation_functions.NonSeparableReductionTransformation(
                     k // (M - 1), lambda y: _input_converter(i, y)
                 )
             )
-        t_3.append(
+        transformations[2].append(
             transformation_functions.NonSeparableReductionTransformation(
                 n - k,
                 lambda y: y[k:n],
             )
         )
 
-        transformations = [t_1, t_2, t_3]
+        # transformations = [transformations[0], transformations[1], transformations[2]]
 
         self.wfg = BaseWFG(S, A, upper_bounds, shapes, transformations)
 
@@ -711,7 +754,7 @@ class WFG9(object):
 
 
 class WFGProblemFactory(problem.ProblemFactory):
-    def specification(self):
+    def specification(self) -> problem.ProblemSpec:
         self._n_wfg = int(sys.argv[1])
         self._n_dim = int(sys.argv[2])
 
@@ -727,7 +770,7 @@ class WFGProblemFactory(problem.ProblemFactory):
             values=[problem.Var("f1"), problem.Var("f2")],
         )
 
-    def create_problem(self, seed):
+    def create_problem(self,seed:int) -> problem.Problem:
         return WFGProblem()
 
 
@@ -735,20 +778,21 @@ class WFGProblem(problem.Problem):
     def __init__(self) -> None:
         super().__init__()
 
-    def create_evaluator(self, params):
+    def create_evaluator(self, params: List[problem.Var]) -> problem.Evaluator:
         return WFGEvaluator(params)
 
 
 class WFGEvaluator(problem.Evaluator):
-    def __init__(self, params):
+    def __init__(self, params: List[problem.Var]) -> None:
         self._n_wfg = int(sys.argv[1])
         self._n_dim = int(sys.argv[2])
         self._n_obj = int(sys.argv[3])
         self._k = int(sys.argv[4])
 
-        self._x = params
+        self._x = np.array(params)
         self._current_step = 0
 
+        self.wfg: Union[WFG1, WFG2, WFG3, WFG4, WFG5, WFG6, WFG7, WFG8, WFG9]
         if self._n_wfg == 1:
             self.wfg = WFG1(n_arguments=self._n_dim, n_objectives=self._n_obj, k=self._k)
         elif self._n_wfg == 2:
@@ -770,10 +814,10 @@ class WFGEvaluator(problem.Evaluator):
         else:
             assert False, "Invalid specification for WFG number."
 
-    def current_step(self):
+    def current_step(self) -> int:
         return self._current_step
 
-    def evaluate(self, next_step):
+    def evaluate(self, next_step: int) -> list:
         self._current_step = 1
         v = self.wfg(self._x)
         v = v.tolist()

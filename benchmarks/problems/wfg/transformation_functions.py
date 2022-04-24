@@ -1,35 +1,58 @@
 import abc
 from typing import Callable
+from typing import Union
 
 import numpy as np
 
 
-class BaseTransformations(object, metaclass=abc.ABCMeta):
-    @abc.abstractmethod
-    def __call__(self, *args, **kwargs):
+# class BaseTransformations(object, metaclass=abc.ABCMeta):
+#     @abc.abstractmethod
+#     def __call__(self, *args, **kwargs):
 
+#         raise NotImplementedError
+
+
+class BaseIdenticalTransformations(metaclass=abc.ABCMeta):
+    @abc.abstractclassmethod
+    def __call__(self, y: np.ndarray) -> float:
         raise NotImplementedError
 
 
-class BaseBiasTransformation(BaseTransformations, metaclass=abc.ABCMeta):
+class BaseBiasTransformation(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def __call__(self, y: np.ndarray) -> float:
 
         raise NotImplementedError
 
 
-class BaseShiftTransformation(BaseTransformations, metaclass=abc.ABCMeta):
+class BaseShiftTransformation(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def __call__(self, y: float) -> float:
 
         raise NotImplementedError
 
 
-class BaseReductionTransformation(BaseTransformations, metaclass=abc.ABCMeta):
+class BaseReductionTransformation(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def __call__(self, y: np.ndarray) -> float:
 
         raise NotImplementedError
+
+
+BaseTransformations = Union[
+    BaseIdenticalTransformations,
+    BaseBiasTransformation,
+    BaseShiftTransformation,
+    BaseReductionTransformation,
+]
+
+
+class IdenticalTransformation(BaseIdenticalTransformations):
+    def __init__(self) -> None:
+        pass
+
+    def __call__(self, y: float) -> float:
+        return y
 
 
 class PolynomialBiasTransformation(BaseBiasTransformation):
