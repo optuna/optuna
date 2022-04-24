@@ -826,7 +826,7 @@ class WFGEvaluator(problem.Evaluator):
             raise ValueError
         if math.isnan(v[1]) or math.isinf(v[1]):
             raise ValueError
-        return [v[0],v[1]]
+        return [v[0], v[1]]
 
 
 if __name__ == "__main__":
