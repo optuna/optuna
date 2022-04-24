@@ -1,4 +1,5 @@
 import argparse
+import copy
 import json
 import os
 import subprocess
@@ -10,10 +11,14 @@ from matplotlib import colors
 from matplotlib.axes import Axes
 import matplotlib.pyplot as plt
 import numpy as np
+
+import xarray as xr
 from xarray import Dataset
 
 import bayesmark.constants as cc
 from bayesmark.serialize import XRSerializer
+from bayesmark.experiment_aggregate import validate_agg_perf
+import bayesmark.xr_util as xru
 
 
 _DB = "bo_optuna_run"
@@ -53,14 +58,77 @@ def run_benchmark(args: argparse.Namespace) -> None:
         f"-c {args.model} -d {args.dataset} "
         f"-m {metric} --opt-root benchmarks/bayesmark"
     )
+    print("command:", cmd)
     subprocess.run(cmd, shell=True)
 
     cmd = f"bayesmark-agg -dir runs -b {_DB}"
+    print("command:", cmd)
     subprocess.run(cmd, shell=True)
 
     cmd = f"bayesmark-anal -dir runs -b {_DB}"
+    print("command:", cmd)
     subprocess.run(cmd, shell=True)
 
+
+def make_kurobako_results(args: argparse.Namespace):
+    db_root = os.path.abspath("runs")
+    perf_ds, meta = XRSerializer.load_derived(db_root, db=_DB, key=cc.EVAL_RESULTS)
+
+    template_result = {
+        "start_time": None,
+        "end_time": None,
+        "seed": None,
+        "budget": len(perf_ds.coords[cc.ITER].values),
+        "concurrency": len(perf_ds.coords[cc.SUGGEST].values),
+        "scheduling": None,
+        "solver": {
+            "recipe": {},
+        },
+        "problem": {
+            "spec": {},
+        },
+        "trials": []
+    }
+
+    template_trial = {
+        "evaluations": [
+            {
+                "values": [],
+            }
+        ],
+    }
+
+    results = []
+    perf_da = perf_ds[cc.VISIBLE_TO_OPT]
+
+    validate_agg_perf(perf_da, min_trial=1)
+    for func_name in perf_da.coords[cc.TEST_CASE].values:
+        for method_name in perf_da.coords[cc.METHOD].values:
+            for study_id in perf_da.coords[cc.TRIAL].values:
+                result = copy.deepcopy(template_result)
+                result["solver"]["recipe"]["name"] = method_name
+                result["problem"]["spec"]["name"] = func_name
+                for iter in perf_da.coords[cc.ITER].values:
+                    assert len(perf_ds.coords[cc.SUGGEST].values) == 1
+                    curr_perf_value = perf_da.sel(
+                        {
+                            cc.METHOD: method_name,
+                            cc.TEST_CASE: func_name,
+                            cc.TRIAL: study_id,
+                            cc.ITER: iter,
+                        },
+                        drop=True)
+                    trial = copy.deepcopy(template_trial)
+                    trial["evaluations"][0]["values"].append(curr_perf_value[0].item())
+                    result["trials"].append(trial)
+                results.append(result)
+
+    encoder = json.JSONEncoder()
+    with open("./bayesmark_results.json", "w") as f:
+        for res in results:
+            json_str = encoder.encode(res)
+            f.write(json_str)
+            f.write("\n")
 
 def make_plots(args: argparse.Namespace) -> None:
 
@@ -165,5 +233,6 @@ if __name__ == "__main__":
     os.makedirs("partial", exist_ok=True)
 
     run_benchmark(args)
-    make_plots(args)
-    partial_report(args)
+    make_kurobako_results(args)
+    #make_plots(args)
+    #partial_report(args)
