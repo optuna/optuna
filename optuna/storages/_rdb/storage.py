@@ -37,8 +37,8 @@ if TYPE_CHECKING:
     import alembic.config as alembic_config
     import alembic.migration as alembic_migration
     import alembic.script as alembic_script
+
     import sqlalchemy
-    import sqlalchemy.engine as sqlalchemy_engine
     import sqlalchemy.exc as sqlalchemy_exc
     import sqlalchemy.orm as sqlalchemy_orm
     import sqlalchemy.sql.functions as sqlalchemy_sql_functions
@@ -51,7 +51,6 @@ else:
     alembic_script = _LazyImport("alembic.script")
 
     sqlalchemy = _LazyImport("sqlalchemy")
-    sqlalchemy_engine = _LazyImport("sqlalchemy.engine")
     sqlalchemy_exc = _LazyImport("sqlalchemy.exc")
     sqlalchemy_orm = _LazyImport("sqlalchemy.orm")
     sqlalchemy_sql_functions = _LazyImport("sqlalchemy.sql.functions")
@@ -212,7 +211,7 @@ class RDBStorage(BaseStorage):
         self._set_default_engine_kwargs_for_mysql(url, self.engine_kwargs)
 
         try:
-            self.engine = sqlalchemy_engine.create_engine(self.url, **self.engine_kwargs)
+            self.engine = sqlalchemy.engine.create_engine(self.url, **self.engine_kwargs)
         except ImportError as e:
             raise ImportError(
                 "Failed to import DB access module for the specified storage URL. "
@@ -240,7 +239,7 @@ class RDBStorage(BaseStorage):
 
         self.__dict__.update(state)
         try:
-            self.engine = sqlalchemy_engine.create_engine(self.url, **self.engine_kwargs)
+            self.engine = sqlalchemy.engine.create_engine(self.url, **self.engine_kwargs)
         except ImportError as e:
             raise ImportError(
                 "Failed to import DB access module for the specified storage URL. "
@@ -1300,7 +1299,7 @@ class _VersionManager(object):
     def __init__(
         self,
         url: str,
-        engine: "sqlalchemy_engine.Engine",
+        engine: "sqlalchemy.engine.Engine",
         scoped_session: "sqlalchemy_orm.scoped_session",
     ) -> None:
 
