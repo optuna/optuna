@@ -10,13 +10,13 @@ from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _check_plot_args
 from optuna.visualization._utils import _is_log_scale
-from optuna.visualization._utils import COLOR_SCALE
 
 
 if _imports.is_successful():
     from optuna.visualization._plotly_imports import go
     from optuna.visualization._plotly_imports import make_subplots
     from optuna.visualization._plotly_imports import Scatter
+    from optuna.visualization._utils import COLOR_SCALE
 
 _logger = get_logger(__name__)
 
