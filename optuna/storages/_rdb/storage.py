@@ -43,7 +43,7 @@ if TYPE_CHECKING:
     import sqlalchemy.orm as sqlalchemy_orm
     import sqlalchemy.sql.functions as sqlalchemy_sql_functions
 
-    from optuna.storages._rdb import models as optuna_rdb_models
+    from optuna.storages._rdb import models
 else:
     alembic_command = _LazyImport("alembic.command")
     alembic_config = _LazyImport("alembic.config")
@@ -55,7 +55,7 @@ else:
     sqlalchemy_orm = _LazyImport("sqlalchemy.orm")
     sqlalchemy_sql_functions = _LazyImport("sqlalchemy.sql.functions")
 
-    optuna_rdb_models = _LazyImport("optuna.storages._rdb.models")
+    models = _LazyImport("optuna.storages._rdb.models")
 
 _RDB_MAX_FLOAT = np.finfo(np.float32).max
 _RDB_MIN_FLOAT = np.finfo(np.float32).min
@@ -221,7 +221,7 @@ class RDBStorage(BaseStorage):
         self.scoped_session = sqlalchemy_orm.scoped_session(
             sqlalchemy_orm.sessionmaker(bind=self.engine)
         )
-        optuna_rdb_models.BaseModel.metadata.create_all(self.engine)
+        models.BaseModel.metadata.create_all(self.engine)
 
         self._version_manager = _VersionManager(self.url, self.engine, self.scoped_session)
         if not skip_compatibility_check:
@@ -249,7 +249,7 @@ class RDBStorage(BaseStorage):
         self.scoped_session = sqlalchemy_orm.scoped_session(
             sqlalchemy_orm.sessionmaker(bind=self.engine)
         )
-        optuna_rdb_models.BaseModel.metadata.create_all(self.engine)
+        models.BaseModel.metadata.create_all(self.engine)
         self._version_manager = _VersionManager(self.url, self.engine, self.scoped_session)
         if not self.skip_compatibility_check:
             self._version_manager.check_table_schema_compatibility()
@@ -261,10 +261,10 @@ class RDBStorage(BaseStorage):
                 if study_name is None:
                     study_name = self._create_unique_study_name(session)
 
-                direction = optuna_rdb_models.StudyDirectionModel(
+                direction = models.StudyDirectionModel(
                     direction=StudyDirection.NOT_SET, objective=0
                 )
-                study = optuna_rdb_models.StudyModel(study_name=study_name, directions=[direction])
+                study = models.StudyModel(study_name=study_name, directions=[direction])
                 session.add(study)
         except sqlalchemy_exc.IntegrityError:
             raise optuna.exceptions.DuplicatedStudyError(
@@ -281,7 +281,7 @@ class RDBStorage(BaseStorage):
     def delete_study(self, study_id: int) -> None:
 
         with _create_scoped_session(self.scoped_session, True) as session:
-            study = optuna_rdb_models.StudyModel.find_or_raise_by_id(study_id, session)
+            study = models.StudyModel.find_or_raise_by_id(study_id, session)
             session.delete(study)
 
     @staticmethod
@@ -290,7 +290,7 @@ class RDBStorage(BaseStorage):
         while True:
             study_uuid = str(uuid.uuid4())
             study_name = DEFAULT_STUDY_NAME_PREFIX + study_uuid
-            study = optuna_rdb_models.StudyModel.find_by_name(study_name, session)
+            study = models.StudyModel.find_by_name(study_name, session)
             if study is None:
                 break
 
@@ -300,11 +300,11 @@ class RDBStorage(BaseStorage):
     def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
 
         with _create_scoped_session(self.scoped_session) as session:
-            study = optuna_rdb_models.StudyModel.find_or_raise_by_id(study_id, session)
+            study = models.StudyModel.find_or_raise_by_id(study_id, session)
             directions = list(directions)
             current_directions = [
                 d.direction
-                for d in optuna_rdb_models.StudyDirectionModel.where_study_id(study_id, session)
+                for d in models.StudyDirectionModel.where_study_id(study_id, session)
             ]
             if (
                 len(current_directions) > 0
@@ -319,12 +319,12 @@ class RDBStorage(BaseStorage):
 
             for objective, d in enumerate(directions):
                 direction_model = (
-                    optuna_rdb_models.StudyDirectionModel.find_by_study_and_objective(
+                    models.StudyDirectionModel.find_by_study_and_objective(
                         study, objective, session
                     )
                 )
                 if direction_model is None:
-                    direction_model = optuna_rdb_models.StudyDirectionModel(
+                    direction_model = models.StudyDirectionModel(
                         study_id=study_id, objective=objective, direction=d
                     )
                     session.add(direction_model)
@@ -334,12 +334,12 @@ class RDBStorage(BaseStorage):
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
 
         with _create_scoped_session(self.scoped_session, True) as session:
-            study = optuna_rdb_models.StudyModel.find_or_raise_by_id(study_id, session)
-            attribute = optuna_rdb_models.StudyUserAttributeModel.find_by_study_and_key(
+            study = models.StudyModel.find_or_raise_by_id(study_id, session)
+            attribute = models.StudyUserAttributeModel.find_by_study_and_key(
                 study, key, session
             )
             if attribute is None:
-                attribute = optuna_rdb_models.StudyUserAttributeModel(
+                attribute = models.StudyUserAttributeModel(
                     study_id=study_id, key=key, value_json=json.dumps(value)
                 )
                 session.add(attribute)
@@ -349,12 +349,12 @@ class RDBStorage(BaseStorage):
     def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
 
         with _create_scoped_session(self.scoped_session, True) as session:
-            study = optuna_rdb_models.StudyModel.find_or_raise_by_id(study_id, session)
-            attribute = optuna_rdb_models.StudySystemAttributeModel.find_by_study_and_key(
+            study = models.StudyModel.find_or_raise_by_id(study_id, session)
+            attribute = models.StudySystemAttributeModel.find_by_study_and_key(
                 study, key, session
             )
             if attribute is None:
-                attribute = optuna_rdb_models.StudySystemAttributeModel(
+                attribute = models.StudySystemAttributeModel(
                     study_id=study_id, key=key, value_json=json.dumps(value)
                 )
                 session.add(attribute)
@@ -364,7 +364,7 @@ class RDBStorage(BaseStorage):
     def get_study_id_from_name(self, study_name: str) -> int:
 
         with _create_scoped_session(self.scoped_session) as session:
-            study = optuna_rdb_models.StudyModel.find_or_raise_by_name(study_name, session)
+            study = models.StudyModel.find_or_raise_by_name(study_name, session)
             study_id = study.study_id
 
         return study_id
@@ -372,7 +372,7 @@ class RDBStorage(BaseStorage):
     def get_study_id_from_trial_id(self, trial_id: int) -> int:
 
         with _create_scoped_session(self.scoped_session) as session:
-            trial = optuna_rdb_models.TrialModel.find_or_raise_by_id(trial_id, session)
+            trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
             study_id = trial.study_id
 
         return study_id
@@ -380,7 +380,7 @@ class RDBStorage(BaseStorage):
     def get_study_name_from_id(self, study_id: int) -> str:
 
         with _create_scoped_session(self.scoped_session) as session:
-            study = optuna_rdb_models.StudyModel.find_or_raise_by_id(study_id, session)
+            study = models.StudyModel.find_or_raise_by_id(study_id, session)
             study_name = study.study_name
 
         return study_name
@@ -388,7 +388,7 @@ class RDBStorage(BaseStorage):
     def get_study_directions(self, study_id: int) -> List[StudyDirection]:
 
         with _create_scoped_session(self.scoped_session) as session:
-            study = optuna_rdb_models.StudyModel.find_or_raise_by_id(study_id, session)
+            study = models.StudyModel.find_or_raise_by_id(study_id, session)
             directions = [d.direction for d in study.directions]
 
         return directions
@@ -397,8 +397,8 @@ class RDBStorage(BaseStorage):
 
         with _create_scoped_session(self.scoped_session) as session:
             # Ensure that that study exists.
-            optuna_rdb_models.StudyModel.find_or_raise_by_id(study_id, session)
-            attributes = optuna_rdb_models.StudyUserAttributeModel.where_study_id(
+            models.StudyModel.find_or_raise_by_id(study_id, session)
+            attributes = models.StudyUserAttributeModel.where_study_id(
                 study_id, session
             )
             user_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
@@ -409,8 +409,8 @@ class RDBStorage(BaseStorage):
 
         with _create_scoped_session(self.scoped_session) as session:
             # Ensure that that study exists.
-            optuna_rdb_models.StudyModel.find_or_raise_by_id(study_id, session)
-            attributes = optuna_rdb_models.StudySystemAttributeModel.where_study_id(
+            models.StudyModel.find_or_raise_by_id(study_id, session)
+            attributes = models.StudySystemAttributeModel.where_study_id(
                 study_id, session
             )
             system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
@@ -421,9 +421,9 @@ class RDBStorage(BaseStorage):
 
         with _create_scoped_session(self.scoped_session) as session:
             # Ensure trial exists.
-            optuna_rdb_models.TrialModel.find_or_raise_by_id(trial_id, session)
+            models.TrialModel.find_or_raise_by_id(trial_id, session)
 
-            attributes = optuna_rdb_models.TrialUserAttributeModel.where_trial_id(
+            attributes = models.TrialUserAttributeModel.where_trial_id(
                 trial_id, session
             )
             user_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
@@ -434,9 +434,9 @@ class RDBStorage(BaseStorage):
 
         with _create_scoped_session(self.scoped_session) as session:
             # Ensure trial exists.
-            optuna_rdb_models.TrialModel.find_or_raise_by_id(trial_id, session)
+            models.TrialModel.find_or_raise_by_id(trial_id, session)
 
-            attributes = optuna_rdb_models.TrialSystemAttributeModel.where_trial_id(
+            attributes = models.TrialSystemAttributeModel.where_trial_id(
                 trial_id, session
             )
             system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
@@ -448,38 +448,38 @@ class RDBStorage(BaseStorage):
         with _create_scoped_session(self.scoped_session) as session:
             summarized_trial = (
                 session.query(
-                    optuna_rdb_models.TrialModel.study_id,
+                    models.TrialModel.study_id,
                     sqlalchemy_sql_functions.min(
-                        optuna_rdb_models.TrialModel.datetime_start
+                        models.TrialModel.datetime_start
                     ).label("datetime_start"),
-                    sqlalchemy_sql_functions.count(optuna_rdb_models.TrialModel.trial_id).label(
+                    sqlalchemy_sql_functions.count(models.TrialModel.trial_id).label(
                         "n_trial"
                     ),
                 )
-                .group_by(optuna_rdb_models.TrialModel.study_id)
+                .group_by(models.TrialModel.study_id)
                 .with_labels()
                 .subquery()
             )
             study_summary_stmt = session.query(
-                optuna_rdb_models.StudyModel.study_id,
-                optuna_rdb_models.StudyModel.study_name,
+                models.StudyModel.study_id,
+                models.StudyModel.study_name,
                 summarized_trial.c.datetime_start,
                 sqlalchemy_sql_functions.coalesce(summarized_trial.c.n_trial, 0).label("n_trial"),
-            ).select_from(sqlalchemy_orm.outerjoin(optuna_rdb_models.StudyModel, summarized_trial))
+            ).select_from(sqlalchemy_orm.outerjoin(models.StudyModel, summarized_trial))
 
             study_summary = study_summary_stmt.all()
 
             _directions = defaultdict(list)
-            for direction_model in session.query(optuna_rdb_models.StudyDirectionModel).all():
+            for direction_model in session.query(models.StudyDirectionModel).all():
                 _directions[direction_model.study_id].append(direction_model.direction)
 
             _user_attrs = defaultdict(list)
-            for attribute_model in session.query(optuna_rdb_models.StudyUserAttributeModel).all():
+            for attribute_model in session.query(models.StudyUserAttributeModel).all():
                 _user_attrs[attribute_model.study_id].append(attribute_model)
 
             _system_attrs = defaultdict(list)
             for attribute_model in session.query(
-                optuna_rdb_models.StudySystemAttributeModel
+                models.StudySystemAttributeModel
             ).all():
                 _system_attrs[attribute_model.study_id].append(attribute_model)
 
@@ -488,33 +488,33 @@ class RDBStorage(BaseStorage):
                 directions = _directions[study.study_id]
                 best_trial_frozen: Optional[FrozenTrial] = None
                 if include_best_trial:
-                    best_trial: Optional[optuna_rdb_models.TrialModel] = None
+                    best_trial: Optional[models.TrialModel] = None
                     try:
                         if len(directions) > 1:
                             raise ValueError
                         elif directions[0] == StudyDirection.MAXIMIZE:
-                            best_trial = optuna_rdb_models.TrialModel.find_max_value_trial(
+                            best_trial = models.TrialModel.find_max_value_trial(
                                 study.study_id, 0, session
                             )
                         else:
-                            best_trial = optuna_rdb_models.TrialModel.find_min_value_trial(
+                            best_trial = models.TrialModel.find_min_value_trial(
                                 study.study_id, 0, session
                             )
                     except ValueError:
                         best_trial_frozen = None
                     if best_trial:
-                        value = optuna_rdb_models.TrialValueModel.find_by_trial_and_objective(
+                        value = models.TrialValueModel.find_by_trial_and_objective(
                             best_trial, 0, session
                         )
                         assert value
                         params = (
                             session.query(
-                                optuna_rdb_models.TrialParamModel.param_name,
-                                optuna_rdb_models.TrialParamModel.param_value,
-                                optuna_rdb_models.TrialParamModel.distribution_json,
+                                models.TrialParamModel.param_name,
+                                models.TrialParamModel.param_value,
+                                models.TrialParamModel.distribution_json,
                             )
                             .filter(
-                                optuna_rdb_models.TrialParamModel.trial_id == best_trial.trial_id
+                                models.TrialParamModel.trial_id == best_trial.trial_id
                             )
                             .all()
                         )
@@ -528,14 +528,14 @@ class RDBStorage(BaseStorage):
                                 param.param_value
                             )
                             param_distributions[param.param_name] = distribution
-                        user_attrs = optuna_rdb_models.TrialUserAttributeModel.where_trial_id(
+                        user_attrs = models.TrialUserAttributeModel.where_trial_id(
                             best_trial.trial_id, session
                         )
-                        system_attrs = optuna_rdb_models.TrialSystemAttributeModel.where_trial_id(
+                        system_attrs = models.TrialSystemAttributeModel.where_trial_id(
                             best_trial.trial_id, session
                         )
                         intermediate = (
-                            optuna_rdb_models.TrialIntermediateValueModel.where_trial_id(
+                            models.TrialIntermediateValueModel.where_trial_id(
                                 best_trial.trial_id, session
                             )
                         )
@@ -603,7 +603,7 @@ class RDBStorage(BaseStorage):
                     # Locking within a study is necessary since the creation of a trial is not an
                     # atomic operation. More precisely, the trial number computed in
                     # `_get_prepared_new_trial` is prone to race conditions without this lock.
-                    optuna_rdb_models.StudyModel.find_or_raise_by_id(
+                    models.StudyModel.find_or_raise_by_id(
                         study_id, session, for_update=True
                     )
 
@@ -643,9 +643,9 @@ class RDBStorage(BaseStorage):
         study_id: int,
         template_trial: Optional[FrozenTrial],
         session: "sqlalchemy_orm.Session",
-    ) -> "optuna_rdb_models.TrialModel":
+    ) -> "models.TrialModel":
         if template_trial is None:
-            trial = optuna_rdb_models.TrialModel(
+            trial = models.TrialModel(
                 study_id=study_id,
                 number=None,
                 state=TrialState.RUNNING,
@@ -658,7 +658,7 @@ class RDBStorage(BaseStorage):
             # the state is set to `template_trial.state`.
             temp_state = TrialState.RUNNING
 
-            trial = optuna_rdb_models.TrialModel(
+            trial = models.TrialModel(
                 study_id=study_id,
                 number=None,
                 state=temp_state,
@@ -718,7 +718,7 @@ class RDBStorage(BaseStorage):
 
         try:
             with _create_scoped_session(self.scoped_session) as session:
-                trial = optuna_rdb_models.TrialModel.find_or_raise_by_id(
+                trial = models.TrialModel.find_or_raise_by_id(
                     trial_id, session, for_update=True
                 )
                 self.check_trial_is_updatable(trial_id, trial.state)
@@ -759,10 +759,10 @@ class RDBStorage(BaseStorage):
         distribution: distributions.BaseDistribution,
     ) -> None:
 
-        trial = optuna_rdb_models.TrialModel.find_or_raise_by_id(trial_id, session)
+        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        trial_param = optuna_rdb_models.TrialParamModel.find_by_trial_and_param_name(
+        trial_param = models.TrialParamModel.find_by_trial_and_param_name(
             trial, param_name, session
         )
 
@@ -775,7 +775,7 @@ class RDBStorage(BaseStorage):
             trial_param.param_value = param_value_internal
             trial_param.distribution_json = distributions.distribution_to_json(distribution)
         else:
-            trial_param = optuna_rdb_models.TrialParamModel(
+            trial_param = models.TrialParamModel(
                 trial_id=trial_id,
                 param_name=param_name,
                 param_value=param_value_internal,
@@ -797,9 +797,9 @@ class RDBStorage(BaseStorage):
             # Acquire lock.
             #
             # Assume that study exists.
-            optuna_rdb_models.StudyModel.find_or_raise_by_id(study_id, session, for_update=True)
+            models.StudyModel.find_or_raise_by_id(study_id, session, for_update=True)
 
-            optuna_rdb_models.TrialParamModel(
+            models.TrialParamModel(
                 trial_id=trial_id,
                 param_name=param_name,
                 param_value=param_value_internal,
@@ -809,8 +809,8 @@ class RDBStorage(BaseStorage):
     def get_trial_param(self, trial_id: int, param_name: str) -> float:
 
         with _create_scoped_session(self.scoped_session) as session:
-            trial = optuna_rdb_models.TrialModel.find_or_raise_by_id(trial_id, session)
-            trial_param = optuna_rdb_models.TrialParamModel.find_or_raise_by_trial_and_param_name(
+            trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+            trial_param = models.TrialParamModel.find_or_raise_by_trial_and_param_name(
                 trial, param_name, session
             )
             param_value = trial_param.param_value
@@ -853,7 +853,7 @@ class RDBStorage(BaseStorage):
     def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
 
         with _create_scoped_session(self.scoped_session) as session:
-            trial = optuna_rdb_models.TrialModel.find_or_raise_by_id(trial_id, session)
+            trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
             self.check_trial_is_updatable(trial_id, trial.state)
             for objective, v in enumerate(values):
                 self._set_trial_value_without_commit(session, trial_id, objective, v)
@@ -889,15 +889,15 @@ class RDBStorage(BaseStorage):
         self, session: "sqlalchemy_orm.Session", trial_id: int, objective: int, value: float
     ) -> None:
 
-        trial = optuna_rdb_models.TrialModel.find_or_raise_by_id(trial_id, session)
+        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
         value = self._ensure_numerical_limit(value)
 
-        trial_value = optuna_rdb_models.TrialValueModel.find_by_trial_and_objective(
+        trial_value = models.TrialValueModel.find_by_trial_and_objective(
             trial, objective, session
         )
         if trial_value is None:
-            trial_value = optuna_rdb_models.TrialValueModel(
+            trial_value = models.TrialValueModel(
                 trial_id=trial_id, objective=objective, value=value
             )
             session.add(trial_value)
@@ -921,19 +921,19 @@ class RDBStorage(BaseStorage):
         intermediate_value: float,
     ) -> None:
 
-        trial = optuna_rdb_models.TrialModel.find_or_raise_by_id(trial_id, session)
+        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
         _intermediate_value = self._ensure_not_nan(intermediate_value)
         if _intermediate_value is not None:
             _intermediate_value = self._ensure_numerical_limit(_intermediate_value)
 
         trial_intermediate_value = (
-            optuna_rdb_models.TrialIntermediateValueModel.find_by_trial_and_step(
+            models.TrialIntermediateValueModel.find_by_trial_and_step(
                 trial, step, session
             )
         )
         if trial_intermediate_value is None:
-            trial_intermediate_value = optuna_rdb_models.TrialIntermediateValueModel(
+            trial_intermediate_value = models.TrialIntermediateValueModel(
                 trial_id=trial_id, step=step, intermediate_value=_intermediate_value
             )
             session.add(trial_intermediate_value)
@@ -949,14 +949,14 @@ class RDBStorage(BaseStorage):
         self, session: "sqlalchemy_orm.Session", trial_id: int, key: str, value: Any
     ) -> None:
 
-        trial = optuna_rdb_models.TrialModel.find_or_raise_by_id(trial_id, session)
+        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        attribute = optuna_rdb_models.TrialUserAttributeModel.find_by_trial_and_key(
+        attribute = models.TrialUserAttributeModel.find_by_trial_and_key(
             trial, key, session
         )
         if attribute is None:
-            attribute = optuna_rdb_models.TrialUserAttributeModel(
+            attribute = models.TrialUserAttributeModel(
                 trial_id=trial_id, key=key, value_json=json.dumps(value)
             )
             session.add(attribute)
@@ -972,14 +972,14 @@ class RDBStorage(BaseStorage):
         self, session: "sqlalchemy_orm.Session", trial_id: int, key: str, value: Any
     ) -> None:
 
-        trial = optuna_rdb_models.TrialModel.find_or_raise_by_id(trial_id, session)
+        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        attribute = optuna_rdb_models.TrialSystemAttributeModel.find_by_trial_and_key(
+        attribute = models.TrialSystemAttributeModel.find_by_trial_and_key(
             trial, key, session
         )
         if attribute is None:
-            attribute = optuna_rdb_models.TrialSystemAttributeModel(
+            attribute = models.TrialSystemAttributeModel(
                 trial_id=trial_id, key=key, value_json=json.dumps(value)
             )
             session.add(attribute)
@@ -990,10 +990,10 @@ class RDBStorage(BaseStorage):
 
         with _create_scoped_session(self.scoped_session) as session:
             trial_id = (
-                session.query(optuna_rdb_models.TrialModel.trial_id)
+                session.query(models.TrialModel.trial_id)
                 .filter(
-                    optuna_rdb_models.TrialModel.number == trial_number,
-                    optuna_rdb_models.TrialModel.study_id == study_id,
+                    models.TrialModel.number == trial_number,
+                    models.TrialModel.study_id == study_id,
                 )
                 .one_or_none()
             )
@@ -1008,7 +1008,7 @@ class RDBStorage(BaseStorage):
     def get_trial(self, trial_id: int) -> FrozenTrial:
 
         with _create_scoped_session(self.scoped_session) as session:
-            trial_model = optuna_rdb_models.TrialModel.find_or_raise_by_id(trial_id, session)
+            trial_model = models.TrialModel.find_or_raise_by_id(trial_id, session)
             frozen_trial = self._build_frozen_trial_from_trial_model(trial_model)
 
         return frozen_trial
@@ -1033,13 +1033,13 @@ class RDBStorage(BaseStorage):
 
         with _create_scoped_session(self.scoped_session) as session:
             # Ensure that the study exists.
-            optuna_rdb_models.StudyModel.find_or_raise_by_id(study_id, session)
-            query = session.query(optuna_rdb_models.TrialModel.trial_id).filter(
-                optuna_rdb_models.TrialModel.study_id == study_id
+            models.StudyModel.find_or_raise_by_id(study_id, session)
+            query = session.query(models.TrialModel.trial_id).filter(
+                models.TrialModel.study_id == study_id
             )
 
             if states is not None:
-                query = query.filter(optuna_rdb_models.TrialModel.state.in_(states))
+                query = query.filter(models.TrialModel.state.in_(states))
 
             trial_ids = query.all()
 
@@ -1050,23 +1050,23 @@ class RDBStorage(BaseStorage):
             )
             try:
                 trial_models = (
-                    session.query(optuna_rdb_models.TrialModel)
-                    .options(sqlalchemy_orm.selectinload(optuna_rdb_models.TrialModel.params))
-                    .options(sqlalchemy_orm.selectinload(optuna_rdb_models.TrialModel.values))
+                    session.query(models.TrialModel)
+                    .options(sqlalchemy_orm.selectinload(models.TrialModel.params))
+                    .options(sqlalchemy_orm.selectinload(models.TrialModel.values))
                     .options(
-                        sqlalchemy_orm.selectinload(optuna_rdb_models.TrialModel.user_attributes)
+                        sqlalchemy_orm.selectinload(models.TrialModel.user_attributes)
                     )
                     .options(
-                        sqlalchemy_orm.selectinload(optuna_rdb_models.TrialModel.system_attributes)
+                        sqlalchemy_orm.selectinload(models.TrialModel.system_attributes)
                     )
                     .options(
                         sqlalchemy_orm.selectinload(
-                            optuna_rdb_models.TrialModel.intermediate_values
+                            models.TrialModel.intermediate_values
                         )
                     )
                     .filter(
-                        optuna_rdb_models.TrialModel.trial_id.in_(trial_ids),
-                        optuna_rdb_models.TrialModel.study_id == study_id,
+                        models.TrialModel.trial_id.in_(trial_ids),
+                        models.TrialModel.study_id == study_id,
                     )
                     .all()
                 )
@@ -1082,21 +1082,21 @@ class RDBStorage(BaseStorage):
                 )
 
                 trial_models = (
-                    session.query(optuna_rdb_models.TrialModel)
-                    .options(sqlalchemy_orm.selectinload(optuna_rdb_models.TrialModel.params))
-                    .options(sqlalchemy_orm.selectinload(optuna_rdb_models.TrialModel.values))
+                    session.query(models.TrialModel)
+                    .options(sqlalchemy_orm.selectinload(models.TrialModel.params))
+                    .options(sqlalchemy_orm.selectinload(models.TrialModel.values))
                     .options(
-                        sqlalchemy_orm.selectinload(optuna_rdb_models.TrialModel.user_attributes)
+                        sqlalchemy_orm.selectinload(models.TrialModel.user_attributes)
                     )
                     .options(
-                        sqlalchemy_orm.selectinload(optuna_rdb_models.TrialModel.system_attributes)
+                        sqlalchemy_orm.selectinload(models.TrialModel.system_attributes)
                     )
                     .options(
                         sqlalchemy_orm.selectinload(
-                            optuna_rdb_models.TrialModel.intermediate_values
+                            models.TrialModel.intermediate_values
                         )
                     )
-                    .filter(optuna_rdb_models.TrialModel.study_id == study_id)
+                    .filter(models.TrialModel.study_id == study_id)
                     .all()
                 )
                 trial_models = [t for t in trial_models if t.trial_id in trial_ids]
@@ -1106,7 +1106,7 @@ class RDBStorage(BaseStorage):
         return trials
 
     def _build_frozen_trial_from_trial_model(
-        self, trial: "optuna_rdb_models.TrialModel"
+        self, trial: "models.TrialModel"
     ) -> FrozenTrial:
 
         values: Optional[List[float]]
@@ -1156,9 +1156,9 @@ class RDBStorage(BaseStorage):
             direction = _directions[0]
 
             if direction == StudyDirection.MAXIMIZE:
-                trial = optuna_rdb_models.TrialModel.find_max_value_trial(study_id, 0, session)
+                trial = models.TrialModel.find_max_value_trial(study_id, 0, session)
             else:
-                trial = optuna_rdb_models.TrialModel.find_min_value_trial(study_id, 0, session)
+                trial = models.TrialModel.find_min_value_trial(study_id, 0, session)
             trial_id = trial.trial_id
 
         return self.get_trial(trial_id)
@@ -1166,7 +1166,7 @@ class RDBStorage(BaseStorage):
     def read_trials_from_remote_storage(self, study_id: int) -> None:
         # Make sure that the given study exists.
         with _create_scoped_session(self.scoped_session) as session:
-            optuna_rdb_models.StudyModel.find_or_raise_by_id(study_id, session)
+            models.StudyModel.find_or_raise_by_id(study_id, session)
 
     @staticmethod
     def _set_default_engine_kwargs_for_mysql(url: str, engine_kwargs: Dict[str, Any]) -> None:
@@ -1189,7 +1189,7 @@ class RDBStorage(BaseStorage):
     @staticmethod
     def _fill_storage_url_template(template: str) -> str:
 
-        return template.format(SCHEMA_VERSION=optuna_rdb_models.SCHEMA_VERSION)
+        return template.format(SCHEMA_VERSION=models.SCHEMA_VERSION)
 
     def remove_session(self) -> None:
         """Removes the current session.
@@ -1228,9 +1228,9 @@ class RDBStorage(BaseStorage):
 
     def record_heartbeat(self, trial_id: int) -> None:
         with _create_scoped_session(self.scoped_session, True) as session:
-            heartbeat = optuna_rdb_models.TrialHeartbeatModel.where_trial_id(trial_id, session)
+            heartbeat = models.TrialHeartbeatModel.where_trial_id(trial_id, session)
             if heartbeat is None:
-                heartbeat = optuna_rdb_models.TrialHeartbeatModel(trial_id=trial_id)
+                heartbeat = models.TrialHeartbeatModel(trial_id=trial_id)
                 session.add(heartbeat)
             else:
                 heartbeat.heartbeat = session.execute(sqlalchemy.func.now()).scalar()
@@ -1266,10 +1266,10 @@ class RDBStorage(BaseStorage):
             current_heartbeat = current_heartbeat.replace(tzinfo=None)
 
             running_trials = (
-                session.query(optuna_rdb_models.TrialModel)
-                .options(sqlalchemy_orm.selectinload(optuna_rdb_models.TrialModel.heartbeats))
-                .filter(optuna_rdb_models.TrialModel.state == TrialState.RUNNING)
-                .filter(optuna_rdb_models.TrialModel.study_id == study_id)
+                session.query(models.TrialModel)
+                .options(sqlalchemy_orm.selectinload(models.TrialModel.heartbeats))
+                .filter(models.TrialModel.state == TrialState.RUNNING)
+                .filter(models.TrialModel.study_id == study_id)
                 .all()
             )
             for trial in running_trials:
@@ -1312,12 +1312,12 @@ class _VersionManager(object):
     def _init_version_info_model(self) -> None:
 
         with _create_scoped_session(self.scoped_session, True) as session:
-            version_info = optuna_rdb_models.VersionInfoModel.find(session)
+            version_info = models.VersionInfoModel.find(session)
             if version_info is not None:
                 return
 
-            version_info = optuna_rdb_models.VersionInfoModel(
-                schema_version=optuna_rdb_models.SCHEMA_VERSION,
+            version_info = models.VersionInfoModel(
+                schema_version=models.SCHEMA_VERSION,
                 library_version=version.__version__,
             )
             session.add(version_info)
@@ -1352,7 +1352,7 @@ class _VersionManager(object):
         with _create_scoped_session(self.scoped_session) as session:
             # NOTE: After invocation of `_init_version_info_model` method,
             #       it is ensured that a `VersionInfoModel` entry exists.
-            version_info = optuna_rdb_models.VersionInfoModel.find(session)
+            version_info = models.VersionInfoModel.find(session)
 
             assert version_info is not None
 
@@ -1410,21 +1410,21 @@ class _VersionManager(object):
         alembic_command.upgrade(config, "head")
 
         with _create_scoped_session(self.scoped_session, True) as session:
-            version_info = optuna_rdb_models.VersionInfoModel.find(session)
+            version_info = models.VersionInfoModel.find(session)
             assert version_info is not None
-            version_info.schema_version = optuna_rdb_models.SCHEMA_VERSION
+            version_info.schema_version = models.SCHEMA_VERSION
             version_info.library_version = version.__version__
 
     def _is_alembic_supported(self) -> bool:
 
         with _create_scoped_session(self.scoped_session) as session:
-            version_info = optuna_rdb_models.VersionInfoModel.find(session)
+            version_info = models.VersionInfoModel.find(session)
 
             if version_info is None:
                 # `None` means this storage was created just now.
                 return True
 
-            return version_info.schema_version == optuna_rdb_models.SCHEMA_VERSION
+            return version_info.schema_version == models.SCHEMA_VERSION
 
     def _create_alembic_script(self) -> "alembic_script.ScriptDirectory":
 
