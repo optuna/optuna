@@ -16,7 +16,7 @@ def run(args: argparse.Namespace) -> None:
     study_json_filename = os.path.join(args.out_dir, "studies.json")
     solvers_filename = os.path.join(args.out_dir, "solvers.json")
     problems_filename = os.path.join(args.out_dir, "problems.json")
-    
+
     # Ensure all files are empty.
     for filename in [study_json_filename, solvers_filename, problems_filename]:
         with open(filename, "w"):
