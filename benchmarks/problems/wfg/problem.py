@@ -770,7 +770,7 @@ class WFGProblemFactory(problem.ProblemFactory):
             values=[problem.Var("f1"), problem.Var("f2")],
         )
 
-    def create_problem(self,seed:int) -> problem.Problem:
+    def create_problem(self, seed: int) -> problem.Problem:
         return WFGProblem()
 
 
