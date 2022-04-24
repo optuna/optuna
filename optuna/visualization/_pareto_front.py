@@ -98,7 +98,7 @@ def plot_pareto_front(
             non-best, and infeasible. Categories are shown in different colors. Here, whether a
             trial is best (on Pareto front) or not is determined ignoring all infeasible trials.
         targets:
-            A function that returns a tuple of target values to display.
+            A function that returns targets values to display.
             The argument to this function is :class:`~optuna.trial.FrozenTrial`.
 
             .. note::
