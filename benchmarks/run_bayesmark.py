@@ -75,17 +75,116 @@ def make_kurobako_results(args: argparse.Namespace):
     perf_ds, meta = XRSerializer.load_derived(db_root, db=_DB, key=cc.EVAL_RESULTS)
 
     template_result = {
-        "start_time": None,
-        "end_time": None,
-        "seed": None,
+        "start_time": "2022-04-24T14:59:47.372925+09:00",  # dummy
+        "end_time": "2022-04-24T14:59:48.138886+09:00",  # dummy
+        "seed": 0,  # dummy
         "budget": len(perf_ds.coords[cc.ITER].values),
         "concurrency": len(perf_ds.coords[cc.SUGGEST].values),
-        "scheduling": None,
+        "scheduling": "RANDOM",  # dummy
         "solver": {
-            "recipe": {},
+            "recipe": {
+                'name': None,
+                'optuna': {
+                    'loglevel': 'debug',  # dummy
+                    'pruner': 'NopPruner',  # dummy
+                    'pruner_kwargs': '{}',  # dummy
+                    'sampler': 'RandomSampler',  # dummy
+                    'sampler_kwargs': '{}'  # dummy
+                },
+            },
+            'spec': {
+                'attrs': {
+                    'github': 'https://github.com/optuna/optuna',
+                    'paper': 'Akiba, Takuya, et al. "Optuna: A next-generation '
+                             'hyperparameter optimization framework." '
+                             'Proceedings of the 25th ACM SIGKDD International '
+                             'Conference on Knowledge Discovery & Data Mining. '
+                             'ACM, 2019.',
+                    'version': 'optuna=3.0.0b0.dev0, kurobako-py=0.2.0'},
+                'capabilities': ['UNIFORM_CONTINUOUS',
+                                      'UNIFORM_DISCRETE',
+                                      'LOG_UNIFORM_CONTINUOUS',
+                                      'LOG_UNIFORM_DISCRETE',
+                                      'CATEGORICAL',
+                                      'CONDITIONAL',
+                                      'MULTI_OBJECTIVE',
+                                      'CONCURRENT'],
+                'name': '_RandomSampler_NopPruner'
+            }
         },
         "problem": {
-            "spec": {},
+            'recipe': {
+                'hpobench': {
+                    'dataset': './fcnet_tabular_benchmarks/fcnet_slice_localization_data.hdf5'
+                }
+            },
+            'spec': {
+                'attrs': {
+                    'github': 'https://github.com/automl/nas_benchmarks',
+                    'paper': 'Klein, Aaron, and Frank Hutter. "Tabular '
+                             'Benchmarks for Joint Architecture and '
+                             'Hyperparameter Optimization." arXiv preprint '
+                             'arXiv:1905.04970 (2019).',
+                    'version': 'kurobako_problems=0.1.13'
+                },
+                'name': 'HPO-Bench-Slice',
+                'params_domain': [
+                    {
+                        'distribution': 'UNIFORM',
+                        'name': 'activation_fn_1',
+                        'range': {
+                            'choices': ['tanh', 'relu'],
+                            'type': 'CATEGORICAL'
+                        }
+                    },
+                    {'distribution': 'UNIFORM',
+                     'name': 'activation_fn_2',
+                     'range': {'choices': ['tanh', 'relu'],
+                               'type': 'CATEGORICAL'}},
+                    {'distribution': 'UNIFORM',
+                     'name': 'batch_size',
+                     'range': {'high': 4,
+                               'low': 0,
+                               'type': 'DISCRETE'}},
+                    {'distribution': 'UNIFORM',
+                     'name': 'dropout_1',
+                     'range': {'high': 3,
+                               'low': 0,
+                               'type': 'DISCRETE'}},
+                    {'distribution': 'UNIFORM',
+                     'name': 'dropout_2',
+                     'range': {'high': 3,
+                               'low': 0,
+                               'type': 'DISCRETE'}},
+                    {'distribution': 'UNIFORM',
+                     'name': 'init_lr',
+                     'range': {'high': 6,
+                               'low': 0,
+                               'type': 'DISCRETE'}},
+                    {'distribution': 'UNIFORM',
+                     'name': 'lr_schedule',
+                     'range': {'choices': ['cosine', 'const'],
+                               'type': 'CATEGORICAL'}},
+                    {'distribution': 'UNIFORM',
+                     'name': 'n_units_1',
+                     'range': {'high': 6,
+                               'low': 0,
+                               'type': 'DISCRETE'}},
+                    {'distribution': 'UNIFORM',
+                     'name': 'n_units_2',
+                     'range': {'high': 6,
+                               'low': 0,
+                               'type': 'DISCRETE'}}],
+                'steps': 100,
+                'values_domain': [
+                    {
+                        'distribution': 'UNIFORM',
+                        'name': 'Validation MSE',
+                        'range':
+                            {'low': 0.0, 'type': 'CONTINUOUS'}
+                    }
+                ]
+            }
         },
         "trials": []
     }
@@ -93,9 +192,16 @@ def make_kurobako_results(args: argparse.Namespace):
     template_trial = {
         "evaluations": [
             {
+                'ask_elapsed': 0.002855974,
+                'end_step': 300,
+                'evaluate_elapsed': 0.014396439,
+                'start_step': 200,
+                'tell_elapsed': 0.001346957,
                 "values": [],
             }
         ],
+        'params': [0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 4.0, 3.0],
+        'thread_id': 0,
     }
 
     results = []
@@ -232,7 +338,7 @@ if __name__ == "__main__":
     os.makedirs("plots", exist_ok=True)
     os.makedirs("partial", exist_ok=True)
 
-    run_benchmark(args)
+    #run_benchmark(args)
     make_kurobako_results(args)
     #make_plots(args)
     #partial_report(args)
