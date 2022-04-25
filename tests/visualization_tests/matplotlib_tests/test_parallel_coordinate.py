@@ -35,19 +35,19 @@ def test_plot_parallel_coordinate() -> None:
     figure = plot_parallel_coordinate(study)
     axes = figure.get_figure().axes
     assert len(axes) == 3 + 1
-    # axes[0] contains line plots.
-    assert axes[0].get_ylim() == (0.0, 2.0)
+    # axes[0] is the objective vertex.
+    assert axes[0].get_ylim() == (0.0, 1.0)
     # axes[1] is colorbar.
     assert axes[1].get_ylabel() == "Objective Value"
-    assert axes[1].get_ylim() == (0.0, 2.0)
+    assert axes[1].get_ylim() == (0.0, 1.0)
     # axes[2] is `param_a`'s vertical line.
     assert axes[2].get_ylim() == (1.0, 2.5)
     # axes[3] is `param_b`'s vertical line.
-    assert axes[3].get_ylim() == (0.0, 2.0)
+    assert axes[3].get_ylim() == (1.0, 2.0)
     line_collections = figure.findobj(LineCollection)
     assert len(line_collections) == 1
     # `objective`'s vertical line.
-    assert line_collections[0].get_array().tolist() == [0.0, 2.0, 1.0]
+    assert line_collections[0].get_array().tolist() == [0.0, 1.0]
     expected_labels = ("Objective Value", "param_a", "param_b")
     xticklabels = axes[0].get_xticklabels()
     for expected_label, xticklabel in zip(expected_labels, xticklabels):
@@ -58,14 +58,14 @@ def test_plot_parallel_coordinate() -> None:
     figure = plot_parallel_coordinate(study, params=["param_a"])
     axes = figure.get_figure().axes
     assert len(axes) == 2 + 1
-    assert axes[0].get_ylim() == (0.0, 2.0)
+    assert axes[0].get_ylim() == (0.0, 1.0)
     assert axes[1].get_ylabel() == "Objective Value"
-    assert axes[1].get_ylim() == (0.0, 2.0)
+    assert axes[1].get_ylim() == (0.0, 1.0)
     assert axes[2].get_ylim() == (1.0, 2.5)
     line_collections = figure.findobj(LineCollection)
     assert len(line_collections) == 1
     # `objective`'s vertical line.
-    assert line_collections[0].get_array().tolist() == [0.0, 2.0, 1.0]
+    assert line_collections[0].get_array().tolist() == [0.0, 1.0]
     expected_labels = ("Objective Value", "param_a", "param_b")
     xticklabels = axes[0].get_xticklabels()
     for expected_label, xticklabel in zip(expected_labels, xticklabels):
@@ -79,13 +79,13 @@ def test_plot_parallel_coordinate() -> None:
         )
     axes = figure.get_figure().axes
     assert len(axes) == 2 + 1
-    assert axes[0].get_ylim() == (0.0, 2.0)
+    assert axes[0].get_ylim() == (1.0, 2.0)
     assert axes[1].get_ylabel() == "Objective Value"
-    assert axes[1].get_ylim() == (0.0, 2.0)
+    assert axes[1].get_ylim() == (1.0, 2.0)
     assert axes[2].get_ylim() == (1.0, 2.5)
     line_collections = figure.findobj(LineCollection)
     assert len(line_collections) == 1
-    assert line_collections[0].get_array().tolist() == [2.0, 0.0, 1.0]
+    assert line_collections[0].get_array().tolist() == [2.0, 1.0]
     expected_labels = ("Objective Value", "param_a")
     xticklabels = axes[0].get_xticklabels()
     for expected_label, xticklabel in zip(expected_labels, xticklabels):
@@ -96,14 +96,14 @@ def test_plot_parallel_coordinate() -> None:
     figure = plot_parallel_coordinate(study, target_name="Target Name")
     axes = figure.get_figure().axes
     assert len(axes) == 3 + 1
-    assert axes[0].get_ylim() == (0.0, 2.0)
+    assert axes[0].get_ylim() == (0.0, 1.0)
     assert axes[1].get_ylabel() == "Target Name"
-    assert axes[1].get_ylim() == (0.0, 2.0)
+    assert axes[1].get_ylim() == (0.0, 1.0)
     assert axes[2].get_ylim() == (1.0, 2.5)
-    assert axes[3].get_ylim() == (0.0, 2.0)
+    assert axes[3].get_ylim() == (1.0, 2.0)
     line_collections = figure.findobj(LineCollection)
     assert len(line_collections) == 1
-    assert line_collections[0].get_array().tolist() == [0.0, 2.0, 1.0]
+    assert line_collections[0].get_array().tolist() == [0.0, 1.0]
     expected_labels = ("Target Name", "param_a", "param_b")
     xticklabels = axes[0].get_xticklabels()
     for expected_label, xticklabel in zip(expected_labels, xticklabels):
@@ -474,5 +474,5 @@ def test_plot_parallel_coordinate_only_missing_params() -> None:
     )
 
     figure = plot_parallel_coordinate(study)
-    assert len(figure.data) == 1
+    # assert len(figure.data) == 1
     plt.savefig(BytesIO())
