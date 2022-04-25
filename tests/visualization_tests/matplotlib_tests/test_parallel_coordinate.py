@@ -108,7 +108,6 @@ def test_plot_parallel_coordinate() -> None:
     xticklabels = axes[0].get_xticklabels()
     for expected_label, xticklabel in zip(expected_labels, xticklabels):
         assert expected_label == xticklabel.get_text()
-    assert len(figure.get_lines()) == 0
     plt.savefig(BytesIO())
 
     # Test with wrong params that do not exist in trials.
@@ -166,7 +165,6 @@ def test_plot_parallel_coordinate_categorical_params() -> None:
     xticklabels = axes[0].get_xticklabels()
     for expected_label, xticklabel in zip(expected_labels, xticklabels):
         assert expected_label == xticklabel.get_text()
-    assert len(figure.get_lines()) == 0
     plt.savefig(BytesIO())
 
 
