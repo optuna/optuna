@@ -111,7 +111,7 @@ def _get_optimization_history_plot(
 
     _, ax = plt.subplots()
     ax.set_title("Optimization History Plot")
-    ax.set_xlabel("#Trials")
+    ax.set_xlabel("Trial")
     ax.set_ylabel(target_name)
 
     if len(studies) == 0:

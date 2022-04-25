@@ -9,7 +9,7 @@ import plotly
 import pytest
 
 from optuna.distributions import CategoricalDistribution
-from optuna.distributions import LogUniformDistribution
+from optuna.distributions import FloatDistribution
 from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
@@ -160,7 +160,7 @@ def test_plot_contour_log_scale_and_str_category() -> None:
             value=0.0,
             params={"param_a": 1e-6, "param_b": "100"},
             distributions={
-                "param_a": LogUniformDistribution(1e-7, 1e-2),
+                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
                 "param_b": CategoricalDistribution(["100", "101"]),
             },
         )
@@ -170,7 +170,7 @@ def test_plot_contour_log_scale_and_str_category() -> None:
             value=1.0,
             params={"param_a": 1e-5, "param_b": "101"},
             distributions={
-                "param_a": LogUniformDistribution(1e-7, 1e-2),
+                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
                 "param_b": CategoricalDistribution(["100", "101"]),
             },
         )
@@ -192,7 +192,7 @@ def test_plot_contour_log_scale_and_str_category() -> None:
             value=0.0,
             params={"param_a": 1e-6, "param_b": "100", "param_c": "one"},
             distributions={
-                "param_a": LogUniformDistribution(1e-7, 1e-2),
+                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
                 "param_b": CategoricalDistribution(["100", "101"]),
                 "param_c": CategoricalDistribution(["one", "two"]),
             },
@@ -203,7 +203,7 @@ def test_plot_contour_log_scale_and_str_category() -> None:
             value=1.0,
             params={"param_a": 1e-5, "param_b": "101", "param_c": "two"},
             distributions={
-                "param_a": LogUniformDistribution(1e-7, 1e-2),
+                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
                 "param_b": CategoricalDistribution(["100", "101"]),
                 "param_c": CategoricalDistribution(["one", "two"]),
             },
@@ -304,3 +304,24 @@ def test_color_map(direction: str) -> None:
     contour = plot_contour(study, target=lambda t: t.number).data[0]
     assert COLOR_SCALE == [v[1] for v in contour["colorscale"]]
     assert contour["reversescale"]
+
+
+@pytest.mark.parametrize("value", [float("inf"), -float("inf")])
+def test_nonfinite_removed(value: float) -> None:
+
+    study = prepare_study_with_trials(with_c_d=True, value_for_first_trial=value)
+    figure = plot_contour(study, params=["param_b", "param_d"])
+    zvals = itertools.chain.from_iterable(figure.data[0]["z"])
+    assert value not in zvals
+
+
+@pytest.mark.parametrize("objective", (0, 1))
+@pytest.mark.parametrize("value", (float("inf"), -float("inf")))
+def test_nonfinite_multiobjective(objective: int, value: float) -> None:
+
+    study = prepare_study_with_trials(with_c_d=True, n_objectives=2, value_for_first_trial=value)
+    figure = plot_contour(
+        study, params=["param_b", "param_d"], target=lambda t: t.values[objective]
+    )
+    zvals = itertools.chain.from_iterable(figure.data[0]["z"])
+    assert value not in zvals

@@ -1,4 +1,6 @@
+import functools
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import Optional
 from typing import Sequence
@@ -7,6 +9,7 @@ from typing import Union
 import optuna
 from optuna._experimental import experimental
 from optuna._imports import try_import
+from optuna.study.study import ObjectiveFuncType
 
 
 with try_import() as _imports:
@@ -37,6 +40,7 @@ class WeightsAndBiasesCallback(object):
         To ensure correct trial order in Weights & Biases, this callback
         should only be used with ``study.optimize(n_jobs=1)``.
 
+
     Example:
 
         Add Weights & Biases callback to Optuna optimization.
@@ -52,11 +56,57 @@ class WeightsAndBiasesCallback(object):
                 return (x - 2) ** 2
 
 
+            study = optuna.create_study()
+
+            wandb_kwargs = {"project": "my-project"}
+            wandbc = WeightsAndBiasesCallback(wandb_kwargs=wandb_kwargs)
+
+            study.optimize(objective, n_trials=10, callbacks=[wandbc])
+
+
+
+        Weights & Biases logging in multirun mode.
+
+        .. code::
+
+            import optuna
+            from optuna.integration.wandb import WeightsAndBiasesCallback
+
             wandb_kwargs = {"project": "my-project"}
             wandbc = WeightsAndBiasesCallback(wandb_kwargs=wandb_kwargs)
 
 
-            study = optuna.create_study(study_name="my_study")
+            @wandbc.track_in_wandb()
+            def objective(trial):
+                x = trial.suggest_float("x", -10, 10)
+                return (x - 2) ** 2
+
+
+            study = optuna.create_study(as_multirun=True)
+            study.optimize(objective, n_trials=10, callbacks=[wandbc])
+
+
+        Add additional logging to Weights & Biases.
+
+        .. code::
+
+            import optuna
+            from optuna.integration.wandb import WeightsAndBiasesCallback
+            import wandb
+
+            wandb_kwargs = {"project": "my-project"}
+            wandbc = WeightsAndBiasesCallback(wandb_kwargs=wandb_kwargs)
+
+
+            @wandbc.track_in_wandb()
+            def objective(trial):
+                x = trial.suggest_float("x", -10, 10)
+                loss = (x - 2) ** 2
+                wandb.log({"loss": loss})
+                return loss
+
+
+            study = optuna.create_study()
             study.optimize(objective, n_trials=10, callbacks=[wandbc])
 
     Args:
@@ -72,6 +122,9 @@ class WeightsAndBiasesCallback(object):
             Set of arguments passed when initializing Weights & Biases run.
             Please refer to `Weights & Biases API documentation
             <https://docs.wandb.ai/ref/python/init>`_ for more details.
+        as_multirun:
+            Creates new runs for each trial. Useful for generating W&B Sweeps like
+            panels (for ex., parameter importance, parallel coordinates, etc).
 
     Raises:
         :exc:`ValueError`:
@@ -84,6 +137,7 @@ class WeightsAndBiasesCallback(object):
         self,
         metric_name: Union[str, Sequence[str]] = "value",
         wandb_kwargs: Optional[Dict[str, Any]] = None,
+        as_multirun: bool = False,
     ) -> None:
 
         _imports.check()
@@ -97,8 +151,10 @@ class WeightsAndBiasesCallback(object):
 
         self._metric_name = metric_name
         self._wandb_kwargs = wandb_kwargs or {}
+        self._as_multirun = as_multirun
 
-        self._initialize_run()
+        if not self._as_multirun:
+            self._initialize_run()
 
     def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
 
@@ -124,12 +180,64 @@ class WeightsAndBiasesCallback(object):
                 names = [*self._metric_name]
 
         metrics = {name: value for name, value in zip(names, trial.values)}
+
+        if self._as_multirun:
+            metrics["trial_number"] = trial.number
+
         attributes = {"direction": [d.name for d in study.directions]}
 
-        wandb.config.update(attributes)
-        wandb.log({**trial.params, **metrics}, step=trial.number)
+        step = trial.number if wandb.run else None
+        run = wandb.run
 
-    def _initialize_run(self) -> None:
+        # Might create extra runs if a user logs in wandb but doesn't use the decorator.
+
+        if not run:
+            run = self._initialize_run()
+            run.name = f"trial/{trial.number}/{run.name}"
+
+        run.log({**trial.params, **metrics}, step=step)
+
+        if self._as_multirun:
+            run.config.update({**attributes, **trial.params})
+            run.tags = tuple(self._wandb_kwargs.get("tags", ())) + (study.study_name,)
+            run.finish()
+        else:
+            run.config.update(attributes)
+
+    @experimental("3.0.0")
+    def track_in_wandb(self) -> Callable:
+        """Decorator for using W&B for logging inside the objective function.
+
+        The run is initialized with the same ``wandb_kwargs`` that are passed to the callback.
+        All the metrics from inside the objective function will be logged into the same run
+        which stores the parameters for a given trial.
+
+        Returns:
+            ObjectiveFuncType: Objective function with W&B tracking enabled.
+        """
+
+        def decorator(func: ObjectiveFuncType) -> ObjectiveFuncType:
+            @functools.wraps(func)
+            def wrapper(trial: optuna.trial.Trial) -> Union[float, Sequence[float]]:
+
+                run = wandb.run  # Uses global run when `as_multirun` is set to False.
+                if not run:
+                    run = self._initialize_run()
+                    run.name = f"trial/{trial.number}/{run.name}"
+
+                return func(trial)
+
+            return wrapper
+
+        return decorator
+
+    def _initialize_run(self) -> "wandb.sdk.wandb_run.Run":
         """Initializes Weights & Biases run."""
-
-        wandb.init(**self._wandb_kwargs)
+        run = wandb.init(**self._wandb_kwargs)
+        if not isinstance(run, wandb.sdk.wandb_run.Run):
+            raise RuntimeError(
+                "Cannot create a Run. "
+                "Expected wandb.sdk.wandb_run.Run as a return. "
+                f"Got: {type(run)}."
+            )
+        return run

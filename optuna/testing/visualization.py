@@ -1,5 +1,5 @@
 from optuna import Study
-from optuna.distributions import UniformDistribution
+from optuna.distributions import FloatDistribution
 from optuna.study import create_study
 from optuna.trial import create_trial
 
@@ -11,6 +11,7 @@ def prepare_study_with_trials(
     with_c_d: bool = True,
     n_objectives: int = 1,
     direction: str = "minimize",
+    value_for_first_trial: float = 0.0,
 ) -> Study:
 
     """Prepare a study for tests.
@@ -28,6 +29,8 @@ def prepare_study_with_trials(
             hyperparameters ('param_a' and 'param_b').
         n_objectives: Number of objective values.
         direction: Study's optimization direction.
+        value_for_first_trial: Objective value in first trial. This value will be broadcasted
+            to all objectives in multi-objective optimization.
 
     Returns:
         :class:`~optuna.study.Study`
@@ -39,20 +42,20 @@ def prepare_study_with_trials(
         return study
     study.add_trial(
         create_trial(
-            values=[0.0] * n_objectives,
+            values=[value_for_first_trial] * n_objectives,
             params={"param_a": 1.0, "param_b": 2.0, "param_c": 3.0, "param_d": 4.0}
             if with_c_d
             else {"param_a": 1.0, "param_b": 2.0},
             distributions={
-                "param_a": UniformDistribution(0.0, 3.0),
-                "param_b": UniformDistribution(0.0, 3.0),
-                "param_c": UniformDistribution(2.0, 5.0),
-                "param_d": UniformDistribution(2.0, 5.0),
+                "param_a": FloatDistribution(0.0, 3.0),
+                "param_b": FloatDistribution(0.0, 3.0),
+                "param_c": FloatDistribution(2.0, 5.0),
+                "param_d": FloatDistribution(2.0, 5.0),
             }
             if with_c_d
             else {
-                "param_a": UniformDistribution(0.0, 3.0),
-                "param_b": UniformDistribution(0.0, 3.0),
+                "param_a": FloatDistribution(0.0, 3.0),
+                "param_b": FloatDistribution(0.0, 3.0),
             },
         )
     )
@@ -61,11 +64,11 @@ def prepare_study_with_trials(
             values=[2.0] * n_objectives,
             params={"param_b": 0.0, "param_d": 4.0} if with_c_d else {"param_b": 0.0},
             distributions={
-                "param_b": UniformDistribution(0.0, 3.0),
-                "param_d": UniformDistribution(2.0, 5.0),
+                "param_b": FloatDistribution(0.0, 3.0),
+                "param_d": FloatDistribution(2.0, 5.0),
             }
             if with_c_d
-            else {"param_b": UniformDistribution(0.0, 3.0)},
+            else {"param_b": FloatDistribution(0.0, 3.0)},
         )
     )
     if less_than_two:
@@ -78,15 +81,15 @@ def prepare_study_with_trials(
             if with_c_d
             else {"param_a": 2.5, "param_b": 1.0},
             distributions={
-                "param_a": UniformDistribution(0.0, 3.0),
-                "param_b": UniformDistribution(0.0, 3.0),
-                "param_c": UniformDistribution(2.0, 5.0),
-                "param_d": UniformDistribution(2.0, 5.0),
+                "param_a": FloatDistribution(0.0, 3.0),
+                "param_b": FloatDistribution(0.0, 3.0),
+                "param_c": FloatDistribution(2.0, 5.0),
+                "param_d": FloatDistribution(2.0, 5.0),
             }
             if with_c_d
             else {
-                "param_a": UniformDistribution(0.0, 3.0),
-                "param_b": UniformDistribution(0.0, 3.0),
+                "param_a": FloatDistribution(0.0, 3.0),
+                "param_b": FloatDistribution(0.0, 3.0),
             },
         )
     )
@@ -99,15 +102,15 @@ def prepare_study_with_trials(
                 if with_c_d
                 else {"param_a": 0.5, "param_b": 1.5},
                 distributions={
-                    "param_a": UniformDistribution(0.0, 3.0),
-                    "param_b": UniformDistribution(0.0, 3.0),
-                    "param_c": UniformDistribution(2.0, 5.0),
-                    "param_d": UniformDistribution(2.0, 5.0),
+                    "param_a": FloatDistribution(0.0, 3.0),
+                    "param_b": FloatDistribution(0.0, 3.0),
+                    "param_c": FloatDistribution(2.0, 5.0),
+                    "param_d": FloatDistribution(2.0, 5.0),
                 }
                 if with_c_d
                 else {
-                    "param_a": UniformDistribution(0.0, 3.0),
-                    "param_b": UniformDistribution(0.0, 3.0),
+                    "param_a": FloatDistribution(0.0, 3.0),
+                    "param_b": FloatDistribution(0.0, 3.0),
                 },
             )
         )

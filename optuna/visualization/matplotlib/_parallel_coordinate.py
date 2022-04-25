@@ -14,6 +14,7 @@ from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._utils import _check_plot_args
+from optuna.visualization._utils import _get_skipped_trial_numbers
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 from optuna.visualization.matplotlib._utils import _is_categorical
 from optuna.visualization.matplotlib._utils import _is_log_scale
@@ -130,7 +131,14 @@ def _get_parallel_coordinate_plot(
         all_params = set(params)
     sorted_params = sorted(all_params)
 
-    obj_org = [target(t) for t in trials]
+    skipped_trial_numbers = _get_skipped_trial_numbers(trials, sorted_params)
+
+    obj_org = [target(t) for t in trials if t.number not in skipped_trial_numbers]
+
+    if len(obj_org) == 0:
+        _logger.warning("Your study has only completed trials with missing parameters.")
+        return ax
+
     obj_min = min(obj_org)
     obj_max = max(obj_org)
     obj_w = obj_max - obj_min
@@ -144,7 +152,7 @@ def _get_parallel_coordinate_plot(
     numeric_cat_params_indices: List[int] = []
 
     for param_index, p_name in enumerate(sorted_params):
-        values = [t.params[p_name] if p_name in t.params else np.nan for t in trials]
+        values = [t.params[p_name] for t in trials if t.number not in skipped_trial_numbers]
 
         if _is_categorical(trials, p_name):
             vocab = defaultdict(lambda: len(vocab))  # type: DefaultDict[str, int]
