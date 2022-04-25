@@ -65,11 +65,7 @@ jobs:
         # TODO(hvy): Fix samplers_tests/test_samplers.py to not require optional dependencies and remove these installs.
         pip install scikit-optimize
         pip install cma
-
-    # TODO(nzw): Move `run` part to the end of `Install` after PyTorch and BoTorch support Python 3.10.
-    - name: Install PyTorch and BoTorch.
-      run: pip install botorch torch==1.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
-      if: matrix.python-version != '3.10'
+        pip install botorch torch==1.11.0 --extra-index-url https://download.pytorch.org/whl/cpu
 
     - name: Tests
       run: |
