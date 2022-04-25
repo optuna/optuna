@@ -92,6 +92,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         ],
         "experimental": ["redis"],
         "testing": [
+            "shap",
             "chainer>=5.0.0",
             "cma",
             "fakeredis",
@@ -139,6 +140,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             # optuna/visualization/param_importances.py.
         ],
         "integration": [
+            "shap",
             "catboost>=0.26",
             "chainer>=5.0.0",
             "cma",

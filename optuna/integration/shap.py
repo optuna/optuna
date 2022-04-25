@@ -46,7 +46,7 @@ class ShapleyImportanceEvaluator(MeanDecreaseImpurityImportanceEvaluator):
         MeanDecreaseImpurityImportanceEvaluator.__init__(
             self, n_trees=n_trees, max_depth=max_depth, seed=seed
         )
-        # Use the TreeExplainer from the SHAP module
+        # Use the TreeExplainer from the SHAP module.
         self._explainer: TreeExplainer = None
 
     def evaluate(
@@ -57,25 +57,25 @@ class ShapleyImportanceEvaluator(MeanDecreaseImpurityImportanceEvaluator):
         target: Optional[Callable[[FrozenTrial], float]] = None,
     ) -> Dict[str, float]:
 
-        # Train a RandomForest from the parent class
+        # Train a RandomForest from the parent class.
         super().evaluate(study=study, params=params, target=target)
 
-        # Create Tree Explainer object that can calculate shap values
+        # Create Tree Explainer object that can calculate shap values.
         self._explainer = TreeExplainer(self._forest)
 
-        # Generate SHAP values for the parameters during the trials
+        # Generate SHAP values for the parameters during the trials.
         shap_values = self._explainer.shap_values(self._trans_params)
 
-        # Calculate the mean absolute SHAP value for each parameter
+        # Calculate the mean absolute SHAP value for each parameter.
         mean_abs_shap_values = []
         for param_index in range(shap_values.shape[1]):
-            # Add tuples of ("feature_name": mean_abs_shap_value)
+            # Add tuples of ("feature_name": mean_abs_shap_value).
             mean_abs_shap_values.append(
                 (self._param_names[param_index],
                  np.abs(shap_values[:, param_index]).mean())
             )
 
-        # Use the mean absolute SHAP values as the feature importance
+        # Use the mean absolute SHAP values as the feature importance.
         mean_abs_shap_values.sort(key=lambda t: t[1], reverse=True)
         feature_importances = OrderedDict(mean_abs_shap_values)
 

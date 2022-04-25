@@ -1,6 +1,6 @@
 from optuna import create_study
 from optuna import Trial
-from optuna.importance import ShapleyImportanceEvaluator
+from optuna.integration.shap import ShapleyImportanceEvaluator
 from optuna.samplers import RandomSampler
 
 
