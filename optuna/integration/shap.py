@@ -71,8 +71,7 @@ class ShapleyImportanceEvaluator(MeanDecreaseImpurityImportanceEvaluator):
         for param_index in range(shap_values.shape[1]):
             # Add tuples of ("feature_name": mean_abs_shap_value).
             mean_abs_shap_values.append(
-                (self._param_names[param_index],
-                 np.abs(shap_values[:, param_index]).mean())
+                (self._param_names[param_index], np.abs(shap_values[:, param_index]).mean())
             )
 
         # Use the mean absolute SHAP values as the feature importance.
