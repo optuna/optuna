@@ -75,7 +75,6 @@ jobs:
 
         else
           pytest -s tests/integration_tests \
-            --ignore tests/integration_tests/test_catboost.py::test_catboost_pruning_callback_errors \
             --ignore tests/integration_tests/test_pytorch_lightning.py
         fi
 
