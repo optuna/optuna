@@ -65,7 +65,11 @@ jobs:
         # TODO(hvy): Fix samplers_tests/test_samplers.py to not require optional dependencies and remove these installs.
         pip install scikit-optimize
         pip install cma
-        pip install botorch torch==1.11.0 --extra-index-url https://download.pytorch.org/whl/cpu
+
+    # TODO(nzw): Move `run` part to the end of `Install` after Optuna drops Python 3.6 support.
+    - name: Install PyTorch and BoTorch.
+      run: pip install botorch torch==1.11.0 --extra-index-url https://download.pytorch.org/whl/cpu
+      if: matrix.python-version != '3.6'
 
     - name: Tests
       run: |
