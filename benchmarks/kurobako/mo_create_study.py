@@ -3,7 +3,6 @@ import sys
 
 from kurobako import solver
 from kurobako.solver.optuna import OptunaSolverFactory
-
 import optuna
 
 
