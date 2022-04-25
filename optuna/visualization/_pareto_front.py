@@ -43,6 +43,7 @@ def plot_pareto_front(
     include_dominated_trials: bool = True,
     axis_order: Optional[List[int]] = None,
     constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
+    targets: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
 ) -> "go.Figure":
     """Plot the Pareto front of a study.
 
@@ -96,15 +97,36 @@ def plot_pareto_front(
             If given, trials are classified into three categories: feasible and best, feasible but
             non-best, and infeasible. Categories are shown in different colors. Here, whether a
             trial is best (on Pareto front) or not is determined ignoring all infeasible trials.
+        targets:
+            A function that returns targets values to display.
+            The argument to this function is :class:`~optuna.trial.FrozenTrial`.
+
+            .. note::
+                Added in v3.0.0 as an experimental feature. The interface may change in newer
+                versions without prior notice.
+                See https://github.com/optuna/optuna/releases/tag/v3.0.0.
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
+
+    Raises:
+        :exc:`ValueError`:
+            If the number of objectives of ``study`` isn't 2 or 3.
+        :exc:`ValueError`:
+            If ``targets`` returns something other than sequence.
+        :exc:`ValueError`:
+            If the number of target values to display isn't 2 or 3.
+        :exc:`ValueError`:
+            If ``targets`` is specified for empty studies and ``target_names`` is :obj:`None`.
+        :exc:`ValueError`:
+            If using both ``targets`` and ``axis_order``.
+
     """
 
     _imports.check()
 
     info = _get_pareto_front_info(
-        study, target_names, include_dominated_trials, axis_order, constraints_func
+        study, target_names, include_dominated_trials, axis_order, constraints_func, targets
     )
 
     if constraints_func is None:
