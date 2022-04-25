@@ -85,11 +85,11 @@ def make_kurobako_results(args: argparse.Namespace):
             "recipe": {
                 'name': None,
                 'optuna': {
-                    'loglevel': 'debug',  # dummy
-                    'pruner': 'NopPruner',  # dummy
-                    'pruner_kwargs': '{}',  # dummy
-                    'sampler': 'RandomSampler',  # dummy
-                    'sampler_kwargs': '{}'  # dummy
+                    'loglevel': '',  # dummy
+                    'pruner': '',  # dummy
+                    'pruner_kwargs': '',  # dummy
+                    'sampler': '',  # dummy
+                    'sampler_kwargs': ''  # dummy
                 },
             },
             'spec': {
@@ -100,82 +100,27 @@ def make_kurobako_results(args: argparse.Namespace):
                              'Proceedings of the 25th ACM SIGKDD International '
                              'Conference on Knowledge Discovery & Data Mining. '
                              'ACM, 2019.',
-                    'version': 'optuna=3.0.0b0.dev0, kurobako-py=0.2.0'},
-                'capabilities': ['UNIFORM_CONTINUOUS',
-                                      'UNIFORM_DISCRETE',
-                                      'LOG_UNIFORM_CONTINUOUS',
-                                      'LOG_UNIFORM_DISCRETE',
-                                      'CATEGORICAL',
-                                      'CONDITIONAL',
-                                      'MULTI_OBJECTIVE',
-                                      'CONCURRENT'],
-                'name': '_RandomSampler_NopPruner'
+                    'version': ''  # dummy
+                },
+                'capabilities': [],  # dummy
+                'name': None,
             }
         },
         "problem": {
             'recipe': {
-                'hpobench': {
-                    'dataset': './fcnet_tabular_benchmarks/fcnet_slice_localization_data.hdf5'
+                'hpobench': {  # dummy
+                    'dataset': ''  # dummy
                 }
             },
             'spec': {
                 'attrs': {
-                    'github': 'https://github.com/automl/nas_benchmarks',
-                    'paper': 'Klein, Aaron, and Frank Hutter. "Tabular '
-                             'Benchmarks for Joint Architecture and '
-                             'Hyperparameter Optimization." arXiv preprint '
-                             'arXiv:1905.04970 (2019).',
-                    'version': 'kurobako_problems=0.1.13'
+                    'github': '',  # dummy
+                    'paper': '',  # dummy
+                    'version': ''  # dummy
                 },
-                'name': 'HPO-Bench-Slice',
-                'params_domain': [
-                    {
-                        'distribution': 'UNIFORM',
-                        'name': 'activation_fn_1',
-                        'range': {
-                            'choices': ['tanh', 'relu'],
-                            'type': 'CATEGORICAL'
-                        }
-                    },
-                    {'distribution': 'UNIFORM',
-                     'name': 'activation_fn_2',
-                     'range': {'choices': ['tanh', 'relu'],
-                               'type': 'CATEGORICAL'}},
-                    {'distribution': 'UNIFORM',
-                     'name': 'batch_size',
-                     'range': {'high': 4,
-                               'low': 0,
-                               'type': 'DISCRETE'}},
-                    {'distribution': 'UNIFORM',
-                     'name': 'dropout_1',
-                     'range': {'high': 3,
-                               'low': 0,
-                               'type': 'DISCRETE'}},
-                    {'distribution': 'UNIFORM',
-                     'name': 'dropout_2',
-                     'range': {'high': 3,
-                               'low': 0,
-                               'type': 'DISCRETE'}},
-                    {'distribution': 'UNIFORM',
-                     'name': 'init_lr',
-                     'range': {'high': 6,
-                               'low': 0,
-                               'type': 'DISCRETE'}},
-                    {'distribution': 'UNIFORM',
-                     'name': 'lr_schedule',
-                     'range': {'choices': ['cosine', 'const'],
-                               'type': 'CATEGORICAL'}},
-                    {'distribution': 'UNIFORM',
-                     'name': 'n_units_1',
-                     'range': {'high': 6,
-                               'low': 0,
-                               'type': 'DISCRETE'}},
-                    {'distribution': 'UNIFORM',
-                     'name': 'n_units_2',
-                     'range': {'high': 6,
-                               'low': 0,
-                               'type': 'DISCRETE'}}],
-                'steps': 100,
+                'name': None,
+                'params_domain': [],  # dummy
+                'steps': 1,  # dummy
                 'values_domain': [
                     {
                         'distribution': 'UNIFORM',
@@ -192,16 +137,16 @@ def make_kurobako_results(args: argparse.Namespace):
     template_trial = {
         "evaluations": [
             {
-                'ask_elapsed': 0.002855974,
-                'end_step': 300,
-                'evaluate_elapsed': 0.014396439,
-                'start_step': 200,
-                'tell_elapsed': 0.001346957,
+                'ask_elapsed': 0.0,  # dummy
+                'end_step': 1,  # dummy
+                'evaluate_elapsed': 0.0,  # dummy
+                'start_step': 0,  # dummy
+                'tell_elapsed': 0.0,  # dummy
                 "values": [],
             }
         ],
-        'params': [0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 4.0, 3.0],
-        'thread_id': 0,
+        'params': [],  # dummy
+        'thread_id': 0,  # dummy
     }
 
     results = []
@@ -213,6 +158,7 @@ def make_kurobako_results(args: argparse.Namespace):
             for study_id in perf_da.coords[cc.TRIAL].values:
                 result = copy.deepcopy(template_result)
                 result["solver"]["recipe"]["name"] = method_name
+                result["solver"]["spec"]["name"] = method_name
                 result["problem"]["spec"]["name"] = func_name
                 for iter in perf_da.coords[cc.ITER].values:
                     assert len(perf_ds.coords[cc.SUGGEST].values) == 1
