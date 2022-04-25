@@ -334,3 +334,38 @@ def test_distributions(storage_mode: str) -> None:
         assert distributions["i"] == optuna.distributions.IntDistribution(0, 1)
         assert distributions["il"] == optuna.distributions.IntDistribution(1, 128, log=True)
         assert distributions["c"] == optuna.distributions.CategoricalDistribution(("a", "b", "c"))
+
+
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+@pytest.mark.timeout(15, method="signal")
+def test_updates_state(storage_mode: str) -> None:
+    """Check for any distributed deadlock following a property read."""
+    with StorageSupplier(storage_mode) as storage:
+        if dist.get_rank() == 0:
+            study = optuna.create_study(storage=storage)
+            trial = TorchDistributedTrial(study.ask())
+        else:
+            trial = TorchDistributedTrial(None)
+
+        trial.suggest_float("f", 0, 1)
+        trial.suggest_int("i", 0, 1)
+        trial.suggest_categorical("c", ("a", "b", "c"))
+
+        property_names = [
+            p
+            for p in dir(TorchDistributedTrial)
+            if isinstance(getattr(TorchDistributedTrial, p), property)
+        ]
+
+        # rank 0 can read properties without messing up distributed state
+        if dist.get_rank() == 0:
+            [getattr(trial, p) for p in property_names]
+
+        dist.barrier()
+
+        # same with rank 1
+        if dist.get_rank() == 1:
+            [getattr(trial, p) for p in property_names]
+
+        dist.barrier()

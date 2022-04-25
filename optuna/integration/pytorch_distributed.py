@@ -25,9 +25,16 @@ _suggest_deprecated_msg = (
 )
 
 
-def updates_state(f: Callable) -> Any:
+def updates_state(f: Callable[..., Any]) -> Callable[..., Any]:
+    """Method decorator to fetch updated trial state from rank 0 after f is run.
+
+    This decorator ensures trial properties (params, distributions, etc.) on all distributed
+    processes are up-to-date with the wrapped trial stored on rank 0.
+    It should be applied to all Trial methods that update property values.
+    """
+
     @functools.wraps(f)
-    def wrapped(self, *args, **kwargs) -> Any:
+    def wrapped(self: Any, *args, **kwargs) -> Any:
         def state() -> Sequence:
             assert self._delegate is not None
             return (

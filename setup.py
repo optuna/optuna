@@ -103,6 +103,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pandas",
             "plotly>=4.0.0",
             "pytest",
+            "pytest-timeout",
             "scikit-learn>=0.24.2",
             "scikit-optimize",
             "xgboost",
