@@ -28,8 +28,9 @@ CategoricalChoiceType = Union[None, bool, int, float, str]
 class FrozenTrial(BaseTrial):
     """Status and results of a :class:`~optuna.trial.Trial`.
 
-    This object has the same methods as :class:`~optuna.trial.Trial`, and it suggests best
-    parameter values among performed trials. In contrast to :class:`~optuna.trial.Trial`,
+    This object has the same methods as :class:`~optuna.trial.Trial`, and it suggests the same
+    parameter values as in :attr:`params`; it does not suggest fresh parameter values.
+    In contrast to :class:`~optuna.trial.Trial`,
     :class:`~optuna.trial.FrozenTrial` does not depend on :class:`~optuna.study.Study`, and it is
     useful for deploying optimization results.
 
@@ -454,7 +455,7 @@ class FrozenTrial(BaseTrial):
 
     @property
     def last_step(self) -> Optional[int]:
-        """Return the maximum step of `intermediate_values` in the trial.
+        """Return the maximum step of :attr:`intermediate_values` in the trial.
 
         Returns:
             The maximum step of intermediates.
