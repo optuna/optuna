@@ -14,34 +14,47 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Set
+from typing import TYPE_CHECKING
 import uuid
 
-import alembic.command
-import alembic.config
-import alembic.migration
-import alembic.script
 import numpy as np
-from sqlalchemy import func
-from sqlalchemy import orm
-from sqlalchemy.engine import create_engine
-from sqlalchemy.engine import Engine  # NOQA
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.exc import OperationalError
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.sql import functions
 
 import optuna
 from optuna import distributions
 from optuna import version
 from optuna._deprecated import deprecated
+from optuna._imports import _LazyImport
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
-from optuna.storages._rdb import models
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
+
+if TYPE_CHECKING:
+    import alembic.command as alembic_command
+    import alembic.config as alembic_config
+    import alembic.migration as alembic_migration
+    import alembic.script as alembic_script
+    import sqlalchemy
+    import sqlalchemy.exc as sqlalchemy_exc
+    import sqlalchemy.orm as sqlalchemy_orm
+    import sqlalchemy.sql.functions as sqlalchemy_sql_functions
+
+    from optuna.storages._rdb import models
+else:
+    alembic_command = _LazyImport("alembic.command")
+    alembic_config = _LazyImport("alembic.config")
+    alembic_migration = _LazyImport("alembic.migration")
+    alembic_script = _LazyImport("alembic.script")
+
+    sqlalchemy = _LazyImport("sqlalchemy")
+    sqlalchemy_exc = _LazyImport("sqlalchemy.exc")
+    sqlalchemy_orm = _LazyImport("sqlalchemy.orm")
+    sqlalchemy_sql_functions = _LazyImport("sqlalchemy.sql.functions")
+
+    models = _LazyImport("optuna.storages._rdb.models")
 
 _RDB_MAX_FLOAT = np.finfo(np.float32).max
 _RDB_MIN_FLOAT = np.finfo(np.float32).min
@@ -52,14 +65,14 @@ _logger = optuna.logging.get_logger(__name__)
 
 @contextmanager
 def _create_scoped_session(
-    scoped_session: orm.scoped_session,
+    scoped_session: "sqlalchemy_orm.scoped_session",
     ignore_integrity_error: bool = False,
-) -> Generator[orm.Session, None, None]:
+) -> Generator["sqlalchemy_orm.Session", None, None]:
     session = scoped_session()
     try:
         yield session
         session.commit()
-    except IntegrityError as e:
+    except sqlalchemy_exc.IntegrityError as e:
         session.rollback()
         if ignore_integrity_error:
             _logger.debug(
@@ -68,7 +81,7 @@ def _create_scoped_session(
             )
         else:
             raise
-    except SQLAlchemyError as e:
+    except sqlalchemy_exc.SQLAlchemyError as e:
         session.rollback()
         message = (
             "An exception is raised during the commit. "
@@ -194,14 +207,16 @@ class RDBStorage(BaseStorage):
         self._set_default_engine_kwargs_for_mysql(url, self.engine_kwargs)
 
         try:
-            self.engine = create_engine(self.url, **self.engine_kwargs)
+            self.engine = sqlalchemy.engine.create_engine(self.url, **self.engine_kwargs)
         except ImportError as e:
             raise ImportError(
                 "Failed to import DB access module for the specified storage URL. "
                 "Please install appropriate one."
             ) from e
 
-        self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
+        self.scoped_session = sqlalchemy_orm.scoped_session(
+            sqlalchemy_orm.sessionmaker(bind=self.engine)
+        )
         models.BaseModel.metadata.create_all(self.engine)
 
         self._version_manager = _VersionManager(self.url, self.engine, self.scoped_session)
@@ -220,14 +235,16 @@ class RDBStorage(BaseStorage):
 
         self.__dict__.update(state)
         try:
-            self.engine = create_engine(self.url, **self.engine_kwargs)
+            self.engine = sqlalchemy.engine.create_engine(self.url, **self.engine_kwargs)
         except ImportError as e:
             raise ImportError(
                 "Failed to import DB access module for the specified storage URL. "
                 "Please install appropriate one."
             ) from e
 
-        self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
+        self.scoped_session = sqlalchemy_orm.scoped_session(
+            sqlalchemy_orm.sessionmaker(bind=self.engine)
+        )
         models.BaseModel.metadata.create_all(self.engine)
         self._version_manager = _VersionManager(self.url, self.engine, self.scoped_session)
         if not self.skip_compatibility_check:
@@ -245,7 +262,7 @@ class RDBStorage(BaseStorage):
                 )
                 study = models.StudyModel(study_name=study_name, directions=[direction])
                 session.add(study)
-        except IntegrityError:
+        except sqlalchemy_exc.IntegrityError:
             raise optuna.exceptions.DuplicatedStudyError(
                 "Another study with name '{}' already exists. "
                 "Please specify a different name, or reuse the existing one "
@@ -264,7 +281,7 @@ class RDBStorage(BaseStorage):
             session.delete(study)
 
     @staticmethod
-    def _create_unique_study_name(session: orm.Session) -> str:
+    def _create_unique_study_name(session: "sqlalchemy_orm.Session") -> str:
 
         while True:
             study_uuid = str(uuid.uuid4())
@@ -413,8 +430,10 @@ class RDBStorage(BaseStorage):
             summarized_trial = (
                 session.query(
                     models.TrialModel.study_id,
-                    functions.min(models.TrialModel.datetime_start).label("datetime_start"),
-                    functions.count(models.TrialModel.trial_id).label("n_trial"),
+                    sqlalchemy_sql_functions.min(models.TrialModel.datetime_start).label(
+                        "datetime_start"
+                    ),
+                    sqlalchemy_sql_functions.count(models.TrialModel.trial_id).label("n_trial"),
                 )
                 .group_by(models.TrialModel.study_id)
                 .with_labels()
@@ -424,8 +443,8 @@ class RDBStorage(BaseStorage):
                 models.StudyModel.study_id,
                 models.StudyModel.study_name,
                 summarized_trial.c.datetime_start,
-                functions.coalesce(summarized_trial.c.n_trial, 0).label("n_trial"),
-            ).select_from(orm.outerjoin(models.StudyModel, summarized_trial))
+                sqlalchemy_sql_functions.coalesce(summarized_trial.c.n_trial, 0).label("n_trial"),
+            ).select_from(sqlalchemy_orm.outerjoin(models.StudyModel, summarized_trial))
 
             study_summary = study_summary_stmt.all()
 
@@ -561,7 +580,7 @@ class RDBStorage(BaseStorage):
 
                     trial = self._get_prepared_new_trial(study_id, template_trial, session)
                     break  # Successfully created trial.
-                except OperationalError:
+                except sqlalchemy_exc.OperationalError:
                     if n_retries > 2:
                         raise
 
@@ -591,8 +610,11 @@ class RDBStorage(BaseStorage):
             return frozen
 
     def _get_prepared_new_trial(
-        self, study_id: int, template_trial: Optional[FrozenTrial], session: orm.Session
-    ) -> models.TrialModel:
+        self,
+        study_id: int,
+        template_trial: Optional[FrozenTrial],
+        session: "sqlalchemy_orm.Session",
+    ) -> "models.TrialModel":
         if template_trial is None:
             trial = models.TrialModel(
                 study_id=study_id,
@@ -680,7 +702,7 @@ class RDBStorage(BaseStorage):
 
                 if state.is_finished():
                     trial.datetime_complete = datetime.now()
-        except IntegrityError:
+        except sqlalchemy_exc.IntegrityError:
             return False
         return True
 
@@ -699,7 +721,7 @@ class RDBStorage(BaseStorage):
 
     def _set_trial_param_without_commit(
         self,
-        session: orm.Session,
+        session: "sqlalchemy_orm.Session",
         trial_id: int,
         param_name: str,
         param_value_internal: float,
@@ -828,12 +850,12 @@ class RDBStorage(BaseStorage):
 
                 if state.is_finished():
                     trial.datetime_complete = datetime.now()
-        except IntegrityError:
+        except sqlalchemy_exc.IntegrityError:
             return False
         return True
 
     def _set_trial_value_without_commit(
-        self, session: orm.Session, trial_id: int, objective: int, value: float
+        self, session: "sqlalchemy_orm.Session", trial_id: int, objective: int, value: float
     ) -> None:
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
@@ -859,7 +881,11 @@ class RDBStorage(BaseStorage):
             )
 
     def _set_trial_intermediate_value_without_commit(
-        self, session: orm.Session, trial_id: int, step: int, intermediate_value: float
+        self,
+        session: "sqlalchemy_orm.Session",
+        trial_id: int,
+        step: int,
+        intermediate_value: float,
     ) -> None:
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
@@ -885,7 +911,7 @@ class RDBStorage(BaseStorage):
             self._set_trial_user_attr_without_commit(session, trial_id, key, value)
 
     def _set_trial_user_attr_without_commit(
-        self, session: orm.Session, trial_id: int, key: str, value: Any
+        self, session: "sqlalchemy_orm.Session", trial_id: int, key: str, value: Any
     ) -> None:
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
@@ -906,7 +932,7 @@ class RDBStorage(BaseStorage):
             self._set_trial_system_attr_without_commit(session, trial_id, key, value)
 
     def _set_trial_system_attr_without_commit(
-        self, session: orm.Session, trial_id: int, key: str, value: Any
+        self, session: "sqlalchemy_orm.Session", trial_id: int, key: str, value: Any
     ) -> None:
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
@@ -986,18 +1012,18 @@ class RDBStorage(BaseStorage):
             try:
                 trial_models = (
                     session.query(models.TrialModel)
-                    .options(orm.selectinload(models.TrialModel.params))
-                    .options(orm.selectinload(models.TrialModel.values))
-                    .options(orm.selectinload(models.TrialModel.user_attributes))
-                    .options(orm.selectinload(models.TrialModel.system_attributes))
-                    .options(orm.selectinload(models.TrialModel.intermediate_values))
+                    .options(sqlalchemy_orm.selectinload(models.TrialModel.params))
+                    .options(sqlalchemy_orm.selectinload(models.TrialModel.values))
+                    .options(sqlalchemy_orm.selectinload(models.TrialModel.user_attributes))
+                    .options(sqlalchemy_orm.selectinload(models.TrialModel.system_attributes))
+                    .options(sqlalchemy_orm.selectinload(models.TrialModel.intermediate_values))
                     .filter(
                         models.TrialModel.trial_id.in_(trial_ids),
                         models.TrialModel.study_id == study_id,
                     )
                     .all()
                 )
-            except OperationalError as e:
+            except sqlalchemy_exc.OperationalError as e:
                 # Likely exceeding the number of maximum allowed variables using IN.
                 # This number differ between database dialects. For SQLite for instance, see
                 # https://www.sqlite.org/limits.html and the section describing
@@ -1010,11 +1036,11 @@ class RDBStorage(BaseStorage):
 
                 trial_models = (
                     session.query(models.TrialModel)
-                    .options(orm.selectinload(models.TrialModel.params))
-                    .options(orm.selectinload(models.TrialModel.values))
-                    .options(orm.selectinload(models.TrialModel.user_attributes))
-                    .options(orm.selectinload(models.TrialModel.system_attributes))
-                    .options(orm.selectinload(models.TrialModel.intermediate_values))
+                    .options(sqlalchemy_orm.selectinload(models.TrialModel.params))
+                    .options(sqlalchemy_orm.selectinload(models.TrialModel.values))
+                    .options(sqlalchemy_orm.selectinload(models.TrialModel.user_attributes))
+                    .options(sqlalchemy_orm.selectinload(models.TrialModel.system_attributes))
+                    .options(sqlalchemy_orm.selectinload(models.TrialModel.intermediate_values))
                     .filter(models.TrialModel.study_id == study_id)
                     .all()
                 )
@@ -1024,7 +1050,7 @@ class RDBStorage(BaseStorage):
 
         return trials
 
-    def _build_frozen_trial_from_trial_model(self, trial: models.TrialModel) -> FrozenTrial:
+    def _build_frozen_trial_from_trial_model(self, trial: "models.TrialModel") -> FrozenTrial:
 
         values: Optional[List[float]]
         if trial.values:
@@ -1150,7 +1176,7 @@ class RDBStorage(BaseStorage):
                 heartbeat = models.TrialHeartbeatModel(trial_id=trial_id)
                 session.add(heartbeat)
             else:
-                heartbeat.heartbeat = session.execute(func.now()).scalar()
+                heartbeat.heartbeat = session.execute(sqlalchemy.func.now()).scalar()
 
     @deprecated(
         "3.0.0",
@@ -1176,7 +1202,7 @@ class RDBStorage(BaseStorage):
         stale_trial_ids = []
 
         with _create_scoped_session(self.scoped_session, True) as session:
-            current_heartbeat = session.execute(func.now()).scalar()
+            current_heartbeat = session.execute(sqlalchemy.func.now()).scalar()
             # Added the following line to prevent mixing of timezone-aware and timezone-naive
             # `datetime` in PostgreSQL. See
             # https://github.com/optuna/optuna/pull/2190#issuecomment-766605088 for details
@@ -1184,7 +1210,7 @@ class RDBStorage(BaseStorage):
 
             running_trials = (
                 session.query(models.TrialModel)
-                .options(orm.selectinload(models.TrialModel.heartbeats))
+                .options(sqlalchemy_orm.selectinload(models.TrialModel.heartbeats))
                 .filter(models.TrialModel.state == TrialState.RUNNING)
                 .filter(models.TrialModel.study_id == study_id)
                 .all()
@@ -1213,7 +1239,12 @@ class RDBStorage(BaseStorage):
 
 
 class _VersionManager(object):
-    def __init__(self, url: str, engine: Engine, scoped_session: orm.scoped_session) -> None:
+    def __init__(
+        self,
+        url: str,
+        engine: "sqlalchemy.engine.Engine",
+        scoped_session: "sqlalchemy_orm.scoped_session",
+    ) -> None:
 
         self.url = url
         self.engine = engine
@@ -1229,7 +1260,8 @@ class _VersionManager(object):
                 return
 
             version_info = models.VersionInfoModel(
-                schema_version=models.SCHEMA_VERSION, library_version=version.__version__
+                schema_version=models.SCHEMA_VERSION,
+                library_version=version.__version__,
             )
             session.add(version_info)
 
@@ -1237,7 +1269,7 @@ class _VersionManager(object):
 
         logging.getLogger("alembic").setLevel(logging.WARN)
 
-        context = alembic.migration.MigrationContext.configure(self.engine.connect())
+        context = alembic_migration.MigrationContext.configure(self.engine.connect())
         is_initialized = context.get_current_revision() is not None
 
         if is_initialized:
@@ -1254,7 +1286,7 @@ class _VersionManager(object):
 
     def _set_alembic_revision(self, revision: str) -> None:
 
-        context = alembic.migration.MigrationContext.configure(self.engine.connect())
+        context = alembic_migration.MigrationContext.configure(self.engine.connect())
         script = self._create_alembic_script()
         context.stamp(script, revision)
 
@@ -1292,7 +1324,7 @@ class _VersionManager(object):
 
     def get_current_version(self) -> str:
 
-        context = alembic.migration.MigrationContext.configure(self.engine.connect())
+        context = alembic_migration.MigrationContext.configure(self.engine.connect())
         version = context.get_current_revision()
         assert version is not None
 
@@ -1318,7 +1350,7 @@ class _VersionManager(object):
     def upgrade(self) -> None:
 
         config = self._create_alembic_config()
-        alembic.command.upgrade(config, "head")
+        alembic_command.upgrade(config, "head")
 
         with _create_scoped_session(self.scoped_session, True) as session:
             version_info = models.VersionInfoModel.find(session)
@@ -1337,17 +1369,17 @@ class _VersionManager(object):
 
             return version_info.schema_version == models.SCHEMA_VERSION
 
-    def _create_alembic_script(self) -> alembic.script.ScriptDirectory:
+    def _create_alembic_script(self) -> "alembic_script.ScriptDirectory":
 
         config = self._create_alembic_config()
-        script = alembic.script.ScriptDirectory.from_config(config)
+        script = alembic_script.ScriptDirectory.from_config(config)
         return script
 
-    def _create_alembic_config(self) -> alembic.config.Config:
+    def _create_alembic_config(self) -> "alembic_config.Config":
 
         alembic_dir = os.path.join(os.path.dirname(__file__), "alembic")
 
-        config = alembic.config.Config(os.path.join(os.path.dirname(__file__), "alembic.ini"))
+        config = alembic_config.Config(os.path.join(os.path.dirname(__file__), "alembic.ini"))
         config.set_main_option("script_location", escape_alembic_config_value(alembic_dir))
         config.set_main_option("sqlalchemy.url", escape_alembic_config_value(self.url))
         return config

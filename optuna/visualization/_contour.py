@@ -18,7 +18,6 @@ from optuna.visualization._utils import _get_param_values
 from optuna.visualization._utils import _is_log_scale
 from optuna.visualization._utils import _is_numerical
 from optuna.visualization._utils import _is_reverse_scale
-from optuna.visualization._utils import COLOR_SCALE
 
 
 if _imports.is_successful():
@@ -27,6 +26,7 @@ if _imports.is_successful():
     from optuna.visualization._plotly_imports import make_subplots
     from optuna.visualization._plotly_imports import plotly
     from optuna.visualization._plotly_imports import Scatter
+    from optuna.visualization._utils import COLOR_SCALE
 
 _logger = get_logger(__name__)
 

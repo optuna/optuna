@@ -21,11 +21,11 @@ from optuna.visualization._utils import _is_categorical
 from optuna.visualization._utils import _is_log_scale
 from optuna.visualization._utils import _is_numerical
 from optuna.visualization._utils import _is_reverse_scale
-from optuna.visualization._utils import COLOR_SCALE
 
 
 if _imports.is_successful():
     from optuna.visualization._plotly_imports import go
+    from optuna.visualization._utils import COLOR_SCALE
 
 _logger = get_logger(__name__)
 
