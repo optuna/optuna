@@ -73,7 +73,7 @@ class WeightsAndBiasesCallback(object):
             from optuna.integration.wandb import WeightsAndBiasesCallback
 
             wandb_kwargs = {"project": "my-project"}
-            wandbc = WeightsAndBiasesCallback(wandb_kwargs=wandb_kwargs)
+            wandbc = WeightsAndBiasesCallback(wandb_kwargs=wandb_kwargs, as_multirun=True)
 
 
             @wandbc.track_in_wandb()
@@ -82,7 +82,7 @@ class WeightsAndBiasesCallback(object):
                 return (x - 2) ** 2
 
 
-            study = optuna.create_study(as_multirun=True)
+            study = optuna.create_study()
             study.optimize(objective, n_trials=10, callbacks=[wandbc])
 
 
