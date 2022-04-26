@@ -84,17 +84,17 @@ def test_fanova_importance_evaluator_with_infinite(inf_value: float) -> None:
     trial_sampling_seed = 13
     evaluator_seed = 67
 
-    # Calculate importance scores without inf.
+    # Importance scores are calculated without a trial with an inf value.
     study_without_inf = create_study(sampler=RandomSampler(seed=trial_sampling_seed))
     study_without_inf.optimize(objective, n_trials=n_trial)
 
     evaluator_without_inf = FanovaImportanceEvaluator(seed=evaluator_seed)
     param_importance_without_inf = evaluator_without_inf.evaluate(study_without_inf)
 
-    # Calculate importance scores with inf
+    # Importance scores are calculated with a trial with an inf value.
     study_with_inf = create_study(sampler=RandomSampler(seed=trial_sampling_seed))
     study_with_inf.optimize(objective, n_trials=n_trial)
-    # Add a trial with an inf value manually
+    # A trial with an inf value is added into the study manually.
     study_with_inf.add_trial(
         create_trial(
             value=inf_value,
