@@ -73,7 +73,7 @@ class WeightsAndBiasesCallback(object):
             from optuna.integration.wandb import WeightsAndBiasesCallback
 
             wandb_kwargs = {"project": "my-project"}
-            wandbc = WeightsAndBiasesCallback(wandb_kwargs=wandb_kwargs)
+            wandbc = WeightsAndBiasesCallback(wandb_kwargs=wandb_kwargs, as_multirun=True)
 
 
             @wandbc.track_in_wandb()
@@ -82,7 +82,7 @@ class WeightsAndBiasesCallback(object):
                 return (x - 2) ** 2
 
 
-            study = optuna.create_study(as_multirun=True)
+            study = optuna.create_study()
             study.optimize(objective, n_trials=10, callbacks=[wandbc])
 
 
@@ -108,6 +108,32 @@ class WeightsAndBiasesCallback(object):
 
             study = optuna.create_study()
             study.optimize(objective, n_trials=10, callbacks=[wandbc])
+
+
+
+        Add additional logging to Weights & Biases in multirun mode.
+
+        .. code::
+
+            import optuna
+            from optuna.integration.wandb import WeightsAndBiasesCallback
+            import wandb
+
+            wandb_kwargs = {"project": "my-project"}
+            wandbc = WeightsAndBiasesCallback(wandb_kwargs=wandb_kwargs, as_multirun=True)
+
+
+            @wandbc.track_in_wandb()
+            def objective(trial):
+                x = trial.suggest_float("x", -10, 10)
+                loss = (x - 2) ** 2
+                wandb.log({"loss": loss})
+                return loss
+
+
+            study = optuna.create_study()
+            study.optimize(objective, n_trials=10, callbacks=[wandbc])
+
 
     Args:
         metric_name:
