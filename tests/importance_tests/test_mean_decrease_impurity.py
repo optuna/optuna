@@ -101,6 +101,7 @@ def test_mean_decrease_impurity_importance_evaluator_with_infinite(inf_value: fl
     )
     # Importance scores are calculated with a trial with an inf value.
     param_importance_with_inf = evaluator.evaluate(study)
+
     # Obtained importance scores should be the same between with inf and without inf,
     # because the last trial whose objective value is an inf is ignored.
     assert param_importance_with_inf == param_importance_without_inf
