@@ -55,7 +55,6 @@ def get_extras_require() -> Dict[str, List[str]]:
     requirements = {
         "benchmark": [
             "asv>=0.5.0",
-            "virtualenv",
             "botorch",
         ],
         "checking": [
