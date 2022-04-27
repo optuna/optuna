@@ -10,8 +10,8 @@ from sqlalchemy import Float
 
 
 # revision identifiers, used by Alembic.
-revision = 'v3.0.0.b'
-down_revision = 'v3.0.0.a'
+revision = "v3.0.0.b"
+down_revision = "v3.0.0.a"
 branch_labels = None
 depends_on = None
 
