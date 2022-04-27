@@ -803,8 +803,8 @@ class Study:
                 A dictionary of user-specific attributes other than ``params``.
 
         .. seealso::
-            Please refer to :ref:`specify_params` for the tutorial of specifying hyperparameters
-            manually.
+            Please refer to :ref:`enqueue_trial_tutorial` for the tutorial of specifying
+            hyperparameters manually.
         """
 
         self.add_trial(
@@ -866,6 +866,10 @@ class Study:
         .. seealso::
 
             See :func:`~optuna.trial.create_trial` for how to create trials.
+
+        .. seealso::
+            Please refer to :ref:`add_trial_tutorial` for the tutorial of specifying
+            hyperparameters with the evaluated value manually.
 
         Args:
             trial: Trial to add.
