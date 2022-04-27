@@ -9,7 +9,7 @@ from optuna.study import Study
 
 @experimental("3.0.0")
 class UNDXCrossover(BaseCrossover):
-    """A Unimodal Normal Distribution Crossover used by :class:`~optuna.samplers.NSGAIISampler`.
+    """Unimodal Normal Distribution Crossover used by :class:`~optuna.samplers.NSGAIISampler`.
 
     Generates child individuals from the three parents
     using a multivariate normal distribution.

@@ -5,7 +5,7 @@ from optuna.study import Study
 
 
 class UniformCrossover(BaseCrossover):
-    """A Uniform Crossover operation used by :class:`~optuna.samplers.NSGAIISampler`.
+    """Uniform Crossover operation used by :class:`~optuna.samplers.NSGAIISampler`.
 
     Select each parameter with equal probability from the two parent individuals.
     For further information about uniform crossover, please refer to the following paper:
