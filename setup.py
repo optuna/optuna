@@ -45,11 +45,6 @@ def get_install_requires() -> List[str]:
     return requirements
 
 
-def get_tests_require() -> List[str]:
-
-    return get_extras_require()["testing"]
-
-
 def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
@@ -187,7 +182,6 @@ setup(
     },
     python_requires=">=3.6",
     install_requires=get_install_requires(),
-    tests_require=get_tests_require(),
     extras_require=get_extras_require(),
     entry_points={
         "console_scripts": ["optuna = optuna.cli:main"],
