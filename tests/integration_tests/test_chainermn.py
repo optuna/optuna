@@ -298,6 +298,9 @@ class TestChainerMNTrial(object):
 
                 assert x1 == x2
 
+                with pytest.raises(ValueError):
+                    mn_trial.suggest_float("x1", low1, high1, log=True)
+
             low2 = 1e-7
             high2 = 1e-2
             for _ in range(10):
@@ -308,6 +311,9 @@ class TestChainerMNTrial(object):
 
                 x4 = mn_trial.suggest_float("x2", low2, high2, log=True)
                 assert x3 == x4
+
+                with pytest.raises(ValueError):
+                    mn_trial.suggest_float("x2", low2, high2)
 
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
