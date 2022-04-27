@@ -8,7 +8,6 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import SGDClassifier
 from sklearn.neighbors import KernelDensity
 
-import optuna.study
 from optuna import distributions
 from optuna import integration
 from optuna.study import create_study
@@ -365,7 +364,7 @@ def test_callbacks() -> None:
         def __init__(self):
             self.n_calls = 0
 
-        def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
+        def __call__(self, study, trial) -> None:
             self.n_calls += 1
 
     callback1 = DummyCallback()
