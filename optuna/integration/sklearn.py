@@ -463,6 +463,16 @@ class OptunaSearchCV(BaseEstimator):
         verbose:
             Verbosity level. The higher, the more messages.
 
+        callbacks:
+                List of callback functions that are invoked at the end of each trial. Each function
+                must accept two parameters with the following types in this order:
+                :class:`~optuna.study.Study` and :class:`~optuna.trial.FrozenTrial`.
+
+                .. seealso::
+
+                    See the tutorial of :ref:`optuna_callback` for how to use and implement
+                    callback functions.
+
     Attributes:
         best_estimator_:
             Estimator that was chosen by the search. This is present only if
