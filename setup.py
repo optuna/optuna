@@ -94,7 +94,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchaudio==0.11.0 ; python_version>'3.6'",
             "thop",
         ],
-        "experimental": ["redis"],
         "testing": [
             "shap",
             "chainer>=5.0.0",
