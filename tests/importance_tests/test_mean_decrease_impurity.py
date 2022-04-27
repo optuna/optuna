@@ -81,21 +81,14 @@ def test_mean_decrease_impurity_importance_evaluator_with_target() -> None:
 def test_mean_decrease_impurity_importance_evaluator_with_infinite(inf_value: float) -> None:
     # The test ensures that trials with infinite values are ignored to calculate importance scores.
     n_trial = 10
-    trial_sampling_seed = 13
-    evaluator_seed = 67
-
+    seed = 13
     # Importance scores are calculated without a trial with an inf value.
-    study_without_inf = create_study(sampler=RandomSampler(seed=trial_sampling_seed))
-    study_without_inf.optimize(objective, n_trials=n_trial)
-
-    evaluator_without_inf = MeanDecreaseImpurityImportanceEvaluator(seed=evaluator_seed)
-    param_importance_without_inf = evaluator_without_inf.evaluate(study_without_inf)
-
-    # Importance scores are calculated with a trial with an inf value.
-    study_with_inf = create_study(sampler=RandomSampler(seed=trial_sampling_seed))
-    study_with_inf.optimize(objective, n_trials=n_trial)
+    study = create_study(sampler=RandomSampler(seed=seed))
+    study.optimize(objective, n_trials=n_trial)
+    evaluator = MeanDecreaseImpurityImportanceEvaluator(seed=seed)
+    param_importance_without_inf = evaluator.evaluate(study)
     # A trial with an inf value is added into the study manually.
-    study_with_inf.add_trial(
+    study.add_trial(
         create_trial(
             value=inf_value,
             params={"x1": 1.0, "x2": 1.0, "x3": 3.0},
@@ -106,9 +99,8 @@ def test_mean_decrease_impurity_importance_evaluator_with_infinite(inf_value: fl
             },
         )
     )
-    evaluator_with_inf = MeanDecreaseImpurityImportanceEvaluator(seed=evaluator_seed)
-    param_importance_with_inf = evaluator_with_inf.evaluate(study_with_inf)
-
-    # Obtained importance scores should be same among with inf and without inf,
-    # if an trial with an inf value is ignored.
+    # Importance scores are calculated with a trial with an inf value.
+    param_importance_with_inf = evaluator.evaluate(study)
+    # Obtained importance scores should be the same between with inf and without inf,
+    # because the last trial whose objective value is an inf is ignored.
     assert param_importance_with_inf == param_importance_without_inf
