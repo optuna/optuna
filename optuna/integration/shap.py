@@ -7,6 +7,7 @@ from typing import Optional
 import numpy as np
 
 from optuna._imports import try_import
+from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._mean_decrease_impurity import MeanDecreaseImpurityImportanceEvaluator
 from optuna.study import Study
 from optuna.trial import FrozenTrial
@@ -16,11 +17,11 @@ with try_import() as _imports:
     from shap import TreeExplainer
 
 
-class ShapleyImportanceEvaluator(MeanDecreaseImpurityImportanceEvaluator):
+class ShapleyImportanceEvaluator(BaseImportanceEvaluator):
     """Shapley (SHAP) parameter importance evaluator.
 
     This evaluator fits a random forest that predicts objective values given hyperparameter
-    configurations. Feature importances are then computed using the mean absolute SHAP value.
+    configurations. Feature importances are then computed as the mean absolute SHAP values.
 
     .. note::
 
@@ -43,8 +44,9 @@ class ShapleyImportanceEvaluator(MeanDecreaseImpurityImportanceEvaluator):
     ) -> None:
         _imports.check()
 
-        MeanDecreaseImpurityImportanceEvaluator.__init__(
-            self, n_trees=n_trees, max_depth=max_depth, seed=seed
+        # Use the RandomForest as the surrogate model to evaluate the feature importances.
+        self._backend_evaluator = MeanDecreaseImpurityImportanceEvaluator(
+            n_trees=n_trees, max_depth=max_depth, seed=seed
         )
         # Use the TreeExplainer from the SHAP module.
         self._explainer: TreeExplainer = None
@@ -57,21 +59,24 @@ class ShapleyImportanceEvaluator(MeanDecreaseImpurityImportanceEvaluator):
         target: Optional[Callable[[FrozenTrial], float]] = None,
     ) -> Dict[str, float]:
 
-        # Train a RandomForest from the parent class.
-        super().evaluate(study=study, params=params, target=target)
+        # Train a RandomForest from the backend evaluator.
+        self._backend_evaluator.evaluate(study=study, params=params, target=target)
 
         # Create Tree Explainer object that can calculate shap values.
-        self._explainer = TreeExplainer(self._forest)
+        self._explainer = TreeExplainer(self._backend_evaluator._forest)
 
         # Generate SHAP values for the parameters during the trials.
-        shap_values = self._explainer.shap_values(self._trans_params)
+        shap_values = self._explainer.shap_values(self._backend_evaluator._trans_params)
 
         # Calculate the mean absolute SHAP value for each parameter.
         mean_abs_shap_values = []
         for param_index in range(shap_values.shape[1]):
             # Add tuples of ("feature_name": mean_abs_shap_value).
             mean_abs_shap_values.append(
-                (self._param_names[param_index], np.abs(shap_values[:, param_index]).mean())
+                (
+                    self._backend_evaluator._param_names[param_index],
+                    np.abs(shap_values[:, param_index]).mean(),
+                )
             )
 
         # Use the mean absolute SHAP values as the feature importance.
