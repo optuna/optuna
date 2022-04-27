@@ -71,7 +71,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pandas",
             "pillow",
             "plotly>=4.0.0",  # optuna/visualization.
-            "scikit-learn",
             "scikit-learn>=0.24.2",
             "scikit-optimize",
             "sphinx",
