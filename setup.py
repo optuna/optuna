@@ -53,6 +53,11 @@ def get_tests_require() -> List[str]:
 def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
+        "benchmark": [
+            "asv>=0.5.0",
+            "virtualenv",
+            "botorch",
+        ],
         "checking": [
             "black",
             "hacking",
@@ -160,11 +165,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "allennlp>=2.2.0 ; python_version>'3.6'",
             "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai ; python_version>'3.6'",
-        ],
-        "benchmark": [
-            "asv>=0.5.0",
-            "virtualenv",
-            "botorch",
         ],
     }
 
