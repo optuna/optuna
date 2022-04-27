@@ -85,6 +85,7 @@ def test_mean_decrease_impurity_importance_evaluator_with_infinite(inf_value: fl
     # Importance scores are calculated without a trial with an inf value.
     study = create_study(sampler=RandomSampler(seed=seed))
     study.optimize(objective, n_trials=n_trial)
+
     evaluator = MeanDecreaseImpurityImportanceEvaluator(seed=seed)
     param_importance_without_inf = evaluator.evaluate(study)
 
