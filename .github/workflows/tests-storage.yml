@@ -90,7 +90,7 @@ jobs:
         python -c 'import optuna'
         optuna --version
 
-        pip install --progress-bar off .[tests]
+        pip install --progress-bar off .[develop]
 
     - name: Install DB bindings
       run: |

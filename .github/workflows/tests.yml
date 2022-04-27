@@ -58,8 +58,7 @@ jobs:
         python -c 'import optuna'
         optuna --version
 
-        pip install --progress-bar off .[tests]
-        pip install --progress-bar off .[optional]
+        pip install --progress-bar off .[develop]
 
         # Required for samplers_tests/test_samplers.py.
         # TODO(hvy): Fix samplers_tests/test_samplers.py to not require optional dependencies and remove these installs.

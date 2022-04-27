@@ -67,22 +67,35 @@ def get_extras_require() -> Dict[str, List[str]]:
             "types-redis",
             "types-PyYAML",
         ],
-        "codecov": ["codecov", "pytest-cov"],
-        "doctest": [
-            "cma",
-            "matplotlib>=3.0.0",
-            "pandas",
-            "plotly>=4.0.0",
+        "develop": [
+            "codecov",
+            "fakeredis",
+            "matplotlib>=3.0.0",  # optuna/visualization/matplotlib
+            "pandas",  # optuna/study.py
+            "plotly>=4.0.0",  # optuna/visualization.
+            "pytest",
+            "pytest-cov",
+            "redis",  # optuna/storages/redis.py.
             "scikit-learn>=0.24.2",
-            "scikit-optimize",
-            "mlflow",
+            # optuna/visualization/param_importances.py.
         ],
         "document": [
+            "cma",
+            "lightgbm",
+            "matplotlib",
+            "matplotlib>=3.0.0",
+            "mlflow",
+            "pandas",
+            "pillow",
+            "plotly>=4.0.0",  # optuna/visualization.
+            "scikit-learn",
+            "scikit-learn>=0.24.2",
+            "scikit-optimize",
             "sphinx",
-            "sphinx_rtd_theme",
             "sphinx-copybutton",
             "sphinx-gallery",
             "sphinx-plotly-directive",
+            "sphinx_rtd_theme",
             "pillow",
             "matplotlib",
             "scikit-learn",

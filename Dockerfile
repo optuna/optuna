@@ -17,9 +17,9 @@ ARG BUILD_TYPE='dev'
 
 RUN if [ "${BUILD_TYPE}" = "dev" ]; then \
         if [ "${PYTHON_VERSION}" \< "3.6" ]; then \
-            pip install ${PIP_OPTIONS} -e '.[doctest, document, testing]' -f https://download.pytorch.org/whl/torch_stable.html; \
+            pip install ${PIP_OPTIONS} -e '.[document, testing]' -f https://download.pytorch.org/whl/torch_stable.html; \
         else \
-            pip install ${PIP_OPTIONS} -e '.[checking, doctest, document, testing]' -f https://download.pytorch.org/whl/torch_stable.html; \
+            pip install ${PIP_OPTIONS} -e '.[checking, document, testing]' -f https://download.pytorch.org/whl/torch_stable.html; \
         fi \
     else \
         pip install ${PIP_OPTIONS} -e .; \
