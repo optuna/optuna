@@ -29,7 +29,7 @@ class FrozenTrial(BaseTrial):
     """Status and results of a :class:`~optuna.trial.Trial`.
 
     This object has the same methods as :class:`~optuna.trial.Trial`, and it suggests the same
-    parameter values as in :attr:`params`; it does not sample any value from distribution.
+    parameter values as in :attr:`params`; it does not sample any value from a distribution.
     In contrast to :class:`~optuna.trial.Trial`,
     :class:`~optuna.trial.FrozenTrial` does not depend on :class:`~optuna.study.Study`, and it is
     useful for deploying optimization results.
