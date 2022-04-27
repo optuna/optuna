@@ -8,6 +8,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import SGDClassifier
 from sklearn.neighbors import KernelDensity
 
+import optuna.study
 from optuna import distributions
 from optuna import integration
 from optuna.study import create_study
@@ -357,3 +358,36 @@ def test_optuna_search_convert_deprecated_distribution() -> None:
     )
 
     assert optuna_search.param_distributions == expected_param_dist
+
+
+def test_callbacks() -> None:
+    class DummyCallback:
+        def __init__(self):
+            self.n_calls = 0
+
+        def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
+            self.n_calls += 1
+
+    callback1 = DummyCallback()
+    callback2 = DummyCallback()
+
+    X, y = make_blobs(n_samples=10)
+    est = SGDClassifier(max_iter=5, tol=1e-03)
+    param_dist = {}  # type: ignore
+    optuna_search = integration.OptunaSearchCV(
+        est,
+        param_dist,
+        cv=3,
+        enable_pruning=True,
+        max_iter=5,
+        n_trials=5,
+        error_score=np.nan,
+        random_state=0,
+        return_train_score=True,
+        callbacks=[callback1, callback2],
+    )
+
+    optuna_search.fit(X, y)
+
+    assert callback1.n_calls == optuna_search.n_trials_
+    assert callback2.n_calls == optuna_search.n_trials_
