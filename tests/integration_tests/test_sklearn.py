@@ -8,6 +8,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import SGDClassifier
 from sklearn.neighbors import KernelDensity
 
+import optuna
 from optuna import distributions
 from optuna import integration
 from optuna.study import create_study
@@ -361,10 +362,10 @@ def test_optuna_search_convert_deprecated_distribution() -> None:
 
 def test_callbacks() -> None:
     class DummyCallback:
-        def __init__(self):
+        def __init__(self) -> None:
             self.n_calls = 0
 
-        def __call__(self, study, trial) -> None:
+        def __call__(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> None:
             self.n_calls += 1
 
     callback1 = DummyCallback()
