@@ -30,7 +30,7 @@ def updates_state(f: Callable[..., Any]) -> Callable[..., Any]:
 
     This decorator ensures trial properties (params, distributions, etc.) on all distributed
     processes are up-to-date with the wrapped trial stored on rank 0.
-    It should be applied to all Trial methods that update property values.
+    It should be applied to all :class:`~optuna.integration.TorchDistributedTrial` methods that update property values.
     """
 
     @functools.wraps(f)
