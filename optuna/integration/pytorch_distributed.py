@@ -34,8 +34,9 @@ def updates_state(f: Callable[..., Any]) -> Callable[..., Any]:
     """
 
     @functools.wraps(f)
-    def wrapped(self: Any, *args, **kwargs) -> Any:
+    def wrapped(*args: Any, **kwargs: Any) -> Any:
         def state() -> Sequence:
+            self: TorchDistributedTrial = args[0]
             assert self._delegate is not None
             return (
                 self._delegate.number,
@@ -47,7 +48,7 @@ def updates_state(f: Callable[..., Any]) -> Callable[..., Any]:
             )
 
         try:
-            return f(self, *args, **kwargs)
+            return f(*args, **kwargs)
         finally:
             (
                 self._number,
