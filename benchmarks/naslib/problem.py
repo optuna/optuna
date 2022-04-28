@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Any
+from typing import Any, Callable
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -10,83 +10,70 @@ from kurobako import problem
 
 sys.stdout = open(os.devnull, "w")  # Suppress output
 
-
-import naslib.search_spaces as ss  # NOQA
-from naslib.search_spaces.core.graph import Graph  # NOQA
-from naslib.search_spaces.core.query_metrics import Metric  # NOQA
-import naslib.search_spaces.nasbench201.conversions as nasbench201_conversion  # NOQA
-import naslib.search_spaces.nasbench201.graph as nasbench201_graph  # NOQA
 from naslib.utils import get_dataset_api  # NOQA
-
 
 sys.stdout.close()
 sys.stdout = sys.__stdout__
 
+op_names = ["skip_connect","none","nor_conv_3x3","nor_conv_1x1","avg_pool_3x3",]
+edge_num = 4 * 3 // 2
+max_epoch = 199
+
+prune_start_epoch = 10
+prune_epoch_step = 10
+
 
 class NASLibProblemFactory(problem.ProblemFactory):
-    def __init__(self, search_space: Graph, **config: Any) -> None:
-        self._search_space = search_space
-        self._config = config
+    def __init__(self, dataset: str) -> None:
+        """
+        Args:
+            dataset:
+                "cifar10", "cifar100" or "ImageNet16-120"
+        """
+        self._dataset = dataset
+        if dataset == "cifar10":
+            self._dataset = "cifar10-valid" # Set name used in dataset API
+        self._dataset_api = get_dataset_api("nasbench201", dataset)
 
     def specification(self) -> problem.ProblemSpec:
-        if isinstance(self._search_space, ss.NasBench201SearchSpace):
-            params = [
-                problem.Var(f"x{i}", problem.CategoricalRange(nasbench201_graph.OP_NAMES))
-                for i in range(len(nasbench201_conversion.EDGE_LIST))
-            ]
-            self._converter = lambda x: [int(z) for z in x]
-        else:
-            raise NotImplementedError(f"{self._search_space} is not supported.")
 
-        dummy = self._search_space.copy()
-        dummy.sample_random_architecture()
-        config_copy = config.copy()
-        del config_copy["direction"]
-        out = dummy.query(**config_copy)
-        steps = len(out) - 1  # -1 because the zeroth step (untrained) is ignored
+        params = [
+            problem.Var(f"x{i}", problem.CategoricalRange(op_names)) for i in range(edge_num)
+        ]
         return problem.ProblemSpec(
-            name=f"{self._search_space}", params=params, values=[problem.Var("value")], steps=steps
+            name=f"nasbench201", 
+            params=params,
+            values=[problem.Var("value")],
+            steps=list(range(prune_start_epoch, max_epoch, prune_epoch_step)) + [max_epoch]
         )
 
     def create_problem(self, seed: int) -> problem.Problem:
-        return NASLibProblem(self._search_space, self._converter, **self._config)
+        return NASLibProblem(self._dataset, self._dataset_api)
 
 
 class NASLibProblem(problem.Problem):
-    def __init__(self, search_space: Graph, converter: Any, direction: str, **config: Any) -> None:
+    def __init__(self, dataset: str, dataset_api: Any) -> None:
         super().__init__()
-        self._search_space = search_space
-        self._config = config
-        self._converter = converter
-        self._scale = 1 if direction == "minimize" else -1
+        self._dataset = dataset
+        self._dataset_api = dataset_api
 
-    def create_evaluator(self, params: List[Any]) -> problem.Evaluator:
-        return NASLibEvaluator(
-            self._converter(params), self._search_space.copy(), self._scale, self._config
-        )
+    def create_evaluator(self, params: List[float]) -> problem.Evaluator:
+        ops = [op_names[int(x)] for x in params]
+        arch_str = "|{}~0|+|{}~0|{}~1|+|{}~0|{}~1|{}~2|".format(*ops)
+        return NASLibEvaluator(self._dataset_api["nb201_data"][arch_str][self._dataset]["eval_acc1es"])
 
 
 class NASLibEvaluator(problem.Evaluator):
-    def __init__(
-        self,
-        params: List[Optional[float]],
-        search_space: Graph,
-        scale: float,
-        config: Dict[str, Any],
-    ) -> None:
-        self._search_space = search_space
-        self._search_space.set_spec(params)
-        self._config = config
+    def __init__(self, learning_curve: List[float]) -> None:
         self._current_step = 0
-        self._scale = scale
-        self._lc = self._search_space.query(**self._config)
+        self._lc = learning_curve
 
     def current_step(self) -> int:
         return self._current_step
 
     def evaluate(self, next_step: int) -> List[float]:
         self._current_step = next_step
-        return [self._lc[next_step] * self._scale]
+        return [-self._lc[next_step]]
 
 
 if __name__ == "__main__":
@@ -97,28 +84,7 @@ if __name__ == "__main__":
         exit(1)
 
     search_space_name = sys.argv[1]
+    assert search_space_name == "nasbench201" # We currently do not support other benchmarks
     dataset = sys.argv[2]
-
-    search_spaces = {
-        "nasbench201": ss.NasBench201SearchSpace(),
-    }
-
-    config = {
-        "metric": Metric.TEST_ACCURACY,
-        "epoch": -1,
-        "full_lc": True,
-        "direction": "maximize",
-    }
-    # config: arguments provided to `query` method of `search_space` in NASLib.
-    # metric      : Metric to query for.
-    # dataset     : Dataset to query for.
-    # epoch       : If specified, returns the metric of the arch at that epoch of training.
-    # full_lc     : If true, returns the curve of the given metric in all epochs.
-    # dataset_api : API to use for querying metrics.
-
-    search_space = search_spaces[search_space_name]
-
-    config["dataset"] = dataset
-    config["dataset_api"] = get_dataset_api(search_space_name, dataset)
-    runner = problem.ProblemRunner(NASLibProblemFactory(search_space, **config))
+    runner = problem.ProblemRunner(NASLibProblemFactory(dataset))
     runner.run()
