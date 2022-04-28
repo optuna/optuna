@@ -26,7 +26,7 @@ _suggest_deprecated_msg = (
 
 
 def updates_state(f: Callable[..., Any]) -> Callable[..., Any]:
-    """Method decorator to fetch updated trial state from rank 0 after f is run.
+    """Method decorator to fetch updated trial properties from rank 0 after ``f`` is run.
 
     This decorator ensures trial properties (params, distributions, etc.) on all distributed
     processes are up-to-date with the wrapped trial stored on rank 0.
