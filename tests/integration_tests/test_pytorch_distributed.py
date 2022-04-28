@@ -364,7 +364,7 @@ def test_updates_state(storage_mode: str) -> None:
 
         dist.barrier()
 
-        # same with rank 1
+        # Same with rank 1.
         if dist.get_rank() == 1:
             [getattr(trial, p) for p in property_names]
 
