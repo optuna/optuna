@@ -7,7 +7,7 @@ from optuna.study import Study
 
 @experimental("3.0.0")
 class BLXAlphaCrossover(BaseCrossover):
-    """A Blend Crossover operation used by :class:`~optuna.samplers.NSGAIISampler`.
+    """Blend Crossover operation used by :class:`~optuna.samplers.NSGAIISampler`.
 
     Uniformly samples child individuals from the hyper-rectangles created
     by the two parent individuals. For further information about BLX-alpha crossover,
