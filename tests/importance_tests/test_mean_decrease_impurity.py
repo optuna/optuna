@@ -82,11 +82,14 @@ def test_mean_decrease_impurity_importance_evaluator_with_infinite(inf_value: fl
     # The test ensures that trials with infinite values are ignored to calculate importance scores.
     n_trial = 10
     seed = 13
+
     # Importance scores are calculated without a trial with an inf value.
     study = create_study(sampler=RandomSampler(seed=seed))
     study.optimize(objective, n_trials=n_trial)
+
     evaluator = MeanDecreaseImpurityImportanceEvaluator(seed=seed)
     param_importance_without_inf = evaluator.evaluate(study)
+
     # A trial with an inf value is added into the study manually.
     study.add_trial(
         create_trial(
@@ -101,6 +104,7 @@ def test_mean_decrease_impurity_importance_evaluator_with_infinite(inf_value: fl
     )
     # Importance scores are calculated with a trial with an inf value.
     param_importance_with_inf = evaluator.evaluate(study)
+
     # Obtained importance scores should be the same between with inf and without inf,
     # because the last trial whose objective value is an inf is ignored.
     assert param_importance_with_inf == param_importance_without_inf
