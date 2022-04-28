@@ -26,7 +26,7 @@ def init_process_group() -> None:
     os.environ["MASTER_ADDR"] = "127.0.0.1"
     os.environ["MASTER_PORT"] = "20000"
 
-    dist.init_process_group("gloo")
+    dist.init_process_group("gloo", timeout=datetime.timedelta(seconds=15))
 
 
 def test_torch_distributed_trial_experimental_warning() -> None:
@@ -338,8 +338,7 @@ def test_distributions(storage_mode: str) -> None:
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-@pytest.mark.timeout(15, method="signal")
-def test_updates_state(storage_mode: str) -> None:
+def test_updates_properties(storage_mode: str) -> None:
     """Check for any distributed deadlock following a property read."""
     with StorageSupplier(storage_mode) as storage:
         if dist.get_rank() == 0:
