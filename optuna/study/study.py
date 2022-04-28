@@ -585,7 +585,6 @@ class Study:
         Returns:
             A :class:`~optuna.trial.FrozenTrial` representing the resulting trial.
             A returned trial is deep copied thus user can modify it as needed.
-
         """
 
         return _tell_with_warning(
