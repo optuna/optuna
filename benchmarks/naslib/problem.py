@@ -47,7 +47,7 @@ class NASLibProblemFactory(problem.ProblemFactory):
             problem.Var(f"x{i}", problem.CategoricalRange(op_names)) for i in range(edge_num)
         ]
         return problem.ProblemSpec(
-            name="nasbench201",
+            name=f"NASBench201-{self._dataset}",
             params=params,
             values=[problem.Var("value")],
             steps=list(range(prune_start_epoch, max_epoch, prune_epoch_step)) + [max_epoch],
