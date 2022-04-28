@@ -1,9 +1,7 @@
 import os
 import sys
-from typing import Any, Callable
-from typing import Dict
+from typing import Any
 from typing import List
-from typing import Optional
 
 from kurobako import problem
 
@@ -12,10 +10,17 @@ sys.stdout = open(os.devnull, "w")  # Suppress output
 
 from naslib.utils import get_dataset_api  # NOQA
 
+
 sys.stdout.close()
 sys.stdout = sys.__stdout__
 
-op_names = ["skip_connect","none","nor_conv_3x3","nor_conv_1x1","avg_pool_3x3",]
+op_names = [
+    "skip_connect",
+    "none",
+    "nor_conv_3x3",
+    "nor_conv_1x1",
+    "avg_pool_3x3",
+]
 edge_num = 4 * 3 // 2
 max_epoch = 199
 
@@ -25,14 +30,15 @@ prune_epoch_step = 10
 
 class NASLibProblemFactory(problem.ProblemFactory):
     def __init__(self, dataset: str) -> None:
-        """
+        """Creates ProblemFactory for NASBench201.
+
         Args:
             dataset:
-                "cifar10", "cifar100" or "ImageNet16-120"
+                Accepts one of "cifar10", "cifar100" or "ImageNet16-120".
         """
         self._dataset = dataset
         if dataset == "cifar10":
-            self._dataset = "cifar10-valid" # Set name used in dataset API
+            self._dataset = "cifar10-valid"  # Set name used in dataset API
         self._dataset_api = get_dataset_api("nasbench201", dataset)
 
     def specification(self) -> problem.ProblemSpec:
@@ -41,10 +47,10 @@ class NASLibProblemFactory(problem.ProblemFactory):
             problem.Var(f"x{i}", problem.CategoricalRange(op_names)) for i in range(edge_num)
         ]
         return problem.ProblemSpec(
-            name=f"nasbench201", 
+            name="nasbench201",
             params=params,
             values=[problem.Var("value")],
-            steps=list(range(prune_start_epoch, max_epoch, prune_epoch_step)) + [max_epoch]
+            steps=list(range(prune_start_epoch, max_epoch, prune_epoch_step)) + [max_epoch],
         )
 
     def create_problem(self, seed: int) -> problem.Problem:
@@ -60,7 +66,9 @@ class NASLibProblem(problem.Problem):
     def create_evaluator(self, params: List[float]) -> problem.Evaluator:
         ops = [op_names[int(x)] for x in params]
         arch_str = "|{}~0|+|{}~0|{}~1|+|{}~0|{}~1|{}~2|".format(*ops)
-        return NASLibEvaluator(self._dataset_api["nb201_data"][arch_str][self._dataset]["eval_acc1es"])
+        return NASLibEvaluator(
+            self._dataset_api["nb201_data"][arch_str][self._dataset]["eval_acc1es"]
+        )
 
 
 class NASLibEvaluator(problem.Evaluator):
@@ -84,7 +92,7 @@ if __name__ == "__main__":
         exit(1)
 
     search_space_name = sys.argv[1]
-    assert search_space_name == "nasbench201" # We currently do not support other benchmarks
+    assert search_space_name == "nasbench201"  # We currently do not support other benchmarks
     dataset = sys.argv[2]
     runner = problem.ProblemRunner(NASLibProblemFactory(dataset))
     runner.run()
