@@ -24,7 +24,6 @@ def upgrade():
             "intermediate_value",
             type_=Float(precision=FLOAT_PRECISION),
             nullable=True,
-            existing_nullable=True,
         )
     with op.batch_alter_table("trial_params") as batch_op:
         batch_op.alter_column(
