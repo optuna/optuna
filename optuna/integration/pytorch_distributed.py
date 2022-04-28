@@ -111,7 +111,6 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
             assert trial is None, "error message"
         self._delegate = trial
         self._device = device
-        self._params = {}
 
         self._number = self._broadcast(getattr(self._delegate, "number", None))
         self._params = self._broadcast(getattr(self._delegate, "params", None))
