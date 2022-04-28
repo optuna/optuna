@@ -25,7 +25,7 @@ _suggest_deprecated_msg = (
 )
 
 
-def updates_state(f: Callable[..., Any]) -> Callable[..., Any]:
+def updates_properties(f: Callable[..., Any]) -> Callable[..., Any]:
     """Method decorator to fetch updated trial properties from rank 0 after ``f`` is run.
 
     This decorator ensures trial properties (params, distributions, etc.) on all distributed
@@ -35,8 +35,9 @@ def updates_state(f: Callable[..., Any]) -> Callable[..., Any]:
 
     @functools.wraps(f)
     def wrapped(*args: Any, **kwargs: Any) -> Any:
+        self: TorchDistributedTrial = args[0]
+
         def state() -> Sequence:
-            self: TorchDistributedTrial = args[0]
             assert self._delegate is not None
             return (
                 self._delegate.number,
@@ -119,7 +120,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         self._system_attrs = self._broadcast(getattr(self._delegate, "system_attrs", None))
         self._datetime_start = self._broadcast(getattr(self._delegate, "datetime_start", None))
 
-    @updates_state
+    @updates_properties
     def suggest_float(
         self,
         name: str,
@@ -137,24 +138,24 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         return self._call_and_communicate(func, torch.float)
 
     @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
-    @updates_state
+    @updates_properties
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
 
         return self.suggest_float(name, low, high)
 
     @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
-    @updates_state
+    @updates_properties
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
 
         return self.suggest_float(name, low, high, log=True)
 
     @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
-    @updates_state
+    @updates_properties
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
 
         return self.suggest_float(name, low, high, step=q)
 
-    @updates_state
+    @updates_properties
     def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
         def func() -> float:
 
@@ -163,7 +164,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
         return self._call_and_communicate(func, torch.int)
 
-    @updates_state
+    @updates_properties
     def suggest_categorical(self, name: str, choices: Sequence["CategoricalChoiceType"]) -> Any:
         def func() -> CategoricalChoiceType:
 
@@ -172,7 +173,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
         return self._call_and_communicate_obj(func)
 
-    @updates_state
+    @updates_properties
     def report(self, value: float, step: int) -> None:
         err = None
         if dist.get_rank() == 0:
@@ -188,7 +189,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         if err is not None:
             raise err
 
-    @updates_state
+    @updates_properties
     def should_prune(self) -> bool:
         def func() -> bool:
 
@@ -200,7 +201,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         # due to the RuntimeError.
         return self._call_and_communicate(func, torch.uint8)
 
-    @updates_state
+    @updates_properties
     def set_user_attr(self, key: str, value: Any) -> None:
         err = None
         if dist.get_rank() == 0:
@@ -216,7 +217,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         if err is not None:
             raise err
 
-    @updates_state
+    @updates_properties
     def set_system_attr(self, key: str, value: Any) -> None:
         err = None
 
