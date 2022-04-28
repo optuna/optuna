@@ -358,7 +358,7 @@ def test_updates_state(storage_mode: str) -> None:
             if isinstance(getattr(TorchDistributedTrial, p), property)
         ]
 
-        # rank 0 can read properties without messing up distributed state
+        # Rank 0 can read properties without deadlock.
         if dist.get_rank() == 0:
             [getattr(trial, p) for p in property_names]
 
