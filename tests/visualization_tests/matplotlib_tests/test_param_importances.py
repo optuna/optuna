@@ -194,6 +194,7 @@ def test_trial_with_infinite_value_ignored(
 
     # Obtained figures should be the same between with inf and without inf,
     # because the last trial whose objective value is an inf is ignored.
+    assert len(figure_without_inf) > 0
     assert figure_with_inf == figure_without_inf
 
 
@@ -245,4 +246,5 @@ def test_multi_objective_trial_with_infinite_value_ignored(
 
     # Obtained figures should be the same between with inf and without inf,
     # because the last trial whose objective value is an inf is ignored.
+    assert len(figure_without_inf) > 0
     assert figure_without_inf == figure_with_inf
