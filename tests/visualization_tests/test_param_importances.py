@@ -125,6 +125,7 @@ def test_trial_with_infinite_value_ignored(
     # A figure is created without a trial with an inf value.
     figure_without_inf = plot_param_importances(study, evaluator=evaluator)
 
+    # A trial with an inf value is added into the study manually.
     study.add_trial(
         create_trial(
             value=inf_value,
@@ -136,6 +137,7 @@ def test_trial_with_infinite_value_ignored(
             },
         )
     )
+
     # A figure is created with a trial with an inf value.
     figure_with_inf = plot_param_importances(study, evaluator=evaluator)
 
@@ -170,6 +172,7 @@ def test_multi_objective_trial_with_infinite_value_ignored(
         study, evaluator=evaluator, target=lambda t: t.values[target_idx]
     )
 
+    # A trial with an inf value is added into the study manually.
     study.add_trial(
         create_trial(
             values=[inf_value, inf_value],
@@ -181,6 +184,7 @@ def test_multi_objective_trial_with_infinite_value_ignored(
             },
         )
     )
+
     # A figure is created with a trial with an inf value.
     figure_with_inf = plot_param_importances(
         study, evaluator=evaluator, target=lambda t: t.values[target_idx]
