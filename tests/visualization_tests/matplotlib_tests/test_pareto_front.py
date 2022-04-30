@@ -6,10 +6,10 @@ from typing import Optional
 from typing import Sequence
 from typing import Union
 
-import numpy.ma.testutils
-from matplotlib.collections import PathCollection
+import matplotlib.figure
 import matplotlib.pyplot as plt
 import numpy as np
+import numpy.ma.testutils
 import pytest
 
 import optuna
@@ -25,7 +25,7 @@ def allclose_as_set(
     return np.allclose(sorted(p1), sorted(p2))
 
 
-def _check_data(figure: "go.Figure", axis: str, expected: Sequence[int]) -> None:
+def _check_data(figure: matplotlib.figure, axis: str, expected: Sequence[int]) -> None:
     """Compare `figure` against `expected`.
 
     Concatenate `data` in `figure` in reverse order, pick the desired `axis`, and compare with
@@ -37,10 +37,10 @@ def _check_data(figure: "go.Figure", axis: str, expected: Sequence[int]) -> None
         expected: The expected result.
     """
     axis_map = {"x": 0, "y": 1, "z": 2}
-    axis = axis_map[axis]
     n_data = len(figure.collections)
     actual = tuple(
-        itertools.chain(*list(map(lambda i: figure.collections[i].get_offsets()[:, axis], reversed(range(n_data)))))
+        itertools.chain(*list(map(lambda i: figure.collections[i].get_offsets()[:, axis_map[axis]],
+                                  reversed(range(n_data)))))
     )
     numpy.ma.testutils.assert_array_equal(actual, expected)
 
