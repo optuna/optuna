@@ -1,6 +1,5 @@
 import collections
 import itertools
-import random
 from typing import Any
 from typing import cast
 from typing import Dict
@@ -10,6 +9,8 @@ from typing import Optional
 from typing import Sequence
 from typing import Union
 import warnings
+
+import numpy as np
 
 from optuna.distributions import BaseDistribution
 from optuna.logging import get_logger
@@ -97,9 +98,12 @@ class GridSampler(BaseSampler):
         search_space:
             A dictionary whose key and value are a parameter name and the corresponding candidates
             of values, respectively.
+        seed: Seed for random number generator.
     """
 
-    def __init__(self, search_space: Mapping[str, Sequence[GridValueType]]) -> None:
+    def __init__(
+        self, search_space: Mapping[str, Sequence[GridValueType]], seed: Optional[int] = None
+    ) -> None:
 
         for param_name, param_values in search_space.items():
             for value in param_values:
@@ -114,6 +118,11 @@ class GridSampler(BaseSampler):
         self._all_grids = list(itertools.product(*self._search_space.values()))
         self._param_names = sorted(search_space.keys())
         self._n_min_trials = len(self._all_grids)
+        self._rng = np.random.RandomState(seed)
+
+    def reseed_rng(self) -> None:
+
+        self._rng = np.random.RandomState()
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
@@ -152,7 +161,7 @@ class GridSampler(BaseSampler):
 
         # In distributed optimization, multiple workers may simultaneously pick up the same grid.
         # To make the conflict less frequent, the grid is chosen randomly.
-        grid_id = random.choice(target_grids)
+        grid_id = self._rng.choice(target_grids)
 
         study._storage.set_trial_system_attr(trial._trial_id, "search_space", self._search_space)
         study._storage.set_trial_system_attr(trial._trial_id, "grid_id", grid_id)
