@@ -193,12 +193,13 @@ def test_plot_pareto_front_3d(
     plt.savefig(BytesIO())
 
     # Test with three trials.
+    study.enqueue_trial({"x": 1, "y": 1, "z": 2})
     study.enqueue_trial({"x": 1, "y": 1, "z": 1})
-    study.enqueue_trial({"x": 1, "y": 0, "z": 1})
+    study.enqueue_trial({"x": 1, "y": 0, "z": 2})
     study.enqueue_trial({"x": 1, "y": 1, "z": 0})
     study.optimize(
-        lambda t: [t.suggest_int("x", 0, 1), t.suggest_int("y", 0, 1), t.suggest_int("z", 0, 1)],
-        n_trials=3,
+        lambda t: [t.suggest_int("x", 0, 1), t.suggest_int("y", 0, 2), t.suggest_int("z", 0, 2)],
+        n_trials=4,
     )
 
     constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]]
@@ -221,31 +222,30 @@ def test_plot_pareto_front_3d(
         constraints_func=constraints_func,
         targets=targets,
     )
+    actual_axis_order = axis_order or [0, 1, 2]
     assert len(figure.get_lines()) == 0
 
-    if constraints_func is not None:
-        if axis_order is not None:
-            pareto_front_points = np.array([[1.0, 0.0, 1.0]])[:, axis_order][:, 0:2]
+    if use_constraints_func:
+        if include_dominated_trials:
+            # The enqueue order of trial is: infeasible, feasible non-best, then feasible best.
+            assert len(figure.collections) == 3
+            data = [(1, 1, 1, 1), (1, 0, 1, 1), (1, 2, 2, 0)]  # type: ignore
         else:
-            pareto_front_points = np.array([[1.0, 0.0, 1.0]])[:, 0:2]
-        assert pareto_front_points.shape == (1, 2)
+            # The enqueue order of trial is: infeasible, feasible.
+            assert len(figure.collections) == 2
+            data = [(1, 1, 1), (1, 0, 1), (1, 2, 0)]  # type: ignore
     else:
-        if axis_order is not None:
-            pareto_front_points = np.array([[1.0, 0.0, 1.0], [1.0, 1.0, 0.0]])[:, axis_order][
-                :, 0:2
-            ]
+        if include_dominated_trials:
+            # The last elements come from dominated trial that is enqueued firstly.
+            assert len(figure.collections) == 2
+            data = [(1, 1, 1, 1), (0, 1, 1, 1), (2, 0, 2, 1)]  # type: ignore
         else:
-            pareto_front_points = np.array([[1.0, 0.0, 1.0], [1.0, 1.0, 0.0]])[:, 0:2]
-        assert pareto_front_points.shape == (2, 2)
+            assert len(figure.collections) == 1
+            data = [(1, 1), (0, 1), (2, 0)]  # type: ignore
 
-    path_offsets = list(map(lambda pc: pc.get_offsets(), figure.findobj(PathCollection)))
-    exists_pareto_front = any(
-        map(lambda po: allclose_as_set(po, pareto_front_points), path_offsets)
-    )
-    exists_dominated_trials = any(map(lambda po: allclose_as_set(po, [[1.0, 1.0]]), path_offsets))
-    assert exists_pareto_front
-    if include_dominated_trials:
-        assert exists_dominated_trials
+    _check_data(figure, "x", data[actual_axis_order[0]])
+    _check_data(figure, "y", data[actual_axis_order[1]])
+    # _check_data(figure, "z", data[actual_axis_order[2]])
     plt.savefig(BytesIO())
 
     # Test with `target_names` argument.
@@ -310,31 +310,6 @@ def test_plot_pareto_front_3d(
         assert figure.get_xlabel() == target_names[axis_order[0]]
         assert figure.get_ylabel() == target_names[axis_order[1]]
         assert figure.get_zlabel() == target_names[axis_order[2]]
-
-    if constraints_func is not None:
-        if axis_order is not None:
-            pareto_front_points = np.array([[1.0, 0.0, 1.0]])[:, axis_order][:, 0:2]
-        else:
-            pareto_front_points = np.array([[1.0, 0.0, 1.0]])[:, 0:2]
-        assert pareto_front_points.shape == (1, 2)
-    else:
-        if axis_order is not None:
-            pareto_front_points = np.array([[1.0, 0.0, 1.0], [1.0, 1.0, 0.0]])[:, axis_order][
-                :, 0:2
-            ]
-        else:
-            pareto_front_points = np.array([[1.0, 0.0, 1.0], [1.0, 1.0, 0.0]])[:, 0:2]
-        assert pareto_front_points.shape == (2, 2)
-
-    path_offsets = list(map(lambda pc: pc.get_offsets(), figure.findobj(PathCollection)))
-    exists_pareto_front = any(
-        map(lambda po: allclose_as_set(po, pareto_front_points), path_offsets)
-    )
-    exists_dominated_trials = any(map(lambda po: allclose_as_set(po, [[1.0, 1.0]]), path_offsets))
-    assert exists_pareto_front
-    if include_dominated_trials:
-        assert exists_dominated_trials
-    plt.savefig(BytesIO())
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
