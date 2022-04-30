@@ -39,8 +39,14 @@ def _check_data(figure: matplotlib.figure, axis: str, expected: Sequence[int]) -
     axis_map = {"x": 0, "y": 1, "z": 2}
     n_data = len(figure.collections)
     actual = tuple(
-        itertools.chain(*list(map(lambda i: figure.collections[i].get_offsets()[:, axis_map[axis]],
-                                  reversed(range(n_data)))))
+        itertools.chain(
+            *list(
+                map(
+                    lambda i: figure.collections[i].get_offsets()[:, axis_map[axis]],
+                    reversed(range(n_data)),
+                )
+            )
+        )
     )
     numpy.ma.testutils.assert_array_equal(actual, expected)
 
