@@ -267,12 +267,13 @@ def test_set_and_get_study_user_attrs(storage_mode: str) -> None:
         # Test overwriting value.
         check_set_and_get("dataset", "ImageNet")
 
-        # Non-existent study id or key.
-        non_existent_study_id = study_id + 1
+        # Non-existent study id.
         with pytest.raises(KeyError):
-            storage.set_study_user_attr(non_existent_study_id, "key", "value")
+            storage.get_study_user_attrs(study_id + 1)
+
+        # Non-existent study id.
         with pytest.raises(KeyError):
-            storage.get_study_user_attrs(non_existent_study_id)
+            storage.set_study_user_attr(study_id + 1, "key", "value")
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
