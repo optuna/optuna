@@ -12,6 +12,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _check_plot_args
+from optuna.visualization._utils import _filter_nonfinite
 
 
 if _imports.is_successful():
@@ -104,7 +105,9 @@ def plot_param_importances(
 
     # Importances cannot be evaluated without completed trials.
     # Return an empty figure for consistency with other visualization functions.
-    trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
+    trials = _filter_nonfinite(
+        study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
+    )
     if len(trials) == 0:
         logger.warning("Study instance does not contain completed trials.")
         return go.Figure(data=[], layout=layout)
