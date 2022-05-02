@@ -151,9 +151,8 @@ class Study:
         """Return trials located at the Pareto front in the study.
 
         A trial is located at the Pareto front if there are no trials that dominate the trial.
-        It's called that a trial ``t0`` dominates another trial ``t1`` if
-        ``all(v0 <= v1) for v0, v1 in zip(t0.values, t1.values)`` and
-        ``any(v0 < v1) for v0, v1 in zip(t0.values, t1.values)`` are held.
+        It's called that a trial ``t0`` dominates another trial ``t1`` if the condition
+        ``all(v0 <= v1) for v0, v1 in zip(t0.values, t1.values)`` is true.
 
         Returns:
             A list of :class:`~optuna.trial.FrozenTrial` objects.
