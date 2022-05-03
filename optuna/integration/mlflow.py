@@ -2,6 +2,7 @@ import functools
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import Generator
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -276,7 +277,9 @@ class MLflowCallback:
                 tags[key] = "{}...".format(value[: max_val_length - 3])
 
         # This sets the tags for MLflow.
-        mlflow.set_tags(tags)
+        # MLflow handles up to 100 tags per request
+        for tags_chunk in self._dict_chunks(tags, 100):
+            mlflow.set_tags(tags_chunk)
 
     def _log_metrics(self, values: Optional[List[float]]) -> None:
         """Log the trial results as metrics to MLflow.
@@ -308,15 +311,36 @@ class MLflowCallback:
             else:
                 names = [*self._metric_name]
 
+        # MLflow handles up to 1000 metrics per request
         metrics = {name: val for name, val in zip(names, values)}
-        mlflow.log_metrics(metrics)
+        for metric_chunk in self._dict_chunks(metrics, 1000):
+            mlflow.log_metrics(metric_chunk)
 
-    @staticmethod
-    def _log_params(params: Dict[str, Any]) -> None:
+    @classmethod
+    def _log_params(cls, params: Dict[str, Any]) -> None:
         """Log the parameters of the trial to MLflow.
 
         Args:
             params: Trial params.
         """
+        # MLflow handles up to 100 parameters per request
+        for params_chunk in cls._dict_chunks(params, 100):
+            mlflow.log_params(params_chunk)
 
-        mlflow.log_params(params)
+    @staticmethod
+    def _dict_chunks(d: Dict[str, Any], n: int) -> Generator[Dict, None, None]:
+        """Splits a dictionary into chunks of maximum size n.
+
+        Args:
+            d: Dictionary to be chunked.
+            n: Maximum size of each chunk.
+
+        Returns:
+            Generator of dictionaries.
+        """
+        chunk = {}
+        for i, param in enumerate(d.items(), 1):
+            chunk[param[0]] = param[1]
+            if len(chunk) % n == 0 or i == len(d):
+                yield chunk
+                chunk = {}
