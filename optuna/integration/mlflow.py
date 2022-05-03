@@ -145,6 +145,9 @@ class MLflowCallback(object):
 
     def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
 
+        if trial.state == optuna.trial.TrialState.PRUNED:
+            return
+
         self._initialize_experiment(study)
 
         with mlflow.start_run(
@@ -155,14 +158,18 @@ class MLflowCallback(object):
             tags=self._mlflow_kwargs.get("tags"),
         ):
 
-            # This sets the metrics for MLflow.
-            self._log_metrics(trial.values)
-
             # This sets the params for MLflow.
             self._log_params(trial.params)
 
             # This sets the tags for MLflow.
             self._set_tags(trial, study)
+
+            if trial.state == optuna.trial.TrialState.FAIL:
+                # Values are set to None when trial fails
+                mlflow.end_run(status="FAILED")
+            else:
+                # This sets the metrics for MLflow.
+                self._log_metrics(trial.values)
 
     @experimental("2.9.0")
     def track_in_mlflow(self) -> Callable:
