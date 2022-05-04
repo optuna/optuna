@@ -16,9 +16,9 @@ body:
       description: |
         Please give us your environment information. You can get this information by typing the following.
         ```
-        python -c 'import optuna; print(optuna.__version__)'
-        python -c 'import platform; print(platform.python_version())'
-        python -c 'import platform; print(platform.platform())'
+        python -c 'import optuna; print(f"- Optuna version:{optuna.__version__}")'
+        python -c 'import platform; print(f"- Python version:{platform.python_version()}")'
+        python -c 'import platform; print(f"- OS:{platform.platform()}")'
         ```
       value: |
         - Optuna version:
@@ -39,10 +39,10 @@ body:
     id: logs
     attributes:
       label: Error messages, stack traces, or logs
-      description: Please copy and paste any relevant error messages, stack traces, or log output. 
+      description: Please copy and paste any relevant error messages, stack traces, or log output.
       render: shell
     validations:
-       required: true
+      required: true
   - type: textarea
     id: steps-to-reproduce
     attributes:
