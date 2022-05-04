@@ -107,7 +107,7 @@ class MLflowCallback(object):
             Flag indicating whether or not to add the trial's user attrs
             to the mlflow trial as tags. Please note that when both trial and
             study user attributes are logged, the latter will supersede the former
-            in case of a collison.
+            in case of a collision.
 
 
     Raises:
