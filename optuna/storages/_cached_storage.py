@@ -12,8 +12,8 @@ from typing import Tuple
 from typing import Union
 
 import optuna
-from optuna._deprecated import deprecated
 from optuna import distributions
+from optuna._deprecated import deprecated
 from optuna.storages import BaseStorage
 from optuna.storages._rdb.storage import RDBStorage
 from optuna.storages._redis import RedisStorage

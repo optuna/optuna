@@ -14,8 +14,8 @@ from typing import Union
 import uuid
 
 import optuna
-from optuna._deprecated import deprecated
 from optuna import distributions  # NOQA
+from optuna._deprecated import deprecated
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX

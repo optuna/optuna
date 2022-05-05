@@ -20,7 +20,6 @@ import uuid
 import numpy as np
 
 import optuna
-from optuna._deprecated import deprecated
 from optuna import distributions
 from optuna import version
 from optuna._deprecated import deprecated
