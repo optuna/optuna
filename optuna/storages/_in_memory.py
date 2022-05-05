@@ -14,6 +14,7 @@ from typing import Union
 import uuid
 
 import optuna
+from optuna._deprecated import deprecated
 from optuna import distributions  # NOQA
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages import BaseStorage
@@ -127,6 +128,7 @@ class InMemoryStorage(BaseStorage):
 
             return self._trial_id_to_study_id_and_number[trial_id][0]
 
+    @deprecated("2.9.0", "4.0.0")
     def get_study_name_from_id(self, study_id: int) -> str:
 
         with self._lock:
