@@ -126,7 +126,8 @@ class RDBStorage(BaseStorage):
             study.optimize(objective, n_trials=10)
 
     Args:
-        url: URL of the storage.
+        url:
+            URL of the storage.
         engine_kwargs:
             A dictionary of keyword arguments that is passed to
             `sqlalchemy.engine.create_engine`_ function.
@@ -134,6 +135,7 @@ class RDBStorage(BaseStorage):
             Flag to skip schema compatibility check if set to True.
         heartbeat_interval:
             Interval to record the heartbeat. It is recorded every ``interval`` seconds.
+            ``heartbeat_interval`` must be :obj:`None` or a positive integer.
 
             .. note::
                 The heartbeat is supposed to be used with :meth:`~optuna.study.Study.optimize`.
@@ -142,6 +144,7 @@ class RDBStorage(BaseStorage):
 
         grace_period:
             Grace period before a running trial is failed from the last heartbeat.
+            ``grace_period`` must be :obj:`None` or a positive integer.
             If it is :obj:`None`, the grace period will be `2 * heartbeat_interval`.
         failed_trial_callback:
             A callback function that is invoked after failing each stale trial.
@@ -177,12 +180,6 @@ class RDBStorage(BaseStorage):
         You can use :class:`~optuna.storages.RetryFailedTrialCallback` to automatically retry
         failed trials detected by heartbeat.
 
-    Raises:
-        :exc:`ValueError`:
-            If the given `heartbeat_interval` or `grace_period` is not a positive integer.
-        :exc:`RuntimeError`:
-            When a process tries to finish a trial that has already
-            been set to :class:`~optuna.trial.TrialState.FAIL` by heartbeat.
     """
 
     def __init__(

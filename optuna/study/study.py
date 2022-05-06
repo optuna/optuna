@@ -94,12 +94,12 @@ class Study:
     def best_params(self) -> Dict[str, Any]:
         """Return parameters of the best trial in the study.
 
+        .. note::
+            This feature can only be used for single-objective optimization.
+
         Returns:
             A dictionary containing parameters of the best trial.
 
-        Raises:
-            :exc:`RuntimeError`:
-                If the study has more than one direction.
         """
 
         return self.best_trial.params
@@ -108,12 +108,12 @@ class Study:
     def best_value(self) -> float:
         """Return the best objective value in the study.
 
+        .. note::
+            This feature can only be used for single-objective optimization.
+
         Returns:
             A float representing the best objective value.
 
-        Raises:
-            :exc:`RuntimeError`:
-                If the study has more than one direction.
         """
 
         best_value = self.best_trial.value
@@ -125,12 +125,13 @@ class Study:
     def best_trial(self) -> FrozenTrial:
         """Return the best trial in the study.
 
+        .. note::
+            This feature can only be used for single-objective optimization.
+            If your study is multi-objective,
+            use :attr:`~optuna.study.Study.best_trials` instead.
+
         Returns:
             A :class:`~optuna.trial.FrozenTrial` object of the best trial.
-
-        Raises:
-            :exc:`RuntimeError`:
-                If the study has more than one direction.
 
         .. seealso::
             The :ref:`reuse_best_trial` tutorial provides a detailed example of how to use this
@@ -165,12 +166,14 @@ class Study:
     def direction(self) -> StudyDirection:
         """Return the direction of the study.
 
+        .. note::
+            This feature can only be used for single-objective optimization.
+            If your study is multi-objective,
+            use :attr:`~optuna.study.Study.directions` instead.
+
         Returns:
             A :class:`~optuna.study.StudyDirection` object.
 
-        Raises:
-            :exc:`RuntimeError`:
-                If the study has more than one direction.
         """
 
         if self._is_multi_objective():
@@ -579,23 +582,6 @@ class Study:
                 finished trial are told. If :obj:`True`, tell is skipped without any error
                 when the trial is already finished.
 
-        Raises:
-            TypeError:
-                If ``trial`` is not a :class:`~optuna.trial.Trial` or an :obj:`int`.
-            ValueError:
-                If any of the following.
-                ``state`` is :class:`~optuna.trial.TrialState.COMPLETE` but
-                ``values`` is :obj:`None`.
-                ``state`` is :class:`~optuna.trial.TrialState.FAIL` or
-                :class:`~optuna.trial.TrialState.PRUNED` but
-                ``values`` is not :obj:`None`.
-                ``state`` is not
-                :class:`~optuna.trial.TrialState.COMPLETE`,
-                :class:`~optuna.trial.TrialState.FAIL` or
-                :class:`~optuna.trial.TrialState.PRUNED`.
-                ``trial`` is a trial number but no
-                trial exists with that number.
-
         Returns:
             A :class:`~optuna.trial.FrozenTrial` representing the resulting trial.
             A returned trial is deep copied thus user can modify it as needed.
@@ -734,6 +720,7 @@ class Study:
         immediately after all trials which the :meth:`~optuna.study.Study.optimize` method
         spawned finishes.
         This method does not affect any behaviors of parallel or successive study processes.
+        This method only works when it is called inside an objective function or callback.
 
         Example:
 
@@ -753,9 +740,6 @@ class Study:
                 study.optimize(objective, n_trials=10)
                 assert len(study.trials) == 5
 
-        Raises:
-            RuntimeError:
-                If this method is called outside an objective function or callback.
         """
 
         if self._optimize_lock.acquire(False):
@@ -803,6 +787,7 @@ class Study:
                 A dictionary of user-specific attributes other than ``params``.
 
         .. seealso::
+
             Please refer to :ref:`enqueue_trial_tutorial` for the tutorial of specifying
             hyperparameters manually.
         """
@@ -874,10 +859,6 @@ class Study:
         Args:
             trial: Trial to add.
 
-        Raises:
-            :exc:`ValueError`:
-                If trial is an invalid state.
-
         """
 
         trial._validate()
@@ -919,9 +900,6 @@ class Study:
         Args:
             trials: Trials to add.
 
-        Raises:
-            :exc:`ValueError`:
-                If ``trials`` include invalid trial.
         """
 
         for trial in trials:
@@ -1053,7 +1031,7 @@ def create_study(
         direction:
             Direction of optimization. Set ``minimize`` for minimization and ``maximize`` for
             maximization. You can also pass the corresponding :class:`~optuna.study.StudyDirection`
-            object.
+            object. ``direction`` and ``directions`` must not be specified at the same time.
 
             .. note::
                 If none of `direction` and `directions` are specified, the direction of the study
@@ -1066,16 +1044,10 @@ def create_study(
             Otherwise, the creation of the study is skipped, and the existing one is returned.
         directions:
             A sequence of directions during multi-objective optimization.
+            ``direction`` and ``directions`` must not be specified at the same time.
 
     Returns:
         A :class:`~optuna.study.Study` object.
-
-    Raises:
-        :exc:`ValueError`:
-            If the length of ``directions`` is zero.
-            Or, if ``direction`` is neither 'minimize' nor 'maximize' when it is a string.
-            Or, if the element of ``directions`` is neither `minimize` nor `maximize`.
-            Or, if both ``direction`` and ``directions`` are specified.
 
     See also:
         :func:`optuna.create_study` is an alias of :func:`optuna.study.create_study`.
@@ -1188,6 +1160,7 @@ def load_study(
         study_name:
             Study's name. Each study has a unique name as an identifier. If :obj:`None`, checks
             whether the storage contains a single study, and if so loads that study.
+            ``study_name`` is required if there are multiple studies in the storage.
         storage:
             Database URL such as ``sqlite:///example.db``. Please see also the documentation of
             :func:`~optuna.study.create_study` for further details.
@@ -1199,10 +1172,6 @@ def load_study(
             A pruner object that decides early stopping of unpromising trials.
             If :obj:`None` is specified, :class:`~optuna.pruners.MedianPruner` is used
             as the default. See also :class:`~optuna.pruners`.
-
-    Raises:
-        :exc:`ValueError`:
-            If ``study_name`` is :obj:`None` and the storage contains more than 1 study.
 
     See also:
         :func:`optuna.load_study` is an alias of :func:`optuna.study.load_study`.

@@ -94,7 +94,8 @@ class WeightsAndBiasesCallback(object):
             If single name is provided, or this argument is left to default value,
             it will be broadcasted to each objective with a number suffix in order
             returned by objective function e.g. two objectives and default metric name
-            will be logged as ``value_0`` and ``value_1``.
+            will be logged as ``value_0`` and ``value_1``. The number of metrics must be
+            the same as the number of values objective function returns.
         wandb_kwargs:
             Set of arguments passed when initializing Weights & Biases run.
             Please refer to `Weights & Biases API documentation
@@ -103,11 +104,6 @@ class WeightsAndBiasesCallback(object):
             Creates new runs for each trial. Useful for generating W&B Sweeps like
             panels (for ex., parameter importance, parallel coordinates, etc).
 
-    Raises:
-        :exc:`ValueError`:
-            If there are missing or extra metric names in multi-objective optimization.
-        :exc:`TypeError`:
-            When metric names are not passed as sequence.
     """
 
     def __init__(

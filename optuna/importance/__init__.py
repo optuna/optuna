@@ -68,7 +68,8 @@ def get_param_importances(
         target:
             A function to specify the value to evaluate importances.
             If it is :obj:`None` and ``study`` is being used for single-objective optimization,
-            the objective values are used.
+            the objective values are used. ``target`` must be specified if ``study`` is being
+            used for multi-objective optimization.
 
             .. note::
                 Specify this argument if ``study`` is being used for multi-objective
@@ -79,10 +80,6 @@ def get_param_importances(
         An :class:`collections.OrderedDict` where the keys are parameter names and the values are
         assessed importances.
 
-    Raises:
-        :exc:`ValueError`:
-            If ``target`` is :obj:`None` and ``study`` is being used for multi-objective
-            optimization.
     """
     if evaluator is None:
         evaluator = FanovaImportanceEvaluator()
