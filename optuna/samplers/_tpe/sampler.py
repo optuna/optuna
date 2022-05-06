@@ -1,6 +1,7 @@
 import math
 from typing import Any
 from typing import Callable
+from typing import cast
 from typing import Container
 from typing import Dict
 from typing import List
@@ -625,7 +626,9 @@ def _get_observation_pairs(
     constant_liar: bool = False,  # TODO(hvy): Remove default value and fix unit tests.
     get_constraints: bool = False,
 ) -> Tuple[
-    Dict[str, List[Optional[float]]], List[Tuple[float, List[float]]], Optional[List[Tuple[float]]]
+    Dict[str, List[Optional[float]]],
+    List[Tuple[float, List[float]]],
+    Optional[List[Sequence[float]]],
 ]:
     """Get observation pairs from the study.
 
@@ -663,7 +666,7 @@ def _get_observation_pairs(
 
     scores = []
     values: Dict[str, List[Optional[float]]] = {param_name: [] for param_name in param_names}
-    constraints = [] if get_constraints else None
+    constraints: Optional[List[Sequence[float]]] = [] if get_constraints else None
     for trial in study.get_trials(deepcopy=False, states=states):
         # If ``multivariate`` = True and ``group`` = True, we ignore the trials that are not
         # included in each subspace.
@@ -709,7 +712,8 @@ def _get_observation_pairs(
             values[param_name].append(param_value)
 
         if get_constraints:
-            constraints.append(trial.system_attrs.get(_CONSTRAINTS_KEY))
+            assert constraints is not None
+            constraints.append(cast(Sequence[float], trial.system_attrs.get(_CONSTRAINTS_KEY)))
 
     return values, scores, constraints
 
