@@ -98,7 +98,7 @@ class GridSampler(BaseSampler):
         search_space:
             A dictionary whose key and value are a parameter name and the corresponding candidates
             of values, respectively.
-        seed: Seed for random number generator.
+        seed: A seed to specify the order of trials as the grid is randomly shuffled.
     """
 
     def __init__(
