@@ -601,6 +601,13 @@ def check_distribution_compatibility(
     if dist_old.__class__ != dist_new.__class__:
         raise ValueError("Cannot set different distribution kind to the same parameter name.")
 
+    if isinstance(dist_old, (FloatDistribution, IntDistribution)):
+        # For mypy.
+        assert isinstance(dist_new, (FloatDistribution, IntDistribution))
+
+        if dist_old.log != dist_new.log:
+            raise ValueError("Cannot set different log configuration to the same parameter name.")
+
     if not isinstance(dist_old, CategoricalDistribution):
         return
     if not isinstance(dist_new, CategoricalDistribution):
