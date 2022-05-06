@@ -458,6 +458,9 @@ class TPESampler(BaseSampler):
                 )
                 indices_below = feasible_idx[feasible_below]
                 indices_above = np.concatenate([feasible_idx[feasible_above], infeasible_idx])
+            # `np.sort` is used to keep chronological order.
+            indices_below = np.sort(indices_below)
+            indices_above = np.sort(indices_above)
         else:
             indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n))
         # `None` items are intentionally converted to `nan` and then filtered out.
@@ -466,14 +469,10 @@ class TPESampler(BaseSampler):
         below = _build_observation_dict(config_values, indices_below)
         above = _build_observation_dict(config_values, indices_above)
 
-        if study._is_multi_objective():
+        if study._is_multi_objective() and self._constraints_func is None:
             weights_below = _calculate_weights_below_for_multi_objective(
                 config_values, scores, indices_below
             )
-            if self._constraints_func is not None:
-                # Set weights for infeasible indices to EPS.
-                below_infeasible_f = constraints_1d[indices_below] > 0
-                weights_below[below_infeasible_f] = EPS
             mpe_below = _ParzenEstimator(
                 below,
                 {param_name: param_distribution},
