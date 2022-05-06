@@ -36,7 +36,7 @@ with try_import() as _imports:
     from sklearn.ensemble import RandomForestRegressor
 
 
-class _Fanova(object):
+class _Fanova:
     def __init__(
         self,
         n_trees: int,
@@ -55,7 +55,7 @@ class _Fanova(object):
             random_state=seed,
         )
         self._trees: Optional[List[_FanovaTree]] = None
-        self._variances: Optional[Dict[Tuple[int, ...], numpy.ndarray]] = None
+        self._variances: Dict[Tuple[int, ...], numpy.ndarray] = {}
         self._column_to_encoded_columns: Optional[List[numpy.ndarray]] = None
 
     def fit(
@@ -73,7 +73,6 @@ class _Fanova(object):
 
         self._trees = [_FanovaTree(e.tree_, search_spaces) for e in self._forest.estimators_]
         self._column_to_encoded_columns = column_to_encoded_columns
-        self._variances = {}
 
         if all(tree.variance == 0 for tree in self._trees):
             # If all trees have 0 variance, we cannot assess any importances.
@@ -83,7 +82,6 @@ class _Fanova(object):
     def get_importance(self, features: Tuple[int, ...]) -> Tuple[float, float]:
         # Assert that `fit` has been called.
         assert self._trees is not None
-        assert self._variances is not None
 
         self._compute_variances(features)
 
@@ -100,8 +98,6 @@ class _Fanova(object):
         return float(fractions.mean()), float(fractions.std())
 
     def _compute_variances(self, features: Tuple[int, ...]) -> None:
-        assert self._trees is not None
-        assert self._variances is not None
         assert self._column_to_encoded_columns is not None
 
         if features in self._variances:
@@ -125,6 +121,6 @@ class _Fanova(object):
                 for sub_features in itertools.combinations(features, k):
                     marginal_variance -= self._variances[sub_features][tree_index]
 
-            variances[tree_index] = numpy.clip(marginal_variance, 0.0, numpy.inf)
+            variances[tree_index] = numpy.clip(marginal_variance, 0.0, None)
 
         self._variances[features] = variances
