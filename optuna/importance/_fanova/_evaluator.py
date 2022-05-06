@@ -135,7 +135,7 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
 
         importances = {}
         for i, name in enumerate(distributions.keys()):
-            importance, _ = evaluator.get_importance((i,))
+            importance, _ = evaluator.get_importance(i)
             importances[name] = importance
 
         importances = {**importances, **zero_importances}

@@ -19,7 +19,6 @@ given a unique one-hot encoded raw feature.
 
 """
 
-import itertools
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -55,7 +54,7 @@ class _Fanova:
             random_state=seed,
         )
         self._trees: Optional[List[_FanovaTree]] = None
-        self._variances: Dict[Tuple[int, ...], numpy.ndarray] = {}
+        self._variances: Dict[int, numpy.ndarray] = {}
         self._column_to_encoded_columns: Optional[List[numpy.ndarray]] = None
 
     def fit(
@@ -79,48 +78,34 @@ class _Fanova:
             # This could occur if for instance `X.shape[0] == 1`.
             raise RuntimeError("Encountered zero total variance in all trees.")
 
-    def get_importance(self, features: Tuple[int, ...]) -> Tuple[float, float]:
+    def get_importance(self, feature: int) -> Tuple[float, float]:
         # Assert that `fit` has been called.
         assert self._trees is not None
 
-        self._compute_variances(features)
+        self._compute_variances(feature)
 
         fractions: Union[List[float], numpy.ndarray] = []
 
         for tree_index, tree in enumerate(self._trees):
             tree_variance = tree.variance
             if tree_variance > 0.0:
-                fraction = self._variances[features][tree_index] / tree_variance
+                fraction = self._variances[feature][tree_index] / tree_variance
                 fractions = numpy.append(fractions, fraction)
 
         fractions = numpy.asarray(fractions)
 
         return float(fractions.mean()), float(fractions.std())
 
-    def _compute_variances(self, features: Tuple[int, ...]) -> None:
+    def _compute_variances(self, feature: int) -> None:
         assert self._column_to_encoded_columns is not None
 
-        if features in self._variances:
+        if feature in self._variances:
             return
 
-        for k in range(1, len(features)):
-            for sub_features in itertools.combinations(features, k):
-                if sub_features not in self._variances:
-                    self._compute_variances(sub_features)
-
-        raw_features = numpy.concatenate([self._column_to_encoded_columns[f] for f in features])
-
+        raw_feature = self._column_to_encoded_columns[feature]
         variances = numpy.empty(len(self._trees), dtype=numpy.float64)
 
         for tree_index, tree in enumerate(self._trees):
-            marginal_variance = tree.get_marginal_variance(raw_features)
-
-            # See `fANOVA.__compute_marginals` in
-            # https://github.com/automl/fanova/blob/master/fanova/fanova.py.
-            for k in range(1, len(features)):
-                for sub_features in itertools.combinations(features, k):
-                    marginal_variance -= self._variances[sub_features][tree_index]
-
+            marginal_variance = tree.get_marginal_variance(raw_feature)
             variances[tree_index] = numpy.clip(marginal_variance, 0.0, None)
-
-        self._variances[features] = variances
+        self._variances[feature] = variances
