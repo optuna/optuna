@@ -153,7 +153,7 @@ def test_cast_value() -> None:
     samplers.GridSampler._check_value("x", "foo")
     samplers.GridSampler._check_value("x", "")
 
-    with pytest.raises(ValueError):
+    with pytest.warns(UserWarning):
         samplers.GridSampler._check_value("x", [1])
 
 

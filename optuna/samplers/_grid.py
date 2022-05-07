@@ -211,11 +211,12 @@ class GridSampler(BaseSampler):
         if param_value is None or isinstance(param_value, (str, int, float, bool)):
             return
 
-        raise ValueError(
+        message = (
             "{} contains a value with the type of {}, which is not supported by "
             "`GridSampler`. Please make sure a value is `str`, `int`, `float`, `bool`"
-            " or `None`.".format(param_name, type(param_value))
+            " or `None` for persistent storage.".format(param_name, type(param_value))
         )
+        warnings.warn(message)
 
     def _get_unvisited_grid_ids(self, study: Study) -> List[int]:
 
