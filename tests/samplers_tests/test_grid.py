@@ -22,7 +22,7 @@ def test_study_optimize_with_single_search_space() -> None:
 
         a = trial.suggest_int("a", 0, 100)
         b = trial.suggest_float("b", -0.1, 0.1)
-        c = trial.suggest_categorical("c", ("x", "y"))
+        c = trial.suggest_categorical("c", ("x", "y", None, 1, 2.0))
         d = trial.suggest_float("d", -5, 5, step=1)
         e = trial.suggest_float("e", 0.0001, 1, log=True)
 
@@ -34,7 +34,7 @@ def test_study_optimize_with_single_search_space() -> None:
     # Test that all combinations of the grid is sampled.
     search_space = {
         "b": np.arange(-0.1, 0.1, 0.05),
-        "c": ["x", "y"],
+        "c": ("x", "y", None, 1, 2.0),
         "d": [-0.5, 0.5],
         "e": [0.1],
         "a": list(range(0, 100, 20)),
