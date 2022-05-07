@@ -50,7 +50,7 @@ def test_plot_parallel_coordinate() -> None:
     # Objective value as line plots.
     objectives = [line[0, 1] for line in line_collections[0].get_segments()]
     assert objectives == [0.0, 1.0]
-    expected_labels = ("Objective Value", "param_a", "param_b")
+    expected_labels = ["Objective Value", "param_a", "param_b"]
     xtick_labels = axes[0].get_xticklabels()
     for expected_label, xtick_label in zip(expected_labels, xtick_labels):
         assert expected_label == xtick_label.get_text()
@@ -68,7 +68,7 @@ def test_plot_parallel_coordinate() -> None:
     assert len(line_collections) == 1
     objectives = [line[0, 1] for line in line_collections[0].get_segments()]
     assert objectives == [0.0, 1.0]
-    expected_labels = ("Objective Value", "param_a", "param_b")
+    expected_labels = ["Objective Value", "param_a", "param_b"]
     xtick_labels = axes[0].get_xticklabels()
     for expected_label, xtick_label in zip(expected_labels, xtick_labels):
         assert expected_label == xtick_label.get_text()
@@ -89,7 +89,7 @@ def test_plot_parallel_coordinate() -> None:
     assert len(line_collections) == 1
     objectives = [line[0, 1] for line in line_collections[0].get_segments()]
     assert objectives == [2.0, 1.0]
-    expected_labels = ("Objective Value", "param_a")
+    expected_labels = ["Objective Value", "param_a"]
     xtick_labels = axes[0].get_xticklabels()
     for expected_label, xtick_label in zip(expected_labels, xtick_labels):
         assert expected_label == xtick_label.get_text()
@@ -108,7 +108,7 @@ def test_plot_parallel_coordinate() -> None:
     assert len(line_collections) == 1
     objectives = [line[0, 1] for line in line_collections[0].get_segments()]
     assert objectives == [0.0, 1.0]
-    expected_labels = ("Target Name", "param_a", "param_b")
+    expected_labels = ["Target Name", "param_a", "param_b"]
     xtick_labels = axes[0].get_xticklabels()
     for expected_label, xtick_label in zip(expected_labels, xtick_labels):
         assert expected_label == xtick_label.get_text()
@@ -167,7 +167,7 @@ def test_plot_parallel_coordinate_categorical_params() -> None:
     assert len(line_collections) == 1
     objectives = [line[0, 1] for line in line_collections[0].get_segments()]
     assert objectives == [0.0, 2.0]
-    expected_labels = ("Objective Value", "category_a", "category_b")
+    expected_labels = ["Objective Value", "category_a", "category_b"]
     xtick_labels = axes[0].get_xticklabels()
     for expected_label, xtick_label in zip(expected_labels, xtick_labels):
         assert expected_label == xtick_label.get_text()
@@ -235,7 +235,7 @@ def test_plot_parallel_coordinate_categorical_numeric_params() -> None:
     assert [label.get_position()[1] for label in axes[3].get_yticklabels()] == list(
         range(num_choices__category_b)
     )
-    expected_labels = ("Objective Value", "category_a", "category_b")
+    expected_labels = ["Objective Value", "category_a", "category_b"]
     xtick_labels = axes[0].get_xticklabels()
     for expected_label, xtick_label in zip(expected_labels, xtick_labels):
         assert expected_label == xtick_label.get_text()
@@ -287,7 +287,7 @@ def test_plot_parallel_coordinate_log_params() -> None:
     assert objectives == [0.0, 1.0, 0.1]
     assert axes[2].get_ylim() == (1e-6, 1e-4)
     assert axes[3].get_ylim() == (10.0, 200)
-    expected_labels = ("Objective Value", "param_a", "param_b")
+    expected_labels = ["Objective Value", "param_a", "param_b"]
     xtick_labels = axes[0].get_xticklabels()
     for expected_label, xtick_label in zip(expected_labels, xtick_labels):
         assert expected_label == xtick_label.get_text()
@@ -332,7 +332,7 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
         30 * (1.0 - default_padding_fraction),
         30 * (1.0 + default_padding_fraction),
     )
-    expected_labels = ("Objective Value", "category_a", "param_b")
+    expected_labels = ["Objective Value", "category_a", "param_b"]
     xtick_labels = axes[0].get_xticklabels()
     for expected_label, xtick_label in zip(expected_labels, xtick_labels):
         assert expected_label == xtick_label.get_text()
@@ -366,7 +366,7 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
     assert [lien.get_text() for lien in axes[2].get_yticklabels()] == ["preferred"]
     assert [label.get_position()[1] for label in axes[2].get_yticklabels()] == [0]
     assert axes[3].get_ylim() == (20, 30)
-    expected_labels = ("Objective Value", "category_a", "param_b")
+    expected_labels = ["Objective Value", "category_a", "param_b"]
     xtick_labels = axes[0].get_xticklabels()
     for expected_label, xtick_label in zip(expected_labels, xtick_labels):
         assert expected_label == xtick_label.get_text()
