@@ -342,7 +342,7 @@ def _make_json_compatible(value: Any) -> Any:
         json.dumps(value)
         return value
     except TypeError:
-        # the value can't be converted to JSON directly, so return a string representation
+        # The value can't be converted to JSON directly, so return a string representation.
         return str(value)
 
 
@@ -357,7 +357,6 @@ def _make_scatter_object(
 ) -> Union["go.Scatter", "go.Scatter3d"]:
     trials_with_values = trials_with_values or []
 
-    assert n_targets in (2, 3)
     marker = _make_marker(
         [trial for trial, _ in trials_with_values],
         include_dominated_trials,
@@ -374,8 +373,7 @@ def _make_scatter_object(
             marker=marker,
             showlegend=False,
         )
-    else:
-        assert n_targets == 3
+    elif n_targets == 3:
         return go.Scatter3d(
             x=[values[axis_order[0]] for _, values in trials_with_values],
             y=[values[axis_order[1]] for _, values in trials_with_values],
@@ -385,6 +383,11 @@ def _make_scatter_object(
             hovertemplate=hovertemplate,
             marker=marker,
             showlegend=False,
+        )
+    else:
+        raise ValueError(
+            "`plot_pareto_front` function only supports 2 or 3 targets."
+            " you used {} targets now.".format(n_targets)
         )
 
 
