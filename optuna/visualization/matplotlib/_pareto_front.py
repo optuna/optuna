@@ -56,7 +56,7 @@ def plot_pareto_front(
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their objective
-            values. ``study.n_objectives`` must be eigher 2 or 3.
+            values. ``study.n_objectives`` must be either 2 or 3 when ``targets`` is :obj:`None`.
         target_names:
             Objective name list used as the axis titles. If :obj:`None` is specified,
             "Objective {objective_index}" is used instead. If ``targets`` is specified
@@ -77,7 +77,7 @@ def plot_pareto_front(
             The argument to this function is :class:`~optuna.trial.FrozenTrial`.
             ``targets`` must be :obj:`None` or return 2 or 3 values.
             ``axis_order`` and ``targets`` cannot be used at the same time.
-            If your study has more than 4 objectives, ``targets`` must be specified.
+            If ``study.n_objectives`` is neither 2 nor 3, ``targets`` must be specified.
 
             .. note::
                 Added in v3.0.0 as an experimental feature. The interface may change in newer
