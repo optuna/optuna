@@ -360,7 +360,7 @@ def test_plot_pareto_front_targets_without_target_names() -> None:
 @pytest.mark.parametrize(
     "targets",
     [
-        lambda t: (t.values[0]),
+        lambda t: t.values[0],
     ],
 )
 def test_plot_pareto_front_invalid_target_values(
