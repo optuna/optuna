@@ -197,16 +197,19 @@ def test_enqueued_trial() -> None:
     assert sorted([study.trials[1].params["a"], study.trials[2].params["a"]]) == [0, 50]
 
 
-def test_same_seed_trial() -> None:
-    sampler1 = samplers.GridSampler({"a": [0, 20, 40, 60, 80, 100]}, 0)
+def test_same_seed_trials() -> None:
+    grid_values = [0, 20, 40, 60, 80, 100]
+    seed = 0
+
+    sampler1 = samplers.GridSampler({"a": grid_values}, seed)
     study1 = optuna.create_study(sampler=sampler1)
     study1.optimize(lambda trial: trial.suggest_int("a", 0, 100))
 
-    sampler2 = samplers.GridSampler({"a": [0, 20, 40, 60, 80, 100]}, 0)
+    sampler2 = samplers.GridSampler({"a": grid_values}, seed)
     study2 = optuna.create_study(sampler=sampler2)
     study2.optimize(lambda trial: trial.suggest_int("a", 0, 100))
 
-    for i in range(6):
+    for i in range(len(grid_values)):
         assert study1.trials[i].params["a"] == study2.trials[i].params["a"]
 
 
