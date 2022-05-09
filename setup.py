@@ -94,6 +94,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         "testing": [
             "chainer>=5.0.0",
             "cma",
+            # TODO(HideakiImamura): Remove the version constraint after the next release.
             "fakeredis<=1.7.1",
             "lightgbm",
             "matplotlib>=3.0.0",
@@ -127,6 +128,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "fastai ; python_version>'3.6' and python_version<'3.10'",
         ],
         "tests": [
+            # TODO(HideakiImamura): Remove the version constraint after the next release.
             "fakeredis<=1.7.1",
             "pytest",
         ],
