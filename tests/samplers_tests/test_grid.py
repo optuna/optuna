@@ -215,11 +215,10 @@ def test_same_seed_trials() -> None:
 
 def test_reseed_rng() -> None:
     sampler = samplers.GridSampler({"a": [0, 100]})
+    original_seed = sampler._rng.get_state()
     sampler.reseed_rng()
-    study = optuna.create_study(sampler=sampler)
-    study.optimize(lambda trial: trial.suggest_int("a", 0, 100))
 
-    assert sorted([study.trials[0].params["a"], study.trials[1].params["a"]]) == [0, 100]
+    assert str(original_seed) != str(sampler._rng.get_state())
 
 
 def test_enqueued_insufficient_trial() -> None:
