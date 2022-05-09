@@ -6,6 +6,9 @@ from typing import Callable
 from typing import Dict
 from typing import Optional
 from typing import Sequence
+from typing import TypeVar
+
+from typing_extensions import ParamSpec
 
 import optuna
 from optuna._deprecated import deprecated
@@ -20,12 +23,16 @@ with try_import() as _imports:
     import torch.distributed as dist
 
 
+_T = TypeVar("_T")
+_P = ParamSpec("_P")
+
+
 _suggest_deprecated_msg = (
     "Use :func:`~optuna.integration.TorchDistributedTrial.suggest_float` instead."
 )
 
 
-def updates_properties(f: Callable[..., Any]) -> Callable[..., Any]:
+def updates_properties(f: Callable[_P, _T]) -> Callable[_P, _T]:
     """Method decorator to fetch updated trial properties from rank 0 after ``f`` is run.
 
     This decorator ensures trial properties (params, distributions, etc.) on all distributed
@@ -35,7 +42,7 @@ def updates_properties(f: Callable[..., Any]) -> Callable[..., Any]:
     """
 
     @functools.wraps(f)
-    def wrapped(*args: Any, **kwargs: Any) -> Any:
+    def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> _T:
         self: TorchDistributedTrial = args[0]
 
         def state() -> Sequence:
