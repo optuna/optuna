@@ -62,18 +62,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "types-redis",
             "types-PyYAML",
         ],
-        "develop": [
-            "codecov",
-            "fakeredis",
-            "matplotlib>=3.0.0",  # optuna/visualization/matplotlib
-            "pandas",  # optuna/study.py
-            "plotly>=4.0.0",  # optuna/visualization.
-            "pytest",
-            "pytest-cov",
-            "redis",  # optuna/storages/redis.py.
-            "scikit-learn>=0.24.2",
-            # optuna/visualization/param_importances.py.
-        ],
         "document": [
             "cma",
             "lightgbm",
@@ -102,19 +90,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchaudio==0.11.0 ; python_version>'3.6'",
             "thop",
         ],
-        "tests": [
-            "fakeredis<=1.7.1; python_version<'3.8'",
-            "fakeredis ; python_version>='3.8'",
-            "pytest",
-        ],
-        "optional": [
-            "matplotlib>=3.0.0",  # optuna/visualization/matplotlib
-            "pandas",  # optuna/study.py
-            "plotly>=4.0.0",  # optuna/visualization.
-            "redis",  # optuna/storages/redis.py.
-            "scikit-learn>=0.24.2",
-            # optuna/visualization/param_importances.py.
-        ],
         "integration": [
             "allennlp>=2.2.0 ; python_version>'3.6'",
             "botorch>=0.4.0 ; python_version>'3.6'",
@@ -141,6 +116,20 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.12.0 ; python_version>'3.6'",
             "wandb",
             "xgboost",
+        ],
+        "optional": [
+            "matplotlib>=3.0.0",  # optuna/visualization/matplotlib
+            "pandas",  # optuna/study.py
+            "plotly>=4.0.0",  # optuna/visualization.
+            "redis",  # optuna/storages/redis.py.
+            "scikit-learn>=0.24.2",
+            # optuna/visualization/param_importances.py.
+        ],
+        "test": [
+            "codecov",
+            "fakeredis",
+            "pytest",
+            "pytest-cov",
         ],
     }
 
