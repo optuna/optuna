@@ -1560,7 +1560,8 @@ def test_configure_logging_verbosity(verbosity: str, expected: bool) -> None:
 
         # Create study.
         args = ["optuna", "create-study", "--storage", storage_url, verbosity]
-        # If `--verbose`, the INFO level log message should be generated.
+        # `--verbose` makes the log level DEBUG.
+        # `--quiet` makes the log level WARNING.
         result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         error_message = result.stderr.decode()
         assert ("A new study created in RDB with name" in error_message) == expected
