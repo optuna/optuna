@@ -97,6 +97,7 @@ class _Fanova:
         return float(fractions.mean()), float(fractions.std())
 
     def _compute_variances(self, feature: int) -> None:
+        assert self._trees is not None
         assert self._column_to_encoded_columns is not None
 
         if feature in self._variances:
