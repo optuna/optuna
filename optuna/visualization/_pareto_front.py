@@ -43,6 +43,7 @@ def plot_pareto_front(
     include_dominated_trials: bool = True,
     axis_order: Optional[List[int]] = None,
     constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
+    targets: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
 ) -> "go.Figure":
     """Plot the Pareto front of a study.
 
@@ -76,15 +77,17 @@ def plot_pareto_front(
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their objective
-            values.
+            values. ``study.n_objectives`` must be eigher 2 or 3.
         target_names:
             Objective name list used as the axis titles. If :obj:`None` is specified,
-            "Objective {objective_index}" is used instead.
+            "Objective {objective_index}" is used instead. If ``targets`` is specified
+            for a study that does not contain any completed trial,
+            ``target_name`` must be specified.
         include_dominated_trials:
             A flag to include all dominated trial's objective values.
         axis_order:
             A list of indices indicating the axis order. If :obj:`None` is specified,
-            default order is used.
+            default order is used. ``axis_order`` and ``targets`` cannot be used at the same time.
         constraints_func:
             An optional function that computes the objective constraints. It must take a
             :class:`~optuna.trial.FrozenTrial` and return the constraints. The return value must
@@ -96,19 +99,25 @@ def plot_pareto_front(
             If given, trials are classified into three categories: feasible and best, feasible but
             non-best, and infeasible. Categories are shown in different colors. Here, whether a
             trial is best (on Pareto front) or not is determined ignoring all infeasible trials.
+        targets:
+            A function that returns targets values to display.
+            The argument to this function is :class:`~optuna.trial.FrozenTrial`.
+            ``axis_order`` and ``targets`` cannot be used at the same time.
+            If your study has more than 4 objectives, ``targets`` must be specified.
+
+            .. note::
+                Added in v3.0.0 as an experimental feature. The interface may change in newer
+                versions without prior notice.
+                See https://github.com/optuna/optuna/releases/tag/v3.0.0.
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
-
-    Raises:
-        :exc:`ValueError`:
-            If the number of objectives of ``study`` isn't 2 or 3.
     """
 
     _imports.check()
 
     info = _get_pareto_front_info(
-        study, target_names, include_dominated_trials, axis_order, constraints_func
+        study, target_names, include_dominated_trials, axis_order, constraints_func, targets
     )
 
     if constraints_func is None:
@@ -413,7 +422,7 @@ def _make_marker(
             "color": [t.number for t in trials],
             "colorscale": "Blues",
             "colorbar": {
-                "title": "#Trials",
+                "title": "Trial",
             },
         }
     else:
@@ -422,7 +431,7 @@ def _make_marker(
             "color": [t.number for t in trials],
             "colorscale": "Reds",
             "colorbar": {
-                "title": "#Best trials",
+                "title": "Best Trial",
                 "x": 1.1 if include_dominated_trials else 1,
                 "xpad": 40,
             },

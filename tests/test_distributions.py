@@ -132,25 +132,33 @@ def test_check_distribution_compatibility() -> None:
 
     # test compatibility between IntDistributions.
     distributions.check_distribution_compatibility(
-        EXAMPLE_DISTRIBUTIONS["i"], EXAMPLE_DISTRIBUTIONS["il"]
-    )
-    distributions.check_distribution_compatibility(
-        EXAMPLE_DISTRIBUTIONS["il"], EXAMPLE_DISTRIBUTIONS["id"]
-    )
-    distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS["id"], EXAMPLE_DISTRIBUTIONS["i"]
     )
 
+    with pytest.raises(ValueError):
+        distributions.check_distribution_compatibility(
+            EXAMPLE_DISTRIBUTIONS["i"], EXAMPLE_DISTRIBUTIONS["il"]
+        )
+
+    with pytest.raises(ValueError):
+        distributions.check_distribution_compatibility(
+            EXAMPLE_DISTRIBUTIONS["il"], EXAMPLE_DISTRIBUTIONS["id"]
+        )
+
     # test compatibility between FloatDistributions.
-    distributions.check_distribution_compatibility(
-        EXAMPLE_DISTRIBUTIONS["f"], EXAMPLE_DISTRIBUTIONS["fl"]
-    )
-    distributions.check_distribution_compatibility(
-        EXAMPLE_DISTRIBUTIONS["fl"], EXAMPLE_DISTRIBUTIONS["fd"]
-    )
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS["fd"], EXAMPLE_DISTRIBUTIONS["f"]
     )
+
+    with pytest.raises(ValueError):
+        distributions.check_distribution_compatibility(
+            EXAMPLE_DISTRIBUTIONS["f"], EXAMPLE_DISTRIBUTIONS["fl"]
+        )
+
+    with pytest.raises(ValueError):
+        distributions.check_distribution_compatibility(
+            EXAMPLE_DISTRIBUTIONS["fl"], EXAMPLE_DISTRIBUTIONS["fd"]
+        )
 
     # test dynamic value range (CategoricalDistribution)
     pytest.raises(

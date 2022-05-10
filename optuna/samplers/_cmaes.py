@@ -185,9 +185,6 @@ class CmaEsSampler(BaseSampler):
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.6.0.
 
-    Raises:
-        ValueError:
-            If ``restart_strategy`` is not 'ipop' or :obj:`None`.
     """
 
     def __init__(
