@@ -1,4 +1,4 @@
-"""empty message
+"""Change floating point precision and make intermediate_value nullable.
 
 Revision ID: v3.0.0.b
 Revises: v3.0.0.a
