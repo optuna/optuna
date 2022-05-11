@@ -490,9 +490,9 @@ def test_set_trial_state(storage_mode: str) -> None:
 
         # Non-existent study.
         with pytest.raises(KeyError):
-            latest_trial_id = trial_ids[-1]
+            non_existent_trial_id = trial_ids[-1] + 1
             storage.set_trial_state(
-                latest_trial_id + 1,
+                non_existent_trial_id,
                 state=TrialState.COMPLETE,
             )
 
