@@ -17,6 +17,7 @@ with try_import() as _imports:
     from shap import TreeExplainer
 
 
+@experimental("3.0.0")
 class ShapleyImportanceEvaluator(BaseImportanceEvaluator):
     """Shapley (SHAP) parameter importance evaluator.
 
