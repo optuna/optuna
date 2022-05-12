@@ -50,6 +50,10 @@ class NSGAIISampler(BaseSampler):
     Args:
         population_size:
             Number of individuals (trials) in a generation.
+            ``population_size`` must be greater than or equal to ``crossover.n_parents``.
+            For :class:`~optuna.samplers.nsgaii.UNDXCrossover` and
+            :class:`~optuna.samplers.nsgaii.SPXCrossover`, ``n_parents=3``, and for the other
+            algorithms, ``n_parents=2``.
 
         mutation_prob:
             Probability of mutating each parameter when creating a new individual.
@@ -103,14 +107,6 @@ class NSGAIISampler(BaseSampler):
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.5.0.
 
-    Raises:
-        ValueError:
-            If ``crossover`` is not instance of :class:`~optuna.samplers.nsgaii.BaseCrossover`.
-            Or, if ``population_size <= n_parents``.
-            The `n_parents` is determined by each crossover.
-            For :class:`~optuna.samplers.nsgaii.UNDXCrossover` and
-            :class:`~optuna.samplers.nsgaii.SPXCrossover`, ``n_parents=3``, and for the other
-            algorithms, ``n_parents=2``.
     """
 
     def __init__(

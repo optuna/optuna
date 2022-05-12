@@ -11,37 +11,30 @@ def run(args: argparse.Namespace) -> None:
         raise ValueError(f"Data directory {args.data_dir} cannot be found.")
 
     os.makedirs(args.out_dir, exist_ok=True)
-    study_json_fn = os.path.join(args.out_dir, "studies.json")
+    study_json_filename = os.path.join(args.out_dir, "studies.json")
     solvers_filename = os.path.join(args.out_dir, "solvers.json")
     problems_filename = os.path.join(args.out_dir, "problems.json")
 
     # Ensure all files are empty.
-    for filename in [study_json_fn, solvers_filename, problems_filename]:
+    for filename in [study_json_filename, solvers_filename, problems_filename]:
         with open(filename, "w"):
             pass
 
-    # Create HPO bench problem.
-    datasets = [
-        "fcnet_tabular_benchmarks/fcnet_naval_propulsion_data.hdf5",
-        "fcnet_tabular_benchmarks/fcnet_parkinsons_telemonitoring_data.hdf5",
-        "fcnet_tabular_benchmarks/fcnet_protein_structure_data.hdf5",
-        "fcnet_tabular_benchmarks/fcnet_slice_localization_data.hdf5",
-    ]
-    for dataset in datasets:
-        dataset = os.path.join(args.data_dir, dataset)
-        cmd = f'{kurobako_cmd} problem hpobench "{dataset}" | tee -a {problems_filename}'
-        subprocess.run(cmd, shell=True)
+    # Create ZDT problems.
+    cmd = f"{kurobako_cmd} problem-suite zdt | tee -a {problems_filename}"
+    subprocess.run(cmd, shell=True)
 
-    # Create NAS bench problem.
+    # Create NAS bench problem(A) (for Multi-Objective Settings).
     dataset = os.path.join(args.data_dir, "nasbench_full.bin")
-    cmd = f'{kurobako_cmd} problem nasbench "{dataset}" | tee -a {problems_filename}'
+    cmd = (
+        f'{kurobako_cmd} problem nasbench "{dataset}" '
+        f"--metrics params accuracy | tee -a {problems_filename}"
+    )
     subprocess.run(cmd, shell=True)
 
     # Create solvers.
     sampler_list = args.sampler_list.split()
     sampler_kwargs_list = args.sampler_kwargs_list.split()
-    pruner_list = args.pruner_list.split()
-    pruner_kwargs_list = args.pruner_kwargs_list.split()
 
     if len(sampler_list) != len(sampler_kwargs_list):
         raise ValueError(
@@ -49,63 +42,70 @@ def run(args: argparse.Namespace) -> None:
             f"sampler_list: {sampler_list}, sampler_kwargs_list: {sampler_kwargs_list}."
         )
 
-    if len(pruner_list) != len(pruner_kwargs_list):
-        raise ValueError(
-            "The number of pruners does not match the given keyword arguments. \n"
-            f"pruner_list: {pruner_list}, pruner_keyword_arguments: {pruner_kwargs_list}."
-        )
-
     for sampler, sampler_kwargs in zip(sampler_list, sampler_kwargs_list):
-        for pruner, pruner_kwargs in zip(pruner_list, pruner_kwargs_list):
-            name = f"{args.name_prefix}_{sampler}_{pruner}"
-            cmd = (
-                f"{kurobako_cmd} solver --name {name} optuna --loglevel debug "
-                f"--sampler {sampler} --sampler-kwargs {sampler_kwargs} "
-                f"--pruner {pruner} --pruner-kwargs {pruner_kwargs} "
-                f"| tee -a {solvers_filename}"
-            )
-            subprocess.run(cmd, shell=True)
+        name = f"{args.name_prefix}_{sampler}"
+        python_command = f"{args.path_to_create_study} {sampler} {sampler_kwargs}"
+        cmd = (
+            f"{kurobako_cmd} solver --name {name} command python3 {python_command}"
+            f"| tee -a {solvers_filename}"
+        )
+        subprocess.run(cmd, shell=True)
 
     # Create study.
     cmd = (
-        f"{kurobako_cmd} studies --budget 80 "
+        f"{kurobako_cmd} studies --budget 120 "
         f"--solvers $(cat {solvers_filename}) --problems $(cat {problems_filename}) "
         f"--repeats {args.n_runs} --seed {args.seed} "
-        f"> {study_json_fn}"
+        f"> {study_json_filename}"
     )
     subprocess.run(cmd, shell=True)
 
     result_filename = os.path.join(args.out_dir, "results.json")
     cmd = (
-        f"cat {study_json_fn} | {kurobako_cmd} run --parallelism {args.n_jobs} "
+        f"cat {study_json_filename} | {kurobako_cmd} run --parallelism {args.n_jobs} -q "
         f"> {result_filename}"
     )
     subprocess.run(cmd, shell=True)
 
+    # Report.
     report_filename = os.path.join(args.out_dir, "report.md")
     cmd = f"cat {result_filename} | {kurobako_cmd} report > {report_filename}"
     subprocess.run(cmd, shell=True)
 
-    cmd = (
-        f"cat {result_filename} | {kurobako_cmd} plot curve --errorbar -o {args.out_dir} --xmin 10"
-    )
-    subprocess.run(cmd, shell=True)
+    # Plot pareto-front.
+    problem_names = ["NASBench", "ZDT1", "ZDT2", "ZDT3", "ZDT4", "ZDT5", "ZDT6"]
+    xmins = [0, 0, 0, 0, 0, 8, 0.2]
+    xmaxs = [25000000, 1, 1, 1, 1, 24, 1]
+    ymins = [0, 1, 2, 0, 20, 1, 5]
+    ymaxs = [0.2, 7, 7, 7, 250, 6, 10]
+    for problem_name, xmin, xmax, ymin, ymax in zip(problem_names, xmins, xmaxs, ymins, ymaxs):
+        cmd = (
+            f"cat {result_filename} | grep {problem_name} | "
+            f"{kurobako_cmd} plot pareto-front -o {args.out_dir} "
+            f"--xmin {xmin} --xmax {xmax} --ymin {ymin} --ymax {ymax}"
+        )
+        subprocess.run(cmd, shell=True)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--path-to-kurobako", type=str, default="")
+    parser.add_argument(
+        "--path-to-create-study", type=str, default="benchmarks/kurobako/mo_create_study.py"
+    )
     parser.add_argument("--name-prefix", type=str, default="")
     parser.add_argument("--n-runs", type=int, default=100)
     parser.add_argument("--n-jobs", type=int, default=10)
-    parser.add_argument("--sampler-list", type=str, default="RandomSampler TPESampler")
+    parser.add_argument(
+        "--sampler-list",
+        type=str,
+        default="RandomSampler TPESampler NSGAIISampler",
+    )
     parser.add_argument(
         "--sampler-kwargs-list",
         type=str,
-        default=r"{} {\"multivariate\":true\,\"constant_liar\":true}",
+        default=r"{} {\"multivariate\":true\,\"constant_liar\":true} {\"population_size\":20}",
     )
-    parser.add_argument("--pruner-list", type=str, default="NopPruner")
-    parser.add_argument("--pruner-kwargs-list", type=str, default="{}")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--data-dir", type=str, default="data")
     parser.add_argument("--out-dir", type=str, default="out")

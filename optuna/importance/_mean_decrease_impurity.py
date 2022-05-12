@@ -13,6 +13,7 @@ from optuna.importance._base import BaseImportanceEvaluator
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+from optuna.visualization._utils import _filter_nonfinite
 
 
 with try_import() as _imports:
@@ -72,9 +73,9 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
             return OrderedDict()
 
         trials = []
-        for trial in study.trials:
-            if trial.state != TrialState.COMPLETE:
-                continue
+        for trial in _filter_nonfinite(
+            study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
+        ):
             if any(name not in trial.params for name in distributions.keys()):
                 continue
             trials.append(trial)

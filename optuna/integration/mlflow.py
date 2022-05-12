@@ -63,33 +63,6 @@ class MLflowCallback(object):
 
             shutil.rmtree(tempdir)
 
-        Add additional logging to MLflow
-
-        .. testcode::
-
-            import optuna
-            import mlflow
-            from optuna.integration.mlflow import MLflowCallback
-
-            mlflc = MLflowCallback(
-                tracking_uri=YOUR_TRACKING_URI,
-                metric_name="my metric score",
-            )
-
-
-            @mlflc.track_in_mlflow()
-            def objective(trial):
-                x = trial.suggest_float("x", -10, 10)
-                mlflow.log_param("power", 2)
-                mlflow.log_metric("base of metric", x - 2)
-
-                return (x - 2) ** 2
-
-
-            study = optuna.create_study(study_name="my_other_study")
-            study.optimize(objective, n_trials=10, callbacks=[mlflc])
-
-
     Args:
         tracking_uri:
             The URI of the MLflow tracking server.
@@ -104,7 +77,8 @@ class MLflowCallback(object):
             If single name is provided, or this argument is left to default value,
             it will be broadcasted to each objective with a number suffix in order
             returned by objective function e.g. two objectives and default metric name
-            will be logged as ``value_0`` and ``value_1``.
+            will be logged as ``value_0`` and ``value_1``. The number of metrics must be
+            the same as the number of values an objective function returns.
         create_experiment:
             When :obj:`True`, new MLflow experiment will be created for each optimization run,
             named after the Optuna study. Setting this argument to :obj:`False` lets user run
@@ -119,6 +93,12 @@ class MLflowCallback(object):
             Please refer to `MLflow API documentation
             <https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.start_run>`_
             for more details.
+
+                .. note::
+                    ``nest_trials`` argument added in v2.3.0 is a part of ``mlflow_kwargs``
+                    since v3.0.0. Anyone using ``nest_trials=True`` should migrate to
+                    ``mlflow_kwargs={"nested": True}`` to avoid raising :exc:`TypeError`.
+
         tag_study_user_attrs:
             Flag indicating whether or not to add the study's user attrs
             to the mlflow trial as tags. Please note that when this flag is
@@ -128,18 +108,9 @@ class MLflowCallback(object):
             Flag indicating whether or not to add the trial's user attrs
             to the mlflow trial as tags. Please note that when both trial and
             study user attributes are logged, the latter will supersede the former
-            in case of a collison.
+            in case of a collision.
 
-    .. note::
-        ``nest_trials`` argument added in v2.3.0 is a part of ``mlflow_kwargs`` since v3.0.0.
-        Anyone using ``nest_trials=True`` should migrate to ``mlflow_kwargs={"nested": True}``
-        to avoid raising :exc:`TypeError`.
 
-    Raises:
-        :exc:`ValueError`:
-            If there are missing or extra metric names in multi-objective optimization.
-        :exc:`TypeError`:
-            When metric names are not passed as sequence.
     """
 
     def __init__(
@@ -197,6 +168,34 @@ class MLflowCallback(object):
 
         All information logged in the decorated objective function will be added to the MLflow
         run for the trial created by the callback.
+
+        Example:
+
+            Add additional logging to MLflow.
+
+            .. testcode::
+
+                import optuna
+                import mlflow
+                from optuna.integration.mlflow import MLflowCallback
+
+                mlflc = MLflowCallback(
+                    tracking_uri=YOUR_TRACKING_URI,
+                    metric_name="my metric score",
+                )
+
+
+                @mlflc.track_in_mlflow()
+                def objective(trial):
+                    x = trial.suggest_float("x", -10, 10)
+                    mlflow.log_param("power", 2)
+                    mlflow.log_metric("base of metric", x - 2)
+
+                    return (x - 2) ** 2
+
+
+                study = optuna.create_study(study_name="my_other_study")
+                study.optimize(objective, n_trials=10, callbacks=[mlflc])
 
         Returns:
             ObjectiveFuncType: Objective function with tracking to MLflow enabled.

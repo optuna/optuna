@@ -28,6 +28,7 @@ from optuna import trial as trial_module
 from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.storages._heartbeat import get_heartbeat
 from optuna.study._tell import _tell_with_warning
+from optuna.study._tell import STUDY_TELL_WARNING_KEY
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -235,8 +236,8 @@ def _run_trial(
         elif frozen_trial.state == TrialState.FAIL:
             if func_err is not None:
                 _log_failed_trial(frozen_trial, repr(func_err), exc_info=func_err_fail_exc_info)
-            elif "study_tell_warning" in frozen_trial.system_attrs:
-                _log_failed_trial(frozen_trial, frozen_trial.system_attrs["study_tell_warning"])
+            elif STUDY_TELL_WARNING_KEY in frozen_trial.system_attrs:
+                _log_failed_trial(frozen_trial, frozen_trial.system_attrs[STUDY_TELL_WARNING_KEY])
             else:
                 assert False, "Should not reach."
         else:

@@ -122,8 +122,11 @@ class Trial(BaseTrial):
                 A parameter name.
             low:
                 Lower endpoint of the range of suggested values. ``low`` is included in the range.
+                ``low`` must be less than or equal to ``high``. If ``log`` is :obj:`True`,
+                ``low`` must be larger than 0.
             high:
                 Upper endpoint of the range of suggested values. ``high`` is included in the range.
+                ``high`` must be greater than or equal to ``low``.
             step:
                 A step of discretization.
 
@@ -139,10 +142,6 @@ class Trial(BaseTrial):
                 .. note::
                     The ``step`` and ``log`` arguments cannot be used at the same time. To set
                     the ``log`` argument to :obj:`True`, set the ``step`` argument to :obj:`None`.
-
-        Raises:
-            :exc:`ValueError`:
-                If ``step is not None`` and ``log = True`` are specified.
 
         Returns:
             A suggested float value.
@@ -267,8 +266,11 @@ class Trial(BaseTrial):
                 A parameter name.
             low:
                 Lower endpoint of the range of suggested values. ``low`` is included in the range.
+                ``low`` must be less than or equal to ``high``. If ``log`` is :obj:`True`,
+                ``low`` must be larger than 0.
             high:
                 Upper endpoint of the range of suggested values. ``high`` is included in the range.
+                ``high`` must be greater than or equal to ``low``.
             step:
                 A step of discretization.
 
@@ -387,6 +389,10 @@ class Trial(BaseTrial):
             the reported ``value`` only the first time is stored and the reported values
             from the second time are ignored.
 
+        .. note::
+            :func:`~optuna.trial.Trial.report` does not support multi-objective
+            optimization.
+
         Example:
 
             Report intermediate scores of `SGDClassifier <https://scikit-learn.org/stable/modules/
@@ -429,14 +435,7 @@ class Trial(BaseTrial):
                 assume that ``step`` starts at zero. For example,
                 :class:`~optuna.pruners.MedianPruner` simply checks if ``step`` is less than
                 ``n_warmup_steps`` as the warmup mechanism.
-
-        Raises:
-            :exc:`NotImplementedError`:
-                If trial is being used for multi-objective optimization.
-            :exe:`ValueError`:
-                If ``step`` is negative.
-            :exe:`TypeError`:
-                If the type of ``value`` is not :obj:`float`.
+                ``step`` must be a positive integer.
         """
 
         if len(self.study.directions) > 1:
@@ -484,13 +483,13 @@ class Trial(BaseTrial):
         .. seealso::
             Please refer to the example code in :func:`optuna.trial.Trial.report`.
 
+        .. note::
+            :func:`~optuna.trial.Trial.should_prune` does not support multi-objective
+            optimization.
+
         Returns:
             A boolean value. If :obj:`True`, the trial should be pruned according to the
             configured pruning algorithm. Otherwise, the trial should continue.
-
-        Raises:
-            :exc:`NotImplementedError`:
-                If trial is being used for multi-objective optimization.
         """
 
         if len(self.study.directions) > 1:

@@ -14,6 +14,7 @@ from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._utils import _check_plot_args
+from optuna.visualization._utils import _get_skipped_trial_numbers
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 from optuna.visualization.matplotlib._utils import _is_categorical
 from optuna.visualization.matplotlib._utils import _is_log_scale
@@ -79,11 +80,6 @@ def plot_parallel_coordinate(
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
-
-    Raises:
-        :exc:`ValueError`:
-            If ``target`` is :obj:`None` and ``study`` is being used for multi-objective
-            optimization.
     """
 
     _imports.check()
@@ -130,7 +126,14 @@ def _get_parallel_coordinate_plot(
         all_params = set(params)
     sorted_params = sorted(all_params)
 
-    obj_org = [target(t) for t in trials]
+    skipped_trial_numbers = _get_skipped_trial_numbers(trials, sorted_params)
+
+    obj_org = [target(t) for t in trials if t.number not in skipped_trial_numbers]
+
+    if len(obj_org) == 0:
+        _logger.warning("Your study has only completed trials with missing parameters.")
+        return ax
+
     obj_min = min(obj_org)
     obj_max = max(obj_org)
     obj_w = obj_max - obj_min
@@ -144,7 +147,7 @@ def _get_parallel_coordinate_plot(
     numeric_cat_params_indices: List[int] = []
 
     for param_index, p_name in enumerate(sorted_params):
-        values = [t.params[p_name] if p_name in t.params else np.nan for t in trials]
+        values = [t.params[p_name] for t in trials if t.number not in skipped_trial_numbers]
 
         if _is_categorical(trials, p_name):
             vocab = defaultdict(lambda: len(vocab))  # type: DefaultDict[str, int]
@@ -197,7 +200,7 @@ def _get_parallel_coordinate_plot(
     xs = [range(len(sorted_params) + 1) for _ in range(len(dims_obj_base))]
     segments = [np.column_stack([x, y]) for x, y in zip(xs, dims_obj_base)]
     lc = LineCollection(segments, cmap=cmap)
-    lc.set_array(np.asarray([target(t) for t in trials]))
+    lc.set_array(np.asarray(obj_org))
     axcb = fig.colorbar(lc, pad=0.1)
     axcb.set_label(target_name)
     plt.xticks(range(len(sorted_params) + 1), var_names, rotation=330)

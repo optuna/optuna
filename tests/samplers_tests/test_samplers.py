@@ -48,9 +48,15 @@ parametrize_sampler = pytest.mark.parametrize(
         []
         if sys.version_info < (3, 7, 0)
         else [
-            lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
             lambda: optuna.samplers.QMCSampler(),
         ]
+    )
+    # TODO(nzw0301): Remove version constraints if BoTorch supports Python 3.10
+    # or Optuna does not support Python 3.6.
+    + (
+        []
+        if sys.version_info >= (3, 10, 0) or sys.version_info < (3, 7, 0)
+        else [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)]
     ),
 )
 parametrize_relative_sampler = pytest.mark.parametrize(
@@ -70,9 +76,11 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
         optuna.samplers.NSGAIISampler,
         lambda: optuna.samplers.MOTPESampler(n_startup_trials=0),
     ]
+    # TODO(nzw0301): Remove version constraints if BoTorch supports Python 3.10
+    # or Optuna does not support Python 3.6.
     + (
         []
-        if sys.version_info < (3, 7, 0)
+        if sys.version_info >= (3, 10, 0) or sys.version_info < (3, 7, 0)
         else [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)]
     ),
 )

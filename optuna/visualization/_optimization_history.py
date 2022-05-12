@@ -71,11 +71,6 @@ def plot_optimization_history(
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
-
-    Raises:
-        :exc:`ValueError`:
-            If ``target`` is :obj:`None` and ``study`` is being used for multi-objective
-            optimization.
     """
 
     _imports.check()
@@ -98,7 +93,7 @@ def _get_optimization_history_plot(
 
     layout = go.Layout(
         title="Optimization History Plot",
-        xaxis={"title": "#Trials"},
+        xaxis={"title": "Trial"},
         yaxis={"title": target_name},
     )
 
