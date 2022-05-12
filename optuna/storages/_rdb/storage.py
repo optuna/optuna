@@ -1093,7 +1093,7 @@ class RDBStorage(BaseStorage):
         with _create_scoped_session(self.scoped_session) as session:
             _directions = self.get_study_directions(study_id)
             if len(_directions) > 1:
-                raise ValueError(
+                raise RuntimeError(
                     "Best trial can be obtained only for single-objective optimization."
                 )
             direction = _directions[0]

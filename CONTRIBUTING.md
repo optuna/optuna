@@ -32,6 +32,7 @@ If you write code, we have some conventions as follows.
 - [Unit Tests](#unit-tests)
 - [Continuous Integration and Local Verification](#continuous-integration-and-local-verification)
 - [Creating a Pull Request](#creating-a-pull-request)
+- [Learning Optuna's Implementation](#learning-optunas-implementation)
 
 ## Guidelines
 
@@ -190,3 +191,14 @@ The description of your pull request should
 - describe the motivation
 - describe the changes
 - if still work-in-progress, describe remaining tasks
+
+## Learning Optuna's Implementation
+
+With Optuna actively being developed and the amount of code growing,
+it has become difficult to get a hold of the overall flow from reading the code.
+So we created a tiny program called [Minituna](https://github.com/CyberAgentAILab/minituna).
+Once you get a good understanding of how Minituna is designed, it will not be too difficult to read the Optuna code.
+We encourage you to practice reading the Minituna code with the following article.
+
+[An Introduction to the Implementation of Optuna, a Hyperparameter Optimization Framework](https://medium.com/optuna/an-introduction-to-the-implementation-of-optuna-a-hyperparameter-optimization-framework-33995d9ec354)
+
