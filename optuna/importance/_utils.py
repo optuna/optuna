@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
@@ -7,7 +6,6 @@ from typing import Optional
 
 import numpy
 
-from optuna._imports import try_import
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.importance._base import _get_distributions
@@ -93,7 +91,7 @@ def _gather_study_info(
 
 def _gather_importance_values(
     non_single_importances, single_distributions, single_importance_value=0.0
-) -> OrderedDict[str, float]:
+) -> Dict[str, float]:
     single_importances = {name: single_importance_value for name in single_distributions.keys()}
     importances = {**non_single_importances, **single_importances}
     sorted_importances = OrderedDict(

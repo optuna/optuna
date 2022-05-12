@@ -1,13 +1,8 @@
-from collections import OrderedDict
 from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
 
-import numpy
-
-from optuna._transform import _SearchSpaceTransform
-from optuna.importance._base import _get_distributions
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova._fanova import _Fanova
 from optuna.importance._utils import _gather_importance_values
@@ -15,8 +10,6 @@ from optuna.importance._utils import _gather_study_info
 from optuna.importance._utils import _StudyInfo
 from optuna.study import Study
 from optuna.trial import FrozenTrial
-from optuna.trial import TrialState
-from optuna.visualization._utils import _filter_nonfinite
 
 
 class FanovaImportanceEvaluator(BaseImportanceEvaluator):
@@ -85,31 +78,34 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
         info: _StudyInfo
         info = _gather_study_info(study, params=params, target=target)
 
-        trans = info.trans
-        trans_bounds = trans.bounds
-        column_to_encoded_columns = trans.column_to_encoded_columns
-
-        # Many (deep) copies of the search spaces are required during the tree traversal and using
-        # Optuna distributions will create a bottleneck.
-        # Therefore, search spaces (parameter distributions) are represented by a single
-        # `numpy.ndarray`, coupled with a list of flags that indicate whether they are categorical
-        # or not.
-
-        evaluator = self._evaluator
-        evaluator.fit(
-            X=info.trans_params,
-            y=info.trans_values,
-            search_spaces=trans_bounds,
-            column_to_encoded_columns=column_to_encoded_columns,
-        )
-
         importances = {}
-        for i, name in enumerate(info.non_single_distributions.keys()):
-            importance, _ = evaluator.get_importance((i,))
-            importances[name] = importance
+        if len(info.non_single_distributions) > 0:
+            trans = info.trans
+            assert trans is not None
 
-        total_importance = sum(importances.values())
-        for name in importances:
-            importances[name] /= total_importance
+            trans_bounds = trans.bounds
+            column_to_encoded_columns = trans.column_to_encoded_columns
+
+            # Many (deep) copies of the search spaces are required during the tree traversal and
+            # using Optuna distributions will create a bottleneck.
+            # Therefore, search spaces (parameter distributions) are represented by a single
+            # `numpy.ndarray`, coupled with a list of flags that indicate whether they are
+            # categorical or not.
+
+            evaluator = self._evaluator
+            evaluator.fit(
+                X=info.trans_params,
+                y=info.trans_values,
+                search_spaces=trans_bounds,
+                column_to_encoded_columns=column_to_encoded_columns,
+            )
+
+            for i, name in enumerate(info.non_single_distributions.keys()):
+                importance, _ = evaluator.get_importance((i,))
+                importances[name] = importance
+
+            total_importance = sum(importances.values())
+            for name in importances:
+                importances[name] /= total_importance
 
         return _gather_importance_values(importances, info.single_distributions)

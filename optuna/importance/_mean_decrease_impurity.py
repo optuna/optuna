@@ -67,6 +67,8 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
 
         importances = OrderedDict()
         if n_params > 0:
+            assert info.trans is not None
+
             self._forest.fit(info.trans_params, info.trans_values)
 
             feature_importances = self._forest.feature_importances_
