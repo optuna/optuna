@@ -393,15 +393,7 @@ def test_plot_pareto_front_targets_without_target_names() -> None:
         )
 
 
-@pytest.mark.parametrize(
-    "targets",
-    [
-        lambda t: t.values[0],
-    ],
-)
-def test_plot_pareto_front_invalid_target_values(
-    targets: Optional[Callable[[FrozenTrial], Sequence[float]]]
-) -> None:
+def test_plot_pareto_front_invalid_target_values() -> None:
     study = optuna.create_study(directions=["minimize", "minimize", "minimize", "minimize"])
     study.optimize(lambda t: [0, 0, 0, 0], n_trials=3)
     with pytest.raises(
@@ -411,7 +403,7 @@ def test_plot_pareto_front_invalid_target_values(
     ):
         plot_pareto_front(
             study=study,
-            targets=targets,
+            targets=lambda t: t.values[0],
         )
 
 
