@@ -6,14 +6,13 @@ from typing import Optional
 
 import numpy
 
-from optuna.importance._utils import _gather_study_info
-from optuna.importance._utils import _gather_importance_values
-from optuna.importance._utils import _StudyInfo
-
 from optuna._transform import _SearchSpaceTransform
 from optuna.importance._base import _get_distributions
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova._fanova import _Fanova
+from optuna.importance._utils import _gather_importance_values
+from optuna.importance._utils import _gather_study_info
+from optuna.importance._utils import _StudyInfo
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -82,8 +81,8 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
         *,
         target: Optional[Callable[[FrozenTrial], float]] = None,
     ) -> Dict[str, float]:
-        
-        info : _StudyInfo
+
+        info: _StudyInfo
         info = _gather_study_info(study, params=params, target=target)
 
         trans = info.trans
