@@ -90,7 +90,9 @@ def _gather_study_info(
 
 
 def _gather_importance_values(
-    non_single_importances, single_distributions, single_importance_value=0.0
+    non_single_importances: Dict[str, float],
+    single_distributions: Dict[str, BaseDistribution],
+    single_importance_value: float = 0.0,
 ) -> Dict[str, float]:
     single_importances = {name: single_importance_value for name in single_distributions.keys()}
     importances = {**non_single_importances, **single_importances}
