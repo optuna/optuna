@@ -70,7 +70,7 @@ def _gather_study_info(
             continue
         trials.append(trial)
 
-    trans = _SearchSpaceTransform(distributions, transform_log=False, transform_step=False)
+    trans = _SearchSpaceTransform(non_single_distributions, transform_log=False, transform_step=False)
 
     n_trials = len(trials)
     trans_params = numpy.empty((n_trials, trans.bounds.shape[0]), dtype=numpy.float64)
