@@ -11,6 +11,7 @@ from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._mean_decrease_impurity import MeanDecreaseImpurityImportanceEvaluator
 from optuna.study import Study
 from optuna.trial import FrozenTrial
+from optuna._experimental import experimental
 
 
 with try_import() as _imports:
