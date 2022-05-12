@@ -70,15 +70,10 @@ class ShapleyImportanceEvaluator(BaseImportanceEvaluator):
         shap_values = self._explainer.shap_values(self._backend_evaluator._trans_params)
 
         # Calculate the mean absolute SHAP value for each parameter.
-        mean_abs_shap_values = []
-        for param_index in range(shap_values.shape[1]):
-            # Add tuples of ("feature_name": mean_abs_shap_value).
-            mean_abs_shap_values.append(
-                (
-                    self._backend_evaluator._param_names[param_index],
-                    np.abs(shap_values[:, param_index]).mean(),
-                )
-            )
+        # Tuples of ("feature_name": mean_abs_shap_value).
+        mean_abs_shap_values = tuple(
+            zip(self._backend_evaluator._param_names, np.abs(shap_values).mean(axis=0))
+        )
 
         # Use the mean absolute SHAP values as the feature importance.
         mean_abs_shap_values.sort(key=lambda t: t[1], reverse=True)
