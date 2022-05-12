@@ -8,6 +8,7 @@ import numpy
 
 from optuna._imports import try_import
 from optuna.importance._base import BaseImportanceEvaluator
+from optuna.importance._utils import _gather_importance_values
 from optuna.importance._utils import _gather_study_info
 from optuna.importance._utils import _StudyInfo
 from optuna.study import Study
@@ -59,27 +60,25 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
         target: Optional[Callable[[FrozenTrial], float]] = None,
     ) -> Dict[str, float]:
 
-        res: _StudyInfo
-        res = _gather_study_info(study, params=params, target=target)
+        info: _StudyInfo
+        info = _gather_study_info(study, params=params, target=target)
 
-        n_params = len(res.non_single_distributions)
+        n_params = len(info.non_single_distributions)
 
+        importances = OrderedDict()
         if n_params > 0:
-            self._forest.fit(res.trans_params, res.trans_values)
+            self._forest.fit(info.trans_params, info.trans_values)
 
             feature_importances = self._forest.feature_importances_
             feature_importances_reduced = numpy.zeros(n_params)
             numpy.add.at(
                 feature_importances_reduced,
-                res.trans.encoded_column_to_column,
+                info.trans.encoded_column_to_column,
                 feature_importances,
             )
 
-            param_importances = OrderedDict()
-            param_names = list(res.distributions.keys())
+            param_names = list(info.non_single_distributions.keys())
             for i in feature_importances_reduced.argsort()[::-1]:
-                param_importances[param_names[i]] = feature_importances_reduced[i].item()
+                importances[param_names[i]] = feature_importances_reduced[i].item()
 
-        return OrderedDict(
-            **param_importances, **{name: 0.0 for name in res.single_distributions.keys()}
-        )
+        return _gather_importance_values(importances, info.single_distributions)
