@@ -99,10 +99,7 @@ def plot_pareto_front(
     elif info.n_targets == 3:
         return _get_pareto_front_3d(info)
     else:
-        raise ValueError(
-            "`plot_pareto_front` function only supports 2 or 3 targets."
-            " you used {} targets now.".format(info.n_targets)
-        )
+        assert False, "Must not reach here"
 
 
 def _get_pareto_front_2d(info: _ParetoFrontInfo) -> "Axes":

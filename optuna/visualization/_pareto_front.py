@@ -286,6 +286,12 @@ def _get_pareto_front_info(
                 "If `targets` is specified for empty studies, `target_names` must be specified."
             )
 
+    if n_targets not in (2, 3):
+        raise ValueError(
+            "`plot_pareto_front` function only supports 2 or 3 targets."
+            " you used {} targets now.".format(n_targets)
+        )
+
     if target_names is None:
         target_names = [f"Objective {i}" for i in range(n_targets)]
     elif len(target_names) != n_targets:
@@ -385,10 +391,7 @@ def _make_scatter_object(
             showlegend=False,
         )
     else:
-        raise ValueError(
-            "`plot_pareto_front` function only supports 2 or 3 targets."
-            " you used {} targets now.".format(n_targets)
-        )
+        assert False, "Must not reach here"
 
 
 def _make_hovertext(trial: FrozenTrial) -> str:
