@@ -375,8 +375,12 @@ class TPESampler(BaseSampler):
             return {}
 
         param_names = list(search_space.keys())
-        values, scores, _ = _get_observation_pairs(
-            study, param_names, self._multivariate, self._constant_liar
+        values, scores, constraints = _get_observation_pairs(
+            study,
+            param_names,
+            self._multivariate,
+            self._constant_liar,
+            self._constraints_func is not None,
         )
 
         # If the number of samples is insufficient, we run random trial.
@@ -385,7 +389,9 @@ class TPESampler(BaseSampler):
             return {}
 
         # We divide data into below and above.
-        indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n))
+        indices_below, indices_above = _split_observation_pairs(
+            scores, self._gamma(n), constraints
+        )
         # `None` items are intentionally converted to `nan` and then filtered out.
         # For `nan` conversion, the dtype must be float.
         config_values = {k: np.asarray(v, dtype=float) for k, v in values.items()}
@@ -395,7 +401,7 @@ class TPESampler(BaseSampler):
         # We then sample by maximizing log likelihood ratio.
         if study._is_multi_objective():
             weights_below = _calculate_weights_below_for_multi_objective(
-                config_values, scores, indices_below, np.ones(len(indices_below), dtype=bool)
+                config_values, scores, indices_below, constraints
             )
             mpe_below = _ParzenEstimator(
                 below, search_space, self._parzen_estimator_parameters, weights_below
@@ -438,28 +444,9 @@ class TPESampler(BaseSampler):
                 study, trial, param_name, param_distribution
             )
 
-        if self._constraints_func is not None:
-            # constraints_1d: 0 <=> feasible, >0 <=> infeasible
-            constraints_1d = np.maximum(np.array(constraints), 0).sum(1)
-            idx = constraints_1d.argsort()
-            if constraints_1d[idx[self._gamma(n)]] > 0:
-                # All trials in above are infeasible.
-                # Just use the result sorted by the sum of constraints values.
-                indices_below = idx[: self._gamma(n)]
-                indices_above = idx[self._gamma(n) :]
-            else:
-                # All trials in below are feasible.
-                # Select which ones to put in below by objective func.
-                (feasible_idx,) = (constraints_1d == 0).nonzero()
-                (infeasible_idx,) = (constraints_1d > 0).nonzero()
-                assert len(feasible_idx) >= self._gamma(n)
-                feasible_below, feasible_above = _split_observation_pairs(
-                    list(np.array(scores)[feasible_idx]), self._gamma(n)
-                )
-                indices_below = feasible_idx[feasible_below]
-                indices_above = np.concatenate([feasible_idx[feasible_above], infeasible_idx])
-        else:
-            indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n))
+        indices_below, indices_above = _split_observation_pairs(
+            scores, self._gamma(n), constraints
+        )
         # `None` items are intentionally converted to `nan` and then filtered out.
         # For `nan` conversion, the dtype must be float.
         config_values = {k: np.asarray(v, dtype=float) for k, v in values.items()}
@@ -468,7 +455,7 @@ class TPESampler(BaseSampler):
 
         if study._is_multi_objective():
             weights_below = _calculate_weights_below_for_multi_objective(
-                config_values, scores, indices_below, constraints_1d[indices_below] == 0
+                config_values, scores, indices_below, constraints
             )
             mpe_below = _ParzenEstimator(
                 below,
@@ -717,7 +704,27 @@ def _get_observation_pairs(
 def _split_observation_pairs(
     loss_vals: List[Tuple[float, List[float]]],
     n_below: int,
+    constraints: Optional[List[Sequence[float]]],
 ) -> Tuple[np.ndarray, np.ndarray]:
+    if constraints is not None:
+        # 1-dimensional violation value (violation_1d==0 <=> feasible, >0 <=> infeasible).
+        violation_1d = np.maximum(np.array(constraints), 0).sum(1)
+        idx = violation_1d.argsort()
+        if violation_1d[idx[n_below]] > 0:
+            # Below is filled by all feasible trials and trials with smaller violation values.
+            indices_below = idx[:n_below]
+            indices_above = idx[n_below:]
+        else:
+            # All trials in below are feasible. Feasible trials with smaller loss_vals are selected.
+            (feasible_idx,) = (violation_1d == 0).nonzero()
+            (infeasible_idx,) = (violation_1d > 0).nonzero()
+            assert len(feasible_idx) >= n_below
+            feasible_below, feasible_above = _split_observation_pairs(
+                list(np.array(loss_vals)[feasible_idx]), n_below, None
+            )
+            indices_below = feasible_idx[feasible_below]
+            indices_above = np.concatenate([feasible_idx[feasible_above], infeasible_idx])
+        return indices_below, indices_above
 
     n_objectives = 1
     if len(loss_vals) > 0:
@@ -832,7 +839,7 @@ def _calculate_weights_below_for_multi_objective(
     config_values: Dict[str, np.ndarray],
     loss_vals: List[Tuple[float, List[float]]],
     indices: np.ndarray,
-    feasible_mask: np.ndarray,
+    constraints: Optional[List[Sequence[float]]],
 ) -> np.ndarray:
     # Multi-objective TPE only sees the first parameter to determine the weights.
     # In the call of `sample_relative`, this logic makes sense because we only have the
@@ -840,6 +847,11 @@ def _calculate_weights_below_for_multi_objective(
     # misses the one trial, then the other parameter must miss the trial, in this call of
     # `sample_relative`.
     # In the call of `sample_independent`, we only have one parameter so the logic makes sense.
+    if constraints is None:
+        feasible_mask = np.ones(len(indices), dtype=bool)
+    else:
+        violation_1d = np.maximum(np.array(constraints), 0).sum(1)
+        feasible_mask = violation_1d[indices] == 0
     cvals = list(config_values.values())[0][indices[feasible_mask]]
 
     # Multi-objective TPE does not support pruning, so it ignores the ``step``.
