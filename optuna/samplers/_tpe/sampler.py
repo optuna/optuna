@@ -706,6 +706,10 @@ def _split_observation_pairs(
     n_below: int,
     constraints: Optional[List[Sequence[float]]],
 ) -> Tuple[np.ndarray, np.ndarray]:
+    # When constrains is not None, trials are split into two groups according to the following rules.
+    # 1. Feasible trials are better than infeasible trials
+    # 2. Infeasible trials are sorted by sum of how much they violate each constraint.
+    # 3. Feasible trials are sorted by loss_vals.
     if constraints is not None:
         # 1-dimensional violation value (violation_1d==0 <=> feasible, >0 <=> infeasible).
         violation_1d = np.maximum(np.array(constraints), 0).sum(1)
@@ -851,6 +855,7 @@ def _calculate_weights_below_for_multi_objective(
     if constraints is None:
         feasible_mask = np.ones(len(indices), dtype=bool)
     else:
+        # Hypervolume contributions are calculated only using feasible trials.
         violation_1d = np.maximum(np.array(constraints), 0).sum(1)
         feasible_mask = violation_1d[indices] == 0
     cvals = list(config_values.values())[0][indices[feasible_mask]]
@@ -881,6 +886,7 @@ def _calculate_weights_below_for_multi_objective(
         weights_below = np.clip(contributions / np.max(contributions), 0, 1)
 
     weights_below = weights_below[~np.isnan(cvals)]
+    # For now, EPS weight is assigned to infeasible trials
     weights_below_all = np.full(len(indices), EPS)
     weights_below_all[feasible_mask] = weights_below
     return weights_below_all
