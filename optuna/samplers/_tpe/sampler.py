@@ -724,7 +724,8 @@ def _split_observation_pairs(
             )
             indices_below = feasible_idx[feasible_below]
             indices_above = np.concatenate([feasible_idx[feasible_above], infeasible_idx])
-        return indices_below, indices_above
+        # `np.sort` is used to keep chronological order.
+        return np.sort(indices_below), np.sort(indices_above)
 
     n_objectives = 1
     if len(loss_vals) > 0:
