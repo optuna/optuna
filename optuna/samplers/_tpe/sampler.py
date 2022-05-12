@@ -860,9 +860,12 @@ def _calculate_weights_below_for_multi_objective(
         reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
         reference_point[reference_point == 0] = EPS
         hv = _compute_hypervolume(lvals, reference_point)
-        indices = ~np.eye(n_below).astype(bool)
+        indices_mat = ~np.eye(n_below).astype(bool)
         contributions = np.asarray(
-            [hv - _compute_hypervolume(lvals[indices[i]], reference_point) for i in range(n_below)]
+            [
+                hv - _compute_hypervolume(lvals[indices_mat[i]], reference_point)
+                for i in range(n_below)
+            ]
         )
         contributions += EPS
         weights_below = np.clip(contributions / np.max(contributions), 0, 1)
