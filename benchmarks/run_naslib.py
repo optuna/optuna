@@ -44,6 +44,12 @@ def run(args: argparse.Namespace) -> None:
             f"sampler_list: {sampler_list}, sampler_kwargs_list: {sampler_kwargs_list}."
         )
 
+    if len(pruner_list) != len(pruner_kwargs_list):
+        raise ValueError(
+            "The number of pruners does not match the given keyword arguments. \n"
+            f"pruner_list: {pruner_list}, pruner_kwargs_list: {pruner_kwargs_list}."
+        )
+
     for sampler, sampler_kwargs in zip(sampler_list, sampler_kwargs_list):
         for pruner, pruner_kwargs in zip(pruner_list, pruner_kwargs_list):
             name = f"{args.name_prefix}_{sampler}_{pruner}"
