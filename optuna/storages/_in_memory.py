@@ -287,7 +287,7 @@ class InMemoryStorage(BaseStorage):
             if best_trial_id is None:
                 raise ValueError("No trials are completed yet.")
             elif len(self._studies[study_id].directions) > 1:
-                raise ValueError(
+                raise RuntimeError(
                     "Best trial can be obtained only for single-objective optimization."
                 )
             return self.get_trial(best_trial_id)

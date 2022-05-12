@@ -1175,7 +1175,7 @@ def test_get_best_trial_for_multi_objective_optimization(storage_mode: str) -> N
             template_trial.state = TrialState.COMPLETE
             template_trial.values = [i, i + 1]
             storage.create_new_trial(study_id, template_trial=template_trial)
-        with pytest.raises(ValueError):
+        with pytest.raises(RuntimeError):
             storage.get_best_trial(study_id)
 
 
