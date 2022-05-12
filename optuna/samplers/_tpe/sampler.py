@@ -395,7 +395,7 @@ class TPESampler(BaseSampler):
         # We then sample by maximizing log likelihood ratio.
         if study._is_multi_objective():
             weights_below = _calculate_weights_below_for_multi_objective(
-                config_values, scores, indices_below
+                config_values, scores, indices_below, np.ones(len(indices_below), dtype=bool)
             )
             mpe_below = _ParzenEstimator(
                 below, search_space, self._parzen_estimator_parameters, weights_below
@@ -468,12 +468,8 @@ class TPESampler(BaseSampler):
 
         if study._is_multi_objective():
             weights_below = _calculate_weights_below_for_multi_objective(
-                config_values, scores, indices_below
+                config_values, scores, indices_below, constraints_1d[indices_below] == 0
             )
-            if self._constraints_func is not None:
-                # Set weights for infeasible indices to EPS.
-                below_infeasible_f = constraints_1d[indices_below] > 0
-                weights_below[below_infeasible_f] = EPS
             mpe_below = _ParzenEstimator(
                 below,
                 {param_name: param_distribution},
@@ -836,6 +832,7 @@ def _calculate_weights_below_for_multi_objective(
     config_values: Dict[str, np.ndarray],
     loss_vals: List[Tuple[float, List[float]]],
     indices: np.ndarray,
+    feasible_mask: np.ndarray,
 ) -> np.ndarray:
     # Multi-objective TPE only sees the first parameter to determine the weights.
     # In the call of `sample_relative`, this logic makes sense because we only have the
@@ -843,10 +840,10 @@ def _calculate_weights_below_for_multi_objective(
     # misses the one trial, then the other parameter must miss the trial, in this call of
     # `sample_relative`.
     # In the call of `sample_independent`, we only have one parameter so the logic makes sense.
-    cvals = list(config_values.values())[0][indices]
+    cvals = list(config_values.values())[0][indices[feasible_mask]]
 
     # Multi-objective TPE does not support pruning, so it ignores the ``step``.
-    lvals = np.asarray([v for _, v in loss_vals])[indices]
+    lvals = np.asarray([v for _, v in loss_vals])[indices[feasible_mask]]
 
     # Calculate weights based on hypervolume contributions.
     n_below = len(lvals)
@@ -871,4 +868,6 @@ def _calculate_weights_below_for_multi_objective(
         weights_below = np.clip(contributions / np.max(contributions), 0, 1)
 
     weights_below = weights_below[~np.isnan(cvals)]
-    return weights_below
+    weights_below_all = np.full(len(indices), 0.1)
+    weights_below_all[feasible_mask] = weights_below
+    return weights_below_all
