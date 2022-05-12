@@ -6,12 +6,12 @@ from typing import Optional
 
 import numpy as np
 
+from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._mean_decrease_impurity import MeanDecreaseImpurityImportanceEvaluator
 from optuna.study import Study
 from optuna.trial import FrozenTrial
-from optuna._experimental import experimental
 
 
 with try_import() as _imports:
@@ -27,8 +27,8 @@ class ShapleyImportanceEvaluator(BaseImportanceEvaluator):
 
     .. note::
 
-        This evaluator requires the `sklearn <https://scikit-learn.org/stable/>`_ Python package and
-        `SHAP <https://shap.readthedocs.io/en/stable/index.html>`_.
+        This evaluator requires the `sklearn <https://scikit-learn.org/stable/>`_ Python package
+         and `SHAP <https://shap.readthedocs.io/en/stable/index.html>`_.
         The model for the SHAP calculation is based on `sklearn.ensemble.RandomForestClassifier
         <https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html>`_.
 
@@ -71,8 +71,8 @@ class ShapleyImportanceEvaluator(BaseImportanceEvaluator):
         shap_values = self._explainer.shap_values(self._backend_evaluator._trans_params)
 
         # Calculate the mean absolute SHAP value for each parameter.
-        # Tuples of ("feature_name": mean_abs_shap_value).
-        mean_abs_shap_values = tuple(
+        # List of tuples ("feature_name": mean_abs_shap_value).
+        mean_abs_shap_values = list(
             zip(self._backend_evaluator._param_names, np.abs(shap_values).mean(axis=0))
         )
 
