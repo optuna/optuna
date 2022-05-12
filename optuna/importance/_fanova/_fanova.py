@@ -72,6 +72,7 @@ class _Fanova:
 
         self._trees = [_FanovaTree(e.tree_, search_spaces) for e in self._forest.estimators_]
         self._column_to_encoded_columns = column_to_encoded_columns
+        self._variances = {}
 
         if all(tree.variance == 0 for tree in self._trees):
             # If all trees have 0 variance, we cannot assess any importances.

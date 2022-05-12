@@ -33,7 +33,7 @@ class _FanovaTree:
     @property
     def variance(self) -> float:
         if self._variance is None:
-            leaf_node_indices = numpy.where(numpy.array(self._tree.feature) < 0)[0]
+            leaf_node_indices = numpy.nonzero(numpy.array(self._tree.feature) < 0)[0]
             statistics = self._statistics[leaf_node_indices]
             values = statistics[:, 0]
             weights = statistics[:, 1]
