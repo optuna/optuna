@@ -868,6 +868,6 @@ def _calculate_weights_below_for_multi_objective(
         weights_below = np.clip(contributions / np.max(contributions), 0, 1)
 
     weights_below = weights_below[~np.isnan(cvals)]
-    weights_below_all = np.full(len(indices), 0.1)
+    weights_below_all = np.full(len(indices), EPS)
     weights_below_all[feasible_mask] = weights_below
     return weights_below_all
