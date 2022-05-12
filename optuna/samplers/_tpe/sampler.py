@@ -706,8 +706,9 @@ def _split_observation_pairs(
     n_below: int,
     constraints: Optional[List[Sequence[float]]],
 ) -> Tuple[np.ndarray, np.ndarray]:
-    # When constrains is not None, trials are split into two groups according to the following rules.
-    # 1. Feasible trials are better than infeasible trials
+    # When constrains is not None, trials are split into below and above
+    # according to the following rules.
+    # 1. Feasible trials are better than infeasible trials.
     # 2. Infeasible trials are sorted by sum of how much they violate each constraint.
     # 3. Feasible trials are sorted by loss_vals.
     if constraints is not None:
@@ -719,7 +720,8 @@ def _split_observation_pairs(
             indices_below = idx[:n_below]
             indices_above = idx[n_below:]
         else:
-            # All trials in below are feasible. Feasible trials with smaller loss_vals are selected.
+            # All trials in below are feasible.
+            # Feasible trials with smaller loss_vals are selected.
             (feasible_idx,) = (violation_1d == 0).nonzero()
             (infeasible_idx,) = (violation_1d > 0).nonzero()
             assert len(feasible_idx) >= n_below
