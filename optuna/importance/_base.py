@@ -62,7 +62,8 @@ class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
 
 
 def _get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, BaseDistribution]:
-    _check_evaluate_args(study, params)
+    completed_trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+    _check_evaluate_args(completed_trials, params)
 
     if params is None:
         return intersection_search_space(study, ordered_dict=True)
@@ -73,10 +74,7 @@ def _get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, B
 
     # Compute the search space based on the subset of trials containing all parameters.
     distributions = None
-    for trial in study.trials:
-        if trial.state != TrialState.COMPLETE:
-            continue
-
+    for trial in completed_trials:
         trial_distributions = trial.distributions
         if not all(name in trial_distributions for name in params_not_none):
             continue
@@ -106,8 +104,7 @@ def _get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, B
     return distributions
 
 
-def _check_evaluate_args(study: Study, params: Optional[List[str]]) -> None:
-    completed_trials = list(filter(lambda t: t.state == TrialState.COMPLETE, study.trials))
+def _check_evaluate_args(completed_trials: List[FrozenTrial], params: Optional[List[str]]) -> None:
     if len(completed_trials) == 0:
         raise ValueError("Cannot evaluate parameter importances without completed trials.")
     if len(completed_trials) == 1:
