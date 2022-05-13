@@ -382,8 +382,6 @@ class InMemoryStorage(BaseStorage):
             trial = self._get_trial(trial_id)
             self.check_trial_is_updatable(trial_id, trial.state)
 
-            self.check_trial_is_updatable(trial_id, trial.state)
-
             trial = copy.copy(trial)
             trial.user_attrs = copy.copy(trial.user_attrs)
             trial.user_attrs[key] = value
@@ -393,8 +391,6 @@ class InMemoryStorage(BaseStorage):
 
         with self._lock:
             trial = self._get_trial(trial_id)
-            self.check_trial_is_updatable(trial_id, trial.state)
-
             self.check_trial_is_updatable(trial_id, trial.state)
 
             trial = copy.copy(trial)
