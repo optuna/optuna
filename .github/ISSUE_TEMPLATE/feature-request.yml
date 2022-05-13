@@ -12,8 +12,8 @@ body:
       label: Motivation
       description: |
         Please write the motivation for the proposal.
-        If your feature request is related to a problem, please describe a clear and concise descriptionof what the problem is.
-    validations: 
+        If your feature request is related to a problem, please describe a clear and concise description of what the problem is.
+    validations:
       required: true
   - type: textarea
     id: description
@@ -33,7 +33,6 @@ body:
     id: additional-context
     attributes:
       label: Additional context (optional)
-      description:  Please add any other context or screenshots about the feature request here. 
+      description:  Please add any other context or screenshots about the feature request here.
     validations:
       required: false
-
