@@ -65,7 +65,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         "document": [
             "cma",
             "lightgbm",
-            "matplotlib>=3.0.0",
+            "matplotlib",
             "mlflow",
             "pandas",
             "pillow",
@@ -116,7 +116,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "xgboost",
         ],
         "optional": [
-            "matplotlib>=3.0.0",  # optuna/visualization/matplotlib
+            "matplotlib",  # optuna/visualization/matplotlib
             "pandas",  # optuna/study.py
             "plotly>=4.0.0",  # optuna/visualization.
             "redis",  # optuna/storages/redis.py.
