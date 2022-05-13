@@ -43,7 +43,9 @@ def updates_properties(f: Callable[_P, _T]) -> Callable[_P, _T]:
 
     @functools.wraps(f)
     def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> _T:
-        self: TorchDistributedTrial = args[0]
+        # TODO(nlgranger): Remove type ignore after mypy includes
+        # https://github.com/python/mypy/pull/12668
+        self: TorchDistributedTrial = args[0]  # type: ignore
 
         def state() -> Sequence:
             assert self._delegate is not None
