@@ -65,7 +65,6 @@ def get_extras_require() -> Dict[str, List[str]]:
         "document": [
             "cma",
             "lightgbm",
-            "matplotlib",
             "matplotlib>=3.0.0",
             "mlflow",
             "pandas",
