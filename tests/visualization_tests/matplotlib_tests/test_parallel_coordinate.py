@@ -314,7 +314,7 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
     axes = figure.get_figure().axes
     assert len(axes) == 3 + 1
     # Default padding is 5% in Matplotlib.
-    default_padding_fraction = 0.05
+    default_padding_fraction = plt.margins()[0]
     assert axes[0].get_ylim() == (-default_padding_fraction, default_padding_fraction)
     assert axes[1].get_ylabel() == "Objective Value"
     # Optuna's parallel coordinate uses 10% padding for color map.
