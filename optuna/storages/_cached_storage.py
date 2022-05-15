@@ -116,7 +116,7 @@ class _CachedStorage(BaseStorage):
 
         return self._backend.get_study_id_from_name(study_name)
 
-    @deprecated("2.9.0", "4.0.0")
+    @deprecated("3.0.0", "4.0.0")
     def get_study_id_from_trial_id(self, trial_id: int) -> int:
 
         with self._lock:

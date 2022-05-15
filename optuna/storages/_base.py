@@ -210,7 +210,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-    @deprecated("2.9.0", "4.0.0")
+    @deprecated("3.0.0", "4.0.0")
     def get_study_id_from_trial_id(self, trial_id: int) -> int:
         """Read the ID of a study to which a trial belongs.
 

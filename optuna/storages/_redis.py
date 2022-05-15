@@ -267,7 +267,7 @@ class RedisStorage(BaseStorage):
         assert study_id_pkl is not None
         return pickle.loads(study_id_pkl)
 
-    @deprecated("2.9.0", "4.0.0")
+    @deprecated("3.0.0", "4.0.0")
     def get_study_id_from_trial_id(self, trial_id: int) -> int:
 
         return self._get_study_id_from_trial_id(trial_id)

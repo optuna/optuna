@@ -358,7 +358,7 @@ class RDBStorage(BaseStorage):
 
         return study_id
 
-    @deprecated("2.9.0", "4.0.0")
+    @deprecated("3.0.0", "4.0.0")
     def get_study_id_from_trial_id(self, trial_id: int) -> int:
 
         with _create_scoped_session(self.scoped_session) as session:
