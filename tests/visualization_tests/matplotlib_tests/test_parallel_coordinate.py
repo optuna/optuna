@@ -414,7 +414,7 @@ def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
     assert axes[0].get_ylim() == (0.0, 3.0)
     assert axes[1].get_ylabel() == "Objective Value"
     assert axes[1].get_ylim() == (0.0, 3.0)
-    objectives = objectives = _fetch_objectives_from_figure(figure)
+    objectives = _fetch_objectives_from_figure(figure)
     # Objective values are not sorted by the other parameters,
     # unlike Plotly's parallel_coordinate.
     assert objectives == [0.0, 1.0, 2.0, 3.0]
