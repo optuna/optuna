@@ -340,7 +340,7 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
     assert axes[0].get_ylim() == (0.0, 2.0)
     assert axes[1].get_ylabel() == "Objective Value"
     assert axes[1].get_ylim() == (0.0, 2.0)
-    objectives = objectives = _fetch_objectives_from_figure(figure)
+    objectives = _fetch_objectives_from_figure(figure)
     # Objective values are not sorted by the other parameters,
     # unlike Plotly's parallel_coordinate.
     assert objectives == [0.0, 2.0]
