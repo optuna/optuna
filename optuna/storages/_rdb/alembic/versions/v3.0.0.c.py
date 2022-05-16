@@ -16,8 +16,8 @@ from sqlalchemy import orm
 
 
 # revision identifiers, used by Alembic.
-revision = 'v3.0.0.c'
-down_revision = 'v3.0.0.b'
+revision = "v3.0.0.c"
+down_revision = "v3.0.0.b"
 branch_labels = None
 depends_on = None
 
@@ -29,9 +29,9 @@ RDB_MIN_FLOAT = np.finfo(np.float32).min
 
 def _isinf(value: float) -> bool:
     return (
-        np.isclose(value, RDB_MIN_FLOAT) or
-        np.isclose(value, RDB_MIN_FLOAT) or
-        np.isinf(value)  # for users who store inf/-inf at v2.10.0 or older.
+        np.isclose(value, RDB_MIN_FLOAT)
+        or np.isclose(value, RDB_MIN_FLOAT)
+        or np.isinf(value)  # for users who store inf/-inf at v2.10.0 or older.
     )
 
 
@@ -52,8 +52,15 @@ class IntermediateValueModel(BaseModel):
 def upgrade():
     bind = op.get_bind()
     session = orm.Session(bind=bind)
-    with op.batch_alter_table('trial_intermediate_values', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('intermediate_value_type', sa.Enum('FINITE_OR_NAN', 'INF_POS', 'INF_NEG', name='floattypeenum'), nullable=False, default="FINITE_OR_NAN"))
+    with op.batch_alter_table("trial_intermediate_values", schema=None) as batch_op:
+        batch_op.add_column(
+            sa.Column(
+                "intermediate_value_type",
+                sa.Enum("FINITE_OR_NAN", "INF_POS", "INF_NEG", name="floattypeenum"),
+                nullable=False,
+                default="FINITE_OR_NAN",
+            )
+        )
 
     try:
         records = session.query(IntermediateValueModel).all()
@@ -67,10 +74,12 @@ def upgrade():
                     float_type = IntermediateValueModel.FloatTypeEnum.INF_NEG
             else:
                 continue
-            mapping.append({
-                'trial_intermediate_value_id': r.trial_intermediate_value_id,
-                'float_type': float_type
-            })
+            mapping.append(
+                {
+                    "trial_intermediate_value_id": r.trial_intermediate_value_id,
+                    "float_type": float_type,
+                }
+            )
         session.bulk_update_mappings(IntermediateValueModel, mapping)
         session.commit()
     except SQLAlchemyError as e:
@@ -97,10 +106,12 @@ def downgrade():
             else:
                 _intermediate_value = RDB_MIN_FLOAT
 
-            mapping.append({
-                'trial_intermediate_value_id': r.trial_intermediate_value_id,
-                'intermediate_value': _intermediate_value
-            })
+            mapping.append(
+                {
+                    "trial_intermediate_value_id": r.trial_intermediate_value_id,
+                    "intermediate_value": _intermediate_value,
+                }
+            )
         session.bulk_update_mappings(IntermediateValueModel, mapping)
         session.commit()
     except SQLAlchemyError as e:
@@ -109,5 +120,5 @@ def downgrade():
     finally:
         session.close()
 
-    with op.batch_alter_table('trial_intermediate_values', schema=None) as batch_op:
-        batch_op.drop_column('intermediate_value_type')
+    with op.batch_alter_table("trial_intermediate_values", schema=None) as batch_op:
+        batch_op.drop_column("intermediate_value_type")
