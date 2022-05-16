@@ -6,14 +6,13 @@ import pytest
 
 import optuna
 from optuna.integration.catboost import CatBoostPruningCallback
-from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
 
 
 def test_catboost_pruning_callback_call() -> None:
     # The pruner is deactivated.
     study = optuna.create_study(pruner=DeterministicPruner(False))
-    trial = create_running_trial(study, 1.0)
+    trial = study.ask()
     pruning_callback = CatBoostPruningCallback(trial, "Logloss")
     info = types.SimpleNamespace(
         iteration=1, metrics={"learn": {"Logloss": [1.0]}, "validation": {"Logloss": [1.0]}}
@@ -22,7 +21,7 @@ def test_catboost_pruning_callback_call() -> None:
 
     # The pruner is activated.
     study = optuna.create_study(pruner=DeterministicPruner(True))
-    trial = create_running_trial(study, 1.0)
+    trial = study.ask()
     pruning_callback = CatBoostPruningCallback(trial, "Logloss")
     info = types.SimpleNamespace(
         iteration=1, metrics={"learn": {"Logloss": [1.0]}, "validation": {"Logloss": [1.0]}}
