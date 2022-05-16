@@ -35,8 +35,6 @@ def get_install_requires() -> List[str]:
         "colorlog",
         "numpy",
         "packaging>=20.0",
-        # TODO(kstoneriv3): remove this after deprecation of Python 3.6
-        "scipy!=1.4.0" if sys.version[:3] == "3.6" else "scipy>=1.7.0",
         "sqlalchemy>=1.1.0",
         "tqdm",
         "typing_extensions",
@@ -71,6 +69,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "plotly>=4.0.0",
             "scikit-learn>=0.24.2",
             "scikit-optimize",
+            # TODO(kstoneriv3): remove this after deprecation of Python 3.6
+            "scipy!=1.4.0" if sys.version[:3] == "3.6" else "scipy>=1.7.0",
             "mlflow",
         ],
         "document": [
@@ -82,6 +82,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pillow",
             "matplotlib",
             "scikit-learn",
+            # TODO(kstoneriv3): remove this after deprecation of Python 3.6
+            "scipy!=1.4.0" if sys.version[:3] == "3.6" else "scipy>=1.7.0",
             "plotly>=4.0.0",  # optuna/visualization.
             "pandas",
             "lightgbm",
@@ -106,6 +108,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytest",
             "scikit-learn>=0.24.2",
             "scikit-optimize",
+            # TODO(kstoneriv3): remove this after deprecation of Python 3.6
+            "scipy!=1.4.0" if sys.version[:3] == "3.6" else "scipy>=1.7.0",
             "xgboost",
             "tensorflow ; python_version>'3.6'",
             "tensorflow-datasets",
@@ -137,8 +141,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pandas",  # optuna/study.py
             "plotly>=4.0.0",  # optuna/visualization.
             "redis",  # optuna/storages/redis.py.
-            "scikit-learn>=0.24.2",
-            # optuna/visualization/param_importances.py.
+            "scikit-learn>=0.24.2",  # optuna/visualization/param_importances.py.
+            # TODO(kstoneriv3): remove this after deprecation of Python 3.6
+            "scipy!=1.4.0" if sys.version[:3] == "3.6" else "scipy>=1.7.0",
         ],
         "integration": [
             "catboost>=0.26",
@@ -152,6 +157,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pandas",
             "scikit-learn>=0.24.2",
             "scikit-optimize",
+            # TODO(kstoneriv3): remove this after deprecation of Python 3.6
+            "scipy!=1.4.0" if sys.version[:3] == "3.6" else "scipy>=1.7.0",
             "xgboost",
             "tensorflow ; python_version>'3.6'",
             "tensorflow-datasets",
