@@ -27,14 +27,6 @@ RDB_MAX_FLOAT = np.finfo(np.float32).max
 RDB_MIN_FLOAT = np.finfo(np.float32).min
 
 
-def _isinf(value: float) -> bool:
-    return (
-        np.isclose(value, RDB_MIN_FLOAT)
-        or np.isclose(value, RDB_MIN_FLOAT)
-        or np.isinf(value)  # for users who store inf/-inf at v2.10.0 or older.
-    )
-
-
 class IntermediateValueModel(BaseModel):
     class FloatTypeEnum(enum.Enum):
         FINITE_OR_NAN = 1
@@ -44,9 +36,7 @@ class IntermediateValueModel(BaseModel):
     __tablename__ = "trial_intermediate_values"
     trial_intermediate_value_id = sa.Column(sa.Integer, primary_key=True)
     intermediate_value = sa.Column(sa.Float, nullable=True)
-    intermediate_value_type = sa.Column(
-        sa.Enum(FloatTypeEnum), nullable=False, default=FloatTypeEnum.FINITE_OR_NAN
-    )
+    intermediate_value_type = sa.Column(sa.Enum(FloatTypeEnum), nullable=False)
 
 
 def upgrade():
@@ -58,8 +48,8 @@ def upgrade():
                 "intermediate_value_type",
                 sa.Enum("FINITE_OR_NAN", "INF_POS", "INF_NEG", name="floattypeenum"),
                 nullable=False,
-                default="FINITE_OR_NAN",
-            )
+                server_default="FINITE_OR_NAN",
+            ),
         )
 
     try:
@@ -67,17 +57,16 @@ def upgrade():
         mapping = []
         for r in records:
             float_type: IntermediateValueModel.FloatTypeEnum
-            if _isinf(r.intermediate_value):
-                if r.intermediate_value > 0:
-                    float_type = IntermediateValueModel.FloatTypeEnum.INF_POS
-                else:
-                    float_type = IntermediateValueModel.FloatTypeEnum.INF_NEG
+            if np.isclose(r.intermediate_value, RDB_MAX_FLOAT) or np.isposinf(r.intermediate_value):
+                float_type = IntermediateValueModel.FloatTypeEnum.INF_POS
+            elif np.isclose(r.intermediate_value, RDB_MIN_FLOAT) or np.isneginf(r.intermediate_value):
+                float_type = IntermediateValueModel.FloatTypeEnum.INF_NEG
             else:
                 continue
             mapping.append(
                 {
                     "trial_intermediate_value_id": r.trial_intermediate_value_id,
-                    "float_type": float_type,
+                    "intermediate_value_type": float_type,
                 }
             )
         session.bulk_update_mappings(IntermediateValueModel, mapping)

@@ -458,9 +458,7 @@ class TrialIntermediateValueModel(BaseModel):
     trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
     step = Column(Integer, nullable=False)
     intermediate_value = Column(Float(precision=FLOAT_PRECISION), nullable=True)
-    intermediate_value_type = Column(
-        Enum(FloatTypeEnum), nullable=False, default=FloatTypeEnum.FINITE_OR_NAN
-    )
+    intermediate_value_type = Column(Enum(FloatTypeEnum), nullable=False)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("intermediate_values", cascade="all, delete-orphan")

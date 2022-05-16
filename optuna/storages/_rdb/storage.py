@@ -910,11 +910,10 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             _intermediate_value = None
 
         intermediate_value_type = models.TrialIntermediateValueModel.FloatTypeEnum.FINITE_OR_NAN
-        if math.isinf(intermediate_value):
-            if intermediate_value > 0:
-                intermediate_value_type = models.TrialIntermediateValueModel.FloatTypeEnum.INF_POS
-            else:
-                intermediate_value_type = models.TrialIntermediateValueModel.FloatTypeEnum.INF_NEG
+        if np.isposinf(intermediate_value):
+            intermediate_value_type = models.TrialIntermediateValueModel.FloatTypeEnum.INF_POS
+        elif np.isneginf(intermediate_value):
+            intermediate_value_type = models.TrialIntermediateValueModel.FloatTypeEnum.INF_NEG
 
         trial_intermediate_value = models.TrialIntermediateValueModel.find_by_trial_and_step(
             trial, step, session
