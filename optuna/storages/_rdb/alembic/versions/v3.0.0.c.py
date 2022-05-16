@@ -42,7 +42,7 @@ class IntermediateValueModel(BaseModel):
 def upgrade():
     bind = op.get_bind()
     session = orm.Session(bind=bind)
-    with op.batch_alter_table("trial_intermediate_values", schema=None) as batch_op:
+    with op.batch_alter_table("trial_intermediate_values") as batch_op:
         batch_op.add_column(
             sa.Column(
                 "intermediate_value_type",
@@ -57,9 +57,13 @@ def upgrade():
         mapping = []
         for r in records:
             float_type: IntermediateValueModel.FloatTypeEnum
-            if np.isclose(r.intermediate_value, RDB_MAX_FLOAT) or np.isposinf(r.intermediate_value):
+            if np.isclose(r.intermediate_value, RDB_MAX_FLOAT) or np.isposinf(
+                r.intermediate_value
+            ):
                 float_type = IntermediateValueModel.FloatTypeEnum.INF_POS
-            elif np.isclose(r.intermediate_value, RDB_MIN_FLOAT) or np.isneginf(r.intermediate_value):
+            elif np.isclose(r.intermediate_value, RDB_MIN_FLOAT) or np.isneginf(
+                r.intermediate_value
+            ):
                 float_type = IntermediateValueModel.FloatTypeEnum.INF_NEG
             else:
                 continue

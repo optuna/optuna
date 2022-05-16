@@ -4,7 +4,6 @@ import copy
 from datetime import datetime
 import json
 import logging
-import math
 import os
 from typing import Any
 from typing import Callable
@@ -821,7 +820,10 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
     ) -> float:
         value_type = intermediate_value_model.intermediate_value_type
         if value_type == models.TrialIntermediateValueModel.FloatTypeEnum.FINITE_OR_NAN:
-            return intermediate_value_model.intermediate_value
+            if intermediate_value_model.intermediate_value is None:
+                return float("nan")
+            else:
+                return intermediate_value_model.intermediate_value
         if value_type == models.TrialIntermediateValueModel.FloatTypeEnum.INF_POS:
             return float("inf")
         if value_type == models.TrialIntermediateValueModel.FloatTypeEnum.INF_NEG:
@@ -905,8 +907,8 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        _intermediate_value: Optional[float] = intermediate_value
-        if not math.isfinite(intermediate_value):
+        _intermediate_value = self._ensure_not_nan(intermediate_value)
+        if not np.isfinite(intermediate_value):
             _intermediate_value = None
 
         intermediate_value_type = models.TrialIntermediateValueModel.FloatTypeEnum.FINITE_OR_NAN
