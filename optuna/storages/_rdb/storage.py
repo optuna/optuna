@@ -4,6 +4,7 @@ import copy
 from datetime import datetime
 import json
 import logging
+import math
 import os
 from typing import Any
 from typing import Callable
@@ -793,6 +794,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
     @staticmethod
     def _ensure_numerical_limit(value: float) -> float:
+        # TODO(c-bata): Remove this method after fixing inf/-inf handling of trial.values
 
         # Max and min trial values that can be stored are limited by
         # dialect. Most limiting one is MySQL which in current data
@@ -802,6 +804,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
     @staticmethod
     def _lift_numerical_limit(value: Optional[float]) -> float:
+        # TODO(c-bata): Remove this method after fixing inf/-inf handling of trial.values
 
         # Floats can't be compared for equality because they are
         # approximate and not stored as exact values.
@@ -811,6 +814,19 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         elif np.isclose(value, _RDB_MIN_FLOAT) or np.isclose(value, _RDB_MAX_FLOAT):
             return float(np.sign(value) * float("inf"))
         return value
+
+    @staticmethod
+    def _convert_intermediate_value_representation(
+        intermediate_value_model: models.TrialIntermediateValueModel,
+    ) -> float:
+        value_type = intermediate_value_model.intermediate_value_type
+        if value_type == models.TrialIntermediateValueModel.FloatTypeEnum.FINITE_OR_NAN:
+            return intermediate_value_model.intermediate_value
+        if value_type == models.TrialIntermediateValueModel.FloatTypeEnum.INF_POS:
+            return float("inf")
+        if value_type == models.TrialIntermediateValueModel.FloatTypeEnum.INF_NEG:
+            return float("-inf")
+        assert False, "Must not reach here"
 
     @deprecated(
         "3.0.0",
@@ -888,20 +904,32 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
-        _intermediate_value = self._ensure_not_nan(intermediate_value)
-        if _intermediate_value is not None:
-            _intermediate_value = self._ensure_numerical_limit(_intermediate_value)
+
+        _intermediate_value: Optional[float] = intermediate_value
+        if not math.isfinite(intermediate_value):
+            _intermediate_value = None
+
+        intermediate_value_type = models.TrialIntermediateValueModel.FloatTypeEnum.FINITE_OR_NAN
+        if math.isinf(intermediate_value):
+            if intermediate_value > 0:
+                intermediate_value_type = models.TrialIntermediateValueModel.FloatTypeEnum.INF_POS
+            else:
+                intermediate_value_type = models.TrialIntermediateValueModel.FloatTypeEnum.INF_NEG
 
         trial_intermediate_value = models.TrialIntermediateValueModel.find_by_trial_and_step(
             trial, step, session
         )
         if trial_intermediate_value is None:
             trial_intermediate_value = models.TrialIntermediateValueModel(
-                trial_id=trial_id, step=step, intermediate_value=_intermediate_value
+                trial_id=trial_id,
+                step=step,
+                intermediate_value=_intermediate_value,
+                intermediate_value_type=intermediate_value_type,
             )
             session.add(trial_intermediate_value)
         else:
             trial_intermediate_value.intermediate_value = _intermediate_value
+            trial_intermediate_value.intermediate_value_type = intermediate_value_type
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
 
@@ -1080,7 +1108,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 attr.key: json.loads(attr.value_json) for attr in trial.system_attributes
             },
             intermediate_values={
-                v.step: self._lift_numerical_limit(v.intermediate_value)
+                v.step: self._convert_intermediate_value_representation(v)
                 for v in trial.intermediate_values
             },
             trial_id=trial.trial_id,
