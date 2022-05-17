@@ -1,5 +1,6 @@
 import math
 from typing import Any
+from typing import cast
 from typing import Dict
 from unittest.mock import call
 from unittest.mock import patch
@@ -14,6 +15,7 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.integration.cma import _Optimizer
+from optuna.samplers import RandomSampler
 from optuna.study._study_direction import StudyDirection
 from optuna.testing.distribution import UnsupportedDistribution
 from optuna.testing.sampler import DeterministicRelativeSampler
@@ -64,12 +66,15 @@ class TestPyCmaSampler(object):
         assert isinstance(seed, int)
         assert 0 < seed
 
-        assert isinstance(sampler._independent_sampler, optuna.samplers.RandomSampler)
+        assert isinstance(sampler._independent_sampler, RandomSampler)
 
     @staticmethod
     def test_reseed_rng() -> None:
         sampler = optuna.integration.PyCmaSampler()
         original_seed = sampler._cma_opts["seed"]
+        original_independent_sampler_random_state = cast(
+            RandomSampler, sampler._independent_sampler
+        )._rng.get_state()
 
         with patch.object(
             sampler._independent_sampler,
@@ -78,7 +83,10 @@ class TestPyCmaSampler(object):
         ) as mock_object:
             sampler.reseed_rng()
             assert mock_object.call_count == 1
-            assert original_seed != sampler._cma_opts["seed"]
+        assert original_seed != sampler._cma_opts["seed"]
+        assert str(original_independent_sampler_random_state) != str(
+            cast(RandomSampler, sampler._independent_sampler)._rng.get_state()
+        )
 
     @staticmethod
     def test_infer_relative_search_space_1d() -> None:
@@ -140,7 +148,7 @@ class TestPyCmaSampler(object):
 
     @staticmethod
     def test_call_after_trial_of_independent_sampler() -> None:
-        independent_sampler = optuna.samplers.RandomSampler()
+        independent_sampler = RandomSampler()
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
             sampler = optuna.integration.PyCmaSampler(independent_sampler=independent_sampler)
