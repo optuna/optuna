@@ -44,7 +44,7 @@ def upgrade():
     bind = op.get_bind()
     inspector = Inspector.from_engine(bind)
     column_names_in_intermediate_values = [
-        column['name'] for column in inspector.get_columns("trial_intermediate_values")
+        column["name"] for column in inspector.get_columns("trial_intermediate_values")
     ]
 
     if "intermediate_value_type" not in column_names_in_intermediate_values:
