@@ -180,7 +180,7 @@ def test_upgrade_identity() -> None:
 
 @pytest.mark.parametrize(
     "optuna_version",
-    ["2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c"],
+    ["0.9.0.a", "1.2.0.a", "1.3.0.a", "2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c"],
 )
 def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
     src_db_file = os.path.join(
@@ -280,24 +280,6 @@ def test_upgrade_distributions(optuna_version: str) -> None:
         storage_url = f"sqlite:///{workdir}/sqlite.db"
 
         storage = RDBStorage(storage_url, skip_compatibility_check=True, skip_table_creation=True)
-        old_study = load_study(storage=storage, study_name="schema migration")
-        old_distribution_dict = old_study.trials[0].distributions
-
-        if version.parse(optuna_version) >= version.parse("3.0.0.a"):
-            assert isinstance(old_distribution_dict["x1"], FloatDistribution)
-            assert isinstance(old_distribution_dict["x2"], FloatDistribution)
-            assert isinstance(old_distribution_dict["x3"], FloatDistribution)
-            assert isinstance(old_distribution_dict["y1"], IntDistribution)
-            assert isinstance(old_distribution_dict["y2"], IntDistribution)
-            assert isinstance(old_distribution_dict["z"], CategoricalDistribution)
-        else:
-            assert isinstance(old_distribution_dict["x1"], UniformDistribution)
-            assert isinstance(old_distribution_dict["x2"], LogUniformDistribution)
-            assert isinstance(old_distribution_dict["x3"], DiscreteUniformDistribution)
-            assert isinstance(old_distribution_dict["y1"], IntUniformDistribution)
-            assert isinstance(old_distribution_dict["y2"], IntLogUniformDistribution)
-            assert isinstance(old_distribution_dict["z"], CategoricalDistribution)
-
         assert storage.get_current_version() == f"v{optuna_version}"
         head_version = storage.get_head_version()
         storage.upgrade()
