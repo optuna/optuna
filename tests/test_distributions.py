@@ -10,6 +10,9 @@ import pytest
 from optuna import distributions
 
 
+_choices = (None, True, False, 0, 1, 0.0, 1.0, float("nan"), float("inf"), -float("inf"), "", "a")
+_choices_json = '[null, true, false, 0, 1, 0.0, 1.0, NaN, Infinity, -Infinity, "", "a"]'
+
 EXAMPLE_DISTRIBUTIONS: Dict[str, Any] = {
     "i": distributions.IntDistribution(low=1, high=9, log=False),
     # i2 and i3 are identical to i, and tested for cases when `log` and `step` are omitted in json.
@@ -22,7 +25,7 @@ EXAMPLE_DISTRIBUTIONS: Dict[str, Any] = {
     "f": distributions.FloatDistribution(low=1.0, high=2.0, log=False),
     "fl": distributions.FloatDistribution(low=0.001, high=100.0, log=True),
     "fd": distributions.FloatDistribution(low=1.0, high=9.0, log=False, step=2.0),
-    "c1": distributions.CategoricalDistribution(choices=(2.71, -float("inf"))),
+    "c1": distributions.CategoricalDistribution(choices=_choices),
     "c2": distributions.CategoricalDistribution(choices=("Roppongi", "Azabu")),
     "c3": distributions.CategoricalDistribution(choices=["Roppongi", "Azabu"]),
 }
@@ -44,7 +47,7 @@ EXAMPLE_JSONS = {
     '"attributes": {"low": 0.001, "high": 100.0, "log": true, "step": null}}',
     "fd": '{"name": "FloatDistribution", '
     '"attributes": {"low": 1.0, "high": 9.0, "step": 2.0, "log": false}}',
-    "c1": '{"name": "CategoricalDistribution", "attributes": {"choices": [2.71, -Infinity]}}',
+    "c1": f'{{"name": "CategoricalDistribution", "attributes": {{"choices": {_choices_json}}}}}',
     "c2": '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}',
     "c3": '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}',
 }
@@ -60,7 +63,7 @@ EXAMPLE_ABBREVIATED_JSONS = {
     "f": '{"type": "float", "low": 1.0, "high": 2.0, "log": false, "step": null}',
     "fl": '{"type": "float", "low": 0.001, "high": 100, "log": true, "step": null}',
     "fd": '{"type": "float", "low": 1.0, "high": 9.0, "log": false, "step": 2.0}',
-    "c1": '{"type": "categorical", "choices": [2.71, -Infinity]}',
+    "c1": f'{{"type": "categorical", "choices": {_choices_json}}}',
     "c2": '{"type": "categorical", "choices": ["Roppongi", "Azabu"]}',
     "c3": '{"type": "categorical", "choices": ["Roppongi", "Azabu"]}',
 }
@@ -119,7 +122,7 @@ def test_check_distribution_compatibility() -> None:
     # test the same distribution
     for key in EXAMPLE_JSONS:
         distributions.check_distribution_compatibility(
-            EXAMPLE_DISTRIBUTIONS[key], EXAMPLE_DISTRIBUTIONS[key]
+            EXAMPLE_DISTRIBUTIONS[key], distributions.json_to_distribution(EXAMPLE_JSONS[key])
         )
 
     # test different distribution classes
@@ -347,8 +350,9 @@ def test_eq_ne_hash() -> None:
 
 def test_repr() -> None:
 
-    # The following variable is needed to apply `eval` to distribution
-    # instances that contain `float('inf')` as a field value.
+    # The following variables are needed to apply `eval` to distribution
+    # instances that contain `float('nan')` or `float('inf')` as a field value.
+    nan = float("nan")  # NOQA
     inf = float("inf")  # NOQA
 
     for d in EXAMPLE_DISTRIBUTIONS.values():

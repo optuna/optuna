@@ -2,12 +2,15 @@ import abc
 import copy
 import decimal
 import json
+from numbers import Real
 from typing import Any
 from typing import cast
 from typing import Dict
 from typing import Sequence
 from typing import Union
 import warnings
+
+import numpy as np
 
 from optuna._deprecated import deprecated
 
@@ -509,6 +512,30 @@ class CategoricalDistribution(BaseDistribution):
         index = int(param_value_in_internal_repr)
         return 0 <= index < len(self.choices)
 
+    def __eq__(self, other: Any) -> bool:
+
+        if not isinstance(other, BaseDistribution):
+            return NotImplemented
+        if type(self) is not type(other):
+            return False
+        if self.__dict__.keys() != other.__dict__.keys():
+            return False
+        for (key, value), (other_key, other_value) in zip(
+            sorted(self.__dict__.items()), sorted(other.__dict__.items())
+        ):
+            if key == "choices":
+                if len(value) != len(other_value):
+                    return False
+                for choice, other_choice in zip(value, other_value):
+                    choice_is_nan = isinstance(choice, Real) and np.isnan(choice)
+                    other_choice_is_nan = isinstance(other_choice, Real) and np.isnan(other_choice)
+                    if (choice != other_choice) and not (choice_is_nan and other_choice_is_nan):
+                        return False
+            else:
+                if value != other_value:
+                    return False
+        return True
+
 
 DISTRIBUTION_CLASSES = (
     IntDistribution,
@@ -612,7 +639,7 @@ def check_distribution_compatibility(
         return
     if not isinstance(dist_new, CategoricalDistribution):
         return
-    if dist_old.choices != dist_new.choices:
+    if dist_old != dist_new:
         raise ValueError(
             CategoricalDistribution.__name__ + " does not support dynamic value space."
         )
