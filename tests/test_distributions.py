@@ -122,6 +122,11 @@ def test_check_distribution_compatibility() -> None:
     # test the same distribution
     for key in EXAMPLE_JSONS:
         distributions.check_distribution_compatibility(
+            EXAMPLE_DISTRIBUTIONS[key], EXAMPLE_DISTRIBUTIONS[key]
+        )
+        # We need to create new objects to compare NaNs.
+        # See https://github.com/optuna/optuna/pull/3567#pullrequestreview-974939837.
+        distributions.check_distribution_compatibility(
             EXAMPLE_DISTRIBUTIONS[key], distributions.json_to_distribution(EXAMPLE_JSONS[key])
         )
 
