@@ -432,12 +432,18 @@ def test_botorch_invalid_different_studies() -> None:
 def test_reseed_rng() -> None:
     independent_sampler = RandomSampler()
     sampler = BoTorchSampler(independent_sampler=independent_sampler)
-    original_independent_sampler_seed = cast(RandomSampler, sampler._independent_sampler)._rng.seed
+    original_independent_sampler_random_state = cast(
+        RandomSampler, sampler._independent_sampler
+    )._rng.get_state()
 
-    sampler.reseed_rng()
-    assert (
-        original_independent_sampler_seed
-        != cast(RandomSampler, sampler._independent_sampler)._rng.seed
+    with patch.object(
+        sampler._independent_sampler, "reseed_rng", wraps=sampler._independent_sampler.reseed_rng
+    ) as mock_object:
+        sampler.reseed_rng()
+        assert mock_object.call_count == 1
+
+    assert str(original_independent_sampler_random_state) != str(
+        cast(RandomSampler, sampler._independent_sampler)._rng.get_state()
     )
 
 

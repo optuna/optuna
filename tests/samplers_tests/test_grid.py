@@ -215,10 +215,10 @@ def test_same_seed_trials() -> None:
 
 def test_reseed_rng() -> None:
     sampler = samplers.GridSampler({"a": [0, 100]})
-    original_seed = sampler._rng.get_state()
+    original_rondom_state = sampler._rng.get_state()
     sampler.reseed_rng()
 
-    assert str(original_seed) != str(sampler._rng.get_state())
+    assert str(original_rondom_state) != str(sampler._rng.get_state())
 
 
 def test_enqueued_insufficient_trial() -> None:

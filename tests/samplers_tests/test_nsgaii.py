@@ -460,12 +460,14 @@ def test_study_system_attr_for_population_cache() -> None:
 
 def test_reseed_rng() -> None:
     sampler = NSGAIISampler(population_size=10)
-    original_seed = sampler._rng.seed
-    original_random_sampler_seed = sampler._random_sampler._rng.seed
+    original_random_state = sampler._rng.get_state()
 
-    sampler.reseed_rng()
-    assert original_seed != sampler._rng.seed
-    assert original_random_sampler_seed != sampler._random_sampler._rng.seed
+    with patch.object(
+        sampler._random_sampler, "reseed_rng", wraps=sampler._random_sampler.reseed_rng
+    ) as mock_object:
+        sampler.reseed_rng()
+        assert mock_object.call_count == 1
+    assert str(original_random_state) != str(sampler._rng.get_state())
 
 
 def test_constraints_func_experimental_warning() -> None:

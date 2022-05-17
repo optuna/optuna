@@ -137,10 +137,10 @@ def test_pickle_random_sampler(seed: Optional[int]) -> None:
 
 def test_random_sampler_reseed_rng() -> None:
     sampler = optuna.samplers.RandomSampler()
-    original_seed = sampler._rng.seed
-
+    original_random_state = sampler._rng.get_state()
     sampler.reseed_rng()
-    assert original_seed != sampler._rng.seed
+
+    assert str(original_random_state) != str(sampler._rng.get_state())
 
 
 @parametrize_sampler
