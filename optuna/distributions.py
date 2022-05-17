@@ -527,8 +527,10 @@ class CategoricalDistribution(BaseDistribution):
                 if len(value) != len(other_value):
                     return False
                 for choice, other_choice in zip(value, other_value):
-                    choice_is_nan = isinstance(choice, Real) and np.isnan(choice)
-                    other_choice_is_nan = isinstance(other_choice, Real) and np.isnan(other_choice)
+                    choice_is_nan = isinstance(choice, Real) and np.isnan(float(choice))
+                    other_choice_is_nan = isinstance(other_choice, Real) and np.isnan(
+                        float(other_choice)
+                    )
                     if (choice != other_choice) and not (choice_is_nan and other_choice_is_nan):
                         return False
             else:
