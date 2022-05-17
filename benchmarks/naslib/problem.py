@@ -7,7 +7,7 @@ from kurobako import problem
 
 
 
-from naslib.utils import get_dataset_api  # NOQA
+from naslib.utils import get_dataset_api
 
 
 op_names = [
