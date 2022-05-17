@@ -963,6 +963,7 @@ def build_state_fn(state: optuna.trial.TrialState) -> Callable[[int], optuna.tri
 def test_reseed_rng() -> None:
     sampler = TPESampler()
     original_random_state = sampler._rng.get_state()
+    original_random_sampler_random_state = sampler._random_sampler._rng.get_state()
 
     with patch.object(
         sampler._random_sampler, "reseed_rng", wraps=sampler._random_sampler.reseed_rng
@@ -970,6 +971,9 @@ def test_reseed_rng() -> None:
         sampler.reseed_rng()
         assert mock_object.call_count == 1
     assert str(original_random_state) != str(sampler._rng.get_state())
+    assert str(original_random_sampler_random_state) != str(
+        sampler._random_sampler._rng.get_state()
+    )
 
 
 def test_call_after_trial_of_random_sampler() -> None:
