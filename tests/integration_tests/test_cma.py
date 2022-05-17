@@ -70,7 +70,6 @@ class TestPyCmaSampler(object):
     def test_reseed_rng() -> None:
         sampler = optuna.integration.PyCmaSampler()
         original_seed = sampler._cma_opts["seed"]
-        sampler._independent_sampler.reseed_rng()
 
         with patch.object(
             sampler._independent_sampler,
