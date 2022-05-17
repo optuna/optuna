@@ -538,6 +538,10 @@ class CategoricalDistribution(BaseDistribution):
                     return False
         return True
 
+    def __hash__(self) -> int:
+
+        return hash((self.__class__,) + tuple(sorted(self.__dict__.items())))
+
 
 DISTRIBUTION_CLASSES = (
     IntDistribution,
