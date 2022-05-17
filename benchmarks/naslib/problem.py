@@ -6,13 +6,9 @@ from typing import List
 from kurobako import problem
 
 
-sys.stdout = open(os.devnull, "w")  # Suppress output
 
 from naslib.utils import get_dataset_api  # NOQA
 
-
-sys.stdout.close()
-sys.stdout = sys.__stdout__
 
 op_names = [
     "skip_connect",
@@ -92,7 +88,8 @@ if __name__ == "__main__":
         exit(1)
 
     search_space_name = sys.argv[1]
-    assert search_space_name == "nasbench201"  # We currently do not support other benchmarks
+    # We currently do not support other benchmarks.
+    assert search_space_name == "nasbench201"
     dataset = sys.argv[2]
     runner = problem.ProblemRunner(NASLibProblemFactory(dataset))
     runner.run()
