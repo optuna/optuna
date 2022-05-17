@@ -84,11 +84,6 @@ class GridSampler(BaseSampler):
         The total number of actual trials may therefore exceed the size of the grid.
 
     Note:
-        The grid is randomly shuffled and the order in which parameter configurations are
-        suggested may vary. This is to reduce duplicate suggestions during distributed
-        optimization.
-
-    Note:
         All parameters must be specified when using :class:`~optuna.samplers.GridSampler` with
         :meth:`~optuna.study.Study.enqueue_trial`.
 
@@ -96,7 +91,11 @@ class GridSampler(BaseSampler):
         search_space:
             A dictionary whose key and value are a parameter name and the corresponding candidates
             of values, respectively.
-        seed: A seed to specify the order of trials as the grid is randomly shuffled.
+        seed:
+            A seed to fix the order of trials as the grid is randomly shuffled. Please note that
+            it is not recommended using this option in distributed optimization settings since
+            this option cannot ensure the order of trials and may increase the number of duplicate
+            suggestions during distributed optimization.
     """
 
     def __init__(
