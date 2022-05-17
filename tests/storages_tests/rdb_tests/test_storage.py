@@ -8,7 +8,6 @@ from typing import Dict
 from typing import Optional
 from unittest.mock import patch
 
-from packaging import version
 import pytest
 from sqlalchemy.exc import IntegrityError
 
@@ -16,13 +15,8 @@ import optuna
 from optuna import create_study
 from optuna import load_study
 from optuna.distributions import CategoricalDistribution
-from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
-from optuna.distributions import IntLogUniformDistribution
-from optuna.distributions import IntUniformDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
 from optuna.storages import RDBStorage
 from optuna.storages._rdb.models import SCHEMA_VERSION
 from optuna.storages._rdb.models import TrialHeartbeatModel
@@ -180,7 +174,7 @@ def test_upgrade_identity() -> None:
 
 @pytest.mark.parametrize(
     "optuna_version",
-    ["0.9.0.a", "1.2.0.a", "1.3.0.a", "2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c"],
+    ["2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c"],
 )
 def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
     src_db_file = os.path.join(
