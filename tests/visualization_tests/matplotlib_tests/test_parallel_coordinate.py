@@ -162,7 +162,7 @@ def test_plot_parallel_coordinate_categorical_params() -> None:
     assert axes[2].get_ylim() == (0, 1)
     assert [line.get_text() for line in axes[2].get_yticklabels()] == ["preferred", "opt"]
     assert axes[3].get_ylim() == (0, 1)
-    assert [lien.get_text() for lien in axes[3].get_yticklabels()] == ["net", "una"]
+    assert [line.get_text() for line in axes[3].get_yticklabels()] == ["net", "una"]
     objectives = _fetch_objectives_from_figure(figure)
     assert objectives == [0.0, 2.0]
     expected_labels = ["Objective Value", "category_a", "category_b"]
@@ -312,7 +312,7 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
     # unlike Plotly's parallel_coordinate.
     assert objectives == [0.0]
     assert axes[2].get_ylim() == (-default_padding_fraction, default_padding_fraction)
-    assert [lien.get_text() for lien in axes[2].get_yticklabels()] == ["preferred"]
+    assert [line.get_text() for line in axes[2].get_yticklabels()] == ["preferred"]
     assert [label.get_position()[1] for label in axes[2].get_yticklabels()] == [0]
     assert axes[3].get_ylim() == (
         30 * (1.0 - default_padding_fraction),
@@ -345,7 +345,7 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
     # unlike Plotly's parallel_coordinate.
     assert objectives == [0.0, 2.0]
     assert axes[2].get_ylim() == (-default_padding_fraction, default_padding_fraction)
-    assert [lien.get_text() for lien in axes[2].get_yticklabels()] == ["preferred"]
+    assert [line.get_text() for line in axes[2].get_yticklabels()] == ["preferred"]
     assert [label.get_position()[1] for label in axes[2].get_yticklabels()] == [0]
     assert axes[3].get_ylim() == (20, 30)
     expected_labels = ["Objective Value", "category_a", "param_b"]
@@ -420,7 +420,7 @@ def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
     assert objectives == [0.0, 1.0, 2.0, 3.0]
     num_choices_param_a = 2
     assert axes[2].get_ylim() == (0, num_choices_param_a - 1)
-    assert [lien.get_text() for lien in axes[2].get_yticklabels()] == ["preferred", "opt"]
+    assert [line.get_text() for line in axes[2].get_yticklabels()] == ["preferred", "opt"]
     assert [label.get_position()[1] for label in axes[2].get_yticklabels()] == list(
         range(num_choices_param_a)
     )
