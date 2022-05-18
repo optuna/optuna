@@ -1,5 +1,6 @@
 import math
 
+import numpy as np
 import pytest
 
 from optuna.distributions import CategoricalDistribution
@@ -413,3 +414,20 @@ def test_plot_parallel_coordinate_only_missing_params() -> None:
 
     figure = plot_parallel_coordinate(study)
     assert len(figure.data) == 0
+
+
+@pytest.mark.parametrize("value", [float("inf"), -float("inf"), float("nan")])
+def test_nonfinite_removed(value: float) -> None:
+
+    study = prepare_study_with_trials(value_for_first_trial=value)
+    figure = plot_parallel_coordinate(study)
+    assert all(np.isfinite(figure.data[0]["dimensions"][0]["values"]))
+
+
+@pytest.mark.parametrize("objective", (0, 1))
+@pytest.mark.parametrize("value", (float("inf"), -float("inf"), float("nan")))
+def test_nonfinite_multiobjective(objective: int, value: float) -> None:
+
+    study = prepare_study_with_trials(n_objectives=2, value_for_first_trial=value)
+    figure = plot_parallel_coordinate(study, target=lambda t: t.values[objective])
+    assert all(np.isfinite(figure.data[0]["dimensions"][0]["values"]))

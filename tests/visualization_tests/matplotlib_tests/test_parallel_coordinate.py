@@ -209,3 +209,20 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
     figure = plot_parallel_coordinate(study_categorical_params)
     assert len(figure.get_lines()) == 0
     plt.savefig(BytesIO())
+
+
+@pytest.mark.parametrize("value", [float("inf"), -float("inf"), float("nan")])
+def test_nonfinite_removed(value: float) -> None:
+
+    study = prepare_study_with_trials(value_for_first_trial=value)
+    plot_parallel_coordinate(study)
+    plt.savefig(BytesIO())
+
+
+@pytest.mark.parametrize("objective", (0, 1))
+@pytest.mark.parametrize("value", (float("inf"), -float("inf"), float("nan")))
+def test_nonfinite_multiobjective(objective: int, value: float) -> None:
+
+    study = prepare_study_with_trials(n_objectives=2, value_for_first_trial=value)
+    plot_parallel_coordinate(study, target=lambda t: t.values[objective])
+    plt.savefig(BytesIO())
