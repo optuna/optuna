@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import copy
 import pickle
 import sys
 from typing import Any
@@ -9,6 +10,7 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Union
+from unittest.mock import patch
 import warnings
 
 from _pytest.mark.structures import MarkDecorator
@@ -84,6 +86,51 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
         else [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)]
     ),
 )
+parametrize_reseedable_sampler = copy.deepcopy(parametrize_sampler)
+parametrize_reseedable_sampler.args[1].append(
+    lambda: PartialFixedSampler(
+        fixed_params={"x": 0}, base_sampler=optuna.samplers.RandomSampler()
+    )
+)
+
+
+@parametrize_reseedable_sampler
+def test_sampler_reseed_rng(sampler_class: Callable[[], BaseSampler]) -> None:
+    sampler = sampler_class()
+    has_rng = "_rng" in sampler.__dict__
+    has_another_sampler = False
+
+    for name, attr in sampler.__dict__.items():
+        if isinstance(attr, BaseSampler):
+            has_another_sampler = True
+            had_sampler_name = name
+            break
+
+    if has_rng:
+        original_random_state = sampler._rng.get_state()  # type: ignore
+
+    if has_another_sampler:
+        had_sampler = sampler.__dict__[had_sampler_name]
+        original_had_sampler_random_state = had_sampler._rng.get_state()  # type: ignore
+
+    if has_another_sampler:
+        with patch.object(
+            had_sampler,
+            "reseed_rng",
+            wraps=had_sampler.reseed_rng,
+        ) as mock_object:
+            sampler.reseed_rng()
+            assert mock_object.call_count == 1
+    else:
+        sampler.reseed_rng()
+
+    if has_rng:
+        assert str(original_random_state) != str(sampler._rng.get_state())  # type: ignore
+
+    if has_another_sampler:
+        assert str(original_had_sampler_random_state) != str(
+            sampler.__dict__[had_sampler_name]._rng.get_state()  # type: ignore
+        )
 
 
 def parametrize_suggest_method(name: str) -> MarkDecorator:
