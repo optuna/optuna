@@ -240,12 +240,12 @@ class TPESampler(BaseSampler):
         gamma: Callable[[int], int] = default_gamma,
         weights: Callable[[int], np.ndarray] = default_weights,
         seed: Optional[int] = None,
-        constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
         *,
         multivariate: bool = False,
         group: bool = False,
         warn_independent_sampling: bool = True,
         constant_liar: bool = False,
+        constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
     ) -> None:
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
