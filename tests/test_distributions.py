@@ -1,10 +1,12 @@
 import copy
 import json
 from typing import Any
+from typing import cast
 from typing import Dict
 from typing import Optional
 import warnings
 
+import numpy as np
 import pytest
 
 from optuna import distributions
@@ -196,6 +198,37 @@ def test_check_distribution_compatibility() -> None:
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS["fd"], distributions.FloatDistribution(low=-1.0, high=11.0, step=0.5)
     )
+
+
+@pytest.mark.parametrize("value", (0, 1, 4, 10, 11))
+def test_int_internal_representation(value: int) -> None:
+
+    i = distributions.IntDistribution(low=1, high=10)
+    assert i.to_external_repr(i.to_internal_repr(value)) == value
+
+
+@pytest.mark.parametrize("value", (1.99, 2.0, 4.5, 7, 7.1))
+def test_float_internal_representation(value: float) -> None:
+    f = distributions.FloatDistribution(low=2.0, high=7.0)
+    assert f.to_external_repr(f.to_internal_repr(value)) == value
+
+
+def test_categorical_internal_representation() -> None:
+    c = EXAMPLE_DISTRIBUTIONS["c1"]
+    for choice in c.choices:
+        if isinstance(choice, float) and np.isnan(choice):
+            assert np.isnan(c.to_external_repr(c.to_internal_repr(choice)))
+        else:
+            assert c.to_external_repr(c.to_internal_repr(choice)) == choice
+
+    # We need to create new objects to compare NaNs.
+    # See https://github.com/optuna/optuna/pull/3567#pullrequestreview-974939837.
+    c_ = distributions.json_to_distribution(EXAMPLE_JSONS["c1"])
+    for choice in cast(distributions.CategoricalDistribution, c_).choices:
+        if isinstance(choice, float) and np.isnan(choice):
+            assert np.isnan(c.to_external_repr(c.to_internal_repr(choice)))
+        else:
+            assert c.to_external_repr(c.to_internal_repr(choice)) == choice
 
 
 @pytest.mark.parametrize(
