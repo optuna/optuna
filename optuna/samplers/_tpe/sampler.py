@@ -219,6 +219,11 @@ class TPESampler(BaseSampler):
             The function won't be called when trials fail or they are pruned, but this behavior is
             subject to change in the future releases.
 
+            .. note::
+                Added in v3.0.0-b1 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v3.0.0-b1
+
     Raises:
         ValueError:
             If ``multivariate`` is :obj:`False` and ``group`` is :obj:`True`.
