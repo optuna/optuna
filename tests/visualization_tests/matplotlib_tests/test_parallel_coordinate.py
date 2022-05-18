@@ -1,5 +1,6 @@
 from io import BytesIO
 import string
+from typing import Dict
 from typing import List
 
 from matplotlib.axes._axes import Axes
@@ -7,6 +8,7 @@ from matplotlib.collections import LineCollection
 import matplotlib.pyplot as plt
 import pytest
 
+from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.study import create_study
@@ -35,6 +37,8 @@ def _fetch_objectives_from_figure(figure: Axes) -> List[float]:
 
 def _test_xtick_labels(axes: Axes, expected_labels: List[str]) -> None:
     xtick_labels = axes[0].get_xticklabels()
+
+    assert len(expected_labels) == len(xtick_labels)
     for expected_label, xtick_label in zip(expected_labels, xtick_labels):
         assert expected_label == xtick_label.get_text()
 
@@ -78,7 +82,7 @@ def test_plot_parallel_coordinate() -> None:
     assert axes[2].get_ylim() == (1.0, 2.5)
     objectives = _fetch_objectives_from_figure(figure)
     assert objectives == [0.0, 1.0]
-    expected_labels = ["Objective Value", "param_a", "param_b"]
+    expected_labels = ["Objective Value", "param_a"]
     _test_xtick_labels(axes, expected_labels)
     plt.savefig(BytesIO())
 
@@ -133,24 +137,22 @@ def test_plot_parallel_coordinate() -> None:
 def test_plot_parallel_coordinate_categorical_params() -> None:
     # Test with categorical params that cannot be converted to numeral.
     study_categorical_params = create_study()
+    distributions: Dict[str, BaseDistribution] = {
+        "category_a": CategoricalDistribution(("preferred", "opt")),
+        "category_b": CategoricalDistribution(("net", "una")),
+    }
     study_categorical_params.add_trial(
         create_trial(
             value=0.0,
             params={"category_a": "preferred", "category_b": "net"},
-            distributions={
-                "category_a": CategoricalDistribution(("preferred", "opt")),
-                "category_b": CategoricalDistribution(("net", "una")),
-            },
+            distributions=distributions,
         )
     )
     study_categorical_params.add_trial(
         create_trial(
             value=2.0,
             params={"category_a": "opt", "category_b": "una"},
-            distributions={
-                "category_a": CategoricalDistribution(("preferred", "opt")),
-                "category_b": CategoricalDistribution(("net", "una")),
-            },
+            distributions=distributions,
         )
     )
     figure = plot_parallel_coordinate(study_categorical_params)
@@ -173,14 +175,15 @@ def test_plot_parallel_coordinate_categorical_params() -> None:
 def test_plot_parallel_coordinate_categorical_numeric_params() -> None:
     # Test with categorical params that can be interpreted as numeric params.
     study_categorical_params = create_study()
+    distributions: Dict[str, BaseDistribution] = {
+        "category_a": CategoricalDistribution((1, 2)),
+        "category_b": CategoricalDistribution((10, 20, 30)),
+    }
     study_categorical_params.add_trial(
         create_trial(
             value=0.0,
             params={"category_a": 2, "category_b": 20},
-            distributions={
-                "category_a": CategoricalDistribution((1, 2)),
-                "category_b": CategoricalDistribution((10, 20, 30)),
-            },
+            distributions=distributions,
         )
     )
 
@@ -188,10 +191,7 @@ def test_plot_parallel_coordinate_categorical_numeric_params() -> None:
         create_trial(
             value=1.0,
             params={"category_a": 1, "category_b": 30},
-            distributions={
-                "category_a": CategoricalDistribution((1, 2)),
-                "category_b": CategoricalDistribution((10, 20, 30)),
-            },
+            distributions=distributions,
         )
     )
 
@@ -199,10 +199,7 @@ def test_plot_parallel_coordinate_categorical_numeric_params() -> None:
         create_trial(
             value=2.0,
             params={"category_a": 2, "category_b": 10},
-            distributions={
-                "category_a": CategoricalDistribution((1, 2)),
-                "category_b": CategoricalDistribution((10, 20, 30)),
-            },
+            distributions=distributions,
         )
     )
 
@@ -237,34 +234,29 @@ def test_plot_parallel_coordinate_categorical_numeric_params() -> None:
 def test_plot_parallel_coordinate_log_params() -> None:
     # Test with log params.
     study_log_params = create_study()
+    distributions: Dict[str, BaseDistribution] = {
+        "param_a": FloatDistribution(1e-7, 1e-2, log=True),
+        "param_b": FloatDistribution(1, 1000, log=True),
+    }
     study_log_params.add_trial(
         create_trial(
             value=0.0,
             params={"param_a": 1e-6, "param_b": 10},
-            distributions={
-                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
-                "param_b": FloatDistribution(1, 1000, log=True),
-            },
+            distributions=distributions,
         )
     )
     study_log_params.add_trial(
         create_trial(
             value=1.0,
             params={"param_a": 2e-5, "param_b": 200},
-            distributions={
-                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
-                "param_b": FloatDistribution(1, 1000, log=True),
-            },
+            distributions=distributions,
         )
     )
     study_log_params.add_trial(
         create_trial(
             value=0.1,
             params={"param_a": 1e-4, "param_b": 30},
-            distributions={
-                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
-                "param_b": FloatDistribution(1, 1000, log=True),
-            },
+            distributions=distributions,
         )
     )
     figure = plot_parallel_coordinate(study_log_params)
@@ -286,14 +278,15 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
     # Test case when one unique value is suggested during the optimization.
 
     study_categorical_params = create_study()
+    distributions: Dict[str, BaseDistribution] = {
+        "category_a": CategoricalDistribution(("preferred", "opt")),
+        "param_b": FloatDistribution(1, 1000, log=True),
+    }
     study_categorical_params.add_trial(
         create_trial(
             value=0.0,
             params={"category_a": "preferred", "param_b": 30},
-            distributions={
-                "category_a": CategoricalDistribution(("preferred", "opt")),
-                "param_b": FloatDistribution(1, 1000, log=True),
-            },
+            distributions=distributions,
         )
     )
 
@@ -326,10 +319,7 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
         create_trial(
             value=2.0,
             params={"category_a": "preferred", "param_b": 20},
-            distributions={
-                "category_a": CategoricalDistribution(("preferred", "opt")),
-                "param_b": FloatDistribution(1, 1000, log=True),
-            },
+            distributions=distributions,
         )
     )
 
@@ -357,16 +347,17 @@ def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
     # Test with sample from multiple distributions including categorical params
     # that can be interpreted as numeric params.
     study = create_study()
+    distributions: Dict[str, BaseDistribution] = {
+        "param_a": CategoricalDistribution(("preferred", "opt")),
+        "param_b": CategoricalDistribution((1, 2, 10)),
+        "param_c": FloatDistribution(1, 1000, log=True),
+        "param_d": CategoricalDistribution((1, -1, 2)),
+    }
     study.add_trial(
         create_trial(
             value=0.0,
             params={"param_a": "preferred", "param_b": 2, "param_c": 30, "param_d": 2},
-            distributions={
-                "param_a": CategoricalDistribution(("preferred", "opt")),
-                "param_b": CategoricalDistribution((1, 2, 10)),
-                "param_c": FloatDistribution(1, 1000),
-                "param_d": CategoricalDistribution((1, -1, 2)),
-            },
+            distributions=distributions,
         )
     )
 
@@ -374,12 +365,7 @@ def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
         create_trial(
             value=1.0,
             params={"param_a": "opt", "param_b": 1, "param_c": 200, "param_d": 2},
-            distributions={
-                "param_a": CategoricalDistribution(("preferred", "opt")),
-                "param_b": CategoricalDistribution((1, 2, 10)),
-                "param_c": FloatDistribution(1, 1000),
-                "param_d": CategoricalDistribution((1, -1, 2)),
-            },
+            distributions=distributions,
         )
     )
 
@@ -387,12 +373,7 @@ def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
         create_trial(
             value=2.0,
             params={"param_a": "preferred", "param_b": 10, "param_c": 10, "param_d": 1},
-            distributions={
-                "param_a": CategoricalDistribution(("preferred", "opt")),
-                "param_b": CategoricalDistribution((1, 2, 10)),
-                "param_c": FloatDistribution(1, 1000),
-                "param_d": CategoricalDistribution((1, -1, 2)),
-            },
+            distributions=distributions,
         )
     )
 
@@ -400,12 +381,7 @@ def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
         create_trial(
             value=3.0,
             params={"param_a": "opt", "param_b": 2, "param_c": 10, "param_d": -1},
-            distributions={
-                "param_a": CategoricalDistribution(("preferred", "opt")),
-                "param_b": CategoricalDistribution((1, 2, 10)),
-                "param_c": FloatDistribution(1, 1000),
-                "param_d": CategoricalDistribution((-1, 1, 2)),
-            },
+            distributions=distributions,
         )
     )
     figure = plot_parallel_coordinate(study)
@@ -438,7 +414,7 @@ def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
         range(num_choices_param_d)
     )
     expected_labels = ["Objective Value"] + [
-        f"param_{postfix}" for postfix in string.ascii_lowercase
+        f"param_{postfix}" for postfix in string.ascii_lowercase[:4]
     ]
     _test_xtick_labels(axes, expected_labels)
     plt.savefig(BytesIO())
