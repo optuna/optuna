@@ -160,7 +160,7 @@ def test_plot_parallel_coordinate_categorical_params() -> None:
     assert axes[1].get_ylabel() == "Objective Value"
     assert axes[1].get_ylim() == (0.0, 2.0)
     assert axes[2].get_ylim() == (0, 1)
-    assert [lien.get_text() for lien in axes[2].get_yticklabels()] == ["preferred", "opt"]
+    assert [line.get_text() for line in axes[2].get_yticklabels()] == ["preferred", "opt"]
     assert axes[3].get_ylim() == (0, 1)
     assert [lien.get_text() for lien in axes[3].get_yticklabels()] == ["net", "una"]
     objectives = _fetch_objectives_from_figure(figure)
