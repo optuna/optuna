@@ -215,7 +215,6 @@ def _get_parallel_coordinate_plot(
         ax2.spines["top"].set_visible(False)
         ax2.spines["bottom"].set_visible(False)
         ax2.xaxis.set_visible(False)
-        ax2.plot([1] * len(param_values[i]), param_values[i], visible=False)
         ax2.spines["right"].set_position(("axes", (i + 1) / len(sorted_params)))
         if p_name in cat_param_names:
             idx = cat_param_names.index(p_name)
