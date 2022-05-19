@@ -18,7 +18,7 @@ class BaseHeartbeat(metaclass=abc.ABCMeta):
     The heartbeat mechanism periodically checks whether each trial process is alive during an
     optimization loop. To support this mechanism, the methods of
     :class:`~optuna.storages._heartbeat.BaseHeartbeat` is implemented for the target database
-    backend, tipically with multiple inheritance of :class:`~optuna.storages._base.BaseStorage`
+    backend, typically with multiple inheritance of :class:`~optuna.storages._base.BaseStorage`
     and :class:`~optuna.storages._heartbeat.BaseHeartbeat`.
 
     .. seealso::
