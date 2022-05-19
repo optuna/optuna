@@ -43,7 +43,7 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
     ▲ : Does not support the feature, but does not cause any errors.
     ❌: Cause an error.
 
-    (**) assumes that `d` is the dimension of the search space, `n` is the number of finished trials, and m is the number of objectives.
+    (**) assumes that `d` is the dimension of the search space, `n` is the number of finished trials, and `m` is the number of objectives.
 
 .. autosummary::
    :toctree: generated/
