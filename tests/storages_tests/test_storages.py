@@ -27,7 +27,7 @@ from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.storages import RedisStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
-from optuna.storages._heartbeat import get_heartbeat
+from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.testing.storage import STORAGE_MODES
@@ -1219,7 +1219,7 @@ def test_fail_stale_trials_with_optimize(storage_mode: str) -> None:
         storage_mode, heartbeat_interval=heartbeat_interval, grace_period=grace_period
     ) as storage:
         assert storage.is_heartbeat_enabled()
-        heartbeat = get_heartbeat(storage)
+        assert isinstance(storage, BaseHeartbeat)
 
         study1 = optuna.create_study(storage=storage)
         study2 = optuna.create_study(storage=storage)
@@ -1227,8 +1227,8 @@ def test_fail_stale_trials_with_optimize(storage_mode: str) -> None:
         with pytest.warns(UserWarning):
             trial1 = study1.ask()
             trial2 = study2.ask()
-        heartbeat.record_heartbeat(trial1._trial_id)
-        heartbeat.record_heartbeat(trial2._trial_id)
+        storage.record_heartbeat(trial1._trial_id)
+        storage.record_heartbeat(trial2._trial_id)
         time.sleep(grace_period + 1)
 
         assert study1.trials[0].state is TrialState.RUNNING
@@ -1272,7 +1272,7 @@ def test_failed_trial_callback(storage_mode: str) -> None:
         failed_trial_callback=failed_trial_callback,
     ) as storage:
         assert storage.is_heartbeat_enabled()
-        heartbeat = get_heartbeat(storage)
+        assert isinstance(storage, BaseHeartbeat)
 
         study = optuna.create_study(storage=storage)
         study.set_system_attr("test", "A")
@@ -1280,7 +1280,7 @@ def test_failed_trial_callback(storage_mode: str) -> None:
         with pytest.warns(UserWarning):
             trial = study.ask()
         trial.set_system_attr("test", "B")
-        heartbeat.record_heartbeat(trial._trial_id)
+        storage.record_heartbeat(trial._trial_id)
         time.sleep(grace_period + 1)
 
         # Exceptions raised in spawned threads are caught by `_TestableThread`.
@@ -1303,7 +1303,7 @@ def test_retry_failed_trial_callback(storage_mode: str, max_retry: Optional[int]
         failed_trial_callback=RetryFailedTrialCallback(max_retry=max_retry),
     ) as storage:
         assert storage.is_heartbeat_enabled()
-        heartbeat = get_heartbeat(storage)
+        assert isinstance(storage, BaseHeartbeat)
 
         study = optuna.create_study(storage=storage)
 
@@ -1311,7 +1311,7 @@ def test_retry_failed_trial_callback(storage_mode: str, max_retry: Optional[int]
             trial = study.ask()
         trial.suggest_float("_", -1, -1)
         trial.report(0.5, 1)
-        heartbeat.record_heartbeat(trial._trial_id)
+        storage.record_heartbeat(trial._trial_id)
         time.sleep(grace_period + 1)
 
         # Exceptions raised in spawned threads are caught by `_TestableThread`.
@@ -1352,14 +1352,14 @@ def test_retry_failed_trial_callback_intermediate(
         ),
     ) as storage:
         assert storage.is_heartbeat_enabled()
-        heartbeat = get_heartbeat(storage)
+        assert isinstance(storage, BaseHeartbeat)
 
         study = optuna.create_study(storage=storage)
 
         trial = study.ask()
         trial.suggest_float("_", -1, -1)
         trial.report(0.5, 1)
-        heartbeat.record_heartbeat(trial._trial_id)
+        storage.record_heartbeat(trial._trial_id)
         time.sleep(grace_period + 1)
 
         # Exceptions raised in spawned threads are caught by `_TestableThread`.
@@ -1470,14 +1470,14 @@ def test_retry_failed_trial_callback_repetitive_failure(storage_mode: str) -> No
         failed_trial_callback=RetryFailedTrialCallback(max_retry=max_retry),
     ) as storage:
         assert storage.is_heartbeat_enabled()
-        heartbeat = get_heartbeat(storage)
+        assert isinstance(storage, BaseHeartbeat)
 
         study = optuna.create_study(storage=storage)
 
         # Make repeatedly failed and retried trials by heartbeat.
         for _ in range(n_trials):
             trial = study.ask()
-            heartbeat.record_heartbeat(trial._trial_id)
+            storage.record_heartbeat(trial._trial_id)
             time.sleep(grace_period + 1)
             optuna.storages.fail_stale_trials(study)
 
