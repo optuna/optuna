@@ -755,8 +755,6 @@ def test_sample_independent_pruned_state() -> None:
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
 def test_get_observation_pairs(direction: str) -> None:
-    sign = 1 if direction == "minimize" else -1
-
     def objective(trial: Trial) -> float:
 
         x = trial.suggest_int("x", 5, 5)
@@ -778,6 +776,7 @@ def test_get_observation_pairs(direction: str) -> None:
     study = optuna.create_study(direction=direction)
     study.optimize(objective, n_trials=5, catch=(RuntimeError,))
 
+    sign = 1 if direction == "minimize" else -1
     scores = [
         (-float("inf"), [sign * 5.0]),  # COMPLETE
         (-7, [sign * 2]),  # PRUNED (with intermediate values)
@@ -806,7 +805,10 @@ def test_get_observation_pairs(direction: str) -> None:
         scores,
     )
 
-    def objective2(trial: Trial) -> float:
+
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+def test_get_observation_pairs_multi(direction: str) -> None:
+    def objective(trial: Trial) -> float:
 
         x = trial.suggest_int("x", 5, 5)
         y = trial.suggest_int("y", 6, 6)
@@ -825,8 +827,9 @@ def test_get_observation_pairs(direction: str) -> None:
             raise RuntimeError()
 
     study = optuna.create_study(direction=direction)
-    study.optimize(objective2, n_trials=5, catch=(RuntimeError,))
+    study.optimize(objective, n_trials=5, catch=(RuntimeError,))
 
+    sign = 1 if direction == "minimize" else -1
     assert _tpe.sampler._get_observation_pairs(study, ["x", "y"], True) == (
         {"x": [5.0, 5.0, 5.0, 5.0], "y": [6.0, 6.0, 6.0, 6.0]},
         [
