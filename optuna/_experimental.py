@@ -5,7 +5,6 @@ from typing import Any
 from typing import Callable
 from typing import Optional
 from typing import overload
-from typing import Type
 from typing import TypeVar
 from typing import Union
 import warnings
@@ -44,7 +43,7 @@ def _get_docstring_indent(docstring: str) -> str:
 def experimental(
     version: str,
     name: Optional[str] = None,
-) -> Union[Callable[[Type[CT]], Type[CT]], Callable[FP, FT]]:
+) -> Union[Callable[[CT], CT], Callable[FP, FT]]:
     """Decorate class or function as experimental.
 
     Args:
@@ -90,7 +89,7 @@ def experimental(
 
             return new_func
 
-        def _experimental_class(cls: Type[CT]) -> Type[CT]:
+        def _experimental_class(cls: CT) -> CT:
             """Decorates a class as experimental.
 
             This decorator is supposed to be applied to the experimental class.

@@ -5,7 +5,6 @@ from typing import Any
 from typing import Callable
 from typing import Optional
 from typing import overload
-from typing import Type
 from typing import TypeVar
 from typing import Union
 import warnings
@@ -17,9 +16,11 @@ from optuna._experimental import _get_docstring_indent
 from optuna._experimental import _validate_version
 
 
+T = TypeVar("T")
 FT = TypeVar("FT")
 FP = ParamSpec("FP")
 CT = TypeVar("CT")
+
 
 _DEPRECATION_NOTE_TEMPLATE = """
 
@@ -55,7 +56,7 @@ def deprecated(
     removed_version: str,
     name: Optional[str] = None,
     text: Optional[str] = None,
-) -> Union[Callable[[Type[CT]], Type[CT]], Callable[FP, FT]]:
+) -> Union[Callable[[Callable[FP, FT]], Callable[FP, FT]], Callable[[CT], CT]]:
     """Decorate class or function as deprecated.
 
     Args:
@@ -85,14 +86,14 @@ def deprecated(
     _validate_two_version(deprecated_version, removed_version)
 
     @overload
-    def _deprecated_wrapper(f: Callable[FP, FT]) -> Callable[FP, FT]:
+    def _deprecated_wrapper(f: Callable[FP, FT]) -> T:
         ...
 
     @overload
-    def _deprecated_wrapper(f: Type[CT]) -> Type[CT]:
+    def _deprecated_wrapper(f: CT) -> T:
         ...
 
-    def _deprecated_wrapper(f: Any) -> Any:
+    def _deprecated_wrapper(f: Union[Callable[FP, FT], CT]) -> Union[Callable[FP, FT], CT]:
         # f is either func or class.
 
         def _deprecated_func(func: Callable[FP, FT]) -> Callable[FP, FT]:
@@ -127,7 +128,7 @@ def deprecated(
 
             return new_func
 
-        def _deprecated_class(cls: Type[CT]) -> Type[CT]:
+        def _deprecated_class(cls: CT) -> CT:
             """Decorates a class as deprecated.
 
             This decorator is supposed to be applied to the deprecated class.
@@ -166,6 +167,9 @@ def deprecated(
 
             return cls
 
-        return _deprecated_class(f) if inspect.isclass(f) else _deprecated_func(f)
+        if inspect.isclass(f):
+            return _deprecated_class(f)
+        else:
+            return _deprecated_func(f)
 
     return _deprecated_wrapper
