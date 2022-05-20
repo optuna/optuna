@@ -453,6 +453,12 @@ class IntLogUniformDistribution(IntDistribution):
         return d
 
 
+def _nanequal(value1: Any, value2: Any) -> bool:
+    value1_is_nan = isinstance(value1, Real) and np.isnan(float(value1))
+    value2_is_nan = isinstance(value2, Real) and np.isnan(float(value2))
+    return (value1 == value2) or (value1_is_nan and value2_is_nan)
+
+
 class CategoricalDistribution(BaseDistribution):
     """A categorical distribution.
 
@@ -496,12 +502,11 @@ class CategoricalDistribution(BaseDistribution):
 
     def to_internal_repr(self, param_value_in_external_repr: CategoricalChoiceType) -> float:
 
-        try:
-            return self.choices.index(param_value_in_external_repr)
-        except ValueError as e:
-            raise ValueError(
-                "'{}' not in {}.".format(param_value_in_external_repr, self.choices)
-            ) from e
+        for index, choice in enumerate(self.choices):
+            if _nanequal(param_value_in_external_repr, choice):
+                return index
+
+        raise ValueError(f"'{param_value_in_external_repr}' not in {self.choices}.")
 
     def single(self) -> bool:
 
@@ -527,11 +532,7 @@ class CategoricalDistribution(BaseDistribution):
                 if len(value) != len(other_value):
                     return False
                 for choice, other_choice in zip(value, other_value):
-                    choice_is_nan = isinstance(choice, Real) and np.isnan(float(choice))
-                    other_choice_is_nan = isinstance(other_choice, Real) and np.isnan(
-                        float(other_choice)
-                    )
-                    if (choice != other_choice) and not (choice_is_nan and other_choice_is_nan):
+                    if not _nanequal(choice, other_choice):
                         return False
             else:
                 if value != other_value:
