@@ -12,8 +12,8 @@ Differences include relying on scikit-learn to fit random forests
 This stands in contrast to the original implementation which is partially written in C++.
 Since Python runtime overhead may become noticeable, included are instead several
 optimizations, e.g. vectorized NumPy functions to compute the marginals, instead of keeping all
-running statistics.
-
+running statistics. Known cases include when assessing categorical features with a larger
+number of choices since each choice is given a unique one-hot encoded raw feature.
 """
 
 from typing import Dict
@@ -51,7 +51,7 @@ class _Fanova:
             random_state=seed,
         )
         self._trees: Optional[List[_FanovaTree]] = None
-        self._variances: Dict[int, numpy.ndarray] = {}
+        self._variances: Optional[Dict[int, numpy.ndarray]] = None
         self._column_to_encoded_columns: Optional[List[numpy.ndarray]] = None
 
     def fit(
@@ -79,6 +79,7 @@ class _Fanova:
     def get_importance(self, feature: int) -> Tuple[float, float]:
         # Assert that `fit` has been called.
         assert self._trees is not None
+        assert self._variances is not None
 
         self._compute_variances(feature)
 
@@ -96,15 +97,16 @@ class _Fanova:
 
     def _compute_variances(self, feature: int) -> None:
         assert self._trees is not None
+        assert self._variances is not None
         assert self._column_to_encoded_columns is not None
 
         if feature in self._variances:
             return
 
-        raw_feature = self._column_to_encoded_columns[feature]
+        raw_features = self._column_to_encoded_columns[feature]
         variances = numpy.empty(len(self._trees), dtype=numpy.float64)
 
         for tree_index, tree in enumerate(self._trees):
-            marginal_variance = tree.get_marginal_variance(raw_feature)
+            marginal_variance = tree.get_marginal_variance(raw_features)
             variances[tree_index] = numpy.clip(marginal_variance, 0.0, None)
         self._variances[feature] = variances
