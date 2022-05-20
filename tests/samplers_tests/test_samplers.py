@@ -24,7 +24,6 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.samplers import BaseSampler
-from optuna.samplers import PartialFixedSampler
 from optuna.study import Study
 from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.trial import FrozenTrial
@@ -87,45 +86,70 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
     ),
 )
 parametrize_reseedable_sampler = copy.deepcopy(parametrize_sampler)
-parametrize_reseedable_sampler.args[1].append(
-    lambda: PartialFixedSampler(
-        fixed_params={"x": 0}, base_sampler=optuna.samplers.RandomSampler()
-    )
+parametrize_reseedable_sampler.args[1].extend(
+    [
+        lambda: optuna.samplers.PartialFixedSampler(
+            fixed_params={"x": 0}, base_sampler=optuna.samplers.RandomSampler()
+        ),
+        lambda: optuna.samplers.GridSampler(search_space={"x": [0]}),
+    ]
 )
 
 
 @parametrize_reseedable_sampler
 def test_sampler_reseed_rng(sampler_class: Callable[[], BaseSampler]) -> None:
+    def _extract_attr_name_from_sampler_by_cls(sampler: BaseSampler, cls: Any) -> Optional[str]:
+        for name, attr in sampler.__dict__.items():
+            if isinstance(attr, cls):
+                return name
+        return None
+
     sampler = sampler_class()
-    has_rng = "_rng" in sampler.__dict__
+    has_rng = False
     has_another_sampler = False
 
-    for name, attr in sampler.__dict__.items():
-        if isinstance(attr, BaseSampler):
-            has_another_sampler = True
-            had_sampler_name = name
-            break
+    rng_name = _extract_attr_name_from_sampler_by_cls(sampler, np.random.RandomState)
+    if rng_name is not None:
+        has_rng = True
 
-    if has_rng:
-        original_random_state = sampler._rng.get_state()  # type: ignore
-        sampler.reseed_rng();
-        assert str(original_random_state) != str(sampler.__dict__[rng_name].get_state())  # type: ignore
+    had_sampler_name = _extract_attr_name_from_sampler_by_cls(sampler, BaseSampler)
+    if had_sampler_name is not None:
+        has_another_sampler = True
+
+    # CmaEsSampler has a RandomState that is not reseed by its reseed method.
+    if has_rng and not isinstance(sampler, optuna.samplers.CmaEsSampler):
+        rng_name = str(rng_name)
+        original_random_state = sampler.__dict__[rng_name].get_state()  # type: ignore
+        sampler.reseed_rng()
+        assert str(original_random_state) != str(
+            sampler.__dict__[rng_name].get_state()
+        )  # type: ignore
 
     if has_another_sampler:
+        had_sampler_name = str(had_sampler_name)
         had_sampler = sampler.__dict__[had_sampler_name]
-        original_had_sampler_random_state = had_sampler._rng.get_state()  # type: ignore
-
-        with patch.object(
-            had_sampler,
-            "reseed_rng",
-            wraps=had_sampler.reseed_rng,
-        ) as mock_object:
-            sampler.reseed_rng()
-            assert mock_object.call_count == 1
-
-        assert str(original_had_sampler_random_state) != str(
-            sampler.__dict__[had_sampler_name]._rng.get_state()  # type: ignore
+        had_sampler_rng_name = _extract_attr_name_from_sampler_by_cls(
+            had_sampler, np.random.RandomState
         )
+
+        if had_sampler_rng_name is not None:
+            had_sampler_rng_name = str(had_sampler_rng_name)
+            original_had_sampler_random_state = had_sampler.__dict__[
+                had_sampler_rng_name
+            ].get_state()  # type: ignore
+
+            with patch.object(
+                had_sampler,
+                "reseed_rng",
+                wraps=had_sampler.reseed_rng,
+            ) as mock_object:
+                sampler.reseed_rng()
+                assert mock_object.call_count == 1
+
+            had_sampler = sampler.__dict__[had_sampler_name]
+            assert str(original_had_sampler_random_state) != str(
+                had_sampler.__dict__[had_sampler_rng_name].get_state()  # type: ignore
+            )
 
 
 def parametrize_suggest_method(name: str) -> MarkDecorator:
@@ -566,7 +590,7 @@ def test_partial_fixed_sampling(sampler_class: Callable[[], BaseSampler]) -> Non
     fixed_params = {"y": 0}
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        study.sampler = PartialFixedSampler(fixed_params, study.sampler)
+        study.sampler = optuna.samplers.PartialFixedSampler(fixed_params, study.sampler)
     study.optimize(objective, n_trials=1)
     trial_params = study.trials[-1].params
     assert trial_params["y"] == fixed_params["y"]
