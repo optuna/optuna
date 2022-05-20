@@ -14,7 +14,6 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.integration.cma import _Optimizer
-from optuna.samplers import RandomSampler
 from optuna.study._study_direction import StudyDirection
 from optuna.testing.distribution import UnsupportedDistribution
 from optuna.testing.sampler import DeterministicRelativeSampler
@@ -65,7 +64,7 @@ class TestPyCmaSampler(object):
         assert isinstance(seed, int)
         assert 0 < seed
 
-        assert isinstance(sampler._independent_sampler, RandomSampler)
+        assert isinstance(sampler._independent_sampler, optuna.samplers.RandomSampler)
 
     @staticmethod
     def test_infer_relative_search_space_1d() -> None:
@@ -127,7 +126,7 @@ class TestPyCmaSampler(object):
 
     @staticmethod
     def test_call_after_trial_of_independent_sampler() -> None:
-        independent_sampler = RandomSampler()
+        independent_sampler = optuna.samplers.RandomSampler()
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
             sampler = optuna.integration.PyCmaSampler(independent_sampler=independent_sampler)
