@@ -429,24 +429,6 @@ def test_botorch_invalid_different_studies() -> None:
         other_study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=3)
 
 
-def test_reseed_rng() -> None:
-    independent_sampler = RandomSampler()
-    sampler = BoTorchSampler(independent_sampler=independent_sampler)
-    original_independent_sampler_random_state = cast(
-        RandomSampler, sampler._independent_sampler
-    )._rng.get_state()
-
-    with patch.object(
-        sampler._independent_sampler, "reseed_rng", wraps=sampler._independent_sampler.reseed_rng
-    ) as mock_object:
-        sampler.reseed_rng()
-        assert mock_object.call_count == 1
-
-    assert str(original_independent_sampler_random_state) != str(
-        cast(RandomSampler, sampler._independent_sampler)._rng.get_state()
-    )
-
-
 def test_call_after_trial_of_independent_sampler() -> None:
     independent_sampler = optuna.samplers.RandomSampler()
     with warnings.catch_warnings():

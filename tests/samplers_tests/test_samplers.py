@@ -201,14 +201,6 @@ def test_pickle_random_sampler(seed: Optional[int]) -> None:
     assert sampler._rng.bytes(10) == restored_sampler._rng.bytes(10)
 
 
-def test_random_sampler_reseed_rng() -> None:
-    sampler = optuna.samplers.RandomSampler()
-    original_random_state = sampler._rng.get_state()
-    sampler.reseed_rng()
-
-    assert str(original_random_state) != str(sampler._rng.get_state())
-
-
 @parametrize_sampler
 @pytest.mark.parametrize(
     "distribution",

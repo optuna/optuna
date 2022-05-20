@@ -1,6 +1,5 @@
 import math
 from typing import Any
-from typing import cast
 from typing import Dict
 from unittest.mock import call
 from unittest.mock import patch
@@ -67,26 +66,6 @@ class TestPyCmaSampler(object):
         assert 0 < seed
 
         assert isinstance(sampler._independent_sampler, RandomSampler)
-
-    @staticmethod
-    def test_reseed_rng() -> None:
-        sampler = optuna.integration.PyCmaSampler()
-        original_seed = sampler._cma_opts["seed"]
-        original_independent_sampler_random_state = cast(
-            RandomSampler, sampler._independent_sampler
-        )._rng.get_state()
-
-        with patch.object(
-            sampler._independent_sampler,
-            "reseed_rng",
-            wraps=sampler._independent_sampler.reseed_rng,
-        ) as mock_object:
-            sampler.reseed_rng()
-            assert mock_object.call_count == 1
-        assert original_seed != sampler._cma_opts["seed"]
-        assert str(original_independent_sampler_random_state) != str(
-            cast(RandomSampler, sampler._independent_sampler)._rng.get_state()
-        )
 
     @staticmethod
     def test_infer_relative_search_space_1d() -> None:
