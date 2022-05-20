@@ -3,8 +3,9 @@ import inspect
 import textwrap
 from typing import Any
 from typing import Callable
-from typing import overload
 from typing import Optional
+from typing import overload
+from typing import Type
 from typing import TypeVar
 from typing import Union
 import warnings
@@ -17,7 +18,6 @@ from optuna.exceptions import ExperimentalWarning
 FT = TypeVar("FT")
 FP = ParamSpec("FP")
 CT = TypeVar("CT")
-
 
 _EXPERIMENTAL_NOTE_TEMPLATE = """
 
@@ -86,23 +86,23 @@ def experimental(
                     stacklevel=2,
                 )
 
-                return func(*args, **kwargs)  # type: ignore
+                return func(*args, **kwargs)
 
             return new_func
 
-        def _experimental_class(cls: CT) -> CT:
+        def _experimental_class(cls: Type[CT]) -> Type[CT]:
             """Decorates a class as experimental.
 
             This decorator is supposed to be applied to the experimental class.
             """
-            _original_init = cls.__init__  # type: ignore
+            _original_init = cls.__init__
 
             @functools.wraps(_original_init)
-            def wrapped_init(self, *args, **kwargs) -> None:  # type: ignore
+            def wrapped_init(self, *args: Any, **kwargs: Any) -> None:  # type: ignore
                 warnings.warn(
                     "{} is experimental (supported from v{}). "
                     "The interface can change in the future.".format(
-                        name if name is not None else cls.__name__, version  # type: ignore
+                        name if name is not None else cls.__name__, version
                     ),
                     ExperimentalWarning,
                     stacklevel=2,
@@ -110,7 +110,7 @@ def experimental(
 
                 _original_init(self, *args, **kwargs)
 
-            cls.__init__ = wrapped_init  # type: ignore
+            setattr(cls, "__init__", wrapped_init)
 
             if cls.__doc__ is None:
                 cls.__doc__ = ""
