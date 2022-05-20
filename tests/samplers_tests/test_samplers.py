@@ -75,7 +75,7 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
     "multi_objective_sampler_class",
     [
         optuna.samplers.NSGAIISampler,
-        lambda: optuna.samplers.MOTPESampler(n_startup_trials=0),
+        lambda: optuna.samplers.TPESampler(n_startup_trials=0),
     ]
     # TODO(nzw0301): Remove version constraints if BoTorch supports Python 3.10
     # or Optuna does not support Python 3.6.
