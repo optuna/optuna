@@ -3,10 +3,20 @@ import inspect
 import textwrap
 from typing import Any
 from typing import Callable
+from typing import overload
 from typing import Optional
+from typing import TypeVar
+from typing import Union
 import warnings
 
+from typing_extensions import ParamSpec
+
 from optuna.exceptions import ExperimentalWarning
+
+
+FT = TypeVar("FT")
+FP = ParamSpec("FP")
+CT = TypeVar("CT")
 
 
 _EXPERIMENTAL_NOTE_TEMPLATE = """
@@ -31,7 +41,10 @@ def _get_docstring_indent(docstring: str) -> str:
     return docstring.split("\n")[-1] if "\n" in docstring else ""
 
 
-def experimental(version: str, name: Optional[str] = None) -> Any:
+def experimental(
+    version: str,
+    name: Optional[str] = None,
+) -> Union[Callable[[CT], CT], Callable[FP, FT]]:
     """Decorate class or function as experimental.
 
     Args:
@@ -41,10 +54,18 @@ def experimental(version: str, name: Optional[str] = None) -> Any:
 
     _validate_version(version)
 
+    @overload
+    def _experimental_wrapper(f: Callable[FP, FT]) -> Callable[FP, FT]:
+        ...
+
+    @overload
+    def _experimental_wrapper(f: CT) -> CT:
+        ...
+
     def _experimental_wrapper(f: Any) -> Any:
         # f is either func or class.
 
-        def _experimental_func(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
+        def _experimental_func(func: Callable[FP, FT]) -> Callable[FP, FT]:
 
             if func.__doc__ is None:
                 func.__doc__ = ""
@@ -69,19 +90,19 @@ def experimental(version: str, name: Optional[str] = None) -> Any:
 
             return new_func
 
-        def _experimental_class(cls: Any) -> Any:
+        def _experimental_class(cls: CT) -> CT:
             """Decorates a class as experimental.
 
             This decorator is supposed to be applied to the experimental class.
             """
-            _original_init = cls.__init__
+            _original_init = cls.__init__  # type: ignore
 
             @functools.wraps(_original_init)
             def wrapped_init(self, *args, **kwargs) -> None:  # type: ignore
                 warnings.warn(
                     "{} is experimental (supported from v{}). "
                     "The interface can change in the future.".format(
-                        name if name is not None else cls.__name__, version
+                        name if name is not None else cls.__name__, version  # type: ignore
                     ),
                     ExperimentalWarning,
                     stacklevel=2,
@@ -89,7 +110,7 @@ def experimental(version: str, name: Optional[str] = None) -> Any:
 
                 _original_init(self, *args, **kwargs)
 
-            cls.__init__ = wrapped_init
+            cls.__init__ = wrapped_init  # type: ignore
 
             if cls.__doc__ is None:
                 cls.__doc__ = ""

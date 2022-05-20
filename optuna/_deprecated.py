@@ -4,13 +4,21 @@ import textwrap
 from typing import Any
 from typing import Callable
 from typing import Optional
+from typing import overload
+from typing import TypeVar
+from typing import Union
+import typing_extensions
 import warnings
 
 from packaging import version
+from typing_extensions import ParamSpec
 
 from optuna._experimental import _get_docstring_indent
 from optuna._experimental import _validate_version
 
+FT = TypeVar("FT")
+FP = ParamSpec("FP")
+CT = TypeVar("CT")
 
 _DEPRECATION_NOTE_TEMPLATE = """
 
@@ -46,7 +54,7 @@ def deprecated(
     removed_version: str,
     name: Optional[str] = None,
     text: Optional[str] = None,
-) -> Any:
+) -> Union[Callable[[CT], CT], Callable[FP, FT]]:
     """Decorate class or function as deprecated.
 
     Args:
@@ -75,10 +83,18 @@ def deprecated(
     _validate_version(removed_version)
     _validate_two_version(deprecated_version, removed_version)
 
+    @overload
+    def _deprecated_wrapper(f: Callable[FP, FT]) -> Callable[FP, FT]:
+        ...
+
+    @overload
+    def _deprecated_wrapper(f: CT) -> CT:
+        ...
+
     def _deprecated_wrapper(f: Any) -> Any:
         # f is either func or class.
 
-        def _deprecated_func(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
+        def _deprecated_func(func: Callable[FP, FT]) -> Callable[FP, FT]:
             """Decorates a function as deprecated.
 
             This decorator is supposed to be applied to the deprecated function.
@@ -110,17 +126,17 @@ def deprecated(
 
             return new_func
 
-        def _deprecated_class(cls: Any) -> Any:
+        def _deprecated_class(cls: CT) -> CT:
             """Decorates a class as deprecated.
 
             This decorator is supposed to be applied to the deprecated class.
             """
-            _original_init = cls.__init__
+            _original_init = cls.__init__  # type: ignore
 
             @functools.wraps(_original_init)
             def wrapped_init(self, *args, **kwargs) -> None:  # type: ignore
                 message = _DEPRECATION_WARNING_TEMPLATE.format(
-                    name=(name if name is not None else cls.__name__),
+                    name=(name if name is not None else cls.__name__),  # type: ignore
                     d_ver=deprecated_version,
                     r_ver=removed_version,
                 )
@@ -134,7 +150,7 @@ def deprecated(
 
                 _original_init(self, *args, **kwargs)
 
-            cls.__init__ = wrapped_init
+            cls.__init__ = wrapped_init  # type: ignore
 
             if cls.__doc__ is None:
                 cls.__doc__ = ""
