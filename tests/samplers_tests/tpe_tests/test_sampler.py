@@ -753,7 +753,10 @@ def test_sample_independent_pruned_state() -> None:
     assert len(set(suggestions)) == 3
 
 
-def test_get_observation_pairs() -> None:
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+def test_get_observation_pairs(direction: str) -> None:
+    sign = 1 if direction == "minimize" else -1
+
     def objective(trial: Trial) -> float:
 
         x = trial.suggest_int("x", 5, 5)
@@ -772,49 +775,15 @@ def test_get_observation_pairs() -> None:
         else:
             raise RuntimeError()
 
-    # Test direction=minimize.
-    study = optuna.create_study(direction="minimize")
+    study = optuna.create_study(direction=direction)
     study.optimize(objective, n_trials=5, catch=(RuntimeError,))
 
     scores = [
-        (-float("inf"), [5.0]),  # COMPLETE
-        (-7, [2]),  # PRUNED (with intermediate values)
+        (-float("inf"), [sign * 5.0]),  # COMPLETE
+        (-7, [sign * 2]),  # PRUNED (with intermediate values)
         (-3, [float("inf")]),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-        (float("inf"), [0.0]),  # PRUNED (without intermediate values)
+        (float("inf"), [sign * 0.0]),  # PRUNED (without intermediate values)
     ]
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], False) == (
-        {"x": [5.0, 5.0, 5.0, 5.0]},
-        scores,
-    )
-    assert _tpe.sampler._get_observation_pairs(study, ["y"], False) == (
-        {"y": [None, None, None, None]},
-        scores,
-    )
-    assert _tpe.sampler._get_observation_pairs(study, ["z"], False) == (
-        {"z": [0, 0, 0, 0]},  # The internal representation of 'None' for z is 0
-        scores,
-    )
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], True) == (
-        {"x": [5.0, 5.0, 5.0, 5.0]},
-        scores,
-    )
-    assert _tpe.sampler._get_observation_pairs(study, ["y"], True) == ({"y": []}, [])
-    assert _tpe.sampler._get_observation_pairs(study, ["z"], True) == (
-        {"z": [0, 0, 0, 0]},  # The internal representation of 'None' for z is 0
-        scores,
-    )
-
-    # Test direction=maximize.
-    study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=4)
-    study._storage.create_new_trial(study._study_id)  # Create a running trial.
-    scores = [
-        (-float("inf"), [-5.0]),  # COMPLETE
-        (-7, [-2]),  # PRUNED (with intermediate values)
-        (-3, [float("inf")]),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-        (float("inf"), [0.0]),  # PRUNED (without intermediate values)
-    ]
-
     assert _tpe.sampler._get_observation_pairs(study, ["x"], False) == (
         {"x": [5.0, 5.0, 5.0, 5.0]},
         scores,
@@ -855,38 +824,19 @@ def test_get_observation_pairs() -> None:
         else:
             raise RuntimeError()
 
-    # Test direction=minimize.
-    study = optuna.create_study(direction="minimize")
+    study = optuna.create_study(direction=direction)
     study.optimize(objective2, n_trials=5, catch=(RuntimeError,))
 
     assert _tpe.sampler._get_observation_pairs(study, ["x", "y"], True) == (
         {"x": [5.0, 5.0, 5.0, 5.0], "y": [6.0, 6.0, 6.0, 6.0]},
         [
-            (-float("inf"), [11.0]),  # COMPLETE
-            (-7, [2]),  # PRUNED (with intermediate values)
+            (-float("inf"), [sign * 11.0]),  # COMPLETE
+            (-7, [sign * 2]),  # PRUNED (with intermediate values)
             (
                 -3,
                 [float("inf")],
             ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-            (float("inf"), [0.0]),  # PRUNED (without intermediate values)
-        ],
-    )
-
-    # Test direction=maximize.
-    study = optuna.create_study(direction="maximize")
-    study.optimize(objective2, n_trials=4)
-    study._storage.create_new_trial(study._study_id)  # Create a running trial.
-
-    assert _tpe.sampler._get_observation_pairs(study, ["x", "y"], True) == (
-        {"x": [5.0, 5.0, 5.0, 5.0], "y": [6.0, 6.0, 6.0, 6.0]},
-        [
-            (-float("inf"), [-11.0]),  # COMPLETE
-            (-7, [-2]),  # PRUNED (with intermediate values)
-            (
-                -3,
-                [float("inf")],
-            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-            (float("inf"), [0.0]),  # PRUNED (without intermediate values)
+            (float("inf"), [sign * 0.0]),  # PRUNED (without intermediate values)
         ],
     )
 
