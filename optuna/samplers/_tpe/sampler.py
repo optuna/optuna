@@ -1,7 +1,6 @@
 import math
 from typing import Any
 from typing import Callable
-from typing import cast
 from typing import Container
 from typing import Dict
 from typing import List
@@ -380,7 +379,7 @@ class TPESampler(BaseSampler):
             return {}
 
         param_names = list(search_space.keys())
-        values, scores, constraints = _get_observation_pairs(
+        values, scores, violations = _get_observation_pairs(
             study,
             param_names,
             self._multivariate,
@@ -394,9 +393,7 @@ class TPESampler(BaseSampler):
             return {}
 
         # We divide data into below and above.
-        indices_below, indices_above = _split_observation_pairs(
-            scores, self._gamma(n), constraints
-        )
+        indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n), violations)
         # `None` items are intentionally converted to `nan` and then filtered out.
         # For `nan` conversion, the dtype must be float.
         config_values = {k: np.asarray(v, dtype=float) for k, v in values.items()}
@@ -406,7 +403,7 @@ class TPESampler(BaseSampler):
         # We then sample by maximizing log likelihood ratio.
         if study._is_multi_objective():
             weights_below = _calculate_weights_below_for_multi_objective(
-                config_values, scores, indices_below, constraints
+                config_values, scores, indices_below, violations
             )
             mpe_below = _ParzenEstimator(
                 below, search_space, self._parzen_estimator_parameters, weights_below
@@ -612,11 +609,11 @@ def _get_observation_pairs(
     param_names: List[str],
     multivariate: bool,
     constant_liar: bool = False,  # TODO(hvy): Remove default value and fix unit tests.
-    get_constraints: bool = False,
+    constraints_enabled: bool = False,
 ) -> Tuple[
     Dict[str, List[Optional[float]]],
     List[Tuple[float, List[float]]],
-    Optional[List[Sequence[float]]],
+    Optional[List[float]],
 ]:
     """Get observation pairs from the study.
 
@@ -634,6 +631,10 @@ def _get_observation_pairs(
     The second element of an observation pair is used to rank observations in
     ``_split_observation_pairs`` method (i.e., observations are sorted lexicographically by
     ``(-step, value)``).
+
+    When ``constraints_enabled`` is :obj:`True`, 1-dimensional violation values are returned
+    as the third element (:obj:`None` otherwise). Each value is a float of 0 or greator and a
+    trial is feasible if and only if its violation score is 0.
     """
 
     if len(param_names) > 1:
@@ -654,7 +655,7 @@ def _get_observation_pairs(
 
     scores = []
     values: Dict[str, List[Optional[float]]] = {param_name: [] for param_name in param_names}
-    constraints: Optional[List[Sequence[float]]] = [] if get_constraints else None
+    violations: Optional[List[float]] = [] if constraints_enabled else None
     for trial in study.get_trials(deepcopy=False, states=states):
         # If ``multivariate`` = True and ``group`` = True, we ignore the trials that are not
         # included in each subspace.
@@ -699,26 +700,35 @@ def _get_observation_pairs(
                 param_value = None
             values[param_name].append(param_value)
 
-        if get_constraints:
-            assert constraints is not None
-            constraints.append(cast(Sequence[float], trial.system_attrs.get(_CONSTRAINTS_KEY)))
+        if constraints_enabled:
+            assert violations is not None
+            constraint = trial.system_attrs.get(_CONSTRAINTS_KEY)
+            if constraint is None:
+                warnings.warn(
+                    f"Trial {trial.number} does not have constraint values."
+                    " It will be dominated by the other trials."
+                )
+                violation = float("inf")
+            else:
+                # Violation values of infeasible dimensions are summed up.
+                violation = sum(map(lambda x: max(x, 0.0), constraint))
+            violations.append(violation)
 
-    return values, scores, constraints
+    return values, scores, violations
 
 
 def _split_observation_pairs(
     loss_vals: List[Tuple[float, List[float]]],
     n_below: int,
-    constraints: Optional[List[Sequence[float]]],
+    violations: Optional[List[float]],
 ) -> Tuple[np.ndarray, np.ndarray]:
     # When constrains is not None, trials are split into below and above
     # according to the following rules.
     # 1. Feasible trials are better than infeasible trials.
     # 2. Infeasible trials are sorted by sum of how much they violate each constraint.
     # 3. Feasible trials are sorted by loss_vals.
-    if constraints is not None:
-        # 1-dimensional violation value (violation_1d==0 <=> feasible, >0 <=> infeasible).
-        violation_1d = np.maximum(np.array(constraints), 0).sum(1)
+    if violations is not None:
+        violation_1d = np.array(violations, dtype=float)
         idx = violation_1d.argsort()
         if violation_1d[idx[n_below]] > 0:
             # Below is filled by all feasible trials and trials with smaller violation values.
@@ -851,7 +861,7 @@ def _calculate_weights_below_for_multi_objective(
     config_values: Dict[str, np.ndarray],
     loss_vals: List[Tuple[float, List[float]]],
     indices: np.ndarray,
-    constraints: Optional[List[Sequence[float]]],
+    violations: Optional[List[float]],
 ) -> np.ndarray:
     # Multi-objective TPE only sees the first parameter to determine the weights.
     # In the call of `sample_relative`, this logic makes sense because we only have the
@@ -859,12 +869,11 @@ def _calculate_weights_below_for_multi_objective(
     # misses the one trial, then the other parameter must miss the trial, in this call of
     # `sample_relative`.
     # In the call of `sample_independent`, we only have one parameter so the logic makes sense.
-    if constraints is None:
+    if violations is None:
         feasible_mask = np.ones(len(indices), dtype=bool)
     else:
         # Hypervolume contributions are calculated only using feasible trials.
-        violation_1d = np.maximum(np.array(constraints), 0).sum(1)
-        feasible_mask = violation_1d[indices] == 0
+        feasible_mask = np.array(violations, dtype=float)[indices] == 0
     cvals = list(config_values.values())[0][indices[feasible_mask]]
 
     # Multi-objective TPE does not support pruning, so it ignores the ``step``.
