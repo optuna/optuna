@@ -105,16 +105,13 @@ def test_sampler_reseed_rng(sampler_class: Callable[[], BaseSampler]) -> None:
         return None
 
     sampler = sampler_class()
-    has_rng = False
     has_another_sampler = False
 
     rng_name = _extract_attr_name_from_sampler_by_cls(sampler, np.random.RandomState)
-    if rng_name is not None:
-        has_rng = True
+    has_rng = rng_name is not None
 
     had_sampler_name = _extract_attr_name_from_sampler_by_cls(sampler, BaseSampler)
-    if had_sampler_name is not None:
-        has_another_sampler = True
+    has_another_sampler = had_sampler_name is not None
 
     # CmaEsSampler has a RandomState that is not reseed by its reseed method.
     if has_rng and not isinstance(sampler, optuna.samplers.CmaEsSampler):
