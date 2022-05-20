@@ -16,6 +16,7 @@ from typing_extensions import ParamSpec
 from optuna._experimental import _get_docstring_indent
 from optuna._experimental import _validate_version
 
+
 FT = TypeVar("FT")
 FP = ParamSpec("FP")
 CT = TypeVar("CT")
