@@ -55,7 +55,7 @@ def deprecated(
     removed_version: str,
     name: Optional[str] = None,
     text: Optional[str] = None,
-) -> Union[Callable[[CT], CT], Callable[FP, FT]]:
+) -> Union[Callable[[Type[CT]], Type[CT]], Callable[FP, FT]]:
     """Decorate class or function as deprecated.
 
     Args:
@@ -89,7 +89,7 @@ def deprecated(
         ...
 
     @overload
-    def _deprecated_wrapper(f: CT) -> CT:
+    def _deprecated_wrapper(f: Type[CT]) -> Type[CT]:
         ...
 
     def _deprecated_wrapper(f: Any) -> Any:

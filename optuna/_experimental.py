@@ -44,7 +44,7 @@ def _get_docstring_indent(docstring: str) -> str:
 def experimental(
     version: str,
     name: Optional[str] = None,
-) -> Union[Callable[[CT], CT], Callable[FP, FT]]:
+) -> Union[Callable[[Type[CT]], Type[CT]], Callable[FP, FT]]:
     """Decorate class or function as experimental.
 
     Args:
