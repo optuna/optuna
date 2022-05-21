@@ -7,7 +7,7 @@ from typing import Sequence
 from typing import Union
 
 from optuna import multi_objective
-from optuna._deprecated import deprecated
+from optuna._deprecated import deprecated_class
 from optuna.distributions import BaseDistribution
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -18,7 +18,7 @@ from optuna.trial import TrialState
 CategoricalChoiceType = Union[None, bool, int, float, str]
 
 
-@deprecated("2.4.0", "4.0.0")
+@deprecated_class("2.4.0", "4.0.0")
 class MultiObjectiveTrial(object):
     """A trial is a process of evaluating an objective function.
 
@@ -236,7 +236,7 @@ class MultiObjectiveTrial(object):
     # integrations for multi-objective optimization.
 
 
-@deprecated("2.4.0", "4.0.0")
+@deprecated_class("2.4.0", "4.0.0")
 class FrozenMultiObjectiveTrial(object):
     """Status and results of a :class:`~optuna.multi_objective.trial.MultiObjectiveTrial`.
 

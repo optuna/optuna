@@ -21,7 +21,7 @@ from optuna import samplers
 from optuna import storages
 from optuna import trial as trial_module
 from optuna._convert_positional_args import convert_positional_args
-from optuna._deprecated import deprecated
+from optuna._deprecated import deprecated_func
 from optuna._imports import _LazyImport
 from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.distributions import BaseDistribution
@@ -927,11 +927,11 @@ class Study:
 
         return None
 
-    @deprecated("2.5.0", "4.0.0")
+    @deprecated_func("2.5.0", "4.0.0")
     def _ask(self) -> trial_module.Trial:
         return self.ask()
 
-    @deprecated("2.5.0", "4.0.0")
+    @deprecated_func("2.5.0", "4.0.0")
     def _tell(
         self, trial: trial_module.Trial, state: TrialState, values: Optional[List[float]]
     ) -> None:

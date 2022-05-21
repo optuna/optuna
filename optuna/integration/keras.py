@@ -3,7 +3,7 @@ from typing import Optional
 import warnings
 
 import optuna
-from optuna._deprecated import deprecated
+from optuna._deprecated import deprecated_class
 
 
 with optuna._imports.try_import() as _imports:
@@ -24,7 +24,7 @@ _keras_pruning_callback_deprecated_msg = (
 )
 
 
-@deprecated("2.1.0", "4.0.0", text=_keras_pruning_callback_deprecated_msg)
+@deprecated_class("2.1.0", "4.0.0", text=_keras_pruning_callback_deprecated_msg)
 class KerasPruningCallback(Callback):
     """Keras callback to prune unpromising trials.
 

@@ -22,7 +22,7 @@ import numpy as np
 import optuna
 from optuna import distributions
 from optuna import version
-from optuna._deprecated import deprecated
+from optuna._deprecated import deprecated_func
 from optuna._imports import _LazyImport
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
@@ -680,7 +680,7 @@ class RDBStorage(BaseStorage):
 
         return trial
 
-    @deprecated(
+    @deprecated_func(
         "3.0.0",
         "5.0.0",
         text="Use :func:`~optuna.storages.RDBStorage.set_trial_state_values` instead.",
@@ -814,7 +814,7 @@ class RDBStorage(BaseStorage):
             return float(np.sign(value) * float("inf"))
         return value
 
-    @deprecated(
+    @deprecated_func(
         "3.0.0",
         "5.0.0",
         text="Use :func:`~optuna.storages.RDBStorage.set_trial_state_values` instead.",
@@ -1178,7 +1178,7 @@ class RDBStorage(BaseStorage):
             else:
                 heartbeat.heartbeat = session.execute(sqlalchemy.func.now()).scalar()
 
-    @deprecated(
+    @deprecated_func(
         "3.0.0",
         "5.0.0",
         text="Use :func:`~optuna.storages.fail_stale_trials` instead.",

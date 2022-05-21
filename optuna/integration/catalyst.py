@@ -1,6 +1,6 @@
 from packaging import version
 
-from optuna._deprecated import deprecated
+from optuna._deprecated import deprecated_class
 from optuna._imports import try_import
 
 
@@ -17,7 +17,7 @@ if not _imports.is_successful():
     OptunaPruningCallback = object  # NOQA
 
 
-@deprecated("2.7.0", "4.0.0")
+@deprecated_class("2.7.0", "4.0.0")
 class CatalystPruningCallback(OptunaPruningCallback):  # type: ignore
     """Catalyst callback to prune unpromising trials.
 
