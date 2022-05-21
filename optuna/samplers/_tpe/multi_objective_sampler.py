@@ -3,7 +3,7 @@ from typing import Optional
 
 import numpy as np
 
-from optuna._deprecated import deprecated_func
+from optuna._deprecated import deprecated_class
 from optuna.samplers._tpe.sampler import TPESampler
 
 
@@ -18,7 +18,7 @@ def _default_weights_above(x: int) -> np.ndarray:
     return np.ones(x)
 
 
-@deprecated_func("2.9.0", "4.0.0")
+@deprecated_class("2.9.0", "4.0.0")
 class MOTPESampler(TPESampler):
     """Multi-objective sampler using the MOTPE algorithm.
 
