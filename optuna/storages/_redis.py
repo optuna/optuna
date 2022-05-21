@@ -17,7 +17,7 @@ import optuna
 from optuna import distributions
 from optuna import exceptions
 from optuna._deprecated import deprecated_func
-from optuna._experimental import experimental
+from optuna._experimental import experimental_class
 from optuna._imports import try_import
 from optuna.storages import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
@@ -34,7 +34,7 @@ with try_import() as _imports:
     import redis
 
 
-@experimental("1.4.0")
+@experimental_class("1.4.0")
 class RedisStorage(BaseStorage):
     """Storage class for Redis backend.
 

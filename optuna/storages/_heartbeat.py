@@ -1,11 +1,11 @@
 import copy
 
 import optuna
-from optuna._experimental import experimental
+from optuna._experimental import experimental_func
 from optuna.trial import TrialState
 
 
-@experimental("2.9.0")
+@experimental_func("2.9.0")
 def fail_stale_trials(study: "optuna.Study") -> None:
     """Fail stale trials and run their failure callbacks.
 

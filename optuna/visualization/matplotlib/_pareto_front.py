@@ -3,7 +3,7 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 
-from optuna._experimental import experimental
+from optuna._experimental import experimental_func
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.visualization._pareto_front import _get_pareto_front_info
@@ -16,7 +16,7 @@ if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import plt
 
 
-@experimental("2.8.0")
+@experimental_func("2.8.0")
 def plot_pareto_front(
     study: Study,
     *,

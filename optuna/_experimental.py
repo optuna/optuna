@@ -1,12 +1,9 @@
 import functools
-import inspect
 import textwrap
 from typing import Any
 from typing import Callable
 from typing import Optional
-from typing import overload
 from typing import TypeVar
-from typing import Union
 import warnings
 
 from typing_extensions import ParamSpec
@@ -40,11 +37,11 @@ def _get_docstring_indent(docstring: str) -> str:
     return docstring.split("\n")[-1] if "\n" in docstring else ""
 
 
-def experimental(
+def experimental_func(
     version: str,
     name: Optional[str] = None,
-) -> Union[Callable[[CT], CT], Callable[FP, FT]]:
-    """Decorate class or function as experimental.
+) -> Callable[[Callable[FP, FT]], Callable[FP, FT]]:
+    """Decorate function as experimental.
 
     Args:
         version: The first version that supports the target feature.
@@ -53,55 +50,55 @@ def experimental(
 
     _validate_version(version)
 
-    @overload
-    def _experimental_wrapper(f: Callable[FP, FT]) -> Callable[FP, FT]:
-        ...
+    def decorator(func: Callable[FP, FT]) -> Callable[FP, FT]:
+        if func.__doc__ is None:
+            func.__doc__ = ""
 
-    @overload
-    def _experimental_wrapper(f: CT) -> CT:
-        ...
+        note = _EXPERIMENTAL_NOTE_TEMPLATE.format(ver=version)
+        indent = _get_docstring_indent(func.__doc__)
+        func.__doc__ = func.__doc__.strip() + textwrap.indent(note, indent) + indent
 
-    def _experimental_wrapper(f: Any) -> Any:
-        # f is either func or class.
+        @functools.wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> FT:
+            warnings.warn(
+                "{} is experimental (supported from v{}). "
+                "The interface can change in the future.".format(
+                    name if name is not None else func.__name__, version
+                ),
+                ExperimentalWarning,
+                stacklevel=2,
+            )
 
-        def _experimental_func(func: Callable[FP, FT]) -> Callable[FP, FT]:
+            return func(*args, **kwargs)
 
-            if func.__doc__ is None:
-                func.__doc__ = ""
+        return wrapper
 
-            note = _EXPERIMENTAL_NOTE_TEMPLATE.format(ver=version)
-            indent = _get_docstring_indent(func.__doc__)
-            func.__doc__ = func.__doc__.strip() + textwrap.indent(note, indent) + indent
+    return decorator
 
-            # TODO(crcrpar): Annotate this correctly.
-            @functools.wraps(func)
-            def new_func(*args: Any, **kwargs: Any) -> Any:
-                warnings.warn(
-                    "{} is experimental (supported from v{}). "
-                    "The interface can change in the future.".format(
-                        name if name is not None else func.__name__, version
-                    ),
-                    ExperimentalWarning,
-                    stacklevel=2,
-                )
 
-                return func(*args, **kwargs)
+def experimental_class(
+    version: str,
+    name: Optional[str] = None,
+) -> Callable[[CT], CT]:
 
-            return new_func
+    _validate_version(version)
 
-        def _experimental_class(cls: CT) -> CT:
+    def decorator(cls: CT) -> CT:
+
+        def wrapper(cls: CT) -> CT:
             """Decorates a class as experimental.
 
             This decorator is supposed to be applied to the experimental class.
             """
-            _original_init = cls.__init__
+            _original_init = getattr(cls, "__init__")
+            _original_name = getattr(cls, "__name__")
 
             @functools.wraps(_original_init)
             def wrapped_init(self, *args: Any, **kwargs: Any) -> None:  # type: ignore
                 warnings.warn(
                     "{} is experimental (supported from v{}). "
                     "The interface can change in the future.".format(
-                        name if name is not None else cls.__name__, version
+                        name if name is not None else _original_name, version
                     ),
                     ExperimentalWarning,
                     stacklevel=2,
@@ -120,6 +117,6 @@ def experimental(
 
             return cls
 
-        return _experimental_class(f) if inspect.isclass(f) else _experimental_func(f)
+        return wrapper(cls)
 
-    return _experimental_wrapper
+    return decorator

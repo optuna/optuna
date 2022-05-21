@@ -6,7 +6,7 @@ from typing import Optional
 
 import numpy as np
 
-from optuna._experimental import experimental
+from optuna._experimental import experimental_class
 from optuna._imports import try_import
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._mean_decrease_impurity import MeanDecreaseImpurityImportanceEvaluator
@@ -18,7 +18,7 @@ with try_import() as _imports:
     from shap import TreeExplainer
 
 
-@experimental("3.0.0")
+@experimental_class("3.0.0")
 class ShapleyImportanceEvaluator(BaseImportanceEvaluator):
     """Shapley (SHAP) parameter importance evaluator.
 

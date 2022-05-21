@@ -158,12 +158,12 @@ def deprecated_class(
             This decorator is supposed to be applied to the deprecated class.
             """
             _original_init = getattr(cls, "__init__")
-            _name = getattr(cls, "__name__")
+            _original_name = getattr(cls, "__name__")
 
             @functools.wraps(_original_init)
             def wrapped_init(self, *args, **kwargs) -> None:  # type: ignore
                 message = _DEPRECATION_WARNING_TEMPLATE.format(
-                    name=(name if name is not None else _name),
+                    name=(name if name is not None else _original_name),
                     d_ver=deprecated_version,
                     r_ver=removed_version,
                 )

@@ -22,7 +22,7 @@ from optuna import logging
 from optuna import samplers
 from optuna import study as study_module
 from optuna import TrialPruned
-from optuna._experimental import experimental
+from optuna._experimental import experimental_class
 from optuna._imports import try_import
 from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.study import StudyDirection
@@ -358,7 +358,7 @@ class _Objective(object):
             trial.set_user_attr("std_{}".format(name), np.nanstd(array))
 
 
-@experimental("0.17.0")
+@experimental_class("0.17.0")
 class OptunaSearchCV(BaseEstimator):
     """Hyperparameter search with cross-validation.
 

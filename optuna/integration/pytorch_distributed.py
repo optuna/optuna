@@ -8,7 +8,7 @@ from typing import Sequence
 
 import optuna
 from optuna._deprecated import deprecated_func
-from optuna._experimental import experimental
+from optuna._experimental import experimental_class
 from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
@@ -24,7 +24,7 @@ _suggest_deprecated_msg = (
 )
 
 
-@experimental("2.6.0")
+@experimental_class("2.6.0")
 class TorchDistributedTrial(optuna.trial.BaseTrial):
     """A wrapper of :class:`~optuna.trial.Trial` to incorporate Optuna with PyTorch distributed.
 
