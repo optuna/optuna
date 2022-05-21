@@ -84,7 +84,6 @@ def experimental_class(
     _validate_version(version)
 
     def decorator(cls: CT) -> CT:
-
         def wrapper(cls: CT) -> CT:
             """Decorates a class as experimental.
 

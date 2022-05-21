@@ -85,9 +85,7 @@ def deprecated_func(
         if func.__doc__ is None:
             func.__doc__ = ""
 
-        note = _DEPRECATION_NOTE_TEMPLATE.format(
-            d_ver=deprecated_version, r_ver=removed_version
-        )
+        note = _DEPRECATION_NOTE_TEMPLATE.format(d_ver=deprecated_version, r_ver=removed_version)
         if text is not None:
             note += _format_text(text)
         indent = _get_docstring_indent(func.__doc__)
@@ -151,7 +149,6 @@ def deprecated_class(
     _validate_two_version(deprecated_version, removed_version)
 
     def decorator(cls: CT) -> CT:
-
         def wrapper(cls: CT) -> CT:
             """Decorates a class as deprecated.
 
