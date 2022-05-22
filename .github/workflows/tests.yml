@@ -66,10 +66,10 @@ jobs:
         pip install scikit-optimize
         pip install cma
 
-    # TODO(nzw): Move `run` part to the end of `Install` after PyTorch and BoTorch support Python 3.10.
+    # TODO(nzw): Move `run` part to the end of `Install` after Optuna drops Python 3.6 support.
     - name: Install PyTorch and BoTorch.
-      run: pip install botorch torch==1.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
-      if: matrix.python-version != '3.10'
+      run: pip install botorch torch==1.11.0 --extra-index-url https://download.pytorch.org/whl/cpu
+      if: matrix.python-version != '3.6'
 
     - name: Tests
       run: |

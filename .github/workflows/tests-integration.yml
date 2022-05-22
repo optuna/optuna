@@ -54,11 +54,7 @@ jobs:
         optuna --version
 
         pip install --progress-bar off .[tests]
-        pip install --progress-bar off .[integration] -f https://download.pytorch.org/whl/torch_stable.html
-
-        # TODO(nzw0301): remove the version constraint
-        # when resolving https://github.com/optuna/optuna/issues/3418
-        pip install --progress-bar off -U "setuptools==59.5.0"
+        pip install --progress-bar off .[integration] --extra-index-url https://download.pytorch.org/whl/cpu
 
     - name: Tests
       run: |
@@ -66,32 +62,29 @@ jobs:
           pytest tests/integration_tests \
             --ignore tests/integration_tests/allennlp_tests/ \
             --ignore tests/integration_tests/test_botorch.py \
-            --ignore tests/integration_tests/test_keras.py \
-            --ignore tests/integration_tests/test_tensorboard.py \
-            --ignore tests/integration_tests/test_tensorflow.py \
-            --ignore tests/integration_tests/test_tfkeras.py \
-            --ignore tests/integration_tests/test_fastaiv2.py
-        elif [ ${{ matrix.python-version }} = 3.10 ]; then
-          pytest tests/integration_tests \
-            --ignore tests/integration_tests/allennlp_tests/ \
-            --ignore tests/integration_tests/test_botorch.py \
             --ignore tests/integration_tests/test_catalyst.py \
             --ignore tests/integration_tests/test_fastaiv2.py \
+            --ignore tests/integration_tests/test_keras.py \
             --ignore tests/integration_tests/test_pytorch_distributed.py \
             --ignore tests/integration_tests/test_pytorch_ignite.py \
             --ignore tests/integration_tests/test_pytorch_lightning.py \
             --ignore tests/integration_tests/test_skorch.py \
-            --ignore tests/integration_tests/test_fastaiv2.py
+            --ignore tests/integration_tests/test_tensorboard.py \
+            --ignore tests/integration_tests/test_tensorflow.py \
+            --ignore tests/integration_tests/test_tfkeras.py
+
         else
-          pytest -s tests/integration_tests
+          pytest -s tests/integration_tests \
+            --ignore tests/integration_tests/test_pytorch_lightning.py
         fi
 
     - name: Tests MPI
       run: |
         mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
 
-        if [ ${{ matrix.python-version }} != 3.10 ]; then
+        if [ ${{ matrix.python-version }} != 3.6 ]; then
           mpirun -n 2 -- pytest tests/integration_tests/test_pytorch_distributed.py
         fi
+
       env:
         OMP_NUM_THREADS: 1
