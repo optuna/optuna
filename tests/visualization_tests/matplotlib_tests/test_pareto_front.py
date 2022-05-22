@@ -251,6 +251,7 @@ def test_plot_pareto_front_3d(
 
     _check_data(figure, "x", data[actual_axis_order[0]])
     _check_data(figure, "y", data[actual_axis_order[1]])
+    # TODO(fukatani): check z data.
     # _check_data(figure, "z", data[actual_axis_order[2]])
     plt.savefig(BytesIO())
 
