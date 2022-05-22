@@ -13,7 +13,6 @@ from typing import Union
 
 import optuna
 from optuna import distributions
-from optuna._deprecated import deprecated
 from optuna.storages import BaseStorage
 from optuna.storages._rdb.storage import RDBStorage
 from optuna.storages._redis import RedisStorage
@@ -115,15 +114,6 @@ class _CachedStorage(BaseStorage):
     def get_study_id_from_name(self, study_name: str) -> int:
 
         return self._backend.get_study_id_from_name(study_name)
-
-    @deprecated("3.0.0", "4.0.0")
-    def get_study_id_from_trial_id(self, trial_id: int) -> int:
-
-        with self._lock:
-            if trial_id in self._trial_id_to_study_id_and_number:
-                return self._trial_id_to_study_id_and_number[trial_id][0]
-
-        return self._backend.get_study_id_from_trial_id(trial_id)
 
     def get_study_name_from_id(self, study_id: int) -> str:
 
