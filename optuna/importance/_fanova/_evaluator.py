@@ -3,11 +3,17 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
+import numpy
+
+from optuna._transform import _SearchSpaceTransform
+from optuna.importance._base import _get_distributions
+from optuna.importance._base import _get_filtered_trials
+from optuna.importance._base import _get_target_values
+from optuna.importance._base import _get_trans_params
+from optuna.importance._base import _param_importances_to_dict
+from optuna.importance._base import _split_distributions
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova._fanova import _Fanova
-from optuna.importance._utils import _gather_importance_values
-from optuna.importance._utils import _gather_study_info
-from optuna.importance._utils import _StudyInfo
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 
@@ -70,42 +76,38 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
     def evaluate(
         self,
         study: Study,
-        params: Optional[List[str]] = None,
-        *,
-        target: Optional[Callable[[FrozenTrial], float]] = None,
+        params: List[str],
+        target: Callable[[FrozenTrial], float],
     ) -> Dict[str, float]:
 
-        info: _StudyInfo
-        info = _gather_study_info(study, params=params, target=target)
+        distributions = _get_distributions(study, params=params)
+        non_single_distributions, single_distributions = _split_distributions(distributions)
 
-        importances = {}
-        if len(info.non_single_distributions) > 0:
-            trans = info.trans
-            assert trans is not None
+        if len(non_single_distributions) == 0:
+            return {}
 
-            trans_bounds = trans.bounds
-            column_to_encoded_columns = trans.column_to_encoded_columns
+        trials: List[FrozenTrial] = _get_filtered_trials(study, params=params, target=target)
 
-            # Many (deep) copies of the search spaces are required during the tree traversal and
-            # using Optuna distributions will create a bottleneck.
-            # Therefore, search spaces (parameter distributions) are represented by a single
-            # `numpy.ndarray`, coupled with a list of flags that indicate whether they are
-            # categorical or not.
+        trans = _SearchSpaceTransform(
+            non_single_distributions, transform_log=False, transform_step=False
+        )
 
-            evaluator = self._evaluator
-            evaluator.fit(
-                X=info.trans_params,
-                y=info.trans_values,
-                search_spaces=trans_bounds,
-                column_to_encoded_columns=column_to_encoded_columns,
-            )
+        trans_params: numpy.ndarray = _get_trans_params(trials, trans)
+        values: numpy.ndarray = _get_target_values(trials, target)
 
-            for i, name in enumerate(info.non_single_distributions.keys()):
-                importance, _ = evaluator.get_importance((i,))
-                importances[name] = importance
+        evaluator = self._evaluator
+        evaluator.fit(
+            X=trans_params,
+            y=values,
+            search_spaces=trans.bounds,
+            column_to_encoded_columns=trans.column_to_encoded_columns,
+        )
+        param_importances = numpy.array(
+            [evaluator.get_importance((i,))[0] for i in range(trans.num_params)]
+        )
+        param_importances /= numpy.sum(param_importances)
 
-            total_importance = sum(importances.values())
-            for name in importances:
-                importances[name] /= total_importance
-
-        return _gather_importance_values(importances, info.single_distributions)
+        return {
+            **_param_importances_to_dict(non_single_distributions.keys(), param_importances),
+            **_param_importances_to_dict(single_distributions.keys(), 0.0),
+        }

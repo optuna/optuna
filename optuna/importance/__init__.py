@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from typing import Callable
 from typing import Dict
 from typing import List
@@ -6,6 +7,7 @@ from typing import Optional
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova import FanovaImportanceEvaluator
 from optuna.importance._mean_decrease_impurity import MeanDecreaseImpurityImportanceEvaluator
+from optuna.samplers._search_space.intersection import intersection_search_space
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 
@@ -87,4 +89,29 @@ def get_param_importances(
     if not isinstance(evaluator, BaseImportanceEvaluator):
         raise TypeError("Evaluator must be a subclass of BaseImportanceEvaluator.")
 
-    return evaluator.evaluate(study, params=params, target=target)
+    if target is None:
+        if study._is_multi_objective():
+            raise ValueError(
+                "If the `study` is being used for multi-objective optimization, "
+                "please specify the `target`. For example, use "
+                "`target=lambda t: t.values[0]` for the first objective value."
+            )
+
+        def default_target(trial: FrozenTrial) -> float:
+            val: Optional[float] = trial.value
+            assert val is not None
+            return val
+
+        target = default_target
+
+    if params is None:
+        params = list(intersection_search_space(study, ordered_dict=True).keys())
+
+    importances = evaluator.evaluate(study, params=params, target=target)
+
+    # Sort the importances in descending order.
+    return OrderedDict(
+        reversed(
+            sorted(importances.items(), key=lambda name_and_importance: name_and_importance[1])
+        )
+    )
