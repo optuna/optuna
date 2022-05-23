@@ -52,10 +52,10 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
    For float, integer, or categorical parameters, see :ref:`configurations` tutorial.
 
    For pruning, see :ref:`pruning` tutorial.
-
+   
    For multivariate optimization, see :class:`~optuna.samplers.BaseSampler`. The multivariate optimization is implemented as :func:`~optuna.samplers.BaseSampler.sample_relative` in Optuna. Please check the concrete documents of samplers for more details.
 
-   For conditional search space, see :ref:`configurations` tutorial and :class:`~optuna.samplers.TPESampler`. The ``group`` option of :class:`~optuna.samplers.TPESampler` allows :class:`~optuna.samplers.TPESampler`to handle the conditional search space.
+   For conditional search space, see :ref:`configurations` tutorial and :class:`~optuna.samplers.TPESampler`. The ``group`` option of :class:`~optuna.samplers.TPESampler` allows :class:`~optuna.samplers.TPESampler` to handle the conditional search space.
 
    For multi-objective optimization, see :ref:`multi_objective` tutorial.
 
