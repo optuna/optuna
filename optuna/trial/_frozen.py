@@ -28,8 +28,9 @@ CategoricalChoiceType = Union[None, bool, int, float, str]
 class FrozenTrial(BaseTrial):
     """Status and results of a :class:`~optuna.trial.Trial`.
 
-    This object has the same methods as :class:`~optuna.trial.Trial`, and it suggests best
-    parameter values among performed trials. In contrast to :class:`~optuna.trial.Trial`,
+    This object has the same methods as :class:`~optuna.trial.Trial`, and it suggests the same
+    parameter values as in :attr:`params`; it does not sample any value from a distribution.
+    In contrast to :class:`~optuna.trial.Trial`,
     :class:`~optuna.trial.FrozenTrial` does not depend on :class:`~optuna.study.Study`, and it is
     useful for deploying optimization results.
 
@@ -103,9 +104,11 @@ class FrozenTrial(BaseTrial):
             :class:`TrialState` of the :class:`~optuna.trial.Trial`.
         value:
             Objective value of the :class:`~optuna.trial.Trial`.
+            ``value`` and ``values`` must not be specified at the same time.
         values:
             Sequence of objective values of the :class:`~optuna.trial.Trial`.
             The length is greater than 1 if the problem is multi-objective optimization.
+            ``value`` and ``values`` must not be specified at the same time.
         datetime_start:
             Datetime where the :class:`~optuna.trial.Trial` started.
         datetime_complete:
@@ -118,9 +121,6 @@ class FrozenTrial(BaseTrial):
         intermediate_values:
             Intermediate objective values set with :func:`optuna.trial.Trial.report`.
 
-    Raises:
-        :exc:`ValueError`:
-            If both ``value`` and ``values`` are specified.
     """
 
     def __init__(
@@ -454,7 +454,7 @@ class FrozenTrial(BaseTrial):
 
     @property
     def last_step(self) -> Optional[int]:
-        """Return the maximum step of `intermediate_values` in the trial.
+        """Return the maximum step of :attr:`intermediate_values` in the trial.
 
         Returns:
             The maximum step of intermediates.
@@ -536,10 +536,12 @@ def create_trial(
             Trial state.
         value:
             Trial objective value. Must be specified if ``state`` is :class:`TrialState.COMPLETE`.
+            ``value`` and ``values`` must not be specified at the same time.
         values:
             Sequence of the trial objective values. The length is greater than 1 if the problem is
             multi-objective optimization.
             Must be specified if ``state`` is :class:`TrialState.COMPLETE`.
+            ``value`` and ``values`` must not be specified at the same time.
         params:
             Dictionary with suggested parameters of the trial.
         distributions:
@@ -553,10 +555,6 @@ def create_trial(
 
     Returns:
         Created trial.
-
-    Raises:
-        :exc:`ValueError`:
-            If both ``value`` and ``values`` are specified.
     """
 
     params = params or {}

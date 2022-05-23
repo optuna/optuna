@@ -16,6 +16,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _check_plot_args
+from optuna.visualization._utils import _filter_nonfinite
 from optuna.visualization._utils import _get_skipped_trial_numbers
 from optuna.visualization._utils import _is_categorical
 from optuna.visualization._utils import _is_log_scale
@@ -79,11 +80,6 @@ def plot_parallel_coordinate(
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
-
-    Raises:
-        :exc:`ValueError`:
-            If ``target`` is :obj:`None` and ``study`` is being used for multi-objective
-            optimization.
     """
 
     _imports.check()
@@ -101,7 +97,9 @@ def _get_parallel_coordinate_plot(
     layout = go.Layout(title="Parallel Coordinate Plot")
     reverse_scale = _is_reverse_scale(study, target)
 
-    trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
+    trials = _filter_nonfinite(
+        study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
+    )
 
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")

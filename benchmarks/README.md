@@ -148,3 +148,50 @@ Allowed models are `[kNN, SVM, DT, RF, MLP-sgd, ada, linear]` and allowed datase
 ```
 
 You'll find benchmark artifacts in `plots` and `report` directories.
+
+
+## Performance Benchmarks with `NASLib`
+
+This workflow allows to benchmark optimization algorithms available in Optuna with [`NASLib`](https://github.com/automl/NASLib). NASLib has an abstraction over a number of NAS benchmarks. Currently only NAS-Bench-201 is supported. This benchmark can be run on GitHub Actions or locally.
+
+
+### How to run on the GitHub Actions
+
+Please follow the same steps as in [Performance Benchmarks with `kurobako`](#performance-benchmarks-with-kurobako), except that you need to select `Performance benchmarks with NASLib` in step 3.
+
+### How to Run Locally
+
+In order to run NASLib benchmarks, you need the following dependencies:
+* [`NASLib`](https://github.com/automl/NASLib) and necessary data files (Currently, [`nb201_cifar10_full_training.pickle`](https://drive.google.com/file/d/1sh8pEhdrgZ97-VFBVL94rI36gedExVgJ/view?usp=sharing), [`nb201_cifar100_full_training.pickle`](https://drive.google.com/file/d/1hV6-mCUKInIK1iqZ0jfBkcKaFmftlBtp/view?usp=sharing) and [`nb201_ImageNet16_full_training.pickle`](https://drive.google.com/file/d/1FVCn54aQwD6X6NazaIZ_yjhj47mOGdIH/view?usp=sharing) are needed.)
+* [`kurobako`](https://github.com/optuna/kurobako)
+* [`kurobako-py`](https://github.com/optuna/kurobako-py)
+* `gnuplot`
+
+Please see each page for the detailed instructions. In short, `NASLib` can be installed by cloning the [NASLib](https://github.com/automl/NASLib), downloading all the data files under `NASLib/naslib/data/` repository from GitHub, and running 
+```
+$ pip3 install -e .
+```
+
+You also need to set up `kurobako` command in the same way as we have described. After this, `kurobako-py` can be installed with
+```
+$ pip3 install kurobako
+```
+
+
+Finally, you can run the script of `benchmarks/run_naslib.py`.
+```bash
+$ python3 benchmarks/run_naslib.py \   
+            --path-to-kurobako "" \
+            --name "performance-benchmarks" \
+            --n-runs 10 \
+            --n-jobs 10 \
+            --sampler-list "RandomSampler TPESampler" \
+            --sampler-kwargs-list "{} {}" \
+            --pruner-list "NopPruner" \
+            --pruner-kwargs-list "{}" \
+            --seed 0 \
+            --out-dir "out"
+```
+Please see `benchmarks/run_naslib.py` to check the arguments and those default values.
+
+

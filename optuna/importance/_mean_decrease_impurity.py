@@ -13,6 +13,7 @@ from optuna.importance._base import BaseImportanceEvaluator
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+from optuna.visualization._utils import _filter_nonfinite
 
 
 with try_import() as _imports:
@@ -52,6 +53,9 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
             min_samples_leaf=1,
             random_state=seed,
         )
+        self._trans_params = numpy.empty(0)
+        self._trans_values = numpy.empty(0)
+        self._param_names: List[str] = list()
 
     def evaluate(
         self,
@@ -72,9 +76,9 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
             return OrderedDict()
 
         trials = []
-        for trial in study.trials:
-            if trial.state != TrialState.COMPLETE:
-                continue
+        for trial in _filter_nonfinite(
+            study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
+        ):
             if any(name not in trial.params for name in distributions.keys()):
                 continue
             trials.append(trial)
@@ -82,27 +86,27 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
         trans = _SearchSpaceTransform(distributions, transform_log=False, transform_step=False)
 
         n_trials = len(trials)
-        trans_params = numpy.empty((n_trials, trans.bounds.shape[0]), dtype=numpy.float64)
-        trans_values = numpy.empty(n_trials, dtype=numpy.float64)
+        self._trans_params = numpy.empty((n_trials, trans.bounds.shape[0]), dtype=numpy.float64)
+        self._trans_values = numpy.empty(n_trials, dtype=numpy.float64)
 
         for trial_idx, trial in enumerate(trials):
-            trans_params[trial_idx] = trans.transform(trial.params)
-            trans_values[trial_idx] = trial.value if target is None else target(trial)
+            self._trans_params[trial_idx] = trans.transform(trial.params)
+            self._trans_values[trial_idx] = trial.value if target is None else target(trial)
 
         encoded_column_to_column = trans.encoded_column_to_column
 
-        if trans_params.size == 0:  # `params` were given but as an empty list.
+        if self._trans_params.size == 0:  # `params` were given but as an empty list.
             return OrderedDict()
 
         forest = self._forest
-        forest.fit(trans_params, trans_values)
+        forest.fit(self._trans_params, self._trans_values)
         feature_importances = forest.feature_importances_
         feature_importances_reduced = numpy.zeros(len(distributions))
         numpy.add.at(feature_importances_reduced, encoded_column_to_column, feature_importances)
 
         param_importances = OrderedDict()
-        param_names = list(distributions.keys())
+        self._param_names = list(distributions.keys())
         for i in feature_importances_reduced.argsort()[::-1]:
-            param_importances[param_names[i]] = feature_importances_reduced[i].item()
+            param_importances[self._param_names[i]] = feature_importances_reduced[i].item()
 
         return param_importances

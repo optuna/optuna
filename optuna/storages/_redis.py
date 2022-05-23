@@ -63,9 +63,11 @@ class RedisStorage(BaseStorage):
             study.optimize(objective)
 
     Args:
-        url: URL of the redis storage, password and db are optional. (ie: redis://localhost:6379)
+        url:
+            URL of the redis storage, password and db are optional. (ie: redis://localhost:6379)
         heartbeat_interval:
             Interval to record the heartbeat. It is recorded every ``interval`` seconds.
+            ``heartbeat_interval`` must be :obj:`None` or a positive integer.
 
             .. note::
                 The heartbeat is supposed to be used with :meth:`~optuna.study.Study.optimize`.
@@ -74,6 +76,7 @@ class RedisStorage(BaseStorage):
 
         grace_period:
             Grace period before a running trial is failed from the last heartbeat.
+            ``grace_period`` must be :obj:`None` or a positive integer.
             If it is :obj:`None`, the grace period will be `2 * heartbeat_interval`.
         failed_trial_callback:
             A callback function that is invoked after failing each stale trial.
@@ -89,9 +92,6 @@ class RedisStorage(BaseStorage):
         make sure Redis in installed and running.
         Please execute ``$ pip install -U redis`` to install redis python library.
 
-    Raises:
-        :exc:`ValueError`:
-            If the given `heartbeat_interval` or `grace_period` is not a positive integer.
     """
 
     def __init__(
@@ -515,7 +515,7 @@ class RedisStorage(BaseStorage):
 
             _direction = self.get_study_directions(study_id)
             if len(_direction) > 1:
-                raise ValueError(
+                raise RuntimeError(
                     "Best trial can be obtained only for single-objective optimization."
                 )
             direction = _direction[0]
