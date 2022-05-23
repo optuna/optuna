@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 import numpy as np
 import pytest
 import scipy as sp
@@ -8,7 +10,6 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import SGDClassifier
 from sklearn.neighbors import KernelDensity
 
-import optuna
 from optuna import distributions
 from optuna import integration
 from optuna.study import create_study
@@ -361,33 +362,31 @@ def test_optuna_search_convert_deprecated_distribution() -> None:
 
 
 def test_callbacks() -> None:
-    class DummyCallback:
-        def __init__(self) -> None:
-            self.n_calls = 0
+    callbacks = []
 
-        def __call__(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> None:
-            self.n_calls += 1
+    for _ in range(2):
+        callback = MagicMock()
+        callback.__call__ = MagicMock(return_value=None)  # type: ignore
+        callbacks.append(callback)
 
-    callback1 = DummyCallback()
-    callback2 = DummyCallback()
-
+    n_trials = 5
     X, y = make_blobs(n_samples=10)
     est = SGDClassifier(max_iter=5, tol=1e-03)
-    param_dist = {}  # type: ignore
+    param_dist = {"alpha": distributions.FloatDistribution(1e-04, 1e03, log=True)}
     optuna_search = integration.OptunaSearchCV(
         est,
         param_dist,
         cv=3,
         enable_pruning=True,
         max_iter=5,
-        n_trials=5,
+        n_trials=n_trials,
         error_score=np.nan,
-        random_state=0,
-        return_train_score=True,
-        callbacks=[callback1, callback2],
+        callbacks=callbacks,  # type: ignore
     )
 
     optuna_search.fit(X, y)
 
-    assert callback1.n_calls == optuna_search.n_trials_
-    assert callback2.n_calls == optuna_search.n_trials_
+    for callback in callbacks:
+        for trial in optuna_search.trials_:
+            callback.assert_any_call(optuna_search.study_, trial)
+        assert callback.call_count == n_trials
