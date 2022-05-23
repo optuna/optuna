@@ -132,7 +132,7 @@ class RDBStorage(BaseStorage):
             A dictionary of keyword arguments that is passed to
             `sqlalchemy.engine.create_engine`_ function.
         skip_compatibility_check:
-            Flag to skip schema compatibility check if set to True.
+            Flag to skip schema compatibility check if set to :obj:`True`.
         heartbeat_interval:
             Interval to record the heartbeat. It is recorded every ``interval`` seconds.
             ``heartbeat_interval`` must be :obj:`None` or a positive integer.
@@ -154,6 +154,9 @@ class RDBStorage(BaseStorage):
             .. note::
                 The procedure to fail existing stale trials is called just before asking the
                 study for a new trial.
+
+        skip_table_creation:
+            Flag to skip table creation if set to :obj:`True`.
 
     .. _sqlalchemy.engine.create_engine:
         https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine
@@ -191,6 +194,7 @@ class RDBStorage(BaseStorage):
         heartbeat_interval: Optional[int] = None,
         grace_period: Optional[int] = None,
         failed_trial_callback: Optional[Callable[["optuna.Study", FrozenTrial], None]] = None,
+        skip_table_creation: bool = False,
     ) -> None:
 
         self.engine_kwargs = engine_kwargs or {}
@@ -217,7 +221,8 @@ class RDBStorage(BaseStorage):
         self.scoped_session = sqlalchemy_orm.scoped_session(
             sqlalchemy_orm.sessionmaker(bind=self.engine)
         )
-        models.BaseModel.metadata.create_all(self.engine)
+        if not skip_table_creation:
+            models.BaseModel.metadata.create_all(self.engine)
 
         self._version_manager = _VersionManager(self.url, self.engine, self.scoped_session)
         if not skip_compatibility_check:
