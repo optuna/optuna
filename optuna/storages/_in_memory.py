@@ -120,13 +120,6 @@ class InMemoryStorage(BaseStorage):
 
             return self._study_name_to_id[study_name]
 
-    def get_study_id_from_trial_id(self, trial_id: int) -> int:
-
-        with self._lock:
-            self._check_trial_id(trial_id)
-
-            return self._trial_id_to_study_id_and_number[trial_id][0]
-
     def get_study_name_from_id(self, study_id: int) -> str:
 
         with self._lock:
@@ -287,7 +280,7 @@ class InMemoryStorage(BaseStorage):
             if best_trial_id is None:
                 raise ValueError("No trials are completed yet.")
             elif len(self._studies[study_id].directions) > 1:
-                raise ValueError(
+                raise RuntimeError(
                     "Best trial can be obtained only for single-objective optimization."
                 )
             return self.get_trial(best_trial_id)
@@ -382,8 +375,6 @@ class InMemoryStorage(BaseStorage):
             trial = self._get_trial(trial_id)
             self.check_trial_is_updatable(trial_id, trial.state)
 
-            self.check_trial_is_updatable(trial_id, trial.state)
-
             trial = copy.copy(trial)
             trial.user_attrs = copy.copy(trial.user_attrs)
             trial.user_attrs[key] = value
@@ -393,8 +384,6 @@ class InMemoryStorage(BaseStorage):
 
         with self._lock:
             trial = self._get_trial(trial_id)
-            self.check_trial_is_updatable(trial_id, trial.state)
-
             self.check_trial_is_updatable(trial_id, trial.state)
 
             trial = copy.copy(trial)

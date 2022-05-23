@@ -10,7 +10,6 @@ import torch.nn.functional as F
 
 import optuna
 from optuna.integration import PyTorchLightningPruningCallback
-from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
 from optuna.testing.storage import StorageSupplier
 
@@ -120,7 +119,7 @@ def test_pytorch_lightning_pruning_callback() -> None:
 def test_pytorch_lightning_pruning_callback_monitor_is_invalid() -> None:
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
-    trial = create_running_trial(study, 1.0)
+    trial = study.ask()
     callback = PyTorchLightningPruningCallback(trial, "InvalidMonitor")
 
     trainer = pl.Trainer(

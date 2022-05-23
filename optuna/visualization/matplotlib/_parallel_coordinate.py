@@ -14,6 +14,7 @@ from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._utils import _check_plot_args
+from optuna.visualization._utils import _filter_nonfinite
 from optuna.visualization._utils import _get_skipped_trial_numbers
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 from optuna.visualization.matplotlib._utils import _is_categorical
@@ -112,8 +113,9 @@ def _get_parallel_coordinate_plot(
     ax.spines["bottom"].set_visible(False)
 
     # Prepare data for plotting.
-    trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
-
+    trials = _filter_nonfinite(
+        study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
+    )
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
         return ax
@@ -213,7 +215,6 @@ def _get_parallel_coordinate_plot(
         ax2.spines["top"].set_visible(False)
         ax2.spines["bottom"].set_visible(False)
         ax2.xaxis.set_visible(False)
-        ax2.plot([1] * len(param_values[i]), param_values[i], visible=False)
         ax2.spines["right"].set_position(("axes", (i + 1) / len(sorted_params)))
         if p_name in cat_param_names:
             idx = cat_param_names.index(p_name)

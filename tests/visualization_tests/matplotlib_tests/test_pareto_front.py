@@ -79,7 +79,9 @@ def test_plot_pareto_front_2d(
     plt.savefig(BytesIO())
 
     # Test with `target_names` argument.
-    with pytest.raises(ValueError):
+    error_message = "The length of `target_names` is supposed to be 2."
+
+    with pytest.raises(ValueError, match=error_message):
         plot_pareto_front(
             study=study,
             target_names=[],
@@ -87,7 +89,7 @@ def test_plot_pareto_front_2d(
             targets=targets,
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=error_message):
         plot_pareto_front(
             study=study,
             target_names=["Foo"],
@@ -95,7 +97,7 @@ def test_plot_pareto_front_2d(
             targets=targets,
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=error_message):
         plot_pareto_front(
             study=study,
             target_names=["Foo", "Bar", "Baz"],
@@ -197,7 +199,9 @@ def test_plot_pareto_front_3d(
     plt.savefig(BytesIO())
 
     # Test with `target_names` argument.
-    with pytest.raises(ValueError):
+    error_message = "The length of `target_names` is supposed to be 3."
+
+    with pytest.raises(ValueError, match=error_message):
         plot_pareto_front(
             study=study,
             target_names=[],
@@ -206,7 +210,7 @@ def test_plot_pareto_front_3d(
             targets=targets,
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=error_message):
         plot_pareto_front(
             study=study,
             target_names=["Foo"],
@@ -215,7 +219,7 @@ def test_plot_pareto_front_3d(
             targets=targets,
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=error_message):
         plot_pareto_front(
             study=study,
             target_names=["Foo", "Bar"],
@@ -224,7 +228,7 @@ def test_plot_pareto_front_3d(
             targets=targets,
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=error_message):
         plot_pareto_front(
             study=study,
             target_names=["Foo", "Bar", "Baz", "Qux"],
@@ -269,19 +273,26 @@ def test_plot_pareto_front_3d(
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
 def test_plot_pareto_front_unsupported_dimensions(include_dominated_trials: bool) -> None:
+
+    error_message = (
+        "`plot_pareto_front` function only supports 2 or 3 objective"
+        " studies when using `targets` is `None`. Please use `targets`"
+        " if your objective studies have more than 3 objectives."
+    )
+
     # Unsupported: n_objectives == 1.
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=error_message):
         study = optuna.create_study(directions=["minimize"])
         study.optimize(lambda t: [0], n_trials=1)
         plot_pareto_front(study=study, include_dominated_trials=include_dominated_trials)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=error_message):
         study = optuna.create_study(direction="minimize")
         study.optimize(lambda t: [0], n_trials=1)
         plot_pareto_front(study=study, include_dominated_trials=include_dominated_trials)
 
     # Unsupported: n_objectives == 4.
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=error_message):
         study = optuna.create_study(directions=["minimize", "minimize", "minimize", "minimize"])
         study.optimize(lambda t: [0, 0, 0, 0], n_trials=1)
         plot_pareto_front(study=study, include_dominated_trials=include_dominated_trials)
@@ -357,15 +368,7 @@ def test_plot_pareto_front_targets_without_target_names() -> None:
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
-@pytest.mark.parametrize(
-    "targets",
-    [
-        lambda t: (t.values[0]),
-    ],
-)
-def test_plot_pareto_front_invalid_target_values(
-    targets: Optional[Callable[[FrozenTrial], Sequence[float]]]
-) -> None:
+def test_plot_pareto_front_invalid_target_values() -> None:
     study = optuna.create_study(directions=["minimize", "minimize", "minimize", "minimize"])
     study.optimize(lambda t: [0, 0, 0, 0], n_trials=3)
     with pytest.raises(
@@ -375,7 +378,7 @@ def test_plot_pareto_front_invalid_target_values(
     ):
         plot_pareto_front(
             study=study,
-            targets=targets,
+            targets=lambda t: t.values[0],
         )
 
 

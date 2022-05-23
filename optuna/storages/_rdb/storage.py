@@ -358,14 +358,6 @@ class RDBStorage(BaseStorage):
 
         return study_id
 
-    def get_study_id_from_trial_id(self, trial_id: int) -> int:
-
-        with _create_scoped_session(self.scoped_session) as session:
-            trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-            study_id = trial.study_id
-
-        return study_id
-
     def get_study_name_from_id(self, study_id: int) -> str:
 
         with _create_scoped_session(self.scoped_session) as session:
@@ -1093,7 +1085,7 @@ class RDBStorage(BaseStorage):
         with _create_scoped_session(self.scoped_session) as session:
             _directions = self.get_study_directions(study_id)
             if len(_directions) > 1:
-                raise ValueError(
+                raise RuntimeError(
                     "Best trial can be obtained only for single-objective optimization."
                 )
             direction = _directions[0]

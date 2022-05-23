@@ -111,7 +111,9 @@ def test_plot_pareto_front_2d(
     assert figure.layout.yaxis.title.text == titles[actual_axis_order[1]]
 
     # Test with `target_names` argument.
-    with pytest.raises(ValueError):
+    error_message = "The length of `target_names` is supposed to be 2."
+
+    with pytest.raises(ValueError, match=error_message):
         plot_pareto_front(
             study=study,
             target_names=[],
@@ -119,7 +121,7 @@ def test_plot_pareto_front_2d(
             targets=targets,
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=error_message):
         plot_pareto_front(
             study=study,
             target_names=["Foo"],
@@ -127,7 +129,7 @@ def test_plot_pareto_front_2d(
             targets=targets,
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=error_message):
         plot_pareto_front(
             study=study,
             target_names=["Foo", "Bar", "Baz"],
@@ -232,7 +234,9 @@ def test_plot_pareto_front_3d(
     assert figure.layout.scene.zaxis.title.text == titles[actual_axis_order[2]]
 
     # Test with `target_names` argument.
-    with pytest.raises(ValueError):
+    error_message = "The length of `target_names` is supposed to be 3."
+
+    with pytest.raises(ValueError, match=error_message):
         plot_pareto_front(
             study=study,
             target_names=[],
@@ -241,7 +245,7 @@ def test_plot_pareto_front_3d(
             targets=targets,
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=error_message):
         plot_pareto_front(
             study=study,
             target_names=["Foo"],
@@ -250,7 +254,7 @@ def test_plot_pareto_front_3d(
             targets=targets,
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=error_message):
         plot_pareto_front(
             study=study,
             target_names=["Foo", "Bar"],
@@ -259,7 +263,7 @@ def test_plot_pareto_front_3d(
             targets=targets,
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=error_message):
         plot_pareto_front(
             study=study,
             target_names=["Foo", "Bar", "Baz", "Qux"],
@@ -282,8 +286,14 @@ def test_plot_pareto_front_unsupported_dimensions(
 ) -> None:
     constraints_func = (lambda x: [-1.0]) if use_constraints_func else None
 
+    error_message = (
+        "`plot_pareto_front` function only supports 2 or 3 objective"
+        " studies when using `targets` is `None`. Please use `targets`"
+        " if your objective studies have more than 3 objectives."
+    )
+
     # Unsupported: n_objectives == 1.
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=error_message):
         study = optuna.create_study(directions=["minimize"])
         study.optimize(lambda t: [0], n_trials=1)
         plot_pareto_front(
@@ -292,7 +302,7 @@ def test_plot_pareto_front_unsupported_dimensions(
             constraints_func=constraints_func,
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=error_message):
         study = optuna.create_study(direction="minimize")
         study.optimize(lambda t: [0], n_trials=1)
         plot_pareto_front(
@@ -302,7 +312,7 @@ def test_plot_pareto_front_unsupported_dimensions(
         )
 
     # Unsupported: n_objectives == 4.
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=error_message):
         study = optuna.create_study(directions=["minimize", "minimize", "minimize", "minimize"])
         study.optimize(lambda t: [0, 0, 0, 0], n_trials=1)
         plot_pareto_front(
@@ -367,6 +377,71 @@ def test_plot_pareto_front_invalid_axis_order(
             include_dominated_trials=include_dominated_trials,
             axis_order=invalid_axis_order,
             constraints_func=constraints_func,
+        )
+
+
+def test_plot_pareto_front_targets_without_target_names() -> None:
+    study = optuna.create_study(directions=["minimize", "minimize", "minimize"])
+    with pytest.raises(
+        ValueError,
+        match="If `targets` is specified for empty studies, `target_names` must be specified.",
+    ):
+        plot_pareto_front(
+            study=study,
+            target_names=None,
+            targets=lambda t: (t.values[0], t.values[1], t.values[2]),
+        )
+
+
+def test_plot_pareto_front_invalid_target_values() -> None:
+    study = optuna.create_study(directions=["minimize", "minimize", "minimize", "minimize"])
+    study.optimize(lambda t: [0, 0, 0, 0], n_trials=3)
+    with pytest.raises(
+        ValueError,
+        match="targets` should return a sequence of target values. your `targets`"
+        " returns <class 'float'>",
+    ):
+        plot_pareto_front(
+            study=study,
+            targets=lambda t: t.values[0],
+        )
+
+
+@pytest.mark.parametrize(
+    "targets",
+    [
+        lambda t: (t.values[0],),
+        lambda t: (t.values[0], t.values[1], t.values[2], t.values[3]),
+    ],
+)
+def test_plot_pareto_front_n_targets_unsupported(
+    targets: Callable[[FrozenTrial], Sequence[float]]
+) -> None:
+    study = optuna.create_study(directions=["minimize", "minimize", "minimize", "minimize"])
+    study.optimize(lambda t: [0, 0, 0, 0], n_trials=3)
+    n_targets = len(targets(study.best_trials[0]))
+    with pytest.raises(
+        ValueError,
+        match="`plot_pareto_front` function only supports 2 or 3 targets."
+        " you used {} targets now.".format(n_targets),
+    ):
+        plot_pareto_front(
+            study=study,
+            targets=targets,
+        )
+
+
+def test_plot_pareto_front_using_axis_order_and_targets() -> None:
+    study = optuna.create_study(directions=["minimize", "minimize", "minimize"])
+    with pytest.raises(
+        ValueError,
+        match="Using both `targets` and `axis_order` is not supported."
+        " Use either `targets` or `axis_order`.",
+    ):
+        plot_pareto_front(
+            study=study,
+            axis_order=[0, 1, 2],
+            targets=lambda t: (t.values[0], t.values[1], t.values[2]),
         )
 
 

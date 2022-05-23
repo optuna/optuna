@@ -5,7 +5,6 @@ import pytest
 
 import optuna
 from optuna.integration import KerasPruningCallback
-from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
 
 
@@ -43,7 +42,7 @@ def test_keras_pruning_callback(interval: int, epochs: int) -> None:
 def test_keras_pruning_callback_observation_isnan() -> None:
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
-    trial = create_running_trial(study, 1.0)
+    trial = study.ask()
     callback = KerasPruningCallback(trial, "loss")
 
     with pytest.raises(optuna.TrialPruned):
@@ -56,7 +55,7 @@ def test_keras_pruning_callback_observation_isnan() -> None:
 def test_keras_pruning_callback_monitor_is_invalid() -> None:
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
-    trial = create_running_trial(study, 1.0)
+    trial = study.ask()
     callback = KerasPruningCallback(trial, "InvalidMonitor")
 
     with pytest.warns(UserWarning):

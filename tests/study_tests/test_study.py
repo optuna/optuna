@@ -1009,8 +1009,7 @@ def test_log_completed_trial_skip_storage_access() -> None:
 
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
         study._log_completed_trial(frozen_trial)
-        # Trial.best_trial and Trial.best_params access storage.
-        assert mock_object.call_count == 2
+        assert mock_object.call_count == 1
 
     logging.set_verbosity(logging.WARNING)
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
@@ -1020,7 +1019,7 @@ def test_log_completed_trial_skip_storage_access() -> None:
     logging.set_verbosity(logging.DEBUG)
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
         study._log_completed_trial(frozen_trial)
-        assert mock_object.call_count == 2
+        assert mock_object.call_count == 1
 
 
 def test_create_study_with_multi_objectives() -> None:

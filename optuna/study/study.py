@@ -948,14 +948,15 @@ class Study:
                 )
             )
         elif len(trial.values) == 1:
+            best_trial = self.best_trial
             _logger.info(
                 "Trial {} finished with value: {} and parameters: {}. "
                 "Best is trial {} with value: {}.".format(
                     trial.number,
                     trial.values[0],
                     trial.params,
-                    self.best_trial.number,
-                    self.best_value,
+                    best_trial.number,
+                    best_trial.value,
                 )
             )
         else:

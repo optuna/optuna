@@ -115,14 +115,6 @@ class _CachedStorage(BaseStorage):
 
         return self._backend.get_study_id_from_name(study_name)
 
-    def get_study_id_from_trial_id(self, trial_id: int) -> int:
-
-        with self._lock:
-            if trial_id in self._trial_id_to_study_id_and_number:
-                return self._trial_id_to_study_id_and_number[trial_id][0]
-
-        return self._backend.get_study_id_from_trial_id(trial_id)
-
     def get_study_name_from_id(self, study_id: int) -> str:
 
         with self._lock:
