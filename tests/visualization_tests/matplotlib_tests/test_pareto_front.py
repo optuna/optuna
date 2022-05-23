@@ -7,7 +7,6 @@ from typing import Sequence
 from typing import Union
 
 from matplotlib.axes._axes import Axes
-import matplotlib.figure
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma.testutils
