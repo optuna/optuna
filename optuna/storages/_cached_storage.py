@@ -389,9 +389,6 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
     def _get_stale_trial_ids(self, study_id: int) -> List[int]:
         return self._backend._get_stale_trial_ids(study_id)
 
-    def _is_heartbeat_supported(self) -> bool:
-        return self._backend._is_heartbeat_supported()
-
     def get_heartbeat_interval(self) -> Optional[int]:
         return self._backend.get_heartbeat_interval()
 

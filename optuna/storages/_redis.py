@@ -779,9 +779,6 @@ class RedisStorage(BaseStorage, BaseHeartbeat):
         seconds, microseconds = self._redis.time()
         return seconds + microseconds * 1e-6
 
-    def _is_heartbeat_supported(self) -> bool:
-        return True
-
     def get_heartbeat_interval(self) -> Optional[int]:
         return self.heartbeat_interval
 

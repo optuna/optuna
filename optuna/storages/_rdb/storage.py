@@ -1226,10 +1226,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         return stale_trial_ids
 
-    def _is_heartbeat_supported(self) -> bool:
-
-        return True
-
     def get_heartbeat_interval(self) -> Optional[int]:
 
         return self.heartbeat_interval
