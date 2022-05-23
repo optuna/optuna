@@ -94,9 +94,7 @@ class _SearchSpaceTransform:
     def num_params(self) -> int:
         return len(self._column_to_encoded_columns)
 
-    @property
-    def num_features(self) -> int:
-        return len(self.encoded_column_to_column)
+    # TODO(contramundum53): num_features should be added if needed
 
     def transform(self, params: Dict[str, Any]) -> numpy.ndarray:
         """Transform a parameter configuration from actual values to continuous space.
