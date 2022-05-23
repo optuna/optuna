@@ -137,7 +137,7 @@ Benchmark run can be started with
           --budget 80 \
           --repeat 10 \
           --sampler-list "TPESampler CmaEsSampler" \
-          --sampler-kwargs-list "{\"multivariate\":true\,\"constant_liar\":true} {}" \
+          --sampler-kwargs-list "{\"multivariate\":true,\"constant_liar\":true} {}" \
           --pruner-list "NopPruner" \
           --pruner-kwargs-list "{}"
 ```
