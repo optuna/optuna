@@ -815,7 +815,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         return value
 
     @staticmethod
-    def _convert_intermediate_value_representation(
+    def _to_intermediate_value_from_sqlalchemy_model(
         intermediate_value_model: models.TrialIntermediateValueModel,
     ) -> float:
         value_type = intermediate_value_model.intermediate_value_type
@@ -1109,7 +1109,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 attr.key: json.loads(attr.value_json) for attr in trial.system_attributes
             },
             intermediate_values={
-                v.step: self._convert_intermediate_value_representation(v)
+                v.step: self._to_intermediate_value_from_sqlalchemy_model(v)
                 for v in trial.intermediate_values
             },
             trial_id=trial.trial_id,
