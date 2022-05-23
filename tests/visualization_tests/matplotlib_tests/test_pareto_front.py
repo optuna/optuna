@@ -6,6 +6,7 @@ from typing import Optional
 from typing import Sequence
 from typing import Union
 
+from matplotlib.axes._axes import Axes
 import matplotlib.figure
 import matplotlib.pyplot as plt
 import numpy as np
@@ -25,7 +26,7 @@ def allclose_as_set(
     return np.allclose(sorted(p1), sorted(p2))
 
 
-def _check_data(figure: matplotlib.figure, axis: str, expected: Sequence[int]) -> None:
+def _check_data(figure: Axes, axis: str, expected: Sequence[int]) -> None:
     """Compare `figure` against `expected`.
 
     Concatenate `data` in `figure` in reverse order, pick the desired `axis`, and compare with
