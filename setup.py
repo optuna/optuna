@@ -45,14 +45,13 @@ def get_install_requires() -> List[str]:
     return requirements
 
 
-def get_tests_require() -> List[str]:
-
-    return get_extras_require()["testing"]
-
-
 def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
+        "benchmark": [
+            "asv>=0.5.0",
+            "botorch",
+        ],
         "checking": [
             "black",
             "hacking",
@@ -63,22 +62,21 @@ def get_extras_require() -> Dict[str, List[str]]:
             "types-redis",
             "types-PyYAML",
         ],
-        "codecov": ["codecov", "pytest-cov"],
-        "doctest": [
+        "document": [
             "cma",
-            "matplotlib>=3.0.0",
+            "lightgbm",
+            "matplotlib",
+            "mlflow",
             "pandas",
-            "plotly>=4.0.0",
+            "pillow",
+            "plotly>=4.0.0",  # optuna/visualization.
             "scikit-learn>=0.24.2",
             "scikit-optimize",
-            "mlflow",
-        ],
-        "document": [
             "sphinx",
-            "sphinx_rtd_theme",
             "sphinx-copybutton",
             "sphinx-gallery",
             "sphinx-plotly-directive",
+            "sphinx_rtd_theme",
             "pillow",
             "matplotlib",
             "scikit-learn",
@@ -90,81 +88,46 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchaudio==0.11.0 ; python_version>'3.6'",
             "thop",
         ],
-        "experimental": ["redis"],
-        "testing": [
-            "shap",
+        "integration": [
+            "allennlp>=2.2.0 ; python_version>'3.6'",
+            "botorch>=0.4.0 ; python_version>'3.6'",
+            "catalyst>=21.3 ; python_version>'3.6'",
+            "catboost>=0.26",
             "chainer>=5.0.0",
             "cma",
-            "fakeredis<=1.7.1; python_version<'3.8'",
-            "fakeredis ; python_version>='3.8'",
+            "fastai ; python_version>'3.6'",
             "lightgbm",
-            "matplotlib>=3.0.0",
             "mlflow",
             "mpi4py",
             "mxnet",
             "pandas",
-            "plotly>=4.0.0",
-            "pytest",
-            "scikit-learn>=0.24.2",
-            "scikit-optimize",
-            "xgboost",
-            "tensorflow ; python_version>'3.6'",
-            "tensorflow-datasets",
             "pytorch-ignite ; python_version>'3.6'",
             "pytorch-lightning>=1.5.0 ; python_version>'3.6'",
+            "scikit-learn>=0.24.2",
+            "scikit-optimize",
+            "shap",
             "skorch ; python_version>'3.6'",
-            "catalyst>=21.3 ; python_version>'3.6'",
+            "tensorflow ; python_version>'3.6'",
+            "tensorflow-datasets",
             "torch==1.11.0 ; python_version>'3.6'",
-            "torchvision==0.12.0 ; python_version>'3.6'",
             "torchaudio==0.11.0 ; python_version>'3.6'",
-            "allennlp>=2.2.0 ; python_version>'3.6'",
-            "botorch>=0.4.0 ; python_version>'3.6'",
-            "fastai ; python_version>'3.6'",
-        ],
-        "tests": [
-            "fakeredis<=1.7.1; python_version<'3.8'",
-            "fakeredis ; python_version>='3.8'",
-            "pytest",
+            "torchvision==0.12.0 ; python_version>'3.6'",
+            "wandb",
+            "xgboost",
         ],
         "optional": [
-            "matplotlib>=3.0.0",  # optuna/visualization/matplotlib
+            "matplotlib",  # optuna/visualization/matplotlib
             "pandas",  # optuna/study.py
             "plotly>=4.0.0",  # optuna/visualization.
             "redis",  # optuna/storages/redis.py.
             "scikit-learn>=0.24.2",
             # optuna/visualization/param_importances.py.
         ],
-        "integration": [
-            "shap",
-            "catboost>=0.26",
-            "chainer>=5.0.0",
-            "cma",
-            "lightgbm",
-            "mlflow",
-            "wandb",
-            "mpi4py",
-            "mxnet",
-            "pandas",
-            "scikit-learn>=0.24.2",
-            "scikit-optimize",
-            "xgboost",
-            "tensorflow ; python_version>'3.6'",
-            "tensorflow-datasets",
-            "pytorch-ignite ; python_version>'3.6'",
-            "pytorch-lightning>=1.5.0 ; python_version>'3.6'",
-            "skorch ; python_version>'3.6'",
-            "catalyst>=21.3 ; python_version>'3.6'",
-            "torch==1.11.0 ; python_version>'3.6'",
-            "torchvision==0.12.0 ; python_version>'3.6'",
-            "torchaudio==0.11.0 ; python_version>'3.6'",
-            "allennlp>=2.2.0 ; python_version>'3.6'",
-            "botorch>=0.4.0 ; python_version>'3.6'",
-            "fastai ; python_version>'3.6'",
-        ],
-        "benchmark": [
-            "asv>=0.5.0",
-            "virtualenv",
-            "botorch",
+        "test": [
+            "codecov",
+            "fakeredis<=1.7.1",
+            "pytest",
+            "pytest-cov",
         ],
     }
 
@@ -206,7 +169,6 @@ setup(
     },
     python_requires=">=3.6",
     install_requires=get_install_requires(),
-    tests_require=get_tests_require(),
     extras_require=get_extras_require(),
     entry_points={
         "console_scripts": ["optuna = optuna.cli:main"],
