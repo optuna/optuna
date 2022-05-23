@@ -210,23 +210,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_study_id_from_trial_id(self, trial_id: int) -> int:
-        """Read the ID of a study to which a trial belongs.
-
-        Args:
-            trial_id:
-                ID of the trial.
-
-        Returns:
-            ID of the study.
-
-        Raises:
-            :exc:`KeyError`:
-                If no trial with the matching ``trial_id`` exists.
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def get_study_name_from_id(self, study_id: int) -> str:
         """Read the study name of a study.
 

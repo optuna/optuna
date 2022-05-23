@@ -176,21 +176,6 @@ def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode: str) ->
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_get_study_id_from_trial_id(storage_mode: str) -> None:
-
-    with StorageSupplier(storage_mode) as storage:
-
-        # Check if trial_number starts from 0.
-        study_id = storage.create_new_study()
-
-        trial_id = storage.create_new_trial(study_id)
-        assert storage.get_study_id_from_trial_id(trial_id) == study_id
-
-        with pytest.raises(KeyError):
-            storage.get_study_id_from_trial_id(trial_id + 1)
-
-
-@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_and_get_study_directions(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
