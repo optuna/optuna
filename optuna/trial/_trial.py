@@ -17,6 +17,7 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.trial._base import BaseTrial
+from optuna.trial import TrialState
 
 
 _logger = logging.get_logger(__name__)
@@ -56,12 +57,15 @@ class Trial(BaseTrial):
     def _init_relative_params(self) -> None:
 
         trial = self.storage.get_trial(self._trial_id)
+        self.frozen_trials = self.storage.get_all_trials(self._study_id)
 
         study = pruners._filter_study(self.study, trial)
 
-        self.relative_search_space = self.study.sampler.infer_relative_search_space(study, trial)
+        self.relative_search_space = self.study.sampler.infer_relative_search_space(
+            study, self.frozen_trials, trial
+        )
         self.relative_params = self.study.sampler.sample_relative(
-            study, trial, self.relative_search_space
+            study, self.frozen_trials, trial, self.relative_search_space
         )
 
     def suggest_float(
@@ -593,7 +597,7 @@ class Trial(BaseTrial):
             else:
                 study = pruners._filter_study(self.study, trial)
                 param_value = self.study.sampler.sample_independent(
-                    study, trial, name, distribution
+                    study, self.frozen_trials, trial, name, distribution
                 )
 
             param_value_in_internal_repr = distribution.to_internal_repr(param_value)

@@ -1,6 +1,7 @@
 import abc
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Sequence
 
@@ -47,7 +48,7 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def infer_relative_search_space(
-        self, study: Study, trial: FrozenTrial
+        self, study: Study, trials: List[FrozenTrial], trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
         """Infer the search space that will be used by relative sampling in the target trial.
 
@@ -75,7 +76,11 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def sample_relative(
-        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+        self,
+        study: Study,
+        trials: List[FrozenTrial],
+        trial: FrozenTrial,
+        search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
         """Sample parameters in a given search space.
 
@@ -109,6 +114,7 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
     def sample_independent(
         self,
         study: Study,
+        trials: List[FrozenTrial],
         trial: FrozenTrial,
         param_name: str,
         param_distribution: BaseDistribution,

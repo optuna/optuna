@@ -120,13 +120,17 @@ class GridSampler(BaseSampler):
         self._rng.seed()
 
     def infer_relative_search_space(
-        self, study: Study, trial: FrozenTrial
+        self, study: Study, trials: List[FrozenTrial], trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
 
         return {}
 
     def sample_relative(
-        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+        self,
+        study: Study,
+        trials: List[FrozenTrial],
+        trial: FrozenTrial,
+        search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
         # Instead of returning param values, GridSampler puts the target grid id as a system attr,
         # and the values are returned from `sample_independent`. This is because the distribution
@@ -138,7 +142,7 @@ class GridSampler(BaseSampler):
         if "grid_id" in trial.system_attrs or "fixed_params" in trial.system_attrs:
             return {}
 
-        target_grids = self._get_unvisited_grid_ids(study)
+        target_grids = self._get_unvisited_grid_ids(study, trials)
 
         if len(target_grids) == 0:
             # This case may occur with distributed optimization or trial queue. If there is no
@@ -166,6 +170,7 @@ class GridSampler(BaseSampler):
     def sample_independent(
         self,
         study: Study,
+        trials: FrozenTrial,
         trial: FrozenTrial,
         param_name: str,
         param_distribution: BaseDistribution,
@@ -222,16 +227,14 @@ class GridSampler(BaseSampler):
         )
         warnings.warn(message)
 
-    def _get_unvisited_grid_ids(self, study: Study) -> List[int]:
+    def _get_unvisited_grid_ids(self, study: Study, trials: List[FrozenTrial] = None) -> List[int]:
+
+        if not trials:
+            trials = study._storage.get_all_trials(study._study_id, deepcopy=False)
 
         # List up unvisited grids based on already finished ones.
         visited_grids = []
         running_grids = []
-
-        # We directly query the storage to get trials here instead of `study.get_trials`,
-        # since some pruners such as `HyperbandPruner` use the study transformed
-        # to filter trials. See https://github.com/optuna/optuna/issues/2327 for details.
-        trials = study._storage.get_all_trials(study._study_id, deepcopy=False)
 
         for t in trials:
             if "grid_id" in t.system_attrs and self._same_search_space(

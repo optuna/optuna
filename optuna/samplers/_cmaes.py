@@ -271,7 +271,10 @@ class CmaEsSampler(BaseSampler):
         self._independent_sampler.reseed_rng()
 
     def infer_relative_search_space(
-        self, study: "optuna.Study", trial: "optuna.trial.FrozenTrial"
+        self,
+        study: "optuna.Study",
+        trials: List["optuna.trial.FrozenTrial"],
+        trial: "optuna.trial.FrozenTrial",
     ) -> Dict[str, BaseDistribution]:
         search_space: Dict[str, BaseDistribution] = {}
         for name, distribution in self._search_space.calculate(study).items():
@@ -297,6 +300,7 @@ class CmaEsSampler(BaseSampler):
     def sample_relative(
         self,
         study: "optuna.Study",
+        trials: List["optuna.trial.FrozenTrial"],
         trial: "optuna.trial.FrozenTrial",
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
@@ -306,7 +310,7 @@ class CmaEsSampler(BaseSampler):
         if len(search_space) == 0:
             return {}
 
-        completed_trials = self._get_trials(study)
+        completed_trials = self._get_trials(trials)
         if len(completed_trials) < self._n_startup_trials:
             return {}
 
@@ -491,6 +495,7 @@ class CmaEsSampler(BaseSampler):
     def sample_independent(
         self,
         study: "optuna.Study",
+        trials: List["optuna.trial.FrozenTrial"],
         trial: "optuna.trial.FrozenTrial",
         param_name: str,
         param_distribution: BaseDistribution,
@@ -499,7 +504,7 @@ class CmaEsSampler(BaseSampler):
         self._raise_error_if_multi_objective(study)
 
         if self._warn_independent_sampling:
-            complete_trials = self._get_trials(study)
+            complete_trials = self._get_trials(trials)
             if len(complete_trials) >= self._n_startup_trials:
                 self._log_independent_sampling(trial, param_name)
 
@@ -520,9 +525,9 @@ class CmaEsSampler(BaseSampler):
             )
         )
 
-    def _get_trials(self, study: "optuna.Study") -> List[FrozenTrial]:
+    def _get_trials(self, trials: List["optuna.trial.FrozenTrial"]) -> List[FrozenTrial]:
         complete_trials = []
-        for t in study.get_trials(deepcopy=False):
+        for t in trials:
             if t.state == TrialState.COMPLETE:
                 complete_trials.append(t)
             elif (
