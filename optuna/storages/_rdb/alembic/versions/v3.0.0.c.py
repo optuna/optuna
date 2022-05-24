@@ -10,7 +10,6 @@ import enum
 import numpy as np
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import orm
@@ -41,23 +40,23 @@ class IntermediateValueModel(BaseModel):
 
 
 def upgrade():
+    # MySQL and PostgreSQL supports DEFAULT clause like 'ALTER TABLE <tbl_name>
+    # ADD COLUMN <col_name> ... DEFAULT "FINITE_OR_NAN"', but seemingly Alembic
+    # does not support such a SQL statement. So first add a column with schema-level
+    # default value setting, then remove it by `batch_op.alter_column()`.
+    with op.batch_alter_table("trial_intermediate_values") as batch_op:
+        batch_op.add_column(
+            sa.Column(
+                "intermediate_value_type",
+                sa.Enum("FINITE_OR_NAN", "INF_POS", "INF_NEG", name="floattypeenum"),
+                nullable=False,
+                server_default="FINITE_OR_NAN",
+            ),
+        )
+    with op.batch_alter_table("trial_intermediate_values") as batch_op:
+        batch_op.alter_column("intermediate_value_type", server_default=None)
+
     bind = op.get_bind()
-    inspector = Inspector.from_engine(bind)
-    column_names_in_intermediate_values = [
-        column["name"] for column in inspector.get_columns("trial_intermediate_values")
-    ]
-
-    if "intermediate_value_type" not in column_names_in_intermediate_values:
-        with op.batch_alter_table("trial_intermediate_values") as batch_op:
-            batch_op.add_column(
-                sa.Column(
-                    "intermediate_value_type",
-                    sa.Enum("FINITE_OR_NAN", "INF_POS", "INF_NEG", name="floattypeenum"),
-                    nullable=False,
-                    server_default="FINITE_OR_NAN",
-                ),
-            )
-
     session = orm.Session(bind=bind)
     try:
         records = session.query(IntermediateValueModel).all()
