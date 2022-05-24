@@ -55,12 +55,6 @@ def run_benchmark(args: argparse.Namespace) -> None:
     )
     subprocess.run(cmd, shell=True)
 
-    cmd = f"bayesmark-agg -dir runs -b {_DB}"
-    subprocess.run(cmd, shell=True)
-
-    cmd = f"bayesmark-anal -dir runs -b {_DB}"
-    subprocess.run(cmd, shell=True)
-
 
 def make_plots(args: argparse.Namespace) -> None:
 
