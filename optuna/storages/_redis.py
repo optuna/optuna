@@ -35,7 +35,7 @@ with try_import() as _imports:
     import redis
 
 
-@experimental("1.4.0")
+@experimental_class("1.4.0")
 class RedisStorage(BaseStorage, BaseHeartbeat):
     """Storage class for Redis backend.
 
