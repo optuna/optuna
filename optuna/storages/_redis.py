@@ -21,6 +21,7 @@ from optuna._experimental import experimental_class
 from optuna._imports import try_import
 from optuna.storages import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
@@ -34,8 +35,8 @@ with try_import() as _imports:
     import redis
 
 
-@experimental_class("1.4.0")
-class RedisStorage(BaseStorage):
+@experimental("1.4.0")
+class RedisStorage(BaseStorage, BaseHeartbeat):
     """Storage class for Redis backend.
 
     Note that library users can instantiate this class, but the attributes
@@ -267,7 +268,7 @@ class RedisStorage(BaseStorage):
         assert study_id_pkl is not None
         return pickle.loads(study_id_pkl)
 
-    def get_study_id_from_trial_id(self, trial_id: int) -> int:
+    def _get_study_id_from_trial_id(self, trial_id: int) -> int:
 
         study_id_pkl = self._redis.get("trial_id:{:010d}:study_id".format(trial_id))
         if study_id_pkl is None:
@@ -446,7 +447,7 @@ class RedisStorage(BaseStorage):
 
             # To ensure that there are no failed trials with heartbeats in the DB
             # under any circumstances
-            study_id = self.get_study_id_from_trial_id(trial_id)
+            study_id = self._get_study_id_from_trial_id(trial_id)
             self._redis.hdel(self._key_study_heartbeats(study_id), str(trial_id))
         else:
             self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
@@ -464,7 +465,7 @@ class RedisStorage(BaseStorage):
         self.check_trial_is_updatable(trial_id, self.get_trial(trial_id).state)
 
         # Check param distribution compatibility with previous trial(s).
-        study_id = self.get_study_id_from_trial_id(trial_id)
+        study_id = self._get_study_id_from_trial_id(trial_id)
         param_distribution = self._get_study_param_distribution(study_id)
         if param_name in param_distribution:
             distributions.check_distribution_compatibility(
@@ -595,7 +596,7 @@ class RedisStorage(BaseStorage):
 
             # To ensure that there are no failed trials with heartbeats in the DB
             # under any circumstances
-            study_id = self.get_study_id_from_trial_id(trial_id)
+            study_id = self._get_study_id_from_trial_id(trial_id)
             self._redis.hdel(self._key_study_heartbeats(study_id), str(trial_id))
         else:
             self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
@@ -607,7 +608,7 @@ class RedisStorage(BaseStorage):
         trial = self.get_trial(trial_id)
         if trial.state != TrialState.COMPLETE:
             return
-        study_id = self.get_study_id_from_trial_id(trial_id)
+        study_id = self._get_study_id_from_trial_id(trial_id)
 
         _direction = self.get_study_directions(study_id)
         if len(_direction) > 1:
@@ -736,7 +737,7 @@ class RedisStorage(BaseStorage):
             raise KeyError("trial_id {} does not exist.".format(trial_id))
 
     def record_heartbeat(self, trial_id: int) -> None:
-        study_id = self.get_study_id_from_trial_id(trial_id)
+        study_id = self._get_study_id_from_trial_id(trial_id)
         self._redis.hset(
             self._key_study_heartbeats(study_id),
             str(trial_id),
@@ -777,9 +778,6 @@ class RedisStorage(BaseStorage):
     def _get_redis_time(self) -> float:
         seconds, microseconds = self._redis.time()
         return seconds + microseconds * 1e-6
-
-    def _is_heartbeat_supported(self) -> bool:
-        return True
 
     def get_heartbeat_interval(self) -> Optional[int]:
         return self.heartbeat_interval

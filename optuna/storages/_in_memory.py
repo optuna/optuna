@@ -120,13 +120,6 @@ class InMemoryStorage(BaseStorage):
 
             return self._study_name_to_id[study_name]
 
-    def get_study_id_from_trial_id(self, trial_id: int) -> int:
-
-        with self._lock:
-            self._check_trial_id(trial_id)
-
-            return self._trial_id_to_study_id_and_number[trial_id][0]
-
     def get_study_name_from_id(self, study_id: int) -> str:
 
         with self._lock:

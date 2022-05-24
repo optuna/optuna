@@ -1,8 +1,71 @@
+import abc
 import copy
+from typing import Callable
+from typing import List
+from typing import Optional
 
 import optuna
+
 from optuna._experimental import experimental_func
+from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+class BaseHeartbeat(metaclass=abc.ABCMeta):
+    """Base class for heartbeat.
+
+    This class is not supposed to be directly accessed by library users.
+
+    The heartbeat mechanism periodically checks whether each trial process is alive during an
+    optimization loop. To support this mechanism, the methods of
+    :class:`~optuna.storages._heartbeat.BaseHeartbeat` is implemented for the target database
+    backend, typically with multiple inheritance of :class:`~optuna.storages._base.BaseStorage`
+    and :class:`~optuna.storages._heartbeat.BaseHeartbeat`.
+
+    .. seealso::
+        See :class:`~optuna.storages.RDBStorage` and :class:`~optuna.storages.RedisStorage`, where
+        those backends support heartbeat.
+    """
+
+    @abc.abstractmethod
+    def record_heartbeat(self, trial_id: int) -> None:
+        """Record the heartbeat of the trial.
+
+        Args:
+            trial_id:
+                ID of the trial.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def _get_stale_trial_ids(self, study_id: int) -> List[int]:
+        """Get the stale trial ids of the study.
+
+        Args:
+            study_id:
+                ID of the study.
+        Returns:
+            List of IDs of trials whose heartbeat has not been updated for a long time.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def get_heartbeat_interval(self) -> Optional[int]:
+        """Get the heartbeat interval if it is set.
+
+        Returns:
+            The heartbeat interval if it is set, otherwise :obj:`None`.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def get_failed_trial_callback(self) -> Optional[Callable[["optuna.Study", FrozenTrial], None]]:
+        """Get the failed trial callback function.
+
+        Returns:
+            The failed trial callback function if it is set, otherwise :obj:`None`.
+        """
+        raise NotImplementedError()
 
 
 @experimental_func("2.9.0")
@@ -21,6 +84,9 @@ def fail_stale_trials(study: "optuna.Study") -> None:
             Study holding the trials to check.
     """
     storage = study._storage
+
+    if not isinstance(storage, BaseHeartbeat):
+        return
 
     if not storage.is_heartbeat_enabled():
         return

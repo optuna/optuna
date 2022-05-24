@@ -140,10 +140,10 @@ unit tests are stored under the [tests directory](./tests).
 Please install some required packages at first.
 ```bash
 # Install required packages to test all modules without visualization and integration modules.
-pip install ".[tests]"
+pip install ".[test]"
 
 # Install required packages to test all modules including visualization and integration modules.
-pip install ".[testing]" -f https://download.pytorch.org/whl/torch_stable.html
+pip install ".[optional,integration]" -f https://download.pytorch.org/whl/torch_stable.html
 ```
 
 You can run your tests as follows:

@@ -26,6 +26,7 @@ from optuna._deprecated import deprecated_func
 from optuna._imports import _LazyImport
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
@@ -96,7 +97,7 @@ def _create_scoped_session(
         session.close()
 
 
-class RDBStorage(BaseStorage):
+class RDBStorage(BaseStorage, BaseHeartbeat):
     """Storage class for RDB backend.
 
     Note that library users can instantiate this class, but the attributes
@@ -132,7 +133,7 @@ class RDBStorage(BaseStorage):
             A dictionary of keyword arguments that is passed to
             `sqlalchemy.engine.create_engine`_ function.
         skip_compatibility_check:
-            Flag to skip schema compatibility check if set to True.
+            Flag to skip schema compatibility check if set to :obj:`True`.
         heartbeat_interval:
             Interval to record the heartbeat. It is recorded every ``interval`` seconds.
             ``heartbeat_interval`` must be :obj:`None` or a positive integer.
@@ -154,6 +155,9 @@ class RDBStorage(BaseStorage):
             .. note::
                 The procedure to fail existing stale trials is called just before asking the
                 study for a new trial.
+
+        skip_table_creation:
+            Flag to skip table creation if set to :obj:`True`.
 
     .. _sqlalchemy.engine.create_engine:
         https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine
@@ -191,6 +195,7 @@ class RDBStorage(BaseStorage):
         heartbeat_interval: Optional[int] = None,
         grace_period: Optional[int] = None,
         failed_trial_callback: Optional[Callable[["optuna.Study", FrozenTrial], None]] = None,
+        skip_table_creation: bool = False,
     ) -> None:
 
         self.engine_kwargs = engine_kwargs or {}
@@ -217,7 +222,8 @@ class RDBStorage(BaseStorage):
         self.scoped_session = sqlalchemy_orm.scoped_session(
             sqlalchemy_orm.sessionmaker(bind=self.engine)
         )
-        models.BaseModel.metadata.create_all(self.engine)
+        if not skip_table_creation:
+            models.BaseModel.metadata.create_all(self.engine)
 
         self._version_manager = _VersionManager(self.url, self.engine, self.scoped_session)
         if not skip_compatibility_check:
@@ -355,14 +361,6 @@ class RDBStorage(BaseStorage):
         with _create_scoped_session(self.scoped_session) as session:
             study = models.StudyModel.find_or_raise_by_name(study_name, session)
             study_id = study.study_id
-
-        return study_id
-
-    def get_study_id_from_trial_id(self, trial_id: int) -> int:
-
-        with _create_scoped_session(self.scoped_session) as session:
-            trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-            study_id = trial.study_id
 
         return study_id
 
@@ -1224,10 +1222,6 @@ class RDBStorage(BaseStorage):
                     stale_trial_ids.append(trial.trial_id)
 
         return stale_trial_ids
-
-    def _is_heartbeat_supported(self) -> bool:
-
-        return True
 
     def get_heartbeat_interval(self) -> Optional[int]:
 
