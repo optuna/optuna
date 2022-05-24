@@ -173,44 +173,82 @@ class DewanckerRanker:
 class BayesmarkReportBuilder:
     def __init__(self) -> None:
 
-        self._solvers: Counter = Counter()
-        self._datasets: Counter = Counter()
-        self._models: Counter = Counter()
+        self._solvers: Set[str] = set()
+        self._datasets: Set[str] = set()
+        self._models: Set[str] = set()
+        self._firsts: Dict[str, int] = defaultdict(int)
+        self._borda: Dict[str, int] = defaultdict(int)
+        self._metric_precedence = str()
         self._problems_counter = 1
         self._problems_body = io.StringIO()
 
-    def add_problem(self, name: str, scores: Dict[str, float]) -> "BayesmarkReportBuilder":
+    def set_precedence(self, metrics: List[BaseMetric]) -> None:
+
+        self._metric_precedence = " -> ".join([m.name for m in metrics])
+
+    def add_problem(
+        self,
+        name: str,
+        report: PartialReport,
+        ranking: DewanckerRanker,
+        metrics: List[BaseMetric],
+    ) -> "BayesmarkReportBuilder":
 
         if self._problems_body.closed:
             self._problems_body = io.StringIO()
 
-        problem_title = f"### ({self._problems_counter}) Problem: {name}\n"
-        self._problems_body.write(problem_title)
-        self._problems_body.write(_TABLE_HEADER)
+        problem_header = f"### ({self._problems_counter}) Problem: {name}" + _LINE_BREAK
+        self._problems_body.write(problem_header)
+        metric_names = [f"{m.name} (avg +- std) |" for m in metrics]
+        self._problems_body.write(
+            "".join([_LINE_BREAK, _TABLE_HEADER, *metric_names, _LINE_BREAK])
+        )
+        metric_format = ["---:|" for _ in range(len(metrics))]
+        self._problems_body.write("".join([_HEADER_FORMAT, *metric_format, _LINE_BREAK]))
 
-        for idx, (solver, score) in enumerate(scores.items()):
-            row = f"|{idx + 1}|{solver}|{score:.5f}|\n"
-            self._problems_body.write(row)
+        positions = np.abs(ranking.borda - (max(ranking.borda) + 1))
+        for pos, solver in zip(positions, ranking.solvers):
+            self._solvers.add(solver)
+            row_buffer = io.StringIO()
+            row_buffer.write(f"|{pos}|{solver}|")
+            for metric in metrics:
+                mean, variance = report.summarize_solver(solver, metric)
+                row_buffer.write(f"{mean:.5f} +- {np.sqrt(variance):.5f}|")
 
-        self._solvers.update(scores.keys())
+            self._problems_body.write("".join([row_buffer.getvalue(), _LINE_BREAK]))
+            row_buffer.close()
+
         self._problems_counter += 1
+        return self
 
+    def update_leaderboard(self, ranking: DewanckerRanker) -> "BayesmarkReportBuilder":
+
+        for solver, borda in ranking:
+            if borda == max(ranking.borda):
+                self._firsts[solver] += 1
+            self._borda[solver] += borda
         return self
 
     def add_dataset(self, dataset: str) -> "BayesmarkReportBuilder":
 
-        self._datasets.update([dataset])
+        self._datasets.update(dataset)
         return self
 
     def add_model(self, model: str) -> "BayesmarkReportBuilder":
 
-        self._models.update([model])
+        self._models.update(model)
         return self
 
     def assemble_report(self) -> str:
 
         num_datasets = len(self._datasets)
         num_models = len(self._models)
+
+        overall_body = io.StringIO()
+        overall_body.write(_OVERALL_HEADER)
+        for solver in self._solvers:
+            row = f"|{solver}|{self._borda[solver]}|{self._firsts[solver]}|"
+            overall_body.write("".join([row, _LINE_BREAK]))
 
         with open(os.path.join("benchmarks", "bayesmark", "report_template.md")) as file:
             report_template = file.read()
@@ -220,10 +258,13 @@ class BayesmarkReportBuilder:
             num_solvers=len(self._solvers),
             num_datasets=num_datasets,
             num_models=num_models,
+            precedence=self._metric_precedence,
             num_problems=num_datasets * num_models,
+            overall=overall_body.getvalue(),
             leaderboards=self._problems_body.getvalue(),
         )
 
+        overall_body.close()
         self._problems_body.close()
         return report
 
