@@ -39,7 +39,18 @@ class IntermediateValueModel(BaseModel):
     intermediate_value_type = sa.Column(sa.Enum(FloatTypeEnum), nullable=False)
 
 
+def _get_postgresql_float_type_enum():
+    from sqlalchemy.dialects import postgresql
+
+    return postgresql.ENUM("FINITE_OR_NAN", "INF_POS", "INF_NEG", name="floattypeenum")
+
+
 def upgrade():
+    bind = op.get_bind()
+
+    if bind.dialect.name == "postgresql":
+        _get_postgresql_float_type_enum().create(bind)
+
     # MySQL and PostgreSQL supports DEFAULT clause like 'ALTER TABLE <tbl_name>
     # ADD COLUMN <col_name> ... DEFAULT "FINITE_OR_NAN"', but seemingly Alembic
     # does not support such a SQL statement. So first add a column with schema-level
@@ -56,7 +67,6 @@ def upgrade():
     with op.batch_alter_table("trial_intermediate_values") as batch_op:
         batch_op.alter_column("intermediate_value_type", server_default=None)
 
-    bind = op.get_bind()
     session = orm.Session(bind=bind)
     try:
         records = session.query(IntermediateValueModel).all()
@@ -121,3 +131,6 @@ def downgrade():
 
     with op.batch_alter_table("trial_intermediate_values", schema=None) as batch_op:
         batch_op.drop_column("intermediate_value_type")
+
+    if bind.dialect.name == "postgresql":
+        _get_postgresql_float_type_enum().drop(bind)
