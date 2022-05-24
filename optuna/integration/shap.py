@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from typing import Callable
 from typing import Dict
 from typing import List
@@ -8,14 +7,20 @@ import numpy as np
 
 from optuna._experimental import experimental
 from optuna._imports import try_import
+from optuna._transform import _SearchSpaceTransform
+from optuna.importance._base import _get_distributions
+from optuna.importance._base import _get_filtered_trials
+from optuna.importance._base import _get_target_values
+from optuna.importance._base import _get_trans_params
+from optuna.importance._base import _param_importances_to_dict
 from optuna.importance._base import BaseImportanceEvaluator
-from optuna.importance._mean_decrease_impurity import MeanDecreaseImpurityImportanceEvaluator
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 
 
 with try_import() as _imports:
     from shap import TreeExplainer
+    from sklearn.ensemble import RandomForestRegressor
 
 
 @experimental("3.0.0")
@@ -47,37 +52,41 @@ class ShapleyImportanceEvaluator(BaseImportanceEvaluator):
         _imports.check()
 
         # Use the RandomForest as the surrogate model to evaluate the feature importances.
-        self._backend_evaluator = MeanDecreaseImpurityImportanceEvaluator(
-            n_trees=n_trees, max_depth=max_depth, seed=seed
+        self._forest = RandomForestRegressor(
+            n_estimators=n_trees,
+            max_depth=max_depth,
+            min_samples_split=2,
+            min_samples_leaf=1,
+            random_state=seed,
         )
-        # Use the TreeExplainer from the SHAP module.
-        self._explainer: TreeExplainer = None
 
     def evaluate(
-        self,
-        study: Study,
-        params: Optional[List[str]] = None,
-        *,
-        target: Optional[Callable[[FrozenTrial], float]] = None,
+        self, study: Study, params: List[str], target: Callable[[FrozenTrial], float]
     ) -> Dict[str, float]:
 
-        # Train a RandomForest from the backend evaluator.
-        self._backend_evaluator.evaluate(study=study, params=params, target=target)
+        distributions = _get_distributions(study, params=params)
+
+        if len(distributions) == 0:
+            return {}
+
+        trials: List[FrozenTrial] = _get_filtered_trials(study, params=params, target=target)
+        trans = _SearchSpaceTransform(distributions, transform_log=False, transform_step=False)
+        trans_params: np.ndarray = _get_trans_params(trials, trans)
+        values: np.ndarray = _get_target_values(trials, target)
+
+        forest = self._forest
+        forest.fit(X=trans_params, y=values)
 
         # Create Tree Explainer object that can calculate shap values.
-        self._explainer = TreeExplainer(self._backend_evaluator._forest)
+        explainer = TreeExplainer(forest)
 
         # Generate SHAP values for the parameters during the trials.
-        shap_values = self._explainer.shap_values(self._backend_evaluator._trans_params)
+        feature_shap_values: np.ndarray = explainer.shap_values(trans_params)
+        param_shap_values = np.zeros((len(trials), trans.num_params))
+        np.add.at(param_shap_values.T, trans.encoded_column_to_column, feature_shap_values.T)
 
         # Calculate the mean absolute SHAP value for each parameter.
         # List of tuples ("feature_name": mean_abs_shap_value).
-        mean_abs_shap_values = list(
-            zip(self._backend_evaluator._param_names, np.abs(shap_values).mean(axis=0))
-        )
+        mean_abs_shap_values = np.abs(param_shap_values).mean(axis=0)
 
-        # Use the mean absolute SHAP values as the feature importance.
-        mean_abs_shap_values.sort(key=lambda t: t[1], reverse=True)
-        feature_importances = OrderedDict(mean_abs_shap_values)
-
-        return feature_importances
+        return _param_importances_to_dict(params, mean_abs_shap_values)
