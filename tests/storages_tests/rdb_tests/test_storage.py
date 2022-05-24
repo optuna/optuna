@@ -188,7 +188,7 @@ def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
         shutil.copyfile(src_db_file, f"{workdir}/sqlite.db")
         storage_url = f"sqlite:///{workdir}/sqlite.db"
 
-        storage = RDBStorage(storage_url, skip_compatibility_check=True)
+        storage = RDBStorage(storage_url, skip_compatibility_check=True, skip_table_creation=True)
         assert storage.get_current_version() == f"v{optuna_version}"
         head_version = storage.get_head_version()
         storage.upgrade()
@@ -233,7 +233,7 @@ def test_upgrade_multi_objective_optimization(optuna_version: str) -> None:
         shutil.copyfile(src_db_file, f"{workdir}/sqlite.db")
         storage_url = f"sqlite:///{workdir}/sqlite.db"
 
-        storage = RDBStorage(storage_url, skip_compatibility_check=True)
+        storage = RDBStorage(storage_url, skip_compatibility_check=True, skip_table_creation=True)
         assert storage.get_current_version() == f"v{optuna_version}"
         head_version = storage.get_head_version()
         storage.upgrade()
@@ -277,7 +277,7 @@ def test_upgrade_distributions(optuna_version: str) -> None:
         shutil.copyfile(src_db_file, f"{workdir}/sqlite.db")
         storage_url = f"sqlite:///{workdir}/sqlite.db"
 
-        storage = RDBStorage(storage_url, skip_compatibility_check=True)
+        storage = RDBStorage(storage_url, skip_compatibility_check=True, skip_table_creation=True)
         old_study = load_study(storage=storage, study_name="schema migration")
         old_distribution_dict = old_study.trials[0].distributions
 
