@@ -29,7 +29,7 @@ def run_benchmark(args: argparse.Namespace) -> None:
     config = dict()
     for sampler, sampler_kwargs in zip(sampler_list, sampler_kwargs_list):
         for pruner, pruner_kwargs in zip(pruner_list, pruner_kwargs_list):
-            optimizer_name = f"{sampler}-{pruner}-Optuna"
+            optimizer_name = f"{sampler}-{pruner}"
             optimizer_kwargs = {
                 "sampler": sampler,
                 "sampler_kwargs": json.loads(sampler_kwargs),
@@ -49,7 +49,7 @@ def run_benchmark(args: argparse.Namespace) -> None:
     cmd = (
         f"bayesmark-launch -n {args.budget} -r {args.repeat} "
         f"-dir runs -b {_DB} "
-        f"-o RandomSearch {samplers} "
+        f"-o {samplers} "
         f"-c {args.model} -d {args.dataset} "
         f"-m {metric} --opt-root benchmarks/bayesmark"
     )
