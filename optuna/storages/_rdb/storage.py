@@ -26,6 +26,7 @@ from optuna._deprecated import deprecated
 from optuna._imports import _LazyImport
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
@@ -96,7 +97,7 @@ def _create_scoped_session(
         session.close()
 
 
-class RDBStorage(BaseStorage):
+class RDBStorage(BaseStorage, BaseHeartbeat):
     """Storage class for RDB backend.
 
     Note that library users can instantiate this class, but the attributes
@@ -1216,10 +1217,6 @@ class RDBStorage(BaseStorage):
                     stale_trial_ids.append(trial.trial_id)
 
         return stale_trial_ids
-
-    def _is_heartbeat_supported(self) -> bool:
-
-        return True
 
     def get_heartbeat_interval(self) -> Optional[int]:
 

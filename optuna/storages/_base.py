@@ -1,6 +1,5 @@
 import abc
 from typing import Any
-from typing import Callable
 from typing import cast
 from typing import Container
 from typing import Dict
@@ -10,8 +9,8 @@ from typing import Sequence
 from typing import Tuple
 from typing import Union
 
-import optuna
 from optuna.distributions import BaseDistribution
+from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
@@ -698,26 +697,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
                 "Trial#{} has already finished and can not be updated.".format(trial.number)
             )
 
-    def record_heartbeat(self, trial_id: int) -> None:
-        """Record the heartbeat of the trial.
-
-        Args:
-            trial_id:
-                ID of the trial.
-        """
-        pass
-
-    def _get_stale_trial_ids(self, study_id: int) -> List[int]:
-        """Get the stale trial ids of the study.
-
-        Args:
-            study_id:
-                ID of the study.
-        Returns:
-            List of IDs of trials whose heartbeat has not been updated for a long time.
-        """
-        return []
-
     def is_heartbeat_enabled(self) -> bool:
         """Check whether the storage enables the heartbeat.
 
@@ -726,23 +705,4 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             :meth:`~optuna.storages.BaseStorage.get_heartbeat_interval` is an integer,
             otherwise :obj:`False`.
         """
-        return self._is_heartbeat_supported() and self.get_heartbeat_interval() is not None
-
-    def _is_heartbeat_supported(self) -> bool:
-        return False
-
-    def get_heartbeat_interval(self) -> Optional[int]:
-        """Get the heartbeat interval if it is set.
-
-        Returns:
-            The heartbeat interval if it is set, otherwise :obj:`None`.
-        """
-        return None
-
-    def get_failed_trial_callback(self) -> Optional[Callable[["optuna.Study", FrozenTrial], None]]:
-        """Get the failed trial callback function.
-
-        Returns:
-            The failed trial callback function if it is set, otherwise :obj:`None`.
-        """
-        return None
+        return isinstance(self, BaseHeartbeat) and self.get_heartbeat_interval() is not None
