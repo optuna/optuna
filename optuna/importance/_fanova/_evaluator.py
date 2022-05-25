@@ -103,7 +103,7 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
             column_to_encoded_columns=trans.column_to_encoded_columns,
         )
         param_importances = numpy.array(
-            [evaluator.get_importance((i,))[0] for i in range(trans.num_params)]
+            [evaluator.get_importance((i,))[0] for i in range(len(params))]
         )
         param_importances /= numpy.sum(param_importances)
 

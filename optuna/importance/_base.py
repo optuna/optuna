@@ -160,14 +160,6 @@ def _get_filtered_trials(
     ]
 
 
-def _feature_importances_to_param_importances(
-    feature_importances: numpy.ndarray, trans: _SearchSpaceTransform
-) -> numpy.ndarray:
-    param_importances = numpy.zeros(trans.num_params)
-    numpy.add.at(param_importances, trans.encoded_column_to_column, feature_importances)
-    return param_importances
-
-
 def _param_importances_to_dict(
     params: Collection[str], param_importances: Union[numpy.ndarray, float]
 ) -> Dict[str, float]:

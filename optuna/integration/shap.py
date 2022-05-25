@@ -64,10 +64,10 @@ class ShapleyImportanceEvaluator(BaseImportanceEvaluator):
         self, study: Study, params: List[str], target: Callable[[FrozenTrial], float]
     ) -> Dict[str, float]:
 
-        distributions = _get_distributions(study, params=params)
-
-        if len(distributions) == 0:
+        if len(params) == 0:
             return {}
+
+        distributions = _get_distributions(study, params=params)
 
         trials: List[FrozenTrial] = _get_filtered_trials(study, params=params, target=target)
         trans = _SearchSpaceTransform(distributions, transform_log=False, transform_step=False)
@@ -82,7 +82,7 @@ class ShapleyImportanceEvaluator(BaseImportanceEvaluator):
 
         # Generate SHAP values for the parameters during the trials.
         feature_shap_values: np.ndarray = explainer.shap_values(trans_params)
-        param_shap_values = np.zeros((len(trials), trans.num_params))
+        param_shap_values = np.zeros((len(trials), len(params)))
         np.add.at(param_shap_values.T, trans.encoded_column_to_column, feature_shap_values.T)
 
         # Calculate the mean absolute SHAP value for each parameter.
