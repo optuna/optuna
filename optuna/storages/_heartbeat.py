@@ -5,7 +5,6 @@ from typing import List
 from typing import Optional
 
 import optuna
-
 from optuna._experimental import experimental_func
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
