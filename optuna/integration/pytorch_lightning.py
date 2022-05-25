@@ -1,3 +1,4 @@
+from typing import cast
 import warnings
 
 from packaging import version
@@ -94,7 +95,7 @@ class PyTorchLightningPruningCallback(Callback):
         if trainer.is_global_zero:
             self._trial.report(current_score, step=epoch)
             should_stop = self._trial.should_prune()
-        should_stop = trainer.training_type_plugin.broadcast(should_stop)
+        should_stop = cast(bool, trainer.training_type_plugin.broadcast(should_stop))
         if not should_stop:
             return
 
