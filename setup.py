@@ -62,6 +62,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             # TODO(nzw0301) remove the constraint of sklearn `1.0.0`
             # after skopt supports sklearn >= 1.0.0
             "scikit-learn>=0.24.2,<1.0.0",
+            # TODO(not522): remove this after mlflow is fixed.
+            # https://github.com/mlflow/mlflow/pull/5945
+            "protobuf<4.0.0",
             "scikit-optimize",
             "mlflow",
         ],
@@ -103,6 +106,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             # TODO(nzw0301) remove the constraint of sklearn `1.0.0`
             # after skopt supports sklearn >= 1.0.0
             "scikit-learn>=0.24.2,<1.0.0",
+            # TODO(not522): remove this after mlflow is fixed.
+            # https://github.com/mlflow/mlflow/pull/5945
+            "protobuf<4.0.0",
             "scikit-optimize",
             "xgboost",
             "tensorflow",
