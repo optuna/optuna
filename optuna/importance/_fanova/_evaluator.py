@@ -11,6 +11,7 @@ from optuna.importance._base import _get_filtered_trials
 from optuna.importance._base import _get_target_values
 from optuna.importance._base import _get_trans_params
 from optuna.importance._base import _param_importances_to_dict
+from optuna.importance._base import _sort_dict_by_importance
 from optuna.importance._base import _split_nonsingle_and_single_distributions
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova._fanova import _Fanova
@@ -76,12 +77,25 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
     def evaluate(
         self,
         study: Study,
+        params: Optional[List[str]] = None,
         *,
-        params: List[str],
-        target: Callable[[FrozenTrial], float],
+        target: Optional[Callable[[FrozenTrial], float]] = None,
     ) -> Dict[str, float]:
 
         distributions = _get_distributions(study, params=params)
+
+        if params is None:
+            params = list(distributions.keys())
+        assert params is not None
+        if target is None:
+
+            def default_target(trial: FrozenTrial) -> float:
+                assert trial.value is not None
+                return trial.value
+
+            target = default_target
+        assert target is not None
+
         non_single_distributions, single_distributions = _split_nonsingle_and_single_distributions(
             distributions
         )
@@ -110,7 +124,9 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
         )
         param_importances /= numpy.sum(param_importances)
 
-        return {
-            **_param_importances_to_dict(non_single_distributions.keys(), param_importances),
-            **_param_importances_to_dict(single_distributions.keys(), 0.0),
-        }
+        return _sort_dict_by_importance(
+            {
+                **_param_importances_to_dict(non_single_distributions.keys(), param_importances),
+                **_param_importances_to_dict(single_distributions.keys(), 0.0),
+            }
+        )

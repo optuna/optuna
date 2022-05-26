@@ -25,9 +25,9 @@ class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
     def evaluate(
         self,
         study: Study,
+        params: Optional[List[str]] = None,
         *,
-        params: List[str],
-        target: Callable[[FrozenTrial], float],
+        target: Optional[Callable[[FrozenTrial], float]] = None,
     ) -> Dict[str, float]:
         """Evaluate parameter importances based on completed trials in the given study.
 
@@ -49,8 +49,9 @@ class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
                 assessed.
             target:
                 A function to specify the value to evaluate importances.
-                Can also be used for other trial attributes, such as
-                the duration, like ``target=lambda t: t.duration.total_seconds()``.
+                If it is :obj:`None` and ``study`` is being used for single-objective optimization,
+                the objective values are used. ``target`` must be specified if ``study`` is being
+                used for multi-objective optimization.
 
         Returns:
             An :class:`collections.OrderedDict` where the keys are parameter names and the values
@@ -172,3 +173,13 @@ def _get_target_values(
     trials: List[FrozenTrial], target: Callable[[FrozenTrial], float]
 ) -> numpy.ndarray:
     return numpy.array([target(trial) for trial in trials])
+
+
+def _sort_dict_by_importance(param_importances: Dict[str, float]) -> Dict[str, float]:
+    return OrderedDict(
+        reversed(
+            sorted(
+                param_importances.items(), key=lambda name_and_importance: name_and_importance[1]
+            )
+        )
+    )

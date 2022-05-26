@@ -7,7 +7,6 @@ from typing import Optional
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova import FanovaImportanceEvaluator
 from optuna.importance._mean_decrease_impurity import MeanDecreaseImpurityImportanceEvaluator
-from optuna.samplers._search_space.intersection import intersection_search_space
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 
@@ -97,29 +96,9 @@ def get_param_importances(
                 "`target=lambda t: t.values[0]` for the first objective value."
             )
 
-        def default_target(trial: FrozenTrial) -> float:
-            val: Optional[float] = trial.value
-            assert val is not None
-            return val
-
-        target = default_target
-
-    if params is None:
-        try:
-            params = list(
-                intersection_search_space(study, ordered_dict=True, allow_empty_study=False).keys()
-            )
-        except ValueError:
-            raise ValueError("The study does not contain completed trials.")
-
-        if len(params) == 0:
-            return OrderedDict()
+    if params is not None and len(params) == 0:
+        return OrderedDict()
 
     importances = evaluator.evaluate(study, params=params, target=target)
 
-    # Sort the importances in descending order.
-    return OrderedDict(
-        reversed(
-            sorted(importances.items(), key=lambda name_and_importance: name_and_importance[1])
-        )
-    )
+    return importances
