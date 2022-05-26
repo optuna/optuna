@@ -1,8 +1,12 @@
+from collections import OrderedDict
+from typing import List
 from typing import Tuple
 
 import pytest
 
+import optuna
 from optuna import create_study
+from optuna import samplers
 from optuna import Trial
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
@@ -10,6 +14,8 @@ from optuna.distributions import IntDistribution
 from optuna.importance import get_param_importances
 from optuna.integration.shap import ShapleyImportanceEvaluator
 from optuna.samplers import RandomSampler
+from optuna.testing.storage import STORAGE_MODES
+from optuna.testing.storage import StorageSupplier
 from optuna.trial import create_trial
 
 
@@ -166,3 +172,235 @@ def test_multi_objective_shap_importance_evaluator_with_infinite(
     # Obtained importance scores should be the same between with inf and without inf,
     # because the last trial whose objective value is an inf is ignored.
     assert param_importance_with_inf == param_importance_without_inf
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_get_param_importance_target_is_none_and_study_is_multi_obj(
+    storage_mode: str,
+) -> None:
+    def objective(trial: Trial) -> Tuple[float, float]:
+        x1 = trial.suggest_float("x1", 0.1, 3)
+        x2 = trial.suggest_float("x2", 0.1, 3, log=True)
+        x3 = trial.suggest_float("x3", 0, 3, step=1)
+        x4 = trial.suggest_int("x4", -3, 3)
+        x5 = trial.suggest_int("x5", 1, 5, log=True)
+        x6 = trial.suggest_categorical("x6", [1.0, 1.1, 1.2])
+        if trial.number % 2 == 0:
+            # Conditional parameters are ignored unless `params` is specified and is not `None`.
+            x7 = trial.suggest_float("x7", 0.1, 3)
+
+        assert isinstance(x6, float)
+        value = x1**4 + x2 + x3 - x4**2 - x5 + x6
+        if trial.number % 2 == 0:
+            value += x7
+        return value, 0.0
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(directions=["minimize", "minimize"], storage=storage)
+        study.optimize(objective, n_trials=3)
+
+        with pytest.raises(ValueError):
+            get_param_importances(study, evaluator=ShapleyImportanceEvaluator())
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_get_param_importances(
+    storage_mode: str,
+) -> None:
+    def objective(trial: Trial) -> float:
+        x1 = trial.suggest_float("x1", 0.1, 3)
+        x2 = trial.suggest_float("x2", 0.1, 3, log=True)
+        x3 = trial.suggest_float("x3", 0, 3, step=1)
+        x4 = trial.suggest_int("x4", -3, 3)
+        x5 = trial.suggest_int("x5", 1, 5, log=True)
+        x6 = trial.suggest_categorical("x6", [1.0, 1.1, 1.2])
+        if trial.number % 2 == 0:
+            # Conditional parameters are ignored unless `params` is specified and is not `None`.
+            x7 = trial.suggest_float("x7", 0.1, 3)
+
+        assert isinstance(x6, float)
+        value = x1**4 + x2 + x3 - x4**2 - x5 + x6
+        if trial.number % 2 == 0:
+            value += x7
+        return value
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage, sampler=samplers.RandomSampler())
+        study.optimize(objective, n_trials=3)
+
+        param_importance = get_param_importances(study, evaluator=ShapleyImportanceEvaluator())
+
+        assert isinstance(param_importance, OrderedDict)
+        assert len(param_importance) == 6
+        assert all(
+            param_name in param_importance for param_name in ["x1", "x2", "x3", "x4", "x5", "x6"]
+        )
+        prev_importance = float("inf")
+        for param_name, importance in param_importance.items():
+            assert isinstance(param_name, str)
+            assert isinstance(importance, float)
+            assert importance <= prev_importance
+            prev_importance = importance
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+@pytest.mark.parametrize("params", [[], ["x1"], ["x1", "x3"], ["x1", "x4"]])
+def test_get_param_importances_with_params(
+    storage_mode: str,
+    params: List[str],
+) -> None:
+    def objective(trial: Trial) -> float:
+        x1 = trial.suggest_float("x1", 0.1, 3)
+        x2 = trial.suggest_float("x2", 0.1, 3, log=True)
+        x3 = trial.suggest_float("x3", 0, 3, step=1)
+        if trial.number % 2 == 0:
+            x4 = trial.suggest_float("x4", 0.1, 3)
+
+        value = x1**4 + x2 + x3
+        if trial.number % 2 == 0:
+            value += x4
+        return value
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        study.optimize(objective, n_trials=10)
+
+        param_importance = get_param_importances(
+            study, evaluator=ShapleyImportanceEvaluator(), params=params
+        )
+
+        assert isinstance(param_importance, OrderedDict)
+        assert len(param_importance) == len(params)
+        assert all(param in param_importance for param in params)
+        for param_name, importance in param_importance.items():
+            assert isinstance(param_name, str)
+            assert isinstance(importance, float)
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_get_param_importances_with_target(
+    storage_mode: str,
+) -> None:
+    def objective(trial: Trial) -> float:
+        x1 = trial.suggest_float("x1", 0.1, 3)
+        x2 = trial.suggest_float("x2", 0.1, 3, log=True)
+        x3 = trial.suggest_float("x3", 0, 3, step=1)
+        if trial.number % 2 == 0:
+            x4 = trial.suggest_float("x4", 0.1, 3)
+
+        value = x1**4 + x2 + x3
+        if trial.number % 2 == 0:
+            value += x4
+        return value
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        study.optimize(objective, n_trials=3)
+
+        param_importance = get_param_importances(
+            study,
+            evaluator=ShapleyImportanceEvaluator(),
+            target=lambda t: t.params["x1"] + t.params["x2"],
+        )
+
+        assert isinstance(param_importance, OrderedDict)
+        assert len(param_importance) == 3
+        assert all(param_name in param_importance for param_name in ["x1", "x2", "x3"])
+        prev_importance = float("inf")
+        for param_name, importance in param_importance.items():
+            assert isinstance(param_name, str)
+            assert isinstance(importance, float)
+            assert importance <= prev_importance
+            prev_importance = importance
+
+
+def test_get_param_importances_invalid_empty_study() -> None:
+
+    study = create_study()
+
+    with pytest.raises(ValueError):
+        get_param_importances(study, evaluator=ShapleyImportanceEvaluator())
+
+    def objective(trial: Trial) -> float:
+        raise optuna.TrialPruned
+
+    study.optimize(objective, n_trials=3)
+
+    with pytest.raises(ValueError):
+        get_param_importances(study, evaluator=ShapleyImportanceEvaluator())
+
+
+def test_get_param_importances_invalid_single_trial() -> None:
+    def objective(trial: Trial) -> float:
+        x1 = trial.suggest_float("x1", 0.1, 3)
+        return x1**2
+
+    study = create_study()
+    study.optimize(objective, n_trials=1)
+
+    with pytest.raises(ValueError):
+        get_param_importances(study, evaluator=ShapleyImportanceEvaluator())
+
+
+def test_get_param_importances_invalid_evaluator_type() -> None:
+    def objective(trial: Trial) -> float:
+        x1 = trial.suggest_float("x1", 0.1, 3)
+        return x1**2
+
+    study = create_study()
+    study.optimize(objective, n_trials=3)
+
+    with pytest.raises(TypeError):
+        get_param_importances(study, evaluator={})  # type: ignore
+
+
+def test_get_param_importances_invalid_no_completed_trials_params() -> None:
+    def objective(trial: Trial) -> float:
+        x1 = trial.suggest_float("x1", 0.1, 3)
+        if trial.number % 2 == 0:
+            _ = trial.suggest_float("x2", 0.1, 3, log=True)
+            raise optuna.TrialPruned
+        return x1**2
+
+    study = create_study()
+    study.optimize(objective, n_trials=3)
+
+    # None of the trials with `x2` are completed.
+    with pytest.raises(ValueError):
+        get_param_importances(study, evaluator=ShapleyImportanceEvaluator(), params=["x2"])
+
+    # None of the trials with `x2` are completed. Adding "x1" should not matter.
+    with pytest.raises(ValueError):
+        get_param_importances(study, evaluator=ShapleyImportanceEvaluator(), params=["x1", "x2"])
+
+    # None of the trials contain `x3`.
+    with pytest.raises(ValueError):
+        get_param_importances(study, evaluator=ShapleyImportanceEvaluator(), params=["x3"])
+
+
+def test_get_param_importances_invalid_dynamic_search_space_params() -> None:
+    def objective(trial: Trial) -> float:
+        x1 = trial.suggest_float("x1", 0.1, trial.number + 0.1)
+        return x1**2
+
+    study = create_study()
+    study.optimize(objective, n_trials=3)
+
+    with pytest.raises(ValueError):
+        get_param_importances(study, evaluator=ShapleyImportanceEvaluator(), params=["x1"])
+
+
+def test_get_param_importances_empty_search_space() -> None:
+    def objective(trial: Trial) -> float:
+        x = trial.suggest_float("x", 0, 5)
+        y = trial.suggest_float("y", 1, 1)
+        return 4 * x**2 + 4 * y**2
+
+    study = create_study()
+    study.optimize(objective, n_trials=3)
+
+    param_importance = get_param_importances(study, evaluator=ShapleyImportanceEvaluator())
+
+    assert len(param_importance) == 2
+    assert all([param in param_importance for param in ["x", "y"]])
+    assert param_importance["y"] == 0.0

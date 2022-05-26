@@ -128,7 +128,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "fakeredis<=1.7.1",
             "pytest",
             "pytest-cov",
-            "shap",
         ],
     }
 
