@@ -45,6 +45,8 @@ class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
                 An optimized study.
             params:
                 A list of names of parameters to assess.
+                If :obj:`None`, all parameters that are present in all of the completed trials are
+                assessed.
             target:
                 A function to specify the value to evaluate importances.
                 Can also be used for other trial attributes, such as
