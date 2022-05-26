@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 import numpy as np
 import pytest
 import scipy as sp
@@ -357,3 +359,34 @@ def test_optuna_search_convert_deprecated_distribution() -> None:
     )
 
     assert optuna_search.param_distributions == expected_param_dist
+
+
+def test_callbacks() -> None:
+    callbacks = []
+
+    for _ in range(2):
+        callback = MagicMock()
+        callback.__call__ = MagicMock(return_value=None)  # type: ignore
+        callbacks.append(callback)
+
+    n_trials = 5
+    X, y = make_blobs(n_samples=10)
+    est = SGDClassifier(max_iter=5, tol=1e-03)
+    param_dist = {"alpha": distributions.FloatDistribution(1e-04, 1e03, log=True)}
+    optuna_search = integration.OptunaSearchCV(
+        est,
+        param_dist,
+        cv=3,
+        enable_pruning=True,
+        max_iter=5,
+        n_trials=n_trials,
+        error_score=np.nan,
+        callbacks=callbacks,  # type: ignore
+    )
+
+    optuna_search.fit(X, y)
+
+    for callback in callbacks:
+        for trial in optuna_search.trials_:
+            callback.assert_any_call(optuna_search.study_, trial)
+        assert callback.call_count == n_trials
