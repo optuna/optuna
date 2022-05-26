@@ -325,7 +325,7 @@ def test_plot_pareto_front_3d(
 def test_plot_pareto_front_unsupported_dimensions(
     include_dominated_trials: bool, use_constraints_func: bool
 ) -> None:
-    constraints_func = (lambda x: [-1.0]) if use_constraints_func else None
+    constraints_func = (lambda _: [-1.0]) if use_constraints_func else None
 
     error_message = (
         "`plot_pareto_front` function only supports 2 or 3 objective"
@@ -336,7 +336,7 @@ def test_plot_pareto_front_unsupported_dimensions(
     # Unsupported: n_objectives == 1.
     with pytest.raises(ValueError, match=error_message):
         study = optuna.create_study(directions=["minimize"])
-        study.optimize(lambda t: [0], n_trials=1)
+        study.optimize(lambda _: [0], n_trials=1)
         plot_pareto_front(
             study=study,
             include_dominated_trials=include_dominated_trials,
@@ -345,7 +345,7 @@ def test_plot_pareto_front_unsupported_dimensions(
 
     with pytest.raises(ValueError, match=error_message):
         study = optuna.create_study(direction="minimize")
-        study.optimize(lambda t: [0], n_trials=1)
+        study.optimize(lambda _: [0], n_trials=1)
         plot_pareto_front(
             study=study,
             include_dominated_trials=include_dominated_trials,
@@ -355,7 +355,7 @@ def test_plot_pareto_front_unsupported_dimensions(
     # Unsupported: n_objectives == 4.
     with pytest.raises(ValueError, match=error_message):
         study = optuna.create_study(directions=["minimize", "minimize", "minimize", "minimize"])
-        study.optimize(lambda t: [0, 0, 0, 0], n_trials=1)
+        study.optimize(lambda _: [0, 0, 0, 0], n_trials=1)
         plot_pareto_front(
             study=study,
             include_dominated_trials=include_dominated_trials,
@@ -371,8 +371,8 @@ def test_plot_pareto_front_invalid_axis_order(
     dimension: int, include_dominated_trials: bool, use_constraints_func: bool
 ) -> None:
     study = optuna.create_study(directions=["minimize"] * dimension)
-    study.optimize(lambda t: [0] * dimension, n_trials=1)
-    constraints_func = (lambda x: [-1.0]) if use_constraints_func else None
+    study.optimize(lambda _: [0] * dimension, n_trials=1)
+    constraints_func = (lambda _: [-1.0]) if use_constraints_func else None
 
     # Invalid: len(axis_order) != dimension
     with pytest.raises(ValueError):
@@ -412,7 +412,7 @@ def test_plot_pareto_front_invalid_axis_order(
     # Invalid: min(axis_order) < 0
     with pytest.raises(ValueError):
         study = optuna.create_study(directions=["minimize", "minimize"])
-        study.optimize(lambda t: [0] * 2, n_trials=1)
+        study.optimize(lambda _: [0] * 2, n_trials=1)
         invalid_axis_order = list(range(dimension))
         invalid_axis_order[0] -= 1
         assert min(invalid_axis_order) < 0
@@ -441,7 +441,7 @@ def test_plot_pareto_front_targets_without_target_names() -> None:
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 def test_plot_pareto_front_invalid_target_values() -> None:
     study = optuna.create_study(directions=["minimize", "minimize", "minimize", "minimize"])
-    study.optimize(lambda t: [0, 0, 0, 0], n_trials=3)
+    study.optimize(lambda _: [0, 0, 0, 0], n_trials=3)
     with pytest.raises(
         ValueError,
         match="targets` should return a sequence of target values. your `targets`"
@@ -465,7 +465,7 @@ def test_plot_pareto_front_n_targets_unsupported(
     targets: Callable[[FrozenTrial], Sequence[float]]
 ) -> None:
     study = optuna.create_study(directions=["minimize", "minimize", "minimize", "minimize"])
-    study.optimize(lambda t: [0, 0, 0, 0], n_trials=3)
+    study.optimize(lambda _: [0, 0, 0, 0], n_trials=3)
     n_targets = len(targets(study.best_trials[0]))
     with pytest.raises(
         ValueError,
