@@ -793,7 +793,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
     @staticmethod
     def _ensure_numerical_limit(value: float) -> float:
-        # TODO(c-bata): Remove this method after fixing inf/-inf handling of trial.values
+        # TODO(c-bata): Remove this method after fixing inf/-inf handling of trial.values.
 
         # Max and min trial values that can be stored are limited by
         # dialect. Most limiting one is MySQL which in current data
@@ -803,7 +803,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
     @staticmethod
     def _lift_numerical_limit(value: Optional[float]) -> float:
-        # TODO(c-bata): Remove this method after fixing inf/-inf handling of trial.values
+        # TODO(c-bata): Remove this method after fixing inf/-inf handling of trial.values.
 
         # Floats can't be compared for equality because they are
         # approximate and not stored as exact values.
