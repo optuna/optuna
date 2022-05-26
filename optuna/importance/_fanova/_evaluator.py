@@ -11,7 +11,7 @@ from optuna.importance._base import _get_filtered_trials
 from optuna.importance._base import _get_target_values
 from optuna.importance._base import _get_trans_params
 from optuna.importance._base import _param_importances_to_dict
-from optuna.importance._base import _split_distributions
+from optuna.importance._base import _split_nonsingle_and_single_distributions
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova._fanova import _Fanova
 from optuna.study import Study
@@ -82,7 +82,9 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
     ) -> Dict[str, float]:
 
         distributions = _get_distributions(study, params=params)
-        non_single_distributions, single_distributions = _split_distributions(distributions)
+        non_single_distributions, single_distributions = _split_nonsingle_and_single_distributions(
+            distributions
+        )
 
         if len(non_single_distributions) == 0:
             return {}

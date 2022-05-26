@@ -134,7 +134,7 @@ def _check_evaluate_args(completed_trials: List[FrozenTrial], params: Optional[L
                 )
 
 
-def _split_distributions(
+def _split_nonsingle_and_single_distributions(
     distributions: Dict[str, BaseDistribution]
 ) -> Tuple[Dict[str, BaseDistribution], Dict[str, BaseDistribution]]:
     non_single_distributions = {
