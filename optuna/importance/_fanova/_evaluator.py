@@ -13,6 +13,7 @@ from optuna.importance._fanova._fanova import _Fanova
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+from optuna.visualization._utils import _filter_nonfinite
 
 
 class FanovaImportanceEvaluator(BaseImportanceEvaluator):
@@ -95,9 +96,9 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
         distributions = {name: dist for name, dist in distributions.items() if not dist.single()}
 
         trials = []
-        for trial in study.trials:
-            if trial.state != TrialState.COMPLETE:
-                continue
+        for trial in _filter_nonfinite(
+            study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
+        ):
             if any(name not in trial.params for name in distributions.keys()):
                 continue
             trials.append(trial)

@@ -14,6 +14,7 @@ from typing import Union
 import optuna
 from optuna import distributions
 from optuna.storages import BaseStorage
+from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.storages._rdb.storage import RDBStorage
 from optuna.storages._redis import RedisStorage
 from optuna.study._study_direction import StudyDirection
@@ -34,7 +35,7 @@ class _StudyInfo:
         self.name: Optional[str] = None
 
 
-class _CachedStorage(BaseStorage):
+class _CachedStorage(BaseStorage, BaseHeartbeat):
     """A wrapper class of storage backends.
 
     This class is used in :func:`~optuna.get_storage` function and automatically
@@ -114,14 +115,6 @@ class _CachedStorage(BaseStorage):
     def get_study_id_from_name(self, study_name: str) -> int:
 
         return self._backend.get_study_id_from_name(study_name)
-
-    def get_study_id_from_trial_id(self, trial_id: int) -> int:
-
-        with self._lock:
-            if trial_id in self._trial_id_to_study_id_and_number:
-                return self._trial_id_to_study_id_and_number[trial_id][0]
-
-        return self._backend.get_study_id_from_trial_id(trial_id)
 
     def get_study_name_from_id(self, study_id: int) -> str:
 
@@ -385,18 +378,8 @@ class _CachedStorage(BaseStorage):
     def record_heartbeat(self, trial_id: int) -> None:
         self._backend.record_heartbeat(trial_id)
 
-    def fail_stale_trials(self, study_id: int) -> List[int]:
-        stale_trial_ids = self._backend._get_stale_trial_ids(study_id)
-        confirmed_stale_trial_ids = []
-
-        for trial_id in stale_trial_ids:
-            if self.set_trial_state_values(trial_id, state=TrialState.FAIL):
-                confirmed_stale_trial_ids.append(trial_id)
-
-        return confirmed_stale_trial_ids
-
-    def _is_heartbeat_supported(self) -> bool:
-        return self._backend._is_heartbeat_supported()
+    def _get_stale_trial_ids(self, study_id: int) -> List[int]:
+        return self._backend._get_stale_trial_ids(study_id)
 
     def get_heartbeat_interval(self) -> Optional[int]:
         return self._backend.get_heartbeat_interval()

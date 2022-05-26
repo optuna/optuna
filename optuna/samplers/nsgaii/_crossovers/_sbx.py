@@ -9,7 +9,7 @@ from optuna.study import Study
 
 @experimental("3.0.0")
 class SBXCrossover(BaseCrossover):
-    """A Simulated Binary Crossover operation used by :class:`~optuna.samplers.NSGAIISampler`.
+    """Simulated Binary Crossover operation used by :class:`~optuna.samplers.NSGAIISampler`.
 
     Generates a child from two parent individuals
     according to the polynomial probability distribution.

@@ -8,12 +8,21 @@ from typing import Dict
 from typing import Optional
 from unittest.mock import patch
 
+from packaging import version
 import pytest
 from sqlalchemy.exc import IntegrityError
 
+import optuna
 from optuna import create_study
 from optuna import load_study
-from optuna import version
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
+from optuna.distributions import IntLogUniformDistribution
+from optuna.distributions import IntUniformDistribution
+from optuna.distributions import LogUniformDistribution
+from optuna.distributions import UniformDistribution
 from optuna.storages import RDBStorage
 from optuna.storages._rdb.models import SCHEMA_VERSION
 from optuna.storages._rdb.models import TrialHeartbeatModel
@@ -25,6 +34,7 @@ from optuna.trial import Trial
 
 from .create_db import mo_objective_test_upgrade
 from .create_db import objective_test_upgrade
+from .create_db import objective_test_upgrade_distributions
 
 
 def test_init() -> None:
@@ -34,10 +44,12 @@ def test_init() -> None:
 
     version_info = session.query(VersionInfoModel).first()
     assert version_info.schema_version == SCHEMA_VERSION
-    assert version_info.library_version == version.__version__
+    assert version_info.library_version == optuna.version.__version__
 
     assert storage.get_current_version() == storage.get_head_version()
     assert storage.get_all_versions() == [
+        "v3.0.0.b",
+        "v3.0.0.a",
         "v2.6.0.a",
         "v2.4.0.a",
         "v1.3.0.a",
@@ -165,7 +177,9 @@ def test_upgrade_identity() -> None:
     assert old_version == new_version
 
 
-@pytest.mark.parametrize("optuna_version", ["0.9.0", "1.2.0", "1.3.0", "2.4.0", "2.6.0"])
+@pytest.mark.parametrize(
+    "optuna_version", ["0.9.0.a", "1.2.0.a", "1.3.0.a", "2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b"]
+)
 def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
     src_db_file = os.path.join(
         os.path.dirname(__file__), "test_upgrade_assets", f"{optuna_version}.db"
@@ -174,8 +188,8 @@ def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
         shutil.copyfile(src_db_file, f"{workdir}/sqlite.db")
         storage_url = f"sqlite:///{workdir}/sqlite.db"
 
-        storage = RDBStorage(storage_url, skip_compatibility_check=True)
-        assert storage.get_current_version() == f"v{optuna_version}.a"
+        storage = RDBStorage(storage_url, skip_compatibility_check=True, skip_table_creation=True)
+        assert storage.get_current_version() == f"v{optuna_version}"
         head_version = storage.get_head_version()
         storage.upgrade()
         assert head_version == storage.get_current_version()
@@ -210,7 +224,7 @@ def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
         assert study.user_attrs["d"] == 3
 
 
-@pytest.mark.parametrize("optuna_version", ["2.4.0", "2.6.0"])
+@pytest.mark.parametrize("optuna_version", ["2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b"])
 def test_upgrade_multi_objective_optimization(optuna_version: str) -> None:
     src_db_file = os.path.join(
         os.path.dirname(__file__), "test_upgrade_assets", f"{optuna_version}.db"
@@ -219,8 +233,8 @@ def test_upgrade_multi_objective_optimization(optuna_version: str) -> None:
         shutil.copyfile(src_db_file, f"{workdir}/sqlite.db")
         storage_url = f"sqlite:///{workdir}/sqlite.db"
 
-        storage = RDBStorage(storage_url, skip_compatibility_check=True)
-        assert storage.get_current_version() == f"v{optuna_version}.a"
+        storage = RDBStorage(storage_url, skip_compatibility_check=True, skip_table_creation=True)
+        assert storage.get_current_version() == f"v{optuna_version}"
         head_version = storage.get_head_version()
         storage.upgrade()
         assert head_version == storage.get_current_version()
@@ -252,6 +266,53 @@ def test_upgrade_multi_objective_optimization(optuna_version: str) -> None:
             assert 0 <= trial.values[1] <= 150
         assert study.system_attrs["c"] == 2
         assert study.user_attrs["d"] == 3
+
+
+@pytest.mark.parametrize("optuna_version", ["2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b"])
+def test_upgrade_distributions(optuna_version: str) -> None:
+    src_db_file = os.path.join(
+        os.path.dirname(__file__), "test_upgrade_assets", f"{optuna_version}.db"
+    )
+    with tempfile.TemporaryDirectory() as workdir:
+        shutil.copyfile(src_db_file, f"{workdir}/sqlite.db")
+        storage_url = f"sqlite:///{workdir}/sqlite.db"
+
+        storage = RDBStorage(storage_url, skip_compatibility_check=True, skip_table_creation=True)
+        old_study = load_study(storage=storage, study_name="schema migration")
+        old_distribution_dict = old_study.trials[0].distributions
+
+        if version.parse(optuna_version) >= version.parse("3.0.0.a"):
+            assert isinstance(old_distribution_dict["x1"], FloatDistribution)
+            assert isinstance(old_distribution_dict["x2"], FloatDistribution)
+            assert isinstance(old_distribution_dict["x3"], FloatDistribution)
+            assert isinstance(old_distribution_dict["y1"], IntDistribution)
+            assert isinstance(old_distribution_dict["y2"], IntDistribution)
+            assert isinstance(old_distribution_dict["z"], CategoricalDistribution)
+        else:
+            assert isinstance(old_distribution_dict["x1"], UniformDistribution)
+            assert isinstance(old_distribution_dict["x2"], LogUniformDistribution)
+            assert isinstance(old_distribution_dict["x3"], DiscreteUniformDistribution)
+            assert isinstance(old_distribution_dict["y1"], IntUniformDistribution)
+            assert isinstance(old_distribution_dict["y2"], IntLogUniformDistribution)
+            assert isinstance(old_distribution_dict["z"], CategoricalDistribution)
+
+        assert storage.get_current_version() == f"v{optuna_version}"
+        head_version = storage.get_head_version()
+        storage.upgrade()
+        assert head_version == storage.get_current_version()
+
+        new_study = load_study(storage=storage, study_name="schema migration")
+        new_distribution_dict = new_study.trials[0]._distributions
+
+        assert isinstance(new_distribution_dict["x1"], FloatDistribution)
+        assert isinstance(new_distribution_dict["x2"], FloatDistribution)
+        assert isinstance(new_distribution_dict["x3"], FloatDistribution)
+        assert isinstance(new_distribution_dict["y1"], IntDistribution)
+        assert isinstance(new_distribution_dict["y2"], IntDistribution)
+        assert isinstance(new_distribution_dict["z"], CategoricalDistribution)
+
+        # Check if Study.optimize can run on new storage.
+        new_study.optimize(objective_test_upgrade_distributions, n_trials=1)
 
 
 def test_record_heartbeat() -> None:

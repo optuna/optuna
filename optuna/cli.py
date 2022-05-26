@@ -312,7 +312,7 @@ class _StudySetUserAttribute(_BaseCommand):
             help="The name of the study to set the user attribute to.",
         )
         parser.add_argument("--key", "-k", required=True, help="Key of the user attribute.")
-        parser.add_argument("--value", "-v", required=True, help="Value to be set.")
+        parser.add_argument("--value", required=True, help="Value to be set.")
         return parser
 
     def take_action(self, parsed_args: Namespace) -> None:
@@ -657,7 +657,7 @@ class _StorageUpgrade(_BaseCommand):
         if storage_url.startswith("redis"):
             self.logger.info("This storage does not support upgrade yet.")
             return
-        storage = RDBStorage(storage_url, skip_compatibility_check=True)
+        storage = RDBStorage(storage_url, skip_compatibility_check=True, skip_table_creation=True)
         current_version = storage.get_current_version()
         head_version = storage.get_head_version()
         known_versions = storage.get_all_versions()
@@ -773,7 +773,7 @@ class _Ask(_BaseCommand):
 
         if parsed_args.search_space is not None:
             # The search space is expected to be a JSON serialized string, e.g.
-            # '{"x": {"name": "UniformDistribution", "attributes": {"low": 0.0, "high": 1.0}},
+            # '{"x": {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}},
             #   "y": ...}'.
             search_space = {
                 name: optuna.distributions.json_to_distribution(json.dumps(dist))
@@ -837,7 +837,12 @@ class _Tell(_BaseCommand):
         parser.add_argument("--study-name", type=str, help="Name of study.")
         parser.add_argument("--trial-number", type=int, help="Trial number.")
         parser.add_argument("--values", type=float, nargs="+", help="Objective values.")
-        parser.add_argument("--state", type=str, default="complete", help="Trial state.")
+        parser.add_argument(
+            "--state",
+            type=str,
+            help="Trial state.",
+            choices=("complete", "pruned", "fail"),
+        )
         parser.add_argument(
             "--skip-if-finished",
             default=False,
@@ -861,7 +866,11 @@ class _Tell(_BaseCommand):
             study_name=parsed_args.study_name,
         )
 
-        state = TrialState[parsed_args.state.upper()]
+        if parsed_args.state is not None:
+            state: Optional[TrialState] = TrialState[parsed_args.state.upper()]
+        else:
+            state = None
+
         trial_number = parsed_args.trial_number
         values = parsed_args.values
 
@@ -910,6 +919,7 @@ class _OptunaApp(App):
         assert len(stream_handlers) == 1
         stream_handler = stream_handlers[0]
         stream_handler.setFormatter(optuna.logging.create_default_formatter())
+        optuna.logging.set_verbosity(stream_handler.level)
 
     def clean_up(self, cmd: Command, result: int, err: Optional[Exception]) -> None:
 

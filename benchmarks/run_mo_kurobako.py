@@ -135,7 +135,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--path-to-kurobako", type=str, default="")
     parser.add_argument(
-        "--path-to-create-study", type=str, default="benchmarks/mo_create_study.py"
+        "--path-to-create-study", type=str, default="benchmarks/kurobako/mo_create_study.py"
     )
     parser.add_argument("--name-prefix", type=str, default="")
     parser.add_argument("--n-runs", type=int, default=100)

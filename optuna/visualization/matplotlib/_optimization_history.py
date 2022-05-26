@@ -82,11 +82,6 @@ def plot_optimization_history(
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
-
-    Raises:
-        :exc:`ValueError`:
-            If ``target`` is :obj:`None` and ``study`` is being used for multi-objective
-            optimization.
     """
 
     _imports.check()
@@ -111,7 +106,7 @@ def _get_optimization_history_plot(
 
     _, ax = plt.subplots()
     ax.set_title("Optimization History Plot")
-    ax.set_xlabel("#Trials")
+    ax.set_xlabel("Trial")
     ax.set_ylabel(target_name)
 
     if len(studies) == 0:

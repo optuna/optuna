@@ -21,7 +21,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
 
     services:
       mysql:
@@ -90,7 +90,8 @@ jobs:
         python -c 'import optuna'
         optuna --version
 
-        pip install --progress-bar off .[tests]
+        pip install --progress-bar off .[test]
+        pip install --progress-bar off .[optional]
 
     - name: Install DB bindings
       run: |

@@ -45,14 +45,14 @@ def get_install_requires() -> List[str]:
     return requirements
 
 
-def get_tests_require() -> List[str]:
-
-    return get_extras_require()["testing"]
-
-
 def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
+        "benchmark": [
+            "asv>=0.5.0",
+            "botorch",
+            "virtualenv",
+        ],
         "checking": [
             "black",
             "hacking",
@@ -63,118 +63,78 @@ def get_extras_require() -> Dict[str, List[str]]:
             "types-redis",
             "types-PyYAML",
         ],
-        "codecov": ["codecov", "pytest-cov"],
-        "doctest": [
+        "document": [
             "cma",
-            "matplotlib>=3.0.0",
+            "lightgbm",
+            "matplotlib",
+            "mlflow",
             "pandas",
-            "plotly>=4.0.0",
+            "pillow",
+            "plotly>=4.0.0",  # optuna/visualization.
+            # TODO(not522): remove this after mlflow is fixed.
+            # https://github.com/mlflow/mlflow/pull/5945
+            "protobuf<4.0.0",
             "scikit-learn>=0.24.2",
             "scikit-optimize",
-            "mlflow",
-        ],
-        "document": [
             "sphinx",
-            "sphinx_rtd_theme",
             "sphinx-copybutton",
             "sphinx-gallery",
             "sphinx-plotly-directive",
+            "sphinx_rtd_theme",
             "pillow",
             "matplotlib",
             "scikit-learn",
             "plotly>=4.0.0",  # optuna/visualization.
             "pandas",
             "lightgbm",
-            "torch==1.10.0",
-            "torchvision==0.11.1",
-            "torchaudio==0.10.0",
+            "torch==1.11.0 ; python_version>'3.6'",
+            "torchvision==0.12.0 ; python_version>'3.6'",
+            "torchaudio==0.11.0 ; python_version>'3.6'",
             "thop",
         ],
-        "experimental": ["redis"],
-        "testing": [
+        "integration": [
+            "allennlp>=2.2.0 ; python_version>'3.6'",
+            "botorch>=0.4.0 ; python_version>'3.6'",
+            "catalyst>=21.3 ; python_version>'3.6'",
+            "catboost>=0.26",
             "chainer>=5.0.0",
             "cma",
-            "fakeredis",
+            "fastai ; python_version>'3.6'",
             "lightgbm",
-            "matplotlib>=3.0.0",
             "mlflow",
             "mpi4py",
             "mxnet",
             "pandas",
-            "plotly>=4.0.0",
-            "pytest",
+            # TODO(not522): remove this after mlflow is fixed.
+            # https://github.com/mlflow/mlflow/pull/5945
+            "protobuf<4.0.0",
+            "pytorch-ignite ; python_version>'3.6'",
+            "pytorch-lightning>=1.5.0 ; python_version>'3.6'",
             "scikit-learn>=0.24.2",
             "scikit-optimize",
-            "xgboost",
+            "shap",
+            "skorch ; python_version>'3.6'",
             "tensorflow ; python_version>'3.6'",
             "tensorflow-datasets",
-            "pytorch-ignite",
-            "pytorch-lightning>=1.5.0,<1.6.0",
-            "skorch",
-            "catalyst>=21.3",
-            "torch==1.10.0 ; sys_platform=='darwin'",
-            "torch==1.10.0+cpu ; sys_platform!='darwin'",
-            "torchvision==0.11.1 ; sys_platform=='darwin'",
-            "torchvision==0.11.1+cpu ; sys_platform!='darwin'",
-            "torchaudio==0.10.0",
-            # TODO(himkt): Remove `nltk` after solving
-            # https://github.com/allenai/allennlp/issues/5521
-            "nltk<3.6.6",
-            # TODO(himkt): Remove upper bound constraint
-            # after solving https://github.com/optuna/optuna/issues/3366
-            "allennlp>=2.2.0,<2.9.1 ; python_version>'3.6'",
-            "botorch>=0.4.0 ; python_version>'3.6'",
-            "fastai ; python_version>'3.6'",
-        ],
-        "tests": [
-            "fakeredis",
-            "pytest",
+            "torch==1.11.0 ; python_version>'3.6'",
+            "torchaudio==0.11.0 ; python_version>'3.6'",
+            "torchvision==0.12.0 ; python_version>'3.6'",
+            "wandb",
+            "xgboost",
         ],
         "optional": [
-            "matplotlib>=3.0.0",  # optuna/visualization/matplotlib
+            "matplotlib",  # optuna/visualization/matplotlib
             "pandas",  # optuna/study.py
             "plotly>=4.0.0",  # optuna/visualization.
             "redis",  # optuna/storages/redis.py.
             "scikit-learn>=0.24.2",
             # optuna/visualization/param_importances.py.
         ],
-        "integration": [
-            "catboost>=0.26",
-            "chainer>=5.0.0",
-            "cma",
-            "lightgbm",
-            "mlflow",
-            "wandb",
-            "mpi4py",
-            "mxnet",
-            "pandas",
-            "scikit-learn>=0.24.2",
-            "scikit-optimize",
-            "xgboost",
-            "tensorflow ; python_version>'3.6'",
-            "tensorflow-datasets",
-            "pytorch-ignite",
-            "pytorch-lightning>=1.5.0,<1.6.0",
-            "skorch",
-            "catalyst>=21.3",
-            "torch==1.10.0 ; sys_platform=='darwin'",
-            "torch==1.10.0+cpu ; sys_platform!='darwin'",
-            "torchvision==0.11.1 ; sys_platform=='darwin'",
-            "torchvision==0.11.1+cpu ; sys_platform!='darwin'",
-            "torchaudio==0.10.0",
-            # TODO(himkt): Remove `nltk` after solving
-            # https://github.com/allenai/allennlp/issues/5521
-            "nltk<3.6.6",
-            # TODO(himkt): Remove upper bound constraint
-            # after solving https://github.com/optuna/optuna/issues/3366
-            "allennlp>=2.2.0,<2.9.1 ; python_version>'3.6'",
-            "botorch>=0.4.0 ; python_version>'3.6'",
-            "fastai ; python_version>'3.6'",
-        ],
-        "benchmark": [
-            "asv>=0.5.0",
-            "virtualenv",
-            "botorch",
+        "test": [
+            "codecov",
+            "fakeredis<=1.7.1",
+            "pytest",
+            "pytest-cov",
         ],
     }
 
@@ -216,7 +176,6 @@ setup(
     },
     python_requires=">=3.6",
     install_requires=get_install_requires(),
-    tests_require=get_tests_require(),
     extras_require=get_extras_require(),
     entry_points={
         "console_scripts": ["optuna = optuna.cli:main"],
@@ -244,6 +203,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3 :: Only",
         "Topic :: Scientific/Engineering",
         "Topic :: Scientific/Engineering :: Mathematics",

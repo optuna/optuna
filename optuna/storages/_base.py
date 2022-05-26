@@ -1,6 +1,5 @@
 import abc
 from typing import Any
-from typing import Callable
 from typing import cast
 from typing import Container
 from typing import Dict
@@ -10,8 +9,8 @@ from typing import Sequence
 from typing import Tuple
 from typing import Union
 
-import optuna
 from optuna.distributions import BaseDistribution
+from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
@@ -206,23 +205,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         Raises:
             :exc:`KeyError`:
                 If no study with the matching ``study_name`` exists.
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def get_study_id_from_trial_id(self, trial_id: int) -> int:
-        """Read the ID of a study to which a trial belongs.
-
-        Args:
-            trial_id:
-                ID of the trial.
-
-        Returns:
-            ID of the study.
-
-        Raises:
-            :exc:`KeyError`:
-                If no trial with the matching ``trial_id`` exists.
         """
         raise NotImplementedError
 
@@ -715,30 +697,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
                 "Trial#{} has already finished and can not be updated.".format(trial.number)
             )
 
-    def record_heartbeat(self, trial_id: int) -> None:
-        """Record the heartbeat of the trial.
-
-        Args:
-            trial_id:
-                ID of the trial.
-        """
-        pass
-
-    def fail_stale_trials(self, study_id: int) -> List[int]:
-        """Fail stale trials.
-
-        The running trials whose heartbeat has not been updated for a long time will be failed,
-        that is, those states will be changed to :obj:`~optuna.trial.TrialState.FAIL`.
-        The grace period is ``2 * heartbeat_interval``.
-
-        Args:
-            study_id:
-                ID of the related study.
-        Returns:
-            List of trial IDs of the failed trials.
-        """
-        pass
-
     def is_heartbeat_enabled(self) -> bool:
         """Check whether the storage enables the heartbeat.
 
@@ -747,23 +705,4 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             :meth:`~optuna.storages.BaseStorage.get_heartbeat_interval` is an integer,
             otherwise :obj:`False`.
         """
-        return self._is_heartbeat_supported() and self.get_heartbeat_interval() is not None
-
-    def _is_heartbeat_supported(self) -> bool:
-        return False
-
-    def get_heartbeat_interval(self) -> Optional[int]:
-        """Get the heartbeat interval if it is set.
-
-        Returns:
-            The heartbeat interval if it is set, otherwise :obj:`None`.
-        """
-        return None
-
-    def get_failed_trial_callback(self) -> Optional[Callable[["optuna.Study", FrozenTrial], None]]:
-        """Get the failed trial callback function.
-
-        Returns:
-            The failed trial callback function if it is set, otherwise :obj:`None`.
-        """
-        return None
+        return isinstance(self, BaseHeartbeat) and self.get_heartbeat_interval() is not None

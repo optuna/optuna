@@ -243,22 +243,7 @@ class _Optimizer(object):
 
         dimensions = []
         for name, distribution in sorted(self._search_space.items()):
-            if isinstance(distribution, distributions.UniformDistribution):
-                # Convert the upper bound from exclusive (optuna) to inclusive (skopt).
-                high = np.nextafter(distribution.high, float("-inf"))
-                dimension = space.Real(distribution.low, high)
-            elif isinstance(distribution, distributions.LogUniformDistribution):
-                # Convert the upper bound from exclusive (optuna) to inclusive (skopt).
-                high = np.nextafter(distribution.high, float("-inf"))
-                dimension = space.Real(distribution.low, high, prior="log-uniform")
-            elif isinstance(distribution, distributions.IntUniformDistribution):
-                count = (distribution.high - distribution.low) // distribution.step
-                dimension = space.Integer(0, count)
-            elif isinstance(distribution, distributions.IntLogUniformDistribution):
-                low = distribution.low - 0.5
-                high = distribution.high + 0.5
-                dimension = space.Real(low, high, prior="log-uniform")
-            elif isinstance(distribution, distributions.IntDistribution):
+            if isinstance(distribution, distributions.IntDistribution):
                 if distribution.log:
                     low = distribution.low - 0.5
                     high = distribution.high + 0.5
@@ -266,12 +251,10 @@ class _Optimizer(object):
                 else:
                     count = (distribution.high - distribution.low) // distribution.step
                     dimension = space.Integer(0, count)
-            elif isinstance(distribution, distributions.DiscreteUniformDistribution):
-                count = int((distribution.high - distribution.low) // distribution.q)
-                dimension = space.Integer(0, count)
             elif isinstance(distribution, distributions.CategoricalDistribution):
                 dimension = space.Categorical(distribution.choices)
             elif isinstance(distribution, distributions.FloatDistribution):
+                # Convert the upper bound from exclusive (optuna) to inclusive (skopt).
                 if distribution.log:
                     high = np.nextafter(distribution.high, float("-inf"))
                     dimension = space.Real(distribution.low, high, prior="log-uniform")
@@ -310,25 +293,9 @@ class _Optimizer(object):
         params = {}
         param_values = self._optimizer.ask()
         for (name, distribution), value in zip(sorted(self._search_space.items()), param_values):
-            if isinstance(
-                distribution,
-                (
-                    distributions.UniformDistribution,
-                    distributions.LogUniformDistribution,
-                    distributions.DiscreteUniformDistribution,
-                    distributions.FloatDistribution,
-                ),
-            ):
+            if isinstance(distribution, distributions.FloatDistribution):
                 # Type of value is np.floating, so cast it to Python's built-in float.
                 value = float(value)
-            if isinstance(distribution, distributions.DiscreteUniformDistribution):
-                value = value * distribution.q + distribution.low
-            elif isinstance(distribution, distributions.IntUniformDistribution):
-                value = int(value * distribution.step + distribution.low)
-            elif isinstance(distribution, distributions.IntLogUniformDistribution):
-                value = int(np.round(value))
-                value = min(max(value, distribution.low), distribution.high)
-            elif isinstance(distribution, distributions.FloatDistribution):
                 if distribution.step is not None:
                     value = value * distribution.step + distribution.low
             elif isinstance(distribution, distributions.IntDistribution):
@@ -370,13 +337,9 @@ class _Optimizer(object):
         for name, distribution in sorted(self._search_space.items()):
             param_value = trial.params[name]
 
-            if isinstance(distribution, distributions.DiscreteUniformDistribution):
-                param_value = (param_value - distribution.low) // distribution.q
-            elif isinstance(distribution, distributions.FloatDistribution):
+            if isinstance(distribution, distributions.FloatDistribution):
                 if distribution.step is not None:
                     param_value = (param_value - distribution.low) // distribution.step
-            elif isinstance(distribution, distributions.IntUniformDistribution):
-                param_value = (param_value - distribution.low) // distribution.step
             elif isinstance(distribution, distributions.IntDistribution):
                 if not distribution.log:
                     param_value = (param_value - distribution.low) // distribution.step

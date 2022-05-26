@@ -223,8 +223,8 @@ class TestChainerMNStudy(object):
     def test_relative_sampling(storage_mode: str, comm: CommunicatorBase) -> None:
 
         relative_search_space = {
-            "x": distributions.UniformDistribution(low=-10, high=10),
-            "y": distributions.LogUniformDistribution(low=20, high=30),
+            "x": distributions.FloatDistribution(low=-10, high=10),
+            "y": distributions.FloatDistribution(low=20, high=30, log=True),
             "z": distributions.CategoricalDistribution(choices=(-1.0, 1.0)),
         }
         relative_params = {"x": 1.0, "y": 25.0, "z": -1.0}
@@ -299,7 +299,7 @@ class TestChainerMNTrial(object):
                 assert x1 == x2
 
                 with pytest.raises(ValueError):
-                    mn_trial.suggest_loguniform("x1", low1, high1)
+                    mn_trial.suggest_float("x1", low1, high1, log=True)
 
             low2 = 1e-7
             high2 = 1e-2
@@ -309,8 +309,7 @@ class TestChainerMNTrial(object):
                 x3 = mn_trial.suggest_float("x2", low2, high2, log=True)
                 assert low2 <= x3 <= high2
 
-                x4 = mn_trial.suggest_loguniform("x2", low2, high2)
-
+                x4 = mn_trial.suggest_float("x2", low2, high2, log=True)
                 assert x3 == x4
 
                 with pytest.raises(ValueError):
@@ -318,64 +317,23 @@ class TestChainerMNTrial(object):
 
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-    def test_suggest_uniform(storage_mode: str, comm: CommunicatorBase) -> None:
-
-        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
-            study = TestChainerMNStudy._create_shared_study(storage, comm)
-            low = 0.5
-            high = 1.0
-            for _ in range(10):
-                mn_trial = _create_new_chainermn_trial(study, comm)
-
-                x1 = mn_trial.suggest_float("x", low, high)
-                assert low <= x1 <= high
-
-                x2 = mn_trial.suggest_float("x", low, high)
-                assert x1 == x2
-
-                with pytest.raises(ValueError):
-                    mn_trial.suggest_loguniform("x", low, high)
-
-    @staticmethod
-    @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-    def test_suggest_loguniform(storage_mode: str, comm: CommunicatorBase) -> None:
-
-        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
-            study = TestChainerMNStudy._create_shared_study(storage, comm)
-            low = 1e-7
-            high = 1e-2
-            for _ in range(10):
-                mn_trial = _create_new_chainermn_trial(study, comm)
-
-                x1 = mn_trial.suggest_loguniform("x", low, high)
-                assert low <= x1 <= high
-
-                x2 = mn_trial.suggest_loguniform("x", low, high)
-                assert x1 == x2
-
-                with pytest.raises(ValueError):
-                    mn_trial.suggest_float("x", low, high)
-
-    @staticmethod
-    @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-    def test_suggest_discrete_uniform(storage_mode: str, comm: CommunicatorBase) -> None:
+    def test_suggest_float_with_step(storage_mode: str, comm: CommunicatorBase) -> None:
 
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
             low = 0.0
             high = 10.0
-            q = 1.0
+            step = 1.0
             for _ in range(10):
                 mn_trial = _create_new_chainermn_trial(study, comm)
 
-                x1 = mn_trial.suggest_discrete_uniform("x", low, high, q)
+                x1 = mn_trial.suggest_float("x", low, high, step=step)
                 assert low <= x1 <= high
 
-                x2 = mn_trial.suggest_discrete_uniform("x", low, high, q)
+                x2 = mn_trial.suggest_float("x", low, high, step=step)
                 assert x1 == x2
 
-                with pytest.raises(ValueError):
-                    mn_trial.suggest_float("x", low, high)
+                mn_trial.suggest_float("x", low, high)
 
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)

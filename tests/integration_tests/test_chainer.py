@@ -12,7 +12,6 @@ import pytest
 
 import optuna
 from optuna.integration.chainer import ChainerPruningExtension
-from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
 
 
@@ -32,7 +31,7 @@ class FixedValueDataset(chainer.dataset.DatasetMixin):
 def test_chainer_pruning_extension_trigger() -> None:
 
     study = optuna.create_study()
-    trial = create_running_trial(study, 1.0)
+    trial = study.ask()
 
     extension = ChainerPruningExtension(trial, "main/loss", (1, "epoch"))
     assert isinstance(extension._pruner_trigger, triggers.IntervalTrigger)
@@ -77,7 +76,7 @@ def test_chainer_pruning_extension() -> None:
 def test_chainer_pruning_extension_observation_nan() -> None:
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
-    trial = create_running_trial(study, 1.0)
+    trial = study.ask()
     extension = ChainerPruningExtension(trial, "main/loss", (1, "epoch"))
 
     MockTrainer = namedtuple("MockTrainer", ("observation", "updater"))
@@ -93,7 +92,7 @@ def test_chainer_pruning_extension_observation_nan() -> None:
 def test_observation_exists() -> None:
 
     study = optuna.create_study()
-    trial = create_running_trial(study, 1.0)
+    trial = study.ask()
     MockTrainer = namedtuple("MockTrainer", ("observation",))
     trainer = MockTrainer(observation={"OK": 0})
 

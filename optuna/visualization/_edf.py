@@ -1,4 +1,3 @@
-import itertools
 from typing import Callable
 from typing import cast
 from typing import List
@@ -14,6 +13,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _check_plot_args
+from optuna.visualization._utils import _filter_nonfinite
 
 
 if _imports.is_successful():
@@ -98,11 +98,6 @@ def plot_edf(
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
-
-    Raises:
-        :exc:`ValueError`:
-            If ``target`` is :obj:`None` and ``study`` is being used for multi-objective
-            optimization.
     """
 
     _imports.check()
@@ -132,21 +127,6 @@ def _get_edf_plot(
         _logger.warning("There are no studies.")
         return go.Figure(data=[], layout=layout)
 
-    all_trials = list(
-        itertools.chain.from_iterable(
-            (
-                trial
-                for trial in study.get_trials(deepcopy=False)
-                if trial.state == TrialState.COMPLETE
-            )
-            for study in studies
-        )
-    )
-
-    if len(all_trials) == 0:
-        _logger.warning("There are no complete trials.")
-        return go.Figure(data=[], layout=layout)
-
     if target is None:
 
         def _target(t: FrozenTrial) -> float:
@@ -154,22 +134,26 @@ def _get_edf_plot(
 
         target = _target
 
-    min_x_value = min(target(trial) for trial in all_trials)
-    max_x_value = max(target(trial) for trial in all_trials)
+    all_values: List[np.ndarray] = []
+    for study in studies:
+        trials = _filter_nonfinite(
+            study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
+        )
+
+        values = np.array([target(trial) for trial in trials])
+        all_values.append(values)
+
+    if all(len(values) == 0 for values in all_values):
+        _logger.warning("There are no complete trials.")
+        return go.Figure(data=[], layout=layout)
+
+    min_x_value = np.min(np.concatenate(all_values))
+    max_x_value = np.max(np.concatenate(all_values))
     x_values = np.linspace(min_x_value, max_x_value, 100)
 
     traces = []
-    for study in studies:
-        values = np.asarray(
-            [
-                target(trial)
-                for trial in study.get_trials(deepcopy=False)
-                if trial.state == TrialState.COMPLETE
-            ]
-        )
-
+    for values, study in zip(all_values, studies):
         y_values = np.sum(values[:, np.newaxis] <= x_values, axis=0) / values.size
-
         traces.append(go.Scatter(x=x_values, y=y_values, name=study.study_name, mode="lines"))
 
     figure = go.Figure(data=traces, layout=layout)

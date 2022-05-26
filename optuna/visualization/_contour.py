@@ -13,11 +13,11 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _check_plot_args
+from optuna.visualization._utils import _filter_nonfinite
 from optuna.visualization._utils import _get_param_values
 from optuna.visualization._utils import _is_log_scale
 from optuna.visualization._utils import _is_numerical
 from optuna.visualization._utils import _is_reverse_scale
-from optuna.visualization._utils import COLOR_SCALE
 
 
 if _imports.is_successful():
@@ -26,6 +26,7 @@ if _imports.is_successful():
     from optuna.visualization._plotly_imports import make_subplots
     from optuna.visualization._plotly_imports import plotly
     from optuna.visualization._plotly_imports import Scatter
+    from optuna.visualization._utils import COLOR_SCALE
 
 _logger = get_logger(__name__)
 
@@ -79,11 +80,6 @@ def plot_contour(
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
-
-    Raises:
-        :exc:`ValueError`:
-            If ``target`` is :obj:`None` and ``study`` is being used for multi-objective
-            optimization.
     """
 
     _imports.check()
@@ -100,7 +96,9 @@ def _get_contour_plot(
 
     layout = go.Layout(title="Contour Plot")
 
-    trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
+    trials = _filter_nonfinite(
+        study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
+    )
 
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")

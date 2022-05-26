@@ -5,7 +5,7 @@ from alembic import context
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
-import optuna
+import optuna.storages._rdb.models
 
 
 # this is the Alembic Config object, which provides
