@@ -553,7 +553,10 @@ class TPESampler(BaseSampler):
         values: Optional[Sequence[float]],
     ) -> None:
         assert state in [TrialState.COMPLETE, TrialState.FAIL, TrialState.PRUNED]
-        if state == TrialState.COMPLETE and self._constraints_func is not None:
+        if (
+            state in [TrialState.COMPLETE, TrialState.PRUNED]
+            and self._constraints_func is not None
+        ):
             constraints = None
             try:
                 con = self._constraints_func(trial)
