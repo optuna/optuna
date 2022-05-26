@@ -20,7 +20,7 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
 +----------------------------------+---------------+--------------+-------------+--------------+----------------------------------------+------------+----------------+
 | Categorical parameters           |       ✅      |     ✅       |     ✅      |      ▲       |                   ✅                   |     ▲      |       ✅       |
 +----------------------------------+---------------+--------------+-------------+--------------+----------------------------------------+------------+----------------+
-| Pruning                          |       ▲       |     ▲        |     ✅      |      ▲       |                   ▲                    |     ▲      |       ▲        |
+| Pruning                          |       ▲       |     ✅       |     ✅      |      ▲       |                   ❌                   |     ✅     |       ▲        |
 +----------------------------------+---------------+--------------+-------------+--------------+----------------------------------------+------------+----------------+
 | Multivariate optimization        |       ▲       |     ▲        |     ✅      |      ✅      |                   ▲                    |     ▲      |       ✅       |
 +----------------------------------+---------------+--------------+-------------+--------------+----------------------------------------+------------+----------------+
@@ -34,11 +34,10 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
 +----------------------------------+---------------+--------------+-------------+--------------+----------------------------------------+------------+----------------+
 | Constrained optimization         |       ❌      |     ❌       |     ✅      |      ❌      |                   ✅                   |     ❌     |       ✅       |
 +----------------------------------+---------------+--------------+-------------+--------------+----------------------------------------+------------+----------------+
-| Time complecity (per trial) (**) |      O(1)     |    O(1)      |    O(n)     |    O(d^3)    |                 O(mp^2)                |    O(1)    |     O(n^3)     |
+| Time complecity (per trial) (*)  |      O(1)     |    O(1)      |    O(n)     |    O(d^3)    |                 O(mp^2)                |    O(1)    |     O(n^3)     |
 +----------------------------------+---------------+--------------+-------------+--------------+----------------------------------------+------------+----------------+
-| Recommended budgets (#trials)    | as many as    | < number of  | 100 ~ 1000  | 1000 ~ 10000 |                100 ~ 10000             | as many as |    10 ~ 100    |
-|                                  | one likes     | possible     |             |              |                                        | one likes  |                |
-|                                  |               | combinations |             |              |                                        |            |                |
+| Recommended budgets (#trials)    | as many as    | number of    | 100 ~ 1000  | 1000 ~ 10000 |                100 ~ 10000             | as many as |    10 ~ 100    |
+| (**)                             | one likes     | combinations |             |              |                                        | one likes  |                |
 +----------------------------------+---------------+--------------+-------------+--------------+----------------------------------------+------------+----------------+
 
 .. note::
@@ -46,7 +45,9 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
     ▲ : Works, but inefficiently.
     ❌: Causes an error, or has no interface.
 
-    (**) assumes that `d` is the dimension of the search space, `n` is the number of finished trials, `m` is the number of objectives, and `p` is the population size (algorithm specific parameter).
+    (*): We assumes that `d` is the dimension of the search space, `n` is the number of finished trials, `m` is the number of objectives, and `p` is the population size (algorithm specific parameter).
+
+    (**): The budget depends on the number of parameters and the number of objectives.
 
 .. note::
    For float, integer, or categorical parameters, see :ref:`configurations` tutorial.
