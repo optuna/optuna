@@ -229,6 +229,7 @@ def test_enqueued_insufficient_trial() -> None:
     with pytest.raises(ValueError):
         study.optimize(lambda trial: trial.suggest_int("a", 0, 100))
 
+
 def test_nan() -> None:
     sampler = optuna.samplers.GridSampler({"x": [0, float("nan")]})
     study = optuna.create_study(sampler=sampler)

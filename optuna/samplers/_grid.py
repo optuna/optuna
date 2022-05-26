@@ -1,4 +1,3 @@
-from cmath import isnan
 import collections
 import itertools
 from numbers import Real
@@ -269,7 +268,9 @@ class GridSampler(BaseSampler):
                 return False
 
             for i, param_value in enumerate(search_space[param_name]):
-                if not GridSampler._grid_value_equal(param_value, self._search_space[param_name][i]):
+                if not GridSampler._grid_value_equal(
+                    param_value, self._search_space[param_name][i]
+                ):
                     return False
 
         return True
