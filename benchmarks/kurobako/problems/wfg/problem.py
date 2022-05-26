@@ -3,10 +3,11 @@ import sys
 from typing import List
 from typing import Union
 
-from kurobako import problem
 import numpy as np
 import shape_functions
 import transformation_functions
+
+from kurobako import problem
 
 
 class BaseWFG(object):
@@ -812,7 +813,7 @@ class WFGEvaluator(problem.Evaluator):
         elif self._n_wfg == 9:
             self.wfg = WFG9(n_arguments=self._n_dim, n_objectives=self._n_obj, k=self._k)
         else:
-            assert False, "Invalid specification for WFG number."
+            raise AssertionError("Invalid specification for WFG number.")
 
     def current_step(self) -> int:
         return self._current_step

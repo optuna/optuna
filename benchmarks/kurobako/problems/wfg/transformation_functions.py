@@ -182,7 +182,7 @@ class MultiModalShiftTransformation(BaseShiftTransformation):
 
         q1 = np.fabs(y - c) / (2 * (np.floor(c - y) + c))
         q2 = (4 * a + 2) * np.pi * (0.5 - q1)
-        return (1.0 + np.cos(q2) + 4 * b * (q1**2)) / (b + 2)
+        return (1.0 + np.cos(q2) + 4 * b * (q1 ** 2)) / (b + 2)
 
 
 class WeightedSumReductionTransformation(BaseReductionTransformation):
