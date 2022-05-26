@@ -5,15 +5,8 @@ from typing import Union
 import numpy as np
 
 
-# class BaseTransformations(object, metaclass=abc.ABCMeta):
-#     @abc.abstractmethod
-#     def __call__(self, *args, **kwargs):
-
-#         raise NotImplementedError
-
-
-class BaseIdenticalTransformations(metaclass=abc.ABCMeta):
-    @abc.abstractclassmethod
+class BaseIdenticalTransformation(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
     def __call__(self, y: float) -> float:
         raise NotImplementedError
 
@@ -40,14 +33,14 @@ class BaseReductionTransformation(metaclass=abc.ABCMeta):
 
 
 BaseTransformations = Union[
-    BaseIdenticalTransformations,
+    BaseIdenticalTransformation,
     BaseBiasTransformation,
     BaseShiftTransformation,
     BaseReductionTransformation,
 ]
 
 
-class IdenticalTransformation(BaseIdenticalTransformations):
+class IdenticalTransformation(BaseIdenticalTransformation):
     def __init__(self) -> None:
         pass
 
