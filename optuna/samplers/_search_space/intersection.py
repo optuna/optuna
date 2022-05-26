@@ -97,13 +97,10 @@ class IntersectionSearchSpace(object):
 
         self._cursor = next_cursor
 
-        if self._search_space is None:
-            if allow_empty_study:
-                search_space = {}
-            else:
-                raise ValueError("Cannot determine intersection search space for an empty study.")
-        else:
-            search_space = self._search_space
+        if self._search_space is None and not allow_empty_study:
+            raise ValueError("Cannot determine intersection search space for an empty study.")
+
+        search_space = self._search_space or {}
 
         if ordered_dict:
             search_space = OrderedDict(sorted(search_space.items(), key=lambda x: x[0]))
