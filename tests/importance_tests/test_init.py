@@ -11,7 +11,6 @@ from optuna.importance import BaseImportanceEvaluator
 from optuna.importance import FanovaImportanceEvaluator
 from optuna.importance import get_param_importances
 from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
-from optuna.integration.shap import ShapleyImportanceEvaluator
 from optuna.study import create_study
 from optuna.testing.storage import STORAGE_MODES
 from optuna.testing.storage import StorageSupplier
@@ -23,7 +22,6 @@ parametrize_evaluator = pytest.mark.parametrize(
     [
         MeanDecreaseImpurityImportanceEvaluator,
         FanovaImportanceEvaluator,
-        ShapleyImportanceEvaluator,
     ],
 )
 
