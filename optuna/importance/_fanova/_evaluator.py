@@ -76,6 +76,7 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
     def evaluate(
         self,
         study: Study,
+        *,
         params: List[str],
         target: Callable[[FrozenTrial], float],
     ) -> Dict[str, float]:
@@ -103,7 +104,7 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
             column_to_encoded_columns=trans.column_to_encoded_columns,
         )
         param_importances = numpy.array(
-            [evaluator.get_importance((i,))[0] for i in range(len(params))]
+            [evaluator.get_importance((i,))[0] for i in range(len(non_single_distributions))]
         )
         param_importances /= numpy.sum(param_importances)
 

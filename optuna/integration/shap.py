@@ -61,7 +61,7 @@ class ShapleyImportanceEvaluator(BaseImportanceEvaluator):
         )
 
     def evaluate(
-        self, study: Study, params: List[str], target: Callable[[FrozenTrial], float]
+        self, study: Study, *, params: List[str], target: Callable[[FrozenTrial], float]
     ) -> Dict[str, float]:
 
         if len(params) == 0:

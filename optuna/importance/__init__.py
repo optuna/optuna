@@ -80,7 +80,7 @@ def get_param_importances(
 
     Returns:
         An :class:`collections.OrderedDict` where the keys are parameter names and the values are
-        assessed importances.
+        assessed importances. The importances will be sorted in a descending order.
 
     """
     if evaluator is None:
@@ -105,7 +105,15 @@ def get_param_importances(
         target = default_target
 
     if params is None:
-        params = list(intersection_search_space(study, ordered_dict=True).keys())
+        try:
+            params = list(
+                intersection_search_space(study, ordered_dict=True, allow_empty_study=False).keys()
+            )
+        except ValueError:
+            raise ValueError("The study does not contain completed trials.")
+
+        if len(params) == 0:
+            return OrderedDict()
 
     importances = evaluator.evaluate(study, params=params, target=target)
 

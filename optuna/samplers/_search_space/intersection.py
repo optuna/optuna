@@ -33,7 +33,9 @@ class IntersectionSearchSpace(object):
 
         self._include_pruned = include_pruned
 
-    def calculate(self, study: Study, ordered_dict: bool = False) -> Dict[str, BaseDistribution]:
+    def calculate(
+        self, study: Study, ordered_dict: bool = False, allow_empty_study: bool = True
+    ) -> Dict[str, BaseDistribution]:
         """Returns the intersection search space of the :class:`~optuna.study.Study`.
 
         Args:
@@ -45,6 +47,10 @@ class IntersectionSearchSpace(object):
                 If :obj:`False`, the returned object will be a :obj:`dict`.
                 If :obj:`True`, the returned object will be an :obj:`collections.OrderedDict`
                 sorted by keys, i.e. parameter names.
+            allow_empty_study:
+                A boolean flag specifying whether an empty study is allowed.
+                If :obj:`False`, a :class:`ValueError` is raised if the study is empty.
+                If :obj:`True`, an empty search space is returned.
 
         Returns:
             A dictionary containing the parameter names and parameter's distributions.
@@ -90,7 +96,14 @@ class IntersectionSearchSpace(object):
                 del self._search_space[param_name]
 
         self._cursor = next_cursor
-        search_space = self._search_space or {}
+
+        if self._search_space is None:
+            if allow_empty_study:
+                search_space = {}
+            else:
+                raise ValueError("Cannot determine intersection search space for an empty study.")
+        else:
+            search_space = self._search_space
 
         if ordered_dict:
             search_space = OrderedDict(sorted(search_space.items(), key=lambda x: x[0]))
@@ -99,7 +112,10 @@ class IntersectionSearchSpace(object):
 
 
 def intersection_search_space(
-    study: Study, ordered_dict: bool = False, include_pruned: bool = False
+    study: Study,
+    ordered_dict: bool = False,
+    include_pruned: bool = False,
+    allow_empty_study: bool = True,
 ) -> Dict[str, BaseDistribution]:
     """Return the intersection search space of the :class:`~optuna.study.Study`.
 
@@ -124,11 +140,15 @@ def intersection_search_space(
             keys, i.e. parameter names.
         include_pruned:
             Whether pruned trials should be included in the search space.
+        allow_empty_study:
+            A boolean flag specifying whether an empty study is allowed.
+            If :obj:`False`, a :class:`ValueError` is raised if the study is empty.
+            If :obj:`True`, an empty search space is returned.
 
     Returns:
         A dictionary containing the parameter names and parameter's distributions.
     """
 
     return IntersectionSearchSpace(include_pruned=include_pruned).calculate(
-        study, ordered_dict=ordered_dict
+        study, ordered_dict=ordered_dict, allow_empty_study=allow_empty_study
     )
