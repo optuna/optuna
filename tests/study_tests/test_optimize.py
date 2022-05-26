@@ -12,6 +12,7 @@ from optuna import Trial
 from optuna import TrialPruned
 from optuna.study import _optimize
 from optuna.study._tell import _tell_with_warning
+from optuna.study._tell import STUDY_TELL_WARNING_KEY
 from optuna.testing.storage import STORAGE_MODES
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import TrialState
@@ -67,7 +68,7 @@ def test_run_trial_automatically_fail(storage_mode: str, caplog: LogCaptureFixtu
         assert frozen_trial.state == TrialState.FAIL
         assert frozen_trial.value is None
         assert "Trial 0 failed because of the following error:" in caplog.text
-        assert "The objective function returned nan." in caplog.text
+        assert "The value nan is not acceptable." in caplog.text
 
         caplog.clear()
         frozen_trial = _optimize._run_trial(study, lambda _: None, catch=())  # type: ignore
@@ -133,6 +134,7 @@ def test_run_trial_catch_exception(storage_mode: str) -> None:
         study = create_study(storage=storage)
         frozen_trial = _optimize._run_trial(study, func_value_error, catch=(ValueError,))
         assert frozen_trial.state == TrialState.FAIL
+        assert STUDY_TELL_WARNING_KEY not in frozen_trial.system_attrs
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)

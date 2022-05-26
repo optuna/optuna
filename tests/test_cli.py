@@ -1542,3 +1542,26 @@ def test_tell_with_nan() -> None:
         assert len(study.trials) == 1
         assert study.trials[0].state == TrialState.FAIL
         assert study.trials[0].values is None
+
+
+@pytest.mark.skip_coverage
+@pytest.mark.parametrize(
+    "verbosity, expected",
+    [
+        ("--verbose", True),
+        ("--quiet", False),
+    ],
+)
+def test_configure_logging_verbosity(verbosity: str, expected: bool) -> None:
+
+    with StorageSupplier("sqlite") as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
+
+        # Create study.
+        args = ["optuna", "create-study", "--storage", storage_url, verbosity]
+        # `--verbose` makes the log level DEBUG.
+        # `--quiet` makes the log level WARNING.
+        result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        error_message = result.stderr.decode()
+        assert ("A new study created in RDB with name" in error_message) == expected

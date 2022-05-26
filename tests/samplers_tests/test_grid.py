@@ -22,7 +22,7 @@ def test_study_optimize_with_single_search_space() -> None:
 
         a = trial.suggest_int("a", 0, 100)
         b = trial.suggest_float("b", -0.1, 0.1)
-        c = trial.suggest_categorical("c", ("x", "y"))
+        c = trial.suggest_categorical("c", ("x", "y", None, 1, 2.0))
         d = trial.suggest_float("d", -5, 5, step=1)
         e = trial.suggest_float("e", 0.0001, 1, log=True)
 
@@ -34,7 +34,7 @@ def test_study_optimize_with_single_search_space() -> None:
     # Test that all combinations of the grid is sampled.
     search_space = {
         "b": np.arange(-0.1, 0.1, 0.05),
-        "c": ["x", "y"],
+        "c": ("x", "y", None, 1, 2.0),
         "d": [-0.5, 0.5],
         "e": [0.1],
         "a": list(range(0, 100, 20)),
@@ -153,7 +153,7 @@ def test_cast_value() -> None:
     samplers.GridSampler._check_value("x", "foo")
     samplers.GridSampler._check_value("x", "")
 
-    with pytest.raises(ValueError):
+    with pytest.warns(UserWarning):
         samplers.GridSampler._check_value("x", [1])
 
 
@@ -163,8 +163,8 @@ def test_has_same_search_space() -> None:
     sampler = samplers.GridSampler(search_space)
     assert sampler._same_search_space(search_space)
     assert sampler._same_search_space({"x": [3, 2, 1], "y": ["a", "b", "c"]})
-    assert sampler._same_search_space({"y": ["c", "a", "b"], "x": [1, 2, 3]})
 
+    assert not sampler._same_search_space({"y": ["c", "a", "b"], "x": [1, 2, 3]})
     assert not sampler._same_search_space({"x": [3, 2, 1, 0], "y": ["a", "b", "c"]})
     assert not sampler._same_search_space({"x": [3, 2], "y": ["a", "b", "c"]})
 
@@ -195,6 +195,30 @@ def test_enqueued_trial() -> None:
     assert len(study.trials) == 3
     assert study.trials[0].params["a"] == 100
     assert sorted([study.trials[1].params["a"], study.trials[2].params["a"]]) == [0, 50]
+
+
+def test_same_seed_trials() -> None:
+    grid_values = [0, 20, 40, 60, 80, 100]
+    seed = 0
+
+    sampler1 = samplers.GridSampler({"a": grid_values}, seed)
+    study1 = optuna.create_study(sampler=sampler1)
+    study1.optimize(lambda trial: trial.suggest_int("a", 0, 100))
+
+    sampler2 = samplers.GridSampler({"a": grid_values}, seed)
+    study2 = optuna.create_study(sampler=sampler2)
+    study2.optimize(lambda trial: trial.suggest_int("a", 0, 100))
+
+    for i in range(len(grid_values)):
+        assert study1.trials[i].params["a"] == study2.trials[i].params["a"]
+
+
+def test_reseed_rng() -> None:
+    sampler = samplers.GridSampler({"a": [0, 100]})
+    original_seed = sampler._rng.get_state()
+    sampler.reseed_rng()
+
+    assert str(original_seed) != str(sampler._rng.get_state())
 
 
 def test_enqueued_insufficient_trial() -> None:

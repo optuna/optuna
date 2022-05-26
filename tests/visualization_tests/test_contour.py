@@ -304,3 +304,24 @@ def test_color_map(direction: str) -> None:
     contour = plot_contour(study, target=lambda t: t.number).data[0]
     assert COLOR_SCALE == [v[1] for v in contour["colorscale"]]
     assert contour["reversescale"]
+
+
+@pytest.mark.parametrize("value", [float("inf"), -float("inf")])
+def test_nonfinite_removed(value: float) -> None:
+
+    study = prepare_study_with_trials(with_c_d=True, value_for_first_trial=value)
+    figure = plot_contour(study, params=["param_b", "param_d"])
+    zvals = itertools.chain.from_iterable(figure.data[0]["z"])
+    assert value not in zvals
+
+
+@pytest.mark.parametrize("objective", (0, 1))
+@pytest.mark.parametrize("value", (float("inf"), -float("inf")))
+def test_nonfinite_multiobjective(objective: int, value: float) -> None:
+
+    study = prepare_study_with_trials(with_c_d=True, n_objectives=2, value_for_first_trial=value)
+    figure = plot_contour(
+        study, params=["param_b", "param_d"], target=lambda t: t.values[objective]
+    )
+    zvals = itertools.chain.from_iterable(figure.data[0]["z"])
+    assert value not in zvals

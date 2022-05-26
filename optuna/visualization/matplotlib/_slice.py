@@ -78,11 +78,6 @@ def plot_slice(
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
-
-    Raises:
-        :exc:`ValueError`:
-            If ``target`` is :obj:`None` and ``study`` is being used for multi-objective
-            optimization.
     """
 
     _imports.check()
@@ -154,7 +149,7 @@ def _get_slice_plot(
             )
 
     axcb = fig.colorbar(sc, ax=axs)
-    axcb.set_label("#Trials")
+    axcb.set_label("Trial")
 
     return axs
 

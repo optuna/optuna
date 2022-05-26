@@ -2,7 +2,7 @@
 
 # Optuna: A hyperparameter optimization framework
 
-[![Python](https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8%20%7C%203.9-blue)](https://www.python.org)
+[![Python](https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8%20%7C%203.9%20%7C%203.10-blue)](https://www.python.org)
 [![pypi](https://img.shields.io/pypi/v/optuna.svg)](https://pypi.python.org/pypi/optuna)
 [![conda](https://img.shields.io/conda/vn/conda-forge/optuna.svg)](https://anaconda.org/conda-forge/optuna)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/optuna/optuna)
@@ -55,7 +55,7 @@ We use the terms *study* and *trial* as follows:
 - Trial: a single execution of the objective function
 
 Please refer to sample code below. The goal of a *study* is to find out the optimal set of
-hyperparameter values (e.g., `classifier` and `svm_c`) through multiple *trials* (e.g.,
+hyperparameter values (e.g., `regressor` and `svr_c`) through multiple *trials* (e.g.,
 `n_trials=100`). Optuna is a framework designed for the automation and the acceleration of the
 optimization *studies*.
 
@@ -68,7 +68,7 @@ import ...
 def objective(trial):
 
     # Invoke suggest methods of a Trial object to generate hyperparameters.
-    regressor_name = trial.suggest_categorical('classifier', ['SVR', 'RandomForest'])
+    regressor_name = trial.suggest_categorical('regressor', ['SVR', 'RandomForest'])
     if regressor_name == 'SVR':
         svr_c = trial.suggest_float('svr_c', 1e-10, 1e10, log=True)
         regressor_obj = sklearn.svm.SVR(C=svr_c)
