@@ -754,26 +754,32 @@ def test_sample_independent_pruned_state() -> None:
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-def test_get_observation_pairs(direction: str) -> None:
+@pytest.mark.parametrize("constraints_enabled", [False, True])
+def test_get_observation_pairs(direction: str, constraints_enabled: bool) -> None:
     def objective(trial: Trial) -> float:
 
         x = trial.suggest_int("x", 5, 5)
         z = trial.suggest_categorical("z", [None])
         if trial.number == 0:
+            trial.set_user_attr("constraint", (-1, -1))
             return x * int(z is None)
         elif trial.number == 1:
+            trial.set_user_attr("constraint", (0, -1))
             trial.report(1, 4)
             trial.report(2, 7)
             raise TrialPruned()
         elif trial.number == 2:
+            trial.set_user_attr("constraint", (1, -1))
             trial.report(float("nan"), 3)
             raise TrialPruned()
         elif trial.number == 3:
+            trial.set_user_attr("constraint", (2, -1))
             raise TrialPruned()
         else:
             raise RuntimeError()
 
-    study = optuna.create_study(direction=direction)
+    sampler = TPESampler(constraints_func=lambda trial: trial.user_attrs["constraint"])
+    study = optuna.create_study(direction=direction, sampler=sampler)
     study.optimize(objective, n_trials=5, catch=(RuntimeError,))
 
     sign = 1 if direction == "minimize" else -1
@@ -783,54 +789,80 @@ def test_get_observation_pairs(direction: str) -> None:
         (-3, [float("inf")]),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
         (float("inf"), [sign * 0.0]),  # PRUNED (without intermediate values)
     ]
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], False) == (
+    violations = [0, 0, 1, 2] if constraints_enabled else None
+    assert _tpe.sampler._get_observation_pairs(
+        study, ["x"], False, constraints_enabled=constraints_enabled
+    ) == (
         {"x": [5.0, 5.0, 5.0, 5.0]},
         scores,
+        violations,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["y"], False) == (
+    assert _tpe.sampler._get_observation_pairs(
+        study, ["y"], False, constraints_enabled=constraints_enabled
+    ) == (
         {"y": [None, None, None, None]},
         scores,
+        violations,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["z"], False) == (
+    assert _tpe.sampler._get_observation_pairs(
+        study, ["z"], False, constraints_enabled=constraints_enabled
+    ) == (
         {"z": [0, 0, 0, 0]},  # The internal representation of 'None' for z is 0
         scores,
+        violations,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], True) == (
+    assert _tpe.sampler._get_observation_pairs(
+        study, ["x"], True, constraints_enabled=constraints_enabled
+    ) == (
         {"x": [5.0, 5.0, 5.0, 5.0]},
         scores,
+        violations,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["y"], True) == ({"y": []}, [])
-    assert _tpe.sampler._get_observation_pairs(study, ["z"], True) == (
+    assert _tpe.sampler._get_observation_pairs(
+        study, ["y"], True, constraints_enabled=constraints_enabled
+    ) == ({"y": []}, [], [] if constraints_enabled else None)
+    assert _tpe.sampler._get_observation_pairs(
+        study, ["z"], True, constraints_enabled=constraints_enabled
+    ) == (
         {"z": [0, 0, 0, 0]},  # The internal representation of 'None' for z is 0
         scores,
+        violations,
     )
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-def test_get_observation_pairs_multi(direction: str) -> None:
+@pytest.mark.parametrize("constraints_enabled", [False, True])
+def test_get_observation_pairs_multi(direction: str, constraints_enabled: bool) -> None:
     def objective(trial: Trial) -> float:
 
         x = trial.suggest_int("x", 5, 5)
         y = trial.suggest_int("y", 6, 6)
         if trial.number == 0:
+            trial.set_user_attr("constraint", (-1, -1))
             return x + y
         elif trial.number == 1:
+            trial.set_user_attr("constraint", (0, -1))
             trial.report(1, 4)
             trial.report(2, 7)
             raise TrialPruned()
         elif trial.number == 2:
+            trial.set_user_attr("constraint", (1, -1))
             trial.report(float("nan"), 3)
             raise TrialPruned()
         elif trial.number == 3:
+            trial.set_user_attr("constraint", (2, -1))
             raise TrialPruned()
         else:
             raise RuntimeError()
 
-    study = optuna.create_study(direction=direction)
+    sampler = TPESampler(constraints_func=lambda trial: trial.user_attrs["constraint"])
+    study = optuna.create_study(direction=direction, sampler=sampler)
     study.optimize(objective, n_trials=5, catch=(RuntimeError,))
 
     sign = 1 if direction == "minimize" else -1
-    assert _tpe.sampler._get_observation_pairs(study, ["x", "y"], True) == (
+    assert _tpe.sampler._get_observation_pairs(
+        study, ["x", "y"], True, constraints_enabled=constraints_enabled
+    ) == (
         {"x": [5.0, 5.0, 5.0, 5.0], "y": [6.0, 6.0, 6.0, 6.0]},
         [
             (-float("inf"), [sign * 11.0]),  # COMPLETE
@@ -841,6 +873,7 @@ def test_get_observation_pairs_multi(direction: str) -> None:
             ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
             (float("inf"), [sign * 0.0]),  # PRUNED (without intermediate values)
         ],
+        [0, 0, 1, 2] if constraints_enabled else None,
     )
 
 
@@ -856,9 +889,28 @@ def test_split_observation_pairs() -> None:
             (-float("inf"), [-5.0]),  # COMPLETE
         ],
         2,
+        None,
     )
     assert list(indices_below) == [0, 3]
     assert list(indices_above) == [1, 2]
+
+
+def test_split_observation_pairs_with_constraints() -> None:
+    indices_below, indices_above = _tpe.sampler._split_observation_pairs(
+        [
+            (-7, [-2]),  # PRUNED (with intermediate values)
+            (float("inf"), [0.0]),  # PRUNED (without intermediate values)
+            (
+                -3,
+                [float("inf")],
+            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (-float("inf"), [-5.0]),  # COMPLETE
+        ],
+        2,
+        [1, 0, 1, 2],
+    )
+    assert list(indices_below) == [0, 1]
+    assert list(indices_above) == [2, 3]
 
 
 def test_build_observation_dict() -> None:
@@ -1078,10 +1130,12 @@ def test_constant_liar_observation_pairs(direction: str, multivariate: bool) -> 
     ) == (
         {"x": []},
         [],
+        None,
     )
     assert _tpe.sampler._get_observation_pairs(study, ["x"], multivariate, constant_liar=True) == (
         {"x": [2]},
         expected_values,
+        None,
     )
 
 
