@@ -9,8 +9,6 @@ from typing import Optional
 from typing import Sequence
 from typing import Union
 
-from mlflow.utils.validation import MAX_METRICS_PER_BATCH
-from mlflow.utils.validation import MAX_PARAMS_TAGS_PER_BATCH
 
 import optuna
 from optuna._experimental import experimental
@@ -20,6 +18,8 @@ from optuna.study.study import ObjectiveFuncType
 
 with try_import() as _imports:
     import mlflow
+    from mlflow.utils.validation import MAX_METRICS_PER_BATCH
+    from mlflow.utils.validation import MAX_PARAMS_TAGS_PER_BATCH
 
 RUN_ID_ATTRIBUTE_KEY = "mlflow_run_id"
 
