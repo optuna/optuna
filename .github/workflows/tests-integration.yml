@@ -53,7 +53,8 @@ jobs:
         python -c 'import optuna'
         optuna --version
 
-        pip install --progress-bar off .[tests]
+        pip install --progress-bar off .[test]
+        pip install --progress-bar off .[optional]
         pip install --progress-bar off .[integration] --extra-index-url https://download.pytorch.org/whl/cpu
 
     - name: Tests

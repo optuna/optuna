@@ -58,7 +58,7 @@ jobs:
         python -c 'import optuna'
         optuna --version
 
-        pip install --progress-bar off .[tests]
+        pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
 
         # Required for samplers_tests/test_samplers.py.

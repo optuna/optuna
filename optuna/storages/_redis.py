@@ -21,6 +21,7 @@ from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna.storages import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
@@ -35,7 +36,7 @@ with try_import() as _imports:
 
 
 @experimental("1.4.0")
-class RedisStorage(BaseStorage):
+class RedisStorage(BaseStorage, BaseHeartbeat):
     """Storage class for Redis backend.
 
     Note that library users can instantiate this class, but the attributes
@@ -777,9 +778,6 @@ class RedisStorage(BaseStorage):
     def _get_redis_time(self) -> float:
         seconds, microseconds = self._redis.time()
         return seconds + microseconds * 1e-6
-
-    def _is_heartbeat_supported(self) -> bool:
-        return True
 
     def get_heartbeat_interval(self) -> Optional[int]:
         return self.heartbeat_interval
