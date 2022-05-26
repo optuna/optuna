@@ -292,6 +292,7 @@ class MatplotlibContourFigure(BaseContourFigure):
 
         # self.plots[i] has a type of Axes.
         self.plots = [Axes() for _ in range(self.get_n_plots())]
+        self.is_category = [(False, False) for _ in range(self.get_n_plots())]
 
         if isinstance(figure, Axes):
             self.plots[0] = figure
@@ -303,6 +304,10 @@ class MatplotlibContourFigure(BaseContourFigure):
                 return x - n_removed_less_than_x
 
             for axis_number, f in enumerate(figure.flatten()):
+                f.set_xlabel(figure[-1][axis_number % self.n_params].get_xlabel())
+                f.set_ylabel(figure[axis_number / self.n_params][0].get_ylabel())
+                f.set_xticklabels(figure[-1][axis_number % self.n_params].get_xticklabels())
+                f.set_yticklabels(figure[axis_number / self.n_params][0].get_yticklabels())
                 if axis_number in _removed_axis_numbers:
                     assert not f.has_data()
                     continue
@@ -328,28 +333,48 @@ class MatplotlibContourFigure(BaseContourFigure):
         raise NotImplementedError
 
     def get_x_points(self, n: int = 0) -> Optional[List[float]]:
-        raise NotImplementedError
+        if len(self.plots[n].collections) == 0:
+            return None
+        return list(self.plots[n].collections[-1].get_offsets()[0])
 
     def get_y_points(self, n: int = 0) -> Optional[List[float]]:
-        raise NotImplementedError
+        if len(self.plots[n].collections) == 0:
+            return None
+        return list(self.plots[n].collections[-1].get_offsets()[1])
 
     def get_x_range(self, n: int = 0) -> Tuple[float, float]:
-        raise NotImplementedError
+        return self.plots[n].get_xlim()
 
     def get_y_range(self, n: int = 0) -> Tuple[float, float]:
-        raise NotImplementedError
+        return self.plots[n].get_ylim()
 
     def get_x_name(self, n: int = 0) -> str:
-        raise NotImplementedError
+        return self.plots[n].get_xlabel()
 
     def get_y_name(self, n: int = 0) -> str:
-        raise NotImplementedError
+        return self.plots[n].get_ylabel()
 
     def get_target_name(self) -> Optional[str]:
-        raise NotImplementedError
+        raise self.plots[0].figure.axes[-1].get_ylabel()
 
     def get_x_type(self, n: int = 0) -> VarType:
-        raise NotImplementedError
+        var_type = self.plots[n].get_xscale()
+        if var_type == "linear" and:
+            return VarType.UNIFORM
+        elif var_type == "log":
+            return VarType.LOG
+        elif var_type == "category":
+            return VarType.CATEGORICAL
+        else:
+            assert False
 
     def get_y_type(self, n: int = 0) -> VarType:
-        raise NotImplementedError
+        var_type = self.plots[n].get_yscale()
+        if var_type == "linear" and:
+            return VarType.UNIFORM
+        elif var_type == "log":
+            return VarType.LOG
+        elif var_type == "category":
+            return VarType.CATEGORICAL
+        else:
+            assert False
