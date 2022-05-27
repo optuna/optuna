@@ -105,7 +105,6 @@ def test_sampler_reseed_rng(sampler_class: Callable[[], BaseSampler]) -> None:
         return None
 
     sampler = sampler_class()
-    has_another_sampler = False
 
     rng_name = _extract_attr_name_from_sampler_by_cls(sampler, np.random.RandomState)
     has_rng = rng_name is not None
