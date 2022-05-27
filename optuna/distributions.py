@@ -453,7 +453,7 @@ class IntLogUniformDistribution(IntDistribution):
         return d
 
 
-def _nanequal(value1: Any, value2: Any) -> bool:
+def _categorical_choice_equal(value1: CategoricalChoiceType, value2: CategoricalChoiceType) -> bool:
     value1_is_nan = isinstance(value1, Real) and np.isnan(float(value1))
     value2_is_nan = isinstance(value2, Real) and np.isnan(float(value2))
     return (value1 == value2) or (value1_is_nan and value2_is_nan)
