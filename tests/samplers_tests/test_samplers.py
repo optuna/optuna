@@ -1,5 +1,4 @@
 from collections import OrderedDict
-import copy
 import pickle
 import sys
 from typing import Any
@@ -85,19 +84,54 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
         else [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)]
     ),
 )
-parametrize_reseedable_sampler = copy.deepcopy(parametrize_sampler)
-parametrize_reseedable_sampler.args[1].extend(
+
+
+@pytest.mark.parametrize(
+    "sampler_class,expected_has_rng,expected_has_another_sampler",
     [
-        lambda: optuna.samplers.PartialFixedSampler(
-            fixed_params={"x": 0}, base_sampler=optuna.samplers.RandomSampler()
+        (optuna.samplers.RandomSampler, True, False),
+        (lambda: optuna.samplers.TPESampler(n_startup_trials=0), True, True),
+        (lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True), True, True),
+        (lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0), True, True),
+        (
+            lambda: optuna.integration.SkoptSampler(
+                skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
+            ),
+            False,
+            True,
         ),
-        lambda: optuna.samplers.GridSampler(search_space={"x": [0]}),
+        (lambda: optuna.integration.PyCmaSampler(n_startup_trials=0), False, True),
+        (optuna.samplers.NSGAIISampler, True, True),
+        (
+            lambda: optuna.samplers.PartialFixedSampler(
+                fixed_params={"x": 0}, base_sampler=optuna.samplers.RandomSampler()
+            ),
+            False,
+            True,
+        ),
+        (lambda: optuna.samplers.GridSampler(search_space={"x": [0]}), True, False),
     ]
+    # TODO(kstoneriv3): Update this after the support for Python 3.6 is stopped.
+    + (
+        []
+        if sys.version_info < (3, 7, 0)
+        else [
+            (lambda: optuna.samplers.QMCSampler(), False, True),
+        ]
+    )
+    # TODO(nzw0301): Remove version constraints if BoTorch supports Python 3.10
+    # or Optuna does not support Python 3.6.
+    + (
+        []
+        if sys.version_info >= (3, 10, 0) or sys.version_info < (3, 7, 0)
+        else [(lambda: optuna.integration.BoTorchSampler(n_startup_trials=0), False, True)]
+    ),
 )
-
-
-@parametrize_reseedable_sampler
-def test_sampler_reseed_rng(sampler_class: Callable[[], BaseSampler]) -> None:
+def test_sampler_reseed_rng(
+    sampler_class: Callable[[], BaseSampler],
+    expected_has_rng: bool,
+    expected_has_another_sampler: bool,
+) -> None:
     def _extract_attr_name_from_sampler_by_cls(sampler: BaseSampler, cls: Any) -> Optional[str]:
         for name, attr in sampler.__dict__.items():
             if isinstance(attr, cls):
@@ -108,18 +142,18 @@ def test_sampler_reseed_rng(sampler_class: Callable[[], BaseSampler]) -> None:
 
     rng_name = _extract_attr_name_from_sampler_by_cls(sampler, np.random.RandomState)
     has_rng = rng_name is not None
+    assert expected_has_rng == has_rng
 
     had_sampler_name = _extract_attr_name_from_sampler_by_cls(sampler, BaseSampler)
     has_another_sampler = had_sampler_name is not None
+    assert expected_has_another_sampler == has_another_sampler
 
     # CmaEsSampler has a RandomState that is not reseed by its reseed method.
     if has_rng and not isinstance(sampler, optuna.samplers.CmaEsSampler):
         rng_name = str(rng_name)
         original_random_state = sampler.__dict__[rng_name].get_state()
         sampler.reseed_rng()
-        assert str(original_random_state) != str(
-            sampler.__dict__[rng_name].get_state()
-        )
+        assert str(original_random_state) != str(sampler.__dict__[rng_name].get_state())
 
     if has_another_sampler:
         had_sampler_name = str(had_sampler_name)
