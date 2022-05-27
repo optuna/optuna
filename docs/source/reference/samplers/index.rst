@@ -34,7 +34,7 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
 +----------------------------------+---------------+--------------+-------------+--------------+----------------------------------------+------------+----------------+
 | Constrained optimization         |       ❌      |     ❌       |     ✅      |      ❌      |                   ✅                   |     ❌     |       ✅       |
 +----------------------------------+---------------+--------------+-------------+--------------+----------------------------------------+------------+----------------+
-| Time complecity (per trial) (*)  |      O(1)     |    O(1)      |    O(n)     |    O(d^3)    |                 O(mp^2)                |    O(1)    |     O(n^3)     |
+| Time complexity (per trial) (*)  |      O(1)     |    O(dn)     | O(dnlog(n)) |    O(d^3)    |                 O(mnp)                 |    O(dn)   |     O(n^3)     |
 +----------------------------------+---------------+--------------+-------------+--------------+----------------------------------------+------------+----------------+
 | Recommended budgets (#trials)    | as many as    | number of    | 100 ~ 1000  | 1000 ~ 10000 |                100 ~ 10000             | as many as |    10 ~ 100    |
 | (**)                             | one likes     | combinations |             |              |                                        | one likes  |                |
@@ -46,6 +46,8 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
     ❌: Causes an error, or has no interface.
 
     (*): We assumes that `d` is the dimension of the search space, `n` is the number of finished trials, `m` is the number of objectives, and `p` is the population size (algorithm specific parameter).
+    In addition, we omit O(d+n) from the all of time complexity, since all samplers take O(d) to call the :func:`~optuna.samplers.BaseSampler.sample_independent` and O(n) to collect the completed trials.
+    This means that, for example, the actual time complexity of :class:`~optuna.samplers.RandomSampler` is O(d+n+1) = O(d+n).
 
     (**): The budget depends on the number of parameters and the number of objectives.
 
