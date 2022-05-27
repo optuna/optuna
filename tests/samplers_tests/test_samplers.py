@@ -119,7 +119,7 @@ def test_sampler_reseed_rng(sampler_class: Callable[[], BaseSampler]) -> None:
         sampler.reseed_rng()
         assert str(original_random_state) != str(
             sampler.__dict__[rng_name].get_state()
-        )  # type: ignore
+        )
 
     if has_another_sampler:
         had_sampler_name = str(had_sampler_name)
