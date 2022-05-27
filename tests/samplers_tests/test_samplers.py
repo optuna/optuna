@@ -132,7 +132,7 @@ def test_sampler_reseed_rng(sampler_class: Callable[[], BaseSampler]) -> None:
             had_sampler_rng_name = str(had_sampler_rng_name)
             original_had_sampler_random_state = had_sampler.__dict__[
                 had_sampler_rng_name
-            ].get_state()  # type: ignore
+            ].get_state()
 
             with patch.object(
                 had_sampler,
