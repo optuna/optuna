@@ -345,7 +345,12 @@ class TestTrialIntermediateValueModel(object):
         session.add(study)
         session.add(trial)
         session.add(
-            TrialIntermediateValueModel(trial_id=trial.trial_id, step=0, intermediate_value=10)
+            TrialIntermediateValueModel(
+                trial_id=trial.trial_id,
+                step=0,
+                intermediate_value=10,
+                intermediate_value_type=TrialIntermediateValueModel.FloatTypeEnum.FINITE_OR_NAN,
+            )
         )
         session.commit()
         return trial
@@ -377,7 +382,12 @@ class TestTrialIntermediateValueModel(object):
 
         trial = TestTrialIntermediateValueModel._create_model(session)
         trial.intermediate_values.append(
-            TrialIntermediateValueModel(trial_id=1, step=1, intermediate_value=20)
+            TrialIntermediateValueModel(
+                trial_id=1,
+                step=1,
+                intermediate_value=20,
+                intermediate_value_type=TrialIntermediateValueModel.FloatTypeEnum.FINITE_OR_NAN,
+            )
         )
         session.commit()
 
