@@ -14,6 +14,7 @@ from typing import Union
 import optuna
 from optuna import distributions
 from optuna.storages import BaseStorage
+from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.storages._rdb.storage import RDBStorage
 from optuna.storages._redis import RedisStorage
 from optuna.study._study_direction import StudyDirection
@@ -34,7 +35,7 @@ class _StudyInfo:
         self.name: Optional[str] = None
 
 
-class _CachedStorage(BaseStorage):
+class _CachedStorage(BaseStorage, BaseHeartbeat):
     """A wrapper class of storage backends.
 
     This class is used in :func:`~optuna.get_storage` function and automatically
@@ -379,9 +380,6 @@ class _CachedStorage(BaseStorage):
 
     def _get_stale_trial_ids(self, study_id: int) -> List[int]:
         return self._backend._get_stale_trial_ids(study_id)
-
-    def _is_heartbeat_supported(self) -> bool:
-        return self._backend._is_heartbeat_supported()
 
     def get_heartbeat_interval(self) -> Optional[int]:
         return self._backend.get_heartbeat_interval()

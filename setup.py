@@ -51,6 +51,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         "benchmark": [
             "asv>=0.5.0",
             "botorch",
+            "virtualenv",
         ],
         "checking": [
             "black",
@@ -70,6 +71,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pandas",
             "pillow",
             "plotly>=4.0.0",  # optuna/visualization.
+            # TODO(not522): remove this after mlflow is fixed.
+            # https://github.com/mlflow/mlflow/pull/5945
+            "protobuf<4.0.0",
             "scikit-learn>=0.24.2",
             "scikit-optimize",
             "sphinx",
@@ -101,6 +105,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mpi4py",
             "mxnet",
             "pandas",
+            # TODO(not522): remove this after mlflow is fixed.
+            # https://github.com/mlflow/mlflow/pull/5945
+            "protobuf<4.0.0",
             "pytorch-ignite ; python_version>'3.6'",
             "pytorch-lightning>=1.5.0 ; python_version>'3.6'",
             "scikit-learn>=0.24.2",

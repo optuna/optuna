@@ -136,10 +136,10 @@ Benchmark run can be started with
           --model kNN \
           --budget 80 \
           --repeat 10 \
-          --sampler-list TPESampler CmaEsSampler \
-          --sampler-kwargs-list {"multivariate":true,"constant_liar":true} {} \
-          --pruner-list NopPruner \
-          --pruner-kwargs-list {}
+          --sampler-list "TPESampler CmaEsSampler" \
+          --sampler-kwargs-list "{\"multivariate\":true,\"constant_liar\":true} {}" \
+          --pruner-list "NopPruner" \
+          --pruner-kwargs-list "{}"
 ```
 
 Allowed models are `[kNN, SVM, DT, RF, MLP-sgd, ada, linear]` and allowed datasets are `[breast, digits, iris, wine, diabetes]`. For more details on default parameters please refer to `benchmarks/run_bayesmark.py`. Markdown report can be generated after benchmark has been completed by running
