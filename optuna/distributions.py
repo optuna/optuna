@@ -453,7 +453,9 @@ class IntLogUniformDistribution(IntDistribution):
         return d
 
 
-def _categorical_choice_equal(value1: CategoricalChoiceType, value2: CategoricalChoiceType) -> bool:
+def _categorical_choice_equal(
+    value1: CategoricalChoiceType, value2: CategoricalChoiceType
+) -> bool:
     value1_is_nan = isinstance(value1, Real) and np.isnan(float(value1))
     value2_is_nan = isinstance(value2, Real) and np.isnan(float(value2))
     return (value1 == value2) or (value1_is_nan and value2_is_nan)
@@ -503,7 +505,7 @@ class CategoricalDistribution(BaseDistribution):
     def to_internal_repr(self, param_value_in_external_repr: CategoricalChoiceType) -> float:
 
         for index, choice in enumerate(self.choices):
-            if _nanequal(param_value_in_external_repr, choice):
+            if _categorical_choice_equal(param_value_in_external_repr, choice):
                 return index
 
         raise ValueError(f"'{param_value_in_external_repr}' not in {self.choices}.")
@@ -532,7 +534,7 @@ class CategoricalDistribution(BaseDistribution):
                 if len(value) != len(other_value):
                     return False
                 for choice, other_choice in zip(value, other_value):
-                    if not _nanequal(choice, other_choice):
+                    if not _categorical_choice_equal(choice, other_choice):
                         return False
             else:
                 if value != other_value:
