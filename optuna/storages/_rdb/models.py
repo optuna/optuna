@@ -1,3 +1,4 @@
+import enum
 from typing import Any
 from typing import List
 from typing import Optional
@@ -446,12 +447,18 @@ class TrialValueModel(BaseModel):
 
 
 class TrialIntermediateValueModel(BaseModel):
+    class FloatTypeEnum(enum.Enum):
+        FINITE_OR_NAN = 1
+        INF_POS = 2
+        INF_NEG = 3
+
     __tablename__ = "trial_intermediate_values"
     __table_args__: Any = (UniqueConstraint("trial_id", "step"),)
     trial_intermediate_value_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
     step = Column(Integer, nullable=False)
     intermediate_value = Column(Float(precision=FLOAT_PRECISION), nullable=True)
+    intermediate_value_type = Column(Enum(FloatTypeEnum), nullable=False)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("intermediate_values", cascade="all, delete-orphan")

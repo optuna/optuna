@@ -107,31 +107,23 @@ def test_loaded_trials(storage_url: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "input,expected",
+    "input_value,expected",
     [
         (float("inf"), float("inf")),
         (-float("inf"), -float("inf")),
-        (np.finfo(np.float32).max, float("inf")),
-        (np.finfo(np.float32).min, -float("inf")),
-        (np.finfo(np.float64).max, float("inf")),
-        (np.finfo(np.float64).min, -float("inf")),
     ],
 )
-def test_store_infinite_values(input: float, expected: float, storage_url: str) -> None:
+def test_store_infinite_values(input_value: float, expected: float, storage_url: str) -> None:
 
     storage: Union[RDBStorage, RedisStorage]
     if storage_url.startswith("redis"):
-        # Only RDB can convert max/min value to inf. It was introduced by
-        # https://github.com/optuna/optuna/pull/3238.
-        if input != float("inf") and input != -float("inf"):
-            pytest.skip("RedisStorage does not convert max/min to inf/-inf.")
         storage = optuna.storages.RedisStorage(url=storage_url)
     else:
         storage = optuna.storages.RDBStorage(url=storage_url)
     study_id = storage.create_new_study()
     trial_id = storage.create_new_trial(study_id)
-    storage.set_trial_intermediate_value(trial_id, 1, input)
-    storage.set_trial_state_values(trial_id, state=TrialState.COMPLETE, values=(input,))
+    storage.set_trial_intermediate_value(trial_id, 1, input_value)
+    storage.set_trial_state_values(trial_id, state=TrialState.COMPLETE, values=(input_value,))
     assert storage.get_trial(trial_id).value == expected
     assert storage.get_trial(trial_id).intermediate_values[1] == expected
 
