@@ -77,7 +77,8 @@ class MLflowCallback(object):
             If single name is provided, or this argument is left to default value,
             it will be broadcasted to each objective with a number suffix in order
             returned by objective function e.g. two objectives and default metric name
-            will be logged as ``value_0`` and ``value_1``.
+            will be logged as ``value_0`` and ``value_1``. The number of metrics must be
+            the same as the number of values an objective function returns.
         create_experiment:
             When :obj:`True`, new MLflow experiment will be created for each optimization run,
             named after the Optuna study. Setting this argument to :obj:`False` lets user run
@@ -107,14 +108,9 @@ class MLflowCallback(object):
             Flag indicating whether or not to add the trial's user attrs
             to the mlflow trial as tags. Please note that when both trial and
             study user attributes are logged, the latter will supersede the former
-            in case of a collison.
+            in case of a collision.
 
 
-    Raises:
-        :exc:`ValueError`:
-            If there are missing or extra metric names in multi-objective optimization.
-        :exc:`TypeError`:
-            When metric names are not passed as sequence.
     """
 
     def __init__(

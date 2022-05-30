@@ -26,6 +26,7 @@ from optuna._deprecated import deprecated
 from optuna._imports import _LazyImport
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
@@ -96,7 +97,7 @@ def _create_scoped_session(
         session.close()
 
 
-class RDBStorage(BaseStorage):
+class RDBStorage(BaseStorage, BaseHeartbeat):
     """Storage class for RDB backend.
 
     Note that library users can instantiate this class, but the attributes
@@ -126,14 +127,16 @@ class RDBStorage(BaseStorage):
             study.optimize(objective, n_trials=10)
 
     Args:
-        url: URL of the storage.
+        url:
+            URL of the storage.
         engine_kwargs:
             A dictionary of keyword arguments that is passed to
             `sqlalchemy.engine.create_engine`_ function.
         skip_compatibility_check:
-            Flag to skip schema compatibility check if set to True.
+            Flag to skip schema compatibility check if set to :obj:`True`.
         heartbeat_interval:
             Interval to record the heartbeat. It is recorded every ``interval`` seconds.
+            ``heartbeat_interval`` must be :obj:`None` or a positive integer.
 
             .. note::
                 The heartbeat is supposed to be used with :meth:`~optuna.study.Study.optimize`.
@@ -142,6 +145,7 @@ class RDBStorage(BaseStorage):
 
         grace_period:
             Grace period before a running trial is failed from the last heartbeat.
+            ``grace_period`` must be :obj:`None` or a positive integer.
             If it is :obj:`None`, the grace period will be `2 * heartbeat_interval`.
         failed_trial_callback:
             A callback function that is invoked after failing each stale trial.
@@ -151,6 +155,9 @@ class RDBStorage(BaseStorage):
             .. note::
                 The procedure to fail existing stale trials is called just before asking the
                 study for a new trial.
+
+        skip_table_creation:
+            Flag to skip table creation if set to :obj:`True`.
 
     .. _sqlalchemy.engine.create_engine:
         https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine
@@ -177,12 +184,6 @@ class RDBStorage(BaseStorage):
         You can use :class:`~optuna.storages.RetryFailedTrialCallback` to automatically retry
         failed trials detected by heartbeat.
 
-    Raises:
-        :exc:`ValueError`:
-            If the given `heartbeat_interval` or `grace_period` is not a positive integer.
-        :exc:`RuntimeError`:
-            When a process tries to finish a trial that has already
-            been set to :class:`~optuna.trial.TrialState.FAIL` by heartbeat.
     """
 
     def __init__(
@@ -194,6 +195,7 @@ class RDBStorage(BaseStorage):
         heartbeat_interval: Optional[int] = None,
         grace_period: Optional[int] = None,
         failed_trial_callback: Optional[Callable[["optuna.Study", FrozenTrial], None]] = None,
+        skip_table_creation: bool = False,
     ) -> None:
 
         self.engine_kwargs = engine_kwargs or {}
@@ -220,7 +222,8 @@ class RDBStorage(BaseStorage):
         self.scoped_session = sqlalchemy_orm.scoped_session(
             sqlalchemy_orm.sessionmaker(bind=self.engine)
         )
-        models.BaseModel.metadata.create_all(self.engine)
+        if not skip_table_creation:
+            models.BaseModel.metadata.create_all(self.engine)
 
         self._version_manager = _VersionManager(self.url, self.engine, self.scoped_session)
         if not skip_compatibility_check:
@@ -358,14 +361,6 @@ class RDBStorage(BaseStorage):
         with _create_scoped_session(self.scoped_session) as session:
             study = models.StudyModel.find_or_raise_by_name(study_name, session)
             study_id = study.study_id
-
-        return study_id
-
-    def get_study_id_from_trial_id(self, trial_id: int) -> int:
-
-        with _create_scoped_session(self.scoped_session) as session:
-            trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-            study_id = trial.study_id
 
         return study_id
 
@@ -798,6 +793,7 @@ class RDBStorage(BaseStorage):
 
     @staticmethod
     def _ensure_numerical_limit(value: float) -> float:
+        # TODO(c-bata): Remove this method after fixing inf/-inf handling of trial.values.
 
         # Max and min trial values that can be stored are limited by
         # dialect. Most limiting one is MySQL which in current data
@@ -807,6 +803,7 @@ class RDBStorage(BaseStorage):
 
     @staticmethod
     def _lift_numerical_limit(value: Optional[float]) -> float:
+        # TODO(c-bata): Remove this method after fixing inf/-inf handling of trial.values.
 
         # Floats can't be compared for equality because they are
         # approximate and not stored as exact values.
@@ -816,6 +813,22 @@ class RDBStorage(BaseStorage):
         elif np.isclose(value, _RDB_MIN_FLOAT) or np.isclose(value, _RDB_MAX_FLOAT):
             return float(np.sign(value) * float("inf"))
         return value
+
+    @staticmethod
+    def _to_intermediate_value_from_sqlalchemy_model(
+        intermediate_value_model: models.TrialIntermediateValueModel,
+    ) -> float:
+        value_type = intermediate_value_model.intermediate_value_type
+        if value_type == models.TrialIntermediateValueModel.FloatTypeEnum.FINITE_OR_NAN:
+            if intermediate_value_model.intermediate_value is None:
+                return float("nan")
+            else:
+                return intermediate_value_model.intermediate_value
+        if value_type == models.TrialIntermediateValueModel.FloatTypeEnum.INF_POS:
+            return float("inf")
+        if value_type == models.TrialIntermediateValueModel.FloatTypeEnum.INF_NEG:
+            return float("-inf")
+        assert False, "Must not reach here"
 
     @deprecated(
         "3.0.0",
@@ -893,20 +906,31 @@ class RDBStorage(BaseStorage):
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
+
         _intermediate_value = self._ensure_not_nan(intermediate_value)
-        if _intermediate_value is not None:
-            _intermediate_value = self._ensure_numerical_limit(_intermediate_value)
+        if not np.isfinite(intermediate_value):
+            _intermediate_value = None
+
+        intermediate_value_type = models.TrialIntermediateValueModel.FloatTypeEnum.FINITE_OR_NAN
+        if np.isposinf(intermediate_value):
+            intermediate_value_type = models.TrialIntermediateValueModel.FloatTypeEnum.INF_POS
+        elif np.isneginf(intermediate_value):
+            intermediate_value_type = models.TrialIntermediateValueModel.FloatTypeEnum.INF_NEG
 
         trial_intermediate_value = models.TrialIntermediateValueModel.find_by_trial_and_step(
             trial, step, session
         )
         if trial_intermediate_value is None:
             trial_intermediate_value = models.TrialIntermediateValueModel(
-                trial_id=trial_id, step=step, intermediate_value=_intermediate_value
+                trial_id=trial_id,
+                step=step,
+                intermediate_value=_intermediate_value,
+                intermediate_value_type=intermediate_value_type,
             )
             session.add(trial_intermediate_value)
         else:
             trial_intermediate_value.intermediate_value = _intermediate_value
+            trial_intermediate_value.intermediate_value_type = intermediate_value_type
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
 
@@ -1085,7 +1109,7 @@ class RDBStorage(BaseStorage):
                 attr.key: json.loads(attr.value_json) for attr in trial.system_attributes
             },
             intermediate_values={
-                v.step: self._lift_numerical_limit(v.intermediate_value)
+                v.step: self._to_intermediate_value_from_sqlalchemy_model(v)
                 for v in trial.intermediate_values
             },
             trial_id=trial.trial_id,
@@ -1096,7 +1120,7 @@ class RDBStorage(BaseStorage):
         with _create_scoped_session(self.scoped_session) as session:
             _directions = self.get_study_directions(study_id)
             if len(_directions) > 1:
-                raise ValueError(
+                raise RuntimeError(
                     "Best trial can be obtained only for single-objective optimization."
                 )
             direction = _directions[0]
@@ -1227,10 +1251,6 @@ class RDBStorage(BaseStorage):
                     stale_trial_ids.append(trial.trial_id)
 
         return stale_trial_ids
-
-    def _is_heartbeat_supported(self) -> bool:
-
-        return True
 
     def get_heartbeat_interval(self) -> Optional[int]:
 

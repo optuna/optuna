@@ -27,6 +27,7 @@ from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.storages import RedisStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.testing.storage import STORAGE_MODES
@@ -176,18 +177,6 @@ def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode: str) ->
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_get_study_id_from_trial_id(storage_mode: str) -> None:
-
-    with StorageSupplier(storage_mode) as storage:
-
-        # Check if trial_number starts from 0.
-        study_id = storage.create_new_study()
-
-        trial_id = storage.create_new_trial(study_id)
-        assert storage.get_study_id_from_trial_id(trial_id) == study_id
-
-
-@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_and_get_study_directions(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -233,12 +222,17 @@ def test_set_and_get_study_directions(storage_mode: str) -> None:
                 storage.set_study_directions(study_id, (StudyDirection.NOT_SET,))
 
             # Test non-existent study.
+            non_existent_study_id = study_id + 1
             with pytest.raises(KeyError):
-                storage.set_study_directions(study_id + 1, opposite)
+                storage.get_study_directions(non_existent_study_id)
+
+            # Test non-existent study.
+            with pytest.raises(KeyError):
+                storage.set_study_directions(non_existent_study_id, opposite)
 
             # Test non-existent study is checked before directions.
             with pytest.raises(KeyError):
-                storage.set_study_directions(study_id + 1, (StudyDirection.NOT_SET,))
+                storage.set_study_directions(non_existent_study_id, (StudyDirection.NOT_SET,))
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -260,14 +254,14 @@ def test_set_and_get_study_user_attrs(storage_mode: str) -> None:
         # Test overwriting value.
         check_set_and_get("dataset", "ImageNet")
 
-        # Non-existent study id or key.
+        # Non-existent study id.
         non_existent_study_id = study_id + 1
         with pytest.raises(KeyError):
+            storage.get_study_user_attrs(non_existent_study_id)
+
+        # Non-existent study id.
+        with pytest.raises(KeyError):
             storage.set_study_user_attr(non_existent_study_id, "key", "value")
-        with pytest.raises(KeyError):
-            storage.get_study_user_attrs(non_existent_study_id)
-        with pytest.raises(KeyError):
-            storage.get_study_user_attrs(non_existent_study_id)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -290,8 +284,13 @@ def test_set_and_get_study_system_attrs(storage_mode: str) -> None:
         check_set_and_get("dataset", "ImageNet")
 
         # Non-existent study id.
+        non_existent_study_id = study_id + 1
         with pytest.raises(KeyError):
-            storage.set_study_system_attr(study_id + 1, "key", "value")
+            storage.get_study_system_attrs(non_existent_study_id)
+
+        # Non-existent study id.
+        with pytest.raises(KeyError):
+            storage.set_study_system_attr(non_existent_study_id, "key", "value")
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -443,6 +442,9 @@ def test_get_trial_number_from_id(storage_mode: str) -> None:
         trial_id = storage.create_new_trial(study_id)
         assert storage.get_trial_number_from_id(trial_id) == 1
 
+        with pytest.raises(KeyError):
+            storage.get_trial_number_from_id(trial_id + 1)
+
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_trial_state(storage_mode: str) -> None:
@@ -471,6 +473,14 @@ def test_set_trial_state(storage_mode: str) -> None:
                 assert storage.get_trial(trial_id).datetime_complete is not None
             else:
                 assert storage.get_trial(trial_id).datetime_complete is None
+
+        # Non-existent study.
+        with pytest.raises(KeyError):
+            non_existent_trial_id = max(trial_ids) + 1
+            storage.set_trial_state(
+                non_existent_trial_id,
+                state=TrialState.COMPLETE,
+            )
 
         for state in ALL_STATES:
             if not state.is_finished():
@@ -508,6 +518,14 @@ def test_set_trial_state_values_for_state(storage_mode: str) -> None:
                 assert storage.get_trial(trial_id).datetime_complete is not None
             else:
                 assert storage.get_trial(trial_id).datetime_complete is None
+
+        # Non-existent study.
+        with pytest.raises(KeyError):
+            non_existent_trial_id = max(trial_ids) + 1
+            storage.set_trial_state_values(
+                non_existent_trial_id,
+                state=TrialState.COMPLETE,
+            )
 
         for state in ALL_STATES:
             if not state.is_finished():
@@ -1175,7 +1193,8 @@ def test_get_best_trial_for_multi_objective_optimization(storage_mode: str) -> N
             template_trial.state = TrialState.COMPLETE
             template_trial.values = [i, i + 1]
             storage.create_new_trial(study_id, template_trial=template_trial)
-        with pytest.raises(ValueError):
+
+        with pytest.raises(RuntimeError):
             storage.get_best_trial(study_id)
 
 
@@ -1218,6 +1237,7 @@ def test_fail_stale_trials_with_optimize(storage_mode: str) -> None:
         storage_mode, heartbeat_interval=heartbeat_interval, grace_period=grace_period
     ) as storage:
         assert storage.is_heartbeat_enabled()
+        assert isinstance(storage, BaseHeartbeat)
 
         study1 = optuna.create_study(storage=storage)
         study2 = optuna.create_study(storage=storage)
@@ -1270,6 +1290,7 @@ def test_failed_trial_callback(storage_mode: str) -> None:
         failed_trial_callback=failed_trial_callback,
     ) as storage:
         assert storage.is_heartbeat_enabled()
+        assert isinstance(storage, BaseHeartbeat)
 
         study = optuna.create_study(storage=storage)
         study.set_system_attr("test", "A")
@@ -1300,6 +1321,7 @@ def test_retry_failed_trial_callback(storage_mode: str, max_retry: Optional[int]
         failed_trial_callback=RetryFailedTrialCallback(max_retry=max_retry),
     ) as storage:
         assert storage.is_heartbeat_enabled()
+        assert isinstance(storage, BaseHeartbeat)
 
         study = optuna.create_study(storage=storage)
 
@@ -1348,6 +1370,7 @@ def test_retry_failed_trial_callback_intermediate(
         ),
     ) as storage:
         assert storage.is_heartbeat_enabled()
+        assert isinstance(storage, BaseHeartbeat)
 
         study = optuna.create_study(storage=storage)
 
@@ -1444,11 +1467,13 @@ def test_get_stale_trial_ids(storage_mode: str) -> None:
 def test_read_trials_from_remote_storage(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
-        with pytest.raises(KeyError):
-            storage.read_trials_from_remote_storage(-1)
 
         study_id = storage.create_new_study()
         storage.read_trials_from_remote_storage(study_id)
+
+        # Non-existent study.
+        with pytest.raises(KeyError):
+            storage.read_trials_from_remote_storage(study_id + 1)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES_HEARTBEAT)
@@ -1464,6 +1489,9 @@ def test_retry_failed_trial_callback_repetitive_failure(storage_mode: str) -> No
         grace_period=grace_period,
         failed_trial_callback=RetryFailedTrialCallback(max_retry=max_retry),
     ) as storage:
+        assert storage.is_heartbeat_enabled()
+        assert isinstance(storage, BaseHeartbeat)
+
         study = optuna.create_study(storage=storage)
 
         # Make repeatedly failed and retried trials by heartbeat.
@@ -1520,3 +1548,22 @@ def test_pickle_storage(storage_mode: str) -> None:
             assert storage.engine != restored_storage.engine
             assert storage.scoped_session != restored_storage.scoped_session
             assert storage._version_manager != restored_storage._version_manager
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_check_trial_is_updatable(storage_mode: str) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        study_id = storage.create_new_study()
+        trial_id = storage.create_new_trial(study_id)
+
+        storage.check_trial_is_updatable(trial_id, TrialState.RUNNING)
+        storage.check_trial_is_updatable(trial_id, TrialState.WAITING)
+
+        with pytest.raises(RuntimeError):
+            storage.check_trial_is_updatable(trial_id, TrialState.FAIL)
+
+        with pytest.raises(RuntimeError):
+            storage.check_trial_is_updatable(trial_id, TrialState.PRUNED)
+
+        with pytest.raises(RuntimeError):
+            storage.check_trial_is_updatable(trial_id, TrialState.COMPLETE)

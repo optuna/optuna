@@ -5,7 +5,6 @@ import tensorflow as tf
 
 import optuna
 from optuna.integration import TFKerasPruningCallback
-from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
 
 
@@ -45,7 +44,7 @@ def test_tfkeras_pruning_callback() -> None:
 def test_tfkeras_pruning_callback_observation_isnan() -> None:
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
-    trial = create_running_trial(study, 1.0)
+    trial = study.ask()
     callback = TFKerasPruningCallback(trial, "loss")
 
     with pytest.raises(optuna.TrialPruned):
@@ -58,7 +57,7 @@ def test_tfkeras_pruning_callback_observation_isnan() -> None:
 def test_tfkeras_pruning_callback_monitor_is_invalid() -> None:
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
-    trial = create_running_trial(study, 1.0)
+    trial = study.ask()
     callback = TFKerasPruningCallback(trial, "InvalidMonitor")
 
     with pytest.warns(UserWarning):

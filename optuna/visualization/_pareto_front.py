@@ -77,15 +77,17 @@ def plot_pareto_front(
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their objective
-            values.
+            values. ``study.n_objectives`` must be either 2 or 3 when ``targets`` is :obj:`None`.
         target_names:
             Objective name list used as the axis titles. If :obj:`None` is specified,
-            "Objective {objective_index}" is used instead.
+            "Objective {objective_index}" is used instead. If ``targets`` is specified
+            for a study that does not contain any completed trial,
+            ``target_name`` must be specified.
         include_dominated_trials:
             A flag to include all dominated trial's objective values.
         axis_order:
             A list of indices indicating the axis order. If :obj:`None` is specified,
-            default order is used.
+            default order is used. ``axis_order`` and ``targets`` cannot be used at the same time.
         constraints_func:
             An optional function that computes the objective constraints. It must take a
             :class:`~optuna.trial.FrozenTrial` and return the constraints. The return value must
@@ -100,6 +102,8 @@ def plot_pareto_front(
         targets:
             A function that returns targets values to display.
             The argument to this function is :class:`~optuna.trial.FrozenTrial`.
+            ``axis_order`` and ``targets`` cannot be used at the same time.
+            If ``study.n_objectives`` is neither 2 nor 3, ``targets`` must be specified.
 
             .. note::
                 Added in v3.0.0 as an experimental feature. The interface may change in newer
@@ -108,19 +112,6 @@ def plot_pareto_front(
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
-
-    Raises:
-        :exc:`ValueError`:
-            If the number of objectives of ``study`` isn't 2 or 3.
-        :exc:`ValueError`:
-            If ``targets`` returns something other than sequence.
-        :exc:`ValueError`:
-            If the number of target values to display isn't 2 or 3.
-        :exc:`ValueError`:
-            If ``targets`` is specified for empty studies and ``target_names`` is :obj:`None`.
-        :exc:`ValueError`:
-            If using both ``targets`` and ``axis_order``.
-
     """
 
     _imports.check()
@@ -295,6 +286,12 @@ def _get_pareto_front_info(
                 "If `targets` is specified for empty studies, `target_names` must be specified."
             )
 
+    if n_targets not in (2, 3):
+        raise ValueError(
+            "`plot_pareto_front` function only supports 2 or 3 targets."
+            " you used {} targets now.".format(n_targets)
+        )
+
     if target_names is None:
         target_names = [f"Objective {i}" for i in range(n_targets)]
     elif len(target_names) != n_targets:
@@ -351,7 +348,7 @@ def _make_json_compatible(value: Any) -> Any:
         json.dumps(value)
         return value
     except TypeError:
-        # the value can't be converted to JSON directly, so return a string representation
+        # The value can't be converted to JSON directly, so return a string representation.
         return str(value)
 
 
@@ -366,7 +363,6 @@ def _make_scatter_object(
 ) -> Union["go.Scatter", "go.Scatter3d"]:
     trials_with_values = trials_with_values or []
 
-    assert n_targets in (2, 3)
     marker = _make_marker(
         [trial for trial, _ in trials_with_values],
         include_dominated_trials,
@@ -383,8 +379,7 @@ def _make_scatter_object(
             marker=marker,
             showlegend=False,
         )
-    else:
-        assert n_targets == 3
+    elif n_targets == 3:
         return go.Scatter3d(
             x=[values[axis_order[0]] for _, values in trials_with_values],
             y=[values[axis_order[1]] for _, values in trials_with_values],
@@ -395,6 +390,8 @@ def _make_scatter_object(
             marker=marker,
             showlegend=False,
         )
+    else:
+        assert False, "Must not reach here"
 
 
 def _make_hovertext(trial: FrozenTrial) -> str:

@@ -50,7 +50,7 @@ jobs:
         pip install --progress-bar off .
         python -c 'import optuna'
         optuna --version
-        pip install --progress-bar off .[tests]
+        pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
         # Required for samplers_tests/test_samplers.py.
         # TODO(hvy): Fix samplers_tests/test_samplers.py to not require optional depenendencies and remove these installs.
@@ -104,12 +104,10 @@ jobs:
         python -c 'import optuna'
         optuna --version
 
-        pip install --progress-bar off .[tests]
+        pip install --progress-bar off .[test]
+        pip install --progress-bar off .[optional]
         pip install --progress-bar off .[integration]
 
-        # TODO(nzw0301): remove the version constraint
-        # when resolving https://github.com/optuna/optuna/issues/3418
-        pip install --progress-bar off -U "setuptools==59.5.0"
 
     - name: Tests
       run: |
@@ -117,10 +115,14 @@ jobs:
         # tests/integration_tests/test_lightgbm.py as shown in
         # https://github.com/optuna/optuna/issues/2695. It can be completed if we
         # execute tests individually.
-        for file in `find tests/integration_tests -name 'test_*.py' -print`;
+        # TODO(nzw0301): Remove the skip of lightning when resolving
+        # https://github.com/optuna/optuna/issues/3418.
+        for file in `find tests/integration_tests -name 'test_*.py' \
+          ! -name '*test_pytorch_lightning.py' -print`;
         do
           pytest $file;
         done
+
       env:
         OMP_NUM_THREADS: 1
 

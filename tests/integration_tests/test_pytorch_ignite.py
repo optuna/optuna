@@ -5,7 +5,6 @@ from ignite.engine import Engine
 import pytest
 
 import optuna
-from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
 
 
@@ -19,7 +18,7 @@ def test_pytorch_ignite_pruning_handler() -> None:
 
     # The pruner is activated.
     study = optuna.create_study(pruner=DeterministicPruner(True))
-    trial = create_running_trial(study, 1.0)
+    trial = study.ask()
 
     handler = optuna.integration.PyTorchIgnitePruningHandler(trial, "accuracy", trainer)
     with patch.object(trainer, "state", epoch=3):
@@ -30,7 +29,7 @@ def test_pytorch_ignite_pruning_handler() -> None:
 
     # The pruner is not activated.
     study = optuna.create_study(pruner=DeterministicPruner(False))
-    trial = create_running_trial(study, 1.0)
+    trial = study.ask()
 
     handler = optuna.integration.PyTorchIgnitePruningHandler(trial, "accuracy", trainer)
     with patch.object(trainer, "state", epoch=5):

@@ -153,6 +153,7 @@ class TPESampler(BaseSampler):
             for a trial in completed trials, the intersection of the subspace and the search space
             of the trial becomes subspace itself or an empty set.
             Sampling from the joint distribution on the subspace is realized by multivariate TPE.
+            If ``group`` is :obj:`True`, ``multivariate`` must be :obj:`True` as well.
 
             .. note::
                 Added in v2.8.0 as an experimental feature. The interface may change in newer
@@ -206,9 +207,6 @@ class TPESampler(BaseSampler):
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.8.0.
 
-    Raises:
-        ValueError:
-            If ``multivariate`` is :obj:`False` and ``group`` is :obj:`True`.
     """
 
     def __init__(
