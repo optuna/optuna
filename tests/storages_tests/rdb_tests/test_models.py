@@ -16,6 +16,7 @@ from optuna.storages._rdb.models import TrialSystemAttributeModel
 from optuna.storages._rdb.models import TrialUserAttributeModel
 from optuna.storages._rdb.models import TrialValueModel
 from optuna.storages._rdb.models import VersionInfoModel
+from optuna.storages._rdb.models import FloatTypeEnum
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import TrialState
 
@@ -349,7 +350,7 @@ class TestTrialIntermediateValueModel(object):
                 trial_id=trial.trial_id,
                 step=0,
                 intermediate_value=10,
-                intermediate_value_type=TrialIntermediateValueModel.FloatTypeEnum.FINITE_OR_NAN,
+                intermediate_value_type=FloatTypeEnum.FINITE_OR_NAN,
             )
         )
         session.commit()
@@ -386,7 +387,7 @@ class TestTrialIntermediateValueModel(object):
                 trial_id=1,
                 step=1,
                 intermediate_value=20,
-                intermediate_value_type=TrialIntermediateValueModel.FloatTypeEnum.FINITE_OR_NAN,
+                intermediate_value_type=FloatTypeEnum.FINITE_OR_NAN,
             )
         )
         session.commit()

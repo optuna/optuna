@@ -38,6 +38,12 @@ FLOAT_PRECISION = 53
 BaseModel: Any = declarative_base()
 
 
+class FloatTypeEnum(enum.Enum):
+    FINITE_OR_NAN = 1  
+    INF_POS = 2  
+    INF_NEG = 3  
+
+
 class StudyModel(BaseModel):
     __tablename__ = "studies"
     study_id = Column(Integer, primary_key=True)
@@ -447,10 +453,6 @@ class TrialValueModel(BaseModel):
 
 
 class TrialIntermediateValueModel(BaseModel):
-    class FloatTypeEnum(enum.Enum):
-        FINITE_OR_NAN = 1
-        INF_POS = 2
-        INF_NEG = 3
 
     __tablename__ = "trial_intermediate_values"
     __table_args__: Any = (UniqueConstraint("trial_id", "step"),)

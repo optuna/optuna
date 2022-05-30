@@ -14,6 +14,7 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Set
+from typing import Tuple
 from typing import TYPE_CHECKING
 import uuid
 
@@ -57,11 +58,44 @@ else:
 
     models = _LazyImport("optuna.storages._rdb.models")
 
-_RDB_MAX_FLOAT = np.finfo(np.float32).max
-_RDB_MIN_FLOAT = np.finfo(np.float32).min
+
 
 
 _logger = optuna.logging.get_logger(__name__)
+
+
+def _float_without_nan_to_pair_repr(value: float) -> Tuple[float, models.FloatTypeEnum]:
+    if np.isposinf(value):
+        return (0.0, models.FloatTypeEnum.INF_POS)
+    elif np.isneginf(value):
+        return (0.0, models.FloatTypeEnum.INF_NEG)
+    else:
+        return (value, models.FloatTypeEnum.FINITE_OR_NAN)
+
+def _float_with_nan_to_pair_repr(value: float) -> Tuple[Optional[float], models.FloatTypeEnum]:
+    if np.isnan(value):
+        return (None, models.FloatTypeEnum.FINITE_OR_NAN)
+    else:
+        return _float_without_nan_to_pair_repr(value)
+
+def _pair_repr_to_float_without_nan(value: float, float_type: models.FloatTypeEnum) -> float:
+
+    if float_type == models.FloatTypeEnum.INF_POS:
+        assert value == 0.0
+        return np.Infinity
+    elif float_type == models.FloatTypeEnum.INF_NEG:
+        assert value == 0.0
+        return -np.Infinity
+    else:
+        assert float_type == models.FloatTypeEnum.FINITE_OR_NAN
+        return value
+
+def _pair_repr_to_float_with_nan(value: Optional[float], float_type: models.FloatTypeEnum) -> float:
+
+    if float_type == models.FloatTypeEnum.FINITE_OR_NAN and value is None:
+        return np.nan
+    else:
+        return _pair_repr_to_float_without_nan(value, float_type)
 
 
 @contextmanager
@@ -521,7 +555,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                             {i.key: json.loads(i.value_json) for i in user_attrs},
                             {i.key: json.loads(i.value_json) for i in system_attrs},
                             {
-                                value.step: self._lift_numerical_limit(value.intermediate_value)
+                                value.step: _pair_repr_to_float_with_nan(
+                                    value.intermediate_value, value.intermediate_value_type
+                                )
                                 for value in intermediate
                             },
                             best_trial.trial_id,
@@ -785,13 +821,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         return param_value
 
     @staticmethod
-    def _ensure_not_nan(value: float) -> Optional[float]:
-        if np.isnan(value):
-            return None
-        else:
-            return value
-
-    @staticmethod
     def _ensure_numerical_limit(value: float) -> float:
         # TODO(c-bata): Remove this method after fixing inf/-inf handling of trial.values.
 
@@ -813,22 +842,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         elif np.isclose(value, _RDB_MIN_FLOAT) or np.isclose(value, _RDB_MAX_FLOAT):
             return float(np.sign(value) * float("inf"))
         return value
-
-    @staticmethod
-    def _to_intermediate_value_from_sqlalchemy_model(
-        intermediate_value_model: models.TrialIntermediateValueModel,
-    ) -> float:
-        value_type = intermediate_value_model.intermediate_value_type
-        if value_type == models.TrialIntermediateValueModel.FloatTypeEnum.FINITE_OR_NAN:
-            if intermediate_value_model.intermediate_value is None:
-                return float("nan")
-            else:
-                return intermediate_value_model.intermediate_value
-        if value_type == models.TrialIntermediateValueModel.FloatTypeEnum.INF_POS:
-            return float("inf")
-        if value_type == models.TrialIntermediateValueModel.FloatTypeEnum.INF_NEG:
-            return float("-inf")
-        assert False, "Must not reach here"
 
     @deprecated(
         "3.0.0",
@@ -907,15 +920,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        _intermediate_value = self._ensure_not_nan(intermediate_value)
-        if not np.isfinite(intermediate_value):
-            _intermediate_value = None
-
-        intermediate_value_type = models.TrialIntermediateValueModel.FloatTypeEnum.FINITE_OR_NAN
-        if np.isposinf(intermediate_value):
-            intermediate_value_type = models.TrialIntermediateValueModel.FloatTypeEnum.INF_POS
-        elif np.isneginf(intermediate_value):
-            intermediate_value_type = models.TrialIntermediateValueModel.FloatTypeEnum.INF_NEG
+        (sanitized_intermediate_value, float_type) = _float_with_nan_to_pair_repr(intermediate_value)
 
         trial_intermediate_value = models.TrialIntermediateValueModel.find_by_trial_and_step(
             trial, step, session
@@ -924,13 +929,13 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             trial_intermediate_value = models.TrialIntermediateValueModel(
                 trial_id=trial_id,
                 step=step,
-                intermediate_value=_intermediate_value,
-                intermediate_value_type=intermediate_value_type,
+                intermediate_value=sanitized_intermediate_value,
+                intermediate_value_type=float_type,
             )
             session.add(trial_intermediate_value)
         else:
-            trial_intermediate_value.intermediate_value = _intermediate_value
-            trial_intermediate_value.intermediate_value_type = intermediate_value_type
+            trial_intermediate_value.intermediate_value = sanitized_intermediate_value
+            trial_intermediate_value.intermediate_value_type = float_type
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
 
@@ -1109,7 +1114,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 attr.key: json.loads(attr.value_json) for attr in trial.system_attributes
             },
             intermediate_values={
-                v.step: self._to_intermediate_value_from_sqlalchemy_model(v)
+                v.step: _pair_repr_to_float_with_nan(v.intermediate_value, v.intermediate_value_type)
                 for v in trial.intermediate_values
             },
             trial_id=trial.trial_id,
