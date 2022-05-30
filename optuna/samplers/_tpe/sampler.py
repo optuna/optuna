@@ -220,9 +220,9 @@ class TPESampler(BaseSampler):
             subject to change in the future releases.
 
             .. note::
-                Added in v3.0.0-b1 as an experimental feature. The interface may change in newer
-                versions without prior notice. See
-                https://github.com/optuna/optuna/releases/tag/v3.0.0-b1
+                Added in v3.0.0 as an experimental feature. The interface may change in newer
+                versions without prior notice.
+                See https://github.com/optuna/optuna/releases/tag/v3.0.0.
 
     """
 
