@@ -58,12 +58,11 @@ else:
 
     models = _LazyImport("optuna.storages._rdb.models")
 
-
-_logger = optuna.logging.get_logger(__name__)
-
-
 _RDB_MAX_FLOAT = np.finfo(np.float32).max
 _RDB_MIN_FLOAT = np.finfo(np.float32).min
+
+
+_logger = optuna.logging.get_logger(__name__)
 
 
 def _float_without_nan_to_pair_repr(value: float) -> Tuple[float, models.FloatTypeEnum]:
