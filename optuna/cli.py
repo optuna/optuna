@@ -657,7 +657,7 @@ class _StorageUpgrade(_BaseCommand):
         if storage_url.startswith("redis"):
             self.logger.info("This storage does not support upgrade yet.")
             return
-        storage = RDBStorage(storage_url, skip_compatibility_check=True)
+        storage = RDBStorage(storage_url, skip_compatibility_check=True, skip_table_creation=True)
         current_version = storage.get_current_version()
         head_version = storage.get_head_version()
         known_versions = storage.get_all_versions()
