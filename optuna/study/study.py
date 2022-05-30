@@ -25,6 +25,7 @@ from optuna._deprecated import deprecated
 from optuna._imports import _LazyImport
 from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.distributions import BaseDistribution
+from optuna.storages._heartbeat import is_heartbeat_enabled
 from optuna.study._multi_objective import _get_pareto_front_trials
 from optuna.study._optimize import _optimize
 from optuna.study._study_direction import StudyDirection
@@ -481,7 +482,7 @@ class Study:
         """
 
         if not self._optimize_lock.locked():
-            if self._storage.is_heartbeat_enabled():
+            if is_heartbeat_enabled(self._storage):
                 warnings.warn("Heartbeat of storage is supposed to be used with Study.optimize.")
 
         fixed_distributions = fixed_distributions or {}
