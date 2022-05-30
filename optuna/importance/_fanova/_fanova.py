@@ -12,7 +12,7 @@ Differences include relying on scikit-learn to fit random forests
 This stands in contrast to the original implementation which is partially written in C++.
 Since Python runtime overhead may become noticeable, included are instead several
 optimizations, e.g. vectorized NumPy functions to compute the marginals, instead of keeping all
-running statistics. Known cases include when assessing categorical features with a larger
+running statistics. Known cases include assessing categorical features with a larger
 number of choices since each choice is given a unique one-hot encoded raw feature.
 """
 
