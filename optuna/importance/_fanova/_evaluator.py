@@ -3,17 +3,32 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Tuple
 
 import numpy
 
 from optuna._transform import _SearchSpaceTransform
+from optuna.distributions import BaseDistribution
 from optuna.importance._base import _get_distributions
+from optuna.importance._base import _get_filtered_trials
+from optuna.importance._base import _get_target_values
+from optuna.importance._base import _get_trans_params
+from optuna.importance._base import _param_importances_to_dict
+from optuna.importance._base import _sort_dict_by_importance
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova._fanova import _Fanova
 from optuna.study import Study
 from optuna.trial import FrozenTrial
-from optuna.trial import TrialState
-from optuna.visualization._utils import _filter_nonfinite
+
+
+def _split_nonsingle_and_single_distributions(
+    distributions: Dict[str, BaseDistribution]
+) -> Tuple[Dict[str, BaseDistribution], Dict[str, BaseDistribution]]:
+    non_single_distributions = {
+        name: dist for name, dist in distributions.items() if not dist.single()
+    }
+    single_distributions = {name: dist for name, dist in distributions.items() if dist.single()}
+    return (non_single_distributions, single_distributions)
 
 
 class FanovaImportanceEvaluator(BaseImportanceEvaluator):
@@ -79,67 +94,45 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
                 "`target=lambda t: t.values[0]` for the first objective value."
             )
 
-        distributions = _get_distributions(study, params)
-        if len(distributions) == 0:
-            return OrderedDict()
+        distributions = _get_distributions(study, params=params)
+        if params is None:
+            params = list(distributions.keys())
+        assert params is not None
 
         # fANOVA does not support parameter distributions with a single value.
         # However, there is no reason to calculate parameter importance in such case anyway,
         # since it will always be 0 as the parameter is constant in the objective function.
-        zero_importances = {name: 0.0 for name, dist in distributions.items() if dist.single()}
-        distributions = {name: dist for name, dist in distributions.items() if not dist.single()}
+        non_single_distributions, single_distributions = _split_nonsingle_and_single_distributions(
+            distributions
+        )
 
-        trials = []
-        for trial in _filter_nonfinite(
-            study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
-        ):
-            if any(name not in trial.params for name in distributions.keys()):
-                continue
-            trials.append(trial)
-
-        trans = _SearchSpaceTransform(distributions, transform_log=False, transform_step=False)
-
-        n_trials = len(trials)
-        trans_params = numpy.empty((n_trials, trans.bounds.shape[0]), dtype=numpy.float64)
-        trans_values = numpy.empty(n_trials, dtype=numpy.float64)
-
-        for trial_idx, trial in enumerate(trials):
-            trans_params[trial_idx] = trans.transform(trial.params)
-            trans_values[trial_idx] = trial.value if target is None else target(trial)
-
-        trans_bounds = trans.bounds
-        column_to_encoded_columns = trans.column_to_encoded_columns
-
-        if trans_params.size == 0:  # `params` were given but as an empty list.
+        if len(non_single_distributions) == 0:
             return OrderedDict()
 
-        # Many (deep) copies of the search spaces are required during the tree traversal and using
-        # Optuna distributions will create a bottleneck.
-        # Therefore, search spaces (parameter distributions) are represented by a single
-        # `numpy.ndarray`, coupled with a list of flags that indicate whether they are categorical
-        # or not.
+        trials: List[FrozenTrial] = _get_filtered_trials(study, params=params, target=target)
+
+        trans = _SearchSpaceTransform(
+            non_single_distributions, transform_log=False, transform_step=False
+        )
+
+        trans_params: numpy.ndarray = _get_trans_params(trials, trans)
+        values: numpy.ndarray = _get_target_values(trials, target)
 
         evaluator = self._evaluator
         evaluator.fit(
             X=trans_params,
-            y=trans_values,
-            search_spaces=trans_bounds,
-            column_to_encoded_columns=column_to_encoded_columns,
+            y=values,
+            search_spaces=trans.bounds,
+            column_to_encoded_columns=trans.column_to_encoded_columns,
         )
-
-        importances = {}
-        for i, name in enumerate(distributions.keys()):
-            importance, _ = evaluator.get_importance(i)
-            importances[name] = importance
-
-        importances = {**importances, **zero_importances}
-        total_importance = sum(importances.values())
-        for name in importances:
-            importances[name] /= total_importance
-
-        sorted_importances = OrderedDict(
-            reversed(
-                sorted(importances.items(), key=lambda name_and_importance: name_and_importance[1])
-            )
+        param_importances = numpy.array(
+            [evaluator.get_importance(i)[0] for i in range(len(non_single_distributions))]
         )
-        return sorted_importances
+        param_importances /= numpy.sum(param_importances)
+
+        return _sort_dict_by_importance(
+            {
+                **_param_importances_to_dict(non_single_distributions.keys(), param_importances),
+                **_param_importances_to_dict(single_distributions.keys(), 0.0),
+            }
+        )
