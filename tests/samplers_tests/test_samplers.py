@@ -149,11 +149,14 @@ def test_sampler_reseed_rng(
     assert expected_has_another_sampler == has_another_sampler
 
     # CmaEsSampler has a RandomState that is not reseed by its reseed method.
-    if has_rng and not isinstance(sampler, optuna.samplers.CmaEsSampler):
+    if has_rng:
         rng_name = str(rng_name)
         original_random_state = sampler.__dict__[rng_name].get_state()
         sampler.reseed_rng()
-        assert str(original_random_state) != str(sampler.__dict__[rng_name].get_state())
+        if not isinstance(sampler, optuna.samplers.CmaEsSampler):
+            assert str(original_random_state) != str(sampler.__dict__[rng_name].get_state())
+        else:
+            assert str(original_random_state) == str(sampler.__dict__[rng_name].get_state())
 
     if has_another_sampler:
         had_sampler_name = str(had_sampler_name)
@@ -162,24 +165,20 @@ def test_sampler_reseed_rng(
             had_sampler, np.random.RandomState
         )
 
-        if had_sampler_rng_name is not None:
-            had_sampler_rng_name = str(had_sampler_rng_name)
-            original_had_sampler_random_state = had_sampler.__dict__[
-                had_sampler_rng_name
-            ].get_state()
+        original_had_sampler_random_state = had_sampler.__dict__[had_sampler_rng_name].get_state()
 
-            with patch.object(
-                had_sampler,
-                "reseed_rng",
-                wraps=had_sampler.reseed_rng,
-            ) as mock_object:
-                sampler.reseed_rng()
-                assert mock_object.call_count == 1
+        with patch.object(
+            had_sampler,
+            "reseed_rng",
+            wraps=had_sampler.reseed_rng,
+        ) as mock_object:
+            sampler.reseed_rng()
+            assert mock_object.call_count == 1
 
-            had_sampler = sampler.__dict__[had_sampler_name]
-            assert str(original_had_sampler_random_state) != str(
-                had_sampler.__dict__[had_sampler_rng_name].get_state()
-            )
+        had_sampler = sampler.__dict__[had_sampler_name]
+        assert str(original_had_sampler_random_state) != str(
+            had_sampler.__dict__[had_sampler_rng_name].get_state()
+        )
 
 
 def parametrize_suggest_method(name: str) -> MarkDecorator:
