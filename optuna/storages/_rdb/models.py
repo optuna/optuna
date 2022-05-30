@@ -39,9 +39,9 @@ BaseModel: Any = declarative_base()
 
 
 class FloatTypeEnum(enum.Enum):
-    FINITE_OR_NAN = 1  
-    INF_POS = 2  
-    INF_NEG = 3  
+    FINITE_OR_NAN = 1
+    INF_POS = 2
+    INF_NEG = 3
 
 
 class StudyModel(BaseModel):

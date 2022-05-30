@@ -59,9 +59,11 @@ else:
     models = _LazyImport("optuna.storages._rdb.models")
 
 
-
-
 _logger = optuna.logging.get_logger(__name__)
+
+
+_RDB_MAX_FLOAT = np.finfo(np.float32).max
+_RDB_MIN_FLOAT = np.finfo(np.float32).min
 
 
 def _float_without_nan_to_pair_repr(value: float) -> Tuple[float, models.FloatTypeEnum]:
@@ -72,11 +74,13 @@ def _float_without_nan_to_pair_repr(value: float) -> Tuple[float, models.FloatTy
     else:
         return (value, models.FloatTypeEnum.FINITE_OR_NAN)
 
+
 def _float_with_nan_to_pair_repr(value: float) -> Tuple[Optional[float], models.FloatTypeEnum]:
     if np.isnan(value):
         return (None, models.FloatTypeEnum.FINITE_OR_NAN)
     else:
         return _float_without_nan_to_pair_repr(value)
+
 
 def _pair_repr_to_float_without_nan(value: float, float_type: models.FloatTypeEnum) -> float:
 
@@ -90,11 +94,15 @@ def _pair_repr_to_float_without_nan(value: float, float_type: models.FloatTypeEn
         assert float_type == models.FloatTypeEnum.FINITE_OR_NAN
         return value
 
-def _pair_repr_to_float_with_nan(value: Optional[float], float_type: models.FloatTypeEnum) -> float:
+
+def _pair_repr_to_float_with_nan(
+    value: Optional[float], float_type: models.FloatTypeEnum
+) -> float:
 
     if float_type == models.FloatTypeEnum.FINITE_OR_NAN and value is None:
         return np.nan
     else:
+        assert value is not None
         return _pair_repr_to_float_without_nan(value, float_type)
 
 
@@ -920,7 +928,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        (sanitized_intermediate_value, float_type) = _float_with_nan_to_pair_repr(intermediate_value)
+        (sanitized_intermediate_value, float_type) = _float_with_nan_to_pair_repr(
+            intermediate_value
+        )
 
         trial_intermediate_value = models.TrialIntermediateValueModel.find_by_trial_and_step(
             trial, step, session
@@ -1114,7 +1124,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 attr.key: json.loads(attr.value_json) for attr in trial.system_attributes
             },
             intermediate_values={
-                v.step: _pair_repr_to_float_with_nan(v.intermediate_value, v.intermediate_value_type)
+                v.step: _pair_repr_to_float_with_nan(
+                    v.intermediate_value, v.intermediate_value_type
+                )
                 for v in trial.intermediate_values
             },
             trial_id=trial.trial_id,

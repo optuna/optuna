@@ -46,6 +46,7 @@ def _float_without_nan_to_pair_repr(value: float) -> Tuple[float, FloatTypeEnum]
     else:
         return (value, FloatTypeEnum.FINITE_OR_NAN)
 
+
 def _float_with_nan_to_pair_repr(value: float) -> Tuple[Optional[float], FloatTypeEnum]:
     if np.isnan(value):
         return (None, FloatTypeEnum.FINITE_OR_NAN)

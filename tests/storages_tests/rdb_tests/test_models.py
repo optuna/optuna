@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from optuna.storages._rdb.models import BaseModel
+from optuna.storages._rdb.models import FloatTypeEnum
 from optuna.storages._rdb.models import StudyDirectionModel
 from optuna.storages._rdb.models import StudyModel
 from optuna.storages._rdb.models import StudySystemAttributeModel
@@ -16,7 +17,6 @@ from optuna.storages._rdb.models import TrialSystemAttributeModel
 from optuna.storages._rdb.models import TrialUserAttributeModel
 from optuna.storages._rdb.models import TrialValueModel
 from optuna.storages._rdb.models import VersionInfoModel
-from optuna.storages._rdb.models import FloatTypeEnum
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import TrialState
 
