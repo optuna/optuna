@@ -86,7 +86,7 @@ def _pair_repr_to_float_without_nan(value: float, float_type: models.FloatTypeEn
 
     if float_type == models.FloatTypeEnum.INF_POS:
         assert value == 0.0
-        return np.Infinity
+        return float("inf")
     elif float_type == models.FloatTypeEnum.INF_NEG:
         assert value == 0.0
         return -np.Infinity
