@@ -100,7 +100,7 @@ def _pair_repr_to_float_with_nan(
 ) -> float:
 
     if float_type == models.FloatTypeEnum.FINITE_OR_NAN and value is None:
-        return np.nan
+        return float("nan")
     else:
         assert value is not None
         return _pair_repr_to_float_without_nan(value, float_type)
