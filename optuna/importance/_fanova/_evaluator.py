@@ -33,12 +33,6 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
 
     .. note::
 
-        Pairwise and higher order importances are not supported through this class. They can be
-        computed using :class:`~optuna.importance._fanova._fanova._Fanova` directly but is not
-        recommended as interfaces may change without prior notice.
-
-    .. note::
-
         The performance of fANOVA depends on the prediction performance of the underlying
         random forest model. In order to obtain high prediction performance, it is necessary to
         cover a wide range of the hyperparameter search space. It is recommended to use an
@@ -135,7 +129,7 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
 
         importances = {}
         for i, name in enumerate(distributions.keys()):
-            importance, _ = evaluator.get_importance((i,))
+            importance, _ = evaluator.get_importance(i)
             importances[name] = importance
 
         importances = {**importances, **zero_importances}
