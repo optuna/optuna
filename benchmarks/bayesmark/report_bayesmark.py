@@ -1,4 +1,4 @@
-from abc import ABC
+import abc
 from collections import defaultdict
 import io
 import itertools
@@ -25,13 +25,19 @@ Moments = Tuple[float, float]
 Samples = Dict[str, List[float]]
 
 
-class BaseMetric(ABC):
+class BaseMetric(object, metaclass=abc.ABCMeta):
     @property
+    @abc.abstractmethod
     def name(self) -> str:
         """Metric name displayed in final report."""
 
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def calculate(self, data: pd.DataFrame) -> List[float]:
         """Calculates metric for each study in data frame."""
+
+        raise NotImplementedError
 
 
 class BestValueMetric(BaseMetric):
