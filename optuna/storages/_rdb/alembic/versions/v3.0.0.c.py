@@ -17,7 +17,6 @@ from typing import Optional
 from typing import Tuple
 
 
-
 # revision identifiers, used by Alembic.
 revision = "v3.0.0.c"
 down_revision = "v3.0.0.b"
@@ -31,6 +30,7 @@ RDB_MIN_FLOAT = np.finfo(np.float32).min
 
 
 FLOAT_PRECISION = 53
+
 
 class IntermediateValueModel(BaseModel):
     class TrialIntermediateValueType(enum.Enum):
@@ -46,7 +46,8 @@ class IntermediateValueModel(BaseModel):
 
     @classmethod
     def _intermediate_value_to_stored_repr(
-        cls, value: float,
+        cls,
+        value: float,
     ) -> Tuple[Optional[float], TrialIntermediateValueType]:
         if np.isnan(value):
             return (None, cls.TrialIntermediateValueType.NAN)
@@ -56,6 +57,7 @@ class IntermediateValueModel(BaseModel):
             return (None, cls.TrialIntermediateValueType.INF_NEG)
         else:
             return (value, cls.TrialIntermediateValueType.FINITE)
+
 
 def upgrade():
     bind = op.get_bind()
@@ -96,7 +98,10 @@ def upgrade():
                 value = np.nan
             else:
                 value = r.intermediate_value
-            (sanitized_value, float_type) = IntermediateValueModel._intermediate_value_to_stored_repr(value)
+            (
+                sanitized_value,
+                float_type,
+            ) = IntermediateValueModel._intermediate_value_to_stored_repr(value)
             mapping.append(
                 {
                     "trial_intermediate_value_id": r.trial_intermediate_value_id,
@@ -121,12 +126,19 @@ def downgrade():
         records = session.query(IntermediateValueModel).all()
         mapping = []
         for r in records:
-            if r.intermediate_value_type == IntermediateValueModel.TrialIntermediateValueType.FINITE or \
-                r.intermediate_value_type == IntermediateValueModel.TrialIntermediateValueType.NAN:
+            if (
+                r.intermediate_value_type
+                == IntermediateValueModel.TrialIntermediateValueType.FINITE
+                or r.intermediate_value_type
+                == IntermediateValueModel.TrialIntermediateValueType.NAN
+            ):
                 continue
 
             _intermediate_value = r.intermediate_value
-            if r.intermediate_value_type == IntermediateValueModel.TrialIntermediateValueType.INF_POS:
+            if (
+                r.intermediate_value_type
+                == IntermediateValueModel.TrialIntermediateValueType.INF_POS
+            ):
                 _intermediate_value = RDB_MAX_FLOAT
             else:
                 _intermediate_value = RDB_MIN_FLOAT

@@ -1,7 +1,9 @@
 import enum
-from typing import Any, Tuple
+import math
+from typing import Any
 from typing import List
 from typing import Optional
+from typing import Tuple
 
 from sqlalchemy import asc
 from sqlalchemy import CheckConstraint
@@ -22,7 +24,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from optuna import distributions
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import TrialState
-import math
+
 
 # Don't modify this version number anymore.
 # The schema management functionality has been moved to alembic.
@@ -467,7 +469,8 @@ class TrialIntermediateValueModel(BaseModel):
 
     @classmethod
     def _intermediate_value_to_stored_repr(
-        cls, value: float,
+        cls,
+        value: float,
     ) -> Tuple[Optional[float], TrialIntermediateValueType]:
         if math.isnan(value):
             return (None, cls.TrialIntermediateValueType.NAN)
@@ -477,10 +480,10 @@ class TrialIntermediateValueModel(BaseModel):
             return (None, cls.TrialIntermediateValueType.INF_NEG)
         else:
             return (value, cls.TrialIntermediateValueType.FINITE)
-    
+
     @classmethod
     def _stored_repr_to_intermediate_value(
-        cls, value: float, float_type: TrialIntermediateValueType
+        cls, value: Optional[float], float_type: TrialIntermediateValueType
     ) -> float:
         if float_type == cls.TrialIntermediateValueType.NAN:
             assert value is None
@@ -494,13 +497,17 @@ class TrialIntermediateValueModel(BaseModel):
         else:
             assert float_type == cls.TrialIntermediateValueType.FINITE
             return value
-    
-    def __init__(self, *, original_intermediate_value, **kwargs):
-        sanitized_intermediate_value, intermediate_value_type = \
-            self._intermediate_value_to_stored_repr(original_intermediate_value)
-        super().__init__(**kwargs, 
-                        intermediate_value=sanitized_intermediate_value,
-                        intermediate_value_type=intermediate_value_type)
+
+    def __init__(self, *, original_intermediate_value: float, **kwargs: Any) -> None:
+        (
+            sanitized_intermediate_value,
+            intermediate_value_type,
+        ) = self._intermediate_value_to_stored_repr(original_intermediate_value)
+        super().__init__(
+            **kwargs,
+            intermediate_value=sanitized_intermediate_value,
+            intermediate_value_type=intermediate_value_type,
+        )
 
     @property
     def original_intermediate_value(self) -> float:
@@ -509,9 +516,11 @@ class TrialIntermediateValueModel(BaseModel):
         )
 
     @original_intermediate_value.setter
-    def original_intermediate_value(self, value) -> None:
-        sanitized_intermediate_value, intermediate_value_type = \
-            self._intermediate_value_to_stored_repr(value)
+    def original_intermediate_value(self, value: float) -> None:
+        (
+            sanitized_intermediate_value,
+            intermediate_value_type,
+        ) = self._intermediate_value_to_stored_repr(value)
         self.intermediate_value = sanitized_intermediate_value
         self.intermediate_value_type = intermediate_value_type
 

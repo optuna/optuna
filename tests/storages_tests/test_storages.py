@@ -1275,6 +1275,7 @@ def test_check_trial_is_updatable(storage_mode: str) -> None:
         with pytest.raises(RuntimeError):
             storage.check_trial_is_updatable(trial_id, TrialState.COMPLETE)
 
+
 @pytest.mark.parametrize(
     "value",
     [1.0, float("inf"), -float("inf")],
@@ -1286,4 +1287,3 @@ def test_trial_intermediate_value_stored_repr(value: float) -> None:
         )
         == value
     )
-

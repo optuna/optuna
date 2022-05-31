@@ -884,7 +884,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        
         trial_intermediate_value = models.TrialIntermediateValueModel.find_by_trial_and_step(
             trial, step, session
         )
@@ -1075,8 +1074,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 attr.key: json.loads(attr.value_json) for attr in trial.system_attributes
             },
             intermediate_values={
-                v.step: v.original_intermediate_value
-                for v in trial.intermediate_values
+                v.step: v.original_intermediate_value for v in trial.intermediate_values
             },
             trial_id=trial.trial_id,
         )

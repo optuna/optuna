@@ -125,7 +125,6 @@ def test_store_values(value: float, storage_url: str) -> None:
     assert got_value == value or (np.isnan(got_value) and np.isnan(value))
 
 
-
 def test_multiprocess(storage_url: str) -> None:
     n_workers = 8
     study_name = _STUDY_NAME
