@@ -46,8 +46,9 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
     ❌: Causes an error, or has no interface.
 
     (*): We assumes that `d` is the dimension of the search space, `n` is the number of finished trials, `m` is the number of objectives, and `p` is the population size (algorithm specific parameter).
-    In addition, we omit O(d+n) from the all of time complexity, since all samplers take O(d) to call the :func:`~optuna.samplers.BaseSampler.sample_independent` and O(n) to collect the completed trials.
+    This table shows the time complexity of the sampling algorithms. We may omit other terms that depend on the implementation in Optuna, including O(d) to call the sampling methods and O(n) to collect the completed trials.
     This means that, for example, the actual time complexity of :class:`~optuna.samplers.RandomSampler` is O(d+n+1) = O(d+n).
+    From another perspective, with the exception of :class:`~optuna.samplers.NSGAIISampler`, all time complexity is written for single-objective optimization.
 
     (**): The budget depends on the number of parameters and the number of objectives.
 
