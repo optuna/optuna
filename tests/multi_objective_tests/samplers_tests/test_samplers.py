@@ -89,9 +89,7 @@ def test_random_mo_sampler_reseed_rng() -> None:
         optuna.multi_objective.samplers.MOTPEMultiObjectiveSampler,
     ],
 )
-def test_deprecated_warning(
-    sampler_class: optuna.multi_objective.samplers.BaseMultiObjectiveSampler,
-) -> None:
+def test_deprecated_warning(sampler_class: Callable[[], BaseMultiObjectiveSampler]) -> None:
     with pytest.warns(FutureWarning):
         sampler_class()
 
