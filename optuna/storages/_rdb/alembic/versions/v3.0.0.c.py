@@ -89,7 +89,7 @@ def upgrade():
             if np.isclose(r.intermediate_value, RDB_MAX_FLOAT) or np.isposinf(
                 r.intermediate_value
             ):
-                value = np.inf
+                value = float("inf")
             elif np.isclose(r.intermediate_value, RDB_MIN_FLOAT) or np.isneginf(
                 r.intermediate_value
             ):
