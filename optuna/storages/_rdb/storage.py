@@ -65,7 +65,6 @@ _RDB_MIN_FLOAT = np.finfo(np.float32).min
 _logger = optuna.logging.get_logger(__name__)
 
 
-
 @contextmanager
 def _create_scoped_session(
     scoped_session: "sqlalchemy_orm.scoped_session",
@@ -1236,7 +1235,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
     def get_failed_trial_callback(self) -> Optional[Callable[["optuna.Study", FrozenTrial], None]]:
 
         return self.failed_trial_callback
-    
+
     @staticmethod
     def _float_without_nan_to_stored_repr(value: float) -> Tuple[float, models.FloatTypeEnum]:
         if np.isposinf(value):
@@ -1247,7 +1246,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             return (value, models.FloatTypeEnum.FINITE_OR_NAN)
 
     @staticmethod
-    def _float_with_nan_to_stored_repr(value: float) -> Tuple[Optional[float], models.FloatTypeEnum]:
+    def _float_with_nan_to_stored_repr(
+        value: float,
+    ) -> Tuple[Optional[float], models.FloatTypeEnum]:
         if np.isnan(value):
             return (None, models.FloatTypeEnum.FINITE_OR_NAN)
         else:
@@ -1276,8 +1277,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         else:
             assert value is not None
             return RDBStorage._stored_repr_to_float_without_nan(value, float_type)
-
-
 
 
 class _VersionManager(object):
@@ -1425,8 +1424,6 @@ class _VersionManager(object):
         config.set_main_option("script_location", escape_alembic_config_value(alembic_dir))
         config.set_main_option("sqlalchemy.url", escape_alembic_config_value(self.url))
         return config
-
-
 
 
 def escape_alembic_config_value(value: str) -> str:

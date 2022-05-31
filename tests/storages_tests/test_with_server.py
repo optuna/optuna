@@ -124,7 +124,6 @@ def test_store_values(value: float, storage_url: str) -> None:
     got_value = storage.get_trial(trial_id).intermediate_values[1]
     assert got_value == value or (np.isnan(got_value) and np.isnan(value))
 
-
     # A `nan` is not acceptable as the final value.
     if not np.isnan(value):
         storage.set_trial_state_values(trial_id, state=TrialState.COMPLETE, values=(value,))
