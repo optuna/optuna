@@ -108,7 +108,7 @@ jobs:
 
     - name: Run benchmark report builder
       run: |
-        python benchmarks/report_bayesmark.py
+        python benchmarks/bayesmark/report_bayesmark.py
     
     - name: Upload report
       uses: actions/upload-artifact@v2
