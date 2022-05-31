@@ -95,7 +95,7 @@ def upgrade():
             ):
                 value = float("-inf")
             elif np.isnan(r.intermediate_value):
-                value = np.nan
+                value = float("nan")
             else:
                 value = r.intermediate_value
             (
