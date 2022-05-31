@@ -496,6 +496,7 @@ class TrialIntermediateValueModel(BaseModel):
             return float("-inf")
         else:
             assert float_type == cls.TrialIntermediateValueType.FINITE
+            assert value is not None
             return value
 
     def __init__(self, *, original_intermediate_value: float, **kwargs: Any) -> None:
