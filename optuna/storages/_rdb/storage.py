@@ -65,45 +65,6 @@ _RDB_MIN_FLOAT = np.finfo(np.float32).min
 _logger = optuna.logging.get_logger(__name__)
 
 
-def _float_without_nan_to_pair_repr(value: float) -> Tuple[float, models.FloatTypeEnum]:
-    if np.isposinf(value):
-        return (0.0, models.FloatTypeEnum.INF_POS)
-    elif np.isneginf(value):
-        return (0.0, models.FloatTypeEnum.INF_NEG)
-    else:
-        return (value, models.FloatTypeEnum.FINITE_OR_NAN)
-
-
-def _float_with_nan_to_pair_repr(value: float) -> Tuple[Optional[float], models.FloatTypeEnum]:
-    if np.isnan(value):
-        return (None, models.FloatTypeEnum.FINITE_OR_NAN)
-    else:
-        return _float_without_nan_to_pair_repr(value)
-
-
-def _pair_repr_to_float_without_nan(value: float, float_type: models.FloatTypeEnum) -> float:
-
-    if float_type == models.FloatTypeEnum.INF_POS:
-        assert value == 0.0
-        return float("inf")
-    elif float_type == models.FloatTypeEnum.INF_NEG:
-        assert value == 0.0
-        return float("-inf")
-    else:
-        assert float_type == models.FloatTypeEnum.FINITE_OR_NAN
-        return value
-
-
-def _pair_repr_to_float_with_nan(
-    value: Optional[float], float_type: models.FloatTypeEnum
-) -> float:
-
-    if float_type == models.FloatTypeEnum.FINITE_OR_NAN and value is None:
-        return float("nan")
-    else:
-        assert value is not None
-        return _pair_repr_to_float_without_nan(value, float_type)
-
 
 @contextmanager
 def _create_scoped_session(
@@ -562,7 +523,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                             {i.key: json.loads(i.value_json) for i in user_attrs},
                             {i.key: json.loads(i.value_json) for i in system_attrs},
                             {
-                                value.step: _pair_repr_to_float_with_nan(
+                                value.step: RDBStorage._stored_repr_to_float_with_nan(
                                     value.intermediate_value, value.intermediate_value_type
                                 )
                                 for value in intermediate
@@ -927,7 +888,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        (sanitized_intermediate_value, float_type) = _float_with_nan_to_pair_repr(
+        (sanitized_intermediate_value, float_type) = RDBStorage._float_with_nan_to_stored_repr(
             intermediate_value
         )
 
@@ -1123,7 +1084,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 attr.key: json.loads(attr.value_json) for attr in trial.system_attributes
             },
             intermediate_values={
-                v.step: _pair_repr_to_float_with_nan(
+                v.step: RDBStorage._stored_repr_to_float_with_nan(
                     v.intermediate_value, v.intermediate_value_type
                 )
                 for v in trial.intermediate_values
@@ -1275,6 +1236,48 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
     def get_failed_trial_callback(self) -> Optional[Callable[["optuna.Study", FrozenTrial], None]]:
 
         return self.failed_trial_callback
+    
+    @staticmethod
+    def _float_without_nan_to_stored_repr(value: float) -> Tuple[float, models.FloatTypeEnum]:
+        if np.isposinf(value):
+            return (0.0, models.FloatTypeEnum.INF_POS)
+        elif np.isneginf(value):
+            return (0.0, models.FloatTypeEnum.INF_NEG)
+        else:
+            return (value, models.FloatTypeEnum.FINITE_OR_NAN)
+
+    @staticmethod
+    def _float_with_nan_to_stored_repr(value: float) -> Tuple[Optional[float], models.FloatTypeEnum]:
+        if np.isnan(value):
+            return (None, models.FloatTypeEnum.FINITE_OR_NAN)
+        else:
+            return RDBStorage._float_without_nan_to_stored_repr(value)
+
+    @staticmethod
+    def _stored_repr_to_float_without_nan(value: float, float_type: models.FloatTypeEnum) -> float:
+
+        if float_type == models.FloatTypeEnum.INF_POS:
+            assert value == 0.0
+            return float("inf")
+        elif float_type == models.FloatTypeEnum.INF_NEG:
+            assert value == 0.0
+            return float("-inf")
+        else:
+            assert float_type == models.FloatTypeEnum.FINITE_OR_NAN
+            return value
+
+    @staticmethod
+    def _stored_repr_to_float_with_nan(
+        value: Optional[float], float_type: models.FloatTypeEnum
+    ) -> float:
+
+        if float_type == models.FloatTypeEnum.FINITE_OR_NAN and value is None:
+            return float("nan")
+        else:
+            assert value is not None
+            return RDBStorage._stored_repr_to_float_without_nan(value, float_type)
+
+
 
 
 class _VersionManager(object):
@@ -1422,6 +1425,8 @@ class _VersionManager(object):
         config.set_main_option("script_location", escape_alembic_config_value(alembic_dir))
         config.set_main_option("sqlalchemy.url", escape_alembic_config_value(self.url))
         return config
+
+
 
 
 def escape_alembic_config_value(value: str) -> str:

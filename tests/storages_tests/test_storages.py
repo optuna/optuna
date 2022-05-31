@@ -1567,3 +1567,21 @@ def test_check_trial_is_updatable(storage_mode: str) -> None:
 
         with pytest.raises(RuntimeError):
             storage.check_trial_is_updatable(trial_id, TrialState.COMPLETE)
+
+@pytest.mark.parametrize(
+    "value",
+    [1.0, float("inf"), -float("inf")],
+)
+def test_float_without_nan_to_stored_repr(value: float) -> None:
+    assert RDBStorage._stored_repr_to_float_without_nan(*RDBStorage._float_without_nan_to_stored_repr(value)) == value
+
+
+@pytest.mark.parametrize(
+    "value",
+    [1.0, float("inf"), -float("inf"), float("nan")],
+)
+def test_float_with_nan_to_stored_repr(value: float) -> None:
+    def nanequal(x, y):
+        return (np.isnan(x) and np.isnan(y)) or x == y
+    assert nanequal(RDBStorage._stored_repr_to_float_with_nan(*RDBStorage._float_with_nan_to_stored_repr(value)), value)
+

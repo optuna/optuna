@@ -38,7 +38,7 @@ class FloatTypeEnum(enum.Enum):
     INF_NEG = 3
 
 
-def _float_without_nan_to_pair_repr(value: float) -> Tuple[float, FloatTypeEnum]:
+def _float_without_nan_to_stored_repr(value: float) -> Tuple[float, FloatTypeEnum]:
     if np.isposinf(value):
         return (0.0, FloatTypeEnum.INF_POS)
     elif np.isneginf(value):
@@ -47,11 +47,11 @@ def _float_without_nan_to_pair_repr(value: float) -> Tuple[float, FloatTypeEnum]
         return (value, FloatTypeEnum.FINITE_OR_NAN)
 
 
-def _float_with_nan_to_pair_repr(value: float) -> Tuple[Optional[float], FloatTypeEnum]:
+def _float_with_nan_to_stored_repr(value: float) -> Tuple[Optional[float], FloatTypeEnum]:
     if np.isnan(value):
         return (None, FloatTypeEnum.FINITE_OR_NAN)
     else:
-        return _float_without_nan_to_pair_repr(value)
+        return _float_without_nan_to_stored_repr(value)
 
 
 class IntermediateValueModel(BaseModel):
@@ -100,7 +100,7 @@ def upgrade():
                 value = np.nan
             else:
                 value = r.intermediate_value
-            (sanitized_value, float_type) = _float_with_nan_to_pair_repr(value)
+            (sanitized_value, float_type) = _float_with_nan_to_stored_repr(value)
             mapping.append(
                 {
                     "trial_intermediate_value_id": r.trial_intermediate_value_id,
