@@ -13,7 +13,7 @@ Please refer to ["A Strategy for Ranking Optimizers using Multiple Criteria"][De
 ## Table of Contents
 
 1. [Overall Results](#overall-results)
-2. [Problem Leaderboards](#problem-leaderboards)
+2. [Individual Results](#individual-results)
 3. [Datasets](#datasets)
 4. [Models](#models)
 
@@ -21,7 +21,7 @@ Please refer to ["A Strategy for Ranking Optimizers using Multiple Criteria"][De
 
 {overall}
 
-## Problem Leaderboards
+## Individual Results
 
 {leaderboards}
 
