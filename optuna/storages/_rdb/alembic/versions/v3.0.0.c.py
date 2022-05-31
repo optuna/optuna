@@ -93,7 +93,7 @@ def upgrade():
             elif np.isclose(r.intermediate_value, RDB_MIN_FLOAT) or np.isneginf(
                 r.intermediate_value
             ):
-                value = -np.inf
+                value = float("-inf")
             elif np.isnan(r.intermediate_value):
                 value = np.nan
             else:
