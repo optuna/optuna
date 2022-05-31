@@ -1237,47 +1237,55 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         return self.failed_trial_callback
 
     @staticmethod
-    def _float_without_nan_to_stored_repr(value: float) -> Tuple[float, models.FloatTypeEnum]:
+    def _value_to_stored_repr(value: float) -> Tuple[Optional[float], models.TrialValueType]:
         if np.isposinf(value):
-            return (0.0, models.FloatTypeEnum.INF_POS)
+            return (None, models.TrialValueType.INF_POS)
         elif np.isneginf(value):
-            return (0.0, models.FloatTypeEnum.INF_NEG)
+            return (None, models.TrialValueType.INF_NEG)
         else:
-            return (value, models.FloatTypeEnum.FINITE_OR_NAN)
+            return (value, models.TrialValueType.FINITE)
 
     @staticmethod
-    def _float_with_nan_to_stored_repr(
+    def _intermediate_value_to_stored_repr(
         value: float,
-    ) -> Tuple[Optional[float], models.FloatTypeEnum]:
+    ) -> Tuple[Optional[float], models.TrialIntermediateValueType]:
         if np.isnan(value):
-            return (None, models.FloatTypeEnum.FINITE_OR_NAN)
+            return (None, models.TrialIntermediateValueType.NAN)
+        elif np.isposinf(value):
+            return (None, models.TrialIntermediateValueType.INF_POS)
+        elif np.isneginf(value):
+            return (None, models.TrialIntermediateValueType.INF_NEG)
         else:
-            return RDBStorage._float_without_nan_to_stored_repr(value)
+            return (value, models.TrialIntermediateValueType.FINITE)
 
     @staticmethod
-    def _stored_repr_to_float_without_nan(value: float, float_type: models.FloatTypeEnum) -> float:
-
-        if float_type == models.FloatTypeEnum.INF_POS:
-            assert value == 0.0
+    def _stored_repr_to_value(value: float, float_type: models.TrialValueType) -> float:
+        if float_type == models.TrialValueType.INF_POS:
+            assert value is None
             return float("inf")
-        elif float_type == models.FloatTypeEnum.INF_NEG:
-            assert value == 0.0
+        elif float_type == models.TrialValueType.INF_NEG:
+            assert value is None
             return float("-inf")
         else:
-            assert float_type == models.FloatTypeEnum.FINITE_OR_NAN
+            assert float_type == models.TrialValueType.FINITE
             return value
 
     @staticmethod
-    def _stored_repr_to_float_with_nan(
-        value: Optional[float], float_type: models.FloatTypeEnum
+    def _stored_repr_to_intermediate_value(
+        value: float, float_type: models.TrialIntermediateValueType
     ) -> float:
-
-        if float_type == models.FloatTypeEnum.FINITE_OR_NAN and value is None:
+        if float_type == models.TrialIntermediateValueType.NAN:
+            assert value is None
             return float("nan")
+        elif float_type == models.TrialIntermediateValueType.INF_POS:
+            assert value is None
+            return float("inf")
+        elif float_type == models.TrialIntermediateValueType.INF_NEG:
+            assert value is None
+            return float("-inf")
         else:
-            assert value is not None
-            return RDBStorage._stored_repr_to_float_without_nan(value, float_type)
-
+            assert float_type == models.TrialIntermediateValueType.FINITE
+            return value
 
 class _VersionManager(object):
     def __init__(

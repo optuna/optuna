@@ -3,6 +3,7 @@ from typing import Any
 from typing import List
 from typing import Optional
 
+import numpy as np
 from sqlalchemy import asc
 from sqlalchemy import CheckConstraint
 from sqlalchemy import Column
@@ -16,6 +17,7 @@ from sqlalchemy import Integer
 from sqlalchemy import orm
 from sqlalchemy import String
 from sqlalchemy import Text
+from sqlalchemy import Tuple
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -36,12 +38,6 @@ NOT_FOUND_MSG = "Record does not exist."
 FLOAT_PRECISION = 53
 
 BaseModel: Any = declarative_base()
-
-
-class FloatTypeEnum(enum.Enum):
-    FINITE_OR_NAN = 1
-    INF_POS = 2
-    INF_NEG = 3
 
 
 class StudyModel(BaseModel):
@@ -417,12 +413,18 @@ class TrialParamModel(BaseModel):
 
 
 class TrialValueModel(BaseModel):
+    class TrialValueType(enum.Enum):
+        FINITE = 1
+        INF_POS = 2
+        INF_NEG = 3
+
     __tablename__ = "trial_values"
     __table_args__: Any = (UniqueConstraint("trial_id", "objective"),)
     trial_value_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
     objective = Column(Integer, nullable=False)
-    value = Column(Float(precision=FLOAT_PRECISION), nullable=False)
+    value = Column(Float(precision=FLOAT_PRECISION), nullable=True)
+    value_type = Column(Enum(TrialValueType), nullable=False)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("values", cascade="all, delete-orphan")
@@ -451,8 +453,34 @@ class TrialValueModel(BaseModel):
 
         return trial_values
 
+    @staticmethod
+    def _value_to_stored_repr(value: float) -> Tuple[Optional[float], TrialValueType]:
+        if np.isposinf(value):
+            return (None, TrialValueType.INF_POS)
+        elif np.isneginf(value):
+            return (None, TrialValueType.INF_NEG)
+        else:
+            return (value, TrialValueType.FINITE)
+
+    @staticmethod
+    def _stored_repr_to_value(value: float, float_type: TrialValueType) -> float:
+        if float_type == TrialValueType.INF_POS:
+            assert value is None
+            return float("inf")
+        elif float_type == TrialValueType.INF_NEG:
+            assert value is None
+            return float("-inf")
+        else:
+            assert float_type == TrialValueType.FINITE
+            return value
+
 
 class TrialIntermediateValueModel(BaseModel):
+    class TrialIntermediateValueType(enum.Enum):
+        FINITE = 1
+        INF_POS = 2
+        INF_NEG = 3
+        NAN = 4
 
     __tablename__ = "trial_intermediate_values"
     __table_args__: Any = (UniqueConstraint("trial_id", "step"),)
@@ -460,7 +488,7 @@ class TrialIntermediateValueModel(BaseModel):
     trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
     step = Column(Integer, nullable=False)
     intermediate_value = Column(Float(precision=FLOAT_PRECISION), nullable=True)
-    intermediate_value_type = Column(Enum(FloatTypeEnum), nullable=False)
+    intermediate_value_type = Column(Enum(TrialIntermediateValueType), nullable=False)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("intermediate_values", cascade="all, delete-orphan")
@@ -489,6 +517,35 @@ class TrialIntermediateValueModel(BaseModel):
 
         return trial_intermediate_values
 
+    @staticmethod
+    def _intermediate_value_to_stored_repr(
+        value: float,
+    ) -> Tuple[Optional[float], TrialIntermediateValueType]:
+        if np.isnan(value):
+            return (None, TrialIntermediateValueType.NAN)
+        elif np.isposinf(value):
+            return (None, TrialIntermediateValueType.INF_POS)
+        elif np.isneginf(value):
+            return (None, TrialIntermediateValueType.INF_NEG)
+        else:
+            return (value, TrialIntermediateValueType.FINITE)
+
+    @staticmethod
+    def _stored_repr_to_intermediate_value(
+        value: float, float_type: TrialIntermediateValueType
+    ) -> float:
+        if float_type == TrialIntermediateValueType.NAN:
+            assert value is None
+            return float("nan")
+        elif float_type == TrialIntermediateValueType.INF_POS:
+            assert value is None
+            return float("inf")
+        elif float_type == TrialIntermediateValueType.INF_NEG:
+            assert value is None
+            return float("-inf")
+        else:
+            assert float_type == TrialIntermediateValueType.FINITE
+            return value
 
 class TrialHeartbeatModel(BaseModel):
     __tablename__ = "trial_heartbeats"
