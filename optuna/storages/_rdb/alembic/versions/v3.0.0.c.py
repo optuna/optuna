@@ -72,7 +72,7 @@ def upgrade():
         batch_op.add_column(
             sa.Column(
                 "intermediate_value_type",
-                sa.Enum("FINITE", "INF_POS", "INF_NEG", "NAN", name="floattypeenum"),
+                sa.Enum("FINITE", "INF_POS", "INF_NEG", "NAN", name="trialintermediatevaluetype"),
                 nullable=False,
                 server_default="FINITE",
             ),
@@ -89,13 +89,13 @@ def upgrade():
             if np.isclose(r.intermediate_value, RDB_MAX_FLOAT) or np.isposinf(
                 r.intermediate_value
             ):
-                value = np.inf
+                value = float("inf")
             elif np.isclose(r.intermediate_value, RDB_MIN_FLOAT) or np.isneginf(
                 r.intermediate_value
             ):
-                value = -np.inf
+                value = float("-inf")
             elif np.isnan(r.intermediate_value):
-                value = np.nan
+                value = float("nan")
             else:
                 value = r.intermediate_value
             (
