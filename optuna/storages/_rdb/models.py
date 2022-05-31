@@ -1,5 +1,5 @@
 import enum
-from typing import Any
+from typing import Any, Tuple
 from typing import List
 from typing import Optional
 
@@ -22,7 +22,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from optuna import distributions
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import TrialState
-
+import math
 
 # Don't modify this version number anymore.
 # The schema management functionality has been moved to alembic.
@@ -447,10 +447,11 @@ class TrialValueModel(BaseModel):
 
 
 class TrialIntermediateValueModel(BaseModel):
-    class FloatTypeEnum(enum.Enum):
-        FINITE_OR_NAN = 1
+    class TrialIntermediateValueType(enum.Enum):
+        FINITE = 1
         INF_POS = 2
         INF_NEG = 3
+        NAN = 4
 
     __tablename__ = "trial_intermediate_values"
     __table_args__: Any = (UniqueConstraint("trial_id", "step"),)
@@ -458,11 +459,61 @@ class TrialIntermediateValueModel(BaseModel):
     trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
     step = Column(Integer, nullable=False)
     intermediate_value = Column(Float(precision=FLOAT_PRECISION), nullable=True)
-    intermediate_value_type = Column(Enum(FloatTypeEnum), nullable=False)
+    intermediate_value_type = Column(Enum(TrialIntermediateValueType), nullable=False)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("intermediate_values", cascade="all, delete-orphan")
     )
+
+    @classmethod
+    def _intermediate_value_to_stored_repr(
+        cls, value: float,
+    ) -> Tuple[Optional[float], TrialIntermediateValueType]:
+        if math.isnan(value):
+            return (None, cls.TrialIntermediateValueType.NAN)
+        elif value == float("inf"):
+            return (None, cls.TrialIntermediateValueType.INF_POS)
+        elif value == float("-inf"):
+            return (None, cls.TrialIntermediateValueType.INF_NEG)
+        else:
+            return (value, cls.TrialIntermediateValueType.FINITE)
+    
+    @classmethod
+    def _stored_repr_to_intermediate_value(
+        cls, value: float, float_type: TrialIntermediateValueType
+    ) -> float:
+        if float_type == cls.TrialIntermediateValueType.NAN:
+            assert value is None
+            return float("nan")
+        elif float_type == cls.TrialIntermediateValueType.INF_POS:
+            assert value is None
+            return float("inf")
+        elif float_type == cls.TrialIntermediateValueType.INF_NEG:
+            assert value is None
+            return float("-inf")
+        else:
+            assert float_type == cls.TrialIntermediateValueType.FINITE
+            return value
+    
+    def __init__(self, *, original_intermediate_value, **kwargs):
+        sanitized_intermediate_value, intermediate_value_type = \
+            self._intermediate_value_to_stored_repr(original_intermediate_value)
+        super().__init__(**kwargs, 
+                        intermediate_value=sanitized_intermediate_value,
+                        intermediate_value_type=intermediate_value_type)
+
+    @property
+    def original_intermediate_value(self) -> float:
+        return self._stored_repr_to_intermediate_value(
+            self.intermediate_value, self.intermediate_value_type
+        )
+
+    @original_intermediate_value.setter
+    def original_intermediate_value(self, value) -> None:
+        sanitized_intermediate_value, intermediate_value_type = \
+            self._intermediate_value_to_stored_repr(value)
+        self.intermediate_value = sanitized_intermediate_value
+        self.intermediate_value_type = intermediate_value_type
 
     @classmethod
     def find_by_trial_and_step(

@@ -107,13 +107,10 @@ def test_loaded_trials(storage_url: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "input_value,expected",
-    [
-        (float("inf"), float("inf")),
-        (-float("inf"), -float("inf")),
-    ],
+    "value",
+    [1.0, float("inf"), -float("inf"), float("nan")],
 )
-def test_store_infinite_values(input_value: float, expected: float, storage_url: str) -> None:
+def test_store_values(value: float, storage_url: str) -> None:
 
     storage: Union[RDBStorage, RedisStorage]
     if storage_url.startswith("redis"):
@@ -122,10 +119,11 @@ def test_store_infinite_values(input_value: float, expected: float, storage_url:
         storage = optuna.storages.RDBStorage(url=storage_url)
     study_id = storage.create_new_study()
     trial_id = storage.create_new_trial(study_id)
-    storage.set_trial_intermediate_value(trial_id, 1, input_value)
-    storage.set_trial_state_values(trial_id, state=TrialState.COMPLETE, values=(input_value,))
-    assert storage.get_trial(trial_id).value == expected
-    assert storage.get_trial(trial_id).intermediate_values[1] == expected
+    storage.set_trial_intermediate_value(trial_id, 1, value)
+
+    got_value = storage.get_trial(trial_id).intermediate_values[1]
+    assert got_value == value or (np.isnan(got_value) and np.isnan(value))
+
 
 
 def test_multiprocess(storage_url: str) -> None:
