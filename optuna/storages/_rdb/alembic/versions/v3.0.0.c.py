@@ -72,9 +72,9 @@ def upgrade():
         batch_op.add_column(
             sa.Column(
                 "intermediate_value_type",
-                sa.Enum("FINITE_OR_NAN", "INF_POS", "INF_NEG", name="floattypeenum"),
+                sa.Enum("FINITE", "INF_POS", "INF_NEG", "NAN", name="floattypeenum"),
                 nullable=False,
-                server_default="FINITE_OR_NAN",
+                server_default="FINITE",
             ),
         )
     with op.batch_alter_table("trial_intermediate_values") as batch_op:
