@@ -39,10 +39,10 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
 
-    - name: Setup environment for MXNet
+    - name: Setup environment
       run: |
         sudo apt-get update
-        sudo apt-get -y install libopenblas-dev
+        sudo apt-get -y install openmpi-bin libopenmpi-dev libopenblas-dev
 
     - name: Install
       run: |
