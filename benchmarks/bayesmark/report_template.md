@@ -4,7 +4,7 @@
 * Number of Models: {num_models}
 * Number of Datasets: {num_datasets}
 * Number of Problems: {num_problems}
-* Metrics Precedence: `{precedence}`
+* Metrics Precedence: {precedence}
 
 Please refer to ["A Strategy for Ranking Optimizers using Multiple Criteria"][Dewancker, Ian, et al., 2016] for the ranking strategy used in this report.
 
