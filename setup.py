@@ -106,7 +106,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "bokeh<2.0.0",
             "chainer>=5.0.0",
             "cma",
-            "fakeredis",
+            "fakeredis<=1.7.1; python_version<'3.8'",
+            "fakeredis ; python_version>='3.8'",
             "lightgbm<=3.2.1",
             "matplotlib>=3.0.0",
             "mlflow",
@@ -142,7 +143,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "fastai<=2.5.2",
         ],
         "tests": [
-            "fakeredis",
+            "fakeredis<=1.7.1; python_version<'3.8'",
+            "fakeredis ; python_version>='3.8'",
             "pytest",
         ],
         "optional": [
