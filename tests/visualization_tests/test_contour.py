@@ -1,5 +1,6 @@
 import itertools
 from typing import Callable
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -7,13 +8,14 @@ from typing import Union
 
 import pytest
 
+from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.testing.visualization.contour import BaseContourFigure
+from optuna.testing.visualization.contour import MatplotlibContourFigure
 from optuna.testing.visualization.contour import PlotlyContourFigure
-from optuna.testing.visualization.contour import VarType
 from optuna.trial import create_trial
 from optuna.trial import Trial
 from optuna.visualization import plot_contour
@@ -21,14 +23,12 @@ from optuna.visualization._utils import COLOR_SCALE
 
 
 RANGE_TYPE = Union[Tuple[str, str], Tuple[float, float]]
-
-
-@pytest.mark.parametrize(
-    "create_figure",
-    [
-        PlotlyContourFigure,
-    ],
+parametrize_figure = pytest.mark.parametrize(
+    "create_figure", [PlotlyContourFigure, MatplotlibContourFigure]
 )
+
+
+@parametrize_figure
 def test_target_is_none_and_study_is_multi_obj(
     create_figure: Callable[..., BaseContourFigure],
 ) -> None:
@@ -38,12 +38,7 @@ def test_target_is_none_and_study_is_multi_obj(
         _ = create_figure(study)
 
 
-@pytest.mark.parametrize(
-    "create_figure",
-    [
-        PlotlyContourFigure,
-    ],
-)
+@parametrize_figure
 def test_target_is_not_none_and_study_is_multi_obj(
     create_figure: Callable[..., BaseContourFigure],
 ) -> None:
@@ -59,12 +54,7 @@ def test_target_is_not_none_and_study_is_multi_obj(
     figure.save_static_image()
 
 
-@pytest.mark.parametrize(
-    "create_figure",
-    [
-        PlotlyContourFigure,
-    ],
-)
+@parametrize_figure
 @pytest.mark.parametrize(
     "params",
     [
@@ -113,8 +103,10 @@ def test_plot_contour(
             if isinstance(figure, PlotlyContourFigure):
                 assert figure.get_x_grid() == [0.925, 1.0, 2.5, 2.575]
                 assert figure.get_y_grid() == [-0.1, 0.0, 1.0, 2.0, 2.1]
-                assert figure.get_z_map()[3][1] == 0.0
-                assert figure.get_z_map()[2][2] == 1.0
+                z = figure.get_z_map()
+                assert z is not None
+                assert z[3][1] == 0.0
+                assert z[2][2] == 1.0
             assert figure.get_target_name() == "Objective Value"
             assert figure.get_x_points() == [1.0, 2.5]
             assert figure.get_y_points() == [2.0, 1.0]
@@ -135,12 +127,7 @@ def test_plot_contour(
     figure.save_static_image()
 
 
-@pytest.mark.parametrize(
-    "create_figure",
-    [
-        PlotlyContourFigure,
-    ],
-)
+@parametrize_figure
 @pytest.mark.parametrize(
     "params",
     [
@@ -158,13 +145,16 @@ def test_plot_contour_customized_target(
     if isinstance(figure, PlotlyContourFigure):
         for n in range(figure.get_n_plots()):
             z = figure.get_z_map(n)
+            assert z is not None
             assert 4.0 in itertools.chain.from_iterable(z)
             assert 2.0 in itertools.chain.from_iterable(z)
     n_params = len(params)
     if n_params == 2:
         if isinstance(figure, PlotlyContourFigure):
-            assert figure.get_z_map()[3][1] == 4.0
-            assert figure.get_z_map()[2][2] == 2.0
+            z = figure.get_z_map()
+            assert z is not None
+            assert z[3][1] == 4.0
+            assert z[2][2] == 2.0
     else:
         for i in range(n_params):
             assert figure.get_param_names()[i] == params[i]
@@ -177,12 +167,7 @@ def test_plot_contour_customized_target(
     figure.save_static_image()
 
 
-@pytest.mark.parametrize(
-    "create_figure",
-    [
-        PlotlyContourFigure,
-    ],
-)
+@parametrize_figure
 @pytest.mark.parametrize(
     "params",
     [
@@ -200,12 +185,7 @@ def test_plot_contour_customized_target_name(
     figure.save_static_image()
 
 
-@pytest.mark.parametrize(
-    "create_figure",
-    [
-        PlotlyContourFigure,
-    ],
-)
+@parametrize_figure
 @pytest.mark.parametrize(
     "params",
     [
@@ -231,12 +211,7 @@ def test_generate_contour_plot_for_few_observations(
     figure.save_static_image()
 
 
-@pytest.mark.parametrize(
-    "create_figure",
-    [
-        PlotlyContourFigure,
-    ],
-)
+@parametrize_figure
 def test_plot_contour_log_scale_and_str_category(
     create_figure: Callable[..., BaseContourFigure],
 ) -> None:
@@ -269,8 +244,10 @@ def test_plot_contour_log_scale_and_str_category(
     assert figure.get_y_range() == (-0.05, 1.05)
     assert figure.get_x_name() == "param_a"
     assert figure.get_y_name() == "param_b"
-    assert figure.get_x_type() == VarType.LOG
-    assert figure.get_y_type() == VarType.CATEGORICAL
+    assert figure.get_x_is_log()
+    if isinstance(figure, PlotlyContourFigure):
+        assert figure.get_y_is_categorical()
+    figure.save_static_image()
 
     # If the search space has three parameters, plot_contour generates nine plots.
     study = create_study()
@@ -296,33 +273,31 @@ def test_plot_contour_log_scale_and_str_category(
 
     figure = create_figure(study)
     param_ranges = {"param_a": (-6.05, -4.95), "param_b": (-0.05, 1.05), "param_c": (-0.05, 1.05)}
-    param_types = {
-        "param_a": VarType.LOG,
-        "param_b": VarType.CATEGORICAL,
-        "param_c": VarType.CATEGORICAL,
-    }
 
     assert figure.get_n_plots() == 6
     assert figure.get_n_params() == 3
     for n in range(figure.get_n_plots()):
         assert figure.get_x_range(n) == param_ranges[figure.get_x_name(n)]
         assert figure.get_y_range(n) == param_ranges[figure.get_y_name(n)]
-        assert figure.get_x_type(n) == param_types[figure.get_x_name(n)]
-        assert figure.get_y_type(n) == param_types[figure.get_y_name(n)]
+        if isinstance(distributions[figure.get_x_name(n)], FloatDistribution):
+            assert figure.get_x_is_log(n)
+        else:
+            if isinstance(figure, PlotlyContourFigure):
+                assert figure.get_x_is_categorical(n)
+        if isinstance(distributions[figure.get_y_name(n)], FloatDistribution):
+            assert figure.get_y_is_log(n)
+        else:
+            if isinstance(figure, PlotlyContourFigure):
+                assert figure.get_y_is_categorical(n)
     figure.save_static_image()
 
 
-@pytest.mark.parametrize(
-    "create_figure",
-    [
-        PlotlyContourFigure,
-    ],
-)
+@parametrize_figure
 def test_plot_contour_mixture_category_types(
     create_figure: Callable[..., BaseContourFigure],
 ) -> None:
     study = create_study()
-    distributions = {
+    distributions: Dict[str, BaseDistribution] = {
         "param_a": CategoricalDistribution([None, "100"]),
         "param_b": CategoricalDistribution([101, 102.0]),
     }
@@ -345,32 +320,27 @@ def test_plot_contour_mixture_category_types(
     # yaxis is treated as non-categorical
     assert figure.get_x_range() == (-0.05, 1.05)
     assert figure.get_y_range() == (100.95, 102.05)
-    assert figure.get_x_type() == VarType.CATEGORICAL
-    assert figure.get_y_type() != VarType.CATEGORICAL
+    if isinstance(figure, PlotlyContourFigure):
+        assert figure.get_x_is_categorical()
+        assert not figure.get_y_is_categorical()
     figure.save_static_image()
 
 
-@pytest.mark.parametrize(
-    "create_figure",
-    [
-        PlotlyContourFigure,
-    ],
-)
+@parametrize_figure
 @pytest.mark.parametrize("value", [float("inf"), -float("inf")])
 def test_nonfinite_removed(create_figure: Callable[..., BaseContourFigure], value: float) -> None:
 
     study = prepare_study_with_trials(with_c_d=True, value_for_first_trial=value)
     figure = create_figure(study, params=["param_b", "param_d"])
-    zvals = itertools.chain.from_iterable(figure.get_z_map())
-    assert value not in zvals
+    if isinstance(figure, PlotlyContourFigure):
+        z = figure.get_z_map()
+        assert z is not None
+        zvals = itertools.chain.from_iterable(z)
+        assert value not in zvals
+    figure.save_static_image()
 
 
-@pytest.mark.parametrize(
-    "create_figure",
-    [
-        PlotlyContourFigure,
-    ],
-)
+@parametrize_figure
 @pytest.mark.parametrize("objective", (0, 1))
 @pytest.mark.parametrize("value", (float("inf"), -float("inf")))
 def test_nonfinite_multiobjective(
@@ -381,8 +351,12 @@ def test_nonfinite_multiobjective(
     figure = create_figure(
         study, params=["param_b", "param_d"], target=lambda t: t.values[objective]
     )
-    zvals = itertools.chain.from_iterable(figure.get_z_map())
-    assert value not in zvals
+    if isinstance(figure, PlotlyContourFigure):
+        z = figure.get_z_map()
+        assert z is not None
+        zvals = itertools.chain.from_iterable(z)
+        assert value not in zvals
+    figure.save_static_image()
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])

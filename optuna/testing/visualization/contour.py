@@ -1,8 +1,9 @@
 import abc
-from enum import Enum
 from io import BytesIO
 import tempfile
+from typing import Any
 from typing import Callable
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -17,12 +18,6 @@ from optuna.visualization import plot_contour
 from optuna.visualization._plotly_imports import go
 from optuna.visualization.matplotlib import plot_contour as matplotlib_plot_contour
 from optuna.visualization.matplotlib._matplotlib_imports import Axes
-
-
-class VarType(Enum):
-    UNIFORM = "uniform"
-    LOG = "log"
-    CATEGORICAL = "category"
 
 
 class BaseContourFigure(object, metaclass=abc.ABCMeta):
@@ -111,11 +106,19 @@ class BaseContourFigure(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_x_type(self, n: int = 0) -> VarType:
+    def get_x_is_log(self, n: int = 0) -> bool:
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_y_type(self, n: int = 0) -> VarType:
+    def get_y_is_log(self, n: int = 0) -> bool:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_x_is_categorical(self, n: int = 0) -> bool:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_y_is_categorical(self, n: int = 0) -> bool:
         raise NotImplementedError
 
 
@@ -134,6 +137,12 @@ class PlotlyContourFigure(BaseContourFigure):
 
         self.figure = figure
 
+        if len(study.get_trials(states=(TrialState.COMPLETE,))) == 0:
+            return
+
+        if params is not None and len(params) < 2:
+            return
+
         # self.plots[i] includes
         #   "scatter": go.Scatter
         #   "contour": go.Contour
@@ -141,7 +150,7 @@ class PlotlyContourFigure(BaseContourFigure):
         #   "yaxis"  : go.layout.YAxis
         #   "xname"  : str
         #   "yname"  : str
-        self.plots = [{} for _ in range(self.get_n_plots())]
+        self.plots: List[Dict[str, Any]] = [{} for _ in range(self.get_n_plots())]
 
         # Used if `n_params` > 2.
         _removed_axis_numbers = [k * self.n_params + k + 1 for k in range(self.n_params)]
@@ -194,11 +203,11 @@ class PlotlyContourFigure(BaseContourFigure):
                 param_name = figure.layout[axis_name].title.text
             self.plots[plot_number][axis_name[0] + "name"] = param_name
 
-        for l in figure.layout:
-            if l.startswith("xaxis"):
-                _create_axis_by_name(l, "xaxis")
-            elif l.startswith("yaxis"):
-                _create_axis_by_name(l, "yaxis")
+        for layout_key in figure.layout:
+            if layout_key.startswith("xaxis"):
+                _create_axis_by_name(layout_key, "xaxis")
+            elif layout_key.startswith("yaxis"):
+                _create_axis_by_name(layout_key, "yaxis")
 
     def is_empty(self) -> bool:
         return len(self.figure.data) == 0
@@ -238,14 +247,6 @@ class PlotlyContourFigure(BaseContourFigure):
     def get_y_range(self, n: int = 0) -> Tuple[float, float]:
         return self.plots[n]["yaxis"].range
 
-    def _get_titles(self, start_string: str) -> List[str]:
-        titles = []
-        for l in self.figure.layout:
-            if l.startswith(start_string) and self.figure.layout[l].title.text is not None:
-                titles.append(self.figure.layout[l].title.text)
-        titles.sort()
-        return titles
-
     def get_x_name(self, n: int = 0) -> str:
         return self.plots[n]["xname"]
 
@@ -255,22 +256,17 @@ class PlotlyContourFigure(BaseContourFigure):
     def get_target_name(self) -> Optional[str]:
         return self.plots[0]["contour"].colorbar.title.text
 
-    def _get_type_by_name(self, n: int, name: str) -> VarType:
-        var_type = self.plots[n][name].type
-        if var_type is None:
-            return VarType.UNIFORM
-        elif var_type == "log":
-            return VarType.LOG
-        elif var_type == "category":
-            return VarType.CATEGORICAL
-        else:
-            assert False
+    def get_x_is_log(self, n: int = 0) -> bool:
+        return self.plots[n]["xaxis"].type == "log"
 
-    def get_x_type(self, n: int = 0) -> VarType:
-        return self._get_type_by_name(n, "xaxis")
+    def get_y_is_log(self, n: int = 0) -> bool:
+        return self.plots[n]["yaxis"].type == "log"
 
-    def get_y_type(self, n: int = 0) -> VarType:
-        return self._get_type_by_name(n, "yaxis")
+    def get_x_is_categorical(self, n: int = 0) -> bool:
+        return self.plots[n]["xaxis"].type == "category"
+
+    def get_y_is_categorical(self, n: int = 0) -> bool:
+        return self.plots[n]["yaxis"].type == "category"
 
 
 class MatplotlibContourFigure(BaseContourFigure):
@@ -291,11 +287,18 @@ class MatplotlibContourFigure(BaseContourFigure):
         self.figure = figure
 
         # self.plots[i] has a type of Axes.
-        self.plots = [Axes() for _ in range(self.get_n_plots())]
+        self.plots: List[Axes] = []
+
+        if len(study.get_trials(states=(TrialState.COMPLETE,))) == 0:
+            return
+
+        if params is not None and len(params) < 2:
+            return
 
         if isinstance(figure, Axes):
-            self.plots[0] = figure
+            self.plots = [figure]
         elif isinstance(figure, np.ndarray):
+            self.plots = [figure[0][0] for _ in range(self.get_n_plots())]
             _removed_axis_numbers = [k * self.n_params + k for k in range(self.n_params)]
 
             def _axis_number_to_plot_number(x: int) -> int:
@@ -304,12 +307,10 @@ class MatplotlibContourFigure(BaseContourFigure):
 
             for axis_number, f in enumerate(figure.flatten()):
                 f.set_xlabel(figure[-1][axis_number % self.n_params].get_xlabel())
-                f.set_ylabel(figure[axis_number / self.n_params][0].get_ylabel())
+                f.set_ylabel(figure[axis_number // self.n_params][0].get_ylabel())
                 if axis_number in _removed_axis_numbers:
                     assert not f.has_data()
                     continue
-                f.set_xticklabels(figure[-1][axis_number % self.n_params].get_xticklabels())
-                f.set_yticklabels(figure[axis_number / self.n_params][0].get_yticklabels())
                 plot_number = _axis_number_to_plot_number(axis_number)
                 assert f.has_data()
                 self.plots[plot_number] = f
@@ -317,7 +318,7 @@ class MatplotlibContourFigure(BaseContourFigure):
             assert False
 
     def is_empty(self) -> bool:
-        return not all([f.has_data() for f in self.plots])
+        return not any([f.has_data() for f in self.plots])
 
     def save_static_image(self) -> None:
         plt.savefig(BytesIO())
@@ -334,17 +335,23 @@ class MatplotlibContourFigure(BaseContourFigure):
     def get_x_points(self, n: int = 0) -> Optional[List[float]]:
         if len(self.plots[n].collections) == 0:
             return None
-        return list(self.plots[n].collections[-1].get_offsets()[0])
+        return list(self.plots[n].collections[-1].get_offsets()[:, 0])
 
     def get_y_points(self, n: int = 0) -> Optional[List[float]]:
         if len(self.plots[n].collections) == 0:
             return None
-        return list(self.plots[n].collections[-1].get_offsets()[1])
+        return list(self.plots[n].collections[-1].get_offsets()[:, 1])
 
     def get_x_range(self, n: int = 0) -> Tuple[float, float]:
+        if self.get_x_is_log(n):
+            l, r = self.plots[n].get_xlim()
+            return (np.log10(l), np.log10(r))
         return self.plots[n].get_xlim()
 
     def get_y_range(self, n: int = 0) -> Tuple[float, float]:
+        if self.get_y_is_log(n):
+            l, r = self.plots[n].get_ylim()
+            return (np.log10(l), np.log10(r))
         return self.plots[n].get_ylim()
 
     def get_x_name(self, n: int = 0) -> str:
@@ -354,26 +361,19 @@ class MatplotlibContourFigure(BaseContourFigure):
         return self.plots[n].get_ylabel()
 
     def get_target_name(self) -> Optional[str]:
-        raise self.plots[0].figure.axes[-1].get_ylabel()
+        target_name = self.plots[0].figure.axes[-1].get_ylabel()
+        if target_name == "":
+            return None
+        return target_name
 
-    def get_x_type(self, n: int = 0) -> VarType:
-        var_type = self.plots[n].get_xscale()
-        if var_type == "linear" and not self.is_category[n][0]:
-            return VarType.UNIFORM
-        elif var_type == "log":
-            return VarType.LOG
-        elif var_type == "linear" and self.is_category[n][0]:
-            return VarType.CATEGORICAL
-        else:
-            assert False
+    def get_x_is_log(self, n: int = 0) -> bool:
+        return self.plots[n].get_xscale() == "log"
 
-    def get_y_type(self, n: int = 0) -> VarType:
-        var_type = self.plots[n].get_yscale()
-        if var_type == "linear" and not self.is_category[n][1]:
-            return VarType.UNIFORM
-        elif var_type == "log":
-            return VarType.LOG
-        elif var_type == "linear" and self.is_category[n][1]:
-            return VarType.CATEGORICAL
-        else:
-            assert False
+    def get_y_is_log(self, n: int = 0) -> bool:
+        return self.plots[n].get_yscale() == "log"
+
+    def get_x_is_categorical(self, n: int = 0) -> bool:
+        raise NotImplementedError
+
+    def get_y_is_categorical(self, n: int = 0) -> bool:
+        raise NotImplementedError
