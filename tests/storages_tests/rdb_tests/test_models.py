@@ -349,7 +349,7 @@ class TestTrialIntermediateValueModel(object):
                 trial_id=trial.trial_id,
                 step=0,
                 intermediate_value=10,
-                intermediate_value_type=TrialIntermediateValueModel.FloatTypeEnum.FINITE_OR_NAN,
+                intermediate_value_type=TrialIntermediateValueModel.TrialIntermediateValueType.FINITE,  # noqa: E501
             )
         )
         session.commit()
@@ -386,7 +386,7 @@ class TestTrialIntermediateValueModel(object):
                 trial_id=1,
                 step=1,
                 intermediate_value=20,
-                intermediate_value_type=TrialIntermediateValueModel.FloatTypeEnum.FINITE_OR_NAN,
+                intermediate_value_type=TrialIntermediateValueModel.TrialIntermediateValueType.FINITE,  # noqa: E501
             )
         )
         session.commit()
