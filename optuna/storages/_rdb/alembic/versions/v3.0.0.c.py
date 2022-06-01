@@ -101,7 +101,7 @@ def upgrade():
             (
                 stored_value,
                 float_type,
-            ) = IntermediateValueModel._intermediate_value_to_stored_repr(value)
+            ) = IntermediateValueModel.intermediate_value_to_stored_repr(value)
             mapping.append(
                 {
                     "trial_intermediate_value_id": r.trial_intermediate_value_id,
