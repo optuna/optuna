@@ -521,7 +521,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                             {i.key: json.loads(i.value_json) for i in user_attrs},
                             {i.key: json.loads(i.value_json) for i in system_attrs},
                             {
-                                value.step: value.get_original_intermediate_value()
+                                value.step: models.TrialIntermediateValueModel.stored_repr_to_intermediate_value(  # noqa: E501
+                                    value.intermediate_value, value.intermediate_value_type
+                                )
                                 for value in intermediate
                             },
                             best_trial.trial_id,
@@ -884,20 +886,26 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
+        (
+            stored_value,
+            value_type,
+        ) = models.TrialIntermediateValueModel.intermediate_value_to_stored_repr(
+            intermediate_value
+        )
         trial_intermediate_value = models.TrialIntermediateValueModel.find_by_trial_and_step(
             trial, step, session
         )
         if trial_intermediate_value is None:
-            trial_intermediate_value = (
-                models.TrialIntermediateValueModel.make_record_with_original_intermediate_value(
-                    trial_id=trial_id,
-                    step=step,
-                    original_intermediate_value=intermediate_value,
-                )
+            trial_intermediate_value = models.TrialIntermediateValueModel(
+                trial_id=trial_id,
+                step=step,
+                intermediate_value=stored_value,
+                intermediate_value_type=value_type,
             )
             session.add(trial_intermediate_value)
         else:
-            trial_intermediate_value.set_original_intermediate_value(intermediate_value)
+            trial_intermediate_value.intermediate_value = stored_value
+            trial_intermediate_value.intermediate_value_type = value_type
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
 
@@ -1076,7 +1084,10 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 attr.key: json.loads(attr.value_json) for attr in trial.system_attributes
             },
             intermediate_values={
-                v.step: v.get_original_intermediate_value() for v in trial.intermediate_values
+                v.step: models.TrialIntermediateValueModel.stored_repr_to_intermediate_value(
+                    v.intermediate_value, v.intermediate_value_type
+                )
+                for v in trial.intermediate_values
             },
             trial_id=trial.trial_id,
         )

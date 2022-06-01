@@ -468,7 +468,7 @@ class TrialIntermediateValueModel(BaseModel):
     )
 
     @classmethod
-    def _intermediate_value_to_stored_repr(
+    def intermediate_value_to_stored_repr(
         cls,
         value: float,
     ) -> Tuple[Optional[float], TrialIntermediateValueType]:
@@ -482,7 +482,7 @@ class TrialIntermediateValueModel(BaseModel):
             return (value, cls.TrialIntermediateValueType.FINITE)
 
     @classmethod
-    def _stored_repr_to_intermediate_value(
+    def stored_repr_to_intermediate_value(
         cls, value: Optional[float], float_type: TrialIntermediateValueType
     ) -> float:
         if float_type == cls.TrialIntermediateValueType.NAN:
@@ -498,35 +498,6 @@ class TrialIntermediateValueModel(BaseModel):
             assert float_type == cls.TrialIntermediateValueType.FINITE
             assert value is not None
             return value
-
-    @classmethod
-    def make_record_with_original_intermediate_value(
-        cls, *, original_intermediate_value: float, **kwargs: Any
-    ) -> "TrialIntermediateValueModel":
-        assert "intermediate_value" not in kwargs
-        assert "intermediate_value_type" not in kwargs
-        (
-            stored_intermediate_value,
-            intermediate_value_type,
-        ) = cls._intermediate_value_to_stored_repr(original_intermediate_value)
-        return cls(
-            **kwargs,
-            intermediate_value=stored_intermediate_value,
-            intermediate_value_type=intermediate_value_type,
-        )
-
-    def get_original_intermediate_value(self) -> float:
-        return self._stored_repr_to_intermediate_value(
-            self.intermediate_value, self.intermediate_value_type
-        )
-
-    def set_original_intermediate_value(self, value: float) -> None:
-        (
-            stored_intermediate_value,
-            intermediate_value_type,
-        ) = self._intermediate_value_to_stored_repr(value)
-        self.intermediate_value = stored_intermediate_value
-        self.intermediate_value_type = intermediate_value_type
 
     @classmethod
     def find_by_trial_and_step(

@@ -22,7 +22,6 @@ from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.storages import RedisStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
-from optuna.storages._rdb.models import TrialIntermediateValueModel
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.testing.storage import STORAGE_MODES
@@ -1274,16 +1273,3 @@ def test_check_trial_is_updatable(storage_mode: str) -> None:
 
         with pytest.raises(RuntimeError):
             storage.check_trial_is_updatable(trial_id, TrialState.COMPLETE)
-
-
-@pytest.mark.parametrize(
-    "value",
-    [1.0, float("inf"), -float("inf")],
-)
-def test_trial_intermediate_value_stored_repr(value: float) -> None:
-    assert (
-        TrialIntermediateValueModel._stored_repr_to_intermediate_value(
-            *TrialIntermediateValueModel._intermediate_value_to_stored_repr(value)
-        )
-        == value
-    )

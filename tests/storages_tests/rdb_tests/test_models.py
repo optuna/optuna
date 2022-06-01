@@ -345,10 +345,11 @@ class TestTrialIntermediateValueModel(object):
         session.add(study)
         session.add(trial)
         session.add(
-            TrialIntermediateValueModel.make_record_with_original_intermediate_value(
+            TrialIntermediateValueModel(
                 trial_id=trial.trial_id,
                 step=0,
-                original_intermediate_value=10,
+                intermediate_value=10,
+                intermediate_value_type=TrialIntermediateValueModel.TrialIntermediateValueType.FINITE,  # noqa: E501
             )
         )
         session.commit()
@@ -381,10 +382,11 @@ class TestTrialIntermediateValueModel(object):
 
         trial = TestTrialIntermediateValueModel._create_model(session)
         trial.intermediate_values.append(
-            TrialIntermediateValueModel.make_record_with_original_intermediate_value(
+            TrialIntermediateValueModel(
                 trial_id=1,
                 step=1,
-                original_intermediate_value=20,
+                intermediate_value=20,
+                intermediate_value_type=TrialIntermediateValueModel.TrialIntermediateValueType.FINITE,  # noqa: E501
             )
         )
         session.commit()
