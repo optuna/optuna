@@ -521,7 +521,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                             {i.key: json.loads(i.value_json) for i in user_attrs},
                             {i.key: json.loads(i.value_json) for i in system_attrs},
                             {
-                                value.step: value.original_intermediate_value
+                                value.step: value.get_original_intermediate_value()
                                 for value in intermediate
                             },
                             best_trial.trial_id,
@@ -888,14 +888,16 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             trial, step, session
         )
         if trial_intermediate_value is None:
-            trial_intermediate_value = models.TrialIntermediateValueModel(
-                trial_id=trial_id,
-                step=step,
-                original_intermediate_value=intermediate_value,
+            trial_intermediate_value = (
+                models.TrialIntermediateValueModel.make_record_with_original_intermediate_value(
+                    trial_id=trial_id,
+                    step=step,
+                    original_intermediate_value=intermediate_value,
+                )
             )
             session.add(trial_intermediate_value)
         else:
-            trial_intermediate_value.original_intermediate_value = intermediate_value
+            trial_intermediate_value.set_original_intermediate_value(intermediate_value)
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
 
@@ -1074,7 +1076,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 attr.key: json.loads(attr.value_json) for attr in trial.system_attributes
             },
             intermediate_values={
-                v.step: v.original_intermediate_value for v in trial.intermediate_values
+                v.step: v.get_original_intermediate_value() for v in trial.intermediate_values
             },
             trial_id=trial.trial_id,
         )

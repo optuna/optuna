@@ -499,25 +499,28 @@ class TrialIntermediateValueModel(BaseModel):
             assert value is not None
             return value
 
-    def __init__(self, *, original_intermediate_value: float, **kwargs: Any) -> None:
+    @classmethod
+    def make_record_with_original_intermediate_value(
+        cls, *, original_intermediate_value: float, **kwargs
+    ) -> "TrialIntermediateValueModel":
+        assert "intermediate_value" not in kwargs
+        assert "intermediate_value_type" not in kwargs
         (
             stored_intermediate_value,
             intermediate_value_type,
-        ) = self._intermediate_value_to_stored_repr(original_intermediate_value)
-        super().__init__(
+        ) = cls._intermediate_value_to_stored_repr(original_intermediate_value)
+        return cls(
             **kwargs,
             intermediate_value=stored_intermediate_value,
             intermediate_value_type=intermediate_value_type,
         )
 
-    @property
-    def original_intermediate_value(self) -> float:
+    def get_original_intermediate_value(self) -> float:
         return self._stored_repr_to_intermediate_value(
             self.intermediate_value, self.intermediate_value_type
         )
 
-    @original_intermediate_value.setter
-    def original_intermediate_value(self, value: float) -> None:
+    def set_original_intermediate_value(self, value: float) -> None:
         (
             stored_intermediate_value,
             intermediate_value_type,
