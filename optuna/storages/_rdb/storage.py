@@ -1356,7 +1356,7 @@ class _VersionManager(object):
     def get_head_version(self) -> str:
 
         script = self._create_alembic_script()
-        return script.get_current_head()
+        return script.get_current_head()  # type: ignore
 
     def _get_base_version(self) -> str:
 
