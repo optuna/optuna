@@ -2,7 +2,6 @@ import copy
 from datetime import datetime
 import threading
 from typing import Any
-from typing import cast
 from typing import Container
 from typing import Dict
 from typing import Iterator
@@ -166,7 +165,7 @@ class InMemoryStorage(BaseStorage):
             n_trials=len(study.trials),
             datetime_start=min(
                 [
-                    cast(datetime, trial.datetime_start)
+                    trial.datetime_start
                     for trial in self.get_all_trials(study_id, deepcopy=False)
                     if trial.datetime_start is not None
                 ],

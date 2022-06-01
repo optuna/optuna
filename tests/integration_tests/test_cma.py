@@ -67,21 +67,6 @@ class TestPyCmaSampler(object):
         assert isinstance(sampler._independent_sampler, optuna.samplers.RandomSampler)
 
     @staticmethod
-    def test_reseed_rng() -> None:
-        sampler = optuna.integration.PyCmaSampler()
-        original_seed = sampler._cma_opts["seed"]
-        sampler._independent_sampler.reseed_rng()
-
-        with patch.object(
-            sampler._independent_sampler,
-            "reseed_rng",
-            wraps=sampler._independent_sampler.reseed_rng,
-        ) as mock_object:
-            sampler.reseed_rng()
-            assert mock_object.call_count == 1
-            assert original_seed != sampler._cma_opts["seed"]
-
-    @staticmethod
     def test_infer_relative_search_space_1d() -> None:
 
         sampler = optuna.integration.PyCmaSampler()

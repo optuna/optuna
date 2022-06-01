@@ -463,6 +463,16 @@ class OptunaSearchCV(BaseEstimator):
         verbose:
             Verbosity level. The higher, the more messages.
 
+        callbacks:
+            List of callback functions that are invoked at the end of each trial. Each function
+            must accept two parameters with the following types in this order:
+            :class:`~optuna.study.Study` and :class:`~optuna.trial.FrozenTrial`.
+
+            .. seealso::
+
+                See the tutorial of :ref:`optuna_callback` for how to use and implement
+                callback functions.
+
     Attributes:
         best_estimator_:
             Estimator that was chosen by the search. This is present only if
@@ -695,6 +705,7 @@ class OptunaSearchCV(BaseEstimator):
         subsample: Union[float, int] = 1.0,
         timeout: Optional[float] = None,
         verbose: int = 0,
+        callbacks: Optional[List[Callable[[study_module.Study, FrozenTrial], None]]] = None,
     ) -> None:
 
         _imports.check()
@@ -725,6 +736,7 @@ class OptunaSearchCV(BaseEstimator):
         self.subsample = subsample
         self.timeout = timeout
         self.verbose = verbose
+        self.callbacks = callbacks
 
     def _check_is_fitted(self) -> None:
 
@@ -883,7 +895,11 @@ class OptunaSearchCV(BaseEstimator):
         )
 
         self.study_.optimize(
-            objective, n_jobs=self.n_jobs, n_trials=self.n_trials, timeout=self.timeout
+            objective,
+            n_jobs=self.n_jobs,
+            n_trials=self.n_trials,
+            timeout=self.timeout,
+            callbacks=self.callbacks,
         )
 
         _logger.info("Finished hyperparemeter search!")
