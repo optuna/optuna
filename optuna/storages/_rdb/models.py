@@ -501,7 +501,7 @@ class TrialIntermediateValueModel(BaseModel):
 
     @classmethod
     def make_record_with_original_intermediate_value(
-        cls, *, original_intermediate_value: float, **kwargs
+        cls, *, original_intermediate_value: float, **kwargs: Any
     ) -> "TrialIntermediateValueModel":
         assert "intermediate_value" not in kwargs
         assert "intermediate_value_type" not in kwargs
