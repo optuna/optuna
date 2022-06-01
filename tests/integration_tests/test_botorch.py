@@ -429,18 +429,6 @@ def test_botorch_invalid_different_studies() -> None:
         other_study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=3)
 
 
-def test_reseed_rng() -> None:
-    independent_sampler = RandomSampler()
-    sampler = BoTorchSampler(independent_sampler=independent_sampler)
-    original_independent_sampler_seed = cast(RandomSampler, sampler._independent_sampler)._rng.seed
-
-    sampler.reseed_rng()
-    assert (
-        original_independent_sampler_seed
-        != cast(RandomSampler, sampler._independent_sampler)._rng.seed
-    )
-
-
 def test_call_after_trial_of_independent_sampler() -> None:
     independent_sampler = optuna.samplers.RandomSampler()
     with warnings.catch_warnings():
