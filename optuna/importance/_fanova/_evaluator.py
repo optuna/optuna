@@ -21,16 +21,6 @@ from optuna.study import Study
 from optuna.trial import FrozenTrial
 
 
-def _split_nonsingle_and_single_distributions(
-    distributions: Dict[str, BaseDistribution]
-) -> Tuple[Dict[str, BaseDistribution], Dict[str, BaseDistribution]]:
-    non_single_distributions = {
-        name: dist for name, dist in distributions.items() if not dist.single()
-    }
-    single_distributions = {name: dist for name, dist in distributions.items() if dist.single()}
-    return (non_single_distributions, single_distributions)
-
-
 class FanovaImportanceEvaluator(BaseImportanceEvaluator):
     """fANOVA importance evaluator.
 
