@@ -65,13 +65,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         ],
         "document": [
             "cma",
-            "lightgbm",
-            "matplotlib",
             "mlflow",
-            "pandas",
-            "pillow",
-            "plotly>=4.0.0",  # optuna/visualization.
-            "scikit-learn>=0.24.2",
             "scikit-optimize",
             "sphinx",
             "sphinx-copybutton",
