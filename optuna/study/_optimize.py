@@ -7,8 +7,6 @@ import gc
 import itertools
 import os
 import sys
-from threading import Event
-from threading import Thread
 from typing import Any
 from typing import Callable
 from typing import List
@@ -25,7 +23,7 @@ from optuna import exceptions
 from optuna import logging
 from optuna import progress_bar as pbar_module
 from optuna import trial as trial_module
-from optuna.storages._heartbeat import BaseHeartbeat
+from optuna.storages._heartbeat import get_heartbeat_thread
 from optuna.storages._heartbeat import is_heartbeat_enabled
 from optuna.study._tell import _tell_with_warning
 from optuna.study._tell import STUDY_TELL_WARNING_KEY
@@ -194,15 +192,9 @@ def _run_trial(
     value_or_values: Optional[Union[float, Sequence[float]]] = None
     func_err: Optional[Union[Exception, KeyboardInterrupt]] = None
     func_err_fail_exc_info: Optional[Any] = None
-    stop_event: Optional[Event] = None
-    thread: Optional[Thread] = None
 
-    if is_heartbeat_enabled(study._storage):
-        assert isinstance(study._storage, BaseHeartbeat)
-        heartbeat = study._storage
-        stop_event = Event()
-        thread = Thread(target=_record_heartbeat, args=(trial._trial_id, heartbeat, stop_event))
-        thread.start()
+    heartbeat_thread = get_heartbeat_thread(study._storage)
+    heartbeat_thread.start(trial._trial_id)
 
     try:
         value_or_values = func(trial)
@@ -215,11 +207,7 @@ def _run_trial(
         func_err = e
         func_err_fail_exc_info = sys.exc_info()
 
-    if is_heartbeat_enabled(study._storage):
-        assert stop_event is not None
-        assert thread is not None
-        stop_event.set()
-        thread.join()
+    heartbeat_thread.join()
 
     # `_tell_with_warning` may raise during trial post-processing.
     try:
@@ -251,15 +239,6 @@ def _run_trial(
     ):
         raise func_err
     return frozen_trial
-
-
-def _record_heartbeat(trial_id: int, storage: BaseHeartbeat, stop_event: Event) -> None:
-    heartbeat_interval = storage.get_heartbeat_interval()
-    assert heartbeat_interval is not None
-    while True:
-        storage.record_heartbeat(trial_id)
-        if stop_event.wait(timeout=heartbeat_interval):
-            return
 
 
 def _log_failed_trial(

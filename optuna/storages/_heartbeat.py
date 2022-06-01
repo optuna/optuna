@@ -1,5 +1,7 @@
 import abc
 import copy
+from threading import Event
+from threading import Thread
 from typing import Callable
 from typing import List
 from typing import Optional
@@ -66,6 +68,59 @@ class BaseHeartbeat(metaclass=abc.ABCMeta):
             The failed trial callback function if it is set, otherwise :obj:`None`.
         """
         raise NotImplementedError()
+
+
+class BaseHeartbeatThread:
+    def start(self, trial_id: int) -> None:
+        raise NotImplementedError()
+
+    def join(self) -> None:
+        raise NotImplementedError()
+
+
+class NullHeartbeatThread(BaseHeartbeatThread):
+    def start(self, trial_id: int) -> None:
+        pass
+
+    def join(self) -> None:
+        pass
+
+
+class HeartbeatThread(BaseHeartbeatThread):
+    def __init__(self, heartbeat: BaseHeartbeat) -> None:
+        self._heartbeat = heartbeat
+        self._thread: Optional[Thread] = None
+        self._stop_event: Optional[Event] = None
+
+    def start(self, trial_id: int) -> None:
+        self._stop_event = Event()
+        self._thread = Thread(
+            target=self._record_heartbeat, args=(trial_id, self._heartbeat, self._stop_event)
+        )
+        self._thread.start()
+
+    def join(self) -> None:
+        assert self._stop_event is not None
+        assert self._thread is not None
+        self._stop_event.set()
+        self._thread.join()
+
+    @staticmethod
+    def _record_heartbeat(trial_id: int, heartbeat: BaseHeartbeat, stop_event: Event) -> None:
+        heartbeat_interval = heartbeat.get_heartbeat_interval()
+        assert heartbeat_interval is not None
+        while True:
+            heartbeat.record_heartbeat(trial_id)
+            if stop_event.wait(timeout=heartbeat_interval):
+                return
+
+
+def get_heartbeat_thread(storage: BaseStorage) -> BaseHeartbeatThread:
+    if is_heartbeat_enabled(storage):
+        assert isinstance(storage, BaseHeartbeat)
+        return HeartbeatThread(storage)
+    else:
+        return NullHeartbeatThread()
 
 
 @experimental("2.9.0")
