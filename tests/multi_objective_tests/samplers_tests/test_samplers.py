@@ -81,6 +81,19 @@ def test_random_mo_sampler_reseed_rng() -> None:
     assert str(original_random_state) != str(sampler._sampler._rng.get_state())
 
 
+@pytest.mark.parametrize(
+    "sampler_class",
+    [
+        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
+        optuna.multi_objective.samplers.NSGAIIMultiObjectiveSampler,
+        optuna.multi_objective.samplers.MOTPEMultiObjectiveSampler,
+    ],
+)
+def test_deprecated_warning(sampler_class: Callable[[], BaseMultiObjectiveSampler]) -> None:
+    with pytest.warns(FutureWarning):
+        sampler_class()
+
+
 def _create_new_trial(
     study: multi_objective.study.MultiObjectiveStudy,
 ) -> multi_objective.trial.FrozenMultiObjectiveTrial:
