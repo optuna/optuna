@@ -45,7 +45,7 @@ class IntermediateValueModel(BaseModel):
     intermediate_value_type = sa.Column(sa.Enum(TrialIntermediateValueType), nullable=False)
 
     @classmethod
-    def _intermediate_value_to_stored_repr(
+    def intermediate_value_to_stored_repr(
         cls,
         value: float,
     ) -> Tuple[Optional[float], TrialIntermediateValueType]:
