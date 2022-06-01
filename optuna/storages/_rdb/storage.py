@@ -1320,7 +1320,9 @@ class _VersionManager(object):
     def get_head_version(self) -> str:
 
         script = self._create_alembic_script()
-        return script.get_current_head()
+        head = script.get_current_head()
+        assert head is not None
+        return head
 
     def _get_base_version(self) -> str:
 
