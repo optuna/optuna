@@ -104,6 +104,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mxnet",
             "pandas",
             "plotly>=4.0.0",
+            "kaleido",
             "pytest",
             "scikit-learn>=0.24.2",
             "scikit-optimize",
