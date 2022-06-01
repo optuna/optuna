@@ -501,12 +501,12 @@ class TrialIntermediateValueModel(BaseModel):
 
     def __init__(self, *, original_intermediate_value: float, **kwargs: Any) -> None:
         (
-            sanitized_intermediate_value,
+            stored_intermediate_value,
             intermediate_value_type,
         ) = self._intermediate_value_to_stored_repr(original_intermediate_value)
         super().__init__(
             **kwargs,
-            intermediate_value=sanitized_intermediate_value,
+            intermediate_value=stored_intermediate_value,
             intermediate_value_type=intermediate_value_type,
         )
 
@@ -519,10 +519,10 @@ class TrialIntermediateValueModel(BaseModel):
     @original_intermediate_value.setter
     def original_intermediate_value(self, value: float) -> None:
         (
-            sanitized_intermediate_value,
+            stored_intermediate_value,
             intermediate_value_type,
         ) = self._intermediate_value_to_stored_repr(value)
-        self.intermediate_value = sanitized_intermediate_value
+        self.intermediate_value = stored_intermediate_value
         self.intermediate_value_type = intermediate_value_type
 
     @classmethod

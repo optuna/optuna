@@ -99,14 +99,14 @@ def upgrade():
             else:
                 value = r.intermediate_value
             (
-                sanitized_value,
+                stored_value,
                 float_type,
             ) = IntermediateValueModel._intermediate_value_to_stored_repr(value)
             mapping.append(
                 {
                     "trial_intermediate_value_id": r.trial_intermediate_value_id,
                     "intermediate_value_type": float_type,
-                    "intermediate_value": sanitized_value,
+                    "intermediate_value": stored_value,
                 }
             )
         session.bulk_update_mappings(IntermediateValueModel, mapping)
