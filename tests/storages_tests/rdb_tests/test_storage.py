@@ -175,7 +175,7 @@ def test_upgrade_identity() -> None:
 
 @pytest.mark.parametrize(
     "optuna_version",
-    ["0.9.0.a", "1.2.0.a", "1.3.0.a", "2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c"],
+    ["0.9.0.a", "1.2.0.a", "1.3.0.a", "2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c", "3.0.0.d"],
 )
 def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
     src_db_file = os.path.join(
@@ -221,7 +221,7 @@ def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
         assert study.user_attrs["d"] == 3
 
 
-@pytest.mark.parametrize("optuna_version", ["2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c"])
+@pytest.mark.parametrize("optuna_version", ["2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c", "3.0.0.d"])
 def test_upgrade_multi_objective_optimization(optuna_version: str) -> None:
     src_db_file = os.path.join(
         os.path.dirname(__file__), "test_upgrade_assets", f"{optuna_version}.db"
@@ -265,7 +265,7 @@ def test_upgrade_multi_objective_optimization(optuna_version: str) -> None:
         assert study.user_attrs["d"] == 3
 
 
-@pytest.mark.parametrize("optuna_version", ["2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c"])
+@pytest.mark.parametrize("optuna_version", ["2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c", "3.0.0.d"])
 def test_upgrade_distributions(optuna_version: str) -> None:
     src_db_file = os.path.join(
         os.path.dirname(__file__), "test_upgrade_assets", f"{optuna_version}.db"
