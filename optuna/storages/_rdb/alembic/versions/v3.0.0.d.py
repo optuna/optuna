@@ -106,10 +106,9 @@ def upgrade():
                 value = float("inf")
             elif np.isclose(r.value, RDB_MIN_FLOAT) or np.isneginf(r.value):
                 value = float("-inf")
-            elif np.isnan(r.value):
-                value = float("nan")
             else:
                 value = r.value
+
             (
                 stored_value,
                 float_type,
@@ -163,5 +162,11 @@ def downgrade():
 
     with op.batch_alter_table("trial_values", schema=None) as batch_op:
         batch_op.drop_column("value_type")
+        batch_op.alter_column(
+            "value",
+            existing_type=sa.Float(precision=FLOAT_PRECISION),
+            existing_nullable=True,
+            nullable=False,
+        )
 
     sa.Enum(TrialValueModel.TrialValueType).drop(bind, checkfirst=True)
