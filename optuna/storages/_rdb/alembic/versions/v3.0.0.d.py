@@ -88,7 +88,10 @@ def upgrade():
             ),
         )
     with op.batch_alter_table("trial_values") as batch_op:
-        batch_op.alter_column("value_type", server_default=None)
+        batch_op.alter_column("value_type",
+                existing_type=sa.Enum("FINITE", "INF_POS", "INF_NEG", name="trialvaluetype"),
+                existing_nullable=False,
+                server_default=None)
         batch_op.alter_column(
             "value",
             existing_type=sa.Float(precision=FLOAT_PRECISION),
