@@ -528,21 +528,19 @@ class CategoricalDistribution(BaseDistribution):
 
         if not isinstance(other, BaseDistribution):
             return NotImplemented
-        if type(self) is not type(other):
+        if not isinstance(other, self.__class__):
             return False
         if self.__dict__.keys() != other.__dict__.keys():
             return False
-        for (key, value), (other_key, other_value) in zip(
-            sorted(self.__dict__.items()), sorted(other.__dict__.items())
-        ):
+        for key, value in self.__dict__.items():
             if key == "choices":
-                if len(value) != len(other_value):
+                if len(value) != len(getattr(other, key)):
                     return False
-                for choice, other_choice in zip(value, other_value):
+                for choice, other_choice in zip(value, getattr(other, key)):
                     if not _categorical_choice_equal(choice, other_choice):
                         return False
             else:
-                if value != other_value:
+                if value != getattr(other, key):
                     return False
         return True
 
