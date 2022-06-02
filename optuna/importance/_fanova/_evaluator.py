@@ -21,6 +21,16 @@ from optuna.study import Study
 from optuna.trial import FrozenTrial
 
 
+def _split_nonsingle_and_single_distributions(
+    distributions: Dict[str, BaseDistribution]
+) -> Tuple[Dict[str, BaseDistribution], Dict[str, BaseDistribution]]:
+    non_single_distributions = {
+        name: dist for name, dist in distributions.items() if not dist.single()
+    }
+    single_distributions = {name: dist for name, dist in distributions.items() if dist.single()}
+    return (non_single_distributions, single_distributions)
+
+
 class FanovaImportanceEvaluator(BaseImportanceEvaluator):
     """fANOVA importance evaluator.
 
@@ -92,8 +102,9 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
         # fANOVA does not support parameter distributions with a single value.
         # However, there is no reason to calculate parameter importance in such case anyway,
         # since it will always be 0 as the parameter is constant in the objective function.
-        single_distributions = {name: 0.0 for name, dist in distributions.items() if dist.single()}
-        non_single_distributions = {name: dist for name, dist in distributions.items() if not dist.single()}
+        non_single_distributions, single_distributions = _split_nonsingle_and_single_distributions(
+            distributions
+        )
 
         if len(non_single_distributions) == 0:
             return OrderedDict()
@@ -104,10 +115,13 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
             non_single_distributions, transform_log=False, transform_step=False
         )
 
+        trans_params: numpy.ndarray = _get_trans_params(trials, trans)
+        target_values: numpy.ndarray = _get_target_values(trials, target)
+
         evaluator = self._evaluator
         evaluator.fit(
-            X=_get_trans_params(trials, trans),
-            y=_get_target_values(trials, target),
+            X=trans_params,
+            y=target_values,
             search_spaces=trans.bounds,
             column_to_encoded_columns=trans.column_to_encoded_columns,
         )
