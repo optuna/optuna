@@ -521,7 +521,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                             {i.key: json.loads(i.value_json) for i in user_attrs},
                             {i.key: json.loads(i.value_json) for i in system_attrs},
                             {
-                                value.step: self._lift_numerical_limit(value.intermediate_value)
+                                value.step: models.TrialIntermediateValueModel.stored_repr_to_intermediate_value(  # noqa: E501
+                                    value.intermediate_value, value.intermediate_value_type
+                                )
                                 for value in intermediate
                             },
                             best_trial.trial_id,
@@ -785,14 +787,8 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         return param_value
 
     @staticmethod
-    def _ensure_not_nan(value: float) -> Optional[float]:
-        if np.isnan(value):
-            return None
-        else:
-            return value
-
-    @staticmethod
     def _ensure_numerical_limit(value: float) -> float:
+        # TODO(c-bata): Remove this method after fixing inf/-inf handling of trial.values.
 
         # Max and min trial values that can be stored are limited by
         # dialect. Most limiting one is MySQL which in current data
@@ -802,6 +798,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
     @staticmethod
     def _lift_numerical_limit(value: Optional[float]) -> float:
+        # TODO(c-bata): Remove this method after fixing inf/-inf handling of trial.values.
 
         # Floats can't be compared for equality because they are
         # approximate and not stored as exact values.
@@ -888,20 +885,27 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
-        _intermediate_value = self._ensure_not_nan(intermediate_value)
-        if _intermediate_value is not None:
-            _intermediate_value = self._ensure_numerical_limit(_intermediate_value)
 
+        (
+            stored_value,
+            value_type,
+        ) = models.TrialIntermediateValueModel.intermediate_value_to_stored_repr(
+            intermediate_value
+        )
         trial_intermediate_value = models.TrialIntermediateValueModel.find_by_trial_and_step(
             trial, step, session
         )
         if trial_intermediate_value is None:
             trial_intermediate_value = models.TrialIntermediateValueModel(
-                trial_id=trial_id, step=step, intermediate_value=_intermediate_value
+                trial_id=trial_id,
+                step=step,
+                intermediate_value=stored_value,
+                intermediate_value_type=value_type,
             )
             session.add(trial_intermediate_value)
         else:
-            trial_intermediate_value.intermediate_value = _intermediate_value
+            trial_intermediate_value.intermediate_value = stored_value
+            trial_intermediate_value.intermediate_value_type = value_type
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
 
@@ -1080,7 +1084,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 attr.key: json.loads(attr.value_json) for attr in trial.system_attributes
             },
             intermediate_values={
-                v.step: self._lift_numerical_limit(v.intermediate_value)
+                v.step: models.TrialIntermediateValueModel.stored_repr_to_intermediate_value(
+                    v.intermediate_value, v.intermediate_value_type
+                )
                 for v in trial.intermediate_values
             },
             trial_id=trial.trial_id,
@@ -1327,7 +1333,9 @@ class _VersionManager(object):
     def get_head_version(self) -> str:
 
         script = self._create_alembic_script()
-        return script.get_current_head()
+        current_head = script.get_current_head()
+        assert current_head is not None
+        return current_head
 
     def _get_base_version(self) -> str:
 
