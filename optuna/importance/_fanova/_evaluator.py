@@ -115,13 +115,10 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
             non_single_distributions, transform_log=False, transform_step=False
         )
 
-        trans_params: numpy.ndarray = _get_trans_params(trials, trans)
-        values: numpy.ndarray = _get_target_values(trials, target)
-
         evaluator = self._evaluator
         evaluator.fit(
-            X=trans_params,
-            y=values,
+            X=_get_trans_params(trials, trans),
+            y=_get_target_values(trials, target),
             search_spaces=trans.bounds,
             column_to_encoded_columns=trans.column_to_encoded_columns,
         )

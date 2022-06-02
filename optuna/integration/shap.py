@@ -87,10 +87,10 @@ class ShapleyImportanceEvaluator(BaseImportanceEvaluator):
         trials: List[FrozenTrial] = _get_filtered_trials(study, params=params, target=target)
         trans = _SearchSpaceTransform(distributions, transform_log=False, transform_step=False)
         trans_params: np.ndarray = _get_trans_params(trials, trans)
-        values: np.ndarray = _get_target_values(trials, target)
+        target_values: np.ndarray = _get_target_values(trials, target)
 
         forest = self._forest
-        forest.fit(X=trans_params, y=values)
+        forest.fit(X=trans_params, y=target_values)
 
         # Create Tree Explainer object that can calculate shap values.
         explainer = TreeExplainer(forest)

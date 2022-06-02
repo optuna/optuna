@@ -83,11 +83,9 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
 
         trials: List[FrozenTrial] = _get_filtered_trials(study, params=params, target=target)
         trans = _SearchSpaceTransform(distributions, transform_log=False, transform_step=False)
-        trans_params: numpy.ndarray = _get_trans_params(trials, trans)
-        values: numpy.ndarray = _get_target_values(trials, target)
 
         forest = self._forest
-        forest.fit(X=trans_params, y=values)
+        forest.fit(X=_get_trans_params(trials, trans), y=_get_target_values(trials, target))
         feature_importances = forest.feature_importances_
 
         # Untransform feature importances to param importances
