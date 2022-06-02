@@ -165,7 +165,6 @@ def downgrade():
         batch_op.alter_column(
             "value",
             existing_type=sa.Float(precision=FLOAT_PRECISION),
-            existing_nullable=True,
             nullable=False,
         )
 
