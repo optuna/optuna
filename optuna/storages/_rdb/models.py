@@ -430,7 +430,6 @@ class TrialValueModel(BaseModel):
         TrialModel, backref=orm.backref("values", cascade="all, delete-orphan")
     )
 
-
     @classmethod
     def value_to_stored_repr(
         cls,
@@ -444,9 +443,7 @@ class TrialValueModel(BaseModel):
             return (value, cls.TrialValueType.FINITE)
 
     @classmethod
-    def stored_repr_to_value(
-        cls, value: Optional[float], float_type: TrialValueType
-    ) -> float:
+    def stored_repr_to_value(cls, value: Optional[float], float_type: TrialValueType) -> float:
         if float_type == cls.TrialValueType.INF_POS:
             assert value is None
             return float("inf")

@@ -1,4 +1,4 @@
-"""empty message
+"""Handle inf/-inf for trial_values table.
 
 Revision ID: v3.0.0.d
 Revises: v3.0.0.c
@@ -18,8 +18,8 @@ from typing import Tuple
 
 
 # revision identifiers, used by Alembic.
-revision = 'v3.0.0.d'
-down_revision = 'v3.0.0.c'
+revision = "v3.0.0.d"
+down_revision = "v3.0.0.c"
 branch_labels = None
 depends_on = None
 
@@ -56,9 +56,7 @@ class TrialValueModel(BaseModel):
             return (value, cls.TrialValueType.FINITE)
 
     @classmethod
-    def stored_repr_to_value(
-        cls, value: Optional[float], float_type: TrialValueType
-    ) -> float:
+    def stored_repr_to_value(cls, value: Optional[float], float_type: TrialValueType) -> float:
         if float_type == cls.TrialValueType.INF_POS:
             assert value is None
             return float("inf")
@@ -91,6 +89,7 @@ def upgrade():
         )
     with op.batch_alter_table("trial_values") as batch_op:
         batch_op.alter_column("value_type", server_default=None)
+        batch_op.alter_column("value", existing_nullable=False, nullable=True)
 
     session = orm.Session(bind=bind)
     try:
@@ -98,13 +97,9 @@ def upgrade():
         mapping = []
         for r in records:
             value: float
-            if np.isclose(r.value, RDB_MAX_FLOAT) or np.isposinf(
-                r.value
-            ):
+            if np.isclose(r.value, RDB_MAX_FLOAT) or np.isposinf(r.value):
                 value = float("inf")
-            elif np.isclose(r.value, RDB_MIN_FLOAT) or np.isneginf(
-                r.value
-            ):
+            elif np.isclose(r.value, RDB_MIN_FLOAT) or np.isneginf(r.value):
                 value = float("-inf")
             elif np.isnan(r.value):
                 value = float("nan")
@@ -138,7 +133,7 @@ def downgrade():
         records = session.query(TrialValueModel).all()
         mapping = []
         for r in records:
-            if r.value_type== TrialValueModel.TrialValueType.FINITE:
+            if r.value_type == TrialValueModel.TrialValueType.FINITE:
                 continue
 
             _value = r.value

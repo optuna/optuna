@@ -1037,7 +1037,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         if trial.values:
             values = [0 for _ in trial.values]
             for value_model in trial.values:
-                values[value_model.objective] = TrialValueModel.stored_repr_to_value(value_model.value, value_model.value_type)
+                values[value_model.objective] = TrialValueModel.stored_repr_to_value(
+                    value_model.value, value_model.value_type
+                )
         else:
             values = None
 
