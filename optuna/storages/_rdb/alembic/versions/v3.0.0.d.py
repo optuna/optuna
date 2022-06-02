@@ -75,7 +75,7 @@ def upgrade():
     sa.Enum(TrialValueModel.TrialValueType).create(bind, checkfirst=True)
 
     # MySQL and PostgreSQL supports DEFAULT clause like 'ALTER TABLE <tbl_name>
-    # ADD COLUMN <col_name> ... DEFAULT "FINITE_OR_NAN"', but seemingly Alembic
+    # ADD COLUMN <col_name> ... DEFAULT "FINITE"', but seemingly Alembic
     # does not support such a SQL statement. So first add a column with schema-level
     # default value setting, then remove it by `batch_op.alter_column()`.
     with op.batch_alter_table("trial_values") as batch_op:
