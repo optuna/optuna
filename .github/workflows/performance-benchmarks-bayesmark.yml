@@ -59,6 +59,7 @@ jobs:
         python -c 'import optuna'
         optuna --version
 
+        pip install --progress-bar off .[benchmark]
         pip install --progress-bar off bayesmark matplotlib pandas
 
     - name: Run performance benchmark
