@@ -17,8 +17,6 @@ from typing import Set
 from typing import TYPE_CHECKING
 import uuid
 
-import numpy as np
-
 import optuna
 from optuna import distributions
 from optuna import version
@@ -57,8 +55,6 @@ else:
     sqlalchemy_sql_functions = _LazyImport("sqlalchemy.sql.functions")
 
     models = _LazyImport("optuna.storages._rdb.models")
-
-
 
 
 _logger = optuna.logging.get_logger(__name__)
