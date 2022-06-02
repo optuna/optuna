@@ -210,16 +210,6 @@ def test_sample_relative_n_startup_trials() -> None:
         assert mock_relative.call_count == 4
 
 
-def test_reseed_rng() -> None:
-    sampler = optuna.samplers.CmaEsSampler()
-
-    with patch.object(
-        sampler._independent_sampler, "reseed_rng", wraps=sampler._independent_sampler.reseed_rng
-    ) as mock_object:
-        sampler.reseed_rng()
-        assert mock_object.call_count == 1
-
-
 def test_get_trials() -> None:
     with patch("optuna.Study.get_trials", new=Mock(side_effect=lambda deepcopy: _create_trials())):
         sampler = optuna.samplers.CmaEsSampler(consider_pruned_trials=False)
