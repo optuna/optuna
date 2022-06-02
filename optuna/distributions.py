@@ -546,9 +546,7 @@ class CategoricalDistribution(BaseDistribution):
                     return False
         return True
 
-    def __hash__(self) -> int:
-
-        return hash((self.__class__,) + tuple(sorted(self.__dict__.items())))
+    __hash__ = BaseDistribution.__hash__
 
 
 DISTRIBUTION_CLASSES = (
