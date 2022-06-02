@@ -89,7 +89,7 @@ def upgrade():
         )
     with op.batch_alter_table("trial_values") as batch_op:
         batch_op.alter_column("value_type", server_default=None)
-        batch_op.alter_column("value", existing_nullable=False, nullable=True)
+        batch_op.alter_column("value", existing_type=sa.Float(precision=FLOAT_PRECISION), existing_nullable=False, nullable=True)
 
     session = orm.Session(bind=bind)
     try:
