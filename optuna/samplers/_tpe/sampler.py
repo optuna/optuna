@@ -632,7 +632,7 @@ def _get_observation_pairs(
     ``(-step, value)``).
 
     When ``constraints_enabled`` is :obj:`True`, 1-dimensional violation values are returned
-    as the third element (:obj:`None` otherwise). Each value is a float of 0 or greator and a
+    as the third element (:obj:`None` otherwise). Each value is a float of 0 or greater and a
     trial is feasible if and only if its violation score is 0.
     """
 
@@ -705,7 +705,7 @@ def _get_observation_pairs(
             if constraint is None:
                 warnings.warn(
                     f"Trial {trial.number} does not have constraint values."
-                    " It will be dominated by the other trials."
+                    " It will be treated as a lower priority than other trials."
                 )
                 violation = float("inf")
             else:
