@@ -413,16 +413,47 @@ class TrialParamModel(BaseModel):
 
 
 class TrialValueModel(BaseModel):
+    class TrialValueType(enum.Enum):
+        FINITE = 1
+        INF_POS = 2
+        INF_NEG = 3
+
     __tablename__ = "trial_values"
     __table_args__: Any = (UniqueConstraint("trial_id", "objective"),)
     trial_value_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
     objective = Column(Integer, nullable=False)
-    value = Column(Float(precision=FLOAT_PRECISION), nullable=False)
+    value = Column(Float(precision=FLOAT_PRECISION), nullable=True)
+    value_type = Column(Enum(TrialValueType), nullable=False)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("values", cascade="all, delete-orphan")
     )
+
+    @classmethod
+    def value_to_stored_repr(
+        cls,
+        value: float,
+    ) -> Tuple[Optional[float], TrialValueType]:
+        if value == float("inf"):
+            return (None, cls.TrialValueType.INF_POS)
+        elif value == float("-inf"):
+            return (None, cls.TrialValueType.INF_NEG)
+        else:
+            return (value, cls.TrialValueType.FINITE)
+
+    @classmethod
+    def stored_repr_to_value(cls, value: Optional[float], float_type: TrialValueType) -> float:
+        if float_type == cls.TrialValueType.INF_POS:
+            assert value is None
+            return float("inf")
+        elif float_type == cls.TrialValueType.INF_NEG:
+            assert value is None
+            return float("-inf")
+        else:
+            assert float_type == cls.TrialValueType.FINITE
+            assert value is not None
+            return value
 
     @classmethod
     def find_by_trial_and_objective(
