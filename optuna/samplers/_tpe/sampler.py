@@ -427,7 +427,7 @@ class TPESampler(BaseSampler):
         param_distribution: BaseDistribution,
     ) -> Any:
 
-        values, scores, constraints = _get_observation_pairs(
+        values, scores, violations = _get_observation_pairs(
             study,
             [param_name],
             self._multivariate,
@@ -444,9 +444,7 @@ class TPESampler(BaseSampler):
                 study, trial, param_name, param_distribution
             )
 
-        indices_below, indices_above = _split_observation_pairs(
-            scores, self._gamma(n), constraints
-        )
+        indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n), violations)
         # `None` items are intentionally converted to `nan` and then filtered out.
         # For `nan` conversion, the dtype must be float.
         config_values = {k: np.asarray(v, dtype=float) for k, v in values.items()}
@@ -455,7 +453,7 @@ class TPESampler(BaseSampler):
 
         if study._is_multi_objective():
             weights_below = _calculate_weights_below_for_multi_objective(
-                config_values, scores, indices_below, constraints
+                config_values, scores, indices_below, violations
             )
             mpe_below = _ParzenEstimator(
                 below,
