@@ -169,7 +169,7 @@ SHAP
    :toctree: generated/
    :nosignatures:
 
-   optuna.integration.shap
+   optuna.integration.shap.ShapleyImportanceEvaluator
 
 skorch
 ------
