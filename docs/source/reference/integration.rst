@@ -169,7 +169,7 @@ SHAP
    :toctree: generated/
    :nosignatures:
 
-   optuna.integration.SHAP
+   optuna.integration.shap
 
 skorch
 ------
