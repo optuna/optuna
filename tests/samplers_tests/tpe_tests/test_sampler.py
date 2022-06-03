@@ -753,6 +753,15 @@ def test_sample_independent_pruned_state() -> None:
     assert len(set(suggestions)) == 3
 
 
+def test_constrained_sample_independent_zero_startup() -> None:
+    """Tests TPESampler with constrained option works when n_startup_trials=0"""
+    study = optuna.create_study()
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
+    trial = frozen_trial_factory(30)
+    sampler = TPESampler(n_startup_trials=0, seed=2, constraints_func=lambda _: (0,))
+    sampler.sample_independent(study, trial, "param-a", dist)
+
+
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
 @pytest.mark.parametrize("constraints_enabled", [False, True])
 def test_get_observation_pairs(direction: str, constraints_enabled: bool) -> None:
