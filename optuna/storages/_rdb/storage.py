@@ -17,8 +17,6 @@ from typing import Set
 from typing import TYPE_CHECKING
 import uuid
 
-import numpy as np
-
 import optuna
 from optuna import distributions
 from optuna import version
@@ -27,6 +25,7 @@ from optuna._imports import _LazyImport
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages._heartbeat import BaseHeartbeat
+from optuna.storages._rdb.models import TrialValueModel
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
@@ -56,9 +55,6 @@ else:
     sqlalchemy_sql_functions = _LazyImport("sqlalchemy.sql.functions")
 
     models = _LazyImport("optuna.storages._rdb.models")
-
-_RDB_MAX_FLOAT = np.finfo(np.float32).max
-_RDB_MIN_FLOAT = np.finfo(np.float32).min
 
 
 _logger = optuna.logging.get_logger(__name__)
@@ -513,7 +509,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                         best_trial_frozen = FrozenTrial(
                             best_trial.number,
                             TrialState.COMPLETE,
-                            self._lift_numerical_limit(value.value),
+                            TrialValueModel.stored_repr_to_value(value.value, value.value_type),
                             best_trial.datetime_start,
                             best_trial.datetime_complete,
                             param_dict,
@@ -521,7 +517,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                             {i.key: json.loads(i.value_json) for i in user_attrs},
                             {i.key: json.loads(i.value_json) for i in system_attrs},
                             {
-                                value.step: self._lift_numerical_limit(value.intermediate_value)
+                                value.step: models.TrialIntermediateValueModel.stored_repr_to_intermediate_value(  # noqa: E501
+                                    value.intermediate_value, value.intermediate_value_type
+                                )
                                 for value in intermediate
                             },
                             best_trial.trial_id,
@@ -784,34 +782,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         return param_value
 
-    @staticmethod
-    def _ensure_not_nan(value: float) -> Optional[float]:
-        if np.isnan(value):
-            return None
-        else:
-            return value
-
-    @staticmethod
-    def _ensure_numerical_limit(value: float) -> float:
-
-        # Max and min trial values that can be stored are limited by
-        # dialect. Most limiting one is MySQL which in current data
-        # model will store floats as single precision (32 bit).
-        # There is no support for +inf and -inf in this dialect.
-        return float(np.clip(value, _RDB_MIN_FLOAT, _RDB_MAX_FLOAT))
-
-    @staticmethod
-    def _lift_numerical_limit(value: Optional[float]) -> float:
-
-        # Floats can't be compared for equality because they are
-        # approximate and not stored as exact values.
-        # https://dev.mysql.com/doc/refman/8.0/en/problems-with-float.html
-        if value is None:
-            return float("nan")
-        elif np.isclose(value, _RDB_MIN_FLOAT) or np.isclose(value, _RDB_MAX_FLOAT):
-            return float(np.sign(value) * float("inf"))
-        return value
-
     @deprecated(
         "3.0.0",
         "5.0.0",
@@ -858,16 +828,17 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
-        value = self._ensure_numerical_limit(value)
+        stored_value, value_type = TrialValueModel.value_to_stored_repr(value)
 
         trial_value = models.TrialValueModel.find_by_trial_and_objective(trial, objective, session)
         if trial_value is None:
             trial_value = models.TrialValueModel(
-                trial_id=trial_id, objective=objective, value=value
+                trial_id=trial_id, objective=objective, value=stored_value, value_type=value_type
             )
             session.add(trial_value)
         else:
-            trial_value.value = value
+            trial_value.value = stored_value
+            trial_value.value_type = value_type
 
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
@@ -888,20 +859,27 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
-        _intermediate_value = self._ensure_not_nan(intermediate_value)
-        if _intermediate_value is not None:
-            _intermediate_value = self._ensure_numerical_limit(_intermediate_value)
 
+        (
+            stored_value,
+            value_type,
+        ) = models.TrialIntermediateValueModel.intermediate_value_to_stored_repr(
+            intermediate_value
+        )
         trial_intermediate_value = models.TrialIntermediateValueModel.find_by_trial_and_step(
             trial, step, session
         )
         if trial_intermediate_value is None:
             trial_intermediate_value = models.TrialIntermediateValueModel(
-                trial_id=trial_id, step=step, intermediate_value=_intermediate_value
+                trial_id=trial_id,
+                step=step,
+                intermediate_value=stored_value,
+                intermediate_value_type=value_type,
             )
             session.add(trial_intermediate_value)
         else:
-            trial_intermediate_value.intermediate_value = _intermediate_value
+            trial_intermediate_value.intermediate_value = stored_value
+            trial_intermediate_value.intermediate_value_type = value_type
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
 
@@ -1054,7 +1032,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         if trial.values:
             values = [0 for _ in trial.values]
             for value_model in trial.values:
-                values[value_model.objective] = self._lift_numerical_limit(value_model.value)
+                values[value_model.objective] = TrialValueModel.stored_repr_to_value(
+                    value_model.value, value_model.value_type
+                )
         else:
             values = None
 
@@ -1080,7 +1060,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 attr.key: json.loads(attr.value_json) for attr in trial.system_attributes
             },
             intermediate_values={
-                v.step: self._lift_numerical_limit(v.intermediate_value)
+                v.step: models.TrialIntermediateValueModel.stored_repr_to_intermediate_value(
+                    v.intermediate_value, v.intermediate_value_type
+                )
                 for v in trial.intermediate_values
             },
             trial_id=trial.trial_id,
@@ -1327,7 +1309,9 @@ class _VersionManager(object):
     def get_head_version(self) -> str:
 
         script = self._create_alembic_script()
-        return script.get_current_head()
+        current_head = script.get_current_head()
+        assert current_head is not None
+        return current_head
 
     def _get_base_version(self) -> str:
 

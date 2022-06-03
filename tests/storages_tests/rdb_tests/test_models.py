@@ -298,7 +298,14 @@ class TestTrialValueModel(object):
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
         session.add(study)
         session.add(trial)
-        session.add(TrialValueModel(trial_id=trial.trial_id, objective=0, value=10))
+        session.add(
+            TrialValueModel(
+                trial_id=trial.trial_id,
+                objective=0,
+                value=10,
+                value_type=TrialValueModel.TrialValueType.FINITE,
+            )
+        )
         session.commit()
         return trial
 
@@ -324,7 +331,11 @@ class TestTrialValueModel(object):
     def test_cascade_delete_on_trial(session: Session) -> None:
 
         trial = TestTrialValueModel._create_model(session)
-        trial.values.append(TrialValueModel(trial_id=1, objective=1, value=20))
+        trial.values.append(
+            TrialValueModel(
+                trial_id=1, objective=1, value=20, value_type=TrialValueModel.TrialValueType.FINITE
+            )
+        )
         session.commit()
 
         assert 2 == len(TrialValueModel.where_trial_id(trial.trial_id, session))
@@ -345,7 +356,12 @@ class TestTrialIntermediateValueModel(object):
         session.add(study)
         session.add(trial)
         session.add(
-            TrialIntermediateValueModel(trial_id=trial.trial_id, step=0, intermediate_value=10)
+            TrialIntermediateValueModel(
+                trial_id=trial.trial_id,
+                step=0,
+                intermediate_value=10,
+                intermediate_value_type=TrialIntermediateValueModel.TrialIntermediateValueType.FINITE,  # noqa: E501
+            )
         )
         session.commit()
         return trial
@@ -377,7 +393,12 @@ class TestTrialIntermediateValueModel(object):
 
         trial = TestTrialIntermediateValueModel._create_model(session)
         trial.intermediate_values.append(
-            TrialIntermediateValueModel(trial_id=1, step=1, intermediate_value=20)
+            TrialIntermediateValueModel(
+                trial_id=1,
+                step=1,
+                intermediate_value=20,
+                intermediate_value_type=TrialIntermediateValueModel.TrialIntermediateValueType.FINITE,  # noqa: E501
+            )
         )
         session.commit()
 

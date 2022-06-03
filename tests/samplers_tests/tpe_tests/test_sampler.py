@@ -974,18 +974,6 @@ def build_state_fn(state: optuna.trial.TrialState) -> Callable[[int], optuna.tri
     return state_fn
 
 
-def test_reseed_rng() -> None:
-    sampler = TPESampler()
-    original_seed = sampler._rng.seed
-
-    with patch.object(
-        sampler._random_sampler, "reseed_rng", wraps=sampler._random_sampler.reseed_rng
-    ) as mock_object:
-        sampler.reseed_rng()
-        assert mock_object.call_count == 1
-        assert original_seed != sampler._rng.seed
-
-
 def test_call_after_trial_of_random_sampler() -> None:
     sampler = TPESampler()
     study = optuna.create_study(sampler=sampler)

@@ -458,16 +458,6 @@ def test_study_system_attr_for_population_cache() -> None:
     assert len(cached_entries[0][1]) == 10  # Population size.
 
 
-def test_reseed_rng() -> None:
-    sampler = NSGAIISampler(population_size=10)
-    original_seed = sampler._rng.seed
-    original_random_sampler_seed = sampler._random_sampler._rng.seed
-
-    sampler.reseed_rng()
-    assert original_seed != sampler._rng.seed
-    assert original_random_sampler_seed != sampler._random_sampler._rng.seed
-
-
 def test_constraints_func_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         NSGAIISampler(constraints_func=lambda _: [0])

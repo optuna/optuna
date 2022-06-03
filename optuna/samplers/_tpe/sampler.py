@@ -306,7 +306,7 @@ class TPESampler(BaseSampler):
 
     def reseed_rng(self) -> None:
 
-        self._rng = np.random.RandomState()
+        self._rng.seed()
         self._random_sampler.reseed_rng()
 
     def infer_relative_search_space(

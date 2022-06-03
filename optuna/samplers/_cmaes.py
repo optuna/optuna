@@ -328,7 +328,7 @@ class CmaEsSampler(BaseSampler):
             optimizer = self._init_optimizer(trans, study.direction)
 
         if self._restart_strategy is None:
-            generation_attr_key = "cma:generation"  # for backward compatibility
+            generation_attr_key = "cma:generation"  # For backward compatibility.
         else:
             generation_attr_key = "cma:restart_{}:generation".format(n_restarts)
 
@@ -367,15 +367,15 @@ class CmaEsSampler(BaseSampler):
                     trans, study.direction, population_size=popsize, randomize_start_point=True
                 )
 
-            # Store optimizer
+            # Store optimizer.
             optimizer_str = pickle.dumps(optimizer).hex()
             optimizer_attrs = _split_optimizer_str(optimizer_str)
             for key in optimizer_attrs:
                 study._storage.set_trial_system_attr(trial._trial_id, key, optimizer_attrs[key])
 
-        # Caution: optimizer should update its seed value
+        # Caution: optimizer should update its seed value.
         seed = self._cma_rng.randint(1, 2**16) + trial.number
-        optimizer._rng = np.random.RandomState(seed)
+        optimizer._rng.seed(seed)
         params = optimizer.ask()
 
         study._storage.set_trial_system_attr(
