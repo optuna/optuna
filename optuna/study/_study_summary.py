@@ -12,7 +12,7 @@ from optuna.study._study_direction import StudyDirection
 _logger = logging.get_logger(__name__)
 
 
-class StudySummary(object):
+class StudySummary:
     """Basic attributes and aggregated results of a :class:`~optuna.study.Study`.
 
     See also :func:`optuna.study.get_all_study_summaries`.

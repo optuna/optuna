@@ -19,7 +19,7 @@ CategoricalChoiceType = Union[None, bool, int, float, str]
 
 
 @deprecated("2.4.0", "4.0.0")
-class MultiObjectiveTrial(object):
+class MultiObjectiveTrial:
     """A trial is a process of evaluating an objective function.
 
     This object is passed to an objective function and provides interfaces to get parameter
@@ -237,7 +237,7 @@ class MultiObjectiveTrial(object):
 
 
 @deprecated("2.4.0", "4.0.0")
-class FrozenMultiObjectiveTrial(object):
+class FrozenMultiObjectiveTrial:
     """Status and results of a :class:`~optuna.multi_objective.trial.MultiObjectiveTrial`.
 
     Attributes:

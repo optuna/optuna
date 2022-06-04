@@ -46,7 +46,7 @@ def test_convert_positional_args_mypy_type_inference() -> None:
     )
     assert callable(decorator_converter)
 
-    class _Sample(object):
+    class _Sample:
         def __init__(self) -> None:
             pass
 

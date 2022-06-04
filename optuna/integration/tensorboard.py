@@ -12,7 +12,7 @@ with try_import() as _imports:
 
 
 @experimental("2.0.0")
-class TensorBoardCallback(object):
+class TensorBoardCallback:
     """Callback to track Optuna trials with TensorBoard.
 
     This callback adds relevant information that is tracked by Optuna to TensorBoard.

@@ -24,7 +24,7 @@ class _TqdmLoggingHandler(logging.StreamHandler):
             self.handleError(record)
 
 
-class _ProgressBar(object):
+class _ProgressBar:
     """Progress Bar implementation for :func:`~optuna.study.Study.optimize` on the top of `tqdm`.
 
     Args:

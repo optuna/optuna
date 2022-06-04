@@ -8,7 +8,7 @@ from optuna.distributions import BaseDistribution
 from optuna.study import Study
 
 
-class IntersectionSearchSpace(object):
+class IntersectionSearchSpace:
     """A class to calculate the intersection search space of a :class:`~optuna.study.Study`.
 
     Intersection search space contains the intersection of parameter distributions that have been

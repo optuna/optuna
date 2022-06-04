@@ -6,7 +6,7 @@ with try_import() as _imports:
     import mxnet as mx
 
 
-class MXNetPruningCallback(object):
+class MXNetPruningCallback:
     """MXNet callback to prune unpromising trials.
 
     See `the example <https://github.com/optuna/optuna-examples/blob/main/

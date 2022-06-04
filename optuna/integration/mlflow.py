@@ -20,7 +20,7 @@ RUN_ID_ATTRIBUTE_KEY = "mlflow_run_id"
 
 
 @experimental("1.4.0")
-class MLflowCallback(object):
+class MLflowCallback:
     """Callback to track Optuna trials with MLflow.
 
     This callback adds relevant information that is

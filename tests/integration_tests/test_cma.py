@@ -26,7 +26,7 @@ def test_cmaes_deprecation_warning() -> None:
         optuna.integration.CmaEsSampler()
 
 
-class TestPyCmaSampler(object):
+class TestPyCmaSampler:
     @staticmethod
     def test_init_cma_opts() -> None:
 
@@ -138,7 +138,7 @@ class TestPyCmaSampler(object):
             assert mock_object.call_count == 1
 
 
-class TestOptimizer(object):
+class TestOptimizer:
     @staticmethod
     @pytest.fixture
     def search_space() -> Dict[str, BaseDistribution]:

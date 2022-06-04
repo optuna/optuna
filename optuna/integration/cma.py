@@ -302,7 +302,7 @@ class PyCmaSampler(BaseSampler):
         self._independent_sampler.after_trial(study, trial, state, values)
 
 
-class _Optimizer(object):
+class _Optimizer:
     def __init__(
         self,
         search_space: Dict[str, BaseDistribution],

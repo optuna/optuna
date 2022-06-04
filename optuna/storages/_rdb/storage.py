@@ -1214,7 +1214,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         return self.failed_trial_callback
 
 
-class _VersionManager(object):
+class _VersionManager:
     def __init__(
         self,
         url: str,

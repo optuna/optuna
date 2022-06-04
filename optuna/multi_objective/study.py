@@ -207,7 +207,7 @@ def load_study(
 
 
 @deprecated("2.4.0", "4.0.0")
-class MultiObjectiveStudy(object):
+class MultiObjectiveStudy:
     """A study corresponds to a multi-objective optimization task, i.e., a set of trials.
 
     This object provides interfaces to run a new

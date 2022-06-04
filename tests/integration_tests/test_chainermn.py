@@ -40,7 +40,7 @@ STORAGE_MODES = ["sqlite"]
 PRUNER_INIT_FUNCS = [lambda: pruners.MedianPruner(), lambda: pruners.SuccessiveHalvingPruner()]
 
 
-class Func(object):
+class Func:
     def __init__(self) -> None:
 
         self.suggested_values: Dict[int, Dict[str, Any]] = {}
@@ -101,7 +101,7 @@ def comm() -> CommunicatorBase:
     return chainermn.create_communicator("naive")
 
 
-class TestChainerMNStudy(object):
+class TestChainerMNStudy:
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     def test_init(storage_mode: str, comm: CommunicatorBase) -> None:
@@ -268,7 +268,7 @@ class TestChainerMNStudy(object):
             pytest.skip("This test is for multi-node only.")
 
 
-class TestChainerMNTrial(object):
+class TestChainerMNTrial:
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     def test_init(storage_mode: str, comm: CommunicatorBase) -> None:

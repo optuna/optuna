@@ -6,7 +6,7 @@ with optuna._imports.try_import() as _imports:
     from ignite.engine import Engine
 
 
-class PyTorchIgnitePruningHandler(object):
+class PyTorchIgnitePruningHandler:
     """PyTorch Ignite handler to prune unpromising trials.
 
     See `the example <https://github.com/optuna/optuna-examples/blob/main/
