@@ -687,6 +687,87 @@ def test_enqueue_trial_with_out_of_range_parameters(storage_mode: str) -> None:
         assert t.params["x"] == fixed_value
 
 
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_enqueue_trial_skips_existing_finished(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        assert len(study.trials) == 0
+
+        def objective(trial: Trial) -> float:
+
+            x = trial.suggest_int("x", -10, 10)
+            y = trial.suggest_int("y", -10, 10)
+            return x**2 + y**2
+
+        study.enqueue_trial({"x": -5, "y": 5})
+        study.optimize(objective, n_trials=1)
+
+        t0 = study.trials[0]
+        assert t0.params["x"] == -5
+        assert t0.params["y"] == 5
+
+        with pytest.warns(RuntimeWarning):
+            study.enqueue_trial({"x": -5, "y": 5})
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_enqueue_trial_skips_existing_waiting(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        assert len(study.trials) == 0
+
+        def objective(trial: Trial) -> float:
+
+            x = trial.suggest_int("x", -10, 10)
+            y = trial.suggest_int("y", -10, 10)
+            return x**2 + y**2
+
+        study.enqueue_trial({"x": -5, "y": 5})
+        with pytest.warns(RuntimeWarning):
+            study.enqueue_trial({"x": -5, "y": 5})
+
+        study.optimize(objective, n_trials=1)
+        t0 = study.trials[0]
+        assert t0.params["x"] == -5
+        assert t0.params["y"] == 5
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+@pytest.mark.parametrize("new_params", [{"x": -5, "y": 5, "z": 5}, {"x": -5}, {"x": -5, "z": 5}])
+def test_enqueue_trial_skip_existing_allows_unfixed(
+    storage_mode: str, new_params: Dict[str, int]
+) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        assert len(study.trials) == 0
+
+        def objective(trial: Trial) -> float:
+
+            x = trial.suggest_int("x", -10, 10)
+            y = trial.suggest_int("y", -10, 10)
+            if trial.number == 1:
+                z = trial.suggest_int("z", -10, 10)
+                return x**2 + y**2 + z**2
+            return x**2 + y**2
+
+        study.enqueue_trial({"x": -5, "y": 5})
+        study.optimize(objective, n_trials=1)
+        t0 = study.trials[0]
+        assert t0.params["x"] == -5
+        assert t0.params["y"] == 5
+
+        study.enqueue_trial(new_params)
+        study.optimize(objective, n_trials=1)
+
+        unfixed_params = {"x", "y", "z"} - set(new_params)
+        t1 = study.trials[1]
+        assert all(t1.params[k] == new_params[k] for k in new_params)
+        assert all(-10 <= t1.params[k] <= 10 for k in unfixed_params)
+
+
 @patch("optuna.study._optimize.gc.collect")
 def test_optimize_with_gc(collect_mock: Mock) -> None:
 

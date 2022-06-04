@@ -14,6 +14,8 @@ from typing import TYPE_CHECKING
 from typing import Union
 import warnings
 
+import numpy as np
+
 from optuna import exceptions
 from optuna import logging
 from optuna import pruners
@@ -753,7 +755,10 @@ class Study:
         self._stop_flag = True
 
     def enqueue_trial(
-        self, params: Dict[str, Any], user_attrs: Optional[Dict[str, Any]] = None
+        self,
+        params: Dict[str, Any],
+        user_attrs: Optional[Dict[str, Any]] = None,
+        skip_if_exists: bool = True,
     ) -> None:
         """Enqueue a trial with given parameter values.
 
@@ -786,12 +791,18 @@ class Study:
                 Parameter values to pass your objective function.
             user_attrs:
                 A dictionary of user-specific attributes other than ``params``.
+            skip_if_exists:
+                When :obj:`True`, prevents duplicate trials from being enqueued again.
 
         .. seealso::
 
             Please refer to :ref:`enqueue_trial_tutorial` for the tutorial of specifying
             hyperparameters manually.
         """
+
+        if skip_if_exists:
+            if self._should_skip_enqueue(params):
+                return
 
         self.add_trial(
             create_trial(
@@ -927,6 +938,31 @@ class Study:
             return trial._trial_id
 
         return None
+
+    def _should_skip_enqueue(self, params: Dict[str, Any]) -> bool:
+
+        for trial in self.get_trials(deepcopy=False):
+            trial_params = trial.system_attrs.get("fixed_params", trial.params)
+            if trial_params.keys() != params.keys():
+                continue
+
+            try:
+                trial_exists = all(np.isclose(trial_params[p], params[p]) for p in params)
+                if trial_exists:
+                    warnings.warn(
+                        f"Trial with params {params} already exists. Skipping enqueue.",
+                        RuntimeWarning,
+                    )
+                    return True
+
+            except TypeError:
+                # One of the enqueued params has distribution that does not match
+                # existing param (e.g. trying to enqueue categorical to float param).
+                # We are not doing anything about it here, since sanitization should
+                # be handled regardless if `skip_if_exists` is `True`.
+                pass
+
+        return False
 
     @deprecated("2.5.0", "4.0.0")
     def _ask(self) -> trial_module.Trial:
