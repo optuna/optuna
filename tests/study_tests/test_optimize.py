@@ -71,14 +71,14 @@ def test_run_trial_automatically_fail(storage_mode: str, caplog: LogCaptureFixtu
         assert "The value nan is not acceptable." in caplog.text
 
         caplog.clear()
-        frozen_trial = _optimize._run_trial(study, lambda _: None, catch=())  # type: ignore[arg-type, return-value] # noqa: E501
+        frozen_trial = _optimize._run_trial(study, lambda _: None, catch=())  # type: ignore[arg-type,return-value] # noqa: E501
         assert frozen_trial.state == TrialState.FAIL
         assert frozen_trial.value is None
         assert "Trial 1 failed because of the following error:" in caplog.text
         assert "The value None could not be cast to float." in caplog.text
 
         caplog.clear()
-        frozen_trial = _optimize._run_trial(study, lambda _: object(), catch=())  # type: ignore[arg-type, return-value] # noqa: E501
+        frozen_trial = _optimize._run_trial(study, lambda _: object(), catch=())  # type: ignore[arg-type,return-value] # noqa: E501
         assert frozen_trial.state == TrialState.FAIL
         assert frozen_trial.value is None
         assert "Trial 2 failed because of the following error:" in caplog.text
