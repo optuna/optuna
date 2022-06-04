@@ -65,7 +65,7 @@ def experimental(version: str, name: Optional[str] = None) -> Any:
                     stacklevel=2,
                 )
 
-                return func(*args, **kwargs)  # type: ignore
+                return func(*args, **kwargs)
 
             return new_func
 
@@ -77,7 +77,7 @@ def experimental(version: str, name: Optional[str] = None) -> Any:
             _original_init = cls.__init__
 
             @functools.wraps(_original_init)
-            def wrapped_init(self, *args, **kwargs) -> None:  # type: ignore
+            def wrapped_init(self: Any, *args: Any, **kwargs: Any) -> None:
                 warnings.warn(
                     "{} is experimental (supported from v{}). "
                     "The interface can change in the future.".format(

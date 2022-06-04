@@ -106,7 +106,7 @@ def deprecated(
                     message += " " + text
                 warnings.warn(message, FutureWarning, stacklevel=2)
 
-                return func(*args, **kwargs)  # type: ignore
+                return func(*args, **kwargs)
 
             return new_func
 
@@ -118,7 +118,7 @@ def deprecated(
             _original_init = cls.__init__
 
             @functools.wraps(_original_init)
-            def wrapped_init(self, *args, **kwargs) -> None:  # type: ignore
+            def wrapped_init(self: Any, *args: Any, **kwargs: Any) -> None:
                 message = _DEPRECATION_WARNING_TEMPLATE.format(
                     name=(name if name is not None else cls.__name__),
                     d_ver=deprecated_version,

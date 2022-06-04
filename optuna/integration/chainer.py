@@ -11,7 +11,7 @@ with optuna._imports.try_import() as _imports:
     from chainer.training.triggers import ManualScheduleTrigger
 
 if not _imports.is_successful():
-    Extension = object  # type: ignore # NOQA
+    Extension = object  # NOQA
 
 
 class ChainerPruningExtension(Extension):
@@ -69,10 +69,10 @@ class ChainerPruningExtension(Extension):
         _imports.check()
 
         if isinstance(observation_value, chainer.Variable):
-            observation_value = observation_value.data  # type: ignore
+            observation_value = observation_value.data
 
         try:
-            observation_value = float(observation_value)  # type: ignore
+            observation_value = float(observation_value)
         except TypeError:
             raise TypeError(
                 "Type of observation value is not supported by ChainerPruningExtension.\n"
