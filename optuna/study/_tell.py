@@ -188,8 +188,6 @@ def _tell_with_warning(
         # Sampler defined trial post-processing.
         study = pruners._filter_study(study, frozen_trial)
         study.sampler.after_trial(study, frozen_trial, state, values)
-    except Exception:
-        raise
     finally:
         study._storage.set_trial_state_values(trial_id, state, values)
 
