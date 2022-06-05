@@ -800,9 +800,8 @@ class Study:
             hyperparameters manually.
         """
 
-        if skip_if_exists:
-            if self._should_skip_enqueue(params):
-                return
+        if skip_if_exists and self._should_skip_enqueue(params):
+            return
 
         self.add_trial(
             create_trial(
