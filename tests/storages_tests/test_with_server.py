@@ -128,6 +128,23 @@ def test_store_infinite_values(input_value: float, expected: float, storage_url:
     assert storage.get_trial(trial_id).intermediate_values[1] == expected
 
 
+def test_store_nan_intermediate_values(storage_url: str) -> None:
+
+    storage: Union[RDBStorage, RedisStorage]
+    if storage_url.startswith("redis"):
+        storage = optuna.storages.RedisStorage(url=storage_url)
+    else:
+        storage = optuna.storages.RDBStorage(url=storage_url)
+    study_id = storage.create_new_study()
+    trial_id = storage.create_new_trial(study_id)
+
+    value = float("nan")
+    storage.set_trial_intermediate_value(trial_id, 1, value)
+
+    got_value = storage.get_trial(trial_id).intermediate_values[1]
+    assert np.isnan(got_value)
+
+
 def test_multiprocess(storage_url: str) -> None:
     n_workers = 8
     study_name = _STUDY_NAME

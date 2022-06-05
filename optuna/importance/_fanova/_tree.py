@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     import sklearn.tree
 
 
-class _FanovaTree(object):
+class _FanovaTree:
     def __init__(self, tree: "sklearn.tree._tree.Tree", search_spaces: numpy.ndarray) -> None:
         assert search_spaces.shape[0] == tree.n_features
         assert search_spaces.shape[1] == 2
@@ -33,13 +33,7 @@ class _FanovaTree(object):
     @property
     def variance(self) -> float:
         if self._variance is None:
-            leaf_node_indices = numpy.array(
-                [
-                    node_index
-                    for node_index in range(self._n_nodes)
-                    if self._is_node_leaf(node_index)
-                ]
-            )
+            leaf_node_indices = numpy.nonzero(numpy.array(self._tree.feature) < 0)[0]
             statistics = self._statistics[leaf_node_indices]
             values = statistics[:, 0]
             weights = statistics[:, 1]

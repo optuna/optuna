@@ -6,6 +6,7 @@ from typing import Optional
 
 import optuna
 from optuna._experimental import experimental_func
+from optuna.storages import BaseStorage
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -87,7 +88,7 @@ def fail_stale_trials(study: "optuna.Study") -> None:
     if not isinstance(storage, BaseHeartbeat):
         return
 
-    if not storage.is_heartbeat_enabled():
+    if not is_heartbeat_enabled(storage):
         return
 
     failed_trial_ids = []
@@ -100,3 +101,14 @@ def fail_stale_trials(study: "optuna.Study") -> None:
         for trial_id in failed_trial_ids:
             failed_trial = copy.deepcopy(storage.get_trial(trial_id))
             failed_trial_callback(study, failed_trial)
+
+
+def is_heartbeat_enabled(storage: BaseStorage) -> bool:
+    """Check whether the storage enables the heartbeat.
+
+    Returns:
+        :obj:`True` if the storage also inherits :class:`~optuna.storages._heartbeat.BaseHeartbeat`
+        and the return value of :meth:`~optuna.storages.BaseStorage.get_heartbeat_interval` is an
+        integer, otherwise :obj:`False`.
+    """
+    return isinstance(storage, BaseHeartbeat) and storage.get_heartbeat_interval() is not None

@@ -11,15 +11,17 @@ jobs:
 
     if: github.repository == 'optuna/optuna'
     steps:
-    - uses: actions/stale@v3
+    - uses: actions/stale@v5
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         stale-issue-message: 'This issue has not seen any recent activity.'
         stale-pr-message: 'This pull request has not seen any recent activity.'
         close-issue-message: 'This issue was closed automatically because it had not seen any recent activity. If you want to discuss it, you can reopen it freely.'
         close-pr-message: 'This pull request was closed automatically because it had not seen any recent activity. If you want to discuss it, you can reopen it freely.'
-        days-before-stale: 14
-        days-before-close: 100
+        days-before-issue-stale: 14
+        days-before-issue-close: 100
+        days-before-pr-stale: 7
+        days-before-pr-close: 14
         stale-issue-label: 'stale'
         stale-pr-label: 'stale'
         exempt-issue-labels: 'no-stale'

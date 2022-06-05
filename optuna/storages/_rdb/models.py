@@ -1,7 +1,9 @@
 import enum
+import math
 from typing import Any
 from typing import List
 from typing import Optional
+from typing import Tuple
 
 from sqlalchemy import asc
 from sqlalchemy import CheckConstraint
@@ -411,16 +413,47 @@ class TrialParamModel(BaseModel):
 
 
 class TrialValueModel(BaseModel):
+    class TrialValueType(enum.Enum):
+        FINITE = 1
+        INF_POS = 2
+        INF_NEG = 3
+
     __tablename__ = "trial_values"
     __table_args__: Any = (UniqueConstraint("trial_id", "objective"),)
     trial_value_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
     objective = Column(Integer, nullable=False)
-    value = Column(Float(precision=FLOAT_PRECISION), nullable=False)
+    value = Column(Float(precision=FLOAT_PRECISION), nullable=True)
+    value_type = Column(Enum(TrialValueType), nullable=False)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("values", cascade="all, delete-orphan")
     )
+
+    @classmethod
+    def value_to_stored_repr(
+        cls,
+        value: float,
+    ) -> Tuple[Optional[float], TrialValueType]:
+        if value == float("inf"):
+            return (None, cls.TrialValueType.INF_POS)
+        elif value == float("-inf"):
+            return (None, cls.TrialValueType.INF_NEG)
+        else:
+            return (value, cls.TrialValueType.FINITE)
+
+    @classmethod
+    def stored_repr_to_value(cls, value: Optional[float], float_type: TrialValueType) -> float:
+        if float_type == cls.TrialValueType.INF_POS:
+            assert value is None
+            return float("inf")
+        elif float_type == cls.TrialValueType.INF_NEG:
+            assert value is None
+            return float("-inf")
+        else:
+            assert float_type == cls.TrialValueType.FINITE
+            assert value is not None
+            return value
 
     @classmethod
     def find_by_trial_and_objective(
@@ -447,10 +480,11 @@ class TrialValueModel(BaseModel):
 
 
 class TrialIntermediateValueModel(BaseModel):
-    class FloatTypeEnum(enum.Enum):
-        FINITE_OR_NAN = 1
+    class TrialIntermediateValueType(enum.Enum):
+        FINITE = 1
         INF_POS = 2
         INF_NEG = 3
+        NAN = 4
 
     __tablename__ = "trial_intermediate_values"
     __table_args__: Any = (UniqueConstraint("trial_id", "step"),)
@@ -458,11 +492,43 @@ class TrialIntermediateValueModel(BaseModel):
     trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
     step = Column(Integer, nullable=False)
     intermediate_value = Column(Float(precision=FLOAT_PRECISION), nullable=True)
-    intermediate_value_type = Column(Enum(FloatTypeEnum), nullable=False)
+    intermediate_value_type = Column(Enum(TrialIntermediateValueType), nullable=False)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("intermediate_values", cascade="all, delete-orphan")
     )
+
+    @classmethod
+    def intermediate_value_to_stored_repr(
+        cls,
+        value: float,
+    ) -> Tuple[Optional[float], TrialIntermediateValueType]:
+        if math.isnan(value):
+            return (None, cls.TrialIntermediateValueType.NAN)
+        elif value == float("inf"):
+            return (None, cls.TrialIntermediateValueType.INF_POS)
+        elif value == float("-inf"):
+            return (None, cls.TrialIntermediateValueType.INF_NEG)
+        else:
+            return (value, cls.TrialIntermediateValueType.FINITE)
+
+    @classmethod
+    def stored_repr_to_intermediate_value(
+        cls, value: Optional[float], float_type: TrialIntermediateValueType
+    ) -> float:
+        if float_type == cls.TrialIntermediateValueType.NAN:
+            assert value is None
+            return float("nan")
+        elif float_type == cls.TrialIntermediateValueType.INF_POS:
+            assert value is None
+            return float("inf")
+        elif float_type == cls.TrialIntermediateValueType.INF_NEG:
+            assert value is None
+            return float("-inf")
+        else:
+            assert float_type == cls.TrialIntermediateValueType.FINITE
+            assert value is not None
+            return value
 
     @classmethod
     def find_by_trial_and_step(
