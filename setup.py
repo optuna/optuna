@@ -52,7 +52,15 @@ def get_extras_require() -> Dict[str, List[str]]:
     requirements = {
         # TODO(HideakiImamura) Unpin mypy version after fixing "Duplicate modules" error in
         # tutorials.
-        "checking": ["black==21.9b0", "hacking", "isort", "mypy==0.790", "blackdoc"],
+        "checking": [
+            "black==21.9b0",
+            # black requires click v7, not v8.
+            "click<=7.1.2",
+            "hacking",
+            "isort",
+            "mypy==0.790",
+            "blackdoc",
+        ],
         "codecov": ["codecov", "pytest-cov"],
         "doctest": [
             "cma",
