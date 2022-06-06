@@ -89,6 +89,8 @@ def get_extras_require() -> Dict[str, List[str]]:
         ],
         "experimental": ["redis"],
         "testing": [
+            # bokeh v1 does not works with Jinja v3.
+            "Jinja2<3.0.0",
             # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
             # https://github.com/optuna/optuna/issues/1000.
             "bokeh<2.0.0",
@@ -134,6 +136,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytest",
         ],
         "optional": [
+            # bokeh v1 does not works with Jinja v3.
+            "Jinja2<3.0.0",
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
             "matplotlib>=3.0.0",  # optuna/visualization/matplotlib
             "pandas",  # optuna/study.py
