@@ -131,7 +131,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytorch-ignite",
             "pytorch-lightning>=1.0.2",
             "skorch",
-            "catalyst>=21.3",
+            # The integration module does not work with catalyst v22.
+            "catalyst>=21.3,<=21.9",
             "torch==1.8.0 ; sys_platform=='darwin'",
             "torch==1.8.0+cpu ; sys_platform!='darwin'",
             "torchvision==0.9.0 ; sys_platform=='darwin'",
@@ -186,7 +187,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytorch-ignite",
             "pytorch-lightning>=1.0.2",
             "skorch",
-            "catalyst>=21.3",
+            # The integration module does not work with catalyst v22.
+            "catalyst>=21.3,<=21.9",
             "torch==1.8.0 ; sys_platform=='darwin'",
             "torch==1.8.0+cpu ; sys_platform!='darwin'",
             "torchvision==0.9.0 ; sys_platform=='darwin'",
