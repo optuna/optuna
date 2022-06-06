@@ -28,14 +28,14 @@ def get_long_description() -> str:
 def get_install_requires() -> List[str]:
 
     requirements = [
-        "alembic",
+        "alembic<=1.4.1",
         "cliff",
         "cmaes>=0.8.2",
         "colorlog",
         "numpy",
         "packaging>=20.0",
         "scipy!=1.4.0",
-        "sqlalchemy>=1.1.0",
+        "sqlalchemy>=1.1.0,<=1.4.25",
         "tqdm",
         "PyYAML",  # Only used in `optuna/cli.py`.
     ]
