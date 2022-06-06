@@ -78,11 +78,11 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mlflow<=1.20.2",
         ],
         "document": [
-            "sphinx",
-            "sphinx_rtd_theme",
-            "sphinx-copybutton",
-            "sphinx-gallery",
-            "sphinx-plotly-directive",
+            "sphinx<=3.5.4",
+            "sphinx_rtd_theme<=1.0.0",
+            "sphinx-copybutton<=0.4.0",
+            "sphinx-gallery<=0.10.0",
+            "sphinx-plotly-directive<=0.1.3",
             "pillow",
             "matplotlib",
             # TODO(nzw0301) remove the constraint of sklearn `1.0.0`
