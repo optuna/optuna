@@ -9,7 +9,7 @@ import torch.distributed as dist
 
 import optuna
 from optuna.integration import TorchDistributedTrial
-from optuna.testing.integration import DeterministicPruner
+from optuna.testing.pruner import DeterministicPruner
 from optuna.testing.storage import STORAGE_MODES
 from optuna.testing.storage import StorageSupplier
 
