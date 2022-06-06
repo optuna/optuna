@@ -80,6 +80,8 @@ def get_extras_require() -> Dict[str, List[str]]:
         "document": [
             # bokeh v1 does not works with Jinja v3.
             "Jinja2<3.0.0",
+            # Jinja2 v2 requires the following MarkupSafe.
+            "MarkupSafe<=2.0.1",
             "sphinx<=3.5.4",
             "sphinx_rtd_theme<=1.0.0",
             "sphinx-copybutton<=0.4.0",
