@@ -74,7 +74,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             # https://github.com/mlflow/mlflow/pull/5945
             "protobuf<4.0.0",
             "scikit-optimize",
-            "mlflow",
+            # See https://github.com/optuna/optuna/issues/3136
+            "mlflow<=1.20.2",
         ],
         "document": [
             "sphinx",
@@ -110,7 +111,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "fakeredis ; python_version>='3.8'",
             "lightgbm<=3.2.1",
             "matplotlib>=3.0.0",
-            "mlflow",
+            # See https://github.com/optuna/optuna/issues/3136
+            "mlflow<=1.20.2",
             "mpi4py",
             "mxnet",
             "pandas",
@@ -168,7 +170,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "chainer>=5.0.0",
             "cma",
             "lightgbm<=3.2.1",
-            "mlflow",
+            # See https://github.com/optuna/optuna/issues/3136
+            "mlflow<=1.20.2",
             "wandb",
             "mpi4py",
             "mxnet",
