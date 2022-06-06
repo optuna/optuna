@@ -97,6 +97,8 @@ def get_extras_require() -> Dict[str, List[str]]:
         ],
         "experimental": ["redis"],
         "testing": [
+            # bokeh v1 does not works with MarkupSafe 2.1.
+            "MarkupSafe<=2.0.1",
             # bokeh v1 does not works with Jinja v3.
             "Jinja2<3.0.0",
             # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
@@ -144,6 +146,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytest",
         ],
         "optional": [
+            # bokeh v1 does not works with MarkupSafe 2.1.
+            "MarkupSafe<=2.0.1",
             # bokeh v1 does not works with Jinja v3.
             "Jinja2<3.0.0",
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
