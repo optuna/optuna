@@ -78,6 +78,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mlflow<=1.20.2",
         ],
         "document": [
+            # bokeh v1 does not works with Jinja v3.
+            "Jinja2<3.0.0",
             "sphinx<=3.5.4",
             "sphinx_rtd_theme<=1.0.0",
             "sphinx-copybutton<=0.4.0",
