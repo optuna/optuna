@@ -129,7 +129,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "nltk<3.6.6",
             "allennlp>=2.2.0,<2.7.0",
             "botorch>=0.4.0 ; python_version>'3.6'",
-            "fastai",
+            "fastai<=2.5.2",
         ],
         "tests": [
             "fakeredis",
@@ -180,7 +180,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "nltk<3.6.6",
             "allennlp>=2.2.0,<2.7.0",
             "botorch>=0.4.0 ; python_version>'3.6'",
-            "fastai",
+            "fastai<=2.5.2",
         ],
         "benchmark": [
             "asv",
