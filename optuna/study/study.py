@@ -14,8 +14,6 @@ from typing import TYPE_CHECKING
 from typing import Union
 import warnings
 
-import numpy as np
-
 from optuna import exceptions
 from optuna import logging
 from optuna import pruners
@@ -942,25 +940,12 @@ class Study:
 
         for trial in self.get_trials(deepcopy=False):
             trial_params = trial.system_attrs.get("fixed_params", trial.params)
-            if trial_params.keys() != params.keys():
-                continue
-
-            try:
-                trial_exists = all(np.isclose(trial_params[p], params[p]) for p in params)
-                if trial_exists:
-                    warnings.warn(
-                        f"Trial with params {params} already exists. Skipping enqueue.",
-                        RuntimeWarning,
-                    )
-                    return True
-
-            except TypeError:
-                # One of the enqueued params has distribution that does not match
-                # existing param (e.g. trying to enqueue categorical to float param).
-                # We are not doing anything about it here, since sanitization should
-                # be handled regardless if `skip_if_exists` is `True`.
-                pass
-
+            if trial_params == params:
+                warnings.warn(
+                    f"Trial with params {params} already exists. Skipping enqueue.",
+                    RuntimeWarning,
+                )
+                return True
         return False
 
     @deprecated("2.5.0", "4.0.0")

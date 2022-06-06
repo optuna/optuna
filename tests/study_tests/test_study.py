@@ -768,6 +768,17 @@ def test_enqueue_trial_skip_existing_allows_unfixed(
         assert all(-10 <= t1.params[k] <= 10 for k in unfixed_params)
 
 
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+@pytest.mark.parametrize("param", ["foo", 1, 1.1])
+def test_enqueue_trial_skip_existing_handles_common_types(storage_mode: str, param: Any) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        study.enqueue_trial({"x": param})
+        with pytest.warns(RuntimeWarning):
+            study.enqueue_trial({"x": param})
+
+
 @patch("optuna.study._optimize.gc.collect")
 def test_optimize_with_gc(collect_mock: Mock) -> None:
 
