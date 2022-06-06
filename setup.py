@@ -89,7 +89,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-learn<1.0.0",
             "plotly>=4.0.0",  # optuna/visualization.
             "pandas",
-            "lightgbm",
+            "lightgbm<=3.2.1",
             "torch==1.8.0",
             "torchvision==0.9.0",
             "torchaudio==0.8.0",
@@ -105,7 +105,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "chainer>=5.0.0",
             "cma",
             "fakeredis",
-            "lightgbm",
+            "lightgbm<=3.2.1",
             "matplotlib>=3.0.0",
             "mlflow",
             "mpi4py",
@@ -161,7 +161,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             # https://github.com/optuna/optuna/issues/1000.
             "chainer>=5.0.0",
             "cma",
-            "lightgbm",
+            "lightgbm<=3.2.1",
             "mlflow",
             "wandb",
             "mpi4py",
