@@ -792,6 +792,10 @@ class Study:
             skip_if_exists:
                 When :obj:`True`, prevents duplicate trials from being enqueued again.
 
+                .. note::
+                    This method might produce duplicated trials if called simultaneously
+                    by multiple processes at the same time with same ``params`` dict.
+
         .. seealso::
 
             Please refer to :ref:`enqueue_trial_tutorial` for the tutorial of specifying
