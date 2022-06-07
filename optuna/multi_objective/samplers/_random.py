@@ -4,12 +4,12 @@ from typing import Optional
 
 import optuna
 from optuna import multi_objective
-from optuna._deprecated import deprecated
+from optuna._deprecated import deprecated_class
 from optuna.distributions import BaseDistribution
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
 
 
-@deprecated("2.4.0", "4.0.0")
+@deprecated_class("2.4.0", "4.0.0")
 class RandomMultiObjectiveSampler(BaseMultiObjectiveSampler):
     """Multi-objective sampler using random sampling.
 

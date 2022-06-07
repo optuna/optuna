@@ -8,7 +8,7 @@ import numpy as np
 
 import optuna
 from optuna import logging
-from optuna._experimental import experimental
+from optuna._experimental import experimental_class
 from optuna._imports import _LazyImport
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
@@ -24,7 +24,7 @@ _logger = logging.get_logger(__name__)
 _SUGGESTED_STATES = (TrialState.COMPLETE, TrialState.PRUNED)
 
 
-@experimental("3.0.0")
+@experimental_class("3.0.0")
 class QMCSampler(BaseSampler):
     """A Quasi Monte Carlo Sampler that generates low-discrepancy sequences.
 

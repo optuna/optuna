@@ -12,7 +12,7 @@ from typing import Union
 import warnings
 
 import optuna
-from optuna._experimental import experimental
+from optuna._experimental import experimental_func
 from optuna.study import Study
 from optuna.study._multi_objective import _get_pareto_front_trials_by_trials
 from optuna.trial import FrozenTrial
@@ -35,7 +35,7 @@ class _ParetoFrontInfo(NamedTuple):
     axis_order: Sequence[int]
 
 
-@experimental("2.4.0")
+@experimental_func("2.4.0")
 def plot_pareto_front(
     study: Study,
     *,
