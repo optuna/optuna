@@ -69,7 +69,7 @@ def make_plots(args: argparse.Namespace) -> None:
     fig.set_size_inches(12, 8)
     warmup = json.loads(args.plot_warmup)
     metric = df.metric[0]
-    color_lookup = build_color_dict(df["opt"].unique())
+    color_lookup = build_color_dict(sorted(df["opt"].unique()))
 
     for optimizer, summary in summaries.groupby("opt"):
         color = color_lookup[optimizer]
