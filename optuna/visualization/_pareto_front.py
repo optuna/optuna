@@ -13,6 +13,7 @@ import warnings
 
 import optuna
 from optuna._experimental import experimental
+from optuna.exceptions import ExperimentalWarning
 from optuna.study import Study
 from optuna.study._multi_objective import _get_pareto_front_trials_by_trials
 from optuna.trial import FrozenTrial
@@ -99,6 +100,11 @@ def plot_pareto_front(
             If given, trials are classified into three categories: feasible and best, feasible but
             non-best, and infeasible. Categories are shown in different colors. Here, whether a
             trial is best (on Pareto front) or not is determined ignoring all infeasible trials.
+
+            .. note::
+                Added in v3.0.0 as an experimental feature. The interface may change in newer
+                versions without prior notice.
+                See https://github.com/optuna/optuna/releases/tag/v3.0.0.
         targets:
             A function that returns targets values to display.
             The argument to this function is :class:`~optuna.trial.FrozenTrial`.
@@ -140,6 +146,12 @@ def plot_pareto_front(
             ),
         ]
     else:
+        warnings.warn(
+            "``constraint_func`` argument is an experimental feature."
+            " The interface can change in the future.",
+            ExperimentalWarning,
+        )
+
         data = [
             _make_scatter_object(
                 info.n_targets,
