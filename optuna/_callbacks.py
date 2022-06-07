@@ -3,7 +3,8 @@ from typing import List
 from typing import Optional
 
 import optuna
-from optuna._experimental import experimental
+from optuna._experimental import experimental_class
+from optuna._experimental import experimental_func
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -59,7 +60,7 @@ class MaxTrialsCallback:
             study.stop()
 
 
-@experimental("2.8.0")
+@experimental_class("2.8.0")
 class RetryFailedTrialCallback:
     """Retry a failed trial up to a maximum number of times.
 
@@ -134,7 +135,7 @@ class RetryFailedTrialCallback:
         )
 
     @staticmethod
-    @experimental("2.8.0")
+    @experimental_func("2.8.0")
     def retried_trial_number(trial: FrozenTrial) -> Optional[int]:
         """Return the number of the original trial being retried.
 
@@ -150,7 +151,7 @@ class RetryFailedTrialCallback:
         return trial.system_attrs.get("failed_trial", None)
 
     @staticmethod
-    @experimental("3.0.0")
+    @experimental_func("3.0.0")
     def retry_history(trial: FrozenTrial) -> List[int]:
         """Return the list of retried trial numbers with respect to the specified trial.
 
