@@ -45,7 +45,7 @@ def experimental_func(
 
     Args:
         version: The first version that supports the target feature.
-        name: The name of the feature. Defaults to the function or class name. Optional.
+        name: The name of the feature. Defaults to the function name. Optional.
     """
 
     _validate_version(version)
@@ -80,6 +80,12 @@ def experimental_class(
     version: str,
     name: Optional[str] = None,
 ) -> Callable[[CT], CT]:
+    """Decorate class as experimental.
+
+    Args:
+        version: The first version that supports the target feature.
+        name: The name of the feature. Defaults to the class name. Optional.
+    """
 
     _validate_version(version)
 

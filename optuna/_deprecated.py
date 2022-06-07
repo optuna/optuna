@@ -61,7 +61,7 @@ def deprecated_func(
         removed_version:
             The version in which the target feature will be removed.
         name:
-            The name of the feature. Defaults to the function or class name. Optional.
+            The name of the feature. Defaults to the function name. Optional.
         text:
             The additional text for the deprecation note. The default note is build using specified
             ``deprecated_version`` and ``removed_version``. If you want to provide additional
@@ -128,7 +128,7 @@ def deprecated_class(
         removed_version:
             The version in which the target feature will be removed.
         name:
-            The name of the feature. Defaults to the function or class name. Optional.
+            The name of the feature. Defaults to the class name. Optional.
         text:
             The additional text for the deprecation note. The default note is build using specified
             ``deprecated_version`` and ``removed_version``. If you want to provide additional
