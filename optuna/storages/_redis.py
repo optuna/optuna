@@ -390,7 +390,7 @@ class RedisStorage(BaseStorage, BaseHeartbeat):
             study_summary.n_trials = len(self._get_study_trials(study_id))
             min_datetime_start = min(
                 [
-                    cast(datetime, t.datetime_start)
+                    t.datetime_start
                     for t in self.get_all_trials(study_id)
                     if t.datetime_start is not None
                 ],

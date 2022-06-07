@@ -174,7 +174,7 @@ class NSGAIISampler(BaseSampler):
 
     def reseed_rng(self) -> None:
         self._random_sampler.reseed_rng()
-        self._rng = np.random.RandomState()
+        self._rng.seed()
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial

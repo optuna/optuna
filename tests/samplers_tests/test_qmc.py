@@ -82,17 +82,6 @@ def test_initial_seeding() -> None:
 @pytest.mark.skipif(
     sys.version_info < (3, 7, 0), reason="QMCSampler is not supported in Python 3.6"
 )
-def test_reseed_rng() -> None:
-    sampler = _init_QMCSampler_without_exp_warning()
-    with patch.object(sampler._independent_sampler, "reseed_rng") as mock_reseed_rng:
-        sampler.reseed_rng()
-    mock_reseed_rng.assert_called_once()
-
-
-# TODO(kstoneriv3): Remove this after the support for Python 3.6 is stopped.
-@pytest.mark.skipif(
-    sys.version_info < (3, 7, 0), reason="QMCSampler is not supported in Python 3.6"
-)
 def test_infer_relative_search_space() -> None:
     def objective(trial: Trial) -> float:
         ret: float = trial.suggest_int("x1", 0, 10)

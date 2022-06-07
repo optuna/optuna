@@ -386,14 +386,16 @@ class BoTorchSampler(BaseSampler):
     def __init__(
         self,
         *,
-        candidates_func: Callable[
-            [
+        candidates_func: Optional[
+            Callable[
+                [
+                    "torch.Tensor",
+                    "torch.Tensor",
+                    Optional["torch.Tensor"],
+                    "torch.Tensor",
+                ],
                 "torch.Tensor",
-                "torch.Tensor",
-                Optional["torch.Tensor"],
-                "torch.Tensor",
-            ],
-            "torch.Tensor",
+            ]
         ] = None,
         constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
         n_startup_trials: int = 10,

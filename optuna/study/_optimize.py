@@ -26,6 +26,7 @@ from optuna import logging
 from optuna import progress_bar as pbar_module
 from optuna import trial as trial_module
 from optuna.storages._heartbeat import BaseHeartbeat
+from optuna.storages._heartbeat import is_heartbeat_enabled
 from optuna.study._tell import _tell_with_warning
 from optuna.study._tell import STUDY_TELL_WARNING_KEY
 from optuna.trial import FrozenTrial
@@ -184,7 +185,7 @@ def _run_trial(
     func: "optuna.study.study.ObjectiveFuncType",
     catch: Tuple[Type[Exception], ...],
 ) -> trial_module.FrozenTrial:
-    if study._storage.is_heartbeat_enabled():
+    if is_heartbeat_enabled(study._storage):
         optuna.storages.fail_stale_trials(study)
 
     trial = study.ask()
@@ -196,7 +197,7 @@ def _run_trial(
     stop_event: Optional[Event] = None
     thread: Optional[Thread] = None
 
-    if study._storage.is_heartbeat_enabled():
+    if is_heartbeat_enabled(study._storage):
         assert isinstance(study._storage, BaseHeartbeat)
         heartbeat = study._storage
         stop_event = Event()
@@ -214,7 +215,7 @@ def _run_trial(
         func_err = e
         func_err_fail_exc_info = sys.exc_info()
 
-    if study._storage.is_heartbeat_enabled():
+    if is_heartbeat_enabled(study._storage):
         assert stop_event is not None
         assert thread is not None
         stop_event.set()

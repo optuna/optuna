@@ -20,7 +20,7 @@ class PartialFixedSampler(BaseSampler):
 
     Example:
 
-         After several steps of optimization, you can fix the value of ``y`` and re-optimize it.
+        After several steps of optimization, you can fix the value of ``y`` and re-optimize it.
 
         .. testcode::
 

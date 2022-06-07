@@ -103,20 +103,6 @@ def test_partial_fixed_experimental_warning() -> None:
         optuna.samplers.PartialFixedSampler(fixed_params={"x": 0}, base_sampler=study.sampler)
 
 
-def test_reseed_rng() -> None:
-    base_sampler = RandomSampler()
-    study = optuna.create_study(sampler=base_sampler)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = PartialFixedSampler(fixed_params={"x": 0}, base_sampler=study.sampler)
-    original_seed = base_sampler._rng.seed
-
-    with patch.object(base_sampler, "reseed_rng", wraps=base_sampler.reseed_rng) as mock_object:
-        sampler.reseed_rng()
-        assert mock_object.call_count == 1
-        assert original_seed != base_sampler._rng.seed
-
-
 def test_call_after_trial_of_base_sampler() -> None:
     base_sampler = RandomSampler()
     with warnings.catch_warnings():
