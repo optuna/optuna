@@ -145,7 +145,7 @@ def plot_pareto_front(
         ]
     else:
         warnings.warn(
-            "``constraint_func`` argument is an experimental feature."
+            "``constraints_func`` argument is an experimental feature."
             " The interface can change in the future.",
             ExperimentalWarning,
         )
