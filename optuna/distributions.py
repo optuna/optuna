@@ -2,12 +2,15 @@ import abc
 import copy
 import decimal
 import json
+from numbers import Real
 from typing import Any
 from typing import cast
 from typing import Dict
 from typing import Sequence
 from typing import Union
 import warnings
+
+import numpy as np
 
 from optuna._deprecated import deprecated_class
 
@@ -450,6 +453,19 @@ class IntLogUniformDistribution(IntDistribution):
         return d
 
 
+def _categorical_choice_equal(
+    value1: CategoricalChoiceType, value2: CategoricalChoiceType
+) -> bool:
+    """A function to check two choices equal considering NaN.
+
+    This function can handle NaNs like np.float32("nan") other than float.
+    """
+
+    value1_is_nan = isinstance(value1, Real) and np.isnan(float(value1))
+    value2_is_nan = isinstance(value2, Real) and np.isnan(float(value2))
+    return (value1 == value2) or (value1_is_nan and value2_is_nan)
+
+
 class CategoricalDistribution(BaseDistribution):
     """A categorical distribution.
 
@@ -493,12 +509,11 @@ class CategoricalDistribution(BaseDistribution):
 
     def to_internal_repr(self, param_value_in_external_repr: CategoricalChoiceType) -> float:
 
-        try:
-            return self.choices.index(param_value_in_external_repr)
-        except ValueError as e:
-            raise ValueError(
-                "'{}' not in {}.".format(param_value_in_external_repr, self.choices)
-            ) from e
+        for index, choice in enumerate(self.choices):
+            if _categorical_choice_equal(param_value_in_external_repr, choice):
+                return index
+
+        raise ValueError(f"'{param_value_in_external_repr}' not in {self.choices}.")
 
     def single(self) -> bool:
 
@@ -508,6 +523,28 @@ class CategoricalDistribution(BaseDistribution):
 
         index = int(param_value_in_internal_repr)
         return 0 <= index < len(self.choices)
+
+    def __eq__(self, other: Any) -> bool:
+
+        if not isinstance(other, BaseDistribution):
+            return NotImplemented
+        if not isinstance(other, self.__class__):
+            return False
+        if self.__dict__.keys() != other.__dict__.keys():
+            return False
+        for key, value in self.__dict__.items():
+            if key == "choices":
+                if len(value) != len(getattr(other, key)):
+                    return False
+                for choice, other_choice in zip(value, getattr(other, key)):
+                    if not _categorical_choice_equal(choice, other_choice):
+                        return False
+            else:
+                if value != getattr(other, key):
+                    return False
+        return True
+
+    __hash__ = BaseDistribution.__hash__
 
 
 DISTRIBUTION_CLASSES = (
@@ -612,7 +649,7 @@ def check_distribution_compatibility(
         return
     if not isinstance(dist_new, CategoricalDistribution):
         return
-    if dist_old.choices != dist_new.choices:
+    if dist_old != dist_new:
         raise ValueError(
             CategoricalDistribution.__name__ + " does not support dynamic value space."
         )
