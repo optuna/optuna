@@ -268,9 +268,7 @@ class GridSampler(BaseSampler):
                 return False
 
             for i, param_value in enumerate(search_space[param_name]):
-                if not self._grid_value_equal(
-                    param_value, self._search_space[param_name][i]
-                ):
+                if not self._grid_value_equal(param_value, self._search_space[param_name][i]):
                     return False
 
         return True
