@@ -55,7 +55,7 @@ class AUCMetric(BaseMetric):
 
         aucs: List[float] = list()
         for _, grp in data.groupby("uuid"):
-            auc = np.sum(grp.generalization.cummin() - grp.generalization.min())
+            auc = np.sum(grp.generalization.cummin())
             aucs.append(auc / grp.shape[0])
         return aucs
 
