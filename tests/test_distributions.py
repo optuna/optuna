@@ -1,14 +1,19 @@
 import copy
 import json
 from typing import Any
+from typing import cast
 from typing import Dict
 from typing import Optional
 import warnings
 
+import numpy as np
 import pytest
 
 from optuna import distributions
 
+
+_choices = (None, True, False, 0, 1, 0.0, 1.0, float("nan"), float("inf"), -float("inf"), "", "a")
+_choices_json = '[null, true, false, 0, 1, 0.0, 1.0, NaN, Infinity, -Infinity, "", "a"]'
 
 EXAMPLE_DISTRIBUTIONS: Dict[str, Any] = {
     "i": distributions.IntDistribution(low=1, high=9, log=False),
@@ -22,7 +27,7 @@ EXAMPLE_DISTRIBUTIONS: Dict[str, Any] = {
     "f": distributions.FloatDistribution(low=1.0, high=2.0, log=False),
     "fl": distributions.FloatDistribution(low=0.001, high=100.0, log=True),
     "fd": distributions.FloatDistribution(low=1.0, high=9.0, log=False, step=2.0),
-    "c1": distributions.CategoricalDistribution(choices=(2.71, -float("inf"))),
+    "c1": distributions.CategoricalDistribution(choices=_choices),
     "c2": distributions.CategoricalDistribution(choices=("Roppongi", "Azabu")),
     "c3": distributions.CategoricalDistribution(choices=["Roppongi", "Azabu"]),
 }
@@ -44,7 +49,7 @@ EXAMPLE_JSONS = {
     '"attributes": {"low": 0.001, "high": 100.0, "log": true, "step": null}}',
     "fd": '{"name": "FloatDistribution", '
     '"attributes": {"low": 1.0, "high": 9.0, "step": 2.0, "log": false}}',
-    "c1": '{"name": "CategoricalDistribution", "attributes": {"choices": [2.71, -Infinity]}}',
+    "c1": f'{{"name": "CategoricalDistribution", "attributes": {{"choices": {_choices_json}}}}}',
     "c2": '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}',
     "c3": '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}',
 }
@@ -60,7 +65,7 @@ EXAMPLE_ABBREVIATED_JSONS = {
     "f": '{"type": "float", "low": 1.0, "high": 2.0, "log": false, "step": null}',
     "fl": '{"type": "float", "low": 0.001, "high": 100, "log": true, "step": null}',
     "fd": '{"type": "float", "low": 1.0, "high": 9.0, "log": false, "step": 2.0}',
-    "c1": '{"type": "categorical", "choices": [2.71, -Infinity]}',
+    "c1": f'{{"type": "categorical", "choices": {_choices_json}}}',
     "c2": '{"type": "categorical", "choices": ["Roppongi", "Azabu"]}',
     "c3": '{"type": "categorical", "choices": ["Roppongi", "Azabu"]}',
 }
@@ -120,6 +125,11 @@ def test_check_distribution_compatibility() -> None:
     for key in EXAMPLE_JSONS:
         distributions.check_distribution_compatibility(
             EXAMPLE_DISTRIBUTIONS[key], EXAMPLE_DISTRIBUTIONS[key]
+        )
+        # We need to create new objects to compare NaNs.
+        # See https://github.com/optuna/optuna/pull/3567#pullrequestreview-974939837.
+        distributions.check_distribution_compatibility(
+            EXAMPLE_DISTRIBUTIONS[key], distributions.json_to_distribution(EXAMPLE_JSONS[key])
         )
 
     # test different distribution classes
@@ -188,6 +198,37 @@ def test_check_distribution_compatibility() -> None:
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS["fd"], distributions.FloatDistribution(low=-1.0, high=11.0, step=0.5)
     )
+
+
+@pytest.mark.parametrize("value", (0, 1, 4, 10, 11))
+def test_int_internal_representation(value: int) -> None:
+
+    i = distributions.IntDistribution(low=1, high=10)
+    assert i.to_external_repr(i.to_internal_repr(value)) == value
+
+
+@pytest.mark.parametrize("value", (1.99, 2.0, 4.5, 7, 7.1))
+def test_float_internal_representation(value: float) -> None:
+    f = distributions.FloatDistribution(low=2.0, high=7.0)
+    assert f.to_external_repr(f.to_internal_repr(value)) == value
+
+
+def test_categorical_internal_representation() -> None:
+    c = EXAMPLE_DISTRIBUTIONS["c1"]
+    for choice in c.choices:
+        if isinstance(choice, float) and np.isnan(choice):
+            assert np.isnan(c.to_external_repr(c.to_internal_repr(choice)))
+        else:
+            assert c.to_external_repr(c.to_internal_repr(choice)) == choice
+
+    # We need to create new objects to compare NaNs.
+    # See https://github.com/optuna/optuna/pull/3567#pullrequestreview-974939837.
+    c_ = distributions.json_to_distribution(EXAMPLE_JSONS["c1"])
+    for choice in cast(distributions.CategoricalDistribution, c_).choices:
+        if isinstance(choice, float) and np.isnan(choice):
+            assert np.isnan(c.to_external_repr(c.to_internal_repr(choice)))
+        else:
+            assert c.to_external_repr(c.to_internal_repr(choice)) == choice
 
 
 @pytest.mark.parametrize(
@@ -347,8 +388,9 @@ def test_eq_ne_hash() -> None:
 
 def test_repr() -> None:
 
-    # The following variable is needed to apply `eval` to distribution
-    # instances that contain `float('inf')` as a field value.
+    # The following variables are needed to apply `eval` to distribution
+    # instances that contain `float('nan')` or `float('inf')` as a field value.
+    nan = float("nan")  # NOQA
     inf = float("inf")  # NOQA
 
     for d in EXAMPLE_DISTRIBUTIONS.values():

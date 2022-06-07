@@ -13,7 +13,8 @@ from typing import Union
 
 from optuna import logging
 from optuna import multi_objective
-from optuna._deprecated import deprecated
+from optuna._deprecated import deprecated_class
+from optuna._deprecated import deprecated_func
 from optuna.pruners import NopPruner
 from optuna.storages import BaseStorage
 from optuna.study import create_study as _create_study
@@ -42,7 +43,7 @@ _logger = logging.get_logger(__name__)
 #
 # TODO(ohta): Consider to add `objective_labels` argument.
 # See: https://github.com/optuna/optuna/pull/1054#issuecomment-616382152
-@deprecated("2.4.0", "4.0.0")
+@deprecated_func("2.4.0", "4.0.0")
 def create_study(
     directions: List[str],
     study_name: Optional[str] = None,
@@ -134,7 +135,7 @@ def create_study(
     return MultiObjectiveStudy(study)
 
 
-@deprecated("2.4.0", "4.0.0")
+@deprecated_func("2.4.0", "4.0.0")
 def load_study(
     study_name: str,
     storage: Union[str, BaseStorage],
@@ -206,7 +207,7 @@ def load_study(
     return MultiObjectiveStudy(study)
 
 
-@deprecated("2.4.0", "4.0.0")
+@deprecated_class("2.4.0", "4.0.0")
 class MultiObjectiveStudy(object):
     """A study corresponds to a multi-objective optimization task, i.e., a set of trials.
 

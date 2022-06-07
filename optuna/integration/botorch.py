@@ -10,7 +10,8 @@ import warnings
 import numpy
 
 from optuna import logging
-from optuna._experimental import experimental
+from optuna._experimental import experimental_class
+from optuna._experimental import experimental_func
 from optuna._imports import try_import
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
@@ -46,7 +47,7 @@ with try_import() as _imports:
 _logger = logging.get_logger(__name__)
 
 
-@experimental("2.4.0")
+@experimental_func("2.4.0")
 def qei_candidates_func(
     train_x: "torch.Tensor",
     train_obj: "torch.Tensor",
@@ -148,7 +149,7 @@ def qei_candidates_func(
     return candidates
 
 
-@experimental("2.4.0")
+@experimental_func("2.4.0")
 def qehvi_candidates_func(
     train_x: "torch.Tensor",
     train_obj: "torch.Tensor",
@@ -234,7 +235,7 @@ def qehvi_candidates_func(
     return candidates
 
 
-@experimental("2.4.0")
+@experimental_func("2.4.0")
 def qparego_candidates_func(
     train_x: "torch.Tensor",
     train_obj: "torch.Tensor",
@@ -326,7 +327,7 @@ def _get_default_candidates_func(
 
 # TODO(hvy): Allow utilizing GPUs via some parameter, not having to rewrite the callback
 # functions.
-@experimental("2.4.0")
+@experimental_class("2.4.0")
 class BoTorchSampler(BaseSampler):
     """A sampler that uses BoTorch, a Bayesian optimization library built on top of PyTorch.
 

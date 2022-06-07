@@ -20,7 +20,7 @@ import uuid
 import optuna
 from optuna import distributions
 from optuna import version
-from optuna._deprecated import deprecated
+from optuna._deprecated import deprecated_func
 from optuna._imports import _LazyImport
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
@@ -676,7 +676,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         return trial
 
-    @deprecated(
+    @deprecated_func(
         "3.0.0",
         "5.0.0",
         text="Use :func:`~optuna.storages.RDBStorage.set_trial_state_values` instead.",
@@ -782,7 +782,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         return param_value
 
-    @deprecated(
+    @deprecated_func(
         "3.0.0",
         "5.0.0",
         text="Use :func:`~optuna.storages.RDBStorage.set_trial_state_values` instead.",
@@ -1158,7 +1158,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             else:
                 heartbeat.heartbeat = session.execute(sqlalchemy.func.now()).scalar()
 
-    @deprecated(
+    @deprecated_func(
         "3.0.0",
         "5.0.0",
         text="Use :func:`~optuna.storages.fail_stale_trials` instead.",
