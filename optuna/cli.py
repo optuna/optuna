@@ -881,7 +881,7 @@ class _Tell(_BaseCommand):
             skip_if_finished=parsed_args.skip_if_finished,
         )
 
-        self.logger.info(f"Told trial {trial_number} with values {values} and state " f"{state}.")
+        self.logger.info(f"Told trial {trial_number} with values {values} and state {state}.")
 
         return 0
 
