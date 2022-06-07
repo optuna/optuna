@@ -66,13 +66,17 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mlflow",
         ],
         "document": [
+            # bokeh v1 does not works with Jinja v3.
+            "Jinja2<3.0.0",
+            # Jinja2 v2 requires the following MarkupSafe.
+            "MarkupSafe<=2.0.1",
             # TODO(nzw): Remove the version constraint after resolving the issue
             # https://github.com/optuna/optuna/issues/2658.
-            "sphinx<4.0.0",
-            "sphinx_rtd_theme",
-            "sphinx-copybutton",
-            "sphinx-gallery",
-            "sphinx-plotly-directive",
+            "sphinx<=3.5.4",
+            "sphinx_rtd_theme<=1.0.0",
+            "sphinx-copybutton<=0.4.0",
+            "sphinx-gallery<=0.10.0",
+            "sphinx-plotly-directive<=0.1.3",
             "pillow",
             "matplotlib",
             # TODO(nzw0301) remove the constraint of sklearn `1.0.0`
