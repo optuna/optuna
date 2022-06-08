@@ -730,7 +730,6 @@ def _split_observation_pairs(
         violation_1d = np.array(violations, dtype=float)
         idx = violation_1d.argsort()
         if n_below >= len(idx) or violation_1d[idx[n_below]] > 0:
-            # if violation_1d[idx[n_below]] > 0:
             # Below is filled by all feasible trials and trials with smaller violation values.
             indices_below = idx[:n_below]
             indices_above = idx[n_below:]
