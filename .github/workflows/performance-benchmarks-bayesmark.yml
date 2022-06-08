@@ -50,7 +50,7 @@ jobs:
       with:
         python-version: 3.9
 
-    - name: Install Python libralies
+    - name: Install Python libraries
       run: |
         python -m pip install --upgrade pip
         pip install --progress-bar off -U setuptools wheel
@@ -59,8 +59,8 @@ jobs:
         python -c 'import optuna'
         optuna --version
 
-        pip install --progress-bar off bayesmark
-        pip install --progress-bar off matplotlib
+        pip install --progress-bar off .[benchmark]
+        pip install --progress-bar off bayesmark matplotlib pandas
 
     - name: Run performance benchmark
       run: |
@@ -75,12 +75,14 @@ jobs:
           --pruner-kwargs-list '${{ github.event.inputs.pruner-kwargs-list }}' \
           --plot-warmup '${{ github.event.inputs.plot-warmup }}'
     
-    - uses: actions/upload-artifact@v2
+    - name: Upload plot
+      uses: actions/upload-artifact@v2
       with:
         name: benchmark-plots
         path: plots
     
-    - uses: actions/upload-artifact@v2
+    - name: Upload partial report
+      uses: actions/upload-artifact@v2
       with:
         name: partial-reports
         path: partial
@@ -90,22 +92,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@master
+    - name: Checkout
+      uses: actions/checkout@master
 
-    - uses: actions/download-artifact@v2
+    - name: Download partial reports
+      uses: actions/download-artifact@v2
       with:
         name: partial-reports
         path: partial
     
+    - name: Install Python libraries
+      run: |
+        python -m pip install --upgrade pip
+        pip install --progress-bar off -U setuptools wheel
+        pip install --progress-bar off numpy scipy pandas
+
     - name: Run benchmark report builder
       run: |
-        python benchmarks/report_bayesmark.py
+        python benchmarks/bayesmark/report_bayesmark.py
     
-    - uses: actions/upload-artifact@v2
+    - name: Upload report
+      uses: actions/upload-artifact@v2
       with:
         name: benchmark-report
         path: report
     
-    - uses: geekyeggo/delete-artifact@v1
+    - name: Cleanup partial reports
+      uses: geekyeggo/delete-artifact@v1
       with:
         name: partial-reports

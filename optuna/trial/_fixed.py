@@ -6,7 +6,7 @@ from typing import Sequence
 import warnings
 
 from optuna import distributions
-from optuna._deprecated import deprecated
+from optuna._deprecated import deprecated_func
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
@@ -78,17 +78,17 @@ class FixedTrial(BaseTrial):
 
         return self._suggest(name, FloatDistribution(low, high, log=log, step=step))
 
-    @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
+    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
 
         return self.suggest_float(name, low, high)
 
-    @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
+    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
 
         return self.suggest_float(name, low, high, log=True)
 
-    @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
+    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
 
         return self.suggest_float(name, low, high, step=q)

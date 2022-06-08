@@ -6,7 +6,7 @@ from typing import Optional
 from typing import Tuple
 from typing import Union
 
-from optuna._experimental import experimental
+from optuna._experimental import experimental_func
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
@@ -27,7 +27,7 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
-@experimental("2.2.0")
+@experimental_func("2.2.0")
 def plot_slice(
     study: Study,
     params: Optional[List[str]] = None,
