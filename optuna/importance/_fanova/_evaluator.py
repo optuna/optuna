@@ -3,12 +3,10 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Tuple
 
 import numpy
 
 from optuna._transform import _SearchSpaceTransform
-from optuna.distributions import BaseDistribution
 from optuna.importance._base import _get_distributions
 from optuna.importance._base import _get_filtered_trials
 from optuna.importance._base import _get_target_values
@@ -19,16 +17,6 @@ from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova._fanova import _Fanova
 from optuna.study import Study
 from optuna.trial import FrozenTrial
-
-
-def _split_nonsingle_and_single_distributions(
-    distributions: Dict[str, BaseDistribution]
-) -> Tuple[Dict[str, BaseDistribution], Dict[str, BaseDistribution]]:
-    non_single_distributions = {
-        name: dist for name, dist in distributions.items() if not dist.single()
-    }
-    single_distributions = {name: dist for name, dist in distributions.items() if dist.single()}
-    return (non_single_distributions, single_distributions)
 
 
 class FanovaImportanceEvaluator(BaseImportanceEvaluator):
@@ -102,9 +90,12 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
         # fANOVA does not support parameter distributions with a single value.
         # However, there is no reason to calculate parameter importance in such case anyway,
         # since it will always be 0 as the parameter is constant in the objective function.
-        non_single_distributions, single_distributions = _split_nonsingle_and_single_distributions(
-            distributions
-        )
+        non_single_distributions = {
+            name: dist for name, dist in distributions.items() if not dist.single()
+        }
+        single_distributions = {
+            name: dist for name, dist in distributions.items() if dist.single()
+        }
 
         if len(non_single_distributions) == 0:
             return OrderedDict()
