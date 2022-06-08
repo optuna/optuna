@@ -7,7 +7,7 @@ from typing import List
 from typing import Optional
 
 import optuna
-from optuna._experimental import experimental
+from optuna._experimental import experimental_func
 from optuna.storages import BaseStorage
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -123,7 +123,7 @@ def get_heartbeat_thread(storage: BaseStorage) -> BaseHeartbeatThread:
         return NullHeartbeatThread()
 
 
-@experimental("2.9.0")
+@experimental_func("2.9.0")
 def fail_stale_trials(study: "optuna.Study") -> None:
     """Fail stale trials and run their failure callbacks.
 

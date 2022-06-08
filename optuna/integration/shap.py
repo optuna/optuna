@@ -6,7 +6,7 @@ from typing import Optional
 
 import numpy as np
 
-from optuna._experimental import experimental
+from optuna._experimental import experimental_class
 from optuna._imports import try_import
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._mean_decrease_impurity import MeanDecreaseImpurityImportanceEvaluator
@@ -18,7 +18,7 @@ with try_import() as _imports:
     from shap import TreeExplainer
 
 
-@experimental("3.0.0")
+@experimental_class("3.0.0")
 class ShapleyImportanceEvaluator(BaseImportanceEvaluator):
     """Shapley (SHAP) parameter importance evaluator.
 
@@ -28,7 +28,7 @@ class ShapleyImportanceEvaluator(BaseImportanceEvaluator):
     .. note::
 
         This evaluator requires the `sklearn <https://scikit-learn.org/stable/>`_ Python package
-         and `SHAP <https://shap.readthedocs.io/en/stable/index.html>`_.
+        and `SHAP <https://shap.readthedocs.io/en/stable/index.html>`_.
         The model for the SHAP calculation is based on `sklearn.ensemble.RandomForestClassifier
         <https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html>`_.
 

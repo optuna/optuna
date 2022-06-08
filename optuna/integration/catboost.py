@@ -4,7 +4,7 @@ from typing import Optional
 from packaging import version
 
 import optuna
-from optuna._experimental import experimental
+from optuna._experimental import experimental_class
 from optuna._imports import try_import
 
 
@@ -15,7 +15,7 @@ with try_import() as _imports:
         raise ImportError(f"You don't have CatBoost>=0.26! CatBoost version: {cb.__version__}")
 
 
-@experimental("3.0.0")
+@experimental_class("3.0.0")
 class CatBoostPruningCallback(object):
     """Callback for catboost to prune unpromising trials.
 

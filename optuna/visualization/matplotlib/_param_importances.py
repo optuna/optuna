@@ -6,7 +6,7 @@ from typing import Optional
 import numpy as np
 
 import optuna
-from optuna._experimental import experimental
+from optuna._experimental import experimental_func
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.logging import get_logger
 from optuna.study import Study
@@ -29,7 +29,7 @@ _logger = get_logger(__name__)
 AXES_PADDING_RATIO = 1.05
 
 
-@experimental("2.2.0")
+@experimental_func("2.2.0")
 def plot_param_importances(
     study: Study,
     evaluator: Optional[BaseImportanceEvaluator] = None,
