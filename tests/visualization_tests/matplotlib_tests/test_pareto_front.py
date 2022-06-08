@@ -500,7 +500,7 @@ def test_constraints_func_experimental_warning() -> None:
         return [1.0] if t.params["x"] == 1 and t.params["y"] == 0 else [-1.0]
 
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
-        figure = plot_pareto_front(
+        plot_pareto_front(
             study=study,
             constraints_func=constraints_func,
         )
