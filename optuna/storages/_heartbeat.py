@@ -70,10 +70,12 @@ class BaseHeartbeat(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
 
-class BaseHeartbeatThread:
+class BaseHeartbeatThread(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
     def start(self, trial_id: int) -> None:
         raise NotImplementedError()
 
+    @abc.abstractmethod
     def join(self) -> None:
         raise NotImplementedError()
 
