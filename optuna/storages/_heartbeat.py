@@ -2,9 +2,11 @@ import abc
 import copy
 from threading import Event
 from threading import Thread
+from types import TracebackType
 from typing import Callable
 from typing import List
 from typing import Optional
+from typing import Type
 
 import optuna
 from optuna._experimental import experimental_func
@@ -71,8 +73,19 @@ class BaseHeartbeat(metaclass=abc.ABCMeta):
 
 
 class BaseHeartbeatThread(metaclass=abc.ABCMeta):
+    def __enter__(self) -> None:
+        self.start()
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[Exception]],
+        exc_value: Optional[Exception],
+        traceback: Optional[TracebackType],
+    ) -> None:
+        self.join()
+
     @abc.abstractmethod
-    def start(self, trial_id: int) -> None:
+    def start(self) -> None:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -81,7 +94,10 @@ class BaseHeartbeatThread(metaclass=abc.ABCMeta):
 
 
 class NullHeartbeatThread(BaseHeartbeatThread):
-    def start(self, trial_id: int) -> None:
+    def __init__(self) -> None:
+        pass
+
+    def start(self) -> None:
         pass
 
     def join(self) -> None:
@@ -89,15 +105,16 @@ class NullHeartbeatThread(BaseHeartbeatThread):
 
 
 class HeartbeatThread(BaseHeartbeatThread):
-    def __init__(self, heartbeat: BaseHeartbeat) -> None:
+    def __init__(self, trial_id: int, heartbeat: BaseHeartbeat) -> None:
+        self._trial_id = trial_id
         self._heartbeat = heartbeat
         self._thread: Optional[Thread] = None
         self._stop_event: Optional[Event] = None
 
-    def start(self, trial_id: int) -> None:
+    def start(self) -> None:
         self._stop_event = Event()
         self._thread = Thread(
-            target=self._record_heartbeat, args=(trial_id, self._heartbeat, self._stop_event)
+            target=self._record_heartbeat, args=(self._trial_id, self._heartbeat, self._stop_event)
         )
         self._thread.start()
 
@@ -117,10 +134,10 @@ class HeartbeatThread(BaseHeartbeatThread):
                 return
 
 
-def get_heartbeat_thread(storage: BaseStorage) -> BaseHeartbeatThread:
+def get_heartbeat_thread(trial_id: int, storage: BaseStorage) -> BaseHeartbeatThread:
     if is_heartbeat_enabled(storage):
         assert isinstance(storage, BaseHeartbeat)
-        return HeartbeatThread(storage)
+        return HeartbeatThread(trial_id, storage)
     else:
         return NullHeartbeatThread()
 

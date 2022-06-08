@@ -193,21 +193,17 @@ def _run_trial(
     func_err: Optional[Union[Exception, KeyboardInterrupt]] = None
     func_err_fail_exc_info: Optional[Any] = None
 
-    heartbeat_thread = get_heartbeat_thread(study._storage)
-    heartbeat_thread.start(trial._trial_id)
-
-    try:
-        value_or_values = func(trial)
-    except exceptions.TrialPruned as e:
-        # TODO(mamu): Handle multi-objective cases.
-        state = TrialState.PRUNED
-        func_err = e
-    except (Exception, KeyboardInterrupt) as e:
-        state = TrialState.FAIL
-        func_err = e
-        func_err_fail_exc_info = sys.exc_info()
-
-    heartbeat_thread.join()
+    with get_heartbeat_thread(trial._trial_id, study._storage):
+        try:
+            value_or_values = func(trial)
+        except exceptions.TrialPruned as e:
+            # TODO(mamu): Handle multi-objective cases.
+            state = TrialState.PRUNED
+            func_err = e
+        except (Exception, KeyboardInterrupt) as e:
+            state = TrialState.FAIL
+            func_err = e
+            func_err_fail_exc_info = sys.exc_info()
 
     # `_tell_with_warning` may raise during trial post-processing.
     try:
