@@ -91,7 +91,7 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
         feature_importances = forest.feature_importances_
 
         # Untransform feature importances to param importances
-        #  by adding up relevant feature importances
+        # by adding up relevant feature importances.
         param_importances = numpy.zeros(len(params))
         numpy.add.at(param_importances, trans.encoded_column_to_column, feature_importances)
 
