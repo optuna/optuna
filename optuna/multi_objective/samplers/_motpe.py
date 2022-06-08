@@ -8,7 +8,7 @@ import numpy as np
 
 import optuna
 from optuna import multi_objective
-from optuna._deprecated import deprecated
+from optuna._deprecated import deprecated_class
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.multi_objective.samplers import _MultiObjectiveSamplerAdapter
@@ -22,7 +22,7 @@ from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 
 
-@deprecated("2.4.0", "4.0.0")
+@deprecated_class("2.4.0", "4.0.0")
 class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
     """Multi-objective sampler using the MOTPE algorithm.
 

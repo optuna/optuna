@@ -8,7 +8,7 @@ from typing import Sequence
 from typing import Union
 
 import optuna
-from optuna._experimental import experimental
+from optuna._experimental import experimental_class
 from optuna._imports import try_import
 from optuna.study.study import ObjectiveFuncType
 
@@ -19,8 +19,8 @@ with try_import() as _imports:
 RUN_ID_ATTRIBUTE_KEY = "mlflow_run_id"
 
 
-@experimental("1.4.0")
-class MLflowCallback:
+@experimental_class("1.4.0")
+class MLflowCallback(object):
     """Callback to track Optuna trials with MLflow.
 
     This callback adds relevant information that is
@@ -160,7 +160,7 @@ class MLflowCallback:
             # This sets the tags for MLflow.
             self._set_tags(trial, study)
 
-    @experimental("2.9.0")
+    @experimental_class("2.9.0")
     def track_in_mlflow(self) -> Callable:
         """Decorator for using MLflow logging in the objective function.
 

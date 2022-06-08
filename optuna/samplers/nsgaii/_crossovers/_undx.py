@@ -2,12 +2,12 @@ from typing import Optional
 
 import numpy as np
 
-from optuna._experimental import experimental
+from optuna._experimental import experimental_class
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.study import Study
 
 
-@experimental("3.0.0")
+@experimental_class("3.0.0")
 class UNDXCrossover(BaseCrossover):
     """Unimodal Normal Distribution Crossover used by :class:`~optuna.samplers.NSGAIISampler`.
 

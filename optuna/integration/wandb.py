@@ -7,7 +7,8 @@ from typing import Sequence
 from typing import Union
 
 import optuna
-from optuna._experimental import experimental
+from optuna._experimental import experimental_class
+from optuna._experimental import experimental_func
 from optuna._imports import try_import
 from optuna.study.study import ObjectiveFuncType
 
@@ -16,8 +17,8 @@ with try_import() as _imports:
     import wandb
 
 
-@experimental("2.9.0")
-class WeightsAndBiasesCallback:
+@experimental_class("2.9.0")
+class WeightsAndBiasesCallback(object):
     """Callback to track Optuna trials with Weights & Biases.
 
     This callback enables tracking of Optuna study in
@@ -177,7 +178,7 @@ class WeightsAndBiasesCallback:
         else:
             run.config.update(attributes)
 
-    @experimental("3.0.0")
+    @experimental_func("3.0.0")
     def track_in_wandb(self) -> Callable:
         """Decorator for using W&B for logging inside the objective function.
 

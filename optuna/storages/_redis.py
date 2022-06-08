@@ -16,8 +16,8 @@ from typing import Union
 import optuna
 from optuna import distributions
 from optuna import exceptions
-from optuna._deprecated import deprecated
-from optuna._experimental import experimental
+from optuna._deprecated import deprecated_func
+from optuna._experimental import experimental_class
 from optuna._imports import try_import
 from optuna.storages import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
@@ -35,7 +35,7 @@ with try_import() as _imports:
     import redis
 
 
-@experimental("1.4.0")
+@experimental_class("1.4.0")
 class RedisStorage(BaseStorage, BaseHeartbeat):
     """Storage class for Redis backend.
 
@@ -422,7 +422,7 @@ class RedisStorage(BaseStorage, BaseHeartbeat):
             datetime_complete=None,
         )
 
-    @deprecated(
+    @deprecated_func(
         "3.0.0",
         "5.0.0",
         text="Use :func:`~optuna.storages.RedisStorage.set_trial_state_values` instead.",
@@ -559,7 +559,7 @@ class RedisStorage(BaseStorage, BaseHeartbeat):
         self._check_study_id(study_id)
         self.set_trial_param(trial_id, param_name, param_value_internal, distribution)
 
-    @deprecated(
+    @deprecated_func(
         "3.0.0",
         "5.0.0",
         text="Use :func:`~optuna.storages.RedisStorage.set_trial_state_values` instead.",
@@ -744,7 +744,7 @@ class RedisStorage(BaseStorage, BaseHeartbeat):
             pickle.dumps(self._get_redis_time()),
         )
 
-    @deprecated(
+    @deprecated_func(
         "3.0.0",
         "5.0.0",
         text="Use :func:`~optuna.storages.fail_stale_trials` instead.",
