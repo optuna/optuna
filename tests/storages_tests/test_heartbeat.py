@@ -12,6 +12,7 @@ from optuna._callbacks import RetryFailedTrialCallback
 from optuna.storages import RDBStorage
 from optuna.storages import RedisStorage
 from optuna.storages._heartbeat import BaseHeartbeat
+from optuna.storages._heartbeat import is_heartbeat_enabled
 from optuna.testing.storage import STORAGE_MODES_HEARTBEAT
 from optuna.testing.storage import StorageSupplier
 from optuna.testing.threading import _TestableThread
@@ -28,7 +29,7 @@ def test_fail_stale_trials_with_optimize(storage_mode: str) -> None:
     with StorageSupplier(
         storage_mode, heartbeat_interval=heartbeat_interval, grace_period=grace_period
     ) as storage:
-        assert storage.is_heartbeat_enabled()
+        assert is_heartbeat_enabled(storage)
         assert isinstance(storage, BaseHeartbeat)
 
         study1 = optuna.create_study(storage=storage)
@@ -81,7 +82,7 @@ def test_failed_trial_callback(storage_mode: str) -> None:
         grace_period=grace_period,
         failed_trial_callback=failed_trial_callback,
     ) as storage:
-        assert storage.is_heartbeat_enabled()
+        assert is_heartbeat_enabled(storage)
         assert isinstance(storage, BaseHeartbeat)
 
         study = optuna.create_study(storage=storage)
@@ -112,7 +113,7 @@ def test_retry_failed_trial_callback(storage_mode: str, max_retry: Optional[int]
         grace_period=grace_period,
         failed_trial_callback=RetryFailedTrialCallback(max_retry=max_retry),
     ) as storage:
-        assert storage.is_heartbeat_enabled()
+        assert is_heartbeat_enabled(storage)
         assert isinstance(storage, BaseHeartbeat)
 
         study = optuna.create_study(storage=storage)
@@ -161,7 +162,7 @@ def test_retry_failed_trial_callback_intermediate(
             max_retry=max_retry, inherit_intermediate_values=True
         ),
     ) as storage:
-        assert storage.is_heartbeat_enabled()
+        assert is_heartbeat_enabled(storage)
         assert isinstance(storage, BaseHeartbeat)
 
         study = optuna.create_study(storage=storage)
@@ -268,7 +269,7 @@ def test_retry_failed_trial_callback_repetitive_failure(storage_mode: str) -> No
         grace_period=grace_period,
         failed_trial_callback=RetryFailedTrialCallback(max_retry=max_retry),
     ) as storage:
-        assert storage.is_heartbeat_enabled()
+        assert is_heartbeat_enabled(storage)
         assert isinstance(storage, BaseHeartbeat)
 
         study = optuna.create_study(storage=storage)

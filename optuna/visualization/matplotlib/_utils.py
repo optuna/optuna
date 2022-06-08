@@ -1,6 +1,6 @@
 from typing import List
 
-from optuna._experimental import experimental
+from optuna._experimental import experimental_func
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
@@ -11,7 +11,7 @@ from optuna.visualization.matplotlib import _matplotlib_imports
 __all__ = ["is_available"]
 
 
-@experimental("2.2.0")
+@experimental_func("2.2.0")
 def is_available() -> bool:
     """Returns whether visualization with Matplotlib is available or not.
 

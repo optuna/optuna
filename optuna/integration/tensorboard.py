@@ -2,7 +2,7 @@ import os
 from typing import Dict
 
 import optuna
-from optuna._experimental import experimental
+from optuna._experimental import experimental_class
 from optuna._imports import try_import
 
 
@@ -11,7 +11,7 @@ with try_import() as _imports:
     import tensorflow as tf
 
 
-@experimental("2.0.0")
+@experimental_class("2.0.0")
 class TensorBoardCallback(object):
     """Callback to track Optuna trials with TensorBoard.
 

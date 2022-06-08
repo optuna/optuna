@@ -10,7 +10,7 @@ import optuna
 from optuna import distributions
 from optuna import logging
 from optuna import pruners
-from optuna._deprecated import deprecated
+from optuna._deprecated import deprecated_func
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
@@ -155,7 +155,7 @@ class Trial(BaseTrial):
 
         return self._suggest(name, distribution)
 
-    @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
+    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
         """Suggest a value for the continuous parameter.
 
@@ -177,7 +177,7 @@ class Trial(BaseTrial):
 
         return self.suggest_float(name, low, high)
 
-    @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
+    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
         """Suggest a value for the continuous parameter.
 
@@ -199,7 +199,7 @@ class Trial(BaseTrial):
 
         return self.suggest_float(name, low, high, log=True)
 
-    @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
+    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
         """Suggest a value for the discrete parameter.
 
