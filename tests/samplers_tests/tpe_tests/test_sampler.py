@@ -904,7 +904,7 @@ def test_split_observation_pairs() -> None:
     assert list(indices_above) == [1, 2]
 
 
-def test_split_observation_pairs_with_constraints() -> None:
+def test_split_observation_pairs_with_constraints_below_all_feasible() -> None:
     indices_below, indices_above = _tpe.sampler._split_observation_pairs(
         [
             (-7, [-2]),  # PRUNED (with intermediate values)
@@ -915,11 +915,29 @@ def test_split_observation_pairs_with_constraints() -> None:
             ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
             (-float("inf"), [-5.0]),  # COMPLETE
         ],
-        2,
-        [1, 0, 1, 2],
+        1,
+        [1, 0, 0, 2],
     )
-    assert list(indices_below) == [0, 1]
-    assert list(indices_above) == [2, 3]
+    assert list(indices_below) == [2]
+    assert list(indices_above) == [0, 1, 3]
+
+
+def test_split_observation_pairs_with_constraints_below_include_infeasible() -> None:
+    indices_below, indices_above = _tpe.sampler._split_observation_pairs(
+        [
+            (-7, [-2]),  # PRUNED (with intermediate values)
+            (float("inf"), [0.0]),  # PRUNED (without intermediate values)
+            (
+                -3,
+                [float("inf")],
+            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (-float("inf"), [-5.0]),  # COMPLETE
+        ],
+        3,
+        [1, 0, 0, 2],
+    )
+    assert list(indices_below) == [0, 1, 2]
+    assert list(indices_above) == [3]
 
 
 def test_build_observation_dict() -> None:
