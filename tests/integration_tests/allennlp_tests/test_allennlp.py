@@ -387,7 +387,7 @@ def test_allennlp_pruning_callback_with_executor(
         storage = "sqlite:///" + os.path.join(tmp_dir, pruner_name, "result.db")
         serialization_dir = os.path.join(tmp_dir, pruner_name, "allennlp")
 
-        pruner = pruner_class(**pruner_kwargs)  # type: ignore
+        pruner = pruner_class(**pruner_kwargs)
         run_allennlp_executor(pruner)
         process = psutil.Process()
         manager = _VariableManager(process.ppid())
