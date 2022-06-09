@@ -1,4 +1,5 @@
 import functools
+from itertools import islice
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -7,6 +8,8 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Union
+
+from mlflow.utils.validation import MAX_PARAMS_TAGS_PER_BATCH, MAX_METRICS_PER_BATCH
 
 import optuna
 from optuna._experimental import experimental_class
@@ -278,7 +281,7 @@ class MLflowCallback:
 
         # This sets the tags for MLflow.
         # MLflow handles up to 100 tags per request
-        for tags_chunk in self._dict_chunks(tags, 100):
+        for tags_chunk in _dict_chunks(tags, MAX_PARAMS_TAGS_PER_BATCH):
             mlflow.set_tags(tags_chunk)
 
     def _log_metrics(self, values: Optional[List[float]]) -> None:
@@ -313,10 +316,10 @@ class MLflowCallback:
 
         # MLflow handles up to 1000 metrics per request
         metrics = {name: val for name, val in zip(names, values)}
-        for metric_chunk in self._dict_chunks(metrics, 1000):
+        for metric_chunk in _dict_chunks(metrics, MAX_METRICS_PER_BATCH):
             mlflow.log_metrics(metric_chunk)
 
-    @classmethod
+    @staticmethod
     def _log_params(cls, params: Dict[str, Any]) -> None:
         """Log the parameters of the trial to MLflow.
 
@@ -324,23 +327,21 @@ class MLflowCallback:
             params: Trial params.
         """
         # MLflow handles up to 100 parameters per request
-        for params_chunk in cls._dict_chunks(params, 100):
+        for params_chunk in _dict_chunks(params, MAX_PARAMS_TAGS_PER_BATCH):
             mlflow.log_params(params_chunk)
 
-    @staticmethod
-    def _dict_chunks(d: Dict[str, Any], n: int) -> Generator[Dict, None, None]:
-        """Splits a dictionary into chunks of maximum size n.
+def _dict_chunks(
+    dict_data: Dict[str, Any], num_elements_per_dict: int
+) -> Generator[Dict[str, Any], None, None]:
+    """Splits a dictionary into chunks of maximum size n.
 
-        Args:
-            d: Dictionary to be chunked.
-            n: Maximum size of each chunk.
+    Args:
+        d: Dictionary to be chunked.
+        n: Maximum size of each chunk.
 
-        Returns:
-            Generator of dictionaries.
-        """
-        chunk = {}
-        for i, param in enumerate(d.items(), 1):
-            chunk[param[0]] = param[1]
-            if len(chunk) % n == 0 or i == len(d):
-                yield chunk
-                chunk = {}
+    Returns:
+        Generator of dictionaries.
+    """
+    it = iter(dict_data)
+    for _ in range(0, len(dict_data), num_elements_per_dict):
+        yield {k: dict_data[k] for k in islice(it, num_elements_per_dict)}
