@@ -547,7 +547,7 @@ def test_chunk_info(tmpdir: py.path.local) -> None:
         for i in range(num_params):
             trial.suggest_float(f"x_{i}", 0, 1)
 
-        return tuple([1.] * num_objective)
+        return tuple([1.0] * num_objective)
 
     tracking_uri = f"file:{tmpdir}"
     study_name = "my_study"
@@ -567,6 +567,6 @@ def test_chunk_info(tmpdir: py.path.local) -> None:
 
     # The `tags` contains param's distributions and other information too, such as trial number.
     print(run_dict["data"]["tags"])
-    assert len(run_dict["data"]["tags"]) == num_params
+    assert len(run_dict["data"]["tags"]) > num_params
     assert len(run_dict["data"]["params"]) == num_params
     assert len(run_dict["data"]["metrics"]) == num_objective
