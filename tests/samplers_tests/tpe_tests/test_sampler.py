@@ -37,6 +37,11 @@ def test_multivariate_experimental_warning() -> None:
         optuna.samplers.TPESampler(multivariate=True)
 
 
+def test_constraints_func_experimental_warning() -> None:
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        optuna.samplers.TPESampler(constraints_func=lambda _: (0,))
+
+
 def test_warn_independent_sampling(capsys: _pytest.capture.CaptureFixture) -> None:
     def objective(trial: Trial) -> float:
         x = trial.suggest_categorical("x", ["a", "b"])
