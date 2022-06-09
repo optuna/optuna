@@ -10,7 +10,7 @@ import transformation_functions
 from kurobako import problem
 
 
-class BaseWFG(object):
+class BaseWFG:
     def __init__(
         self,
         S: np.ndarray,
@@ -56,7 +56,7 @@ class BaseWFG(object):
         return f
 
 
-class WFG1(object):
+class WFG1:
     """WFG1
 
     Args:
@@ -135,7 +135,7 @@ class WFG1(object):
         return self.wfg.__call__(z)
 
 
-class WFG2(object):
+class WFG2:
     """WFG2
 
     Args:
@@ -216,7 +216,7 @@ class WFG2(object):
         return self.wfg.__call__(z)
 
 
-class WFG3(object):
+class WFG3:
     """WFG3
 
     Args:
@@ -297,7 +297,7 @@ class WFG3(object):
         return self.wfg.__call__(z)
 
 
-class WFG4(object):
+class WFG4:
     """WFG4
 
     Args:
@@ -364,7 +364,7 @@ class WFG4(object):
         return self.wfg.__call__(z)
 
 
-class WFG5(object):
+class WFG5:
     """WFG5
 
     Args:
@@ -432,7 +432,7 @@ class WFG5(object):
         return self.wfg.__call__(z)
 
 
-class WFG6(object):
+class WFG6:
     """WFG6
 
     Args:
@@ -499,7 +499,7 @@ class WFG6(object):
         return self.wfg.__call__(z)
 
 
-class WFG7(object):
+class WFG7:
     """WFG7
 
     Args:
@@ -583,7 +583,7 @@ class WFG7(object):
         return self.wfg.__call__(z)
 
 
-class WFG8(object):
+class WFG8:
     """WFG8
 
     Args:
@@ -666,7 +666,7 @@ class WFG8(object):
         return self.wfg.__call__(z)
 
 
-class WFG9(object):
+class WFG9:
     """WFG9
 
     Args:

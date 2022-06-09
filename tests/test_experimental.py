@@ -11,7 +11,7 @@ def _sample_func() -> int:
     return 10
 
 
-class _Sample(object):
+class _Sample:
     def __init__(self, a: Any, b: Any, c: Any) -> None:
         pass
 

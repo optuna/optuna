@@ -67,7 +67,7 @@ def _fetch_pruner_config(trial: optuna.Trial) -> Dict[str, Any]:
     return kwargs
 
 
-class AllenNLPExecutor(object):
+class AllenNLPExecutor:
     """AllenNLP extension to use optuna with Jsonnet config file.
 
     See the examples of `objective function <https://github.com/optuna/optuna-examples/tree/

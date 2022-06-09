@@ -47,7 +47,7 @@ def func(trial: Trial, x_max: float = 1.0) -> float:
     return (x - 2) ** 2 + (y - 25) ** 2 + z
 
 
-class Func(object):
+class Func:
     def __init__(self, sleep_sec: Optional[float] = None) -> None:
 
         self.n_calls = 0

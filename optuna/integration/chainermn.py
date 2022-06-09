@@ -27,7 +27,7 @@ with try_import() as _imports:
 _suggest_deprecated_msg = "Use :func:`~optuna.integration.ChainerMNTrial.suggest_float` instead."
 
 
-class _ChainerMNObjectiveFunc(object):
+class _ChainerMNObjectiveFunc:
     """A wrapper of an objective function to incorporate Optuna with ChainerMN.
 
     Note that this class is not supposed to be used by library users.
@@ -55,7 +55,7 @@ class _ChainerMNObjectiveFunc(object):
         return self.objective(ChainerMNTrial(trial, self.comm), self.comm)
 
 
-class ChainerMNStudy(object):
+class ChainerMNStudy:
     """A wrapper of :class:`~optuna.study.Study` to incorporate Optuna with ChainerMN.
 
     .. seealso::

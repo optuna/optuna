@@ -18,7 +18,7 @@ with try_import() as _imports:
 
 
 @experimental_class("2.9.0")
-class WeightsAndBiasesCallback(object):
+class WeightsAndBiasesCallback:
     """Callback to track Optuna trials with Weights & Biases.
 
     This callback enables tracking of Optuna study in
