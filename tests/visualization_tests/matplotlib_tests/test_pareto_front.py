@@ -497,7 +497,7 @@ def test_constraints_func_experimental_warning() -> None:
     study = optuna.create_study(directions=["minimize", "minimize"])
 
     def constraints_func(t: FrozenTrial) -> Sequence[float]:
-        return [1.0] if t.params["x"] == 1 and t.params["y"] == 0 else [-1.0]
+        return [1.0]
 
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         plot_pareto_front(
