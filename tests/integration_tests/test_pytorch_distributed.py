@@ -181,7 +181,7 @@ def test_report_nan(storage_mode: str) -> None:
             trial = TorchDistributedTrial(None)
 
         with pytest.raises(TypeError):
-            trial.report("abc", 0)  # type: ignore
+            trial.report("abc", 0)
 
         if dist.get_rank() == 0:
             assert study is not None

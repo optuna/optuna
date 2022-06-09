@@ -1243,7 +1243,7 @@ def test_tell_automatically_fail() -> None:
 
     # Check invalid values, e.g. str cannot be cast to float.
     with pytest.warns(UserWarning):
-        study.tell(study.ask(), "a")  # type: ignore
+        study.tell(study.ask(), "a")
         assert len(study.trials) == 1
         assert study.trials[-1].state == TrialState.FAIL
         assert study.trials[-1].values is None
@@ -1313,13 +1313,13 @@ def test_tell_multi_objective_automatically_fail() -> None:
         assert study.trials[-1].values is None
 
     with pytest.warns(UserWarning):
-        study.tell(study.ask(), [1.0, None])  # type: ignore
+        study.tell(study.ask(), [1.0, None])
         assert len(study.trials) == 4
         assert study.trials[-1].state == TrialState.FAIL
         assert study.trials[-1].values is None
 
     with pytest.warns(UserWarning):
-        study.tell(study.ask(), [None, None])  # type: ignore
+        study.tell(study.ask(), [None, None])
         assert len(study.trials) == 5
         assert study.trials[-1].state == TrialState.FAIL
         assert study.trials[-1].values is None
@@ -1354,7 +1354,7 @@ def test_tell_invalid() -> None:
 
     # It must be Trial or int for trial.
     with pytest.raises(TypeError):
-        study.tell("1", 1.0)  # type: ignore
+        study.tell("1", 1.0)
 
 
 def test_tell_duplicate_tell() -> None:

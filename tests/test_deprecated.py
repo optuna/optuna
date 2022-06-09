@@ -73,7 +73,7 @@ def test_deprecation_instance_method_decorator() -> None:
     assert decorated_method.__doc__ == _Sample._method_expected.__doc__
 
     with pytest.warns(FutureWarning):
-        decorated_method(None)  # type: ignore
+        decorated_method(None)
 
 
 def test_deprecation_class_decorator() -> None:

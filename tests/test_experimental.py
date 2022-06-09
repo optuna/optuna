@@ -66,7 +66,7 @@ def test_experimental_instance_method_decorator() -> None:
     assert decorated_method.__doc__ == _Sample._method_expected.__doc__
 
     with pytest.warns(ExperimentalWarning):
-        decorated_method(None)  # type: ignore
+        decorated_method(None)
 
 
 def test_experimental_class_decorator() -> None:
