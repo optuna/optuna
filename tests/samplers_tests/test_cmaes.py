@@ -2,6 +2,7 @@ import pickle
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Optional
 from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
@@ -31,7 +32,10 @@ def test_consider_pruned_trials_experimental_warning() -> None:
     "use_separable_cma, cma_class_str",
     [(False, "optuna.samplers._cmaes.CMA"), (True, "optuna.samplers._cmaes.SepCMA")],
 )
-def test_init_cmaes_opts(use_separable_cma: bool, cma_class_str: str) -> None:
+@pytest.mark.parametrize("popsize", [None, 8])
+def test_init_cmaes_opts(
+    use_separable_cma: bool, cma_class_str: str, popsize: Optional[int]
+) -> None:
     sampler = optuna.samplers.CmaEsSampler(
         x0={"x": 0, "y": 0},
         sigma0=0.1,
@@ -39,6 +43,7 @@ def test_init_cmaes_opts(use_separable_cma: bool, cma_class_str: str) -> None:
         n_startup_trials=1,
         independent_sampler=DeterministicRelativeSampler({}, {}),
         use_separable_cma=use_separable_cma,
+        popsize=popsize,
     )
     study = optuna.create_study(sampler=sampler)
 
@@ -46,7 +51,6 @@ def test_init_cmaes_opts(use_separable_cma: bool, cma_class_str: str) -> None:
         cma_obj = MagicMock()
         cma_obj.ask.return_value = np.array((-1, -1))
         cma_obj.generation = 0
-        cma_obj.population_size = 5
         cma_class.return_value = cma_obj
         study.optimize(
             lambda t: t.suggest_float("x", -1, 1) + t.suggest_float("y", -1, 1), n_trials=2
@@ -60,7 +64,7 @@ def test_init_cmaes_opts(use_separable_cma: bool, cma_class_str: str) -> None:
         assert np.allclose(actual_kwargs["bounds"], np.array([(-1, 1), (-1, 1)]))
         assert actual_kwargs["seed"] == np.random.RandomState(1).randint(1, 2**32)
         assert actual_kwargs["n_max_resampling"] == 10 * 2
-        assert actual_kwargs["population_size"] is None
+        assert actual_kwargs["population_size"] == popsize
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
