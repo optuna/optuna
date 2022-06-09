@@ -299,7 +299,7 @@ class TPESampler(BaseSampler):
 
         if constraints_func is not None:
             warnings.warn(
-                "The constraints_func option is an experimental feature."
+                "The ``constraints_func`` option is an experimental feature."
                 " The interface can change in the future.",
                 ExperimentalWarning,
             )
