@@ -9,9 +9,9 @@ from typing import Optional
 from typing import Sequence
 from typing import Union
 
-
 import optuna
 from optuna._experimental import experimental_class
+from optuna._experimental import experimental_func
 from optuna._imports import try_import
 from optuna.study.study import ObjectiveFuncType
 
@@ -22,6 +22,7 @@ with try_import() as _imports:
     from mlflow.utils.validation import MAX_PARAMS_TAGS_PER_BATCH
 
 RUN_ID_ATTRIBUTE_KEY = "mlflow_run_id"
+
 
 @experimental_class("1.4.0")
 class MLflowCallback:
@@ -164,7 +165,7 @@ class MLflowCallback:
             # This sets the tags for MLflow.
             self._set_tags(trial, study)
 
-    @experimental_class("2.9.0")
+    @experimental_func("2.9.0")
     def track_in_mlflow(self) -> Callable:
         """Decorator for using MLflow logging in the objective function.
 
@@ -330,10 +331,11 @@ class MLflowCallback:
         for params_chunk in _dict_chunks(params, MAX_PARAMS_TAGS_PER_BATCH):
             mlflow.log_params(params_chunk)
 
+
 def _dict_chunks(
     dict_data: Dict[str, Any], num_elements_per_dict: int
 ) -> Generator[Dict[str, Any], None, None]:
-    """Splits a dictionary into chunks of maximum size n.
+    """Splits a dictionary into chunks of maximum size num_elements_per_dict.
 
     Args:
         dict_data: Dictionary to be chunked.
