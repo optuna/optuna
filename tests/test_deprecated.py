@@ -6,7 +6,7 @@ import pytest
 from optuna import _deprecated
 
 
-class _Sample(object):
+class _Sample:
     def __init__(self, a: Any, b: Any, c: Any) -> None:
         pass
 
@@ -153,7 +153,7 @@ def test_deprecation_text_specified(text: Optional[str]) -> None:
 
 @pytest.mark.parametrize("text", [None, "", "test", "test" * 100])
 def test_deprecation_class_text_specified(text: Optional[str]) -> None:
-    class _Class(object):
+    class _Class:
         def __init__(self, a: Any, b: Any, c: Any) -> None:
             pass
 

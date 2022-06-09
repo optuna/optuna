@@ -25,7 +25,7 @@ First, callable classes can be used for that purpose as follows:
     import optuna
 
 
-    class Objective(object):
+    class Objective:
         def __init__(self, min_x, max_x):
             # Hold this implementation specific arguments as the fields of the class.
             self.min_x = min_x

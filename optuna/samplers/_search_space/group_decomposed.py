@@ -9,7 +9,7 @@ from optuna.study import Study
 from optuna.trial import TrialState
 
 
-class _SearchSpaceGroup(object):
+class _SearchSpaceGroup:
     def __init__(self) -> None:
         self._search_spaces: List[Dict[str, BaseDistribution]] = []
 
@@ -35,7 +35,7 @@ class _SearchSpaceGroup(object):
         )
 
 
-class _GroupDecomposedSearchSpace(object):
+class _GroupDecomposedSearchSpace:
     def __init__(self, include_pruned: bool = False) -> None:
         self._search_space = _SearchSpaceGroup()
         self._study_id: Optional[int] = None

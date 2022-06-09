@@ -546,9 +546,7 @@ def test_sample_relative() -> None:
     }
     unknown_param_value = 30
 
-    sampler = FixedSampler(  # type: ignore
-        relative_search_space, relative_params, unknown_param_value
-    )
+    sampler = FixedSampler(relative_search_space, relative_params, unknown_param_value)
     study = optuna.study.create_study(sampler=sampler)
 
     def objective(trial: Trial) -> float:

@@ -16,7 +16,7 @@ with try_import() as _imports:
 
 
 @experimental_class("3.0.0")
-class CatBoostPruningCallback(object):
+class CatBoostPruningCallback:
     """Callback for catboost to prune unpromising trials.
 
     See `the example <https://github.com/optuna/optuna-examples/blob/main/

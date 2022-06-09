@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import itertools
+from typing import cast
 from typing import Dict
 from typing import List
 from typing import Mapping
@@ -220,3 +221,14 @@ def test_enqueued_insufficient_trial() -> None:
 
     with pytest.raises(ValueError):
         study.optimize(lambda trial: trial.suggest_int("a", 0, 100))
+
+
+def test_nan() -> None:
+    sampler = optuna.samplers.GridSampler({"x": [0, float("nan")]})
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(
+        lambda trial: 1
+        if np.isnan(cast(float, trial.suggest_categorical("x", [0, float("nan")])))
+        else 0
+    )
+    assert len(study.get_trials()) == 2

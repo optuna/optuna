@@ -61,7 +61,7 @@ _DEFAULT_LIGHTGBM_PARAMETERS = {
 _logger = optuna.logging.get_logger(__name__)
 
 
-class _BaseTuner(object):
+class _BaseTuner:
     def __init__(
         self,
         lgbm_params: Optional[Dict[str, Any]] = None,

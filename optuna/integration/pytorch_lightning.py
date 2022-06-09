@@ -19,9 +19,9 @@ with optuna._imports.try_import() as _imports:
     from pytorch_lightning.callbacks import Callback
 
 if not _imports.is_successful():
-    Callback = object  # type: ignore # NOQA
-    LightningModule = object  # type: ignore # NOQA
-    Trainer = object  # type: ignore # NOQA
+    Callback = object  # NOQA
+    LightningModule = object  # NOQA
+    Trainer = object  # NOQA
 
 
 class PyTorchLightningPruningCallback(Callback):
