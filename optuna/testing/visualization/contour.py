@@ -11,6 +11,7 @@ from typing import Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 
+from optuna.distributions import CategoricalChoiceType
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -26,13 +27,13 @@ class BaseContourFigure(object, metaclass=abc.ABCMeta):
     If `n_params` == `d`, there are `d * (d - 1)` figures. The exception to this rule is when
     `d` = 2. If `d` = 2, there is only one figure.
 
-    All figures should be accessed by its number. If `d` = 4, the number of each figure is defined
-    as follows.
-    param_1 |         | plot_0  | plot_1  | plot_2  |
-    param_2 | plot_3  |         | plot_4  | plot_5  |
-    param_3 | plot_6  | plot_7  |         | plot_8  |
-    param_4 | plot_9  | plot_10 | plot_11 |         |
-              param_1   param_2   param_3   param_4
+    All figures should be accessed by its coordinate. If `d` = 4, the coordinate of each figure is
+    defined as follows. Blank means an empty figure.
+    param_0 |         | (1, 0)  | (2, 0)  | (3, 0)  |
+    param_1 | (0, 1)  |         | (2, 1)  | (3, 1)  |
+    param_2 | (0, 2)  | (1, 2)  |         | (3, 2)  |
+    param_3 | (0, 3)  | (1, 3)  | (2, 3)  |         |
+              param_0   param_1   param_2   param_3
     """
 
     def __init__(self, study: Study, params: Optional[List[str]] = None) -> None:
@@ -66,18 +67,6 @@ class BaseContourFigure(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_x_grid(self, n: int = 0) -> Optional[List[float]]:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def get_y_grid(self, n: int = 0) -> Optional[List[float]]:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def get_z_map(self, n: int = 0) -> Optional[List[List[float]]]:
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def get_x_points(self, n: int = 0) -> Optional[List[float]]:
         raise NotImplementedError
 
@@ -102,6 +91,14 @@ class BaseContourFigure(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def get_x_ticks(self, n: int = 0) -> List[CategoricalChoiceType]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_y_ticks(self, n: int = 0) -> List[CategoricalChoiceType]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def get_target_name(self) -> Optional[str]:
         raise NotImplementedError
 
@@ -111,14 +108,6 @@ class BaseContourFigure(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def get_y_is_log(self, n: int = 0) -> bool:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def get_x_is_categorical(self, n: int = 0) -> bool:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def get_y_is_categorical(self, n: int = 0) -> bool:
         raise NotImplementedError
 
 
@@ -216,21 +205,6 @@ class PlotlyContourFigure(BaseContourFigure):
         with tempfile.TemporaryDirectory() as td:
             self.figure.write_image(td + "tmp.png")
 
-    def get_x_grid(self, n: int = 0) -> Optional[List[float]]:
-        if self.plots[n]["contour"].x is None:
-            return None
-        return list(self.plots[n]["contour"].x)
-
-    def get_y_grid(self, n: int = 0) -> Optional[List[float]]:
-        if self.plots[n]["contour"].y is None:
-            return None
-        return list(self.plots[n]["contour"].y)
-
-    def get_z_map(self, n: int = 0) -> Optional[List[List[float]]]:
-        if self.plots[n]["contour"].z is None:
-            return None
-        return list(self.plots[n]["contour"].z)
-
     def get_x_points(self, n: int = 0) -> Optional[List[float]]:
         if self.plots[n]["scatter"].x is None:
             return None
@@ -253,6 +227,12 @@ class PlotlyContourFigure(BaseContourFigure):
     def get_y_name(self, n: int = 0) -> str:
         return self.plots[n]["yname"]
 
+    def get_x_ticks(self, n: int = 0) -> List[CategoricalChoiceType]:
+        return list(self.plots[n]["contour"].x)
+
+    def get_y_ticks(self, n: int = 0) -> List[CategoricalChoiceType]:
+        return list(self.plots[n]["contour"].y)
+
     def get_target_name(self) -> Optional[str]:
         return self.plots[0]["contour"].colorbar.title.text
 
@@ -261,12 +241,6 @@ class PlotlyContourFigure(BaseContourFigure):
 
     def get_y_is_log(self, n: int = 0) -> bool:
         return self.plots[n]["yaxis"].type == "log"
-
-    def get_x_is_categorical(self, n: int = 0) -> bool:
-        return self.plots[n]["xaxis"].type == "category"
-
-    def get_y_is_categorical(self, n: int = 0) -> bool:
-        return self.plots[n]["yaxis"].type == "category"
 
 
 class MatplotlibContourFigure(BaseContourFigure):
@@ -308,6 +282,8 @@ class MatplotlibContourFigure(BaseContourFigure):
             for axis_number, f in enumerate(figure.flatten()):
                 f.set_xlabel(figure[-1][axis_number % self.n_params].get_xlabel())
                 f.set_ylabel(figure[axis_number // self.n_params][0].get_ylabel())
+                f.set_xticklabels(figure[-1][axis_number % self.n_params].get_xticklabels())
+                f.set_yticklabels(figure[axis_number // self.n_params][0].get_yticklabels())
                 if axis_number in _removed_axis_numbers:
                     assert not f.has_data()
                     continue
@@ -323,15 +299,6 @@ class MatplotlibContourFigure(BaseContourFigure):
     def save_static_image(self) -> None:
         plt.savefig(BytesIO())
 
-    def get_x_grid(self, n: int = 0) -> Optional[List[float]]:
-        raise NotImplementedError
-
-    def get_y_grid(self, n: int = 0) -> Optional[List[float]]:
-        raise NotImplementedError
-
-    def get_z_map(self, n: int = 0) -> Optional[List[List[float]]]:
-        raise NotImplementedError
-
     def get_x_points(self, n: int = 0) -> Optional[List[float]]:
         if len(self.plots[n].collections) == 0:
             return None
@@ -345,13 +312,13 @@ class MatplotlibContourFigure(BaseContourFigure):
     def get_x_range(self, n: int = 0) -> Tuple[float, float]:
         if self.get_x_is_log(n):
             l, r = self.plots[n].get_xlim()
-            return (np.log10(l), np.log10(r))
+            return np.log10(l), np.log10(r)
         return self.plots[n].get_xlim()
 
     def get_y_range(self, n: int = 0) -> Tuple[float, float]:
         if self.get_y_is_log(n):
             l, r = self.plots[n].get_ylim()
-            return (np.log10(l), np.log10(r))
+            return np.log10(l), np.log10(r)
         return self.plots[n].get_ylim()
 
     def get_x_name(self, n: int = 0) -> str:
@@ -359,6 +326,12 @@ class MatplotlibContourFigure(BaseContourFigure):
 
     def get_y_name(self, n: int = 0) -> str:
         return self.plots[n].get_ylabel()
+
+    def get_x_ticks(self, n: int = 0) -> List[CategoricalChoiceType]:
+        return list(map(lambda t: t.get_text(), self.plots[n].get_xticklabels()))
+
+    def get_y_ticks(self, n: int = 0) -> List[CategoricalChoiceType]:
+        return list(map(lambda t: t.get_text(), self.plots[n].get_yticklabels()))
 
     def get_target_name(self) -> Optional[str]:
         target_name = self.plots[0].figure.axes[-1].get_ylabel()
@@ -371,9 +344,3 @@ class MatplotlibContourFigure(BaseContourFigure):
 
     def get_y_is_log(self, n: int = 0) -> bool:
         return self.plots[n].get_yscale() == "log"
-
-    def get_x_is_categorical(self, n: int = 0) -> bool:
-        raise NotImplementedError
-
-    def get_y_is_categorical(self, n: int = 0) -> bool:
-        raise NotImplementedError
