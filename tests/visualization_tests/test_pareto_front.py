@@ -5,6 +5,7 @@ from typing import Callable
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Tuple
 
 import numpy as np
 import pytest
@@ -87,21 +88,22 @@ def test_plot_pareto_front_2d(
         targets=targets,
     )
     actual_axis_order = axis_order or [0, 1]
+    data: List[Tuple[int, ...]]
     if use_constraints_func:
         assert len(figure.data) == 3
         if include_dominated_trials:
             # The enqueue order of trial is: infeasible, feasible non-best, then feasible best.
-            data = [(1, 0, 1, 1), (1, 2, 2, 0)]  # type: ignore
+            data = [(1, 0, 1, 1), (1, 2, 2, 0)]
         else:
             # The enqueue order of trial is: infeasible, feasible.
-            data = [(1, 0, 1), (1, 2, 0)]  # type: ignore
+            data = [(1, 0, 1), (1, 2, 0)]
     else:
         assert len(figure.data) == 2
         if include_dominated_trials:
             # The last elements come from dominated trial that is enqueued firstly.
-            data = [(0, 1, 1, 1), (2, 0, 2, 1)]  # type: ignore
+            data = [(0, 1, 1, 1), (2, 0, 2, 1)]
         else:
-            data = [(0, 1), (2, 0)]  # type: ignore
+            data = [(0, 1), (2, 0)]
 
     _check_data(figure, "x", data[actual_axis_order[0]])
     _check_data(figure, "y", data[actual_axis_order[1]])
@@ -208,21 +210,22 @@ def test_plot_pareto_front_3d(
         targets=targets,
     )
     actual_axis_order = axis_order or [0, 1, 2]
+    data: List[Tuple[int, ...]]
     if use_constraints_func:
         assert len(figure.data) == 3
         if include_dominated_trials:
             # The enqueue order of trial is: infeasible, feasible non-best, then feasible best.
-            data = [(1, 1, 1, 1), (1, 0, 1, 1), (1, 2, 2, 0)]  # type: ignore
+            data = [(1, 1, 1, 1), (1, 0, 1, 1), (1, 2, 2, 0)]
         else:
             # The enqueue order of trial is: infeasible, feasible.
-            data = [(1, 1, 1), (1, 0, 1), (1, 2, 0)]  # type: ignore
+            data = [(1, 1, 1), (1, 0, 1), (1, 2, 0)]
     else:
         assert len(figure.data) == 2
         if include_dominated_trials:
             # The last elements come from dominated trial that is enqueued firstly.
-            data = [(1, 1, 1, 1), (0, 1, 1, 1), (2, 0, 2, 1)]  # type: ignore
+            data = [(1, 1, 1, 1), (0, 1, 1, 1), (2, 0, 2, 1)]
         else:
-            data = [(1, 1), (0, 1), (2, 0)]  # type: ignore
+            data = [(1, 1), (0, 1), (2, 0)]
 
     _check_data(figure, "x", data[actual_axis_order[0]])
     _check_data(figure, "y", data[actual_axis_order[1]])
