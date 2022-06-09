@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from typing import Callable
 from typing import Dict
 from typing import List
@@ -12,7 +11,6 @@ from optuna.importance._base import _get_filtered_trials
 from optuna.importance._base import _get_target_values
 from optuna.importance._base import _get_trans_params
 from optuna.importance._base import _param_importances_to_dict
-from optuna.importance._base import _sort_dict_by_importance
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova._fanova import _Fanova
 from optuna.study import Study
@@ -71,21 +69,12 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
     def evaluate(
         self,
         study: Study,
-        params: Optional[List[str]] = None,
+        params: List[str],
         *,
-        target: Optional[Callable[[FrozenTrial], float]] = None,
+        target: Callable[[FrozenTrial], float],
     ) -> Dict[str, float]:
-        if target is None and study._is_multi_objective():
-            raise ValueError(
-                "If the `study` is being used for multi-objective optimization, "
-                "please specify the `target`. For example, use "
-                "`target=lambda t: t.values[0]` for the first objective value."
-            )
 
         distributions = _get_distributions(study, params=params)
-        if params is None:
-            params = list(distributions.keys())
-        assert params is not None
 
         # fANOVA does not support parameter distributions with a single value.
         # However, there is no reason to calculate parameter importance in such case anyway,
@@ -98,7 +87,7 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
         }
 
         if len(non_single_distributions) == 0:
-            return OrderedDict()
+            return {}
 
         trials: List[FrozenTrial] = _get_filtered_trials(study, params=params, target=target)
 
@@ -121,9 +110,7 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
         )
         param_importances /= numpy.sum(param_importances)
 
-        return _sort_dict_by_importance(
-            {
-                **_param_importances_to_dict(non_single_distributions.keys(), param_importances),
-                **_param_importances_to_dict(single_distributions.keys(), 0.0),
-            }
-        )
+        return {
+            **_param_importances_to_dict(non_single_distributions.keys(), param_importances),
+            **_param_importances_to_dict(single_distributions.keys(), 0.0),
+        }

@@ -1,7 +1,6 @@
 import abc
 from collections import OrderedDict
 from typing import Callable
-from typing import cast
 from typing import Collection
 from typing import Dict
 from typing import List
@@ -25,9 +24,9 @@ class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
     def evaluate(
         self,
         study: Study,
-        params: Optional[List[str]] = None,
+        params: List[str],
         *,
-        target: Optional[Callable[[FrozenTrial], float]] = None,
+        target: Callable[[FrozenTrial], float],
     ) -> Dict[str, float]:
         """Evaluate parameter importances based on completed trials in the given study.
 
@@ -49,14 +48,8 @@ class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
                 assessed.
             target:
                 A function to specify the value to evaluate importances.
-                If it is :obj:`None` and ``study`` is being used for single-objective optimization,
-                the objective values are used. Can also be used for other trial attributes, such as
+                Can also be used for other trial attributes, such as
                 the duration, like ``target=lambda t: t.duration.total_seconds()``.
-
-                .. note::
-                    Specify this argument if ``study`` is being used for multi-objective
-                    optimization. For example, to get the hyperparameter importance of the first
-                    objective, use ``target=lambda t: t.values[0]`` for the target parameter.
 
         Returns:
             An :class:`collections.OrderedDict` where the keys are parameter names and the values
@@ -141,14 +134,13 @@ def _check_evaluate_args(completed_trials: List[FrozenTrial], params: Optional[L
 
 
 def _get_filtered_trials(
-    study: Study, params: Collection[str], target: Optional[Callable[[FrozenTrial], float]]
+    study: Study, params: Collection[str], target: Callable[[FrozenTrial], float]
 ) -> List[FrozenTrial]:
     trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
     return [
         trial
         for trial in trials
-        if set(params) <= set(trial.params)
-        and numpy.isfinite(target(trial) if target is not None else cast(float, trial.value))
+        if set(params) <= set(trial.params) and numpy.isfinite(target(trial))
     ]
 
 
@@ -166,16 +158,6 @@ def _get_trans_params(trials: List[FrozenTrial], trans: _SearchSpaceTransform) -
 
 
 def _get_target_values(
-    trials: List[FrozenTrial], target: Optional[Callable[[FrozenTrial], float]]
+    trials: List[FrozenTrial], target: Callable[[FrozenTrial], float]
 ) -> numpy.ndarray:
-    return numpy.array([target(trial) if target is not None else trial.value for trial in trials])
-
-
-def _sort_dict_by_importance(param_importances: Dict[str, float]) -> Dict[str, float]:
-    return OrderedDict(
-        reversed(
-            sorted(
-                param_importances.items(), key=lambda name_and_importance: name_and_importance[1]
-            )
-        )
-    )
+    return numpy.array([target(trial) for trial in trials])

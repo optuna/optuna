@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from typing import Callable
 from typing import Dict
 from typing import List
@@ -6,8 +7,10 @@ from typing import Optional
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova import FanovaImportanceEvaluator
 from optuna.importance._mean_decrease_impurity import MeanDecreaseImpurityImportanceEvaluator
+from optuna.samplers._search_space.intersection import intersection_search_space
 from optuna.study import Study
 from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 
 
 __all__ = [
@@ -68,8 +71,8 @@ def get_param_importances(
         target:
             A function to specify the value to evaluate importances.
             If it is :obj:`None` and ``study`` is being used for single-objective optimization,
-            the objective values are used. ``target`` must be specified if ``study`` is being
-            used for multi-objective optimization.
+            the objective values are used. Can also be used for other trial attributes, such as
+            the duration, like ``target=lambda t: t.duration.total_seconds()``.
 
             .. note::
                 Specify this argument if ``study`` is being used for multi-objective
@@ -78,13 +81,45 @@ def get_param_importances(
 
     Returns:
         An :class:`collections.OrderedDict` where the keys are parameter names and the values are
-        assessed importances.
+        assessed importances. The importances will be sorted in a descending order.
 
     """
+
+    if len(study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))) == 0:
+        raise ValueError("The study does not contain completed trials.")
+
     if evaluator is None:
         evaluator = FanovaImportanceEvaluator()
 
     if not isinstance(evaluator, BaseImportanceEvaluator):
         raise TypeError("Evaluator must be a subclass of BaseImportanceEvaluator.")
 
-    return evaluator.evaluate(study, params=params, target=target)
+    if target is None:
+        if study._is_multi_objective():
+            raise ValueError(
+                "If the `study` is being used for multi-objective optimization, "
+                "please specify the `target`. For example, use "
+                "`target=lambda t: t.values[0]` for the first objective value."
+            )
+
+        def default_target(trial: FrozenTrial) -> float:
+            val: Optional[float] = trial.value
+            assert val is not None
+            return val
+
+        target = default_target
+
+    if params is None:
+        params = list(intersection_search_space(study, ordered_dict=True).keys())
+
+    if len(params) == 0:
+        return OrderedDict()
+
+    importances = evaluator.evaluate(study, params=params, target=target)
+
+    # Sort the importances in descending order.
+    return OrderedDict(
+        reversed(
+            sorted(importances.items(), key=lambda name_and_importance: name_and_importance[1])
+        )
+    )

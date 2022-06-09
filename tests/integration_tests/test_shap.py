@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from typing import cast
 from typing import List
 from typing import Tuple
 
@@ -11,11 +12,13 @@ from optuna import Trial
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
+from optuna.importance import get_param_importances
 from optuna.integration.shap import ShapleyImportanceEvaluator
 from optuna.samplers import RandomSampler
 from optuna.testing.storage import STORAGE_MODES
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import create_trial
+from optuna.trial import FrozenTrial
 
 
 def objective(trial: Trial) -> float:
@@ -27,6 +30,13 @@ def objective(trial: Trial) -> float:
     return x1 + x2 * x3 + x4
 
 
+def get_value(trial: FrozenTrial) -> float:
+    return cast(float, trial.value)
+
+
+params = ["x1", "x2", "x3", "x4"]
+
+
 def test_mean_abs_shap_importance_evaluator_n_trees() -> None:
     # Assumes that `seed` can be fixed to reproduce identical results.
 
@@ -34,10 +44,10 @@ def test_mean_abs_shap_importance_evaluator_n_trees() -> None:
     study.optimize(objective, n_trials=3)
 
     evaluator = ShapleyImportanceEvaluator(n_trees=10, seed=0)
-    param_importance = evaluator.evaluate(study)
+    param_importance = evaluator.evaluate(study, params=params, target=get_value)
 
     evaluator = ShapleyImportanceEvaluator(n_trees=20, seed=0)
-    param_importance_different_n_trees = evaluator.evaluate(study)
+    param_importance_different_n_trees = evaluator.evaluate(study, params=params, target=get_value)
 
     assert param_importance != param_importance_different_n_trees
 
@@ -49,10 +59,12 @@ def test_mean_abs_shap_importance_evaluator_max_depth() -> None:
     study.optimize(objective, n_trials=3)
 
     evaluator = ShapleyImportanceEvaluator(max_depth=1, seed=0)
-    param_importance = evaluator.evaluate(study)
+    param_importance = evaluator.evaluate(study, params=params, target=get_value)
 
     evaluator = ShapleyImportanceEvaluator(max_depth=2, seed=0)
-    param_importance_different_max_depth = evaluator.evaluate(study)
+    param_importance_different_max_depth = evaluator.evaluate(
+        study, params=params, target=get_value
+    )
 
     assert param_importance != param_importance_different_max_depth
 
@@ -62,14 +74,14 @@ def test_mean_abs_shap_importance_evaluator_seed() -> None:
     study.optimize(objective, n_trials=3)
 
     evaluator = ShapleyImportanceEvaluator(seed=2)
-    param_importance = evaluator.evaluate(study)
+    param_importance = evaluator.evaluate(study, params=params, target=get_value)
 
     evaluator = ShapleyImportanceEvaluator(seed=2)
-    param_importance_same_seed = evaluator.evaluate(study)
+    param_importance_same_seed = evaluator.evaluate(study, params=params, target=get_value)
     assert param_importance == param_importance_same_seed
 
     evaluator = ShapleyImportanceEvaluator(seed=3)
-    param_importance_different_seed = evaluator.evaluate(study)
+    param_importance_different_seed = evaluator.evaluate(study, params=params, target=get_value)
     assert param_importance != param_importance_different_seed
 
 
@@ -80,9 +92,10 @@ def test_mean_abs_shap_importance_evaluator_with_target() -> None:
     study.optimize(objective, n_trials=3)
 
     evaluator = ShapleyImportanceEvaluator(seed=0)
-    param_importance = evaluator.evaluate(study)
+    param_importance = evaluator.evaluate(study, params=params, target=get_value)
     param_importance_with_target = evaluator.evaluate(
         study,
+        params=params,
         target=lambda t: t.params["x1"] + t.params["x2"],
     )
 
@@ -100,7 +113,7 @@ def test_shap_importance_evaluator_with_infinite(inf_value: float) -> None:
     study.optimize(objective, n_trials=n_trial)
 
     evaluator = ShapleyImportanceEvaluator(seed=seed)
-    param_importance_without_inf = evaluator.evaluate(study)
+    param_importance_without_inf = evaluator.evaluate(study, params=params, target=get_value)
 
     # A trial with an inf value is added into the study manually.
     study.add_trial(
@@ -116,7 +129,7 @@ def test_shap_importance_evaluator_with_infinite(inf_value: float) -> None:
         )
     )
     # Importance scores are calculated with a trial with an inf value.
-    param_importance_with_inf = evaluator.evaluate(study)
+    param_importance_with_inf = evaluator.evaluate(study, params=params, target=get_value)
 
     # Obtained importance scores should be the same between with inf and without inf,
     # because the last trial whose objective value is an inf is ignored.
@@ -145,7 +158,9 @@ def test_multi_objective_shap_importance_evaluator_with_infinite(
     study.optimize(multi_objective_function, n_trials=n_trial)
 
     evaluator = ShapleyImportanceEvaluator(seed=seed)
-    param_importance_without_inf = evaluator.evaluate(study, target=lambda t: t.values[target_idx])
+    param_importance_without_inf = evaluator.evaluate(
+        study, params=params, target=lambda t: t.values[target_idx]
+    )
 
     # A trial with an inf value is added into the study manually.
     study.add_trial(
@@ -161,7 +176,9 @@ def test_multi_objective_shap_importance_evaluator_with_infinite(
         )
     )
     # Importance scores are calculated with a trial with an inf value.
-    param_importance_with_inf = evaluator.evaluate(study, target=lambda t: t.values[target_idx])
+    param_importance_with_inf = evaluator.evaluate(
+        study, params=params, target=lambda t: t.values[target_idx]
+    )
 
     # Obtained importance scores should be the same between with inf and without inf,
     # because the last trial whose objective value is an inf is ignored.
@@ -194,7 +211,7 @@ def test_get_param_importance_target_is_none_and_study_is_multi_obj(
         study.optimize(objective, n_trials=3)
 
         with pytest.raises(ValueError):
-            ShapleyImportanceEvaluator().evaluate(study)
+            get_param_importances(study, evaluator=ShapleyImportanceEvaluator())
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -222,8 +239,7 @@ def test_get_params_importance(
         study = create_study(storage=storage, sampler=samplers.RandomSampler())
         study.optimize(objective, n_trials=3)
 
-        param_importance = ShapleyImportanceEvaluator().evaluate(study)
-
+        param_importance = get_param_importances(study, evaluator=ShapleyImportanceEvaluator())
         assert isinstance(param_importance, OrderedDict)
         assert len(param_importance) == 6
         assert all(
@@ -259,7 +275,9 @@ def test_get_param_importances_with_params(
         study = create_study(storage=storage)
         study.optimize(objective, n_trials=10)
 
-        param_importance = ShapleyImportanceEvaluator().evaluate(study, params=params)
+        param_importance = get_param_importances(
+            study, evaluator=ShapleyImportanceEvaluator(), params=params
+        )
 
         assert isinstance(param_importance, OrderedDict)
         assert len(param_importance) == len(params)
@@ -289,8 +307,9 @@ def test_get_param_importances_with_target(
         study = create_study(storage=storage)
         study.optimize(objective, n_trials=3)
 
-        param_importance = ShapleyImportanceEvaluator().evaluate(
+        param_importance = get_param_importances(
             study,
+            evaluator=ShapleyImportanceEvaluator(),
             target=lambda t: t.params["x1"] + t.params["x2"],
         )
 
@@ -310,7 +329,7 @@ def test_get_param_importances_invalid_empty_study() -> None:
     study = create_study()
 
     with pytest.raises(ValueError):
-        ShapleyImportanceEvaluator().evaluate(study)
+        get_param_importances(study, evaluator=ShapleyImportanceEvaluator())
 
     def objective(trial: Trial) -> float:
         raise optuna.TrialPruned
@@ -318,7 +337,7 @@ def test_get_param_importances_invalid_empty_study() -> None:
     study.optimize(objective, n_trials=3)
 
     with pytest.raises(ValueError):
-        ShapleyImportanceEvaluator().evaluate(study)
+        get_param_importances(study, evaluator=ShapleyImportanceEvaluator())
 
 
 def test_get_param_importances_invalid_single_trial() -> None:
@@ -330,7 +349,7 @@ def test_get_param_importances_invalid_single_trial() -> None:
     study.optimize(objective, n_trials=1)
 
     with pytest.raises(ValueError):
-        ShapleyImportanceEvaluator().evaluate(study)
+        get_param_importances(study, evaluator=ShapleyImportanceEvaluator())
 
 
 def test_get_param_importances_invalid_no_completed_trials_params() -> None:
@@ -346,15 +365,15 @@ def test_get_param_importances_invalid_no_completed_trials_params() -> None:
 
     # None of the trials with `x2` are completed.
     with pytest.raises(ValueError):
-        ShapleyImportanceEvaluator().evaluate(study, params=["x2"])
+        get_param_importances(study, evaluator=ShapleyImportanceEvaluator(), params=["x2"])
 
     # None of the trials with `x2` are completed. Adding "x1" should not matter.
     with pytest.raises(ValueError):
-        ShapleyImportanceEvaluator().evaluate(study, params=["x1", "x2"])
+        get_param_importances(study, evaluator=ShapleyImportanceEvaluator(), params=["x1", "x2"])
 
     # None of the trials contain `x3`.
     with pytest.raises(ValueError):
-        ShapleyImportanceEvaluator().evaluate(study, params=["x3"])
+        get_param_importances(study, evaluator=ShapleyImportanceEvaluator(), params=["x3"])
 
 
 def test_get_param_importances_invalid_dynamic_search_space_params() -> None:
@@ -366,7 +385,7 @@ def test_get_param_importances_invalid_dynamic_search_space_params() -> None:
     study.optimize(objective, n_trials=3)
 
     with pytest.raises(ValueError):
-        ShapleyImportanceEvaluator().evaluate(study, params=["x1"])
+        get_param_importances(study, evaluator=ShapleyImportanceEvaluator(), params=["x1"])
 
 
 def test_get_param_importances_empty_search_space() -> None:
@@ -378,7 +397,7 @@ def test_get_param_importances_empty_search_space() -> None:
     study = create_study()
     study.optimize(objective, n_trials=3)
 
-    param_importance = ShapleyImportanceEvaluator().evaluate(study)
+    param_importance = get_param_importances(study, evaluator=ShapleyImportanceEvaluator())
 
     assert len(param_importance) == 2
     assert all([param in param_importance for param in ["x", "y"]])

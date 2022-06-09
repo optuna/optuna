@@ -1,3 +1,4 @@
+from typing import cast
 from typing import Tuple
 
 import pytest
@@ -8,6 +9,7 @@ from optuna.distributions import FloatDistribution
 from optuna.importance import FanovaImportanceEvaluator
 from optuna.samplers import RandomSampler
 from optuna.trial import create_trial
+from optuna.trial import FrozenTrial
 
 
 def objective(trial: Trial) -> float:
@@ -15,6 +17,13 @@ def objective(trial: Trial) -> float:
     x2 = trial.suggest_float("x2", 0.1, 3, log=True)
     x3 = trial.suggest_float("x3", 2, 4, log=True)
     return x1 + x2 * x3
+
+
+def get_value(trial: FrozenTrial) -> float:
+    return cast(float, trial.value)
+
+
+params = ["x1", "x2", "x3"]
 
 
 def multi_objective_function(trial: Trial) -> Tuple[float, float]:
@@ -31,10 +40,10 @@ def test_fanova_importance_evaluator_n_trees() -> None:
     study.optimize(objective, n_trials=3)
 
     evaluator = FanovaImportanceEvaluator(n_trees=10, seed=0)
-    param_importance = evaluator.evaluate(study)
+    param_importance = evaluator.evaluate(study, params=params, target=get_value)
 
     evaluator = FanovaImportanceEvaluator(n_trees=20, seed=0)
-    param_importance_different_n_trees = evaluator.evaluate(study)
+    param_importance_different_n_trees = evaluator.evaluate(study, params=params, target=get_value)
 
     assert param_importance != param_importance_different_n_trees
 
@@ -46,10 +55,12 @@ def test_fanova_importance_evaluator_max_depth() -> None:
     study.optimize(objective, n_trials=3)
 
     evaluator = FanovaImportanceEvaluator(max_depth=1, seed=0)
-    param_importance = evaluator.evaluate(study)
+    param_importance = evaluator.evaluate(study, params=params, target=get_value)
 
     evaluator = FanovaImportanceEvaluator(max_depth=2, seed=0)
-    param_importance_different_max_depth = evaluator.evaluate(study)
+    param_importance_different_max_depth = evaluator.evaluate(
+        study, params=params, target=get_value
+    )
 
     assert param_importance != param_importance_different_max_depth
 
@@ -59,14 +70,14 @@ def test_fanova_importance_evaluator_seed() -> None:
     study.optimize(objective, n_trials=3)
 
     evaluator = FanovaImportanceEvaluator(seed=2)
-    param_importance = evaluator.evaluate(study)
+    param_importance = evaluator.evaluate(study, params=params, target=get_value)
 
     evaluator = FanovaImportanceEvaluator(seed=2)
-    param_importance_same_seed = evaluator.evaluate(study)
+    param_importance_same_seed = evaluator.evaluate(study, params=params, target=get_value)
     assert param_importance == param_importance_same_seed
 
     evaluator = FanovaImportanceEvaluator(seed=3)
-    param_importance_different_seed = evaluator.evaluate(study)
+    param_importance_different_seed = evaluator.evaluate(study, params=params, target=get_value)
     assert param_importance != param_importance_different_seed
 
 
@@ -77,9 +88,10 @@ def test_fanova_importance_evaluator_with_target() -> None:
     study.optimize(objective, n_trials=3)
 
     evaluator = FanovaImportanceEvaluator(seed=0)
-    param_importance = evaluator.evaluate(study)
+    param_importance = evaluator.evaluate(study, params=params, target=get_value)
     param_importance_with_target = evaluator.evaluate(
         study,
+        params=params,
         target=lambda t: t.params["x1"] + t.params["x2"],
     )
 
@@ -97,7 +109,7 @@ def test_fanova_importance_evaluator_with_infinite(inf_value: float) -> None:
     study.optimize(objective, n_trials=n_trial)
 
     evaluator = FanovaImportanceEvaluator(seed=seed)
-    param_importance_without_inf = evaluator.evaluate(study)
+    param_importance_without_inf = evaluator.evaluate(study, params=params, target=get_value)
 
     # A trial with an inf value is added into the study manually.
     study.add_trial(
@@ -112,7 +124,7 @@ def test_fanova_importance_evaluator_with_infinite(inf_value: float) -> None:
         )
     )
     # Importance scores are calculated with a trial with an inf value.
-    param_importance_with_inf = evaluator.evaluate(study)
+    param_importance_with_inf = evaluator.evaluate(study, params=params, target=get_value)
 
     # Obtained importance scores should be the same between with inf and without inf,
     # because the last trial whose objective value is an inf is ignored.
@@ -133,7 +145,9 @@ def test_multi_objective_fanova_importance_evaluator_with_infinite(
     study.optimize(multi_objective_function, n_trials=n_trial)
 
     evaluator = FanovaImportanceEvaluator(seed=seed)
-    param_importance_without_inf = evaluator.evaluate(study, target=lambda t: t.values[target_idx])
+    param_importance_without_inf = evaluator.evaluate(
+        study, params=params, target=lambda t: t.values[target_idx]
+    )
 
     # A trial with an inf value is added into the study manually.
     study.add_trial(
@@ -148,7 +162,9 @@ def test_multi_objective_fanova_importance_evaluator_with_infinite(
         )
     )
     # Importance scores are calculated with a trial with an inf value.
-    param_importance_with_inf = evaluator.evaluate(study, target=lambda t: t.values[target_idx])
+    param_importance_with_inf = evaluator.evaluate(
+        study, params=params, target=lambda t: t.values[target_idx]
+    )
 
     # Obtained importance scores should be the same between with inf and without inf,
     # because the last trial whose objective value is an inf is ignored.
