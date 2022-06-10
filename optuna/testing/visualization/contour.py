@@ -99,7 +99,7 @@ class BaseTestableContourFigure(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
-class PlotlyContourFigure(BaseContourFigure):
+class PlotlyContourFigure(BaseTestableContourFigure):
     def __init__(
         self,
         study: Study,
@@ -161,7 +161,7 @@ class PlotlyContourFigure(BaseContourFigure):
         return self.layout["yaxis"].type == "log"
 
 
-class MatplotlibContourFigure(BaseContourFigure):
+class MatplotlibContourFigure(BaseTestableContourFigure):
     def __init__(
         self,
         study: Study,

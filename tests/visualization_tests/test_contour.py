@@ -324,7 +324,9 @@ def test_plot_contour_mixture_category_types(
 
 @parametrize_figure
 @pytest.mark.parametrize("value", [float("inf"), -float("inf")])
-def test_nonfinite_removed(create_figure: Callable[..., BaseTestableContourFigure], value: float) -> None:
+def test_nonfinite_removed(
+    create_figure: Callable[..., BaseTestableContourFigure], value: float
+) -> None:
 
     study = prepare_study_with_trials(with_c_d=True, value_for_first_trial=value)
     figure = create_figure(study, params=["param_b", "param_d"])
