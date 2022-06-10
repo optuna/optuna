@@ -8,7 +8,7 @@ from optuna.distributions import BaseDistribution
 from optuna.study import Study
 
 
-class IntersectionSearchSpace(object):
+class IntersectionSearchSpace:
     """A class to calculate the intersection search space of a :class:`~optuna.study.Study`.
 
     Intersection search space contains the intersection of parameter distributions that have been
@@ -64,16 +64,18 @@ class IntersectionSearchSpace(object):
         if self._include_pruned:
             states_of_interest.append(optuna.trial.TrialState.PRUNED)
 
-        next_cursor = self._cursor
-        for trial in reversed(study.get_trials(deepcopy=False)):
+        trials = study.get_trials(deepcopy=False, states=states_of_interest)
+        
+        if len(trials) == 0:
+            return {}
+
+        next_cursor = trials[-1].number
+        for trial in reversed(trials):
             if self._cursor > trial.number:
                 break
 
             if not trial.state.is_finished():
                 next_cursor = trial.number
-
-            if trial.state not in states_of_interest:
-                continue
 
             if self._search_space is None:
                 self._search_space = copy.copy(trial.distributions)
