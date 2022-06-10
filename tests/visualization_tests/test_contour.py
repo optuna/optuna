@@ -116,6 +116,7 @@ def test_plot_contour_error(create_figure: Callable[..., BaseContourFigure]) -> 
 def test_plot_contour_empty(
     create_figure: Callable[..., BaseContourFigure], params: Optional[List[str]]
 ) -> None:
+
     study = prepare_study_with_trials()
     figure = create_figure(study, params=params)
     assert figure.is_empty()
@@ -124,14 +125,20 @@ def test_plot_contour_empty(
 
 @parametrize_figure
 def test_plot_contour_2_params(create_figure: Callable[..., BaseContourFigure]) -> None:
+
     params = ["param_a", "param_b"]
     study = prepare_study_with_trials()
     figure = create_figure(study, params=params)
+    assert figure.get_n_params() == 2
+    assert figure.get_n_plots() == 1
+    assert not figure.is_empty()
     assert figure.get_target_name() == "Objective Value"
     assert figure.get_x_points() == [1.0, 2.5]
     assert figure.get_y_points() == [2.0, 1.0]
     assert figure.get_x_range() == (0.925, 2.575)
     assert figure.get_y_range() == (-0.1, 2.1)
+    assert figure.get_x_name() == "param_a"
+    assert figure.get_y_name() == "param_b"
     figure.save_static_image()
 
 
@@ -147,69 +154,45 @@ def test_plot_contour_2_params(create_figure: Callable[..., BaseContourFigure]) 
 def test_plot_contour_more_than_2_params(
     create_figure: Callable[..., BaseContourFigure], params: Optional[List[str]]
 ) -> None:
+
     study = prepare_study_with_trials()
     figure = create_figure(study, params=params)
     n_params = len(params) if params is not None else 4
     assert figure.get_n_plots() == n_params * (n_params - 1)
+    assert figure.get_n_params() == n_params
+    assert not figure.is_empty()
     params = params if params is not None else list(study.best_params.keys())
     for i in range(n_params):
         assert figure.get_param_names()[i] == params[i]
-    for n in range(figure.get_n_plots()):
-        x_param_name = figure.get_x_name(n)
-        y_param_name = figure.get_y_name(n)
-        assert x_param_name != y_param_name
-        assert x_param_name in params
-        assert y_param_name in params
     figure.save_static_image()
 
 
 @parametrize_figure
-def test_plot_contour_customized_target_2_params(
+@pytest.mark.parametrize("params", [["param_a", "param_b"], ["param_a", "param_b", "param_c"]])
+def test_plot_contour_customized_target(
+    create_figure: Callable[..., BaseContourFigure], params: List[str],
+) -> None:
+
+    study = prepare_study_with_trials()
+    with pytest.warns(UserWarning):
+        figure = create_figure(study, params=params, target=lambda t: t.params["param_d"])
+    assert figure.get_n_params() == len(params)
+    assert figure.get_n_plots() == 1 if len(params) == 2 else len(params) * (len(params) - 1)
+    assert not figure.is_empty()
+    figure.save_static_image()
+
+
+@parametrize_figure
+def test_plot_contour_customized_target_name(
     create_figure: Callable[..., BaseContourFigure],
 ) -> None:
 
     params = ["param_a", "param_b"]
     study = prepare_study_with_trials()
-    with pytest.warns(UserWarning):
-        figure = create_figure(study, params=params, target=lambda t: t.params["param_d"])
-    figure.save_static_image()
-
-
-@parametrize_figure
-def test_plot_contour_customized_target_more_than_2_params(
-    create_figure: Callable[..., BaseContourFigure],
-) -> None:
-
-    params = ["param_a", "param_b", "param_c"]
-    study = prepare_study_with_trials()
-    with pytest.warns(UserWarning):
-        figure = create_figure(study, params=params, target=lambda t: t.params["param_d"])
-    n_params = len(params)
-    for i in range(n_params):
-        assert figure.get_param_names()[i] == params[i]
-    for n in range(figure.get_n_plots()):
-        x_param_name = figure.get_x_name(n)
-        y_param_name = figure.get_y_name(n)
-        assert x_param_name != y_param_name
-        assert x_param_name in params
-        assert y_param_name in params
-    figure.save_static_image()
-
-
-@parametrize_figure
-@pytest.mark.parametrize(
-    "params",
-    [
-        ["param_a", "param_b"],
-        ["param_a", "param_b", "param_c"],
-    ],
-)
-def test_plot_contour_customized_target_name(
-    create_figure: Callable[..., BaseContourFigure], params: List[str]
-) -> None:
-
-    study = prepare_study_with_trials()
     figure = create_figure(study, params=params, target_name="Target Name")
+    assert figure.get_n_params() == 2
+    assert figure.get_n_plots() == 1
+    assert not figure.is_empty()
     assert figure.get_target_name() == "Target Name"
     figure.save_static_image()
 
@@ -263,8 +246,9 @@ def test_plot_contour_log_scale_and_str_category_2_params(
     )
 
     figure = create_figure(study)
-    assert figure.get_n_plots() == 1
+    assert not figure.is_empty()
     assert figure.get_n_params() == 2
+    assert figure.get_n_plots() == 1
     assert figure.get_x_range() == (-6.05, -4.95)
     assert figure.get_y_range() == (-0.05, 1.05)
     assert figure.get_x_name() == "param_a"
@@ -275,7 +259,7 @@ def test_plot_contour_log_scale_and_str_category_2_params(
 
 
 @parametrize_figure
-def test_plot_contour_log_scale_and_str_category_2_params(
+def test_plot_contour_log_scale_and_str_category_more_than_2_params(
     create_figure: Callable[..., BaseContourFigure],
 ) -> None:
     # If the search space has three parameters, plot_contour generates nine plots.
@@ -301,22 +285,9 @@ def test_plot_contour_log_scale_and_str_category_2_params(
     )
 
     figure = create_figure(study)
-    param_ranges = {"param_a": (-6.05, -4.95), "param_b": (-0.05, 1.05), "param_c": (-0.05, 1.05)}
-    categories = {"param_b": ["100", "101"], "param_c": ["one", "two"]}
-
     assert figure.get_n_plots() == 6
     assert figure.get_n_params() == 3
-    for n in range(figure.get_n_plots()):
-        assert figure.get_x_range(n) == param_ranges[figure.get_x_name(n)]
-        assert figure.get_y_range(n) == param_ranges[figure.get_y_name(n)]
-        if isinstance(distributions[figure.get_x_name(n)], FloatDistribution):
-            assert figure.get_x_is_log(n)
-        else:
-            assert figure.get_x_ticks(n) == categories[figure.get_x_name(n)]
-        if isinstance(distributions[figure.get_y_name(n)], FloatDistribution):
-            assert figure.get_y_is_log(n)
-        else:
-            assert figure.get_y_ticks(n) == categories[figure.get_y_name(n)]
+    assert not figure.is_empty()
     figure.save_static_image()
 
 
