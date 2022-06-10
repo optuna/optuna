@@ -18,12 +18,11 @@ from optuna.visualization import plot_contour
 from optuna.visualization.matplotlib import plot_contour as plt_plot_contour
 
 
-class BaseContourFigure(object, metaclass=abc.ABCMeta):
+class BaseTestableContourFigure(object, metaclass=abc.ABCMeta):
     """Base class of the testable contour figure.
 
     The methods except the followings are only used when `n_params = 2`.
     - `get_n_params`
-    - `get_param_names`
     - `get_n_plots`
     - `is_empty`
     - `save_static_image`
@@ -36,15 +35,11 @@ class BaseContourFigure(object, metaclass=abc.ABCMeta):
         if params is not None and len(params) < 2:
             return
 
-        self.params = params if params is not None else list(study.trials[0].params.keys())
-        self.params.sort()
-        self.n_params = len(self.params)
+        params = params if params is not None else list(study.trials[0].params.keys())
+        self.n_params = len(params)
 
     def get_n_params(self) -> int:
-        return len(self.params)
-
-    def get_param_names(self) -> List[str]:
-        return self.params
+        return self.n_params
 
     def get_n_plots(self) -> int:
         if self.get_n_params() == 2:

@@ -12,7 +12,7 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
-from optuna.testing.visualization.contour import BaseContourFigure
+from optuna.testing.visualization.contour import BaseTestableContourFigure
 from optuna.testing.visualization.contour import MatplotlibContourFigure
 from optuna.testing.visualization.contour import PlotlyContourFigure
 from optuna.trial import create_trial
@@ -29,7 +29,7 @@ parametrize_figure = pytest.mark.parametrize(
 
 @parametrize_figure
 def test_target_is_none_and_study_is_multi_obj(
-    create_figure: Callable[..., BaseContourFigure],
+    create_figure: Callable[..., BaseTestableContourFigure],
 ) -> None:
 
     study = create_study(directions=["minimize", "minimize"])
@@ -39,7 +39,7 @@ def test_target_is_none_and_study_is_multi_obj(
 
 @parametrize_figure
 def test_target_is_not_none_and_study_is_multi_obj(
-    create_figure: Callable[..., BaseContourFigure],
+    create_figure: Callable[..., BaseTestableContourFigure],
 ) -> None:
 
     # Multiple sub-figures.
@@ -66,7 +66,7 @@ def test_target_is_not_none_and_study_is_multi_obj(
     ],
 )
 def test_plot_contour_no_trial(
-    create_figure: Callable[..., BaseContourFigure], params: Optional[List[str]]
+    create_figure: Callable[..., BaseTestableContourFigure], params: Optional[List[str]]
 ) -> None:
 
     study_without_trials = prepare_study_with_trials(no_trials=True)
@@ -88,9 +88,8 @@ def test_plot_contour_no_trial(
     ],
 )
 def test_plot_contour_ignored_error(
-    create_figure: Callable[..., BaseContourFigure], params: Optional[List[str]]
+    create_figure: Callable[..., BaseTestableContourFigure], params: Optional[List[str]]
 ) -> None:
-
     def fail_objective(_: Trial) -> float:
 
         raise ValueError
@@ -103,7 +102,7 @@ def test_plot_contour_ignored_error(
 
 
 @parametrize_figure
-def test_plot_contour_error(create_figure: Callable[..., BaseContourFigure]) -> None:
+def test_plot_contour_error(create_figure: Callable[..., BaseTestableContourFigure]) -> None:
 
     study = prepare_study_with_trials()
 
@@ -114,7 +113,7 @@ def test_plot_contour_error(create_figure: Callable[..., BaseContourFigure]) -> 
 @parametrize_figure
 @pytest.mark.parametrize("params", [[], ["param_a"]])
 def test_plot_contour_empty(
-    create_figure: Callable[..., BaseContourFigure], params: Optional[List[str]]
+    create_figure: Callable[..., BaseTestableContourFigure], params: Optional[List[str]]
 ) -> None:
 
     study = prepare_study_with_trials()
@@ -124,7 +123,7 @@ def test_plot_contour_empty(
 
 
 @parametrize_figure
-def test_plot_contour_2_params(create_figure: Callable[..., BaseContourFigure]) -> None:
+def test_plot_contour_2_params(create_figure: Callable[..., BaseTestableContourFigure]) -> None:
 
     params = ["param_a", "param_b"]
     study = prepare_study_with_trials()
@@ -152,7 +151,7 @@ def test_plot_contour_2_params(create_figure: Callable[..., BaseContourFigure]) 
     ],
 )
 def test_plot_contour_more_than_2_params(
-    create_figure: Callable[..., BaseContourFigure], params: Optional[List[str]]
+    create_figure: Callable[..., BaseTestableContourFigure], params: Optional[List[str]]
 ) -> None:
 
     study = prepare_study_with_trials()
@@ -161,16 +160,14 @@ def test_plot_contour_more_than_2_params(
     assert figure.get_n_plots() == n_params * (n_params - 1)
     assert figure.get_n_params() == n_params
     assert not figure.is_empty()
-    params = params if params is not None else list(study.best_params.keys())
-    for i in range(n_params):
-        assert figure.get_param_names()[i] == params[i]
     figure.save_static_image()
 
 
 @parametrize_figure
 @pytest.mark.parametrize("params", [["param_a", "param_b"], ["param_a", "param_b", "param_c"]])
 def test_plot_contour_customized_target(
-    create_figure: Callable[..., BaseContourFigure], params: List[str],
+    create_figure: Callable[..., BaseTestableContourFigure],
+    params: List[str],
 ) -> None:
 
     study = prepare_study_with_trials()
@@ -184,7 +181,7 @@ def test_plot_contour_customized_target(
 
 @parametrize_figure
 def test_plot_contour_customized_target_name(
-    create_figure: Callable[..., BaseContourFigure],
+    create_figure: Callable[..., BaseTestableContourFigure],
 ) -> None:
 
     params = ["param_a", "param_b"]
@@ -206,7 +203,7 @@ def test_plot_contour_customized_target_name(
     ],
 )
 def test_generate_contour_plot_for_few_observations(
-    create_figure: Callable[..., BaseContourFigure],
+    create_figure: Callable[..., BaseTestableContourFigure],
     params: List[str],
 ) -> None:
 
@@ -221,7 +218,7 @@ def test_generate_contour_plot_for_few_observations(
 
 @parametrize_figure
 def test_plot_contour_log_scale_and_str_category_2_params(
-    create_figure: Callable[..., BaseContourFigure],
+    create_figure: Callable[..., BaseTestableContourFigure],
 ) -> None:
 
     # If the search space has two parameters, plot_contour generates a single plot.
@@ -254,13 +251,14 @@ def test_plot_contour_log_scale_and_str_category_2_params(
     assert figure.get_x_name() == "param_a"
     assert figure.get_y_name() == "param_b"
     assert figure.get_x_is_log()
+    assert not figure.get_y_is_log()
     assert figure.get_y_ticks() == ["100", "101"]
     figure.save_static_image()
 
 
 @parametrize_figure
 def test_plot_contour_log_scale_and_str_category_more_than_2_params(
-    create_figure: Callable[..., BaseContourFigure],
+    create_figure: Callable[..., BaseTestableContourFigure],
 ) -> None:
     # If the search space has three parameters, plot_contour generates nine plots.
     study = create_study()
@@ -293,7 +291,7 @@ def test_plot_contour_log_scale_and_str_category_more_than_2_params(
 
 @parametrize_figure
 def test_plot_contour_mixture_category_types(
-    create_figure: Callable[..., BaseContourFigure],
+    create_figure: Callable[..., BaseTestableContourFigure],
 ) -> None:
     study = create_study()
     distributions: Dict[str, BaseDistribution] = {
@@ -326,7 +324,7 @@ def test_plot_contour_mixture_category_types(
 
 @parametrize_figure
 @pytest.mark.parametrize("value", [float("inf"), -float("inf")])
-def test_nonfinite_removed(create_figure: Callable[..., BaseContourFigure], value: float) -> None:
+def test_nonfinite_removed(create_figure: Callable[..., BaseTestableContourFigure], value: float) -> None:
 
     study = prepare_study_with_trials(with_c_d=True, value_for_first_trial=value)
     figure = create_figure(study, params=["param_b", "param_d"])
@@ -337,7 +335,7 @@ def test_nonfinite_removed(create_figure: Callable[..., BaseContourFigure], valu
 @pytest.mark.parametrize("objective", (0, 1))
 @pytest.mark.parametrize("value", (float("inf"), -float("inf")))
 def test_nonfinite_multiobjective(
-    create_figure: Callable[..., BaseContourFigure], objective: int, value: float
+    create_figure: Callable[..., BaseTestableContourFigure], objective: int, value: float
 ) -> None:
 
     study = prepare_study_with_trials(with_c_d=True, n_objectives=2, value_for_first_trial=value)
