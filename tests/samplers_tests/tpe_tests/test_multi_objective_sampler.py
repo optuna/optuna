@@ -25,6 +25,28 @@ class MockSystemAttr:
         self.value[key] = value
 
 
+def suggest(
+    sampler: optuna.samplers.BaseSampler,
+    study: optuna.Study,
+    trial: optuna.trial.FrozenTrial,
+    distribution: optuna.distributions.BaseDistribution,
+    past_trials: List[optuna.trial.FrozenTrial],
+) -> float:
+    attrs = MockSystemAttr()
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
+        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
+    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
+        "optuna.trial.Trial.system_attrs", new_callable=PropertyMock
+    ) as mock1, patch(
+        "optuna.trial.FrozenTrial.system_attrs",
+        new_callable=PropertyMock,
+    ) as mock2:
+        mock1.return_value = attrs.value
+        mock2.return_value = attrs.value
+        suggestion = sampler.sample_independent(study, trial, "param-a", distribution)
+    return suggestion
+
+
 def test_multi_objective_sample_independent_seed_fix() -> None:
     study = optuna.create_study(directions=["minimize", "maximize"])
     dist = optuna.distributions.FloatDistribution(1.0, 100.0)
@@ -34,46 +56,13 @@ def test_multi_objective_sample_independent_seed_fix() -> None:
     # Prepare a trial and a sample for later checks.
     trial = frozen_trial_factory(16, [0, 0])
     sampler = TPESampler(seed=0)
-    attrs = MockSystemAttr()
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
-    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
-        "optuna.trial.Trial.system_attrs", new_callable=PropertyMock
-    ) as mock1, patch(
-        "optuna.trial.FrozenTrial.system_attrs",
-        new_callable=PropertyMock,
-    ) as mock2:
-        mock1.return_value = attrs.value
-        mock2.return_value = attrs.value
-        suggestion = sampler.sample_independent(study, trial, "param-a", dist)
+    suggestion = suggest(sampler, study, trial, dist, past_trials)
 
     sampler = TPESampler(seed=0)
-    attrs = MockSystemAttr()
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
-    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
-        "optuna.trial.Trial.system_attrs", new_callable=PropertyMock
-    ) as mock1, patch(
-        "optuna.trial.FrozenTrial.system_attrs",
-        new_callable=PropertyMock,
-    ) as mock2:
-        mock1.return_value = attrs.value
-        mock2.return_value = attrs.value
-        assert sampler.sample_independent(study, trial, "param-a", dist) == suggestion
+    assert suggest(sampler, study, trial, dist, past_trials) == suggestion
 
     sampler = TPESampler(seed=1)
-    attrs = MockSystemAttr()
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
-    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
-        "optuna.trial.Trial.system_attrs", new_callable=PropertyMock
-    ) as mock1, patch(
-        "optuna.trial.FrozenTrial.system_attrs",
-        new_callable=PropertyMock,
-    ) as mock2:
-        mock1.return_value = attrs.value
-        mock2.return_value = attrs.value
-        assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
+    assert suggest(sampler, study, trial, dist, past_trials) != suggestion
 
 
 def test_multi_objective_sample_independent_prior() -> None:
@@ -86,46 +75,13 @@ def test_multi_objective_sample_independent_prior() -> None:
     # Prepare a trial and a sample for later checks.
     trial = frozen_trial_factory(16, [0, 0])
     sampler = TPESampler(seed=0)
-    attrs = MockSystemAttr()
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
-    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
-        "optuna.trial.Trial.system_attrs", new_callable=PropertyMock
-    ) as mock1, patch(
-        "optuna.trial.FrozenTrial.system_attrs",
-        new_callable=PropertyMock,
-    ) as mock2:
-        mock1.return_value = attrs.value
-        mock2.return_value = attrs.value
-        suggestion = sampler.sample_independent(study, trial, "param-a", dist)
+    suggestion = suggest(sampler, study, trial, dist, past_trials)
 
     sampler = TPESampler(consider_prior=False, seed=0)
-    attrs = MockSystemAttr()
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
-    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
-        "optuna.trial.Trial.system_attrs", new_callable=PropertyMock
-    ) as mock1, patch(
-        "optuna.trial.FrozenTrial.system_attrs",
-        new_callable=PropertyMock,
-    ) as mock2:
-        mock1.return_value = attrs.value
-        mock2.return_value = attrs.value
-        assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
+    assert suggest(sampler, study, trial, dist, past_trials) != suggestion
 
     sampler = TPESampler(prior_weight=0.5, seed=0)
-    attrs = MockSystemAttr()
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
-    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
-        "optuna.trial.Trial.system_attrs", new_callable=PropertyMock
-    ) as mock1, patch(
-        "optuna.trial.FrozenTrial.system_attrs",
-        new_callable=PropertyMock,
-    ) as mock2:
-        mock1.return_value = attrs.value
-        mock2.return_value = attrs.value
-        assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
+    assert suggest(sampler, study, trial, dist, past_trials) != suggestion
 
 
 def test_multi_objective_sample_independent_n_startup_trial() -> None:
@@ -133,49 +89,39 @@ def test_multi_objective_sample_independent_n_startup_trial() -> None:
     dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     random.seed(128)
     past_trials = [frozen_trial_factory(i, [random.random(), random.random()]) for i in range(16)]
-
     trial = frozen_trial_factory(16, [0, 0])
-    sampler = TPESampler(n_startup_trials=16, seed=0)
-    attrs = MockSystemAttr()
-    with patch.object(
-        study._storage, "get_all_trials", return_value=past_trials[:15]
-    ), patch.object(
-        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
-    ), patch.object(
-        study._storage, "get_trial", return_value=trial
-    ), patch(
-        "optuna.trial.Trial.system_attrs", new_callable=PropertyMock
-    ) as mock1, patch(
-        "optuna.trial.FrozenTrial.system_attrs",
-        new_callable=PropertyMock,
-    ) as mock2, patch.object(
-        optuna.samplers.RandomSampler,
-        "sample_independent",
-        return_value=1.0,
-    ) as sample_method:
-        mock1.return_value = attrs.value
-        mock2.return_value = attrs.value
-        sampler.sample_independent(study, trial, "param-a", dist)
-    assert sample_method.call_count == 1
+
+    def _suggest_and_return_call_count(
+        sampler: optuna.samplers.BaseSampler,
+        past_trials: List[optuna.trial.FrozenTrial],
+    ) -> int:
+        attrs = MockSystemAttr()
+        with patch.object(
+            study._storage, "get_all_trials", return_value=past_trials
+        ), patch.object(
+            study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
+        ), patch.object(
+            study._storage, "get_trial", return_value=trial
+        ), patch(
+            "optuna.trial.Trial.system_attrs", new_callable=PropertyMock
+        ) as mock1, patch(
+            "optuna.trial.FrozenTrial.system_attrs",
+            new_callable=PropertyMock,
+        ) as mock2, patch.object(
+            optuna.samplers.RandomSampler,
+            "sample_independent",
+            return_value=1.0,
+        ) as sample_method:
+            mock1.return_value = attrs.value
+            mock2.return_value = attrs.value
+            sampler.sample_independent(study, trial, "param-a", dist)
+        return sample_method.call_count
 
     sampler = TPESampler(n_startup_trials=16, seed=0)
-    attrs = MockSystemAttr()
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
-    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
-        "optuna.trial.Trial.system_attrs", new_callable=PropertyMock
-    ) as mock1, patch(
-        "optuna.trial.FrozenTrial.system_attrs",
-        new_callable=PropertyMock,
-    ) as mock2, patch.object(
-        optuna.samplers.RandomSampler,
-        "sample_independent",
-        return_value=1.0,
-    ) as sample_method:
-        mock1.return_value = attrs.value
-        mock2.return_value = attrs.value
-        sampler.sample_independent(study, trial, "param-a", dist)
-    assert sample_method.call_count == 0
+    assert _suggest_and_return_call_count(sampler, past_trials[:-1]) == 1
+
+    sampler = TPESampler(n_startup_trials=16, seed=0)
+    assert _suggest_and_return_call_count(sampler, past_trials) == 0
 
 
 def test_multi_objective_sample_independent_misc_arguments() -> None:
@@ -187,71 +133,20 @@ def test_multi_objective_sample_independent_misc_arguments() -> None:
     # Prepare a trial and a sample for later checks.
     trial = frozen_trial_factory(16, [0, 0])
     sampler = TPESampler(seed=0)
-    attrs = MockSystemAttr()
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
-    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
-        "optuna.trial.Trial.system_attrs", new_callable=PropertyMock
-    ) as mock1, patch(
-        "optuna.trial.FrozenTrial.system_attrs",
-        new_callable=PropertyMock,
-    ) as mock2:
-        mock1.return_value = attrs.value
-        mock2.return_value = attrs.value
-        suggestion = sampler.sample_independent(study, trial, "param-a", dist)
+    suggestion = suggest(sampler, study, trial, dist, past_trials)
 
     # Test misc. parameters.
     sampler = TPESampler(n_ei_candidates=13, seed=0)
-    attrs = MockSystemAttr()
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
-    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
-        "optuna.trial.Trial.system_attrs", new_callable=PropertyMock
-    ) as mock1, patch(
-        "optuna.trial.FrozenTrial.system_attrs",
-        new_callable=PropertyMock,
-    ) as mock2:
-        mock1.return_value = attrs.value
-        mock2.return_value = attrs.value
-        assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
+    assert suggest(sampler, study, trial, dist, past_trials) != suggestion
 
     sampler = TPESampler(gamma=lambda _: 1, seed=0)
-    attrs = MockSystemAttr()
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
-    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
-        "optuna.trial.Trial.system_attrs", new_callable=PropertyMock
-    ) as mock1, patch(
-        "optuna.trial.FrozenTrial.system_attrs",
-        new_callable=PropertyMock,
-    ) as mock2:
-        mock1.return_value = attrs.value
-        mock2.return_value = attrs.value
-        assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
+    assert suggest(sampler, study, trial, dist, past_trials) != suggestion
 
     sampler = TPESampler(weights=lambda n: np.zeros(n), seed=0)
-    attrs = MockSystemAttr()
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
-    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
-        "optuna.trial.Trial.system_attrs", new_callable=PropertyMock
-    ) as mock1, patch(
-        "optuna.trial.FrozenTrial.system_attrs",
-        new_callable=PropertyMock,
-    ) as mock2:
-        mock1.return_value = attrs.value
-        mock2.return_value = attrs.value
-        assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
+    assert suggest(sampler, study, trial, dist, past_trials) != suggestion
 
 
-@pytest.mark.parametrize(
-    "log, step",
-    [
-        (False, None),
-        (True, None),
-        (False, 0.1),
-    ],
-)
+@pytest.mark.parametrize("log, step", [(False, None), (True, None), (False, 0.1)])
 def test_multi_objective_sample_independent_float_distributions(
     log: bool, step: Optional[float]
 ) -> None:
@@ -276,18 +171,7 @@ def test_multi_objective_sample_independent_float_distributions(
 
     trial = frozen_trial_factory(16, [0, 0])
     sampler = TPESampler(seed=0)
-    attrs = MockSystemAttr()
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
-    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
-        "optuna.trial.Trial.system_attrs", new_callable=PropertyMock
-    ) as mock1, patch(
-        "optuna.trial.FrozenTrial.system_attrs",
-        new_callable=PropertyMock,
-    ) as mock2:
-        mock1.return_value = attrs.value
-        mock2.return_value = attrs.value
-        float_suggestion = sampler.sample_independent(study, trial, "param-a", float_dist)
+    float_suggestion = suggest(sampler, study, trial, float_dist, past_trials)
     assert 1.0 <= float_suggestion < 100.0
 
     if float_dist.step == 0.1:
@@ -299,18 +183,7 @@ def test_multi_objective_sample_independent_float_distributions(
     past_trials = [frozen_trial_factory(i, [random.random(), random.random()]) for i in range(16)]
     trial = frozen_trial_factory(16, [0, 0])
     sampler = TPESampler(seed=0)
-    attrs = MockSystemAttr()
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
-    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
-        "optuna.trial.Trial.system_attrs", new_callable=PropertyMock
-    ) as mock1, patch(
-        "optuna.trial.FrozenTrial.system_attrs",
-        new_callable=PropertyMock,
-    ) as mock2:
-        mock1.return_value = attrs.value
-        mock2.return_value = attrs.value
-        suggestion = sampler.sample_independent(study, trial, "param-a", dist)
+    suggestion = suggest(sampler, study, trial, dist, past_trials)
     if float_dist.log or float_dist.step == 0.1:
         assert float_suggestion != suggestion
     else:
@@ -338,18 +211,7 @@ def test_multi_objective_sample_independent_categorical_distributions() -> None:
 
     trial = frozen_trial_factory(16, [0, 0])
     sampler = TPESampler(seed=0)
-    attrs = MockSystemAttr()
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
-    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
-        "optuna.trial.Trial.system_attrs", new_callable=PropertyMock
-    ) as mock1, patch(
-        "optuna.trial.FrozenTrial.system_attrs",
-        new_callable=PropertyMock,
-    ) as mock2:
-        mock1.return_value = attrs.value
-        mock2.return_value = attrs.value
-        categorical_suggestion = sampler.sample_independent(study, trial, "param-a", cat_dist)
+    categorical_suggestion = suggest(sampler, study, trial, cat_dist, past_trials)
     assert categorical_suggestion in categories
 
 
@@ -380,18 +242,7 @@ def test_multi_objective_sample_int_distributions(log: bool, step: int) -> None:
 
     trial = frozen_trial_factory(16, [0, 0])
     sampler = TPESampler(seed=0)
-    attrs = MockSystemAttr()
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
-    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
-        "optuna.trial.Trial.system_attrs", new_callable=PropertyMock
-    ) as mock1, patch(
-        "optuna.trial.FrozenTrial.system_attrs",
-        new_callable=PropertyMock,
-    ) as mock2:
-        mock1.return_value = attrs.value
-        mock2.return_value = attrs.value
-        int_suggestion = sampler.sample_independent(study, trial, "param-a", int_dist)
+    int_suggestion = suggest(sampler, study, trial, int_dist, past_trials)
     assert 1 <= int_suggestion <= 100
     assert isinstance(int_suggestion, int)
 
@@ -417,18 +268,7 @@ def test_multi_objective_sample_independent_handle_unsuccessful_states(
 
     trial = frozen_trial_factory(32, [0, 0])
     sampler = TPESampler(seed=0)
-    attrs = MockSystemAttr()
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
-    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
-        "optuna.trial.Trial.system_attrs", new_callable=PropertyMock
-    ) as mock1, patch(
-        "optuna.trial.FrozenTrial.system_attrs",
-        new_callable=PropertyMock,
-    ) as mock2:
-        mock1.return_value = attrs.value
-        mock2.return_value = attrs.value
-        all_success_suggestion = sampler.sample_independent(study, trial, "param-a", dist)
+    all_success_suggestion = suggest(sampler, study, trial, dist, past_trials)
 
     # Test unsuccessful trials are handled differently.
     state_fn = build_state_fn(state)
@@ -439,18 +279,7 @@ def test_multi_objective_sample_independent_handle_unsuccessful_states(
 
     trial = frozen_trial_factory(32, [0, 0])
     sampler = TPESampler(seed=0)
-    attrs = MockSystemAttr()
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
-    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
-        "optuna.trial.Trial.system_attrs", new_callable=PropertyMock
-    ) as mock1, patch(
-        "optuna.trial.FrozenTrial.system_attrs",
-        new_callable=PropertyMock,
-    ) as mock2:
-        mock1.return_value = attrs.value
-        mock2.return_value = attrs.value
-        partial_unsuccessful_suggestion = sampler.sample_independent(study, trial, "param-a", dist)
+    partial_unsuccessful_suggestion = suggest(sampler, study, trial, dist, past_trials)
     assert partial_unsuccessful_suggestion != all_success_suggestion
 
 
@@ -473,18 +302,7 @@ def test_multi_objective_sample_independent_ignored_states() -> None:
         ]
         trial = frozen_trial_factory(32, [0, 0])
         sampler = TPESampler(seed=0)
-    attrs = MockSystemAttr()
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
-    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
-        "optuna.trial.Trial.system_attrs", new_callable=PropertyMock
-    ) as mock1, patch(
-        "optuna.trial.FrozenTrial.system_attrs",
-        new_callable=PropertyMock,
-    ) as mock2:
-        mock1.return_value = attrs.value
-        mock2.return_value = attrs.value
-        suggestions.append(sampler.sample_independent(study, trial, "param-a", dist))
+        suggestions.append(suggest(sampler, study, trial, dist, past_trials))
 
     assert len(set(suggestions)) == 1
 
