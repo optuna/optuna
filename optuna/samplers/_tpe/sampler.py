@@ -710,7 +710,7 @@ def _get_observation_pairs(
                 violation = float("inf")
             else:
                 # Violation values of infeasible dimensions are summed up.
-                violation = sum(map(lambda x: max(x, 0.0), constraint))
+                violation = sum(v for v in constraint if v > 0)
             violations.append(violation)
 
     return values, scores, violations
