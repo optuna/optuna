@@ -264,7 +264,8 @@ def _create_trials() -> List[FrozenTrial]:
     return trials
 
 
-def test_population_size_is_multiplied_when_enable_ipop() -> None:
+@pytest.mark.parametrize("popsize", [None, 16])
+def test_population_size_is_multiplied_when_enable_ipop(popsize: Optional[int]) -> None:
     inc_popsize = 2
     sampler = optuna.samplers.CmaEsSampler(
         x0={"x": 0, "y": 0},
@@ -273,6 +274,7 @@ def test_population_size_is_multiplied_when_enable_ipop() -> None:
         n_startup_trials=1,
         independent_sampler=DeterministicRelativeSampler({}, {}),
         restart_strategy="ipop",
+        popsize=popsize,
         inc_popsize=inc_popsize,
     )
     study = optuna.create_study(sampler=sampler)
@@ -294,16 +296,17 @@ def test_population_size_is_multiplied_when_enable_ipop() -> None:
             mean=np.array([-1, -1], dtype=float),
             sigma=1.3,
             bounds=np.array([[-1, 1], [-1, 1]], dtype=float),
+            population_size=popsize,  # Already tested by test_init_cmaes_opts().
         )
         cma_obj.should_stop = should_stop_mock
         cma_class_mock.return_value = cma_obj
 
-        popsize = cma_obj.population_size
-        study.optimize(objective, n_trials=2 + popsize)
+        initial_popsize = cma_obj.population_size
+        study.optimize(objective, n_trials=2 + initial_popsize)
         assert cma_obj.should_stop.call_count == 1
 
         _, actual_kwargs = cma_class_mock.call_args
-        assert actual_kwargs["population_size"] == inc_popsize * popsize
+        assert actual_kwargs["population_size"] == inc_popsize * initial_popsize
 
 
 def test_restore_optimizer_keeps_backward_compatibility() -> None:
