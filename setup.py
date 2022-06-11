@@ -70,7 +70,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "lightgbm",
             "matplotlib",
             "mlflow",
-            # TODO(nzw0301): Remove onnx if thop add onnx to its dependencies.
+            # TODO(nzw0301): Remove onnx if thop adds onnx to its dependencies.
             "onnx",
             "pandas",
             "pillow",
