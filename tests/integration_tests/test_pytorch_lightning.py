@@ -10,7 +10,7 @@ import torch.nn.functional as F
 
 import optuna
 from optuna.integration import PyTorchLightningPruningCallback
-from optuna.testing.integration import DeterministicPruner
+from optuna.testing.pruner import DeterministicPruner
 from optuna.testing.storage import StorageSupplier
 
 
