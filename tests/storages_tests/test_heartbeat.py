@@ -13,8 +13,8 @@ from optuna.storages import RDBStorage
 from optuna.storages import RedisStorage
 from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.storages._heartbeat import is_heartbeat_enabled
-from optuna.testing.storage import STORAGE_MODES_HEARTBEAT
-from optuna.testing.storage import StorageSupplier
+from optuna.testing.storages import STORAGE_MODES_HEARTBEAT
+from optuna.testing.storages import StorageSupplier
 from optuna.testing.threading import _TestableThread
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState

@@ -16,7 +16,7 @@ from optuna import create_trial
 from optuna._transform import _SearchSpaceTransform
 from optuna.samplers._cmaes import _concat_optimizer_attrs
 from optuna.samplers._cmaes import _split_optimizer_str
-from optuna.testing.sampler import DeterministicRelativeSampler
+from optuna.testing.samplers import DeterministicRelativeSampler
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 

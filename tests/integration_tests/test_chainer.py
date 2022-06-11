@@ -12,7 +12,7 @@ import pytest
 
 import optuna
 from optuna.integration.chainer import ChainerPruningExtension
-from optuna.testing.pruner import DeterministicPruner
+from optuna.testing.pruners import DeterministicPruner
 
 
 class FixedValueDataset(chainer.dataset.DatasetMixin):

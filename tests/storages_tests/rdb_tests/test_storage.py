@@ -22,7 +22,7 @@ from optuna.storages._rdb.models import SCHEMA_VERSION
 from optuna.storages._rdb.models import TrialHeartbeatModel
 from optuna.storages._rdb.models import VersionInfoModel
 from optuna.storages._rdb.storage import _create_scoped_session
-from optuna.testing.storage import StorageSupplier
+from optuna.testing.storages import StorageSupplier
 from optuna.testing.threading import _TestableThread
 from optuna.trial import Trial
 
