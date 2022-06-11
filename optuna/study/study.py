@@ -28,7 +28,7 @@ from optuna._deprecated import deprecated_func
 from optuna._imports import _LazyImport
 from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.distributions import BaseDistribution
-from optuna.storages._cached_storage import is_cached_storage
+from optuna.storages._cached_storage import _CachedStorage
 from optuna.storages._heartbeat import is_heartbeat_enabled
 from optuna.study._multi_objective import _get_pareto_front_trials
 from optuna.study._optimize import _optimize
@@ -250,7 +250,7 @@ class Study:
         Returns:
             A list of :class:`~optuna.trial.FrozenTrial` objects.
         """
-        if is_cached_storage(self._storage):
+        if isinstance(self._storage, _CachedStorage):
             self._storage.read_trials_from_remote_storage(self._study_id)
 
         return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy, states=states)
@@ -497,7 +497,7 @@ class Study:
         }
 
         # Sync storage once every trial.
-        if is_cached_storage(self._storage):
+        if isinstance(self._storage, _CachedStorage):
             self._storage.read_trials_from_remote_storage(self._study_id)
 
         trial_id = self._pop_waiting_trial_id()

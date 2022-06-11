@@ -386,13 +386,3 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
 
     def get_failed_trial_callback(self) -> Optional[Callable[["optuna.Study", FrozenTrial], None]]:
         return self._backend.get_failed_trial_callback()
-
-
-def is_cached_storage(storage: BaseStorage) -> bool:
-    """Check whether the storage is the CachedStorage.
-
-    Returns:
-        :obj:`True` if the storage inherits
-        :class:`~optuna.storages._cached_storage._CachedStorage`, otherwise :obj:`False`.
-    """
-    return isinstance(storage, _CachedStorage)
