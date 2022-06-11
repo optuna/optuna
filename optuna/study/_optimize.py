@@ -160,8 +160,6 @@ def _optimize_sequential(
 
         try:
             frozen_trial = _run_trial(study, func, catch)
-        except Exception:
-            raise
         finally:
             # The following line mitigates memory problems that can be occurred in some
             # environments (e.g., services that use computing containers such as CircleCI).
