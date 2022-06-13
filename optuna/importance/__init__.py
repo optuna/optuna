@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
@@ -7,7 +8,6 @@ from typing import Optional
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova import FanovaImportanceEvaluator
 from optuna.importance._mean_decrease_impurity import MeanDecreaseImpurityImportanceEvaluator
-from optuna.samplers._search_space.intersection import intersection_search_space
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -19,6 +19,35 @@ __all__ = [
     "MeanDecreaseImpurityImportanceEvaluator",
     "get_param_importances",
 ]
+
+
+def _check_evaluate_args(completed_trials: List[FrozenTrial], params: Optional[List[str]]) -> None:
+    if len(completed_trials) == 0:
+        raise ValueError("Cannot evaluate parameter importances without completed trials.")
+    if len(completed_trials) == 1:
+        raise ValueError("Cannot evaluate parameter importances with only a single trial.")
+
+    if not isinstance(params, (list, tuple)):
+        raise TypeError(
+            "Parameters must be specified as a list. Actual parameters: {}.".format(params)
+        )
+    if any(not isinstance(p, str) for p in params):
+        raise TypeError(
+            "Parameters must be specified by their names with strings. Actual parameters: "
+            "{}.".format(params)
+        )
+
+    if len(params) > 0:
+        at_least_one_trial = False
+        for trial in completed_trials:
+            if all(p in trial.distributions for p in params):
+                at_least_one_trial = True
+                break
+        if not at_least_one_trial:
+            raise ValueError(
+                "Study must contain completed trials with all specified parameters. "
+                "Specified parameters: {}.".format(params)
+            )
 
 
 def get_param_importances(
@@ -85,7 +114,8 @@ def get_param_importances(
 
     """
 
-    if len(study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))) == 0:
+    completed_trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+    if len(completed_trials) == 0:
         raise ValueError("The study does not contain completed trials.")
 
     if evaluator is None:
@@ -110,12 +140,28 @@ def get_param_importances(
         target = default_target
 
     if params is None:
-        params = list(intersection_search_space(study, ordered_dict=True).keys())
+        # Find intersection spaces of all parameters.
+        # We don't use `intersection_search_space` here because
+        # we don't want to call `study.get_trials` multiple times.
+        dists: Any
+        dists = completed_trials[0].distributions.items()
+        for trial in completed_trials[1:]:
+            # We use lambda to capture the value of `trial.distributions`.
+            dists = (
+                lambda d: (
+                    (param, dist) for param, dist in dists if param in d and dist == d[param]
+                )
+            )(trial.distributions)
+        params = list(param for param, dist in dists)
+
+    assert params is not None
+
+    _check_evaluate_args(completed_trials, params)
 
     if len(params) == 0:
         return OrderedDict()
 
-    importances = evaluator.evaluate(study, params=params, target=target)
+    importances = evaluator.evaluate(completed_trials, params=params, target=target)
 
     # Sort the importances in descending order.
     return OrderedDict(

@@ -40,10 +40,12 @@ def test_mean_decrease_impurity_importance_evaluator_n_trees() -> None:
     study.optimize(objective, n_trials=3)
 
     evaluator = MeanDecreaseImpurityImportanceEvaluator(n_trees=10, seed=0)
-    param_importance = evaluator.evaluate(study, params=params, target=get_value)
+    param_importance = evaluator.evaluate(study.get_trials(), params=params, target=get_value)
 
     evaluator = MeanDecreaseImpurityImportanceEvaluator(n_trees=20, seed=0)
-    param_importance_different_n_trees = evaluator.evaluate(study, params=params, target=get_value)
+    param_importance_different_n_trees = evaluator.evaluate(
+        study.get_trials(), params=params, target=get_value
+    )
 
     assert param_importance != param_importance_different_n_trees
 
@@ -55,11 +57,11 @@ def test_mean_decrease_impurity_importance_evaluator_max_depth() -> None:
     study.optimize(objective, n_trials=3)
 
     evaluator = MeanDecreaseImpurityImportanceEvaluator(max_depth=1, seed=0)
-    param_importance = evaluator.evaluate(study, params=params, target=get_value)
+    param_importance = evaluator.evaluate(study.get_trials(), params=params, target=get_value)
 
     evaluator = MeanDecreaseImpurityImportanceEvaluator(max_depth=2, seed=0)
     param_importance_different_max_depth = evaluator.evaluate(
-        study, params=params, target=get_value
+        study.get_trials(), params=params, target=get_value
     )
 
     assert param_importance != param_importance_different_max_depth
@@ -70,14 +72,18 @@ def test_mean_decrease_impurity_importance_evaluator_seed() -> None:
     study.optimize(objective, n_trials=3)
 
     evaluator = MeanDecreaseImpurityImportanceEvaluator(seed=2)
-    param_importance = evaluator.evaluate(study, params=params, target=get_value)
+    param_importance = evaluator.evaluate(study.get_trials(), params=params, target=get_value)
 
     evaluator = MeanDecreaseImpurityImportanceEvaluator(seed=2)
-    param_importance_same_seed = evaluator.evaluate(study, params=params, target=get_value)
+    param_importance_same_seed = evaluator.evaluate(
+        study.get_trials(), params=params, target=get_value
+    )
     assert param_importance == param_importance_same_seed
 
     evaluator = MeanDecreaseImpurityImportanceEvaluator(seed=3)
-    param_importance_different_seed = evaluator.evaluate(study, params=params, target=get_value)
+    param_importance_different_seed = evaluator.evaluate(
+        study.get_trials(), params=params, target=get_value
+    )
     assert param_importance != param_importance_different_seed
 
 
@@ -88,9 +94,9 @@ def test_mean_decrease_impurity_importance_evaluator_with_target() -> None:
     study.optimize(objective, n_trials=3)
 
     evaluator = MeanDecreaseImpurityImportanceEvaluator(seed=0)
-    param_importance = evaluator.evaluate(study, params=params, target=get_value)
+    param_importance = evaluator.evaluate(study.get_trials(), params=params, target=get_value)
     param_importance_with_target = evaluator.evaluate(
-        study,
+        study.get_trials(),
         params=params,
         target=lambda t: t.params["x1"] + t.params["x2"],
     )
@@ -109,7 +115,9 @@ def test_mean_decrease_impurity_importance_evaluator_with_infinite(inf_value: fl
     study.optimize(objective, n_trials=n_trial)
 
     evaluator = MeanDecreaseImpurityImportanceEvaluator(seed=seed)
-    param_importance_without_inf = evaluator.evaluate(study, params=params, target=get_value)
+    param_importance_without_inf = evaluator.evaluate(
+        study.get_trials(), params=params, target=get_value
+    )
 
     # A trial with an inf value is added into the study manually.
     study.add_trial(
@@ -124,7 +132,9 @@ def test_mean_decrease_impurity_importance_evaluator_with_infinite(inf_value: fl
         )
     )
     # Importance scores are calculated with a trial with an inf value.
-    param_importance_with_inf = evaluator.evaluate(study, params=params, target=get_value)
+    param_importance_with_inf = evaluator.evaluate(
+        study.get_trials(), params=params, target=get_value
+    )
 
     # Obtained importance scores should be the same between with inf and without inf,
     # because the last trial whose objective value is an inf is ignored.
@@ -146,7 +156,7 @@ def test_multi_objective_mean_decrease_impurity_importance_evaluator_with_infini
 
     evaluator = MeanDecreaseImpurityImportanceEvaluator(seed=seed)
     param_importance_without_inf = evaluator.evaluate(
-        study, params=params, target=lambda t: t.values[target_idx]
+        study.get_trials(), params=params, target=lambda t: t.values[target_idx]
     )
 
     # A trial with an inf value is added into the study manually.
@@ -163,7 +173,7 @@ def test_multi_objective_mean_decrease_impurity_importance_evaluator_with_infini
     )
     # Importance scores are calculated with a trial with an inf value.
     param_importance_with_inf = evaluator.evaluate(
-        study, params=params, target=lambda t: t.values[target_idx]
+        study.get_trials(), params=params, target=lambda t: t.values[target_idx]
     )
 
     # Obtained importance scores should be the same between with inf and without inf,

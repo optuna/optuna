@@ -13,7 +13,6 @@ from optuna.importance._base import _get_trans_params
 from optuna.importance._base import _param_importances_to_dict
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova._fanova import _Fanova
-from optuna.study import Study
 from optuna.trial import FrozenTrial
 
 
@@ -24,9 +23,9 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
     `An Efficient Approach for Assessing Hyperparameter Importance
     <http://proceedings.mlr.press/v32/hutter14.html>`_.
 
-    Given a study, fANOVA fits a random forest regression model that predicts the objective value
-    given a parameter configuration. The more accurate this model is, the more reliable the
-    importances assessed by this class are.
+    Given a list of trials, fANOVA fits a random forest regression model that predicts the
+    objective value given a parameter configuration. The more accurate this model is, the more
+    reliable the importances assessed by this class are.
 
     .. note::
 
@@ -75,13 +74,17 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
 
     def evaluate(
         self,
-        study: Study,
+        completed_trials: List[FrozenTrial],
         params: List[str],
         *,
         target: Callable[[FrozenTrial], float],
     ) -> Dict[str, float]:
 
-        distributions = _get_distributions(study, params=params)
+        trials: List[FrozenTrial] = _get_filtered_trials(
+            completed_trials, params=params, target=target
+        )
+
+        distributions = _get_distributions(trials, params=params)
 
         # fANOVA does not support parameter distributions with a single value.
         # However, there is no reason to calculate parameter importance in such case anyway,
@@ -95,8 +98,6 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
 
         if len(non_single_distributions) == 0:
             return {}
-
-        trials: List[FrozenTrial] = _get_filtered_trials(study, params=params, target=target)
 
         trans = _SearchSpaceTransform(
             non_single_distributions, transform_log=False, transform_step=False

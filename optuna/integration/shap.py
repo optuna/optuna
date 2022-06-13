@@ -14,7 +14,6 @@ from optuna.importance._base import _get_target_values
 from optuna.importance._base import _get_trans_params
 from optuna.importance._base import _param_importances_to_dict
 from optuna.importance._base import BaseImportanceEvaluator
-from optuna.study import Study
 from optuna.trial import FrozenTrial
 
 
@@ -62,15 +61,16 @@ class ShapleyImportanceEvaluator(BaseImportanceEvaluator):
 
     def evaluate(
         self,
-        study: Study,
+        completed_trials: List[FrozenTrial],
         params: List[str],
         *,
         target: Callable[[FrozenTrial], float],
     ) -> Dict[str, float]:
 
-        distributions = _get_distributions(study, params=params)
-
-        trials: List[FrozenTrial] = _get_filtered_trials(study, params=params, target=target)
+        trials: List[FrozenTrial] = _get_filtered_trials(
+            completed_trials, params=params, target=target
+        )
+        distributions = _get_distributions(trials, params=params)
         trans = _SearchSpaceTransform(distributions, transform_log=False, transform_step=False)
         trans_params: np.ndarray = _get_trans_params(trials, trans)
         target_values: np.ndarray = _get_target_values(trials, target)
