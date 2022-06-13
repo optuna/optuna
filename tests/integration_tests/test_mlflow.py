@@ -566,7 +566,6 @@ def test_chunk_info(tmpdir: py.path.local) -> None:
     run_dict = run.to_dictionary()
 
     # The `tags` contains param's distributions and other information too, such as trial number.
-    print(run_dict["data"]["tags"])
     assert len(run_dict["data"]["tags"]) > num_params
     assert len(run_dict["data"]["params"]) == num_params
     assert len(run_dict["data"]["metrics"]) == num_objective
