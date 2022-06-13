@@ -323,7 +323,7 @@ def test_record_heartbeat() -> None:
         storage.heartbeat_interval = heartbeat_interval
         study = create_study(storage=storage)
         # Exceptions raised in spawned threads are caught by `_TestableThread`.
-        with patch("optuna.study._optimize.Thread", _TestableThread):
+        with patch("optuna.storages._heartbeat.Thread", _TestableThread):
             study.optimize(objective, n_trials=n_trials)
 
         trial_heartbeats = []
