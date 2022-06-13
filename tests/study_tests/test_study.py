@@ -769,7 +769,9 @@ def test_enqueue_trial_skip_existing_allows_unfixed(
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-@pytest.mark.parametrize("param", ["foo", 1, 1.1])
+@pytest.mark.parametrize(
+    "param", ["foo", 1, 1.1, 1e17, 1e-17, float("inf"), float("-inf"), float("nan"), None]
+)
 def test_enqueue_trial_skip_existing_handles_common_types(storage_mode: str, param: Any) -> None:
 
     with StorageSupplier(storage_mode) as storage:
