@@ -150,10 +150,12 @@ Also, we also provide Optuna docker images on [DockerHub](https://hub.docker.com
 
 ## Communication
 
+- [GitHub Discussions] for feature requests and questions.
 - [GitHub Issues] for bug reports, feature requests and questions.
 - [Gitter] for interactive chat with developers.
 - [Stack Overflow] for questions.
 
+[GitHub Discussions]: https://github.com/optuna/optuna/discussions
 [GitHub issues]: https://github.com/optuna/optuna/issues
 [Gitter]: https://gitter.im/optuna/optuna
 [Stack Overflow]: https://stackoverflow.com/questions/tagged/optuna
