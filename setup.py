@@ -70,9 +70,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             "lightgbm",
             "matplotlib",
             "mlflow",
+            # TODO(nzw0301): Remove onnx if thop adds onnx to its dependencies.
+            "onnx",
             "pandas",
             "pillow",
             "plotly>=4.0.0",  # optuna/visualization.
+            # TODO(nzw0301): Remove protobuf after
+            # https://github.com/onnx/onnx/issues/4239 is resolved.
+            "protobuf<=3.20.1",
             "scikit-learn",
             "scikit-optimize",
             "sphinx",
