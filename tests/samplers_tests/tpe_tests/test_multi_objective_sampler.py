@@ -490,8 +490,10 @@ def test_multi_objective_sample_independent_ignored_states() -> None:
 
 
 @pytest.mark.parametrize("int_value", [-5, 5, 0])
-@pytest.mark.parametrize("categorical_value", [1, 0., "A", None, True, float("inf"), float("nan")])
-@pytest.mark.parametrize("objective_value", [-5., 5., 0., -float("inf"), float("inf")])
+@pytest.mark.parametrize(
+    "categorical_value", [1, 0.0, "A", None, True, float("inf"), float("nan")]
+)
+@pytest.mark.parametrize("objective_value", [-5.0, 5.0, 0.0, -float("inf"), float("inf")])
 @pytest.mark.parametrize("multivariate", [True, False])
 @pytest.mark.parametrize("constant_liar", [True, False])
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
@@ -533,10 +535,14 @@ def test_multi_objective_get_observation_pairs(
         {"x": [int_value, int_value], "y": [0, 0]},
         [(-float("inf"), [objective_value, -objective_value]) for _ in range(2)],
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["z"], multivariate, constant_liar) == ((
-        {"z": [None, None]},
-        [(-float("inf"), [objective_value, -objective_value]) for _ in range(2)],
-    ) if not multivariate else ({"z": []}, []))
+    assert _tpe.sampler._get_observation_pairs(study, ["z"], multivariate, constant_liar) == (
+        (
+            {"z": [None, None]},
+            [(-float("inf"), [objective_value, -objective_value]) for _ in range(2)],
+        )
+        if not multivariate
+        else ({"z": []}, [])
+    )
 
 
 def test_calculate_nondomination_rank() -> None:
@@ -556,17 +562,23 @@ def test_calculate_nondomination_rank() -> None:
     assert ranks == [0, 1, 0, 2, 0, 1]
 
     # The negative values are included.
-    test_case = np.asarray([[-5, -5, -4], [-5, -5, 5], [-9, -9, 0], [5, 7, 5], [0, 0, -9], [0, -9, 9]])
+    test_case = np.asarray(
+        [[-5, -5, -4], [-5, -5, 5], [-9, -9, 0], [5, 7, 5], [0, 0, -9], [0, -9, 9]]
+    )
     ranks = list(_tpe.sampler._calculate_nondomination_rank(test_case))
     assert ranks == [0, 1, 0, 2, 0, 1]
 
     # The +inf is included.
-    test_case = np.asarray([[1, 1], [1, float("inf")], [float("inf"), 1], [float("inf"), float("inf")]])
+    test_case = np.asarray(
+        [[1, 1], [1, float("inf")], [float("inf"), 1], [float("inf"), float("inf")]]
+    )
     ranks = list(_tpe.sampler._calculate_nondomination_rank(test_case))
     assert ranks == [0, 0, 0, 0]
 
     # The -inf is included.
-    test_case = np.asarray([[1, 1], [1, -float("inf")], [-float("inf"), 1], [-float("inf"), -float("inf")]])
+    test_case = np.asarray(
+        [[1, 1], [1, -float("inf")], [-float("inf"), 1], [-float("inf"), -float("inf")]]
+    )
     ranks = list(_tpe.sampler._calculate_nondomination_rank(test_case))
     assert ranks == [0, 0, 0, 0]
 
@@ -646,10 +658,12 @@ def test_calculate_weights_below_for_multi_objective() -> None:
     # +/-inf objective values.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
         {"x": np.array([1.0, 2.0, 3.0, 4.0], dtype=float)},
-        [(0, [-float("inf"), -float("inf")]),
-         (0, [0.0, -float("inf")]),
-         (0, [-float("inf"), 0.0]),
-         (0, [float("inf"), float("inf")])],
+        [
+            (0, [-float("inf"), -float("inf")]),
+            (0, [0.0, -float("inf")]),
+            (0, [-float("inf"), 0.0]),
+            (0, [float("inf"), float("inf")]),
+        ],
         np.array([0, 1, 2]),
     )
     assert len(weights_below) == 3
@@ -687,12 +701,12 @@ def test_solve_hssp(dim: int) -> None:
         assert approx / truth > 0.6321  # 1 - 1/e
 
 
-def test_solve_hssp_infinite_loss():
+def test_solve_hssp_infinite_loss() -> None:
     random.seed(128)
 
     subset_size = int(random.random() * 4) + 1
     test_case = np.asarray([[random.random() for _ in range(2)] for _ in range(8)])
-    test_case = np.vstack([test_case,  [float("inf") for _ in range(2)]])
+    test_case = np.vstack([test_case, [float("inf") for _ in range(2)]])
     truth, approx = _compute_hssp_truth_and_approx(test_case, subset_size)
     assert np.isinf(truth)
     assert np.isinf(approx)
