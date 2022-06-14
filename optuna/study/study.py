@@ -953,7 +953,7 @@ class Study:
                 # Can't have repeated trials if different params are suggested.
                 continue
 
-            repeated_trials: List[bool] = []
+            repeated_params: List[bool] = []
             for param_name, param_value in params.items():
                 existing_param = trial_params[param_name]
                 if not isinstance(param_value, type(existing_param)):
@@ -968,9 +968,9 @@ class Study:
                     if isinstance(param_value, (float, np.floating))
                     else param_value == existing_param
                 )
-                repeated_trials.append(is_repeated)
+                repeated_params.append(is_repeated)
 
-            if all(repeated_trials) and len(repeated_trials) > 0:
+            if all(repeated_params) and len(repeated_params) > 0:
                 return True
 
         return False
