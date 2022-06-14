@@ -307,28 +307,45 @@ def test_multi_objective_sample_independent_ignored_states() -> None:
     assert len(set(suggestions)) == 1
 
 
-def test_multi_objective_get_observation_pairs() -> None:
+@pytest.mark.parametrize("constraints_enabled", [False, True])
+@pytest.mark.parametrize("constraint_value", [-2, 2])
+def test_multi_objective_get_observation_pairs(
+    constraints_enabled: bool, constraint_value: int
+) -> None:
     def objective(trial: optuna.trial.Trial) -> Tuple[float, float]:
         trial.suggest_int("x", 5, 5)
+        trial.set_user_attr("constraint", (constraint_value, -1))
         return 5.0, 5.0
 
-    sampler = TPESampler(seed=0)
+    sampler = TPESampler(constraints_func=lambda trial: trial.user_attrs["constraint"], seed=0)
     study = optuna.create_study(directions=["minimize", "maximize"], sampler=sampler)
     study.optimize(objective, n_trials=5)
 
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], False) == (
+    violations = [max(0, constraint_value) for _ in range(5)] if constraints_enabled else None
+    assert _tpe.sampler._get_observation_pairs(
+        study, ["x"], False, constraints_enabled=constraints_enabled
+    ) == (
         {"x": [5.0, 5.0, 5.0, 5.0, 5.0]},
         [(-float("inf"), [5.0, -5.0]) for _ in range(5)],
+        violations,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["y"], False) == (
+    assert _tpe.sampler._get_observation_pairs(
+        study, ["y"], False, constraints_enabled=constraints_enabled
+    ) == (
         {"y": [None, None, None, None, None]},
         [(-float("inf"), [5.0, -5.0]) for _ in range(5)],
+        violations,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], True) == (
+    assert _tpe.sampler._get_observation_pairs(
+        study, ["x"], True, constraints_enabled=constraints_enabled
+    ) == (
         {"x": [5.0, 5.0, 5.0, 5.0, 5.0]},
         [(-float("inf"), [5.0, -5.0]) for _ in range(5)],
+        violations,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["y"], True) == ({"y": []}, [])
+    assert _tpe.sampler._get_observation_pairs(
+        study, ["y"], True, constraints_enabled=constraints_enabled
+    ) == ({"y": []}, [], [] if constraints_enabled else None)
 
 
 def test_calculate_nondomination_rank() -> None:
@@ -354,6 +371,7 @@ def test_calculate_weights_below_for_multi_objective() -> None:
         {"x": np.array([1.0, 2.0, 3.0], dtype=float)},
         [(0, [0.2, 0.5]), (0, [0.9, 0.4]), (0, [1, 1])],
         np.array([0, 1]),
+        None,
     )
     assert len(weights_below) == 2
     assert weights_below[0] > weights_below[1]
@@ -364,6 +382,7 @@ def test_calculate_weights_below_for_multi_objective() -> None:
         {"x": np.array([1.0, 2.0, 3.0], dtype=float)},
         [(0, [0.2, 0.8]), (0, [0.8, 0.2]), (0, [1, 1])],
         np.array([0, 1]),
+        None,
     )
     assert len(weights_below) == 2
     assert weights_below[0] == weights_below[1]
@@ -374,6 +393,7 @@ def test_calculate_weights_below_for_multi_objective() -> None:
         {"x": np.array([1.0, 2.0, 3.0], dtype=float)},
         [(0, [0.2, 0.8]), (0, [0.2, 0.8]), (0, [1, 1])],
         np.array([0, 1]),
+        None,
     )
     assert len(weights_below) == 2
     assert weights_below[0] == weights_below[1]
@@ -384,12 +404,25 @@ def test_calculate_weights_below_for_multi_objective() -> None:
         {"x": np.array([1.0, 2.0, 3.0, 4.0], dtype=float)},
         [(0, [0.3, 0.3]), (0, [0.2, 0.8]), (0, [0.8, 0.2]), (0, [1, 1])],
         np.array([0, 1, 2]),
+        None,
     )
     assert len(weights_below) == 3
     assert weights_below[0] > weights_below[1]
     assert weights_below[0] > weights_below[2]
     assert weights_below[1] == weights_below[2]
     assert sum(weights_below) > 0
+
+    # Three samples with two infeasible trials.
+    weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
+        {"x": np.array([1.0, 2.0, 3.0, 4.0], dtype=float)},
+        [(0, [0.3, 0.3]), (0, [0.2, 0.8]), (0, [0.8, 0.2]), (0, [1, 1])],
+        np.array([0, 1, 2]),
+        [2, 8, 0],
+    )
+    assert len(weights_below) == 3
+    assert weights_below[0] == _tpe.sampler.EPS
+    assert weights_below[1] == _tpe.sampler.EPS
+    assert weights_below[2] > 0
 
 
 def test_solve_hssp() -> None:
