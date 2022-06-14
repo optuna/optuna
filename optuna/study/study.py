@@ -963,7 +963,7 @@ class Study:
                     continue
 
                 if isinstance(param_value, (float, np.floating)):
-                    if np.isnan(param_value) or np.isclose(param_value, existing_param):
+                    if np.isnan(param_value) or np.isclose(param_value, existing_param, atol=0.0):
                         return True
                 else:
                     if param_value == existing_param:
