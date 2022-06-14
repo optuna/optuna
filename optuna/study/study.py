@@ -953,6 +953,7 @@ class Study:
                 # Can't have repeated trials if different params are suggested.
                 continue
 
+            repeated_trials: List[bool] = []
             for param_name, param_value in params.items():
                 existing_param = trial_params[param_name]
                 if not isinstance(param_value, type(existing_param)):
@@ -962,11 +963,16 @@ class Study:
                     # be handled regardless if `skip_if_exists` is `True`.
                     continue
 
-                if isinstance(param_value, (float, np.floating)):
-                    if np.isnan(param_value) or np.isclose(param_value, existing_param, atol=0.0):
-                        return True
-                elif param_value == existing_param:
-                    return True
+                is_repeated = (
+                    np.isnan(param_value) or np.isclose(param_value, existing_param, atol=0.0)
+                    if isinstance(param_value, (float, np.floating))
+                    else param_value == existing_param
+                )
+                repeated_trials.append(is_repeated)
+
+            if all(repeated_trials) and len(repeated_trials) > 0:
+                return True
+
         return False
 
     @deprecated_func("2.5.0", "4.0.0")

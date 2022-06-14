@@ -735,7 +735,9 @@ def test_enqueue_trial_skips_existing_waiting(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-@pytest.mark.parametrize("new_params", [{"x": -5, "y": 5, "z": 5}, {"x": -5}, {"x": -5, "z": 5}])
+@pytest.mark.parametrize(
+    "new_params", [{"x": -5, "y": 5, "z": 5}, {"x": -5}, {"x": -5, "z": 5}, {"x": -5, "y": 6}]
+)
 def test_enqueue_trial_skip_existing_allows_unfixed(
     storage_mode: str, new_params: Dict[str, int]
 ) -> None:
