@@ -1,9 +1,6 @@
 from collections import OrderedDict
 import copy
-import itertools
-from typing import Any
 from typing import Dict
-from typing import Generator
 from typing import Optional
 
 import optuna
@@ -69,40 +66,29 @@ class IntersectionSearchSpace:
 
         trials = study.get_trials(deepcopy=False, states=states_of_interest)
 
-        current_cursor = self._cursor
+        next_cursor = trials[-1].number if len(trials) > 0 else -1
+        for trial in reversed(trials):
+            if self._cursor > trial.number:
+                break
 
-        def reversed_new_trials_iter(
-            finished: bool,
-        ) -> Generator[optuna.trial.FrozenTrial, None, None]:
-            nonlocal current_cursor
-            return (
-                trial
-                for trial in itertools.takewhile(
-                    lambda t: t.number < current_cursor, reversed(trials)
-                )
-                if trial.state.is_finished() == finished
-            )
+            if not trial.state.is_finished():
+                next_cursor = trial.number
 
-        dists: Any
-        dists = self._search_space.items() if self._search_space is not None else None
-        for trial in reversed_new_trials_iter(finished=True):
-            if dists is None:
-                dists = trial.distributions.items()
-            else:
-                # We use lambda to capture the value of `trial.distributions`.
-                dists = (
-                    lambda d: (
-                        (param, dist) for param, dist in dists if param in d and dist == d[param]
-                    )
-                )(trial.distributions)
+            if self._search_space is None:
+                self._search_space = copy.copy(trial.distributions)
+                continue
 
-        self._search_space = dict(dists) if dists is not None else None
+            delete_list = []
+            for param_name, param_distribution in self._search_space.items():
+                if param_name not in trial.distributions:
+                    delete_list.append(param_name)
+                elif trial.distributions[param_name] != param_distribution:
+                    delete_list.append(param_name)
 
-        self._cursor = max(
-            (trial.number for trial in reversed_new_trials_iter(finished=False)),
-            default=-1 if len(trials) == 0 else trials[-1].number,
-        )
+            for param_name in delete_list:
+                del self._search_space[param_name]
 
+        self._cursor = next_cursor
         search_space = self._search_space or {}
 
         if ordered_dict:
