@@ -145,7 +145,7 @@ class CmaEsSampler(BaseSampler):
                 https://github.com/optuna/optuna/releases/tag/v2.1.0.
 
         popsize:
-            A population size of CMA-ES.  When setted ``restart_strategy = 'ipop'``, this is used
+            A population size of CMA-ES. When set ``restart_strategy = 'ipop'``, this is used
             as the initial population size.
 
         inc_popsize:
