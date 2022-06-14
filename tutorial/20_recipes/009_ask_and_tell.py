@@ -208,7 +208,7 @@ def batched_objective(xs: np.ndarray, ys: np.ndarray):
 # In the following example, the number of pairs of hyperparameters in a batch is :math:`10`,
 # and ``batched_objective`` is evaluated three times.
 # Thus, the number of trials is :math:`30`.
-# Note that you need to store either ``trial_ids`` or ``trial`` to call
+# Note that you need to store either ``trial_numbers`` or ``trial`` to call
 # :func:`optuna.study.Study.tell` method after the batched evaluations.
 
 batch_size = 10
@@ -217,12 +217,12 @@ study = optuna.create_study(sampler=optuna.samplers.CmaEsSampler())
 for _ in range(3):
 
     # create batch
-    trial_ids = []
+    trial_numbers = []
     x_batch = []
     y_batch = []
     for _ in range(batch_size):
         trial = study.ask()
-        trial_ids.append(trial.number)
+        trial_numbers.append(trial.number)
         x_batch.append(trial.suggest_float("x", -10, 10))
         y_batch.append(trial.suggest_float("y", -10, 10))
 
@@ -232,5 +232,5 @@ for _ in range(3):
     objectives = batched_objective(x_batch, y_batch)
 
     # finish all trials in the batch
-    for trial_id, objective in zip(trial_ids, objectives):
-        study.tell(trial_id, objective)
+    for trial_number, objective in zip(trial_numbers, objectives):
+        study.tell(trial_number, objective)
