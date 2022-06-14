@@ -54,13 +54,6 @@ def test_threshold_pruner_with_two_side() -> None:
 
 
 def test_threshold_pruner_with_invalid_inputs() -> None:
-
-    with pytest.raises(TypeError):
-        optuna.pruners.ThresholdPruner(lower="val", upper=1.0)  # type: ignore
-
-    with pytest.raises(TypeError):
-        optuna.pruners.ThresholdPruner(lower=0.0, upper="val")  # type: ignore
-
     with pytest.raises(TypeError):
         optuna.pruners.ThresholdPruner(lower=None, upper=None)
 

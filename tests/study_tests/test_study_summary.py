@@ -1,7 +1,5 @@
 import copy
 
-import pytest
-
 from optuna import create_study
 from optuna.storages import RDBStorage
 
@@ -42,14 +40,8 @@ def test_study_summary_lt_le() -> None:
     assert summary_0 < summary_1
     assert not summary_1 < summary_0
 
-    with pytest.raises(TypeError):
-        summary_0 < 1
-
     assert summary_0 <= summary_0
     assert not summary_1 <= summary_0
-
-    with pytest.raises(TypeError):
-        summary_0 <= 1
 
     # A list of StudySummaries is sortable.
     summaries.reverse()

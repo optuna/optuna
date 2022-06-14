@@ -1352,10 +1352,6 @@ def test_tell_invalid() -> None:
     with pytest.raises(ValueError):
         study.tell(study.ask().number + 1, 1.0)
 
-    # It must be Trial or int for trial.
-    with pytest.raises(TypeError):
-        study.tell("1", 1.0)  # type: ignore
-
 
 def test_tell_duplicate_tell() -> None:
     study = create_study()
