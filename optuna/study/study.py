@@ -965,9 +965,8 @@ class Study:
                 if isinstance(param_value, (float, np.floating)):
                     if np.isnan(param_value) or np.isclose(param_value, existing_param, atol=0.0):
                         return True
-                else:
-                    if param_value == existing_param:
-                        return True
+                elif param_value == existing_param:
+                    return True
         return False
 
     @deprecated_func("2.5.0", "4.0.0")
