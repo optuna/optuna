@@ -66,7 +66,7 @@ class IntersectionSearchSpace:
 
         trials = study.get_trials(deepcopy=False, states=states_of_interest)
 
-        next_cursor = trials[-1].number if len(trials) > 0 else -1
+        next_cursor = trials[-1].number + 1 if len(trials) > 0 else -1
         for trial in reversed(trials):
             if self._cursor > trial.number:
                 break
