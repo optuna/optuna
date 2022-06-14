@@ -59,7 +59,11 @@ class IntersectionSearchSpace:
             if self._study_id != study._study_id:
                 raise ValueError("`IntersectionSearchSpace` cannot handle multiple studies.")
 
-        states_of_interest = [optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.WAITING, optuna.trial.TrialState.RUNNING]
+        states_of_interest = [
+            optuna.trial.TrialState.COMPLETE,
+            optuna.trial.TrialState.WAITING,
+            optuna.trial.TrialState.RUNNING,
+        ]
 
         if self._include_pruned:
             states_of_interest.append(optuna.trial.TrialState.PRUNED)
