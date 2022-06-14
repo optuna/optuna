@@ -79,7 +79,7 @@ def upgrade():
         batch_op.alter_column(
             "value",
             type_=Float(precision=FLOAT_PRECISION),
-            existing_nullable=False,
+            nullable=False,
         )
 
 
