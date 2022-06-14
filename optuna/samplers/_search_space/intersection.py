@@ -73,6 +73,7 @@ class IntersectionSearchSpace:
 
             if not trial.state.is_finished():
                 next_cursor = trial.number
+                continue
 
             if self._search_space is None:
                 self._search_space = copy.copy(trial.distributions)
