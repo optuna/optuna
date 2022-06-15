@@ -379,30 +379,26 @@ def test_multi_objective_get_observation_pairs_constrained(constraint_value: int
     study.optimize(objective, n_trials=5)
 
     violations = [max(0, constraint_value) for _ in range(5)]
-    assert _tpe.sampler._get_observation_pairs(
-        study, ["x"], False, constraints_enabled=True
-    ) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["x"], False, constraints_enabled=True) == (
         {"x": [5.0, 5.0, 5.0, 5.0, 5.0]},
         [(-float("inf"), [5.0, -5.0]) for _ in range(5)],
         violations,
     )
-    assert _tpe.sampler._get_observation_pairs(
-        study, ["y"], False, constraints_enabled=True
-    ) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["y"], False, constraints_enabled=True) == (
         {"y": [None, None, None, None, None]},
         [(-float("inf"), [5.0, -5.0]) for _ in range(5)],
         violations,
     )
-    assert _tpe.sampler._get_observation_pairs(
-        study, ["x"], True, constraints_enabled=True
-    ) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["x"], True, constraints_enabled=True) == (
         {"x": [5.0, 5.0, 5.0, 5.0, 5.0]},
         [(-float("inf"), [5.0, -5.0]) for _ in range(5)],
         violations,
     )
-    assert _tpe.sampler._get_observation_pairs(
-        study, ["y"], True, constraints_enabled=True
-    ) == ({"y": []}, [], [])
+    assert _tpe.sampler._get_observation_pairs(study, ["y"], True, constraints_enabled=True) == (
+        {"y": []},
+        [],
+        [],
+    )
 
 
 def test_calculate_nondomination_rank() -> None:
