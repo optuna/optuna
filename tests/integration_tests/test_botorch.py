@@ -1,3 +1,4 @@
+from typing import Any
 from typing import cast
 from typing import Optional
 from typing import Sequence
@@ -78,9 +79,9 @@ def test_botorch_candidates_func_invalid_type() -> None:
         train_obj: torch.Tensor,
         train_con: Optional[torch.Tensor],
         bounds: torch.Tensor,
-    ) -> torch.Tensor:
+    ) -> Any:
         # Must be a `torch.Tensor`, not a list.
-        return torch.rand(1).tolist()
+        return [torch.rand(1).tolist()]
 
     sampler = BoTorchSampler(candidates_func=candidates_func, n_startup_trials=1)
 
