@@ -340,7 +340,7 @@ def test_fast_non_dominated_sort_empty(n_dims: int) -> None:
     directions = [
         random.choice([StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]) for _ in range(n_dims)
     ]
-    trials = []
+    trials: List[FrozenTrial] = []
     sampler = NSGAIISampler()
     population_per_rank = sampler._fast_non_dominated_sort(trials, directions)
     assert population_per_rank == []
