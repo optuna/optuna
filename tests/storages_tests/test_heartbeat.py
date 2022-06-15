@@ -49,7 +49,7 @@ def test_fail_stale_trials_with_optimize(storage_mode: str) -> None:
         with patch("optuna.storages._heartbeat.Thread", _TestableThread):
             study1.optimize(lambda _: 1.0, n_trials=1)
 
-        assert study1.trials[0].state is TrialState.FAIL
+        assert study1.trials[0].state is TrialState.FAIL  # type: ignore [comparison-overlap]
         assert study2.trials[0].state is TrialState.RUNNING
 
 
@@ -220,7 +220,7 @@ def test_fail_stale_trials(storage_mode: str, grace_period: Optional[int]) -> No
 
         optuna.storages.fail_stale_trials(study)
 
-        assert study.trials[0].state is TrialState.FAIL
+        assert study.trials[0].state is TrialState.FAIL  # type: ignore [comparison-overlap]
 
 
 @pytest.mark.parametrize("storage_mode", ["sqlite", "redis"])
