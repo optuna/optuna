@@ -565,8 +565,6 @@ class BoTorchSampler(BaseSampler):
                         f"Constraints should be a sequence of floats but got {type(con).__name__}."
                     )
                 constraints = tuple(con)
-            except Exception:
-                raise
             finally:
                 assert constraints is None or isinstance(constraints, tuple)
 

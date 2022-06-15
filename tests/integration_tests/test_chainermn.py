@@ -21,7 +21,7 @@ from optuna.samplers import BaseSampler
 from optuna.storages import BaseStorage
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
-from optuna.testing.integration import DeterministicPruner
+from optuna.testing.pruner import DeterministicPruner
 from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import Trial

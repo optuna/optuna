@@ -70,9 +70,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             "lightgbm",
             "matplotlib",
             "mlflow",
+            # TODO(nzw0301): Remove onnx if thop adds onnx to its dependencies.
+            "onnx",
             "pandas",
             "pillow",
             "plotly>=4.0.0",  # optuna/visualization.
+            # TODO(nzw0301): Remove protobuf after
+            # https://github.com/onnx/onnx/issues/4239 is resolved.
+            "protobuf<=3.20.1",
             "scikit-learn",
             "scikit-optimize",
             "sphinx",
@@ -87,6 +92,8 @@ def get_extras_require() -> Dict[str, List[str]]:
         ],
         "integration": [
             "allennlp>=2.2.0 ; python_version>'3.6'",
+            # TODO(c-bata): Remove cached-path after allennllp supports v1.1.3
+            "cached-path<=1.1.2 ; python_version>'3.6'",
             "botorch>=0.4.0 ; python_version>'3.6'",
             "catalyst>=21.3 ; python_version>'3.6'",
             "catboost>=0.26",

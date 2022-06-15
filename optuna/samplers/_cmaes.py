@@ -144,6 +144,10 @@ class CmaEsSampler(BaseSampler):
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.1.0.
 
+        popsize:
+            A population size of CMA-ES. When set ``restart_strategy = 'ipop'``, this is used
+            as the initial population size.
+
         inc_popsize:
             Multiplier for increasing population size before each restart.
             This argument will be used when setting ``restart_strategy = 'ipop'``.
@@ -198,6 +202,7 @@ class CmaEsSampler(BaseSampler):
         *,
         consider_pruned_trials: bool = False,
         restart_strategy: Optional[str] = None,
+        popsize: Optional[int] = None,
         inc_popsize: int = 2,
         use_separable_cma: bool = False,
         source_trials: Optional[List[FrozenTrial]] = None,
@@ -211,6 +216,7 @@ class CmaEsSampler(BaseSampler):
         self._search_space = optuna.samplers.IntersectionSearchSpace()
         self._consider_pruned_trials = consider_pruned_trials
         self._restart_strategy = restart_strategy
+        self._popsize = popsize
         self._inc_popsize = inc_popsize
         self._use_separable_cma = use_separable_cma
         self._source_trials = source_trials
@@ -325,7 +331,7 @@ class CmaEsSampler(BaseSampler):
         optimizer, n_restarts = self._restore_optimizer(completed_trials)
         if optimizer is None:
             n_restarts = 0
-            optimizer = self._init_optimizer(trans, study.direction)
+            optimizer = self._init_optimizer(trans, study.direction, population_size=self._popsize)
 
         if self._restart_strategy is None:
             generation_attr_key = "cma:generation"  # For backward compatibility.
