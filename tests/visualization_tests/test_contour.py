@@ -1,4 +1,5 @@
 import itertools
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -15,8 +16,7 @@ from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
 from optuna.trial import Trial
 from optuna.visualization import plot_contour
-from optuna.visualization._contour import _generate_contour_subplot
-from optuna.visualization._utils import _is_reverse_scale
+from optuna.visualization._contour import _generate_contour_subplot_info
 from optuna.visualization._utils import COLOR_SCALE
 
 
@@ -138,17 +138,25 @@ def test_generate_contour_plot_for_few_observations() -> None:
 
     study = prepare_study_with_trials(less_than_two=True)
     trials = study.trials
-    reverse_scale = _is_reverse_scale(study, target=None)
+    param_values_range: Dict[str, Tuple[float, float]] = {}
 
     # `x_axis` has one observation.
     params = ["param_a", "param_b"]
-    contour, scatter = _generate_contour_subplot(trials, params[0], params[1], reverse_scale)
-    assert contour.x is None and contour.y is None and scatter.x is None and scatter.y is None
+    info = _generate_contour_subplot_info(trials, params[0], params[1], param_values_range, None)
+    assert len(info.x_indices) == 0
+    assert len(info.y_indices) == 0
+    assert len(info.x_values) == 0
+    assert len(info.y_values) == 0
+    assert len(info.z_values) == 1 and len(info.z_values[0]) == 0
 
     # `y_axis` has one observation.
     params = ["param_b", "param_a"]
-    contour, scatter = _generate_contour_subplot(trials, params[0], params[1], reverse_scale)
-    assert contour.x is None and contour.y is None and scatter.x is None and scatter.y is None
+    info = _generate_contour_subplot_info(trials, params[0], params[1], param_values_range, None)
+    assert len(info.x_indices) == 0
+    assert len(info.y_indices) == 0
+    assert len(info.x_values) == 0
+    assert len(info.y_values) == 0
+    assert len(info.z_values) == 1 and len(info.z_values[0]) == 0
 
 
 def test_plot_contour_log_scale_and_str_category() -> None:

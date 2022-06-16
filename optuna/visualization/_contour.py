@@ -2,10 +2,10 @@ import math
 from typing import Callable
 from typing import Dict
 from typing import List
+from typing import NamedTuple
 from typing import Optional
 from typing import Tuple
-
-from packaging import version
+from typing import Union
 
 from optuna.logging import get_logger
 from optuna.study import Study
@@ -24,11 +24,26 @@ if _imports.is_successful():
     from optuna.visualization._plotly_imports import Contour
     from optuna.visualization._plotly_imports import go
     from optuna.visualization._plotly_imports import make_subplots
-    from optuna.visualization._plotly_imports import plotly
     from optuna.visualization._plotly_imports import Scatter
     from optuna.visualization._utils import COLOR_SCALE
 
 _logger = get_logger(__name__)
+
+
+class _SubContourInfo(NamedTuple):
+    x_indices: List[Union[str, int, float]]
+    y_indices: List[Union[str, int, float]]
+    x_values: List[Union[str, float]]
+    y_values: List[Union[str, float]]
+    z_values: List[List[float]]
+
+
+class _ContourInfo(NamedTuple):
+    sorted_params: List[str]
+    param_values_range: Dict[str, Tuple[float, float]]
+    param_is_log: Dict[str, bool]
+    param_is_cat: Dict[str, bool]
+    sub_plot_infos: List[List[_SubContourInfo]]
 
 
 def plot_contour(
@@ -96,77 +111,35 @@ def _get_contour_plot(
 
     layout = go.Layout(title="Contour Plot")
 
-    trials = _filter_nonfinite(
-        study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
-    )
+    info = _get_contour_info(study, params, target)
+    sorted_params = info.sorted_params
+    param_values_range = info.param_values_range
+    param_is_log = info.param_is_log
+    param_is_cat = info.param_is_cat
+    sub_plot_infos = info.sub_plot_infos
 
-    if len(trials) == 0:
-        _logger.warning("Your study does not have any completed trials.")
+    if len(sorted_params) <= 1:
         return go.Figure(data=[], layout=layout)
-
-    all_params = {p_name for t in trials for p_name in t.params.keys()}
-    if params is None:
-        sorted_params = sorted(all_params)
-    elif len(params) <= 1:
-        _logger.warning("The length of params must be greater than 1.")
-        return go.Figure(data=[], layout=layout)
-    else:
-        for input_p_name in params:
-            if input_p_name not in all_params:
-                raise ValueError("Parameter {} does not exist in your study.".format(input_p_name))
-        sorted_params = sorted(set(params))
-
-    padding_ratio = 0.05
-    param_values_range = {}
-    for p_name in sorted_params:
-        values = _get_param_values(trials, p_name)
-
-        min_value = min(values)
-        max_value = max(values)
-
-        if _is_log_scale(trials, p_name):
-            padding = (math.log10(max_value) - math.log10(min_value)) * padding_ratio
-            min_value = math.pow(10, math.log10(min_value) - padding)
-            max_value = math.pow(10, math.log10(max_value) + padding)
-
-        elif _is_numerical(trials, p_name):
-            padding = (max_value - min_value) * padding_ratio
-            min_value = min_value - padding
-            max_value = max_value + padding
-
-        else:
-            # Plotly>=4.12.0 draws contours using the indices of categorical variables instead of
-            # raw values and the range should be updated based on the cardinality of categorical
-            # variables. See https://github.com/optuna/optuna/issues/1967.
-            if version.parse(plotly.__version__) >= version.parse("4.12.0"):
-                span = len(set(values)) - 1
-                padding = span * padding_ratio
-                min_value = -padding
-                max_value = span + padding
-
-        param_values_range[p_name] = (min_value, max_value)
 
     reverse_scale = _is_reverse_scale(study, target)
 
     if len(sorted_params) == 2:
         x_param = sorted_params[0]
         y_param = sorted_params[1]
-        sub_plots = _generate_contour_subplot(
-            trials, x_param, y_param, reverse_scale, param_values_range, target, target_name
-        )
+        sub_plots = _generate_contour_subplot(sub_plot_infos[0][0], reverse_scale, target_name)
         figure = go.Figure(data=sub_plots, layout=layout)
         figure.update_xaxes(title_text=x_param, range=param_values_range[x_param])
         figure.update_yaxes(title_text=y_param, range=param_values_range[y_param])
 
-        if not _is_numerical(trials, x_param):
+        if param_is_cat[x_param]:
             figure.update_xaxes(type="category")
-        if not _is_numerical(trials, y_param):
+        if param_is_cat[y_param]:
             figure.update_yaxes(type="category")
 
-        if _is_log_scale(trials, x_param):
+        if param_is_log[x_param]:
             log_range = [math.log10(p) for p in param_values_range[x_param]]
             figure.update_xaxes(range=log_range, type="log")
-        if _is_log_scale(trials, y_param):
+        if param_is_log[y_param]:
             log_range = [math.log10(p) for p in param_values_range[y_param]]
             figure.update_yaxes(range=log_range, type="log")
     else:
@@ -181,13 +154,7 @@ def _get_contour_plot(
                     figure.add_trace(go.Scatter(), row=y_i + 1, col=x_i + 1)
                 else:
                     sub_plots = _generate_contour_subplot(
-                        trials,
-                        x_param,
-                        y_param,
-                        reverse_scale,
-                        param_values_range,
-                        target,
-                        target_name,
+                        sub_plot_infos[y_i][x_i], reverse_scale, target_name
                     )
                     contour = sub_plots[0]
                     scatter = sub_plots[1]
@@ -200,15 +167,15 @@ def _get_contour_plot(
                 figure.update_xaxes(range=param_values_range[x_param], row=y_i + 1, col=x_i + 1)
                 figure.update_yaxes(range=param_values_range[y_param], row=y_i + 1, col=x_i + 1)
 
-                if not _is_numerical(trials, x_param):
+                if param_is_cat[x_param]:
                     figure.update_xaxes(type="category", row=y_i + 1, col=x_i + 1)
-                if not _is_numerical(trials, y_param):
+                if param_is_cat[y_param]:
                     figure.update_yaxes(type="category", row=y_i + 1, col=x_i + 1)
 
-                if _is_log_scale(trials, x_param):
+                if param_is_log[x_param]:
                     log_range = [math.log10(p) for p in param_values_range[x_param]]
                     figure.update_xaxes(range=log_range, type="log", row=y_i + 1, col=x_i + 1)
-                if _is_log_scale(trials, y_param):
+                if param_is_log[y_param]:
                     log_range = [math.log10(p) for p in param_values_range[y_param]]
                     figure.update_yaxes(range=log_range, type="log", row=y_i + 1, col=x_i + 1)
 
@@ -221,26 +188,162 @@ def _get_contour_plot(
 
 
 def _generate_contour_subplot(
-    trials: List[FrozenTrial],
-    x_param: str,
-    y_param: str,
+    info: _SubContourInfo,
     reverse_scale: bool,
-    param_values_range: Optional[Dict[str, Tuple[float, float]]] = None,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
     target_name: str = "Objective Value",
 ) -> Tuple["Contour", "Scatter"]:
 
-    if param_values_range is None:
-        param_values_range = {}
+    x_indices = info.x_indices
+    y_indices = info.y_indices
+    x_values = info.x_values
+    y_values = info.y_values
+    z_values = info.z_values
+
+    if len(x_indices) < 2:
+        return go.Contour(), go.Scatter()
+    if len(y_indices) < 2:
+        return go.Contour(), go.Scatter()
+
+    contour = go.Contour(
+        x=x_indices,
+        y=y_indices,
+        z=z_values,
+        colorbar={"title": target_name},
+        colorscale=COLOR_SCALE,
+        connectgaps=True,
+        contours_coloring="heatmap",
+        hoverinfo="none",
+        line_smoothing=1.3,
+        reversescale=reverse_scale,
+    )
+
+    scatter = go.Scatter(
+        x=x_values,
+        y=y_values,
+        marker={"line": {"width": 2.0, "color": "Grey"}, "color": "black"},
+        mode="markers",
+        showlegend=False,
+    )
+
+    return contour, scatter
+
+
+def _get_contour_info(
+    study: Study,
+    params: Optional[List[str]] = None,
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+) -> _ContourInfo:
+
+    trials = _filter_nonfinite(
+        study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
+    )
+
+    all_params = {p_name for t in trials for p_name in t.params.keys()}
+    if len(trials) == 0:
+        _logger.warning("Your study does not have any completed trials.")
+        sorted_params = []
+    elif params is None:
+        sorted_params = sorted(all_params)
+    elif len(params) <= 1:
+        _logger.warning("The length of params must be greater than 1.")
+        sorted_params = list(params)
+    else:
+        for input_p_name in params:
+            if input_p_name not in all_params:
+                raise ValueError("Parameter {} does not exist in your study.".format(input_p_name))
+        sorted_params = sorted(set(params))
+
+    padding_ratio = 0.05
+    param_values_range = {}
+    param_is_log = {}
+    param_is_cat = {}
+    for p_name in sorted_params:
+        values = _get_param_values(trials, p_name)
+
+        min_value = min(values)
+        max_value = max(values)
+
+        if _is_log_scale(trials, p_name):
+            padding = (math.log10(max_value) - math.log10(min_value)) * padding_ratio
+            min_value = math.pow(10, math.log10(min_value) - padding)
+            max_value = math.pow(10, math.log10(max_value) + padding)
+            param_is_log[p_name] = True
+            param_is_cat[p_name] = False
+
+        elif _is_numerical(trials, p_name):
+            padding = (max_value - min_value) * padding_ratio
+            min_value = min_value - padding
+            max_value = max_value + padding
+            param_is_log[p_name] = False
+            param_is_cat[p_name] = False
+
+        else:
+            param_is_log[p_name] = False
+            param_is_cat[p_name] = True
+            span = len(set(values)) - 1
+            padding = span * padding_ratio
+            min_value = -padding
+            max_value = span + padding
+
+        param_values_range[p_name] = (min_value, max_value)
+
+    sub_plot_infos: List[List[_SubContourInfo]]
+    if len(sorted_params) == 2:
+        x_param = sorted_params[0]
+        y_param = sorted_params[1]
+        sub_plot_info = _generate_contour_subplot_info(
+            trials, x_param, y_param, param_values_range, target
+        )
+        sub_plot_infos = [[sub_plot_info]]
+    else:
+        sub_plot_infos = [
+            [
+                _SubContourInfo(
+                    x_indices=[], y_indices=[], x_values=[], y_values=[], z_values=[[]]
+                )
+                for _ in range(len(sorted_params))
+            ]
+            for _ in range(len(sorted_params))
+        ]
+        for x_i, x_param in enumerate(sorted_params):
+            for y_i, y_param in enumerate(sorted_params):
+                sub_plot_info = _generate_contour_subplot_info(
+                    trials,
+                    x_param,
+                    y_param,
+                    param_values_range,
+                    target,
+                )
+                sub_plot_infos[y_i][x_i] = sub_plot_info
+
+    return _ContourInfo(
+        sorted_params=sorted_params,
+        param_values_range=param_values_range,
+        param_is_log=param_is_log,
+        param_is_cat=param_is_cat,
+        sub_plot_infos=sub_plot_infos,
+    )
+
+
+def _generate_contour_subplot_info(
+    trials: List[FrozenTrial],
+    x_param: str,
+    y_param: str,
+    param_values_range: Dict[str, Tuple[float, float]],
+    target: Optional[Callable[[FrozenTrial], float]],
+) -> _SubContourInfo:
+
+    if x_param == y_param:
+        return _SubContourInfo(x_indices=[], y_indices=[], x_values=[], y_values=[], z_values=[[]])
 
     x_indices = sorted(set(_get_param_values(trials, x_param)))
     y_indices = sorted(set(_get_param_values(trials, y_param)))
     if len(x_indices) < 2:
         _logger.warning("Param {} unique value length is less than 2.".format(x_param))
-        return go.Contour(), go.Scatter()
+        return _SubContourInfo(x_indices=[], y_indices=[], x_values=[], y_values=[], z_values=[[]])
     if len(y_indices) < 2:
         _logger.warning("Param {} unique value length is less than 2.".format(y_param))
-        return go.Contour(), go.Scatter()
+        return _SubContourInfo(x_indices=[], y_indices=[], x_values=[], y_values=[], z_values=[[]])
 
     # Padding to the plot for non-categorical params.
     x_range = param_values_range[x_param]
@@ -251,7 +354,7 @@ def _generate_contour_subplot(
     if _is_numerical(trials, y_param):
         y_indices = [y_range[0]] + y_indices + [y_range[1]]
 
-    z = [[float("nan") for _ in range(len(x_indices))] for _ in range(len(y_indices))]
+    z_values = [[float("nan") for _ in range(len(x_indices))] for _ in range(len(y_indices))]
 
     x_values = []
     y_values = []
@@ -280,27 +383,12 @@ def _generate_contour_subplot(
             raise ValueError(
                 f"Trial{trial.number} has COMPLETE state, but its target value is non-numeric."
             )
-        z[y_i][x_i] = value
+        z_values[y_i][x_i] = value
 
-    contour = go.Contour(
-        x=x_indices,
-        y=y_indices,
-        z=z,
-        colorbar={"title": target_name},
-        colorscale=COLOR_SCALE,
-        connectgaps=True,
-        contours_coloring="heatmap",
-        hoverinfo="none",
-        line_smoothing=1.3,
-        reversescale=reverse_scale,
+    return _SubContourInfo(
+        x_indices=x_indices,
+        y_indices=y_indices,
+        x_values=x_values,
+        y_values=y_values,
+        z_values=z_values,
     )
-
-    scatter = go.Scatter(
-        x=x_values,
-        y=y_values,
-        marker={"line": {"width": 2.0, "color": "Grey"}, "color": "black"},
-        mode="markers",
-        showlegend=False,
-    )
-
-    return (contour, scatter)
