@@ -5,7 +5,7 @@ import pytest
 
 import optuna
 from optuna.integration import KerasPruningCallback
-from optuna.testing.pruner import DeterministicPruner
+from optuna.testing.pruners import DeterministicPruner
 
 
 @pytest.mark.parametrize("interval, epochs", [(1, 1), (2, 1), (2, 2)])
