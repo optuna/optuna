@@ -54,6 +54,25 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     any successive reads on data `X` from the same process must read the written
     value or one of the more recent values.
 
+    **Stronger consistency requirements for special data**
+
+    Under a multi-worker setting, a storage class must return the latest values of any attributes
+    of a study, not necessarily for the attributes of a `Trial`.
+    However, if the `read_trials_from_remote_storage(study_id)` method is called, any successive
+    reads on the `state` attribute of a `Trial` are guaranteed to return the same or more recent
+    values than the value at the time of the call to the
+    `read_trials_from_remote_storage(study_id)` method.
+    Let `T` be a `Trial`.
+    Let `P` be the process that last updated the `state` attribute of `T`.
+    Then, any reads on any attributes of `T` are guaranteed to return the same or
+    more recent values than any writes by `P` on the attribute before `P` updated
+    the `state` attribute of `T`.
+    The same applies for `user_attrs', 'system_attrs' and 'intermediate_values` attributes.
+
+    .. note::
+
+        These attribute behaviors may become user customizable in the future.
+
     **Data persistence**
 
     A storage class does not guarantee that write operations are logged into a persistent
