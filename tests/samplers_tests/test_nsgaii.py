@@ -199,6 +199,13 @@ def test_constrained_dominates() -> None:
                         (8, 9),
                         (8, 10),])
 
+    t1 = _create_frozen_trial(0, [-5, 5], [5, -2])
+    t2 = _create_frozen_trial(1, [0, 5], [0, float("nan")])
+
+    # TODO(contramundum53): Currently, a NaN in constraints is treated as infeasible, but 
+    # it is not counted in violation. This is not intuitive, and should be fixed.
+    assert not _constrained_dominates(t1, t2, directions)
+    assert _constrained_dominates(t2, t1, directions)
 
 
 def test_fast_non_dominated_sort() -> None:
