@@ -1,16 +1,16 @@
-
-
 from typing import List
+
+import pytest
+
+import optuna
+from optuna.study import StudyDirection
+from optuna.study._multi_objective import _dominates
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna.study import StudyDirection
-import optuna
-import pytest
-from optuna.study._multi_objective import _dominates
+
 
 def test_dominates() -> None:
-
-    def create_trial(values: List[float], state:TrialState = TrialState.COMPLETE) -> FrozenTrial:
+    def create_trial(values: List[float], state: TrialState = TrialState.COMPLETE) -> FrozenTrial:
         return optuna.trial.create_trial(values=values, state=state)
 
     directions = [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
@@ -18,7 +18,7 @@ def test_dominates() -> None:
     def check_domination(t0: FrozenTrial, t1: FrozenTrial) -> None:
         assert _dominates(t0, t1, directions)
         assert not _dominates(t1, t0, directions)
-    
+
     def check_nondomination(t0: FrozenTrial, t1: FrozenTrial) -> None:
         assert not _dominates(t0, t1, directions)
         assert not _dominates(t1, t0, directions)
