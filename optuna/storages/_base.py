@@ -10,7 +10,6 @@ from typing import Tuple
 from typing import Union
 
 from optuna.distributions import BaseDistribution
-from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
@@ -696,13 +695,3 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             raise RuntimeError(
                 "Trial#{} has already finished and can not be updated.".format(trial.number)
             )
-
-    def is_heartbeat_enabled(self) -> bool:
-        """Check whether the storage enables the heartbeat.
-
-        Returns:
-            :obj:`True` if the storage supports the heartbeat and the return value of
-            :meth:`~optuna.storages.BaseStorage.get_heartbeat_interval` is an integer,
-            otherwise :obj:`False`.
-        """
-        return isinstance(self, BaseHeartbeat) and self.get_heartbeat_interval() is not None

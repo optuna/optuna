@@ -14,7 +14,7 @@ import numpy as np
 
 import optuna
 from optuna import multi_objective
-from optuna._deprecated import deprecated
+from optuna._deprecated import deprecated_class
 from optuna.distributions import BaseDistribution
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
 
@@ -25,7 +25,7 @@ _PARENTS_KEY = "multi_objective:nsga2:parents"
 _POPULATION_CACHE_KEY_PREFIX = "multi_objective:nsga2:population"
 
 
-@deprecated("2.4.0", "4.0.0")
+@deprecated_class("2.4.0", "4.0.0")
 class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
     """Multi-objective sampler using the NSGA-II algorithm.
 
@@ -94,7 +94,7 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
 
     def reseed_rng(self) -> None:
         self._random_sampler.reseed_rng()
-        self._rng = np.random.RandomState()
+        self._rng.seed()
 
     def infer_relative_search_space(
         self,

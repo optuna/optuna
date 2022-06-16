@@ -1,4 +1,4 @@
-from optuna._experimental import experimental
+from optuna._experimental import experimental_func
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import TrialState
@@ -12,7 +12,7 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
-@experimental("2.2.0")
+@experimental_func("2.2.0")
 def plot_intermediate_values(study: Study) -> "Axes":
     """Plot intermediate values of all trials in a study with Matplotlib.
 

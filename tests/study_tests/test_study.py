@@ -47,7 +47,7 @@ def func(trial: Trial, x_max: float = 1.0) -> float:
     return (x - 2) ** 2 + (y - 25) ** 2 + z
 
 
-class Func(object):
+class Func:
     def __init__(self, sleep_sec: Optional[float] = None) -> None:
 
         self.n_calls = 0
@@ -1250,7 +1250,7 @@ def test_tell_automatically_fail() -> None:
 
     # Check invalid values, e.g. `None` that cannot be cast to float.
     with pytest.warns(UserWarning):
-        study.tell(study.ask(), None)  # type: ignore
+        study.tell(study.ask(), None)
         assert len(study.trials) == 2
         assert study.trials[-1].state == TrialState.FAIL
         assert study.trials[-1].values is None

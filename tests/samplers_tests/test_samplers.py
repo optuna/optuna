@@ -9,6 +9,7 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Union
+from unittest.mock import patch
 import warnings
 
 from _pytest.mark.structures import MarkDecorator
@@ -22,7 +23,6 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.samplers import BaseSampler
-from optuna.samplers import PartialFixedSampler
 from optuna.study import Study
 from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.trial import FrozenTrial
@@ -73,7 +73,7 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
     "multi_objective_sampler_class",
     [
         optuna.samplers.NSGAIISampler,
-        lambda: optuna.samplers.MOTPESampler(n_startup_trials=0),
+        lambda: optuna.samplers.TPESampler(n_startup_trials=0),
     ]
     # TODO(nzw0301): Update this after the support for Python 3.6 is stopped.
     + (
@@ -82,6 +82,102 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
         else [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)]
     ),
 )
+
+
+@pytest.mark.parametrize(
+    "sampler_class,expected_has_rng,expected_has_another_sampler",
+    [
+        (optuna.samplers.RandomSampler, True, False),
+        (lambda: optuna.samplers.TPESampler(n_startup_trials=0), True, True),
+        (lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True), True, True),
+        (lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0), True, True),
+        (
+            lambda: optuna.integration.SkoptSampler(
+                skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
+            ),
+            False,
+            True,
+        ),
+        (lambda: optuna.integration.PyCmaSampler(n_startup_trials=0), False, True),
+        (optuna.samplers.NSGAIISampler, True, True),
+        (
+            lambda: optuna.samplers.PartialFixedSampler(
+                fixed_params={"x": 0}, base_sampler=optuna.samplers.RandomSampler()
+            ),
+            False,
+            True,
+        ),
+        (lambda: optuna.samplers.GridSampler(search_space={"x": [0]}), True, False),
+    ]
+    # TODO(kstoneriv3): Update this after the support for Python 3.6 is stopped.
+    + (
+        []
+        if sys.version_info < (3, 7, 0)
+        else [
+            (lambda: optuna.samplers.QMCSampler(), False, True),
+        ]
+    )
+    # TODO(nzw0301): Remove version constraints if BoTorch supports Python 3.10
+    # or Optuna does not support Python 3.6.
+    + (
+        []
+        if sys.version_info >= (3, 10, 0) or sys.version_info < (3, 7, 0)
+        else [(lambda: optuna.integration.BoTorchSampler(n_startup_trials=0), False, True)]
+    ),
+)
+def test_sampler_reseed_rng(
+    sampler_class: Callable[[], BaseSampler],
+    expected_has_rng: bool,
+    expected_has_another_sampler: bool,
+) -> None:
+    def _extract_attr_name_from_sampler_by_cls(sampler: BaseSampler, cls: Any) -> Optional[str]:
+        for name, attr in sampler.__dict__.items():
+            if isinstance(attr, cls):
+                return name
+        return None
+
+    sampler = sampler_class()
+
+    rng_name = _extract_attr_name_from_sampler_by_cls(sampler, np.random.RandomState)
+    has_rng = rng_name is not None
+    assert expected_has_rng == has_rng
+
+    had_sampler_name = _extract_attr_name_from_sampler_by_cls(sampler, BaseSampler)
+    has_another_sampler = had_sampler_name is not None
+    assert expected_has_another_sampler == has_another_sampler
+
+    if has_rng:
+        rng_name = str(rng_name)
+        original_random_state = sampler.__dict__[rng_name].get_state()
+        sampler.reseed_rng()
+
+        if not isinstance(sampler, optuna.samplers.CmaEsSampler):
+            assert str(original_random_state) != str(sampler.__dict__[rng_name].get_state())
+        else:
+            # CmaEsSampler has a RandomState that is not reseed by its reseed_rng method.
+            assert str(original_random_state) == str(sampler.__dict__[rng_name].get_state())
+
+    if has_another_sampler:
+        had_sampler_name = str(had_sampler_name)
+        had_sampler = sampler.__dict__[had_sampler_name]
+        had_sampler_rng_name = _extract_attr_name_from_sampler_by_cls(
+            had_sampler, np.random.RandomState
+        )
+
+        original_had_sampler_random_state = had_sampler.__dict__[had_sampler_rng_name].get_state()
+
+        with patch.object(
+            had_sampler,
+            "reseed_rng",
+            wraps=had_sampler.reseed_rng,
+        ) as mock_object:
+            sampler.reseed_rng()
+            assert mock_object.call_count == 1
+
+        had_sampler = sampler.__dict__[had_sampler_name]
+        assert str(original_had_sampler_random_state) != str(
+            had_sampler.__dict__[had_sampler_rng_name].get_state()
+        )
 
 
 def parametrize_suggest_method(name: str) -> MarkDecorator:
@@ -131,14 +227,6 @@ def test_pickle_random_sampler(seed: Optional[int]) -> None:
     sampler = optuna.samplers.RandomSampler(seed)
     restored_sampler = pickle.loads(pickle.dumps(sampler))
     assert sampler._rng.bytes(10) == restored_sampler._rng.bytes(10)
-
-
-def test_random_sampler_reseed_rng() -> None:
-    sampler = optuna.samplers.RandomSampler()
-    original_seed = sampler._rng.seed
-
-    sampler.reseed_rng()
-    assert original_seed != sampler._rng.seed
 
 
 @parametrize_sampler
@@ -458,9 +546,7 @@ def test_sample_relative() -> None:
     }
     unknown_param_value = 30
 
-    sampler = FixedSampler(  # type: ignore
-        relative_search_space, relative_params, unknown_param_value
-    )
+    sampler = FixedSampler(relative_search_space, relative_params, unknown_param_value)
     study = optuna.study.create_study(sampler=sampler)
 
     def objective(trial: Trial) -> float:
@@ -522,7 +608,7 @@ def test_partial_fixed_sampling(sampler_class: Callable[[], BaseSampler]) -> Non
     fixed_params = {"y": 0}
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        study.sampler = PartialFixedSampler(fixed_params, study.sampler)
+        study.sampler = optuna.samplers.PartialFixedSampler(fixed_params, study.sampler)
     study.optimize(objective, n_trials=1)
     trial_params = study.trials[-1].params
     assert trial_params["y"] == fixed_params["y"]

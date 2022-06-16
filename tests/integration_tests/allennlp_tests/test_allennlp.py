@@ -23,7 +23,7 @@ import optuna
 from optuna.integration.allennlp import AllenNLPPruningCallback
 from optuna.integration.allennlp._pruner import _create_pruner
 from optuna.integration.allennlp._variables import _VariableManager
-from optuna.testing.integration import DeterministicPruner
+from optuna.testing.pruner import DeterministicPruner
 
 
 def test_build_params() -> None:
@@ -387,7 +387,7 @@ def test_allennlp_pruning_callback_with_executor(
         storage = "sqlite:///" + os.path.join(tmp_dir, pruner_name, "result.db")
         serialization_dir = os.path.join(tmp_dir, pruner_name, "allennlp")
 
-        pruner = pruner_class(**pruner_kwargs)  # type: ignore
+        pruner = pruner_class(**pruner_kwargs)
         run_allennlp_executor(pruner)
         process = psutil.Process()
         manager = _VariableManager(process.ppid())

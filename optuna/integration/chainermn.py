@@ -9,7 +9,7 @@ from typing import Type
 import warnings
 
 from optuna import TrialPruned
-from optuna._deprecated import deprecated
+from optuna._deprecated import deprecated_func
 from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
@@ -27,7 +27,7 @@ with try_import() as _imports:
 _suggest_deprecated_msg = "Use :func:`~optuna.integration.ChainerMNTrial.suggest_float` instead."
 
 
-class _ChainerMNObjectiveFunc(object):
+class _ChainerMNObjectiveFunc:
     """A wrapper of an objective function to incorporate Optuna with ChainerMN.
 
     Note that this class is not supposed to be used by library users.
@@ -55,7 +55,7 @@ class _ChainerMNObjectiveFunc(object):
         return self.objective(ChainerMNTrial(trial, self.comm), self.comm)
 
 
-class ChainerMNStudy(object):
+class ChainerMNStudy:
     """A wrapper of :class:`~optuna.study.Study` to incorporate Optuna with ChainerMN.
 
     .. seealso::
@@ -182,17 +182,17 @@ class ChainerMNTrial(BaseTrial):
 
         return self._call_with_mpi(func)
 
-    @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
+    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
 
         return self.suggest_float(name, low, high)
 
-    @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
+    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
 
         return self.suggest_float(name, low, high, log=True)
 
-    @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
+    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
 
         return self.suggest_float(name, low, high, step=q)

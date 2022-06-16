@@ -5,7 +5,7 @@ from typing import Optional
 from tqdm.auto import tqdm
 
 from optuna import logging as optuna_logging
-from optuna._experimental import experimental
+from optuna._experimental import experimental_func
 
 
 _tqdm_handler: Optional["_TqdmLoggingHandler"] = None
@@ -24,7 +24,7 @@ class _TqdmLoggingHandler(logging.StreamHandler):
             self.handleError(record)
 
 
-class _ProgressBar(object):
+class _ProgressBar:
     """Progress Bar implementation for :func:`~optuna.study.Study.optimize` on the top of `tqdm`.
 
     Args:
@@ -50,7 +50,7 @@ class _ProgressBar(object):
 
     # TODO(hvy): Remove initialization indirection via this method when the progress bar is no
     # longer experimental.
-    @experimental("1.2.0", name="Progress bar")
+    @experimental_func("1.2.0", name="Progress bar")
     def _init_valid(self) -> None:
 
         if self._n_trials is not None:

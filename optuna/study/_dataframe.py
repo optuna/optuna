@@ -17,7 +17,7 @@ with try_import() as _imports:
 
 # Required for type annotation in `Study.trials_dataframe`.
 if not _imports.is_successful():
-    pd = object  # type: ignore # NOQA
+    pd = object  # NOQA
 
 
 def _create_records_and_aggregate_column(

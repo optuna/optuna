@@ -1,5 +1,6 @@
 import collections
 import itertools
+from numbers import Real
 from typing import Any
 from typing import Dict
 from typing import List
@@ -251,6 +252,12 @@ class GridSampler(BaseSampler):
 
         return list(unvisited_grids)
 
+    @staticmethod
+    def _grid_value_equal(value1: GridValueType, value2: GridValueType) -> bool:
+        value1_is_nan = isinstance(value1, Real) and np.isnan(float(value1))
+        value2_is_nan = isinstance(value2, Real) and np.isnan(float(value2))
+        return (value1 == value2) or (value1_is_nan and value2_is_nan)
+
     def _same_search_space(self, search_space: Mapping[str, Sequence[GridValueType]]) -> bool:
 
         if set(search_space.keys()) != set(self._search_space.keys()):
@@ -261,7 +268,7 @@ class GridSampler(BaseSampler):
                 return False
 
             for i, param_value in enumerate(search_space[param_name]):
-                if param_value != self._search_space[param_name][i]:
+                if not self._grid_value_equal(param_value, self._search_space[param_name][i]):
                     return False
 
         return True

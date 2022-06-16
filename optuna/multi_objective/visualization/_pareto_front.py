@@ -4,7 +4,7 @@ from typing import Optional
 
 import optuna
 from optuna import multi_objective
-from optuna._deprecated import deprecated
+from optuna._deprecated import deprecated_func
 from optuna.multi_objective.study import MultiObjectiveStudy
 from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
 from optuna.trial import TrialState
@@ -17,7 +17,7 @@ if _imports.is_successful():
 _logger = optuna.logging.get_logger(__name__)
 
 
-@deprecated("2.4.0", "4.0.0")
+@deprecated_func("2.4.0", "4.0.0")
 def plot_pareto_front(
     study: MultiObjectiveStudy,
     names: Optional[List[str]] = None,

@@ -78,14 +78,3 @@ jobs:
           pytest -s tests/integration_tests \
             --ignore tests/integration_tests/test_pytorch_lightning.py
         fi
-
-    - name: Tests MPI
-      run: |
-        mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
-
-        if [ ${{ matrix.python-version }} != 3.6 ]; then
-          mpirun -n 2 -- pytest tests/integration_tests/test_pytorch_distributed.py
-        fi
-
-      env:
-        OMP_NUM_THREADS: 1

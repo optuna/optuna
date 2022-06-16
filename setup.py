@@ -51,49 +51,49 @@ def get_extras_require() -> Dict[str, List[str]]:
         "benchmark": [
             "asv>=0.5.0",
             "botorch",
+            "cma",
+            "scikit-optimize",
             "virtualenv",
         ],
         "checking": [
             "black",
+            "blackdoc",
             "hacking",
             "isort",
-            "blackdoc",
             "mypy",
-            "types-setuptools",
-            "types-redis",
             "types-PyYAML",
+            "types-redis",
+            "types-setuptools",
         ],
         "document": [
             "cma",
             "lightgbm",
             "matplotlib",
             "mlflow",
+            # TODO(nzw0301): Remove onnx if thop adds onnx to its dependencies.
+            "onnx",
             "pandas",
             "pillow",
             "plotly>=4.0.0",  # optuna/visualization.
-            # TODO(not522): remove this after mlflow is fixed.
-            # https://github.com/mlflow/mlflow/pull/5945
-            "protobuf<4.0.0",
-            "scikit-learn>=0.24.2",
+            # TODO(nzw0301): Remove protobuf after
+            # https://github.com/onnx/onnx/issues/4239 is resolved.
+            "protobuf<=3.20.1",
+            "scikit-learn",
             "scikit-optimize",
             "sphinx",
             "sphinx-copybutton",
             "sphinx-gallery",
             "sphinx-plotly-directive",
             "sphinx_rtd_theme",
-            "pillow",
-            "matplotlib",
-            "scikit-learn",
-            "plotly>=4.0.0",  # optuna/visualization.
-            "pandas",
-            "lightgbm",
-            "torch==1.11.0 ; python_version>'3.6'",
-            "torchvision==0.12.0 ; python_version>'3.6'",
-            "torchaudio==0.11.0 ; python_version>'3.6'",
             "thop",
+            "torch==1.11.0 ; python_version>'3.6'",
+            "torchaudio==0.11.0 ; python_version>'3.6'",
+            "torchvision==0.12.0 ; python_version>'3.6'",
         ],
         "integration": [
             "allennlp>=2.2.0 ; python_version>'3.6'",
+            # TODO(c-bata): Remove cached-path after allennllp supports v1.1.3
+            "cached-path<=1.1.2 ; python_version>'3.6'",
             "botorch>=0.4.0 ; python_version>'3.6'",
             "catalyst>=21.3 ; python_version>'3.6'",
             "catboost>=0.26",
@@ -105,9 +105,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mpi4py",
             "mxnet",
             "pandas",
-            # TODO(not522): remove this after mlflow is fixed.
-            # https://github.com/mlflow/mlflow/pull/5945
-            "protobuf<4.0.0",
             "pytorch-ignite ; python_version>'3.6'",
             "pytorch-lightning>=1.5.0 ; python_version>'3.6'",
             "scikit-learn>=0.24.2",
@@ -132,7 +129,8 @@ def get_extras_require() -> Dict[str, List[str]]:
         ],
         "test": [
             "codecov",
-            "fakeredis<=1.7.1",
+            "fakeredis<=1.7.1; python_version<'3.8'",
+            "fakeredis ; python_version>='3.8'",
             "pytest",
             "pytest-cov",
         ],

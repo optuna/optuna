@@ -4,6 +4,7 @@ from typing import Callable
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Tuple
 from typing import Union
 
 from matplotlib.axes._axes import Axes
@@ -101,23 +102,24 @@ def test_plot_pareto_front_2d(
     assert len(figure.get_lines()) == 0
 
     actual_axis_order = axis_order or [0, 1]
+    data: List[Tuple[int, ...]]
     if use_constraints_func:
         if include_dominated_trials:
             # The enqueue order of trial is: infeasible, feasible non-best, then feasible best.
             assert len(figure.collections) == 3
-            data = [(1, 0, 1, 1), (1, 2, 2, 0)]  # type: ignore
+            data = [(1, 0, 1, 1), (1, 2, 2, 0)]
         else:
             # The enqueue order of trial is: infeasible, feasible.
             assert len(figure.collections) == 2
-            data = [(1, 0, 1), (1, 2, 0)]  # type: ignore
+            data = [(1, 0, 1), (1, 2, 0)]
     else:
         if include_dominated_trials:
             # The last elements come from dominated trial that is enqueued firstly.
             assert len(figure.collections) == 2
-            data = [(0, 1, 1, 1), (2, 0, 2, 1)]  # type: ignore
+            data = [(0, 1, 1, 1), (2, 0, 2, 1)]
         else:
             assert len(figure.collections) == 1
-            data = [(0, 1), (2, 0)]  # type: ignore
+            data = [(0, 1), (2, 0)]
 
     _check_data(figure, "x", data[actual_axis_order[0]])
     _check_data(figure, "y", data[actual_axis_order[1]])
@@ -230,24 +232,24 @@ def test_plot_pareto_front_3d(
     )
     actual_axis_order = axis_order or [0, 1, 2]
     assert len(figure.get_lines()) == 0
-
+    data: List[Tuple[int, ...]]
     if use_constraints_func:
         if include_dominated_trials:
             # The enqueue order of trial is: infeasible, feasible non-best, then feasible best.
             assert len(figure.collections) == 3
-            data = [(1, 1, 1, 1), (1, 0, 1, 1), (1, 2, 2, 0)]  # type: ignore
+            data = [(1, 1, 1, 1), (1, 0, 1, 1), (1, 2, 2, 0)]
         else:
             # The enqueue order of trial is: infeasible, feasible.
             assert len(figure.collections) == 2
-            data = [(1, 1, 1), (1, 0, 1), (1, 2, 0)]  # type: ignore
+            data = [(1, 1, 1), (1, 0, 1), (1, 2, 0)]
     else:
         if include_dominated_trials:
             # The last elements come from dominated trial that is enqueued firstly.
             assert len(figure.collections) == 2
-            data = [(1, 1, 1, 1), (0, 1, 1, 1), (2, 0, 2, 1)]  # type: ignore
+            data = [(1, 1, 1, 1), (0, 1, 1, 1), (2, 0, 2, 1)]
         else:
             assert len(figure.collections) == 1
-            data = [(1, 1), (0, 1), (2, 0)]  # type: ignore
+            data = [(1, 1), (0, 1), (2, 0)]
 
     _check_data(figure, "x", data[actual_axis_order[0]])
     _check_data(figure, "y", data[actual_axis_order[1]])
@@ -490,4 +492,17 @@ def test_plot_pareto_front_using_axis_order_and_targets() -> None:
             study=study,
             axis_order=[0, 1, 2],
             targets=lambda t: (t.values[0], t.values[1], t.values[2]),
+        )
+
+
+def test_constraints_func_experimental_warning() -> None:
+    study = optuna.create_study(directions=["minimize", "minimize"])
+
+    def constraints_func(t: FrozenTrial) -> Sequence[float]:
+        return [1.0]
+
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        plot_pareto_front(
+            study=study,
+            constraints_func=constraints_func,
         )

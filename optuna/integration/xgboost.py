@@ -35,7 +35,7 @@ _doc = """Callback for XGBoost to prune unpromising trials.
 
 if _imports.is_successful() and use_callback_cls:
 
-    class XGBoostPruningCallback(xgb.callback.TrainingCallback):  # type: ignore
+    class XGBoostPruningCallback(xgb.callback.TrainingCallback):
         __doc__ = _doc
 
         def __init__(self, trial: optuna.trial.Trial, observation_key: str) -> None:
