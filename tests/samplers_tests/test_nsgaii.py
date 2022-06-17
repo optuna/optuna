@@ -34,6 +34,11 @@ from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 
 
+def _nan_equal(a: Any, b: Any) -> bool:
+    if isinstance(a, float) and isinstance(b, float) and np.isnan(a) and np.isnan(b):
+        return True
+    return a == b
+
 def test_population_size() -> None:
     # Set `population_size` to 10.
     sampler = NSGAIISampler(population_size=10)
@@ -119,8 +124,10 @@ def test_constraints_func_none() -> None:
     for trial in study.trials:
         assert _CONSTRAINTS_KEY not in trial.system_attrs
 
-
-def test_constraints_func() -> None:
+@pytest.mark.parametrize("constraint_value", [-1.0, 0.0, 1.0,
+     -float("inf"), float("inf"), float("nan")
+    ])
+def test_constraints_func(constraint_value) -> None:
     n_trials = 4
     n_objectives = 2
     constraints_func_call_count = 0
@@ -129,7 +136,7 @@ def test_constraints_func() -> None:
         nonlocal constraints_func_call_count
         constraints_func_call_count += 1
 
-        return (trial.number,)
+        return (constraint_value,)
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
@@ -143,7 +150,7 @@ def test_constraints_func() -> None:
     assert len(study.trials) == n_trials
     assert constraints_func_call_count == n_trials
     for trial in study.trials:
-        assert trial.system_attrs[_CONSTRAINTS_KEY] == (trial.number,)
+        assert _nan_equal(trial.system_attrs[_CONSTRAINTS_KEY], (constraint_value,))
 
 
 def test_fast_non_dominated_sort() -> None:
