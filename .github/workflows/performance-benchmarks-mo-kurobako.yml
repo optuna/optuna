@@ -18,7 +18,7 @@ on:
 
 
 jobs:
-  performance-benchmarks-kurobako:
+  performance-benchmarks-mo-kurobako:
     runs-on: ubuntu-latest
 
     steps:
