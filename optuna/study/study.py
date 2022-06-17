@@ -1,4 +1,5 @@
 import copy
+from numbers import Real
 import threading
 from typing import Any
 from typing import Callable
@@ -964,8 +965,9 @@ class Study:
                     continue
 
                 is_repeated = (
-                    np.isnan(param_value) or np.isclose(param_value, existing_param, atol=0.0)
-                    if isinstance(param_value, (float, np.floating))
+                    np.isnan(float(param_value))
+                    or np.isclose(float(param_value), float(existing_param), atol=0.0)
+                    if isinstance(param_value, Real)
                     else param_value == existing_param
                 )
                 repeated_params.append(is_repeated)
