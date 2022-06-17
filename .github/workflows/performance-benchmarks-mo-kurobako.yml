@@ -1,4 +1,4 @@
-name: Performance Benchmarks with kurobako
+name: Performance Benchmarks with mo-kurobako
 
 on:
   workflow_dispatch:
