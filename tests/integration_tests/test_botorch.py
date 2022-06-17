@@ -81,7 +81,7 @@ def test_botorch_candidates_func_invalid_type() -> None:
         bounds: torch.Tensor,
     ) -> Any:
         # Must be a `torch.Tensor`, not a list.
-        return [torch.rand(1).tolist()]
+        return [0.0]
 
     sampler = BoTorchSampler(candidates_func=candidates_func, n_startup_trials=1)
 
