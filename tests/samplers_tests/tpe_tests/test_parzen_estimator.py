@@ -1,3 +1,4 @@
+from typing import Callable
 from typing import Dict
 from typing import List
 from unittest.mock import patch
@@ -367,3 +368,33 @@ def test_calculate(
     np.testing.assert_almost_equal(s_weights, expected["weights"])
     np.testing.assert_almost_equal(s_mus, expected["mus"])
     np.testing.assert_almost_equal(s_sigmas, expected["sigmas"])
+
+
+@pytest.mark.parametrize(
+    "weights",
+    [
+        lambda x: np.zeros(x),
+        lambda x: -np.ones(x),
+        lambda x: float("inf") * np.ones(x),
+        lambda x: -float("inf") * np.ones(x),
+        lambda x: np.asarray([float("nan") for _ in range(x)]),
+    ],
+)
+def test_invalid_weights(weights: Callable[[int], np.ndarray]) -> None:
+    parameters = _ParzenEstimatorParameters(
+        prior_weight=1.0,
+        consider_prior=False,
+        consider_magic_clip=False,
+        consider_endpoints=False,
+        weights=weights,
+        multivariate=False,
+    )
+    mpe = _ParzenEstimator(
+        {"a": np.asarray([0.0])}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
+    )
+
+    # TODO(HideakiImamura): Currently, the weight calculation does not raise if the specified
+    #  weights function is invalid. To be fixed to raise a `ValueError`.
+    assert len(mpe._weights) == 1
+    # If `weights = lambda x: -np.ones(x)`, the calculated weight is 1, otherwise nan.
+    assert np.isnan(mpe._weights[0]) or mpe._weights[0] == 1.0
