@@ -39,6 +39,7 @@ def _nan_equal(a: Any, b: Any) -> bool:
         return True
     return a == b
 
+
 def test_population_size() -> None:
     # Set `population_size` to 10.
     sampler = NSGAIISampler(population_size=10)
@@ -124,10 +125,11 @@ def test_constraints_func_none() -> None:
     for trial in study.trials:
         assert _CONSTRAINTS_KEY not in trial.system_attrs
 
-@pytest.mark.parametrize("constraint_value", [-1.0, 0.0, 1.0,
-     -float("inf"), float("inf"), float("nan")
-    ])
-def test_constraints_func(constraint_value) -> None:
+
+@pytest.mark.parametrize(
+    "constraint_value", [-1.0, 0.0, 1.0, -float("inf"), float("inf"), float("nan")]
+)
+def test_constraints_func(constraint_value: float) -> None:
     n_trials = 4
     n_objectives = 2
     constraints_func_call_count = 0
