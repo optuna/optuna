@@ -314,10 +314,6 @@ def _generate_contour_subplot(
     y_values = info.y_values
     z_values = info.z_values
 
-    ax.set(xlabel=x_param, ylabel=y_param)
-    ax.set_xlim(param_values_range[x_param][0], param_values_range[x_param][1])
-    ax.set_ylim(param_values_range[y_param][0], param_values_range[y_param][1])
-
     if len(x_indices) < 2:
         ax.label_outer()
         return ax
@@ -346,10 +342,13 @@ def _generate_contour_subplot(
         z_values,
     )
     cs = None
+    ax.set(xlabel=x_param, ylabel=y_param)
+    ax.set_xlim(param_values_range[x_param][0], param_values_range[x_param][1])
+    ax.set_ylim(param_values_range[y_param][0], param_values_range[y_param][1])
     if len(zi) > 0:
         if param_is_log[x_param]:
             ax.set_xscale("log")
-        if param_is_log[x_param]:
+        if param_is_log[y_param]:
             ax.set_yscale("log")
         if x_param != y_param:
             # Contour the gridded data.
