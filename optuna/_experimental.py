@@ -99,7 +99,7 @@ def experimental_class(
             _original_name = getattr(cls, "__name__")
 
             @functools.wraps(_original_init)
-            def wrapped_init(self, *args: Any, **kwargs: Any) -> None:  # type: ignore
+            def wrapped_init(self: Any, *args: Any, **kwargs: Any) -> None:
                 warnings.warn(
                     "{} is experimental (supported from v{}). "
                     "The interface can change in the future.".format(

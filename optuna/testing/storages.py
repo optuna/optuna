@@ -29,7 +29,7 @@ STORAGE_MODES_HEARTBEAT = [
 SQLITE3_TIMEOUT = 300
 
 
-class StorageSupplier(object):
+class StorageSupplier:
     def __init__(self, storage_specifier: str, **kwargs: Any) -> None:
 
         self.storage_specifier = storage_specifier

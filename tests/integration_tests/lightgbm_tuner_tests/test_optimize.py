@@ -33,7 +33,7 @@ def turnoff_train(metric: str = "binary_logloss") -> Generator[None, None, None]
     unexpected_value = 0.5
     dummy_num_iterations = 1234
 
-    class DummyBooster(object):
+    class DummyBooster:
         def __init__(self) -> None:
 
             self.best_score = {
@@ -60,7 +60,7 @@ def turnoff_cv(metric: str = "binary_logloss") -> Generator[None, None, None]:
         yield
 
 
-class TestOptunaObjective(object):
+class TestOptunaObjective:
     def test_init_(self) -> None:
 
         target_param_names = ["learning_rate"]  # Invalid parameter name.
@@ -96,7 +96,7 @@ class TestOptunaObjective(object):
             assert study.best_value == 0.5
 
 
-class TestOptunaObjectiveCV(object):
+class TestOptunaObjectiveCV:
     def test_call(self) -> None:
         target_param_names = ["lambda_l1"]
         lgbm_params: Dict[str, Any] = {}
@@ -120,12 +120,12 @@ class TestOptunaObjectiveCV(object):
             assert study.best_value == 0.5
 
 
-class TestBaseTuner(object):
+class TestBaseTuner:
     def test_get_booster_best_score(self) -> None:
 
         expected_value = 1.0
 
-        class DummyBooster(object):
+        class DummyBooster:
             def __init__(self) -> None:
 
                 self.best_score = {"valid_0": {"binary_logloss": expected_value}}
@@ -172,7 +172,7 @@ class TestBaseTuner(object):
 
         expected_value = 1.0
 
-        class DummyBooster(object):
+        class DummyBooster:
             def __init__(self) -> None:
 
                 self.best_score = {"dev": {"binary_logloss": expected_value}}
@@ -189,7 +189,7 @@ class TestBaseTuner(object):
         unexpected_value = 0.5
         expected_value = 1.0
 
-        class DummyBooster(object):
+        class DummyBooster:
             def __init__(self) -> None:
 
                 self.best_score = {
@@ -271,7 +271,7 @@ class TestBaseTuner(object):
             tuner._metric_with_eval_at("ndcg")
 
 
-class TestLightGBMTuner(object):
+class TestLightGBMTuner:
     def _get_tuner_object(
         self,
         params: Dict[str, Any] = {},
@@ -788,7 +788,7 @@ class TestLightGBMTuner(object):
         assert best_score_second_try == best_score_first_try
 
 
-class TestLightGBMTunerCV(object):
+class TestLightGBMTunerCV:
     def _get_tunercv_object(
         self,
         params: Dict[str, Any] = {},

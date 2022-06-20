@@ -131,7 +131,7 @@ def _safe_indexing(
     return sklearn_safe_indexing(X, indices)
 
 
-class _Objective(object):
+class _Objective:
     """Callable that implements objective function.
 
     Args:

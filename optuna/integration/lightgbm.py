@@ -37,7 +37,7 @@ else:
     setattr(sys.modules[__name__], "LightGBMTunerCV", tuner.__dict__["LightGBMTunerCV"])
 
 
-class LightGBMPruningCallback(object):
+class LightGBMPruningCallback:
     """Callback for LightGBM to prune unpromising trials.
 
     See `the example <https://github.com/optuna/optuna-examples/blob/main/

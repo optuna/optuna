@@ -6,8 +6,8 @@ import pytest
 from optuna import create_study
 from optuna import create_trial
 from optuna import Trial
-from optuna.testing.storage import STORAGE_MODES
-from optuna.testing.storage import StorageSupplier
+from optuna.testing.storages import STORAGE_MODES
+from optuna.testing.storages import StorageSupplier
 from optuna.trial import TrialState
 
 

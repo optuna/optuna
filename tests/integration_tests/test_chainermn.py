@@ -21,9 +21,9 @@ from optuna.samplers import BaseSampler
 from optuna.storages import BaseStorage
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
-from optuna.testing.integration import DeterministicPruner
-from optuna.testing.sampler import DeterministicRelativeSampler
-from optuna.testing.storage import StorageSupplier
+from optuna.testing.pruners import DeterministicPruner
+from optuna.testing.samplers import DeterministicRelativeSampler
+from optuna.testing.storages import StorageSupplier
 from optuna.trial import Trial
 from optuna.trial import TrialState
 
@@ -40,7 +40,7 @@ STORAGE_MODES = ["sqlite"]
 PRUNER_INIT_FUNCS = [lambda: pruners.MedianPruner(), lambda: pruners.SuccessiveHalvingPruner()]
 
 
-class Func(object):
+class Func:
     def __init__(self) -> None:
 
         self.suggested_values: Dict[int, Dict[str, Any]] = {}
@@ -101,7 +101,7 @@ def comm() -> CommunicatorBase:
     return chainermn.create_communicator("naive")
 
 
-class TestChainerMNStudy(object):
+class TestChainerMNStudy:
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     def test_init(storage_mode: str, comm: CommunicatorBase) -> None:
@@ -228,9 +228,7 @@ class TestChainerMNStudy(object):
             "z": distributions.CategoricalDistribution(choices=(-1.0, 1.0)),
         }
         relative_params = {"x": 1.0, "y": 25.0, "z": -1.0}
-        sampler = DeterministicRelativeSampler(
-            relative_search_space, relative_params  # type: ignore
-        )
+        sampler = DeterministicRelativeSampler(relative_search_space, relative_params)
 
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm, sampler=sampler)
@@ -268,7 +266,7 @@ class TestChainerMNStudy(object):
             pytest.skip("This test is for multi-node only.")
 
 
-class TestChainerMNTrial(object):
+class TestChainerMNTrial:
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     def test_init(storage_mode: str, comm: CommunicatorBase) -> None:

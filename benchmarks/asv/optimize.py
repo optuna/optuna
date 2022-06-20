@@ -7,7 +7,7 @@ from optuna.samplers import BaseSampler
 from optuna.samplers import CmaEsSampler
 from optuna.samplers import RandomSampler
 from optuna.samplers import TPESampler
-from optuna.testing.storage import StorageSupplier
+from optuna.testing.storages import StorageSupplier
 
 
 def parse_args(args: str) -> List[Union[int, str]]:

@@ -7,7 +7,7 @@ from typing import Tuple
 from typing import Type
 
 
-class _DeferredImportExceptionContextManager(object):
+class _DeferredImportExceptionContextManager:
     """Context manager to defer exceptions from imports.
 
     Catches :exc:`ImportError` and :exc:`SyntaxError`.

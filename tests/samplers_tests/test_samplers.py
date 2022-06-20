@@ -24,7 +24,7 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.samplers import BaseSampler
 from optuna.study import Study
-from optuna.testing.sampler import DeterministicRelativeSampler
+from optuna.testing.samplers import DeterministicRelativeSampler
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState
@@ -546,9 +546,7 @@ def test_sample_relative() -> None:
     }
     unknown_param_value = 30
 
-    sampler = FixedSampler(  # type: ignore
-        relative_search_space, relative_params, unknown_param_value
-    )
+    sampler = FixedSampler(relative_search_space, relative_params, unknown_param_value)
     study = optuna.study.create_study(sampler=sampler)
 
     def objective(trial: Trial) -> float:

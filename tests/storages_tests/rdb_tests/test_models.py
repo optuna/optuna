@@ -28,7 +28,7 @@ def session() -> Session:
     return Session(bind=engine)
 
 
-class TestStudyDirectionModel(object):
+class TestStudyDirectionModel:
     @staticmethod
     def _create_model(session: Session) -> StudyModel:
 
@@ -83,7 +83,7 @@ class TestStudyDirectionModel(object):
         assert 0 == len(StudyDirectionModel.where_study_id(study.study_id, session))
 
 
-class TestStudySystemAttributeModel(object):
+class TestStudySystemAttributeModel:
     @staticmethod
     def test_find_by_study_and_key(session: Session) -> None:
 
@@ -138,7 +138,7 @@ class TestStudySystemAttributeModel(object):
         assert 0 == len(StudySystemAttributeModel.where_study_id(study_id, session))
 
 
-class TestTrialModel(object):
+class TestTrialModel:
     @staticmethod
     def test_default_datetime(session: Session) -> None:
         # Regardless of the initial state the trial created here should have null datetime_start
@@ -205,7 +205,7 @@ class TestTrialModel(object):
         assert 0 == TrialModel.count(session, study)
 
 
-class TestTrialUserAttributeModel(object):
+class TestTrialUserAttributeModel:
     @staticmethod
     def test_find_by_trial_and_key(session: Session) -> None:
 
@@ -247,7 +247,7 @@ class TestTrialUserAttributeModel(object):
         assert 0 == len(TrialUserAttributeModel.where_trial_id(trial_id, session))
 
 
-class TestTrialSystemAttributeModel(object):
+class TestTrialSystemAttributeModel:
     @staticmethod
     def test_find_by_trial_and_key(session: Session) -> None:
 
@@ -289,7 +289,7 @@ class TestTrialSystemAttributeModel(object):
         assert 0 == len(TrialSystemAttributeModel.where_trial_id(trial_id, session))
 
 
-class TestTrialValueModel(object):
+class TestTrialValueModel:
     @staticmethod
     def _create_model(session: Session) -> TrialModel:
 
@@ -346,7 +346,7 @@ class TestTrialValueModel(object):
         assert 0 == len(TrialValueModel.where_trial_id(trial.trial_id, session))
 
 
-class TestTrialIntermediateValueModel(object):
+class TestTrialIntermediateValueModel:
     @staticmethod
     def _create_model(session: Session) -> TrialModel:
 
@@ -410,7 +410,7 @@ class TestTrialIntermediateValueModel(object):
         assert 0 == len(TrialIntermediateValueModel.where_trial_id(trial.trial_id, session))
 
 
-class TestTrialHeartbeatModel(object):
+class TestTrialHeartbeatModel:
     @staticmethod
     def _create_model(session: Session) -> TrialModel:
 
@@ -445,7 +445,7 @@ class TestTrialHeartbeatModel(object):
         assert TrialHeartbeatModel.where_trial_id(trial.trial_id, session) is None
 
 
-class TestVersionInfoModel(object):
+class TestVersionInfoModel:
     @staticmethod
     def test_version_info_id_constraint(session: Session) -> None:
 
