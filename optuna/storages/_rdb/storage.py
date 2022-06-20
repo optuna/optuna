@@ -26,6 +26,7 @@ from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.storages._rdb.models import TrialValueModel
+from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
@@ -541,6 +542,44 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 )
 
         return study_summaries
+
+    def get_all_studies(self) -> List[FrozenStudy]:
+        with _create_scoped_session(self.scoped_session) as session:
+
+            studies = session.query(
+                models.StudyModel.study_id,
+                models.StudyModel.study_name,
+            ).all()
+
+            _directions = defaultdict(list)
+            for direction_model in session.query(models.StudyDirectionModel).all():
+                _directions[direction_model.study_id].append(direction_model.direction)
+
+            _user_attrs = defaultdict(list)
+            for attribute_model in session.query(models.StudyUserAttributeModel).all():
+                _user_attrs[attribute_model.study_id].append(attribute_model)
+
+            _system_attrs = defaultdict(list)
+            for attribute_model in session.query(models.StudySystemAttributeModel).all():
+                _system_attrs[attribute_model.study_id].append(attribute_model)
+
+            frozen_studies = []
+            for study in studies:
+                directions = _directions[study.study_id]
+                user_attrs = _user_attrs.get(study.study_id, [])
+                system_attrs = _system_attrs.get(study.study_id, [])
+                frozen_studies.append(
+                    FrozenStudy(
+                        study_name=study.study_name,
+                        direction=None,
+                        directions=directions,
+                        user_attrs={i.key: json.loads(i.value_json) for i in user_attrs},
+                        system_attrs={i.key: json.loads(i.value_json) for i in system_attrs},
+                        study_id=study.study_id,
+                    )
+                )
+
+            return frozen_studies
 
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
 
