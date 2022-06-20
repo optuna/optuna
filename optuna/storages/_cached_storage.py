@@ -19,7 +19,6 @@ from optuna.storages._rdb.storage import RDBStorage
 from optuna.storages._redis import RedisStorage
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
-from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 

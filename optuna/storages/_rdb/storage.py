@@ -28,7 +28,6 @@ from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.storages._rdb.models import TrialValueModel
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
-from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 

@@ -12,7 +12,6 @@ from typing import Union
 from optuna.distributions import BaseDistribution
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
-from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
