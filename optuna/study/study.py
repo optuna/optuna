@@ -1416,12 +1416,12 @@ def get_all_study_summaries(
 
     for s in frozen_studies:
 
-        all_trials = storage.get_all_trials(s.study_id)
+        all_trials = storage.get_all_trials(s._study_id)
         completed_trials = [t for t in all_trials if t.state == TrialState.COMPLETE]
 
         n_trials = len(all_trials)
 
-        if include_best_trial:
+        if include_best_trial and len(completed_trials) != 0:
             if s.direction == StudyDirection.MAXIMIZE:
                 best_trial = max(completed_trials, key=lambda t: cast(float, t.value))
             else:
@@ -1429,7 +1429,9 @@ def get_all_study_summaries(
         else:
             best_trial = None
 
-        datetime_start = min([t.datetime_start for t in all_trials])
+        datetime_start = min(
+            [t.datetime_start for t in all_trials if t.datetime_start is not None], default=None
+        )
 
         study_summaries.append(
             StudySummary(
@@ -1440,7 +1442,7 @@ def get_all_study_summaries(
                 system_attrs=s.system_attrs,
                 n_trials=n_trials,
                 datetime_start=datetime_start,
-                study_id=s.study_id,
+                study_id=s._study_id,
                 directions=s.directions,
             )
         )

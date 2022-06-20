@@ -317,7 +317,7 @@ def test_get_all_study_summaries(storage_mode: str, include_best_trial: bool) ->
             assert summary.best_trial is None
 
 
-@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+@pytest.mark.parametrize("storage_mode", ["redis"])
 def test_get_all_study_summaries_with_no_trials(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -1409,7 +1409,7 @@ def test_enqueued_trial_datetime_start(storage_mode: str) -> None:
         assert study.trials[0].datetime_start is not None
 
 
-@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+@pytest.mark.parametrize("storage_mode", ["redis"])
 def test_study_summary_datetime_start_calculation(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -1423,11 +1423,11 @@ def test_study_summary_datetime_start_calculation(storage_mode: str) -> None:
         study.enqueue_trial(params={"x": 1})
 
         # Study summary with only enqueued trials should have null datetime_start
-        summaries = study._storage.get_all_study_summaries(include_best_trial=True)
+        summaries = get_all_study_summaries(study._storage, include_best_trial=True)
         assert summaries[0].datetime_start is None
 
         # Study summary with completed trials should have nonnull datetime_start
         study.optimize(objective, n_trials=1)
         study.enqueue_trial(params={"x": 1})
-        summaries = study._storage.get_all_study_summaries(include_best_trial=True)
+        summaries = get_all_study_summaries(study._storage, include_best_trial=True)
         assert summaries[0].datetime_start is not None
