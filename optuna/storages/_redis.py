@@ -326,24 +326,6 @@ class RedisStorage(BaseStorage, BaseHeartbeat):
             self._key_study_param_distribution(study_id), pickle.dumps(param_distribution)
         )
 
-    def get_all_study_summaries(self, include_best_trial: bool) -> List[StudySummary]:
-
-        queries = []
-        study_ids = [pickle.loads(sid) for sid in self._redis.lrange("study_list", 0, -1)]
-        for study_id in study_ids:
-            queries.append(self._key_study_summary(study_id))
-
-        study_summaries = []
-        summary_pkls = self._redis.mget(queries)
-        for summary_pkl in summary_pkls:
-            assert summary_pkl is not None
-            summary = pickle.loads(summary_pkl)
-            if not include_best_trial:
-                summary.best_trial = None
-            study_summaries.append(summary)
-
-        return study_summaries
-
     def get_all_studies(self) -> List[FrozenStudy]:
         queries = []
         study_ids = [pickle.loads(sid) for sid in self._redis.lrange("study_list", 0, -1)]

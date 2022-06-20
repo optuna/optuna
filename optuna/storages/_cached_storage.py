@@ -155,10 +155,6 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
 
         return self._backend.get_study_system_attrs(study_id)
 
-    def get_all_study_summaries(self, include_best_trial: bool) -> List[StudySummary]:
-
-        return self._backend.get_all_study_summaries(include_best_trial=include_best_trial)
-
     def get_all_studies(self) -> List[FrozenStudy]:
 
         return self._backend.get_all_studies()

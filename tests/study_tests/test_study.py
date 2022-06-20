@@ -317,7 +317,7 @@ def test_get_all_study_summaries(storage_mode: str, include_best_trial: bool) ->
             assert summary.best_trial is None
 
 
-@pytest.mark.parametrize("storage_mode", ["redis"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_all_study_summaries_with_no_trials(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:

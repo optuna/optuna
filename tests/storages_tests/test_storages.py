@@ -48,7 +48,7 @@ def test_get_storage() -> None:
     )
 
 
-@pytest.mark.parametrize("storage_mode", ["redis"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_create_new_study(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -69,7 +69,7 @@ def test_create_new_study(storage_mode: str) -> None:
         assert all(s.study_name.startswith(DEFAULT_STUDY_NAME_PREFIX) for s in summaries)
 
 
-@pytest.mark.parametrize("storage_mode", ["redis"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_create_new_study_unique_id(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -128,7 +128,7 @@ def test_delete_study(storage_mode: str) -> None:
             storage.delete_study(study_id)
 
 
-@pytest.mark.parametrize("storage_mode", ["redis"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_delete_study_after_create_multiple_studies(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -860,7 +860,7 @@ def test_set_trial_system_attr(storage_mode: str) -> None:
             storage.set_trial_system_attr(trial_id_1, "key", "value")
 
 
-@pytest.mark.parametrize("storage_mode", ["redis"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_all_studies(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
