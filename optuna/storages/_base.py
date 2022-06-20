@@ -10,6 +10,7 @@ from typing import Tuple
 from typing import Union
 
 from optuna.distributions import BaseDistribution
+from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
@@ -288,6 +289,9 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             A list of :class:`~optuna.study.StudySummary` objects.
 
         """
+        raise NotImplementedError
+
+    def get_all_studies(self) -> List[FrozenStudy]:
         raise NotImplementedError
 
     # Basic trial manipulation

@@ -22,6 +22,7 @@ from optuna._imports import try_import
 from optuna.storages import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages._heartbeat import BaseHeartbeat
+from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
@@ -342,6 +343,30 @@ class RedisStorage(BaseStorage, BaseHeartbeat):
             study_summaries.append(summary)
 
         return study_summaries
+
+    def get_all_studies(self) -> List[FrozenStudy]:
+        queries = []
+        study_ids = [pickle.loads(sid) for sid in self._redis.lrange("study_list", 0, -1)]
+        for study_id in study_ids:
+            queries.append(self._key_study_summary(study_id))
+
+        frozen_studies = []
+        summary_pkls = self._redis.mget(queries)
+        for summary_pkl in summary_pkls:
+            assert summary_pkl is not None
+            summary = pickle.loads(summary_pkl)
+            frozen_studies.append(
+                FrozenStudy(
+                    summary.study_name,
+                    summary.direction,
+                    summary.user_attrs,
+                    summary.system_attrs,
+                    summary.study_id,
+                    summary.directions,
+                )
+            )
+
+        return frozen_studies
 
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
 
