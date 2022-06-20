@@ -12,6 +12,27 @@ _logger = logging.get_logger(__name__)
 
 
 class FrozenStudy:
+    """Basic attributes of a :class:`~optuna.study.Study`.
+
+    Attributes:
+        study_name:
+            Name of the :class:`~optuna.study.Study`.
+        direction:
+            :class:`~optuna.study.StudyDirection` of the :class:`~optuna.study.Study`.
+
+            .. note::
+                This attribute is only available during single-objective optimization.
+        directions:
+            A sequence of :class:`~optuna.study.StudyDirection` objects.
+        user_attrs:
+            Dictionary that contains the attributes of the :class:`~optuna.study.Study` set with
+            :func:`optuna.study.Study.set_user_attr`.
+        system_attrs:
+            Dictionary that contains the attributes of the :class:`~optuna.study.Study` internally
+            set by Optuna.
+
+    """
+
     def __init__(
         self,
         study_name: str,
@@ -19,6 +40,7 @@ class FrozenStudy:
         user_attrs: Dict[str, Any],
         system_attrs: Dict[str, Any],
         study_id: int,
+        *,
         directions: Optional[Sequence[StudyDirection]] = None,
     ):
         self.study_name = study_name
