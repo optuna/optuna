@@ -806,9 +806,7 @@ class Study:
         """
 
         if skip_if_exists and self._should_skip_enqueue(params):
-            warnings.warn(
-                f"Trial with params {params} already exists. Skipping enqueue.", RuntimeWarning
-            )
+            _logger.info(f"Trial with params {params} already exists. Skipping enqueue.")
             return
 
         self.add_trial(
