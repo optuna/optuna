@@ -1,6 +1,7 @@
 from typing import Callable
 from typing import cast
 from typing import List
+from typing import NamedTuple
 from typing import Optional
 from typing import Sequence
 from typing import Union
@@ -20,6 +21,12 @@ if _imports.is_successful():
     from optuna.visualization._plotly_imports import go
 
 _logger = get_logger(__name__)
+
+
+class _EDFInfo(NamedTuple):
+    study_names: List[str]
+    x_values: np.ndarray
+    y_values_by_study: List[np.ndarray]
 
 
 def plot_edf(
@@ -102,6 +109,33 @@ def plot_edf(
 
     _imports.check()
 
+    layout = go.Layout(
+        title="Empirical Distribution Function Plot",
+        xaxis={"title": target_name},
+        yaxis={"title": "Cumulative Probability"},
+    )
+
+    info = _get_edf_info(study, target, target_name)
+
+    if len(info.study_names) == 0 or len(info.x_values) == 0:
+        return go.Figure(data=[], layout=layout)
+
+    traces = []
+    for y_values, study_name in zip(info.y_values_by_study, info.study_names):
+        traces.append(go.Scatter(x=info.x_values, y=y_values, name=study_name, mode="lines"))
+
+    figure = go.Figure(data=traces, layout=layout)
+    figure.update_yaxes(range=[0, 1])
+
+    return figure
+
+
+def _get_edf_info(
+    study: Union[Study, Sequence[Study]],
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
+) -> _EDFInfo:
+
     if isinstance(study, Study):
         studies = [study]
     else:
@@ -109,23 +143,9 @@ def plot_edf(
 
     _check_plot_args(studies, target, target_name)
 
-    return _get_edf_plot(studies, target, target_name)
-
-
-def _get_edf_plot(
-    studies: List[Study],
-    target: Optional[Callable[[FrozenTrial], float]] = None,
-    target_name: str = "Objective Value",
-) -> "go.Figure":
-    layout = go.Layout(
-        title="Empirical Distribution Function Plot",
-        xaxis={"title": target_name},
-        yaxis={"title": "Cumulative Probability"},
-    )
-
     if len(studies) == 0:
         _logger.warning("There are no studies.")
-        return go.Figure(data=[], layout=layout)
+        return _EDFInfo(study_names=[], x_values=np.array([]), y_values_by_study=[])
 
     if target is None:
 
@@ -134,6 +154,7 @@ def _get_edf_plot(
 
         target = _target
 
+    study_names = []
     all_values: List[np.ndarray] = []
     for study in studies:
         trials = _filter_nonfinite(
@@ -142,21 +163,20 @@ def _get_edf_plot(
 
         values = np.array([target(trial) for trial in trials])
         all_values.append(values)
+        study_names.append(study.study_name)
 
     if all(len(values) == 0 for values in all_values):
         _logger.warning("There are no complete trials.")
-        return go.Figure(data=[], layout=layout)
+        return _EDFInfo(study_names=study_names, x_values=np.array([]), y_values_by_study=[])
 
     min_x_value = np.min(np.concatenate(all_values))
     max_x_value = np.max(np.concatenate(all_values))
     x_values = np.linspace(min_x_value, max_x_value, 100)
 
-    traces = []
-    for values, study in zip(all_values, studies):
-        y_values = np.sum(values[:, np.newaxis] <= x_values, axis=0) / values.size
-        traces.append(go.Scatter(x=x_values, y=y_values, name=study.study_name, mode="lines"))
+    y_values_by_study = []
+    for values in all_values:
+        y_values_by_study.append(np.sum(values[:, np.newaxis] <= x_values, axis=0) / values.size)
 
-    figure = go.Figure(data=traces, layout=layout)
-    figure.update_yaxes(range=[0, 1])
-
-    return figure
+    return _EDFInfo(
+        study_names=study_names, x_values=x_values, y_values_by_study=y_values_by_study
+    )
