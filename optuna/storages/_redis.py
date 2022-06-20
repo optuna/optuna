@@ -361,7 +361,7 @@ class RedisStorage(BaseStorage, BaseHeartbeat):
                     summary.direction,
                     summary.user_attrs,
                     summary.system_attrs,
-                    summary.study_id,
+                    summary._study_id,
                     summary.directions,
                 )
             )

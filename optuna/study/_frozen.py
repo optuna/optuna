@@ -54,3 +54,18 @@ class FrozenStudy:
             return NotImplemented
 
         return self._study_id <= other._study_id
+
+    @property
+    def direction(self) -> StudyDirection:
+
+        if len(self._directions) > 1:
+            raise RuntimeError(
+                "This attribute is not available during multi-objective optimization."
+            )
+
+        return self._directions[0]
+
+    @property
+    def directions(self) -> Sequence[StudyDirection]:
+
+        return self._directions
