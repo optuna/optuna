@@ -759,7 +759,7 @@ class Study:
         self,
         params: Dict[str, Any],
         user_attrs: Optional[Dict[str, Any]] = None,
-        skip_if_exists: bool = True,
+        skip_if_exists: bool = False,
     ) -> None:
         """Enqueue a trial with given parameter values.
 

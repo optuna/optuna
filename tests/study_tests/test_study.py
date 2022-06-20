@@ -708,7 +708,7 @@ def test_enqueue_trial_skips_existing_finished(storage_mode: str) -> None:
         assert t0.params["y"] == 5
 
         with pytest.warns(RuntimeWarning):
-            study.enqueue_trial({"x": -5, "y": 5})
+            study.enqueue_trial({"x": -5, "y": 5}, skip_if_exists=True)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -726,7 +726,7 @@ def test_enqueue_trial_skips_existing_waiting(storage_mode: str) -> None:
 
         study.enqueue_trial({"x": -5, "y": 5})
         with pytest.warns(RuntimeWarning):
-            study.enqueue_trial({"x": -5, "y": 5})
+            study.enqueue_trial({"x": -5, "y": 5}, skip_if_exists=True)
 
         study.optimize(objective, n_trials=1)
         t0 = study.trials[0]
@@ -761,7 +761,7 @@ def test_enqueue_trial_skip_existing_allows_unfixed(
         assert t0.params["x"] == -5
         assert t0.params["y"] == 5
 
-        study.enqueue_trial(new_params)
+        study.enqueue_trial(new_params, skip_if_exists=True)
         study.optimize(objective, n_trials=1)
 
         unfixed_params = {"x", "y", "z"} - set(new_params)
@@ -780,7 +780,7 @@ def test_enqueue_trial_skip_existing_handles_common_types(storage_mode: str, par
         study = create_study(storage=storage)
         study.enqueue_trial({"x": param})
         with pytest.warns(RuntimeWarning):
-            study.enqueue_trial({"x": param})
+            study.enqueue_trial({"x": param}, skip_if_exists=True)
 
 
 @patch("optuna.study._optimize.gc.collect")
