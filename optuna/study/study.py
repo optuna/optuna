@@ -962,6 +962,7 @@ class Study:
                     # (e.g. trying to enqueue categorical to float param).
                     # We are not doing anything about it here, since sanitization should
                     # be handled regardless if `skip_if_exists` is `True`.
+                    repeated_params.append(False)
                     continue
 
                 is_repeated = (
@@ -972,7 +973,7 @@ class Study:
                 )
                 repeated_params.append(is_repeated)
 
-            if all(repeated_params) and len(repeated_params) > 0:
+            if all(repeated_params):
                 return True
 
         return False
