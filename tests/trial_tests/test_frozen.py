@@ -11,8 +11,8 @@ import pytest
 from optuna import create_study
 from optuna.distributions import BaseDistribution
 from optuna.distributions import FloatDistribution
-from optuna.testing.storage import STORAGE_MODES
-from optuna.testing.storage import StorageSupplier
+from optuna.testing.storages import STORAGE_MODES
+from optuna.testing.storages import StorageSupplier
 from optuna.trial import BaseTrial
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
@@ -109,7 +109,7 @@ def test_set_values() -> None:
 
     trial = _create_default_trial()
     trial.values = (0.1, 0.2)
-    assert trial.values == [0.1, 0.2]
+    assert trial.values == [0.1, 0.2]  # type: ignore[comparison-overlap]
 
     trial = _create_default_trial()
     trial.values = [0.1, 0.2]

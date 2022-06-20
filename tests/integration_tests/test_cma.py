@@ -15,8 +15,8 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.integration.cma import _Optimizer
 from optuna.study._study_direction import StudyDirection
-from optuna.testing.distribution import UnsupportedDistribution
-from optuna.testing.sampler import DeterministicRelativeSampler
+from optuna.testing.distributions import UnsupportedDistribution
+from optuna.testing.samplers import DeterministicRelativeSampler
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
