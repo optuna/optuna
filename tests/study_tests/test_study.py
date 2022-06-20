@@ -1409,7 +1409,7 @@ def test_enqueued_trial_datetime_start(storage_mode: str) -> None:
         assert study.trials[0].datetime_start is not None
 
 
-@pytest.mark.parametrize("storage_mode", ["redis"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_study_summary_datetime_start_calculation(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
