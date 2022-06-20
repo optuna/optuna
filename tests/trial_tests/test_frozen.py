@@ -20,29 +20,14 @@ from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
-
-def _create_frozen_trial(
-    params: Dict[str, Any] = {"x": 10},
-    distributions: Dict[str, BaseDistribution] = {"x": FloatDistribution(5, 12)},
-) -> FrozenTrial:
-    return FrozenTrial(
-        number=0,
-        trial_id=0,
-        state=TrialState.COMPLETE,
-        value=0.2,
-        datetime_start=datetime.datetime.now(),
-        datetime_complete=datetime.datetime.now(),
-        params=params,
-        distributions=distributions,
-        user_attrs={},
-        system_attrs={},
-        intermediate_values={},
-    )
-
+def _create_default_trial() -> FrozenTrial:
+    trial = create_trial(value=0.2, params={"x": 10}, distributions={"x": FloatDistribution(5, 12)})
+    trial.number = 0
+    return trial
 
 def test_eq_ne() -> None:
 
-    trial = _create_frozen_trial()
+    trial = _create_default_trial()
 
     trial_other = copy.copy(trial)
     assert trial == trial_other
@@ -53,7 +38,7 @@ def test_eq_ne() -> None:
 
 def test_lt() -> None:
 
-    trial = _create_frozen_trial()
+    trial = _create_default_trial()
 
     trial_other = copy.copy(trial)
     assert not trial < trial_other
@@ -80,7 +65,7 @@ def test_lt() -> None:
 
 def test_repr() -> None:
 
-    trial = _create_frozen_trial()
+    trial = _create_default_trial()
 
     assert trial == eval(repr(trial))
 
@@ -113,7 +98,7 @@ def test_sampling(storage_mode: str) -> None:
 
 def test_suggest_float() -> None:
 
-    trial = _create_frozen_trial(
+    trial = create_trial(value=0.2,
         params={"x": 0.2}, distributions={"x": FloatDistribution(0.0, 1.0)}
     )
 
@@ -128,7 +113,7 @@ def test_suggest_float() -> None:
 
 def test_suggest_uniform() -> None:
 
-    trial = _create_frozen_trial(
+    trial = create_trial(value=0.2, 
         params={"x": 0.2},
         distributions={"x": FloatDistribution(0.0, 1.0)},
     )
@@ -141,7 +126,7 @@ def test_suggest_uniform() -> None:
 
 def test_suggest_loguniform() -> None:
 
-    trial = _create_frozen_trial(
+    trial = create_trial(value=0.2, 
         params={"x": 0.99}, distributions={"x": FloatDistribution(0.1, 1.0, log=True)}
     )
     assert trial.suggest_loguniform("x", 0.1, 1.0) == 0.99
@@ -152,7 +137,7 @@ def test_suggest_loguniform() -> None:
 
 def test_suggest_discrete_uniform() -> None:
 
-    trial = _create_frozen_trial(
+    trial = create_trial(value=0.2, 
         params={"x": 0.9},
         distributions={"x": FloatDistribution(0.0, 1.0, step=0.1)},
     )
@@ -164,7 +149,7 @@ def test_suggest_discrete_uniform() -> None:
 
 def test_suggest_int() -> None:
 
-    trial = _create_frozen_trial(
+    trial = create_trial(value=0.2, 
         params={"x": 1},
         distributions={"x": IntDistribution(0, 10)},
     )
@@ -177,7 +162,7 @@ def test_suggest_int() -> None:
 
 def test_suggest_int_log() -> None:
 
-    trial = _create_frozen_trial(
+    trial = create_trial(value=0.2, 
         params={"x": 1},
         distributions={"x": IntDistribution(1, 10, log=True)},
     )
@@ -194,7 +179,7 @@ def test_suggest_int_log() -> None:
 def test_suggest_categorical() -> None:
 
     # Integer categories.
-    trial = _create_frozen_trial(
+    trial = create_trial(value=0.2, 
         params={"x": 1}, distributions={"x": CategoricalDistribution((0, 1, 2, 3))}
     )
     assert trial.suggest_categorical("x", (0, 1, 2, 3)) == 1
@@ -203,7 +188,7 @@ def test_suggest_categorical() -> None:
         trial.suggest_categorical("y", [0, 1, 2, 3])
 
     # String categories.
-    trial = _create_frozen_trial(
+    trial = create_trial(value=0.2, 
         params={"x": "baz"},
         distributions={"x": CategoricalDistribution(("foo", "bar", "baz"))},
     )
@@ -276,7 +261,7 @@ def test_not_contained_param() -> None:
 def test_report() -> None:
 
     # FrozenTrial ignores reported values.
-    trial = _create_frozen_trial()
+    trial = _create_default_trial()
     trial.report(1.0, 1)
     trial.report(2.0, 2)
 
@@ -284,37 +269,37 @@ def test_report() -> None:
 def test_should_prune() -> None:
 
     # FrozenTrial never prunes trials.
-    assert _create_frozen_trial().should_prune() is False
+    assert _create_default_trial().should_prune() is False
 
 
 def test_set_user_attrs() -> None:
 
-    trial = _create_frozen_trial()
+    trial = _create_default_trial()
     trial.set_user_attr("data", "MNIST")
     assert trial.user_attrs["data"] == "MNIST"
 
 
 def test_set_system_attrs() -> None:
 
-    trial = _create_frozen_trial()
+    trial = _create_default_trial()
     trial.set_system_attr("system_message", "test")
     assert trial.system_attrs["system_message"] == "test"
 
 
 def test_set_value() -> None:
 
-    trial = _create_frozen_trial()
+    trial = _create_default_trial()
     trial.value = 0.1
     assert trial.value == 0.1
 
 
 def test_set_values() -> None:
 
-    trial = _create_frozen_trial()
+    trial = _create_default_trial()
     trial.values = (0.1, 0.2)
     assert trial.values == [0.1, 0.2]
 
-    trial = _create_frozen_trial()
+    trial = _create_default_trial()
     trial.values = [0.1, 0.2]
     assert trial.values == [0.1, 0.2]
 
@@ -322,7 +307,7 @@ def test_set_values() -> None:
 def test_validate() -> None:
 
     # Valid.
-    valid_trial = _create_frozen_trial()
+    valid_trial = _create_default_trial()
     valid_trial._validate()
 
     # Invalid: `datetime_start` is not set when the trial is not in the waiting state.
@@ -378,7 +363,7 @@ def test_validate() -> None:
 
 def test_number() -> None:
 
-    trial = _create_frozen_trial()
+    trial = _create_default_trial()
     assert trial.number == 0
 
     trial.number = 2
@@ -387,7 +372,7 @@ def test_number() -> None:
 
 def test_datetime_start() -> None:
 
-    trial = _create_frozen_trial()
+    trial = _create_default_trial()
     assert trial.datetime_start is not None
     old_date_time_start = trial.datetime_start
     trial.datetime_complete = datetime.datetime.now()
@@ -397,18 +382,9 @@ def test_datetime_start() -> None:
 def test_params() -> None:
 
     params = {"x": 1}
-    trial = FrozenTrial(
-        number=0,
-        trial_id=0,
-        state=TrialState.COMPLETE,
-        value=0.2,
-        datetime_start=datetime.datetime.now(),
-        datetime_complete=datetime.datetime.now(),
+    trial = create_trial(value=0.2,
         params=params,
         distributions={"x": FloatDistribution(0, 10)},
-        user_attrs={},
-        system_attrs={},
-        intermediate_values={},
     )
 
     assert trial.suggest_uniform("x", 0, 10) == 1
@@ -423,18 +399,10 @@ def test_params() -> None:
 def test_distributions() -> None:
 
     distributions = {"x": FloatDistribution(0, 10)}
-    trial = FrozenTrial(
-        number=0,
-        trial_id=0,
-        state=TrialState.COMPLETE,
+    trial = create_trial(
         value=0.2,
-        datetime_start=datetime.datetime.now(),
-        datetime_complete=datetime.datetime.now(),
         params={"x": 1},
         distributions=dict(distributions),
-        user_attrs={},
-        system_attrs={},
-        intermediate_values={},
     )
     assert trial.distributions == distributions
 
@@ -445,7 +413,7 @@ def test_distributions() -> None:
 
 def test_user_attrs() -> None:
 
-    trial = _create_frozen_trial()
+    trial = _create_default_trial()
     assert trial.user_attrs == {}
 
     user_attrs = {"data": "MNIST"}
@@ -455,7 +423,7 @@ def test_user_attrs() -> None:
 
 def test_system_attrs() -> None:
 
-    trial = _create_frozen_trial()
+    trial = _create_default_trial()
     assert trial.system_attrs == {}
 
     system_attrs = {"system_message": "test"}
