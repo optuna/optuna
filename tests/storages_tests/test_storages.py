@@ -7,7 +7,6 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
-from unittest.mock import patch
 
 import numpy as np
 import pytest
