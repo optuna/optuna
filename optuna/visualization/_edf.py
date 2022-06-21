@@ -25,7 +25,7 @@ _logger = get_logger(__name__)
 
 class _EDFLineInfo(NamedTuple):
     study_name: str
-    y_values_by_study: np.ndarray
+    y_values: np.ndarray
 
 
 class _EDFInfo(NamedTuple):
@@ -120,12 +120,13 @@ def plot_edf(
     )
 
     info = _get_edf_info(study, target, target_name)
+    edf_lines = info.lines
 
-    if len(info.study_names) == 0 or len(info.x_values) == 0:
+    if len(edf_lines) == 0:
         return go.Figure(data=[], layout=layout)
 
     traces = []
-    for y_values, study_name in zip(info.y_values_by_study, info.study_names):
+    for study_name, y_values in edf_lines:
         traces.append(go.Scatter(x=info.x_values, y=y_values, name=study_name, mode="lines"))
 
     figure = go.Figure(data=traces, layout=layout)
@@ -149,7 +150,7 @@ def _get_edf_info(
 
     if len(studies) == 0:
         _logger.warning("There are no studies.")
-        return _EDFInfo(study_names=[], x_values=np.array([]), y_values_by_study=[])
+        return _EDFInfo(lines=[], x_values=np.array([]))
 
     if target is None:
 
@@ -171,16 +172,15 @@ def _get_edf_info(
 
     if all(len(values) == 0 for values in all_values):
         _logger.warning("There are no complete trials.")
-        return _EDFInfo(study_names=study_names, x_values=np.array([]), y_values_by_study=[])
+        return _EDFInfo(lines=[], x_values=np.array([]))
 
     min_x_value = np.min(np.concatenate(all_values))
     max_x_value = np.max(np.concatenate(all_values))
     x_values = np.linspace(min_x_value, max_x_value, 100)
 
-    y_values_by_study = []
-    for values in all_values:
-        y_values_by_study.append(np.sum(values[:, np.newaxis] <= x_values, axis=0) / values.size)
+    edf_line_info_list = []
+    for (study_name, values) in zip(study_names, all_values):
+        y_values = np.sum(values[:, np.newaxis] <= x_values, axis=0) / values.size
+        edf_line_info_list.append(_EDFLineInfo(study_name=study_name, y_values=y_values))
 
-    return _EDFInfo(
-        study_names=study_names, x_values=x_values, y_values_by_study=y_values_by_study
-    )
+    return _EDFInfo(lines=edf_line_info_list, x_values=x_values)

@@ -107,14 +107,15 @@ def plot_edf(
     cmap = plt.get_cmap("tab20")  # Use tab20 colormap for multiple line plots.
 
     info = _get_edf_info(study, target, target_name)
+    edf_lines = info.lines
 
-    if len(info.study_names) == 0 or len(info.x_values) == 0:
+    if len(edf_lines) == 0:
         return ax
 
-    for i, (y_values, study_name) in enumerate(zip(info.y_values_by_study, info.study_names)):
+    for i, (study_name, y_values) in enumerate(edf_lines):
         ax.plot(info.x_values, y_values, color=cmap(i), alpha=0.7, label=study_name)
 
-    if len(info.study_names) >= 2:
+    if len(edf_lines) >= 2:
         ax.legend()
 
     return ax
