@@ -21,10 +21,12 @@ def test_intersection_search_space() -> None:
     assert search_space.calculate(study) == intersection_search_space(study)
 
     # Waiting trial.
-    study.enqueue_trial({"y": 0, "x": 5}, {"y": FloatDistribution(-3, 3), "x": IntDistribution(0, 10)})
+    study.enqueue_trial(
+        {"y": 0, "x": 5}, {"y": FloatDistribution(-3, 3), "x": IntDistribution(0, 10)}
+    )
     assert search_space.calculate(study) == {}
     assert search_space.calculate(study) == intersection_search_space(study)
-    
+
     # First trial.
     study.optimize(lambda t: t.suggest_float("y", -3, 3) + t.suggest_int("x", 0, 10), n_trials=1)
     assert search_space.calculate(study) == {
