@@ -103,8 +103,7 @@ def _get_optimization_history_plot(
 
     all_trials = list(
         itertools.chain.from_iterable(
-            (trial for trial in study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)))
-            for study in studies
+            study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)) for study in studies
         )
     )
 
