@@ -428,13 +428,23 @@ def test_fast_non_dominated_sort_missing_constraint_values() -> None:
             [[5, -1], [6, 0], [9, 1], [0, 2]],
             [float("inf"), 4 / 9 + 2 / 3, float("inf"), float("inf")],
         ),
+        ([[5]], [0]),
+        ([[5], [5]], [0, 0]),
+        (
+            [[1], [2], [float("inf")]],
+            [float("inf"), float("nan"), float("inf")],
+        ),  # TODO(knshnb): Decide expected behavior for this case.
+        (
+            [[0], [1], [float("nan")]],
+            [float("inf"), float("nan"), float("inf")],
+        ),  # TODO(knshnb): Decide expected behavior for this case.
     ],
 )
 def test_calc_crowding_distance(values: List[List[float]], expected_dist: List[float]) -> None:
     trials = [_create_frozen_trial(i, value) for i, value in enumerate(values)]
     crowding_dist = optuna.samplers.nsgaii._sampler._calc_crowding_distance(trials)
     for i in range(len(trials)):
-        assert crowding_dist[i] == expected_dist[i]
+        assert _nan_equal(crowding_dist[i], expected_dist[i]), i
 
 
 @pytest.mark.parametrize(
