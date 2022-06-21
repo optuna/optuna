@@ -26,9 +26,10 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
     `An Efficient Approach for Assessing Hyperparameter Importance
     <http://proceedings.mlr.press/v32/hutter14.html>`_.
 
-    Given a study, fANOVA fits a random forest regression model that predicts the objective value
-    given a parameter configuration. The more accurate this model is, the more reliable the
-    importances assessed by this class are.
+    Given a study, fANOVA fits a random forest regression model that predicts the objective values
+    such that their trial states are :class:`~optuna.trial.TrialState.COMPLETE` given a parameter
+    configuration. The more accurate this model is, the more reliable the importances assessed
+    by this class are.
 
     .. note::
 

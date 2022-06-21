@@ -29,8 +29,9 @@ with try_import() as _imports:
 class ShapleyImportanceEvaluator(BaseImportanceEvaluator):
     """Shapley (SHAP) parameter importance evaluator.
 
-    This evaluator fits a random forest that predicts objective values given hyperparameter
-    configurations. Feature importances are then computed as the mean absolute SHAP values.
+    This evaluator fits a random forest that predicts objective values such that their trial states
+    are :class:`~optuna.trial.TrialState.COMPLETE` given hyperparameter configurations. Feature
+    importances are then computed as the mean absolute SHAP values.
 
     .. note::
 
