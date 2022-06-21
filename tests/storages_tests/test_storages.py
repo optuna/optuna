@@ -1,4 +1,3 @@
-import copy
 from datetime import datetime
 import pickle
 import random
