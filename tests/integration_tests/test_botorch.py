@@ -79,7 +79,7 @@ def test_botorch_candidates_func_invalid_type() -> None:
         train_obj: torch.Tensor,
         train_con: Optional[torch.Tensor],
         bounds: torch.Tensor,
-    ) -> Any:
+    ) -> Any:  # The return type is Any because we don't want mypy to check the type.
         # Must be a `torch.Tensor`, not a list.
         return [0.0]
 
