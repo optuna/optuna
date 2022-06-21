@@ -37,6 +37,7 @@ from optuna.trial import FrozenTrial
 def _nan_equal(a: Any, b: Any) -> bool:
     if isinstance(a, float) and isinstance(b, float) and np.isnan(a) and np.isnan(b):
         return True
+    
     return a == b
 
 
@@ -138,7 +139,7 @@ def test_constraints_func(constraint_value: float) -> None:
         nonlocal constraints_func_call_count
         constraints_func_call_count += 1
 
-        return (constraint_value,)
+        return (constraint_value + trial.number,)
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
@@ -152,7 +153,8 @@ def test_constraints_func(constraint_value: float) -> None:
     assert len(study.trials) == n_trials
     assert constraints_func_call_count == n_trials
     for trial in study.trials:
-        assert _nan_equal(trial.system_attrs[_CONSTRAINTS_KEY], (constraint_value,))
+        for x, y in zip(trial.system_attrs[_CONSTRAINTS_KEY], (constraint_value + trial.number,)):
+            assert _nan_equal(x, y)
 
 
 def test_fast_non_dominated_sort() -> None:
