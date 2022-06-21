@@ -341,8 +341,8 @@ def _generate_axis_info(trials: List[FrozenTrial], param_name: str) -> _AxisInfo
     max_value = max([v for v in values if v is not None])
 
     if _is_log_scale(trials, param_name):
-        assert isinstance(min_value, float)
-        assert isinstance(max_value, float)
+        min_value = float(min_value)
+        max_value = float(max_value)
         padding = (math.log10(max_value) - math.log10(min_value)) * PADDING_RATIO
         min_value = math.pow(10, math.log10(min_value) - padding)
         max_value = math.pow(10, math.log10(max_value) + padding)
@@ -350,8 +350,8 @@ def _generate_axis_info(trials: List[FrozenTrial], param_name: str) -> _AxisInfo
         is_cat = False
 
     elif _is_numerical(trials, param_name):
-        assert isinstance(min_value, float)
-        assert isinstance(max_value, float)
+        min_value = float(min_value)
+        max_value = float(max_value)
         padding = (max_value - min_value) * PADDING_RATIO
         min_value = min_value - padding
         max_value = max_value + padding
