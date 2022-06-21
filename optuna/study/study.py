@@ -1421,12 +1421,19 @@ def get_all_study_summaries(
 
         n_trials = len(all_trials)
 
-        if include_best_trial and len(completed_trials) != 0:
-            if s.direction == StudyDirection.MAXIMIZE:
-                best_trial = max(completed_trials, key=lambda t: cast(float, t.value))
+        if len(s.directions) == 1:
+            direction = s.direction
+            directions = None
+            if include_best_trial and len(completed_trials) != 0:
+                if direction == StudyDirection.MAXIMIZE:
+                    best_trial = max(completed_trials, key=lambda t: cast(float, t.value))
+                else:
+                    best_trial = min(completed_trials, key=lambda t: cast(float, t.value))
             else:
-                best_trial = min(completed_trials, key=lambda t: cast(float, t.value))
+                best_trial = None
         else:
+            direction = None
+            directions = s.directions
             best_trial = None
 
         datetime_start = min(
@@ -1436,14 +1443,14 @@ def get_all_study_summaries(
         study_summaries.append(
             StudySummary(
                 study_name=s.study_name,
-                direction=s.direction,
+                direction=direction,
                 best_trial=best_trial,
                 user_attrs=s.user_attrs,
                 system_attrs=s.system_attrs,
                 n_trials=n_trials,
                 datetime_start=datetime_start,
                 study_id=s._study_id,
-                directions=s.directions,
+                directions=directions,
             )
         )
 
