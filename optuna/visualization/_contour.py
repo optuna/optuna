@@ -37,7 +37,7 @@ class _AxisInfo(NamedTuple):
     is_log: bool
     is_cat: bool
     indices: List[Union[str, int, float]]
-    values: List[Union[str, float]]
+    values: List[Union[str, float, None]]
 
 
 class _SubContourInfo(NamedTuple):
@@ -133,6 +133,17 @@ def _get_contour_plot(
         figure.update_xaxes(title_text=x_param, range=sub_plot_infos[0][0].xaxis.range)
         figure.update_yaxes(title_text=y_param, range=sub_plot_infos[0][0].yaxis.range)
 
+        if sub_plot_infos[0][0].xaxis.is_cat:
+            figure.update_xaxes(type="category")
+        if sub_plot_infos[0][0].yaxis.is_cat:
+            figure.update_yaxes(type="category")
+
+        if sub_plot_infos[0][0].xaxis.is_log:
+            log_range = [math.log10(p) for p in sub_plot_infos[0][0].xaxis.range]
+            figure.update_xaxes(range=log_range, type="log")
+        if sub_plot_infos[0][0].yaxis.is_log:
+            log_range = [math.log10(p) for p in sub_plot_infos[0][0].yaxis.range]
+            figure.update_yaxes(range=log_range, type="log")
     else:
         figure = make_subplots(
             rows=len(sorted_params), cols=len(sorted_params), shared_xaxes=True, shared_yaxes=True
@@ -160,26 +171,22 @@ def _get_contour_plot(
                 figure.update_xaxes(range=xaxis.range, row=y_i + 1, col=x_i + 1)
                 figure.update_yaxes(range=yaxis.range, row=y_i + 1, col=x_i + 1)
 
+                if xaxis.is_cat:
+                    figure.update_xaxes(type="category", row=y_i + 1, col=x_i + 1)
+                if yaxis.is_cat:
+                    figure.update_yaxes(type="category", row=y_i + 1, col=x_i + 1)
+
+                if xaxis.is_log:
+                    log_range = [math.log10(p) for p in xaxis.range]
+                    figure.update_xaxes(range=log_range, type="log", row=y_i + 1, col=x_i + 1)
+                if yaxis.is_log:
+                    log_range = [math.log10(p) for p in yaxis.range]
+                    figure.update_yaxes(range=log_range, type="log", row=y_i + 1, col=x_i + 1)
+
                 if x_i == 0:
                     figure.update_yaxes(title_text=y_param, row=y_i + 1, col=x_i + 1)
                 if y_i == len(sorted_params) - 1:
                     figure.update_xaxes(title_text=x_param, row=y_i + 1, col=x_i + 1)
-
-    for y_i in range(len(info.sub_plot_infos)):
-        for x_i in range(len(info.sub_plot_infos[0])):
-            xaxis = sub_plot_infos[y_i][x_i].xaxis
-            yaxis = sub_plot_infos[y_i][x_i].yaxis
-            if xaxis.is_cat:
-                figure.update_xaxes(type="category", row=y_i + 1, col=x_i + 1)
-            if yaxis.is_cat:
-                figure.update_yaxes(type="category", row=y_i + 1, col=x_i + 1)
-
-            if xaxis.is_log:
-                log_range = [math.log10(p) for p in xaxis.range]
-                figure.update_xaxes(range=log_range, type="log", row=y_i + 1, col=x_i + 1)
-            if yaxis.is_log:
-                log_range = [math.log10(p) for p in yaxis.range]
-                figure.update_yaxes(range=log_range, type="log", row=y_i + 1, col=x_i + 1)
 
     return figure
 
@@ -291,13 +298,19 @@ def _generate_contour_subplot_info(
         _logger.warning("Param {} unique value length is less than 2.".format(y_param))
         return _SubContourInfo(xaxis=xaxis, yaxis=yaxis, z_values=[[]])
 
-    z_values = [[float("nan") for _ in range(len(xaxis.indices))] for _ in range(len(yaxis.indices))]
+    z_values = [
+        [float("nan") for _ in range(len(xaxis.indices))] for _ in range(len(yaxis.indices))
+    ]
 
     for i, trial in enumerate(trials):
         if x_param not in trial.params or y_param not in trial.params:
             continue
-        x_i = xaxis.indices.index(xaxis.values[i])
-        y_i = yaxis.indices.index(yaxis.values[i])
+        x_value = xaxis.values[i]
+        y_value = yaxis.values[i]
+        assert x_value is not None
+        assert y_value is not None
+        x_i = xaxis.indices.index(x_value)
+        y_i = yaxis.indices.index(y_value)
 
         if target is None:
             value = trial.value
@@ -316,15 +329,20 @@ def _generate_contour_subplot_info(
 
 
 def _generate_axis_info(trials: List[FrozenTrial], param_name: str) -> _AxisInfo:
+    values: List[Union[str, float, None]]
     if _is_numerical(trials, param_name):
         values = [t.params.get(param_name) for t in trials]
     else:
-        values = [str(t.params.get(param_name)) if param_name in t.params else None for t in trials]
+        values = [
+            str(t.params.get(param_name)) if param_name in t.params else None for t in trials
+        ]
 
     min_value = min([v for v in values if v is not None])
     max_value = max([v for v in values if v is not None])
 
     if _is_log_scale(trials, param_name):
+        assert isinstance(min_value, float)
+        assert isinstance(max_value, float)
         padding = (math.log10(max_value) - math.log10(min_value)) * PADDING_RATIO
         min_value = math.pow(10, math.log10(min_value) - padding)
         max_value = math.pow(10, math.log10(max_value) + padding)
@@ -332,6 +350,8 @@ def _generate_axis_info(trials: List[FrozenTrial], param_name: str) -> _AxisInfo
         is_cat = False
 
     elif _is_numerical(trials, param_name):
+        assert isinstance(min_value, float)
+        assert isinstance(max_value, float)
         padding = (max_value - min_value) * PADDING_RATIO
         min_value = min_value - padding
         max_value = max_value + padding
@@ -359,7 +379,8 @@ def _generate_axis_info(trials: List[FrozenTrial], param_name: str) -> _AxisInfo
         )
 
     if _is_numerical(trials, param_name):
-        indices = [min_value] + indices + [max_value]
+        indices.insert(0, min_value)
+        indices.append(max_value)
 
     return _AxisInfo(
         name=param_name,

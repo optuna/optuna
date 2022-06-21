@@ -13,8 +13,8 @@ from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
-from optuna.visualization._contour import _get_contour_info
 from optuna.visualization._contour import _AxisInfo
+from optuna.visualization._contour import _get_contour_info
 from optuna.visualization._contour import _SubContourInfo
 from optuna.visualization._utils import _check_plot_args
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
@@ -176,7 +176,9 @@ class _LabelEncoder:
 
 
 def _calculate_griddata(
-    xaxis: _AxisInfo, yaxis: _AxisInfo, z_values: List[List[float]],
+    xaxis: _AxisInfo,
+    yaxis: _AxisInfo,
+    z_values: List[List[float]],
 ) -> Tuple[
     np.ndarray,
     np.ndarray,
@@ -213,11 +215,12 @@ def _calculate_griddata(
         z_values = z_values + (z_values * len(y_values_dummy))
 
     def _calculate_axis_data(
-        axis: _AxisInfo, values: List[Union[str, float]],
+        axis: _AxisInfo,
+        values: List[Union[str, float]],
     ) -> Tuple[
         np.ndarray,
-        List[Union[str, int, float]],
         List[str],
+        List[Union[str, int, float]],
         List[Union[str, int, float]],
         List[Union[str, float]],
     ]:
@@ -242,10 +245,12 @@ def _calculate_griddata(
         return ci, cat_param_labels, cat_param_pos, indices, values
 
     xi, cat_param_labels_x, cat_param_pos_x, x_indices, x_values = _calculate_axis_data(
-        xaxis, x_values,
+        xaxis,
+        x_values,
     )
     yi, cat_param_labels_y, cat_param_pos_y, y_indices, y_values = _calculate_axis_data(
-        yaxis, y_values,
+        yaxis,
+        y_values,
     )
 
     # Calculate grid data points.
