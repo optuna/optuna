@@ -49,7 +49,7 @@ def _check_data(figure: Axes, axis: str, expected: Sequence[int]) -> None:
             )
         )
     )
-    numpy.ma.testutils.assert_array_equal(actual, expected)
+    numpy.ma.testutils.assert_array_equal(actual, expected)  # type: ignore[no-untyped-call]
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
