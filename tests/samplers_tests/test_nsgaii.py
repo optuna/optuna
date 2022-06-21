@@ -579,8 +579,8 @@ def test_crossover_numerical_distribution(crossover: BaseCrossover) -> None:
     child_params = crossover.crossover(parent_params, rng, study, numerical_transform.bounds)
     assert child_params.ndim == 1
     assert len(child_params) == len(search_space)
-    assert np.nan not in child_params
-    assert np.inf not in child_params
+    assert not any(np.isnan(child_params))
+    assert not any(np.isinf(child_params))
 
 
 def test_crossover_inlined_categorical_distribution() -> None:
