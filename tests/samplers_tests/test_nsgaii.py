@@ -540,18 +540,19 @@ def test_crossover_dims(n_params: int, sampler_class: Callable[[], BaseSampler])
     assert len(study.trials) == n_trials
 
 
-@pytest.mark.parametrize("crossover", [UNDXCrossover(), SPXCrossover()])
-def test_crossover_invalid_population(crossover: BaseCrossover) -> None:
-    n_objectives = 2
-    n_trials = 8
-
+@pytest.mark.parametrize("crossover,population_size",
+    [
+        (UniformCrossover(), 1),
+        (BLXAlphaCrossover(), 1),
+        (SBXCrossover(), 1),
+        (VSBXCrossover(), 1),
+        (UNDXCrossover(), 2),
+        (SPXCrossover(), 2),
+    ],
+)
+def test_crossover_invalid_population(crossover: BaseCrossover, population_size: int) -> None:
     with pytest.raises(ValueError):
-        sampler = NSGAIISampler(population_size=2, crossover=crossover)
-        study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
-        study.optimize(
-            lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)],
-            n_trials=n_trials,
-        )
+        NSGAIISampler(population_size=population_size, crossover=crossover)
 
 
 @pytest.mark.parametrize(
