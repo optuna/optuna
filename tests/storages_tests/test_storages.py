@@ -1,3 +1,4 @@
+import copy
 from datetime import datetime
 import pickle
 import random
@@ -922,6 +923,24 @@ def test_get_all_trials(storage_mode: str) -> None:
         non_existent_study_id = max(study_to_trials.keys()) + 1
         with pytest.raises(KeyError):
             storage.get_all_trials(non_existent_study_id)
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_get_all_trials_deepcopy_option(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study_summaries, study_to_trials = _setup_studies(storage, n_study=2, n_trial=5, seed=49)
+
+        for study_id in study_summaries:
+            trials0 = storage.get_all_trials(study_id, deepcopy=True)
+            assert len(trials0) == len(study_to_trials[study_id])
+
+            # Check modifying output does not break the internal state of the storage.
+            trials0_original = copy.deepcopy(trials0)
+            trials0[0].params["x"] = 0.1
+
+            trials1 = storage.get_all_trials(study_id, deepcopy=False)
+            assert trials0_original == trials1
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
