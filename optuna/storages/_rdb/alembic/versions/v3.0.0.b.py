@@ -60,7 +60,7 @@ def upgrade():
         .filter(and_(TrialModel.state == TrialState.COMPLETE, TrialValueModel.value.is_(None)))
         .count()
     ) != 0:
-        raise ValueError("Found invalid trial_values' records (value=None and state='Complete')")
+        raise ValueError("Found invalid trial_values records (value=None and state='COMPLETE')")
     session.query(TrialValueModel).filter(TrialValueModel.value.is_(None)).delete()
 
     with op.batch_alter_table("trial_intermediate_values") as batch_op:
