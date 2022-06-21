@@ -23,10 +23,14 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
+class _EDFLineInfo(NamedTuple):
+    study_name: str
+    y_values_by_study: np.ndarray
+
+
 class _EDFInfo(NamedTuple):
-    study_names: List[str]
+    lines: List[_EDFLineInfo]
     x_values: np.ndarray
-    y_values_by_study: List[np.ndarray]
 
 
 def plot_edf(
