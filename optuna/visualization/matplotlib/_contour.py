@@ -14,6 +14,7 @@ from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.visualization._contour import _get_contour_info
+from optuna.visualization._contour import _AxisInfo
 from optuna.visualization._contour import _SubContourInfo
 from optuna.visualization._utils import _check_plot_args
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
@@ -109,9 +110,6 @@ def _get_contour_plot(
 
     info = _get_contour_info(study, params, target)
     sorted_params = info.sorted_params
-    param_values_range = info.param_values_range
-    param_is_log = info.param_is_log
-    param_is_cat = info.param_is_cat
     sub_plot_infos = info.sub_plot_infos
 
     if len(sorted_params) <= 1:
@@ -126,18 +124,7 @@ def _get_contour_plot(
         axs.set_title("Contour Plot")
         cmap = _set_cmap(study, target)
 
-        x_param = sorted_params[0]
-        y_param = sorted_params[1]
-        cs = _generate_contour_subplot(
-            sub_plot_infos[0][0],
-            x_param,
-            y_param,
-            axs,
-            cmap,
-            param_values_range,
-            param_is_log,
-            param_is_cat,
-        )
+        cs = _generate_contour_subplot(sub_plot_infos[0][0], axs, cmap)
         if isinstance(cs, ContourSet):
             axcb = fig.colorbar(cs)
             axcb.set_label(target_name)
@@ -152,16 +139,7 @@ def _get_contour_plot(
         for x_i, x_param in enumerate(sorted_params):
             for y_i, y_param in enumerate(sorted_params):
                 ax = axs[y_i, x_i]
-                cs = _generate_contour_subplot(
-                    sub_plot_infos[y_i][x_i],
-                    x_param,
-                    y_param,
-                    ax,
-                    cmap,
-                    param_values_range,
-                    param_is_log,
-                    param_is_cat,
-                )
+                cs = _generate_contour_subplot(sub_plot_infos[y_i][x_i], ax, cmap)
                 if isinstance(cs, ContourSet):
                     cs_list.append(cs)
         if cs_list:
@@ -198,16 +176,7 @@ class _LabelEncoder:
 
 
 def _calculate_griddata(
-    param_range_values: Dict[str, Tuple[float, float]],
-    param_is_log: Dict[str, bool],
-    param_is_cat: Dict[str, bool],
-    x_param: str,
-    x_indices: List[Union[str, int, float]],
-    y_param: str,
-    y_indices: List[Union[str, int, float]],
-    x_values: List[Union[str, float]],
-    y_values: List[Union[str, float]],
-    z_values: List[List[float]],
+    xaxis: _AxisInfo, yaxis: _AxisInfo, z_values: List[List[float]],
 ) -> Tuple[
     np.ndarray,
     np.ndarray,
@@ -216,73 +185,74 @@ def _calculate_griddata(
     List[str],
     List[Union[str, int, float]],
     List[str],
+    List[Union[str, float]],
+    List[Union[str, float]],
 ]:
+
+    x_values = []
+    y_values = []
+    for x_value, y_value in zip(xaxis.values, yaxis.values):
+        if x_value is not None and y_value is not None:
+            x_values.append(x_value)
+            y_values.append(y_value)
 
     # Return empty values when x or y has no value.
     if len(x_values) == 0 or len(y_values) == 0:
-        return (
-            np.array([]),
-            np.array([]),
-            np.array([]),
-            [],
-            [],
-            [],
-            [],
-        )
+        return np.array([]), np.array([]), np.array([]), [], [], [], [], [], []
 
     # Add dummy values for grid data calculation when a parameter has one unique value.
     if len(set(x_values)) == 1:
-        x_values_dummy = [x for x in x_indices if x not in x_values]
+        x_values_dummy = [x for x in xaxis.indices if x not in x_values]
         x_values = x_values + x_values_dummy * len(x_values)
         y_values = y_values + (y_values * len(x_values_dummy))
         z_values = z_values + (z_values * len(x_values_dummy))
     if len(set(y_values)) == 1:
-        y_values_dummy = [y for y in y_indices if y not in y_values]
+        y_values_dummy = [y for y in yaxis.indices if y not in y_values]
         y_values = y_values + y_values_dummy * len(y_values)
         x_values = x_values + (x_values * len(y_values_dummy))
         z_values = z_values + (z_values * len(y_values_dummy))
 
-    # Convert categorical values to int.
-    cat_param_labels_x = []  # type: List[str]
-    cat_param_pos_x = []  # type: List[Union[str, int, float]]
-    cat_param_labels_y = []  # type: List[str]
-    cat_param_pos_y = []  # type: List[Union[str, int, float]]
-    if param_is_cat[x_param]:
-        enc = _LabelEncoder()
-        x_values = enc.fit_transform(list(map(str, x_values)))
-        cat_param_labels_x = enc.get_labels()
-        cat_param_pos_x = enc.get_indices()
-        x_indices = cat_param_pos_x
-    if param_is_cat[y_param]:
-        enc = _LabelEncoder()
-        y_values = enc.fit_transform(list(map(str, y_values)))
-        cat_param_labels_y = enc.get_labels()
-        cat_param_pos_y = enc.get_indices()
-        y_indices = cat_param_pos_y
+    def _calculate_axis_data(
+        axis: _AxisInfo, values: List[Union[str, float]],
+    ) -> Tuple[
+        np.ndarray,
+        List[Union[str, int, float]],
+        List[str],
+        List[Union[str, int, float]],
+        List[Union[str, float]],
+    ]:
 
-    # Calculate min and max of x and y.
-    x_values_min = param_range_values[x_param][0]
-    x_values_max = param_range_values[x_param][1]
-    y_values_min = param_range_values[y_param][0]
-    y_values_max = param_range_values[y_param][1]
+        # Convert categorical values to int.
+        cat_param_labels = []  # type: List[str]
+        cat_param_pos = []  # type: List[Union[str, int, float]]
+        indices = axis.indices
+        if axis.is_cat:
+            enc = _LabelEncoder()
+            values = enc.fit_transform(list(map(str, values)))
+            cat_param_labels = enc.get_labels()
+            cat_param_pos = enc.get_indices()
+            indices = cat_param_pos
+
+        # For x and y, create 1-D array of evenly spaced coordinates on linear or log scale.
+        if axis.is_log:
+            ci = np.logspace(np.log10(axis.range[0]), np.log10(axis.range[1]), CONTOUR_POINT_NUM)
+        else:
+            ci = np.linspace(axis.range[0], axis.range[1], CONTOUR_POINT_NUM)
+
+        return ci, cat_param_labels, cat_param_pos, indices, values
+
+    xi, cat_param_labels_x, cat_param_pos_x, x_indices, x_values = _calculate_axis_data(
+        xaxis, x_values,
+    )
+    yi, cat_param_labels_y, cat_param_pos_y, y_indices, y_values = _calculate_axis_data(
+        yaxis, y_values,
+    )
 
     # Calculate grid data points.
-    # For x and y, create 1-D array of evenly spaced coordinates on linear or log scale.
     zi: np.ndarray = np.array([])
-
-    if param_is_log[x_param]:
-        xi = np.logspace(np.log10(x_values_min), np.log10(x_values_max), CONTOUR_POINT_NUM)
-    else:
-        xi = np.linspace(x_values_min, x_values_max, CONTOUR_POINT_NUM)
-
-    if param_is_log[y_param]:
-        yi = np.logspace(np.log10(y_values_min), np.log10(y_values_max), CONTOUR_POINT_NUM)
-    else:
-        yi = np.linspace(y_values_min, y_values_max, CONTOUR_POINT_NUM)
-
     # create irregularly spaced map of trial values
     # and interpolate it with Plotly's interpolation formulation
-    if x_param != y_param:
+    if xaxis.name != yaxis.name:
         zmap = _create_zmap(x_indices, y_indices, x_values, y_values, z_values, xi, yi)
         zi = _interpolate_zmap(zmap, CONTOUR_POINT_NUM)
 
@@ -294,30 +264,17 @@ def _calculate_griddata(
         cat_param_labels_x,
         cat_param_pos_y,
         cat_param_labels_y,
+        x_values,
+        y_values,
     )
 
 
-def _generate_contour_subplot(
-    info: _SubContourInfo,
-    x_param: str,
-    y_param: str,
-    ax: "Axes",
-    cmap: "Colormap",
-    param_values_range: Dict[str, Tuple[float, float]],
-    param_is_log: Dict[str, bool],
-    param_is_cat: Dict[str, bool],
-) -> "ContourSet":
+def _generate_contour_subplot(info: _SubContourInfo, ax: "Axes", cmap: "Colormap") -> "ContourSet":
 
-    x_indices = info.x_indices
-    y_indices = info.y_indices
-    x_values = info.x_values
-    y_values = info.y_values
-    z_values = info.z_values
-
-    if len(x_indices) < 2:
+    if len(info.xaxis.indices) < 2:
         ax.label_outer()
         return ax
-    if len(y_indices) < 2:
+    if len(info.yaxis.indices) < 2:
         ax.label_outer()
         return ax
 
@@ -329,28 +286,19 @@ def _generate_contour_subplot(
         x_cat_param_label,
         y_cat_param_pos,
         y_cat_param_label,
-    ) = _calculate_griddata(
-        param_values_range,
-        param_is_log,
-        param_is_cat,
-        x_param,
-        x_indices,
-        y_param,
-        y_indices,
         x_values,
         y_values,
-        z_values,
-    )
+    ) = _calculate_griddata(info.xaxis, info.yaxis, info.z_values)
     cs = None
-    ax.set(xlabel=x_param, ylabel=y_param)
-    ax.set_xlim(param_values_range[x_param][0], param_values_range[x_param][1])
-    ax.set_ylim(param_values_range[y_param][0], param_values_range[y_param][1])
+    ax.set(xlabel=info.xaxis.name, ylabel=info.yaxis.name)
+    ax.set_xlim(info.xaxis.range[0], info.xaxis.range[1])
+    ax.set_ylim(info.yaxis.range[0], info.yaxis.range[1])
     if len(zi) > 0:
-        if param_is_log[x_param]:
+        if info.xaxis.is_log:
             ax.set_xscale("log")
-        if param_is_log[y_param]:
+        if info.yaxis.is_log:
             ax.set_yscale("log")
-        if x_param != y_param:
+        if info.xaxis.name != info.yaxis.name:
             # Contour the gridded data.
             ax.contour(xi, yi, zi, 15, linewidths=0.5, colors="k")
             cs = ax.contourf(xi, yi, zi, 15, cmap=cmap.reversed())
@@ -364,10 +312,10 @@ def _generate_contour_subplot(
                 edgecolors="grey",
                 linewidth=2.0,
             )
-    if param_is_cat[x_param]:
+    if info.xaxis.is_cat:
         ax.set_xticks(x_cat_param_pos)
         ax.set_xticklabels(x_cat_param_label)
-    if param_is_cat[y_param]:
+    if info.yaxis.is_cat:
         ax.set_yticks(y_cat_param_pos)
         ax.set_yticklabels(y_cat_param_label)
     ax.label_outer()

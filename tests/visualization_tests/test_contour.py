@@ -1,4 +1,5 @@
 from io import BytesIO
+import math
 import tempfile
 from typing import Any
 from typing import Callable
@@ -7,12 +8,12 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
+from unittest import mock
 
 import numpy as np
 import pytest
 
 from optuna.distributions import BaseDistribution
-from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.study import create_study
@@ -20,6 +21,8 @@ from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
 from optuna.trial import Trial
 from optuna.visualization import plot_contour as plotly_plot_contour
+from optuna.visualization._contour import _get_contour_info
+from optuna.visualization._contour import _AxisInfo
 from optuna.visualization._plotly_imports import _imports as plotly_imports
 from optuna.visualization._utils import COLOR_SCALE
 from optuna.visualization.matplotlib import plot_contour as plt_plot_contour
@@ -42,146 +45,12 @@ parametrize_plot_contour = pytest.mark.parametrize(
 )
 
 
-def is_empty(figure: Union[go.Figure, Axes, np.ndarray]) -> bool:
-    if isinstance(figure, go.Figure):
-        return len(figure.data) == 0
-    elif isinstance(figure, Axes):
-        return not figure.has_data()
-    else:
-        return not any([f.has_data() for f in figure.flatten()])
-
-
 def save_static_image(figure: Union[go.Figure, Axes, np.ndarray]) -> None:
     if isinstance(figure, go.Figure):
         with tempfile.TemporaryDirectory() as td:
             figure.write_image(td + "tmp.png")
     else:
         plt.savefig(BytesIO())
-
-
-def get_n_plots(figure: Union[go.Figure, Axes, np.ndarray]) -> int:
-    if isinstance(figure, go.Figure):
-        if len(figure.data) <= 2:
-            return 1
-        return (len(figure.data) - int((1 + np.sqrt(1 + 8 * len(figure.data))) / 4)) // 2
-    elif isinstance(figure, Axes):
-        return 1
-    else:
-        assert len(figure.shape) == 2
-        assert figure.shape[0] == figure.shape[1]
-        return figure.shape[0] * (figure.shape[0] - 1)
-
-
-def get_x_points(figure: Union[go.Figure, Axes]) -> Optional[List[float]]:
-    if isinstance(figure, go.Figure):
-        return list(figure.data[1]["x"]) if figure.data[1]["x"] is not None else None
-    elif isinstance(figure, Axes):
-        if len(figure.collections) == 0:
-            return None
-        return list(figure.collections[-1].get_offsets()[:, 0])
-    else:
-        assert False
-
-
-def get_y_points(figure: Union[go.Figure, Axes]) -> Optional[List[float]]:
-    if isinstance(figure, go.Figure):
-        return list(figure.data[1]["y"]) if figure.data[1]["y"] is not None else None
-    elif isinstance(figure, Axes):
-        if len(figure.collections) == 0:
-            return None
-        return list(figure.collections[-1].get_offsets()[:, 1])
-    else:
-        assert False
-
-
-def get_x_range(figure: Union[go.Figure, Axes]) -> Tuple[float, float]:
-    if isinstance(figure, go.Figure):
-        return figure.layout["xaxis"].range
-    elif isinstance(figure, Axes):
-        if get_x_is_log(figure):
-            l, r = figure.get_xlim()
-            return np.log10(l), np.log10(r)
-        return figure.get_xlim()
-    else:
-        assert False
-
-
-def get_y_range(figure: Union[go.Figure, Axes]) -> Tuple[float, float]:
-    if isinstance(figure, go.Figure):
-        return figure.layout["yaxis"].range
-    elif isinstance(figure, Axes):
-        if get_y_is_log(figure):
-            l, r = figure.get_ylim()
-            return np.log10(l), np.log10(r)
-        return figure.get_ylim()
-    else:
-        assert False
-
-
-def get_x_name(figure: Union[go.Figure, Axes]) -> str:
-    if isinstance(figure, go.Figure):
-        return figure.layout["xaxis"].title.text
-    elif isinstance(figure, Axes):
-        return figure.get_xlabel()
-    else:
-        assert False
-
-
-def get_y_name(figure: Union[go.Figure, Axes]) -> str:
-    if isinstance(figure, go.Figure):
-        return figure.layout["yaxis"].title.text
-    elif isinstance(figure, Axes):
-        return figure.get_ylabel()
-    else:
-        assert False
-
-
-def get_x_ticks(figure: Union[go.Figure, Axes]) -> List[CategoricalChoiceType]:
-    if isinstance(figure, go.Figure):
-        return list(figure.data[0]["x"])
-    elif isinstance(figure, Axes):
-        return list(map(lambda t: t.get_text(), figure.get_xticklabels()))
-    else:
-        assert False
-
-
-def get_y_ticks(figure: Union[go.Figure, Axes]) -> List[CategoricalChoiceType]:
-    if isinstance(figure, go.Figure):
-        return list(figure.data[0]["y"])
-    elif isinstance(figure, Axes):
-        return list(map(lambda t: t.get_text(), figure.get_yticklabels()))
-    else:
-        assert False
-
-
-def get_x_is_log(figure: Union[go.Figure, Axes]) -> bool:
-    if isinstance(figure, go.Figure):
-        return figure.layout["xaxis"].type == "log"
-    elif isinstance(figure, Axes):
-        return figure.get_xscale() == "log"
-    else:
-        assert False
-
-
-def get_y_is_log(figure: Union[go.Figure, Axes]) -> bool:
-    if isinstance(figure, go.Figure):
-        return figure.layout["yaxis"].type == "log"
-    elif isinstance(figure, Axes):
-        return figure.get_yscale() == "log"
-    else:
-        assert False
-
-
-def get_target_name(figure: Union[go.Figure, Axes]) -> Optional[str]:
-    if isinstance(figure, go.Figure):
-        return figure.data[0]["colorbar"].title.text
-    elif isinstance(figure, Axes):
-        target_name = figure.figure.axes[-1].get_ylabel()
-        if target_name == "":
-            return None
-        return target_name
-    else:
-        assert False
 
 
 @parametrize_plot_contour
@@ -207,24 +76,15 @@ def test_target_is_not_none_and_study_is_multi_obj(plot_contour: Callable[..., A
 
 
 @parametrize_plot_contour
-@pytest.mark.parametrize(
-    "params",
-    [
-        [],
-        ["param_a"],
-        ["param_a", "param_b"],
-        ["param_a", "param_b", "param_c"],
-        ["param_a", "param_b", "param_c", "param_d"],
-        None,
-    ],
-)
-def test_plot_contour_no_trial(
-    plot_contour: Callable[..., Any], params: Optional[List[str]]
-) -> None:
+def test_plot_contour_customized_target_name(plot_contour: Callable[..., Any]) -> None:
 
-    study_without_trials = prepare_study_with_trials(no_trials=True)
-    figure = plot_contour(study_without_trials, params=params)
-    assert is_empty(figure)
+    params = ["param_a", "param_b"]
+    study = prepare_study_with_trials()
+    figure = plot_contour(study, params=params, target_name="Target Name")
+    if isinstance(figure, go.Figure):
+        assert figure.data[0]["colorbar"].title.text == "Target Name"
+    elif isinstance(figure, Axes):
+        assert figure.figure.axes[-1].get_ylabel() == "Target Name"
     save_static_image(figure)
 
 
@@ -240,9 +100,15 @@ def test_plot_contour_no_trial(
         None,
     ],
 )
-def test_plot_contour_ignored_error(
-    plot_contour: Callable[..., Any], params: Optional[List[str]]
-) -> None:
+def test_plot_contour(plot_contour: Callable[..., Any], params: Optional[List[str]]) -> None:
+
+    # Test with no trial.
+    study_without_trials = prepare_study_with_trials(no_trials=True)
+    figure = plot_contour(study_without_trials, params=params)
+    save_static_image(figure)
+
+    # Test whether trials with `ValueError`s are ignored.
+
     def fail_objective(_: Trial) -> float:
 
         raise ValueError
@@ -250,45 +116,182 @@ def test_plot_contour_ignored_error(
     study = create_study()
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_contour(study, params=params)
-    assert is_empty(figure)
     save_static_image(figure)
 
-
-@parametrize_plot_contour
-def test_plot_contour_error(plot_contour: Callable[..., Any]) -> None:
+    # Test with some trials.
     study = prepare_study_with_trials()
 
+    # Test ValueError due to wrong params.
     with pytest.raises(ValueError):
         plot_contour(study, ["optuna", "Optuna"])
 
-
-@parametrize_plot_contour
-@pytest.mark.parametrize("params", [[], ["param_a"]])
-def test_plot_contour_empty(plot_contour: Callable[..., Any], params: Optional[List[str]]) -> None:
-    study = prepare_study_with_trials()
     figure = plot_contour(study, params=params)
-    assert is_empty(figure)
     save_static_image(figure)
 
 
 @parametrize_plot_contour
-def test_plot_contour_2_params(plot_contour: Callable[..., Any]) -> None:
+def test_plot_contour_log_scale_and_str_category(plot_contour: Callable[..., Any]) -> None:
+
+    # If the search space has two parameters, plot_contour generates a single plot.
+    study = create_study()
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"param_a": 1e-6, "param_b": "100"},
+            distributions={
+                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
+                "param_b": CategoricalDistribution(["100", "101"]),
+            },
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=1.0,
+            params={"param_a": 1e-5, "param_b": "101"},
+            distributions={
+                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
+                "param_b": CategoricalDistribution(["100", "101"]),
+            },
+        )
+    )
+
+    figure = plot_contour(study)
+    save_static_image(figure)
+
+    # If the search space has three parameters, plot_contour generates nine plots.
+    study = create_study()
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"param_a": 1e-6, "param_b": "100", "param_c": "one"},
+            distributions={
+                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
+                "param_b": CategoricalDistribution(["100", "101"]),
+                "param_c": CategoricalDistribution(["one", "two"]),
+            },
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=1.0,
+            params={"param_a": 1e-5, "param_b": "101", "param_c": "two"},
+            distributions={
+                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
+                "param_b": CategoricalDistribution(["100", "101"]),
+                "param_c": CategoricalDistribution(["one", "two"]),
+            },
+        )
+    )
+
+    figure = plot_contour(study)
+    save_static_image(figure)
+
+
+@parametrize_plot_contour
+def test_plot_contour_mixture_category_types(plot_contour: Callable[..., Any]) -> None:
+    study = create_study()
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"param_a": None, "param_b": 101},
+            distributions={
+                "param_a": CategoricalDistribution([None, "100"]),
+                "param_b": CategoricalDistribution([101, 102.0]),
+            },
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=0.5,
+            params={"param_a": "100", "param_b": 102.0},
+            distributions={
+                "param_a": CategoricalDistribution([None, "100"]),
+                "param_b": CategoricalDistribution([101, 102.0]),
+            },
+        )
+    )
+    figure = plot_contour(study)
+    save_static_image(figure)
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        [],
+        ["param_a"],
+        ["param_a", "param_b"],
+        ["param_a", "param_b", "param_c"],
+        ["param_a", "param_b", "param_c", "param_d"],
+        None,
+    ],
+)
+def test_get_contour_info_no_trial(params: Optional[List[str]]) -> None:
+
+    study_without_trials = prepare_study_with_trials(no_trials=True)
+    info = _get_contour_info(study_without_trials, params=params, target=None)
+    assert len(info.sorted_params) == 0
+    assert len(info.sub_plot_infos) == 0
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        [],
+        ["param_a"],
+        ["param_a", "param_b"],
+        ["param_a", "param_b", "param_c"],
+        ["param_a", "param_b", "param_c", "param_d"],
+        None,
+    ],
+)
+def test_get_contour_info_ignored_error(params: Optional[List[str]]) -> None:
+    def fail_objective(_: Trial) -> float:
+
+        raise ValueError
+
+    study = create_study()
+    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
+    info = _get_contour_info(study, params=params, target=None)
+    assert len(info.sorted_params) == 0
+    assert len(info.sub_plot_infos) == 0
+
+
+def test_get_contour_info_error() -> None:
+    study = prepare_study_with_trials()
+
+    with pytest.raises(ValueError):
+        _get_contour_info(study, ["optuna", "Optuna"])
+
+
+@pytest.mark.parametrize("params", [[], ["param_a"]])
+def test_get_contour_info_empty(params: Optional[List[str]]) -> None:
+    study = prepare_study_with_trials()
+    info = _get_contour_info(study, params=params)
+    assert len(info.sorted_params) <= 1
+    assert len(info.sub_plot_infos) <= 1
+
+
+def test_get_contour_info_2_params() -> None:
     params = ["param_a", "param_b"]
     study = prepare_study_with_trials()
-    figure = plot_contour(study, params=params)
-    assert get_n_plots(figure) == 1
-    assert not is_empty(figure)
-    assert get_target_name(figure) == "Objective Value"
-    assert get_x_points(figure) == [1.0, 2.5]
-    assert get_y_points(figure) == [2.0, 1.0]
-    assert get_x_range(figure) == (0.925, 2.575)
-    assert get_y_range(figure) == (-0.1, 2.1)
-    assert get_x_name(figure) == "param_a"
-    assert get_y_name(figure) == "param_b"
-    save_static_image(figure)
+    info = _get_contour_info(study, params=params)
+    assert info.sorted_params == params
+    xaxis = info.sub_plot_infos[0][0].xaxis
+    yaxis = info.sub_plot_infos[0][0].yaxis
+    assert xaxis.name == "param_a"
+    assert yaxis.name == "param_b"
+    assert xaxis.range == (0.925, 2.575)
+    assert yaxis.range == (-0.1, 2.1)
+    assert not xaxis.is_log
+    assert not yaxis.is_log
+    assert not xaxis.is_cat
+    assert not yaxis.is_cat
+    assert xaxis.indices == [0.925, 1.0, 2.5, 2.575]
+    assert yaxis.indices == [-0.1, 0.0, 1.0, 2.0, 2.1]
+    assert xaxis.values == [1.0, None, 2.5]
+    assert yaxis.values == [2.0, 0.0, 1.0]
 
 
-@parametrize_plot_contour
 @pytest.mark.parametrize(
     "params",
     [
@@ -297,19 +300,15 @@ def test_plot_contour_2_params(plot_contour: Callable[..., Any]) -> None:
         None,
     ],
 )
-def test_plot_contour_more_than_2_params(
-    plot_contour: Callable[..., Any], params: Optional[List[str]]
-) -> None:
+def test_get_contour_info_more_than_2_params(params: Optional[List[str]]) -> None:
 
     study = prepare_study_with_trials()
-    figure = plot_contour(study, params=params)
     n_params = len(params) if params is not None else 4
-    assert get_n_plots(figure) == n_params * (n_params - 1)
-    assert not is_empty(figure)
-    save_static_image(figure)
+    info = _get_contour_info(study, params=params)
+    assert len(info.sorted_params) == n_params
+    assert np.shape(info.sub_plot_infos) == (n_params, n_params, 3)
 
 
-@parametrize_plot_contour
 @pytest.mark.parametrize(
     "params",
     [
@@ -317,31 +316,16 @@ def test_plot_contour_more_than_2_params(
         ["param_a", "param_b", "param_c"],
     ],
 )
-def test_plot_contour_customized_target(
-    plot_contour: Callable[..., Any], params: List[str]
-) -> None:
+def test_get_contour_info_customized_target(params: List[str]) -> None:
 
     study = prepare_study_with_trials()
-    with pytest.warns(UserWarning):
-        figure = plot_contour(study, params=params, target=lambda t: t.params["param_d"])
-    assert get_n_plots(figure) == 1 if len(params) == 2 else len(params) * (len(params) - 1)
-    assert not is_empty(figure)
-    save_static_image(figure)
+    info = _get_contour_info(study, params=params, target=lambda t: t.params["param_d"])
+    n_params = len(params)
+    assert len(info.sorted_params) == n_params
+    plot_shape = (1, 1, 3) if n_params == 2 else (n_params, n_params, 3)
+    assert np.shape(info.sub_plot_infos) == plot_shape
 
 
-@parametrize_plot_contour
-def test_plot_contour_customized_target_name(plot_contour: Callable[..., Any]) -> None:
-
-    params = ["param_a", "param_b"]
-    study = prepare_study_with_trials()
-    figure = plot_contour(study, params=params, target_name="Target Name")
-    assert get_n_plots(figure) == 1
-    assert not is_empty(figure)
-    assert get_target_name(figure) == "Target Name"
-    save_static_image(figure)
-
-
-@parametrize_plot_contour
 @pytest.mark.parametrize(
     "params",
     [
@@ -349,24 +333,31 @@ def test_plot_contour_customized_target_name(plot_contour: Callable[..., Any]) -
         ["param_b", "param_a"],  # `y_axis` has one observation.
     ],
 )
-def test_generate_contour_plot_for_few_observations(
-    plot_contour: Callable[..., Any],
-    params: List[str],
-) -> None:
+def test_generate_contour_plot_for_few_observations(params: List[str]) -> None:
 
     study = prepare_study_with_trials(less_than_two=True)
+    info = _get_contour_info(study, params=params)
+    assert info.sorted_params == sorted(params)
+    assert np.shape(info.sub_plot_infos) == (1, 1, 3)
+    xaxis = info.sub_plot_infos[0][0].xaxis
+    yaxis = info.sub_plot_infos[0][0].yaxis
+    assert xaxis.name == sorted(params)[0]
+    assert yaxis.name == sorted(params)[1]
+    assert xaxis.range == (1.0, 1.0)
+    assert yaxis.range == (-0.1, 2.1)
+    assert not xaxis.is_log
+    assert not yaxis.is_log
+    assert not xaxis.is_cat
+    assert not yaxis.is_cat
+    assert xaxis.indices == [1.0]
+    assert yaxis.indices == [-0.1, 0.0, 2.0, 2.1]
+    assert xaxis.values == [1.0, None]
+    assert yaxis.values == [2.0, 0.0]
+    z_values = np.asarray(info.sub_plot_infos[0][0].z_values)
+    assert np.all([np.isnan(v) for v in z_values.flatten()])
 
-    figure = plot_contour(study, params=params)
-    assert get_x_points(figure) is None
-    assert get_y_points(figure) is None
-    assert get_target_name(figure) is None
-    save_static_image(figure)
 
-
-@parametrize_plot_contour
-def test_plot_contour_log_scale_and_str_category_2_params(
-    plot_contour: Callable[..., Any],
-) -> None:
+def test_get_contour_info_log_scale_and_str_category_2_params() -> None:
 
     # If the search space has two parameters, plot_contour generates a single plot.
     study = create_study()
@@ -377,35 +368,42 @@ def test_plot_contour_log_scale_and_str_category_2_params(
     study.add_trial(
         create_trial(
             value=0.0,
-            params={"param_a": 1e-6, "param_b": "100"},
+            params={"param_a": 1e-6, "param_b": "101"},
             distributions=distributions,
         )
     )
     study.add_trial(
         create_trial(
             value=1.0,
-            params={"param_a": 1e-5, "param_b": "101"},
+            params={"param_a": 1e-5, "param_b": "100"},
             distributions=distributions,
         )
     )
 
-    figure = plot_contour(study)
-    assert not is_empty(figure)
-    assert get_n_plots(figure) == 1
-    assert get_x_range(figure) == (-6.05, -4.95)
-    assert get_y_range(figure) == (-0.05, 1.05)
-    assert get_x_name(figure) == "param_a"
-    assert get_y_name(figure) == "param_b"
-    assert get_x_is_log(figure)
-    assert not get_y_is_log(figure)
-    assert get_y_ticks(figure) == ["100", "101"]
-    save_static_image(figure)
+    info = _get_contour_info(study)
+    assert info.sorted_params == ["param_a", "param_b"]
+    assert np.shape(info.sub_plot_infos) == (1, 1, 3)
+    xaxis = info.sub_plot_infos[0][0].xaxis
+    yaxis = info.sub_plot_infos[0][0].yaxis
+    assert xaxis.name == "param_a"
+    assert yaxis.name == "param_b"
+    assert xaxis.range == (math.pow(10, -6.05), math.pow(10, -4.95))
+    assert yaxis.range == (-0.05, 1.05)
+    assert xaxis.is_log
+    assert not yaxis.is_log
+    assert not xaxis.is_cat
+    assert yaxis.is_cat
+    assert xaxis.indices == [math.pow(10, -6.05), 1e-6, 1e-5, math.pow(10, -4.95)]
+    assert yaxis.indices == ["100", "101"]
+    assert xaxis.values == [1e-6, 1e-5]
+    assert yaxis.values == ["101", "100"]
+    z_values = np.asarray(info.sub_plot_infos[0][0].z_values)
+    assert np.shape(z_values) == (2, 4)
+    assert z_values[1][1] == 0.0
+    assert z_values[0][2] == 1.0
 
 
-@parametrize_plot_contour
-def test_plot_contour_log_scale_and_str_category_more_than_2_params(
-    plot_contour: Callable[..., Any],
-) -> None:
+def test_get_contour_info_log_scale_and_str_category_more_than_2_params() -> None:
     # If the search space has three parameters, plot_contour generates nine plots.
     study = create_study()
     distributions = {
@@ -416,28 +414,60 @@ def test_plot_contour_log_scale_and_str_category_more_than_2_params(
     study.add_trial(
         create_trial(
             value=0.0,
-            params={"param_a": 1e-6, "param_b": "100", "param_c": "one"},
+            params={"param_a": 1e-6, "param_b": "101", "param_c": "one"},
             distributions=distributions,
         )
     )
     study.add_trial(
         create_trial(
             value=1.0,
-            params={"param_a": 1e-5, "param_b": "101", "param_c": "two"},
+            params={"param_a": 1e-5, "param_b": "100", "param_c": "two"},
             distributions=distributions,
         )
     )
 
-    figure = plot_contour(study)
-    assert get_n_plots(figure) == 6
-    assert not is_empty(figure)
-    save_static_image(figure)
+    info = _get_contour_info(study)
+    params = ["param_a", "param_b", "param_c"]
+    assert info.sorted_params == params
+    assert np.shape(info.sub_plot_infos) == (3, 3, 3)
+    ranges = {"param_a": (math.pow(10, -6.05), math.pow(10, -4.95)), "param_b": (-0.05, 1.05), "param_c": (-0.05, 1.05)}
+    is_log = {"param_a": True, "param_b": False, "param_c": False}
+    is_cat = {"param_a": False, "param_b": True, "param_c": True}
+    indices = {
+        "param_a": [math.pow(10, -6.05), 1e-6, 1e-5, math.pow(10, -4.95)],
+        "param_b": ["100", "101"],
+        "param_c": ["one", "two"],
+    }
+    values = {"param_a": [1e-6, 1e-5], "param_b": ["101", "100"], "param_c": ["one", "two"]}
+
+    def _check_axis(axis: _AxisInfo, name: str) -> None:
+        assert axis.name == name
+        assert axis.range == ranges[name]
+        assert axis.is_log == is_log[name]
+        assert axis.is_cat == is_cat[name]
+        assert axis.indices == indices[name]
+        assert axis.values == values[name]
+
+    for yi in range(3):
+        for xi in range(3):
+            xaxis = info.sub_plot_infos[yi][xi].xaxis
+            yaxis = info.sub_plot_infos[yi][xi].yaxis
+            x_param = params[xi]
+            y_param = params[yi]
+            _check_axis(xaxis, x_param)
+            _check_axis(yaxis, y_param)
+            z_values = np.asarray(info.sub_plot_infos[yi][xi].z_values)
+            if xi == yi:
+                assert np.shape(z_values) == (1, 0)
+            else:
+                assert np.shape(z_values) == (len(indices[y_param]), len(indices[x_param]))
+                for i, v in enumerate([0.0, 1.0]):
+                    xi = xaxis.indices.index(xaxis.values[i])
+                    yi = yaxis.indices.index(yaxis.values[i])
+                    assert z_values[yi][xi] == v
 
 
-@parametrize_plot_contour
-def test_plot_contour_mixture_category_types(
-    plot_contour: Callable[..., Any],
-) -> None:
+def test_get_contour_info_mixture_category_types() -> None:
     study = create_study()
     distributions: Dict[str, BaseDistribution] = {
         "param_a": CategoricalDistribution([None, "100"]),
@@ -457,37 +487,81 @@ def test_plot_contour_mixture_category_types(
             distributions=distributions,
         )
     )
-    figure = plot_contour(study)
 
-    # yaxis is treated as non-categorical
-    assert get_x_range(figure) == (-0.05, 1.05)
-    assert get_y_range(figure) == (100.95, 102.05)
-    assert get_x_ticks(figure) == ["100", "None"]
-    assert get_y_ticks(figure) != [101, 102.0]
-    save_static_image(figure)
+    info = _get_contour_info(study)
+    assert info.sorted_params == ["param_a", "param_b"]
+    assert np.shape(info.sub_plot_infos) == (1, 1, 3)
+    xaxis = info.sub_plot_infos[0][0].xaxis
+    yaxis = info.sub_plot_infos[0][0].yaxis
+    assert xaxis.name == "param_a"
+    assert yaxis.name == "param_b"
+    assert xaxis.range == (-0.05, 1.05)
+    assert yaxis.range == (100.95, 102.05)
+    assert not xaxis.is_log
+    assert not yaxis.is_log
+    assert xaxis.is_cat
+    assert not yaxis.is_cat
+    assert xaxis.indices == ["100", "None"]
+    assert yaxis.indices == [100.95, 101, 102, 102.05]
+    assert xaxis.values == ["None", "100"]
+    assert yaxis.values == [101.0, 102.0]
+    z_values = np.asarray(info.sub_plot_infos[0][0].z_values)
+    assert np.shape(z_values) == (4, 2)
+    assert z_values[1][1] == 0.0
+    assert z_values[2][0] == 0.5
 
 
-@parametrize_plot_contour
 @pytest.mark.parametrize("value", [float("inf"), -float("inf")])
-def test_nonfinite_removed(plot_contour: Callable[..., Any], value: float) -> None:
+def test_test_get_contour_info_nonfinite_removed(value: float) -> None:
 
     study = prepare_study_with_trials(with_c_d=True, value_for_first_trial=value)
-    figure = plot_contour(study, params=["param_b", "param_d"])
-    save_static_image(figure)
+    info = _get_contour_info(study, params=["param_b", "param_d"])
+    assert info.sorted_params == ["param_b", "param_d"]
+    assert np.shape(info.sub_plot_infos) == (1, 1, 3)
+    xaxis = info.sub_plot_infos[0][0].xaxis
+    yaxis = info.sub_plot_infos[0][0].yaxis
+    assert xaxis.name == "param_b"
+    assert yaxis.name == "param_d"
+    assert xaxis.range == (-0.05, 1.05)
+    assert yaxis.range == (1.9, 4.1)
+    assert not xaxis.is_log
+    assert not yaxis.is_log
+    assert not xaxis.is_cat
+    assert not yaxis.is_cat
+    assert xaxis.indices == [-0.05, 0.0, 1.0, 1.05]
+    assert yaxis.indices == [1.9, 2.0, 4.0, 4.1]
+    assert xaxis.values == [0.0, 1.0]
+    assert yaxis.values == [4.0, 2.0]
+    z_values = np.asarray(info.sub_plot_infos[0][0].z_values)
+    assert np.shape(z_values) == (4, 4)
+    assert value not in z_values.flatten()
 
 
-@parametrize_plot_contour
 @pytest.mark.parametrize("objective", (0, 1))
 @pytest.mark.parametrize("value", (float("inf"), -float("inf")))
-def test_nonfinite_multiobjective(
-    plot_contour: Callable[..., Any], objective: int, value: float
-) -> None:
+def test_test_get_contour_info_nonfinite_multiobjective(objective: int, value: float) -> None:
 
     study = prepare_study_with_trials(with_c_d=True, n_objectives=2, value_for_first_trial=value)
-    figure = plot_contour(
-        study, params=["param_b", "param_d"], target=lambda t: t.values[objective]
-    )
-    save_static_image(figure)
+    info = _get_contour_info(study, params=["param_b", "param_d"], target=lambda t: t.values[objective])
+    assert info.sorted_params == ["param_b", "param_d"]
+    assert np.shape(info.sub_plot_infos) == (1, 1, 3)
+    xaxis = info.sub_plot_infos[0][0].xaxis
+    yaxis = info.sub_plot_infos[0][0].yaxis
+    assert xaxis.name == "param_b"
+    assert yaxis.name == "param_d"
+    assert xaxis.range == (-0.05, 1.05)
+    assert yaxis.range == (1.9, 4.1)
+    assert not xaxis.is_log
+    assert not yaxis.is_log
+    assert not xaxis.is_cat
+    assert not yaxis.is_cat
+    assert xaxis.indices == [-0.05, 0.0, 1.0, 1.05]
+    assert yaxis.indices == [1.9, 2.0, 4.0, 4.1]
+    assert xaxis.values == [0.0, 1.0]
+    assert yaxis.values == [4.0, 2.0]
+    z_values = np.asarray(info.sub_plot_infos[0][0].z_values)
+    assert np.shape(z_values) == (4, 4)
+    assert value not in z_values.flatten()
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
