@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import List, Optional
 from typing import Tuple
 
 import optuna
@@ -147,7 +147,7 @@ def create_intermediate_value_studies() -> List[Study]:
     return studies
 
 
-def create_pytorch_study() -> Study:
+def create_pytorch_study() -> Optional[Study]:
     try:
         import torch
         import torch.nn as nn
@@ -158,7 +158,7 @@ def create_pytorch_study() -> Study:
         from torchvision import transforms
     except ImportError:
         print("create_pytorch_studies is skipped because torch/torchvision is not found")
-        return []
+        return None
 
     DEVICE = torch.device("cpu")
     BATCHSIZE = 128

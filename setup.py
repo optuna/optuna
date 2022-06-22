@@ -134,6 +134,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytest",
             "pytest-cov",
         ],
+        "visual_regression_test": [
+            "jinja2",
+            "kaleido",
+            "matplotlib",
+            "optuna-fast-fanova",
+            "plotly",
+            "scikit-learn",
+        ],
     }
 
     return requirements

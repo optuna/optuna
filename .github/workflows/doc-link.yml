@@ -12,3 +12,12 @@ jobs:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         artifact-path: 0/docs/build/html/index.html
         circleci-jobs: document
+  visualization-regression-tests-link:
+    runs-on: ubuntu-latest
+    if: "github.event.context == 'ci/circleci: visualization-regression-tests'"
+    steps:
+    - uses: larsoner/circleci-artifacts-redirector-action@master
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        artifact-path: 0/optuna-visualization-regression-tests/docs/index.html
+        circleci-jobs: visualization-regression-tests

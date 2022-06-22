@@ -5,6 +5,7 @@ workflows:
   commit-build:
     jobs:
       - document
+      - visual-regression-tests
 
 jobs:
 
@@ -44,3 +45,37 @@ jobs:
 
       - store_artifacts:
           path: ./docs/build/html
+  visualization-regression-tests:
+    docker:
+      - image: cimg/python:3.8
+    steps:
+      - checkout
+
+      - run: &checkout-merge-master
+          name: checkout-merge-master
+          command: |
+            set -ex
+            if [[ -n "${CIRCLE_PR_NUMBER}" ]]; then
+                FETCH_REFS="${FETCH_REFS} +refs/pull/${CIRCLE_PR_NUMBER}/merge:pr/${CIRCLE_PR_NUMBER}/merge"
+                git fetch -u origin ${FETCH_REFS}
+                git checkout "pr/${CIRCLE_PR_NUMBER}/merge"
+            fi
+      - run:
+          name: install optuna
+          command: |
+            python -m venv venv || virtualenv venv --python=python3.8
+            . venv/bin/activate
+            pip install -U pip
+            pip install --progress-bar off .
+            pip install --progress-bar off .[visual_regression_tests]
+      - run:
+          name: build
+          command: |
+            . venv/bin/activate
+            cd visual_regression_tests/
+            python visual_regression_tests.py --heavy --output-dir ./public
+          environment:
+            OMP_NUM_THREADS: 1
+
+      - store_artifacts:
+          path: ./visual_regression_tests/public

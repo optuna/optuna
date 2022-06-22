@@ -9,16 +9,16 @@ import warnings
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
 import matplotlib.pylab as plt
+from studies import create_intermediate_value_studies
+from studies import create_multi_objective_studies
+from studies import create_pytorch_study
+from studies import create_single_objective_studies
+
 import optuna
 from optuna import Study
 from optuna.exceptions import ExperimentalWarning
 import optuna.visualization as plotly_visualization
 import optuna.visualization.matplotlib as matplotlib_visualization
-
-from studies import create_intermediate_value_studies
-from studies import create_multi_objective_studies
-from studies import create_pytorch_study
-from studies import create_single_objective_studies
 
 
 try:
@@ -193,8 +193,9 @@ def main() -> None:
     if args.heavy:
         print("Creating pytorch study")
         pytorch_study = create_pytorch_study()
-        single_objective_studies.append(pytorch_study)
-        intermediate_value_studies.insert(0, pytorch_study)
+        if pytorch_study:
+            single_objective_studies.append(pytorch_study)
+            intermediate_value_studies.insert(0, pytorch_study)
 
     pages: List[Tuple[str, str]] = []
     for funcname, studies, generate in [
