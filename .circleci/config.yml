@@ -67,7 +67,7 @@ jobs:
             . venv/bin/activate
             pip install -U pip
             pip install --progress-bar off .
-            pip install --progress-bar off .[visual_regression_tests]
+            pip install --progress-bar off .[visual_regression_test]
       - run:
           name: build
           command: |
