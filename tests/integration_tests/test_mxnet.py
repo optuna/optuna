@@ -6,7 +6,7 @@ import pytest
 
 import optuna
 from optuna.integration.mxnet import MXNetPruningCallback
-from optuna.testing.pruner import DeterministicPruner
+from optuna.testing.pruners import DeterministicPruner
 
 
 def test_mxnet_pruning_callback() -> None:

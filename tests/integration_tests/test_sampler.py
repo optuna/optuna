@@ -7,7 +7,7 @@ import optuna
 from optuna.integration import PyCmaSampler
 from optuna.integration import SkoptSampler
 from optuna.samplers import BaseSampler
-from optuna.testing.sampler import FirstTrialOnlyRandomSampler
+from optuna.testing.samplers import FirstTrialOnlyRandomSampler
 
 
 parametrize_sampler = pytest.mark.parametrize(

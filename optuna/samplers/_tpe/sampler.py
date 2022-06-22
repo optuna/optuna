@@ -873,7 +873,6 @@ def _calculate_weights_below_for_multi_objective(
     else:
         # Hypervolume contributions are calculated only using feasible trials.
         feasible_mask = np.array(violations, dtype=float)[indices] == 0
-    cvals = list(config_values.values())[0][indices[feasible_mask]]
 
     # Multi-objective TPE does not support pruning, so it ignores the ``step``.
     lvals = np.asarray([v for _, v in loss_vals])[indices[feasible_mask]]
@@ -900,8 +899,9 @@ def _calculate_weights_below_for_multi_objective(
         contributions += EPS
         weights_below = np.clip(contributions / np.max(contributions), 0, 1)
 
-    weights_below = weights_below[~np.isnan(cvals)]
+    cvals = list(config_values.values())[0][indices]
     # For now, EPS weight is assigned to infeasible trials.
     weights_below_all = np.full(len(indices), EPS)
     weights_below_all[feasible_mask] = weights_below
+    weights_below_all = weights_below_all[~np.isnan(cvals)]
     return weights_below_all

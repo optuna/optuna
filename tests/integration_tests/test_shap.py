@@ -13,8 +13,8 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.integration.shap import ShapleyImportanceEvaluator
 from optuna.samplers import RandomSampler
-from optuna.testing.storage import STORAGE_MODES
-from optuna.testing.storage import StorageSupplier
+from optuna.testing.storages import STORAGE_MODES
+from optuna.testing.storages import StorageSupplier
 from optuna.trial import create_trial
 
 

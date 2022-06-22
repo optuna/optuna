@@ -22,10 +22,10 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
-from optuna.testing.pruner import DeterministicPruner
-from optuna.testing.sampler import DeterministicRelativeSampler
-from optuna.testing.storage import STORAGE_MODES
-from optuna.testing.storage import StorageSupplier
+from optuna.testing.pruners import DeterministicPruner
+from optuna.testing.samplers import DeterministicRelativeSampler
+from optuna.testing.storages import STORAGE_MODES
+from optuna.testing.storages import StorageSupplier
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
