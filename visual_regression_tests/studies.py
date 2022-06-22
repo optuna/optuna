@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import List, cast
 from typing import Optional
 from typing import Tuple
 
@@ -209,9 +209,9 @@ def create_pytorch_study() -> Optional[Study]:
         model = define_model(trial).to(DEVICE)
 
         # Generate the optimizers.
-        optimizer_name: str = trial.suggest_categorical(
-            "optimizer", ["Adam", "RMSprop", "SGD"]
-        )  # type: ignore
+        optimizer_name = cast(
+            str, trial.suggest_categorical("optimizer", ["Adam", "RMSprop", "SGD"])
+        )
         lr = trial.suggest_float("lr", 1e-5, 1e-1, log=True)
         optimizer = getattr(optim, optimizer_name)(model.parameters(), lr=lr)
 
@@ -248,7 +248,7 @@ def create_pytorch_study() -> Optional[Study]:
                     pred = output.argmax(dim=1, keepdim=True)
                     correct += pred.eq(target.view_as(pred)).sum().item()
 
-            accuracy = correct / min(len(valid_loader.dataset), N_VALID_EXAMPLES)  # type: ignore
+            accuracy = correct / min(len(valid_loader.dataset), N_VALID_EXAMPLES)
 
             trial.report(accuracy, epoch)
 

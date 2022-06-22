@@ -14,10 +14,10 @@ jobs:
         circleci-jobs: document
   visualization-regression-tests-link:
     runs-on: ubuntu-latest
-    if: "github.event.context == 'ci/circleci: visualization-regression-tests'"
+    if: "github.event.context == 'ci/circleci: visual-regression-tests'"
     steps:
     - uses: larsoner/circleci-artifacts-redirector-action@master
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
-        artifact-path: 0/optuna-visualization-regression-tests/docs/index.html
-        circleci-jobs: visualization-regression-tests
+        artifact-path: 0/visual_regression_tests/public/index.html
+        circleci-jobs: visual-regression-tests
