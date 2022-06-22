@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Optuna Visual Regression Tests</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        body {
+            padding: 100px;
+        }
+        .wrapper {
+            padding: 64px;
+            background-color: rgb(255, 255, 255);
+            box-shadow: rgba(0, 0, 0, 0.08) 0 8px 24px;
+            margin: 0px auto;
+            border-radius: 8px;
+        }
+        .plot-wrapper {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+        }
+        .plot {
+            width: 50%;
+            object-fit: contain;
+        }
+        .error-message {
+            font-weight: bold;
+            margin: 0 auto;
+            font-size: x-large;
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <h1>{{ funcname }}</h1>
+    {% for study, plotly_file, matplotlib_file in plot_files %}
+    <h2>{{ study.study_name }}</h2>
+    <div class="plot-wrapper">
+        {% if plotly_file %}
+        <img class="plot" src="{{ plotly_file }}">
+        {% else %}
+        <p class="error-message">plotly's {{ funcname }} is failed</p>
+        {% endif %}
+        {% if matplotlib_file %}
+        <img class="plot" src="{{ matplotlib_file }}">
+        {% else %}
+        <p class="error-message">matplotlib's {{ funcname }} is failed</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+</body>
+</html>
