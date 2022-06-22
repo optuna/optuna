@@ -13,23 +13,26 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import FloatDistribution
 from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
+import optuna.trial
 from optuna.trial import BaseTrial
-from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
-def _create_default_trial() -> FrozenTrial:
-    trial = create_trial(
-        value=0.2, params={"x": 10}, distributions={"x": FloatDistribution(5, 12)}
-    )
+def _create_trial(
+    *,
+    value: float = 0.2,
+    params: Dict[str, Any] = {"x": 10},
+    distributions: Dict[str, BaseDistribution] = {"x": FloatDistribution(5, 12)},
+) -> FrozenTrial:
+    trial = optuna.trial.create_trial(value=value, params=params, distributions=distributions)
     trial.number = 0
     return trial
 
 
 def test_eq_ne() -> None:
 
-    trial = _create_default_trial()
+    trial = _create_trial()
 
     trial_other = copy.copy(trial)
     assert trial == trial_other
@@ -40,7 +43,7 @@ def test_eq_ne() -> None:
 
 def test_lt() -> None:
 
-    trial = _create_default_trial()
+    trial = _create_trial()
 
     trial_other = copy.copy(trial)
     assert not trial < trial_other
@@ -67,7 +70,7 @@ def test_lt() -> None:
 
 def test_repr() -> None:
 
-    trial = _create_default_trial()
+    trial = _create_trial()
 
     assert trial == eval(repr(trial))
 
@@ -100,18 +103,18 @@ def test_sampling(storage_mode: str) -> None:
 
 def test_set_value() -> None:
 
-    trial = _create_default_trial()
+    trial = _create_trial()
     trial.value = 0.1
     assert trial.value == 0.1
 
 
 def test_set_values() -> None:
 
-    trial = _create_default_trial()
+    trial = _create_trial()
     trial.values = (0.1, 0.2)
     assert trial.values == [0.1, 0.2]  # type: ignore[comparison-overlap]
 
-    trial = _create_default_trial()
+    trial = _create_trial()
     trial.values = [0.1, 0.2]
     assert trial.values == [0.1, 0.2]
 
@@ -119,7 +122,7 @@ def test_set_values() -> None:
 def test_validate() -> None:
 
     # Valid.
-    valid_trial = _create_default_trial()
+    valid_trial = _create_trial()
     valid_trial._validate()
 
     # Invalid: `datetime_start` is not set when the trial is not in the waiting state.
@@ -175,7 +178,7 @@ def test_validate() -> None:
 
 def test_number() -> None:
 
-    trial = _create_default_trial()
+    trial = _create_trial()
     assert trial.number == 0
 
     trial.number = 2
@@ -185,7 +188,7 @@ def test_number() -> None:
 def test_params() -> None:
 
     params = {"x": 1}
-    trial = create_trial(
+    trial = _create_trial(
         value=0.2,
         params=params,
         distributions={"x": FloatDistribution(0, 10)},
@@ -203,7 +206,7 @@ def test_params() -> None:
 def test_distributions() -> None:
 
     distributions = {"x": FloatDistribution(0, 10)}
-    trial = create_trial(
+    trial = _create_trial(
         value=0.2,
         params={"x": 1},
         distributions=dict(distributions),
@@ -217,7 +220,7 @@ def test_distributions() -> None:
 
 def test_user_attrs() -> None:
 
-    trial = _create_default_trial()
+    trial = _create_trial()
     assert trial.user_attrs == {}
 
     user_attrs = {"data": "MNIST"}
@@ -227,7 +230,7 @@ def test_user_attrs() -> None:
 
 def test_system_attrs() -> None:
 
-    trial = _create_default_trial()
+    trial = _create_trial()
     assert trial.system_attrs == {}
 
     system_attrs = {"system_message": "test"}
@@ -245,7 +248,7 @@ def test_called_single_methods_when_multi() -> None:
     system_attrs = {"baz": "qux"}
     intermediate_values = {0: 0.0, 1: 0.1, 2: 0.1}
 
-    trial = create_trial(
+    trial = optuna.trial.create_trial(
         state=state,
         values=values,
         params=params,

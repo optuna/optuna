@@ -92,21 +92,6 @@ def test_suggest_discrete_uniform(trial_type: type) -> None:
 
 
 @parametrize_trial_type
-def test_suggest_int(trial_type: type) -> None:
-
-    trial = _create_trial(
-        trial_type=trial_type,
-        params={"x": 1},
-        distributions={"x": IntDistribution(0, 10)},
-    )
-
-    assert trial.suggest_int("x", 0, 10) == 1
-
-    with pytest.raises(ValueError):
-        trial.suggest_int("y", 0, 10)
-
-
-@parametrize_trial_type
 def test_suggest_int_log(trial_type: type) -> None:
 
     trial = _create_trial(
@@ -161,54 +146,30 @@ def test_suggest_categorical(trial_type: type) -> None:
 
 
 @parametrize_trial_type
-def test_not_contained_param(trial_type: type) -> None:
+@pytest.mark.parametrize(
+    ("suggest_func", "distribution"),
+    [
+        (lambda self, *args: self.suggest_int(*args), IntDistribution(1, 10)),
+        (lambda self, *args: self.suggest_int(*args, log=True), IntDistribution(1, 10, log=True)),
+        (lambda self, *args: self.suggest_int(*args, step=2), IntDistribution(1, 10, step=2)),
+        (lambda self, *args: self.suggest_float(*args), FloatDistribution(1, 10)),
+        (
+            lambda self, *args: self.suggest_float(*args, log=True),
+            FloatDistribution(1, 10, log=True),
+        ),
+        (lambda self, *args: self.suggest_float(*args, step=1), FloatDistribution(1, 10, step=1)),
+    ],
+)
+def test_not_contained_param(
+    trial_type: type, suggest_func: Any, distribution: BaseDistribution
+) -> None:
     trial = _create_trial(
         trial_type=trial_type,
         params={"x": 1.0},
-        distributions={"x": FloatDistribution(1.0, 10.0)},
+        distributions={"x": distribution},
     )
     with pytest.warns(UserWarning):
-        assert trial.suggest_float("x", 10.0, 100.0) == 1.0
-
-    trial = _create_trial(
-        trial_type=trial_type,
-        params={"x": 1.0},
-        distributions={"x": FloatDistribution(1.0, 10.0, log=True)},
-    )
-    with pytest.warns(UserWarning):
-        assert trial.suggest_float("x", 10.0, 100.0, log=True) == 1.0
-
-    trial = _create_trial(
-        trial_type=trial_type,
-        params={"x": 1.0},
-        distributions={"x": FloatDistribution(1.0, 10.0, step=1.0)},
-    )
-    with pytest.warns(UserWarning):
-        assert trial.suggest_float("x", 10.0, 100.0, step=1.0) == 1.0
-
-    trial = _create_trial(
-        trial_type=trial_type,
-        params={"x": 1.0},
-        distributions={"x": IntDistribution(1, 10)},
-    )
-    with pytest.warns(UserWarning):
-        assert trial.suggest_int("x", 10, 100) == 1
-
-    trial = _create_trial(
-        trial_type=trial_type,
-        params={"x": 1},
-        distributions={"x": IntDistribution(1, 10)},
-    )
-    with pytest.warns(UserWarning):
-        assert trial.suggest_int("x", 10, 100, 1) == 1
-
-    trial = _create_trial(
-        trial_type=trial_type,
-        params={"x": 1},
-        distributions={"x": IntDistribution(1, 10, log=True)},
-    )
-    with pytest.warns(UserWarning):
-        assert trial.suggest_int("x", 10, 100, log=True) == 1
+        assert suggest_func(trial, "x", 10, 100) == 1
 
 
 @parametrize_trial_type
