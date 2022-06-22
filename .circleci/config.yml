@@ -45,7 +45,7 @@ jobs:
 
       - store_artifacts:
           path: ./docs/build/html
-  visualization-regression-tests:
+  visual-regression-tests:
     docker:
       - image: cimg/python:3.8
     steps:
