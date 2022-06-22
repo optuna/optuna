@@ -240,7 +240,7 @@ def test_report(trial_type: type) -> None:
 def test_should_prune(trial_type: type) -> None:
 
     # FrozenTrial never prunes trials.
-    assert _create_trial(trial_type).should_prune() is False
+    assert not _create_trial(trial_type).should_prune()
 
 
 @parametrize_trial_type
