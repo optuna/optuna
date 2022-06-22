@@ -66,9 +66,9 @@ def test_dominates_invalid() -> None:
         _dominates(t0, t1, directions)
 
     # The numbers of objectives and directions don't match.
+    t0 = _create_trial([1])  # One objective.
+    t1 = _create_trial([1])  # One objective.
     with pytest.raises(ValueError):
-        t0 = _create_trial([1])  # One objective.
-        t1 = _create_trial([1])  # One objective.
         _dominates(t0, t1, directions)
 
 
