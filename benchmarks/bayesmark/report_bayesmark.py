@@ -33,6 +33,13 @@ class BaseMetric(object, metaclass=abc.ABCMeta):
 
         raise NotImplementedError
 
+    @property
+    @abc.abstractmethod
+    def precision(self) -> int:
+        """Number of digits following decimal point displayed in final report."""
+
+        raise NotImplementedError
+
     @abc.abstractmethod
     def calculate(self, data: pd.DataFrame) -> List[float]:
         """Calculates metric for each study in data frame."""
@@ -42,6 +49,7 @@ class BaseMetric(object, metaclass=abc.ABCMeta):
 
 class BestValueMetric(BaseMetric):
     name = "Best value"
+    precision = 6
 
     def calculate(self, data: pd.DataFrame) -> List[float]:
 
@@ -50,6 +58,7 @@ class BestValueMetric(BaseMetric):
 
 class AUCMetric(BaseMetric):
     name = "AUC"
+    precision = 3
 
     def calculate(self, data: pd.DataFrame) -> List[float]:
 
@@ -62,6 +71,7 @@ class AUCMetric(BaseMetric):
 
 class ElapsedMetric(BaseMetric):
     name = "Elapsed"
+    precision = 3
 
     def calculate(self, data: pd.DataFrame) -> List[float]:
 
@@ -219,7 +229,8 @@ class BayesmarkReportBuilder:
             row_buffer.write(f"|{pos}|{solver}|")
             for metric in metrics:
                 mean, variance = report.summarize_solver(solver, metric)
-                row_buffer.write(f"{mean:.5f} +- {np.sqrt(variance):.5f}|")
+                precision = metric.precision
+                row_buffer.write(f"{mean:.{precision}f} +- {np.sqrt(variance):.{precision}f}|")
 
             self._problems_body.write("".join([row_buffer.getvalue(), _LINE_BREAK]))
             row_buffer.close()
