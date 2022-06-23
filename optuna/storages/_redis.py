@@ -690,7 +690,8 @@ class RedisStorage(BaseStorage, BaseHeartbeat):
         deepcopy: bool = True,
         states: Optional[Container[TrialState]] = None,
     ) -> List[FrozenTrial]:
-
+        # Redis will copy data from storage with `mget`.
+        # No further copying is required even if the deepcopy option is true.
         return self._get_trials(study_id, states, set())
 
     def _get_trials(
