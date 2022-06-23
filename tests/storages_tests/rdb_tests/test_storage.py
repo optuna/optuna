@@ -88,6 +88,7 @@ def test_init_db_module_import_error() -> None:
 
 
 def test_engine_kwargs() -> None:
+
     create_test_storage(engine_kwargs={"pool_size": 5})
 
 

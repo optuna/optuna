@@ -43,8 +43,14 @@ def test_lt() -> None:
     assert trial < trial_other
     assert not trial_other < trial
 
+    with pytest.raises(TypeError):
+        trial < 1
+
     assert trial <= trial_other
     assert not trial_other <= trial
+
+    with pytest.raises(TypeError):
+        trial <= 1
 
     # A list of FrozenTrials is sortable.
     trials = [trial_other, trial]
