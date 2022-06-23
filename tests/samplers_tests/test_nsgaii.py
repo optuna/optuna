@@ -540,7 +540,8 @@ def test_crossover_dims(n_params: int, sampler_class: Callable[[], BaseSampler])
     assert len(study.trials) == n_trials
 
 
-@pytest.mark.parametrize("crossover,population_size",
+@pytest.mark.parametrize(
+    "crossover,population_size",
     [
         (UniformCrossover(), 1),
         (BLXAlphaCrossover(), 1),
@@ -657,9 +658,7 @@ def test_crossover_duplicated_param_values(crossover: BaseCrossover) -> None:
     ],
 )
 def test_crossover_deterministic(
-    crossover: BaseCrossover,
-    rand_value: float,
-    expected_params: np.ndarray
+    crossover: BaseCrossover, rand_value: float, expected_params: np.ndarray
 ) -> None:
 
     study = optuna.study.create_study()
