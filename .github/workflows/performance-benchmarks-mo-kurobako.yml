@@ -1,4 +1,4 @@
-name: Performance Benchmarks with mo-kurobako
+name: Performance Benchmarks with kurobako for multi-objective optimization
 
 on:
   workflow_dispatch:
