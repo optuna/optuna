@@ -11,7 +11,7 @@ from skopt.space import space
 
 import optuna
 from optuna import distributions
-from optuna.testing.sampler import DeterministicRelativeSampler
+from optuna.testing.samplers import DeterministicRelativeSampler
 from optuna.trial import FrozenTrial
 
 
