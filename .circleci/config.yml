@@ -1,11 +1,18 @@
-version: 2
+version: 2.1
+
+orbs:
+  path-filtering: circleci/path-filtering@0.0.1
 
 workflows:
   version: 2
   commit-build:
     jobs:
       - document
-      - visual-regression-tests
+      - path-filtering/filter:
+          base-revision: main
+          config-path: .circleci/continue-config.yml
+          mapping: |
+            (optuna/visualization/.* | visual_regression_tests/.*) visual-regression-tests true
 
 jobs:
 
