@@ -166,7 +166,7 @@ def plot_param_importances(
 
     hovertemplate = [
         _make_hovertext(param_name, importance, study)
-        for (param_name, importance) in zip(param_names, importance_values)
+        for param_name, importance in zip(param_names, importance_values)
     ]
 
     fig = go.Figure(
