@@ -104,7 +104,7 @@ class PartialReport:
             raise ValueError(f"{solver} not found in report.")
 
         run_metrics = metric.calculate(solver_data)
-        return np.mean(run_metrics), np.var(run_metrics)
+        return np.mean(run_metrics).item(), np.var(run_metrics).item()
 
     def sample_performance(self, metric: BaseMetric) -> Samples:
 
