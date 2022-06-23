@@ -210,5 +210,4 @@ def test_datetime_start(trial_type: type) -> None:
     trial = _create_trial(trial_type)
     assert trial.datetime_start is not None
     old_date_time_start = trial.datetime_start
-    trial.datetime_complete = datetime.datetime.now()  # type: ignore
-    assert trial.datetime_complete != old_date_time_start  # type: ignore
+    assert datetime.datetime.now() != old_date_time_start
