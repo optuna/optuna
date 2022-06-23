@@ -26,9 +26,6 @@ logger = get_logger(__name__)
 
 
 class _ImportancesInfo(NamedTuple):
-    title: str
-    x_axis_name: str
-    y_axis_name: str
     importance_values: List[float]
     param_names: List[str]
     importance_labels: List[str]
@@ -43,12 +40,6 @@ def _get_importances_info(
 ) -> _ImportancesInfo:
     _check_plot_args(study, target, target_name)
 
-    title = "Hyperparameter Importances"
-    x_axis_name = f"Importance for {target_name}"
-    y_axis_name = "Hyperparameter"
-
-    # Importances cannot be evaluated without completed trials.
-    # Return an empty figure for consistency with other visualization functions.
     trials = _filter_nonfinite(
         study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
     )
@@ -56,9 +47,6 @@ def _get_importances_info(
     if len(trials) == 0:
         logger.warning("Study instance does not contain completed trials.")
         return _ImportancesInfo(
-            title=title,
-            x_axis_name=x_axis_name,
-            y_axis_name=y_axis_name,
             importance_values=[],
             param_names=[],
             importance_labels=[],
@@ -74,9 +62,6 @@ def _get_importances_info(
     importance_labels = [f"{val:.2f}" if val >= 0.01 else "<0.01" for val in importance_values]
 
     return _ImportancesInfo(
-        title=title,
-        x_axis_name=x_axis_name,
-        y_axis_name=y_axis_name,
         importance_values=importance_values,
         param_names=param_names,
         importance_labels=importance_labels,
@@ -152,9 +137,9 @@ def plot_param_importances(
     importances_info = _get_importances_info(study, evaluator, params, target, target_name)
 
     layout = go.Layout(
-        title=importances_info.title,
-        xaxis={"title": importances_info.x_axis_name},
-        yaxis={"title": importances_info.y_axis_name},
+        title="Hyperparameter Importances",
+        xaxis={"title": f"Importance for {target_name}"},
+        yaxis={"title": "Hyperparameter"},
         showlegend=False,
     )
 

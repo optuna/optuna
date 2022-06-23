@@ -95,9 +95,9 @@ def plot_param_importances(
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
     fig, ax = plt.subplots()
-    ax.set_title(importances_info.title)
-    ax.set_xlabel(importances_info.x_axis_name)
-    ax.set_ylabel(importances_info.y_axis_name)
+    ax.set_title("Hyperparameter Importances")
+    ax.set_xlabel(f"Importance for {target_name}")
+    ax.set_ylabel("Hyperparameter")
 
     param_names = importances_info.param_names
     pos = np.arange(len(param_names))
