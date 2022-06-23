@@ -75,18 +75,6 @@ jobs:
         chmod +x kurobako
         ./kurobako -h
 
-    - name: Cache hpobench dataset
-      id: cache-hpobench-dataset
-      uses: actions/cache@v2
-      with:
-        path: ./fcnet_tabular_benchmarks
-        key: hpobench-dataset
-
-    - name: Download hpobench dataset
-      if: steps.cache-hpobench-dataset.outputs.cache-hit != 'true'
-      run: |
-        wget http://ml4aad.org/wp-content/uploads/2019/01/fcnet_tabular_benchmarks.tar.gz
-        tar xf fcnet_tabular_benchmarks.tar.gz
 
     - name: Cache nasbench dataset
       id: cache-nasbench-dataset
