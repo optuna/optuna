@@ -434,6 +434,10 @@ def test_fast_non_dominated_sort_missing_constraint_values() -> None:
             [[1], [2], [float("inf")]],
             [float("inf"), float("nan"), float("inf")],
         ),  # TODO(knshnb): Decide expected behavior for this case.
+        (
+            [[float("-inf")], [1], [2]],
+            [float("inf"), float("nan"), float("inf")],
+        ),  # TODO(knshnb): Decide expected behavior for this case.
     ],
 )
 def test_calc_crowding_distance(values: List[List[float]], expected_dist: List[float]) -> None:
@@ -450,6 +454,7 @@ def test_calc_crowding_distance(values: List[List[float]], expected_dist: List[f
         [[5, 0], [6, 0], [9, 0], [0, 0]],
         [[5, -1], [6, 0], [9, 1], [0, 2]],
         [[1], [2], [float("inf")]],
+        [[float("-inf")], [1], [2]],
     ],
 )
 def test_crowding_distance_sort(values: List[List[float]]) -> None:
