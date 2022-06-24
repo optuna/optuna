@@ -453,6 +453,8 @@ def test_calc_crowding_distance(values: List[List[float]], expected_dist: List[f
         [[5], [6], [9], [0]],
         [[5, 0], [6, 0], [9, 0], [0, 0]],
         [[5, -1], [6, 0], [9, 1], [0, 2]],
+        [[1], [2], [float("inf")]],
+        [[0], [1], [float("nan")]],
     ],
 )
 def test_crowding_distance_sort(values: List[List[float]]) -> None:
