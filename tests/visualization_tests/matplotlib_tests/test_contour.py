@@ -16,38 +16,9 @@ from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
 from optuna.trial import Trial
+from optuna.visualization._contour import PADDING_RATIO
 from optuna.visualization.matplotlib import plot_contour
-from optuna.visualization.matplotlib._contour import _create_zmap
 from optuna.visualization.matplotlib._contour import _interpolate_zmap
-from optuna.visualization.matplotlib._contour import AXES_PADDING_RATIO
-
-
-def test_create_zmap() -> None:
-
-    x_values = np.arange(10)
-    y_values = np.arange(10)
-    z_values = list(np.random.rand(10, 10))
-
-    # we are testing for exact placement of z_values
-    # so also passing x_values and y_values as xi and yi
-    zmap = _create_zmap(
-        x_values.tolist(),
-        y_values.tolist(),
-        x_values.tolist(),
-        y_values.tolist(),
-        z_values,
-        x_values,
-        y_values,
-    )
-
-    assert len(zmap) == len(z_values)
-    for coord, value in zmap.items():
-        # test if value under coordinate
-        # still refers to original trial value
-        xidx = coord[0]
-        yidx = coord[1]
-        assert xidx == yidx
-        assert z_values[yidx][xidx] == value
 
 
 def test_interpolate_zmap() -> None:
@@ -300,7 +271,7 @@ def test_contour_subplots_have_correct_axis_labels_and_ranges() -> None:
     }
     for index, (param_name, param_range) in enumerate(param_ranges.items()):
         minimum, maximum = param_range
-        padding = (maximum - minimum) * AXES_PADDING_RATIO
+        padding = (maximum - minimum) * PADDING_RATIO
         param_range_with_padding = (minimum - padding, maximum + padding)
         assert subplots[index, 0].get_ylabel() == param_name
         assert subplots[-1, index].get_xlabel() == param_name

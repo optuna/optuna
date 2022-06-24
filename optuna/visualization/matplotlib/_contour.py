@@ -29,7 +29,6 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
-AXES_PADDING_RATIO = 5e-2
 CONTOUR_POINT_NUM = 100
 
 
@@ -178,7 +177,7 @@ class _LabelEncoder:
 def _calculate_griddata(
     xaxis: _AxisInfo,
     yaxis: _AxisInfo,
-    z_values: List[List[float]],
+    z_values: Dict[Tuple[int, int], float],
 ) -> Tuple[
     np.ndarray,
     np.ndarray,
@@ -207,12 +206,10 @@ def _calculate_griddata(
         x_values_dummy = [x for x in xaxis.indices if x not in x_values]
         x_values = x_values + x_values_dummy * len(x_values)
         y_values = y_values + (y_values * len(x_values_dummy))
-        z_values = z_values + (z_values * len(x_values_dummy))
     if len(set(y_values)) == 1:
         y_values_dummy = [y for y in yaxis.indices if y not in y_values]
         y_values = y_values + y_values_dummy * len(y_values)
         x_values = x_values + (x_values * len(y_values_dummy))
-        z_values = z_values + (z_values * len(y_values_dummy))
 
     def _calculate_axis_data(
         axis: _AxisInfo,
@@ -258,8 +255,7 @@ def _calculate_griddata(
     # create irregularly spaced map of trial values
     # and interpolate it with Plotly's interpolation formulation
     if xaxis.name != yaxis.name:
-        zmap = _create_zmap(x_indices, y_indices, x_values, y_values, z_values, xi, yi)
-        zi = _interpolate_zmap(zmap, CONTOUR_POINT_NUM)
+        zi = _interpolate_zmap(z_values, CONTOUR_POINT_NUM)
 
     return (
         xi,
@@ -325,38 +321,6 @@ def _generate_contour_subplot(info: _SubContourInfo, ax: "Axes", cmap: "Colormap
         ax.set_yticklabels(y_cat_param_label)
     ax.label_outer()
     return cs
-
-
-def _create_zmap(
-    x_indices: List[Union[str, int, float]],
-    y_indices: List[Union[str, int, float]],
-    x_values: List[Union[str, float]],
-    y_values: List[Union[str, float]],
-    z_values: List[List[float]],
-    xi: np.ndarray,
-    yi: np.ndarray,
-) -> Dict[Tuple[int, int], float]:
-
-    # creates z-map from trial values and params.
-    # z-map is represented by hashmap of coordinate and trial value pairs
-    #
-    # coordinates are represented by tuple of integers, where the first item
-    # indicates x-axis index and the second item indicates y-axis index
-    # and refer to a position of trial value on irregular param grid
-    #
-    # since params were resampled either with linspace or logspace
-    # original params might not be on the x and y axes anymore
-    # so we are going with close approximations of trial value positions
-    zmap = dict()
-    for x, y in zip(x_values, y_values):
-        x_i = x_indices.index(x)
-        y_i = y_indices.index(y)
-        z = z_values[y_i][x_i]
-        xindex = int(np.argmin(np.abs(xi - x)))
-        yindex = int(np.argmin(np.abs(yi - y)))
-        zmap[(xindex, yindex)] = z
-
-    return zmap
 
 
 def _interpolate_zmap(zmap: Dict[Tuple[int, int], float], contour_plot_num: int) -> np.ndarray:

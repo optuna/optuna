@@ -1,5 +1,6 @@
 import math
 from typing import Callable
+from typing import Dict
 from typing import List
 from typing import NamedTuple
 from typing import Optional
@@ -43,7 +44,7 @@ class _AxisInfo(NamedTuple):
 class _SubContourInfo(NamedTuple):
     xaxis: _AxisInfo
     yaxis: _AxisInfo
-    z_values: List[List[float]]
+    z_values: Dict[Tuple[int, int], float]
 
 
 class _ContourInfo(NamedTuple):
@@ -205,7 +206,12 @@ def _generate_contour_subplot(
         if x_value is not None and y_value is not None:
             x_values.append(x_value)
             y_values.append(y_value)
-    z_values = info.z_values
+    z_values = [
+        [float("nan") for _ in range(len(info.xaxis.indices))]
+        for _ in range(len(info.yaxis.indices))
+    ]
+    for (x_i, y_i), z_value in info.z_values.items():
+        z_values[y_i][x_i] = z_value
 
     if len(x_indices) < 2:
         return go.Contour(), go.Scatter()
@@ -289,19 +295,16 @@ def _generate_contour_subplot_info(
     yaxis = _generate_axis_info(trials, y_param)
 
     if x_param == y_param:
-        return _SubContourInfo(xaxis=xaxis, yaxis=yaxis, z_values=[[]])
+        return _SubContourInfo(xaxis=xaxis, yaxis=yaxis, z_values={})
 
     if len(xaxis.indices) < 2:
         _logger.warning("Param {} unique value length is less than 2.".format(x_param))
-        return _SubContourInfo(xaxis=xaxis, yaxis=yaxis, z_values=[[]])
+        return _SubContourInfo(xaxis=xaxis, yaxis=yaxis, z_values={})
     if len(yaxis.indices) < 2:
         _logger.warning("Param {} unique value length is less than 2.".format(y_param))
-        return _SubContourInfo(xaxis=xaxis, yaxis=yaxis, z_values=[[]])
+        return _SubContourInfo(xaxis=xaxis, yaxis=yaxis, z_values={})
 
-    z_values = [
-        [float("nan") for _ in range(len(xaxis.indices))] for _ in range(len(yaxis.indices))
-    ]
-
+    z_values = {}
     for i, trial in enumerate(trials):
         if x_param not in trial.params or y_param not in trial.params:
             continue
@@ -323,7 +326,7 @@ def _generate_contour_subplot_info(
             raise ValueError(
                 f"Trial{trial.number} has COMPLETE state, but its target value is non-numeric."
             )
-        z_values[y_i][x_i] = value
+        z_values[(x_i, y_i)] = value
 
     return _SubContourInfo(xaxis=xaxis, yaxis=yaxis, z_values=z_values)
 
