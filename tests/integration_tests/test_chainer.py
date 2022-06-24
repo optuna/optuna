@@ -35,18 +35,21 @@ def test_chainer_pruning_extension_trigger() -> None:
 
     extension = ChainerPruningExtension(trial, "main/loss", (1, "epoch"))
     assert isinstance(extension._pruner_trigger, triggers.IntervalTrigger)
-    extension = ChainerPruningExtension(trial, "main/loss", triggers.IntervalTrigger(1, "epoch"))
+    extension = ChainerPruningExtension(
+        trial, "main/loss", triggers.IntervalTrigger(1, "epoch")  # type: ignore
+    )
     assert isinstance(extension._pruner_trigger, triggers.IntervalTrigger)
     extension = ChainerPruningExtension(
-        trial, "main/loss", triggers.ManualScheduleTrigger(1, "epoch")
+        trial, "main/loss", triggers.ManualScheduleTrigger(1, "epoch")  # type: ignore
     )
     assert isinstance(extension._pruner_trigger, triggers.ManualScheduleTrigger)
 
     with pytest.raises(TypeError):
-        ChainerPruningExtension(trial, "main/loss", triggers.TimeTrigger(1.0))
+        ChainerPruningExtension(trial, "main/loss", triggers.TimeTrigger(1.0))  # type: ignore
 
 
 def test_chainer_pruning_extension() -> None:
+    @typing.no_type_check
     def objective(trial: optuna.trial.Trial) -> float:
 
         model = L.Classifier(chainer.Sequential(L.Linear(None, 2)))
