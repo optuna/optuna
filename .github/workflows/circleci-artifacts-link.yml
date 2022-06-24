@@ -1,4 +1,4 @@
-name: Add Documentation Link
+name: Add redirect link to CircleCI Artifacts
 
 on: status
 
