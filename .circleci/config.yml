@@ -84,4 +84,4 @@ jobs:
             OMP_NUM_THREADS: 1
 
       - store_artifacts:
-          path: ./optuna-visualization-regression-tests/docs
+          path: ./optuna-visualization-regression-tests/public
