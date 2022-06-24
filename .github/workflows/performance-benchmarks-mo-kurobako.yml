@@ -75,7 +75,6 @@ jobs:
         chmod +x kurobako
         ./kurobako -h
 
-
     - name: Cache nasbench dataset
       id: cache-nasbench-dataset
       uses: actions/cache@v2
