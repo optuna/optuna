@@ -1,26 +1,20 @@
 version: 2.1
 
-orbs:
-  path-filtering: circleci/path-filtering@0.0.1
+parameters:
+  run-visual-regression-tests:
+    type: boolean
+    default: false
 
 workflows:
-  version: 2
-  commit-build:
+  visual-regression-tests:
+    when: << pipeline.parameters.run-visual-regression-tests >>
     jobs:
-      - document
-      - path-filtering/filter:
-          base-revision: main
-          config-path: .circleci/visual-regression-tests.yml
-          mapping: |
-            optuna/visualization/*  run-visual-regression-tests true
-            visual_regression_tests/* run-visual-regression-tests true
+      - visual-regression-tests
 
 jobs:
-
-  # TODO (crcrpar): Set cache for sphinx gallery to avoid document job being bottleneck.
-  document:
+  visual-regression-tests:
     docker:
-      - image: readthedocs/build:latest
+      - image: cimg/python:3.8
     steps:
       - checkout
 
@@ -33,23 +27,22 @@ jobs:
                 git fetch -u origin ${FETCH_REFS}
                 git checkout "pr/${CIRCLE_PR_NUMBER}/merge"
             fi
-
       - run:
-          name: install
+          name: install optuna
           command: |
             python -m venv venv || virtualenv venv --python=python3.8
             . venv/bin/activate
             pip install -U pip
-            pip install --progress-bar off .[document]
-
+            pip install --progress-bar off .
+            pip install --progress-bar off .[visual_regression_test]
       - run:
           name: build
           command: |
             . venv/bin/activate
-            cd docs
-            make html
+            cd visual_regression_tests/
+            python visual_regression_tests.py --heavy --output-dir ./public
           environment:
             OMP_NUM_THREADS: 1
 
       - store_artifacts:
-          path: ./docs/build/html
+          path: ./visual_regression_tests/public
