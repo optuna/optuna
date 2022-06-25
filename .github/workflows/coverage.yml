@@ -55,9 +55,14 @@ jobs:
         pip install --progress-bar off .[optional]
         pip install --progress-bar off .[integration] --extra-index-url https://download.pytorch.org/whl/cpu
 
+        echo 'import coverage; coverage.process_startup()' > sitecustomize.py
+
     - name: Tests
       env:
         OMP_NUM_THREADS: 1
+        PYTHONPATH: .
+        COVERAGE_PROCESS_START: .coveragerc
+        COVERAGE_COVERAGE: yes
       run: |
         coverage run --source=optuna -m pytest tests -m "not skip_coverage" \
             --ignore tests/integration_tests/test_pytorch_lightning.py
@@ -67,6 +72,9 @@ jobs:
     - name: Multi-node tests
       env:
         OMP_NUM_THREADS: 1
+        PYTHONPATH: .
+        COVERAGE_PROCESS_START: .coveragerc
+        COVERAGE_COVERAGE: yes
       run: |
         mpirun -n 2 -- coverage run -m pytest tests/integration_tests/test_chainermn.py
         coverage combine --append
