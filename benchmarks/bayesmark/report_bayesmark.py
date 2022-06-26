@@ -189,18 +189,17 @@ class DewanckerRanker:
 class BayesmarkReportBuilder:
     def __init__(self) -> None:
 
-        self._solvers: Set[str] = set()
-        self._datasets: Set[str] = set()
-        self._models: Set[str] = set()
-        self._firsts: Dict[str, int] = defaultdict(int)
-        self._borda: Dict[str, int] = defaultdict(int)
-        self._metric_precedence = str()
-        self._problems_counter = 1
-        self._problems_body = io.StringIO()
+        self.solvers: Set[str] = set()
+        self.datasets: Set[str] = set()
+        self.models: Set[str] = set()
+        self.firsts: Dict[str, int] = defaultdict(int)
+        self.borda: Dict[str, int] = defaultdict(int)
+        self.metric_precedence = str()
+        self.problems: List[Problem] = list()
 
     def set_precedence(self, metrics: List[BaseMetric]) -> None:
 
-        self._metric_precedence = " -> ".join([m.name for m in metrics])
+        self.metric_precedence = " -> ".join([m.name for m in metrics])
 
     def add_problem(
         self,
@@ -242,18 +241,18 @@ class BayesmarkReportBuilder:
 
         for solver, borda in ranking:
             if borda == max(ranking.borda):
-                self._firsts[solver] += 1
-            self._borda[solver] += borda
+                self.firsts[solver] += 1
+            self.borda[solver] += borda
         return self
 
     def add_dataset(self, dataset: str) -> "BayesmarkReportBuilder":
 
-        self._datasets.update(dataset)
+        self.datasets.update(dataset)
         return self
 
     def add_model(self, model: str) -> "BayesmarkReportBuilder":
 
-        self._models.update(model)
+        self.models.update(model)
         return self
 
     def assemble_report(self) -> str:
