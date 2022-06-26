@@ -1,6 +1,6 @@
 import abc
 from collections import defaultdict
-import io
+from dataclasses import dataclass
 import itertools
 import os
 from typing import Dict
@@ -10,16 +10,13 @@ from typing import Optional
 from typing import Set
 from typing import Tuple
 
+from jinja2 import Environment
+from jinja2 import FileSystemLoader
 import numpy as np
 import pandas as pd
 from scipy.special import binom
 from scipy.stats import mannwhitneyu
 
-
-_LINE_BREAK = "\n"
-_TABLE_HEADER = "|Ranking|Solver|"
-_HEADER_FORMAT = "|:---|---:|"
-_OVERALL_HEADER = "|Solver|Borda|Firsts|\n|:---|---:|---:|\n"
 
 Moments = Tuple[float, float]
 Samples = Dict[str, List[float]]
@@ -260,32 +257,10 @@ class BayesmarkReportBuilder:
 
     def assemble_report(self) -> str:
 
-        num_datasets = len(self._datasets)
-        num_models = len(self._models)
-
-        overall_body = io.StringIO()
-        overall_body.write(_OVERALL_HEADER)
-        for solver in self._solvers:
-            row = f"|{solver}|{self._borda[solver]}|{self._firsts[solver]}|"
-            overall_body.write("".join([row, _LINE_BREAK]))
-
-        with open(os.path.join("benchmarks", "bayesmark", "report_template.md")) as file:
-            report_template = file.read()
-
-        # TODO(xadrianzetx) Consider using proper templating engine.
-        report = report_template.format(
-            num_solvers=len(self._solvers),
-            num_datasets=num_datasets,
-            num_models=num_models,
-            precedence=self._metric_precedence,
-            num_problems=num_datasets * num_models,
-            overall=overall_body.getvalue(),
-            leaderboards=self._problems_body.getvalue(),
-        )
-
-        overall_body.close()
-        self._problems_body.close()
-        return report
+        loader = FileSystemLoader(os.path.join("benchmarks", "bayesmark"))
+        env = Environment(loader=loader)
+        report_template = env.get_template("report_template.md")
+        return report_template.render(report=self)
 
 
 def build_report() -> None:
