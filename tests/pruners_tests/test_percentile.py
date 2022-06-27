@@ -171,12 +171,12 @@ def test_get_percentile_intermediate_result_over_trials() -> None:
         trial_ids = [_study._storage.create_new_trial(_study._study_id) for _ in range(trial_num)]
 
         for step, values in enumerate(_intermediate_values):
-            # Study does not have any trials.
+            # Study does not have any complete trials.
             with pytest.raises(ValueError):
-                _all_trials = _study.get_trials()
+                completed_trials = _study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
                 _direction = _study.direction
                 _percentile._get_percentile_intermediate_result_over_trials(
-                    _all_trials, _direction, step, 25, 1
+                    completed_trials, _direction, step, 25, 1
                 )
 
             for i in range(trial_num):
