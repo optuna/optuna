@@ -296,14 +296,14 @@ class RedisStorage(BaseStorage, BaseHeartbeat):
         self._check_study_id(study_id)
 
         study_summary = self._get_study_summary(study_id)
-        return copy.deepcopy(study_summary.user_attrs)
+        return study_summary.user_attrs
 
     def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
 
         self._check_study_id(study_id)
 
         study_summary = self._get_study_summary(study_id)
-        return copy.deepcopy(study_summary.system_attrs)
+        return study_summary.system_attrs
 
     @staticmethod
     def _key_study_param_distribution(study_id: int) -> str:
@@ -690,13 +690,9 @@ class RedisStorage(BaseStorage, BaseHeartbeat):
         deepcopy: bool = True,
         states: Optional[Container[TrialState]] = None,
     ) -> List[FrozenTrial]:
-
-        trials = self._get_trials(study_id, states, set())
-
-        if deepcopy:
-            return copy.deepcopy(trials)
-        else:
-            return trials
+        # Redis will copy data from storage with `mget`.
+        # No further copying is required even if the deepcopy option is true.
+        return self._get_trials(study_id, states, set())
 
     def _get_trials(
         self,

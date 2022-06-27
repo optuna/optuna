@@ -6,7 +6,7 @@ import xgboost as xgb
 
 import optuna
 from optuna.integration.xgboost import XGBoostPruningCallback
-from optuna.testing.pruner import DeterministicPruner
+from optuna.testing.pruners import DeterministicPruner
 
 
 def test_xgboost_pruning_callback_call() -> None:

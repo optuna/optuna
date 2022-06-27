@@ -5,7 +5,7 @@ from ignite.engine import Engine
 import pytest
 
 import optuna
-from optuna.testing.pruner import DeterministicPruner
+from optuna.testing.pruners import DeterministicPruner
 
 
 def test_pytorch_ignite_pruning_handler() -> None:
