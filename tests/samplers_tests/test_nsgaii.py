@@ -155,9 +155,11 @@ def test_constraints_func() -> None:
     [
         [[]],  # empty constraint
         [[-float("inf")], [-1], [0]],  # 1d constraints
-        [[c1, c2] for c1 in [-float("inf"), -1, 0] for c2 in [-float("inf"), -1, 0]],
+        [
+            [c1, c2] for c1 in [-float("inf"), -1, 0] for c2 in [-float("inf"), -1, 0]
+        ],  # 2d-constraints
     ],
-)  # 2d-constraints
+)
 def test_constrained_dominates_feasible_vs_feasible(
     dir1: StudyDirection, dir2: StudyDirection, constraints_list: List[List[float]]
 ) -> None:
