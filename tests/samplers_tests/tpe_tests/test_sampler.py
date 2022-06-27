@@ -768,7 +768,7 @@ def test_constrained_sample_independent_zero_startup() -> None:
     sampler.sample_independent(study, trial, "param-a", dist)
 
 
-@pytest.mark.parametrize("direction, sign", [("minimize", 1), ("maximize", -1)])
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
 @pytest.mark.parametrize(
     "constraints_enabled, constraints_func, expected_violations",
     [
@@ -778,7 +778,6 @@ def test_constrained_sample_independent_zero_startup() -> None:
 )
 def test_get_observation_pairs(
     direction: str,
-    sign: int,
     constraints_enabled: bool,
     constraints_func: Optional[Callable[[optuna.trial.FrozenTrial], Sequence[float]]],
     expected_violations: List[float],
@@ -805,6 +804,7 @@ def test_get_observation_pairs(
     study = optuna.create_study(direction=direction, sampler=sampler)
     study.optimize(objective, n_trials=5, catch=(RuntimeError,))
 
+    sign = 1 if direction == "minimize" else -1
     scores = [
         (-float("inf"), [sign * 5.0]),  # COMPLETE
         (-7, [sign * 2]),  # PRUNED (with intermediate values)
@@ -855,7 +855,7 @@ def test_get_observation_pairs(
     )
 
 
-@pytest.mark.parametrize("direction, sign", [("minimize", 1), ("maximize", -1)])
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
 @pytest.mark.parametrize(
     "constraints_enabled, constraints_func, expected_violations",
     [
@@ -865,7 +865,6 @@ def test_get_observation_pairs(
 )
 def test_get_observation_pairs_multi(
     direction: str,
-    sign: int,
     constraints_enabled: bool,
     constraints_func: Optional[Callable[[optuna.trial.FrozenTrial], Sequence[float]]],
     expected_violations: List[float],
@@ -892,6 +891,7 @@ def test_get_observation_pairs_multi(
     study = optuna.create_study(direction=direction, sampler=sampler)
     study.optimize(objective, n_trials=5, catch=(RuntimeError,))
 
+    sign = 1 if direction == "minimize" else -1
     assert _tpe.sampler._get_observation_pairs(
         study, ["x", "y"], True, constraints_enabled=constraints_enabled
     ) == (
