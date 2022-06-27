@@ -26,15 +26,23 @@ If you feel like giving a hand, here are some ways:
     - __Contribution to Optuna includes not only sending pull requests, but also writing down your comments on issues and pull requests by others, and joining conversations/discussions on [Gitter](https://gitter.im/optuna/optuna).__
     - Also, sharing how you enjoy Optuna is a huge contribution! If you write a blog, let us know about it!
 
-If you write code, we have some conventions as follows.
 
-- [Guidelines](#guidelines)
+# Pull Request Guidelines
+
+If you make a pull request, please follow the guidelines below:
+
+- [Setup Optuna](#setup-optuna)
+- [Checking the Format, Coding Style, and Type Hints](#checking-the-format-coding-style-and-type-hints)
+- [Documentation](#documentation)
 - [Unit Tests](#unit-tests)
 - [Continuous Integration and Local Verification](#continuous-integration-and-local-verification)
 - [Creating a Pull Request](#creating-a-pull-request)
-- [Learning Optuna's Implementation](#learning-optunas-implementation)
 
-## Guidelines
+Detailed conventions and policies to write, test, and maintain Optuna code are described in the [Optuna Wiki](https://github.com/optuna/optuna/wiki).
+
+- [Coding Style Conventions](https://github.com/optuna/optuna/wiki/Coding-Style-Conventions)
+- [Deprecation Policy](https://github.com/optuna/optuna/wiki/Deprecation-policy)
+- [Test Policy](https://github.com/optuna/optuna/wiki/Test-Policy)
 
 ### Setup Optuna
 
@@ -49,7 +57,7 @@ cd optuna
 pip install -e .
 ```
 
-### Checking the Format, Coding Style, and Type Hints
+## Checking the Format, Coding Style, and Type Hints
 
 Code is formatted with [black](https://github.com/psf/black),
 and docstrings are formatted with [blackdoc](https://github.com/keewis/blackdoc).
@@ -77,7 +85,7 @@ $ pip install ".[checking]"
 $ ./formats.sh
 ```
 
-### Documentation
+## Documentation
 
 When adding a new feature to the framework, you also need to document it in the reference.
 The documentation source is stored under the [docs](./docs) directory and written in [reStructuredText format](http://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html).
@@ -159,6 +167,8 @@ pytest tests/${TARGET_TEST_FILE_NAME}
 pytest tests/${TARGET_TEST_FILE_NAME} -k ${TARGET_TEST_FUNCTION_NAME}
 ```
 
+See also the [Optuna Test Policy](https://github.com/optuna/optuna/wiki/Test-Policy), which describes the principles to write and maintain Optuna tests to meet certain quality requirements.
+
 ## Continuous Integration and Local Verification
 
 Optuna repository uses GitHub Actions and CircleCI.
@@ -192,7 +202,7 @@ The description of your pull request should
 - describe the changes
 - if still work-in-progress, describe remaining tasks
 
-## Learning Optuna's Implementation
+# Learning Optuna's Implementation
 
 With Optuna actively being developed and the amount of code growing,
 it has become difficult to get a hold of the overall flow from reading the code.
