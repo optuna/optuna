@@ -129,21 +129,22 @@ def _get_contour_plot(
     if len(sorted_params) == 2:
         x_param = sorted_params[0]
         y_param = sorted_params[1]
-        sub_plots = _generate_contour_subplot(sub_plot_infos[0][0], reverse_scale, target_name)
+        sub_plot_info = sub_plot_infos[0][0]
+        sub_plots = _get_contour_subplot(sub_plot_info, reverse_scale, target_name)
         figure = go.Figure(data=sub_plots, layout=layout)
-        figure.update_xaxes(title_text=x_param, range=sub_plot_infos[0][0].xaxis.range)
-        figure.update_yaxes(title_text=y_param, range=sub_plot_infos[0][0].yaxis.range)
+        figure.update_xaxes(title_text=x_param, range=sub_plot_info.xaxis.range)
+        figure.update_yaxes(title_text=y_param, range=sub_plot_info.yaxis.range)
 
-        if sub_plot_infos[0][0].xaxis.is_cat:
+        if sub_plot_info.xaxis.is_cat:
             figure.update_xaxes(type="category")
-        if sub_plot_infos[0][0].yaxis.is_cat:
+        if sub_plot_info.yaxis.is_cat:
             figure.update_yaxes(type="category")
 
-        if sub_plot_infos[0][0].xaxis.is_log:
-            log_range = [math.log10(p) for p in sub_plot_infos[0][0].xaxis.range]
+        if sub_plot_info.xaxis.is_log:
+            log_range = [math.log10(p) for p in sub_plot_info.xaxis.range]
             figure.update_xaxes(range=log_range, type="log")
-        if sub_plot_infos[0][0].yaxis.is_log:
-            log_range = [math.log10(p) for p in sub_plot_infos[0][0].yaxis.range]
+        if sub_plot_info.yaxis.is_log:
+            log_range = [math.log10(p) for p in sub_plot_info.yaxis.range]
             figure.update_yaxes(range=log_range, type="log")
     else:
         figure = make_subplots(
@@ -156,7 +157,7 @@ def _get_contour_plot(
                 if x_param == y_param:
                     figure.add_trace(go.Scatter(), row=y_i + 1, col=x_i + 1)
                 else:
-                    sub_plots = _generate_contour_subplot(
+                    sub_plots = _get_contour_subplot(
                         sub_plot_infos[y_i][x_i], reverse_scale, target_name
                     )
                     contour = sub_plots[0]
@@ -192,7 +193,7 @@ def _get_contour_plot(
     return figure
 
 
-def _generate_contour_subplot(
+def _get_contour_subplot(
     info: _SubContourInfo,
     reverse_scale: bool,
     target_name: str = "Objective Value",
@@ -271,28 +272,28 @@ def _get_contour_info(
     if len(sorted_params) == 2:
         x_param = sorted_params[0]
         y_param = sorted_params[1]
-        sub_plot_info = _generate_contour_subplot_info(trials, x_param, y_param, target)
+        sub_plot_info = _get_contour_subplot_info(trials, x_param, y_param, target)
         sub_plot_infos = [[sub_plot_info]]
     else:
         sub_plot_infos = []
         for i, y_param in enumerate(sorted_params):
             sub_plot_infos.append([])
             for x_param in sorted_params:
-                sub_plot_info = _generate_contour_subplot_info(trials, x_param, y_param, target)
+                sub_plot_info = _get_contour_subplot_info(trials, x_param, y_param, target)
                 sub_plot_infos[i].append(sub_plot_info)
 
     return _ContourInfo(sorted_params=sorted_params, sub_plot_infos=sub_plot_infos)
 
 
-def _generate_contour_subplot_info(
+def _get_contour_subplot_info(
     trials: List[FrozenTrial],
     x_param: str,
     y_param: str,
     target: Optional[Callable[[FrozenTrial], float]],
 ) -> _SubContourInfo:
 
-    xaxis = _generate_axis_info(trials, x_param)
-    yaxis = _generate_axis_info(trials, y_param)
+    xaxis = _get_axis_info(trials, x_param)
+    yaxis = _get_axis_info(trials, y_param)
 
     if x_param == y_param:
         return _SubContourInfo(xaxis=xaxis, yaxis=yaxis, z_values={})
@@ -331,7 +332,7 @@ def _generate_contour_subplot_info(
     return _SubContourInfo(xaxis=xaxis, yaxis=yaxis, z_values=z_values)
 
 
-def _generate_axis_info(trials: List[FrozenTrial], param_name: str) -> _AxisInfo:
+def _get_axis_info(trials: List[FrozenTrial], param_name: str) -> _AxisInfo:
     values: List[Union[str, float, None]]
     if _is_numerical(trials, param_name):
         values = [t.params.get(param_name) for t in trials]

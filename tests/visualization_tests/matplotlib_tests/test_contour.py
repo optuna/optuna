@@ -18,7 +18,28 @@ from optuna.trial import create_trial
 from optuna.trial import Trial
 from optuna.visualization._contour import PADDING_RATIO
 from optuna.visualization.matplotlib import plot_contour
+from optuna.visualization.matplotlib._contour import _create_zmap
 from optuna.visualization.matplotlib._contour import _interpolate_zmap
+
+
+def test_create_zmap() -> None:
+
+    x_values = np.arange(10)
+    y_values = np.arange(10)
+    z_values = list(np.random.rand(10))
+
+    # we are testing for exact placement of z_values
+    # so also passing x_values and y_values as xi and yi
+    zmap = _create_zmap(x_values.tolist(), y_values.tolist(), z_values, x_values, y_values)
+
+    assert len(zmap) == len(z_values)
+    for coord, value in zmap.items():
+        # test if value under coordinate
+        # still refers to original trial value
+        xidx = coord[0]
+        yidx = coord[1]
+        assert xidx == yidx
+        assert z_values[xidx] == value
 
 
 def test_interpolate_zmap() -> None:
@@ -225,7 +246,7 @@ def test_plot_contour_mixture_category_types() -> None:
         ["param_b", "param_a"],
     ],
 )
-def test_generate_contour_plot_for_few_observations(params: List[str]) -> None:
+def test_plot_contour_for_few_observations(params: List[str]) -> None:
 
     study = prepare_study_with_trials(less_than_two=True)
     figure = plot_contour(study, params)
