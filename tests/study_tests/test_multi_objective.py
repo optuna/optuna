@@ -68,15 +68,15 @@ def test_dominates_invalid() -> None:
     directions = [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
 
     # The numbers of objectives for `t1` and `t2` don't match.
+    t1 = _create_trial([1])  # One objective.
+    t2 = _create_trial([1, 2])  # Two objectives.
     with pytest.raises(ValueError):
-        t1 = _create_trial([1])  # One objective.
-        t2 = _create_trial([1, 2])  # Two objectives.
         _dominates(t1, t2, directions)
 
     # The numbers of objectives and directions don't match.
+    t1 = _create_trial([1])  # One objective.
+    t2 = _create_trial([1])  # One objective.
     with pytest.raises(ValueError):
-        t1 = _create_trial([1])  # One objective.
-        t2 = _create_trial([1])  # One objective.
         _dominates(t1, t2, directions)
 
 
