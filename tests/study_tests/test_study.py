@@ -96,7 +96,7 @@ def check_study(study: Study) -> None:
 
     assert not study._is_multi_objective()
 
-    complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+    complete_trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
     if len(complete_trials) == 0:
         with pytest.raises(ValueError):
             study.best_params

@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from typing import Callable
 from typing import List
+from typing import NamedTuple
 from typing import Optional
 
 import optuna
@@ -22,6 +23,49 @@ if _imports.is_successful():
 
 
 logger = get_logger(__name__)
+
+
+class _ImportancesInfo(NamedTuple):
+    importance_values: List[float]
+    param_names: List[str]
+    importance_labels: List[str]
+
+
+def _get_importances_info(
+    study: Study,
+    evaluator: Optional[BaseImportanceEvaluator],
+    params: Optional[List[str]],
+    target: Optional[Callable[[FrozenTrial], float]],
+    target_name: str,
+) -> _ImportancesInfo:
+    _check_plot_args(study, target, target_name)
+
+    trials = _filter_nonfinite(
+        study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
+    )
+
+    if len(trials) == 0:
+        logger.warning("Study instance does not contain completed trials.")
+        return _ImportancesInfo(
+            importance_values=[],
+            param_names=[],
+            importance_labels=[],
+        )
+
+    importances = optuna.importance.get_param_importances(
+        study, evaluator=evaluator, params=params, target=target
+    )
+
+    importances = OrderedDict(reversed(list(importances.items())))
+    importance_values = list(importances.values())
+    param_names = list(importances.keys())
+    importance_labels = [f"{val:.2f}" if val >= 0.01 else "<0.01" for val in importance_values]
+
+    return _ImportancesInfo(
+        importance_values=importance_values,
+        param_names=param_names,
+        importance_labels=importance_labels,
+    )
 
 
 def plot_param_importances(
@@ -89,7 +133,8 @@ def plot_param_importances(
     """
 
     _imports.check()
-    _check_plot_args(study, target, target_name)
+
+    importances_info = _get_importances_info(study, evaluator, params, target, target_name)
 
     layout = go.Layout(
         title="Hyperparameter Importances",
@@ -98,36 +143,26 @@ def plot_param_importances(
         showlegend=False,
     )
 
-    # Importances cannot be evaluated without completed trials.
-    # Return an empty figure for consistency with other visualization functions.
-    trials = _filter_nonfinite(
-        study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
-    )
-    if len(trials) == 0:
-        logger.warning("Study instance does not contain completed trials.")
+    param_names = importances_info.param_names
+    importance_values = importances_info.importance_values
+
+    if len(importance_values) == 0:
         return go.Figure(data=[], layout=layout)
 
-    importances = optuna.importance.get_param_importances(
-        study, evaluator=evaluator, params=params, target=target
-    )
-
-    importances = OrderedDict(reversed(list(importances.items())))
-    importance_values = list(importances.values())
-    param_names = list(importances.keys())
-    importance_labels = [f"{val:.2f}" if val >= 0.01 else "<0.01" for val in importance_values]
+    hovertemplate = [
+        _make_hovertext(param_name, importance, study)
+        for param_name, importance in zip(param_names, importance_values)
+    ]
 
     fig = go.Figure(
         data=[
             go.Bar(
                 x=importance_values,
                 y=param_names,
-                text=importance_labels,
+                text=importances_info.importance_labels,
                 textposition="outside",
                 cliponaxis=False,  # Ensure text is not clipped.
-                hovertemplate=[
-                    _make_hovertext(param_name, importance, study)
-                    for param_name, importance in importances.items()
-                ],
+                hovertemplate=hovertemplate,
                 marker_color=plotly.colors.sequential.Blues[-4],
                 orientation="h",
             )

@@ -220,7 +220,7 @@ def _get_pareto_front_info(
     if constraints_func is not None:
         feasible_trials = []
         infeasible_trials = []
-        for trial in study.get_trials(states=(TrialState.COMPLETE,)):
+        for trial in study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)):
             if all(map(lambda x: x <= 0.0, constraints_func(trial))):
                 feasible_trials.append(trial)
             else:
@@ -240,7 +240,7 @@ def _get_pareto_front_info(
 
         if include_dominated_trials:
             non_best_trials = _get_non_pareto_front_trials(
-                study.get_trials(deepcopy=False), best_trials
+                study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), best_trials
             )
         else:
             non_best_trials = []
@@ -348,7 +348,7 @@ def _get_non_pareto_front_trials(
 
     non_pareto_trials = []
     for trial in trials:
-        if trial.state == TrialState.COMPLETE and trial not in pareto_trials:
+        if trial not in pareto_trials:
             non_pareto_trials.append(trial)
     return non_pareto_trials
 
