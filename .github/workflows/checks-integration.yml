@@ -35,7 +35,15 @@ jobs:
         pip install --progress-bar off -U .[optional]
         pip install --progress-bar off -U .[integration] --extra-index-url https://download.pytorch.org/whl/cpu
         pip install --progress-bar off -U .[benchmark]
-        pip install --progress-bar off bayesmark
+        pip install --progress-bar off -U bayesmark
+        pip install --progress-bar off -U kurobako
+        curl -L https://github.com/automl/NASLib/archive/refs/heads/Develop.zip -o NASLib-Develop.zip
+        unzip NASLib-Develop.zip
+        mv NASLib-Develop NASLib
+        cd NASLib
+        pip install --upgrade pip setuptools wheel
+        pip install -e .
+        cd ..
 
     - name: black
       run: black . --check --diff
