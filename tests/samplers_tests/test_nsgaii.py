@@ -168,9 +168,10 @@ def test_constrained_dominates_feasible_vs_feasible(
 
     # Check all pairs of trials consisting of these values, i.e.,
     # [-inf, -inf], [-inf, -1], [-inf, 1], [-inf, inf], [-1, -inf], ...
-    # These values should be specified in ascending order.
     values_1d = [-float("inf"), -1, 1, float("inf")]
 
+    # In the following code, we check that the results of _constrained_dominates match
+    # _dominates in all feasible cases.
     values_list = [[x, y] for x in values_1d for y in values_1d]
     values_constraints_list = [(vs, cs) for vs in values_list for cs in constraints_list]
 
@@ -192,15 +193,19 @@ def test_constrained_dominates_feasible_vs_infeasible(
 
     directions = [direction]
 
+    # Feasible constraints.
     constraints_list1 = [
         [c1, c2] for c1 in constraints_1d_feasible for c2 in constraints_1d_feasible
     ]
+    # Infeasible constraints.
     constraints_list2 = [
         [c1, c2]
         for c1 in constraints_1d_feasible + constraints_1d_infeasible
         for c2 in constraints_1d_infeasible
     ]
 
+    # In the following code, we test that the feasible trials always dominate
+    # the infeasible trials.
     for constraints1 in constraints_list1:
         for constraints2 in constraints_list2:
             t1 = _create_frozen_trial(0, [0], constraints1)
@@ -243,6 +248,8 @@ def test_constrained_dominates_infeasible_vs_infeasible(direction: StudyDirectio
         + [[1, float("inf")], [float("inf"), 1], [float("inf"), float("inf")]],
     ]
 
+    # In the following code, we check that constraints with smaller violation dominate
+    # constraints with larger violation, and that they are incomparable in the cases of ties.
     directions = [direction]
     for i in range(len(constraints_infeasible_sorted)):
         # All pairs of constraints in constraints_infeasible_sorted[i] are incomparable.
