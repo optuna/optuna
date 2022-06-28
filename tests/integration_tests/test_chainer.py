@@ -88,7 +88,7 @@ def test_chainer_pruning_extension_observation_nan() -> None:
 
     with patch.object(extension, "_observation_exists", Mock(return_value=True)) as mock:
         with pytest.raises(optuna.TrialPruned):
-            extension(trainer)
+            extension(trainer)  # type: ignore
         assert mock.call_count == 1
 
 
@@ -102,17 +102,17 @@ def test_observation_exists() -> None:
     # Trigger is deactivated. Return False whether trainer has observation or not.
     with patch.object(triggers.IntervalTrigger, "__call__", Mock(return_value=False)) as mock:
         extension = ChainerPruningExtension(trial, "NG", (1, "epoch"))
-        assert extension._observation_exists(trainer) is False
+        assert extension._observation_exists(trainer) is False  # type: ignore
         extension = ChainerPruningExtension(trial, "OK", (1, "epoch"))
-        assert extension._observation_exists(trainer) is False
+        assert extension._observation_exists(trainer) is False  # type: ignore
         assert mock.call_count == 2
 
     # Trigger is activated. Return True if trainer has observation.
     with patch.object(triggers.IntervalTrigger, "__call__", Mock(return_value=True)) as mock:
         extension = ChainerPruningExtension(trial, "NG", (1, "epoch"))
-        assert extension._observation_exists(trainer) is False
+        assert extension._observation_exists(trainer) is False  # type: ignore
         extension = ChainerPruningExtension(trial, "OK", (1, "epoch"))
-        assert extension._observation_exists(trainer) is True
+        assert extension._observation_exists(trainer) is True  # type: ignore
         assert mock.call_count == 2
 
 
@@ -122,4 +122,4 @@ def test_get_float_value() -> None:
     assert 1.0 == ChainerPruningExtension._get_float_value(chainer.Variable(np.array([1.0])))
     assert math.isnan(ChainerPruningExtension._get_float_value(float("nan")))
     with pytest.raises(TypeError):
-        ChainerPruningExtension._get_float_value([])
+        ChainerPruningExtension._get_float_value([])  # type: ignore
