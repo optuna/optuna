@@ -13,7 +13,7 @@ The :mod:`~optuna.visualization` module provides utility functions for plotting 
     The :func:`~optuna.visualization.plot_param_importances` requires the Python package of `scikit-learn <https://github.com/scikit-learn/scikit-learn>`_.
 
     .. _JupyterLab: https://github.com/jupyterlab/jupyterlab
-    .. _installation guide: https://github.com/plotly/plotly.py#jupyterlab-support-python-35
+    .. _installation guide: https://github.com/plotly/plotly.py#jupyterlab-support
 
 .. autosummary::
    :toctree: generated/

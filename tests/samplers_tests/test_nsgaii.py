@@ -419,24 +419,51 @@ def test_fast_non_dominated_sort_missing_constraint_values() -> None:
     ]
 
 
-def test_crowding_distance_sort() -> None:
-    trials = [
-        _create_frozen_trial(0, [5]),
-        _create_frozen_trial(1, [6]),
-        _create_frozen_trial(2, [9]),
-        _create_frozen_trial(3, [0]),
-    ]
-    optuna.samplers.nsgaii._sampler._crowding_distance_sort(trials)
-    assert [t.number for t in trials] == [2, 3, 0, 1]
+@pytest.mark.parametrize(
+    "values, expected_dist",
+    [
+        ([[5], [6], [9], [0]], [6 / 9, 4 / 9, float("inf"), float("inf")]),
+        ([[5, 0], [6, 0], [9, 0], [0, 0]], [6 / 9, 4 / 9, float("inf"), float("inf")]),
+        (
+            [[5, -1], [6, 0], [9, 1], [0, 2]],
+            [float("inf"), 4 / 9 + 2 / 3, float("inf"), float("inf")],
+        ),
+        ([[5]], [0]),
+        ([[5], [5]], [0, 0]),
+        (
+            [[1], [2], [float("inf")]],
+            [float("inf"), float("nan"), float("inf")],
+        ),  # TODO(knshnb): Decide expected behavior for this case.
+        (
+            [[float("-inf")], [1], [2]],
+            [float("inf"), float("nan"), float("inf")],
+        ),  # TODO(knshnb): Decide expected behavior for this case.
+    ],
+)
+def test_calc_crowding_distance(values: List[List[float]], expected_dist: List[float]) -> None:
+    trials = [_create_frozen_trial(i, value) for i, value in enumerate(values)]
+    crowding_dist = optuna.samplers.nsgaii._sampler._calc_crowding_distance(trials)
+    for i in range(len(trials)):
+        assert _nan_equal(crowding_dist[i], expected_dist[i]), i
 
-    trials = [
-        _create_frozen_trial(0, [5, 0]),
-        _create_frozen_trial(1, [6, 0]),
-        _create_frozen_trial(2, [9, 0]),
-        _create_frozen_trial(3, [0, 0]),
-    ]
+
+@pytest.mark.parametrize(
+    "values",
+    [
+        [[5], [6], [9], [0]],
+        [[5, 0], [6, 0], [9, 0], [0, 0]],
+        [[5, -1], [6, 0], [9, 1], [0, 2]],
+        [[1], [2], [float("inf")]],
+        [[float("-inf")], [1], [2]],
+    ],
+)
+def test_crowding_distance_sort(values: List[List[float]]) -> None:
+    """Checks that trials are sorted by the values of `_calc_crowding_distance`."""
+    trials = [_create_frozen_trial(i, value) for i, value in enumerate(values)]
+    crowding_dist = optuna.samplers.nsgaii._sampler._calc_crowding_distance(trials)
     optuna.samplers.nsgaii._sampler._crowding_distance_sort(trials)
-    assert [t.number for t in trials] == [2, 3, 0, 1]
+    sorted_dist = [crowding_dist[t.number] for t in trials]
+    assert sorted_dist == sorted(sorted_dist, reverse=True)
 
 
 def test_study_system_attr_for_population_cache() -> None:

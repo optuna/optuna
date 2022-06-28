@@ -409,8 +409,8 @@ class NSGAIISampler(BaseSampler):
         self._random_sampler.after_trial(study, trial, state, values)
 
 
-def _crowding_distance_sort(population: List[FrozenTrial]) -> None:
-    manhattan_distances = defaultdict(float)
+def _calc_crowding_distance(population: List[FrozenTrial]) -> DefaultDict[int, float]:
+    manhattan_distances: DefaultDict[int, float] = defaultdict(float)
     for i in range(len(population[0].values)):
         population.sort(key=lambda x: cast(float, x.values[i]))
 
@@ -433,7 +433,11 @@ def _crowding_distance_sort(population: List[FrozenTrial]) -> None:
             assert v_low is not None
 
             manhattan_distances[population[j].number] += (v_high - v_low) / width
+    return manhattan_distances
 
+
+def _crowding_distance_sort(population: List[FrozenTrial]) -> None:
+    manhattan_distances = _calc_crowding_distance(population)
     population.sort(key=lambda x: manhattan_distances[x.number])
     population.reverse()
 

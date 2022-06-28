@@ -26,8 +26,9 @@ with try_import() as _imports:
 class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
     """Mean Decrease Impurity (MDI) parameter importance evaluator.
 
-    This evaluator fits a random forest that predicts objective values given hyperparameter
-    configurations. Feature importances are then computed using MDI.
+    This evaluator fits fits a random forest regression model that predicts the objective values
+    of :class:`~optuna.trial.TrialState.COMPLETE` trials given their parameter configurations.
+    Feature importances are then computed using MDI.
 
     .. note::
 
