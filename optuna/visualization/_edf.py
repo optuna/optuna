@@ -25,6 +25,7 @@ _logger = get_logger(__name__)
 
 NUM_SAMPLES_X_AXIS = 100
 
+
 class _EDFLineInfo(NamedTuple):
     study_name: str
     y_values: np.ndarray
