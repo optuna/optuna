@@ -35,6 +35,7 @@ jobs:
         pip install --progress-bar off -U .[optional]
         pip install --progress-bar off -U .[integration] --extra-index-url https://download.pytorch.org/whl/cpu
         pip install --progress-bar off -U .[benchmark]
+        pip install --progress-bar off bayesmark
 
     - name: black
       run: black . --check --diff
