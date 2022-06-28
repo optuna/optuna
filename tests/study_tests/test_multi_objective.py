@@ -29,9 +29,9 @@ def test_dominates_1d_not_equal(v1: float, v2: float) -> None:
 
 
 @pytest.mark.parametrize("v", [0, -float("inf"), float("inf")])
-@pytest.mark.parametrize("dir", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
-def test_dominates_1d_equal(v: float, dir: StudyDirection) -> None:
-    assert not _dominates(_create_trial([v]), _create_trial([v]), [dir])
+@pytest.mark.parametrize("direction", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
+def test_dominates_1d_equal(v: float, direction: StudyDirection) -> None:
+    assert not _dominates(_create_trial([v]), _create_trial([v]), [direction])
 
 
 def test_dominates_2d() -> None:
@@ -42,25 +42,22 @@ def test_dominates_2d() -> None:
     # These values should be specified in ascending order.
     vals = [-float("inf"), -1, 1, float("inf")]
 
-    # This function converts integer indices to values.
-    def get_values(index: Sequence[int]) -> List[float]:
-        return [vals[index[0]], vals[-1 - index[1]]]
 
     # Generate the set of all possible indices.
     all_indices = set((i, j) for i in range(len(vals)) for j in range(len(vals)))
     for (i1, j1) in all_indices:
         # Generate the set of all indices that dominates the current index.
-        dominating_indices = set((i2, j2) for i2 in range(i1 + 1) for j2 in range(j1 + 1))
+        dominating_indices = set((i2, j2) for i2 in range(i1 + 1) for j2 in range(j1, len(vals)))
         dominating_indices -= {(i1, j1)}
 
         for (i2, j2) in dominating_indices:
-            t1 = _create_trial(get_values([i1, j1]))
-            t2 = _create_trial(get_values([i2, j2]))
+            t1 = _create_trial([vals[i1], vals[j1]])
+            t2 = _create_trial([vals[i2], vals[j2]])
             assert _dominates(t2, t1, directions)
 
         for (i2, j2) in all_indices - dominating_indices:
-            t1 = _create_trial(get_values([i1, j1]))
-            t2 = _create_trial(get_values([i2, j2]))
+            t1 = _create_trial([vals[i1], vals[j1]])
+            t2 = _create_trial([vals[i2], vals[j2]])
             assert not _dominates(t2, t1, directions)
 
 
