@@ -652,9 +652,10 @@ def test_crossover_duplicated_param_values(crossover: BaseCrossover) -> None:
         (VSBXCrossover(), 0.0, np.array([2.0, 3.0])),  # c1 = (p1 + p2) / 2.
         (VSBXCrossover(), 0.5, np.array([3.0, 4.0])),  # p2.
         (VSBXCrossover(), 1.0, np.array([3.0, 4.0])),  # p2.
+        # p1, p2 and p3 are on x + 1, and distance from child to PSL is 0.
+        (UNDXCrossover(), -0.5, np.array([3.0, 4.0])),  # [2, 3] + [-1, -1] + [0, 0].
         (UNDXCrossover(), 0.0, np.array([2.0, 3.0])),  # [2, 3] + [0, 0] + [0, 0].
-        (UNDXCrossover(), 0.5, np.array([1.0, 2.0])),  # [2, 3] + [-1, -1] + [1, 1].
-        (UNDXCrossover(), 1.0, np.array([0.0, 1.0])),  # [2, 3] + [-2, -2] + [0, 0].
+        (UNDXCrossover(), 0.5, np.array([1.0, 2.0])),  # [2, 3] + [-1, -1] + [0, 0].
     ],
 )
 def test_crossover_deterministic(
