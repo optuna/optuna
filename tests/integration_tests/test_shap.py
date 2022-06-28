@@ -1,22 +1,15 @@
-from collections import OrderedDict
 from typing import cast
-from typing import List
 from typing import Tuple
 
 import pytest
 
-import optuna
 from optuna import create_study
-from optuna import samplers
 from optuna import Trial
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
-from optuna.importance import get_param_importances
 from optuna.integration.shap import ShapleyImportanceEvaluator
 from optuna.samplers import RandomSampler
-from optuna.testing.storages import STORAGE_MODES
-from optuna.testing.storages import StorageSupplier
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 
@@ -183,4 +176,3 @@ def test_multi_objective_shap_importance_evaluator_with_infinite(
     # Obtained importance scores should be the same between with inf and without inf,
     # because the last trial whose objective value is an inf is ignored.
     assert param_importance_with_inf == param_importance_without_inf
-
