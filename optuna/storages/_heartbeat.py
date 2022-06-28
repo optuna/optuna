@@ -1,8 +1,12 @@
 import abc
 import copy
+from threading import Event
+from threading import Thread
+from types import TracebackType
 from typing import Callable
 from typing import List
 from typing import Optional
+from typing import Type
 
 import optuna
 from optuna._experimental import experimental_func
@@ -66,6 +70,76 @@ class BaseHeartbeat(metaclass=abc.ABCMeta):
             The failed trial callback function if it is set, otherwise :obj:`None`.
         """
         raise NotImplementedError()
+
+
+class BaseHeartbeatThread(metaclass=abc.ABCMeta):
+    def __enter__(self) -> None:
+        self.start()
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[Exception]],
+        exc_value: Optional[Exception],
+        traceback: Optional[TracebackType],
+    ) -> None:
+        self.join()
+
+    @abc.abstractmethod
+    def start(self) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def join(self) -> None:
+        raise NotImplementedError()
+
+
+class NullHeartbeatThread(BaseHeartbeatThread):
+    def __init__(self) -> None:
+        pass
+
+    def start(self) -> None:
+        pass
+
+    def join(self) -> None:
+        pass
+
+
+class HeartbeatThread(BaseHeartbeatThread):
+    def __init__(self, trial_id: int, heartbeat: BaseHeartbeat) -> None:
+        self._trial_id = trial_id
+        self._heartbeat = heartbeat
+        self._thread: Optional[Thread] = None
+        self._stop_event: Optional[Event] = None
+
+    def start(self) -> None:
+        self._stop_event = Event()
+        self._thread = Thread(
+            target=self._record_heartbeat, args=(self._trial_id, self._heartbeat, self._stop_event)
+        )
+        self._thread.start()
+
+    def join(self) -> None:
+        assert self._stop_event is not None
+        assert self._thread is not None
+        self._stop_event.set()
+        self._thread.join()
+
+    @staticmethod
+    def _record_heartbeat(trial_id: int, heartbeat: BaseHeartbeat, stop_event: Event) -> None:
+        heartbeat_interval = heartbeat.get_heartbeat_interval()
+        assert heartbeat_interval is not None
+        while True:
+            heartbeat.record_heartbeat(trial_id)
+            if stop_event.wait(timeout=heartbeat_interval):
+                return
+
+
+def get_heartbeat_thread(trial_id: int, storage: BaseStorage) -> BaseHeartbeatThread:
+    if is_heartbeat_enabled(storage):
+        assert isinstance(storage, BaseHeartbeat)
+        return HeartbeatThread(trial_id, storage)
+    else:
+        return NullHeartbeatThread()
 
 
 @experimental_func("2.9.0")

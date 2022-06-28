@@ -8,7 +8,6 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
-from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -24,8 +23,8 @@ from optuna.storages import RedisStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
-from optuna.testing.storage import STORAGE_MODES
-from optuna.testing.storage import StorageSupplier
+from optuna.testing.storages import STORAGE_MODES
+from optuna.testing.storages import StorageSupplier
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -933,19 +932,15 @@ def test_get_all_trials_deepcopy_option(storage_mode: str) -> None:
         study_summaries, study_to_trials = _setup_studies(storage, n_study=2, n_trial=5, seed=49)
 
         for study_id in study_summaries:
-            with patch("copy.deepcopy", wraps=copy.deepcopy) as mock_object:
-                trials0 = storage.get_all_trials(study_id, deepcopy=True)
-                assert mock_object.call_count > 0
-                assert len(trials0) == len(study_to_trials[study_id])
+            trials0 = storage.get_all_trials(study_id, deepcopy=True)
+            assert len(trials0) == len(study_to_trials[study_id])
 
             # Check modifying output does not break the internal state of the storage.
             trials0_original = copy.deepcopy(trials0)
             trials0[0].params["x"] = 0.1
 
-            with patch("copy.deepcopy", wraps=copy.deepcopy) as mock_object:
-                trials1 = storage.get_all_trials(study_id, deepcopy=False)
-                assert mock_object.call_count == 0
-                assert trials0_original == trials1
+            trials1 = storage.get_all_trials(study_id, deepcopy=False)
+            assert trials0_original == trials1
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)

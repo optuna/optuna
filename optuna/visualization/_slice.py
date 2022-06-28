@@ -86,7 +86,7 @@ def _get_slice_plot(
 
     layout = go.Layout(title="Slice Plot")
 
-    trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
+    trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
 
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")

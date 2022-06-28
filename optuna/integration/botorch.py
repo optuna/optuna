@@ -445,7 +445,7 @@ class BoTorchSampler(BaseSampler):
         if len(search_space) == 0:
             return {}
 
-        trials = [t for t in study.get_trials(deepcopy=False) if t.state == TrialState.COMPLETE]
+        trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
 
         n_trials = len(trials)
         if n_trials < self._n_startup_trials:
@@ -565,8 +565,6 @@ class BoTorchSampler(BaseSampler):
                         f"Constraints should be a sequence of floats but got {type(con).__name__}."
                     )
                 constraints = tuple(con)
-            except Exception:
-                raise
             finally:
                 assert constraints is None or isinstance(constraints, tuple)
 

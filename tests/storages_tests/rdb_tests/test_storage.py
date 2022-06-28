@@ -22,7 +22,7 @@ from optuna.storages._rdb.models import SCHEMA_VERSION
 from optuna.storages._rdb.models import TrialHeartbeatModel
 from optuna.storages._rdb.models import VersionInfoModel
 from optuna.storages._rdb.storage import _create_scoped_session
-from optuna.testing.storage import StorageSupplier
+from optuna.testing.storages import StorageSupplier
 from optuna.testing.threading import _TestableThread
 from optuna.trial import Trial
 
@@ -323,7 +323,7 @@ def test_record_heartbeat() -> None:
         storage.heartbeat_interval = heartbeat_interval
         study = create_study(storage=storage)
         # Exceptions raised in spawned threads are caught by `_TestableThread`.
-        with patch("optuna.study._optimize.Thread", _TestableThread):
+        with patch("optuna.storages._heartbeat.Thread", _TestableThread):
             study.optimize(objective, n_trials=n_trials)
 
         trial_heartbeats = []
