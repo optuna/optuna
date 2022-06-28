@@ -1,4 +1,3 @@
-from typing import List
 from typing import Sequence
 
 import pytest
@@ -42,6 +41,24 @@ def test_dominates_2d() -> None:
     # These values should be specified in ascending order.
     vals = [-float("inf"), -1, 1, float("inf")]
 
+    # The following table illustrates an example of dominance relations.
+    # "✔" cells in the table dominates the "◇" cell in (MINIMIZE, MAXIMIZE) setting.
+    #
+    #                       v[1]
+    #      ╔═════╤═════╤═════╤═════╤═════╗
+    #      ║     │ -∞  │ -1  │  1  │  ∞  ║
+    #      ╟─────┼─────┼─────┼─────┼─────╢
+    #      ║ -∞  │     │     │  ✔  │  ✔  ║
+    #      ╟─────┼─────┼─────┼─────┼─────╢
+    #      ║ -1  │     │     │  ✔  │  ✔  ║
+    # v[0] ╟─────┼─────┼─────┼─────┼─────╢
+    #      ║  1  │     │     │  ◇  │  ✔  ║
+    #      ╟─────┼─────┼─────┼─────┼─────╢
+    #      ║  ∞  │     │     │     │     ║
+    #      ╚═════╧═════╧═════╧═════╧═════╝
+    #
+    # In the following code, we check that for each position of "◇" cell, the relation
+    # above holds.
 
     # Generate the set of all possible indices.
     all_indices = set((i, j) for i in range(len(vals)) for j in range(len(vals)))
