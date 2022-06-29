@@ -102,12 +102,7 @@ def _get_parallel_coordinate_plot(
     ax.spines["bottom"].set_visible(False)
 
     # Prepare data for plotting.
-    if len(info.dims_params) == 0:
-        _logger.warning("Your study does not have any completed trials.")
-        return ax
-
-    if len(info.dim_objective.values) == 0:
-        _logger.warning("Your study has only completed trials with missing parameters.")
+    if len(info.dims_params) == 0 or len(info.dim_objective.values) == 0:
         return ax
 
     obj_min = info.dim_objective.range[0]

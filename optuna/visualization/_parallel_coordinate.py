@@ -116,12 +116,7 @@ def _get_parallel_coordinate_plot(
 
     info = _get_parallel_coordinate_info(study, params, target, target_name)
 
-    if len(info.dims_params) == 0:
-        _logger.warning("Your study does not have any completed trials.")
-        return go.Figure(data=[], layout=layout)
-
-    if len(info.dim_objective.values) == 0:
-        _logger.warning("Your study has only completed trials with missing parameters.")
+    if len(info.dims_params) == 0 or len(info.dim_objective.values) == 0:
         return go.Figure(data=[], layout=layout)
 
     dims = _get_dims_from_info(info)
@@ -178,7 +173,12 @@ def _get_parallel_coordinate_info(
     objective_range = (min(objectives), max(objectives)) if len(objectives) > 0 else (0, 0)
     dim_objective = _DimensionInfo(label=target_name, values=objectives, range=objective_range)
 
-    if len(trials) == 0 or len(objectives) == 0:
+    if len(trials) == 0:
+        _logger.warning("Your study does not have any completed trials.")
+        return _ParallelCoordinateInfo(dim_objective=dim_objective, dims_params=[])
+
+    if len(objectives) == 0:
+        _logger.warning("Your study has only completed trials with missing parameters.")
         return _ParallelCoordinateInfo(dim_objective=dim_objective, dims_params=[])
 
     numeric_cat_params_indices: List[int] = []
