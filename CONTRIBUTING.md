@@ -27,7 +27,7 @@ If you feel like giving a hand, here are some ways:
     - Also, sharing how you enjoy Optuna is a huge contribution! If you write a blog, let us know about it!
 
 
-# Pull Request Guidelines
+## Pull Request Guidelines
 
 If you make a pull request, please follow the guidelines below:
 
@@ -57,7 +57,7 @@ cd optuna
 pip install -e .
 ```
 
-## Checking the Format, Coding Style, and Type Hints
+### Checking the Format, Coding Style, and Type Hints
 
 Code is formatted with [black](https://github.com/psf/black),
 and docstrings are formatted with [blackdoc](https://github.com/keewis/blackdoc).
@@ -85,7 +85,7 @@ $ pip install ".[checking]"
 $ ./formats.sh
 ```
 
-## Documentation
+### Documentation
 
 When adding a new feature to the framework, you also need to document it in the reference.
 The documentation source is stored under the [docs](./docs) directory and written in [reStructuredText format](http://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html).
@@ -139,7 +139,7 @@ Two specific conventions and limitations for Optuna tutorials:
 2. Execution time of the new content needs to be less than three minutes. This limitation derives from Read The Docs. If your content runs some hyperparameter optimization, set the `timeout` to 180 or less. You can check this limitation on [Read the Docs - Build Process](https://docs.readthedocs.io/en/stable/builds.html).
 
 
-## Unit Tests
+### Unit Tests
 
 When adding a new feature or fixing a bug, you also need to write sufficient test code.
 We use [pytest](https://pytest.org/) as the testing framework and
@@ -169,20 +169,18 @@ pytest tests/${TARGET_TEST_FILE_NAME} -k ${TARGET_TEST_FUNCTION_NAME}
 
 See also the [Optuna Test Policy](https://github.com/optuna/optuna/wiki/Test-Policy), which describes the principles to write and maintain Optuna tests to meet certain quality requirements.
 
-## Continuous Integration and Local Verification
+### Continuous Integration and Local Verification
 
 Optuna repository uses GitHub Actions and CircleCI.
 
 Currently, we are migrating to GitHub Actions but still we use CircleCI for testing `document`
 because it makes it much easier to check built documentation.
 
-## Creating a Pull Request
+### Creating a Pull Request
 
-When you are ready to create a pull request, please try to keep the following in mind:
+When you are ready to create a pull request, please try to keep the following in mind.
 
-### Title
-
-The title of your pull request should
+First, the **title** of your pull request should:
 
 - briefly describe and reflect the changes
 - wrap any code with backticks
@@ -190,19 +188,17 @@ The title of your pull request should
 
 *The title will be directly visible in the release notes.*
 
-#### Example
+For example:
 
-Introduces Tree-structured Parzen Estimator to `optuna.samplers`
+- Introduces Tree-structured Parzen Estimator to `optuna.samplers`
 
-### Description
-
-The description of your pull request should
+Second, the **description** of your pull request should:
 
 - describe the motivation
 - describe the changes
 - if still work-in-progress, describe remaining tasks
 
-# Learning Optuna's Implementation
+## Learning Optuna's Implementation
 
 With Optuna actively being developed and the amount of code growing,
 it has become difficult to get a hold of the overall flow from reading the code.
