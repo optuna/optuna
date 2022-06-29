@@ -1,6 +1,7 @@
 import datetime
 from typing import Any
 from typing import Dict
+from typing import Optional
 
 import pytest
 
@@ -8,10 +9,12 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
+from optuna.study.study import create_study
 from optuna.trial import BaseTrial
 from optuna.trial import create_trial
 from optuna.trial import FixedTrial
 from optuna.trial import FrozenTrial
+from optuna.trial import Trial
 
 
 parametrize_trial_type = pytest.mark.parametrize("trial_type", [FixedTrial, FrozenTrial])
@@ -19,15 +22,26 @@ parametrize_trial_type = pytest.mark.parametrize("trial_type", [FixedTrial, Froz
 
 def _create_trial(
     trial_type: type,
-    params: Dict[str, Any] = {"x": 10},
-    distributions: Dict[str, BaseDistribution] = {"x": FloatDistribution(5, 12)},
+    params: Optional[Dict[str, Any]] = None,
+    distributions: Optional[Dict[str, BaseDistribution]] = None,
 ) -> BaseTrial:
+    if params is None:
+        params = {"x": 10}
+    assert params is not None
+    if distributions is None:
+        distributions = {"x": FloatDistribution(5, 12)}
+    assert distributions is not None
+
     if trial_type == FixedTrial:
         return FixedTrial(params)
     elif trial_type == FrozenTrial:
         trial = create_trial(value=0.2, params=params, distributions=distributions)
         trial.number = 0
         return trial
+    elif trial_type == Trial:
+        study = create_study()
+        study.enqueue_trial(params)
+        return study.ask()
     else:
         assert False
 
@@ -145,19 +159,25 @@ def test_suggest_categorical(trial_type: type) -> None:
             trial.suggest_categorical("x", [{"foo": "bar"}])  # type: ignore
 
 
-@parametrize_trial_type
+@pytest.mark.parametrize("trial_type", [FixedTrial, FrozenTrial, Trial])
 @pytest.mark.parametrize(
     ("suggest_func", "distribution"),
     [
-        (lambda self, *args: self.suggest_int(*args), IntDistribution(1, 10)),
-        (lambda self, *args: self.suggest_int(*args, log=True), IntDistribution(1, 10, log=True)),
-        (lambda self, *args: self.suggest_int(*args, step=2), IntDistribution(1, 10, step=2)),
-        (lambda self, *args: self.suggest_float(*args), FloatDistribution(1, 10)),
+        (lambda trial, *args: trial.suggest_int(*args), IntDistribution(1, 10)),
         (
-            lambda self, *args: self.suggest_float(*args, log=True),
+            lambda trial, *args: trial.suggest_int(*args, log=True),
+            IntDistribution(1, 10, log=True),
+        ),
+        (lambda trial, *args: trial.suggest_int(*args, step=2), IntDistribution(1, 10, step=2)),
+        (lambda trial, *args: trial.suggest_float(*args), FloatDistribution(1, 10)),
+        (
+            lambda trial, *args: trial.suggest_float(*args, log=True),
             FloatDistribution(1, 10, log=True),
         ),
-        (lambda self, *args: self.suggest_float(*args, step=1), FloatDistribution(1, 10, step=1)),
+        (
+            lambda trial, *args: trial.suggest_float(*args, step=1),
+            FloatDistribution(1, 10, step=1),
+        ),
     ],
 )
 def test_not_contained_param(
@@ -172,7 +192,7 @@ def test_not_contained_param(
         assert suggest_func(trial, "x", 10, 100) == 1
 
 
-@parametrize_trial_type
+@pytest.mark.parametrize("trial_type", [FixedTrial, FrozenTrial, Trial])
 def test_set_user_attrs(trial_type: type) -> None:
 
     trial = _create_trial(trial_type)
@@ -180,7 +200,7 @@ def test_set_user_attrs(trial_type: type) -> None:
     assert trial.user_attrs["data"] == "MNIST"
 
 
-@parametrize_trial_type
+@pytest.mark.parametrize("trial_type", [FixedTrial, FrozenTrial, Trial])
 def test_set_system_attrs(trial_type: type) -> None:
 
     trial = _create_trial(trial_type)
@@ -191,7 +211,7 @@ def test_set_system_attrs(trial_type: type) -> None:
 @parametrize_trial_type
 def test_report(trial_type: type) -> None:
 
-    # FrozenTrial ignores reported values.
+    # Ignores reported values.
     trial = _create_trial(trial_type)
     trial.report(1.0, 1)
     trial.report(2.0, 2)
@@ -200,7 +220,7 @@ def test_report(trial_type: type) -> None:
 @parametrize_trial_type
 def test_should_prune(trial_type: type) -> None:
 
-    # FrozenTrial never prunes trials.
+    # Never prunes trials.
     assert not _create_trial(trial_type).should_prune()
 
 
