@@ -206,8 +206,8 @@ class BayesmarkReportBuilder:
         self.models: Set[str] = set()
         self.firsts: Dict[str, int] = defaultdict(int)
         self.borda: Dict[str, int] = defaultdict(int)
-        self.metric_precedence = str()
-        self.problems: List[Problem] = list()
+        self.metric_precedence = ""
+        self.problems: List[Problem] = []
 
     def set_precedence(self, metrics: List[BaseMetric]) -> None:
 
