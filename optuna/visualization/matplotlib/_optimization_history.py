@@ -1,6 +1,5 @@
 import itertools
 from typing import Callable
-from typing import cast
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -11,9 +10,9 @@ import numpy as np
 from optuna._experimental import experimental_func
 from optuna.logging import get_logger
 from optuna.study import Study
-from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+from optuna.visualization._optimization_history import _get_optimization_history_error_bar_info
 from optuna.visualization._optimization_history import _get_optimization_history_info_list
 from optuna.visualization._utils import _check_plot_args
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
@@ -140,73 +139,32 @@ def _get_optimization_histories_with_error_bar(
     ax: "Axes",
 ) -> "Axes":
 
-    max_trial_number = np.max(
-        [
-            trial.number
-            for study in studies
-            for trial in study.get_trials(states=(TrialState.COMPLETE,))
-        ]
-    )
-
-    _target: Callable[[FrozenTrial], float]
-    if target is None:
-
-        def _target(t: FrozenTrial) -> float:
-            return cast(float, t.value)
-
-    else:
-        _target = target
-
-    target_values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
-    for study in studies:
-        trials = study.get_trials(states=(TrialState.COMPLETE,))
-        for t in trials:
-            target_values[t.number].append(_target(t))
-
-    mean_of_target_values = [np.mean(v) if len(v) > 0 else np.nan for v in target_values]
-    std_of_target_values = [np.std(v) if len(v) > 0 else np.nan for v in target_values]
-    trial_numbers = np.arange(max_trial_number + 2)[
-        [v is not np.nan for v in mean_of_target_values]
-    ]
-    means = np.asarray(mean_of_target_values)[trial_numbers]
-    stds = np.asarray(std_of_target_values)[trial_numbers]
-
+    eb_info = _get_optimization_history_error_bar_info(studies, target, target_name)
     plt.errorbar(
-        x=trial_numbers,
-        y=means,
-        yerr=stds,
+        x=eb_info.trial_numbers,
+        y=eb_info.value_means,
+        yerr=eb_info.value_stds,
         capsize=5,
         fmt="o",
         color="tab:blue",
     )
-    ax.scatter(trial_numbers, means, color="tab:blue", label=target_name)
+    ax.scatter(
+        eb_info.trial_numbers, eb_info.value_means, color="tab:blue", label=eb_info.label_name
+    )
 
-    if target is None:
-        best_values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
-        for study in studies:
-            trials = study.get_trials(states=(TrialState.COMPLETE,))
-            if study.direction == StudyDirection.MINIMIZE:
-                best_vs = np.minimum.accumulate([cast(float, t.values) for t in trials])
-            else:
-                best_vs = np.maximum.accumulate([cast(float, t.values) for t in trials])
-
-            for i, t in enumerate(trials):
-                best_values[t.number].append(best_vs[i])
-
-        mean_of_best_values = [np.mean(v) if len(v) > 0 else np.nan for v in best_values]
-        std_of_best_values = [np.std(v) if len(v) > 0 else np.nan for v in best_values]
-        means = np.asarray(mean_of_best_values)[trial_numbers]
-        stds = np.asarray(std_of_best_values)[trial_numbers]
-
-        ax.plot(trial_numbers, means, color="tab:red", label="Best Value")
+    if eb_info.best_value_means is not None:
+        ax.plot(
+            eb_info.trial_numbers, eb_info.best_value_means, color="tab:red", label="Best Value"
+        )
+        lower = np.array(eb_info.best_value_means) - np.array(eb_info.best_value_stds)
+        upper = np.array(eb_info.best_value_means) + np.array(eb_info.best_value_stds)
         ax.fill_between(
-            x=trial_numbers,
-            y1=means - stds,
-            y2=means + stds,
+            x=eb_info.trial_numbers,
+            y1=lower,
+            y2=upper,
             color="tab:red",
             alpha=0.4,
         )
-
         ax.legend()
 
     return ax

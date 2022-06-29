@@ -66,6 +66,59 @@ def _get_optimization_history_info_list(
     return optimization_history_info_list
 
 
+class _OptimizationHistoryErrorBarInfo(NamedTuple):
+    trial_numbers: List[int]
+    value_means: List[float]
+    value_stds: List[float]
+    label_name: str
+    best_value_means: Optional[List[float]]
+    best_value_stds: Optional[List[float]]
+    best_label_name: Optional[str]
+
+
+def _get_optimization_history_error_bar_info(
+    studies: List[Study],
+    target: Optional[Callable[[FrozenTrial], float]],
+    target_name: str,
+) -> _OptimizationHistoryErrorBarInfo:
+    info_list = _get_optimization_history_info_list(studies, target, target_name)
+    max_trial_number = max(max(info.trial_numbers) for info in info_list)
+
+    # Calculate mean and std of target values for each trial number.
+    values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
+    # TODO(knshnb): Took over `+2` from the previous code, but not sure why it is necessary.
+    for info in info_list:
+        for trial_number, value in zip(info.trial_numbers, info.values):
+            values[trial_number].append(value)
+    mean_of_values = [np.mean(v) if len(v) > 0 else None for v in values]
+    std_of_values = [np.std(v) if len(v) > 0 else None for v in values]
+    trial_numbers = np.arange(max_trial_number + 2)[[v is not None for v in mean_of_values]]
+    value_means = np.asarray(mean_of_values)[trial_numbers]
+    value_stds = np.asarray(std_of_values)[trial_numbers]
+
+    if target is None:
+        # Calculate mean and std of previous best target values for each trial number.
+        best_values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
+        for info in info_list:
+            assert info.best_values is not None
+            for trial_number, best_value in zip(info.trial_numbers, info.best_values):
+                best_values[trial_number].append(best_value)
+        mean_of_best_values = [np.mean(v) if len(v) > 0 else None for v in best_values]
+        std_of_best_values = [np.std(v) if len(v) > 0 else None for v in best_values]
+        best_value_means = np.asarray(mean_of_best_values)[trial_numbers]
+        best_value_stds = np.asarray(std_of_best_values)[trial_numbers]
+
+    return _OptimizationHistoryErrorBarInfo(
+        trial_numbers=trial_numbers,
+        value_means=list(value_means),
+        value_stds=list(value_stds),
+        label_name=target_name,
+        best_value_means=list(best_value_means),
+        best_value_stds=list(best_value_stds),
+        best_label_name="Best Value",
+    )
+
+
 def plot_optimization_history(
     study: Union[Study, Sequence[Study]],
     *,
@@ -166,79 +219,44 @@ def _get_optimization_histories_with_error_bar(
     target_name: str,
     layout: "go.Layout",
 ) -> "go.Figure":
-    max_trial_number = np.max(
-        [
-            trial.number
-            for study in studies
-            for trial in study.get_trials(states=(TrialState.COMPLETE,))
-        ]
-    )
-
-    _target: Callable[[FrozenTrial], float]
-    if target is None:
-
-        def _target(t: FrozenTrial) -> float:
-            return cast(float, t.value)
-
-    else:
-        _target = target
-
-    target_values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
-    for study in studies:
-        trials = study.get_trials(states=(TrialState.COMPLETE,))
-        for t in trials:
-            target_values[t.number].append(_target(t))
-
-    mean_of_target_values = [np.mean(v) if len(v) > 0 else None for v in target_values]
-    std_of_target_values = [np.std(v) if len(v) > 0 else None for v in target_values]
-    trial_numbers = np.arange(max_trial_number + 2)[[v is not None for v in mean_of_target_values]]
-    means = np.asarray(mean_of_target_values)[trial_numbers]
-    stds = np.asarray(std_of_target_values)[trial_numbers]
+    eb_info = _get_optimization_history_error_bar_info(studies, target, target_name)
     traces = [
         go.Scatter(
-            x=trial_numbers,
-            y=means,
+            x=eb_info.trial_numbers,
+            y=eb_info.value_means,
             error_y={
                 "type": "data",
-                "array": stds,
+                "array": eb_info.value_stds,
                 "visible": True,
             },
             mode="markers",
-            name=target_name,
+            name=eb_info.label_name,
         )
     ]
 
-    if target is None:
-        best_values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
-        for study in studies:
-            trials = study.get_trials(states=(TrialState.COMPLETE,))
-
-            if study.direction == StudyDirection.MINIMIZE:
-                best_vs = np.minimum.accumulate([cast(float, t.value) for t in trials])
-            else:
-                best_vs = np.maximum.accumulate([cast(float, t.value) for t in trials])
-
-            for i, t in enumerate(trials):
-                best_values[t.number].append(best_vs[i])
-
-        mean_of_best_values = [np.mean(v) if len(v) > 0 else None for v in best_values]
-        std_of_best_values = [np.std(v) if len(v) > 0 else None for v in best_values]
-        means = np.asarray(mean_of_best_values)[trial_numbers]
-        stds = np.asarray(std_of_best_values)[trial_numbers]
-        traces.append(go.Scatter(x=trial_numbers, y=means, name="Best Value"))
+    if eb_info.best_value_means is not None:
         traces.append(
             go.Scatter(
-                x=trial_numbers,
-                y=means + stds,
+                x=eb_info.trial_numbers,
+                y=eb_info.best_value_means,
+                name=eb_info.best_label_name,
+            )
+        )
+        upper = np.array(eb_info.best_value_means) + np.array(eb_info.best_value_stds)
+        traces.append(
+            go.Scatter(
+                x=eb_info.trial_numbers,
+                y=upper,
                 mode="lines",
                 line=dict(width=0.01),
                 showlegend=False,
             )
         )
+        lower = np.array(eb_info.best_value_means) - np.array(eb_info.best_value_stds)
         traces.append(
             go.Scatter(
-                x=trial_numbers,
-                y=means - stds,
+                x=eb_info.trial_numbers,
+                y=lower,
                 mode="none",
                 showlegend=False,
                 fill="tonexty",
