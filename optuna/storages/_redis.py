@@ -141,7 +141,7 @@ class RedisStorage(BaseStorage, BaseHeartbeat):
                 "study_id:{:010d}:directions".format(study_id),
                 pickle.dumps([StudyDirection.NOT_SET]),
             )
-            # TODO(wattlebirdaz): Replace StudySummary with FrozenStudy
+            # TODO(wattlebirdaz): Replace StudySummary with FrozenStudy.
             study_summary = StudySummary(
                 study_name=study_name,
                 direction=StudyDirection.NOT_SET,
