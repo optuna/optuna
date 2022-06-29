@@ -11,7 +11,9 @@ _logger = logging.get_logger(__name__)
 
 
 class FrozenStudy:
-    """Basic attributes of a :class:`~optuna.study.Study`.
+    """Basic attributes of a :class:`~optuna.study.Study`. 
+    
+    This class is private and not referenced by Optuna users.
 
     Attributes:
         study_name:
