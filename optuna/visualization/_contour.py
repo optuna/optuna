@@ -214,9 +214,7 @@ def _get_contour_subplot(
     for (x_i, y_i), z_value in info.z_values.items():
         z_values[y_i][x_i] = z_value
 
-    if len(x_indices) < 2:
-        return go.Contour(), go.Scatter()
-    if len(y_indices) < 2:
+    if len(x_indices) < 2 or len(y_indices) < 2:
         return go.Contour(), go.Scatter()
 
     contour = go.Contour(
@@ -363,7 +361,10 @@ def _get_axis_info(trials: List[FrozenTrial], param_name: str) -> _AxisInfo:
         is_cat = False
 
     else:
-        span = len(set(values)) - 1
+        unique_values = set(values)
+        span = len(unique_values) - 1
+        if None in unique_values:
+            span -= 1
         padding = span * PADDING_RATIO
         min_value = -padding
         max_value = span + padding

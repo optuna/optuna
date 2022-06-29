@@ -206,18 +206,6 @@ def _calculate_griddata(
     if len(x_values) == 0 or len(y_values) == 0:
         return np.array([]), np.array([]), np.array([]), [], [], [], [], [], []
 
-    # Add dummy values for grid data calculation when a parameter has one unique value.
-    if len(set(x_values)) == 1:
-        x_values_dummy = [x for x in xaxis.indices if x not in x_values]
-        x_values = x_values + x_values_dummy * len(x_values)
-        y_values = y_values + (y_values * len(x_values_dummy))
-        z_values = z_values + (z_values * len(x_values_dummy))
-    if len(set(y_values)) == 1:
-        y_values_dummy = [y for y in yaxis.indices if y not in y_values]
-        y_values = y_values + y_values_dummy * len(y_values)
-        x_values = x_values + (x_values * len(y_values_dummy))
-        z_values = z_values + (z_values * len(y_values_dummy))
-
     def _calculate_axis_data(
         axis: _AxisInfo,
         values: Sequence[Union[str, float]],
