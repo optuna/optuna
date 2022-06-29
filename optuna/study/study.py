@@ -1,4 +1,5 @@
 import copy
+from numbers import Real
 import threading
 from typing import Any
 from typing import Callable
@@ -13,6 +14,8 @@ from typing import Type
 from typing import TYPE_CHECKING
 from typing import Union
 import warnings
+
+import numpy as np
 
 from optuna import exceptions
 from optuna import logging
@@ -753,7 +756,10 @@ class Study:
         self._stop_flag = True
 
     def enqueue_trial(
-        self, params: Dict[str, Any], user_attrs: Optional[Dict[str, Any]] = None
+        self,
+        params: Dict[str, Any],
+        user_attrs: Optional[Dict[str, Any]] = None,
+        skip_if_exists: bool = False,
     ) -> None:
         """Enqueue a trial with given parameter values.
 
@@ -786,12 +792,22 @@ class Study:
                 Parameter values to pass your objective function.
             user_attrs:
                 A dictionary of user-specific attributes other than ``params``.
+            skip_if_exists:
+                When :obj:`True`, prevents duplicate trials from being enqueued again.
+
+                .. note::
+                    This method might produce duplicated trials if called simultaneously
+                    by multiple processes at the same time with same ``params`` dict.
 
         .. seealso::
 
             Please refer to :ref:`enqueue_trial_tutorial` for the tutorial of specifying
             hyperparameters manually.
         """
+
+        if skip_if_exists and self._should_skip_enqueue(params):
+            _logger.info(f"Trial with params {params} already exists. Skipping enqueue.")
+            return
 
         self.add_trial(
             create_trial(
@@ -927,6 +943,38 @@ class Study:
             return trial._trial_id
 
         return None
+
+    def _should_skip_enqueue(self, params: Dict[str, Any]) -> bool:
+
+        for trial in self.get_trials(deepcopy=False):
+            trial_params = trial.system_attrs.get("fixed_params", trial.params)
+            if trial_params.keys() != params.keys():
+                # Can't have repeated trials if different params are suggested.
+                continue
+
+            repeated_params: List[bool] = []
+            for param_name, param_value in params.items():
+                existing_param = trial_params[param_name]
+                if not isinstance(param_value, type(existing_param)):
+                    # Enqueued param has distribution that does not match existing param
+                    # (e.g. trying to enqueue categorical to float param).
+                    # We are not doing anything about it here, since sanitization should
+                    # be handled regardless if `skip_if_exists` is `True`.
+                    repeated_params.append(False)
+                    continue
+
+                is_repeated = (
+                    np.isnan(float(param_value))
+                    or np.isclose(float(param_value), float(existing_param), atol=0.0)
+                    if isinstance(param_value, Real)
+                    else param_value == existing_param
+                )
+                repeated_params.append(is_repeated)
+
+            if all(repeated_params):
+                return True
+
+        return False
 
     @deprecated_func("2.5.0", "4.0.0")
     def _ask(self) -> trial_module.Trial:
