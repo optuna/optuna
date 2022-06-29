@@ -14,6 +14,7 @@ from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+from optuna.visualization._optimization_history import _get_optimization_history_info_list
 from optuna.visualization._utils import _check_plot_args
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
@@ -220,37 +221,22 @@ def _get_optimization_histories(
     cmap = plt.get_cmap("tab10")  # Use tab10 colormap for similar outputs to plotly.
 
     # Draw a scatter plot and a line plot.
-    for i, study in enumerate(studies):
-        trials = study.get_trials(states=(TrialState.COMPLETE,))
-        if target is None:
-            if study.direction == StudyDirection.MINIMIZE:
-                best_values = np.minimum.accumulate([cast(float, t.value) for t in trials])
-            else:
-                best_values = np.maximum.accumulate([cast(float, t.value) for t in trials])
-            ax.scatter(
-                x=[t.number for t in trials],
-                y=[t.value for t in trials],
-                color=cmap(0) if len(studies) == 1 else cmap(2 * i),
-                alpha=1,
-                label=target_name if len(studies) == 1 else f"{target_name} of {study.study_name}",
-            )
+    for i, info in enumerate(_get_optimization_history_info_list(studies, target, target_name)):
+        ax.scatter(
+            x=info.trial_numbers,
+            y=info.values,
+            color=cmap(0) if len(studies) == 1 else cmap(2 * i),
+            alpha=1,
+            label=info.label_name,
+        )
+        if info.best_values is not None:
             ax.plot(
-                [t.number for t in trials],
-                best_values,
+                info.trial_numbers,
+                info.best_values,
                 marker="o",
                 color=cmap(3) if len(studies) == 1 else cmap(2 * i + 1),
                 alpha=0.5,
-                label="Best Value" if len(studies) == 1 else f"Best Value of {study.study_name}",
+                label=info.best_label_name,
             )
-
             ax.legend()
-        else:
-            ax.scatter(
-                x=[t.number for t in trials],
-                y=[target(t) for t in trials],
-                color=cmap(0) if len(studies) == 0 else cmap(2 * i),
-                alpha=1,
-                label=target_name if len(studies) == 1 else f"{target_name} of {study.study_name}",
-            )
-
     return ax

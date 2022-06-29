@@ -2,6 +2,7 @@ import itertools
 from typing import Callable
 from typing import cast
 from typing import List
+from typing import NamedTuple
 from typing import Optional
 from typing import Sequence
 from typing import Union
@@ -21,6 +22,48 @@ if _imports.is_successful():
     from optuna.visualization._plotly_imports import go
 
 _logger = get_logger(__name__)
+
+
+class _OptimizationHistoryInfo(NamedTuple):
+    trial_numbers: List[int]
+    values: List[float]
+    label_name: str
+    best_values: Optional[List[float]]
+    best_label_name: Optional[str]
+
+
+def _get_optimization_history_info_list(
+    studies: List[Study],
+    target: Optional[Callable[[FrozenTrial], float]],
+    target_name: str,
+) -> List[_OptimizationHistoryInfo]:
+    optimization_history_info_list = []
+    for study in studies:
+        trials = study.get_trials(states=(TrialState.COMPLETE,))
+        label_name = target_name if len(studies) == 1 else f"{target_name} of {study.study_name}"
+        if target is None:
+            values = [cast(float, t.value) for t in trials]
+            if study.direction == StudyDirection.MINIMIZE:
+                best_values = list(np.minimum.accumulate(values))
+            else:
+                best_values = list(np.maximum.accumulate(values))
+            best_label_name = (
+                "Best Value" if len(studies) == 1 else f"Best Value of {study.study_name}"
+            )
+        else:
+            values = [target(t) for t in trials]
+            best_values = None
+            best_label_name = None
+        optimization_history_info_list.append(
+            _OptimizationHistoryInfo(
+                trial_numbers=[t.number for t in trials],
+                values=values,
+                label_name=label_name,
+                best_values=best_values,
+                best_label_name=best_label_name,
+            )
+        )
+    return optimization_history_info_list
 
 
 def plot_optimization_history(
@@ -216,41 +259,21 @@ def _get_optimization_histories(
 ) -> "go.Figure":
 
     traces = []
-    for study in studies:
-        trials = study.get_trials(states=(TrialState.COMPLETE,))
-        if target is None:
-            if study.direction == StudyDirection.MINIMIZE:
-                best_values = np.minimum.accumulate([cast(float, t.value) for t in trials])
-            else:
-                best_values = np.maximum.accumulate([cast(float, t.value) for t in trials])
-            traces.append(
-                go.Scatter(
-                    x=[t.number for t in trials],
-                    y=[t.value for t in trials],
-                    mode="markers",
-                    name=target_name
-                    if len(studies) == 1
-                    else f"{target_name} of {study.study_name}",
-                )
+    for info in _get_optimization_history_info_list(studies, target, target_name):
+        traces.append(
+            go.Scatter(
+                x=info.trial_numbers,
+                y=info.values,
+                mode="markers",
+                name=info.label_name,
             )
+        )
+        if info.best_values is not None:
             traces.append(
                 go.Scatter(
-                    x=[t.number for t in trials],
-                    y=best_values,
-                    name="Best Value"
-                    if len(studies) == 1
-                    else f"Best Value of {study.study_name}",
-                )
-            )
-        else:
-            traces.append(
-                go.Scatter(
-                    x=[t.number for t in trials],
-                    y=[target(t) for t in trials],
-                    mode="markers",
-                    name=target_name
-                    if len(studies) == 1
-                    else f"{target_name} of {study.study_name}",
+                    x=info.trial_numbers,
+                    y=info.best_values,
+                    name=info.best_label_name,
                 )
             )
 
