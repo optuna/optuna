@@ -911,6 +911,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                         models.TrialModel.trial_id.in_(trial_ids),
                         models.TrialModel.study_id == study_id,
                     )
+                    .order_by(models.TrialModel.trial_id)
                     .all()
                 )
             except sqlalchemy_exc.OperationalError as e:
@@ -932,6 +933,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                     .options(sqlalchemy_orm.selectinload(models.TrialModel.system_attributes))
                     .options(sqlalchemy_orm.selectinload(models.TrialModel.intermediate_values))
                     .filter(models.TrialModel.study_id == study_id)
+                    .order_by(models.TrialModel.trial_id)
                     .all()
                 )
                 trial_models = [t for t in trial_models if t.trial_id in trial_ids]
