@@ -41,6 +41,8 @@ def _get_optimization_history_info_list(
     for study in studies:
         trials = study.get_trials(states=(TrialState.COMPLETE,))
         label_name = target_name if len(studies) == 1 else f"{target_name} of {study.study_name}"
+        best_values: Optional[List[float]]
+        best_label_name: Optional[str]
         if target is None:
             values = [cast(float, t.value) for t in trials]
             if study.direction == StudyDirection.MINIMIZE:
@@ -109,7 +111,7 @@ def _get_optimization_history_error_bar_info(
         best_value_stds = np.asarray(std_of_best_values)[trial_numbers]
 
     return _OptimizationHistoryErrorBarInfo(
-        trial_numbers=trial_numbers,
+        trial_numbers=list(trial_numbers),
         value_means=list(value_means),
         value_stds=list(value_stds),
         label_name=target_name,
