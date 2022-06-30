@@ -13,6 +13,7 @@ from typing import Tuple
 import warnings
 
 import numpy as np
+from torch import subtract
 
 import optuna
 from optuna._experimental import ExperimentalWarning
@@ -410,29 +411,41 @@ class NSGAIISampler(BaseSampler):
 
 
 def _calc_crowding_distance(population: List[FrozenTrial]) -> DefaultDict[int, float]:
+
     manhattan_distances: DefaultDict[int, float] = defaultdict(float)
+    if len(population) == 0:
+        return manhattan_distances
+
     for i in range(len(population[0].values)):
         population.sort(key=lambda x: cast(float, x.values[i]))
 
-        v_min = population[0].values[i]
-        v_max = population[-1].values[i]
-        assert v_min is not None
-        assert v_max is not None
-
-        width = v_max - v_min
-        if width == 0:
+        # If population have the same values[i], ignore that value.
+        if population[0].values[i] == population[-1].values[i]:
             continue
 
-        manhattan_distances[population[0].number] = float("inf")
-        manhattan_distances[population[-1].number] = float("inf")
 
-        for j in range(1, len(population) - 1):
-            v_high = population[j + 1].values[i]
-            v_low = population[j - 1].values[i]
-            assert v_high is not None
-            assert v_low is not None
+        vs = [-float("inf")] + [cast(float, population[j].values[i]) for j in range(len(population))] + [float("inf")]
 
-            manhattan_distances[population[j].number] += (v_high - v_low) / width
+        # Smallest finite value.
+        v_min = next(x for x in vs if x != -float("inf"))
+
+        # Largest finite value.
+        v_max = next(x for x in reversed(vs) if x != float("inf"))
+
+        width = v_max - v_min
+        if width <= 0:
+            # width == 0 or width == -inf
+            width = 1
+
+        # subtract_nonfinite(inf, inf) == 0
+        def subtract_nonfinite(x, y):
+            if x == y:
+                return 0
+            else:
+                return x - y
+
+        for j in range(len(population)):
+            manhattan_distances[population[j].number] += subtract_nonfinite(vs[j+2], vs[j]) / width
     return manhattan_distances
 
 
