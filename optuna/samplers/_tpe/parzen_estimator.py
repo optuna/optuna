@@ -1,3 +1,4 @@
+from multiprocessing.sharedctypes import Value
 from typing import Callable
 from typing import Dict
 from typing import NamedTuple
@@ -54,7 +55,6 @@ class _ParzenEstimator:
         parameters: _ParzenEstimatorParameters,
         predetermined_weights: Optional[np.ndarray] = None,
     ) -> None:
-
         self._search_space = search_space
         self._parameters = parameters
         self._n_observations = next(iter(observations.values())).size
@@ -204,7 +204,6 @@ class _ParzenEstimator:
         return ret
 
     def _calculate_weights(self, predetermined_weights: Optional[np.ndarray]) -> np.ndarray:
-
         # We decide the weights.
         consider_prior = self._parameters.consider_prior
         prior_weight = self._parameters.prior_weight
@@ -216,6 +215,13 @@ class _ParzenEstimator:
 
         if predetermined_weights is None:
             w = weights_func(n_observations)[:n_observations]
+            if w is not None:
+                if np.any(w < 0):
+                    raise ValueError("Negative parameters.weights are not allowed.")
+                if len(w) > 0 and np.sum(w) <= 0:
+                    raise ValueError("parameters.weights of all zeros are not allowed")
+                if not np.all(np.isfinite(w)):
+                    raise ValueError("parameters.weights of infinite or NaN values are not allowed.")
         else:
             w = predetermined_weights[:n_observations]
 
