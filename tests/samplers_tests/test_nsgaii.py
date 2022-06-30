@@ -127,9 +127,7 @@ def test_constraints_func_none() -> None:
         assert _CONSTRAINTS_KEY not in trial.system_attrs
 
 
-@pytest.mark.parametrize(
-    "constraint_value", [-1.0, 0.0, 1.0, -float("inf"), float("inf"), float("nan")]
-)
+@pytest.mark.parametrize("constraint_value", [-1.0, 0.0, 1.0, -float("inf"), float("inf")])
 def test_constraints_func(constraint_value: float) -> None:
     n_trials = 4
     n_objectives = 2
@@ -155,6 +153,25 @@ def test_constraints_func(constraint_value: float) -> None:
     for trial in study.trials:
         for x, y in zip(trial.system_attrs[_CONSTRAINTS_KEY], (constraint_value + trial.number,)):
             assert _nan_equal(x, y)
+
+
+def test_constraints_func_nan() -> None:
+    n_trials = 4
+    n_objectives = 2
+
+    def constraints_func(_: FrozenTrial) -> Sequence[float]:
+        return (float("nan"),)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = NSGAIISampler(population_size=2, constraints_func=constraints_func)
+
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
+    with pytest.raises(ValueError):
+        study.optimize(
+            lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)],
+            n_trials=n_trials,
+        )
 
 
 def test_fast_non_dominated_sort() -> None:

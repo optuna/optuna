@@ -393,6 +393,8 @@ class NSGAIISampler(BaseSampler):
             constraints = None
             try:
                 con = self._constraints_func(trial)
+                if np.any(np.isnan(con)):
+                    raise ValueError("Constraint values cannot be NaN.")
                 if not isinstance(con, (tuple, list)):
                     warnings.warn(
                         f"Constraints should be a sequence of floats but got {type(con).__name__}."
