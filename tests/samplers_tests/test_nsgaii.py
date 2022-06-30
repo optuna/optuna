@@ -1,4 +1,5 @@
 from collections import Counter
+from optuna.samplers.nsgaii._sampler import _constrained_dominates
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -128,7 +129,7 @@ def test_constraints_func_none() -> None:
 
 
 @pytest.mark.parametrize(
-    "constraint_value", [-1.0, 0.0, 1.0, -float("inf"), float("inf"), float("nan")]
+    "constraint_value", [-1.0, 0.0, 1.0, -float("inf"), float("inf")]
 )
 def test_constraints_func(constraint_value: float) -> None:
     n_trials = 4
@@ -155,6 +156,14 @@ def test_constraints_func(constraint_value: float) -> None:
     for trial in study.trials:
         for x, y in zip(trial.system_attrs[_CONSTRAINTS_KEY], (constraint_value + trial.number,)):
             assert _nan_equal(x, y)
+
+def test_constrained_dominates_with_nan_constraint() -> None:
+    directions = [StudyDirection.MINIMIZE, StudyDirection.MINIMIZE]
+
+    t1 = _create_frozen_trial(0, [1], [0, float("nan")])
+    t2 = _create_frozen_trial(0, [0], [1, -1])
+    with pytest.raises(ValueError):
+        _constrained_dominates(t1, t2, directions)
 
 
 def test_fast_non_dominated_sort() -> None:
