@@ -109,20 +109,6 @@ def _get_optimization_history_plot(
     ax.set_xlabel("Trial")
     ax.set_ylabel(target_name)
 
-    if len(studies) == 0:
-        _logger.warning("There are no studies.")
-        return ax
-    # Prepare data for plotting.
-    all_trials = list(
-        itertools.chain.from_iterable(
-            study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)) for study in studies
-        )
-    )
-
-    if len(all_trials) == 0:
-        _logger.warning("Study instance does not contain trials.")
-        return ax
-
     if error_bar:
         ax = _get_optimization_histories_with_error_bar(studies, target, target_name, ax)
     else:
@@ -140,6 +126,9 @@ def _get_optimization_histories_with_error_bar(
 ) -> "Axes":
 
     eb_info = _get_optimization_history_error_bar_info(studies, target, target_name)
+    if eb_info is None:
+        return ax
+
     plt.errorbar(
         x=eb_info.trial_numbers,
         y=eb_info.value_means,
@@ -176,10 +165,14 @@ def _get_optimization_histories(
     target_name: str,
     ax: "Axes",
 ) -> "Axes":
+    info_list = _get_optimization_history_info_list(studies, target, target_name)
+    if info_list is None:
+        return ax
+
     cmap = plt.get_cmap("tab10")  # Use tab10 colormap for similar outputs to plotly.
 
     # Draw a scatter plot and a line plot.
-    for i, info in enumerate(_get_optimization_history_info_list(studies, target, target_name)):
+    for i, info in enumerate(info_list):
         ax.scatter(
             x=info.trial_numbers,
             y=info.values,

@@ -1,4 +1,3 @@
-import itertools
 from typing import Callable
 from typing import cast
 from typing import List
@@ -36,8 +35,8 @@ def _get_optimization_history_info_list(
     studies: List[Study],
     target: Optional[Callable[[FrozenTrial], float]],
     target_name: str,
-) -> List[_OptimizationHistoryInfo]:
-    optimization_history_info_list = []
+) -> Optional[List[_OptimizationHistoryInfo]]:
+    optimization_history_info_list: List[_OptimizationHistoryInfo] = []
     for study in studies:
         trials = study.get_trials(states=(TrialState.COMPLETE,))
         label_name = target_name if len(studies) == 1 else f"{target_name} of {study.study_name}"
@@ -65,6 +64,15 @@ def _get_optimization_history_info_list(
                 best_label_name=best_label_name,
             )
         )
+
+    if len(optimization_history_info_list) == 0:
+        _logger.warning("There are no studies.")
+        return None
+
+    if sum(len(info.trial_numbers) for info in optimization_history_info_list) == 0:
+        _logger.warning("There are no complete trials.")
+        return None
+
     return optimization_history_info_list
 
 
@@ -82,8 +90,10 @@ def _get_optimization_history_error_bar_info(
     studies: List[Study],
     target: Optional[Callable[[FrozenTrial], float]],
     target_name: str,
-) -> _OptimizationHistoryErrorBarInfo:
+) -> Optional[_OptimizationHistoryErrorBarInfo]:
     info_list = _get_optimization_history_info_list(studies, target, target_name)
+    if info_list is None:
+        return None
     max_trial_number = max(max(info.trial_numbers) for info in info_list)
 
     # Calculate mean and std of target values for each trial number.
@@ -203,20 +213,6 @@ def _get_optimization_history_plot(
         yaxis={"title": target_name},
     )
 
-    if len(studies) == 0:
-        _logger.warning("There are no studies.")
-        return go.Figure(data=[], layout=layout)
-
-    all_trials = list(
-        itertools.chain.from_iterable(
-            study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)) for study in studies
-        )
-    )
-
-    if len(all_trials) == 0:
-        _logger.warning("There are no complete trials.")
-        return go.Figure(data=[], layout=layout)
-
     if error_bar:
         return _get_optimization_histories_with_error_bar(studies, target, target_name, layout)
     else:
@@ -230,6 +226,9 @@ def _get_optimization_histories_with_error_bar(
     layout: "go.Layout",
 ) -> "go.Figure":
     eb_info = _get_optimization_history_error_bar_info(studies, target, target_name)
+    if eb_info is None:
+        return go.Figure(data=[], layout=layout)
+
     traces = [
         go.Scatter(
             x=eb_info.trial_numbers,
@@ -286,8 +285,12 @@ def _get_optimization_histories(
     layout: "go.Layout",
 ) -> "go.Figure":
 
+    info_list = _get_optimization_history_info_list(studies, target, target_name)
+    if info_list is None:
+        return go.Figure(data=[], layout=layout)
+
     traces = []
-    for info in _get_optimization_history_info_list(studies, target, target_name):
+    for info in info_list:
         traces.append(
             go.Scatter(
                 x=info.trial_numbers,
