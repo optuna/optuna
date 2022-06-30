@@ -36,6 +36,7 @@ def _get_optimization_history_info_list(
     target: Optional[Callable[[FrozenTrial], float]],
     target_name: str,
 ) -> Optional[List[_OptimizationHistoryInfo]]:
+
     optimization_history_info_list: List[_OptimizationHistoryInfo] = []
     for study in studies:
         trials = study.get_trials(states=(TrialState.COMPLETE,))
@@ -91,6 +92,7 @@ def _get_optimization_history_error_bar_info(
     target: Optional[Callable[[FrozenTrial], float]],
     target_name: str,
 ) -> Optional[_OptimizationHistoryErrorBarInfo]:
+
     info_list = _get_optimization_history_info_list(studies, target, target_name)
     if info_list is None:
         return None
@@ -216,6 +218,7 @@ def _get_optimization_histories_with_error_bar(
     target_name: str,
     layout: "go.Layout",
 ) -> "go.Figure":
+
     eb_info = _get_optimization_history_error_bar_info(studies, target, target_name)
     if eb_info is None:
         return go.Figure(data=[], layout=layout)

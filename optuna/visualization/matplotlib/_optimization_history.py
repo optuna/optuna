@@ -156,6 +156,7 @@ def _get_optimization_histories(
     target_name: str,
     ax: "Axes",
 ) -> "Axes":
+
     info_list = _get_optimization_history_info_list(studies, target, target_name)
     if info_list is None:
         return ax
