@@ -1,4 +1,5 @@
 from optuna.study import create_study
+from optuna.testing.objectives import fail_objective
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import Trial
 from optuna.visualization import plot_intermediate_values
@@ -43,10 +44,6 @@ def test_plot_intermediate_values() -> None:
     assert not figure.data
 
     # Ignore failed trials.
-    def fail_objective(_: Trial) -> float:
-
-        raise ValueError
-
     study = create_study()
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_intermediate_values(study)
