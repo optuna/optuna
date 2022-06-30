@@ -577,16 +577,14 @@ class TPESampler(BaseSampler):
 
 
 def _calculate_nondomination_rank(loss_vals: np.ndarray) -> np.ndarray:
-    vecs = loss_vals
-
-    ranks = np.full(len(vecs), -1)
-    num_unranked = len(vecs)
+    ranks = np.full(len(loss_vals), -1)
+    num_unranked = len(loss_vals)
     rank = 0
     while num_unranked > 0:
         counts = np.sum(
             (ranks == -1)[None, :]
-            & np.all(vecs[:, None, :] >= vecs[None, :, :], axis=2)
-            & np.any(vecs[:, None, :] > vecs[None, :, :], axis=2),
+            & np.all(loss_vals[:, None, :] >= loss_vals[None, :, :], axis=2)
+            & np.any(loss_vals[:, None, :] > loss_vals[None, :, :], axis=2),
             axis=1,
         )
         num_unranked -= np.sum((counts == 0) & (ranks == -1))
