@@ -1,4 +1,3 @@
-import itertools
 from typing import Callable
 from typing import List
 from typing import Optional
@@ -11,7 +10,6 @@ from optuna._experimental import experimental_func
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
-from optuna.trial import TrialState
 from optuna.visualization._optimization_history import _get_optimization_history_error_bar_info
 from optuna.visualization._optimization_history import _get_optimization_history_info_list
 from optuna.visualization._utils import _check_plot_args
