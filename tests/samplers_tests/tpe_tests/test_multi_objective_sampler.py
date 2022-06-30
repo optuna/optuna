@@ -142,6 +142,7 @@ def test_multi_objective_sample_independent_misc_arguments() -> None:
     sampler = TPESampler(gamma=lambda _: 1, seed=0)
     assert suggest(sampler, study, trial, dist, past_trials) != suggestion
 
+
 @pytest.mark.parametrize("log, step", [(False, None), (True, None), (False, 0.1)])
 def test_multi_objective_sample_independent_float_distributions(
     log: bool, step: Optional[float]
