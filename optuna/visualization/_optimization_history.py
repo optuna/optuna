@@ -197,15 +197,6 @@ def plot_optimization_history(
         studies = list(study)
 
     _check_plot_args(studies, target, target_name)
-    return _get_optimization_history_plot(studies, target, target_name, error_bar)
-
-
-def _get_optimization_history_plot(
-    studies: List[Study],
-    target: Optional[Callable[[FrozenTrial], float]],
-    target_name: str,
-    error_bar: bool,
-) -> "go.Figure":
 
     layout = go.Layout(
         title="Optimization History Plot",

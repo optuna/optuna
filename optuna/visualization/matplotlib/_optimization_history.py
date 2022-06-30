@@ -91,15 +91,6 @@ def plot_optimization_history(
     else:
         studies = list(study)
     _check_plot_args(study, target, target_name)
-    return _get_optimization_history_plot(studies, target, target_name, error_bar)
-
-
-def _get_optimization_history_plot(
-    studies: List[Study],
-    target: Optional[Callable[[FrozenTrial], float]],
-    target_name: str,
-    error_bar: bool = False,
-) -> "Axes":
 
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
