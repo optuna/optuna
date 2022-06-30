@@ -17,7 +17,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 
 
-parametrize_trial_type = pytest.mark.parametrize("trial_type", [FixedTrial, FrozenTrial])
+parametrize_trial_type = pytest.mark.parametrize("trial_type", [FixedTrial, FrozenTrial, Trial])
 
 
 def _create_trial(
@@ -46,7 +46,7 @@ def _create_trial(
         assert False
 
 
-@parametrize_trial_type
+@pytest.mark.parametrize("trial_type", [FixedTrial, FrozenTrial])
 def test_suggest_float(trial_type: type) -> None:
 
     trial = _create_trial(
@@ -62,7 +62,7 @@ def test_suggest_float(trial_type: type) -> None:
         trial.suggest_float("y", 0.0, 1.0)
 
 
-@parametrize_trial_type
+@pytest.mark.parametrize("trial_type", [FixedTrial, FrozenTrial])
 def test_suggest_uniform(trial_type: type) -> None:
 
     trial = _create_trial(
@@ -77,7 +77,7 @@ def test_suggest_uniform(trial_type: type) -> None:
         trial.suggest_uniform("y", 0.0, 1.0)
 
 
-@parametrize_trial_type
+@pytest.mark.parametrize("trial_type", [FixedTrial, FrozenTrial])
 def test_suggest_loguniform(trial_type: type) -> None:
 
     trial = _create_trial(
@@ -91,7 +91,7 @@ def test_suggest_loguniform(trial_type: type) -> None:
         trial.suggest_loguniform("y", 0.0, 1.0)
 
 
-@parametrize_trial_type
+@pytest.mark.parametrize("trial_type", [FixedTrial, FrozenTrial])
 def test_suggest_discrete_uniform(trial_type: type) -> None:
 
     trial = _create_trial(
@@ -105,7 +105,7 @@ def test_suggest_discrete_uniform(trial_type: type) -> None:
         trial.suggest_discrete_uniform("y", 0.0, 1.0, 0.1)
 
 
-@parametrize_trial_type
+@pytest.mark.parametrize("trial_type", [FixedTrial, FrozenTrial])
 def test_suggest_int_log(trial_type: type) -> None:
 
     trial = _create_trial(
@@ -123,7 +123,7 @@ def test_suggest_int_log(trial_type: type) -> None:
         trial.suggest_int("y", 1, 10, log=True)
 
 
-@parametrize_trial_type
+@pytest.mark.parametrize("trial_type", [FixedTrial, FrozenTrial])
 def test_suggest_categorical(trial_type: type) -> None:
 
     # Integer categories.
@@ -159,7 +159,7 @@ def test_suggest_categorical(trial_type: type) -> None:
             trial.suggest_categorical("x", [{"foo": "bar"}])  # type: ignore
 
 
-@pytest.mark.parametrize("trial_type", [FixedTrial, FrozenTrial, Trial])
+@parametrize_trial_type
 @pytest.mark.parametrize(
     ("suggest_func", "distribution"),
     [
@@ -192,7 +192,7 @@ def test_not_contained_param(
         assert suggest_func(trial, "x", 10, 100) == 1
 
 
-@pytest.mark.parametrize("trial_type", [FixedTrial, FrozenTrial, Trial])
+@parametrize_trial_type
 def test_set_user_attrs(trial_type: type) -> None:
 
     trial = _create_trial(trial_type)
@@ -200,7 +200,7 @@ def test_set_user_attrs(trial_type: type) -> None:
     assert trial.user_attrs["data"] == "MNIST"
 
 
-@pytest.mark.parametrize("trial_type", [FixedTrial, FrozenTrial, Trial])
+@parametrize_trial_type
 def test_set_system_attrs(trial_type: type) -> None:
 
     trial = _create_trial(trial_type)
