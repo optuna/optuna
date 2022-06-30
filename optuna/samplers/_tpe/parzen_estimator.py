@@ -1,4 +1,3 @@
-from multiprocessing.sharedctypes import Value
 from typing import Callable
 from typing import Dict
 from typing import NamedTuple
@@ -221,7 +220,9 @@ class _ParzenEstimator:
                 if len(w) > 0 and np.sum(w) <= 0:
                     raise ValueError("parameters.weights of all zeros are not allowed")
                 if not np.all(np.isfinite(w)):
-                    raise ValueError("parameters.weights of infinite or NaN values are not allowed.")
+                    raise ValueError(
+                        "parameters.weights of infinite or NaN values are not allowed."
+                    )
         else:
             w = predetermined_weights[:n_observations]
 
