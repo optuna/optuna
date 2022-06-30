@@ -423,8 +423,11 @@ def _calc_crowding_distance(population: List[FrozenTrial]) -> DefaultDict[int, f
         if population[0].values[i] == population[-1].values[i]:
             continue
 
-
-        vs = [-float("inf")] + [cast(float, population[j].values[i]) for j in range(len(population))] + [float("inf")]
+        vs = (
+            [-float("inf")]
+            + [cast(float, population[j].values[i]) for j in range(len(population))]
+            + [float("inf")]
+        )
 
         # Smallest finite value.
         v_min = next(x for x in vs if x != -float("inf"))
@@ -438,14 +441,16 @@ def _calc_crowding_distance(population: List[FrozenTrial]) -> DefaultDict[int, f
             width = 1
 
         # subtract_nonfinite(inf, inf) == 0
-        def subtract_nonfinite(x, y):
+        def subtract_nonfinite(x: float, y: float) -> float:
             if x == y:
                 return 0
             else:
                 return x - y
 
         for j in range(len(population)):
-            manhattan_distances[population[j].number] += subtract_nonfinite(vs[j+2], vs[j]) / width
+            manhattan_distances[population[j].number] += (
+                subtract_nonfinite(vs[j + 2], vs[j]) / width
+            )
     return manhattan_distances
 
 
