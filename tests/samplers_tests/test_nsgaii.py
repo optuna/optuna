@@ -1,5 +1,4 @@
 from collections import Counter
-from optuna.samplers.nsgaii._sampler import _constrained_dominates
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -30,6 +29,7 @@ from optuna.samplers.nsgaii import UNDXCrossover
 from optuna.samplers.nsgaii import UniformCrossover
 from optuna.samplers.nsgaii import VSBXCrossover
 from optuna.samplers.nsgaii._crossover import _inlined_categorical_uniform_crossover
+from optuna.samplers.nsgaii._sampler import _constrained_dominates
 from optuna.samplers.nsgaii._sampler import _CONSTRAINTS_KEY
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -128,9 +128,7 @@ def test_constraints_func_none() -> None:
         assert _CONSTRAINTS_KEY not in trial.system_attrs
 
 
-@pytest.mark.parametrize(
-    "constraint_value", [-1.0, 0.0, 1.0, -float("inf"), float("inf")]
-)
+@pytest.mark.parametrize("constraint_value", [-1.0, 0.0, 1.0, -float("inf"), float("inf")])
 def test_constraints_func(constraint_value: float) -> None:
     n_trials = 4
     n_objectives = 2
@@ -156,6 +154,7 @@ def test_constraints_func(constraint_value: float) -> None:
     for trial in study.trials:
         for x, y in zip(trial.system_attrs[_CONSTRAINTS_KEY], (constraint_value + trial.number,)):
             assert _nan_equal(x, y)
+
 
 def test_constrained_dominates_with_nan_constraint() -> None:
     directions = [StudyDirection.MINIMIZE, StudyDirection.MINIMIZE]
