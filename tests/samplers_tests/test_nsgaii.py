@@ -163,18 +163,15 @@ def test_constraints_func() -> None:
 def test_constrained_dominates_feasible_vs_feasible(
     dir1: StudyDirection, dir2: StudyDirection, constraints_list: List[List[float]]
 ) -> None:
-
     directions = [dir1, dir2]
-
     # Check all pairs of trials consisting of these values, i.e.,
     # [-inf, -inf], [-inf, -1], [-inf, 1], [-inf, inf], [-1, -inf], ...
-    values_1d = [-float("inf"), -1, 1, float("inf")]
-
-    # In the following code, we check that the results of _constrained_dominates match
-    # _dominates in all feasible cases.
-    values_list = [[x, y] for x in values_1d for y in values_1d]
+    values_list = [[x, y]
+                    for x in [-float("inf"), -1, 1, float("inf")]
+                    for y in [-float("inf"), -1, 1, float("inf")]]
     values_constraints_list = [(vs, cs) for vs in values_list for cs in constraints_list]
 
+    # The results of _constrained_dominates match _dominates in all feasible cases.
     for (values1, constraints1) in values_constraints_list:
         for (values2, constraints2) in values_constraints_list:
             t1 = _create_frozen_trial(0, values1, constraints1)
