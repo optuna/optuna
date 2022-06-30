@@ -13,7 +13,6 @@ from typing import Tuple
 import warnings
 
 import numpy as np
-from torch import subtract
 
 import optuna
 from optuna._experimental import ExperimentalWarning
