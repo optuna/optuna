@@ -15,6 +15,7 @@ import optuna
 from optuna import samplers
 from optuna.samplers._grid import GridValueType
 from optuna.storages import RetryFailedTrialCallback
+from optuna.testing.objectives import pruned_objective
 from optuna.trial import Trial
 
 
@@ -89,13 +90,10 @@ def test_study_optimize_with_exceeding_number_of_trials() -> None:
 
 
 def test_study_optimize_with_pruning() -> None:
-    def objective(trial: Trial) -> float:
-        raise optuna.TrialPruned
-
     # Pruned trials should count towards grid consumption.
     search_space: Dict[str, List[GridValueType]] = {"a": [0, 50]}
     study = optuna.create_study(sampler=samplers.GridSampler(search_space))
-    study.optimize(objective, n_trials=None)
+    study.optimize(pruned_objective, n_trials=None)
     assert len(study.trials) == 2
 
 

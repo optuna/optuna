@@ -24,6 +24,7 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.samplers import BaseSampler
 from optuna.study import Study
+from optuna.testing.objectives import pruned_objective
 from optuna.testing.samplers import DeterministicRelativeSampler
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
@@ -714,10 +715,7 @@ def test_after_trial_pruning() -> None:
     sampler = SamplerAfterTrial({}, {})
     study = optuna.create_study(directions=["minimize", "minimize"], sampler=sampler)
 
-    def objective(trial: Trial) -> Any:
-        raise optuna.TrialPruned
-
-    study.optimize(objective, n_trials=n_trials)
+    study.optimize(pruned_objective, n_trials=n_trials)
 
     assert n_calls == n_trials
 

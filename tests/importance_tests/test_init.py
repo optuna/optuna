@@ -13,6 +13,7 @@ from optuna.importance import FanovaImportanceEvaluator
 from optuna.importance import get_param_importances
 from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
 from optuna.study import create_study
+from optuna.testing.objectives import pruned_objective
 from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
 from optuna.trial import Trial
@@ -185,10 +186,7 @@ def test_get_param_importances_invalid_empty_study(
     with pytest.raises(ValueError):
         get_param_importances(study, evaluator=evaluator_init_func())
 
-    def objective(trial: Trial) -> float:
-        raise optuna.TrialPruned
-
-    study.optimize(objective, n_trials=3)
+    study.optimize(pruned_objective, n_trials=3)
 
     with pytest.raises(ValueError):
         get_param_importances(study, evaluator=evaluator_init_func())
