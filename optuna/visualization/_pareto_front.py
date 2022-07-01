@@ -11,6 +11,8 @@ from typing import Tuple
 from typing import Union
 import warnings
 
+import numpy as np
+
 import optuna
 from optuna.exceptions import ExperimentalWarning
 from optuna.study import Study
@@ -387,7 +389,9 @@ def _make_scatter_object(
         y = [values[axis_order[1]] for _, values in trials_with_values]
         # If a line is being added, the points need to be in order.
         if "lines" in mode:
-            x, y = zip(*sorted(zip(x, y), key=lambda p: p[0]))
+            idx_order = np.argsort(x)
+            x = [x[idx] for idx in idx_order]
+            y = [y[idx] for idx in idx_order]
         return go.Scatter(
             x=x,
             y=y,
@@ -400,10 +404,13 @@ def _make_scatter_object(
     elif n_targets == 3:
         x = [values[axis_order[0]] for _, values in trials_with_values]
         y = [values[axis_order[1]] for _, values in trials_with_values]
-        z = [values[axis_order[1]] for _, values in trials_with_values]
+        z = [values[axis_order[2]] for _, values in trials_with_values]
         # If a line is being added, the points need to be in order.
         if "lines" in mode:
-            x, y, z = zip(*sorted(zip(x, y, z), key=lambda p: p[0]))
+            idx_order = np.argsort(x)
+            x = [x[idx] for idx in idx_order]
+            y = [y[idx] for idx in idx_order]
+            z = [z[idx] for idx in idx_order]
         return go.Scatter3d(
             x=x,
             y=y,

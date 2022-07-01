@@ -25,7 +25,9 @@ def _check_data(figure: "go.Figure", axis: str, expected: Sequence[int]) -> None
     """Compare `figure` against `expected`.
 
     Concatenate `data` in `figure` in reverse order, pick the desired `axis`, and compare with
-    the `expected` result.
+    the `expected` result. Both the `actual` and `expected` results are sorted prior to
+    comparison as the order may change during plotting (due to adding the Pareto front line).
+    The crucial part is that the content of both lists is the same, not the order.
 
     Args:
         figure: A figure.
@@ -37,7 +39,7 @@ def _check_data(figure: "go.Figure", axis: str, expected: Sequence[int]) -> None
     actual = tuple(
         itertools.chain(*list(map(lambda i: figure.data[i][axis], reversed(range(n_data)))))
     )
-    assert actual == expected
+    assert sorted(actual) == sorted(expected)
 
 
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
