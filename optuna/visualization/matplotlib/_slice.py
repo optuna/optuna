@@ -9,7 +9,7 @@ from optuna._experimental import experimental_func
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
-from optuna.visualization._slice import _get_slice_plot_info
+from optuna.visualization._slice import _get_slice_subplot_info_list
 from optuna.visualization._slice import _SliceSubplotInfo
 from optuna.visualization._utils import _check_plot_args
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
@@ -90,9 +90,9 @@ def _get_slice_plot(
     target_name: str = "Objective Value",
 ) -> "Axes":
 
-    info = _get_slice_plot_info(study, params, target, target_name)
+    subplots = _get_slice_subplot_info_list(study, params, target)
 
-    if len(info.subplots) == 0:
+    if len(subplots) == 0:
         _, ax = plt.subplots()
         return ax
 
@@ -101,13 +101,13 @@ def _get_slice_plot(
     padding_ratio = 0.05
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
 
-    if len(info.subplots) == 1:
+    if len(subplots) == 1:
         # Set up the graph style.
         fig, axs = plt.subplots()
         axs.set_title("Slice Plot")
 
         # Draw a scatter plot.
-        sc = _generate_slice_subplot(info.subplots[0], axs, cmap, padding_ratio, target_name)
+        sc = _generate_slice_subplot(subplots[0], axs, cmap, padding_ratio, target_name)
     else:
         # Set up the graph style.
         min_figwidth = matplotlib.rcParams["figure.figsize"][0] / 2
@@ -115,14 +115,14 @@ def _get_slice_plot(
         # Ensure that each subplot has a minimum width without relying on auto-sizing.
         fig, axs = plt.subplots(
             1,
-            len(info.subplots),
+            len(subplots),
             sharey=True,
-            figsize=(min_figwidth * len(info.subplots), fighight),
+            figsize=(min_figwidth * len(subplots), fighight),
         )
         fig.suptitle("Slice Plot")
 
         # Draw scatter plots.
-        for i, subplot in enumerate(info.subplots):
+        for i, subplot in enumerate(subplots):
             ax = axs[i]
             sc = _generate_slice_subplot(subplot, ax, cmap, padding_ratio, target_name)
 
@@ -142,10 +142,10 @@ def _generate_slice_subplot(
     ax.set(xlabel=subplot_info.param_name, ylabel=target_name)
     x_values = subplot_info.x
     scale = None
-    if subplot_info.is_x_log_scale:
+    if subplot_info.is_log:
         ax.set_xscale("log")
         scale = "log"
-    elif not subplot_info.is_x_nunmerical:
+    elif not subplot_info.is_numerical:
         x_values = [str(x) for x in subplot_info.x]
         scale = "categorical"
     xlim = _calc_lim_with_padding(x_values, padding_ratio, scale)

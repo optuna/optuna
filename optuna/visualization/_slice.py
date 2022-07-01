@@ -29,12 +29,11 @@ class _SliceSubplotInfo(NamedTuple):
     x: List[Any]
     y: List[float]
     trial_numbers: List[int]
-    is_x_log_scale: bool
-    is_x_nunmerical: bool
+    is_log: bool
+    is_numerical: bool
 
 
 class _SlicePlotInfo(NamedTuple):
-    target_name: str
     subplots: List[_SliceSubplotInfo]
 
 
@@ -58,23 +57,22 @@ def _get_slice_subplot_info(
         x=[t.params[param] for t in trials if param in t.params],
         y=[target(t) for t in trials if param in t.params],
         trial_numbers=[t.number for t in trials if param in t.params],
-        is_x_log_scale=log_scale,
-        is_x_nunmerical=numerical,
+        is_log=log_scale,
+        is_numerical=numerical,
     )
 
 
-def _get_slice_plot_info(
+def _get_slice_subplot_info_list(
     study: Study,
     params: Optional[List[str]] = None,
     target: Optional[Callable[[FrozenTrial], float]] = None,
-    target_name: str = "Objective Value",
 ) -> _SlicePlotInfo:
 
     trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
 
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
-        return _SlicePlotInfo(target_name, [])
+        return []
 
     all_params = {p_name for t in trials for p_name in t.params.keys()}
     if params is None:
@@ -85,9 +83,7 @@ def _get_slice_plot_info(
                 raise ValueError(f"Parameter {input_p_name} does not exist in your study.")
         sorted_params = sorted(set(params))
 
-    return _SlicePlotInfo(
-        target_name=target_name,
-        subplots=[
+    return [
             _get_slice_subplot_info(
                 trials=trials,
                 param=param,
@@ -96,8 +92,7 @@ def _get_slice_plot_info(
                 numerical=_is_numerical(trials, param),
             )
             for param in sorted_params
-        ],
-    )
+        ]
 
 
 def plot_slice(
@@ -165,21 +160,21 @@ def _get_slice_plot(
 
     layout = go.Layout(title="Slice Plot")
 
-    info = _get_slice_plot_info(study, params, target, target_name)
+    subplots = _get_slice_subplot_info_list(study, params, target)
 
-    if len(info.subplots) == 0:
+    if len(subplots) == 0:
         return go.Figure(data=[], layout=layout)
-    elif len(info.subplots) == 1:
-        figure = go.Figure(data=[_generate_slice_subplot(info.subplots[0])], layout=layout)
-        figure.update_xaxes(title_text=info.subplots[0].param_name)
+    elif len(subplots) == 1:
+        figure = go.Figure(data=[_generate_slice_subplot(subplots[0])], layout=layout)
+        figure.update_xaxes(title_text=subplots[0].param_name)
         figure.update_yaxes(title_text=target_name)
-        if info.subplots[0].is_x_log_scale:
+        if subplots[0].is_log:
             figure.update_xaxes(type="log")
     else:
-        figure = make_subplots(rows=1, cols=len(info.subplots), shared_yaxes=True)
+        figure = make_subplots(rows=1, cols=len(subplots), shared_yaxes=True)
         figure.update_layout(layout)
         showscale = True  # showscale option only needs to be specified once.
-        for i, subplot_info in enumerate(info.subplots):
+        for i, subplot_info in enumerate(subplots):
             trace = _generate_slice_subplot(subplot_info)
             trace.update(marker={"showscale": showscale})  # showscale's default is True.
             if showscale:
@@ -188,11 +183,11 @@ def _get_slice_plot(
             figure.update_xaxes(title_text=subplot_info.param_name, row=1, col=i + 1)
             if i == 0:
                 figure.update_yaxes(title_text=target_name, row=1, col=1)
-            if subplot_info.is_x_log_scale:
+            if subplot_info.is_log:
                 figure.update_xaxes(type="log", row=1, col=i + 1)
-        if len(info.subplots) > 3:
+        if len(subplots) > 3:
             # Ensure that each subplot has a minimum width without relying on autusizing.
-            figure.update_layout(width=300 * len(info.subplots))
+            figure.update_layout(width=300 * len(subplots))
 
     return figure
 
