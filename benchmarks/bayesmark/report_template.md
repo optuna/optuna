@@ -1,10 +1,10 @@
 # Benchmark Result Report
 
-* Number of Solvers: {num_solvers}
-* Number of Models: {num_models}
-* Number of Datasets: {num_datasets}
-* Number of Problems: {num_problems}
-* Metrics Precedence: {precedence}
+* Number of Solvers: {{ report.solvers|length }}
+* Number of Models: {{ report.models|length }}
+* Number of Datasets: {{ report.datasets|length }}
+* Number of Problems: {{ report.problems|length }}
+* Metrics Precedence: {{ report.metric_precedence }}
 
 Please refer to ["A Strategy for Ranking Optimizers using Multiple Criteria"][Dewancker, Ian, et al., 2016] for the ranking strategy used in this report.
 
@@ -19,11 +19,23 @@ Please refer to ["A Strategy for Ranking Optimizers using Multiple Criteria"][De
 
 ## Overall Results
 
-{overall}
+|Solver|Borda|Firsts|
+|:---|---:|---:|
+{% for solver in report.solvers -%}
+|{{ solver }}|{{ report.borda[solver] }}|{{ report.firsts[solver] }}|
+{% endfor %}
 
 ## Individual Results
 
-{leaderboards}
+{% for problem in report.problems %}
+### ({{ problem.number }}) Problem: {{ problem.name }}
+
+|Ranking|Solver|{%- for metric in problem.metrics -%}{{ metric.name }} (avg +- std)|{% endfor %}
+|:---|---:|{%- for _ in range(problem.metrics|length) -%}---:|{% endfor %}
+{% for solver in problem.solvers -%}
+|{{ solver.rank }}|{{ solver.name }}|{{ solver.results|join('|') }}|
+{% endfor -%}
+{% endfor %}
 
 ## Datasets
 

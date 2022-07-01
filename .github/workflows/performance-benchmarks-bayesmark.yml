@@ -105,7 +105,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install --progress-bar off -U setuptools wheel
-        pip install --progress-bar off numpy scipy pandas
+        pip install --progress-bar off numpy scipy pandas Jinja2
 
     - name: Run benchmark report builder
       run: |
