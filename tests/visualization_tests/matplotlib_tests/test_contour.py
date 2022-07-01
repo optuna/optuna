@@ -16,10 +16,10 @@ from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
 from optuna.trial import Trial
+from optuna.visualization._contour import PADDING_RATIO
 from optuna.visualization.matplotlib import plot_contour
 from optuna.visualization.matplotlib._contour import _create_zmap
 from optuna.visualization.matplotlib._contour import _interpolate_zmap
-from optuna.visualization.matplotlib._contour import AXES_PADDING_RATIO
 
 
 def test_create_zmap() -> None:
@@ -246,7 +246,7 @@ def test_plot_contour_mixture_category_types() -> None:
         ["param_b", "param_a"],
     ],
 )
-def test_generate_contour_plot_for_few_observations(params: List[str]) -> None:
+def test_plot_contour_for_few_observations(params: List[str]) -> None:
 
     study = prepare_study_with_trials(less_than_two=True)
     figure = plot_contour(study, params)
@@ -292,7 +292,7 @@ def test_contour_subplots_have_correct_axis_labels_and_ranges() -> None:
     }
     for index, (param_name, param_range) in enumerate(param_ranges.items()):
         minimum, maximum = param_range
-        padding = (maximum - minimum) * AXES_PADDING_RATIO
+        padding = (maximum - minimum) * PADDING_RATIO
         param_range_with_padding = (minimum - padding, maximum + padding)
         assert subplots[index, 0].get_ylabel() == param_name
         assert subplots[-1, index].get_xlabel() == param_name
