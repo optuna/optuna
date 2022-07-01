@@ -42,22 +42,22 @@ def test_dominates_2d() -> None:
     vals = [-float("inf"), -1, 1, float("inf")]
 
     # The following table illustrates an example of dominance relations.
-    # "✔" cells in the table dominates the "◇" cell in (MINIMIZE, MAXIMIZE) setting.
+    # "D" cells in the table dominates the "t" cell in (MINIMIZE, MAXIMIZE) setting.
     #
     #                       v[1]
     #      ╔═════╤═════╤═════╤═════╤═════╗
     #      ║     │ -∞  │ -1  │  1  │  ∞  ║
     #      ╟─────┼─────┼─────┼─────┼─────╢
-    #      ║ -∞  │     │     │  ✔  │  ✔  ║
+    #      ║ -∞  │     │     │  D  │  D  ║
     #      ╟─────┼─────┼─────┼─────┼─────╢
-    #      ║ -1  │     │     │  ✔  │  ✔  ║
+    #      ║ -1  │     │     │  D  │  D  ║
     # v[0] ╟─────┼─────┼─────┼─────┼─────╢
-    #      ║  1  │     │     │  ◇  │  ✔  ║
+    #      ║  1  │     │     │  t  │  D  ║
     #      ╟─────┼─────┼─────┼─────┼─────╢
     #      ║  ∞  │     │     │     │     ║
     #      ╚═════╧═════╧═════╧═════╧═════╝
     #
-    # In the following code, we check that for each position of "◇" cell, the relation
+    # In the following code, we check that for each position of "t" cell, the relation
     # above holds.
 
     # Generate the set of all possible indices.

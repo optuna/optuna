@@ -221,46 +221,55 @@ def test_constrained_dominates_feasible_vs_infeasible(
 
 @pytest.mark.parametrize("direction", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
 def test_constrained_dominates_infeasible_vs_infeasible(direction: StudyDirection) -> None:
+    inf = float("inf")
+    directions = [direction]
 
-    # These constraint values have zero violations.
-    # TODO(contramundum53): Currently NaN counts as infeasible but has zero violation.
-    # This should be changed.
-    zero_constraint_values = [-float("inf"), -1, 0, float("nan")]
+    # The following table illustrates the violations of some constraint values.
+    # When both trials are infeasible, the trial with smaller violation dominates
+    # the one with larger violation.
+    #
+    #                       c[1]
+    #      ╔═════╤═════╤═════╤═════╤═════╤═════╗
+    #      ║     │ -1  │  0  │  1  │  2  │  ∞  ║
+    #      ╟─────┼─────┼─────┼─────┼─────┼─────╢
+    #      ║ -1  │           │  1  │  2  │  ∞  ║
+    #      ╟─────┼─feasible ─┼─────┼─────┼─────╢
+    #      ║  0  │           │  1  │  2  │  ∞  ║
+    # c[0] ╟─────┼─────┼─────┼─────┼─────┼─────╢
+    #      ║  1  │  1  │  1  │  2  │  3  │  ∞  ║
+    #      ╟─────┼─────┼─────┼─────┼─────┼─────╢
+    #      ║  2  │  2  │  2  │  3  │  4  │  ∞  ║
+    #      ╟─────┼─────┼─────┼─────┼─────┼─────╢
+    #      ║  ∞  │  ∞  │  ∞  │  ∞  │  ∞  │  ∞  ║
+    #      ╚═════╧═════╧═════╧═════╧═════╧═════╝
+    #
 
     # Check all pairs of these constraints.
     constraints_infeasible_sorted = [
-        # violation 0
-        [[float("nan"), z] for z in zero_constraint_values]
-        + [[z, float("nan")] for z in zero_constraint_values],
         # violation 1
-        [[1, z] for z in zero_constraint_values] + [[z, 1] for z in zero_constraint_values],
+        [[1, -inf], [1, -1], [1, 0], [0, 1], [-1, 1], [-inf, 1]],
         # violation 2
-        [[2, z] for z in zero_constraint_values]
-        + [[z, 2] for z in zero_constraint_values]
-        + [[1, 1]],
+        [[2, -inf], [2, -1], [2, 0], [1, 1], [0, 2], [-1, 2], [-inf, 2]],
         # violation 3
-        [[3, z] for z in zero_constraint_values]
-        + [[z, 3] for z in zero_constraint_values]
-        + [[1, 2], [2, 1]],
+        [[3, -inf], [3, -1], [3, 0], [2, 1], [1, 2], [0, 3], [-1, 3], [-inf, 3]],
         # violation inf
-        [[float("inf"), z] for z in zero_constraint_values]
-        + [[z, float("inf")] for z in zero_constraint_values]
-        + [[1, float("inf")], [float("inf"), 1], [float("inf"), float("inf")]],
+        [
+            [-inf, inf],
+            [-1, inf],
+            [0, inf],
+            [1, inf],
+            [inf, inf],
+            [inf, 1],
+            [inf, 0],
+            [inf, -1],
+            [inf, -inf],
+        ]
     ]
 
-    # In the following code, we check that constraints with smaller violation dominate
-    # constraints with larger violation, and that they are incomparable in the cases of ties.
-    directions = [direction]
+    
+    # Check that constraints with smaller violations dominate constraints with larger violation. 
     for i in range(len(constraints_infeasible_sorted)):
-        # All pairs of constraints in constraints_infeasible_sorted[i] are incomparable.
-        for constraints1 in constraints_infeasible_sorted[i]:
-            for constraints2 in constraints_infeasible_sorted[i]:
-                t1 = _create_frozen_trial(0, [0], constraints1)
-                t2 = _create_frozen_trial(1, [1], constraints2)
-                assert not _constrained_dominates(t1, t2, directions)
-                assert not _constrained_dominates(t2, t1, directions)
-
-        for j in range(i + 1, len(constraints_infeasible_sorted)):
+        for j in range(i+1,len(constraints_infeasible_sorted)):
             # Every constraint in constraints_infeasible_sorted[i] dominates
             # every constraint in constraints_infeasible_sorted[j].
             for constraints1 in constraints_infeasible_sorted[i]:
@@ -274,6 +283,16 @@ def test_constrained_dominates_infeasible_vs_infeasible(direction: StudyDirectio
                     t2 = _create_frozen_trial(1, [0], constraints2)
                     assert _constrained_dominates(t1, t2, directions)
                     assert not _constrained_dominates(t2, t1, directions)
+
+
+    # Check that constraints with same violations are incomparable.
+    for constraints_with_same_violations in constraints_infeasible_sorted:
+        for constraints1 in constraints_with_same_violations:
+            for constraints2 in constraints_with_same_violations:
+                t1 = _create_frozen_trial(0, [0], constraints1)
+                t2 = _create_frozen_trial(1, [1], constraints2)
+                assert not _constrained_dominates(t1, t2, directions)
+                assert not _constrained_dominates(t2, t1, directions)
 
 
 def test_fast_non_dominated_sort() -> None:
