@@ -2,6 +2,7 @@ from optuna._experimental import experimental_func
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.visualization._intermediate_values import _get_intermediate_plot_info
+from optuna.visualization._intermediate_values import _IntermediatePlotInfo
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 
@@ -74,10 +75,10 @@ def plot_intermediate_values(study: Study) -> "Axes":
     """
 
     _imports.check()
-    return _get_intermediate_plot(study)
+    return _get_intermediate_plot(_get_intermediate_plot_info(study))
 
 
-def _get_intermediate_plot(study: Study) -> "Axes":
+def _get_intermediate_plot(info: _IntermediatePlotInfo) -> "Axes":
 
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
@@ -87,7 +88,6 @@ def _get_intermediate_plot(study: Study) -> "Axes":
     ax.set_ylabel("Intermediate Value")
     cmap = plt.get_cmap("tab20")  # Use tab20 colormap for multiple line plots.
 
-    info = _get_intermediate_plot_info(study)
     trial_infos = info.trial_infos
 
     for i, tinfo in enumerate(trial_infos):
