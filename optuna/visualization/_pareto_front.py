@@ -141,7 +141,7 @@ def plot_pareto_front(
                 info.best_trials_with_values,
                 hovertemplate="%{text}<extra>Best Trial</extra>",
                 dominated_trials=False,
-                mode="lines+markers"
+                mode="lines+markers",
             ),
         ]
     else:
@@ -175,7 +175,7 @@ def plot_pareto_front(
                 info.best_trials_with_values,
                 hovertemplate="%{text}<extra>Best Trial</extra>",
                 dominated_trials=False,
-                mode="lines+markers"
+                mode="lines+markers",
             ),
         ]
 
@@ -385,7 +385,7 @@ def _make_scatter_object(
     if n_targets == 2:
         x = [values[axis_order[0]] for _, values in trials_with_values]
         y = [values[axis_order[1]] for _, values in trials_with_values]
-        # If a line is being added, the points need to be in order. Otherwise, we can avoid doing the sorting.
+        # If a line is being added, the points need to be in order.
         if "lines" in mode:
             x, y = zip(*sorted(zip(x, y), key=lambda p: p[0]))
         return go.Scatter(
@@ -401,7 +401,7 @@ def _make_scatter_object(
         x = [values[axis_order[0]] for _, values in trials_with_values]
         y = [values[axis_order[1]] for _, values in trials_with_values]
         z = [values[axis_order[1]] for _, values in trials_with_values]
-        # If a line is being added, the points need to be in order. Otherwise, we can avoid doing the sorting.
+        # If a line is being added, the points need to be in order.
         if "lines" in mode:
             x, y, z = zip(*sorted(zip(x, y, z), key=lambda p: p[0]))
         return go.Scatter3d(
