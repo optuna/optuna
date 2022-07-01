@@ -9,7 +9,8 @@ from optuna._experimental import experimental_func
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
-from optuna.visualization._slice import _get_slice_subplot_info_list
+from optuna.visualization._slice import _get_slice_plot_info
+from optuna.visualization._slice import _SlicePlotInfo
 from optuna.visualization._slice import _SliceSubplotInfo
 from optuna.visualization._utils import _check_plot_args
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
@@ -80,19 +81,12 @@ def plot_slice(
 
     _imports.check()
     _check_plot_args(study, target, target_name)
-    return _get_slice_plot(study, params, target, target_name)
+    return _get_slice_plot(_get_slice_plot_info(study, params, target, target_name))
 
 
-def _get_slice_plot(
-    study: Study,
-    params: Optional[List[str]] = None,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
-    target_name: str = "Objective Value",
-) -> "Axes":
+def _get_slice_plot(info: _SlicePlotInfo) -> "Axes":
 
-    subplots = _get_slice_subplot_info_list(study, params, target)
-
-    if len(subplots) == 0:
+    if len(info.subplots) == 0:
         _, ax = plt.subplots()
         return ax
 
@@ -101,13 +95,13 @@ def _get_slice_plot(
     padding_ratio = 0.05
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
 
-    if len(subplots) == 1:
+    if len(info.subplots) == 1:
         # Set up the graph style.
         fig, axs = plt.subplots()
         axs.set_title("Slice Plot")
 
         # Draw a scatter plot.
-        sc = _generate_slice_subplot(subplots[0], axs, cmap, padding_ratio, target_name)
+        sc = _generate_slice_subplot(info.subplots[0], axs, cmap, padding_ratio, info.target_name)
     else:
         # Set up the graph style.
         min_figwidth = matplotlib.rcParams["figure.figsize"][0] / 2
@@ -115,16 +109,16 @@ def _get_slice_plot(
         # Ensure that each subplot has a minimum width without relying on auto-sizing.
         fig, axs = plt.subplots(
             1,
-            len(subplots),
+            len(info.subplots),
             sharey=True,
-            figsize=(min_figwidth * len(subplots), fighight),
+            figsize=(min_figwidth * len(info.subplots), fighight),
         )
         fig.suptitle("Slice Plot")
 
         # Draw scatter plots.
-        for i, subplot in enumerate(subplots):
+        for i, subplot in enumerate(info.subplots):
             ax = axs[i]
-            sc = _generate_slice_subplot(subplot, ax, cmap, padding_ratio, target_name)
+            sc = _generate_slice_subplot(subplot, ax, cmap, padding_ratio, info.target_name)
 
     axcb = fig.colorbar(sc, ax=axs)
     axcb.set_label("Trial")

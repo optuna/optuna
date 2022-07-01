@@ -33,6 +33,11 @@ class _SliceSubplotInfo(NamedTuple):
     is_numerical: bool
 
 
+class _SlicePlotInfo(NamedTuple):
+    target_name: str
+    subplots: List[_SliceSubplotInfo]
+
+
 def _get_slice_subplot_info(
     trials: List[FrozenTrial],
     param: str,
@@ -58,17 +63,18 @@ def _get_slice_subplot_info(
     )
 
 
-def _get_slice_subplot_info_list(
+def _get_slice_plot_info(
     study: Study,
     params: Optional[List[str]] = None,
     target: Optional[Callable[[FrozenTrial], float]] = None,
-) -> List[_SliceSubplotInfo]:
+    target_name: str = "Objective Value",
+) -> _SlicePlotInfo:
 
     trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
 
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
-        return []
+        return _SlicePlotInfo(target_name, [])
 
     all_params = {p_name for t in trials for p_name in t.params.keys()}
     if params is None:
@@ -79,16 +85,19 @@ def _get_slice_subplot_info_list(
                 raise ValueError(f"Parameter {input_p_name} does not exist in your study.")
         sorted_params = sorted(set(params))
 
-    return [
-        _get_slice_subplot_info(
-            trials=trials,
-            param=param,
-            target=target,
-            log_scale=_is_log_scale(trials, param),
-            numerical=_is_numerical(trials, param),
-        )
-        for param in sorted_params
-    ]
+    return _SlicePlotInfo(
+        target_name=target_name,
+        subplots=[
+            _get_slice_subplot_info(
+                trials=trials,
+                param=param,
+                target=target,
+                log_scale=_is_log_scale(trials, param),
+                numerical=_is_numerical(trials, param),
+            )
+            for param in sorted_params
+        ],
+    )
 
 
 def plot_slice(
@@ -144,33 +153,26 @@ def plot_slice(
 
     _imports.check()
     _check_plot_args(study, target, target_name)
-    return _get_slice_plot(study, params, target, target_name)
+    return _get_slice_plot(_get_slice_plot_info(study, params, target, target_name))
 
 
-def _get_slice_plot(
-    study: Study,
-    params: Optional[List[str]] = None,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
-    target_name: str = "Objective Value",
-) -> "go.Figure":
+def _get_slice_plot(info: _SlicePlotInfo) -> "go.Figure":
 
     layout = go.Layout(title="Slice Plot")
 
-    subplots = _get_slice_subplot_info_list(study, params, target)
-
-    if len(subplots) == 0:
+    if len(info.subplots) == 0:
         return go.Figure(data=[], layout=layout)
-    elif len(subplots) == 1:
-        figure = go.Figure(data=[_generate_slice_subplot(subplots[0])], layout=layout)
-        figure.update_xaxes(title_text=subplots[0].param_name)
-        figure.update_yaxes(title_text=target_name)
-        if subplots[0].is_log:
+    elif len(info.subplots) == 1:
+        figure = go.Figure(data=[_generate_slice_subplot(info.subplots[0])], layout=layout)
+        figure.update_xaxes(title_text=info.subplots[0].param_name)
+        figure.update_yaxes(title_text=info.target_name)
+        if info.subplots[0].is_log:
             figure.update_xaxes(type="log")
     else:
-        figure = make_subplots(rows=1, cols=len(subplots), shared_yaxes=True)
+        figure = make_subplots(rows=1, cols=len(info.subplots), shared_yaxes=True)
         figure.update_layout(layout)
         showscale = True  # showscale option only needs to be specified once.
-        for i, subplot_info in enumerate(subplots):
+        for i, subplot_info in enumerate(info.subplots):
             trace = _generate_slice_subplot(subplot_info)
             trace.update(marker={"showscale": showscale})  # showscale's default is True.
             if showscale:
@@ -178,12 +180,12 @@ def _get_slice_plot(
             figure.add_trace(trace, row=1, col=i + 1)
             figure.update_xaxes(title_text=subplot_info.param_name, row=1, col=i + 1)
             if i == 0:
-                figure.update_yaxes(title_text=target_name, row=1, col=1)
+                figure.update_yaxes(title_text=info.target_name, row=1, col=1)
             if subplot_info.is_log:
                 figure.update_xaxes(type="log", row=1, col=i + 1)
-        if len(subplots) > 3:
+        if len(info.subplots) > 3:
             # Ensure that each subplot has a minimum width without relying on autusizing.
-            figure.update_layout(width=300 * len(subplots))
+            figure.update_layout(width=300 * len(info.subplots))
 
     return figure
 
