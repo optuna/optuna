@@ -1,7 +1,7 @@
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Optional
-from typing import Sequence
 
 from optuna import logging
 from optuna.study._study_direction import StudyDirection
@@ -24,7 +24,7 @@ class FrozenStudy:
             .. note::
                 This attribute is only available during single-objective optimization.
         directions:
-            A sequence of :class:`~optuna.study.StudyDirection` objects.
+            A list of :class:`~optuna.study.StudyDirection` objects.
         user_attrs:
             Dictionary that contains the attributes of the :class:`~optuna.study.Study` set with
             :func:`optuna.study.Study.set_user_attr`.
@@ -42,7 +42,7 @@ class FrozenStudy:
         system_attrs: Dict[str, Any],
         study_id: int,
         *,
-        directions: Optional[Sequence[StudyDirection]] = None,
+        directions: Optional[List[StudyDirection]] = None,
     ):
         self.study_name = study_name
         if direction is None and directions is None:
@@ -89,6 +89,6 @@ class FrozenStudy:
         return self._directions[0]
 
     @property
-    def directions(self) -> Sequence[StudyDirection]:
+    def directions(self) -> List[StudyDirection]:
 
         return self._directions
