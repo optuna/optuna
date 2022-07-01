@@ -141,6 +141,7 @@ def plot_pareto_front(
                 info.best_trials_with_values,
                 hovertemplate="%{text}<extra>Best Trial</extra>",
                 dominated_trials=False,
+                mode="lines+markers"
             ),
         ]
     else:
@@ -174,6 +175,7 @@ def plot_pareto_front(
                 info.best_trials_with_values,
                 hovertemplate="%{text}<extra>Best Trial</extra>",
                 dominated_trials=False,
+                mode="lines+markers"
             ),
         ]
 
@@ -370,6 +372,7 @@ def _make_scatter_object(
     hovertemplate: str,
     infeasible: bool = False,
     dominated_trials: bool = False,
+    mode: str = "markers",
 ) -> Union["go.Scatter", "go.Scatter3d"]:
     trials_with_values = trials_with_values or []
 
@@ -380,22 +383,33 @@ def _make_scatter_object(
         infeasible=infeasible,
     )
     if n_targets == 2:
+        x = [values[axis_order[0]] for _, values in trials_with_values]
+        y = [values[axis_order[1]] for _, values in trials_with_values]
+        # If a line is being added, the points need to be in order. Otherwise, we can avoid doing the sorting.
+        if "lines" in mode:
+            x, y = zip(*sorted(zip(x, y), key=lambda p: p[0]))
         return go.Scatter(
-            x=[values[axis_order[0]] for _, values in trials_with_values],
-            y=[values[axis_order[1]] for _, values in trials_with_values],
+            x=x,
+            y=y,
             text=[_make_hovertext(trial) for trial, _ in trials_with_values],
-            mode="markers",
+            mode=mode,
             hovertemplate=hovertemplate,
             marker=marker,
             showlegend=False,
         )
     elif n_targets == 3:
+        x = [values[axis_order[0]] for _, values in trials_with_values]
+        y = [values[axis_order[1]] for _, values in trials_with_values]
+        z = [values[axis_order[1]] for _, values in trials_with_values]
+        # If a line is being added, the points need to be in order. Otherwise, we can avoid doing the sorting.
+        if "lines" in mode:
+            x, y, z = zip(*sorted(zip(x, y, z), key=lambda p: p[0]))
         return go.Scatter3d(
-            x=[values[axis_order[0]] for _, values in trials_with_values],
-            y=[values[axis_order[1]] for _, values in trials_with_values],
-            z=[values[axis_order[2]] for _, values in trials_with_values],
+            x=x,
+            y=y,
+            z=z,
             text=[_make_hovertext(trial) for trial, _ in trials_with_values],
-            mode="markers",
+            mode=mode,
             hovertemplate=hovertemplate,
             marker=marker,
             showlegend=False,
