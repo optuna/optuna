@@ -33,10 +33,6 @@ class _SliceSubplotInfo(NamedTuple):
     is_numerical: bool
 
 
-class _SlicePlotInfo(NamedTuple):
-    subplots: List[_SliceSubplotInfo]
-
-
 def _get_slice_subplot_info(
     trials: List[FrozenTrial],
     param: str,
@@ -66,7 +62,7 @@ def _get_slice_subplot_info_list(
     study: Study,
     params: Optional[List[str]] = None,
     target: Optional[Callable[[FrozenTrial], float]] = None,
-) -> _SlicePlotInfo:
+) -> List[_SliceSubplotInfo]:
 
     trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
 
@@ -84,15 +80,15 @@ def _get_slice_subplot_info_list(
         sorted_params = sorted(set(params))
 
     return [
-            _get_slice_subplot_info(
-                trials=trials,
-                param=param,
-                target=target,
-                log_scale=_is_log_scale(trials, param),
-                numerical=_is_numerical(trials, param),
-            )
-            for param in sorted_params
-        ]
+        _get_slice_subplot_info(
+            trials=trials,
+            param=param,
+            target=target,
+            log_scale=_is_log_scale(trials, param),
+            numerical=_is_numerical(trials, param),
+        )
+        for param in sorted_params
+    ]
 
 
 def plot_slice(
