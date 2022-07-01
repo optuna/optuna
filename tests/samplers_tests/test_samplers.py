@@ -744,7 +744,7 @@ def test_after_trial_failing() -> None:
     sampler = SamplerAfterTrial({}, {})
     study = optuna.create_study(directions=["minimize", "minimize"], sampler=sampler)
 
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(ValueError):
         study.optimize(fail_objective, n_trials=n_trials)
 
     # Called once after the first failing trial before returning from optimize.
