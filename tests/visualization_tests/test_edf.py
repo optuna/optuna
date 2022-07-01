@@ -28,7 +28,7 @@ if plt_imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import plt
 
 
-parametrized_plot_contour = pytest.mark.parametrize("plot_edf", [plotly_plot_edf, plt_plot_edf])
+parametrized_plot_edf = pytest.mark.parametrize("plot_edf", [plotly_plot_edf, plt_plot_edf])
 
 
 def save_static_image(figure: Union[go.Figure, Axes, np.ndarray]) -> None:
