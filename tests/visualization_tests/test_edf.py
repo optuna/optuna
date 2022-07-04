@@ -147,7 +147,7 @@ def test_get_edf_info(n_studies: int, target: Callable[[optuna.trial.FrozenTrial
     max_target = 5
     for i in range(n_studies):
         study = create_study(study_name=str(i))
-        study.optimize(lambda t: t.suggest_float("x", 0, max_target) ** 2, n_trials=n_trials)
+        study.optimize(lambda t: t.suggest_float("x", 0, max_target), n_trials=n_trials)
         studies.append(study)
 
     info = _get_edf_info(studies, target=target)
