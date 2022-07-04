@@ -18,7 +18,6 @@ from optuna.visualization._contour import _ContourInfo
 from optuna.visualization._contour import _get_contour_info
 from optuna.visualization._contour import _SubContourInfo
 from optuna.visualization._utils import _check_plot_args
-from optuna.visualization._utils import _is_reverse_scale
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 
