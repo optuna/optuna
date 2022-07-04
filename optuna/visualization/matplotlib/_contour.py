@@ -2,6 +2,7 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Union
 
@@ -29,7 +30,6 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
-AXES_PADDING_RATIO = 5e-2
 CONTOUR_POINT_NUM = 100
 
 
@@ -136,8 +136,8 @@ def _get_contour_plot(
 
         # Prepare data and draw contour plots.
         cs_list = []
-        for x_i, x_param in enumerate(sorted_params):
-            for y_i, y_param in enumerate(sorted_params):
+        for x_i in range(len(sorted_params)):
+            for y_i in range(len(sorted_params)):
                 ax = axs[y_i, x_i]
                 cs = _generate_contour_subplot(sub_plot_infos[y_i][x_i], ax, cmap)
                 if isinstance(cs, ContourSet):
@@ -162,79 +162,66 @@ class _LabelEncoder:
         self.labels = sorted(set(labels))
         return self
 
-    def transform(self, labels: List[str]) -> List[Union[str, float]]:
+    def transform(self, labels: List[str]) -> List[int]:
         return [self.labels.index(label) for label in labels]
 
-    def fit_transform(self, labels: List[str]) -> List[Union[str, float]]:
+    def fit_transform(self, labels: List[str]) -> List[int]:
         return self.fit(labels).transform(labels)
 
     def get_labels(self) -> List[str]:
         return self.labels
 
-    def get_indices(self) -> List[Union[str, int, float]]:
+    def get_indices(self) -> List[int]:
         return list(range(len(self.labels)))
 
 
 def _calculate_griddata(
     xaxis: _AxisInfo,
     yaxis: _AxisInfo,
-    z_values: List[List[float]],
+    z_values_dict: Dict[Tuple[int, int], float],
 ) -> Tuple[
     np.ndarray,
     np.ndarray,
     np.ndarray,
-    List[Union[str, int, float]],
+    List[int],
     List[str],
-    List[Union[str, int, float]],
+    List[int],
     List[str],
-    List[Union[str, float]],
-    List[Union[str, float]],
+    List[Union[int, float]],
+    List[Union[int, float]],
 ]:
 
     x_values = []
     y_values = []
+    z_values = []
     for x_value, y_value in zip(xaxis.values, yaxis.values):
         if x_value is not None and y_value is not None:
             x_values.append(x_value)
             y_values.append(y_value)
+            x_i = xaxis.indices.index(x_value)
+            y_i = yaxis.indices.index(y_value)
+            z_values.append(z_values_dict[(x_i, y_i)])
 
     # Return empty values when x or y has no value.
     if len(x_values) == 0 or len(y_values) == 0:
         return np.array([]), np.array([]), np.array([]), [], [], [], [], [], []
 
-    # Add dummy values for grid data calculation when a parameter has one unique value.
-    if len(set(x_values)) == 1:
-        x_values_dummy = [x for x in xaxis.indices if x not in x_values]
-        x_values = x_values + x_values_dummy * len(x_values)
-        y_values = y_values + (y_values * len(x_values_dummy))
-        z_values = z_values + (z_values * len(x_values_dummy))
-    if len(set(y_values)) == 1:
-        y_values_dummy = [y for y in yaxis.indices if y not in y_values]
-        y_values = y_values + y_values_dummy * len(y_values)
-        x_values = x_values + (x_values * len(y_values_dummy))
-        z_values = z_values + (z_values * len(y_values_dummy))
-
     def _calculate_axis_data(
         axis: _AxisInfo,
-        values: List[Union[str, float]],
-    ) -> Tuple[
-        np.ndarray,
-        List[str],
-        List[Union[str, int, float]],
-        List[Union[str, int, float]],
-        List[Union[str, float]],
-    ]:
+        values: Sequence[Union[str, float]],
+    ) -> Tuple[np.ndarray, List[str], List[int], List[Union[int, float]]]:
 
         # Convert categorical values to int.
         cat_param_labels = []  # type: List[str]
-        cat_param_pos = []  # type: List[Union[str, int, float]]
-        indices = axis.indices
+        cat_param_pos = []  # type: List[int]
+        returned_values: Sequence[Union[int, float]]
         if axis.is_cat:
             enc = _LabelEncoder()
-            values = enc.fit_transform(list(map(str, values)))
+            returned_values = enc.fit_transform(list(map(str, values)))
             cat_param_labels = enc.get_labels()
             cat_param_pos = enc.get_indices()
-            indices = cat_param_pos
+        else:
+            returned_values = list(map(lambda x: float(x), values))
 
         # For x and y, create 1-D array of evenly spaced coordinates on linear or log scale.
         if axis.is_log:
@@ -242,13 +229,13 @@ def _calculate_griddata(
         else:
             ci = np.linspace(axis.range[0], axis.range[1], CONTOUR_POINT_NUM)
 
-        return ci, cat_param_labels, cat_param_pos, indices, values
+        return ci, cat_param_labels, cat_param_pos, list(returned_values)
 
-    xi, cat_param_labels_x, cat_param_pos_x, x_indices, x_values = _calculate_axis_data(
+    xi, cat_param_labels_x, cat_param_pos_x, transformed_x_values = _calculate_axis_data(
         xaxis,
         x_values,
     )
-    yi, cat_param_labels_y, cat_param_pos_y, y_indices, y_values = _calculate_axis_data(
+    yi, cat_param_labels_y, cat_param_pos_y, transformed_y_values = _calculate_axis_data(
         yaxis,
         y_values,
     )
@@ -258,7 +245,7 @@ def _calculate_griddata(
     # create irregularly spaced map of trial values
     # and interpolate it with Plotly's interpolation formulation
     if xaxis.name != yaxis.name:
-        zmap = _create_zmap(x_indices, y_indices, x_values, y_values, z_values, xi, yi)
+        zmap = _create_zmap(transformed_x_values, transformed_y_values, z_values, xi, yi)
         zi = _interpolate_zmap(zmap, CONTOUR_POINT_NUM)
 
     return (
@@ -269,17 +256,22 @@ def _calculate_griddata(
         cat_param_labels_x,
         cat_param_pos_y,
         cat_param_labels_y,
-        x_values,
-        y_values,
+        transformed_x_values,
+        transformed_y_values,
     )
 
 
 def _generate_contour_subplot(info: _SubContourInfo, ax: "Axes", cmap: "Colormap") -> "ContourSet":
 
-    if len(info.xaxis.indices) < 2:
+    if len(info.xaxis.indices) < 2 or len(info.yaxis.indices) < 2:
         ax.label_outer()
         return ax
-    if len(info.yaxis.indices) < 2:
+
+    ax.set(xlabel=info.xaxis.name, ylabel=info.yaxis.name)
+    ax.set_xlim(info.xaxis.range[0], info.xaxis.range[1])
+    ax.set_ylim(info.yaxis.range[0], info.yaxis.range[1])
+
+    if info.xaxis.name == info.yaxis.name:
         ax.label_outer()
         return ax
 
@@ -295,9 +287,6 @@ def _generate_contour_subplot(info: _SubContourInfo, ax: "Axes", cmap: "Colormap
         y_values,
     ) = _calculate_griddata(info.xaxis, info.yaxis, info.z_values)
     cs = None
-    ax.set(xlabel=info.xaxis.name, ylabel=info.yaxis.name)
-    ax.set_xlim(info.xaxis.range[0], info.xaxis.range[1])
-    ax.set_ylim(info.yaxis.range[0], info.yaxis.range[1])
     if len(zi) > 0:
         if info.xaxis.is_log:
             ax.set_xscale("log")
@@ -328,11 +317,9 @@ def _generate_contour_subplot(info: _SubContourInfo, ax: "Axes", cmap: "Colormap
 
 
 def _create_zmap(
-    x_indices: List[Union[str, int, float]],
-    y_indices: List[Union[str, int, float]],
-    x_values: List[Union[str, float]],
-    y_values: List[Union[str, float]],
-    z_values: List[List[float]],
+    x_values: List[Union[int, float]],
+    y_values: List[Union[int, float]],
+    z_values: List[float],
     xi: np.ndarray,
     yi: np.ndarray,
 ) -> Dict[Tuple[int, int], float]:
@@ -348,10 +335,7 @@ def _create_zmap(
     # original params might not be on the x and y axes anymore
     # so we are going with close approximations of trial value positions
     zmap = dict()
-    for x, y in zip(x_values, y_values):
-        x_i = x_indices.index(x)
-        y_i = y_indices.index(y)
-        z = z_values[y_i][x_i]
+    for x, y, z in zip(x_values, y_values, z_values):
         xindex = int(np.argmin(np.abs(xi - x)))
         yindex = int(np.argmin(np.abs(yi - y)))
         zmap[(xindex, yindex)] = z

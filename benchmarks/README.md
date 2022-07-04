@@ -96,6 +96,25 @@ Finally, you can run the script of `benchmarks/run_kurobako.py`.
 ```
 Please see `benchmarks/run_kurobako.py` to check the arguments and those default values.
 
+### Multi-objective support
+We also have benchmarks for multi-objective optimization in `kurobako`. Note that we do not have pruner support for multi-objective optimization yet.
+
+Multi-objective benchmarks can also be run from GitHub Actions or locally. To run it from GitHub Actions, please click `Performance Benchmarks with mo-kurobako` in Step 3. 
+
+To run it locally, please run `benchmarks/run_mo_kurobako.py`. 
+```bash
+% python benchmarks/run_mo_kurobako.py \
+          --path-to-kurobako "" \ # If the `kurobako` command is available.
+          --name "performance-benchmarks" \
+          --n-runs 10 \
+          --n-jobs 10 \
+          --sampler-list "RandomSampler TPESampler  NSGAIISampler" \
+          --sampler-kwargs-list "{} {\"multivariate\":true,\"constant_liar\":true} {\"population_size\":20}" \
+          --seed 0 \
+          --data-dir "." \
+          --out-dir "out"
+```
+
 ## Performance benchmarks with `bayesmark`
 
 This workflow allows to benchmark optimization algorithms available in Optuna with [`bayesmark`](https://github.com/uber/bayesmark). This is done by repeatedly performing hyperparameter search on set of `scikit-learn` models fitted to a list of [toy datasets](https://scikit-learn.org/stable/datasets/toy_dataset.html) and aggregating the results. Those are then compared to baseline provided by random sampler. This benchmark can be run with GitHub Actions or locally.
@@ -126,7 +145,7 @@ See [this doc](https://bayesmark.readthedocs.io/en/stable/scoring.html) for more
 
 CI runs benchmarks on all model/dataset combination in parallel, hovever running benchmark on single problem locally is possoble. To do this, first install required Python packages.
 ```bash
-pip install bayesmark matplotlib
+pip install bayesmark matplotlib numpy scipy pandas Jinja2
 ```
 
 Benchmark run can be started with

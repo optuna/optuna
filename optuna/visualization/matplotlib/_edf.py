@@ -1,19 +1,13 @@
 from typing import Callable
-from typing import cast
-from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Union
-
-import numpy as np
 
 from optuna._experimental import experimental_func
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
-from optuna.trial import TrialState
-from optuna.visualization._utils import _check_plot_args
-from optuna.visualization._utils import _filter_nonfinite
+from optuna.visualization._edf import _get_edf_info
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 
@@ -103,21 +97,6 @@ def plot_edf(
 
     _imports.check()
 
-    if isinstance(study, Study):
-        studies = [study]
-    else:
-        studies = list(study)
-
-    _check_plot_args(studies, target, target_name)
-    return _get_edf_plot(studies, target, target_name)
-
-
-def _get_edf_plot(
-    studies: List[Study],
-    target: Optional[Callable[[FrozenTrial], float]] = None,
-    target_name: str = "Objective Value",
-) -> "Axes":
-
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
     _, ax = plt.subplots()
@@ -127,41 +106,16 @@ def _get_edf_plot(
     ax.set_ylim(0, 1)
     cmap = plt.get_cmap("tab20")  # Use tab20 colormap for multiple line plots.
 
-    # Prepare data for plotting.
-    if len(studies) == 0:
-        _logger.warning("There are no studies.")
+    info = _get_edf_info(study, target, target_name)
+    edf_lines = info.lines
+
+    if len(edf_lines) == 0:
         return ax
 
-    if target is None:
+    for i, (study_name, y_values) in enumerate(edf_lines):
+        ax.plot(info.x_values, y_values, color=cmap(i), alpha=0.7, label=study_name)
 
-        def _target(t: FrozenTrial) -> float:
-            return cast(float, t.value)
-
-        target = _target
-
-    all_values: List[np.ndarray] = []
-    for study in studies:
-        trials = _filter_nonfinite(
-            study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
-        )
-
-        values = np.array([target(trial) for trial in trials])
-        all_values.append(values)
-
-    if all(len(values) == 0 for values in all_values):
-        _logger.warning("There are no complete trials.")
-        return ax
-
-    min_x_value = np.min(np.concatenate(all_values))
-    max_x_value = np.max(np.concatenate(all_values))
-    x_values = np.linspace(min_x_value, max_x_value, 100)
-
-    # Draw multiple line plots.
-    for i, (values, study) in enumerate(zip(all_values, studies)):
-        y_values = np.sum(values[:, np.newaxis] <= x_values, axis=0) / values.size
-        ax.plot(x_values, y_values, color=cmap(i), alpha=0.7, label=study.study_name)
-
-    if len(studies) >= 2:
+    if len(edf_lines) >= 2:
         ax.legend()
 
     return ax

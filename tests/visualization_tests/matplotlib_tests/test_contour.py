@@ -8,19 +8,11 @@ def test_create_zmap() -> None:
 
     x_values = np.arange(10)
     y_values = np.arange(10)
-    z_values = list(np.random.rand(10, 10))
+    z_values = list(np.random.rand(10))
 
     # we are testing for exact placement of z_values
     # so also passing x_values and y_values as xi and yi
-    zmap = _create_zmap(
-        x_values.tolist(),
-        y_values.tolist(),
-        x_values.tolist(),
-        y_values.tolist(),
-        z_values,
-        x_values,
-        y_values,
-    )
+    zmap = _create_zmap(x_values.tolist(), y_values.tolist(), z_values, x_values, y_values)
 
     assert len(zmap) == len(z_values)
     for coord, value in zmap.items():
@@ -29,7 +21,7 @@ def test_create_zmap() -> None:
         xidx = coord[0]
         yidx = coord[1]
         assert xidx == yidx
-        assert z_values[yidx][xidx] == value
+        assert z_values[xidx] == value
 
 
 def test_interpolate_zmap() -> None:
