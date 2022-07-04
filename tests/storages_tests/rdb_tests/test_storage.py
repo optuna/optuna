@@ -91,9 +91,6 @@ def test_engine_kwargs() -> None:
 
     create_test_storage(engine_kwargs={"pool_size": 5})
 
-    with pytest.raises(TypeError):
-        create_test_storage(engine_kwargs={"wrong_key": "wrong_value"})
-
 
 @pytest.mark.parametrize(
     "url,engine_kwargs,expected",

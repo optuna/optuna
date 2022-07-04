@@ -1,4 +1,3 @@
-from typing import Any
 from typing import Callable
 from typing import List
 from typing import Optional
@@ -528,14 +527,6 @@ def test_multiobjective_raises_on_name_mismatch(tmpdir: py.path.local, metrics: 
 
     with pytest.raises(ValueError):
         study.optimize(_multiobjective_func, n_trials=1, callbacks=[mlflc])
-
-
-@pytest.mark.parametrize("metrics", [{0: "foo", 1: "bar"}])
-def test_multiobjective_raises_on_type_mismatch(tmpdir: py.path.local, metrics: Any) -> None:
-
-    tracking_uri = f"file:{tmpdir}"
-    with pytest.raises(TypeError):
-        MLflowCallback(tracking_uri=tracking_uri, metric_name=metrics)
 
 
 def test_chunk_info(tmpdir: py.path.local) -> None:
