@@ -21,7 +21,9 @@ from optuna.trial import create_trial
 from optuna.trial import Trial
 from optuna.visualization import plot_contour as plotly_plot_contour
 from optuna.visualization._contour import _AxisInfo
+from optuna.visualization._contour import _ContourInfo
 from optuna.visualization._contour import _get_contour_info
+from optuna.visualization._contour import _SubContourInfo
 from optuna.visualization._plotly_imports import _imports as plotly_imports
 from optuna.visualization._utils import COLOR_SCALE
 from optuna.visualization.matplotlib import plot_contour as plt_plot_contour
@@ -117,14 +119,6 @@ def _create_study_mixture_category_types() -> Study:
 
 
 @parametrize_plot_contour
-def test_target_is_none_and_study_is_multi_obj(plot_contour: Callable[..., Any]) -> None:
-
-    study = create_study(directions=["minimize", "minimize"])
-    with pytest.raises(ValueError):
-        plot_contour(study)
-
-
-@parametrize_plot_contour
 def test_plot_contour_customized_target_name(plot_contour: Callable[..., Any]) -> None:
 
     params = ["param_a", "param_b"]
@@ -180,6 +174,13 @@ def test_plot_contour(
         plt.savefig(BytesIO())
 
 
+def test_target_is_none_and_study_is_multi_obj() -> None:
+
+    study = create_study(directions=["minimize", "minimize"])
+    with pytest.raises(ValueError):
+        _get_contour_info(study)
+
+
 @pytest.mark.parametrize(
     "specific_create_study",
     [lambda: prepare_study_with_trials(no_trials=True), _create_study_with_error_trials],
@@ -224,23 +225,34 @@ def test_get_contour_info_2_params() -> None:
     params = ["param_a", "param_b"]
     study = prepare_study_with_trials()
     info = _get_contour_info(study, params=params)
-    assert info.sorted_params == params
-    xaxis = info.sub_plot_infos[0][0].xaxis
-    yaxis = info.sub_plot_infos[0][0].yaxis
-    assert xaxis.name == "param_a"
-    assert yaxis.name == "param_b"
-    assert xaxis.range == (0.925, 2.575)
-    assert yaxis.range == (-0.1, 2.1)
-    assert not xaxis.is_log
-    assert not yaxis.is_log
-    assert not xaxis.is_cat
-    assert not yaxis.is_cat
-    assert xaxis.indices == [0.925, 1.0, 2.5, 2.575]
-    assert yaxis.indices == [-0.1, 0.0, 1.0, 2.0, 2.1]
-    assert xaxis.values == [1.0, None, 2.5]
-    assert yaxis.values == [2.0, 0.0, 1.0]
-    z_values = info.sub_plot_infos[0][0].z_values
-    assert z_values == {(1, 3): 0.0, (2, 2): 1.0}
+    assert info == _ContourInfo(
+        sorted_params=params,
+        sub_plot_infos=[
+            [
+                _SubContourInfo(
+                    xaxis=_AxisInfo(
+                        name="param_a",
+                        range=(0.925, 2.575),
+                        is_log=False,
+                        is_cat=False,
+                        indices=[0.925, 1.0, 2.5, 2.575],
+                        values=[1.0, None, 2.5],
+                    ),
+                    yaxis=_AxisInfo(
+                        name="param_b",
+                        range=(-0.1, 2.1),
+                        is_log=False,
+                        is_cat=False,
+                        indices=[-0.1, 0.0, 1.0, 2.0, 2.1],
+                        values=[2.0, 0.0, 1.0],
+                    ),
+                    z_values={(1, 3): 0.0, (2, 2): 1.0},
+                )
+            ]
+        ],
+        reverse_scale=True,
+        target_name="Objective Value",
+    )
 
 
 @pytest.mark.parametrize(
@@ -288,24 +300,34 @@ def test_generate_contour_plot_for_few_observations(params: List[str]) -> None:
 
     study = prepare_study_with_trials(less_than_two=True)
     info = _get_contour_info(study, params=params)
-    assert info.sorted_params == sorted(params)
-    assert np.shape(np.asarray(info.sub_plot_infos)) == (1, 1, 3)
-    xaxis = info.sub_plot_infos[0][0].xaxis
-    yaxis = info.sub_plot_infos[0][0].yaxis
-    assert xaxis.name == sorted(params)[0]
-    assert yaxis.name == sorted(params)[1]
-    assert xaxis.range == (1.0, 1.0)
-    assert yaxis.range == (-0.1, 2.1)
-    assert not xaxis.is_log
-    assert not yaxis.is_log
-    assert not xaxis.is_cat
-    assert not yaxis.is_cat
-    assert xaxis.indices == [1.0]
-    assert yaxis.indices == [-0.1, 0.0, 2.0, 2.1]
-    assert xaxis.values == [1.0, None]
-    assert yaxis.values == [2.0, 0.0]
-    z_values = info.sub_plot_infos[0][0].z_values
-    assert z_values == {}
+    assert info == _ContourInfo(
+        sorted_params=sorted(params),
+        sub_plot_infos=[
+            [
+                _SubContourInfo(
+                    xaxis=_AxisInfo(
+                        name=sorted(params)[0],
+                        range=(1.0, 1.0),
+                        is_log=False,
+                        is_cat=False,
+                        indices=[1.0],
+                        values=[1.0, None],
+                    ),
+                    yaxis=_AxisInfo(
+                        name=sorted(params)[1],
+                        range=(-0.1, 2.1),
+                        is_log=False,
+                        is_cat=False,
+                        indices=[-0.1, 0.0, 2.0, 2.1],
+                        values=[2.0, 0.0],
+                    ),
+                    z_values={},
+                )
+            ]
+        ],
+        reverse_scale=True,
+        target_name="Objective Value",
+    )
 
 
 def test_get_contour_info_log_scale_and_str_category_2_params() -> None:
@@ -313,24 +335,34 @@ def test_get_contour_info_log_scale_and_str_category_2_params() -> None:
     # If the search space has two parameters, plot_contour generates a single plot.
     study = _create_study_with_log_scale_and_str_category_2d()
     info = _get_contour_info(study)
-    assert info.sorted_params == ["param_a", "param_b"]
-    assert np.shape(np.asarray(info.sub_plot_infos)) == (1, 1, 3)
-    xaxis = info.sub_plot_infos[0][0].xaxis
-    yaxis = info.sub_plot_infos[0][0].yaxis
-    assert xaxis.name == "param_a"
-    assert yaxis.name == "param_b"
-    assert xaxis.range == (math.pow(10, -6.05), math.pow(10, -4.95))
-    assert yaxis.range == (-0.05, 1.05)
-    assert xaxis.is_log
-    assert not yaxis.is_log
-    assert not xaxis.is_cat
-    assert yaxis.is_cat
-    assert xaxis.indices == [math.pow(10, -6.05), 1e-6, 1e-5, math.pow(10, -4.95)]
-    assert yaxis.indices == ["100", "101"]
-    assert xaxis.values == [1e-6, 1e-5]
-    assert yaxis.values == ["101", "100"]
-    z_values = info.sub_plot_infos[0][0].z_values
-    assert z_values == {(1, 1): 0.0, (2, 0): 1.0}
+    assert info == _ContourInfo(
+        sorted_params=["param_a", "param_b"],
+        sub_plot_infos=[
+            [
+                _SubContourInfo(
+                    xaxis=_AxisInfo(
+                        name="param_a",
+                        range=(math.pow(10, -6.05), math.pow(10, -4.95)),
+                        is_log=True,
+                        is_cat=False,
+                        indices=[math.pow(10, -6.05), 1e-6, 1e-5, math.pow(10, -4.95)],
+                        values=[1e-6, 1e-5],
+                    ),
+                    yaxis=_AxisInfo(
+                        name="param_b",
+                        range=(-0.05, 1.05),
+                        is_log=False,
+                        is_cat=True,
+                        indices=["100", "101"],
+                        values=["101", "100"],
+                    ),
+                    z_values={(1, 1): 0.0, (2, 0): 1.0},
+                )
+            ]
+        ],
+        reverse_scale=True,
+        target_name="Objective Value",
+    )
 
 
 def test_get_contour_info_log_scale_and_str_category_more_than_2_params() -> None:
@@ -389,24 +421,34 @@ def test_get_contour_info_mixture_category_types() -> None:
 
     study = _create_study_mixture_category_types()
     info = _get_contour_info(study)
-    assert info.sorted_params == ["param_a", "param_b"]
-    assert np.shape(np.asarray(info.sub_plot_infos)) == (1, 1, 3)
-    xaxis = info.sub_plot_infos[0][0].xaxis
-    yaxis = info.sub_plot_infos[0][0].yaxis
-    assert xaxis.name == "param_a"
-    assert yaxis.name == "param_b"
-    assert xaxis.range == (-0.05, 1.05)
-    assert yaxis.range == (100.95, 102.05)
-    assert not xaxis.is_log
-    assert not yaxis.is_log
-    assert xaxis.is_cat
-    assert not yaxis.is_cat
-    assert xaxis.indices == ["100", "None"]
-    assert yaxis.indices == [100.95, 101, 102, 102.05]
-    assert xaxis.values == ["None", "100"]
-    assert yaxis.values == [101.0, 102.0]
-    z_values = info.sub_plot_infos[0][0].z_values
-    assert z_values == {(0, 2): 0.5, (1, 1): 0.0}
+    assert info == _ContourInfo(
+        sorted_params=["param_a", "param_b"],
+        sub_plot_infos=[
+            [
+                _SubContourInfo(
+                    xaxis=_AxisInfo(
+                        name="param_a",
+                        range=(-0.05, 1.05),
+                        is_log=False,
+                        is_cat=True,
+                        indices=["100", "None"],
+                        values=["None", "100"],
+                    ),
+                    yaxis=_AxisInfo(
+                        name="param_b",
+                        range=(100.95, 102.05),
+                        is_log=False,
+                        is_cat=False,
+                        indices=[100.95, 101, 102, 102.05],
+                        values=[101.0, 102.0],
+                    ),
+                    z_values={(0, 2): 0.5, (1, 1): 0.0},
+                )
+            ]
+        ],
+        reverse_scale=True,
+        target_name="Objective Value",
+    )
 
 
 @pytest.mark.parametrize("value", [float("inf"), -float("inf")])
@@ -414,24 +456,34 @@ def test_test_get_contour_info_nonfinite_removed(value: float) -> None:
 
     study = prepare_study_with_trials(with_c_d=True, value_for_first_trial=value)
     info = _get_contour_info(study, params=["param_b", "param_d"])
-    assert info.sorted_params == ["param_b", "param_d"]
-    assert np.shape(np.asarray(info.sub_plot_infos)) == (1, 1, 3)
-    xaxis = info.sub_plot_infos[0][0].xaxis
-    yaxis = info.sub_plot_infos[0][0].yaxis
-    assert xaxis.name == "param_b"
-    assert yaxis.name == "param_d"
-    assert xaxis.range == (-0.05, 1.05)
-    assert yaxis.range == (1.9, 4.1)
-    assert not xaxis.is_log
-    assert not yaxis.is_log
-    assert not xaxis.is_cat
-    assert not yaxis.is_cat
-    assert xaxis.indices == [-0.05, 0.0, 1.0, 1.05]
-    assert yaxis.indices == [1.9, 2.0, 4.0, 4.1]
-    assert xaxis.values == [0.0, 1.0]
-    assert yaxis.values == [4.0, 2.0]
-    z_values = info.sub_plot_infos[0][0].z_values
-    assert z_values == {(1, 2): 2.0, (2, 1): 1.0}
+    assert info == _ContourInfo(
+        sorted_params=["param_b", "param_d"],
+        sub_plot_infos=[
+            [
+                _SubContourInfo(
+                    xaxis=_AxisInfo(
+                        name="param_b",
+                        range=(-0.05, 1.05),
+                        is_log=False,
+                        is_cat=False,
+                        indices=[-0.05, 0.0, 1.0, 1.05],
+                        values=[0.0, 1.0],
+                    ),
+                    yaxis=_AxisInfo(
+                        name="param_d",
+                        range=(1.9, 4.1),
+                        is_log=False,
+                        is_cat=False,
+                        indices=[1.9, 2.0, 4.0, 4.1],
+                        values=[4.0, 2.0],
+                    ),
+                    z_values={(1, 2): 2.0, (2, 1): 1.0},
+                )
+            ]
+        ],
+        reverse_scale=True,
+        target_name="Objective Value",
+    )
 
 
 @pytest.mark.parametrize("objective", (0, 1))
@@ -442,24 +494,35 @@ def test_test_get_contour_info_nonfinite_multiobjective(objective: int, value: f
     info = _get_contour_info(
         study, params=["param_b", "param_d"], target=lambda t: t.values[objective]
     )
+    assert info == _ContourInfo(
+        sorted_params=["param_b", "param_d"],
+        sub_plot_infos=[
+            [
+                _SubContourInfo(
+                    xaxis=_AxisInfo(
+                        name="param_b",
+                        range=(-0.05, 1.05),
+                        is_log=False,
+                        is_cat=False,
+                        indices=[-0.05, 0.0, 1.0, 1.05],
+                        values=[0.0, 1.0],
+                    ),
+                    yaxis=_AxisInfo(
+                        name="param_d",
+                        range=(1.9, 4.1),
+                        is_log=False,
+                        is_cat=False,
+                        indices=[1.9, 2.0, 4.0, 4.1],
+                        values=[4.0, 2.0],
+                    ),
+                    z_values={(1, 2): 2.0, (2, 1): 1.0},
+                )
+            ]
+        ],
+        reverse_scale=True,
+        target_name="Objective Value",
+    )
     assert info.sorted_params == ["param_b", "param_d"]
-    assert np.shape(np.asarray(info.sub_plot_infos)) == (1, 1, 3)
-    xaxis = info.sub_plot_infos[0][0].xaxis
-    yaxis = info.sub_plot_infos[0][0].yaxis
-    assert xaxis.name == "param_b"
-    assert yaxis.name == "param_d"
-    assert xaxis.range == (-0.05, 1.05)
-    assert yaxis.range == (1.9, 4.1)
-    assert not xaxis.is_log
-    assert not yaxis.is_log
-    assert not xaxis.is_cat
-    assert not yaxis.is_cat
-    assert xaxis.indices == [-0.05, 0.0, 1.0, 1.05]
-    assert yaxis.indices == [1.9, 2.0, 4.0, 4.1]
-    assert xaxis.values == [0.0, 1.0]
-    assert yaxis.values == [4.0, 2.0]
-    z_values = info.sub_plot_infos[0][0].z_values
-    assert z_values == {(1, 2): 2.0, (2, 1): 1.0}
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])

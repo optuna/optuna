@@ -17,7 +17,6 @@ from optuna.visualization._contour import _AxisInfo
 from optuna.visualization._contour import _ContourInfo
 from optuna.visualization._contour import _get_contour_info
 from optuna.visualization._contour import _SubContourInfo
-from optuna.visualization._utils import _check_plot_args
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 
@@ -93,7 +92,6 @@ def plot_contour(
     """
 
     _imports.check()
-    _check_plot_args(study, target, target_name)
     _logger.warning(
         "Output figures of this Matplotlib-based `plot_contour` function would be different from "
         "those of the Plotly-based `plot_contour`."
