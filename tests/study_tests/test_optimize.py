@@ -13,6 +13,8 @@ from optuna import TrialPruned
 from optuna.study import _optimize
 from optuna.study._tell import _tell_with_warning
 from optuna.study._tell import STUDY_TELL_WARNING_KEY
+from optuna.testing.objectives import fail_objective
+from optuna.testing.objectives import pruned_objective_with_intermediate_value
 from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
 from optuna.trial import TrialState
@@ -95,31 +97,29 @@ def test_run_trial_automatically_fail(storage_mode: str, caplog: LogCaptureFixtu
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_run_trial_pruned(storage_mode: str, caplog: LogCaptureFixture) -> None:
-    def gen_func(intermediate: Optional[float] = None) -> Callable[[Trial], float]:
-        def func(trial: Trial) -> float:
-            if intermediate is not None:
-                trial.report(step=1, value=intermediate)
-            raise TrialPruned
-
-        return func
-
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
 
         caplog.clear()
-        frozen_trial = _optimize._run_trial(study, gen_func(), catch=())
+        frozen_trial = _optimize._run_trial(
+            study, pruned_objective_with_intermediate_value([]), catch=()
+        )
         assert frozen_trial.state == TrialState.PRUNED
         assert frozen_trial.value is None
         assert "Trial 0 pruned." in caplog.text
 
         caplog.clear()
-        frozen_trial = _optimize._run_trial(study, gen_func(intermediate=1), catch=())
+        frozen_trial = _optimize._run_trial(
+            study, pruned_objective_with_intermediate_value([1]), catch=()
+        )
         assert frozen_trial.state == TrialState.PRUNED
         assert frozen_trial.value == 1
         assert "Trial 1 pruned." in caplog.text
 
         caplog.clear()
-        frozen_trial = _optimize._run_trial(study, gen_func(intermediate=float("nan")), catch=())
+        frozen_trial = _optimize._run_trial(
+            study, pruned_objective_with_intermediate_value([float("nan")]), catch=()
+        )
         assert frozen_trial.state == TrialState.PRUNED
         assert frozen_trial.value is None
         assert "Trial 2 pruned." in caplog.text
@@ -127,31 +127,25 @@ def test_run_trial_pruned(storage_mode: str, caplog: LogCaptureFixture) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_run_trial_catch_exception(storage_mode: str) -> None:
-    def func_value_error(_: Trial) -> float:
-        raise ValueError
-
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
-        frozen_trial = _optimize._run_trial(study, func_value_error, catch=(ValueError,))
+        frozen_trial = _optimize._run_trial(study, fail_objective, catch=(ValueError,))
         assert frozen_trial.state == TrialState.FAIL
         assert STUDY_TELL_WARNING_KEY not in frozen_trial.system_attrs
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_run_trial_exception(storage_mode: str) -> None:
-    def func_value_error(_: Trial) -> float:
-        raise ValueError
-
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
         with pytest.raises(ValueError):
-            _optimize._run_trial(study, func_value_error, ())
+            _optimize._run_trial(study, fail_objective, ())
 
     # Test trial with unacceptable exception.
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
         with pytest.raises(ValueError):
-            _optimize._run_trial(study, func_value_error, (ArithmeticError,))
+            _optimize._run_trial(study, fail_objective, (ArithmeticError,))
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
