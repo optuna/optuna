@@ -125,10 +125,7 @@ def _get_pareto_front_2d(info: _ParetoFrontInfo) -> "Axes":
     ax.set_ylabel(info.target_names[info.axis_order[1]])
 
     trial_label: str = "Trial"
-    if (
-        info.infeasible_trials_with_values is not None
-        and len(info.infeasible_trials_with_values) > 0
-    ):
+    if len(info.infeasible_trials_with_values) > 0:
         ax.scatter(
             x=[values[info.axis_order[0]] for _, values in info.infeasible_trials_with_values],
             y=[values[info.axis_order[1]] for _, values in info.infeasible_trials_with_values],
@@ -136,14 +133,14 @@ def _get_pareto_front_2d(info: _ParetoFrontInfo) -> "Axes":
             label="Infeasible Trial",
         )
         trial_label = "Feasible Trial"
-    if info.non_best_trials_with_values is not None and len(info.non_best_trials_with_values) > 0:
+    if len(info.non_best_trials_with_values) > 0:
         ax.scatter(
             x=[values[info.axis_order[0]] for _, values in info.non_best_trials_with_values],
             y=[values[info.axis_order[1]] for _, values in info.non_best_trials_with_values],
             color=cmap(0),
             label=trial_label,
         )
-    if info.best_trials_with_values is not None and len(info.best_trials_with_values) > 0:
+    if len(info.best_trials_with_values) > 0:
         ax.scatter(
             x=[values[info.axis_order[0]] for _, values in info.best_trials_with_values],
             y=[values[info.axis_order[1]] for _, values in info.best_trials_with_values],

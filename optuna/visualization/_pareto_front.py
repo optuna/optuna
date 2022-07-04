@@ -33,6 +33,8 @@ class _ParetoFrontInfo(NamedTuple):
     non_best_trials_with_values: List[Tuple[FrozenTrial, List[float]]]
     infeasible_trials_with_values: List[Tuple[FrozenTrial, List[float]]]
     axis_order: List[int]
+    include_dominated_trials: bool
+    has_constraints_func: bool
 
 
 def plot_pareto_front(
@@ -123,8 +125,16 @@ def plot_pareto_front(
     info = _get_pareto_front_info(
         study, target_names, include_dominated_trials, axis_order, constraints_func, targets
     )
+    return _get_pareto_front_plot(info)
 
-    if constraints_func is None:
+
+def _get_pareto_front_plot(info: _ParetoFrontInfo) -> "go.Figure":
+    # include_dominated_trials = len(info.non_best_trials_with_values) != 0
+    include_dominated_trials = info.include_dominated_trials
+    # has_constraints_func = len(info.infeasible_trials_with_values) != 0:
+    has_constraints_func = info.has_constraints_func
+    # if len(info.infeasible_trials_with_values) != 0:
+    if not has_constraints_func:
         data = [
             _make_scatter_object(
                 info.n_targets,
@@ -144,11 +154,6 @@ def plot_pareto_front(
             ),
         ]
     else:
-        warnings.warn(
-            "``constraints_func`` argument is an experimental feature."
-            " The interface can change in the future.",
-            ExperimentalWarning,
-        )
 
         data = [
             _make_scatter_object(
@@ -218,6 +223,12 @@ def _get_pareto_front_info(
         )
 
     if constraints_func is not None:
+        warnings.warn(
+            "``constraints_func`` argument is an experimental feature."
+            " The interface can change in the future.",
+            ExperimentalWarning,
+        )
+
         feasible_trials = []
         infeasible_trials = []
         for trial in study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)):
@@ -261,7 +272,14 @@ def _get_pareto_front_info(
         trials: List[FrozenTrial],
         targets: Callable[[FrozenTrial], Sequence[float]],
     ) -> List[Tuple[FrozenTrial, List[float]]]:
-        return [(trial, list(targets(trial))) for trial in trials]
+        target_values = [targets(trial) for trial in trials]
+        for v in target_values:
+            if not isinstance(v, collections.abc.Sequence):
+                raise ValueError(
+                    "`targets` should return a sequence of target values."
+                    " your `targets` returns {}".format(type(v))
+                )
+        return [(trial, list(v)) for trial, v in zip(trials, target_values)]
 
     best_trials_with_values = _make_trials_with_values(best_trials, _targets)
     non_best_trials_with_values = _make_trials_with_values(non_best_trials, _targets)
@@ -271,11 +289,6 @@ def _get_pareto_front_info(
         trials_with_values: Sequence[Tuple[FrozenTrial, Sequence[float]]]
     ) -> Optional[int]:
         if len(trials_with_values) > 0:
-            if not isinstance(trials_with_values[0][1], collections.abc.Sequence):
-                raise ValueError(
-                    "`targets` should return a sequence of target values."
-                    " your `targets` returns {}".format(type(trials_with_values[0][1]))
-                )
             return len(trials_with_values[0][1])
         return None
 
@@ -333,6 +346,8 @@ def _get_pareto_front_info(
         non_best_trials_with_values=non_best_trials_with_values,
         infeasible_trials_with_values=infeasible_trials_with_values,
         axis_order=axis_order,
+        include_dominated_trials=include_dominated_trials,
+        has_constraints_func=constraints_func is not None,
     )
 
 
