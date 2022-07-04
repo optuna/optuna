@@ -261,7 +261,14 @@ def _get_pareto_front_info(
         trials: List[FrozenTrial],
         targets: Callable[[FrozenTrial], Sequence[float]],
     ) -> List[Tuple[FrozenTrial, List[float]]]:
-        return [(trial, list(targets(trial))) for trial in trials]
+        target_values = [targets(trial) for trial in trials]
+        for v in target_values:
+            if not isinstance(v, collections.abc.Sequence):
+                raise ValueError(
+                    "`targets` should return a sequence of target values."
+                    " your `targets` returns {}".format(type(v))
+                )
+        return [(trial, list(v)) for trial, v in zip(trials, target_values)]
 
     best_trials_with_values = _make_trials_with_values(best_trials, _targets)
     non_best_trials_with_values = _make_trials_with_values(non_best_trials, _targets)
@@ -271,11 +278,6 @@ def _get_pareto_front_info(
         trials_with_values: Sequence[Tuple[FrozenTrial, Sequence[float]]]
     ) -> Optional[int]:
         if len(trials_with_values) > 0:
-            if not isinstance(trials_with_values[0][1], collections.abc.Sequence):
-                raise ValueError(
-                    "`targets` should return a sequence of target values."
-                    " your `targets` returns {}".format(type(trials_with_values[0][1]))
-                )
             return len(trials_with_values[0][1])
         return None
 
