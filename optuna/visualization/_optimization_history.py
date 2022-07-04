@@ -207,19 +207,18 @@ def plot_optimization_history(
     )
 
     if error_bar:
-        return _get_optimization_histories_with_error_bar(studies, target, target_name, layout)
+        eb_info = _get_optimization_history_error_bar_info(studies, target, target_name)
+        return _get_optimization_histories_with_error_bar(eb_info, layout)
     else:
-        return _get_optimization_histories(studies, target, target_name, layout)
+        info_list = _get_optimization_history_info_list(studies, target, target_name)
+        return _get_optimization_histories(info_list, layout)
 
 
 def _get_optimization_histories_with_error_bar(
-    studies: List[Study],
-    target: Optional[Callable[[FrozenTrial], float]],
-    target_name: str,
+    eb_info: Optional[_OptimizationHistoryErrorBarInfo],
     layout: "go.Layout",
 ) -> "go.Figure":
 
-    eb_info = _get_optimization_history_error_bar_info(studies, target, target_name)
     if eb_info is None:
         return go.Figure(data=[], layout=layout)
 
@@ -273,13 +272,10 @@ def _get_optimization_histories_with_error_bar(
 
 
 def _get_optimization_histories(
-    studies: List[Study],
-    target: Optional[Callable[[FrozenTrial], float]],
-    target_name: str,
+    info_list: Optional[List[_OptimizationHistoryInfo]],
     layout: "go.Layout",
 ) -> "go.Figure":
 
-    info_list = _get_optimization_history_info_list(studies, target, target_name)
     if info_list is None:
         return go.Figure(data=[], layout=layout)
 

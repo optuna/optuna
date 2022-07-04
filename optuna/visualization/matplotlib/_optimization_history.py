@@ -12,6 +12,8 @@ from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.visualization._optimization_history import _get_optimization_history_error_bar_info
 from optuna.visualization._optimization_history import _get_optimization_history_info_list
+from optuna.visualization._optimization_history import _OptimizationHistoryErrorBarInfo
+from optuna.visualization._optimization_history import _OptimizationHistoryInfo
 from optuna.visualization._utils import _check_plot_args
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
@@ -99,22 +101,21 @@ def plot_optimization_history(
     ax.set_ylabel(target_name)
 
     if error_bar:
-        ax = _get_optimization_histories_with_error_bar(studies, target, target_name, ax)
+        eb_info = _get_optimization_history_error_bar_info(studies, target, target_name)
+        ax = _get_optimization_histories_with_error_bar(eb_info, ax)
     else:
-        ax = _get_optimization_histories(studies, target, target_name, ax)
+        info_list = _get_optimization_history_info_list(studies, target, target_name)
+        ax = _get_optimization_histories(info_list, ax)
 
     plt.legend(bbox_to_anchor=(1.05, 1.0), loc="upper left")
     return ax
 
 
 def _get_optimization_histories_with_error_bar(
-    studies: List[Study],
-    target: Optional[Callable[[FrozenTrial], float]],
-    target_name: str,
+    eb_info: Optional[_OptimizationHistoryErrorBarInfo],
     ax: "Axes",
 ) -> "Axes":
 
-    eb_info = _get_optimization_history_error_bar_info(studies, target, target_name)
     if eb_info is None:
         return ax
 
@@ -149,13 +150,10 @@ def _get_optimization_histories_with_error_bar(
 
 
 def _get_optimization_histories(
-    studies: List[Study],
-    target: Optional[Callable[[FrozenTrial], float]],
-    target_name: str,
+    info_list: Optional[List[_OptimizationHistoryInfo]],
     ax: "Axes",
 ) -> "Axes":
 
-    info_list = _get_optimization_history_info_list(studies, target, target_name)
     if info_list is None:
         return ax
 
@@ -166,7 +164,7 @@ def _get_optimization_histories(
         ax.scatter(
             x=info.trial_numbers,
             y=info.values,
-            color=cmap(0) if len(studies) == 1 else cmap(2 * i),
+            color=cmap(0) if len(info_list) == 1 else cmap(2 * i),
             alpha=1,
             label=info.label_name,
         )
@@ -175,7 +173,7 @@ def _get_optimization_histories(
                 info.trial_numbers,
                 info.best_values,
                 marker="o",
-                color=cmap(3) if len(studies) == 1 else cmap(2 * i + 1),
+                color=cmap(3) if len(info_list) == 1 else cmap(2 * i + 1),
                 alpha=0.5,
                 label=info.best_label_name,
             )
