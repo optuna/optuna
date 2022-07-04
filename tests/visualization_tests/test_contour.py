@@ -15,6 +15,7 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.study import create_study
+from optuna.study import Study
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
 from optuna.trial import Trial
@@ -43,11 +44,76 @@ parametrize_plot_contour = pytest.mark.parametrize(
 )
 
 
-def save_static_image(figure: Union[go.Figure, Axes, np.ndarray]) -> None:
-    if isinstance(figure, go.Figure):
-        figure.write_image(BytesIO())
-    else:
-        plt.savefig(BytesIO())
+def _create_study_with_error_trials() -> Study:
+    def fail_objective(_: Trial) -> float:
+
+        raise ValueError
+
+    study = create_study()
+    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
+    return study
+
+
+def _create_study_with_log_scale_and_str_category_2d() -> Study:
+    study = create_study()
+    distributions = {
+        "param_a": FloatDistribution(1e-7, 1e-2, log=True),
+        "param_b": CategoricalDistribution(["100", "101"]),
+    }
+    study.add_trial(
+        create_trial(
+            value=0.0, params={"param_a": 1e-6, "param_b": "101"}, distributions=distributions
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=1.0, params={"param_a": 1e-5, "param_b": "100"}, distributions=distributions
+        )
+    )
+    return study
+
+
+def _create_study_with_log_scale_and_str_category_3d() -> Study:
+    study = create_study()
+    distributions = {
+        "param_a": FloatDistribution(1e-7, 1e-2, log=True),
+        "param_b": CategoricalDistribution(["100", "101"]),
+        "param_c": CategoricalDistribution(["one", "two"]),
+    }
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"param_a": 1e-6, "param_b": "101", "param_c": "one"},
+            distributions=distributions,
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=1.0,
+            params={"param_a": 1e-5, "param_b": "100", "param_c": "two"},
+            distributions=distributions,
+        )
+    )
+    return study
+
+
+def _create_study_mixture_category_types() -> Study:
+    study = create_study()
+    distributions: Dict[str, BaseDistribution] = {
+        "param_a": CategoricalDistribution([None, "100"]),
+        "param_b": CategoricalDistribution([101, 102.0]),
+    }
+    study.add_trial(
+        create_trial(
+            value=0.0, params={"param_a": None, "param_b": 101}, distributions=distributions
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=0.5, params={"param_a": "100", "param_b": 102.0}, distributions=distributions
+        )
+    )
+    return study
 
 
 @parametrize_plot_contour
@@ -68,119 +134,56 @@ def test_plot_contour_customized_target_name(plot_contour: Callable[..., Any]) -
         assert figure.data[0]["colorbar"].title.text == "Target Name"
     elif isinstance(figure, Axes):
         assert figure.figure.axes[-1].get_ylabel() == "Target Name"
-    save_static_image(figure)
 
 
 @parametrize_plot_contour
 @pytest.mark.parametrize(
-    "params",
+    "specific_create_study, params",
     [
-        [],
-        ["param_a"],
-        ["param_a", "param_b"],
-        ["param_a", "param_b", "param_c"],
-        ["param_a", "param_b", "param_c", "param_d"],
-        None,
+        [lambda: prepare_study_with_trials(no_trials=True), []],
+        [lambda: prepare_study_with_trials(no_trials=True), ["param_a"]],
+        [lambda: prepare_study_with_trials(no_trials=True), ["param_a", "param_b"]],
+        [lambda: prepare_study_with_trials(no_trials=True), ["param_a", "param_b", "param_c"]],
+        [
+            lambda: prepare_study_with_trials(no_trials=True),
+            ["param_a", "param_b", "param_c", "param_d"],
+        ],
+        [lambda: prepare_study_with_trials(no_trials=True), None],
+        [_create_study_with_error_trials, []],
+        [_create_study_with_error_trials, ["param_a"]],
+        [_create_study_with_error_trials, ["param_a", "param_b"]],
+        [_create_study_with_error_trials, ["param_a", "param_b", "param_c"]],
+        [_create_study_with_error_trials, ["param_a", "param_b", "param_c", "param_d"]],
+        [_create_study_with_error_trials, None],
+        [prepare_study_with_trials, []],
+        [prepare_study_with_trials, ["param_a"]],
+        [prepare_study_with_trials, ["param_a", "param_b"]],
+        [prepare_study_with_trials, ["param_a", "param_b", "param_c"]],
+        [prepare_study_with_trials, ["param_a", "param_b", "param_c", "param_d"]],
+        [prepare_study_with_trials, None],
+        [_create_study_with_log_scale_and_str_category_2d, None],
+        [_create_study_with_log_scale_and_str_category_3d, None],
+        [_create_study_mixture_category_types, None],
     ],
 )
-def test_plot_contour(plot_contour: Callable[..., Any], params: Optional[List[str]]) -> None:
+def test_plot_contour(
+    plot_contour: Callable[..., Any],
+    specific_create_study: Callable[[], Study],
+    params: Optional[List[str]],
+) -> None:
 
-    study_without_trials = prepare_study_with_trials(no_trials=True)
-    figure = plot_contour(study_without_trials, params=params)
-    save_static_image(figure)
-
-    # Test whether trials with `ValueError`s are ignored.
-
-    def fail_objective(_: Trial) -> float:
-
-        raise ValueError
-
-    study = create_study()
-    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
+    study = specific_create_study()
     figure = plot_contour(study, params=params)
-    save_static_image(figure)
-
-    # Test with some trials.
-    study = prepare_study_with_trials()
-
-    # Test ValueError due to wrong params.
-    with pytest.raises(ValueError):
-        plot_contour(study, ["optuna", "Optuna"])
-
-    figure = plot_contour(study, params=params)
-    save_static_image(figure)
+    if isinstance(figure, go.Figure):
+        figure.write_image(BytesIO())
+    else:
+        plt.savefig(BytesIO())
 
 
-@parametrize_plot_contour
-def test_plot_contour_log_scale_and_str_category(plot_contour: Callable[..., Any]) -> None:
-
-    # If the search space has two parameters, plot_contour generates a single plot.
-    study = create_study()
-    distributions = {
-        "param_a": FloatDistribution(1e-7, 1e-2, log=True),
-        "param_b": CategoricalDistribution(["100", "101"]),
-    }
-    study.add_trial(
-        create_trial(
-            value=0.0, params={"param_a": 1e-6, "param_b": "100"}, distributions=distributions
-        )
-    )
-    study.add_trial(
-        create_trial(
-            value=1.0, params={"param_a": 1e-5, "param_b": "101"}, distributions=distributions
-        )
-    )
-
-    figure = plot_contour(study)
-    save_static_image(figure)
-
-    # If the search space has three parameters, plot_contour generates nine plots.
-    study = create_study()
-    distributions = {
-        "param_a": FloatDistribution(1e-7, 1e-2, log=True),
-        "param_b": CategoricalDistribution(["100", "101"]),
-        "param_c": CategoricalDistribution(["one", "two"]),
-    }
-    study.add_trial(
-        create_trial(
-            value=0.0,
-            params={"param_a": 1e-6, "param_b": "100", "param_c": "one"},
-            distributions=distributions,
-        )
-    )
-    study.add_trial(
-        create_trial(
-            value=1.0,
-            params={"param_a": 1e-5, "param_b": "101", "param_c": "two"},
-            distributions=distributions,
-        )
-    )
-
-    figure = plot_contour(study)
-    save_static_image(figure)
-
-
-@parametrize_plot_contour
-def test_plot_contour_mixture_category_types(plot_contour: Callable[..., Any]) -> None:
-    study = create_study()
-    distributions: Dict[str, BaseDistribution] = {
-        "param_a": CategoricalDistribution([None, "100"]),
-        "param_b": CategoricalDistribution([101, 102.0]),
-    }
-    study.add_trial(
-        create_trial(
-            value=0.0, params={"param_a": None, "param_b": 101}, distributions=distributions
-        )
-    )
-    study.add_trial(
-        create_trial(
-            value=0.5, params={"param_a": "100", "param_b": 102.0}, distributions=distributions
-        )
-    )
-    figure = plot_contour(study)
-    save_static_image(figure)
-
-
+@pytest.mark.parametrize(
+    "specific_create_study",
+    [lambda: prepare_study_with_trials(no_trials=True), _create_study_with_error_trials],
+)
 @pytest.mark.parametrize(
     "params",
     [
@@ -192,32 +195,11 @@ def test_plot_contour_mixture_category_types(plot_contour: Callable[..., Any]) -
         None,
     ],
 )
-def test_get_contour_info_no_trial(params: Optional[List[str]]) -> None:
+def test_get_contour_info_empty(
+    specific_create_study: Callable[[], Study], params: Optional[List[str]]
+) -> None:
 
-    study_without_trials = prepare_study_with_trials(no_trials=True)
-    info = _get_contour_info(study_without_trials, params=params)
-    assert len(info.sorted_params) == 0
-    assert len(info.sub_plot_infos) == 0
-
-
-@pytest.mark.parametrize(
-    "params",
-    [
-        [],
-        ["param_a"],
-        ["param_a", "param_b"],
-        ["param_a", "param_b", "param_c"],
-        ["param_a", "param_b", "param_c", "param_d"],
-        None,
-    ],
-)
-def test_get_contour_info_ignored_error(params: Optional[List[str]]) -> None:
-    def fail_objective(_: Trial) -> float:
-
-        raise ValueError
-
-    study = create_study()
-    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
+    study = specific_create_study()
     info = _get_contour_info(study, params=params)
     assert len(info.sorted_params) == 0
     assert len(info.sub_plot_infos) == 0
@@ -231,7 +213,7 @@ def test_get_contour_info_error() -> None:
 
 
 @pytest.mark.parametrize("params", [[], ["param_a"]])
-def test_get_contour_info_empty(params: Optional[List[str]]) -> None:
+def test_get_contour_info_too_short_params(params: Optional[List[str]]) -> None:
     study = prepare_study_with_trials()
     info = _get_contour_info(study, params=params)
     assert len(info.sorted_params) <= 1
@@ -257,6 +239,8 @@ def test_get_contour_info_2_params() -> None:
     assert yaxis.indices == [-0.1, 0.0, 1.0, 2.0, 2.1]
     assert xaxis.values == [1.0, None, 2.5]
     assert yaxis.values == [2.0, 0.0, 1.0]
+    z_values = info.sub_plot_infos[0][0].z_values
+    assert z_values == {(1, 3): 0.0, (2, 2): 1.0}
 
 
 @pytest.mark.parametrize(
@@ -327,22 +311,7 @@ def test_generate_contour_plot_for_few_observations(params: List[str]) -> None:
 def test_get_contour_info_log_scale_and_str_category_2_params() -> None:
 
     # If the search space has two parameters, plot_contour generates a single plot.
-    study = create_study()
-    distributions = {
-        "param_a": FloatDistribution(1e-7, 1e-2, log=True),
-        "param_b": CategoricalDistribution(["100", "101"]),
-    }
-    study.add_trial(
-        create_trial(
-            value=0.0, params={"param_a": 1e-6, "param_b": "101"}, distributions=distributions
-        )
-    )
-    study.add_trial(
-        create_trial(
-            value=1.0, params={"param_a": 1e-5, "param_b": "100"}, distributions=distributions
-        )
-    )
-
+    study = _create_study_with_log_scale_and_str_category_2d()
     info = _get_contour_info(study)
     assert info.sorted_params == ["param_a", "param_b"]
     assert np.shape(np.asarray(info.sub_plot_infos)) == (1, 1, 3)
@@ -365,28 +334,9 @@ def test_get_contour_info_log_scale_and_str_category_2_params() -> None:
 
 
 def test_get_contour_info_log_scale_and_str_category_more_than_2_params() -> None:
-    # If the search space has three parameters, plot_contour generates nine plots.
-    study = create_study()
-    distributions = {
-        "param_a": FloatDistribution(1e-7, 1e-2, log=True),
-        "param_b": CategoricalDistribution(["100", "101"]),
-        "param_c": CategoricalDistribution(["one", "two"]),
-    }
-    study.add_trial(
-        create_trial(
-            value=0.0,
-            params={"param_a": 1e-6, "param_b": "101", "param_c": "one"},
-            distributions=distributions,
-        )
-    )
-    study.add_trial(
-        create_trial(
-            value=1.0,
-            params={"param_a": 1e-5, "param_b": "100", "param_c": "two"},
-            distributions=distributions,
-        )
-    )
 
+    # If the search space has three parameters, plot_contour generates nine plots.
+    study = _create_study_with_log_scale_and_str_category_3d()
     info = _get_contour_info(study)
     params = ["param_a", "param_b", "param_c"]
     assert info.sorted_params == params
@@ -436,22 +386,8 @@ def test_get_contour_info_log_scale_and_str_category_more_than_2_params() -> Non
 
 
 def test_get_contour_info_mixture_category_types() -> None:
-    study = create_study()
-    distributions: Dict[str, BaseDistribution] = {
-        "param_a": CategoricalDistribution([None, "100"]),
-        "param_b": CategoricalDistribution([101, 102.0]),
-    }
-    study.add_trial(
-        create_trial(
-            value=0.0, params={"param_a": None, "param_b": 101}, distributions=distributions
-        )
-    )
-    study.add_trial(
-        create_trial(
-            value=0.5, params={"param_a": "100", "param_b": 102.0}, distributions=distributions
-        )
-    )
 
+    study = _create_study_mixture_category_types()
     info = _get_contour_info(study)
     assert info.sorted_params == ["param_a", "param_b"]
     assert np.shape(np.asarray(info.sub_plot_infos)) == (1, 1, 3)

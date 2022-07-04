@@ -133,6 +133,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "fakeredis ; python_version>='3.8'",
             "pytest",
             "pytest-cov",
+            "kaleido",
         ],
     }
 
