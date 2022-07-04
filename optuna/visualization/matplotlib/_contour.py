@@ -100,18 +100,14 @@ def plot_contour(
         "those of the Plotly-based `plot_contour`."
     )
     info = _get_contour_info(study, params, target)
-    reverse_scale = _is_reverse_scale(study, target)
-    return _get_contour_plot(info, reverse_scale, target_name)
+    return _get_contour_plot(info, target_name)
 
 
-def _get_contour_plot(
-    info: _ContourInfo,
-    reverse_scale: bool,
-    target_name: str = "Objective Value",
-) -> "Axes":
+def _get_contour_plot(info: _ContourInfo, target_name: str = "Objective Value") -> "Axes":
 
     sorted_params = info.sorted_params
     sub_plot_infos = info.sub_plot_infos
+    reverse_scale = info.reverse_scale
 
     if len(sorted_params) <= 1:
         _, ax = plt.subplots()
