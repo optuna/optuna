@@ -32,10 +32,15 @@ class _OptimizationHistoryInfo(NamedTuple):
 
 
 def _get_optimization_history_info_list(
-    studies: List[Study],
+    study: Union[Study, Sequence[Study]],
     target: Optional[Callable[[FrozenTrial], float]],
     target_name: str,
 ) -> Optional[List[_OptimizationHistoryInfo]]:
+
+    if isinstance(study, Study):
+        studies = [study]
+    else:
+        studies = list(study)
 
     optimization_history_info_list: List[_OptimizationHistoryInfo] = []
     for study in studies:
@@ -88,12 +93,12 @@ class _OptimizationHistoryErrorBarInfo(NamedTuple):
 
 
 def _get_optimization_history_error_bar_info(
-    studies: List[Study],
+    study: Union[Study, Sequence[Study]],
     target: Optional[Callable[[FrozenTrial], float]],
     target_name: str,
 ) -> Optional[_OptimizationHistoryErrorBarInfo]:
 
-    info_list = _get_optimization_history_info_list(studies, target, target_name)
+    info_list = _get_optimization_history_info_list(study, target, target_name)
     if info_list is None:
         return None
     max_trial_number = max(max(info.trial_numbers) for info in info_list)
@@ -192,13 +197,7 @@ def plot_optimization_history(
     """
 
     _imports.check()
-
-    if isinstance(study, Study):
-        studies = [study]
-    else:
-        studies = list(study)
-
-    _check_plot_args(studies, target, target_name)
+    _check_plot_args(study, target, target_name)
 
     layout = go.Layout(
         title="Optimization History Plot",
@@ -207,10 +206,10 @@ def plot_optimization_history(
     )
 
     if error_bar:
-        eb_info = _get_optimization_history_error_bar_info(studies, target, target_name)
+        eb_info = _get_optimization_history_error_bar_info(study, target, target_name)
         return _get_optimization_histories_with_error_bar(eb_info, layout)
     else:
-        info_list = _get_optimization_history_info_list(studies, target, target_name)
+        info_list = _get_optimization_history_info_list(study, target, target_name)
         return _get_optimization_histories(info_list, layout)
 
 

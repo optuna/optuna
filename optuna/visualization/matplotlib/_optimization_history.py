@@ -85,11 +85,6 @@ def plot_optimization_history(
     """
 
     _imports.check()
-
-    if isinstance(study, Study):
-        studies = [study]
-    else:
-        studies = list(study)
     _check_plot_args(study, target, target_name)
 
     # Set up the graph style.
@@ -101,10 +96,10 @@ def plot_optimization_history(
     ax.set_ylabel(target_name)
 
     if error_bar:
-        eb_info = _get_optimization_history_error_bar_info(studies, target, target_name)
+        eb_info = _get_optimization_history_error_bar_info(study, target, target_name)
         ax = _get_optimization_histories_with_error_bar(eb_info, ax)
     else:
-        info_list = _get_optimization_history_info_list(studies, target, target_name)
+        info_list = _get_optimization_history_info_list(study, target, target_name)
         ax = _get_optimization_histories(info_list, ax)
 
     plt.legend(bbox_to_anchor=(1.05, 1.0), loc="upper left")
