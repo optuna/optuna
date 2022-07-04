@@ -364,7 +364,7 @@ def _make_scatter_object(
     n_targets: int,
     axis_order: Sequence[int],
     include_dominated_trials: bool,
-    trials_with_values: Optional[Sequence[Tuple[FrozenTrial, Sequence[float]]]],
+    trials_with_values: Sequence[Tuple[FrozenTrial, Sequence[float]]],
     hovertemplate: str,
     infeasible: bool = False,
     dominated_trials: bool = False,
