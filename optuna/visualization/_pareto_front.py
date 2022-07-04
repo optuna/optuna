@@ -159,7 +159,6 @@ def plot_pareto_front(
                 info.best_trials_with_values,
                 hovertemplate="%{text}<extra>Best Trial</extra>",
                 dominated_trials=False,
-                mode="markers",
             ),
         ]
     else:
@@ -193,7 +192,6 @@ def plot_pareto_front(
                 info.best_trials_with_values,
                 hovertemplate="%{text}<extra>Best Trial</extra>",
                 dominated_trials=False,
-                mode="markers",
             ),
         ]
 
@@ -437,7 +435,6 @@ def _make_scatter_object(
     hovertemplate: str,
     infeasible: bool = False,
     dominated_trials: bool = False,
-    mode: str = "markers",
 ) -> Union["go.Scatter", "go.Scatter3d"]:
     trials_with_values = trials_with_values or []
 
@@ -448,38 +445,22 @@ def _make_scatter_object(
         infeasible=infeasible,
     )
     if n_targets == 2:
-        x = [values[axis_order[0]] for _, values in trials_with_values]
-        y = [values[axis_order[1]] for _, values in trials_with_values]
-        # If a line is being added, the points need to be in order.
-        if "lines" in mode:
-            idx_order = np.argsort(x)
-            x = [x[idx] for idx in idx_order]
-            y = [y[idx] for idx in idx_order]
         return go.Scatter(
-            x=x,
-            y=y,
+            x=[values[axis_order[0]] for _, values in trials_with_values],
+            y=[values[axis_order[1]] for _, values in trials_with_values],
             text=[_make_hovertext(trial) for trial, _ in trials_with_values],
-            mode=mode,
+            mode="markers",
             hovertemplate=hovertemplate,
             marker=marker,
             showlegend=False,
         )
     elif n_targets == 3:
-        x = [values[axis_order[0]] for _, values in trials_with_values]
-        y = [values[axis_order[1]] for _, values in trials_with_values]
-        z = [values[axis_order[2]] for _, values in trials_with_values]
-        # If a line is being added, the points need to be in order.
-        if "lines" in mode:
-            idx_order = np.argsort(x)
-            x = [x[idx] for idx in idx_order]
-            y = [y[idx] for idx in idx_order]
-            z = [z[idx] for idx in idx_order]
         return go.Scatter3d(
-            x=x,
-            y=y,
-            z=z,
+            x=[values[axis_order[0]] for _, values in trials_with_values],
+            y=[values[axis_order[1]] for _, values in trials_with_values],
+            z=[values[axis_order[2]] for _, values in trials_with_values],
             text=[_make_hovertext(trial) for trial, _ in trials_with_values],
-            mode=mode,
+            mode="markers",
             hovertemplate=hovertemplate,
             marker=marker,
             showlegend=False,
