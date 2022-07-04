@@ -439,6 +439,8 @@ def test_fast_non_dominated_sort_missing_constraint_values() -> None:
             [float("inf"), float("inf"), float("inf")],
         ),
         ([[float("inf")], [float("inf")], [float("inf")]], [0, 0, 0]),
+        ([[-float("inf")], [-float("inf")], [-float("inf")]], [0, 0, 0]),
+        ([[-float("inf")], [float("inf")]], [float("inf"), float("inf")]),
         (
             [[-float("inf")], [-float("inf")], [-float("inf")], [0], [1], [2], [float("inf")]],
             [0, 0, float("inf"), float("inf"), 1, float("inf"), float("inf")],

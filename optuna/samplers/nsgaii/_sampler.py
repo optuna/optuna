@@ -424,7 +424,7 @@ def _calc_crowding_distance(population: List[FrozenTrial]) -> DefaultDict[int, f
 
         vs = (
             [-float("inf")]
-            + [cast(float, population[j].values[i]) for j in range(len(population))]
+            + [cast(List[float], population[j].values)[i] for j in range(len(population))]
             + [float("inf")]
         )
 
@@ -437,7 +437,7 @@ def _calc_crowding_distance(population: List[FrozenTrial]) -> DefaultDict[int, f
         width = v_max - v_min
         if width <= 0:
             # width == 0 or width == -inf
-            width = 1
+            width = 1.0
 
         # subtract_nonfinite(inf, inf) == 0
         def subtract_nonfinite(x: float, y: float) -> float:
