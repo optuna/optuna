@@ -65,9 +65,9 @@ def _get_slice_subplot_info(
 
 def _get_slice_plot_info(
     study: Study,
-    params: Optional[List[str]] = None,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
-    target_name: str = "Objective Value",
+    params: Optional[List[str]],
+    target: Optional[Callable[[FrozenTrial], float]],
+    target_name: str,
 ) -> _SlicePlotInfo:
 
     trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
