@@ -61,20 +61,6 @@ def test_target_is_none_and_study_is_multi_obj(plot_contour: Callable[..., Any])
 
 
 @parametrize_plot_contour
-def test_target_is_not_none_and_study_is_multi_obj(plot_contour: Callable[..., Any]) -> None:
-
-    # Multiple sub-figures.
-    study = prepare_study_with_trials(more_than_three=True, n_objectives=2, with_c_d=True)
-    figure = plot_contour(study, target=lambda t: t.values[0])
-    save_static_image(figure)
-
-    # Single figure.
-    study = prepare_study_with_trials(more_than_three=True, n_objectives=2, with_c_d=False)
-    figure = plot_contour(study, target=lambda t: t.values[0])
-    save_static_image(figure)
-
-
-@parametrize_plot_contour
 def test_plot_contour_customized_target_name(plot_contour: Callable[..., Any]) -> None:
 
     params = ["param_a", "param_b"]
@@ -101,7 +87,6 @@ def test_plot_contour_customized_target_name(plot_contour: Callable[..., Any]) -
 )
 def test_plot_contour(plot_contour: Callable[..., Any], params: Optional[List[str]]) -> None:
 
-    # Test with no trial.
     study_without_trials = prepare_study_with_trials(no_trials=True)
     figure = plot_contour(study_without_trials, params=params)
     save_static_image(figure)
@@ -133,24 +118,18 @@ def test_plot_contour_log_scale_and_str_category(plot_contour: Callable[..., Any
 
     # If the search space has two parameters, plot_contour generates a single plot.
     study = create_study()
+    distributions = {
+        "param_a": FloatDistribution(1e-7, 1e-2, log=True),
+        "param_b": CategoricalDistribution(["100", "101"]),
+    }
     study.add_trial(
         create_trial(
-            value=0.0,
-            params={"param_a": 1e-6, "param_b": "100"},
-            distributions={
-                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
-                "param_b": CategoricalDistribution(["100", "101"]),
-            },
+            value=0.0, params={"param_a": 1e-6, "param_b": "100"}, distributions=distributions
         )
     )
     study.add_trial(
         create_trial(
-            value=1.0,
-            params={"param_a": 1e-5, "param_b": "101"},
-            distributions={
-                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
-                "param_b": CategoricalDistribution(["100", "101"]),
-            },
+            value=1.0, params={"param_a": 1e-5, "param_b": "101"}, distributions=distributions
         )
     )
 
@@ -159,26 +138,23 @@ def test_plot_contour_log_scale_and_str_category(plot_contour: Callable[..., Any
 
     # If the search space has three parameters, plot_contour generates nine plots.
     study = create_study()
+    distributions = {
+        "param_a": FloatDistribution(1e-7, 1e-2, log=True),
+        "param_b": CategoricalDistribution(["100", "101"]),
+        "param_c": CategoricalDistribution(["one", "two"]),
+    }
     study.add_trial(
         create_trial(
             value=0.0,
             params={"param_a": 1e-6, "param_b": "100", "param_c": "one"},
-            distributions={
-                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
-                "param_b": CategoricalDistribution(["100", "101"]),
-                "param_c": CategoricalDistribution(["one", "two"]),
-            },
+            distributions=distributions,
         )
     )
     study.add_trial(
         create_trial(
             value=1.0,
             params={"param_a": 1e-5, "param_b": "101", "param_c": "two"},
-            distributions={
-                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
-                "param_b": CategoricalDistribution(["100", "101"]),
-                "param_c": CategoricalDistribution(["one", "two"]),
-            },
+            distributions=distributions,
         )
     )
 
@@ -189,24 +165,18 @@ def test_plot_contour_log_scale_and_str_category(plot_contour: Callable[..., Any
 @parametrize_plot_contour
 def test_plot_contour_mixture_category_types(plot_contour: Callable[..., Any]) -> None:
     study = create_study()
+    distributions: Dict[str, BaseDistribution] = {
+        "param_a": CategoricalDistribution([None, "100"]),
+        "param_b": CategoricalDistribution([101, 102.0]),
+    }
     study.add_trial(
         create_trial(
-            value=0.0,
-            params={"param_a": None, "param_b": 101},
-            distributions={
-                "param_a": CategoricalDistribution([None, "100"]),
-                "param_b": CategoricalDistribution([101, 102.0]),
-            },
+            value=0.0, params={"param_a": None, "param_b": 101}, distributions=distributions
         )
     )
     study.add_trial(
         create_trial(
-            value=0.5,
-            params={"param_a": "100", "param_b": 102.0},
-            distributions={
-                "param_a": CategoricalDistribution([None, "100"]),
-                "param_b": CategoricalDistribution([101, 102.0]),
-            },
+            value=0.5, params={"param_a": "100", "param_b": 102.0}, distributions=distributions
         )
     )
     figure = plot_contour(study)
@@ -227,7 +197,7 @@ def test_plot_contour_mixture_category_types(plot_contour: Callable[..., Any]) -
 def test_get_contour_info_no_trial(params: Optional[List[str]]) -> None:
 
     study_without_trials = prepare_study_with_trials(no_trials=True)
-    info = _get_contour_info(study_without_trials, params=params, target=None)
+    info = _get_contour_info(study_without_trials, params=params)
     assert len(info.sorted_params) == 0
     assert len(info.sub_plot_infos) == 0
 
@@ -250,7 +220,7 @@ def test_get_contour_info_ignored_error(params: Optional[List[str]]) -> None:
 
     study = create_study()
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
-    info = _get_contour_info(study, params=params, target=None)
+    info = _get_contour_info(study, params=params)
     assert len(info.sorted_params) == 0
     assert len(info.sub_plot_infos) == 0
 
@@ -352,8 +322,8 @@ def test_generate_contour_plot_for_few_observations(params: List[str]) -> None:
     assert yaxis.indices == [-0.1, 0.0, 2.0, 2.1]
     assert xaxis.values == [1.0, None]
     assert yaxis.values == [2.0, 0.0]
-    z_values = np.asarray(info.sub_plot_infos[0][0].z_values)
-    assert np.all([np.isnan(v) for v in z_values.flatten()])
+    z_values = info.sub_plot_infos[0][0].z_values
+    assert z_values == {}
 
 
 def test_get_contour_info_log_scale_and_str_category_2_params() -> None:
@@ -366,16 +336,12 @@ def test_get_contour_info_log_scale_and_str_category_2_params() -> None:
     }
     study.add_trial(
         create_trial(
-            value=0.0,
-            params={"param_a": 1e-6, "param_b": "101"},
-            distributions=distributions,
+            value=0.0, params={"param_a": 1e-6, "param_b": "101"}, distributions=distributions
         )
     )
     study.add_trial(
         create_trial(
-            value=1.0,
-            params={"param_a": 1e-5, "param_b": "100"},
-            distributions=distributions,
+            value=1.0, params={"param_a": 1e-5, "param_b": "100"}, distributions=distributions
         )
     )
 
@@ -396,10 +362,8 @@ def test_get_contour_info_log_scale_and_str_category_2_params() -> None:
     assert yaxis.indices == ["100", "101"]
     assert xaxis.values == [1e-6, 1e-5]
     assert yaxis.values == ["101", "100"]
-    z_values = np.asarray(info.sub_plot_infos[0][0].z_values)
-    assert np.shape(z_values) == (2, 4)
-    assert z_values[1][1] == 0.0
-    assert z_values[0][2] == 1.0
+    z_values = info.sub_plot_infos[0][0].z_values
+    assert z_values == {(1, 1): 0.0, (2, 0): 1.0}
 
 
 def test_get_contour_info_log_scale_and_str_category_more_than_2_params() -> None:
@@ -459,11 +423,10 @@ def test_get_contour_info_log_scale_and_str_category_more_than_2_params() -> Non
             y_param = params[yi]
             _check_axis(xaxis, x_param)
             _check_axis(yaxis, y_param)
-            z_values = np.asarray(info.sub_plot_infos[yi][xi].z_values)
+            z_values = info.sub_plot_infos[yi][xi].z_values
             if xi == yi:
-                assert np.shape(z_values) == (1, 0)
+                assert z_values == {}
             else:
-                assert np.shape(z_values) == (len(indices[y_param]), len(indices[x_param]))
                 for i, v in enumerate([0.0, 1.0]):
                     x_value = xaxis.values[i]
                     y_value = yaxis.values[i]
@@ -471,7 +434,7 @@ def test_get_contour_info_log_scale_and_str_category_more_than_2_params() -> Non
                     assert y_value is not None
                     xi = xaxis.indices.index(x_value)
                     yi = yaxis.indices.index(y_value)
-                    assert z_values[yi][xi] == v
+                    assert z_values[(xi, yi)] == v
 
 
 def test_get_contour_info_mixture_category_types() -> None:
@@ -482,16 +445,12 @@ def test_get_contour_info_mixture_category_types() -> None:
     }
     study.add_trial(
         create_trial(
-            value=0.0,
-            params={"param_a": None, "param_b": 101},
-            distributions=distributions,
+            value=0.0, params={"param_a": None, "param_b": 101}, distributions=distributions
         )
     )
     study.add_trial(
         create_trial(
-            value=0.5,
-            params={"param_a": "100", "param_b": 102.0},
-            distributions=distributions,
+            value=0.5, params={"param_a": "100", "param_b": 102.0}, distributions=distributions
         )
     )
 
@@ -512,10 +471,8 @@ def test_get_contour_info_mixture_category_types() -> None:
     assert yaxis.indices == [100.95, 101, 102, 102.05]
     assert xaxis.values == ["None", "100"]
     assert yaxis.values == [101.0, 102.0]
-    z_values = np.asarray(info.sub_plot_infos[0][0].z_values)
-    assert np.shape(z_values) == (4, 2)
-    assert z_values[1][1] == 0.0
-    assert z_values[2][0] == 0.5
+    z_values = info.sub_plot_infos[0][0].z_values
+    assert z_values == {(0, 2): 0.5, (1, 1): 0.0}
 
 
 @pytest.mark.parametrize("value", [float("inf"), -float("inf")])
@@ -539,9 +496,8 @@ def test_test_get_contour_info_nonfinite_removed(value: float) -> None:
     assert yaxis.indices == [1.9, 2.0, 4.0, 4.1]
     assert xaxis.values == [0.0, 1.0]
     assert yaxis.values == [4.0, 2.0]
-    z_values = np.asarray(info.sub_plot_infos[0][0].z_values)
-    assert np.shape(z_values) == (4, 4)
-    assert value not in z_values.flatten()
+    z_values = info.sub_plot_infos[0][0].z_values
+    assert z_values == {(1, 2): 2.0, (2, 1): 1.0}
 
 
 @pytest.mark.parametrize("objective", (0, 1))
@@ -568,9 +524,8 @@ def test_test_get_contour_info_nonfinite_multiobjective(objective: int, value: f
     assert yaxis.indices == [1.9, 2.0, 4.0, 4.1]
     assert xaxis.values == [0.0, 1.0]
     assert yaxis.values == [4.0, 2.0]
-    z_values = np.asarray(info.sub_plot_infos[0][0].z_values)
-    assert np.shape(z_values) == (4, 4)
-    assert value not in z_values.flatten()
+    z_values = info.sub_plot_infos[0][0].z_values
+    assert z_values == {(1, 2): 2.0, (2, 1): 1.0}
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])

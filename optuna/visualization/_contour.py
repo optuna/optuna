@@ -240,9 +240,9 @@ def _get_contour_subplot(
 
 def _get_contour_info(
     study: Study,
-    params: Optional[List[str]],
-    target: Optional[Callable[[FrozenTrial], float]],
-    target_name: str,
+    params: Optional[List[str]] = None,
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
 ) -> _ContourInfo:
 
     trials = _filter_nonfinite(
