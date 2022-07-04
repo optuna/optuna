@@ -129,11 +129,8 @@ def plot_pareto_front(
 
 
 def _get_pareto_front_plot(info: _ParetoFrontInfo) -> "go.Figure":
-    # include_dominated_trials = len(info.non_best_trials_with_values) != 0
     include_dominated_trials = info.include_dominated_trials
-    # has_constraints_func = len(info.infeasible_trials_with_values) != 0:
     has_constraints_func = info.has_constraints_func
-    # if len(info.infeasible_trials_with_values) != 0:
     if not has_constraints_func:
         data = [
             _make_scatter_object(
