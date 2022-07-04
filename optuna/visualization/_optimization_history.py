@@ -207,13 +207,13 @@ def plot_optimization_history(
 
     if error_bar:
         eb_info = _get_optimization_history_error_bar_info(study, target, target_name)
-        return _get_optimization_histories_with_error_bar(eb_info, layout)
+        return _get_optimization_history_plot_with_error_bar(eb_info, layout)
     else:
         info_list = _get_optimization_history_info_list(study, target, target_name)
-        return _get_optimization_histories(info_list, layout)
+        return _get_optimization_history_plot(info_list, layout)
 
 
-def _get_optimization_histories_with_error_bar(
+def _get_optimization_history_plot_with_error_bar(
     eb_info: Optional[_OptimizationHistoryErrorBarInfo],
     layout: "go.Layout",
 ) -> "go.Figure":
@@ -270,7 +270,7 @@ def _get_optimization_histories_with_error_bar(
     return figure
 
 
-def _get_optimization_histories(
+def _get_optimization_history_plot(
     info_list: Optional[List[_OptimizationHistoryInfo]],
     layout: "go.Layout",
 ) -> "go.Figure":

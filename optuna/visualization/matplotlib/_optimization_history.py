@@ -97,16 +97,16 @@ def plot_optimization_history(
 
     if error_bar:
         eb_info = _get_optimization_history_error_bar_info(study, target, target_name)
-        ax = _get_optimization_histories_with_error_bar(eb_info, ax)
+        ax = _get_optimization_history_plot_with_error_bar(eb_info, ax)
     else:
         info_list = _get_optimization_history_info_list(study, target, target_name)
-        ax = _get_optimization_histories(info_list, ax)
+        ax = _get_optimization_history_plot(info_list, ax)
 
     plt.legend(bbox_to_anchor=(1.05, 1.0), loc="upper left")
     return ax
 
 
-def _get_optimization_histories_with_error_bar(
+def _get_optimization_history_plot_with_error_bar(
     eb_info: Optional[_OptimizationHistoryErrorBarInfo],
     ax: "Axes",
 ) -> "Axes":
@@ -144,7 +144,7 @@ def _get_optimization_histories_with_error_bar(
     return ax
 
 
-def _get_optimization_histories(
+def _get_optimization_history_plot(
     info_list: Optional[List[_OptimizationHistoryInfo]],
     ax: "Axes",
 ) -> "Axes":
