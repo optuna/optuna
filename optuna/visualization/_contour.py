@@ -51,6 +51,7 @@ class _ContourInfo(NamedTuple):
     sorted_params: List[str]
     sub_plot_infos: List[List[_SubContourInfo]]
     reverse_scale: bool
+    target_name: str
 
 
 def plot_contour(
@@ -106,17 +107,18 @@ def plot_contour(
 
     _imports.check()
     _check_plot_args(study, target, target_name)
-    info = _get_contour_info(study, params, target)
-    return _get_contour_plot(info, target_name)
+    info = _get_contour_info(study, params, target, target_name)
+    return _get_contour_plot(info)
 
 
-def _get_contour_plot(info: _ContourInfo, target_name: str = "Objective Value") -> "go.Figure":
+def _get_contour_plot(info: _ContourInfo) -> "go.Figure":
 
     layout = go.Layout(title="Contour Plot")
 
     sorted_params = info.sorted_params
     sub_plot_infos = info.sub_plot_infos
     reverse_scale = info.reverse_scale
+    target_name = info.target_name
 
     if len(sorted_params) <= 1:
         return go.Figure(data=[], layout=layout)
@@ -238,8 +240,9 @@ def _get_contour_subplot(
 
 def _get_contour_info(
     study: Study,
-    params: Optional[List[str]] = None,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
+    params: Optional[List[str]],
+    target: Optional[Callable[[FrozenTrial], float]],
+    target_name: str,
 ) -> _ContourInfo:
 
     trials = _filter_nonfinite(
@@ -278,7 +281,10 @@ def _get_contour_info(
     reverse_scale = _is_reverse_scale(study, target)
 
     return _ContourInfo(
-        sorted_params=sorted_params, sub_plot_infos=sub_plot_infos, reverse_scale=reverse_scale
+        sorted_params=sorted_params,
+        sub_plot_infos=sub_plot_infos,
+        reverse_scale=reverse_scale,
+        target_name=target_name,
     )
 
 

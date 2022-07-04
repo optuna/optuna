@@ -98,15 +98,16 @@ def plot_contour(
         "Output figures of this Matplotlib-based `plot_contour` function would be different from "
         "those of the Plotly-based `plot_contour`."
     )
-    info = _get_contour_info(study, params, target)
-    return _get_contour_plot(info, target_name)
+    info = _get_contour_info(study, params, target, target_name)
+    return _get_contour_plot(info)
 
 
-def _get_contour_plot(info: _ContourInfo, target_name: str = "Objective Value") -> "Axes":
+def _get_contour_plot(info: _ContourInfo) -> "Axes":
 
     sorted_params = info.sorted_params
     sub_plot_infos = info.sub_plot_infos
     reverse_scale = info.reverse_scale
+    target_name = info.target_name
 
     if len(sorted_params) <= 1:
         _, ax = plt.subplots()
