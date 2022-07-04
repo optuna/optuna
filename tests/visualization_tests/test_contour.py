@@ -1,6 +1,5 @@
 from io import BytesIO
 import math
-import tempfile
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -46,8 +45,7 @@ parametrize_plot_contour = pytest.mark.parametrize(
 
 def save_static_image(figure: Union[go.Figure, Axes, np.ndarray]) -> None:
     if isinstance(figure, go.Figure):
-        with tempfile.TemporaryDirectory() as td:
-            figure.write_image(td + "tmp.png")
+        figure.write_image(BytesIO())
     else:
         plt.savefig(BytesIO())
 
