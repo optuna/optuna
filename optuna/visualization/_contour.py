@@ -105,26 +105,22 @@ def plot_contour(
 
     _imports.check()
     _check_plot_args(study, target, target_name)
-    return _get_contour_plot(study, params, target, target_name)
+    info = _get_contour_info(study, params, target)
+    reverse_scale = _is_reverse_scale(study, target)
+    return _get_contour_plot(info, reverse_scale, target_name)
 
 
 def _get_contour_plot(
-    study: Study,
-    params: Optional[List[str]] = None,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
-    target_name: str = "Objective Value",
+    info: _ContourInfo, reverse_scale: bool, target_name: str = "Objective Value"
 ) -> "go.Figure":
 
     layout = go.Layout(title="Contour Plot")
 
-    info = _get_contour_info(study, params, target)
     sorted_params = info.sorted_params
     sub_plot_infos = info.sub_plot_infos
 
     if len(sorted_params) <= 1:
         return go.Figure(data=[], layout=layout)
-
-    reverse_scale = _is_reverse_scale(study, target)
 
     if len(sorted_params) == 2:
         x_param = sorted_params[0]
