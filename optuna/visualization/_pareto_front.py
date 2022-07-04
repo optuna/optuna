@@ -17,6 +17,7 @@ import optuna
 from optuna.exceptions import ExperimentalWarning
 from optuna.study import Study
 from optuna.study._multi_objective import _get_pareto_front_trials_by_trials
+from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
@@ -35,6 +36,7 @@ class _ParetoFrontInfo(NamedTuple):
     non_best_trials_with_values: Optional[Sequence[Tuple[FrozenTrial, Sequence[float]]]]
     infeasible_trials_with_values: Optional[Sequence[Tuple[FrozenTrial, Sequence[float]]]]
     axis_order: Sequence[int]
+    pareto_front_line_values: Optional[Tuple[Sequence[float], Sequence[float]]]
 
 
 def plot_pareto_front(
@@ -45,6 +47,7 @@ def plot_pareto_front(
     axis_order: Optional[List[int]] = None,
     constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
     targets: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
+    pareto_front_line: Optional[str] = None,
 ) -> "go.Figure":
     """Plot the Pareto front of a study.
 
@@ -115,6 +118,13 @@ def plot_pareto_front(
                 Added in v3.0.0 as an experimental feature. The interface may change in newer
                 versions without prior notice.
                 See https://github.com/optuna/optuna/releases/tag/v3.0.0.
+        pareto_front_line:
+            Configures if a line should be plotted that represents the Pareto front.
+            Only valid for 2D plots (should be None otherwise).
+            If 'linear', a line that connects each of the non-dominated points is added.
+            If 'attainment', an attainment surface is added
+            (see https://eden.dei.uc.pt/~cmfonsec/fonseca-ppsn1996-reprint.pdf).
+            If None (default), then no line is added.
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
@@ -123,7 +133,13 @@ def plot_pareto_front(
     _imports.check()
 
     info = _get_pareto_front_info(
-        study, target_names, include_dominated_trials, axis_order, constraints_func, targets
+        study,
+        target_names,
+        include_dominated_trials,
+        axis_order,
+        constraints_func,
+        targets,
+        pareto_front_line,
     )
 
     if constraints_func is None:
@@ -143,7 +159,7 @@ def plot_pareto_front(
                 info.best_trials_with_values,
                 hovertemplate="%{text}<extra>Best Trial</extra>",
                 dominated_trials=False,
-                mode="lines+markers",
+                mode="markers",
             ),
         ]
     else:
@@ -177,9 +193,16 @@ def plot_pareto_front(
                 info.best_trials_with_values,
                 hovertemplate="%{text}<extra>Best Trial</extra>",
                 dominated_trials=False,
-                mode="lines+markers",
+                mode="markers",
             ),
         ]
+
+    if info.pareto_front_line_values:
+        data.append(
+            _make_pareto_front_line2d(
+                info.pareto_front_line_values,
+            )
+        )
 
     if info.n_targets == 2:
         layout = go.Layout(
@@ -206,6 +229,7 @@ def _get_pareto_front_info(
     axis_order: Optional[List[int]] = None,
     constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
     targets: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
+    pareto_front_line: Optional[str] = None,
 ) -> _ParetoFrontInfo:
     if axis_order is not None:
         warnings.warn(
@@ -332,6 +356,44 @@ def _get_pareto_front_info(
                 "lower than 0."
             )
 
+    pareto_front_line_values = None
+    if pareto_front_line:
+        if n_targets != 2:
+            raise ValueError("`pareto_front_line` is only supported for 2D.")
+        if pareto_front_line not in ["linear", "attainment"]:
+            raise ValueError(
+                "Please set `pareto_front_line` to either None, 'linear' or 'attainment'."
+            )
+        pareto_front_trial_with_values = best_trials_with_values or []
+        pareto_front_line_x = [
+            values[axis_order[0]] for _, values in pareto_front_trial_with_values
+        ]
+        pareto_front_line_y = [
+            values[axis_order[1]] for _, values in pareto_front_trial_with_values
+        ]
+        idx_order = np.argsort(pareto_front_line_x)
+        pareto_front_line_x = [pareto_front_line_x[idx] for idx in idx_order]
+        pareto_front_line_y = [pareto_front_line_y[idx] for idx in idx_order]
+        if pareto_front_line == "attainment":
+            x_first = study.directions[0] == StudyDirection.MINIMIZE
+            n_points = len(pareto_front_line_x)
+            surface_x = []
+            surface_y = []
+            for idx in range(n_points):
+                surface_x.append(pareto_front_line_x[idx])
+                surface_y.append(pareto_front_line_y[idx])
+                if idx < n_points - 1:
+                    if x_first:
+                        surface_x.append(pareto_front_line_x[idx + 1])
+                        surface_y.append(pareto_front_line_y[idx])
+                    else:
+                        surface_x.append(pareto_front_line_x[idx])
+                        surface_y.append(pareto_front_line_y[idx + 1])
+            pareto_front_line_x = surface_x
+            pareto_front_line_y = surface_y
+
+        pareto_front_line_values = (pareto_front_line_x, pareto_front_line_y)
+
     return _ParetoFrontInfo(
         n_targets=n_targets,
         target_names=target_names,
@@ -339,6 +401,7 @@ def _get_pareto_front_info(
         non_best_trials_with_values=non_best_trials_with_values,
         infeasible_trials_with_values=infeasible_trials_with_values,
         axis_order=axis_order,
+        pareto_front_line_values=pareto_front_line_values,
     )
 
 
@@ -423,6 +486,20 @@ def _make_scatter_object(
         )
     else:
         assert False, "Must not reach here"
+
+
+def _make_pareto_front_line2d(
+    pareto_front_line_values: Optional[Tuple[Sequence[float], Sequence[float]]],
+) -> "go.Scatter":
+    pareto_front_line_values = pareto_front_line_values or ([], [])
+    return go.Scatter(
+        x=pareto_front_line_values[0],
+        y=pareto_front_line_values[1],
+        mode="lines",
+        showlegend=False,
+        line={"color": "crimson"},
+        hoverinfo="skip",
+    )
 
 
 def _make_hovertext(trial: FrozenTrial) -> str:

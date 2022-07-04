@@ -12,8 +12,11 @@ import pytest
 
 import optuna
 from optuna.distributions import FloatDistribution
+from optuna.study._multi_objective import _get_pareto_front_trials_by_trials
+from optuna.study._multi_objective import _normalize_value
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import FrozenTrial
+from optuna.trial import Trial
 from optuna.trial import TrialState
 from optuna.visualization import plot_pareto_front
 from optuna.visualization._pareto_front import _make_hovertext
@@ -46,11 +49,13 @@ def _check_data(figure: "go.Figure", axis: str, expected: Sequence[int]) -> None
 @pytest.mark.parametrize("use_constraints_func", [False, True])
 @pytest.mark.parametrize("axis_order", [None, [0, 1], [1, 0]])
 @pytest.mark.parametrize("targets", [None, lambda t: (t.values[0], t.values[1])])
+@pytest.mark.parametrize("pareto_front_line", [None, "linear", "attainment"])
 def test_plot_pareto_front_2d(
     include_dominated_trials: bool,
     use_constraints_func: bool,
     axis_order: Optional[List[int]],
     targets: Optional[Callable[[FrozenTrial], Sequence[float]]],
+    pareto_front_line: str,
 ) -> None:
     if axis_order is not None and targets is not None:
         pytest.skip("skip using both axis_order and targets")
@@ -412,6 +417,33 @@ def test_plot_pareto_front_invalid_target_values() -> None:
         )
 
 
+def test_plot_pareto_front_2d_invalid_pareto_front_line() -> None:
+    study = optuna.create_study(directions=["minimize", "minimize"])
+    study.optimize(lambda _: [0, 0, 0, 0], n_trials=3)
+    with pytest.raises(
+        ValueError,
+        match="Please set `pareto_front_line` to either None, 'linear' or 'attainment'.",
+    ):
+        plot_pareto_front(
+            study=study,
+            pareto_front_line="foo",
+        )
+
+
+@pytest.mark.parametrize("pareto_front_line", ["linear", "attainment", "foo"])
+def test_plot_pareto_front_3d_invalid_pareto_front_line(pareto_front_line: str) -> None:
+    study = optuna.create_study(directions=["minimize", "minimize", "minimize"])
+    study.optimize(lambda _: [0, 0, 0, 0], n_trials=3)
+    with pytest.raises(
+        ValueError,
+        match="pareto_front_line` is only supported for 2D.",
+    ):
+        plot_pareto_front(
+            study=study,
+            pareto_front_line=pareto_front_line,
+        )
+
+
 @pytest.mark.parametrize(
     "targets",
     [
@@ -567,3 +599,54 @@ def test_color_map(direction: str) -> None:
     marker = plot_pareto_front(study).data[0]["marker"]
     assert COLOR_SCALE == [v[1] for v in marker["colorscale"]]
     assert "reversecale" not in marker
+
+
+@pytest.mark.parametrize("direction0", ["minimize", "maximize"])
+@pytest.mark.parametrize("direction1", ["minimize", "maximize"])
+def test_pareto_front_line_2d_attainment_surface(
+    direction0: str,
+    direction1: str,
+) -> None:
+    def objective(trial: Trial) -> Tuple[float, float]:
+        x = trial.suggest_float("x", 0, 5)
+        y = trial.suggest_float("y", 0, 3)
+        v0 = 4 * x**2 + 4 * y**2
+        v1 = (x - 5) ** 2 + (y - 5) ** 2
+        if direction0 == "maximize":
+            v0 *= -1
+        if direction1 == "maximize":
+            v1 *= -1
+        return v0, v1
+
+    n_trials = 50
+    study = optuna.create_study(directions=[direction0, direction1])
+    study.optimize(objective, n_trials=n_trials)
+
+    figure = plot_pareto_front(study=study, pareto_front_line="attainment")
+
+    n_pareto_front_trials = len(_get_pareto_front_trials_by_trials(study.trials, study.directions))
+    attainment_surface_x = figure.data[-1]["x"]
+    attainment_surface_y = figure.data[-1]["y"]
+
+    # Check correct number of points have been added to the surface
+    assert len(attainment_surface_x) == 2 * n_pareto_front_trials - 1
+
+    # Check that the added surfaces points are always on the correct side
+    def get_norm_xy(idx: int) -> Sequence[float]:
+        return [
+            _normalize_value(attainment_surface_x[idx], study.directions[0]),
+            _normalize_value(attainment_surface_y[idx], study.directions[1]),
+        ]
+
+    def _correct_side(xy1: Sequence[float], xy2: Sequence[float]) -> bool:
+        if xy1 == xy2:
+            return True
+        return all(v0 <= v1 for v0, v1 in zip(xy1, xy2))
+
+    for i in range(n_pareto_front_trials - 1):
+        between_idx = 2 * i + 1
+        between_xy = get_norm_xy(between_idx)
+        before_xy = get_norm_xy(between_idx - 1)
+        after_xy = get_norm_xy(between_idx + 1)
+        assert _correct_side(before_xy, between_xy)
+        assert _correct_side(after_xy, between_xy)
