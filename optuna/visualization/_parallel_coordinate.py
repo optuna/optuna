@@ -46,6 +46,8 @@ class _DimensionInfo(NamedTuple):
 class _ParallelCoordinateInfo(NamedTuple):
     dim_objective: _DimensionInfo
     dims_params: List[_DimensionInfo]
+    reverse_scale: bool
+    target_name: str
 
 
 def plot_parallel_coordinate(
@@ -101,25 +103,20 @@ def plot_parallel_coordinate(
 
     _imports.check()
     _check_plot_args(study, target, target_name)
-    return _get_parallel_coordinate_plot(study, params, target, target_name)
+    info = _get_parallel_coordinate_info(study, params, target, target_name)
+    return _get_parallel_coordinate_plot(info)
 
 
-def _get_parallel_coordinate_plot(
-    study: Study,
-    params: Optional[List[str]] = None,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
-    target_name: str = "Objective Value",
-) -> "go.Figure":
+def _get_parallel_coordinate_plot(info: _ParallelCoordinateInfo) -> "go.Figure":
 
     layout = go.Layout(title="Parallel Coordinate Plot")
-    reverse_scale = _is_reverse_scale(study, target)
-
-    info = _get_parallel_coordinate_info(study, params, target, target_name)
 
     if len(info.dims_params) == 0 or len(info.dim_objective.values) == 0:
         return go.Figure(data=[], layout=layout)
 
     dims = _get_dims_from_info(info)
+    reverse_scale = info.reverse_scale
+    target_name = info.target_name
 
     traces = [
         go.Parcoords(
@@ -147,6 +144,9 @@ def _get_parallel_coordinate_info(
     target: Optional[Callable[[FrozenTrial], float]] = None,
     target_name: str = "Objective Value",
 ) -> _ParallelCoordinateInfo:
+
+    reverse_scale = _is_reverse_scale(study, target)
+
     trials = _filter_nonfinite(
         study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
     )
@@ -175,11 +175,21 @@ def _get_parallel_coordinate_info(
 
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
-        return _ParallelCoordinateInfo(dim_objective=dim_objective, dims_params=[])
+        return _ParallelCoordinateInfo(
+            dim_objective=dim_objective,
+            dims_params=[],
+            reverse_scale=reverse_scale,
+            target_name=target_name,
+        )
 
     if len(objectives) == 0:
         _logger.warning("Your study has only completed trials with missing parameters.")
-        return _ParallelCoordinateInfo(dim_objective=dim_objective, dims_params=[])
+        return _ParallelCoordinateInfo(
+            dim_objective=dim_objective,
+            dims_params=[],
+            reverse_scale=reverse_scale,
+            target_name=target_name,
+        )
 
     numeric_cat_params_indices: List[int] = []
     dims = []
@@ -260,7 +270,12 @@ def _get_parallel_coordinate_info(
         dim_objective = updated_dims[0]
         dims = updated_dims[1:]
 
-    return _ParallelCoordinateInfo(dim_objective=dim_objective, dims_params=dims)
+    return _ParallelCoordinateInfo(
+        dim_objective=dim_objective,
+        dims_params=dims,
+        reverse_scale=reverse_scale,
+        target_name=target_name,
+    )
 
 
 def _get_dims_from_info(info: _ParallelCoordinateInfo) -> List[Dict[str, Any]]:

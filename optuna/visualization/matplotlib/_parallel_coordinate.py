@@ -7,9 +7,9 @@ import numpy as np
 from optuna._experimental import experimental_func
 from optuna.logging import get_logger
 from optuna.study import Study
-from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.visualization._parallel_coordinate import _get_parallel_coordinate_info
+from optuna.visualization._parallel_coordinate import _ParallelCoordinateInfo
 from optuna.visualization._utils import _check_plot_args
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
@@ -77,22 +77,14 @@ def plot_parallel_coordinate(
 
     _imports.check()
     _check_plot_args(study, target, target_name)
-    return _get_parallel_coordinate_plot(study, params, target, target_name)
-
-
-def _get_parallel_coordinate_plot(
-    study: Study,
-    params: Optional[List[str]] = None,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
-    target_name: str = "Objective Value",
-) -> "Axes":
-
-    if target is None:
-        reversescale = study.direction == StudyDirection.MINIMIZE
-    else:
-        reversescale = True
-
     info = _get_parallel_coordinate_info(study, params, target, target_name)
+    return _get_parallel_coordinate_plot(info)
+
+
+def _get_parallel_coordinate_plot(info: _ParallelCoordinateInfo) -> "Axes":
+
+    reversescale = info.reverse_scale
+    target_name = info.target_name
 
     # Set up the graph style.
     fig, ax = plt.subplots()
