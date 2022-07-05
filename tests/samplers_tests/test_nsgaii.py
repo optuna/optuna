@@ -227,14 +227,14 @@ def test_constrained_dominates_infeasible_vs_infeasible(direction: StudyDirectio
     # When both trials are infeasible, the trial with smaller violation dominates
     # the one with larger violation.
     #
-    #                       c[1]
+    #                       c2
     #      ╔═════╤═════╤═════╤═════╤═════╤═════╗
     #      ║     │ -1  │  0  │  1  │  2  │  ∞  ║
     #      ╟─────┼─────┼─────┼─────┼─────┼─────╢
     #      ║ -1  │           │  1  │  2  │  ∞  ║
     #      ╟─────┼─feasible ─┼─────┼─────┼─────╢
     #      ║  0  │           │  1  │  2  │  ∞  ║
-    # c[0] ╟─────┼─────┼─────┼─────┼─────┼─────╢
+    # c1   ╟─────┼─────┼─────┼─────┼─────┼─────╢
     #      ║  1  │  1  │  1  │  2  │  3  │  ∞  ║
     #      ╟─────┼─────┼─────┼─────┼─────┼─────╢
     #      ║  2  │  2  │  2  │  3  │  4  │  ∞  ║
