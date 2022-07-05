@@ -173,6 +173,12 @@ def test_constraints_func_nan() -> None:
             n_trials=n_trials,
         )
 
+    trials = study.get_trials()
+    assert len(trials) == 1  # The error stops optimization, but completed trials are recorded.
+    assert all(0 <= x <= 1 for x in trials[0].params.values())  # The params are normal.
+    assert trials[0].values == list(trials[0].params.values())  # The values are normal.
+    assert trials[0].system_attrs[_CONSTRAINTS_KEY] is None  # None is set for constraints.
+
 
 def test_fast_non_dominated_sort() -> None:
     sampler = NSGAIISampler()
