@@ -246,13 +246,13 @@ def test_constrained_dominates_infeasible_vs_infeasible(direction: StudyDirectio
     # Check all pairs of these constraints.
     constraints_infeasible_sorted: List[List[List[float]]]
     constraints_infeasible_sorted = [
-        # violation 1
+        # These constraints have violation 1.
         [[1, -inf], [1, -1], [1, 0], [0, 1], [-1, 1], [-inf, 1]],
-        # violation 2
+        # These constraints have violation 2.
         [[2, -inf], [2, -1], [2, 0], [1, 1], [0, 2], [-1, 2], [-inf, 2]],
-        # violation 3
+        # These constraints have violation 3.
         [[3, -inf], [3, -1], [3, 0], [2, 1], [1, 2], [0, 3], [-1, 3], [-inf, 3]],
-        # violation inf
+        # These constraints have violation inf.
         [
             [-inf, inf],
             [-1, inf],
