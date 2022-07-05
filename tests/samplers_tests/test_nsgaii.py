@@ -148,8 +148,8 @@ def test_constraints_func() -> None:
         assert trial.system_attrs[_CONSTRAINTS_KEY] == (trial.number,)
 
 
-@pytest.mark.parametrize("dir1", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
-@pytest.mark.parametrize("dir2", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
+@pytest.mark.parametrize("direction1", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
+@pytest.mark.parametrize("direction2", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
 @pytest.mark.parametrize(
     "constraints_list",
     [
@@ -161,9 +161,9 @@ def test_constraints_func() -> None:
     ],
 )
 def test_constrained_dominates_feasible_vs_feasible(
-    dir1: StudyDirection, dir2: StudyDirection, constraints_list: List[List[float]]
+    direction1: StudyDirection, direction2: StudyDirection, constraints_list: List[List[float]]
 ) -> None:
-    directions = [dir1, dir2]
+    directions = [direction1, direction2]
     # Check all pairs of trials consisting of these values, i.e.,
     # [-inf, -inf], [-inf, -1], [-inf, 1], [-inf, inf], [-1, -inf], ...
     values_list = [
