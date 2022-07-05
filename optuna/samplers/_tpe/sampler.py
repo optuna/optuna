@@ -580,13 +580,11 @@ def _calculate_nondomination_rank(loss_vals: np.ndarray) -> np.ndarray:
     ranks = np.full(len(loss_vals), -1)
     num_unranked = len(loss_vals)
     rank = 0
+    domination_mat = np.all(loss_vals[:, None, :] >= loss_vals[None, :, :], axis=2) & np.any(
+        loss_vals[:, None, :] > loss_vals[None, :, :], axis=2
+    )
     while num_unranked > 0:
-        counts = np.sum(
-            (ranks == -1)[None, :]
-            & np.all(loss_vals[:, None, :] >= loss_vals[None, :, :], axis=2)
-            & np.any(loss_vals[:, None, :] > loss_vals[None, :, :], axis=2),
-            axis=1,
-        )
+        counts = np.sum((ranks == -1)[None, :] & domination_mat, axis=1)
         num_unranked -= np.sum((counts == 0) & (ranks == -1))
         ranks[(counts == 0) & (ranks == -1)] = rank
         rank += 1
