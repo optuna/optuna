@@ -11,7 +11,6 @@ from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.visualization._optimization_history import _get_optimization_history_error_bar_info
 from optuna.visualization._optimization_history import _get_optimization_history_info_list
-from optuna.visualization._optimization_history import _OptimizationHistoryErrorBarInfo
 from optuna.visualization._optimization_history import _OptimizationHistoryInfo
 from optuna.visualization._utils import _check_plot_args
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
@@ -94,50 +93,11 @@ def plot_optimization_history(
 
     if error_bar:
         eb_info = _get_optimization_history_error_bar_info(study, target, target_name)
-        ax = _get_optimization_history_plot_with_error_bar(eb_info, ax)
+        info_list = None if eb_info is None else [eb_info]
     else:
         info_list = _get_optimization_history_info_list(study, target, target_name)
-        ax = _get_optimization_history_plot(info_list, ax)
-
+    ax = _get_optimization_history_plot(info_list, ax)
     plt.legend(bbox_to_anchor=(1.05, 1.0), loc="upper left")
-    return ax
-
-
-def _get_optimization_history_plot_with_error_bar(
-    eb_info: Optional[_OptimizationHistoryErrorBarInfo],
-    ax: "Axes",
-) -> "Axes":
-
-    if eb_info is None:
-        return ax
-
-    plt.errorbar(
-        x=eb_info.trial_numbers,
-        y=eb_info.value_means,
-        yerr=eb_info.value_stds,
-        capsize=5,
-        fmt="o",
-        color="tab:blue",
-    )
-    ax.scatter(
-        eb_info.trial_numbers, eb_info.value_means, color="tab:blue", label=eb_info.label_name
-    )
-
-    if eb_info.best_value_means is not None:
-        ax.plot(
-            eb_info.trial_numbers, eb_info.best_value_means, color="tab:red", label="Best Value"
-        )
-        lower = np.array(eb_info.best_value_means) - np.array(eb_info.best_value_stds)
-        upper = np.array(eb_info.best_value_means) + np.array(eb_info.best_value_stds)
-        ax.fill_between(
-            x=eb_info.trial_numbers,
-            y1=lower,
-            y2=upper,
-            color="tab:red",
-            alpha=0.4,
-        )
-        ax.legend()
-
     return ax
 
 
@@ -151,23 +111,42 @@ def _get_optimization_history_plot(
 
     cmap = plt.get_cmap("tab10")  # Use tab10 colormap for similar outputs to plotly.
 
-    # Draw a scatter plot and a line plot.
-    for i, info in enumerate(info_list):
+    for i, (trial_numbers, values_info, best_values_info) in enumerate(info_list):
+        if values_info.stds is not None:
+            plt.errorbar(
+                x=trial_numbers,
+                y=values_info.values,
+                yerr=values_info.stds,
+                capsize=5,
+                fmt="o",
+                color="tab:blue",
+            )
         ax.scatter(
-            x=info.trial_numbers,
-            y=info.values,
+            x=trial_numbers,
+            y=values_info.values,
             color=cmap(0) if len(info_list) == 1 else cmap(2 * i),
             alpha=1,
-            label=info.label_name,
+            label=values_info.label_name,
         )
-        if info.best_values is not None:
+
+        if best_values_info is not None:
             ax.plot(
-                info.trial_numbers,
-                info.best_values,
+                trial_numbers,
+                best_values_info.values,
                 marker="o",
                 color=cmap(3) if len(info_list) == 1 else cmap(2 * i + 1),
                 alpha=0.5,
-                label=info.best_label_name,
+                label=best_values_info.label_name,
             )
+            if best_values_info.stds is not None:
+                lower = np.array(best_values_info.values) - np.array(best_values_info.stds)
+                upper = np.array(best_values_info.values) + np.array(best_values_info.stds)
+                ax.fill_between(
+                    x=trial_numbers,
+                    y1=lower,
+                    y2=upper,
+                    color="tab:red",
+                    alpha=0.4,
+                )
             ax.legend()
     return ax

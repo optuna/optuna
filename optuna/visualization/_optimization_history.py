@@ -23,12 +23,16 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
+class _ValuesInfo(NamedTuple):
+    values: List[float]
+    stds: Optional[List[float]]
+    label_name: str
+
+
 class _OptimizationHistoryInfo(NamedTuple):
     trial_numbers: List[int]
-    values: List[float]
-    label_name: str
-    best_values: Optional[List[float]]
-    best_label_name: Optional[str]
+    values_info: _ValuesInfo
+    best_values_info: Optional[_ValuesInfo]
 
 
 def _get_optimization_history_info_list(
@@ -46,8 +50,6 @@ def _get_optimization_history_info_list(
     for study in studies:
         trials = study.get_trials(states=(TrialState.COMPLETE,))
         label_name = target_name if len(studies) == 1 else f"{target_name} of {study.study_name}"
-        best_values: Optional[List[float]]
-        best_label_name: Optional[str]
         if target is None:
             values = [cast(float, t.value) for t in trials]
             if study.direction == StudyDirection.MINIMIZE:
@@ -57,17 +59,15 @@ def _get_optimization_history_info_list(
             best_label_name = (
                 "Best Value" if len(studies) == 1 else f"Best Value of {study.study_name}"
             )
+            best_values_info = _ValuesInfo(best_values, None, best_label_name)
         else:
             values = [target(t) for t in trials]
-            best_values = None
-            best_label_name = None
+            best_values_info = None
         optimization_history_info_list.append(
             _OptimizationHistoryInfo(
                 trial_numbers=[t.number for t in trials],
-                values=values,
-                label_name=label_name,
-                best_values=best_values,
-                best_label_name=best_label_name,
+                values_info=_ValuesInfo(values, None, label_name),
+                best_values_info=best_values_info,
             )
         )
 
@@ -82,21 +82,11 @@ def _get_optimization_history_info_list(
     return optimization_history_info_list
 
 
-class _OptimizationHistoryErrorBarInfo(NamedTuple):
-    trial_numbers: List[int]
-    value_means: List[float]
-    value_stds: List[float]
-    label_name: str
-    best_value_means: Optional[List[float]]
-    best_value_stds: Optional[List[float]]
-    best_label_name: Optional[str]
-
-
 def _get_optimization_history_error_bar_info(
     study: Union[Study, Sequence[Study]],
     target: Optional[Callable[[FrozenTrial], float]],
     target_name: str,
-) -> Optional[_OptimizationHistoryErrorBarInfo]:
+) -> Optional[_OptimizationHistoryInfo]:
 
     info_list = _get_optimization_history_info_list(study, target, target_name)
     if info_list is None:
@@ -106,44 +96,31 @@ def _get_optimization_history_error_bar_info(
     # Calculate mean and std of target values for each trial number.
     values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
     # TODO(knshnb): Took over `+2` from the previous code, but not sure why it is necessary.
-    for info in info_list:
-        for trial_number, value in zip(info.trial_numbers, info.values):
+    for trial_numbers, values_info, _ in info_list:
+        for trial_number, value in zip(trial_numbers, values_info.values):
             values[trial_number].append(value)
     mean_of_values = [np.mean(v) if len(v) > 0 else None for v in values]
     std_of_values = [np.std(v) if len(v) > 0 else None for v in values]
     trial_numbers = np.arange(max_trial_number + 2)[[v is not None for v in mean_of_values]]
     value_means = np.asarray(mean_of_values)[trial_numbers]
     value_stds = np.asarray(std_of_values)[trial_numbers]
+    eb_values_info = _ValuesInfo(value_means, value_stds, target_name)
 
-    best_value_means: Optional[List[float]]
-    best_value_stds: Optional[List[float]]
-    best_label_name: Optional[str]
-    if target is None:
-        # Calculate mean and std of previous best target values for each trial number.
-        best_values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
-        for info in info_list:
-            assert info.best_values is not None
-            for trial_number, best_value in zip(info.trial_numbers, info.best_values):
-                best_values[trial_number].append(best_value)
-        mean_of_best_values = [np.mean(v) if len(v) > 0 else None for v in best_values]
-        std_of_best_values = [np.std(v) if len(v) > 0 else None for v in best_values]
-        best_value_means = list(np.asarray(mean_of_best_values)[trial_numbers])
-        best_value_stds = list(np.asarray(std_of_best_values)[trial_numbers])
-        best_label_name = "Best Value"
-    else:
-        best_value_means = None
-        best_value_stds = None
-        best_label_name = None
+    if target is not None:
+        return _OptimizationHistoryInfo(trial_numbers, eb_values_info, None)
 
-    return _OptimizationHistoryErrorBarInfo(
-        trial_numbers=list(trial_numbers),
-        value_means=list(value_means),
-        value_stds=list(value_stds),
-        label_name=target_name,
-        best_value_means=best_value_means,
-        best_value_stds=best_value_stds,
-        best_label_name=best_label_name,
-    )
+    # Calculate mean and std of previous best target values for each trial number.
+    best_values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
+    for trial_numbers, _, best_values_info in info_list:
+        assert best_values_info is not None
+        for trial_number, best_value in zip(trial_numbers, best_values_info.values):
+            best_values[trial_number].append(best_value)
+    mean_of_best_values = [np.mean(v) if len(v) > 0 else None for v in best_values]
+    std_of_best_values = [np.std(v) if len(v) > 0 else None for v in best_values]
+    best_value_means = list(np.asarray(mean_of_best_values)[trial_numbers])
+    best_value_stds = list(np.asarray(std_of_best_values)[trial_numbers])
+    eb_best_values_info = _ValuesInfo(best_value_means, best_value_stds, "Best Value")
+    return _OptimizationHistoryInfo(trial_numbers, eb_values_info, eb_best_values_info)
 
 
 def plot_optimization_history(
@@ -206,68 +183,11 @@ def plot_optimization_history(
     )
 
     if error_bar:
-        eb_info = _get_optimization_history_error_bar_info(study, target, target_name)
-        return _get_optimization_history_plot_with_error_bar(eb_info, layout)
+        info = _get_optimization_history_error_bar_info(study, target, target_name)
+        info_list = None if info is None else [info]
     else:
         info_list = _get_optimization_history_info_list(study, target, target_name)
-        return _get_optimization_history_plot(info_list, layout)
-
-
-def _get_optimization_history_plot_with_error_bar(
-    eb_info: Optional[_OptimizationHistoryErrorBarInfo],
-    layout: "go.Layout",
-) -> "go.Figure":
-
-    if eb_info is None:
-        return go.Figure(data=[], layout=layout)
-
-    traces = [
-        go.Scatter(
-            x=eb_info.trial_numbers,
-            y=eb_info.value_means,
-            error_y={
-                "type": "data",
-                "array": eb_info.value_stds,
-                "visible": True,
-            },
-            mode="markers",
-            name=eb_info.label_name,
-        )
-    ]
-
-    if eb_info.best_value_means is not None:
-        traces.append(
-            go.Scatter(
-                x=eb_info.trial_numbers,
-                y=eb_info.best_value_means,
-                name=eb_info.best_label_name,
-            )
-        )
-        upper = np.array(eb_info.best_value_means) + np.array(eb_info.best_value_stds)
-        traces.append(
-            go.Scatter(
-                x=eb_info.trial_numbers,
-                y=upper,
-                mode="lines",
-                line=dict(width=0.01),
-                showlegend=False,
-            )
-        )
-        lower = np.array(eb_info.best_value_means) - np.array(eb_info.best_value_stds)
-        traces.append(
-            go.Scatter(
-                x=eb_info.trial_numbers,
-                y=lower,
-                mode="none",
-                showlegend=False,
-                fill="tonexty",
-                fillcolor="rgba(255,0,0,0.2)",
-            )
-        )
-
-    figure = go.Figure(data=traces, layout=layout)
-
-    return figure
+    return _get_optimization_history_plot(info_list, layout)
 
 
 def _get_optimization_history_plot(
@@ -279,25 +199,50 @@ def _get_optimization_history_plot(
         return go.Figure(data=[], layout=layout)
 
     traces = []
-    for info in info_list:
+    for trial_numbers, values_info, best_values_info in info_list:
+        if values_info.stds is None:
+            error_y = None
+        else:
+            error_y = {"type": "data", "array": values_info.stds, "visible": True}
         traces.append(
             go.Scatter(
-                x=info.trial_numbers,
-                y=info.values,
+                x=trial_numbers,
+                y=values_info.values,
+                error_y=error_y,
                 mode="markers",
-                name=info.label_name,
+                name=values_info.label_name,
             )
         )
-        if info.best_values is not None:
+
+        if best_values_info is not None:
             traces.append(
                 go.Scatter(
-                    x=info.trial_numbers,
-                    y=info.best_values,
-                    name=info.best_label_name,
+                    x=trial_numbers,
+                    y=best_values_info.values,
+                    name=best_values_info.label_name,
                 )
             )
+            if best_values_info.stds is not None:
+                upper = np.array(best_values_info.values) + np.array(best_values_info.stds)
+                traces.append(
+                    go.Scatter(
+                        x=trial_numbers,
+                        y=upper,
+                        mode="lines",
+                        line=dict(width=0.01),
+                        showlegend=False,
+                    )
+                )
+                lower = np.array(best_values_info.values) - np.array(best_values_info.stds)
+                traces.append(
+                    go.Scatter(
+                        x=trial_numbers,
+                        y=lower,
+                        mode="none",
+                        showlegend=False,
+                        fill="tonexty",
+                        fillcolor="rgba(255,0,0,0.2)",
+                    )
+                )
 
-    figure = go.Figure(data=traces, layout=layout)
-    figure.update_layout(width=1000, height=400)
-
-    return figure
+    return go.Figure(data=traces, layout=layout)
