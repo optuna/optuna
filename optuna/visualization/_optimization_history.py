@@ -101,13 +101,13 @@ def _get_optimization_history_error_bar_info(
             values[trial_number].append(value)
     mean_of_values = [np.mean(v) if len(v) > 0 else None for v in values]
     std_of_values = [np.std(v) if len(v) > 0 else None for v in values]
-    trial_numbers = np.arange(max_trial_number + 2)[[v is not None for v in mean_of_values]]
-    value_means = np.asarray(mean_of_values)[trial_numbers]
-    value_stds = np.asarray(std_of_values)[trial_numbers]
+    eb_trial_numbers = np.arange(max_trial_number + 2)[[v is not None for v in mean_of_values]]
+    value_means = np.asarray(mean_of_values)[eb_trial_numbers]
+    value_stds = np.asarray(std_of_values)[eb_trial_numbers]
     eb_values_info = _ValuesInfo(value_means, value_stds, target_name)
 
     if target is not None:
-        return _OptimizationHistoryInfo(trial_numbers, eb_values_info, None)
+        return _OptimizationHistoryInfo(eb_trial_numbers, eb_values_info, None)
 
     # Calculate mean and std of previous best target values for each trial number.
     best_values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
@@ -117,10 +117,10 @@ def _get_optimization_history_error_bar_info(
             best_values[trial_number].append(best_value)
     mean_of_best_values = [np.mean(v) if len(v) > 0 else None for v in best_values]
     std_of_best_values = [np.std(v) if len(v) > 0 else None for v in best_values]
-    best_value_means = list(np.asarray(mean_of_best_values)[trial_numbers])
-    best_value_stds = list(np.asarray(std_of_best_values)[trial_numbers])
+    best_value_means = list(np.asarray(mean_of_best_values)[eb_trial_numbers])
+    best_value_stds = list(np.asarray(std_of_best_values)[eb_trial_numbers])
     eb_best_values_info = _ValuesInfo(best_value_means, best_value_stds, "Best Value")
-    return _OptimizationHistoryInfo(trial_numbers, eb_values_info, eb_best_values_info)
+    return _OptimizationHistoryInfo(eb_trial_numbers, eb_values_info, eb_best_values_info)
 
 
 def plot_optimization_history(
