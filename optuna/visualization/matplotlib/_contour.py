@@ -12,9 +12,9 @@ import scipy
 from optuna._experimental import experimental_func
 from optuna.logging import get_logger
 from optuna.study import Study
-from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.visualization._contour import _AxisInfo
+from optuna.visualization._contour import _ContourInfo
 from optuna.visualization._contour import _get_contour_info
 from optuna.visualization._contour import _SubContourInfo
 from optuna.visualization._utils import _check_plot_args
@@ -98,19 +98,16 @@ def plot_contour(
         "Output figures of this Matplotlib-based `plot_contour` function would be different from "
         "those of the Plotly-based `plot_contour`."
     )
-    return _get_contour_plot(study, params, target, target_name)
+    info = _get_contour_info(study, params, target, target_name)
+    return _get_contour_plot(info)
 
 
-def _get_contour_plot(
-    study: Study,
-    params: Optional[List[str]] = None,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
-    target_name: str = "Objective Value",
-) -> "Axes":
+def _get_contour_plot(info: _ContourInfo) -> "Axes":
 
-    info = _get_contour_info(study, params, target)
     sorted_params = info.sorted_params
     sub_plot_infos = info.sub_plot_infos
+    reverse_scale = info.reverse_scale
+    target_name = info.target_name
 
     if len(sorted_params) <= 1:
         _, ax = plt.subplots()
@@ -122,7 +119,7 @@ def _get_contour_plot(
         # Set up the graph style.
         fig, axs = plt.subplots()
         axs.set_title("Contour Plot")
-        cmap = _set_cmap(study, target)
+        cmap = _set_cmap(reverse_scale)
 
         cs = _generate_contour_subplot(sub_plot_infos[0][0], axs, cmap)
         if isinstance(cs, ContourSet):
@@ -132,7 +129,7 @@ def _get_contour_plot(
         # Set up the graph style.
         fig, axs = plt.subplots(n_params, n_params)
         fig.suptitle("Contour Plot")
-        cmap = _set_cmap(study, target)
+        cmap = _set_cmap(reverse_scale)
 
         # Prepare data and draw contour plots.
         cs_list = []
@@ -149,8 +146,8 @@ def _get_contour_plot(
     return axs
 
 
-def _set_cmap(study: Study, target: Optional[Callable[[FrozenTrial], float]]) -> "Colormap":
-    cmap = "Blues_r" if target is None and study.direction == StudyDirection.MAXIMIZE else "Blues"
+def _set_cmap(reverse_scale: bool) -> "Colormap":
+    cmap = "Blues_r" if not reverse_scale else "Blues"
     return plt.get_cmap(cmap)
 
 
