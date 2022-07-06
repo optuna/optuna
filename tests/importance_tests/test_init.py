@@ -207,18 +207,6 @@ def test_get_param_importances_invalid_single_trial(
         get_param_importances(study, evaluator=evaluator_init_func())
 
 
-def test_get_param_importances_invalid_evaluator_type() -> None:
-    def objective(trial: Trial) -> float:
-        x1 = trial.suggest_float("x1", 0.1, 3)
-        return x1**2
-
-    study = create_study()
-    study.optimize(objective, n_trials=3)
-
-    with pytest.raises(TypeError):
-        get_param_importances(study, evaluator={})  # type: ignore
-
-
 @parametrize_evaluator
 def test_get_param_importances_invalid_no_completed_trials_params(
     evaluator_init_func: Callable[[], BaseImportanceEvaluator]
@@ -259,24 +247,6 @@ def test_get_param_importances_invalid_dynamic_search_space_params(
 
     with pytest.raises(ValueError):
         get_param_importances(study, evaluator=evaluator_init_func(), params=["x1"])
-
-
-@parametrize_evaluator
-def test_get_param_importances_invalid_params_type(
-    evaluator_init_func: Callable[[], BaseImportanceEvaluator]
-) -> None:
-    def objective(trial: Trial) -> float:
-        x1 = trial.suggest_float("x1", 0.1, 3)
-        return x1**2
-
-    study = create_study()
-    study.optimize(objective, n_trials=3)
-
-    with pytest.raises(TypeError):
-        get_param_importances(study, evaluator=evaluator_init_func(), params={})  # type: ignore
-
-    with pytest.raises(TypeError):
-        get_param_importances(study, evaluator=evaluator_init_func(), params=[0])  # type: ignore
 
 
 @parametrize_evaluator
