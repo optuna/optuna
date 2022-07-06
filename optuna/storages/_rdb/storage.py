@@ -25,8 +25,8 @@ from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.storages._rdb.models import TrialValueModel
+from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
-from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -417,29 +417,13 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         return system_attrs
 
-    def get_all_study_summaries(self, include_best_trial: bool) -> List[StudySummary]:
-
+    def get_all_studies(self) -> List[FrozenStudy]:
         with _create_scoped_session(self.scoped_session) as session:
-            summarized_trial = (
-                session.query(
-                    models.TrialModel.study_id,
-                    sqlalchemy_sql_functions.min(models.TrialModel.datetime_start).label(
-                        "datetime_start"
-                    ),
-                    sqlalchemy_sql_functions.count(models.TrialModel.trial_id).label("n_trial"),
-                )
-                .group_by(models.TrialModel.study_id)
-                .with_labels()
-                .subquery()
-            )
-            study_summary_stmt = session.query(
+
+            studies = session.query(
                 models.StudyModel.study_id,
                 models.StudyModel.study_name,
-                summarized_trial.c.datetime_start,
-                sqlalchemy_sql_functions.coalesce(summarized_trial.c.n_trial, 0).label("n_trial"),
-            ).select_from(sqlalchemy_orm.outerjoin(models.StudyModel, summarized_trial))
-
-            study_summary = study_summary_stmt.all()
+            ).all()
 
             _directions = defaultdict(list)
             for direction_model in session.query(models.StudyDirectionModel).all():
@@ -453,93 +437,23 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             for attribute_model in session.query(models.StudySystemAttributeModel).all():
                 _system_attrs[attribute_model.study_id].append(attribute_model)
 
-            study_summaries = []
-            for study in study_summary:
+            frozen_studies = []
+            for study in studies:
                 directions = _directions[study.study_id]
-                best_trial_frozen: Optional[FrozenTrial] = None
-                if include_best_trial:
-                    best_trial: Optional[models.TrialModel] = None
-                    try:
-                        if len(directions) > 1:
-                            raise ValueError
-                        elif directions[0] == StudyDirection.MAXIMIZE:
-                            best_trial = models.TrialModel.find_max_value_trial(
-                                study.study_id, 0, session
-                            )
-                        else:
-                            best_trial = models.TrialModel.find_min_value_trial(
-                                study.study_id, 0, session
-                            )
-                    except ValueError:
-                        best_trial_frozen = None
-                    if best_trial:
-                        value = models.TrialValueModel.find_by_trial_and_objective(
-                            best_trial, 0, session
-                        )
-                        assert value
-                        params = (
-                            session.query(
-                                models.TrialParamModel.param_name,
-                                models.TrialParamModel.param_value,
-                                models.TrialParamModel.distribution_json,
-                            )
-                            .filter(models.TrialParamModel.trial_id == best_trial.trial_id)
-                            .all()
-                        )
-                        param_dict = {}
-                        param_distributions = {}
-                        for param in params:
-                            distribution = distributions.json_to_distribution(
-                                param.distribution_json
-                            )
-                            param_dict[param.param_name] = distribution.to_external_repr(
-                                param.param_value
-                            )
-                            param_distributions[param.param_name] = distribution
-                        user_attrs = models.TrialUserAttributeModel.where_trial_id(
-                            best_trial.trial_id, session
-                        )
-                        system_attrs = models.TrialSystemAttributeModel.where_trial_id(
-                            best_trial.trial_id, session
-                        )
-                        intermediate = models.TrialIntermediateValueModel.where_trial_id(
-                            best_trial.trial_id, session
-                        )
-                        best_trial_frozen = FrozenTrial(
-                            best_trial.number,
-                            TrialState.COMPLETE,
-                            TrialValueModel.stored_repr_to_value(value.value, value.value_type),
-                            best_trial.datetime_start,
-                            best_trial.datetime_complete,
-                            param_dict,
-                            param_distributions,
-                            {i.key: json.loads(i.value_json) for i in user_attrs},
-                            {i.key: json.loads(i.value_json) for i in system_attrs},
-                            {
-                                value.step: models.TrialIntermediateValueModel.stored_repr_to_intermediate_value(  # noqa: E501
-                                    value.intermediate_value, value.intermediate_value_type
-                                )
-                                for value in intermediate
-                            },
-                            best_trial.trial_id,
-                        )
                 user_attrs = _user_attrs.get(study.study_id, [])
                 system_attrs = _system_attrs.get(study.study_id, [])
-                study_summaries.append(
-                    StudySummary(
+                frozen_studies.append(
+                    FrozenStudy(
                         study_name=study.study_name,
                         direction=None,
                         directions=directions,
-                        best_trial=best_trial_frozen,
                         user_attrs={i.key: json.loads(i.value_json) for i in user_attrs},
                         system_attrs={i.key: json.loads(i.value_json) for i in system_attrs},
-                        n_trials=study.n_trial,
-                        datetime_start=study.datetime_start,
                         study_id=study.study_id,
                     )
                 )
 
-        return study_summaries
+            return frozen_studies
 
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
 

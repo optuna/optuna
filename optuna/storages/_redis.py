@@ -21,6 +21,7 @@ from optuna._imports import try_import
 from optuna.storages import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages._heartbeat import BaseHeartbeat
+from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
@@ -139,7 +140,7 @@ class RedisStorage(BaseStorage, BaseHeartbeat):
                 "study_id:{:010d}:directions".format(study_id),
                 pickle.dumps([StudyDirection.NOT_SET]),
             )
-
+            # TODO(wattlebirdaz): Replace StudySummary with FrozenStudy.
             study_summary = StudySummary(
                 study_name=study_name,
                 direction=StudyDirection.NOT_SET,
@@ -324,23 +325,29 @@ class RedisStorage(BaseStorage, BaseHeartbeat):
             self._key_study_param_distribution(study_id), pickle.dumps(param_distribution)
         )
 
-    def get_all_study_summaries(self, include_best_trial: bool) -> List[StudySummary]:
-
+    def get_all_studies(self) -> List[FrozenStudy]:
         queries = []
         study_ids = [pickle.loads(sid) for sid in self._redis.lrange("study_list", 0, -1)]
         for study_id in study_ids:
             queries.append(self._key_study_summary(study_id))
 
-        study_summaries = []
+        frozen_studies = []
         summary_pkls = self._redis.mget(queries)
         for summary_pkl in summary_pkls:
             assert summary_pkl is not None
             summary = pickle.loads(summary_pkl)
-            if not include_best_trial:
-                summary.best_trial = None
-            study_summaries.append(summary)
+            frozen_studies.append(
+                FrozenStudy(
+                    study_name=summary.study_name,
+                    direction=summary.direction,
+                    user_attrs=summary.user_attrs,
+                    system_attrs=summary.system_attrs,
+                    study_id=summary._study_id,
+                    directions=summary.directions,
+                )
+            )
 
-        return study_summaries
+        return frozen_studies
 
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
 
