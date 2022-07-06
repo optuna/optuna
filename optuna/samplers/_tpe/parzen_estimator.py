@@ -54,6 +54,7 @@ class _ParzenEstimator:
         parameters: _ParzenEstimatorParameters,
         predetermined_weights: Optional[np.ndarray] = None,
     ) -> None:
+
         self._search_space = search_space
         self._parameters = parameters
         self._n_observations = next(iter(observations.values())).size
