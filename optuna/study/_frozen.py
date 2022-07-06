@@ -2,6 +2,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 
 from optuna import logging
 from optuna.study._study_direction import StudyDirection
@@ -42,7 +43,7 @@ class FrozenStudy:
         system_attrs: Dict[str, Any],
         study_id: int,
         *,
-        directions: Optional[List[StudyDirection]] = None,
+        directions: Optional[Sequence[StudyDirection]] = None,
     ):
         self.study_name = study_name
         if direction is None and directions is None:
