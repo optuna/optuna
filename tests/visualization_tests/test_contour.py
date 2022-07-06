@@ -15,7 +15,8 @@ from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
 from optuna.trial import Trial
 from optuna.visualization import plot_contour
-from optuna.visualization._contour import _generate_contour_subplot
+from optuna.visualization._contour import _get_contour_subplot
+from optuna.visualization._contour import _get_contour_subplot_info
 from optuna.visualization._utils import _is_reverse_scale
 from optuna.visualization._utils import COLOR_SCALE
 
@@ -134,7 +135,7 @@ def test_plot_contour_customized_target_name(params: List[str]) -> None:
             assert data["colorbar"]["title"]["text"] == "Target Name"
 
 
-def test_generate_contour_plot_for_few_observations() -> None:
+def test_plot_contour_for_few_observations() -> None:
 
     study = prepare_study_with_trials(less_than_two=True)
     trials = study.trials
@@ -142,12 +143,14 @@ def test_generate_contour_plot_for_few_observations() -> None:
 
     # `x_axis` has one observation.
     params = ["param_a", "param_b"]
-    contour, scatter = _generate_contour_subplot(trials, params[0], params[1], reverse_scale)
+    info = _get_contour_subplot_info(trials, params[0], params[1], None)
+    contour, scatter = _get_contour_subplot(info, reverse_scale)
     assert contour.x is None and contour.y is None and scatter.x is None and scatter.y is None
 
     # `y_axis` has one observation.
     params = ["param_b", "param_a"]
-    contour, scatter = _generate_contour_subplot(trials, params[0], params[1], reverse_scale)
+    info = _get_contour_subplot_info(trials, params[0], params[1], None)
+    contour, scatter = _get_contour_subplot(info, reverse_scale)
     assert contour.x is None and contour.y is None and scatter.x is None and scatter.y is None
 
 

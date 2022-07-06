@@ -145,7 +145,7 @@ See [this doc](https://bayesmark.readthedocs.io/en/stable/scoring.html) for more
 
 CI runs benchmarks on all model/dataset combination in parallel, hovever running benchmark on single problem locally is possoble. To do this, first install required Python packages.
 ```bash
-pip install bayesmark matplotlib
+pip install bayesmark matplotlib numpy scipy pandas Jinja2
 ```
 
 Benchmark run can be started with

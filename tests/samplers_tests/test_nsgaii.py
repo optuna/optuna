@@ -567,18 +567,20 @@ def test_crossover_dims(n_params: int, sampler_class: Callable[[], BaseSampler])
     assert len(study.trials) == n_trials
 
 
-@pytest.mark.parametrize("crossover", [UNDXCrossover(), SPXCrossover()])
-def test_crossover_invalid_population(crossover: BaseCrossover) -> None:
-    n_objectives = 2
-    n_trials = 8
-
+@pytest.mark.parametrize(
+    "crossover,population_size",
+    [
+        (UniformCrossover(), 1),
+        (BLXAlphaCrossover(), 1),
+        (SBXCrossover(), 1),
+        (VSBXCrossover(), 1),
+        (UNDXCrossover(), 2),
+        (SPXCrossover(), 2),
+    ],
+)
+def test_crossover_invalid_population(crossover: BaseCrossover, population_size: int) -> None:
     with pytest.raises(ValueError):
-        sampler = NSGAIISampler(population_size=2, crossover=crossover)
-        study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
-        study.optimize(
-            lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)],
-            n_trials=n_trials,
-        )
+        NSGAIISampler(population_size=population_size, crossover=crossover)
 
 
 @pytest.mark.parametrize(
@@ -606,8 +608,8 @@ def test_crossover_numerical_distribution(crossover: BaseCrossover) -> None:
     child_params = crossover.crossover(parent_params, rng, study, numerical_transform.bounds)
     assert child_params.ndim == 1
     assert len(child_params) == len(search_space)
-    assert np.nan not in child_params
-    assert np.inf not in child_params
+    assert not any(np.isnan(child_params))
+    assert not any(np.isinf(child_params))
 
 
 def test_crossover_inlined_categorical_distribution() -> None:
@@ -630,17 +632,62 @@ def test_crossover_inlined_categorical_distribution() -> None:
 
 
 @pytest.mark.parametrize(
-    "crossover,expected_params",
+    "crossover",
     [
-        (UniformCrossover(), np.array([3.0, 4.0])),
-        (BLXAlphaCrossover(), np.array([2.0, 3.0])),
-        (SPXCrossover(), np.array([2.75735931, 3.75735931])),
-        (SBXCrossover(), np.array([3.0, 4.0])),
-        (VSBXCrossover(), np.array([3.0, 4.0])),
-        (UNDXCrossover(), np.array([1.0, 2.0])),
+        UniformCrossover(),
+        BLXAlphaCrossover(),
+        SPXCrossover(),
+        SBXCrossover(),
+        VSBXCrossover(),
+        UNDXCrossover(),
     ],
 )
-def test_crossover_deterministic(crossover: BaseCrossover, expected_params: np.ndarray) -> None:
+def test_crossover_duplicated_param_values(crossover: BaseCrossover) -> None:
+
+    param_values = [1.0, 2.0]
+
+    study = optuna.study.create_study()
+    rng = np.random.RandomState()
+    search_space = {"x": FloatDistribution(1, 10), "y": IntDistribution(1, 10)}
+    numerical_transform = _SearchSpaceTransform(search_space)
+    parent_params = np.array([param_values, param_values])
+
+    if crossover.n_parents == 3:
+        parent_params = np.append(parent_params, [param_values], axis=0)
+
+    child_params = crossover.crossover(parent_params, rng, study, numerical_transform.bounds)
+    assert child_params.ndim == 1
+    np.testing.assert_almost_equal(child_params, param_values)
+
+
+@pytest.mark.parametrize(
+    "crossover,rand_value,expected_params",
+    [
+        (UniformCrossover(), 0.0, np.array([1.0, 2.0])),  # p1.
+        (UniformCrossover(), 0.5, np.array([3.0, 4.0])),  # p2.
+        (UniformCrossover(), 1.0, np.array([3.0, 4.0])),  # p2.
+        (BLXAlphaCrossover(), 0.0, np.array([0.0, 1.0])),  # p1 - [1, 1].
+        (BLXAlphaCrossover(), 0.5, np.array([2.0, 3.0])),  # (p1 + p2) / 2.
+        (BLXAlphaCrossover(), 1.0, np.array([4.0, 5.0])),  # p2 + [1, 1].
+        # G = [3, 4], xks=[[-1, 0], [3, 4]. [7, 8]].
+        (SPXCrossover(), 0.0, np.array([7, 8])),  # rs = [0, 0], xks[-1].
+        (SPXCrossover(), 0.5, np.array([2.75735931, 3.75735931])),  # rs = [0.5, 0.25].
+        (SPXCrossover(), 1.0, np.array([-1.0, 0.0])),  # rs = [1, 1], xks[0].
+        (SBXCrossover(), 0.0, np.array([2.0, 3.0])),  # c1 = (p1 + p2) / 2.
+        (SBXCrossover(), 0.5, np.array([3.0, 4.0])),  # p2.
+        (SBXCrossover(), 1.0, np.array([3.0, 4.0])),  # p2.
+        (VSBXCrossover(), 0.0, np.array([2.0, 3.0])),  # c1 = (p1 + p2) / 2.
+        (VSBXCrossover(), 0.5, np.array([3.0, 4.0])),  # p2.
+        (VSBXCrossover(), 1.0, np.array([3.0, 4.0])),  # p2.
+        # p1, p2 and p3 are on x + 1, and distance from child to PSL is 0.
+        (UNDXCrossover(), -0.5, np.array([3.0, 4.0])),  # [2, 3] + [-1, -1] + [0, 0].
+        (UNDXCrossover(), 0.0, np.array([2.0, 3.0])),  # [2, 3] + [0, 0] + [0, 0].
+        (UNDXCrossover(), 0.5, np.array([1.0, 2.0])),  # [2, 3] + [-1, -1] + [0, 0].
+    ],
+)
+def test_crossover_deterministic(
+    crossover: BaseCrossover, rand_value: float, expected_params: np.ndarray
+) -> None:
 
     study = optuna.study.create_study()
     search_space: Dict[str, BaseDistribution] = {
@@ -655,13 +702,13 @@ def test_crossover_deterministic(crossover: BaseCrossover, expected_params: np.n
 
     def _rand(*args: Any, **kwargs: Any) -> Any:
         if len(args) == 0:
-            return 0.5
-        return np.full(args[0], 0.5)
+            return rand_value
+        return np.full(args[0], rand_value)
 
     def _normal(*args: Any, **kwargs: Any) -> Any:
         if kwargs.get("size") is None:
-            return 0.5
-        return np.full(kwargs.get("size"), 0.5)  # type: ignore
+            return rand_value
+        return np.full(kwargs.get("size"), rand_value)  # type: ignore
 
     rng = Mock()
     rng.rand = Mock(side_effect=_rand)

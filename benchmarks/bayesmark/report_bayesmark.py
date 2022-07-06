@@ -1,6 +1,6 @@
 import abc
 from collections import defaultdict
-import io
+from dataclasses import dataclass
 import itertools
 import os
 from typing import Dict
@@ -10,16 +10,13 @@ from typing import Optional
 from typing import Set
 from typing import Tuple
 
+from jinja2 import Environment
+from jinja2 import FileSystemLoader
 import numpy as np
 import pandas as pd
 from scipy.special import binom
 from scipy.stats import mannwhitneyu
 
-
-_LINE_BREAK = "\n"
-_TABLE_HEADER = "|Ranking|Solver|"
-_HEADER_FORMAT = "|:---|---:|"
-_OVERALL_HEADER = "|Solver|Borda|Firsts|\n|:---|---:|---:|\n"
 
 Moments = Tuple[float, float]
 Samples = Dict[str, List[float]]
@@ -186,21 +183,35 @@ class DewanckerRanker:
         self._set_borda(wins)
 
 
+@dataclass
+class Solver:
+    rank: int
+    name: str
+    results: List[str]
+
+
+@dataclass
+class Problem:
+    number: int
+    name: str
+    metrics: List[BaseMetric]
+    solvers: List[Solver]
+
+
 class BayesmarkReportBuilder:
     def __init__(self) -> None:
 
-        self._solvers: Set[str] = set()
-        self._datasets: Set[str] = set()
-        self._models: Set[str] = set()
-        self._firsts: Dict[str, int] = defaultdict(int)
-        self._borda: Dict[str, int] = defaultdict(int)
-        self._metric_precedence = str()
-        self._problems_counter = 1
-        self._problems_body = io.StringIO()
+        self.solvers: Set[str] = set()
+        self.datasets: Set[str] = set()
+        self.models: Set[str] = set()
+        self.firsts: Dict[str, int] = defaultdict(int)
+        self.borda: Dict[str, int] = defaultdict(int)
+        self.metric_precedence = ""
+        self.problems: List[Problem] = []
 
     def set_precedence(self, metrics: List[BaseMetric]) -> None:
 
-        self._metric_precedence = " -> ".join([m.name for m in metrics])
+        self.metric_precedence = " -> ".join([m.name for m in metrics])
 
     def add_problem(
         self,
@@ -210,80 +221,46 @@ class BayesmarkReportBuilder:
         metrics: List[BaseMetric],
     ) -> "BayesmarkReportBuilder":
 
-        if self._problems_body.closed:
-            self._problems_body = io.StringIO()
-
-        problem_header = f"### ({self._problems_counter}) Problem: {name}" + _LINE_BREAK
-        self._problems_body.write(problem_header)
-        metric_names = [f"{m.name} (avg +- std) |" for m in metrics]
-        self._problems_body.write(
-            "".join([_LINE_BREAK, _TABLE_HEADER, *metric_names, _LINE_BREAK])
-        )
-        metric_format = ["---:|" for _ in range(len(metrics))]
-        self._problems_body.write("".join([_HEADER_FORMAT, *metric_format, _LINE_BREAK]))
-
+        solvers: List[Solver] = list()
         positions = np.abs(ranking.borda - (max(ranking.borda) + 1))
         for pos, solver in zip(positions, ranking.solvers):
-            self._solvers.add(solver)
-            row_buffer = io.StringIO()
-            row_buffer.write(f"|{pos}|{solver}|")
+            self.solvers.add(solver)
+            results: List[str] = list()
             for metric in metrics:
                 mean, variance = report.summarize_solver(solver, metric)
                 precision = metric.precision
-                row_buffer.write(f"{mean:.{precision}f} +- {np.sqrt(variance):.{precision}f}|")
+                results.append(f"{mean:.{precision}f} +- {np.sqrt(variance):.{precision}f}")
 
-            self._problems_body.write("".join([row_buffer.getvalue(), _LINE_BREAK]))
-            row_buffer.close()
+            solvers.append(Solver(pos, solver, results))
 
-        self._problems_counter += 1
+        problem_number = len(self.problems) + 1
+        self.problems.append(Problem(problem_number, name, metrics, solvers))
         return self
 
     def update_leaderboard(self, ranking: DewanckerRanker) -> "BayesmarkReportBuilder":
 
         for solver, borda in ranking:
             if borda == max(ranking.borda):
-                self._firsts[solver] += 1
-            self._borda[solver] += borda
+                self.firsts[solver] += 1
+            self.borda[solver] += borda
         return self
 
     def add_dataset(self, dataset: str) -> "BayesmarkReportBuilder":
 
-        self._datasets.update(dataset)
+        self.datasets.update(dataset)
         return self
 
     def add_model(self, model: str) -> "BayesmarkReportBuilder":
 
-        self._models.update(model)
+        self.models.update(model)
         return self
 
     def assemble_report(self) -> str:
 
-        num_datasets = len(self._datasets)
-        num_models = len(self._models)
-
-        overall_body = io.StringIO()
-        overall_body.write(_OVERALL_HEADER)
-        for solver in self._solvers:
-            row = f"|{solver}|{self._borda[solver]}|{self._firsts[solver]}|"
-            overall_body.write("".join([row, _LINE_BREAK]))
-
-        with open(os.path.join("benchmarks", "bayesmark", "report_template.md")) as file:
-            report_template = file.read()
-
-        # TODO(xadrianzetx) Consider using proper templating engine.
-        report = report_template.format(
-            num_solvers=len(self._solvers),
-            num_datasets=num_datasets,
-            num_models=num_models,
-            precedence=self._metric_precedence,
-            num_problems=num_datasets * num_models,
-            overall=overall_body.getvalue(),
-            leaderboards=self._problems_body.getvalue(),
-        )
-
-        overall_body.close()
-        self._problems_body.close()
-        return report
+        loader = FileSystemLoader(os.path.join("benchmarks", "bayesmark"))
+        env = Environment(loader=loader)
+        report_template = env.get_template("report_template.md")
+        return report_template.render(report=self)
 
 
 def build_report() -> None:

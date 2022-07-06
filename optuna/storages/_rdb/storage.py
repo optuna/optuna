@@ -20,7 +20,6 @@ import uuid
 import optuna
 from optuna import distributions
 from optuna import version
-from optuna._deprecated import deprecated_func
 from optuna._imports import _LazyImport
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
@@ -590,32 +589,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         return trial
 
-    @deprecated_func(
-        "3.0.0",
-        "5.0.0",
-        text="Use :func:`~optuna.storages.RDBStorage.set_trial_state_values` instead.",
-    )
-    def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
-
-        try:
-            with _create_scoped_session(self.scoped_session) as session:
-                trial = models.TrialModel.find_or_raise_by_id(trial_id, session, for_update=True)
-                self.check_trial_is_updatable(trial_id, trial.state)
-
-                if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
-                    return False
-
-                trial.state = state
-
-                if state == TrialState.RUNNING:
-                    trial.datetime_start = datetime.now()
-
-                if state.is_finished():
-                    trial.datetime_complete = datetime.now()
-        except sqlalchemy_exc.IntegrityError:
-            return False
-        return True
-
     def set_trial_param(
         self,
         trial_id: int,
@@ -695,19 +668,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             param_value = trial_param.param_value
 
         return param_value
-
-    @deprecated_func(
-        "3.0.0",
-        "5.0.0",
-        text="Use :func:`~optuna.storages.RDBStorage.set_trial_state_values` instead.",
-    )
-    def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
-
-        with _create_scoped_session(self.scoped_session) as session:
-            trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-            self.check_trial_is_updatable(trial_id, trial.state)
-            for objective, v in enumerate(values):
-                self._set_trial_value_without_commit(session, trial_id, objective, v)
 
     def set_trial_state_values(
         self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
@@ -1073,21 +1033,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 session.add(heartbeat)
             else:
                 heartbeat.heartbeat = session.execute(sqlalchemy.func.now()).scalar()
-
-    @deprecated_func(
-        "3.0.0",
-        "5.0.0",
-        text="Use :func:`~optuna.storages.fail_stale_trials` instead.",
-    )
-    def fail_stale_trials(self, study_id: int) -> List[int]:
-        stale_trial_ids = self._get_stale_trial_ids(study_id)
-        confirmed_stale_trial_ids = []
-
-        for trial_id in stale_trial_ids:
-            if self.set_trial_state_values(trial_id, state=TrialState.FAIL):
-                confirmed_stale_trial_ids.append(trial_id)
-
-        return confirmed_stale_trial_ids
 
     def _get_stale_trial_ids(self, study_id: int) -> List[int]:
         assert self.heartbeat_interval is not None

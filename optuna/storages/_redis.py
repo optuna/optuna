@@ -16,7 +16,6 @@ from typing import Union
 import optuna
 from optuna import distributions
 from optuna import exceptions
-from optuna._deprecated import deprecated_func
 from optuna._experimental import experimental_class
 from optuna._imports import try_import
 from optuna.storages import BaseStorage
@@ -429,38 +428,6 @@ class RedisStorage(BaseStorage, BaseHeartbeat):
             datetime_complete=None,
         )
 
-    @deprecated_func(
-        "3.0.0",
-        "5.0.0",
-        text="Use :func:`~optuna.storages.RedisStorage.set_trial_state_values` instead.",
-    )
-    def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
-
-        trial = self.get_trial(trial_id)
-        self.check_trial_is_updatable(trial_id, trial.state)
-
-        if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
-            return False
-
-        trial.state = state
-
-        if state == TrialState.RUNNING:
-            trial.datetime_start = datetime.now()
-
-        if state.is_finished():
-            trial.datetime_complete = datetime.now()
-            self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
-            self._update_cache(trial_id)
-
-            # To ensure that there are no failed trials with heartbeats in the DB
-            # under any circumstances
-            study_id = self._get_study_id_from_trial_id(trial_id)
-            self._redis.hdel(self._key_study_heartbeats(study_id), str(trial_id))
-        else:
-            self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
-
-        return True
-
     def set_trial_param(
         self,
         trial_id: int,
@@ -565,19 +532,6 @@ class RedisStorage(BaseStorage, BaseHeartbeat):
 
         self._check_study_id(study_id)
         self.set_trial_param(trial_id, param_name, param_value_internal, distribution)
-
-    @deprecated_func(
-        "3.0.0",
-        "5.0.0",
-        text="Use :func:`~optuna.storages.RedisStorage.set_trial_state_values` instead.",
-    )
-    def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
-
-        trial = self.get_trial(trial_id)
-        self.check_trial_is_updatable(trial_id, trial.state)
-
-        trial.values = values
-        self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
 
     def set_trial_state_values(
         self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
@@ -746,19 +700,6 @@ class RedisStorage(BaseStorage, BaseHeartbeat):
             str(trial_id),
             pickle.dumps(self._get_redis_time()),
         )
-
-    @deprecated_func(
-        "3.0.0",
-        "5.0.0",
-        text="Use :func:`~optuna.storages.fail_stale_trials` instead.",
-    )
-    def fail_stale_trials(self, study_id: int) -> List[int]:
-        confirmed = []
-        for trial_id in self._get_stale_trial_ids(study_id):
-            if self.set_trial_state_values(trial_id, state=TrialState.FAIL):
-                confirmed.append(trial_id)
-
-        return confirmed
 
     def _get_stale_trial_ids(self, study_id: int) -> List[int]:
         assert self.heartbeat_interval is not None

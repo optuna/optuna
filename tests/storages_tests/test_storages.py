@@ -436,54 +436,6 @@ def test_get_trial_number_from_id(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_set_trial_state(storage_mode: str) -> None:
-
-    with StorageSupplier(storage_mode) as storage:
-
-        if isinstance(storage, (InMemoryStorage, _CachedStorage)):
-            pytest.skip("InMemoryStorage and _CachedStorage does not have set_trial_state()")
-            return  # needed for mypy
-        study_id = storage.create_new_study()
-        trial_ids = [storage.create_new_trial(study_id) for _ in ALL_STATES]
-
-        for trial_id, state in zip(trial_ids, ALL_STATES):
-            if state == TrialState.WAITING:
-                continue
-            assert storage.get_trial(trial_id).state == TrialState.RUNNING
-            datetime_start_prev = storage.get_trial(trial_id).datetime_start
-            if state.is_finished():
-                storage.set_trial_values(trial_id, (0.0,))
-            storage.set_trial_state(trial_id, state)
-            assert storage.get_trial(trial_id).state == state
-            # Repeated state changes to RUNNING should not trigger further datetime_start changes.
-            if state == TrialState.RUNNING:
-                assert storage.get_trial(trial_id).datetime_start == datetime_start_prev
-            if state.is_finished():
-                assert storage.get_trial(trial_id).datetime_complete is not None
-            else:
-                assert storage.get_trial(trial_id).datetime_complete is None
-
-        # Non-existent study.
-        with pytest.raises(KeyError):
-            non_existent_trial_id = max(trial_ids) + 1
-            storage.set_trial_state(
-                non_existent_trial_id,
-                state=TrialState.COMPLETE,
-            )
-
-        for state in ALL_STATES:
-            if not state.is_finished():
-                continue
-            trial_id = storage.create_new_trial(study_id)
-            storage.set_trial_values(trial_id, (0.0,))
-            storage.set_trial_state(trial_id, state)
-            for state2 in ALL_STATES:
-                # Cannot update states of finished trials.
-                with pytest.raises(RuntimeError):
-                    storage.set_trial_state(trial_id, state2)
-
-
-@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_trial_state_values_for_state(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -622,48 +574,6 @@ def test_set_trial_param(storage_mode: str) -> None:
         non_existent_trial_id = max([trial_id_1, trial_id_2, trial_id_3]) + 1
         with pytest.raises(KeyError):
             storage.set_trial_param(non_existent_trial_id, "x", 0.1, distribution_x)
-
-
-@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_set_trial_values(storage_mode: str) -> None:
-
-    with StorageSupplier(storage_mode) as storage:
-
-        if isinstance(storage, (InMemoryStorage, _CachedStorage)):
-            pytest.skip("InMemoryStorage and _CachedStorage does not have set_trial_values()")
-            return  # needed for mypy
-        # Setup test across multiple studies and trials.
-        study_id = storage.create_new_study()
-        trial_id_1 = storage.create_new_trial(study_id)
-        trial_id_2 = storage.create_new_trial(study_id)
-        trial_id_3 = storage.create_new_trial(storage.create_new_study())
-        trial_id_4 = storage.create_new_trial(study_id)
-        trial_id_5 = storage.create_new_trial(study_id)
-
-        # Test setting new value.
-        storage.set_trial_values(trial_id_1, (0.5,))
-        storage.set_trial_values(trial_id_3, (float("inf"),))
-        storage.set_trial_values(trial_id_4, (0.1, 0.2, 0.3))
-        storage.set_trial_values(trial_id_5, [0.1, 0.2, 0.3])
-
-        assert storage.get_trial(trial_id_1).value == 0.5
-        assert storage.get_trial(trial_id_2).value is None
-        assert storage.get_trial(trial_id_3).value == float("inf")
-        assert storage.get_trial(trial_id_4).values == [0.1, 0.2, 0.3]
-        assert storage.get_trial(trial_id_5).values == [0.1, 0.2, 0.3]
-
-        # Values can be overwritten.
-        storage.set_trial_values(trial_id_1, (0.2,))
-        assert storage.get_trial(trial_id_1).value == 0.2
-
-        non_existent_trial_id = max(trial_id_1, trial_id_2, trial_id_3, trial_id_4, trial_id_5) + 1
-        with pytest.raises(KeyError):
-            storage.set_trial_values(non_existent_trial_id, (1,))
-
-        storage.set_trial_state(trial_id_1, TrialState.COMPLETE)
-        # Cannot change values of finished trials.
-        with pytest.raises(RuntimeError):
-            storage.set_trial_values(trial_id_1, (1,))
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
