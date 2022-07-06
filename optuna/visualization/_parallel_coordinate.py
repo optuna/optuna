@@ -212,7 +212,7 @@ def _get_parallel_coordinate_info(
             if max_value not in tickvals:
                 tickvals = tickvals + [max_value]
             dim = _DimensionInfo(
-                label=p_name if len(p_name) < 20 else "{}...".format(p_name[:17]),
+                label=_truncate_label(p_name),
                 values=tuple(values),
                 range=(min_value, max_value),
                 is_log=True,
@@ -231,7 +231,7 @@ def _get_parallel_coordinate_info(
                 values = [vocab[v] for v in values]
                 ticktext = list(sorted(vocab.keys(), key=lambda x: vocab[x]))
             dim = _DimensionInfo(
-                label=p_name if len(p_name) < 20 else "{}...".format(p_name[:17]),
+                label=_truncate_label(p_name),
                 values=tuple(values),
                 range=(min(values), max(values)),
                 is_cat=True,
@@ -240,7 +240,7 @@ def _get_parallel_coordinate_info(
             )
         else:
             dim = _DimensionInfo(
-                label=p_name if len(p_name) < 20 else "{}...".format(p_name[:17]),
+                label=_truncate_label(p_name),
                 values=tuple(values),
                 range=(min(values), max(values)),
             )
@@ -304,3 +304,7 @@ def _get_dims_from_info(info: _ParallelCoordinateInfo) -> List[Dict[str, Any]]:
             dims.append({"label": dim.label, "values": dim.values, "range": dim.range})
 
     return dims
+
+
+def _truncate_label(label: str) -> str:
+    return label if len(label) < 20 else "{}...".format(label[:17])
