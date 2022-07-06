@@ -203,6 +203,7 @@ class _ParzenEstimator:
         return ret
 
     def _calculate_weights(self, predetermined_weights: Optional[np.ndarray]) -> np.ndarray:
+
         # We decide the weights.
         consider_prior = self._parameters.consider_prior
         prior_weight = self._parameters.prior_weight
