@@ -103,6 +103,7 @@ def _get_optimization_history_error_bar_info(
         assert info_list is not None
         for trial_numbers, values_info, best_values_info in info_list:
             if use_best_value:
+                assert best_values_info is not None
                 values_info = best_values_info
             for trial_number, value in zip(trial_numbers, values_info.values):
                 values[trial_number].append(value)
