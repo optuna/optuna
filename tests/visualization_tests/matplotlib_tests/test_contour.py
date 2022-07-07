@@ -87,7 +87,7 @@ def test_target_is_not_none_and_study_is_multi_obj() -> None:
 def test_plot_contour(params: Optional[List[str]]) -> None:
 
     # Test with no trial.
-    study_without_trials = prepare_study_with_trials(no_trials=True)
+    study_without_trials = create_study(direction="minimize")
     figure = plot_contour(study_without_trials, params=params)
     assert len(figure.get_lines()) == 0
     plt.savefig(BytesIO())

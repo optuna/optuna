@@ -5,7 +5,6 @@ from optuna.trial import create_trial
 
 
 def prepare_study_with_trials(
-    no_trials: bool = False,
     less_than_two: bool = False,
     more_than_three: bool = False,
     with_c_d: bool = True,
@@ -17,7 +16,6 @@ def prepare_study_with_trials(
     """Prepare a study for tests.
 
     Args:
-        no_trials: If :obj:`False`, create a study with no trials.
         less_than_two: If :obj:`True`, create a study with two/four hyperparameters where
             'param_a' (and 'param_c') appear(s) only once while 'param_b' (and 'param_d')
             appear(s) twice in `study.trials`.
@@ -38,8 +36,6 @@ def prepare_study_with_trials(
     """
 
     study = create_study(directions=[direction] * n_objectives)
-    if no_trials:
-        return study
     study.add_trial(
         create_trial(
             values=[value_for_first_trial] * n_objectives,
