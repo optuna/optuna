@@ -16,15 +16,15 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.study import create_study
 from optuna.study import Study
-from optuna.testing.visualization import prepare_study_with_trials
-from optuna.trial import create_trial
-from optuna.trial import Trial
 from optuna.visualization import plot_contour as plotly_plot_contour
 from optuna.visualization._contour import _AxisInfo
 from optuna.visualization._contour import _ContourInfo
 from optuna.visualization._contour import _get_contour_info
 from optuna.visualization._contour import _SubContourInfo
 from optuna.visualization._plotly_imports import _imports as plotly_imports
+from optuna.testing.objectives import fail_objective
+from optuna.testing.visualization import prepare_study_with_trials
+from optuna.trial import create_trial
 from optuna.visualization._utils import COLOR_SCALE
 from optuna.visualization.matplotlib import plot_contour as plt_plot_contour
 from optuna.visualization.matplotlib._matplotlib_imports import _imports as plt_imports
@@ -47,12 +47,10 @@ parametrize_plot_contour = pytest.mark.parametrize(
 
 
 def _create_study_with_error_trials() -> Study:
-    def fail_objective(_: Trial) -> float:
-
-        raise ValueError
 
     study = create_study()
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
+
     return study
 
 
