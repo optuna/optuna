@@ -53,6 +53,7 @@ def _get_importances_info(
             param_names=[],
             importance_labels=[],
             target_name=target_name,
+            hover_template=[],
         )
 
     importances = optuna.importance.get_param_importances(
@@ -73,7 +74,7 @@ def _get_importances_info(
         param_names=param_names,
         importance_labels=importance_labels,
         target_name=target_name,
-        hover_template= hover_template
+        hover_template=hover_template,
     )
 
 
