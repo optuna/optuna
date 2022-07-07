@@ -186,7 +186,7 @@ In order to run NASLib benchmarks, you need the following dependencies:
 * [`kurobako-py`](https://github.com/optuna/kurobako-py)
 * `gnuplot`
 
-Please see each page for the detailed instructions. In short, `NASLib` can be installed by cloning the [NASLib](https://github.com/automl/NASLib), downloading all the data files under `NASLib/naslib/data/` repository from GitHub, and running 
+Please see each page for the detailed instructions. In short, `NASLib` can be installed by cloning the [NASLib](https://github.com/automl/NASLib), downloading all the data files under `NASLib/naslib/data/` repository from GitHub, and running
 ```
 $ pip3 install -e .
 ```
@@ -199,7 +199,7 @@ $ pip3 install kurobako
 
 Finally, you can run the script of `benchmarks/run_naslib.py`.
 ```bash
-$ python3 benchmarks/run_naslib.py \   
+$ python3 benchmarks/run_naslib.py \
             --path-to-kurobako "" \
             --name "performance-benchmarks" \
             --n-runs 10 \
