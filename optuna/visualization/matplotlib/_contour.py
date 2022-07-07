@@ -239,8 +239,8 @@ def _calculate_griddata(
 
     # Calculate grid data points.
     zi: np.ndarray = np.array([])
-    # create irregularly spaced map of trial values
-    # and interpolate it with Plotly's interpolation formulation
+    # Create irregularly spaced map of trial values
+    # and interpolate it with Plotly's interpolation formulation.
     if xaxis.name != yaxis.name:
         zmap = _create_zmap(transformed_x_values, transformed_y_values, z_values, xi, yi)
         zi = _interpolate_zmap(zmap, CONTOUR_POINT_NUM)
@@ -321,16 +321,16 @@ def _create_zmap(
     yi: np.ndarray,
 ) -> Dict[Tuple[int, int], float]:
 
-    # creates z-map from trial values and params.
-    # z-map is represented by hashmap of coordinate and trial value pairs
+    # Creates z-map from trial values and params.
+    # z-map is represented by hashmap of coordinate and trial value pairs.
     #
-    # coordinates are represented by tuple of integers, where the first item
+    # Coordinates are represented by tuple of integers, where the first item
     # indicates x-axis index and the second item indicates y-axis index
-    # and refer to a position of trial value on irregular param grid
+    # and refer to a position of trial value on irregular param grid.
     #
-    # since params were resampled either with linspace or logspace
+    # Since params were resampled either with linspace or logspace
     # original params might not be on the x and y axes anymore
-    # so we are going with close approximations of trial value positions
+    # so we are going with close approximations of trial value positions.
     zmap = dict()
     for x, y, z in zip(x_values, y_values, z_values):
         xindex = int(np.argmin(np.abs(xi - x)))
@@ -342,9 +342,9 @@ def _create_zmap(
 
 def _interpolate_zmap(zmap: Dict[Tuple[int, int], float], contour_plot_num: int) -> np.ndarray:
 
-    # implements interpolation formulation used in Plotly
+    # Implements interpolation formulation used in Plotly
     # to interpolate heatmaps and contour plots
-    # https://github.com/plotly/plotly.js/blob/master/src/traces/heatmap/interp2d.js#L30
+    # https://github.com/plotly/plotly.js/blob/95b3bd1bb19d8dc226627442f8f66bce9576def8/src/traces/heatmap/interp2d.js#L15-L20
     # citing their doc:
     #
     # > Fill in missing data from a 2D array using an iterative
