@@ -11,9 +11,9 @@ import pytest
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.study import create_study
+from optuna.testing.objectives import fail_objective
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
-from optuna.trial import Trial
 from optuna.visualization import plot_contour
 from optuna.visualization._contour import _get_contour_subplot
 from optuna.visualization._contour import _get_contour_subplot_info
@@ -61,11 +61,6 @@ def test_plot_contour(params: Optional[List[str]]) -> None:
     assert len(figure.data) == 0
 
     # Test whether trials with `ValueError`s are ignored.
-
-    def fail_objective(_: Trial) -> float:
-
-        raise ValueError
-
     study = create_study()
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_contour(study, params=params)
