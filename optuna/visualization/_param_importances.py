@@ -29,6 +29,8 @@ class _ImportancesInfo(NamedTuple):
     importance_values: List[float]
     param_names: List[str]
     importance_labels: List[str]
+    target_name: str
+    hover_template: List[str]
 
 
 def _get_importances_info(
@@ -50,6 +52,7 @@ def _get_importances_info(
             importance_values=[],
             param_names=[],
             importance_labels=[],
+            target_name=target_name,
         )
 
     importances = optuna.importance.get_param_importances(
@@ -60,11 +63,17 @@ def _get_importances_info(
     importance_values = list(importances.values())
     param_names = list(importances.keys())
     importance_labels = [f"{val:.2f}" if val >= 0.01 else "<0.01" for val in importance_values]
+    hover_template = [
+        _make_hovertext(param_name, importance, study)
+        for param_name, importance in zip(param_names, importance_values)
+    ]
 
     return _ImportancesInfo(
         importance_values=importance_values,
         param_names=param_names,
         importance_labels=importance_labels,
+        target_name=target_name,
+        hover_template= hover_template
     )
 
 
@@ -135,34 +144,33 @@ def plot_param_importances(
     _imports.check()
 
     importances_info = _get_importances_info(study, evaluator, params, target, target_name)
+    return _get_importances_plot(importances_info)
+
+
+def _get_importances_plot(info: _ImportancesInfo) -> "go.Figure":
 
     layout = go.Layout(
         title="Hyperparameter Importances",
-        xaxis={"title": f"Importance for {target_name}"},
+        xaxis={"title": f"Importance for {info.target_name}"},
         yaxis={"title": "Hyperparameter"},
         showlegend=False,
     )
 
-    param_names = importances_info.param_names
-    importance_values = importances_info.importance_values
+    param_names = info.param_names
+    importance_values = info.importance_values
 
     if len(importance_values) == 0:
         return go.Figure(data=[], layout=layout)
-
-    hovertemplate = [
-        _make_hovertext(param_name, importance, study)
-        for param_name, importance in zip(param_names, importance_values)
-    ]
 
     fig = go.Figure(
         data=[
             go.Bar(
                 x=importance_values,
                 y=param_names,
-                text=importances_info.importance_labels,
+                text=info.importance_labels,
                 textposition="outside",
                 cliponaxis=False,  # Ensure text is not clipped.
-                hovertemplate=hovertemplate,
+                hovertemplate=info.hover_template,
                 marker_color=plotly.colors.sequential.Blues[-4],
                 orientation="h",
             )
