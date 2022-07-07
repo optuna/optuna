@@ -51,7 +51,12 @@ def _get_optimization_history_info_list(
     for study in studies:
         trials = study.get_trials(states=(TrialState.COMPLETE,))
         label_name = target_name if len(studies) == 1 else f"{target_name} of {study.study_name}"
-        if target is None:
+        if target is not None:
+            values = [target(t) for t in trials]
+            # We don't calculate best for user-defined target function since we cannot tell
+            # which direction is better.
+            best_values_info: Optional[_ValuesInfo] = None
+        else:
             values = [cast(float, t.value) for t in trials]
             if study.direction == StudyDirection.MINIMIZE:
                 best_values = list(np.minimum.accumulate(values))
@@ -61,9 +66,6 @@ def _get_optimization_history_info_list(
                 "Best Value" if len(studies) == 1 else f"Best Value of {study.study_name}"
             )
             best_values_info = _ValuesInfo(best_values, None, best_label_name)
-        else:
-            values = [target(t) for t in trials]
-            best_values_info = None
         optimization_history_info_list.append(
             _OptimizationHistoryInfo(
                 trial_numbers=[t.number for t in trials],
@@ -98,6 +100,7 @@ def _get_optimization_history_error_bar_info(
         # Calculate mean and std of values for each trial number.
         values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
         # TODO(knshnb): Took over `+2` from the previous code, but not sure why it is necessary.
+        assert info_list is not None
         for trial_numbers, values_info, best_values_info in info_list:
             if use_best_value:
                 values_info = best_values_info
