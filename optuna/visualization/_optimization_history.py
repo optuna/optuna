@@ -4,6 +4,7 @@ from typing import List
 from typing import NamedTuple
 from typing import Optional
 from typing import Sequence
+from typing import Tuple
 from typing import Union
 
 import numpy as np
@@ -93,33 +94,28 @@ def _get_optimization_history_error_bar_info(
         return None
     max_trial_number = max(max(info.trial_numbers) for info in info_list)
 
-    # Calculate mean and std of target values for each trial number.
-    values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
-    # TODO(knshnb): Took over `+2` from the previous code, but not sure why it is necessary.
-    for trial_numbers, values_info, _ in info_list:
-        for trial_number, value in zip(trial_numbers, values_info.values):
-            values[trial_number].append(value)
-    mean_of_values = [np.mean(v) if len(v) > 0 else None for v in values]
-    std_of_values = [np.std(v) if len(v) > 0 else None for v in values]
-    eb_trial_numbers = np.arange(max_trial_number + 2)[[v is not None for v in mean_of_values]]
-    value_means = np.asarray(mean_of_values)[eb_trial_numbers]
-    value_stds = np.asarray(std_of_values)[eb_trial_numbers]
-    eb_values_info = _ValuesInfo(value_means, value_stds, target_name)
+    def _aggregate(label_name: str, use_best_value: bool) -> Tuple[List[int], _ValuesInfo]:
+        # Calculate mean and std of values for each trial number.
+        values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
+        # TODO(knshnb): Took over `+2` from the previous code, but not sure why it is necessary.
+        for trial_numbers, values_info, best_values_info in info_list:
+            if use_best_value:
+                values_info = best_values_info
+            for trial_number, value in zip(trial_numbers, values_info.values):
+                values[trial_number].append(value)
+        mean_of_values = [np.mean(v) if len(v) > 0 else None for v in values]
+        std_of_values = [np.std(v) if len(v) > 0 else None for v in values]
+        eb_trial_numbers = list(
+            np.arange(max_trial_number + 2)[[v is not None for v in mean_of_values]]
+        )
+        value_means = list(np.asarray(mean_of_values)[eb_trial_numbers])
+        value_stds = list(np.asarray(std_of_values)[eb_trial_numbers])
+        return eb_trial_numbers, _ValuesInfo(value_means, value_stds, label_name)
 
-    if target is not None:
-        return _OptimizationHistoryInfo(eb_trial_numbers, eb_values_info, None)
-
-    # Calculate mean and std of previous best target values for each trial number.
-    best_values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
-    for trial_numbers, _, best_values_info in info_list:
-        assert best_values_info is not None
-        for trial_number, best_value in zip(trial_numbers, best_values_info.values):
-            best_values[trial_number].append(best_value)
-    mean_of_best_values = [np.mean(v) if len(v) > 0 else None for v in best_values]
-    std_of_best_values = [np.std(v) if len(v) > 0 else None for v in best_values]
-    best_value_means = list(np.asarray(mean_of_best_values)[eb_trial_numbers])
-    best_value_stds = list(np.asarray(std_of_best_values)[eb_trial_numbers])
-    eb_best_values_info = _ValuesInfo(best_value_means, best_value_stds, "Best Value")
+    eb_trial_numbers, eb_values_info = _aggregate(target_name, False)
+    eb_best_values_info: Optional[_ValuesInfo] = None
+    if target is None:
+        _, eb_best_values_info = _aggregate("Best Value", True)
     return _OptimizationHistoryInfo(eb_trial_numbers, eb_values_info, eb_best_values_info)
 
 
