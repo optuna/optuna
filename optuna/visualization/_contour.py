@@ -255,10 +255,10 @@ def _get_contour_info(
         sorted_params = []
     elif params is None:
         sorted_params = sorted(all_params)
-    elif len(params) <= 1:
-        _logger.warning("The length of params must be greater than 1.")
-        sorted_params = list(params)
     else:
+        if len(params) <= 1:
+            _logger.warning("The length of params must be greater than 1.")
+
         for input_p_name in params:
             if input_p_name not in all_params:
                 raise ValueError("Parameter {} does not exist in your study.".format(input_p_name))
