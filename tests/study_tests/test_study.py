@@ -29,7 +29,6 @@ from optuna import Trial
 from optuna import TrialPruned
 from optuna.exceptions import DuplicatedStudyError
 from optuna.study import StudyDirection
-from optuna.testing import objectives
 from optuna.testing.objectives import fail_objective
 from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
