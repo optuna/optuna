@@ -12,7 +12,7 @@ import pytest
 
 import optuna
 from optuna.integration.chainer import ChainerPruningExtension
-from optuna.testing.pruner import DeterministicPruner
+from optuna.testing.pruners import DeterministicPruner
 
 
 class FixedValueDataset(chainer.dataset.DatasetMixin):
@@ -118,5 +118,3 @@ def test_get_float_value() -> None:
     assert 1.0 == ChainerPruningExtension._get_float_value(1.0)
     assert 1.0 == ChainerPruningExtension._get_float_value(chainer.Variable(np.array([1.0])))
     assert math.isnan(ChainerPruningExtension._get_float_value(float("nan")))
-    with pytest.raises(TypeError):
-        ChainerPruningExtension._get_float_value([])

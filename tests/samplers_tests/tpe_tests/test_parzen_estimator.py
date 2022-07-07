@@ -1,3 +1,4 @@
+from typing import Callable
 from typing import Dict
 from typing import List
 from unittest.mock import patch
@@ -18,6 +19,7 @@ SEARCH_SPACE = {
     "d": distributions.IntDistribution(1, 100),
     "e": distributions.IntDistribution(1, 100, log=True),
     "f": distributions.CategoricalDistribution(["x", "y", "z"]),
+    "g": distributions.CategoricalDistribution([0.0, float("inf"), float("nan"), None]),
 }
 
 MULTIVARIATE_SAMPLES = {
@@ -27,6 +29,7 @@ MULTIVARIATE_SAMPLES = {
     "d": np.array([1]),
     "e": np.array([1]),
     "f": np.array([1]),
+    "g": np.array([1]),
 }
 
 _PRECOMPUTE_SIGMAS0 = "optuna.samplers._tpe.parzen_estimator._ParzenEstimator._precompute_sigmas0"
@@ -51,9 +54,17 @@ def test_init_parzen_estimator(consider_prior: bool, multivariate: bool) -> None
 
     weights = np.array([1] + consider_prior * [1], dtype=float)
     weights /= weights.sum()
-    q = {"a": None, "b": None, "c": 3.0, "d": 1.0, "e": None, "f": None}
-    low = {"a": 1.0, "b": np.log(1.0), "c": -0.5, "d": 0.5, "e": np.log(0.5), "f": None}
-    high = {"a": 100.0, "b": np.log(100.0), "c": 101.5, "d": 100.5, "e": np.log(100.5), "f": None}
+    q = {"a": None, "b": None, "c": 3.0, "d": 1.0, "e": None, "f": None, "g": None}
+    low = {"a": 1.0, "b": np.log(1.0), "c": -0.5, "d": 0.5, "e": np.log(0.5), "f": None, "g": None}
+    high = {
+        "a": 100.0,
+        "b": np.log(100.0),
+        "c": 101.5,
+        "d": 100.5,
+        "e": np.log(100.5),
+        "f": None,
+        "g": None,
+    }
 
     assert np.all(mpe._weights == weights)
     assert mpe._q == q
@@ -69,6 +80,7 @@ def test_init_parzen_estimator(consider_prior: bool, multivariate: bool) -> None
         "e": [(np.log(100.5) + np.log(0.5)) / 2 if consider_prior else np.log(100.5)]
         + consider_prior * [np.log(100.5) - np.log(0.5)],
         "f": None,
+        "g": None,
     }
     expected_sigmas_multivariate = {
         "a": [99.0] + consider_prior * [99.0],
@@ -77,6 +89,7 @@ def test_init_parzen_estimator(consider_prior: bool, multivariate: bool) -> None
         "d": [100.0] + consider_prior * [100.0],
         "e": [np.log(100.5) - np.log(0.5)] + consider_prior * [np.log(100.5) - np.log(0.5)],
         "f": None,
+        "g": None,
     }
     expected_mus = {
         "a": [1.0] + consider_prior * [50.5],
@@ -85,6 +98,7 @@ def test_init_parzen_estimator(consider_prior: bool, multivariate: bool) -> None
         "d": [1.0] + consider_prior * [50.5],
         "e": [np.log(1.0)] + consider_prior * [(np.log(100.5) + np.log(0.5)) / 2.0],
         "f": None,
+        "g": None,
     }
     expected_categorical_weights = {
         "a": None,
@@ -95,6 +109,11 @@ def test_init_parzen_estimator(consider_prior: bool, multivariate: bool) -> None
         "f": np.array([[0.2, 0.6, 0.2], [1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0]])
         if consider_prior
         else np.array([[0.25, 0.5, 0.25]]),
+        "g": np.array(
+            [[1.0 / 6.0, 0.5, 1.0 / 6.0, 1.0 / 6.0], [1.0 / 4.0, 1.0 / 4.0, 1.0 / 4.0, 1.0 / 4.0]]
+        )
+        if consider_prior
+        else np.array([[0.2, 0.4, 0.2, 0.2]]),
     }
 
     for param_name in mpe._sigmas:
@@ -143,15 +162,12 @@ def test_sample_parzen_estimator(multivariate: bool) -> None:
     output_samples = mpe.sample(np.random.RandomState(0), 1)
     if multivariate:
         for param_name, samples in output_samples.items():
-            if samples.dtype == str:
-                assert samples[0] == "y", "parameter {}".format(param_name)
-            else:
-                np.testing.assert_almost_equal(
-                    samples,
-                    MULTIVARIATE_SAMPLES[param_name],
-                    decimal=2,
-                    err_msg="parameter {}".format(param_name),
-                )
+            np.testing.assert_almost_equal(
+                samples,
+                MULTIVARIATE_SAMPLES[param_name],
+                decimal=2,
+                err_msg="parameter {}".format(param_name),
+            )
 
     # Test the output when the seeds are fixed.
     assert output_samples == mpe.sample(np.random.RandomState(0), 1)
@@ -210,20 +226,27 @@ def test_log_pdf_parzen_estimator(multivariate: bool) -> None:
 
 
 @pytest.mark.parametrize("mus", (np.asarray([]), np.asarray([0.4]), np.asarray([-0.4, 0.4])))
+@pytest.mark.parametrize("prior_weight", [1.0, 0.01, 100.0])
 @pytest.mark.parametrize("prior", (True, False))
 @pytest.mark.parametrize("magic_clip", (True, False))
 @pytest.mark.parametrize("endpoints", (True, False))
+@pytest.mark.parametrize("multivariate", (True, False))
 def test_calculate_shape_check(
-    mus: np.ndarray, prior: bool, magic_clip: bool, endpoints: bool
+    mus: np.ndarray,
+    prior_weight: float,
+    prior: bool,
+    magic_clip: bool,
+    endpoints: bool,
+    multivariate: bool,
 ) -> None:
 
     parameters = _ParzenEstimatorParameters(
-        prior_weight=1.0,
+        prior_weight=prior_weight,
         consider_prior=prior,
         consider_magic_clip=magic_clip,
         consider_endpoints=endpoints,
         weights=default_weights,
-        multivariate=False,
+        multivariate=multivariate,
     )
     mpe = _ParzenEstimator(
         {"a": mus}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
@@ -237,6 +260,29 @@ def test_calculate_shape_check(
     assert len(s_weights) == len(mus) + int(prior) if len(mus) > 0 else len(mus) + 1
     assert len(s_mus) == len(mus) + int(prior) if len(mus) > 0 else len(mus) + 1
     assert len(s_sigmas) == len(mus) + int(prior) if len(mus) > 0 else len(mus) + 1
+
+
+@pytest.mark.parametrize("prior_weight", [None, -1.0, 0.0])
+@pytest.mark.parametrize("mus", (np.asarray([]), np.asarray([0.4]), np.asarray([-0.4, 0.4])))
+def test_invalid_prior_weight(prior_weight: float, mus: np.ndarray) -> None:
+
+    parameters = _ParzenEstimatorParameters(
+        prior_weight=prior_weight,
+        consider_prior=True,
+        consider_magic_clip=False,
+        consider_endpoints=False,
+        weights=default_weights,
+        multivariate=False,
+    )
+    mpe = _ParzenEstimator(
+        {"a": mus}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
+    )
+    weights = mpe._weights
+    assert len(weights) == len(mus) + 1
+
+    # TODO(HideakiImamura): After modifying the body to raise an error, modify the test as well.
+    if prior_weight is None:
+        assert all([np.isnan(w) for w in weights])
 
 
 # TODO(ytsmiling): Improve test coverage for weights.
@@ -322,3 +368,33 @@ def test_calculate(
     np.testing.assert_almost_equal(s_weights, expected["weights"])
     np.testing.assert_almost_equal(s_mus, expected["mus"])
     np.testing.assert_almost_equal(s_sigmas, expected["sigmas"])
+
+
+@pytest.mark.parametrize(
+    "weights",
+    [
+        lambda x: np.zeros(x),
+        lambda x: -np.ones(x),
+        lambda x: float("inf") * np.ones(x),
+        lambda x: -float("inf") * np.ones(x),
+        lambda x: np.asarray([float("nan") for _ in range(x)]),
+    ],
+)
+def test_invalid_weights(weights: Callable[[int], np.ndarray]) -> None:
+    parameters = _ParzenEstimatorParameters(
+        prior_weight=1.0,
+        consider_prior=False,
+        consider_magic_clip=False,
+        consider_endpoints=False,
+        weights=weights,
+        multivariate=False,
+    )
+    mpe = _ParzenEstimator(
+        {"a": np.asarray([0.0])}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
+    )
+
+    # TODO(HideakiImamura): Currently, the weight calculation does not raise if the specified
+    #  weights function is invalid. To be fixed to raise a `ValueError`.
+    assert len(mpe._weights) == 1
+    # If `weights = lambda x: -np.ones(x)`, the calculated weight is 1, otherwise nan.
+    assert np.isnan(mpe._weights[0]) or mpe._weights[0] == 1.0

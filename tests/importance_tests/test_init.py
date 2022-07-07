@@ -13,8 +13,9 @@ from optuna.importance import FanovaImportanceEvaluator
 from optuna.importance import get_param_importances
 from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
 from optuna.study import create_study
-from optuna.testing.storage import STORAGE_MODES
-from optuna.testing.storage import StorageSupplier
+from optuna.testing.objectives import pruned_objective
+from optuna.testing.storages import STORAGE_MODES
+from optuna.testing.storages import StorageSupplier
 from optuna.trial import Trial
 
 
@@ -185,10 +186,7 @@ def test_get_param_importances_invalid_empty_study(
     with pytest.raises(ValueError):
         get_param_importances(study, evaluator=evaluator_init_func())
 
-    def objective(trial: Trial) -> float:
-        raise optuna.TrialPruned
-
-    study.optimize(objective, n_trials=3)
+    study.optimize(pruned_objective, n_trials=3)
 
     with pytest.raises(ValueError):
         get_param_importances(study, evaluator=evaluator_init_func())
@@ -207,18 +205,6 @@ def test_get_param_importances_invalid_single_trial(
 
     with pytest.raises(ValueError):
         get_param_importances(study, evaluator=evaluator_init_func())
-
-
-def test_get_param_importances_invalid_evaluator_type() -> None:
-    def objective(trial: Trial) -> float:
-        x1 = trial.suggest_float("x1", 0.1, 3)
-        return x1**2
-
-    study = create_study()
-    study.optimize(objective, n_trials=3)
-
-    with pytest.raises(TypeError):
-        get_param_importances(study, evaluator={})  # type: ignore
 
 
 @parametrize_evaluator
@@ -261,24 +247,6 @@ def test_get_param_importances_invalid_dynamic_search_space_params(
 
     with pytest.raises(ValueError):
         get_param_importances(study, evaluator=evaluator_init_func(), params=["x1"])
-
-
-@parametrize_evaluator
-def test_get_param_importances_invalid_params_type(
-    evaluator_init_func: Callable[[], BaseImportanceEvaluator]
-) -> None:
-    def objective(trial: Trial) -> float:
-        x1 = trial.suggest_float("x1", 0.1, 3)
-        return x1**2
-
-    study = create_study()
-    study.optimize(objective, n_trials=3)
-
-    with pytest.raises(TypeError):
-        get_param_importances(study, evaluator=evaluator_init_func(), params={})  # type: ignore
-
-    with pytest.raises(TypeError):
-        get_param_importances(study, evaluator=evaluator_init_func(), params=[0])  # type: ignore
 
 
 @parametrize_evaluator

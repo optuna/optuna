@@ -23,7 +23,7 @@ import optuna
 from optuna.integration.allennlp import AllenNLPPruningCallback
 from optuna.integration.allennlp._pruner import _create_pruner
 from optuna.integration.allennlp._variables import _VariableManager
-from optuna.testing.pruner import DeterministicPruner
+from optuna.testing.pruners import DeterministicPruner
 
 
 def test_build_params() -> None:

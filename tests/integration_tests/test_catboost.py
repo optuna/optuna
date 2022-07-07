@@ -6,7 +6,7 @@ import pytest
 
 import optuna
 from optuna.integration.catboost import CatBoostPruningCallback
-from optuna.testing.pruner import DeterministicPruner
+from optuna.testing.pruners import DeterministicPruner
 
 
 def test_catboost_pruning_callback_call() -> None:

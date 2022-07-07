@@ -1,19 +1,15 @@
-from collections import OrderedDict
 from typing import Callable
 from typing import List
 from typing import Optional
 
 import numpy as np
 
-import optuna
 from optuna._experimental import experimental_func
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
-from optuna.trial import TrialState
-from optuna.visualization._utils import _check_plot_args
-from optuna.visualization._utils import _filter_nonfinite
+from optuna.visualization._param_importances import _get_importances_info
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 
@@ -93,17 +89,8 @@ def plot_param_importances(
     """
 
     _imports.check()
-    _check_plot_args(study, target, target_name)
-    return _get_param_importance_plot(study, evaluator, params, target, target_name)
 
-
-def _get_param_importance_plot(
-    study: Study,
-    evaluator: Optional[BaseImportanceEvaluator] = None,
-    params: Optional[List[str]] = None,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
-    target_name: str = "Objective Value",
-) -> "Axes":
+    importances_info = _get_importances_info(study, evaluator, params, target, target_name)
 
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
@@ -112,24 +99,12 @@ def _get_param_importance_plot(
     ax.set_xlabel(f"Importance for {target_name}")
     ax.set_ylabel("Hyperparameter")
 
-    # Prepare data for plotting.
-    # Importances cannot be evaluated without completed trials.
-    # Return an empty figure for consistency with other visualization functions.
-    trials = _filter_nonfinite(
-        study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
-    )
-    if len(trials) == 0:
-        _logger.warning("Study instance does not contain completed trials.")
-        return ax
-
-    importances = optuna.importance.get_param_importances(
-        study, evaluator=evaluator, params=params, target=target
-    )
-
-    importances = OrderedDict(reversed(list(importances.items())))
-    importance_values = list(importances.values())
-    param_names = list(importances.keys())
+    param_names = importances_info.param_names
     pos = np.arange(len(param_names))
+    importance_values = importances_info.importance_values
+
+    if len(importance_values) == 0:
+        return ax
 
     # Draw horizontal bars.
     ax.barh(
@@ -141,8 +116,7 @@ def _get_param_importance_plot(
     )
 
     renderer = fig.canvas.get_renderer()
-    for idx, val in enumerate(importance_values):
-        label = f" {val:.2f}" if val >= 0.01 else " <0.01"
+    for idx, (val, label) in enumerate(zip(importance_values, importances_info.importance_labels)):
         text = ax.text(val, idx, label, va="center")
 
         # Sometimes horizontal axis needs to be re-scaled

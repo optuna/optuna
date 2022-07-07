@@ -29,8 +29,9 @@ from optuna import Trial
 from optuna import TrialPruned
 from optuna.exceptions import DuplicatedStudyError
 from optuna.study import StudyDirection
-from optuna.testing.storage import STORAGE_MODES
-from optuna.testing.storage import StorageSupplier
+from optuna.testing.objectives import fail_objective
+from optuna.testing.storages import STORAGE_MODES
+from optuna.testing.storages import StorageSupplier
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -96,7 +97,7 @@ def check_study(study: Study) -> None:
 
     assert not study._is_multi_objective()
 
-    complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+    complete_trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
     if len(complete_trials) == 0:
         with pytest.raises(ValueError):
             study.best_params
@@ -198,24 +199,20 @@ def test_optimize_with_catch(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
 
-        def func_value_error(_: Trial) -> float:
-
-            raise ValueError
-
         # Test default exceptions.
         with pytest.raises(ValueError):
-            study.optimize(func_value_error, n_trials=20)
+            study.optimize(fail_objective, n_trials=20)
         assert len(study.trials) == 1
         assert all(trial.state == TrialState.FAIL for trial in study.trials)
 
         # Test acceptable exception.
-        study.optimize(func_value_error, n_trials=20, catch=(ValueError,))
+        study.optimize(fail_objective, n_trials=20, catch=(ValueError,))
         assert len(study.trials) == 21
         assert all(trial.state == TrialState.FAIL for trial in study.trials)
 
         # Test trial with unacceptable exception.
         with pytest.raises(ValueError):
-            study.optimize(func_value_error, n_trials=20, catch=(ArithmeticError,))
+            study.optimize(fail_objective, n_trials=20, catch=(ArithmeticError,))
         assert len(study.trials) == 22
         assert all(trial.state == TrialState.FAIL for trial in study.trials)
 
@@ -225,12 +222,8 @@ def test_optimize_with_catch_invalid_type(catch: Any) -> None:
 
     study = create_study()
 
-    def func_value_error(_: Trial) -> float:
-
-        raise ValueError
-
     with pytest.raises(TypeError):
-        study.optimize(func_value_error, n_trials=20, catch=catch)
+        study.optimize(fail_objective, n_trials=20, catch=catch)
 
 
 @pytest.mark.parametrize(
@@ -685,6 +678,108 @@ def test_enqueue_trial_with_out_of_range_parameters(storage_mode: str) -> None:
             study.optimize(objective, n_trials=1)
         t = study.trials[0]
         assert t.params["x"] == fixed_value
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_enqueue_trial_skips_existing_finished(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        assert len(study.trials) == 0
+
+        def objective(trial: Trial) -> float:
+
+            x = trial.suggest_int("x", -10, 10)
+            y = trial.suggest_int("y", -10, 10)
+            return x**2 + y**2
+
+        study.enqueue_trial({"x": -5, "y": 5})
+        study.optimize(objective, n_trials=1)
+
+        t0 = study.trials[0]
+        assert t0.params["x"] == -5
+        assert t0.params["y"] == 5
+
+        before_enqueue = len(study.trials)
+        study.enqueue_trial({"x": -5, "y": 5}, skip_if_exists=True)
+        after_enqueue = len(study.trials)
+        assert before_enqueue == after_enqueue
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_enqueue_trial_skips_existing_waiting(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        assert len(study.trials) == 0
+
+        def objective(trial: Trial) -> float:
+
+            x = trial.suggest_int("x", -10, 10)
+            y = trial.suggest_int("y", -10, 10)
+            return x**2 + y**2
+
+        study.enqueue_trial({"x": -5, "y": 5})
+        before_enqueue = len(study.trials)
+        study.enqueue_trial({"x": -5, "y": 5}, skip_if_exists=True)
+        after_enqueue = len(study.trials)
+        assert before_enqueue == after_enqueue
+
+        study.optimize(objective, n_trials=1)
+        t0 = study.trials[0]
+        assert t0.params["x"] == -5
+        assert t0.params["y"] == 5
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+@pytest.mark.parametrize(
+    "new_params", [{"x": -5, "y": 5, "z": 5}, {"x": -5}, {"x": -5, "z": 5}, {"x": -5, "y": 6}]
+)
+def test_enqueue_trial_skip_existing_allows_unfixed(
+    storage_mode: str, new_params: Dict[str, int]
+) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        assert len(study.trials) == 0
+
+        def objective(trial: Trial) -> float:
+
+            x = trial.suggest_int("x", -10, 10)
+            y = trial.suggest_int("y", -10, 10)
+            if trial.number == 1:
+                z = trial.suggest_int("z", -10, 10)
+                return x**2 + y**2 + z**2
+            return x**2 + y**2
+
+        study.enqueue_trial({"x": -5, "y": 5})
+        study.optimize(objective, n_trials=1)
+        t0 = study.trials[0]
+        assert t0.params["x"] == -5
+        assert t0.params["y"] == 5
+
+        study.enqueue_trial(new_params, skip_if_exists=True)
+        study.optimize(objective, n_trials=1)
+
+        unfixed_params = {"x", "y", "z"} - set(new_params)
+        t1 = study.trials[1]
+        assert all(t1.params[k] == new_params[k] for k in new_params)
+        assert all(-10 <= t1.params[k] <= 10 for k in unfixed_params)
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+@pytest.mark.parametrize(
+    "param", ["foo", 1, 1.1, 1e17, 1e-17, float("inf"), float("-inf"), float("nan"), None]
+)
+def test_enqueue_trial_skip_existing_handles_common_types(storage_mode: str, param: Any) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        study.enqueue_trial({"x": param})
+        before_enqueue = len(study.trials)
+        study.enqueue_trial({"x": param}, skip_if_exists=True)
+        after_enqueue = len(study.trials)
+        assert before_enqueue == after_enqueue
 
 
 @patch("optuna.study._optimize.gc.collect")
@@ -1423,11 +1518,11 @@ def test_study_summary_datetime_start_calculation(storage_mode: str) -> None:
         study.enqueue_trial(params={"x": 1})
 
         # Study summary with only enqueued trials should have null datetime_start
-        summaries = study._storage.get_all_study_summaries(include_best_trial=True)
+        summaries = get_all_study_summaries(study._storage, include_best_trial=True)
         assert summaries[0].datetime_start is None
 
         # Study summary with completed trials should have nonnull datetime_start
         study.optimize(objective, n_trials=1)
-        study.enqueue_trial(params={"x": 1})
-        summaries = study._storage.get_all_study_summaries(include_best_trial=True)
+        study.enqueue_trial(params={"x": 1}, skip_if_exists=False)
+        summaries = get_all_study_summaries(study._storage, include_best_trial=True)
         assert summaries[0].datetime_start is not None

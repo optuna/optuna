@@ -8,9 +8,9 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.study import create_study
+from optuna.testing.objectives import fail_objective
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
-from optuna.trial import Trial
 from optuna.visualization import plot_parallel_coordinate
 from optuna.visualization._utils import COLOR_SCALE
 
@@ -85,10 +85,6 @@ def test_plot_parallel_coordinate() -> None:
         plot_parallel_coordinate(study, params=["optuna", "optuna"])
 
     # Ignore failed trials.
-    def fail_objective(_: Trial) -> float:
-
-        raise ValueError
-
     study = create_study()
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_parallel_coordinate(study)

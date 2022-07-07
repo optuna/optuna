@@ -1,7 +1,9 @@
 import copy
+from numbers import Real
 import threading
 from typing import Any
 from typing import Callable
+from typing import cast
 from typing import Container
 from typing import Dict
 from typing import Iterable
@@ -13,6 +15,8 @@ from typing import Type
 from typing import TYPE_CHECKING
 from typing import Union
 import warnings
+
+import numpy as np
 
 from optuna import exceptions
 from optuna import logging
@@ -395,7 +399,7 @@ class Study:
             show_progress_bar:
                 Flag to show progress bars or not. To disable progress bar, set this :obj:`False`.
                 Currently, progress bar is experimental feature and disabled
-                when ``n_trials`` is :obj:`None``, ``timeout`` not is :obj:`None`, and
+                when ``n_trials`` is :obj:`None`, ``timeout`` not is :obj:`None`, and
                 ``n_jobs`` :math:`\\ne 1`.
 
         Raises:
@@ -714,7 +718,6 @@ class Study:
         return _dataframe._trials_dataframe(self, attrs, multi_index)
 
     def stop(self) -> None:
-
         """Exit from the current optimization loop after the running trials finish.
 
         This method lets the running :meth:`~optuna.study.Study.optimize` method return
@@ -753,7 +756,10 @@ class Study:
         self._stop_flag = True
 
     def enqueue_trial(
-        self, params: Dict[str, Any], user_attrs: Optional[Dict[str, Any]] = None
+        self,
+        params: Dict[str, Any],
+        user_attrs: Optional[Dict[str, Any]] = None,
+        skip_if_exists: bool = False,
     ) -> None:
         """Enqueue a trial with given parameter values.
 
@@ -786,12 +792,22 @@ class Study:
                 Parameter values to pass your objective function.
             user_attrs:
                 A dictionary of user-specific attributes other than ``params``.
+            skip_if_exists:
+                When :obj:`True`, prevents duplicate trials from being enqueued again.
+
+                .. note::
+                    This method might produce duplicated trials if called simultaneously
+                    by multiple processes at the same time with same ``params`` dict.
 
         .. seealso::
 
             Please refer to :ref:`enqueue_trial_tutorial` for the tutorial of specifying
             hyperparameters manually.
         """
+
+        if skip_if_exists and self._should_skip_enqueue(params):
+            _logger.info(f"Trial with params {params} already exists. Skipping enqueue.")
+            return
 
         self.add_trial(
             create_trial(
@@ -927,6 +943,38 @@ class Study:
             return trial._trial_id
 
         return None
+
+    def _should_skip_enqueue(self, params: Dict[str, Any]) -> bool:
+
+        for trial in self.get_trials(deepcopy=False):
+            trial_params = trial.system_attrs.get("fixed_params", trial.params)
+            if trial_params.keys() != params.keys():
+                # Can't have repeated trials if different params are suggested.
+                continue
+
+            repeated_params: List[bool] = []
+            for param_name, param_value in params.items():
+                existing_param = trial_params[param_name]
+                if not isinstance(param_value, type(existing_param)):
+                    # Enqueued param has distribution that does not match existing param
+                    # (e.g. trying to enqueue categorical to float param).
+                    # We are not doing anything about it here, since sanitization should
+                    # be handled regardless if `skip_if_exists` is `True`.
+                    repeated_params.append(False)
+                    continue
+
+                is_repeated = (
+                    np.isnan(float(param_value))
+                    or np.isclose(float(param_value), float(existing_param), atol=0.0)
+                    if isinstance(param_value, Real)
+                    else param_value == existing_param
+                )
+                repeated_params.append(is_repeated)
+
+            if all(repeated_params):
+                return True
+
+        return False
 
     @deprecated_func("2.5.0", "4.0.0")
     def _ask(self) -> trial_module.Trial:
@@ -1411,4 +1459,47 @@ def get_all_study_summaries(
     """
 
     storage = storages.get_storage(storage)
-    return storage.get_all_study_summaries(include_best_trial=include_best_trial)
+    frozen_studies = storage.get_all_studies()
+    study_summaries = []
+
+    for s in frozen_studies:
+
+        all_trials = storage.get_all_trials(s._study_id)
+        completed_trials = [t for t in all_trials if t.state == TrialState.COMPLETE]
+
+        n_trials = len(all_trials)
+
+        if len(s.directions) == 1:
+            direction = s.direction
+            directions = None
+            if include_best_trial and len(completed_trials) != 0:
+                if direction == StudyDirection.MAXIMIZE:
+                    best_trial = max(completed_trials, key=lambda t: cast(float, t.value))
+                else:
+                    best_trial = min(completed_trials, key=lambda t: cast(float, t.value))
+            else:
+                best_trial = None
+        else:
+            direction = None
+            directions = s.directions
+            best_trial = None
+
+        datetime_start = min(
+            [t.datetime_start for t in all_trials if t.datetime_start is not None], default=None
+        )
+
+        study_summaries.append(
+            StudySummary(
+                study_name=s.study_name,
+                direction=direction,
+                best_trial=best_trial,
+                user_attrs=s.user_attrs,
+                system_attrs=s.system_attrs,
+                n_trials=n_trials,
+                datetime_start=datetime_start,
+                study_id=s._study_id,
+                directions=directions,
+            )
+        )
+
+    return study_summaries

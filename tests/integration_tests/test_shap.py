@@ -13,8 +13,9 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.integration.shap import ShapleyImportanceEvaluator
 from optuna.samplers import RandomSampler
-from optuna.testing.storage import STORAGE_MODES
-from optuna.testing.storage import StorageSupplier
+from optuna.testing.objectives import pruned_objective
+from optuna.testing.storages import STORAGE_MODES
+from optuna.testing.storages import StorageSupplier
 from optuna.trial import create_trial
 
 
@@ -312,10 +313,7 @@ def test_get_param_importances_invalid_empty_study() -> None:
     with pytest.raises(ValueError):
         ShapleyImportanceEvaluator().evaluate(study)
 
-    def objective(trial: Trial) -> float:
-        raise optuna.TrialPruned
-
-    study.optimize(objective, n_trials=3)
+    study.optimize(pruned_objective, n_trials=3)
 
     with pytest.raises(ValueError):
         ShapleyImportanceEvaluator().evaluate(study)

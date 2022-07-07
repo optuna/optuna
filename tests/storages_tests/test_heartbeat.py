@@ -13,8 +13,8 @@ from optuna.storages import RDBStorage
 from optuna.storages import RedisStorage
 from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.storages._heartbeat import is_heartbeat_enabled
-from optuna.testing.storage import STORAGE_MODES_HEARTBEAT
-from optuna.testing.storage import StorageSupplier
+from optuna.testing.storages import STORAGE_MODES_HEARTBEAT
+from optuna.testing.storages import StorageSupplier
 from optuna.testing.threading import _TestableThread
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -49,7 +49,7 @@ def test_fail_stale_trials_with_optimize(storage_mode: str) -> None:
         with patch("optuna.storages._heartbeat.Thread", _TestableThread):
             study1.optimize(lambda _: 1.0, n_trials=1)
 
-        assert study1.trials[0].state is TrialState.FAIL
+        assert study1.trials[0].state is TrialState.FAIL  # type: ignore [comparison-overlap]
         assert study2.trials[0].state is TrialState.RUNNING
 
 
@@ -220,21 +220,7 @@ def test_fail_stale_trials(storage_mode: str, grace_period: Optional[int]) -> No
 
         optuna.storages.fail_stale_trials(study)
 
-        assert study.trials[0].state is TrialState.FAIL
-
-
-@pytest.mark.parametrize("storage_mode", ["sqlite", "redis"])
-def test_fail_stale_trials_raw(storage_mode: str) -> None:
-    heartbeat_interval = 1
-    grace_period = 2
-
-    with StorageSupplier(storage_mode) as storage:
-        assert isinstance(storage, (RDBStorage, RedisStorage))
-        storage.heartbeat_interval = heartbeat_interval
-        storage.grace_period = grace_period
-
-        study_id = storage.create_new_study()
-        assert storage.fail_stale_trials(study_id) == []
+        assert study.trials[0].state is TrialState.FAIL  # type: ignore [comparison-overlap]
 
 
 @pytest.mark.parametrize("storage_mode", ["sqlite", "redis"])

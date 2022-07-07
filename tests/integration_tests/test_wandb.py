@@ -295,10 +295,3 @@ def test_multiobjective_raises_on_name_mismatch(wandb: mock.MagicMock, metrics: 
 
     with pytest.raises(ValueError):
         study.optimize(_multiobjective_func, n_trials=1, callbacks=[wandbc])
-
-
-@pytest.mark.parametrize("metrics", [{0: "foo", 1: "bar"}])
-def test_multiobjective_raises_on_type_mismatch(metrics: Any) -> None:
-
-    with pytest.raises(TypeError):
-        WeightsAndBiasesCallback(metric_name=metrics)

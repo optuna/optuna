@@ -7,7 +7,7 @@ import pytest
 
 import optuna
 from optuna.study._study_direction import StudyDirection
-from optuna.testing.storage import StorageSupplier
+from optuna.testing.storages import StorageSupplier
 
 
 def test_create_study() -> None:

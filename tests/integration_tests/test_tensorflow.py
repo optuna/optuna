@@ -8,7 +8,7 @@ import tensorflow as tf
 
 import optuna
 from optuna.integration import TensorFlowPruningHook
-from optuna.testing.pruner import DeterministicPruner
+from optuna.testing.pruners import DeterministicPruner
 
 
 def fixed_value_input_fn() -> typing.Tuple[typing.Dict[str, tf.Tensor], tf.Tensor]:

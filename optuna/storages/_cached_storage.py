@@ -17,8 +17,8 @@ from optuna.storages import BaseStorage
 from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.storages._rdb.storage import RDBStorage
 from optuna.storages._redis import RedisStorage
+from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
-from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -154,9 +154,9 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
 
         return self._backend.get_study_system_attrs(study_id)
 
-    def get_all_study_summaries(self, include_best_trial: bool) -> List[StudySummary]:
+    def get_all_studies(self) -> List[FrozenStudy]:
 
-        return self._backend.get_all_study_summaries(include_best_trial=include_best_trial)
+        return self._backend.get_all_studies()
 
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
 

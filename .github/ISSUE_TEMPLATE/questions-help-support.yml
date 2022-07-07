@@ -1,59 +1,11 @@
 name: "\U00002753Questions"
-description: Please let us know if you have any questions.
-labels: ["question"]
+description: Don't use GitHub Issues to ask support questions.
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for your questions!
-
-        If you are more comfortable with [Stack Overflow](https://stackoverflow.com/questions/tagged/optuna), you may consider posting your question with the "optuna" tag there instead.
-        Alternatively, for issues that would benefit from more of an interactive session with the developers, you may refer to the [optuna/optuna chat](https://gitter.im/optuna/optuna) on Gitter.
+        # PLEASE USE GITHUB DISCUSSIONS
+        Don't use GitHub Issues to ask support questions. Use the [GitHub Discussions](https://github.com/optuna/optuna/discussions/categories/q-a) for that.
   - type: textarea
-    id: environment
     attributes:
-      label: Environment
-      description: |
-        Please give us your environment information. You can get this information by typing the following.
-        ```
-        python3 -c 'import optuna; print(f"- Optuna version:{optuna.__version__}")'
-        python3 -c 'import platform; print(f"- Python version:{platform.python_version()}")'
-        python3 -c 'import platform; print(f"- OS:{platform.platform()}")'
-        ```
-      value: |
-        - Optuna version:
-        - Python version:
-        - OS:
-        - (Optional) Other libraries and their versions:
-    validations:
-      required: true
-  - type: textarea
-    id: description
-    attributes:
-      label: Description
-      description: |
-        Please describe your question.
-    validations:
-      required: true
-  - type: textarea
-    id: logs
-    attributes:
-      label: Error messages, stack traces, or logs
-      description: Please copy and paste any relevant error messages, stack traces, or log output.
-      render: shell
-    validations:
-      required: true
-  - type: textarea
-    id: steps-to-reproduce
-    attributes:
-      label: Steps to reproduce
-      description: Please provide how we reproduce your reported bugs. If possible, it is highly recommended to provide the reproducible example codes.
-      value: |
-        1.
-        2.
-        3.
-        ```python
-        # python code
-        ```
-    validations:
-      required: true
+      label: "Don't use GitHub Issues to ask support questions."

@@ -6,7 +6,7 @@ from torch import nn
 
 import optuna
 from optuna.integration import SkorchPruningCallback
-from optuna.testing.pruner import DeterministicPruner
+from optuna.testing.pruners import DeterministicPruner
 
 
 class ClassifierModule(nn.Module):

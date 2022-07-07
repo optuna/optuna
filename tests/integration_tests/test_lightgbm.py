@@ -7,7 +7,7 @@ import pytest
 
 import optuna
 from optuna.integration.lightgbm import LightGBMPruningCallback
-from optuna.testing.pruner import DeterministicPruner
+from optuna.testing.pruners import DeterministicPruner
 
 
 # If `True`, `lgb.cv(..)` will be used in the test, otherwise `lgb.train(..)` will be used.

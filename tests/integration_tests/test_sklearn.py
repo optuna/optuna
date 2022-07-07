@@ -137,23 +137,6 @@ def test_optuna_search_invalid_estimator() -> None:
         optuna_search.fit(X)
 
 
-def test_optuna_search_invalid_param_dist() -> None:
-
-    X, y = make_blobs(n_samples=10)
-    est = KernelDensity()
-    param_dist = ["kernel", distributions.CategoricalDistribution(("gaussian", "linear"))]
-
-    with pytest.raises(TypeError, match="param_distributions must be a dictionary."):
-        integration.OptunaSearchCV(
-            est,
-            param_dist,  # type: ignore
-            cv=3,
-            error_score="raise",
-            random_state=0,
-            return_train_score=True,
-        )
-
-
 def test_optuna_search_pruning_without_partial_fit() -> None:
 
     X, y = make_blobs(n_samples=10)

@@ -445,7 +445,7 @@ class BoTorchSampler(BaseSampler):
         if len(search_space) == 0:
             return {}
 
-        trials = [t for t in study.get_trials(deepcopy=False) if t.state == TrialState.COMPLETE]
+        trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
 
         n_trials = len(trials)
         if n_trials < self._n_startup_trials:

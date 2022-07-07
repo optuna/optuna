@@ -29,6 +29,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
+_CONSTRAINTS_KEY = "tpe:constraints"
 EPS = 1e-12
 _logger = get_logger(__name__)
 
@@ -206,6 +207,22 @@ class TPESampler(BaseSampler):
                 Added in v2.8.0 as an experimental feature. The interface may change in newer
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.8.0.
+        constraints_func:
+            An optional function that computes the objective constraints. It must take a
+            :class:`~optuna.trial.FrozenTrial` and return the constraints. The return value must
+            be a sequence of :obj:`float` s. A value strictly larger than 0 means that a
+            constraints is violated. A value equal to or smaller than 0 is considered feasible.
+            If ``constraints_func`` returns more than one value for a trial, that trial is
+            considered feasible if and only if all values are equal to 0 or smaller.
+
+            The ``constraints_func`` will be evaluated after each successful trial.
+            The function won't be called when trials fail or they are pruned, but this behavior is
+            subject to change in the future releases.
+
+            .. note::
+                Added in v3.0.0 as an experimental feature. The interface may change in newer
+                versions without prior notice.
+                See https://github.com/optuna/optuna/releases/tag/v3.0.0.
 
     """
 
@@ -225,6 +242,7 @@ class TPESampler(BaseSampler):
         group: bool = False,
         warn_independent_sampling: bool = True,
         constant_liar: bool = False,
+        constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
     ) -> None:
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
@@ -251,6 +269,7 @@ class TPESampler(BaseSampler):
         self._search_space_group: Optional[_SearchSpaceGroup] = None
         self._search_space = IntersectionSearchSpace(include_pruned=True)
         self._constant_liar = constant_liar
+        self._constraints_func = constraints_func
 
         if multivariate:
             warnings.warn(
@@ -274,6 +293,13 @@ class TPESampler(BaseSampler):
         if constant_liar:
             warnings.warn(
                 "``constant_liar`` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
+
+        if constraints_func is not None:
+            warnings.warn(
+                "The ``constraints_func`` option is an experimental feature."
                 " The interface can change in the future.",
                 ExperimentalWarning,
             )
@@ -351,8 +377,12 @@ class TPESampler(BaseSampler):
             return {}
 
         param_names = list(search_space.keys())
-        values, scores = _get_observation_pairs(
-            study, param_names, self._multivariate, self._constant_liar
+        values, scores, violations = _get_observation_pairs(
+            study,
+            param_names,
+            self._multivariate,
+            self._constant_liar,
+            self._constraints_func is not None,
         )
 
         # If the number of samples is insufficient, we run random trial.
@@ -361,7 +391,7 @@ class TPESampler(BaseSampler):
             return {}
 
         # We divide data into below and above.
-        indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n))
+        indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n), violations)
         # `None` items are intentionally converted to `nan` and then filtered out.
         # For `nan` conversion, the dtype must be float.
         config_values = {k: np.asarray(v, dtype=float) for k, v in values.items()}
@@ -371,7 +401,7 @@ class TPESampler(BaseSampler):
         # We then sample by maximizing log likelihood ratio.
         if study._is_multi_objective():
             weights_below = _calculate_weights_below_for_multi_objective(
-                config_values, scores, indices_below
+                config_values, scores, indices_below, violations
             )
             mpe_below = _ParzenEstimator(
                 below, search_space, self._parzen_estimator_parameters, weights_below
@@ -397,8 +427,12 @@ class TPESampler(BaseSampler):
         param_distribution: BaseDistribution,
     ) -> Any:
 
-        values, scores = _get_observation_pairs(
-            study, [param_name], self._multivariate, self._constant_liar
+        values, scores, violations = _get_observation_pairs(
+            study,
+            [param_name],
+            self._multivariate,
+            self._constant_liar,
+            self._constraints_func is not None,
         )
 
         n = len(scores)
@@ -410,7 +444,7 @@ class TPESampler(BaseSampler):
                 study, trial, param_name, param_distribution
             )
 
-        indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n))
+        indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n), violations)
         # `None` items are intentionally converted to `nan` and then filtered out.
         # For `nan` conversion, the dtype must be float.
         config_values = {k: np.asarray(v, dtype=float) for k, v in values.items()}
@@ -419,7 +453,7 @@ class TPESampler(BaseSampler):
 
         if study._is_multi_objective():
             weights_below = _calculate_weights_below_for_multi_objective(
-                config_values, scores, indices_below
+                config_values, scores, indices_below, violations
             )
             mpe_below = _ParzenEstimator(
                 below,
@@ -516,34 +550,44 @@ class TPESampler(BaseSampler):
         state: TrialState,
         values: Optional[Sequence[float]],
     ) -> None:
+        assert state in [TrialState.COMPLETE, TrialState.FAIL, TrialState.PRUNED]
+        if (
+            state in [TrialState.COMPLETE, TrialState.PRUNED]
+            and self._constraints_func is not None
+        ):
+            constraints = None
+            try:
+                con = self._constraints_func(trial)
+                if not isinstance(con, (tuple, list)):
+                    warnings.warn(
+                        f"Constraints should be a sequence of floats but got {type(con).__name__}."
+                    )
+                constraints = tuple(con)
+            except Exception:
+                raise
+            finally:
+                assert constraints is None or isinstance(constraints, tuple)
 
+                study._storage.set_trial_system_attr(
+                    trial._trial_id,
+                    _CONSTRAINTS_KEY,
+                    constraints,
+                )
         self._random_sampler.after_trial(study, trial, state, values)
 
 
 def _calculate_nondomination_rank(loss_vals: np.ndarray) -> np.ndarray:
-    vecs = loss_vals.copy()
-
-    # Normalize values
-    lb = vecs.min(axis=0, keepdims=True)
-    ub = vecs.max(axis=0, keepdims=True)
-    vecs = (vecs - lb) / (ub - lb)
-
-    ranks = np.zeros(len(vecs))
-    num_unranked = len(vecs)
+    ranks = np.full(len(loss_vals), -1)
+    num_unranked = len(loss_vals)
     rank = 0
+    domination_mat = np.all(loss_vals[:, None, :] >= loss_vals[None, :, :], axis=2) & np.any(
+        loss_vals[:, None, :] > loss_vals[None, :, :], axis=2
+    )
     while num_unranked > 0:
-        extended = np.tile(vecs, (vecs.shape[0], 1, 1))
-        counts = np.sum(
-            np.logical_and(
-                np.all(extended <= np.swapaxes(extended, 0, 1), axis=2),
-                np.any(extended < np.swapaxes(extended, 0, 1), axis=2),
-            ),
-            axis=1,
-        )
-        vecs[counts == 0] = 1.1  # mark as ranked
-        ranks[counts == 0] = rank
+        counts = np.sum((ranks == -1)[None, :] & domination_mat, axis=1)
+        num_unranked -= np.sum((counts == 0) & (ranks == -1))
+        ranks[(counts == 0) & (ranks == -1)] = rank
         rank += 1
-        num_unranked -= np.sum(counts == 0)
     return ranks
 
 
@@ -552,7 +596,12 @@ def _get_observation_pairs(
     param_names: List[str],
     multivariate: bool,
     constant_liar: bool = False,  # TODO(hvy): Remove default value and fix unit tests.
-) -> Tuple[Dict[str, List[Optional[float]]], List[Tuple[float, List[float]]]]:
+    constraints_enabled: bool = False,
+) -> Tuple[
+    Dict[str, List[Optional[float]]],
+    List[Tuple[float, List[float]]],
+    Optional[List[float]],
+]:
     """Get observation pairs from the study.
 
     This function collects observation pairs from the complete or pruned trials of the study.
@@ -569,6 +618,10 @@ def _get_observation_pairs(
     The second element of an observation pair is used to rank observations in
     ``_split_observation_pairs`` method (i.e., observations are sorted lexicographically by
     ``(-step, value)``).
+
+    When ``constraints_enabled`` is :obj:`True`, 1-dimensional violation values are returned
+    as the third element (:obj:`None` otherwise). Each value is a float of 0 or greater and a
+    trial is feasible if and only if its violation score is 0.
     """
 
     if len(param_names) > 1:
@@ -589,6 +642,7 @@ def _get_observation_pairs(
 
     scores = []
     values: Dict[str, List[Optional[float]]] = {param_name: [] for param_name in param_names}
+    violations: Optional[List[float]] = [] if constraints_enabled else None
     for trial in study.get_trials(deepcopy=False, states=states):
         # If ``multivariate`` = True and ``group`` = True, we ignore the trials that are not
         # included in each subspace.
@@ -633,13 +687,53 @@ def _get_observation_pairs(
                 param_value = None
             values[param_name].append(param_value)
 
-    return values, scores
+        if constraints_enabled:
+            assert violations is not None
+            constraint = trial.system_attrs.get(_CONSTRAINTS_KEY)
+            if constraint is None:
+                warnings.warn(
+                    f"Trial {trial.number} does not have constraint values."
+                    " It will be treated as a lower priority than other trials."
+                )
+                violation = float("inf")
+            else:
+                # Violation values of infeasible dimensions are summed up.
+                violation = sum(v for v in constraint if v > 0)
+            violations.append(violation)
+
+    return values, scores, violations
 
 
 def _split_observation_pairs(
     loss_vals: List[Tuple[float, List[float]]],
     n_below: int,
+    violations: Optional[List[float]],
 ) -> Tuple[np.ndarray, np.ndarray]:
+    # When constrains is not None, trials are split into below and above
+    # according to the following rules.
+    # 1. Feasible trials are better than infeasible trials.
+    # 2. Infeasible trials are sorted by sum of how much they violate each constraint.
+    # 3. Feasible trials are sorted by loss_vals.
+    if violations is not None:
+        violation_1d = np.array(violations, dtype=float)
+        idx = violation_1d.argsort()
+        if n_below >= len(idx) or violation_1d[idx[n_below]] > 0:
+            # Below is filled by all feasible trials and trials with smaller violation values.
+            indices_below = idx[:n_below]
+            indices_above = idx[n_below:]
+        else:
+            # All trials in below are feasible.
+            # Feasible trials with smaller loss_vals are selected.
+            (feasible_idx,) = (violation_1d == 0).nonzero()
+            (infeasible_idx,) = (violation_1d > 0).nonzero()
+            assert len(feasible_idx) >= n_below
+            feasible_below, feasible_above = _split_observation_pairs(
+                list(np.array(loss_vals)[feasible_idx]), n_below, None
+            )
+            indices_below = feasible_idx[feasible_below]
+            indices_above = np.concatenate([feasible_idx[feasible_above], infeasible_idx])
+        # `np.sort` is used to keep chronological order.
+        return np.sort(indices_below), np.sort(indices_above)
 
     n_objectives = 1
     if len(loss_vals) > 0:
@@ -754,6 +848,7 @@ def _calculate_weights_below_for_multi_objective(
     config_values: Dict[str, np.ndarray],
     loss_vals: List[Tuple[float, List[float]]],
     indices: np.ndarray,
+    violations: Optional[List[float]],
 ) -> np.ndarray:
     # Multi-objective TPE only sees the first parameter to determine the weights.
     # In the call of `sample_relative`, this logic makes sense because we only have the
@@ -761,10 +856,14 @@ def _calculate_weights_below_for_multi_objective(
     # misses the one trial, then the other parameter must miss the trial, in this call of
     # `sample_relative`.
     # In the call of `sample_independent`, we only have one parameter so the logic makes sense.
-    cvals = list(config_values.values())[0][indices]
+    if violations is None:
+        feasible_mask = np.ones(len(indices), dtype=bool)
+    else:
+        # Hypervolume contributions are calculated only using feasible trials.
+        feasible_mask = np.array(violations, dtype=float)[indices] == 0
 
     # Multi-objective TPE does not support pruning, so it ignores the ``step``.
-    lvals = np.asarray([v for _, v in loss_vals])[indices]
+    lvals = np.asarray([v for _, v in loss_vals])[indices[feasible_mask]]
 
     # Calculate weights based on hypervolume contributions.
     n_below = len(lvals)
@@ -778,12 +877,19 @@ def _calculate_weights_below_for_multi_objective(
         reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
         reference_point[reference_point == 0] = EPS
         hv = _compute_hypervolume(lvals, reference_point)
-        indices = ~np.eye(n_below).astype(bool)
+        indices_mat = ~np.eye(n_below).astype(bool)
         contributions = np.asarray(
-            [hv - _compute_hypervolume(lvals[indices[i]], reference_point) for i in range(n_below)]
+            [
+                hv - _compute_hypervolume(lvals[indices_mat[i]], reference_point)
+                for i in range(n_below)
+            ]
         )
         contributions += EPS
         weights_below = np.clip(contributions / np.max(contributions), 0, 1)
 
-    weights_below = weights_below[~np.isnan(cvals)]
-    return weights_below
+    cvals = list(config_values.values())[0][indices]
+    # For now, EPS weight is assigned to infeasible trials.
+    weights_below_all = np.full(len(indices), EPS)
+    weights_below_all[feasible_mask] = weights_below
+    weights_below_all = weights_below_all[~np.isnan(cvals)]
+    return weights_below_all

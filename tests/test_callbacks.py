@@ -1,7 +1,6 @@
 from optuna import create_study
-from optuna import Trial
-from optuna import TrialPruned
 from optuna.study import MaxTrialsCallback
+from optuna.testing.objectives import pruned_objective
 from optuna.trial import TrialState
 
 
@@ -12,10 +11,6 @@ def test_stop_with_MaxTrialsCallback() -> None:
     assert len(study.trials) == 5
 
     # Test stopping the optimization with MaxTrialsCallback with pruned trials
-
-    def pruned_objective(trial: Trial) -> float:
-        raise TrialPruned()
-
     study = create_study()
     study.optimize(
         pruned_objective,

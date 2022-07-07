@@ -88,9 +88,6 @@ jobs:
 
     - name: Setup mac environment
       run: |
-        # TODO(nzw0301): remove libomp version constraint if xgboost can work with libomp>11.1.0
-        # https://github.com/dmlc/xgboost/blob/c42e3fbcf3901eec73fcdbf02526f611ef3ed05f/.github/workflows/main.yml#L24-L25
-        wget https://raw.githubusercontent.com/Homebrew/homebrew-core/679923b4eb48a8dc7ecc1f05d06063cd79b3fc00/Formula/libomp.rb -O $(find $(brew --repository) -name libomp.rb)
         brew install libomp
         brew install open-mpi
         brew install openblas
@@ -128,6 +125,7 @@ jobs:
 
     - name: Tests MPI
       run: |
+        export OMPI_MCA_rmaps_base_oversubscribe=yes
         mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
         mpirun -n 2 -- pytest tests/integration_tests/test_pytorch_distributed.py
       env:
