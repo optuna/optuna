@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 
 from optuna.study import create_study
 from optuna.testing.objectives import fail_objective
-from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import Trial
 from optuna.visualization.matplotlib import plot_intermediate_values
 
@@ -12,7 +11,7 @@ from optuna.visualization.matplotlib import plot_intermediate_values
 def test_plot_intermediate_values() -> None:
 
     # Test with no trials.
-    study = prepare_study_with_trials(no_trials=True)
+    study = create_study(direction="minimize")
     figure = plot_intermediate_values(study)
     assert len(figure.get_lines()) == 0
     plt.savefig(BytesIO())
