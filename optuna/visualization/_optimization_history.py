@@ -40,7 +40,7 @@ def _get_optimization_history_info_list(
     study: Union[Study, Sequence[Study]],
     target: Optional[Callable[[FrozenTrial], float]],
     target_name: str,
-) -> Optional[List[_OptimizationHistoryInfo]]:
+) -> List[_OptimizationHistoryInfo]:
 
     if isinstance(study, Study):
         studies = [study]
@@ -76,11 +76,10 @@ def _get_optimization_history_info_list(
 
     if len(optimization_history_info_list) == 0:
         _logger.warning("There are no studies.")
-        return None
 
     if sum(len(info.trial_numbers) for info in optimization_history_info_list) == 0:
         _logger.warning("There are no complete trials.")
-        return None
+        optimization_history_info_list.clear()
 
     return optimization_history_info_list
 
@@ -92,7 +91,7 @@ def _get_optimization_history_error_bar_info(
 ) -> Optional[_OptimizationHistoryInfo]:
 
     info_list = _get_optimization_history_info_list(study, target, target_name)
-    if info_list is None:
+    if len(info_list) == 0:
         return None
     max_trial_number = max(max(info.trial_numbers) for info in info_list)
 
@@ -184,19 +183,16 @@ def plot_optimization_history(
 
     if error_bar:
         info = _get_optimization_history_error_bar_info(study, target, target_name)
-        info_list = None if info is None else [info]
+        info_list = [] if info is None else [info]
     else:
         info_list = _get_optimization_history_info_list(study, target, target_name)
     return _get_optimization_history_plot(info_list, layout)
 
 
 def _get_optimization_history_plot(
-    info_list: Optional[List[_OptimizationHistoryInfo]],
+    info_list: List[_OptimizationHistoryInfo],
     layout: "go.Layout",
 ) -> "go.Figure":
-
-    if info_list is None:
-        return go.Figure(data=[], layout=layout)
 
     traces = []
     for trial_numbers, values_info, best_values_info in info_list:

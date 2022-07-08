@@ -93,7 +93,7 @@ def plot_optimization_history(
 
     if error_bar:
         eb_info = _get_optimization_history_error_bar_info(study, target, target_name)
-        info_list = None if eb_info is None else [eb_info]
+        info_list = [] if eb_info is None else [eb_info]
     else:
         info_list = _get_optimization_history_info_list(study, target, target_name)
     ax = _get_optimization_history_plot(info_list, ax)
@@ -102,12 +102,9 @@ def plot_optimization_history(
 
 
 def _get_optimization_history_plot(
-    info_list: Optional[List[_OptimizationHistoryInfo]],
+    info_list: List[_OptimizationHistoryInfo],
     ax: "Axes",
 ) -> "Axes":
-
-    if info_list is None:
-        return ax
 
     cmap = plt.get_cmap("tab10")  # Use tab10 colormap for similar outputs to plotly.
 
