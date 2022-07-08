@@ -81,29 +81,25 @@ def plot_optimization_history(
 
     _imports.check()
 
-    # Set up the graph style.
-    plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
-
-    _, ax = plt.subplots()
-    ax.set_title("Optimization History Plot")
-    ax.set_xlabel("Trial")
-    ax.set_ylabel(target_name)
-
     if error_bar:
         eb_info = _get_optimization_history_error_bar_info(study, target, target_name)
         info_list = [] if eb_info is None else [eb_info]
     else:
         info_list = _get_optimization_history_info_list(study, target, target_name)
-    ax = _get_optimization_history_plot(info_list, ax)
-    plt.legend(bbox_to_anchor=(1.05, 1.0), loc="upper left")
-    return ax
+    return _get_optimization_history_plot(info_list, target_name)
 
 
 def _get_optimization_history_plot(
     info_list: List[_OptimizationHistoryInfo],
-    ax: "Axes",
+    target_name: str,
 ) -> "Axes":
 
+    # Set up the graph style.
+    plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
+    _, ax = plt.subplots()
+    ax.set_title("Optimization History Plot")
+    ax.set_xlabel("Trial")
+    ax.set_ylabel(target_name)
     cmap = plt.get_cmap("tab10")  # Use tab10 colormap for similar outputs to plotly.
 
     for i, (trial_numbers, values_info, best_values_info) in enumerate(info_list):
@@ -144,4 +140,5 @@ def _get_optimization_history_plot(
                     alpha=0.4,
                 )
             ax.legend()
+    plt.legend(bbox_to_anchor=(1.05, 1.0), loc="upper left")
     return ax

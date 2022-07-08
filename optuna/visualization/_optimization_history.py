@@ -174,24 +174,25 @@ def plot_optimization_history(
     """
 
     _imports.check()
-    layout = go.Layout(
-        title="Optimization History Plot",
-        xaxis={"title": "Trial"},
-        yaxis={"title": target_name},
-    )
 
     if error_bar:
         info = _get_optimization_history_error_bar_info(study, target, target_name)
         info_list = [] if info is None else [info]
     else:
         info_list = _get_optimization_history_info_list(study, target, target_name)
-    return _get_optimization_history_plot(info_list, layout)
+    return _get_optimization_history_plot(info_list, target_name)
 
 
 def _get_optimization_history_plot(
     info_list: List[_OptimizationHistoryInfo],
-    layout: "go.Layout",
+    target_name: str,
 ) -> "go.Figure":
+
+    layout = go.Layout(
+        title="Optimization History Plot",
+        xaxis={"title": "Trial"},
+        yaxis={"title": target_name},
+    )
 
     traces = []
     for trial_numbers, values_info, best_values_info in info_list:
