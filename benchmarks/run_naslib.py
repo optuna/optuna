@@ -77,7 +77,7 @@ def run(args: argparse.Namespace) -> None:
     )
     subprocess.run(cmd, shell=True)
 
-    # Report
+    # Report.
     report_filename = os.path.join(args.out_dir, "report.md")
     cmd = f"cat {result_filename} | {kurobako_cmd} report > {report_filename}"
     subprocess.run(cmd, shell=True)
