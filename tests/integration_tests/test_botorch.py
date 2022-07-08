@@ -15,6 +15,7 @@ from optuna.samplers import RandomSampler
 from optuna.storages import RDBStorage
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
+from optuna.samplers._base import _CONSTRAINTS_KEY
 
 
 @pytest.mark.parametrize("n_objectives", [1, 2, 4])
@@ -182,7 +183,7 @@ def test_botorch_constraints_func_raises() -> None:
     assert len(study.trials) == 2
 
     for trial in study.trials:
-        sys_con = trial.system_attrs["botorch:constraints"]
+        sys_con = trial.system_attrs[_CONSTRAINTS_KEY]
 
         expected_sys_con: Optional[Tuple[int]]
 

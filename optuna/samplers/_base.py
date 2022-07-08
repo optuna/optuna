@@ -1,13 +1,15 @@
 import abc
-from typing import Any
+from typing import Any, Callable
 from typing import Dict
 from typing import Optional
 from typing import Sequence
+import warnings
 
 from optuna.distributions import BaseDistribution
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+from optuna.trial import FrozenTrial
 
 
 class BaseSampler(object, metaclass=abc.ABCMeta):
@@ -193,3 +195,28 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
                 "If the study is being used for multi-objective optimization, "
                 f"{self.__class__.__name__} cannot be used."
             )
+
+
+_CONSTRAINTS_KEY = "sampler:constraints"
+def _process_constraint_after_trial(
+    constraints_func: Callable[[FrozenTrial], Sequence[float]], study: Study, trial: FrozenTrial
+) -> None:
+    if trial.state not in [TrialState.COMPLETE, TrialState.PRUNED]:
+        return
+    
+    constraints = None
+    try:
+        con = constraints_func(trial)
+        if not isinstance(con, (tuple, list)):
+            warnings.warn(
+                f"Constraints should be a sequence of floats but got {type(con).__name__}."
+            )
+        constraints = tuple(con)
+    finally:
+        assert constraints is None or isinstance(constraints, tuple)
+
+        study._storage.set_trial_system_attr(
+            trial._trial_id,
+            _CONSTRAINTS_KEY,
+            constraints,
+        )
