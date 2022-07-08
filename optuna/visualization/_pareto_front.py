@@ -29,9 +29,9 @@ _logger = optuna.logging.get_logger(__name__)
 class _ParetoFrontInfo(NamedTuple):
     n_targets: int
     target_names: Sequence[str]
-    best_trials_with_values: Optional[Sequence[Tuple[FrozenTrial, Sequence[float]]]]
-    non_best_trials_with_values: Optional[Sequence[Tuple[FrozenTrial, Sequence[float]]]]
-    infeasible_trials_with_values: Optional[Sequence[Tuple[FrozenTrial, Sequence[float]]]]
+    best_trials_with_values: Sequence[Tuple[FrozenTrial, Sequence[float]]]
+    non_best_trials_with_values: Sequence[Tuple[FrozenTrial, Sequence[float]]]
+    infeasible_trials_with_values: Sequence[Tuple[FrozenTrial, Sequence[float]]]
     axis_order: Sequence[int]
 
 
@@ -258,11 +258,9 @@ def _get_pareto_front_info(
             )
 
     def _make_trials_with_values(
-        trials: Optional[List[FrozenTrial]],
+        trials: List[FrozenTrial],
         targets: Callable[[FrozenTrial], Sequence[float]],
-    ) -> Optional[Sequence[Tuple[FrozenTrial, Sequence[float]]]]:
-        if trials is None:
-            return None
+    ) -> Sequence[Tuple[FrozenTrial, Sequence[float]]]:
         return [(trial, targets(trial)) for trial in trials]
 
     best_trials_with_values = _make_trials_with_values(best_trials, _targets)
@@ -270,9 +268,9 @@ def _get_pareto_front_info(
     infeasible_trials_with_values = _make_trials_with_values(infeasible_trials, _targets)
 
     def _infer_n_targets(
-        trials_with_values: Optional[Sequence[Tuple[FrozenTrial, Sequence[float]]]]
+        trials_with_values: Sequence[Tuple[FrozenTrial, Sequence[float]]]
     ) -> Optional[int]:
-        if trials_with_values is not None and len(trials_with_values) > 0:
+        if len(trials_with_values) > 0:
             if not isinstance(trials_with_values[0][1], collections.abc.Sequence):
                 raise ValueError(
                     "`targets` should return a sequence of target values."
@@ -366,7 +364,7 @@ def _make_scatter_object(
     n_targets: int,
     axis_order: Sequence[int],
     include_dominated_trials: bool,
-    trials_with_values: Optional[Sequence[Tuple[FrozenTrial, Sequence[float]]]],
+    trials_with_values: Sequence[Tuple[FrozenTrial, Sequence[float]]],
     hovertemplate: str,
     infeasible: bool = False,
     dominated_trials: bool = False,

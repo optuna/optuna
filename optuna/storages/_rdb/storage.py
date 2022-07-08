@@ -20,14 +20,13 @@ import uuid
 import optuna
 from optuna import distributions
 from optuna import version
-from optuna._deprecated import deprecated_func
 from optuna._imports import _LazyImport
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.storages._rdb.models import TrialValueModel
+from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
-from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -418,29 +417,13 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         return system_attrs
 
-    def get_all_study_summaries(self, include_best_trial: bool) -> List[StudySummary]:
-
+    def get_all_studies(self) -> List[FrozenStudy]:
         with _create_scoped_session(self.scoped_session) as session:
-            summarized_trial = (
-                session.query(
-                    models.TrialModel.study_id,
-                    sqlalchemy_sql_functions.min(models.TrialModel.datetime_start).label(
-                        "datetime_start"
-                    ),
-                    sqlalchemy_sql_functions.count(models.TrialModel.trial_id).label("n_trial"),
-                )
-                .group_by(models.TrialModel.study_id)
-                .with_labels()
-                .subquery()
-            )
-            study_summary_stmt = session.query(
+
+            studies = session.query(
                 models.StudyModel.study_id,
                 models.StudyModel.study_name,
-                summarized_trial.c.datetime_start,
-                sqlalchemy_sql_functions.coalesce(summarized_trial.c.n_trial, 0).label("n_trial"),
-            ).select_from(sqlalchemy_orm.outerjoin(models.StudyModel, summarized_trial))
-
-            study_summary = study_summary_stmt.all()
+            ).all()
 
             _directions = defaultdict(list)
             for direction_model in session.query(models.StudyDirectionModel).all():
@@ -454,93 +437,23 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             for attribute_model in session.query(models.StudySystemAttributeModel).all():
                 _system_attrs[attribute_model.study_id].append(attribute_model)
 
-            study_summaries = []
-            for study in study_summary:
+            frozen_studies = []
+            for study in studies:
                 directions = _directions[study.study_id]
-                best_trial_frozen: Optional[FrozenTrial] = None
-                if include_best_trial:
-                    best_trial: Optional[models.TrialModel] = None
-                    try:
-                        if len(directions) > 1:
-                            raise ValueError
-                        elif directions[0] == StudyDirection.MAXIMIZE:
-                            best_trial = models.TrialModel.find_max_value_trial(
-                                study.study_id, 0, session
-                            )
-                        else:
-                            best_trial = models.TrialModel.find_min_value_trial(
-                                study.study_id, 0, session
-                            )
-                    except ValueError:
-                        best_trial_frozen = None
-                    if best_trial:
-                        value = models.TrialValueModel.find_by_trial_and_objective(
-                            best_trial, 0, session
-                        )
-                        assert value
-                        params = (
-                            session.query(
-                                models.TrialParamModel.param_name,
-                                models.TrialParamModel.param_value,
-                                models.TrialParamModel.distribution_json,
-                            )
-                            .filter(models.TrialParamModel.trial_id == best_trial.trial_id)
-                            .all()
-                        )
-                        param_dict = {}
-                        param_distributions = {}
-                        for param in params:
-                            distribution = distributions.json_to_distribution(
-                                param.distribution_json
-                            )
-                            param_dict[param.param_name] = distribution.to_external_repr(
-                                param.param_value
-                            )
-                            param_distributions[param.param_name] = distribution
-                        user_attrs = models.TrialUserAttributeModel.where_trial_id(
-                            best_trial.trial_id, session
-                        )
-                        system_attrs = models.TrialSystemAttributeModel.where_trial_id(
-                            best_trial.trial_id, session
-                        )
-                        intermediate = models.TrialIntermediateValueModel.where_trial_id(
-                            best_trial.trial_id, session
-                        )
-                        best_trial_frozen = FrozenTrial(
-                            best_trial.number,
-                            TrialState.COMPLETE,
-                            TrialValueModel.stored_repr_to_value(value.value, value.value_type),
-                            best_trial.datetime_start,
-                            best_trial.datetime_complete,
-                            param_dict,
-                            param_distributions,
-                            {i.key: json.loads(i.value_json) for i in user_attrs},
-                            {i.key: json.loads(i.value_json) for i in system_attrs},
-                            {
-                                value.step: models.TrialIntermediateValueModel.stored_repr_to_intermediate_value(  # noqa: E501
-                                    value.intermediate_value, value.intermediate_value_type
-                                )
-                                for value in intermediate
-                            },
-                            best_trial.trial_id,
-                        )
                 user_attrs = _user_attrs.get(study.study_id, [])
                 system_attrs = _system_attrs.get(study.study_id, [])
-                study_summaries.append(
-                    StudySummary(
+                frozen_studies.append(
+                    FrozenStudy(
                         study_name=study.study_name,
                         direction=None,
                         directions=directions,
-                        best_trial=best_trial_frozen,
                         user_attrs={i.key: json.loads(i.value_json) for i in user_attrs},
                         system_attrs={i.key: json.loads(i.value_json) for i in system_attrs},
-                        n_trials=study.n_trial,
-                        datetime_start=study.datetime_start,
                         study_id=study.study_id,
                     )
                 )
 
-        return study_summaries
+            return frozen_studies
 
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
 
@@ -676,32 +589,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         return trial
 
-    @deprecated_func(
-        "3.0.0",
-        "5.0.0",
-        text="Use :func:`~optuna.storages.RDBStorage.set_trial_state_values` instead.",
-    )
-    def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
-
-        try:
-            with _create_scoped_session(self.scoped_session) as session:
-                trial = models.TrialModel.find_or_raise_by_id(trial_id, session, for_update=True)
-                self.check_trial_is_updatable(trial_id, trial.state)
-
-                if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
-                    return False
-
-                trial.state = state
-
-                if state == TrialState.RUNNING:
-                    trial.datetime_start = datetime.now()
-
-                if state.is_finished():
-                    trial.datetime_complete = datetime.now()
-        except sqlalchemy_exc.IntegrityError:
-            return False
-        return True
-
     def set_trial_param(
         self,
         trial_id: int,
@@ -781,19 +668,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             param_value = trial_param.param_value
 
         return param_value
-
-    @deprecated_func(
-        "3.0.0",
-        "5.0.0",
-        text="Use :func:`~optuna.storages.RDBStorage.set_trial_state_values` instead.",
-    )
-    def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
-
-        with _create_scoped_session(self.scoped_session) as session:
-            trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-            self.check_trial_is_updatable(trial_id, trial.state)
-            for objective, v in enumerate(values):
-                self._set_trial_value_without_commit(session, trial_id, objective, v)
 
     def set_trial_state_values(
         self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
@@ -1159,21 +1033,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 session.add(heartbeat)
             else:
                 heartbeat.heartbeat = session.execute(sqlalchemy.func.now()).scalar()
-
-    @deprecated_func(
-        "3.0.0",
-        "5.0.0",
-        text="Use :func:`~optuna.storages.fail_stale_trials` instead.",
-    )
-    def fail_stale_trials(self, study_id: int) -> List[int]:
-        stale_trial_ids = self._get_stale_trial_ids(study_id)
-        confirmed_stale_trial_ids = []
-
-        for trial_id in stale_trial_ids:
-            if self.set_trial_state_values(trial_id, state=TrialState.FAIL):
-                confirmed_stale_trial_ids.append(trial_id)
-
-        return confirmed_stale_trial_ids
 
     def _get_stale_trial_ids(self, study_id: int) -> List[int]:
         assert self.heartbeat_interval is not None
