@@ -45,7 +45,7 @@ def run_benchmark(args: argparse.Namespace) -> None:
     samplers = " ".join(config.keys())
     metric = "nll" if args.dataset in ["breast", "iris", "wine", "digits"] else "mse"
     cmd = (
-        f"bayesmark-launch -n {args.budget} -r {args.repeat} "
+        f"bayesmark-launch -n {args.n_trials} -r {args.repeat} "
         f"-dir runs -b {_DB} "
         f"-o {samplers} "
         f"-c {args.model} -d {args.dataset} "
@@ -164,7 +164,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", type=str, default="iris")
     parser.add_argument("--model", type=str, default="kNN")
-    parser.add_argument("--budget", type=int, default=80)
+    parser.add_argument("--n-trials", type=int, default=80)
     parser.add_argument("--repeat", type=int, default=10)
     parser.add_argument("--sampler-list", type=str, default="TPESampler CmaEsSampler")
     parser.add_argument(
