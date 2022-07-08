@@ -101,12 +101,10 @@ def _get_optimization_history_info_list(
                 values_info = best_values_info
             for trial_number, value in zip(trial_numbers, values_info.values):
                 values[trial_number].append(value)
-        mean_of_values = [np.mean(v) if len(v) > 0 else None for v in values]
-        std_of_values = [np.std(v) if len(v) > 0 else None for v in values]
-        eb_trial_numbers = list(np.arange(max_num_trial)[[v is not None for v in mean_of_values]])
-        value_means = list(np.asarray(mean_of_values)[eb_trial_numbers])
-        value_stds = list(np.asarray(std_of_values)[eb_trial_numbers])
-        return eb_trial_numbers, _ValuesInfo(value_means, value_stds, label_name)
+        trial_numbers_union = [i for i in range(max_num_trial) if len(values[i]) > 0]
+        value_means = [np.mean(v) for v in values if len(v) > 0]
+        value_stds = [np.std(v) for v in values if len(v) > 0]
+        return trial_numbers_union, _ValuesInfo(value_means, value_stds, label_name)
 
     eb_trial_numbers, eb_values_info = _aggregate(target_name, False)
     eb_best_values_info: Optional[_ValuesInfo] = None
