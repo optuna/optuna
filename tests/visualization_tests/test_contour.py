@@ -132,21 +132,18 @@ def test_plot_contour_customized_target_name(plot_contour: Callable[..., Any]) -
 @pytest.mark.parametrize(
     "specific_create_study, params",
     [
-        [lambda: prepare_study_with_trials(no_trials=True), []],
-        [lambda: prepare_study_with_trials(no_trials=True), ["param_a"]],
-        [lambda: prepare_study_with_trials(no_trials=True), ["param_a", "param_b"]],
-        [lambda: prepare_study_with_trials(no_trials=True), ["param_a", "param_b", "param_c"]],
-        [
-            lambda: prepare_study_with_trials(no_trials=True),
-            ["param_a", "param_b", "param_c", "param_d"],
-        ],
-        [lambda: prepare_study_with_trials(no_trials=True), None],
-        [_create_study_with_error_trials, []],
-        [_create_study_with_error_trials, ["param_a"]],
-        [_create_study_with_error_trials, ["param_a", "param_b"]],
-        [_create_study_with_error_trials, ["param_a", "param_b", "param_c"]],
-        [_create_study_with_error_trials, ["param_a", "param_b", "param_c", "param_d"]],
-        [_create_study_with_error_trials, None],
+        [lambda: create_study(), []],
+        [lambda: create_study(), ["param_a"]],
+        [lambda: create_study(), ["param_a", "param_b"]],
+        [lambda: create_study(), ["param_a", "param_b", "param_c"]],
+        [lambda: create_study(), ["param_a", "param_b", "param_c", "param_d"]],
+        [lambda: create_study(), None],
+        [_create_study_with_failed_trial, []],
+        [_create_study_with_failed_trial, ["param_a"]],
+        [_create_study_with_failed_trial, ["param_a", "param_b"]],
+        [_create_study_with_failed_trial, ["param_a", "param_b", "param_c"]],
+        [_create_study_with_failed_trial, ["param_a", "param_b", "param_c", "param_d"]],
+        [_create_study_with_failed_trial, None],
         [prepare_study_with_trials, []],
         [prepare_study_with_trials, ["param_a"]],
         [prepare_study_with_trials, ["param_a", "param_b"]],
@@ -181,7 +178,7 @@ def test_target_is_none_and_study_is_multi_obj() -> None:
 
 @pytest.mark.parametrize(
     "specific_create_study",
-    [lambda: prepare_study_with_trials(no_trials=True), _create_study_with_error_trials],
+    [lambda: create_study(), _create_study_with_failed_trial],
 )
 @pytest.mark.parametrize(
     "params",

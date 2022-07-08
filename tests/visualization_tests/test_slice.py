@@ -19,7 +19,7 @@ def test_target_is_none_and_study_is_multi_obj() -> None:
 def test_plot_slice() -> None:
 
     # Test with no trial.
-    study = prepare_study_with_trials(no_trials=True)
+    study = create_study(direction="minimize")
     figure = plot_slice(study)
     assert len(figure.data) == 0
 
