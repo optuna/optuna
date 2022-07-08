@@ -176,7 +176,6 @@ def objective(
             {"objective": "binary", "metric": ["auc", "binary_error"]},
             dtrain,
             num_boost_round,
-            verbose_eval=False,
             nfold=2,
             callbacks=[pruning_callback],
         )
@@ -187,7 +186,6 @@ def objective(
             num_boost_round,
             valid_sets=[dtest],
             valid_names=valid_names,
-            verbose_eval=False,
             callbacks=[pruning_callback],
         )
     return 1.0
