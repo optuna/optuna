@@ -381,6 +381,8 @@ class BoTorchSampler(BaseSampler):
         independent_sampler:
             An independent sampler to use for the initial trials and for parameters that are
             conditional.
+        seed:
+            Seed for random number generator.
     """
 
     def __init__(
@@ -400,13 +402,20 @@ class BoTorchSampler(BaseSampler):
         constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
         n_startup_trials: int = 10,
         independent_sampler: Optional[BaseSampler] = None,
+        seed: Optional[int] = None,
     ):
         _imports.check()
 
         self._candidates_func = candidates_func
         self._constraints_func = constraints_func
-        self._independent_sampler = independent_sampler or RandomSampler()
+        self._independent_sampler = independent_sampler or RandomSampler(seed=seed)
         self._n_startup_trials = n_startup_trials
+
+        if seed is not None:
+            # `torch.manual_seed` makes `BoTorchSampler` and the default candidates functions
+            # reproducible. `SobolQMCNormalSampler`'s constructor has a `seed` argument, but its
+            # behavior is deterministic when the torch's seed is fixed.
+            torch.manual_seed(seed)
 
         self._study_id: Optional[int] = None
         self._search_space = IntersectionSearchSpace()
@@ -547,6 +556,7 @@ class BoTorchSampler(BaseSampler):
 
     def reseed_rng(self) -> None:
         self._independent_sampler.reseed_rng()
+        torch.manual_seed(numpy.random.RandomState().randint(numpy.iinfo(numpy.int).max))
 
     def after_trial(
         self,

@@ -1,3 +1,5 @@
+from collections import OrderedDict
+import random
 from typing import cast
 from typing import Optional
 from typing import Sequence
@@ -440,3 +442,50 @@ def test_call_after_trial_of_independent_sampler() -> None:
     ) as mock_object:
         study.optimize(lambda _: 1.0, n_trials=1)
         assert mock_object.call_count == 1
+
+
+def test_sample_relative_seed_fix() -> None:
+    study = optuna.create_study()
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
+
+    for i in range(8):
+        param_value = random.random() * 99.0 + 1.0
+        trial = optuna.trial.create_trial(
+            value=(param_value - 20.0) ** 2,
+            params={"param-a": param_value},
+            distributions={"param-a": dist},
+        )
+        study.add_trial(trial)
+
+    trial = study.ask()
+
+    sampler = BoTorchSampler(n_startup_trials=5, seed=0)
+    suggestion = sampler.sample_relative(study, trial, OrderedDict((("param-a", dist),)))
+
+    sampler = BoTorchSampler(n_startup_trials=5, seed=0)
+    assert sampler.sample_relative(study, trial, OrderedDict((("param-a", dist),))) == suggestion
+
+    sampler = BoTorchSampler(n_startup_trials=5, seed=1)
+    assert sampler.sample_relative(study, trial, OrderedDict((("param-a", dist),))) != suggestion
+
+
+def test_reseed_rng() -> None:
+    study = optuna.create_study()
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
+
+    for i in range(8):
+        param_value = random.random() * 99.0 + 1.0
+        trial = optuna.trial.create_trial(
+            value=(param_value - 20.0) ** 2,
+            params={"param-a": param_value},
+            distributions={"param-a": dist},
+        )
+        study.add_trial(trial)
+
+    trial = study.ask()
+
+    sampler = BoTorchSampler(n_startup_trials=5, seed=0)
+    suggestion = sampler.sample_relative(study, trial, OrderedDict((("param-a", dist),)))
+
+    sampler.reseed_rng()
+    assert sampler.sample_relative(study, trial, OrderedDict((("param-a", dist),))) != suggestion
