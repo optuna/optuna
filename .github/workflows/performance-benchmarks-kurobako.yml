@@ -19,6 +19,10 @@ on:
         description: 'Pruner Arguments List: A list of pruner keyword arguments. Should be a whitespace-separated list of json format dictionaries.'
         required: false
         default: '{}'
+      n-trials:
+        description: 'Number of Trials'
+        required: false
+        default: '80'
       n-runs:
         description: 'Number of Studies'
         required: false
@@ -115,6 +119,7 @@ jobs:
         python benchmarks/run_kurobako.py \
           --path-to-kurobako "." \
           --name-prefix "" \
+          --n-trials ${{ github.event.inputs.n-trials }} \
           --n-runs ${{ github.event.inputs.n-runs }} \
           --n-jobs 10 \
           --sampler-list '${{ github.event.inputs.sampler-list }}' \
