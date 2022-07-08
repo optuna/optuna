@@ -16,15 +16,15 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.study import create_study
 from optuna.study import Study
+from optuna.testing.objectives import fail_objective
+from optuna.testing.visualization import prepare_study_with_trials
+from optuna.trial import create_trial
 from optuna.visualization import plot_contour as plotly_plot_contour
 from optuna.visualization._contour import _AxisInfo
 from optuna.visualization._contour import _ContourInfo
 from optuna.visualization._contour import _get_contour_info
 from optuna.visualization._contour import _SubContourInfo
 from optuna.visualization._plotly_imports import _imports as plotly_imports
-from optuna.testing.objectives import fail_objective
-from optuna.testing.visualization import prepare_study_with_trials
-from optuna.trial import create_trial
 from optuna.visualization._utils import COLOR_SCALE
 from optuna.visualization.matplotlib import plot_contour as plt_plot_contour
 from optuna.visualization.matplotlib._matplotlib_imports import _imports as plt_imports
@@ -46,7 +46,7 @@ parametrize_plot_contour = pytest.mark.parametrize(
 )
 
 
-def _create_study_with_error_trials() -> Study:
+def _create_study_with_failed_trial() -> Study:
 
     study = create_study()
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
@@ -211,12 +211,19 @@ def test_get_contour_info_error() -> None:
         _get_contour_info(study, ["optuna", "Optuna"])
 
 
+def test_get_contour_info_non_exist_param() -> None:
+    study = prepare_study_with_trials()
+
+    with pytest.raises(ValueError):
+        _get_contour_info(study, params=["not-exist-param_a", "not-exist-param_b"])
+
+
 @pytest.mark.parametrize("params", [[], ["param_a"]])
-def test_get_contour_info_too_short_params(params: Optional[List[str]]) -> None:
+def test_get_contour_info_too_short_params(params: List[str]) -> None:
     study = prepare_study_with_trials()
     info = _get_contour_info(study, params=params)
-    assert len(info.sorted_params) <= 1
-    assert len(info.sub_plot_infos) <= 1
+    assert len(info.sorted_params) == len(params)
+    assert len(info.sub_plot_infos) == len(params)
 
 
 def test_get_contour_info_2_params() -> None:
