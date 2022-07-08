@@ -12,7 +12,6 @@ from optuna.trial import FrozenTrial
 from optuna.visualization._optimization_history import _get_optimization_history_error_bar_info
 from optuna.visualization._optimization_history import _get_optimization_history_info_list
 from optuna.visualization._optimization_history import _OptimizationHistoryInfo
-from optuna.visualization._utils import _check_plot_args
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 
@@ -81,7 +80,6 @@ def plot_optimization_history(
     """
 
     _imports.check()
-    _check_plot_args(study, target, target_name)
 
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
