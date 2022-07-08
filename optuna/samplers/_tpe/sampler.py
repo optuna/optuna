@@ -16,7 +16,9 @@ from optuna._hypervolume import WFG
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.logging import get_logger
-from optuna.samplers._base import BaseSampler, _process_constraint_after_trial, _CONSTRAINTS_KEY
+from optuna.samplers._base import _CONSTRAINTS_KEY
+from optuna.samplers._base import _process_constraint_after_trial
+from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._search_space import IntersectionSearchSpace
 from optuna.samplers._search_space.group_decomposed import _GroupDecomposedSearchSpace
@@ -550,7 +552,8 @@ class TPESampler(BaseSampler):
         values: Optional[Sequence[float]],
     ) -> None:
         assert state in [TrialState.COMPLETE, TrialState.FAIL, TrialState.PRUNED]
-        _process_constraint_after_trial(self._constraints_func, study, trial)
+        if self._constraints_func is not None:
+            _process_constraint_after_trial(self._constraints_func, study, trial)
         self._random_sampler.after_trial(study, trial, state, values)
 
 

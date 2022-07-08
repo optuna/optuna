@@ -12,10 +12,10 @@ import optuna
 from optuna import integration
 from optuna.integration import BoTorchSampler
 from optuna.samplers import RandomSampler
+from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.storages import RDBStorage
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
-from optuna.samplers._base import _CONSTRAINTS_KEY
 
 
 @pytest.mark.parametrize("n_objectives", [1, 2, 4])

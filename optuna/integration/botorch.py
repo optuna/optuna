@@ -8,7 +8,6 @@ from typing import Union
 import warnings
 
 import numpy
-from py import process
 
 from optuna import logging
 from optuna._experimental import experimental_class
@@ -19,7 +18,8 @@ from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
 from optuna.samplers import IntersectionSearchSpace
 from optuna.samplers import RandomSampler
-from optuna.samplers._base import _process_constraint_after_trial, _CONSTRAINTS_KEY
+from optuna.samplers._base import _CONSTRAINTS_KEY
+from optuna.samplers._base import _process_constraint_after_trial
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial

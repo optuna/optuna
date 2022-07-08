@@ -17,7 +17,9 @@ import numpy as np
 import optuna
 from optuna._experimental import ExperimentalWarning
 from optuna.distributions import BaseDistribution
-from optuna.samplers._base import BaseSampler, _process_constraint_after_trial, _CONSTRAINTS_KEY
+from optuna.samplers._base import _CONSTRAINTS_KEY
+from optuna.samplers._base import _process_constraint_after_trial
+from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._search_space import IntersectionSearchSpace
 from optuna.samplers.nsgaii._crossover import perform_crossover

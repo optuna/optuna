@@ -1,5 +1,6 @@
 import abc
-from typing import Any, Callable
+from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import Optional
 from typing import Sequence
@@ -9,7 +10,6 @@ from optuna.distributions import BaseDistribution
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna.trial import FrozenTrial
 
 
 class BaseSampler(object, metaclass=abc.ABCMeta):
@@ -198,12 +198,14 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
 
 
 _CONSTRAINTS_KEY = "sampler:constraints"
+
+
 def _process_constraint_after_trial(
     constraints_func: Callable[[FrozenTrial], Sequence[float]], study: Study, trial: FrozenTrial
 ) -> None:
     if trial.state not in [TrialState.COMPLETE, TrialState.PRUNED]:
         return
-    
+
     constraints = None
     try:
         con = constraints_func(trial)
