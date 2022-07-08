@@ -40,6 +40,7 @@ def _get_optimization_history_info_list(
     study: Union[Study, Sequence[Study]],
     target: Optional[Callable[[FrozenTrial], float]],
     target_name: str,
+    error_bar: bool,
 ) -> List[_OptimizationHistoryInfo]:
 
     _check_plot_args(study, target, target_name)
@@ -48,7 +49,7 @@ def _get_optimization_history_info_list(
     else:
         studies = list(study)
 
-    optimization_history_info_list: List[_OptimizationHistoryInfo] = []
+    info_list: List[_OptimizationHistoryInfo] = []
     for study in studies:
         trials = study.get_trials(states=(TrialState.COMPLETE,))
         label_name = target_name if len(studies) == 1 else f"{target_name} of {study.study_name}"
@@ -67,7 +68,7 @@ def _get_optimization_history_info_list(
                 "Best Value" if len(studies) == 1 else f"Best Value of {study.study_name}"
             )
             best_values_info = _ValuesInfo(best_values, None, best_label_name)
-        optimization_history_info_list.append(
+        info_list.append(
             _OptimizationHistoryInfo(
                 trial_numbers=[t.number for t in trials],
                 values_info=_ValuesInfo(values, None, label_name),
@@ -75,25 +76,19 @@ def _get_optimization_history_info_list(
             )
         )
 
-    if len(optimization_history_info_list) == 0:
+    if len(info_list) == 0:
         _logger.warning("There are no studies.")
 
-    if sum(len(info.trial_numbers) for info in optimization_history_info_list) == 0:
+    if sum(len(info.trial_numbers) for info in info_list) == 0:
         _logger.warning("There are no complete trials.")
-        optimization_history_info_list.clear()
+        info_list.clear()
 
-    return optimization_history_info_list
+    if not error_bar:
+        return info_list
 
-
-def _get_optimization_history_error_bar_info(
-    study: Union[Study, Sequence[Study]],
-    target: Optional[Callable[[FrozenTrial], float]],
-    target_name: str,
-) -> Optional[_OptimizationHistoryInfo]:
-
-    info_list = _get_optimization_history_info_list(study, target, target_name)
+    # When error_bar=True, a list of 0 or 1 element is returned.
     if len(info_list) == 0:
-        return None
+        return []
     max_num_trial = max(max(info.trial_numbers) for info in info_list) + 1
 
     def _aggregate(label_name: str, use_best_value: bool) -> Tuple[List[int], _ValuesInfo]:
@@ -117,7 +112,7 @@ def _get_optimization_history_error_bar_info(
     eb_best_values_info: Optional[_ValuesInfo] = None
     if target is None:
         _, eb_best_values_info = _aggregate("Best Value", True)
-    return _OptimizationHistoryInfo(eb_trial_numbers, eb_values_info, eb_best_values_info)
+    return [_OptimizationHistoryInfo(eb_trial_numbers, eb_values_info, eb_best_values_info)]
 
 
 def plot_optimization_history(
@@ -172,11 +167,7 @@ def plot_optimization_history(
 
     _imports.check()
 
-    if error_bar:
-        info = _get_optimization_history_error_bar_info(study, target, target_name)
-        info_list = [] if info is None else [info]
-    else:
-        info_list = _get_optimization_history_info_list(study, target, target_name)
+    info_list = _get_optimization_history_info_list(study, target, target_name, error_bar)
     return _get_optimization_history_plot(info_list, target_name)
 
 

@@ -9,7 +9,6 @@ import numpy as np
 from optuna._experimental import experimental_func
 from optuna.study import Study
 from optuna.trial import FrozenTrial
-from optuna.visualization._optimization_history import _get_optimization_history_error_bar_info
 from optuna.visualization._optimization_history import _get_optimization_history_info_list
 from optuna.visualization._optimization_history import _OptimizationHistoryInfo
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
@@ -81,11 +80,7 @@ def plot_optimization_history(
 
     _imports.check()
 
-    if error_bar:
-        eb_info = _get_optimization_history_error_bar_info(study, target, target_name)
-        info_list = [] if eb_info is None else [eb_info]
-    else:
-        info_list = _get_optimization_history_info_list(study, target, target_name)
+    info_list = _get_optimization_history_info_list(study, target, target_name, error_bar)
     return _get_optimization_history_plot(info_list, target_name)
 
 
