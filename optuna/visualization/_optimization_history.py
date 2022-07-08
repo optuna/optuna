@@ -102,8 +102,8 @@ def _get_optimization_history_info_list(
             for trial_number, value in zip(trial_numbers, values_info.values):
                 values[trial_number].append(value)
         trial_numbers_union = [i for i in range(max_num_trial) if len(values[i]) > 0]
-        value_means = [np.mean(v) for v in values if len(v) > 0]
-        value_stds = [np.std(v) for v in values if len(v) > 0]
+        value_means = [np.mean(v).item() for v in values if len(v) > 0]
+        value_stds = [np.std(v).item() for v in values if len(v) > 0]
         return trial_numbers_union, _ValuesInfo(value_means, value_stds, label_name)
 
     eb_trial_numbers, eb_values_info = _aggregate(target_name, False)
