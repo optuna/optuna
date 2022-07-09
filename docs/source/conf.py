@@ -51,7 +51,6 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
     "sphinx.ext.napoleon",
-    "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
     "cliff.sphinxext",
     "sphinx_copybutton",
@@ -202,3 +201,6 @@ plotly_include_source = True
 plotly_formats = ["html"]
 plotly_html_show_formats = False
 plotly_html_show_source_link = False
+
+
+html_show_sourcelink=False
