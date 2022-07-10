@@ -51,6 +51,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
     "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
     "cliff.sphinxext",
     "sphinx_copybutton",
@@ -101,6 +102,9 @@ html_logo = "../image/optuna-logo.png"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
+
+# Remove "Edit on GitHub"
+html_show_sourcelink = False
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -201,6 +205,3 @@ plotly_include_source = True
 plotly_formats = ["html"]
 plotly_html_show_formats = False
 plotly_html_show_source_link = False
-
-# remove sourcelink
-html_show_sourcelink = False
