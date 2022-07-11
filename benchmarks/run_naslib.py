@@ -63,7 +63,7 @@ def run(args: argparse.Namespace) -> None:
 
     # Create study.
     cmd = (
-        f"{kurobako_cmd} studies --budget {args.n_trials} "
+        f"{kurobako_cmd} studies --budget {args.budget} "
         f"--solvers $(cat {solvers_filename}) --problems $(cat {problems_filename}) "
         f"--repeats {args.n_runs} --seed {args.seed} "
         f"> {study_json_filename}"
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--path-to-kurobako", type=str, default="")
     parser.add_argument("--name-prefix", type=str, default="")
-    parser.add_argument("--n-trials", type=int, default=100)
+    parser.add_argument("--budget", type=int, default=100)
     parser.add_argument("--n-runs", type=int, default=10)
     parser.add_argument("--n-jobs", type=int, default=10)
     parser.add_argument("--sampler-list", type=str, default="RandomSampler TPESampler")
