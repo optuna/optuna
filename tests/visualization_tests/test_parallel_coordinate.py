@@ -348,13 +348,13 @@ def test_color_map(direction: str) -> None:
         assert not line["reversescale"]
 
     # When `target` is not `None`, `reversescale` is always `True`.
-    line = plot_parallel_coordinate(study, target=lambda t: t.number).data[0]["line"]
+    line = plot_parallel_coordinate(study, target=lambda t: float(t.number)).data[0]["line"]
     assert COLOR_SCALE == [v[1] for v in line["colorscale"]]
     assert line["reversescale"]
 
     # Multi-objective optimization.
     study = prepare_study_with_trials(with_c_d=False, n_objectives=2, direction=direction)
-    line = plot_parallel_coordinate(study, target=lambda t: t.number).data[0]["line"]
+    line = plot_parallel_coordinate(study, target=lambda t: float(t.number)).data[0]["line"]
     assert COLOR_SCALE == [v[1] for v in line["colorscale"]]
     assert line["reversescale"]
 
