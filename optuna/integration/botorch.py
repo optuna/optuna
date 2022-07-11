@@ -558,5 +558,5 @@ class BoTorchSampler(BaseSampler):
         values: Optional[Sequence[float]],
     ) -> None:
         if self._constraints_func is not None:
-            _process_constraint_after_trial(self._constraints_func, study, trial)
+            _process_constraint_after_trial(self._constraints_func, study, trial, state)
         self._independent_sampler.after_trial(study, trial, state, values)

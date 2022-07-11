@@ -391,7 +391,7 @@ class NSGAIISampler(BaseSampler):
     ) -> None:
         assert state in [TrialState.COMPLETE, TrialState.FAIL, TrialState.PRUNED]
         if self._constraints_func is not None:
-            _process_constraint_after_trial(self._constraints_func, study, trial)
+            _process_constraint_after_trial(self._constraints_func, study, trial, state)
         self._random_sampler.after_trial(study, trial, state, values)
 
 
