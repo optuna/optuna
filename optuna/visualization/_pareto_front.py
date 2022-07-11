@@ -28,11 +28,11 @@ _logger = optuna.logging.get_logger(__name__)
 
 class _ParetoFrontInfo(NamedTuple):
     n_targets: int
-    target_names: Sequence[str]
-    best_trials_with_values: Sequence[Tuple[FrozenTrial, Sequence[float]]]
-    non_best_trials_with_values: Sequence[Tuple[FrozenTrial, Sequence[float]]]
-    infeasible_trials_with_values: Sequence[Tuple[FrozenTrial, Sequence[float]]]
-    axis_order: Sequence[int]
+    target_names: List[str]
+    best_trials_with_values: List[Tuple[FrozenTrial, List[float]]]
+    non_best_trials_with_values: List[Tuple[FrozenTrial, List[float]]]
+    infeasible_trials_with_values: List[Tuple[FrozenTrial, List[float]]]
+    axis_order: List[int]
 
 
 def plot_pareto_front(
@@ -260,8 +260,15 @@ def _get_pareto_front_info(
     def _make_trials_with_values(
         trials: List[FrozenTrial],
         targets: Callable[[FrozenTrial], Sequence[float]],
-    ) -> Sequence[Tuple[FrozenTrial, Sequence[float]]]:
-        return [(trial, targets(trial)) for trial in trials]
+    ) -> List[Tuple[FrozenTrial, List[float]]]:
+        target_values = [targets(trial) for trial in trials]
+        for v in target_values:
+            if not isinstance(v, collections.abc.Sequence):
+                raise ValueError(
+                    "`targets` should return a sequence of target values."
+                    " your `targets` returns {}".format(type(v))
+                )
+        return [(trial, list(v)) for trial, v in zip(trials, target_values)]
 
     best_trials_with_values = _make_trials_with_values(best_trials, _targets)
     non_best_trials_with_values = _make_trials_with_values(non_best_trials, _targets)
@@ -271,11 +278,6 @@ def _get_pareto_front_info(
         trials_with_values: Sequence[Tuple[FrozenTrial, Sequence[float]]]
     ) -> Optional[int]:
         if len(trials_with_values) > 0:
-            if not isinstance(trials_with_values[0][1], collections.abc.Sequence):
-                raise ValueError(
-                    "`targets` should return a sequence of target values."
-                    " your `targets` returns {}".format(type(trials_with_values[0][1]))
-                )
             return len(trials_with_values[0][1])
         return None
 
