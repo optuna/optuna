@@ -89,7 +89,8 @@ def _get_optimization_history_info_list(
     # When error_bar=True, a list of 0 or 1 element is returned.
     if len(info_list) == 0:
         return []
-    max_num_trial = max(max(info.trial_numbers) for info in info_list) + 1
+    all_trial_numbers = [number for info in info_list for number in info.trial_numbers]
+    max_num_trial = max(all_trial_numbers) + 1
 
     def _aggregate(label_name: str, use_best_value: bool) -> Tuple[List[int], _ValuesInfo]:
         # Calculate mean and std of values for each trial number.
