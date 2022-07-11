@@ -173,7 +173,7 @@ jobs:
         python benchmarks/run_naslib.py \
           --path-to-kurobako "." \
           --name-prefix "" \
-          --n-trials ${{ github.event.inputs.budget }} \
+          --budget ${{ github.event.inputs.budget }} \
           --n-runs ${{ github.event.inputs.n-runs }} \
           --n-jobs 6 \
           --sampler-list '${{ github.event.inputs.sampler-list }}' \

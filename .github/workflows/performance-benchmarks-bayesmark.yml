@@ -19,7 +19,7 @@ on:
         description: 'Pruner Arguments List: A list of pruner keyword arguments. Should be a whitespace-separated list of json format dictionaries.'
         required: false
         default: '{}'
-     budget:
+      budget:
         description: 'Number of Trials if the pruning is not enabled. If the pruning is enabled, the total number of steps is equal to `budget * (steps per trial)`.'
         required: false
         default: '80'
@@ -67,7 +67,7 @@ jobs:
         python benchmarks/run_bayesmark.py \
           --dataset ${{ matrix.dataset }} \
           --model ${{ matrix.model }} \
-          --n-trials ${{ github.event.inputs.budget }} \
+          --budget ${{ github.event.inputs.budget }} \
           --repeat ${{ github.event.inputs.repeat }} \
           --sampler-list '${{ github.event.inputs.sampler-list }}' \
           --sampler-kwargs-list '${{ github.event.inputs.sampler-kwargs-list }}' \
