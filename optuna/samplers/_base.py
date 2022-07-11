@@ -201,7 +201,10 @@ _CONSTRAINTS_KEY = "sampler:constraints"
 
 
 def _process_constraint_after_trial(
-    constraints_func: Callable[[FrozenTrial], Sequence[float]], study: Study, trial: FrozenTrial, state: TrialState
+    constraints_func: Callable[[FrozenTrial], Sequence[float]],
+    study: Study,
+    trial: FrozenTrial,
+    state: TrialState,
 ) -> None:
     if state not in [TrialState.COMPLETE, TrialState.PRUNED]:
         return
