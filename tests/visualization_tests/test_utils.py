@@ -176,7 +176,7 @@ def test_filter_inf_trials_message(caplog: LogCaptureFixture, with_message: bool
         assert msg not in caplog.text
 
 
-def test_invalid_target__filter_nonfinite() -> None:
+def test_invalid_target_filter_nonfinite() -> None:
     study = prepare_study_with_trials()
     trials = study.get_trials(states=(TrialState.COMPLETE,))
     with pytest.raises(ValueError):
