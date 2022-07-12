@@ -887,14 +887,11 @@ def _calculate_weights_below_for_multi_objective(
         )
         neginf_replacement = np.minimum(2 * best_point, 0.5 * best_point)
 
-        print(lvals)
         is_posinf = lvals == np.inf
         lvals[is_posinf] = np.broadcast_to(posinf_replacement, lvals.shape, subok=True)[is_posinf]
         is_neginf = lvals == -np.inf
         lvals[is_neginf] = np.broadcast_to(neginf_replacement, lvals.shape, subok=True)[is_neginf]
 
-        print(is_posinf)
-        print(lvals)
         hv = _compute_hypervolume(lvals, reference_point)
         indices_mat = ~np.eye(n_below).astype(bool)
         contributions = np.asarray(
