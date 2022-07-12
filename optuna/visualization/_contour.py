@@ -106,7 +106,6 @@ def plot_contour(
     """
 
     _imports.check()
-    _check_plot_args(study, target, target_name)
     info = _get_contour_info(study, params, target, target_name)
     return _get_contour_plot(info)
 
@@ -240,10 +239,12 @@ def _get_contour_subplot(
 
 def _get_contour_info(
     study: Study,
-    params: Optional[List[str]],
-    target: Optional[Callable[[FrozenTrial], float]],
-    target_name: str,
+    params: Optional[List[str]] = None,
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
 ) -> _ContourInfo:
+
+    _check_plot_args(study, target, target_name)
 
     trials = _filter_nonfinite(
         study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target

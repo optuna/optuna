@@ -11,6 +11,10 @@ on:
         description: 'Sampler Arguments List: A list of sampler keyword arguments. Should be a whitespace-separated list of json format dictionaries.'
         required: false
         default: '{} {\"multivariate\":true,\"constant_liar\":true} {\"population_size\":20}'
+      budget:
+        description: 'Number of Trials if the pruning is not enabled. If the pruning is enabled, the total number of steps is equal to `budget * (steps per trial)`.'
+        required: false
+        default: '120'
       n-runs:
         description: 'Number of Studies'
         required: false
@@ -98,6 +102,7 @@ jobs:
         python benchmarks/run_mo_kurobako.py \
           --path-to-kurobako "." \
           --name-prefix "" \
+          --budget ${{ github.event.inputs.budget }} \
           --n-runs ${{ github.event.inputs.n-runs }} \
           --n-jobs 10 \
           --n-concurrency ${{ github.event.inputs.n-concurrency }} \
