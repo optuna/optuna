@@ -380,7 +380,6 @@ def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
         )
     )
     figure = plot_parallel_coordinate(study)
-    plt.savefig("hoge.png")
     axes = figure.get_figure().axes
     assert len(axes) == 5 + 1
     assert axes[0].get_ylim() == (0.0, 3.0)

@@ -5,7 +5,6 @@ from typing import Optional
 import numpy as np
 
 from optuna._experimental import experimental_func
-from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.visualization._parallel_coordinate import _get_parallel_coordinate_info
@@ -18,8 +17,6 @@ if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
     from optuna.visualization.matplotlib._matplotlib_imports import LineCollection
     from optuna.visualization.matplotlib._matplotlib_imports import plt
-
-_logger = get_logger(__name__)
 
 
 @experimental_func("2.2.0")

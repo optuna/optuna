@@ -39,8 +39,8 @@ class _DimensionInfo(NamedTuple):
     range: Tuple[float, float]
     is_log: bool = False
     is_cat: bool = False
-    tickvals: Optional[List[int]] = None
-    ticktext: Optional[List[str]] = None
+    tickvals: List[int] = []
+    ticktext: List[str] = []
 
 
 class _ParallelCoordinateInfo(NamedTuple):
@@ -166,9 +166,9 @@ def _get_parallel_coordinate_info(
 
         target = _target
 
-    skipped_trial_ids = _get_skipped_trial_numbers(trials, sorted_params)
+    skipped_trial_numbers = _get_skipped_trial_numbers(trials, sorted_params)
 
-    objectives = tuple([target(t) for t in trials if t.number not in skipped_trial_ids])
+    objectives = tuple([target(t) for t in trials if t.number not in skipped_trial_numbers])
     # The value of (0, 0) is a dummy range. It is ignored when we plot.
     objective_range = (min(objectives), max(objectives)) if len(objectives) > 0 else (0, 0)
     dim_objective = _DimensionInfo(label=target_name, values=objectives, range=objective_range)
@@ -196,7 +196,7 @@ def _get_parallel_coordinate_info(
     for dim_index, p_name in enumerate(sorted_params, start=1):
         values = []
         for t in trials:
-            if t.number in skipped_trial_ids:
+            if t.number in skipped_trial_numbers:
                 continue
 
             if p_name in t.params:
@@ -289,8 +289,6 @@ def _get_dims_from_info(info: _ParallelCoordinateInfo) -> List[Dict[str, Any]]:
 
     for dim in info.dims_params:
         if dim.is_log or dim.is_cat:
-            assert dim.tickvals is not None
-            assert dim.ticktext is not None
             dims.append(
                 {
                     "label": dim.label,
