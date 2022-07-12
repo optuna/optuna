@@ -908,12 +908,9 @@ def _clamp_inf_and_calc_reference_point(lvals: np.ndarray) -> Tuple[np.ndarray, 
         ]
     )
     worst_point[worst_point == -np.inf] = 0.0
-    reference_point = np.maximum(
+    posinf_replacement = np.maximum(
         np.maximum(1.1 * worst_point, 0.9 * worst_point), worst_point + EPS
     )
-
-    # If values contain +inf, it has zero contribution to hypervolume.
-    posinf_replacement = reference_point
 
     best_point = np.array(
         [
@@ -929,4 +926,6 @@ def _clamp_inf_and_calc_reference_point(lvals: np.ndarray) -> Tuple[np.ndarray, 
     new_lvals[is_posinf] = np.broadcast_to(posinf_replacement, lvals.shape, subok=True)[is_posinf]
     is_neginf = lvals == -np.inf
     new_lvals[is_neginf] = np.broadcast_to(neginf_replacement, lvals.shape, subok=True)[is_neginf]
+
+    reference_point = posinf_replacement
     return new_lvals, reference_point
