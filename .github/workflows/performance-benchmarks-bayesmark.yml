@@ -23,7 +23,7 @@ on:
         description: 'Number of Trials if the pruning is not enabled. If the pruning is enabled, the total number of steps is equal to `budget * (steps per trial)`.'
         required: false
         default: '80'
-      repeat:
+      n-runs:
         description: 'Number of Studies'
         required: false
         default: '10'
@@ -68,7 +68,7 @@ jobs:
           --dataset ${{ matrix.dataset }} \
           --model ${{ matrix.model }} \
           --budget ${{ github.event.inputs.budget }} \
-          --repeat ${{ github.event.inputs.repeat }} \
+          --n-runs ${{ github.event.inputs.n-runs }} \
           --sampler-list '${{ github.event.inputs.sampler-list }}' \
           --sampler-kwargs-list '${{ github.event.inputs.sampler-kwargs-list }}' \
           --pruner-list '${{ github.event.inputs.pruner-list }}' \
