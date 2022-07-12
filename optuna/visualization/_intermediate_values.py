@@ -15,12 +15,12 @@ _logger = get_logger(__name__)
 
 
 class _TrialInfo(NamedTuple):
-    trial_number: int = 0
-    sorted_intermediate_values: List[Tuple[int, float]] = []
+    trial_number: int
+    sorted_intermediate_values: List[Tuple[int, float]]
 
 
 class _IntermediatePlotInfo(NamedTuple):
-    trial_infos: List[_TrialInfo] = []
+    trial_infos: List[_TrialInfo]
 
 
 def _get_intermediate_plot_info(study: Study) -> _IntermediatePlotInfo:

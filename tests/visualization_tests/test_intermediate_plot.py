@@ -20,7 +20,7 @@ def test_intermediate_plot_info() -> None:
     # Test with no trials.
     study = create_study(direction="minimize")
 
-    assert _get_intermediate_plot_info(study) == _IntermediatePlotInfo()
+    assert _get_intermediate_plot_info(study) == _IntermediatePlotInfo(trial_infos=[])
 
     # Test with a trial with intermediate values.
     def objective(trial: Trial, report_intermediate_values: bool) -> float:
@@ -48,12 +48,12 @@ def test_intermediate_plot_info() -> None:
     # Test a study of only one trial that has no intermediate values.
     study = create_study()
     study.optimize(lambda t: objective(t, False), n_trials=1)
-    assert _get_intermediate_plot_info(study) == _IntermediatePlotInfo()
+    assert _get_intermediate_plot_info(study) == _IntermediatePlotInfo(trial_infos=[])
 
     # Ignore failed trials.
     study = create_study()
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
-    assert _get_intermediate_plot_info(study) == _IntermediatePlotInfo()
+    assert _get_intermediate_plot_info(study) == _IntermediatePlotInfo(trial_infos=[])
 
 
 @pytest.mark.parametrize(
@@ -66,7 +66,7 @@ def test_intermediate_plot_info() -> None:
 @pytest.mark.parametrize(
     "info",
     [
-        _IntermediatePlotInfo(),
+        _IntermediatePlotInfo(trial_infos=[]),
         _IntermediatePlotInfo(
             trial_infos=[
                 _TrialInfo(trial_number=0, sorted_intermediate_values=[(0, 1.0), (1, 2.0)])
