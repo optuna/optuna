@@ -103,7 +103,7 @@ html_logo = "../image/optuna-logo.png"
 html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
 
-# Remove "Edit on GitHub"
+# Remove "Edit on GitHub."
 html_show_sourcelink = False
 
 # Custom sidebar templates, must be a dictionary that maps document names
