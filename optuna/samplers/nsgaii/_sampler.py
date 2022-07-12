@@ -452,17 +452,10 @@ def _calc_crowding_distance(population: List[FrozenTrial]) -> DefaultDict[int, f
             # width == 0 or width == -inf
             width = 1.0
 
-        # subtract_nonfinite(inf, inf) == 0
-        def subtract_nonfinite(x: float, y: float) -> float:
-            if x == y:
-                return 0
-            else:
-                return x - y
-
         for j in range(len(population)):
-            manhattan_distances[population[j].number] += (
-                subtract_nonfinite(vs[j + 2], vs[j]) / width
-            )
+            # inf - inf and (-inf) - (-inf) is considered to be zero.
+            gap = 0.0 if vs[j] == vs[j + 2] else vs[j + 2] - vs[j]
+            manhattan_distances[population[j].number] += gap / width
     return manhattan_distances
 
 
