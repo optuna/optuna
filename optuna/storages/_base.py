@@ -60,8 +60,8 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     of a study and a trial. Generally, typical storages naturally hold this requirement. However,
     :class:`~optuna.storages._CachedStorage` does not, so we introduce the
     `read_trials_from_remote_storage(study_id)` method in the class. The detailed explanation how
-    :class:`~optuna.storages._CachedStorage` aquires this requirement, you can check this
-    class docstrings.
+    :class:`~optuna.storages._CachedStorage` aquires this requirement, is available at
+    the docstring.
 
     .. note::
 
