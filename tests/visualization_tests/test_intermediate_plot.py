@@ -7,16 +7,12 @@ import pytest
 from optuna.study import create_study
 from optuna.testing.objectives import fail_objective
 from optuna.trial import Trial
-from optuna.visualization._intermediate_values import (
-    _get_intermediate_plot as _get_pyplot_intermediate_plot,
-)
+import optuna.visualization._intermediate_values
 from optuna.visualization._intermediate_values import _get_intermediate_plot_info
 from optuna.visualization._intermediate_values import _IntermediatePlotInfo
 from optuna.visualization._intermediate_values import _TrialInfo
 from optuna.visualization._plotly_imports import go
-from optuna.visualization.matplotlib._intermediate_values import (
-    _get_intermediate_plot as _get_matplotlib_intermediate_plot,
-)
+import optuna.visualization.matplotlib._intermediate_values
 from optuna.visualization.matplotlib._matplotlib_imports import plt
 
 
@@ -61,7 +57,11 @@ def test_intermediate_plot_info() -> None:
 
 
 @pytest.mark.parametrize(
-    "plotter", [_get_matplotlib_intermediate_plot, _get_pyplot_intermediate_plot]
+    "plotter",
+    [
+        optuna.visualization._intermediate_values._get_intermediate_plot,
+        optuna.visualization.matplotlib._intermediate_values._get_intermediate_plot,
+    ],
 )
 @pytest.mark.parametrize(
     "info",
