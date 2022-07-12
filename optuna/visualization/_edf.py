@@ -29,8 +29,8 @@ class _EDFLineInfo(NamedTuple):
 
 
 class _EDFInfo(NamedTuple):
-    lines: List[_EDFLineInfo]
-    x_values: np.ndarray
+    lines: List[_EDFLineInfo] = []
+    x_values: np.ndarray = np.array([])
 
 
 def plot_edf(
@@ -150,7 +150,7 @@ def _get_edf_info(
 
     if len(studies) == 0:
         _logger.warning("There are no studies.")
-        return _EDFInfo(lines=[], x_values=np.array([]))
+        return _EDFInfo()
 
     if target is None:
 
@@ -172,7 +172,7 @@ def _get_edf_info(
 
     if all(len(values) == 0 for values in all_values):
         _logger.warning("There are no complete trials.")
-        return _EDFInfo(lines=[], x_values=np.array([]))
+        return _EDFInfo()
 
     min_x_value = np.min(np.concatenate(all_values))
     max_x_value = np.max(np.concatenate(all_values))

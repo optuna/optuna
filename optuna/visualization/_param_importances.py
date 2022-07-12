@@ -26,9 +26,9 @@ logger = get_logger(__name__)
 
 
 class _ImportancesInfo(NamedTuple):
-    importance_values: List[float]
-    param_names: List[str]
-    importance_labels: List[str]
+    importance_values: List[float] = []
+    param_names: List[str] = []
+    importance_labels: List[str] = []
 
 
 def _get_importances_info(
@@ -46,11 +46,7 @@ def _get_importances_info(
 
     if len(trials) == 0:
         logger.warning("Study instance does not contain completed trials.")
-        return _ImportancesInfo(
-            importance_values=[],
-            param_names=[],
-            importance_labels=[],
-        )
+        return _ImportancesInfo()
 
     importances = optuna.importance.get_param_importances(
         study, evaluator=evaluator, params=params, target=target
