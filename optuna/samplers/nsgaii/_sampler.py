@@ -410,6 +410,19 @@ class NSGAIISampler(BaseSampler):
 
 
 def _calc_crowding_distance(population: List[FrozenTrial]) -> DefaultDict[int, float]:
+    """Calculates the crowding distance of population.
+    We define the crowding distance as the summation of the crowding distance of each dimension
+    of value calculated as follows:
+
+    * If all values in that dimension are the same, i.e., [1, 1, 1] or [inf, inf],
+      the crowding distances of all trials in that dimension are zero.
+    * Otherwise, the crowding distances of that dimension is the difference between
+      two nearest values besides that value, one above and one below, divided by the difference
+      between the maximal and minimal finite value of that dimension. Please note that:
+        * the nearest value below the minimum is considered to be -inf and the
+          nearest value above the maximum is considered to be inf, and
+        * inf - inf and (-inf) - (-inf) is considered to be zero.
+    """
 
     manhattan_distances: DefaultDict[int, float] = defaultdict(float)
     if len(population) == 0:
