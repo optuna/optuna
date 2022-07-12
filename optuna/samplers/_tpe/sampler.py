@@ -897,7 +897,7 @@ def _clamp_inf_and_calc_reference_point(lvals: np.ndarray) -> Tuple[np.ndarray, 
     """Clamp inf values in lvals and calculate the reference point.
     
     This function satisfies the following axioms:
-    1. Clamped lvals and the calculated reference point only contains finite values.
+    1. Clamped lvals and the calculated reference point only contain finite values.
     2. Clamping preserves the original order of lvals.
     3. Clamped lvals are always smaller than or equal to the calculated reference point.
     """
