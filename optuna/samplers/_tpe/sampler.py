@@ -773,7 +773,7 @@ def _split_observation_pairs(
         if subset_size > 0:
             rank_i_lvals = lvals[nondomination_ranks == i]
             rank_i_indices = indices[nondomination_ranks == i]
-            rank_i_lvals, reference_point = _normalize_and_calc_reference_point(rank_i_lvals)
+            rank_i_lvals, reference_point = _clamp_inf_and_calc_reference_point(rank_i_lvals)
             selected_indices = _solve_hssp(
                 rank_i_lvals, rank_i_indices, subset_size, reference_point
             )
@@ -872,7 +872,7 @@ def _calculate_weights_below_for_multi_objective(
         weights_below = np.asarray([1.0])
     else:
 
-        lvals, reference_point = _normalize_and_calc_reference_point(lvals)
+        lvals, reference_point = _clamp_inf_and_calc_reference_point(lvals)
 
         hv = _compute_hypervolume(lvals, reference_point)
         indices_mat = ~np.eye(n_below).astype(bool)
@@ -893,7 +893,14 @@ def _calculate_weights_below_for_multi_objective(
     return weights_below_all
 
 
-def _normalize_and_calc_reference_point(lvals: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+def _clamp_inf_and_calc_reference_point(lvals: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """Clamp inf values in lvals and calculate the reference point.
+    
+    This function satisfies the following axioms:
+    1. Clamped lvals only contains finite values.
+    2. Clamping preserves the original order of lvals.
+    3. Clamped lvals are always smaller than or equal to the calculated reference point.
+    """
     worst_point = np.array(
         [
             np.max(lvals[:, i][lvals[:, i] != np.inf], initial=-np.inf)

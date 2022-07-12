@@ -635,11 +635,11 @@ def test_solve_hssp(dim: int) -> None:
         [[float("inf")], [0.0]],
     ],
 )
-def test_normalize_and_calc_reference_point(
+def test_clamp_inf_and_calc_reference_point(
     test_case: Union[np.ndarray, List[List[float]]]
 ) -> None:
     test_case = np.array(test_case)
-    normalized, reference_point = _tpe.sampler._normalize_and_calc_reference_point(test_case)
+    normalized, reference_point = _tpe.sampler._clamp_inf_and_calc_reference_point(test_case)
     assert np.all(np.isfinite(normalized))
     assert np.all(np.isfinite(reference_point))
     assert np.all(normalized <= reference_point)
