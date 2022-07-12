@@ -774,7 +774,6 @@ def _split_observation_pairs(
             rank_i_lvals = lvals[nondomination_ranks == i]
             rank_i_indices = indices[nondomination_ranks == i]
             rank_i_lvals, reference_point = _normalize_and_calc_reference_point(rank_i_lvals)
-            print(lvals, rank_i_lvals, reference_point)
             selected_indices = _solve_hssp(
                 rank_i_lvals, rank_i_indices, subset_size, reference_point
             )
