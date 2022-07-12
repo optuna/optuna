@@ -411,6 +411,7 @@ class NSGAIISampler(BaseSampler):
 
 def _calc_crowding_distance(population: List[FrozenTrial]) -> DefaultDict[int, float]:
     """Calculates the crowding distance of population.
+
     We define the crowding distance as the summation of the crowding distance of each dimension
     of value calculated as follows:
 
