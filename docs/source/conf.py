@@ -26,7 +26,7 @@ __version__ = pkg_resources.get_distribution("optuna").version
 # -- Project information -----------------------------------------------------
 
 project = "Optuna"
-copyright = "2018, Optuna Contributors."
+copyright = "2018, Optuna Contributors"
 author = "Optuna Contributors."
 
 # The short X.Y version

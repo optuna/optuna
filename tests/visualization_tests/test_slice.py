@@ -2,9 +2,9 @@ import pytest
 
 from optuna.distributions import FloatDistribution
 from optuna.study import create_study
+from optuna.testing.objectives import fail_objective
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
-from optuna.trial import Trial
 from optuna.visualization import plot_slice
 from optuna.visualization._utils import COLOR_SCALE
 
@@ -19,7 +19,7 @@ def test_target_is_none_and_study_is_multi_obj() -> None:
 def test_plot_slice() -> None:
 
     # Test with no trial.
-    study = prepare_study_with_trials(no_trials=True)
+    study = create_study(direction="minimize")
     figure = plot_slice(study)
     assert len(figure.data) == 0
 
@@ -57,10 +57,6 @@ def test_plot_slice() -> None:
         plot_slice(study, params=["optuna"])
 
     # Ignore failed trials.
-    def fail_objective(_: Trial) -> float:
-
-        raise ValueError
-
     study = create_study()
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_slice(study)

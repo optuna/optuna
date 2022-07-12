@@ -29,6 +29,7 @@ from optuna import Trial
 from optuna import TrialPruned
 from optuna.exceptions import DuplicatedStudyError
 from optuna.study import StudyDirection
+from optuna.testing.objectives import fail_objective
 from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
 from optuna.trial import FrozenTrial
@@ -198,24 +199,20 @@ def test_optimize_with_catch(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
 
-        def func_value_error(_: Trial) -> float:
-
-            raise ValueError
-
         # Test default exceptions.
         with pytest.raises(ValueError):
-            study.optimize(func_value_error, n_trials=20)
+            study.optimize(fail_objective, n_trials=20)
         assert len(study.trials) == 1
         assert all(trial.state == TrialState.FAIL for trial in study.trials)
 
         # Test acceptable exception.
-        study.optimize(func_value_error, n_trials=20, catch=(ValueError,))
+        study.optimize(fail_objective, n_trials=20, catch=(ValueError,))
         assert len(study.trials) == 21
         assert all(trial.state == TrialState.FAIL for trial in study.trials)
 
         # Test trial with unacceptable exception.
         with pytest.raises(ValueError):
-            study.optimize(func_value_error, n_trials=20, catch=(ArithmeticError,))
+            study.optimize(fail_objective, n_trials=20, catch=(ArithmeticError,))
         assert len(study.trials) == 22
         assert all(trial.state == TrialState.FAIL for trial in study.trials)
 
@@ -225,12 +222,8 @@ def test_optimize_with_catch_invalid_type(catch: Any) -> None:
 
     study = create_study()
 
-    def func_value_error(_: Trial) -> float:
-
-        raise ValueError
-
     with pytest.raises(TypeError):
-        study.optimize(func_value_error, n_trials=20, catch=catch)
+        study.optimize(fail_objective, n_trials=20, catch=catch)
 
 
 @pytest.mark.parametrize(
