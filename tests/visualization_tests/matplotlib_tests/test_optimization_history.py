@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 
 from optuna.study import create_study
+from optuna.testing.objectives import fail_objective
 from optuna.trial import Trial
 from optuna.visualization.matplotlib import plot_optimization_history
 
@@ -69,9 +70,6 @@ def test_plot_optimization_history(direction: str) -> None:
     plt.savefig(BytesIO())
 
     # Ignore failed trials.
-    def fail_objective(_: Trial) -> float:
-        raise ValueError
-
     study = create_study(direction=direction)
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
 
@@ -145,9 +143,6 @@ def test_plot_optimization_history_with_multiple_studies(direction: str) -> None
     plt.savefig(BytesIO())
 
     # Ignore failed trials.
-    def fail_objective(_: Trial) -> float:
-        raise ValueError
-
     studies = [create_study(direction=direction) for _ in range(n_studies)]
     for study in studies:
         study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
@@ -212,9 +207,6 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
     plt.savefig(BytesIO())
 
     # Ignore failed trials.
-    def fail_objective(_: Trial) -> float:
-        raise ValueError
-
     studies = [create_study(direction=direction) for _ in range(n_studies)]
     for study in studies:
         study.optimize(fail_objective, n_trials=1, catch=(ValueError,))

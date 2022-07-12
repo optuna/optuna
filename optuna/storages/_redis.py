@@ -16,12 +16,12 @@ from typing import Union
 import optuna
 from optuna import distributions
 from optuna import exceptions
-from optuna._deprecated import deprecated_func
 from optuna._experimental import experimental_class
 from optuna._imports import try_import
 from optuna.storages import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages._heartbeat import BaseHeartbeat
+from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
@@ -140,7 +140,7 @@ class RedisStorage(BaseStorage, BaseHeartbeat):
                 "study_id:{:010d}:directions".format(study_id),
                 pickle.dumps([StudyDirection.NOT_SET]),
             )
-
+            # TODO(wattlebirdaz): Replace StudySummary with FrozenStudy.
             study_summary = StudySummary(
                 study_name=study_name,
                 direction=StudyDirection.NOT_SET,
@@ -325,23 +325,29 @@ class RedisStorage(BaseStorage, BaseHeartbeat):
             self._key_study_param_distribution(study_id), pickle.dumps(param_distribution)
         )
 
-    def get_all_study_summaries(self, include_best_trial: bool) -> List[StudySummary]:
-
+    def get_all_studies(self) -> List[FrozenStudy]:
         queries = []
         study_ids = [pickle.loads(sid) for sid in self._redis.lrange("study_list", 0, -1)]
         for study_id in study_ids:
             queries.append(self._key_study_summary(study_id))
 
-        study_summaries = []
+        frozen_studies = []
         summary_pkls = self._redis.mget(queries)
         for summary_pkl in summary_pkls:
             assert summary_pkl is not None
             summary = pickle.loads(summary_pkl)
-            if not include_best_trial:
-                summary.best_trial = None
-            study_summaries.append(summary)
+            frozen_studies.append(
+                FrozenStudy(
+                    study_name=summary.study_name,
+                    direction=summary.direction,
+                    user_attrs=summary.user_attrs,
+                    system_attrs=summary.system_attrs,
+                    study_id=summary._study_id,
+                    directions=summary.directions,
+                )
+            )
 
-        return study_summaries
+        return frozen_studies
 
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
 
@@ -421,38 +427,6 @@ class RedisStorage(BaseStorage, BaseHeartbeat):
             datetime_start=datetime.now(),
             datetime_complete=None,
         )
-
-    @deprecated_func(
-        "3.0.0",
-        "5.0.0",
-        text="Use :func:`~optuna.storages.RedisStorage.set_trial_state_values` instead.",
-    )
-    def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
-
-        trial = self.get_trial(trial_id)
-        self.check_trial_is_updatable(trial_id, trial.state)
-
-        if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
-            return False
-
-        trial.state = state
-
-        if state == TrialState.RUNNING:
-            trial.datetime_start = datetime.now()
-
-        if state.is_finished():
-            trial.datetime_complete = datetime.now()
-            self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
-            self._update_cache(trial_id)
-
-            # To ensure that there are no failed trials with heartbeats in the DB
-            # under any circumstances
-            study_id = self._get_study_id_from_trial_id(trial_id)
-            self._redis.hdel(self._key_study_heartbeats(study_id), str(trial_id))
-        else:
-            self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
-
-        return True
 
     def set_trial_param(
         self,
@@ -558,19 +532,6 @@ class RedisStorage(BaseStorage, BaseHeartbeat):
 
         self._check_study_id(study_id)
         self.set_trial_param(trial_id, param_name, param_value_internal, distribution)
-
-    @deprecated_func(
-        "3.0.0",
-        "5.0.0",
-        text="Use :func:`~optuna.storages.RedisStorage.set_trial_state_values` instead.",
-    )
-    def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
-
-        trial = self.get_trial(trial_id)
-        self.check_trial_is_updatable(trial_id, trial.state)
-
-        trial.values = values
-        self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
 
     def set_trial_state_values(
         self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
@@ -739,19 +700,6 @@ class RedisStorage(BaseStorage, BaseHeartbeat):
             str(trial_id),
             pickle.dumps(self._get_redis_time()),
         )
-
-    @deprecated_func(
-        "3.0.0",
-        "5.0.0",
-        text="Use :func:`~optuna.storages.fail_stale_trials` instead.",
-    )
-    def fail_stale_trials(self, study_id: int) -> List[int]:
-        confirmed = []
-        for trial_id in self._get_stale_trial_ids(study_id):
-            if self.set_trial_state_values(trial_id, state=TrialState.FAIL):
-                confirmed.append(trial_id)
-
-        return confirmed
 
     def _get_stale_trial_ids(self, study_id: int) -> List[int]:
         assert self.heartbeat_interval is not None

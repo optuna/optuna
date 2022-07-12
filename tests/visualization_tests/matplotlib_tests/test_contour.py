@@ -13,13 +13,13 @@ from pytest import WarningsRecorder
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.study import create_study
+from optuna.testing.objectives import fail_objective
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
-from optuna.trial import Trial
+from optuna.visualization._contour import PADDING_RATIO
 from optuna.visualization.matplotlib import plot_contour
 from optuna.visualization.matplotlib._contour import _create_zmap
 from optuna.visualization.matplotlib._contour import _interpolate_zmap
-from optuna.visualization.matplotlib._contour import AXES_PADDING_RATIO
 
 
 def test_create_zmap() -> None:
@@ -87,17 +87,12 @@ def test_target_is_not_none_and_study_is_multi_obj() -> None:
 def test_plot_contour(params: Optional[List[str]]) -> None:
 
     # Test with no trial.
-    study_without_trials = prepare_study_with_trials(no_trials=True)
+    study_without_trials = create_study(direction="minimize")
     figure = plot_contour(study_without_trials, params=params)
     assert len(figure.get_lines()) == 0
     plt.savefig(BytesIO())
 
     # Test whether trials with `ValueError`s are ignored.
-
-    def fail_objective(_: Trial) -> float:
-
-        raise ValueError
-
     study = create_study()
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_contour(study, params=params)
@@ -246,7 +241,7 @@ def test_plot_contour_mixture_category_types() -> None:
         ["param_b", "param_a"],
     ],
 )
-def test_generate_contour_plot_for_few_observations(params: List[str]) -> None:
+def test_plot_contour_for_few_observations(params: List[str]) -> None:
 
     study = prepare_study_with_trials(less_than_two=True)
     figure = plot_contour(study, params)
@@ -292,7 +287,7 @@ def test_contour_subplots_have_correct_axis_labels_and_ranges() -> None:
     }
     for index, (param_name, param_range) in enumerate(param_ranges.items()):
         minimum, maximum = param_range
-        padding = (maximum - minimum) * AXES_PADDING_RATIO
+        padding = (maximum - minimum) * PADDING_RATIO
         param_range_with_padding = (minimum - padding, maximum + padding)
         assert subplots[index, 0].get_ylabel() == param_name
         assert subplots[-1, index].get_xlabel() == param_name

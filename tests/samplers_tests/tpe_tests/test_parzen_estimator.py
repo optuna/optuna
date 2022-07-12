@@ -389,12 +389,7 @@ def test_invalid_weights(weights: Callable[[int], np.ndarray]) -> None:
         weights=weights,
         multivariate=False,
     )
-    mpe = _ParzenEstimator(
-        {"a": np.asarray([0.0])}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
-    )
-
-    # TODO(HideakiImamura): Currently, the weight calculation does not raise if the specified
-    #  weights function is invalid. To be fixed to raise a `ValueError`.
-    assert len(mpe._weights) == 1
-    # If `weights = lambda x: -np.ones(x)`, the calculated weight is 1, otherwise nan.
-    assert np.isnan(mpe._weights[0]) or mpe._weights[0] == 1.0
+    with pytest.raises(ValueError):
+        _ParzenEstimator(
+            {"a": np.asarray([0.0])}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
+        )

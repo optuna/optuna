@@ -19,10 +19,18 @@ on:
         description: 'Pruner Arguments List: A list of pruner keyword arguments. Should be a whitespace-separated list of json format dictionaries.'
         required: false
         default: '{}'
+      budget:
+        description: 'Number of Trials if the pruning is not enabled. If the pruning is enabled, the total number of steps is equal to `budget * (steps per trial)`.'
+        required: false
+        default: '100'
       n-runs:
         description: 'Number of Studies'
         required: false
         default: '10'
+      n-concurrency:
+        description: 'Number of Concurrent Trials'
+        required: false
+        default: '1'
 
 
 jobs:
@@ -90,7 +98,7 @@ jobs:
         pip install --upgrade pip setuptools wheel
         pip install -e .
         cd ..
-        
+
     - name: Cache nasbench201-cifar10 dataset
       id: cache-nb201-cifar10-dataset
       uses: actions/cache@v2
@@ -114,13 +122,12 @@ jobs:
         }
         wget_gdrive 1sh8pEhdrgZ97-VFBVL94rI36gedExVgJ nb201_cifar10_full_training.pickle
         cd ../../../
-    
+
     - name: Cache nasbench201-cifar100 dataset
       id: cache-nb201-cifar100-dataset
       uses: actions/cache@v2
       with:
         path: NASLib/naslib/data/nb201_cifar100_full_training.pickle
-        
         key: cache-nb201-cifar100
 
     - name: Download nasbench201-cifar100 dataset
@@ -145,7 +152,6 @@ jobs:
       uses: actions/cache@v2
       with:
         path: NASLib/naslib/data/nb201_ImageNet16_full_training.pickle
-        
         key: cache-nb201-imagenet16
 
     - name: Download nasbench201-imagenet16 dataset
@@ -171,8 +177,10 @@ jobs:
         python benchmarks/run_naslib.py \
           --path-to-kurobako "." \
           --name-prefix "" \
+          --budget ${{ github.event.inputs.budget }} \
           --n-runs ${{ github.event.inputs.n-runs }} \
           --n-jobs 6 \
+          --n-concurrency ${{ github.event.inputs.n-concurrency }} \
           --sampler-list '${{ github.event.inputs.sampler-list }}' \
           --sampler-kwargs-list '${{ github.event.inputs.sampler-kwargs-list }}' \
           --pruner-list '${{ github.event.inputs.pruner-list }}' \
