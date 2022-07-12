@@ -773,9 +773,8 @@ def _split_observation_pairs(
         if subset_size > 0:
             rank_i_lvals = lvals[nondomination_ranks == i]
             rank_i_indices = indices[nondomination_ranks == i]
-            worst_point = np.max(rank_i_lvals, axis=0)
-            reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
-            reference_point[reference_point == 0] = EPS
+            rank_i_lvals, reference_point = _normalize_and_calc_reference_point(rank_i_lvals)
+            print(lvals, rank_i_lvals, reference_point)
             selected_indices = _solve_hssp(
                 rank_i_lvals, rank_i_indices, subset_size, reference_point
             )
@@ -873,24 +872,8 @@ def _calculate_weights_below_for_multi_objective(
     elif n_below == 1:
         weights_below = np.asarray([1.0])
     else:
-        worst_point = np.array(
-            [np.max(lvals[:, i][lvals[:, i] != np.inf], initial=0) for i in range(lvals.shape[1])]
-        )
-        reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
-        reference_point[reference_point == 0] = EPS
 
-        # If values contain +inf, it has zero contribution to hypervolume.
-        posinf_replacement = reference_point[None, :]
-
-        best_point = np.array(
-            [np.min(lvals[:, i][lvals[:, i] != -np.inf], initial=0) for i in range(lvals.shape[1])]
-        )
-        neginf_replacement = np.minimum(2 * best_point, 0.5 * best_point)
-
-        is_posinf = lvals == np.inf
-        lvals[is_posinf] = np.broadcast_to(posinf_replacement, lvals.shape, subok=True)[is_posinf]
-        is_neginf = lvals == -np.inf
-        lvals[is_neginf] = np.broadcast_to(neginf_replacement, lvals.shape, subok=True)[is_neginf]
+        lvals, reference_point = _normalize_and_calc_reference_point(lvals)
 
         hv = _compute_hypervolume(lvals, reference_point)
         indices_mat = ~np.eye(n_below).astype(bool)
@@ -909,3 +892,35 @@ def _calculate_weights_below_for_multi_objective(
     weights_below_all[feasible_mask] = weights_below
     weights_below_all = weights_below_all[~np.isnan(cvals)]
     return weights_below_all
+
+
+def _normalize_and_calc_reference_point(lvals: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    worst_point = np.array(
+        [
+            np.max(lvals[:, i][lvals[:, i] != np.inf], initial=-np.inf)
+            for i in range(lvals.shape[1])
+        ]
+    )
+    worst_point[worst_point == -np.inf] = 0.0
+    reference_point = np.maximum(
+        np.maximum(1.1 * worst_point, 0.9 * worst_point), worst_point + EPS
+    )
+
+    # If values contain +inf, it has zero contribution to hypervolume.
+    posinf_replacement = reference_point
+
+    best_point = np.array(
+        [
+            np.min(lvals[:, i][lvals[:, i] != -np.inf], initial=np.inf)
+            for i in range(lvals.shape[1])
+        ]
+    )
+    best_point[best_point == np.inf] = 0.0
+    neginf_replacement = np.minimum(np.minimum(2 * best_point, 0.5 * best_point), best_point - EPS)
+
+    new_lvals = lvals.copy()
+    is_posinf = lvals == np.inf
+    new_lvals[is_posinf] = np.broadcast_to(posinf_replacement, lvals.shape, subok=True)[is_posinf]
+    is_neginf = lvals == -np.inf
+    new_lvals[is_neginf] = np.broadcast_to(neginf_replacement, lvals.shape, subok=True)[is_neginf]
+    return new_lvals, reference_point

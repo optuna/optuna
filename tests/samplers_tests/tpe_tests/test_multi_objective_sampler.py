@@ -618,33 +618,37 @@ def test_solve_hssp(dim: int) -> None:
         assert approx / truth > 0.6321  # 1 - 1/e
 
 
-def test_solve_hssp_infinite_loss() -> None:
-    random.seed(128)
+@pytest.mark.parametrize(
+    "test_case",
+    [
+        np.zeros((0, 1)),
+        [[0.0]],
+        [[1.0]],
+        [[-1.0]],
+        [[float("inf")]],
+        [[-float("inf")]],
+        [[1.0], [0.0]],
+        [[-1.0], [0.0]],
+        [[-1.0], [1.0]],
+        [[-float("inf")], [float("inf")]],
+        [[-float("inf")], [0.0]],
+        [[float("inf")], [0.0]],
+    ],
+)
+def test_normalize_and_calc_reference_point(
+    test_case: Union[np.ndarray, List[List[float]]]
+) -> None:
+    test_case = np.array(test_case)
+    normalized, reference_point = _tpe.sampler._normalize_and_calc_reference_point(test_case)
+    assert np.all(np.isfinite(normalized))
+    assert np.all(np.isfinite(reference_point))
+    assert np.all(normalized <= reference_point)
 
-    subset_size = int(random.random() * 4) + 1
-    test_case = np.asarray([[random.random() for _ in range(2)] for _ in range(8)])
-    test_case = np.vstack([test_case, [float("inf") for _ in range(2)]])
-    truth, approx = _compute_hssp_truth_and_approx(test_case, subset_size)
-    assert np.isinf(truth)
-    assert np.isinf(approx)
-
-    test_case = np.asarray([[random.random() for _ in range(3)] for _ in range(8)])
-    test_case = np.vstack([test_case, [float("inf") for _ in range(3)]])
-    truth, approx = _compute_hssp_truth_and_approx(test_case, subset_size)
-    assert truth == 0
-    assert np.isnan(approx)
-
-    test_case = np.asarray([[random.random() for _ in range(2)] for _ in range(8)])
-    test_case = np.vstack([test_case, [-float("inf") for _ in range(2)]])
-    truth, approx = _compute_hssp_truth_and_approx(test_case, subset_size)
-    assert np.isinf(truth)
-    assert np.isinf(approx)
-
-    test_case = np.asarray([[random.random() for _ in range(3)] for _ in range(8)])
-    test_case = np.vstack([test_case, [-float("inf") for _ in range(3)]])
-    truth, approx = _compute_hssp_truth_and_approx(test_case, subset_size)
-    assert np.isinf(truth)
-    assert np.isinf(approx)
+    # Check that all orders between values are kept.
+    assert np.all(
+        (test_case[None, :, :] < test_case[:, None, :])
+        == (normalized[None, :, :] < normalized[:, None, :])
+    )
 
 
 def frozen_trial_factory(
