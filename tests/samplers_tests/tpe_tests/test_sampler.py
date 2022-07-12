@@ -4,6 +4,7 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Union
 from unittest.mock import Mock
 from unittest.mock import patch
@@ -768,31 +769,38 @@ def test_constrained_sample_independent_zero_startup() -> None:
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-@pytest.mark.parametrize("constraints_enabled", [False, True])
-def test_get_observation_pairs(direction: str, constraints_enabled: bool) -> None:
+@pytest.mark.parametrize(
+    "constraints_enabled, constraints_func, expected_violations",
+    [
+        (False, None, None),
+        (True, lambda trial: [(-1, -1), (0, -1), (1, -1), (2, -1)][trial.number], [0, 0, 1, 2]),
+    ],
+)
+def test_get_observation_pairs(
+    direction: str,
+    constraints_enabled: bool,
+    constraints_func: Optional[Callable[[optuna.trial.FrozenTrial], Sequence[float]]],
+    expected_violations: List[float],
+) -> None:
     def objective(trial: Trial) -> float:
 
         x = trial.suggest_int("x", 5, 5)
         z = trial.suggest_categorical("z", [None])
         if trial.number == 0:
-            trial.set_user_attr("constraint", (-1, -1))
             return x * int(z is None)
         elif trial.number == 1:
-            trial.set_user_attr("constraint", (0, -1))
             trial.report(1, 4)
             trial.report(2, 7)
             raise TrialPruned()
         elif trial.number == 2:
-            trial.set_user_attr("constraint", (1, -1))
             trial.report(float("nan"), 3)
             raise TrialPruned()
         elif trial.number == 3:
-            trial.set_user_attr("constraint", (2, -1))
             raise TrialPruned()
         else:
             raise RuntimeError()
 
-    sampler = TPESampler(constraints_func=lambda trial: trial.user_attrs["constraint"])
+    sampler = TPESampler(constraints_func=constraints_func)
     study = optuna.create_study(direction=direction, sampler=sampler)
     study.optimize(objective, n_trials=5, catch=(RuntimeError,))
 
@@ -803,73 +811,83 @@ def test_get_observation_pairs(direction: str, constraints_enabled: bool) -> Non
         (-3, [float("inf")]),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
         (float("inf"), [sign * 0.0]),  # PRUNED (without intermediate values)
     ]
-    violations = [0, 0, 1, 2] if constraints_enabled else None
     assert _tpe.sampler._get_observation_pairs(
         study, ["x"], False, constraints_enabled=constraints_enabled
     ) == (
         {"x": [5.0, 5.0, 5.0, 5.0]},
         scores,
-        violations,
+        expected_violations,
     )
     assert _tpe.sampler._get_observation_pairs(
         study, ["y"], False, constraints_enabled=constraints_enabled
     ) == (
         {"y": [None, None, None, None]},
         scores,
-        violations,
+        expected_violations,
     )
     assert _tpe.sampler._get_observation_pairs(
         study, ["z"], False, constraints_enabled=constraints_enabled
     ) == (
         {"z": [0, 0, 0, 0]},  # The internal representation of 'None' for z is 0
         scores,
-        violations,
+        expected_violations,
     )
     assert _tpe.sampler._get_observation_pairs(
         study, ["x"], True, constraints_enabled=constraints_enabled
     ) == (
         {"x": [5.0, 5.0, 5.0, 5.0]},
         scores,
-        violations,
+        expected_violations,
     )
     assert _tpe.sampler._get_observation_pairs(
         study, ["y"], True, constraints_enabled=constraints_enabled
-    ) == ({"y": []}, [], [] if constraints_enabled else None)
+    ) == (
+        {"y": []},
+        [],
+        [] if constraints_enabled else expected_violations,
+    )
     assert _tpe.sampler._get_observation_pairs(
         study, ["z"], True, constraints_enabled=constraints_enabled
     ) == (
         {"z": [0, 0, 0, 0]},  # The internal representation of 'None' for z is 0
         scores,
-        violations,
+        expected_violations,
     )
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-@pytest.mark.parametrize("constraints_enabled", [False, True])
-def test_get_observation_pairs_multi(direction: str, constraints_enabled: bool) -> None:
+@pytest.mark.parametrize(
+    "constraints_enabled, constraints_func, expected_violations",
+    [
+        (False, None, None),
+        (True, lambda trial: [(-1, -1), (0, -1), (1, -1), (2, -1)][trial.number], [0, 0, 1, 2]),
+    ],
+)
+def test_get_observation_pairs_multi(
+    direction: str,
+    constraints_enabled: bool,
+    constraints_func: Optional[Callable[[optuna.trial.FrozenTrial], Sequence[float]]],
+    expected_violations: List[float],
+) -> None:
     def objective(trial: Trial) -> float:
 
         x = trial.suggest_int("x", 5, 5)
         y = trial.suggest_int("y", 6, 6)
         if trial.number == 0:
-            trial.set_user_attr("constraint", (-1, -1))
             return x + y
         elif trial.number == 1:
-            trial.set_user_attr("constraint", (0, -1))
             trial.report(1, 4)
             trial.report(2, 7)
             raise TrialPruned()
         elif trial.number == 2:
-            trial.set_user_attr("constraint", (1, -1))
             trial.report(float("nan"), 3)
             raise TrialPruned()
         elif trial.number == 3:
-            trial.set_user_attr("constraint", (2, -1))
             raise TrialPruned()
         else:
             raise RuntimeError()
 
-    sampler = TPESampler(constraints_func=lambda trial: trial.user_attrs["constraint"])
+    sampler = TPESampler(constraints_func=constraints_func)
     study = optuna.create_study(direction=direction, sampler=sampler)
     study.optimize(objective, n_trials=5, catch=(RuntimeError,))
 
@@ -887,7 +905,7 @@ def test_get_observation_pairs_multi(direction: str, constraints_enabled: bool) 
             ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
             (float("inf"), [sign * 0.0]),  # PRUNED (without intermediate values)
         ],
-        [0, 0, 1, 2] if constraints_enabled else None,
+        expected_violations,
     )
 
 

@@ -23,6 +23,10 @@ on:
         description: 'Number of Studies'
         required: false
         default: '10'
+      n-concurrency:
+        description: 'Number of Concurrent Trials'
+        required: false
+        default: '1'
 
 
 jobs:
@@ -117,6 +121,7 @@ jobs:
           --name-prefix "" \
           --n-runs ${{ github.event.inputs.n-runs }} \
           --n-jobs 10 \
+          --n-concurrency ${{ github.event.inputs.n-concurrency }} \
           --sampler-list '${{ github.event.inputs.sampler-list }}' \
           --sampler-kwargs-list '${{ github.event.inputs.sampler-kwargs-list }}' \
           --pruner-list '${{ github.event.inputs.pruner-list }}' \

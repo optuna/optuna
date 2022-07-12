@@ -3,7 +3,7 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 
 from optuna.study import create_study
-from optuna.testing.visualization import prepare_study_with_trials
+from optuna.testing.objectives import fail_objective
 from optuna.trial import Trial
 from optuna.visualization.matplotlib import plot_intermediate_values
 
@@ -11,7 +11,7 @@ from optuna.visualization.matplotlib import plot_intermediate_values
 def test_plot_intermediate_values() -> None:
 
     # Test with no trials.
-    study = prepare_study_with_trials(no_trials=True)
+    study = create_study(direction="minimize")
     figure = plot_intermediate_values(study)
     assert len(figure.get_lines()) == 0
     plt.savefig(BytesIO())
@@ -51,10 +51,6 @@ def test_plot_intermediate_values() -> None:
     plt.savefig(BytesIO())
 
     # Ignore failed trials.
-    def fail_objective(_: Trial) -> float:
-
-        raise ValueError
-
     study = create_study()
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_intermediate_values(study)

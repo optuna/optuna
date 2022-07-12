@@ -142,9 +142,6 @@ def test_multi_objective_sample_independent_misc_arguments() -> None:
     sampler = TPESampler(gamma=lambda _: 1, seed=0)
     assert suggest(sampler, study, trial, dist, past_trials) != suggestion
 
-    sampler = TPESampler(weights=lambda n: np.zeros(n), seed=0)
-    assert suggest(sampler, study, trial, dist, past_trials) != suggestion
-
 
 @pytest.mark.parametrize("log, step", [(False, None), (True, None), (False, 0.1)])
 def test_multi_objective_sample_independent_float_distributions(
@@ -429,25 +426,25 @@ def test_calculate_nondomination_rank() -> None:
         [[1, 1], [1, float("inf")], [float("inf"), 1], [float("inf"), float("inf")]]
     )
     ranks = list(_tpe.sampler._calculate_nondomination_rank(test_case))
-    assert ranks == [0, 0, 0, 0]
+    assert ranks == [0, 1, 1, 2]
 
     # The -inf is included.
     test_case = np.asarray(
         [[1, 1], [1, -float("inf")], [-float("inf"), 1], [-float("inf"), -float("inf")]]
     )
     ranks = list(_tpe.sampler._calculate_nondomination_rank(test_case))
-    assert ranks == [0, 0, 0, 0]
+    assert ranks == [2, 1, 1, 0]
 
 
 def test_calculate_weights_below_for_multi_objective() -> None:
     # No sample.
-    with pytest.raises(IndexError):
-        _ = _tpe.sampler._calculate_weights_below_for_multi_objective(
-            {"x": np.array([1.0, 2.0, 3.0], dtype=float)},
-            [(0, [0.2, 0.5]), (0, [0.9, 0.4]), (0, [1, 1])],
-            np.array([]),
-            None,
-        )
+    weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
+        {"x": np.array([1.0, 2.0, 3.0], dtype=float)},
+        [(0, [0.2, 0.5]), (0, [0.9, 0.4]), (0, [1, 1])],
+        np.array([], np.int64),
+        None,
+    )
+    assert len(weights_below) == 0
 
     # One sample.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(

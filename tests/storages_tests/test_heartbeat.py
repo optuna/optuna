@@ -224,20 +224,6 @@ def test_fail_stale_trials(storage_mode: str, grace_period: Optional[int]) -> No
 
 
 @pytest.mark.parametrize("storage_mode", ["sqlite", "redis"])
-def test_fail_stale_trials_raw(storage_mode: str) -> None:
-    heartbeat_interval = 1
-    grace_period = 2
-
-    with StorageSupplier(storage_mode) as storage:
-        assert isinstance(storage, (RDBStorage, RedisStorage))
-        storage.heartbeat_interval = heartbeat_interval
-        storage.grace_period = grace_period
-
-        study_id = storage.create_new_study()
-        assert storage.fail_stale_trials(study_id) == []
-
-
-@pytest.mark.parametrize("storage_mode", ["sqlite", "redis"])
 def test_get_stale_trial_ids(storage_mode: str) -> None:
     heartbeat_interval = 1
     grace_period = 2

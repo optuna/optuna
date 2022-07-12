@@ -10,8 +10,8 @@ from typing import Tuple
 from typing import Union
 
 from optuna.distributions import BaseDistribution
+from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
-from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -276,16 +276,11 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_all_study_summaries(self, include_best_trial: bool) -> List[StudySummary]:
-        """Read a list of :class:`~optuna.study.StudySummary` objects.
-
-        Args:
-            include_best_trial:
-                If :obj:`True`, :obj:`~optuna.study.StudySummary` objects have the best trials in
-                the ``best_trial`` attribute. Otherwise, ``best_trial`` is :obj:`None`.
+    def get_all_studies(self) -> List[FrozenStudy]:
+        """Read a list of :class:`~optuna.study.FrozenStudy` objects.
 
         Returns:
-            A list of :class:`~optuna.study.StudySummary` objects.
+            A list of :class:`~optuna.study.FrozenStudy` objects.
 
         """
         raise NotImplementedError

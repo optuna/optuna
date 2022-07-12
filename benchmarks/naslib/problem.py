@@ -30,7 +30,8 @@ class NASLibProblemFactory(problem.ProblemFactory):
         """
         self._dataset = dataset
         if dataset == "cifar10":
-            self._dataset = "cifar10-valid"  # Set name used in dataset API
+            # Set name used in dataset API.
+            self._dataset = "cifar10-valid"
         self._dataset_api = get_dataset_api("nasbench201", dataset)
 
     def specification(self) -> problem.ProblemSpec:

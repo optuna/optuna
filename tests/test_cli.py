@@ -224,16 +224,12 @@ def test_delete_study_command() -> None:
         # Create study.
         command = ["optuna", "create-study", "--storage", storage_url, "--study-name", study_name]
         subprocess.check_call(command)
-        assert study_name in {
-            s.study_name: s for s in storage.get_all_study_summaries(include_best_trial=True)
-        }
+        assert study_name in {s.study_name: s for s in storage.get_all_studies()}
 
         # Delete study.
         command = ["optuna", "delete-study", "--storage", storage_url, "--study-name", study_name]
         subprocess.check_call(command)
-        assert study_name not in {
-            s.study_name: s for s in storage.get_all_study_summaries(include_best_trial=True)
-        }
+        assert study_name not in {s.study_name: s for s in storage.get_all_studies()}
 
 
 @pytest.mark.skip_coverage

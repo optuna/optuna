@@ -1,4 +1,3 @@
-from typing import Any
 from typing import cast
 from typing import Optional
 from typing import Sequence
@@ -71,24 +70,6 @@ def test_botorch_candidates_func() -> None:
 
     assert len(study.trials) == n_trials
     assert candidates_func_call_count == n_trials - n_startup_trials
-
-
-def test_botorch_candidates_func_invalid_type() -> None:
-    def candidates_func(
-        train_x: torch.Tensor,
-        train_obj: torch.Tensor,
-        train_con: Optional[torch.Tensor],
-        bounds: torch.Tensor,
-    ) -> Any:  # The return type is Any because we don't want mypy to check the type.
-        # Must be a `torch.Tensor`, not a list.
-        return [0.0]
-
-    sampler = BoTorchSampler(candidates_func=candidates_func, n_startup_trials=1)
-
-    study = optuna.create_study(direction="minimize", sampler=sampler)
-
-    with pytest.raises(TypeError):
-        study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=3)
 
 
 def test_botorch_candidates_func_invalid_batch_size() -> None:
@@ -170,19 +151,6 @@ def test_botorch_constraints_func_none(n_objectives: int) -> None:
 
     assert len(study.trials) == n_trials
     assert constraints_func_call_count == n_trials
-
-
-def test_botorch_constraints_func_invalid_type() -> None:
-    def constraints_func(trial: FrozenTrial) -> Sequence[float]:
-        x0 = trial.params["x0"]
-        return x0 - 0.5  # Not a tuple, but it should be.
-
-    sampler = BoTorchSampler(constraints_func=constraints_func)
-
-    study = optuna.create_study(direction="minimize", sampler=sampler)
-
-    with pytest.raises(TypeError):
-        study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=3)
 
 
 def test_botorch_constraints_func_invalid_inconsistent_n_constraints() -> None:
