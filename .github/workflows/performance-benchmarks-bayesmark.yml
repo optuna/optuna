@@ -20,7 +20,7 @@ on:
         required: false
         default: '{}'
       budget:
-        description: 'Number of Trials'
+        description: 'Number of Trials if the pruning is not enabled. If the pruning is enabled, the total number of steps is equal to `budget * (steps per trial)`.'
         required: false
         default: '80'
       repeat:
