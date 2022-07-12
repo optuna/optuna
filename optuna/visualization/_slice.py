@@ -172,17 +172,17 @@ def _get_slice_plot(info: _SlicePlotInfo) -> "go.Figure":
         figure = make_subplots(rows=1, cols=len(info.subplots), shared_yaxes=True)
         figure.update_layout(layout)
         showscale = True  # showscale option only needs to be specified once.
-        for i, subplot_info in enumerate(info.subplots):
+        for column_index, subplot_info in enumerate(info.subplots, start=1):
             trace = _generate_slice_subplot(subplot_info)
             trace.update(marker={"showscale": showscale})  # showscale's default is True.
             if showscale:
                 showscale = False
-            figure.add_trace(trace, row=1, col=i + 1)
-            figure.update_xaxes(title_text=subplot_info.param_name, row=1, col=i + 1)
-            if i == 0:
-                figure.update_yaxes(title_text=info.target_name, row=1, col=1)
+            figure.add_trace(trace, row=1, col=column_index)
+            figure.update_xaxes(title_text=subplot_info.param_name, row=1, col=column_index)
+            if column_index == 1:
+                figure.update_yaxes(title_text=info.target_name, row=1, col=column_index)
             if subplot_info.is_log:
-                figure.update_xaxes(type="log", row=1, col=i + 1)
+                figure.update_xaxes(type="log", row=1, col=column_index)
         if len(info.subplots) > 3:
             # Ensure that each subplot has a minimum width without relying on autusizing.
             figure.update_layout(width=300 * len(info.subplots))
