@@ -515,7 +515,7 @@ def test_calculate_weights_below_for_multi_objective() -> None:
     assert np.isclose(weights_below[1], weights_below[2])
     assert sum(weights_below) > 0
 
-    # +/-inf objective values.
+    # Test -inf objective values.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
         {"x": np.array([1.0, 2.0, 3.0, 4.0], dtype=float)},
         [
@@ -528,7 +528,50 @@ def test_calculate_weights_below_for_multi_objective() -> None:
         None,
     )
     assert len(weights_below) == 3
-    assert all([np.isnan(w) for w in weights_below])
+    # Assert that weights are sane.
+    assert np.all(weights_below > 0)
+    assert np.all(weights_below <= 1)
+
+    # Test +inf objective values.
+    weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
+        {"x": np.array([1.0, 2.0, 3.0], dtype=float)},
+        [
+            (0, [float("inf"), float("inf")]),
+            (0, [0.0, float("inf")]),
+            (0, [float("inf"), 0.0]),
+        ],
+        np.array([0, 1, 2]),
+        None,
+    )
+    assert len(weights_below) == 3
+    # Assert that weights are sane.
+    assert np.all(weights_below > 0)
+    assert np.all(weights_below <= 1)
+
+    # Test +/-inf objective values mixed with finite values.
+    weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
+        {"x": np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0], dtype=float)},
+        [
+            (0, [0.5, 0.5]),
+            (0, [1.0, -float("inf")]),
+            (0, [-float("inf"), 1.0]),
+            (0, [float("inf"), 0.0]),
+            (0, [0.0, float("inf")]),
+            (0, [float("inf"), float("inf")]),
+        ],
+        np.array([0, 1, 2, 3, 4, 5]),
+        None,
+    )
+
+    # Assert that weights are sane.
+    assert np.all(weights_below > 0)
+    assert np.all(weights_below <= 1)
+
+    THRESHOLD = 1e-7
+    # Assert that the weights are non-negligible for non-posinf trials.
+    assert np.all(weights_below[:3] > THRESHOLD)
+    # Assert that the weights are negligible for posinf trials.
+    assert np.all(weights_below[3:] <= THRESHOLD)
 
     # Missing parameter values.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(

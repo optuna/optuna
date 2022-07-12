@@ -873,9 +873,28 @@ def _calculate_weights_below_for_multi_objective(
     elif n_below == 1:
         weights_below = np.asarray([1.0])
     else:
-        worst_point = np.max(lvals, axis=0)
+        worst_point = np.array(
+            [np.max(lvals[:, i][lvals[:, i] != np.inf], initial=0) for i in range(lvals.shape[1])]
+        )
         reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
         reference_point[reference_point == 0] = EPS
+
+        # If values contain +inf, it has zero contribution to hypervolume.
+        posinf_replacement = reference_point[None, :]
+
+        best_point = np.array(
+            [np.min(lvals[:, i][lvals[:, i] != -np.inf], initial=0) for i in range(lvals.shape[1])]
+        )
+        neginf_replacement = np.minimum(2 * best_point, 0.5 * best_point)
+
+        print(lvals)
+        is_posinf = lvals == np.inf
+        lvals[is_posinf] = np.broadcast_to(posinf_replacement, lvals.shape, subok=True)[is_posinf]
+        is_neginf = lvals == -np.inf
+        lvals[is_neginf] = np.broadcast_to(neginf_replacement, lvals.shape, subok=True)[is_neginf]
+
+        print(is_posinf)
+        print(lvals)
         hv = _compute_hypervolume(lvals, reference_point)
         indices_mat = ~np.eye(n_below).astype(bool)
         contributions = np.asarray(
