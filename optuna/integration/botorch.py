@@ -556,7 +556,7 @@ class BoTorchSampler(BaseSampler):
 
     def reseed_rng(self) -> None:
         self._independent_sampler.reseed_rng()
-        torch.manual_seed(numpy.random.RandomState().randint(numpy.iinfo(numpy.int).max))
+        torch.manual_seed(numpy.random.RandomState().randint(numpy.iinfo(numpy.int64).max))
 
     def after_trial(
         self,
