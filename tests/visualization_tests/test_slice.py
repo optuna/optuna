@@ -40,6 +40,9 @@ def test_plot_slice_customized_target_name(plot_slice: Callable[..., Any]) -> No
         assert figure[0].yaxis.label.get_text() == "Target Name"
 
 
+# TODO: test_plot_slice
+
+
 def test_target_is_none_and_study_is_multi_obj() -> None:
 
     study = create_study(directions=["minimize", "minimize"])
@@ -69,6 +72,15 @@ def test_get_slice_plot_info_empty(
     study = specific_create_study()
     info = _get_slice_plot_info(study, params=params, target=None, target_name="Objective Value")
     assert len(info.subplots) == 0
+
+
+def test_get_contour_info_error() -> None:
+    study = prepare_study_with_trials()
+
+    with pytest.raises(ValueError):
+        _get_slice_plot_info(
+            study, params=["optuna", "Optuna"], target=None, target_name="Objective Value"
+        )
 
 
 def test_get_slice_plot_into_non_exist_param() -> None:
