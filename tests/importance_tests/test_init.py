@@ -278,13 +278,6 @@ def objective(trial: Trial) -> float:
     return x1 + x2 * x3
 
 
-def multi_objective_function(trial: Trial) -> Tuple[float, float]:
-    x1 = trial.suggest_float("x1", 0.1, 3)
-    x2 = trial.suggest_float("x2", 0.1, 3, log=True)
-    x3 = trial.suggest_float("x3", 2, 4, log=True)
-    return x1, x2 * x3
-
-
 @parametrize_evaluator
 def test_importance_evaluator_seed(evaluator_init_func: Any) -> None:
     study = create_study(sampler=RandomSampler(seed=0))
