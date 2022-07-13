@@ -193,18 +193,11 @@ def test_get_contour_info_empty(
     assert len(info.sub_plot_infos) == 0
 
 
-def test_get_contour_info_error() -> None:
+def test_get_contour_info_non_exist_param_error() -> None:
     study = prepare_study_with_trials()
 
     with pytest.raises(ValueError):
-        _get_contour_info(study, ["optuna", "Optuna"])
-
-
-def test_get_contour_info_non_exist_param() -> None:
-    study = prepare_study_with_trials()
-
-    with pytest.raises(ValueError):
-        _get_contour_info(study, params=["not-exist-param_a", "not-exist-param_b"])
+        _get_contour_info(study, ["optuna"])
 
 
 @pytest.mark.parametrize("params", [[], ["param_a"]])
