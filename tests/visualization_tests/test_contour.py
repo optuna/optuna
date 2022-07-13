@@ -526,7 +526,6 @@ def test_get_contour_info_nonfinite_multiobjective(objective: int, value: float)
         reverse_scale=True,
         target_name="Objective Value",
     )
-    assert info.sorted_params == ["param_b", "param_d"]
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
