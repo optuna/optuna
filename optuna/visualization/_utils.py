@@ -160,7 +160,7 @@ def _filter_nonfinite(
 
         if not isinstance(value, float):
             raise ValueError(
-                f"Trial{trial.number} has COMPLETE state, but its target value is non-numeric."
+                f"Trial{trial.number} has {trial.state.name} state, but its target value is non-numeric."
             )
 
         # Not a Number, positive infinity and negative infinity are considered to be non-finite.
