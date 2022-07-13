@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import math
+from typing import Any
 from typing import Callable
 from typing import List
 from typing import Tuple
@@ -12,6 +13,7 @@ from optuna.importance import BaseImportanceEvaluator
 from optuna.importance import FanovaImportanceEvaluator
 from optuna.importance import get_param_importances
 from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
+from optuna.samplers import RandomSampler
 from optuna.study import create_study
 from optuna.testing.objectives import pruned_objective
 from optuna.testing.storages import STORAGE_MODES
@@ -267,3 +269,51 @@ def test_get_param_importances_empty_search_space(
     assert all([param in param_importance for param in ["x", "y"]])
     assert param_importance["x"] == 1.0
     assert param_importance["y"] == 0.0
+
+
+def objective(trial: Trial) -> float:
+    x1 = trial.suggest_float("x1", 0.1, 3)
+    x2 = trial.suggest_float("x2", 0.1, 3, log=True)
+    x3 = trial.suggest_float("x3", 2, 4, log=True)
+    return x1 + x2 * x3
+
+
+def multi_objective_function(trial: Trial) -> Tuple[float, float]:
+    x1 = trial.suggest_float("x1", 0.1, 3)
+    x2 = trial.suggest_float("x2", 0.1, 3, log=True)
+    x3 = trial.suggest_float("x3", 2, 4, log=True)
+    return x1, x2 * x3
+
+
+@parametrize_evaluator
+def test_importance_evaluator_seed(evaluator_init_func: Any) -> None:
+    study = create_study(sampler=RandomSampler(seed=0))
+    study.optimize(objective, n_trials=3)
+
+    evaluator = evaluator_init_func(seed=2)
+    param_importance = evaluator.evaluate(study)
+
+    evaluator = evaluator_init_func(seed=2)
+    param_importance_same_seed = evaluator.evaluate(study)
+    assert param_importance == param_importance_same_seed
+
+    evaluator = evaluator_init_func(seed=3)
+    param_importance_different_seed = evaluator.evaluate(study)
+    assert param_importance != param_importance_different_seed
+
+
+@parametrize_evaluator
+def test_importance_evaluator_with_target(evaluator_init_func: Any) -> None:
+    # Assumes that `seed` can be fixed to reproduce identical results.
+
+    study = create_study(sampler=RandomSampler(seed=0))
+    study.optimize(objective, n_trials=3)
+
+    evaluator = evaluator_init_func(seed=0)
+    param_importance = evaluator.evaluate(study)
+    param_importance_with_target = evaluator.evaluate(
+        study,
+        target=lambda t: t.params["x1"] + t.params["x2"],
+    )
+
+    assert param_importance != param_importance_with_target
