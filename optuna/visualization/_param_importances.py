@@ -30,7 +30,6 @@ class _ImportancesInfo(NamedTuple):
     param_names: List[str]
     importance_labels: List[str]
     target_name: str
-    hover_template: List[str]
 
 
 def _get_importances_info(
@@ -53,7 +52,6 @@ def _get_importances_info(
             param_names=[],
             importance_labels=[],
             target_name=target_name,
-            hover_template=[],
         )
 
     importances = optuna.importance.get_param_importances(
@@ -64,17 +62,12 @@ def _get_importances_info(
     importance_values = list(importances.values())
     param_names = list(importances.keys())
     importance_labels = [f"{val:.2f}" if val >= 0.01 else "<0.01" for val in importance_values]
-    hover_template = [
-        _make_hovertext(param_name, importance, study)
-        for param_name, importance in zip(param_names, importance_values)
-    ]
 
     return _ImportancesInfo(
         importance_values=importance_values,
         param_names=param_names,
         importance_labels=importance_labels,
         target_name=target_name,
-        hover_template=hover_template,
     )
 
 
@@ -145,10 +138,11 @@ def plot_param_importances(
     _imports.check()
 
     importances_info = _get_importances_info(study, evaluator, params, target, target_name)
-    return _get_importances_plot(importances_info)
+    hover_template = _get_hover_template(importances_info, study)
+    return _get_importances_plot(importances_info, hover_template)
 
 
-def _get_importances_plot(info: _ImportancesInfo) -> "go.Figure":
+def _get_importances_plot(info: _ImportancesInfo, hover_template: List[str]) -> "go.Figure":
 
     layout = go.Layout(
         title="Hyperparameter Importances",
@@ -171,7 +165,7 @@ def _get_importances_plot(info: _ImportancesInfo) -> "go.Figure":
                 text=info.importance_labels,
                 textposition="outside",
                 cliponaxis=False,  # Ensure text is not clipped.
-                hovertemplate=info.hover_template,
+                hovertemplate=hover_template,
                 marker_color=plotly.colors.sequential.Blues[-4],
                 orientation="h",
             )
@@ -193,3 +187,12 @@ def _make_hovertext(param_name: str, importance: float, study: Study) -> str:
     return "{} ({}): {}<extra></extra>".format(
         param_name, _get_distribution(param_name, study).__class__.__name__, importance
     )
+
+
+def _get_hover_template(importances_info: _ImportancesInfo, study: Study) -> List[str]:
+    return [
+        _make_hovertext(param_name, importance, study)
+        for param_name, importance in zip(
+            importances_info.param_names, importances_info.importance_values
+        )
+    ]
