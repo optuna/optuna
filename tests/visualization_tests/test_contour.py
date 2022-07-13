@@ -532,12 +532,12 @@ def test_color_map(direction: str) -> None:
         assert not contour["reversescale"]
 
     # When `target` is not `None`, `reversescale` is always `True`.
-    contour = plotly_plot_contour(study, target=lambda t: float(t.number)).data[0]
+    contour = plotly_plot_contour(study, target=lambda t: t.number).data[0]
     assert COLOR_SCALE == [v[1] for v in contour["colorscale"]]
     assert contour["reversescale"]
 
     # Multi-objective optimization.
     study = prepare_study_with_trials(with_c_d=False, n_objectives=2, direction=direction)
-    contour = plotly_plot_contour(study, target=lambda t: float(t.number)).data[0]
+    contour = plotly_plot_contour(study, target=lambda t: t.number).data[0]
     assert COLOR_SCALE == [v[1] for v in contour["colorscale"]]
     assert contour["reversescale"]
