@@ -33,6 +33,8 @@ class _ParetoFrontInfo(NamedTuple):
     non_best_trials_with_values: List[Tuple[FrozenTrial, List[float]]]
     infeasible_trials_with_values: List[Tuple[FrozenTrial, List[float]]]
     axis_order: List[int]
+    include_dominated_trials: bool
+    has_constraints_func: bool
 
 
 def plot_pareto_front(
@@ -123,8 +125,13 @@ def plot_pareto_front(
     info = _get_pareto_front_info(
         study, target_names, include_dominated_trials, axis_order, constraints_func, targets
     )
+    return _get_pareto_front_plot(info)
 
-    if constraints_func is None:
+
+def _get_pareto_front_plot(info: _ParetoFrontInfo) -> "go.Figure":
+    include_dominated_trials = info.include_dominated_trials
+    has_constraints_func = info.has_constraints_func
+    if not has_constraints_func:
         data = [
             _make_scatter_object(
                 info.n_targets,
@@ -335,6 +342,8 @@ def _get_pareto_front_info(
         non_best_trials_with_values=non_best_trials_with_values,
         infeasible_trials_with_values=infeasible_trials_with_values,
         axis_order=axis_order,
+        include_dominated_trials=include_dominated_trials,
+        has_constraints_func=constraints_func is not None,
     )
 
 
