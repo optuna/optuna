@@ -69,6 +69,7 @@ def _get_slice_plot_info(
     target: Optional[Callable[[FrozenTrial], float]],
     target_name: str,
 ) -> _SlicePlotInfo:
+    _check_plot_args(study, target, target_name)
 
     trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
 
@@ -152,7 +153,6 @@ def plot_slice(
     """
 
     _imports.check()
-    _check_plot_args(study, target, target_name)
     return _get_slice_plot(_get_slice_plot_info(study, params, target, target_name))
 
 

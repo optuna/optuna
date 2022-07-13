@@ -1,99 +1,195 @@
+from io import BytesIO
+from typing import Any
+from typing import Callable
+
 import pytest
 
+from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.study import create_study
-from optuna.testing.objectives import fail_objective
-from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
-from optuna.visualization import plot_slice
-from optuna.visualization._utils import COLOR_SCALE
+from optuna.visualization._plotly_imports import go
+import optuna.visualization._slice
+from optuna.visualization._slice import _get_slice_plot_info
+from optuna.visualization._slice import _SlicePlotInfo
+from optuna.visualization._slice import _SliceSubplotInfo
+from optuna.visualization.matplotlib._matplotlib_imports import plt
+import optuna.visualization.matplotlib._slice
 
 
 def test_target_is_none_and_study_is_multi_obj() -> None:
-
     study = create_study(directions=["minimize", "minimize"])
     with pytest.raises(ValueError):
-        plot_slice(study)
+        _get_slice_plot_info(study, None, None, "target_name")
 
 
-def test_plot_slice() -> None:
-
-    # Test with no trial.
+def test_get_slice_plot_info_empty() -> None:
     study = create_study(direction="minimize")
-    figure = plot_slice(study)
-    assert len(figure.data) == 0
-
-    study = prepare_study_with_trials(with_c_d=False)
-
-    # Test with a trial.
-    figure = plot_slice(study)
-    assert len(figure.data) == 2
-    assert figure.data[0]["x"] == (1.0, 2.5)
-    assert figure.data[0]["y"] == (0.0, 1.0)
-    assert figure.data[1]["x"] == (2.0, 0.0, 1.0)
-    assert figure.data[1]["y"] == (0.0, 2.0, 1.0)
-    assert figure.layout.yaxis.title.text == "Objective Value"
-
-    # Test with a trial to select parameter.
-    figure = plot_slice(study, params=["param_a"])
-    assert len(figure.data) == 1
-    assert figure.data[0]["x"] == (1.0, 2.5)
-    assert figure.data[0]["y"] == (0.0, 1.0)
-
-    # Test with a customized target value.
-    with pytest.warns(UserWarning):
-        figure = plot_slice(study, params=["param_a"], target=lambda t: t.params["param_b"])
-    assert len(figure.data) == 1
-    assert figure.data[0]["x"] == (1.0, 2.5)
-    assert figure.data[0]["y"] == (2.0, 1.0)
-    assert figure.layout.yaxis.title.text == "Objective Value"
-
-    # Test with a customized target name.
-    figure = plot_slice(study, target_name="Target Name")
-    assert figure.layout.yaxis.title.text == "Target Name"
-
-    # Test with wrong parameters.
-    with pytest.raises(ValueError):
-        plot_slice(study, params=["optuna"])
-
-    # Ignore failed trials.
-    study = create_study()
-    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
-    figure = plot_slice(study)
-    assert len(figure.data) == 0
+    assert _get_slice_plot_info(study, None, None, "target_name") == _SlicePlotInfo(
+        target_name="target_name", subplots=[]
+    )
 
 
-def test_plot_slice_log_scale() -> None:
-
-    study = create_study()
+def test_get_slice_plot_info() -> None:
+    study = create_study(direction="minimize")
     study.add_trial(
         create_trial(
-            value=0.0,
-            params={"x_linear": 1.0, "y_log": 1e-3},
+            value=1.0,
+            params={"x": 1.0, "y": 2.0},
             distributions={
-                "x_linear": FloatDistribution(0.0, 3.0),
-                "y_log": FloatDistribution(1e-5, 1.0, log=True),
+                "x": FloatDistribution(0.0, 2.0),
+                "y": FloatDistribution(1.0, 2.0, log=True),
+            },
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=2.0,
+            params={"x": 3.0, "z": "a", "w": 3},
+            distributions={
+                "x": FloatDistribution(0.0, 5.0),
+                "z": CategoricalDistribution(["a", "b"]),
+                "w": CategoricalDistribution([2, 3, 5]),
             },
         )
     )
 
-    # Plot a parameter.
-    figure = plot_slice(study, params=["y_log"])
-    assert figure.layout["xaxis_type"] == "log"
-    figure = plot_slice(study, params=["x_linear"])
-    assert figure.layout["xaxis_type"] is None
+    # Default arguments
+    assert _get_slice_plot_info(study, None, None, "target_name") == _SlicePlotInfo(
+        target_name="target_name",
+        subplots=[
+            _SliceSubplotInfo(
+                param_name="w", x=[3], y=[2.0], trial_numbers=[1], is_log=False, is_numerical=True
+            ),
+            _SliceSubplotInfo(
+                param_name="x",
+                x=[1.0, 3.0],
+                y=[1.0, 2.0],
+                trial_numbers=[0, 1],
+                is_log=False,
+                is_numerical=True,
+            ),
+            _SliceSubplotInfo(
+                param_name="y", x=[2.0], y=[1.0], trial_numbers=[0], is_log=True, is_numerical=True
+            ),
+            _SliceSubplotInfo(
+                param_name="z",
+                x=["a"],
+                y=[2.0],
+                trial_numbers=[1],
+                is_log=False,
+                is_numerical=False,
+            ),
+        ],
+    )
 
-    # Plot multiple parameters.
-    figure = plot_slice(study)
-    assert figure.layout["xaxis_type"] is None
-    assert figure.layout["xaxis2_type"] == "log"
+    # Specify params
+    assert _get_slice_plot_info(study, ["x"], None, "target_name") == _SlicePlotInfo(
+        target_name="target_name",
+        subplots=[
+            _SliceSubplotInfo(
+                param_name="x",
+                x=[1.0, 3.0],
+                y=[1.0, 2.0],
+                trial_numbers=[0, 1],
+                is_log=False,
+                is_numerical=True,
+            ),
+        ],
+    )
+
+    # Specify target
+    assert _get_slice_plot_info(study, None, lambda _: 0.0, "target_name") == _SlicePlotInfo(
+        target_name="target_name",
+        subplots=[
+            _SliceSubplotInfo(
+                param_name="w", x=[3], y=[0.0], trial_numbers=[1], is_log=False, is_numerical=True
+            ),
+            _SliceSubplotInfo(
+                param_name="x",
+                x=[1.0, 3.0],
+                y=[0.0, 0.0],
+                trial_numbers=[0, 1],
+                is_log=False,
+                is_numerical=True,
+            ),
+            _SliceSubplotInfo(
+                param_name="y", x=[2.0], y=[0.0], trial_numbers=[0], is_log=True, is_numerical=True
+            ),
+            _SliceSubplotInfo(
+                param_name="z",
+                x=["a"],
+                y=[0.0],
+                trial_numbers=[1],
+                is_log=False,
+                is_numerical=False,
+            ),
+        ],
+    )
+
+    # Nonexistent parameter
+    with pytest.raises(ValueError):
+        _get_slice_plot_info(study, ["nonexistent"], None, "target_name")
 
 
-@pytest.mark.parametrize("direction", ["minimize", "maximize"])
-def test_color_map(direction: str) -> None:
-    study = prepare_study_with_trials(with_c_d=False, direction=direction)
-
-    # Since `plot_slice`'s colormap depends on only trial.number, `reversecale` is not in the plot.
-    marker = plot_slice(study).data[0]["marker"]
-    assert COLOR_SCALE == [v[1] for v in marker["colorscale"]]
-    assert "reversecale" not in marker
+@pytest.mark.parametrize(
+    "plotter",
+    [
+        optuna.visualization._slice._get_slice_plot,
+        optuna.visualization.matplotlib._slice._get_slice_plot,
+    ],
+)
+@pytest.mark.parametrize(
+    "info",
+    [
+        _SlicePlotInfo(target_name="target_name", subplots=[]),
+        _SlicePlotInfo(
+            target_name="target_name",
+            subplots=[
+                _SliceSubplotInfo(
+                    param_name="x",
+                    x=[1.0, 3.0],
+                    y=[1.0, 2.0],
+                    trial_numbers=[0, 1],
+                    is_log=False,
+                    is_numerical=True,
+                ),
+            ],
+        ),
+        _SlicePlotInfo(
+            target_name="target_name",
+            subplots=[
+                _SliceSubplotInfo(
+                    param_name="x",
+                    x=[1.0, 3.0],
+                    y=[0.0, 0.0],
+                    trial_numbers=[0, 1],
+                    is_log=False,
+                    is_numerical=True,
+                ),
+                _SliceSubplotInfo(
+                    param_name="y",
+                    x=[2.0],
+                    y=[0.0],
+                    trial_numbers=[0],
+                    is_log=True,
+                    is_numerical=True,
+                ),
+                _SliceSubplotInfo(
+                    param_name="z",
+                    x=["a"],
+                    y=[2.0],
+                    trial_numbers=[1],
+                    is_log=False,
+                    is_numerical=False,
+                ),
+            ],
+        ),
+    ],
+)
+def test_get_slice_plot(plotter: Callable[[_SlicePlotInfo], Any], info: _SlicePlotInfo) -> None:
+    figure = plotter(info)
+    if isinstance(figure, go.Figure):
+        figure.write_image(BytesIO())
+    else:
+        plt.savefig(BytesIO())

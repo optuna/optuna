@@ -12,7 +12,6 @@ from optuna.trial import FrozenTrial
 from optuna.visualization._slice import _get_slice_plot_info
 from optuna.visualization._slice import _SlicePlotInfo
 from optuna.visualization._slice import _SliceSubplotInfo
-from optuna.visualization._utils import _check_plot_args
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 
@@ -80,7 +79,6 @@ def plot_slice(
     """
 
     _imports.check()
-    _check_plot_args(study, target, target_name)
     return _get_slice_plot(_get_slice_plot_info(study, params, target, target_name))
 
 
