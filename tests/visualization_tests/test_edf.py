@@ -165,7 +165,7 @@ def test_nonfinite_removed(value: float) -> None:
 
     study = prepare_study_with_trials(value_for_first_trial=value)
     edf_info = _get_edf_info(study)
-    assert value not in edf_info.x_values
+    assert all(np.isfinite(edf_info.x_values))
 
 
 @pytest.mark.parametrize("objective", (0, 1))
@@ -174,7 +174,7 @@ def test_nonfinite_multiobjective(objective: int, value: float) -> None:
 
     study = prepare_study_with_trials(n_objectives=2, value_for_first_trial=value)
     edf_info = _get_edf_info(study, target=lambda t: t.values[objective])
-    assert value not in edf_info.x_values
+    assert all(np.isfinite(edf_info.x_values))
 
 
 def test_inconsistent_number_of_trial_values() -> None:
