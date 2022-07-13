@@ -158,10 +158,16 @@ def _filter_nonfinite(
     for trial in trials:
         value = target(trial)
 
-        if not isinstance(value, float):
-            raise ValueError(
-                f"Trial{trial.number} has {trial.state.name} state, but its target value is non-numeric."
+        try:
+            value = float(value)
+        except (
+            ValueError,
+            TypeError,
+        ):
+            warnings.warn(
+                f"Trial{trial.number}'s target value {repr(value)} could not be cast to float."
             )
+            raise
 
         # Not a Number, positive infinity and negative infinity are considered to be non-finite.
         if not np.isfinite(value):

@@ -180,4 +180,4 @@ def test_invalid_target_filter_nonfinite() -> None:
     study = prepare_study_with_trials()
     trials = study.get_trials(states=(TrialState.COMPLETE,))
     with pytest.raises(ValueError):
-        _filter_nonfinite(trials, target=lambda t: str(t.value))  # type: ignore
+        _filter_nonfinite(trials, target=lambda t: "invalid target")  # type: ignore
