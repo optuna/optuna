@@ -197,7 +197,7 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
             )
 
 
-_CONSTRAINTS_KEY = "sampler:constraints"
+_CONSTRAINTS_KEY = "constraints"
 
 
 def _process_constraint_after_trial(
