@@ -200,7 +200,7 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
 _CONSTRAINTS_KEY = "constraints"
 
 
-def _process_constraint_after_trial(
+def _process_constraints_after_trial(
     constraints_func: Callable[[FrozenTrial], Sequence[float]],
     study: Study,
     trial: FrozenTrial,

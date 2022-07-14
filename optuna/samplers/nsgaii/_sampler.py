@@ -18,7 +18,7 @@ import optuna
 from optuna._experimental import ExperimentalWarning
 from optuna.distributions import BaseDistribution
 from optuna.samplers._base import _CONSTRAINTS_KEY
-from optuna.samplers._base import _process_constraint_after_trial
+from optuna.samplers._base import _process_constraints_after_trial
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._search_space import IntersectionSearchSpace
@@ -391,7 +391,7 @@ class NSGAIISampler(BaseSampler):
     ) -> None:
         assert state in [TrialState.COMPLETE, TrialState.FAIL, TrialState.PRUNED]
         if self._constraints_func is not None:
-            _process_constraint_after_trial(self._constraints_func, study, trial, state)
+            _process_constraints_after_trial(self._constraints_func, study, trial, state)
         self._random_sampler.after_trial(study, trial, state, values)
 
 
