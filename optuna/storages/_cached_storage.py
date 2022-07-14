@@ -17,8 +17,8 @@ from optuna.storages import BaseStorage
 from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.storages._rdb.storage import RDBStorage
 from optuna.storages._redis import RedisStorage
+from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
-from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -41,6 +41,18 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
     This class is used in :func:`~optuna.get_storage` function and automatically
     wraps :class:`~optuna.storages.RDBStorage` class or
     :class:`~optuna.storages.RedisStorage` class.
+
+    To support **Stronger consistency requirements for special data** described in
+    :class:`~optuna.storages.BaseStorage`, this class has
+    `read_trials_from_remote_storage(study_id)` method. If the method is called, any successive
+    reads on the `state` attribute of a `Trial` are guaranteed to return the same or more recent
+    values than the value at the time of the call to the method.
+    Let `T` be a `Trial`.
+    Let `P` be the process that last updated the `state` attribute of `T`.
+    Then, any reads on any attributes of `T` are guaranteed to return the same or
+    more recent values than any writes by `P` on the attribute before `P` updated
+    the `state` attribute of `T`.
+    The same applies for `user_attrs', 'system_attrs' and 'intermediate_values` attributes.
 
     Args:
         backend:
@@ -154,9 +166,9 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
 
         return self._backend.get_study_system_attrs(study_id)
 
-    def get_all_study_summaries(self, include_best_trial: bool) -> List[StudySummary]:
+    def get_all_studies(self) -> List[FrozenStudy]:
 
-        return self._backend.get_all_study_summaries(include_best_trial=include_best_trial)
+        return self._backend.get_all_studies()
 
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
 

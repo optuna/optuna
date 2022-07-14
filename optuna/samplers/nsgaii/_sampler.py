@@ -410,29 +410,53 @@ class NSGAIISampler(BaseSampler):
 
 
 def _calc_crowding_distance(population: List[FrozenTrial]) -> DefaultDict[int, float]:
+    """Calculates the crowding distance of population.
+
+    We define the crowding distance as the summation of the crowding distance of each dimension
+    of value calculated as follows:
+
+    * If all values in that dimension are the same, i.e., [1, 1, 1] or [inf, inf],
+      the crowding distances of all trials in that dimension are zero.
+    * Otherwise, the crowding distances of that dimension is the difference between
+      two nearest values besides that value, one above and one below, divided by the difference
+      between the maximal and minimal finite value of that dimension. Please note that:
+        * the nearest value below the minimum is considered to be -inf and the
+          nearest value above the maximum is considered to be inf, and
+        * inf - inf and (-inf) - (-inf) is considered to be zero.
+    """
+
     manhattan_distances: DefaultDict[int, float] = defaultdict(float)
+    if len(population) == 0:
+        return manhattan_distances
+
     for i in range(len(population[0].values)):
         population.sort(key=lambda x: cast(float, x.values[i]))
 
-        v_min = population[0].values[i]
-        v_max = population[-1].values[i]
-        assert v_min is not None
-        assert v_max is not None
-
-        width = v_max - v_min
-        if width == 0:
+        # If population have the same values[i], ignore that value.
+        if population[0].values[i] == population[-1].values[i]:
             continue
 
-        manhattan_distances[population[0].number] = float("inf")
-        manhattan_distances[population[-1].number] = float("inf")
+        vs = (
+            [-float("inf")]
+            + [cast(List[float], population[j].values)[i] for j in range(len(population))]
+            + [float("inf")]
+        )
 
-        for j in range(1, len(population) - 1):
-            v_high = population[j + 1].values[i]
-            v_low = population[j - 1].values[i]
-            assert v_high is not None
-            assert v_low is not None
+        # Smallest finite value.
+        v_min = next(x for x in vs if x != -float("inf"))
 
-            manhattan_distances[population[j].number] += (v_high - v_low) / width
+        # Largest finite value.
+        v_max = next(x for x in reversed(vs) if x != float("inf"))
+
+        width = v_max - v_min
+        if width <= 0:
+            # width == 0 or width == -inf
+            width = 1.0
+
+        for j in range(len(population)):
+            # inf - inf and (-inf) - (-inf) is considered to be zero.
+            gap = 0.0 if vs[j] == vs[j + 2] else vs[j + 2] - vs[j]
+            manhattan_distances[population[j].number] += gap / width
     return manhattan_distances
 
 

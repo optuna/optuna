@@ -3,6 +3,7 @@ from numbers import Real
 import threading
 from typing import Any
 from typing import Callable
+from typing import cast
 from typing import Container
 from typing import Dict
 from typing import Iterable
@@ -28,6 +29,7 @@ from optuna._deprecated import deprecated_func
 from optuna._imports import _LazyImport
 from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.distributions import BaseDistribution
+from optuna.storages._cached_storage import _CachedStorage
 from optuna.storages._heartbeat import is_heartbeat_enabled
 from optuna.study._multi_objective import _get_pareto_front_trials
 from optuna.study._optimize import _optimize
@@ -249,8 +251,9 @@ class Study:
         Returns:
             A list of :class:`~optuna.trial.FrozenTrial` objects.
         """
+        if isinstance(self._storage, _CachedStorage):
+            self._storage.read_trials_from_remote_storage(self._study_id)
 
-        self._storage.read_trials_from_remote_storage(self._study_id)
         return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy, states=states)
 
     @property
@@ -495,7 +498,8 @@ class Study:
         }
 
         # Sync storage once every trial.
-        self._storage.read_trials_from_remote_storage(self._study_id)
+        if isinstance(self._storage, _CachedStorage):
+            self._storage.read_trials_from_remote_storage(self._study_id)
 
         trial_id = self._pop_waiting_trial_id()
         if trial_id is None:
@@ -717,7 +721,6 @@ class Study:
         return _dataframe._trials_dataframe(self, attrs, multi_index)
 
     def stop(self) -> None:
-
         """Exit from the current optimization loop after the running trials finish.
 
         This method lets the running :meth:`~optuna.study.Study.optimize` method return
@@ -1459,4 +1462,47 @@ def get_all_study_summaries(
     """
 
     storage = storages.get_storage(storage)
-    return storage.get_all_study_summaries(include_best_trial=include_best_trial)
+    frozen_studies = storage.get_all_studies()
+    study_summaries = []
+
+    for s in frozen_studies:
+
+        all_trials = storage.get_all_trials(s._study_id)
+        completed_trials = [t for t in all_trials if t.state == TrialState.COMPLETE]
+
+        n_trials = len(all_trials)
+
+        if len(s.directions) == 1:
+            direction = s.direction
+            directions = None
+            if include_best_trial and len(completed_trials) != 0:
+                if direction == StudyDirection.MAXIMIZE:
+                    best_trial = max(completed_trials, key=lambda t: cast(float, t.value))
+                else:
+                    best_trial = min(completed_trials, key=lambda t: cast(float, t.value))
+            else:
+                best_trial = None
+        else:
+            direction = None
+            directions = s.directions
+            best_trial = None
+
+        datetime_start = min(
+            [t.datetime_start for t in all_trials if t.datetime_start is not None], default=None
+        )
+
+        study_summaries.append(
+            StudySummary(
+                study_name=s.study_name,
+                direction=direction,
+                best_trial=best_trial,
+                user_attrs=s.user_attrs,
+                system_attrs=s.system_attrs,
+                n_trials=n_trials,
+                datetime_start=datetime_start,
+                study_id=s._study_id,
+                directions=directions,
+            )
+        )
+
+    return study_summaries

@@ -17,8 +17,8 @@ from optuna import distributions  # NOQA
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
-from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -143,36 +143,18 @@ class InMemoryStorage(BaseStorage):
             self._check_study_id(study_id)
             return self._studies[study_id].system_attrs
 
-    def get_all_study_summaries(self, include_best_trial: bool) -> List[StudySummary]:
-
+    def get_all_studies(self) -> List[FrozenStudy]:
         with self._lock:
-            return [
-                self._build_study_summary(study_id, include_best_trial)
-                for study_id in self._studies
-            ]
+            return [self._build_frozen_study(study_id) for study_id in self._studies]
 
-    def _build_study_summary(self, study_id: int, include_best_trial: bool = True) -> StudySummary:
+    def _build_frozen_study(self, study_id: int) -> FrozenStudy:
         study = self._studies[study_id]
-        return StudySummary(
+        return FrozenStudy(
             study_name=study.name,
             direction=None,
             directions=study.directions,
-            best_trial=copy.deepcopy(self._get_trial(study.best_trial_id))
-            if study.best_trial_id is not None and include_best_trial
-            else None,
             user_attrs=copy.deepcopy(study.user_attrs),
             system_attrs=copy.deepcopy(study.system_attrs),
-            n_trials=len(study.trials),
-            datetime_start=min(
-                [
-                    trial.datetime_start
-                    for trial in self.get_all_trials(study_id, deepcopy=False)
-                    if trial.datetime_start is not None
-                ],
-                default=None,
-            )
-            if study.trials
-            else None,
             study_id=study_id,
         )
 
@@ -428,9 +410,6 @@ class InMemoryStorage(BaseStorage):
                 trials = list(trials)
 
         return trials
-
-    def read_trials_from_remote_storage(self, study_id: int) -> None:
-        self._check_study_id(study_id)
 
     def _check_study_id(self, study_id: int) -> None:
 

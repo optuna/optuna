@@ -28,11 +28,13 @@ _logger = optuna.logging.get_logger(__name__)
 
 class _ParetoFrontInfo(NamedTuple):
     n_targets: int
-    target_names: Sequence[str]
-    best_trials_with_values: Optional[Sequence[Tuple[FrozenTrial, Sequence[float]]]]
-    non_best_trials_with_values: Optional[Sequence[Tuple[FrozenTrial, Sequence[float]]]]
-    infeasible_trials_with_values: Optional[Sequence[Tuple[FrozenTrial, Sequence[float]]]]
-    axis_order: Sequence[int]
+    target_names: List[str]
+    best_trials_with_values: List[Tuple[FrozenTrial, List[float]]]
+    non_best_trials_with_values: List[Tuple[FrozenTrial, List[float]]]
+    infeasible_trials_with_values: List[Tuple[FrozenTrial, List[float]]]
+    axis_order: List[int]
+    include_dominated_trials: bool
+    has_constraints_func: bool
 
 
 def plot_pareto_front(
@@ -123,8 +125,13 @@ def plot_pareto_front(
     info = _get_pareto_front_info(
         study, target_names, include_dominated_trials, axis_order, constraints_func, targets
     )
+    return _get_pareto_front_plot(info)
 
-    if constraints_func is None:
+
+def _get_pareto_front_plot(info: _ParetoFrontInfo) -> "go.Figure":
+    include_dominated_trials = info.include_dominated_trials
+    has_constraints_func = info.has_constraints_func
+    if not has_constraints_func:
         data = [
             _make_scatter_object(
                 info.n_targets,
@@ -258,26 +265,26 @@ def _get_pareto_front_info(
             )
 
     def _make_trials_with_values(
-        trials: Optional[List[FrozenTrial]],
+        trials: List[FrozenTrial],
         targets: Callable[[FrozenTrial], Sequence[float]],
-    ) -> Optional[Sequence[Tuple[FrozenTrial, Sequence[float]]]]:
-        if trials is None:
-            return None
-        return [(trial, targets(trial)) for trial in trials]
+    ) -> List[Tuple[FrozenTrial, List[float]]]:
+        target_values = [targets(trial) for trial in trials]
+        for v in target_values:
+            if not isinstance(v, collections.abc.Sequence):
+                raise ValueError(
+                    "`targets` should return a sequence of target values."
+                    " your `targets` returns {}".format(type(v))
+                )
+        return [(trial, list(v)) for trial, v in zip(trials, target_values)]
 
     best_trials_with_values = _make_trials_with_values(best_trials, _targets)
     non_best_trials_with_values = _make_trials_with_values(non_best_trials, _targets)
     infeasible_trials_with_values = _make_trials_with_values(infeasible_trials, _targets)
 
     def _infer_n_targets(
-        trials_with_values: Optional[Sequence[Tuple[FrozenTrial, Sequence[float]]]]
+        trials_with_values: Sequence[Tuple[FrozenTrial, Sequence[float]]]
     ) -> Optional[int]:
-        if trials_with_values is not None and len(trials_with_values) > 0:
-            if not isinstance(trials_with_values[0][1], collections.abc.Sequence):
-                raise ValueError(
-                    "`targets` should return a sequence of target values."
-                    " your `targets` returns {}".format(type(trials_with_values[0][1]))
-                )
+        if len(trials_with_values) > 0:
             return len(trials_with_values[0][1])
         return None
 
@@ -335,6 +342,8 @@ def _get_pareto_front_info(
         non_best_trials_with_values=non_best_trials_with_values,
         infeasible_trials_with_values=infeasible_trials_with_values,
         axis_order=axis_order,
+        include_dominated_trials=include_dominated_trials,
+        has_constraints_func=constraints_func is not None,
     )
 
 
@@ -366,7 +375,7 @@ def _make_scatter_object(
     n_targets: int,
     axis_order: Sequence[int],
     include_dominated_trials: bool,
-    trials_with_values: Optional[Sequence[Tuple[FrozenTrial, Sequence[float]]]],
+    trials_with_values: Sequence[Tuple[FrozenTrial, Sequence[float]]],
     hovertemplate: str,
     infeasible: bool = False,
     dominated_trials: bool = False,
