@@ -2,23 +2,18 @@ from typing import Sequence
 
 import pytest
 
-import optuna
 from optuna.study import StudyDirection
 from optuna.study._multi_objective import _dominates
-from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-
-
-def _create_trial(values: Sequence[float], state: TrialState = TrialState.COMPLETE) -> FrozenTrial:
-    return optuna.trial.create_trial(values=list(values), state=state)
+from optuna.trial import create_trial
 
 
 @pytest.mark.parametrize(
     ("v1", "v2"), [(-1, 1), (-float("inf"), 0), (0, float("inf")), (-float("inf"), float("inf"))]
 )
 def test_dominates_1d_not_equal(v1: float, v2: float) -> None:
-    t1 = _create_trial([v1])
-    t2 = _create_trial([v2])
+    t1 = create_trial(values=[v1])
+    t2 = create_trial(values=[v2])
 
     assert _dominates(t1, t2, [StudyDirection.MINIMIZE])
     assert not _dominates(t2, t1, [StudyDirection.MINIMIZE])
@@ -30,7 +25,7 @@ def test_dominates_1d_not_equal(v1: float, v2: float) -> None:
 @pytest.mark.parametrize("v", [0, -float("inf"), float("inf")])
 @pytest.mark.parametrize("direction", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
 def test_dominates_1d_equal(v: float, direction: StudyDirection) -> None:
-    assert not _dominates(_create_trial([v]), _create_trial([v]), [direction])
+    assert not _dominates(create_trial(values=[v]), create_trial(values=[v]), [direction])
 
 
 def test_dominates_2d() -> None:
@@ -42,17 +37,17 @@ def test_dominates_2d() -> None:
     vals = [-float("inf"), -1, 1, float("inf")]
 
     # The following table illustrates an example of dominance relations.
-    # "D" cells in the table dominates the "t" cell in (MINIMIZE, MAXIMIZE) setting.
+    # "d" cells in the table dominates the "t" cell in (MINIMIZE, MAXIMIZE) setting.
     #
     #                       v[1]
     #      ╔═════╤═════╤═════╤═════╤═════╗
     #      ║     │ -∞  │ -1  │  1  │  ∞  ║
     #      ╟─────┼─────┼─────┼─────┼─────╢
-    #      ║ -∞  │     │     │  D  │  D  ║
+    #      ║ -∞  │     │     │  d  │  d  ║
     #      ╟─────┼─────┼─────┼─────┼─────╢
-    #      ║ -1  │     │     │  D  │  D  ║
+    #      ║ -1  │     │     │  d  │  d  ║
     # v[0] ╟─────┼─────┼─────┼─────┼─────╢
-    #      ║  1  │     │     │  t  │  D  ║
+    #      ║  1  │     │     │  t  │  d  ║
     #      ╟─────┼─────┼─────┼─────┼─────╢
     #      ║  ∞  │     │     │     │     ║
     #      ╚═════╧═════╧═════╧═════╧═════╝
@@ -65,18 +60,18 @@ def test_dominates_2d() -> None:
     for (t_i, t_j) in all_indices:
         # Generate the set of all indices that dominates the current index.
         dominating_indices = set(
-            (D_i, D_j) for D_i in range(t_i + 1) for D_j in range(t_j, len(vals))
+            (d_i, d_j) for d_i in range(t_i + 1) for d_j in range(t_j, len(vals))
         )
         dominating_indices -= {(t_i, t_j)}
 
-        for (D_i, D_j) in dominating_indices:
-            trial1 = _create_trial([vals[t_i], vals[t_j]])
-            trial2 = _create_trial([vals[D_i], vals[D_j]])
+        for (d_i, d_j) in dominating_indices:
+            trial1 = create_trial(values=[vals[t_i], vals[t_j]])
+            trial2 = create_trial(values=[vals[d_i], vals[d_j]])
             assert _dominates(trial2, trial1, directions)
 
-        for (D_i, D_j) in all_indices - dominating_indices:
-            trial1 = _create_trial([vals[t_i], vals[t_j]])
-            trial2 = _create_trial([vals[D_i], vals[D_j]])
+        for (d_i, d_j) in all_indices - dominating_indices:
+            trial1 = create_trial(values=[vals[t_i], vals[t_j]])
+            trial2 = create_trial(values=[vals[d_i], vals[d_j]])
             assert not _dominates(trial2, trial1, directions)
 
 
@@ -84,14 +79,14 @@ def test_dominates_invalid() -> None:
     directions = [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
 
     # The numbers of objectives for `t1` and `t2` don't match.
-    t1 = _create_trial([1])  # One objective.
-    t2 = _create_trial([1, 2])  # Two objectives.
+    t1 = create_trial(values=[1])  # One objective.
+    t2 = create_trial(values=[1, 2])  # Two objectives.
     with pytest.raises(ValueError):
         _dominates(t1, t2, directions)
 
     # The numbers of objectives and directions don't match.
-    t1 = _create_trial([1])  # One objective.
-    t2 = _create_trial([1])  # One objective.
+    t1 = create_trial(values=[1])  # One objective.
+    t2 = create_trial(values=[1])  # One objective.
     with pytest.raises(ValueError):
         _dominates(t1, t2, directions)
 
@@ -102,8 +97,8 @@ def test_dominates_incomplete_vs_incomplete(t1_state: TrialState, t2_state: Tria
 
     directions = [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
 
-    t1 = _create_trial([1, 1], t1_state)
-    t2 = _create_trial([0, 2], t2_state)
+    t1 = create_trial(values=[1, 1], state=t1_state)
+    t2 = create_trial(values=[0, 2], state=t2_state)
 
     assert not _dominates(t2, t1, list(directions))
     assert not _dominates(t1, t2, list(directions))
@@ -114,8 +109,8 @@ def test_dominates_complete_vs_incomplete(t1_state: TrialState) -> None:
 
     directions = [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
 
-    t1 = _create_trial([0, 2], t1_state)
-    t2 = _create_trial([1, 1], TrialState.COMPLETE)
+    t1 = create_trial(values=[0, 2], state=t1_state)
+    t2 = create_trial(values=[1, 1], state=TrialState.COMPLETE)
 
     assert _dominates(t2, t1, list(directions))
     assert not _dominates(t1, t2, list(directions))
