@@ -57,17 +57,11 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     **Stronger consistency requirements for special data**
 
     Under a multi-worker setting, a storage class must return the latest values of any attributes
-    of a study, not necessarily for the attributes of a `Trial`.
-    However, if the `read_trials_from_remote_storage(study_id)` method is called, any successive
-    reads on the `state` attribute of a `Trial` are guaranteed to return the same or more recent
-    values than the value at the time of the call to the
-    `read_trials_from_remote_storage(study_id)` method.
-    Let `T` be a `Trial`.
-    Let `P` be the process that last updated the `state` attribute of `T`.
-    Then, any reads on any attributes of `T` are guaranteed to return the same or
-    more recent values than any writes by `P` on the attribute before `P` updated
-    the `state` attribute of `T`.
-    The same applies for `user_attrs', 'system_attrs' and 'intermediate_values` attributes.
+    of a study and a trial. Generally, typical storages naturally hold this requirement. However,
+    :class:`~optuna.storages._CachedStorage` does not, so we introduce the
+    `read_trials_from_remote_storage(study_id)` method in the class. The detailed explanation how
+    :class:`~optuna.storages._CachedStorage` aquires this requirement, is available at
+    the docstring.
 
     .. note::
 
@@ -653,19 +647,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
                 If no trial with the matching ``trial_id`` exists.
         """
         return self.get_trial(trial_id).system_attrs
-
-    def read_trials_from_remote_storage(self, study_id: int) -> None:
-        """Make an internal cache of trials up-to-date.
-
-        Args:
-            study_id:
-                ID of the study.
-
-        Raises:
-            :exc:`KeyError`:
-                If no study with the matching ``study_id`` exists.
-        """
-        raise NotImplementedError
 
     def remove_session(self) -> None:
         """Clean up all connections to a database."""
