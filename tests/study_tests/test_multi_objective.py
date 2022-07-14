@@ -1,11 +1,9 @@
-from typing import Sequence
-
 import pytest
 
 from optuna.study import StudyDirection
 from optuna.study._multi_objective import _dominates
-from optuna.trial import TrialState
 from optuna.trial import create_trial
+from optuna.trial import TrialState
 
 
 @pytest.mark.parametrize(
