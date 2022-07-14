@@ -15,16 +15,14 @@ def test_target_is_none_and_study_is_multi_obj() -> None:
         plot_slice(study)
 
 
-def test_plot_slice_with_no_trials() -> None:
+def test_plot_slice() -> None:
 
     # Test with no trial.
     study = create_study(direction="minimize")
     figure = plot_slice(study)
     assert len(figure.data) == 0
 
-
-def test_plot_slice() -> None:
-    study = create_study(direction=direction)
+    study = create_study(direction="minimize")
     study.add_trial(
         create_trial(
             value=0.0,
@@ -119,12 +117,12 @@ def test_plot_slice_log_scale() -> None:
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
 def test_color_map(direction: str) -> None:
-    study = create_study(directions=[direction, direction])
+    study = create_study(direction=direction)
     for i in range(3):
         study.add_trial(
             create_trial(
-                values=[float(i), float(i)],
-                params={"param_a": 1.0, "param_b": 2.0},
+                value=float(i),
+                params={"param_a": float(i), "param_b": float(i)},
                 distributions={
                     "param_a": FloatDistribution(0.0, 3.0),
                     "param_b": FloatDistribution(0.0, 3.0),

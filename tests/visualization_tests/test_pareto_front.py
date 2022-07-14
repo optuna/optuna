@@ -11,7 +11,8 @@ import numpy as np
 import pytest
 
 import optuna
-from optuna import create_study, create_trial
+from optuna import create_study
+from optuna import create_trial
 from optuna.distributions import FloatDistribution
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState

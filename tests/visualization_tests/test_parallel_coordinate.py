@@ -29,7 +29,7 @@ def test_plot_parallel_coordinate() -> None:
     figure = plot_parallel_coordinate(study)
     assert len(figure.data) == 0
 
-    study = create_study(directions="minimize")
+    study = create_study(direction="minimize")
     study.add_trial(
         create_trial(
             value=0.0,
@@ -363,13 +363,13 @@ def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-def test_color_map_single_objective(direction: str) -> None:
-    study = create_study(directions=[direction, direction])
+def test_color_map(direction: str) -> None:
+    study = create_study(direction=direction)
     for i in range(3):
         study.add_trial(
             create_trial(
-                values=[float(i), float(i)],
-                params={"param_a": 1.0, "param_b": 2.0},
+                value=float(i),
+                params={"param_a": float(i), "param_b": float(i)},
                 distributions={
                     "param_a": FloatDistribution(0.0, 3.0),
                     "param_b": FloatDistribution(0.0, 3.0),
@@ -390,15 +390,13 @@ def test_color_map_single_objective(direction: str) -> None:
     assert COLOR_SCALE == [v[1] for v in line["colorscale"]]
     assert line["reversescale"]
 
-
-@pytest.mark.parametrize("direction", ["minimize", "maximize"])
-def test_color_map(direction: str) -> None:
+    # Multi-objective optimization.
     study = create_study(directions=[direction, direction])
     for i in range(3):
         study.add_trial(
             create_trial(
                 values=[float(i), float(i)],
-                params={"param_a": 1.0, "param_b": 2.0},
+                params={"param_a": float(i), "param_b": float(i)},
                 distributions={
                     "param_a": FloatDistribution(0.0, 3.0),
                     "param_b": FloatDistribution(0.0, 3.0),
