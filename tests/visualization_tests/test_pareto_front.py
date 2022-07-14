@@ -12,7 +12,7 @@ import pytest
 
 import optuna
 from optuna.distributions import FloatDistribution
-from optuna.testing.visualization import prepare_study_with_trials
+from optuna.testing.visualization import prepare_study_with_trials, prepare_study_with_trials_two_params
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization import plot_pareto_front
@@ -558,7 +558,7 @@ def test_make_hovertext() -> None:
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
 def test_color_map(direction: str) -> None:
-    study = prepare_study_with_trials(with_c_d=False, direction=direction, n_objectives=2)
+    study = prepare_study_with_trials_two_params(direction=direction, n_objectives=2)
 
     # Since `plot_pareto_front`'s colormap depends on only trial.number,
     # `reversecale` is not in the plot.

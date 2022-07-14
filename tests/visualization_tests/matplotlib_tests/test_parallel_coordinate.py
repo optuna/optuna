@@ -14,7 +14,7 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.study import create_study
 from optuna.testing.objectives import fail_objective
-from optuna.testing.visualization import prepare_study_with_trials
+from optuna.testing.visualization import prepare_study_with_trials, prepare_study_with_trials_two_params
 from optuna.trial import create_trial
 from optuna.visualization.matplotlib import plot_parallel_coordinate
 
@@ -52,7 +52,7 @@ def test_plot_parallel_coordinate() -> None:
     assert len(figure.get_figure().axes) == 0 + 1
     plt.savefig(BytesIO())
 
-    study = prepare_study_with_trials(with_c_d=False)
+    study = prepare_study_with_trials_two_params()
 
     # Test with a trial.
     figure = plot_parallel_coordinate(study)

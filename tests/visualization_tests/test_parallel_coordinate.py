@@ -9,7 +9,7 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.study import create_study
 from optuna.testing.objectives import fail_objective
-from optuna.testing.visualization import prepare_study_with_trials
+from optuna.testing.visualization import prepare_study_with_trials, prepare_study_with_trials_two_params
 from optuna.trial import create_trial
 from optuna.visualization import plot_parallel_coordinate
 from optuna.visualization._utils import COLOR_SCALE
@@ -29,7 +29,7 @@ def test_plot_parallel_coordinate() -> None:
     figure = plot_parallel_coordinate(study)
     assert len(figure.data) == 0
 
-    study = prepare_study_with_trials(with_c_d=False)
+    study = prepare_study_with_trials_two_params()
 
     # Test with a trial.
     figure = plot_parallel_coordinate(study)
@@ -337,7 +337,7 @@ def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
 def test_color_map(direction: str) -> None:
-    study = prepare_study_with_trials(with_c_d=False, direction=direction)
+    study = prepare_study_with_trials_two_params(direction=direction)
 
     # `target` is `None`.
     line = plot_parallel_coordinate(study).data[0]["line"]
@@ -353,7 +353,7 @@ def test_color_map(direction: str) -> None:
     assert line["reversescale"]
 
     # Multi-objective optimization.
-    study = prepare_study_with_trials(with_c_d=False, n_objectives=2, direction=direction)
+    study = prepare_study_with_trials_two_params(n_objectives=2, direction=direction)
     line = plot_parallel_coordinate(study, target=lambda t: t.number).data[0]["line"]
     assert COLOR_SCALE == [v[1] for v in line["colorscale"]]
     assert line["reversescale"]

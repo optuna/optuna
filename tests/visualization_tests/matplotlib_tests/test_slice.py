@@ -8,7 +8,7 @@ import pytest
 from optuna.distributions import FloatDistribution
 from optuna.study import create_study
 from optuna.testing.objectives import fail_objective
-from optuna.testing.visualization import prepare_study_with_trials
+from optuna.testing.visualization import prepare_study_with_trials_two_params
 from optuna.trial import create_trial
 from optuna.visualization.matplotlib import plot_slice
 
@@ -28,7 +28,7 @@ def test_plot_slice() -> None:
     assert len(figure.findobj(PathCollection)) == 0
     plt.savefig(BytesIO())
 
-    study = prepare_study_with_trials(with_c_d=False)
+    study = prepare_study_with_trials_two_params()
 
     # Test with a trial.
     figure = plot_slice(study)

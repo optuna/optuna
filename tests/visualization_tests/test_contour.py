@@ -17,7 +17,7 @@ from optuna.distributions import FloatDistribution
 from optuna.study import create_study
 from optuna.study import Study
 from optuna.testing.objectives import fail_objective
-from optuna.testing.visualization import prepare_study_with_trials
+from optuna.testing.visualization import prepare_study_with_trials, prepare_study_with_trials_two_params
 from optuna.trial import create_trial
 from optuna.visualization import plot_contour as plotly_plot_contour
 from optuna.visualization._contour import _AxisInfo
@@ -531,7 +531,7 @@ def test_get_contour_info_nonfinite_multiobjective(objective: int, value: float)
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
 def test_color_map(direction: str) -> None:
-    study = prepare_study_with_trials(with_c_d=False, direction=direction)
+    study = prepare_study_with_trials_two_params(direction=direction)
 
     # `target` is `None`.
     contour = plotly_plot_contour(study).data[0]
@@ -547,7 +547,7 @@ def test_color_map(direction: str) -> None:
     assert contour["reversescale"]
 
     # Multi-objective optimization.
-    study = prepare_study_with_trials(with_c_d=False, n_objectives=2, direction=direction)
+    study = prepare_study_with_trials_two_params(n_objectives=2, direction=direction)
     contour = plotly_plot_contour(study, target=lambda t: t.number).data[0]
     assert COLOR_SCALE == [v[1] for v in contour["colorscale"]]
     assert contour["reversescale"]
