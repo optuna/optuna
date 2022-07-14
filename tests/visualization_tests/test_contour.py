@@ -458,7 +458,7 @@ def test_get_contour_info_mixture_category_types() -> None:
 @pytest.mark.parametrize("value", [float("inf"), -float("inf")])
 def test_get_contour_info_nonfinite_removed(value: float) -> None:
 
-    study = prepare_study_with_trials(with_c_d=True, value_for_first_trial=value)
+    study = prepare_study_with_trials(value_for_first_trial=value)
     info = _get_contour_info(study, params=["param_b", "param_d"])
     assert info == _ContourInfo(
         sorted_params=["param_b", "param_d"],
@@ -494,7 +494,7 @@ def test_get_contour_info_nonfinite_removed(value: float) -> None:
 @pytest.mark.parametrize("value", (float("inf"), -float("inf")))
 def test_get_contour_info_nonfinite_multiobjective(objective: int, value: float) -> None:
 
-    study = prepare_study_with_trials(with_c_d=True, n_objectives=2, value_for_first_trial=value)
+    study = prepare_study_with_trials(n_objectives=2, value_for_first_trial=value)
     info = _get_contour_info(
         study, params=["param_b", "param_d"], target=lambda t: t.values[objective]
     )
