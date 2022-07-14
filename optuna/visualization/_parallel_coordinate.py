@@ -37,10 +37,10 @@ class _DimensionInfo(NamedTuple):
     label: str
     values: Tuple[float, ...]
     range: Tuple[float, float]
-    is_log: bool = False
-    is_cat: bool = False
-    tickvals: List[int] = []
-    ticktext: List[str] = []
+    is_log: bool
+    is_cat: bool
+    tickvals: List[int]
+    ticktext: List[str]
 
 
 class _ParallelCoordinateInfo(NamedTuple):
@@ -171,7 +171,15 @@ def _get_parallel_coordinate_info(
     objectives = tuple([target(t) for t in trials if t.number not in skipped_trial_numbers])
     # The value of (0, 0) is a dummy range. It is ignored when we plot.
     objective_range = (min(objectives), max(objectives)) if len(objectives) > 0 else (0, 0)
-    dim_objective = _DimensionInfo(label=target_name, values=objectives, range=objective_range)
+    dim_objective = _DimensionInfo(
+        label=target_name,
+        values=objectives,
+        range=objective_range,
+        is_log=False,
+        is_cat=False,
+        tickvals=[],
+        ticktext=[],
+    )
 
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
@@ -216,6 +224,7 @@ def _get_parallel_coordinate_info(
                 values=tuple(values),
                 range=(min_value, max_value),
                 is_log=True,
+                is_cat=False,
                 tickvals=tickvals,
                 ticktext=["{:.3g}".format(math.pow(10, x)) for x in tickvals],
             )
@@ -234,6 +243,7 @@ def _get_parallel_coordinate_info(
                 label=_truncate_label(p_name),
                 values=tuple(values),
                 range=(min(values), max(values)),
+                is_log=False,
                 is_cat=True,
                 tickvals=list(range(len(vocab))),
                 ticktext=ticktext,
@@ -243,6 +253,10 @@ def _get_parallel_coordinate_info(
                 label=_truncate_label(p_name),
                 values=tuple(values),
                 range=(min(values), max(values)),
+                is_log=False,
+                is_cat=False,
+                tickvals=[],
+                ticktext=[],
             )
 
         dims.append(dim)
