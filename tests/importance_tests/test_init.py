@@ -1,5 +1,4 @@
 from collections import OrderedDict
-import math
 from typing import Any
 from typing import Callable
 from typing import List
@@ -13,6 +12,7 @@ from optuna.importance import BaseImportanceEvaluator
 from optuna.importance import FanovaImportanceEvaluator
 from optuna.importance import get_param_importances
 from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
+import optuna.integration.shap
 from optuna.samplers import RandomSampler
 from optuna.study import create_study
 from optuna.testing.objectives import pruned_objective
@@ -21,9 +21,12 @@ from optuna.testing.storages import StorageSupplier
 from optuna.trial import Trial
 
 
-parametrize_evaluator = pytest.mark.parametrize(
-    "evaluator_init_func", [MeanDecreaseImpurityImportanceEvaluator, FanovaImportanceEvaluator]
-)
+evaluators = [MeanDecreaseImpurityImportanceEvaluator, FanovaImportanceEvaluator]
+
+if optuna.integration.shap._imports.is_successful():
+    evaluators += [optuna.integration.shap.ShapleyImportanceEvaluator]
+
+parametrize_evaluator = pytest.mark.parametrize("evaluator_init_func", evaluators)
 
 
 @parametrize_evaluator
@@ -97,7 +100,9 @@ def test_get_param_importances(
             assert isinstance(importance, float)
             assert importance <= prev_importance
             prev_importance = importance
-        assert math.isclose(1.0, sum(i for i in param_importance.values()), abs_tol=1e-5)
+
+        # Sanity check for param importances
+        assert all(0 <= x < float("inf") for x in param_importance.values())
 
 
 @parametrize_evaluator
@@ -134,8 +139,9 @@ def test_get_param_importances_with_params(
         for param_name, importance in param_importance.items():
             assert isinstance(param_name, str)
             assert isinstance(importance, float)
-        if len(param_importance) > 0:
-            assert math.isclose(1.0, sum(i for i in param_importance.values()), abs_tol=1e-5)
+
+        # Sanity check for param importances
+        assert all(0 <= x < float("inf") for x in param_importance.values())
 
 
 @parametrize_evaluator
@@ -175,7 +181,9 @@ def test_get_param_importances_with_target(
             assert isinstance(importance, float)
             assert importance <= prev_importance
             prev_importance = importance
-        assert math.isclose(1.0, sum(param_importance.values()), abs_tol=1e-5)
+
+        # Sanity check for param importances
+        assert all(0 <= x < float("inf") for x in param_importance.values())
 
 
 @parametrize_evaluator
@@ -267,7 +275,7 @@ def test_get_param_importances_empty_search_space(
 
     assert len(param_importance) == 2
     assert all([param in param_importance for param in ["x", "y"]])
-    assert param_importance["x"] == 1.0
+    assert param_importance["x"] > 0.0
     assert param_importance["y"] == 0.0
 
 
