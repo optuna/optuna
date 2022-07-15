@@ -18,6 +18,8 @@ from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
 from optuna.samplers import IntersectionSearchSpace
 from optuna.samplers import RandomSampler
+from optuna.samplers._base import _CONSTRAINTS_KEY
+from optuna.samplers._base import _process_constraints_after_trial
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
@@ -477,7 +479,7 @@ class BoTorchSampler(BaseSampler):
 
             if self._constraints_func is not None:
                 constraints = study._storage.get_trial_system_attrs(trial._trial_id).get(
-                    "botorch:constraints"
+                    _CONSTRAINTS_KEY
                 )
                 if constraints is not None:
                     n_constraints = len(constraints)
@@ -570,21 +572,5 @@ class BoTorchSampler(BaseSampler):
         values: Optional[Sequence[float]],
     ) -> None:
         if self._constraints_func is not None:
-            constraints = None
-
-            try:
-                con = self._constraints_func(trial)
-                if not isinstance(con, (tuple, list)):
-                    warnings.warn(
-                        f"Constraints should be a sequence of floats but got {type(con).__name__}."
-                    )
-                constraints = tuple(con)
-            finally:
-                assert constraints is None or isinstance(constraints, tuple)
-
-                study._storage.set_trial_system_attr(
-                    trial._trial_id,
-                    "botorch:constraints",
-                    constraints,
-                )
+            _process_constraints_after_trial(self._constraints_func, study, trial, state)
         self._independent_sampler.after_trial(study, trial, state, values)
