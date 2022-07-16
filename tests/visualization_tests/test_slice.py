@@ -93,21 +93,9 @@ def test_plot_slice_customized_target_name(plot_slice: Callable[..., Any]) -> No
     [
         [create_study, []],
         [create_study, ["param_a"]],
-        [create_study, ["param_a", "param_b"]],
-        [create_study, ["param_a", "param_b", "param_c"]],
-        [create_study, ["param_a", "param_b", "param_c", "param_d"]],
         [create_study, None],
-        [_create_study_with_failed_trial, []],
-        [_create_study_with_failed_trial, ["param_a"]],
-        [_create_study_with_failed_trial, ["param_a", "param_b"]],
-        [_create_study_with_failed_trial, ["param_a", "param_b", "param_c"]],
-        [_create_study_with_failed_trial, ["param_a", "param_b", "param_c", "param_d"]],
-        [_create_study_with_failed_trial, None],
         [prepare_study_with_trials, []],
         [prepare_study_with_trials, ["param_a"]],
-        [prepare_study_with_trials, ["param_a", "param_b"]],
-        [prepare_study_with_trials, ["param_a", "param_b", "param_c"]],
-        [prepare_study_with_trials, ["param_a", "param_b", "param_c", "param_d"]],
         [prepare_study_with_trials, None],
         [_create_study_with_log_scale_and_str_category_2d, None],
         [_create_study_mixture_category_types, None],
@@ -190,8 +178,19 @@ def test_get_slice_plot_info_customized_target() -> None:
     info = _get_slice_plot_info(
         study, params=params, target=lambda t: t.params["param_d"], target_name="Objective Value"
     )
-    n_params = len(params)
-    assert len(info.subplots) == n_params
+    assert info == _SlicePlotInfo(
+        target_name="Objective Value",
+        subplots=[
+            _SliceSubplotInfo(
+                param_name="param_a",
+                x=[1.0, 2.5],
+                y=[4.0, 2.0],
+                trial_numbers=[0, 2],
+                is_log=False,
+                is_numerical=True,
+            ),
+        ],
+    )
 
 
 @pytest.mark.parametrize(
@@ -203,7 +202,24 @@ def test_get_slice_plot_info_customized_target() -> None:
 )
 def test_get_slice_plot_info_with_params(params: List[str]) -> None:
 
-    study = prepare_study_with_trials(less_than_two=True)
+    study = create_study(direction="minimize")
+    study.add_trial(
+        create_trial(
+            values=[0.0],
+            params={"param_a": 1.0, "param_b": 2.0},
+            distributions={
+                "param_a": FloatDistribution(0.0, 3.0),
+                "param_b": FloatDistribution(0.0, 3.0),
+            },
+        )
+    )
+    study.add_trial(
+        create_trial(
+            values=[2.0],
+            params={"param_b": 0.0},
+            distributions={"param_b": FloatDistribution(0.0, 3.0)},
+        )
+    )
     info = _get_slice_plot_info(study, params, None, "Objective Value")
 
     assert info == _SlicePlotInfo(
