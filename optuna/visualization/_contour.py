@@ -106,7 +106,6 @@ def plot_contour(
     """
 
     _imports.check()
-    _check_plot_args(study, target, target_name)
     info = _get_contour_info(study, params, target, target_name)
     return _get_contour_plot(info)
 
@@ -148,7 +147,7 @@ def _get_contour_plot(info: _ContourInfo) -> "go.Figure":
             rows=len(sorted_params), cols=len(sorted_params), shared_xaxes=True, shared_yaxes=True
         )
         figure.update_layout(layout)
-        showscale = True  # showscale option only needs to be specified once
+        showscale = True  # showscale option only needs to be specified once.
         for x_i, x_param in enumerate(sorted_params):
             for y_i, y_param in enumerate(sorted_params):
                 if x_param == y_param:
@@ -159,7 +158,7 @@ def _get_contour_plot(info: _ContourInfo) -> "go.Figure":
                     )
                     contour = sub_plots[0]
                     scatter = sub_plots[1]
-                    contour.update(showscale=showscale)  # showscale's default is True
+                    contour.update(showscale=showscale)  # showscale's default is True.
                     if showscale:
                         showscale = False
                     figure.add_trace(contour, row=y_i + 1, col=x_i + 1)
@@ -240,10 +239,12 @@ def _get_contour_subplot(
 
 def _get_contour_info(
     study: Study,
-    params: Optional[List[str]],
-    target: Optional[Callable[[FrozenTrial], float]],
-    target_name: str,
+    params: Optional[List[str]] = None,
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
 ) -> _ContourInfo:
+
+    _check_plot_args(study, target, target_name)
 
     trials = _filter_nonfinite(
         study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
@@ -255,10 +256,10 @@ def _get_contour_info(
         sorted_params = []
     elif params is None:
         sorted_params = sorted(all_params)
-    elif len(params) <= 1:
-        _logger.warning("The length of params must be greater than 1.")
-        sorted_params = list(params)
     else:
+        if len(params) <= 1:
+            _logger.warning("The length of params must be greater than 1.")
+
         for input_p_name in params:
             if input_p_name not in all_params:
                 raise ValueError("Parameter {} does not exist in your study.".format(input_p_name))

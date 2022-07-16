@@ -1,4 +1,6 @@
+from collections import OrderedDict
 from typing import cast
+from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -12,6 +14,7 @@ import optuna
 from optuna import integration
 from optuna.integration import BoTorchSampler
 from optuna.samplers import RandomSampler
+from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.storages import RDBStorage
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
@@ -182,7 +185,7 @@ def test_botorch_constraints_func_raises() -> None:
     assert len(study.trials) == 2
 
     for trial in study.trials:
-        sys_con = trial.system_attrs["botorch:constraints"]
+        sys_con = trial.system_attrs[_CONSTRAINTS_KEY]
 
         expected_sys_con: Optional[Tuple[int]]
 
@@ -409,3 +412,59 @@ def test_call_after_trial_of_independent_sampler() -> None:
     ) as mock_object:
         study.optimize(lambda _: 1.0, n_trials=1)
         assert mock_object.call_count == 1
+
+
+def suggest_params_using_sample_relative(sampler: BoTorchSampler) -> List[float]:
+    study = optuna.create_study(sampler=sampler)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
+
+    for i in range(10):
+        param_value = i * 9 + 1.0
+        study.add_trial(
+            optuna.trial.create_trial(
+                value=(param_value - 20.0) ** 2,
+                params={"param-a": param_value},
+                distributions={"param-a": dist},
+            )
+        )
+
+    suggested_params = []
+    for _ in range(10):
+        trial = study.ask()
+        frozen_trial = trial.storage.get_trial(trial._trial_id)
+
+        suggestion = sampler.sample_relative(
+            study, frozen_trial, OrderedDict((("param-a", dist),))
+        )
+        param_value = suggestion["param-a"]
+        suggested_params.append(param_value)
+        param_value_in_internal_repr = dist.to_internal_repr(param_value)
+        trial.storage.set_trial_param(
+            trial._trial_id, "param-a", param_value_in_internal_repr, dist
+        )
+
+        study.tell(trial, (param_value - 20.0) ** 2)
+
+    return suggested_params
+
+
+def test_sample_relative_seed_fix() -> None:
+    sampler = BoTorchSampler(n_startup_trials=5, seed=0)
+    suggested_params = suggest_params_using_sample_relative(sampler)
+
+    sampler = BoTorchSampler(n_startup_trials=5, seed=0)
+    suggested_params_same_seed = suggest_params_using_sample_relative(sampler)
+    assert suggested_params == suggested_params_same_seed
+
+    sampler = BoTorchSampler(n_startup_trials=5, seed=1)
+    suggested_params_different_seed = suggest_params_using_sample_relative(sampler)
+    assert suggested_params != suggested_params_different_seed
+
+
+def test_reseed_rng() -> None:
+    sampler = BoTorchSampler(n_startup_trials=5, seed=0)
+    suggested_params = suggest_params_using_sample_relative(sampler)
+
+    sampler.reseed_rng()
+    suggested_params_different_seed = suggest_params_using_sample_relative(sampler)
+    assert suggested_params != suggested_params_different_seed

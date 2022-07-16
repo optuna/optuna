@@ -14,7 +14,7 @@ from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.samplers import RandomSampler
 from optuna.study import create_study
-from optuna.study import Study
+from optuna.testing.objectives import fail_objective
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
 from optuna.trial import Trial
@@ -51,7 +51,6 @@ def test_target_is_none_and_study_is_multi_obj() -> None:
         _get_importances_info(
             study=study, evaluator=None, params=None, target=None, target_name="Objective Value"
         )
-
 
 def test_get_param_importances_info_for_one_trial() -> None:
     # Cannot obtain importance scores from one complete trial.
