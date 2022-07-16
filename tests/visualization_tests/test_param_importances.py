@@ -7,13 +7,13 @@ from typing import Tuple
 
 import pytest
 
-import optuna
 from optuna.distributions import FloatDistribution
 from optuna.importance import FanovaImportanceEvaluator
 from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.samplers import RandomSampler
 from optuna.study import create_study
+from optuna.study import Study
 from optuna.testing.objectives import fail_objective
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
@@ -38,10 +38,9 @@ parametrize_plot_param_importances = pytest.mark.parametrize(
 )
 
 
-def _create_study_with_only_error_trial() -> optuna.Study:
+def _create_study_with_failed_trial() -> Study:
     study = create_study()
-    trial = study.ask()
-    study.tell(trial, state=optuna.trial.TrialState.FAIL)
+    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     return study
 
 
@@ -51,6 +50,7 @@ def test_target_is_none_and_study_is_multi_obj() -> None:
         _get_importances_info(
             study=study, evaluator=None, params=None, target=None, target_name="Objective Value"
         )
+
 
 def test_get_param_importances_info_for_one_trial() -> None:
     # Cannot obtain importance scores from one complete trial.
@@ -80,8 +80,8 @@ def test_plot_param_importances_customized_target_name(
 @pytest.mark.parametrize(
     "specific_create_study",
     [
-        lambda: prepare_study_with_trials(no_trials=True),
-        _create_study_with_only_error_trial,
+        create_study,
+        _create_study_with_failed_trial,
         prepare_study_with_trials,
     ],
 )
@@ -111,7 +111,7 @@ def test_plot_param_importances(
 
 @pytest.mark.parametrize(
     "specific_create_study",
-    [lambda: prepare_study_with_trials(no_trials=True), _create_study_with_only_error_trial],
+    [create_study, _create_study_with_failed_trial],
 )
 @pytest.mark.parametrize(
     "params",
