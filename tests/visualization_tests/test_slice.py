@@ -200,8 +200,7 @@ def test_get_slice_plot_info_customized_target() -> None:
         ["param_b", "param_a"],  # Second column has 1 observation
     ],
 )
-def test_get_slice_plot_info_with_params(params: List[str]) -> None:
-
+def test_get_slice_plot_info_for_few_observations(params: List[str]) -> None:
     study = create_study(direction="minimize")
     study.add_trial(
         create_trial(
