@@ -208,7 +208,7 @@ def test_get_slice_plot_info_customized_target(params: List[str]) -> None:
         ["param_b", "param_a"],  # Second column has 1 observation
     ],
 )
-def test_generate_contour_plot_for_few_observations(params: List[str]) -> None:
+def test_get_slice_plot_info_with_params(params: List[str]) -> None:
 
     study = prepare_study_with_trials(less_than_two=True)
     info = _get_slice_plot_info(study, params, None, "Objective Value")
