@@ -25,6 +25,7 @@ class JournalOperation(enum.IntEnum):
     DELETE_STUDY = 1
     SET_STUDY_USER_ATTRS = 2
     SET_STUDY_SYSTEM_ATTRS = 3
+    SET_STUDY_DIRECTIONS = 4
 
 
 class JournalStorage(BaseStorage):
@@ -159,10 +160,11 @@ class JournalStorage(BaseStorage):
 
         elif op == JournalOperation.SET_STUDY_USER_ATTRS:
             study_id = log["study_id"]
-            user_attr = "user_attr"
+
             if study_id not in self._studies.keys():
                 return
 
+            user_attr = "user_attr"
             assert len(log[user_attr]) == 2
 
             key = log[user_attr][0]
@@ -172,18 +174,26 @@ class JournalStorage(BaseStorage):
 
         elif op == JournalOperation.SET_STUDY_SYSTEM_ATTRS:
             study_id = log["study_id"]
-            system_attr = "system_attr"
 
             if study_id not in self._studies.keys():
                 return
 
+            system_attr = "system_attr"
             assert len(log[system_attr]) == 2
 
             key = log[system_attr][0]
             val = log[system_attr][1]
 
-            self._studies[study_id].user_attrs[key] = val
+            self._studies[study_id].system_attrs[key] = val
 
+        elif op == JournalOperation.SET_STUDY_DIRECTIONS:
+            study_id = log["study_id"]
+
+            if study_id not in self._studies.keys():
+                return
+
+            directions = log["directions"]
+            self._studies[study_id]._directions = directions
         else:
             raise RuntimeError("No corresponding log operation to op_code:{}".format(op))
 
@@ -319,7 +329,14 @@ class JournalStorage(BaseStorage):
                 If the directions are already set and the each coordinate of passed ``directions``
                 is the opposite direction or :obj:`~optuna.study.StudyDirection.NOT_SET`.
         """
-        raise NotImplementedError
+        self._sync_with_backend()
+        if study_id not in self._studies.keys():
+            raise KeyError
+        log = self._create_operation_log(JournalOperation.SET_STUDY_DIRECTIONS)
+        log["study_id"] = study_id
+        log["directions"] = directions
+        self._buffer_log(log)
+        self._flush_logs()
 
     # Basic study access
 
