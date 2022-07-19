@@ -39,36 +39,60 @@ parametrize_sampler = pytest.mark.parametrize(
         lambda: optuna.samplers.TPESampler(n_startup_trials=0),
         lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
-        lambda: optuna.integration.SkoptSampler(
-            skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
+        pytest.param(
+            lambda: optuna.integration.SkoptSampler(
+                skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
+            ),
+            marks=pytest.mark.skipif(
+                not optuna.integration.skopt._imports.is_successful(),
+                reason="skopt is not installed.",
+            ),
         ),
-        lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
+        pytest.param(
+            lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
+            marks=pytest.mark.skipif(
+                not optuna.integration.cma._imports.is_successful(),
+                reason="pycma is not installed.",
+            ),
+        ),
         optuna.samplers.NSGAIISampler,
-    ]
-    # TODO(kstoneriv3): Update this after the support for Python 3.6 is stopped.
-    + (
-        []
-        if sys.version_info < (3, 7, 0)
-        else [
+        # TODO(kstoneriv3): Update this after the support for Python 3.6 is stopped.
+        pytest.param(
             lambda: optuna.samplers.QMCSampler(),
-        ]
-    )
-    # TODO(nzw0301): Update this after the support for Python 3.6 is stopped.
-    + (
-        []
-        if sys.version_info < (3, 7, 0)
-        else [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)]
-    ),
+            marks=pytest.mark.skipif(
+                sys.version_info < (3, 7, 0), reason="QMCSampler is not supported for Python 3.6."
+            ),
+        ),
+        pytest.param(
+            lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
+            marks=pytest.mark.skipif(
+                not optuna.integration.botorch._imports.is_successful(),
+                reason="BoTorch is not installed.",
+            ),
+        ),
+    ],
 )
 parametrize_relative_sampler = pytest.mark.parametrize(
     "relative_sampler_class",
     [
         lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
-        lambda: optuna.integration.SkoptSampler(
-            skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
+        pytest.param(
+            lambda: optuna.integration.SkoptSampler(
+                skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
+            ),
+            marks=pytest.mark.skipif(
+                not optuna.integration.skopt._imports.is_successful(),
+                reason="skopt is not installed.",
+            ),
         ),
-        lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
+        pytest.param(
+            lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
+            marks=pytest.mark.skipif(
+                not optuna.integration.cma._imports.is_successful(),
+                reason="pycma is not installed.",
+            ),
+        ),
     ],
 )
 parametrize_multi_objective_sampler = pytest.mark.parametrize(
@@ -76,13 +100,14 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
     [
         optuna.samplers.NSGAIISampler,
         lambda: optuna.samplers.TPESampler(n_startup_trials=0),
-    ]
-    # TODO(nzw0301): Update this after the support for Python 3.6 is stopped.
-    + (
-        []
-        if sys.version_info < (3, 7, 0)
-        else [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)]
-    ),
+        pytest.param(
+            lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
+            marks=pytest.mark.skipif(
+                not optuna.integration.botorch._imports.is_successful(),
+                reason="BoTorch is not installed.",
+            ),
+        ),
+    ],
 )
 
 
@@ -93,14 +118,26 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
         (lambda: optuna.samplers.TPESampler(n_startup_trials=0), True, True),
         (lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True), True, True),
         (lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0), True, True),
-        (
+        pytest.param(
             lambda: optuna.integration.SkoptSampler(
                 skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
             ),
             False,
             True,
+            marks=pytest.mark.skipif(
+                not optuna.integration.skopt._imports.is_successful(),
+                reason="skopt is not installed.",
+            ),
         ),
-        (lambda: optuna.integration.PyCmaSampler(n_startup_trials=0), False, True),
+        pytest.param(
+            lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
+            False,
+            True,
+            marks=pytest.mark.skipif(
+                not optuna.integration.cma._imports.is_successful(),
+                reason="pycma is not installed.",
+            ),
+        ),
         (optuna.samplers.NSGAIISampler, True, True),
         (
             lambda: optuna.samplers.PartialFixedSampler(
@@ -110,22 +147,25 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
             True,
         ),
         (lambda: optuna.samplers.GridSampler(search_space={"x": [0]}), True, False),
-    ]
-    # TODO(kstoneriv3): Update this after the support for Python 3.6 is stopped.
-    + (
-        []
-        if sys.version_info < (3, 7, 0)
-        else [
-            (lambda: optuna.samplers.QMCSampler(), False, True),
-        ]
-    )
-    # TODO(nzw0301): Remove version constraints if BoTorch supports Python 3.10
-    # or Optuna does not support Python 3.6.
-    + (
-        []
-        if sys.version_info >= (3, 10, 0) or sys.version_info < (3, 7, 0)
-        else [(lambda: optuna.integration.BoTorchSampler(n_startup_trials=0), False, True)]
-    ),
+        # TODO(kstoneriv3): Update this after the support for Python 3.6 is stopped.
+        pytest.param(
+            lambda: optuna.samplers.QMCSampler(),
+            False,
+            True,
+            marks=pytest.mark.skipif(
+                sys.version_info < (3, 7, 0), reason="QMCSampler is not supported for Python 3.6."
+            ),
+        ),
+        pytest.param(
+            lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
+            False,
+            True,
+            marks=pytest.mark.skipif(
+                not optuna.integration.botorch._imports.is_successful(),
+                reason="BoTorch is not installed.",
+            ),
+        ),
+    ],
 )
 def test_sampler_reseed_rng(
     sampler_class: Callable[[], BaseSampler],
@@ -200,10 +240,22 @@ def parametrize_suggest_method(name: str) -> MarkDecorator:
     "sampler_class",
     [
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
-        lambda: optuna.integration.SkoptSampler(
-            skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
+        pytest.param(
+            lambda: optuna.integration.SkoptSampler(
+                skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
+            ),
+            marks=pytest.mark.skipif(
+                not optuna.integration.skopt._imports.is_successful(),
+                reason="skopt is not installed.",
+            ),
         ),
-        lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
+        pytest.param(
+            lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
+            marks=pytest.mark.skipif(
+                not optuna.integration.cma._imports.is_successful(),
+                reason="pycma is not installed.",
+            ),
+        ),
     ],
 )
 def test_raise_error_for_samplers_during_multi_objectives(

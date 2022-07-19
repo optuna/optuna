@@ -21,10 +21,16 @@ from optuna.testing.storages import StorageSupplier
 from optuna.trial import Trial
 
 
-evaluators = [MeanDecreaseImpurityImportanceEvaluator, FanovaImportanceEvaluator]
-
-if optuna.integration.shap._imports.is_successful():
-    evaluators += [optuna.integration.shap.ShapleyImportanceEvaluator]
+evaluators = [
+    MeanDecreaseImpurityImportanceEvaluator,
+    FanovaImportanceEvaluator,
+    pytest.param(
+        optuna.integration.shap.ShapleyImportanceEvaluator,
+        marks=pytest.mark.skipif(
+            not optuna.integration.shap._imports.is_successful(), reason="shap is not installed."
+        ),
+    ),
+]
 
 parametrize_evaluator = pytest.mark.parametrize("evaluator_init_func", evaluators)
 
