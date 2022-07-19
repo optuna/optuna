@@ -19,6 +19,8 @@ from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
+import uuid
+
 
 class JournalOperation(enum.IntEnum):
     CREATE_STUDY = 0
@@ -203,6 +205,11 @@ class JournalStorage(BaseStorage):
             self._apply_log(log)
             self._log_number_read += 1
 
+    # TODO(wattlebirdaz): Guarantee uniqueness.
+    def _create_unique_study_name(self) -> str:
+        DEFAULT_STUDY_NAME_PREFIX = "no-name-"
+        return DEFAULT_STUDY_NAME_PREFIX + str(uuid.uuid4())
+
     # Basic study manipulation
 
     def create_new_study(self, study_name: Optional[str] = None) -> int:
@@ -229,7 +236,7 @@ class JournalStorage(BaseStorage):
             # lock.release()
             raise DuplicatedStudyError
         log = self._create_operation_log(JournalOperation.CREATE_STUDY)
-        log["study_name"] = study_name
+        log["study_name"] = self._create_unique_study_name() if study_name == None else study_name
         study_id = len(self._studies)
         self._buffer_log(log)
         self._flush_logs()
@@ -354,7 +361,12 @@ class JournalStorage(BaseStorage):
             :exc:`KeyError`:
                 If no study with the matching ``study_name`` exists.
         """
-        raise NotImplementedError
+        self._sync_with_backend()
+        frozen_study = [fs for fs in self._studies.values() if fs.study_name == study_name]
+        if len(frozen_study) != 1:
+            raise KeyError
+        else:
+            return frozen_study[0]._study_id
 
     def get_study_name_from_id(self, study_id: int) -> str:
         """Read the study name of a study.
@@ -370,7 +382,11 @@ class JournalStorage(BaseStorage):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        raise NotImplementedError
+        self._sync_with_backend()
+        if study_id not in self._studies.keys():
+            raise KeyError
+        else:
+            return self._studies[study_id].study_name
 
     def get_study_directions(self, study_id: int) -> List[StudyDirection]:
         """Read whether a study maximizes or minimizes an objective.
@@ -386,7 +402,11 @@ class JournalStorage(BaseStorage):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        raise NotImplementedError
+        self._sync_with_backend()
+        if study_id not in self._studies.keys():
+            raise KeyError
+        else:
+            return self._studies[study_id].directions
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
         """Read the user-defined attributes of a study.
@@ -402,7 +422,11 @@ class JournalStorage(BaseStorage):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        raise NotImplementedError
+        self._sync_with_backend()
+        if study_id not in self._studies.keys():
+            raise KeyError
+        else:
+            return self._studies[study_id].user_attrs
 
     def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
         """Read the optuna-internal attributes of a study.
@@ -418,7 +442,11 @@ class JournalStorage(BaseStorage):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        raise NotImplementedError
+        self._sync_with_backend()
+        if study_id not in self._studies.keys():
+            raise KeyError
+        else:
+            return self._studies[study_id].system_attrs
 
     def get_all_studies(self) -> List[FrozenStudy]:
         """Read a list of :class:`~optuna.study.FrozenStudy` objects.
@@ -427,7 +455,8 @@ class JournalStorage(BaseStorage):
             A list of :class:`~optuna.study.FrozenStudy` objects.
 
         """
-        raise NotImplementedError
+        self._sync_with_backend()
+        return list(self._studies.values())
 
     # Basic trial manipulation
 
