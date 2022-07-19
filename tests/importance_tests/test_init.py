@@ -1,6 +1,8 @@
 from collections import OrderedDict
+import math
 from typing import Any
 from typing import Callable
+from typing import Dict
 from typing import List
 from typing import Tuple
 
@@ -27,6 +29,20 @@ if optuna.integration.shap._imports.is_successful():
     evaluators += [optuna.integration.shap.ShapleyImportanceEvaluator]
 
 parametrize_evaluator = pytest.mark.parametrize("evaluator_init_func", evaluators)
+
+
+def _check_param_importance(
+    evaluator: BaseImportanceEvaluator, param_importance: Dict[str, float]
+) -> bool:
+    if len(param_importance) == 0:
+        return True
+
+    if isinstance(evaluator, (MeanDecreaseImpurityImportanceEvaluator, FanovaImportanceEvaluator)):
+        return math.isclose(1.0, sum(i for i in param_importance.values()), abs_tol=1e-5)
+    elif isinstance(evaluator, optuna.integration.shap.ShapleyImportanceEvaluator):
+        return all(0 <= x < float("inf") for x in param_importance.values())
+    else:
+        raise NotImplementedError
 
 
 @parametrize_evaluator
@@ -87,7 +103,8 @@ def test_get_param_importances(
         study = create_study(storage=storage, sampler=samplers.RandomSampler())
         study.optimize(objective, n_trials=3)
 
-        param_importance = get_param_importances(study, evaluator=evaluator_init_func())
+        evaluator = evaluator_init_func()
+        param_importance = get_param_importances(study, evaluator=evaluator)
 
         assert isinstance(param_importance, OrderedDict)
         assert len(param_importance) == 6
@@ -102,7 +119,7 @@ def test_get_param_importances(
             prev_importance = importance
 
         # Sanity check for param importances
-        assert all(0 <= x < float("inf") for x in param_importance.values())
+        assert _check_param_importance(evaluator, param_importance)
 
 
 @parametrize_evaluator
@@ -129,9 +146,8 @@ def test_get_param_importances_with_params(
         study = create_study(storage=storage)
         study.optimize(objective, n_trials=10)
 
-        param_importance = get_param_importances(
-            study, evaluator=evaluator_init_func(), params=params
-        )
+        evaluator = evaluator_init_func()
+        param_importance = get_param_importances(study, evaluator=evaluator, params=params)
 
         assert isinstance(param_importance, OrderedDict)
         assert len(param_importance) == len(params)
@@ -141,7 +157,7 @@ def test_get_param_importances_with_params(
             assert isinstance(importance, float)
 
         # Sanity check for param importances
-        assert all(0 <= x < float("inf") for x in param_importance.values())
+        assert _check_param_importance(evaluator, param_importance)
 
 
 @parametrize_evaluator
@@ -166,9 +182,10 @@ def test_get_param_importances_with_target(
         study = create_study(storage=storage)
         study.optimize(objective, n_trials=3)
 
+        evaluator = evaluator_init_func()
         param_importance = get_param_importances(
             study,
-            evaluator=evaluator_init_func(),
+            evaluator=evaluator,
             target=lambda t: t.params["x1"] + t.params["x2"],
         )
 
@@ -183,7 +200,7 @@ def test_get_param_importances_with_target(
             prev_importance = importance
 
         # Sanity check for param importances
-        assert all(0 <= x < float("inf") for x in param_importance.values())
+        assert _check_param_importance(evaluator, param_importance)
 
 
 @parametrize_evaluator
@@ -271,11 +288,12 @@ def test_get_param_importances_empty_search_space(
     study = create_study()
     study.optimize(objective, n_trials=3)
 
-    param_importance = get_param_importances(study, evaluator=evaluator_init_func())
+    evaluator = evaluator_init_func()
+    param_importance = get_param_importances(study, evaluator=evaluator)
 
     assert len(param_importance) == 2
     assert all([param in param_importance for param in ["x", "y"]])
-    assert param_importance["x"] > 0.0
+    assert _check_param_importance(evaluator, param_importance)
     assert param_importance["y"] == 0.0
 
 
