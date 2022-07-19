@@ -20,14 +20,19 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 import uuid
+import threading
+import socket
+import os
+import datetime
 
 
 class JournalOperation(enum.IntEnum):
     CREATE_STUDY = 0
     DELETE_STUDY = 1
-    SET_STUDY_USER_ATTRS = 2
-    SET_STUDY_SYSTEM_ATTRS = 3
+    SET_STUDY_USER_ATTR = 2
+    SET_STUDY_SYSTEM_ATTR = 3
     SET_STUDY_DIRECTIONS = 4
+    CREATE_TRIAL = 5
 
 
 class JournalStorage(BaseStorage):
@@ -96,22 +101,31 @@ class JournalStorage(BaseStorage):
     """
 
     def __init__(self) -> None:
+        self._host_name = socket.gethostname()
+        self._host_ip = socket.gethostbyname(self._host_name)
+        self._p_id = os.getpid()
+        self._me = self._host_name + self._host_ip + str(self._p_id)
+
         self._log_number_read: int = 0
         self._backend = FileStorage("operation_logs")
 
-        # study-id - FrozenStudy dict
+        # study-id - FrozenStudy dict (thread-unsafe)
         self._studies: Dict[int, FrozenStudy] = dict()
 
-        # trial-id - FrozenTrial dict
+        # trial-id - FrozenTrial dict (thread-unsafe)
         self._trials: Dict[int, FrozenTrial] = dict()
+        self._trial_ids_created_by_me: Dict[str, int] = dict()
 
-        # study-id - [trial-id] dict
-        self._study_to_trial_ids: Dict[int, List[int]] = dict()
+        # study-id - [trial-id] dict (thread-unsafe)
+        self._study_id_to_trial_ids: Dict[int, List[int]] = dict()
 
-        self._buffered_logs: List[Dict[str, Any]] = []
+        # (thread-safe)
+        self._thread_local = threading.local()
+        self._thread_local._buffered_logs: List[Dict[str, Any]] = []
+        self._thread_local._id = threading.get_ident()
 
-        # for controlling multiple processes
-        self._create_and_delete_study_lockfile = "create_and_delete_study_lockfile"
+        # Lock for controlling multiple threads
+        self._thread_lock = threading.Lock()
 
     def _get_file_lock(self, lockfile: str) -> BaseFileLock:
         from optuna.storages._journal.file_lock import OpenLock
@@ -122,13 +136,11 @@ class JournalStorage(BaseStorage):
         return {"op_code": op_code}
 
     def _buffer_log(self, log: Dict[str, Any]) -> None:
-        self._buffered_logs.append(log)
+        self._thread_local._buffered_logs.append(log)
 
     def _flush_logs(self) -> None:
-        # for log in self._buffered_logs:
-        #     self._backend.append_log(log)
-        self._backend.append_logs(self._buffered_logs)
-        self._buffered_logs = []
+        self._backend.append_logs(self._thread_local._buffered_logs)
+        self._thread_local._buffered_logs = []
 
     def _apply_log(self, log: Dict[str, Any]) -> None:
         op = log["op_code"]
@@ -160,33 +172,31 @@ class JournalStorage(BaseStorage):
 
             assert fs._study_id == study_id
 
-        elif op == JournalOperation.SET_STUDY_USER_ATTRS:
+        elif op == JournalOperation.SET_STUDY_USER_ATTR:
             study_id = log["study_id"]
 
             if study_id not in self._studies.keys():
                 return
 
             user_attr = "user_attr"
-            assert len(log[user_attr]) == 2
+            assert len(log[user_attr].items()) == 1
 
-            key = log[user_attr][0]
-            val = log[user_attr][1]
+            ((key, value),) = log[user_attr].items()
 
-            self._studies[study_id].user_attrs[key] = val
+            self._studies[study_id].user_attrs[key] = value
 
-        elif op == JournalOperation.SET_STUDY_SYSTEM_ATTRS:
+        elif op == JournalOperation.SET_STUDY_SYSTEM_ATTR:
             study_id = log["study_id"]
 
             if study_id not in self._studies.keys():
                 return
 
             system_attr = "system_attr"
-            assert len(log[system_attr]) == 2
+            assert len(log[system_attr].items()) == 1
 
-            key = log[system_attr][0]
-            val = log[system_attr][1]
+            ((key, value),) = log[system_attr].items()
 
-            self._studies[study_id].system_attrs[key] = val
+            self._studies[study_id].system_attrs[key] = value
 
         elif op == JournalOperation.SET_STUDY_DIRECTIONS:
             study_id = log["study_id"]
@@ -196,6 +206,41 @@ class JournalStorage(BaseStorage):
 
             directions = log["directions"]
             self._studies[study_id]._directions = directions
+
+        elif op == JournalOperation.CREATE_TRIAL:
+            study_id = log["study_id"]
+            trial_id = len(self._trials)
+
+            user_attrs = {}
+            system_attrs = {}
+            intermediate_values = {}
+            state = TrialState.RUNNING
+
+            if log["has_template_trial"]:
+                user_attrs = log["user_attrs"]
+                system_attrs = log["system_attrs"]
+                intermediate_values = log["intermediate_values"]
+                state = log["state"]
+
+            self._trials[trial_id] = FrozenTrial(
+                trial_id=trial_id,
+                number=-1,
+                state=state,
+                params={},
+                distributions={},
+                user_attrs=user_attrs,
+                system_attrs=system_attrs,
+                value=None,
+                intermediate_values=intermediate_values,
+                datetime_start=datetime.datetime.now(),
+                datetime_complete=None,
+            )
+
+            self._study_id_to_trial_ids.setdefault(study_id, []).append(trial_id)
+
+            if log["me"] == self._me:
+                self._trial_ids_created_by_me[log["uuid"]] = trial_id
+
         else:
             raise RuntimeError("No corresponding log operation to op_code:{}".format(op))
 
@@ -229,19 +274,21 @@ class JournalStorage(BaseStorage):
             :exc:`optuna.exceptions.DuplicatedStudyError`:
                 If a study with the same ``study_name`` already exists.
         """
-        # lock = _get_file_lock(self._create_and_delete_study_lockfile)
-        # lock.acquire()
-        self._sync_with_backend()
-        if study_name in [s.study_name for s in self._studies.values()]:
-            # lock.release()
-            raise DuplicatedStudyError
         log = self._create_operation_log(JournalOperation.CREATE_STUDY)
         log["study_name"] = self._create_unique_study_name() if study_name == None else study_name
-        study_id = len(self._studies)
         self._buffer_log(log)
         self._flush_logs()
-        # lock.release()
-        return study_id
+
+        with self._thread_lock:
+            self._sync_with_backend()
+
+            study_id_list = [
+                fs._study_id for fs in self._studies.values() if fs.study_name == log["study_name"]
+            ]
+            if len(study_id_list) != 1:
+                raise RuntimeError("Error found in create_new_study")
+
+            return study_id_list[0]
 
     def delete_study(self, study_id: int) -> None:
         """Delete a study.
@@ -254,17 +301,16 @@ class JournalStorage(BaseStorage):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        # lock = _get_file_lock(self._create_and_delete_study_lockfile)
-        # lock.acquire()
-        # breakpoint()
-        self._sync_with_backend()
-        if study_id not in self._studies.keys():
-            raise KeyError
         log = self._create_operation_log(JournalOperation.DELETE_STUDY)
         log["study_id"] = study_id
+
+        with self._thread_lock:
+            self._sync_with_backend()
+            if study_id not in self._studies.keys():
+                raise KeyError
+
         self._buffer_log(log)
         self._flush_logs()
-        # lock.release()
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
         """Register a user-defined attribute to a study.
@@ -283,12 +329,15 @@ class JournalStorage(BaseStorage):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        self._sync_with_backend()
-        if study_id not in self._studies.keys():
-            raise KeyError
-        log = self._create_operation_log(JournalOperation.SET_STUDY_USER_ATTRS)
+        log = self._create_operation_log(JournalOperation.SET_STUDY_USER_ATTR)
         log["study_id"] = study_id
-        log["user_attr"] = [key, value]
+        log["user_attr"] = {key: value}
+
+        with self._thread_lock:
+            self._sync_with_backend()
+            if study_id not in self._studies.keys():
+                raise KeyError
+
         self._buffer_log(log)
         self._flush_logs()
 
@@ -309,12 +358,15 @@ class JournalStorage(BaseStorage):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        self._sync_with_backend()
-        if study_id not in self._studies.keys():
-            raise KeyError
-        log = self._create_operation_log(JournalOperation.SET_STUDY_SYSTEM_ATTRS)
+        log = self._create_operation_log(JournalOperation.SET_STUDY_SYSTEM_ATTR)
         log["study_id"] = study_id
-        log["system_attr"] = [key, value]
+        log["system_attr"] = {key: value}
+
+        with self._thread_lock:
+            self._sync_with_backend()
+            if study_id not in self._studies.keys():
+                raise KeyError
+
         self._buffer_log(log)
         self._flush_logs()
 
@@ -336,12 +388,16 @@ class JournalStorage(BaseStorage):
                 If the directions are already set and the each coordinate of passed ``directions``
                 is the opposite direction or :obj:`~optuna.study.StudyDirection.NOT_SET`.
         """
-        self._sync_with_backend()
-        if study_id not in self._studies.keys():
-            raise KeyError
+
         log = self._create_operation_log(JournalOperation.SET_STUDY_DIRECTIONS)
         log["study_id"] = study_id
         log["directions"] = directions
+
+        with self._thread_lock:
+            self._sync_with_backend()
+            if study_id not in self._studies.keys():
+                raise KeyError
+
         self._buffer_log(log)
         self._flush_logs()
 
@@ -361,12 +417,13 @@ class JournalStorage(BaseStorage):
             :exc:`KeyError`:
                 If no study with the matching ``study_name`` exists.
         """
-        self._sync_with_backend()
-        frozen_study = [fs for fs in self._studies.values() if fs.study_name == study_name]
-        if len(frozen_study) != 1:
-            raise KeyError
-        else:
-            return frozen_study[0]._study_id
+        with self._thread_lock:
+            self._sync_with_backend()
+            frozen_study = [fs for fs in self._studies.values() if fs.study_name == study_name]
+            if len(frozen_study) != 1:
+                raise KeyError
+            else:
+                return frozen_study[0]._study_id
 
     def get_study_name_from_id(self, study_id: int) -> str:
         """Read the study name of a study.
@@ -382,11 +439,12 @@ class JournalStorage(BaseStorage):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        self._sync_with_backend()
-        if study_id not in self._studies.keys():
-            raise KeyError
-        else:
-            return self._studies[study_id].study_name
+        with self._thread_lock:
+            self._sync_with_backend()
+            if study_id not in self._studies.keys():
+                raise KeyError
+            else:
+                return self._studies[study_id].study_name
 
     def get_study_directions(self, study_id: int) -> List[StudyDirection]:
         """Read whether a study maximizes or minimizes an objective.
@@ -402,11 +460,12 @@ class JournalStorage(BaseStorage):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        self._sync_with_backend()
-        if study_id not in self._studies.keys():
-            raise KeyError
-        else:
-            return self._studies[study_id].directions
+        with self._thread_lock:
+            self._sync_with_backend()
+            if study_id not in self._studies.keys():
+                raise KeyError
+            else:
+                return self._studies[study_id].directions
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
         """Read the user-defined attributes of a study.
@@ -422,11 +481,12 @@ class JournalStorage(BaseStorage):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        self._sync_with_backend()
-        if study_id not in self._studies.keys():
-            raise KeyError
-        else:
-            return self._studies[study_id].user_attrs
+        with self._thread_lock:
+            self._sync_with_backend()
+            if study_id not in self._studies.keys():
+                raise KeyError
+            else:
+                return self._studies[study_id].user_attrs
 
     def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
         """Read the optuna-internal attributes of a study.
@@ -442,11 +502,12 @@ class JournalStorage(BaseStorage):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        self._sync_with_backend()
-        if study_id not in self._studies.keys():
-            raise KeyError
-        else:
-            return self._studies[study_id].system_attrs
+        with self._thread_lock:
+            self._sync_with_backend()
+            if study_id not in self._studies.keys():
+                raise KeyError
+            else:
+                return self._studies[study_id].system_attrs
 
     def get_all_studies(self) -> List[FrozenStudy]:
         """Read a list of :class:`~optuna.study.FrozenStudy` objects.
@@ -455,11 +516,11 @@ class JournalStorage(BaseStorage):
             A list of :class:`~optuna.study.FrozenStudy` objects.
 
         """
-        self._sync_with_backend()
-        return list(self._studies.values())
+        with self._thread_lock:
+            self._sync_with_backend()
+            return list(self._studies.values())
 
     # Basic trial manipulation
-
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
         """Create and add a new trial to a study.
 
@@ -479,7 +540,30 @@ class JournalStorage(BaseStorage):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        raise NotImplementedError
+        log = self._create_operation_log(JournalOperation.CREATE_TRIAL)
+        log["study_id"] = study_id
+        log["me"] = self._me
+        log["uuid"] = str(uuid.uuid4()) + "_" + str(self._thread_local._id)
+
+        if template_trial == None:
+            log["has_template_trial"] = False
+        else:
+            log["has_template_trial"] = True
+            log["user_attrs"] = template_trial.user_attrs
+            log["system_attrs"] = template_trial.system_attrs
+            log["intermediate_values"] = template_trial.intermediate_values
+            log["state"] = template_trial.state
+
+        self._buffer_log(log)
+        self._flush_logs()
+
+        with self._thread_lock:
+            self._sync_with_backend()
+
+            if study_id not in self._studies.keys():
+                raise KeyError
+
+            return self._trial_ids_created_by_me[log["uuid"]]
 
     def set_trial_param(
         self,
