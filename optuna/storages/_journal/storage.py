@@ -1,4 +1,8 @@
+import datetime
 import enum
+import os
+import socket
+import threading
 from typing import Any
 from typing import cast
 from typing import Container
@@ -8,8 +12,11 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import Union
+import uuid
 
 from optuna.distributions import BaseDistribution
+from optuna.distributions import distribution_to_json
+from optuna.distributions import json_to_distribution
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages import BaseStorage
 from optuna.storages._journal.file import FileStorage
@@ -19,12 +26,6 @@ from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
-import uuid
-import threading
-import socket
-import os
-import datetime
-
 
 class JournalOperation(enum.IntEnum):
     CREATE_STUDY = 0
@@ -33,6 +34,7 @@ class JournalOperation(enum.IntEnum):
     SET_STUDY_SYSTEM_ATTR = 3
     SET_STUDY_DIRECTIONS = 4
     CREATE_TRIAL = 5
+    SET_TRIAL_PARAM = 6
 
 
 class JournalStorage(BaseStorage):
@@ -121,7 +123,7 @@ class JournalStorage(BaseStorage):
 
         # (thread-safe)
         self._thread_local = threading.local()
-        self._thread_local._buffered_logs: List[Dict[str, Any]] = []
+        self._thread_local._buffered_logs = []
         self._thread_local._id = threading.get_ident()
 
         # Lock for controlling multiple threads
@@ -148,7 +150,7 @@ class JournalStorage(BaseStorage):
             study_name = log["study_name"]
 
             if study_name in [s.study_name for s in self._studies.values()]:
-                return
+                raise DuplicatedStudyError
 
             study_id = len(self._studies)
 
@@ -166,7 +168,7 @@ class JournalStorage(BaseStorage):
             study_id = log["study_id"]
 
             if study_id not in self._studies.keys():
-                return
+                raise KeyError
 
             fs = self._studies.pop(study_id)
 
@@ -176,7 +178,7 @@ class JournalStorage(BaseStorage):
             study_id = log["study_id"]
 
             if study_id not in self._studies.keys():
-                return
+                raise KeyError
 
             user_attr = "user_attr"
             assert len(log[user_attr].items()) == 1
@@ -189,7 +191,7 @@ class JournalStorage(BaseStorage):
             study_id = log["study_id"]
 
             if study_id not in self._studies.keys():
-                return
+                raise KeyError
 
             system_attr = "system_attr"
             assert len(log[system_attr].items()) == 1
@@ -202,13 +204,17 @@ class JournalStorage(BaseStorage):
             study_id = log["study_id"]
 
             if study_id not in self._studies.keys():
-                return
+                raise KeyError
 
             directions = log["directions"]
             self._studies[study_id]._directions = directions
 
         elif op == JournalOperation.CREATE_TRIAL:
             study_id = log["study_id"]
+
+            if study_id not in self._studies.keys():
+                raise KeyError
+
             trial_id = len(self._trials)
 
             user_attrs = {}
@@ -241,6 +247,23 @@ class JournalStorage(BaseStorage):
             if log["me"] == self._me:
                 self._trial_ids_created_by_me[log["uuid"]] = trial_id
 
+        elif op == JournalOperation.SET_TRIAL_PARAM:
+            trial_id = log["trial_id"]
+
+            if trial_id not in self._trials.keys():
+                raise KeyError
+
+            if self._trials[trial_id].state.is_finished():
+                raise RuntimeError
+
+            param_name = log["param_name"]
+            param_value_external = log["param_value_external"]
+            distribution = json_to_distribution(log["distribution"])
+
+            self._trials[trial_id].params[param_name] = distribution.to_internal_repr(
+                param_value_external
+            )
+            self._trials[trial_id].distributions[param_name] = distribution
         else:
             raise RuntimeError("No corresponding log operation to op_code:{}".format(op))
 
@@ -275,7 +298,7 @@ class JournalStorage(BaseStorage):
                 If a study with the same ``study_name`` already exists.
         """
         log = self._create_operation_log(JournalOperation.CREATE_STUDY)
-        log["study_name"] = self._create_unique_study_name() if study_name == None else study_name
+        log["study_name"] = self._create_unique_study_name() if study_name is None else study_name
         self._buffer_log(log)
         self._flush_logs()
 
@@ -285,8 +308,8 @@ class JournalStorage(BaseStorage):
             study_id_list = [
                 fs._study_id for fs in self._studies.values() if fs.study_name == log["study_name"]
             ]
-            if len(study_id_list) != 1:
-                raise RuntimeError("Error found in create_new_study")
+
+            assert len(study_id_list) == 1
 
             return study_id_list[0]
 
@@ -304,13 +327,11 @@ class JournalStorage(BaseStorage):
         log = self._create_operation_log(JournalOperation.DELETE_STUDY)
         log["study_id"] = study_id
 
-        with self._thread_lock:
-            self._sync_with_backend()
-            if study_id not in self._studies.keys():
-                raise KeyError
-
         self._buffer_log(log)
         self._flush_logs()
+
+        with self._thread_lock:
+            self._sync_with_backend()
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
         """Register a user-defined attribute to a study.
@@ -333,13 +354,11 @@ class JournalStorage(BaseStorage):
         log["study_id"] = study_id
         log["user_attr"] = {key: value}
 
-        with self._thread_lock:
-            self._sync_with_backend()
-            if study_id not in self._studies.keys():
-                raise KeyError
-
         self._buffer_log(log)
         self._flush_logs()
+
+        with self._thread_lock:
+            self._sync_with_backend()
 
     def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
         """Register an optuna-internal attribute to a study.
@@ -362,13 +381,11 @@ class JournalStorage(BaseStorage):
         log["study_id"] = study_id
         log["system_attr"] = {key: value}
 
-        with self._thread_lock:
-            self._sync_with_backend()
-            if study_id not in self._studies.keys():
-                raise KeyError
-
         self._buffer_log(log)
         self._flush_logs()
+
+        with self._thread_lock:
+            self._sync_with_backend()
 
     def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
         """Register optimization problem directions to a study.
@@ -393,13 +410,11 @@ class JournalStorage(BaseStorage):
         log["study_id"] = study_id
         log["directions"] = directions
 
-        with self._thread_lock:
-            self._sync_with_backend()
-            if study_id not in self._studies.keys():
-                raise KeyError
-
         self._buffer_log(log)
         self._flush_logs()
+
+        with self._thread_lock:
+            self._sync_with_backend()
 
     # Basic study access
 
@@ -420,10 +435,10 @@ class JournalStorage(BaseStorage):
         with self._thread_lock:
             self._sync_with_backend()
             frozen_study = [fs for fs in self._studies.values() if fs.study_name == study_name]
-            if len(frozen_study) != 1:
+            if len(frozen_study) == 0:
                 raise KeyError
-            else:
-                return frozen_study[0]._study_id
+            assert len(frozen_study) == 1
+            return frozen_study[0]._study_id
 
     def get_study_name_from_id(self, study_id: int) -> str:
         """Read the study name of a study.
@@ -545,7 +560,7 @@ class JournalStorage(BaseStorage):
         log["me"] = self._me
         log["uuid"] = str(uuid.uuid4()) + "_" + str(self._thread_local._id)
 
-        if template_trial == None:
+        if template_trial is None:
             log["has_template_trial"] = False
         else:
             log["has_template_trial"] = True
@@ -559,9 +574,6 @@ class JournalStorage(BaseStorage):
 
         with self._thread_lock:
             self._sync_with_backend()
-
-            if study_id not in self._studies.keys():
-                raise KeyError
 
             return self._trial_ids_created_by_me[log["uuid"]]
 
@@ -590,7 +602,17 @@ class JournalStorage(BaseStorage):
             :exc:`RuntimeError`:
                 If the trial is already finished.
         """
-        raise NotImplementedError
+        log = self._create_operation_log(JournalOperation.SET_TRIAL_PARAM)
+        log["trial_id"] = trial_id
+        log["param_name"] = param_name
+        log["param_value_external"] = distribution.to_external_repr(param_value_internal)
+        log["distribution"] = distribution_to_json(distribution)
+
+        self._buffer_log(log)
+        self._flush_logs()
+
+        with self._thread_lock:
+            self._sync_with_backend()
 
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
         """Read the trial ID of a trial.
