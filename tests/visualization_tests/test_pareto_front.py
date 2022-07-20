@@ -155,33 +155,33 @@ def test_get_pareto_front_info_constrained(
     )
 
 
-def test_get_pareto_front_invalid_number_of_target_names() -> None:
+def test_get_pareto_front_info_invalid_number_of_target_names() -> None:
     study = optuna.create_study(directions=["minimize", "minimize"])
     with pytest.raises(ValueError):
         _get_pareto_front_info(study=study, target_names=["Foo"])
 
 
 @pytest.mark.parametrize("n_dims", [0, 1, 4])
-def test_plot_pareto_front_unsupported_dimensions(n_dims: int) -> None:
+def test_get_pareto_front_info_unsupported_dimensions(n_dims: int) -> None:
     with pytest.raises(ValueError):
         _get_pareto_front_info(study=optuna.create_study(directions=["minimize"] * n_dims))
 
 
 @pytest.mark.parametrize("axis_order", [[0, 1, 1], [0, 0], [0, 2], [-1, 1]])
-def test_plot_pareto_front_invalid_axis_order(axis_order: List[int]) -> None:
+def test_get_pareto_front_info_invalid_axis_order(axis_order: List[int]) -> None:
     study = optuna.create_study(directions=["minimize", "minimize"])
     with pytest.raises(ValueError):
         _get_pareto_front_info(study=study, axis_order=axis_order)
 
 
-def test_plot_pareto_front_invalid_target_values() -> None:
+def test_get_pareto_front_info_invalid_target_values() -> None:
     study = optuna.create_study(directions=["minimize", "minimize"])
     study.optimize(lambda _: [0, 0], n_trials=3)
     with pytest.raises(ValueError):
         _get_pareto_front_info(study=study, targets=lambda t: t.values[0])
 
 
-def test_plot_pareto_front_using_axis_order_and_targets() -> None:
+def test_get_pareto_front_info_using_axis_order_and_targets() -> None:
     study = optuna.create_study(directions=["minimize", "minimize", "minimize"])
     with pytest.raises(ValueError):
         _get_pareto_front_info(
@@ -189,25 +189,6 @@ def test_plot_pareto_front_using_axis_order_and_targets() -> None:
             axis_order=[0, 1, 2],
             targets=lambda t: (t.values[0], t.values[1], t.values[2]),
         )
-
-
-def _check_data(figure: "go.Figure", axis: str, expected: Sequence[int]) -> None:
-    """Compare `figure` against `expected`.
-
-    Concatenate `data` in `figure` in reverse order, pick the desired `axis`, and compare with
-    the `expected` result.
-
-    Args:
-        figure: A figure.
-        axis: The axis to be checked.
-        expected: The expected result.
-    """
-
-    n_data = len(figure.data)
-    actual = tuple(
-        itertools.chain(*list(map(lambda i: figure.data[i][axis], reversed(range(n_data)))))
-    )
-    assert actual == expected
 
 
 @pytest.mark.parametrize(
