@@ -908,9 +908,7 @@ def _clamp_inf_and_calc_reference_point(lvals: np.ndarray) -> Tuple[np.ndarray, 
         ]
     )
     worst_point[worst_point == -np.inf] = 0.0
-    posinf_replacement = np.maximum(
-        np.maximum(1.1 * worst_point, 0.9 * worst_point), worst_point + EPS
-    )
+    posinf_replacement = np.maximum.reduce([1.1 * worst_point, 0.9 * worst_point, worst_point + EPS])
 
     best_point = np.array(
         [
