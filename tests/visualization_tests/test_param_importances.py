@@ -20,18 +20,11 @@ from optuna.trial import create_trial
 from optuna.trial import Trial
 from optuna.visualization import plot_param_importances as plotly_plot_param_importances
 from optuna.visualization._param_importances import _get_importances_info
-from optuna.visualization._plotly_imports import _imports as plotly_imports
+from optuna.visualization._plotly_imports import go
 from optuna.visualization.matplotlib import plot_param_importances as plt_plot_param_importances
-from optuna.visualization.matplotlib._matplotlib_imports import _imports as plt_imports
+from optuna.visualization.matplotlib._matplotlib_imports import Axes
+from optuna.visualization.matplotlib._matplotlib_imports import plt
 
-
-if plotly_imports.is_successful():
-    from optuna.visualization._plotly_imports import go
-
-
-if plt_imports.is_successful():
-    from optuna.visualization.matplotlib._matplotlib_imports import Axes
-    from optuna.visualization.matplotlib._matplotlib_imports import plt
 
 parametrize_plot_param_importances = pytest.mark.parametrize(
     "plot_param_importances", [plotly_plot_param_importances, plt_plot_param_importances]
