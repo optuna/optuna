@@ -917,7 +917,7 @@ def _clamp_inf_and_calc_reference_point(lvals: np.ndarray) -> Tuple[np.ndarray, 
         ]
     )
     best_point[best_point == np.inf] = 0.0
-    neginf_replacement = np.minimum(np.minimum(2 * best_point, 0.5 * best_point), best_point - EPS)
+    neginf_replacement = np.minimum.reduce([2 * best_point, 0.5 * best_point, best_point - EPS])
 
     new_lvals = lvals.copy()
     is_posinf = lvals == np.inf
