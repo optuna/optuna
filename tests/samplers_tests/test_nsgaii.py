@@ -159,8 +159,8 @@ def test_constraints_func(constraint_value: float) -> None:
             assert _nan_equal(x, y)
 
 
-@pytest.mark.parametrize("dir1", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
-@pytest.mark.parametrize("dir2", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
+@pytest.mark.parametrize("direction1", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
+@pytest.mark.parametrize("direction2", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
 @pytest.mark.parametrize(
     "constraints_list",
     [
@@ -172,9 +172,9 @@ def test_constraints_func(constraint_value: float) -> None:
     ],
 )
 def test_constrained_dominates_feasible_vs_feasible(
-    dir1: StudyDirection, dir2: StudyDirection, constraints_list: List[List[float]]
+    direction1: StudyDirection, direction2: StudyDirection, constraints_list: List[List[float]]
 ) -> None:
-    directions = [dir1, dir2]
+    directions = [direction1, direction2]
     # Check all pairs of trials consisting of these values, i.e.,
     # [-inf, -inf], [-inf, -1], [-inf, 1], [-inf, inf], [-1, -inf], ...
     values_list = [
@@ -238,14 +238,14 @@ def test_constrained_dominates_infeasible_vs_infeasible(direction: StudyDirectio
     # When both trials are infeasible, the trial with smaller violation dominates
     # the one with larger violation.
     #
-    #                       c[1]
+    #                       c2
     #      ╔═════╤═════╤═════╤═════╤═════╤═════╗
     #      ║     │ -1  │  0  │  1  │  2  │  ∞  ║
     #      ╟─────┼─────┼─────┼─────┼─────┼─────╢
     #      ║ -1  │           │  1  │  2  │  ∞  ║
     #      ╟─────┼─feasible ─┼─────┼─────┼─────╢
     #      ║  0  │           │  1  │  2  │  ∞  ║
-    # c[0] ╟─────┼─────┼─────┼─────┼─────┼─────╢
+    # c1   ╟─────┼─────┼─────┼─────┼─────┼─────╢
     #      ║  1  │  1  │  1  │  2  │  3  │  ∞  ║
     #      ╟─────┼─────┼─────┼─────┼─────┼─────╢
     #      ║  2  │  2  │  2  │  3  │  4  │  ∞  ║
@@ -257,13 +257,13 @@ def test_constrained_dominates_infeasible_vs_infeasible(direction: StudyDirectio
     # Check all pairs of these constraints.
     constraints_infeasible_sorted: List[List[List[float]]]
     constraints_infeasible_sorted = [
-        # violation 1
+        # These constraints have violation 1.
         [[1, -inf], [1, -1], [1, 0], [0, 1], [-1, 1], [-inf, 1]],
-        # violation 2
+        # These constraints have violation 2.
         [[2, -inf], [2, -1], [2, 0], [1, 1], [0, 2], [-1, 2], [-inf, 2]],
-        # violation 3
+        # These constraints have violation 3.
         [[3, -inf], [3, -1], [3, 0], [2, 1], [1, 2], [0, 3], [-1, 3], [-inf, 3]],
-        # violation inf
+        # These constraints have violation inf.
         [
             [-inf, inf],
             [-1, inf],
