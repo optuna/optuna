@@ -901,12 +901,7 @@ def _clamp_inf_and_calc_reference_point(lvals: np.ndarray) -> Tuple[np.ndarray, 
     2. Clamping preserves the original order of lvals.
     3. Clamped lvals are always smaller than or equal to the calculated reference point.
     """
-    worst_point = np.array(
-        [
-            np.max(lvals[:, i][lvals[:, i] != np.inf], initial=-np.inf)
-            for i in range(lvals.shape[1])
-        ]
-    )
+    worst_point = np.amax(lvals, axis=0, initial=-np.inf, where=~np.isposinf(lvals))
     worst_point[worst_point == -np.inf] = 0.0
     posinf_replacement = np.maximum.reduce([1.1 * worst_point, 0.9 * worst_point, worst_point + EPS])
 
