@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import multiprocessing
+from multiprocessing.managers import DictProxy
 import pickle
 import sys
 from typing import Any
@@ -997,10 +998,7 @@ def test_reseed_rng_change_sampling(sampler_class: Callable[[int], BaseSampler])
 # This function is used only in test_reproducible_in_other_process, but declared at top-level
 # because local function cannot be pickled, which occurs within multiprocessing.
 def run_optimize(
-    k: int,
-    sampler_class_index: int,
-    sequence_dict: Dict[int, List[int]],
-    hash_dict: Dict[int, int],
+    k: int, sampler_class_index: int, sequence_dict: DictProxy, hash_dict: DictProxy
 ) -> None:
     def objective(trial: Trial) -> float:
         a = trial.suggest_float("a", 1, 9)
@@ -1026,8 +1024,8 @@ def test_reproducible_in_other_process(sampler_class_index: int) -> None:
     # For more detail, see https://github.com/optuna/optuna/pull/3187#issuecomment-997673037.
     multiprocessing.set_start_method("spawn", force=True)
     manager = multiprocessing.Manager()
-    sequence_dict: Dict[int, List[int]] = manager.dict()
-    hash_dict: Dict[int, int] = manager.dict()
+    sequence_dict: DictProxy = manager.dict()
+    hash_dict: DictProxy = manager.dict()
     for i in range(3):
         p = multiprocessing.Process(
             target=run_optimize, args=(i, sampler_class_index, sequence_dict, hash_dict)
