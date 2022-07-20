@@ -213,7 +213,7 @@ def _process_constraints_after_trial(
     constraints = None
     try:
         con = constraints_func(trial)
-        if np.any(np.isnan(c)):
+        if np.any(np.isnan(con)):
             raise ValueError("Constraint values cannot be NaN.")
         if not isinstance(con, (tuple, list)):
             warnings.warn(
