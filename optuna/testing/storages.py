@@ -9,7 +9,8 @@ from typing import Union
 import fakeredis
 
 import optuna
-
+from optuna import storages
+from optuna.storages._journal.storage import JournalStorage
 
 STORAGE_MODES = [
     "inmemory",
@@ -44,7 +45,9 @@ class StorageSupplier:
         optuna.storages.RDBStorage,
         optuna.storages.RedisStorage,
     ]:
-
+        print(self.storage_specifier)
+        if "journal" in self.storage_specifier:
+            return JournalStorage(tempfile.NamedTemporaryFile().name)
         if self.storage_specifier == "inmemory":
             if len(self.extra_args) > 0:
                 raise ValueError("InMemoryStorage does not accept any arguments!")
