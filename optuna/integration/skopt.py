@@ -1,4 +1,5 @@
 import copy
+import random
 from typing import Any
 from typing import Dict
 from typing import List
@@ -98,6 +99,9 @@ class SkoptSampler(BaseSampler):
                 evaluation of the objective function is relatively faster than each sampling. On
                 the other hand, it is suggested to set this flag :obj:`True` when each evaluation
                 of the objective function is relatively slower than each sampling.
+
+        seed:
+            Seed for random number generator.
     """
 
     def __init__(
@@ -108,6 +112,7 @@ class SkoptSampler(BaseSampler):
         n_startup_trials: int = 1,
         *,
         consider_pruned_trials: bool = False,
+        seed: Optional[int] = None,
     ) -> None:
 
         _imports.check()
@@ -116,7 +121,7 @@ class SkoptSampler(BaseSampler):
         if "dimensions" in self._skopt_kwargs:
             del self._skopt_kwargs["dimensions"]
 
-        self._independent_sampler = independent_sampler or samplers.RandomSampler()
+        self._independent_sampler = independent_sampler or samplers.RandomSampler(seed=seed)
         self._warn_independent_sampling = warn_independent_sampling
         self._n_startup_trials = n_startup_trials
         self._search_space = samplers.IntersectionSearchSpace()
@@ -129,8 +134,12 @@ class SkoptSampler(BaseSampler):
                 ExperimentalWarning,
             )
 
+        if seed is not None and "random_state" not in self._skopt_kwargs:
+            self._skopt_kwargs["random_state"] = seed
+
     def reseed_rng(self) -> None:
 
+        self._skopt_kwargs["random_state"] = random.randint(1, 2**32)
         self._independent_sampler.reseed_rng()
 
     def infer_relative_search_space(
