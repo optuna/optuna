@@ -680,9 +680,6 @@ class RedisStorage(BaseStorage, BaseHeartbeat):
 
         return trials
 
-    def read_trials_from_remote_storage(self, study_id: int) -> None:
-        self._check_study_id(study_id)
-
     def _check_study_id(self, study_id: int) -> None:
 
         if not self._redis.exists("study_id:{:010d}:study_name".format(study_id)):

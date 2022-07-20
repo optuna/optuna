@@ -962,11 +962,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         return self.get_trial(trial_id)
 
-    def read_trials_from_remote_storage(self, study_id: int) -> None:
-        # Make sure that the given study exists.
-        with _create_scoped_session(self.scoped_session) as session:
-            models.StudyModel.find_or_raise_by_id(study_id, session)
-
     @staticmethod
     def _set_default_engine_kwargs_for_mysql(url: str, engine_kwargs: Dict[str, Any]) -> None:
 

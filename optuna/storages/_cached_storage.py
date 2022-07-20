@@ -42,6 +42,18 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
     wraps :class:`~optuna.storages.RDBStorage` class or
     :class:`~optuna.storages.RedisStorage` class.
 
+    To support **Stronger consistency requirements for special data** described in
+    :class:`~optuna.storages.BaseStorage`, this class has
+    `read_trials_from_remote_storage(study_id)` method. If the method is called, any successive
+    reads on the `state` attribute of a `Trial` are guaranteed to return the same or more recent
+    values than the value at the time of the call to the method.
+    Let `T` be a `Trial`.
+    Let `P` be the process that last updated the `state` attribute of `T`.
+    Then, any reads on any attributes of `T` are guaranteed to return the same or
+    more recent values than any writes by `P` on the attribute before `P` updated
+    the `state` attribute of `T`.
+    The same applies for `user_attrs', 'system_attrs' and 'intermediate_values` attributes.
+
     Args:
         backend:
             :class:`~optuna.storages.RDBStorage` class or :class:`~optuna.storages.RedisStorage`

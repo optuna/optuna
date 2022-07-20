@@ -54,38 +54,6 @@ def test_mean_decrease_impurity_importance_evaluator_max_depth() -> None:
     assert param_importance != param_importance_different_max_depth
 
 
-def test_mean_decrease_impurity_importance_evaluator_seed() -> None:
-    study = create_study(sampler=RandomSampler(seed=0))
-    study.optimize(objective, n_trials=3)
-
-    evaluator = MeanDecreaseImpurityImportanceEvaluator(seed=2)
-    param_importance = evaluator.evaluate(study)
-
-    evaluator = MeanDecreaseImpurityImportanceEvaluator(seed=2)
-    param_importance_same_seed = evaluator.evaluate(study)
-    assert param_importance == param_importance_same_seed
-
-    evaluator = MeanDecreaseImpurityImportanceEvaluator(seed=3)
-    param_importance_different_seed = evaluator.evaluate(study)
-    assert param_importance != param_importance_different_seed
-
-
-def test_mean_decrease_impurity_importance_evaluator_with_target() -> None:
-    # Assumes that `seed` can be fixed to reproduce identical results.
-
-    study = create_study(sampler=RandomSampler(seed=0))
-    study.optimize(objective, n_trials=3)
-
-    evaluator = MeanDecreaseImpurityImportanceEvaluator(seed=0)
-    param_importance = evaluator.evaluate(study)
-    param_importance_with_target = evaluator.evaluate(
-        study,
-        target=lambda t: t.params["x1"] + t.params["x2"],
-    )
-
-    assert param_importance != param_importance_with_target
-
-
 @pytest.mark.parametrize("inf_value", [float("inf"), -float("inf")])
 def test_mean_decrease_impurity_importance_evaluator_with_infinite(inf_value: float) -> None:
     # The test ensures that trials with infinite values are ignored to calculate importance scores.

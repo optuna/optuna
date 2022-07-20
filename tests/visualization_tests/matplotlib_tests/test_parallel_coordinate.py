@@ -6,6 +6,7 @@ from typing import List
 from matplotlib.axes._axes import Axes
 from matplotlib.collections import LineCollection
 import matplotlib.pyplot as plt
+import numpy as np
 import pytest
 
 from optuna.distributions import BaseDistribution
@@ -207,9 +208,7 @@ def test_plot_parallel_coordinate_categorical_numeric_params() -> None:
     assert axes[1].get_ylabel() == "Objective Value"
     assert axes[1].get_ylim() == (0.0, 2.0)
     objectives = _fetch_objectives_from_figure(figure)
-    # Objective values are not sorted by the other parameters,
-    # unlike Plotly's parallel_coordinate.
-    assert objectives == [0.0, 1.0, 2.0]
+    assert objectives == [1.0, 2.0, 0.0]
     num_choices_category_a = 2
     assert axes[2].get_ylim() == (0, num_choices_category_a - 1)
     assert [int(label.get_text()) for label in axes[2].get_yticklabels()] == [1, 2]
@@ -264,7 +263,7 @@ def test_plot_parallel_coordinate_log_params() -> None:
     objectives = _fetch_objectives_from_figure(figure)
     assert objectives == [0.0, 1.0, 0.1]
     assert axes[2].get_ylim() == (1e-6, 1e-4)
-    assert axes[3].get_ylim() == (10.0, 200)
+    np.testing.assert_almost_equal(axes[3].get_ylim(), (10.0, 200))
     expected_labels = ["Objective Value", "param_a", "param_b"]
     _test_xtick_labels(axes, expected_labels)
     plt.savefig(BytesIO())
@@ -297,15 +296,13 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
     # Optuna's parallel coordinate uses 10% padding for color map.
     assert axes[1].get_ylim() == (-0.1, 0.1)
     objectives = _fetch_objectives_from_figure(figure)
-    # Objective values are not sorted by the other parameters,
-    # unlike Plotly's parallel_coordinate.
     assert objectives == [0.0]
     assert axes[2].get_ylim() == (-default_padding_fraction, default_padding_fraction)
     assert [line.get_text() for line in axes[2].get_yticklabels()] == ["preferred"]
     assert [label.get_position()[1] for label in axes[2].get_yticklabels()] == [0]
-    assert axes[3].get_ylim() == (
-        30 * (1.0 - default_padding_fraction),
-        30 * (1.0 + default_padding_fraction),
+    np.testing.assert_almost_equal(
+        axes[3].get_ylim(),
+        (30 * (1.0 - default_padding_fraction), 30 * (1.0 + default_padding_fraction)),
     )
     expected_labels = ["Objective Value", "category_a", "param_b"]
     _test_xtick_labels(axes, expected_labels)
@@ -327,13 +324,11 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
     assert axes[1].get_ylabel() == "Objective Value"
     assert axes[1].get_ylim() == (0.0, 2.0)
     objectives = _fetch_objectives_from_figure(figure)
-    # Objective values are not sorted by the other parameters,
-    # unlike Plotly's parallel_coordinate.
     assert objectives == [0.0, 2.0]
     assert axes[2].get_ylim() == (-default_padding_fraction, default_padding_fraction)
     assert [line.get_text() for line in axes[2].get_yticklabels()] == ["preferred"]
     assert [label.get_position()[1] for label in axes[2].get_yticklabels()] == [0]
-    assert axes[3].get_ylim() == (20, 30)
+    np.testing.assert_almost_equal(axes[3].get_ylim(), (20, 30))
     expected_labels = ["Objective Value", "category_a", "param_b"]
     _test_xtick_labels(axes, expected_labels)
     plt.savefig(BytesIO())
@@ -387,9 +382,7 @@ def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
     assert axes[1].get_ylabel() == "Objective Value"
     assert axes[1].get_ylim() == (0.0, 3.0)
     objectives = _fetch_objectives_from_figure(figure)
-    # Objective values are not sorted by the other parameters,
-    # unlike Plotly's parallel_coordinate.
-    assert objectives == [0.0, 1.0, 2.0, 3.0]
+    assert objectives == [1.0, 3.0, 0.0, 2.0]
     num_choices_param_a = 2
     assert axes[2].get_ylim() == (0, num_choices_param_a - 1)
     assert [line.get_text() for line in axes[2].get_yticklabels()] == ["preferred", "opt"]
@@ -402,7 +395,7 @@ def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
     assert [label.get_position()[1] for label in axes[3].get_yticklabels()] == list(
         range(num_choices_param_b)
     )
-    assert axes[4].get_ylim() == (10, 200)
+    np.testing.assert_almost_equal(axes[4].get_ylim(), (10, 200))
     num_choices_param_d = 3
     assert axes[5].get_ylim() == (0.0, num_choices_param_d - 1)
     assert [int(label.get_text()) for label in axes[5].get_yticklabels()] == [-1, 1, 2]

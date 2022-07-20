@@ -10,6 +10,7 @@ from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.visualization._param_importances import _get_importances_info
+from optuna.visualization._param_importances import _ImportancesInfo
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 
@@ -91,17 +92,20 @@ def plot_param_importances(
     _imports.check()
 
     importances_info = _get_importances_info(study, evaluator, params, target, target_name)
+    return _get_importances_plot(importances_info)
 
+
+def _get_importances_plot(info: _ImportancesInfo) -> "Axes":
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
     fig, ax = plt.subplots()
     ax.set_title("Hyperparameter Importances")
-    ax.set_xlabel(f"Importance for {target_name}")
+    ax.set_xlabel(f"Importance for {info.target_name}")
     ax.set_ylabel("Hyperparameter")
 
-    param_names = importances_info.param_names
+    param_names = info.param_names
     pos = np.arange(len(param_names))
-    importance_values = importances_info.importance_values
+    importance_values = info.importance_values
 
     if len(importance_values) == 0:
         return ax
@@ -116,7 +120,7 @@ def plot_param_importances(
     )
 
     renderer = fig.canvas.get_renderer()
-    for idx, (val, label) in enumerate(zip(importance_values, importances_info.importance_labels)):
+    for idx, (val, label) in enumerate(zip(importance_values, info.importance_labels)):
         text = ax.text(val, idx, label, va="center")
 
         # Sometimes horizontal axis needs to be re-scaled
