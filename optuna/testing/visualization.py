@@ -5,8 +5,6 @@ from optuna.trial import create_trial
 
 
 def prepare_study_with_trials(
-    less_than_two: bool = False,
-    more_than_three: bool = False,
     with_c_d: bool = True,
     n_objectives: int = 1,
     direction: str = "minimize",
@@ -16,12 +14,6 @@ def prepare_study_with_trials(
     """Prepare a study for tests.
 
     Args:
-        less_than_two: If :obj:`True`, create a study with two/four hyperparameters where
-            'param_a' (and 'param_c') appear(s) only once while 'param_b' (and 'param_d')
-            appear(s) twice in `study.trials`.
-        more_than_three: If :obj:`True`, create a study with two/four hyperparameters where
-            'param_a' (and 'param_c') appear(s) only three times while 'param_b' (and 'param_d')
-            appear(s) four times in `study.trials`.
         with_c_d: If :obj:`True`, the study has four hyperparameters named 'param_a',
             'param_b', 'param_c', and 'param_d'. Otherwise, there are only two
             hyperparameters ('param_a' and 'param_b').
@@ -67,9 +59,6 @@ def prepare_study_with_trials(
             else {"param_b": FloatDistribution(0.0, 3.0)},
         )
     )
-    if less_than_two:
-        return study
-
     study.add_trial(
         create_trial(
             values=[1.0] * n_objectives,
@@ -89,25 +78,4 @@ def prepare_study_with_trials(
             },
         )
     )
-
-    if more_than_three:
-        study.add_trial(
-            create_trial(
-                values=[1.5] * n_objectives,
-                params={"param_a": 0.5, "param_b": 1.5, "param_c": 2.0, "param_d": 3.0}
-                if with_c_d
-                else {"param_a": 0.5, "param_b": 1.5},
-                distributions={
-                    "param_a": FloatDistribution(0.0, 3.0),
-                    "param_b": FloatDistribution(0.0, 3.0),
-                    "param_c": FloatDistribution(2.0, 5.0),
-                    "param_d": FloatDistribution(2.0, 5.0),
-                }
-                if with_c_d
-                else {
-                    "param_a": FloatDistribution(0.0, 3.0),
-                    "param_b": FloatDistribution(0.0, 3.0),
-                },
-            )
-        )
     return study

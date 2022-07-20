@@ -1,8 +1,11 @@
 import abc
+from cmath import isnan
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import Optional
 from typing import Sequence
+import warnings
 
 from optuna.distributions import BaseDistribution
 from optuna.study import Study
@@ -193,3 +196,35 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
                 "If the study is being used for multi-objective optimization, "
                 f"{self.__class__.__name__} cannot be used."
             )
+
+
+_CONSTRAINTS_KEY = "constraints"
+
+
+def _process_constraints_after_trial(
+    constraints_func: Callable[[FrozenTrial], Sequence[float]],
+    study: Study,
+    trial: FrozenTrial,
+    state: TrialState,
+) -> None:
+    if state not in [TrialState.COMPLETE, TrialState.PRUNED]:
+        return
+
+    constraints = None
+    try:
+        con = constraints_func(trial)
+        if any(isnan(c) for c in con):
+            raise ValueError("Constraint values cannot be NaN.")
+        if not isinstance(con, (tuple, list)):
+            warnings.warn(
+                f"Constraints should be a sequence of floats but got {type(con).__name__}."
+            )
+        constraints = tuple(con)
+    finally:
+        assert constraints is None or isinstance(constraints, tuple)
+
+        study._storage.set_trial_system_attr(
+            trial._trial_id,
+            _CONSTRAINTS_KEY,
+            constraints,
+        )

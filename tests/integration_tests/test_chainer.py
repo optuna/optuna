@@ -35,18 +35,21 @@ def test_chainer_pruning_extension_trigger() -> None:
 
     extension = ChainerPruningExtension(trial, "main/loss", (1, "epoch"))
     assert isinstance(extension._pruner_trigger, triggers.IntervalTrigger)
-    extension = ChainerPruningExtension(trial, "main/loss", triggers.IntervalTrigger(1, "epoch"))
+    extension = ChainerPruningExtension(
+        trial, "main/loss", triggers.IntervalTrigger(1, "epoch")  # type: ignore
+    )
     assert isinstance(extension._pruner_trigger, triggers.IntervalTrigger)
     extension = ChainerPruningExtension(
-        trial, "main/loss", triggers.ManualScheduleTrigger(1, "epoch")
+        trial, "main/loss", triggers.ManualScheduleTrigger(1, "epoch")  # type: ignore
     )
     assert isinstance(extension._pruner_trigger, triggers.ManualScheduleTrigger)
 
     with pytest.raises(TypeError):
-        ChainerPruningExtension(trial, "main/loss", triggers.TimeTrigger(1.0))
+        ChainerPruningExtension(trial, "main/loss", triggers.TimeTrigger(1.0))  # type: ignore
 
 
 def test_chainer_pruning_extension() -> None:
+    @typing.no_type_check
     def objective(trial: optuna.trial.Trial) -> float:
 
         model = L.Classifier(chainer.Sequential(L.Linear(None, 2)))
@@ -85,7 +88,7 @@ def test_chainer_pruning_extension_observation_nan() -> None:
 
     with patch.object(extension, "_observation_exists", Mock(return_value=True)) as mock:
         with pytest.raises(optuna.TrialPruned):
-            extension(trainer)
+            extension(trainer)  # type: ignore
         assert mock.call_count == 1
 
 
@@ -99,17 +102,17 @@ def test_observation_exists() -> None:
     # Trigger is deactivated. Return False whether trainer has observation or not.
     with patch.object(triggers.IntervalTrigger, "__call__", Mock(return_value=False)) as mock:
         extension = ChainerPruningExtension(trial, "NG", (1, "epoch"))
-        assert extension._observation_exists(trainer) is False
+        assert extension._observation_exists(trainer) is False  # type: ignore
         extension = ChainerPruningExtension(trial, "OK", (1, "epoch"))
-        assert extension._observation_exists(trainer) is False
+        assert extension._observation_exists(trainer) is False  # type: ignore
         assert mock.call_count == 2
 
     # Trigger is activated. Return True if trainer has observation.
     with patch.object(triggers.IntervalTrigger, "__call__", Mock(return_value=True)) as mock:
         extension = ChainerPruningExtension(trial, "NG", (1, "epoch"))
-        assert extension._observation_exists(trainer) is False
+        assert extension._observation_exists(trainer) is False  # type: ignore
         extension = ChainerPruningExtension(trial, "OK", (1, "epoch"))
-        assert extension._observation_exists(trainer) is True
+        assert extension._observation_exists(trainer) is True  # type: ignore
         assert mock.call_count == 2
 
 
