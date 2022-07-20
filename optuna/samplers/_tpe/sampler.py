@@ -904,6 +904,9 @@ def _clamp_inf_and_calc_reference_point(lvals: np.ndarray) -> Tuple[np.ndarray, 
     worst_point = np.amax(lvals, axis=0, initial=-np.inf, where=~np.isposinf(lvals))
     # When there are no finite values for a dimension, the reference point could be any finite value.
     worst_point[worst_point == -np.inf] = 0.0
+    # For positive worst_point, we use 1.1 * worst_point as the reference point.
+    # For negative worst_point, we use 0.9 * worst_point as the reference point.
+    # For worst point that is almost zero, we use worst_point + EPS as the reference point.
     posinf_replacement = np.maximum.reduce([1.1 * worst_point, 0.9 * worst_point, worst_point + EPS])
 
     best_point = np.amin(lvals, axis=0, initial=np.inf, where=~np.isneginf(lvals))
