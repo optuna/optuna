@@ -1,4 +1,5 @@
 from typing import Sequence
+
 import pytest
 
 import optuna

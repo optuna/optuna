@@ -1,6 +1,5 @@
 import datetime
 from io import BytesIO
-import itertools
 from textwrap import dedent
 from typing import Any
 from typing import Callable
