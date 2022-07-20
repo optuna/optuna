@@ -153,7 +153,7 @@ def test_constraints_func(constraint_value: float) -> None:
     assert constraints_func_call_count == n_trials
     for trial in study.trials:
         for x, y in zip(trial.system_attrs[_CONSTRAINTS_KEY], (constraint_value + trial.number,)):
-            assert _nan_equal(x, y)
+            assert x == y
 
 
 def test_constrained_dominates_with_nan_constraint() -> None:
