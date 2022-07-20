@@ -106,14 +106,14 @@ class JournalStorage(BaseStorage):
         These attribute behaviors may become user customizable in the future.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, log_file_name) -> None:
         self._host_name = socket.gethostname()
         self._host_ip = socket.gethostbyname(self._host_name)
         self._p_id = os.getpid()
         self._me = self._host_name + "--" + self._host_ip + "--" + str(self._p_id)
 
         self._log_number_read: int = 0
-        self._backend = FileStorage("operation_logs")
+        self._backend = FileStorage(log_file_name)
 
         # study-id - FrozenStudy dict (thread-unsafe)
         self._studies: Dict[int, FrozenStudy] = dict()
@@ -126,6 +126,7 @@ class JournalStorage(BaseStorage):
 
         # study-id - [trial-id] dict (thread-unsafe)
         self._study_id_to_trial_ids: Dict[int, List[int]] = dict()
+        self._next_study_id: int = 0
 
         # (thread-safe)
         self._thread_local = threading.local()
@@ -163,10 +164,11 @@ class JournalStorage(BaseStorage):
             study_name = log["study_name"]
 
             if study_name in [s.study_name for s in self._studies.values()]:
-                self._push_log_replay_result(log, DuplicatedStudyError)
+                self._push_log_replay_result(log, DuplicatedStudyError(""))
                 return
 
-            study_id = len(self._studies)
+            study_id = self._next_study_id
+            self._next_study_id += 1
 
             fs = FrozenStudy(
                 study_name=study_name,
