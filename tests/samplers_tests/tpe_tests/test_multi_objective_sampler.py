@@ -515,7 +515,7 @@ def test_calculate_weights_below_for_multi_objective() -> None:
     assert np.isclose(weights_below[1], weights_below[2])
     assert sum(weights_below) > 0
 
-    # Test -inf objective values.
+    # Test +/-inf objective values.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
         {"x": np.array([1.0, 2.0, 3.0, 4.0], dtype=float)},
         [
