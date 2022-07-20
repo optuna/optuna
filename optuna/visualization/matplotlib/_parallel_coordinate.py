@@ -9,7 +9,6 @@ from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.visualization._parallel_coordinate import _get_parallel_coordinate_info
 from optuna.visualization._parallel_coordinate import _ParallelCoordinateInfo
-from optuna.visualization._utils import _check_plot_args
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 
@@ -73,7 +72,6 @@ def plot_parallel_coordinate(
     """
 
     _imports.check()
-    _check_plot_args(study, target, target_name)
     info = _get_parallel_coordinate_info(study, params, target, target_name)
     return _get_parallel_coordinate_plot(info)
 

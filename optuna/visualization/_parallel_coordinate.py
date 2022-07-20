@@ -9,6 +9,7 @@ from typing import List
 from typing import NamedTuple
 from typing import Optional
 from typing import Tuple
+from typing import Union
 
 import numpy as np
 
@@ -39,8 +40,8 @@ class _DimensionInfo(NamedTuple):
     range: Tuple[float, float]
     is_log: bool
     is_cat: bool
-    tickvals: List[int]
-    ticktext: List[str]
+    tickvals: List[Union[int, float]]
+    ticktext: List[Union[int, str]]
 
 
 class _ParallelCoordinateInfo(NamedTuple):
@@ -102,7 +103,6 @@ def plot_parallel_coordinate(
     """
 
     _imports.check()
-    _check_plot_args(study, target, target_name)
     info = _get_parallel_coordinate_info(study, params, target, target_name)
     return _get_parallel_coordinate_plot(info)
 
@@ -144,6 +144,8 @@ def _get_parallel_coordinate_info(
     target: Optional[Callable[[FrozenTrial], float]] = None,
     target_name: str = "Objective Value",
 ) -> _ParallelCoordinateInfo:
+
+    _check_plot_args(study, target, target_name)
 
     reverse_scale = _is_reverse_scale(study, target)
 
@@ -214,7 +216,9 @@ def _get_parallel_coordinate_info(
             values = [math.log10(v) for v in values]
             min_value = min(values)
             max_value = max(values)
-            tickvals = list(range(math.ceil(min_value), math.ceil(max_value)))
+            tickvals: List[Union[int, float]] = list(
+                range(math.ceil(min_value), math.ceil(max_value))
+            )
             if min_value not in tickvals:
                 tickvals = [min_value] + tickvals
             if max_value not in tickvals:
@@ -229,8 +233,9 @@ def _get_parallel_coordinate_info(
                 ticktext=["{:.3g}".format(math.pow(10, x)) for x in tickvals],
             )
         elif _is_categorical(trials, p_name):
-            vocab: DefaultDict[str, int] = defaultdict(lambda: len(vocab))
+            vocab: DefaultDict[Union[int, str], int] = defaultdict(lambda: len(vocab))
 
+            ticktext: List[Union[int, str]]
             if _is_numerical(trials, p_name):
                 _ = [vocab[v] for v in sorted(values)]
                 values = [vocab[v] for v in values]
