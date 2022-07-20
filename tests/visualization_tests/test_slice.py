@@ -166,10 +166,47 @@ def test_get_slice_plot_info_non_exist_param_error() -> None:
 def test_get_slice_plot_info_params(params: Optional[List[str]]) -> None:
 
     study = prepare_study_with_trials()
-    n_params = len(params) if params is not None else 4
+    params = ["param_a", "param_b", "param_c", "param_d"] if params is None else params
+    expected_subplot_infos = {
+        "param_a": _SliceSubplotInfo(
+            param_name="param_a",
+            x=[1.0, 2.5],
+            y=[0.0, 1.0],
+            trial_numbers=[0, 2],
+            is_log=False,
+            is_numerical=True,
+        ),
+        "param_b": _SliceSubplotInfo(
+            param_name="param_b",
+            x=[2.0, 0.0, 1.0],
+            y=[0.0, 2.0, 1.0],
+            trial_numbers=[0, 1, 2],
+            is_log=False,
+            is_numerical=True,
+        ),
+        "param_c": _SliceSubplotInfo(
+            param_name="param_c",
+            x=[3.0, 4.5],
+            y=[0.0, 1.0],
+            trial_numbers=[0, 2],
+            is_log=False,
+            is_numerical=True,
+        ),
+        "param_d": _SliceSubplotInfo(
+            param_name="param_d",
+            x=[4.0, 4.0, 2.0],
+            y=[0.0, 2.0, 1.0],
+            trial_numbers=[0, 1, 2],
+            is_log=False,
+            is_numerical=True,
+        ),
+    }
 
     info = _get_slice_plot_info(study, params=params, target=None, target_name="Objective Value")
-    assert len(info.subplots) == n_params
+    assert info == _SlicePlotInfo(
+        target_name="Objective Value",
+        subplots=[expected_subplot_infos[p] for p in params],
+    )
 
 
 def test_get_slice_plot_info_customized_target() -> None:
