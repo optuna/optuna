@@ -1,5 +1,5 @@
 import abc
-from cmath import isnan
+import numpy as np
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -213,7 +213,7 @@ def _process_constraints_after_trial(
     constraints = None
     try:
         con = constraints_func(trial)
-        if any(isnan(c) for c in con):
+        if np.any(np.isnan(c)):
             raise ValueError("Constraint values cannot be NaN.")
         if not isinstance(con, (tuple, list)):
             warnings.warn(
