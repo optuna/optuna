@@ -905,12 +905,7 @@ def _clamp_inf_and_calc_reference_point(lvals: np.ndarray) -> Tuple[np.ndarray, 
     worst_point[worst_point == -np.inf] = 0.0
     posinf_replacement = np.maximum.reduce([1.1 * worst_point, 0.9 * worst_point, worst_point + EPS])
 
-    best_point = np.array(
-        [
-            np.min(lvals[:, i][lvals[:, i] != -np.inf], initial=np.inf)
-            for i in range(lvals.shape[1])
-        ]
-    )
+    best_point = np.amin(lvals, axis=0, initial=np.inf, where=~np.isneginf(lvals))
     best_point[best_point == np.inf] = 0.0
     neginf_replacement = np.minimum.reduce([2 * best_point, 0.5 * best_point, best_point - EPS])
 
