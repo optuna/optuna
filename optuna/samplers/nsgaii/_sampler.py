@@ -17,6 +17,8 @@ import numpy as np
 import optuna
 from optuna._experimental import ExperimentalWarning
 from optuna.distributions import BaseDistribution
+from optuna.samplers._base import _CONSTRAINTS_KEY
+from optuna.samplers._base import _process_constraints_after_trial
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._search_space import IntersectionSearchSpace
@@ -31,7 +33,6 @@ from optuna.trial import TrialState
 
 
 # Define key names of `Trial.system_attrs`.
-_CONSTRAINTS_KEY = "nsga2:constraints"
 _GENERATION_KEY = "nsga2:generation"
 _POPULATION_CACHE_KEY_PREFIX = "nsga2:population"
 
@@ -389,23 +390,8 @@ class NSGAIISampler(BaseSampler):
         values: Optional[Sequence[float]],
     ) -> None:
         assert state in [TrialState.COMPLETE, TrialState.FAIL, TrialState.PRUNED]
-        if state == TrialState.COMPLETE and self._constraints_func is not None:
-            constraints = None
-            try:
-                con = self._constraints_func(trial)
-                if not isinstance(con, (tuple, list)):
-                    warnings.warn(
-                        f"Constraints should be a sequence of floats but got {type(con).__name__}."
-                    )
-                constraints = tuple(con)
-            finally:
-                assert constraints is None or isinstance(constraints, tuple)
-
-                study._storage.set_trial_system_attr(
-                    trial._trial_id,
-                    _CONSTRAINTS_KEY,
-                    constraints,
-                )
+        if self._constraints_func is not None:
+            _process_constraints_after_trial(self._constraints_func, study, trial, state)
         self._random_sampler.after_trial(study, trial, state, values)
 
 
