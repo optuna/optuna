@@ -15,6 +15,7 @@ from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
 import optuna.trial
 from optuna.trial import BaseTrial
+from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -295,3 +296,107 @@ def test_init() -> None:
 
     with pytest.raises(ValueError):
         _ = _create_trial(0.2, [])
+
+
+# TODO(hvy): Write exhaustive test include invalid combinations when feature is no longer
+# experimental.
+@pytest.mark.parametrize("state", [TrialState.COMPLETE, TrialState.FAIL])
+def test_create_trial(state: TrialState) -> None:
+    value = 0.2
+    params = {"x": 10}
+    distributions: Dict[str, BaseDistribution] = {"x": FloatDistribution(5, 12)}
+    user_attrs = {"foo": "bar"}
+    system_attrs = {"baz": "qux"}
+    intermediate_values = {0: 0.0, 1: 0.1, 2: 0.1}
+
+    trial = create_trial(
+        state=state,
+        value=value,
+        params=params,
+        distributions=distributions,
+        user_attrs=user_attrs,
+        system_attrs=system_attrs,
+        intermediate_values=intermediate_values,
+    )
+
+    assert isinstance(trial, FrozenTrial)
+    assert trial.state == state
+    assert trial.value == value
+    assert trial.params == params
+    assert trial.distributions == distributions
+    assert trial.user_attrs == user_attrs
+    assert trial.system_attrs == system_attrs
+    assert trial.intermediate_values == intermediate_values
+    assert trial.datetime_start is not None
+    assert (trial.datetime_complete is not None) == state.is_finished()
+
+    with pytest.raises(ValueError):
+        create_trial(state=state, value=value, values=(value,))
+
+
+# Deprecated distributions are internally converted to corresponding distributions.
+def test_create_trial_distribution_conversion() -> None:
+    fixed_params = {
+        "ud": 0,
+        "dud": 2,
+        "lud": 1,
+        "id": 0,
+        "idd": 2,
+        "ild": 1,
+    }
+
+    fixed_distributions = {
+        "ud": optuna.distributions.UniformDistribution(low=0, high=10),
+        "dud": optuna.distributions.DiscreteUniformDistribution(low=0, high=10, q=2),
+        "lud": optuna.distributions.LogUniformDistribution(low=1, high=10),
+        "id": optuna.distributions.IntUniformDistribution(low=0, high=10),
+        "idd": optuna.distributions.IntUniformDistribution(low=0, high=10, step=2),
+        "ild": optuna.distributions.IntLogUniformDistribution(low=1, high=10),
+    }
+
+    with pytest.warns(
+        FutureWarning,
+        match="See https://github.com/optuna/optuna/issues/2941",
+    ) as record:
+
+        trial = create_trial(params=fixed_params, distributions=fixed_distributions, value=1)
+        assert len(record) == 6
+
+    expected_distributions = {
+        "ud": optuna.distributions.FloatDistribution(low=0, high=10, log=False, step=None),
+        "dud": optuna.distributions.FloatDistribution(low=0, high=10, log=False, step=2),
+        "lud": optuna.distributions.FloatDistribution(low=1, high=10, log=True, step=None),
+        "id": optuna.distributions.IntDistribution(low=0, high=10, log=False, step=1),
+        "idd": optuna.distributions.IntDistribution(low=0, high=10, log=False, step=2),
+        "ild": optuna.distributions.IntDistribution(low=1, high=10, log=True, step=1),
+    }
+
+    assert trial.distributions == expected_distributions
+
+
+# It confirms that ask doesn't convert non-deprecated distributions.
+def test_create_trial_distribution_conversion_noop() -> None:
+    fixed_params = {
+        "ud": 0,
+        "dud": 2,
+        "lud": 1,
+        "id": 0,
+        "idd": 2,
+        "ild": 1,
+        "cd": "a",
+    }
+
+    fixed_distributions = {
+        "ud": optuna.distributions.FloatDistribution(low=0, high=10, log=False, step=None),
+        "dud": optuna.distributions.FloatDistribution(low=0, high=10, log=False, step=2),
+        "lud": optuna.distributions.FloatDistribution(low=1, high=10, log=True, step=None),
+        "id": optuna.distributions.IntDistribution(low=0, high=10, log=False, step=1),
+        "idd": optuna.distributions.IntDistribution(low=0, high=10, log=False, step=2),
+        "ild": optuna.distributions.IntDistribution(low=1, high=10, log=True, step=1),
+        "cd": optuna.distributions.CategoricalDistribution(choices=["a", "b", "c"]),
+    }
+
+    trial = create_trial(params=fixed_params, distributions=fixed_distributions, value=1)
+
+    # Check fixed_distributions doesn't change.
+    assert trial.distributions == fixed_distributions

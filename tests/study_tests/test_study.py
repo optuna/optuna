@@ -111,6 +111,16 @@ def check_study(study: Study) -> None:
         check_frozen_trial(study.best_trial)
 
 
+def stop_objective(threshold_number: int) -> Callable[[Trial], float]:
+    def objective(trial: Trial) -> float:
+        if trial.number >= threshold_number:
+            trial.study.stop()
+
+        return trial.number
+
+    return objective
+
+
 def test_optimize_trivial_in_memory_new() -> None:
 
     study = create_study()
@@ -486,19 +496,14 @@ def test_nested_optimization() -> None:
 
 
 def test_stop_in_objective() -> None:
-    def objective(trial: Trial, threshold_number: int) -> float:
-        if trial.number >= threshold_number:
-            trial.study.stop()
-
-        return trial.number
 
     # Test stopping the optimization: it should stop once the trial number reaches 4.
     study = create_study()
-    study.optimize(lambda x: objective(x, 4), n_trials=10)
+    study.optimize(stop_objective(4), n_trials=10)
     assert len(study.trials) == 5
 
     # Test calling `optimize` again: it should stop once the trial number reaches 11.
-    study.optimize(lambda x: objective(x, 11), n_trials=10)
+    study.optimize(stop_objective(11), n_trials=10)
     assert len(study.trials) == 12
 
 
@@ -859,13 +864,8 @@ def test_optimize_with_progbar_parallel_timeout(capsys: _pytest.capture.CaptureF
 def test_optimize_with_progbar_timeout_formats(
     timeout: float, expected: str, capsys: _pytest.capture.CaptureFixture
 ) -> None:
-    def _objective(trial: Trial) -> float:
-        if trial.number == 5:
-            trial.study.stop()
-        return 1.0
-
     study = create_study()
-    study.optimize(_objective, timeout=timeout, show_progress_bar=True)
+    study.optimize(stop_objective(5), timeout=timeout, show_progress_bar=True)
     _, err = capsys.readouterr()
     assert expected in err
 
@@ -914,13 +914,8 @@ def test_optimize_without_progbar_n_trials_prioritized(
 def test_optimize_progbar_no_constraints(
     n_jobs: int, capsys: _pytest.capture.CaptureFixture
 ) -> None:
-    def _objective(trial: Trial) -> float:
-        if trial.number == 5:
-            trial.study.stop()
-        return 1.0
-
     study = create_study()
-    study.optimize(_objective, n_jobs=n_jobs, show_progress_bar=True)
+    study.optimize(stop_objective(5), n_jobs=n_jobs, show_progress_bar=True)
     _, err = capsys.readouterr()
 
     # We can't simply test if stderr is empty, since we're not sure
@@ -933,13 +928,8 @@ def test_optimize_progbar_no_constraints(
 def test_optimize_without_progbar_no_constraints(
     n_jobs: int, capsys: _pytest.capture.CaptureFixture
 ) -> None:
-    def _objective(trial: Trial) -> float:
-        if trial.number == 5:
-            trial.study.stop()
-        return 1.0
-
     study = create_study()
-    study.optimize(_objective, n_jobs=n_jobs)
+    study.optimize(stop_objective(5), n_jobs=n_jobs)
     _, err = capsys.readouterr()
 
     # Testing for a character that forms progress bar borders.

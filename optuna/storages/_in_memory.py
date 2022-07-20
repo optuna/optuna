@@ -411,9 +411,6 @@ class InMemoryStorage(BaseStorage):
 
         return trials
 
-    def read_trials_from_remote_storage(self, study_id: int) -> None:
-        self._check_study_id(study_id)
-
     def _check_study_id(self, study_id: int) -> None:
 
         if study_id not in self._studies:

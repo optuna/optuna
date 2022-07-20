@@ -193,18 +193,11 @@ def test_get_contour_info_empty(
     assert len(info.sub_plot_infos) == 0
 
 
-def test_get_contour_info_error() -> None:
+def test_get_contour_info_non_exist_param_error() -> None:
     study = prepare_study_with_trials()
 
     with pytest.raises(ValueError):
-        _get_contour_info(study, ["optuna", "Optuna"])
-
-
-def test_get_contour_info_non_exist_param() -> None:
-    study = prepare_study_with_trials()
-
-    with pytest.raises(ValueError):
-        _get_contour_info(study, params=["not-exist-param_a", "not-exist-param_b"])
+        _get_contour_info(study, ["optuna"])
 
 
 @pytest.mark.parametrize("params", [[], ["param_a"]])
@@ -291,8 +284,25 @@ def test_get_contour_info_customized_target(params: List[str]) -> None:
     ],
 )
 def test_generate_contour_plot_for_few_observations(params: List[str]) -> None:
+    study = create_study(direction="minimize")
+    study.add_trial(
+        create_trial(
+            values=[0.0],
+            params={"param_a": 1.0, "param_b": 2.0},
+            distributions={
+                "param_a": FloatDistribution(0.0, 3.0),
+                "param_b": FloatDistribution(0.0, 3.0),
+            },
+        )
+    )
+    study.add_trial(
+        create_trial(
+            values=[2.0],
+            params={"param_b": 0.0},
+            distributions={"param_b": FloatDistribution(0.0, 3.0)},
+        )
+    )
 
-    study = prepare_study_with_trials(less_than_two=True)
     info = _get_contour_info(study, params=params)
     assert info == _ContourInfo(
         sorted_params=sorted(params),
