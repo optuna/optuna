@@ -902,6 +902,7 @@ def _clamp_inf_and_calc_reference_point(lvals: np.ndarray) -> Tuple[np.ndarray, 
     3. Clamped lvals are always smaller than or equal to the calculated reference point.
     """
     worst_point = np.amax(lvals, axis=0, initial=-np.inf, where=~np.isposinf(lvals))
+    # When there are no finite values for a dimension, the reference point could be any finite value.
     worst_point[worst_point == -np.inf] = 0.0
     posinf_replacement = np.maximum.reduce([1.1 * worst_point, 0.9 * worst_point, worst_point + EPS])
 
