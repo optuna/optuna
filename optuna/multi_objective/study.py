@@ -402,7 +402,7 @@ class MultiObjectiveStudy:
                 Parameter values to pass your objective function.
         """
 
-        self._study.enqueue_trial(params)
+        self._study.enqueue_trial(params, skip_if_exists=False)
 
     @property
     def trials(self) -> List["multi_objective.trial.FrozenMultiObjectiveTrial"]:

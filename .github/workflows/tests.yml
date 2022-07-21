@@ -65,6 +65,7 @@ jobs:
         # TODO(hvy): Fix samplers_tests/test_samplers.py to not require optional dependencies and remove these installs.
         pip install scikit-optimize
         pip install cma
+        pip install shap
 
     # TODO(nzw): Move `run` part to the end of `Install` after Optuna drops Python 3.6 support.
     - name: Install PyTorch and BoTorch.

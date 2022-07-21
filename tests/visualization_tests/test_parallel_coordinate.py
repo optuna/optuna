@@ -8,9 +8,9 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.study import create_study
+from optuna.testing.objectives import fail_objective
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
-from optuna.trial import Trial
 from optuna.visualization import plot_parallel_coordinate
 from optuna.visualization._utils import COLOR_SCALE
 
@@ -29,7 +29,34 @@ def test_plot_parallel_coordinate() -> None:
     figure = plot_parallel_coordinate(study)
     assert len(figure.data) == 0
 
-    study = prepare_study_with_trials(with_c_d=False)
+    study = create_study(direction="minimize")
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"param_a": 1.0, "param_b": 2.0},
+            distributions={
+                "param_a": FloatDistribution(0.0, 3.0),
+                "param_b": FloatDistribution(0.0, 3.0),
+            },
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=2.0,
+            params={"param_b": 0.0},
+            distributions={"param_b": FloatDistribution(0.0, 3.0)},
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=1.0,
+            params={"param_a": 2.5, "param_b": 1.0},
+            distributions={
+                "param_a": FloatDistribution(0.0, 3.0),
+                "param_b": FloatDistribution(0.0, 3.0),
+            },
+        )
+    )
 
     # Test with a trial.
     figure = plot_parallel_coordinate(study)
@@ -85,10 +112,6 @@ def test_plot_parallel_coordinate() -> None:
         plot_parallel_coordinate(study, params=["optuna", "optuna"])
 
     # Ignore failed trials.
-    def fail_objective(_: Trial) -> float:
-
-        raise ValueError
-
     study = create_study()
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_parallel_coordinate(study)
@@ -341,7 +364,18 @@ def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
 def test_color_map(direction: str) -> None:
-    study = prepare_study_with_trials(with_c_d=False, direction=direction)
+    study = create_study(direction=direction)
+    for i in range(3):
+        study.add_trial(
+            create_trial(
+                value=float(i),
+                params={"param_a": float(i), "param_b": float(i)},
+                distributions={
+                    "param_a": FloatDistribution(0.0, 3.0),
+                    "param_b": FloatDistribution(0.0, 3.0),
+                },
+            )
+        )
 
     # `target` is `None`.
     line = plot_parallel_coordinate(study).data[0]["line"]
@@ -357,7 +391,18 @@ def test_color_map(direction: str) -> None:
     assert line["reversescale"]
 
     # Multi-objective optimization.
-    study = prepare_study_with_trials(with_c_d=False, n_objectives=2, direction=direction)
+    study = create_study(directions=[direction, direction])
+    for i in range(3):
+        study.add_trial(
+            create_trial(
+                values=[float(i), float(i)],
+                params={"param_a": float(i), "param_b": float(i)},
+                distributions={
+                    "param_a": FloatDistribution(0.0, 3.0),
+                    "param_b": FloatDistribution(0.0, 3.0),
+                },
+            )
+        )
     line = plot_parallel_coordinate(study, target=lambda t: t.number).data[0]["line"]
     assert COLOR_SCALE == [v[1] for v in line["colorscale"]]
     assert line["reversescale"]

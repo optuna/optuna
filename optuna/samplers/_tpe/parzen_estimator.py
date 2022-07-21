@@ -216,6 +216,22 @@ class _ParzenEstimator:
 
         if predetermined_weights is None:
             w = weights_func(n_observations)[:n_observations]
+            if w is not None:
+                if np.any(w < 0):
+                    raise ValueError(
+                        f"The `weights` function is not allowed to return negative values {w}. "
+                        + f"The argument of the `weights` function is {n_observations}."
+                    )
+                if len(w) > 0 and np.sum(w) <= 0:
+                    raise ValueError(
+                        f"The `weight` function is not allowed to return all-zero values {w}."
+                        + f" The argument of the `weights` function is {n_observations}."
+                    )
+                if not np.all(np.isfinite(w)):
+                    raise ValueError(
+                        "The `weights`function is not allowed to return infinite or NaN values "
+                        + f"{w}. The argument of the `weights` function is {n_observations}."
+                    )
         else:
             w = predetermined_weights[:n_observations]
 

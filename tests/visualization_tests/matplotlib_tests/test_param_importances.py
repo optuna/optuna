@@ -12,6 +12,7 @@ from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.samplers import RandomSampler
 from optuna.study import create_study
+from optuna.testing.objectives import fail_objective
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
 from optuna.trial import Trial
@@ -33,7 +34,7 @@ def test_plot_param_importances() -> None:
     assert len(figure.get_lines()) == 0
     plt.savefig(BytesIO())
 
-    study = prepare_study_with_trials(with_c_d=True)
+    study = prepare_study_with_trials()
 
     # Test with a trial.
     figure = plot_param_importances(study)
@@ -104,10 +105,6 @@ def test_plot_param_importances() -> None:
         plot_param_importances(study, params=["optuna"])
 
     # Ignore failed trials.
-    def fail_objective(_: Trial) -> float:
-
-        raise ValueError
-
     study = create_study()
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_param_importances(study)

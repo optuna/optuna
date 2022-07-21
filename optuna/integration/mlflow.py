@@ -1,7 +1,9 @@
 import functools
+from itertools import islice
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import Generator
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -9,12 +11,15 @@ from typing import Union
 
 import optuna
 from optuna._experimental import experimental_class
+from optuna._experimental import experimental_func
 from optuna._imports import try_import
 from optuna.study.study import ObjectiveFuncType
 
 
 with try_import() as _imports:
     import mlflow
+    from mlflow.utils.validation import MAX_METRICS_PER_BATCH
+    from mlflow.utils.validation import MAX_PARAMS_TAGS_PER_BATCH
 
 RUN_ID_ATTRIBUTE_KEY = "mlflow_run_id"
 
@@ -160,7 +165,7 @@ class MLflowCallback:
             # This sets the tags for MLflow.
             self._set_tags(trial, study)
 
-    @experimental_class("2.9.0")
+    @experimental_func("2.9.0")
     def track_in_mlflow(self) -> Callable:
         """Decorator for using MLflow logging in the objective function.
 
@@ -276,7 +281,9 @@ class MLflowCallback:
                 tags[key] = "{}...".format(value[: max_val_length - 3])
 
         # This sets the tags for MLflow.
-        mlflow.set_tags(tags)
+        # MLflow handles up to 100 tags per request.
+        for tags_chunk in _dict_chunks(tags, MAX_PARAMS_TAGS_PER_BATCH):
+            mlflow.set_tags(tags_chunk)
 
     def _log_metrics(self, values: Optional[List[float]]) -> None:
         """Log the trial results as metrics to MLflow.
@@ -308,8 +315,10 @@ class MLflowCallback:
             else:
                 names = [*self._metric_name]
 
+        # MLflow handles up to 1000 metrics per request.
         metrics = {name: val for name, val in zip(names, values)}
-        mlflow.log_metrics(metrics)
+        for metric_chunk in _dict_chunks(metrics, MAX_METRICS_PER_BATCH):
+            mlflow.log_metrics(metric_chunk)
 
     @staticmethod
     def _log_params(params: Dict[str, Any]) -> None:
@@ -318,5 +327,23 @@ class MLflowCallback:
         Args:
             params: Trial params.
         """
+        # MLflow handles up to 100 parameters per request.
+        for params_chunk in _dict_chunks(params, MAX_PARAMS_TAGS_PER_BATCH):
+            mlflow.log_params(params_chunk)
 
-        mlflow.log_params(params)
+
+def _dict_chunks(
+    dict_data: Dict[str, Any], num_elements_per_dict: int
+) -> Generator[Dict[str, Any], None, None]:
+    """Splits a dictionary into chunks of maximum size num_elements_per_dict.
+
+    Args:
+        dict_data: Dictionary to be chunked.
+        num_elements_per_dict: Maximum size of each chunk.
+
+    Returns:
+        Generator of dictionaries.
+    """
+    it = iter(dict_data)
+    for _ in range(0, len(dict_data), num_elements_per_dict):
+        yield {k: dict_data[k] for k in islice(it, num_elements_per_dict)}

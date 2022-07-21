@@ -45,7 +45,7 @@ def run_benchmark(args: argparse.Namespace) -> None:
     samplers = " ".join(config.keys())
     metric = "nll" if args.dataset in ["breast", "iris", "wine", "digits"] else "mse"
     cmd = (
-        f"bayesmark-launch -n {args.budget} -r {args.repeat} "
+        f"bayesmark-launch -n {args.budget} -r {args.n_runs} "
         f"-dir runs -b {_DB} "
         f"-o {samplers} "
         f"-c {args.model} -d {args.dataset} "
@@ -143,7 +143,8 @@ def partial_report(args: argparse.Namespace) -> None:
         for path in [eval_path, time_path]:
             with open(os.path.join(path, study), "r") as file:
                 data = json.load(file)
-                df = Dataset.from_dict(data["data"]).to_dataframe().droplevel("suggestion")
+                df = Dataset.from_dict(data["data"]).to_dataframe()  # type: ignore
+                df = df.droplevel("suggestion")
 
             for argument, meatadata in data["meta"]["args"].items():
                 colname = argument[2:] if argument.startswith("--") else argument
@@ -165,7 +166,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", type=str, default="iris")
     parser.add_argument("--model", type=str, default="kNN")
     parser.add_argument("--budget", type=int, default=80)
-    parser.add_argument("--repeat", type=int, default=10)
+    parser.add_argument("--n-runs", type=int, default=10)
     parser.add_argument("--sampler-list", type=str, default="TPESampler CmaEsSampler")
     parser.add_argument(
         "--sampler-kwargs-list",

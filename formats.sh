@@ -42,7 +42,7 @@ do
   esac
 done
 
-target="examples optuna tests benchmarks"
+target="optuna tests benchmarks"
 mypy_target="optuna tests benchmarks"
 res_all=0
 

@@ -26,7 +26,7 @@ __version__ = pkg_resources.get_distribution("optuna").version
 # -- Project information -----------------------------------------------------
 
 project = "Optuna"
-copyright = "2018, Optuna Contributors."
+copyright = "2018, Optuna Contributors"
 author = "Optuna Contributors."
 
 # The short X.Y version
@@ -102,6 +102,9 @@ html_logo = "../image/optuna-logo.png"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
+
+# Remove "Edit on GitHub."
+html_show_sourcelink = False
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.

@@ -1,5 +1,8 @@
+from typing import Any
+from typing import cast
 from typing import Dict
 from typing import List
+from typing import Union
 
 import numpy as np
 import pytest
@@ -10,8 +13,8 @@ import torch.nn.functional as F
 
 import optuna
 from optuna.integration import PyTorchLightningPruningCallback
-from optuna.testing.pruner import DeterministicPruner
-from optuna.testing.storage import StorageSupplier
+from optuna.testing.pruners import DeterministicPruner
+from optuna.testing.storages import StorageSupplier
 
 
 class Model(pl.LightningModule):
@@ -20,18 +23,22 @@ class Model(pl.LightningModule):
         super().__init__()
         self._model = nn.Sequential(nn.Linear(4, 8))
 
-    def forward(self, data: torch.Tensor) -> torch.Tensor:
+    def forward(self, data: torch.Tensor) -> torch.Tensor:  # type: ignore
 
         return self._model(data)
 
-    def training_step(self, batch: List[torch.Tensor], batch_nb: int) -> Dict[str, torch.Tensor]:
+    def training_step(  # type: ignore
+        self, batch: List[torch.Tensor], batch_nb: int
+    ) -> Dict[str, torch.Tensor]:
 
         data, target = batch
         output = self.forward(data)
         loss = F.nll_loss(output, target)
         return {"loss": loss}
 
-    def validation_step(self, batch: List[torch.Tensor], batch_nb: int) -> Dict[str, torch.Tensor]:
+    def validation_step(  # type: ignore
+        self, batch: List[torch.Tensor], batch_nb: int
+    ) -> Dict[str, torch.Tensor]:
 
         data, target = batch
         output = self.forward(data)
@@ -39,11 +46,19 @@ class Model(pl.LightningModule):
         accuracy = pred.eq(target.view_as(pred)).double().mean()
         return {"validation_accuracy": accuracy}
 
-    def validation_epoch_end(self, outputs: List[Dict[str, torch.Tensor]]) -> None:
+    def validation_epoch_end(
+        self,
+        outputs: Union[
+            List[Union[torch.Tensor, Dict[str, Any]]],
+            List[List[Union[torch.Tensor, Dict[str, Any]]]],
+        ],
+    ) -> None:
         if not len(outputs):
             return
 
-        accuracy = sum(x["validation_accuracy"] for x in outputs) / len(outputs)
+        accuracy = sum(
+            x["validation_accuracy"] for x in cast(List[Dict[str, torch.Tensor]], outputs)
+        ) / len(outputs)
         self.log("accuracy", accuracy)
 
     def configure_optimizers(self) -> torch.optim.Optimizer:

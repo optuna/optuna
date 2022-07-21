@@ -22,7 +22,7 @@ from optuna.storages._rdb.models import SCHEMA_VERSION
 from optuna.storages._rdb.models import TrialHeartbeatModel
 from optuna.storages._rdb.models import VersionInfoModel
 from optuna.storages._rdb.storage import _create_scoped_session
-from optuna.testing.storage import StorageSupplier
+from optuna.testing.storages import StorageSupplier
 from optuna.testing.threading import _TestableThread
 from optuna.trial import Trial
 
@@ -90,9 +90,6 @@ def test_init_db_module_import_error() -> None:
 def test_engine_kwargs() -> None:
 
     create_test_storage(engine_kwargs={"pool_size": 5})
-
-    with pytest.raises(TypeError):
-        create_test_storage(engine_kwargs={"wrong_key": "wrong_value"})
 
 
 @pytest.mark.parametrize(

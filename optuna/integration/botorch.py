@@ -18,6 +18,8 @@ from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
 from optuna.samplers import IntersectionSearchSpace
 from optuna.samplers import RandomSampler
+from optuna.samplers._base import _CONSTRAINTS_KEY
+from optuna.samplers._base import _process_constraints_after_trial
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
@@ -37,6 +39,7 @@ with try_import() as _imports:
     from botorch.sampling.samplers import SobolQMCNormalSampler
     from botorch.utils.multi_objective.box_decompositions import NondominatedPartitioning
     from botorch.utils.multi_objective.scalarization import get_chebyshev_scalarization
+    from botorch.utils.sampling import manual_seed
     from botorch.utils.sampling import sample_simplex
     from botorch.utils.transforms import normalize
     from botorch.utils.transforms import unnormalize
@@ -381,6 +384,8 @@ class BoTorchSampler(BaseSampler):
         independent_sampler:
             An independent sampler to use for the initial trials and for parameters that are
             conditional.
+        seed:
+            Seed for random number generator.
     """
 
     def __init__(
@@ -400,13 +405,15 @@ class BoTorchSampler(BaseSampler):
         constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
         n_startup_trials: int = 10,
         independent_sampler: Optional[BaseSampler] = None,
+        seed: Optional[int] = None,
     ):
         _imports.check()
 
         self._candidates_func = candidates_func
         self._constraints_func = constraints_func
-        self._independent_sampler = independent_sampler or RandomSampler()
+        self._independent_sampler = independent_sampler or RandomSampler(seed=seed)
         self._n_startup_trials = n_startup_trials
+        self._seed = seed
 
         self._study_id: Optional[int] = None
         self._search_space = IntersectionSearchSpace()
@@ -445,7 +452,7 @@ class BoTorchSampler(BaseSampler):
         if len(search_space) == 0:
             return {}
 
-        trials = [t for t in study.get_trials(deepcopy=False) if t.state == TrialState.COMPLETE]
+        trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
 
         n_trials = len(trials)
         if n_trials < self._n_startup_trials:
@@ -472,7 +479,7 @@ class BoTorchSampler(BaseSampler):
 
             if self._constraints_func is not None:
                 constraints = study._storage.get_trial_system_attrs(trial._trial_id).get(
-                    "botorch:constraints"
+                    _CONSTRAINTS_KEY
                 )
                 if constraints is not None:
                     n_constraints = len(constraints)
@@ -511,7 +518,14 @@ class BoTorchSampler(BaseSampler):
 
         if self._candidates_func is None:
             self._candidates_func = _get_default_candidates_func(n_objectives=n_objectives)
-        candidates = self._candidates_func(params, values, con, bounds)
+
+        with manual_seed(self._seed):
+            # `manual_seed` makes the default candidates functions reproducible.
+            # `SobolQMCNormalSampler`'s constructor has a `seed` argument, but its behavior is
+            # deterministic when the BoTorch's seed is fixed.
+            candidates = self._candidates_func(params, values, con, bounds)
+            if self._seed is not None:
+                self._seed += 1
 
         if not isinstance(candidates, torch.Tensor):
             raise TypeError("Candidates must be a torch.Tensor.")
@@ -547,6 +561,8 @@ class BoTorchSampler(BaseSampler):
 
     def reseed_rng(self) -> None:
         self._independent_sampler.reseed_rng()
+        if self._seed is not None:
+            self._seed = numpy.random.RandomState().randint(2**60)
 
     def after_trial(
         self,
@@ -556,21 +572,5 @@ class BoTorchSampler(BaseSampler):
         values: Optional[Sequence[float]],
     ) -> None:
         if self._constraints_func is not None:
-            constraints = None
-
-            try:
-                con = self._constraints_func(trial)
-                if not isinstance(con, (tuple, list)):
-                    warnings.warn(
-                        f"Constraints should be a sequence of floats but got {type(con).__name__}."
-                    )
-                constraints = tuple(con)
-            finally:
-                assert constraints is None or isinstance(constraints, tuple)
-
-                study._storage.set_trial_system_attr(
-                    trial._trial_id,
-                    "botorch:constraints",
-                    constraints,
-                )
+            _process_constraints_after_trial(self._constraints_func, study, trial, state)
         self._independent_sampler.after_trial(study, trial, state, values)

@@ -17,6 +17,8 @@ import numpy as np
 import optuna
 from optuna._experimental import ExperimentalWarning
 from optuna.distributions import BaseDistribution
+from optuna.samplers._base import _CONSTRAINTS_KEY
+from optuna.samplers._base import _process_constraints_after_trial
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._search_space import IntersectionSearchSpace
@@ -31,7 +33,6 @@ from optuna.trial import TrialState
 
 
 # Define key names of `Trial.system_attrs`.
-_CONSTRAINTS_KEY = "nsga2:constraints"
 _GENERATION_KEY = "nsga2:generation"
 _POPULATION_CACHE_KEY_PREFIX = "nsga2:population"
 
@@ -389,51 +390,64 @@ class NSGAIISampler(BaseSampler):
         values: Optional[Sequence[float]],
     ) -> None:
         assert state in [TrialState.COMPLETE, TrialState.FAIL, TrialState.PRUNED]
-        if state == TrialState.COMPLETE and self._constraints_func is not None:
-            constraints = None
-            try:
-                con = self._constraints_func(trial)
-                if not isinstance(con, (tuple, list)):
-                    warnings.warn(
-                        f"Constraints should be a sequence of floats but got {type(con).__name__}."
-                    )
-                constraints = tuple(con)
-            finally:
-                assert constraints is None or isinstance(constraints, tuple)
-
-                study._storage.set_trial_system_attr(
-                    trial._trial_id,
-                    _CONSTRAINTS_KEY,
-                    constraints,
-                )
+        if self._constraints_func is not None:
+            _process_constraints_after_trial(self._constraints_func, study, trial, state)
         self._random_sampler.after_trial(study, trial, state, values)
 
 
-def _crowding_distance_sort(population: List[FrozenTrial]) -> None:
-    manhattan_distances = defaultdict(float)
+def _calc_crowding_distance(population: List[FrozenTrial]) -> DefaultDict[int, float]:
+    """Calculates the crowding distance of population.
+
+    We define the crowding distance as the summation of the crowding distance of each dimension
+    of value calculated as follows:
+
+    * If all values in that dimension are the same, i.e., [1, 1, 1] or [inf, inf],
+      the crowding distances of all trials in that dimension are zero.
+    * Otherwise, the crowding distances of that dimension is the difference between
+      two nearest values besides that value, one above and one below, divided by the difference
+      between the maximal and minimal finite value of that dimension. Please note that:
+        * the nearest value below the minimum is considered to be -inf and the
+          nearest value above the maximum is considered to be inf, and
+        * inf - inf and (-inf) - (-inf) is considered to be zero.
+    """
+
+    manhattan_distances: DefaultDict[int, float] = defaultdict(float)
+    if len(population) == 0:
+        return manhattan_distances
+
     for i in range(len(population[0].values)):
         population.sort(key=lambda x: cast(float, x.values[i]))
 
-        v_min = population[0].values[i]
-        v_max = population[-1].values[i]
-        assert v_min is not None
-        assert v_max is not None
-
-        width = v_max - v_min
-        if width == 0:
+        # If population have the same values[i], ignore that value.
+        if population[0].values[i] == population[-1].values[i]:
             continue
 
-        manhattan_distances[population[0].number] = float("inf")
-        manhattan_distances[population[-1].number] = float("inf")
+        vs = (
+            [-float("inf")]
+            + [cast(List[float], population[j].values)[i] for j in range(len(population))]
+            + [float("inf")]
+        )
 
-        for j in range(1, len(population) - 1):
-            v_high = population[j + 1].values[i]
-            v_low = population[j - 1].values[i]
-            assert v_high is not None
-            assert v_low is not None
+        # Smallest finite value.
+        v_min = next(x for x in vs if x != -float("inf"))
 
-            manhattan_distances[population[j].number] += (v_high - v_low) / width
+        # Largest finite value.
+        v_max = next(x for x in reversed(vs) if x != float("inf"))
 
+        width = v_max - v_min
+        if width <= 0:
+            # width == 0 or width == -inf
+            width = 1.0
+
+        for j in range(len(population)):
+            # inf - inf and (-inf) - (-inf) is considered to be zero.
+            gap = 0.0 if vs[j] == vs[j + 2] else vs[j + 2] - vs[j]
+            manhattan_distances[population[j].number] += gap / width
+    return manhattan_distances
+
+
+def _crowding_distance_sort(population: List[FrozenTrial]) -> None:
+    manhattan_distances = _calc_crowding_distance(population)
     population.sort(key=lambda x: manhattan_distances[x.number])
     population.reverse()
 

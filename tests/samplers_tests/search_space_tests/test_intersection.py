@@ -8,7 +8,7 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.samplers import intersection_search_space
 from optuna.samplers import IntersectionSearchSpace
-from optuna.testing.storage import StorageSupplier
+from optuna.testing.storages import StorageSupplier
 from optuna.trial import Trial
 
 
@@ -17,6 +17,13 @@ def test_intersection_search_space() -> None:
     study = create_study()
 
     # No trial.
+    assert search_space.calculate(study) == {}
+    assert search_space.calculate(study) == intersection_search_space(study)
+
+    # Waiting trial.
+    study.enqueue_trial(
+        {"y": 0, "x": 5}, {"y": FloatDistribution(-3, 3), "x": IntDistribution(0, 10)}
+    )
     assert search_space.calculate(study) == {}
     assert search_space.calculate(study) == intersection_search_space(study)
 

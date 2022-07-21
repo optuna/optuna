@@ -21,7 +21,7 @@ from optuna.exceptions import CLIUsageError
 from optuna.storages import RDBStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.study import StudyDirection
-from optuna.testing.storage import StorageSupplier
+from optuna.testing.storages import StorageSupplier
 from optuna.trial import Trial
 from optuna.trial import TrialState
 
@@ -224,16 +224,12 @@ def test_delete_study_command() -> None:
         # Create study.
         command = ["optuna", "create-study", "--storage", storage_url, "--study-name", study_name]
         subprocess.check_call(command)
-        assert study_name in {
-            s.study_name: s for s in storage.get_all_study_summaries(include_best_trial=True)
-        }
+        assert study_name in {s.study_name: s for s in storage.get_all_studies()}
 
         # Delete study.
         command = ["optuna", "delete-study", "--storage", storage_url, "--study-name", study_name]
         subprocess.check_call(command)
-        assert study_name not in {
-            s.study_name: s for s in storage.get_all_study_summaries(include_best_trial=True)
-        }
+        assert study_name not in {s.study_name: s for s in storage.get_all_studies()}
 
 
 @pytest.mark.skip_coverage

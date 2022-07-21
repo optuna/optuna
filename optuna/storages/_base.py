@@ -10,8 +10,8 @@ from typing import Tuple
 from typing import Union
 
 from optuna.distributions import BaseDistribution
+from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
-from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -57,17 +57,11 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     **Stronger consistency requirements for special data**
 
     Under a multi-worker setting, a storage class must return the latest values of any attributes
-    of a study, not necessarily for the attributes of a `Trial`.
-    However, if the `read_trials_from_remote_storage(study_id)` method is called, any successive
-    reads on the `state` attribute of a `Trial` are guaranteed to return the same or more recent
-    values than the value at the time of the call to the
-    `read_trials_from_remote_storage(study_id)` method.
-    Let `T` be a `Trial`.
-    Let `P` be the process that last updated the `state` attribute of `T`.
-    Then, any reads on any attributes of `T` are guaranteed to return the same or
-    more recent values than any writes by `P` on the attribute before `P` updated
-    the `state` attribute of `T`.
-    The same applies for `user_attrs', 'system_attrs' and 'intermediate_values` attributes.
+    of a study and a trial. Generally, typical storages naturally hold this requirement. However,
+    :class:`~optuna.storages._CachedStorage` does not, so we introduce the
+    `read_trials_from_remote_storage(study_id)` method in the class. The detailed explanation how
+    :class:`~optuna.storages._CachedStorage` aquires this requirement, is available at
+    the docstring.
 
     .. note::
 
@@ -276,16 +270,11 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_all_study_summaries(self, include_best_trial: bool) -> List[StudySummary]:
-        """Read a list of :class:`~optuna.study.StudySummary` objects.
-
-        Args:
-            include_best_trial:
-                If :obj:`True`, :obj:`~optuna.study.StudySummary` objects have the best trials in
-                the ``best_trial`` attribute. Otherwise, ``best_trial`` is :obj:`None`.
+    def get_all_studies(self) -> List[FrozenStudy]:
+        """Read a list of :class:`~optuna.study.FrozenStudy` objects.
 
         Returns:
-            A list of :class:`~optuna.study.StudySummary` objects.
+            A list of :class:`~optuna.study.FrozenStudy` objects.
 
         """
         raise NotImplementedError
@@ -658,19 +647,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
                 If no trial with the matching ``trial_id`` exists.
         """
         return self.get_trial(trial_id).system_attrs
-
-    def read_trials_from_remote_storage(self, study_id: int) -> None:
-        """Make an internal cache of trials up-to-date.
-
-        Args:
-            study_id:
-                ID of the study.
-
-        Raises:
-            :exc:`KeyError`:
-                If no study with the matching ``study_id`` exists.
-        """
-        raise NotImplementedError
 
     def remove_session(self) -> None:
         """Clean up all connections to a database."""
