@@ -165,10 +165,10 @@ def test_constraints_func(constraint_value: float) -> None:
     "constraints_list",
     [
         [[]],  # empty constraint
-        [[-float("inf")], [-1], [0]],  # 1d constraints
+        [[-float("inf")], [-1], [0]],  # single constraint
         [
             [c1, c2] for c1 in [-float("inf"), -1, 0] for c2 in [-float("inf"), -1, 0]
-        ],  # 2d-constraints
+        ],  # multiple constraints
     ],
 )
 def test_constrained_dominates_feasible_vs_feasible(
