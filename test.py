@@ -75,7 +75,7 @@ def create_trial_test():
     study_name = "create_trial_test"
     study_id = storage.create_new_study(study_name)
 
-    trial_id = storage.create_new_trial(study_id, None)
+    trial_id = storage.create_new_trial(study_id)
 
     # Set new params.
     storage.set_trial_param(
