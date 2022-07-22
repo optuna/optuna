@@ -18,6 +18,7 @@ import uuid
 from optuna.distributions import BaseDistribution
 from optuna.distributions import distribution_to_json
 from optuna.distributions import json_to_distribution
+from optuna.distributions import check_distribution_compatibility
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages import BaseStorage
 from optuna.storages._journal.file import FileStorage
@@ -126,6 +127,7 @@ class JournalStorage(BaseStorage):
 
         # study-id - [trial-id] dict (thread-unsafe)
         self._study_id_to_trial_ids: Dict[int, List[int]] = dict()
+        self._trial_id_to_study_id: Dict[int, int] = dict()
         self._next_study_id: int = 0
 
         # Lock for controlling multiple threads
@@ -302,7 +304,7 @@ class JournalStorage(BaseStorage):
             )
 
             self._study_id_to_trial_ids[study_id].append(trial_id)
-
+            self._trial_id_to_study_id[trial_id] = study_id
             self._push_log_replay_result(log, trial_id)
 
         elif op == JournalOperation.SET_TRIAL_PARAM:
@@ -319,6 +321,20 @@ class JournalStorage(BaseStorage):
             param_name = log["param_name"]
             param_value_internal = log["param_value_internal"]
             distribution = json_to_distribution(log["distribution"])
+
+            study_id = self._trial_id_to_study_id[trial_id]
+
+            for prev_trial_id in self._study_id_to_trial_ids[study_id]:
+                prev_trial = self._trials[prev_trial_id]
+                if param_name in prev_trial.params.keys():
+                    try:
+                        check_distribution_compatibility(
+                            prev_trial.distributions[param_name], distribution
+                        )
+                    except Exception as e:
+                        self._push_log_replay_result(log, e)
+                        return
+                    break
 
             self._trials[trial_id].params[param_name] = distribution.to_external_repr(
                 param_value_internal
