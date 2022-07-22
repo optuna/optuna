@@ -255,6 +255,7 @@ class JournalStorage(BaseStorage):
             user_attrs = {}
             system_attrs = {}
             value = None
+            values = None
             intermediate_values = {}
             datetime_start: Optional[Any] = datetime.datetime.now()
             datetime_complete = None
@@ -271,6 +272,7 @@ class JournalStorage(BaseStorage):
                 user_attrs = log["user_attrs"]
                 system_attrs = log["system_attrs"]
                 value = log["value"]
+                values = log["values"]
                 for k, v in log["intermediate_values"].items():
                     intermediate_values[int(k)] = v
                 datetime_start = (
@@ -296,6 +298,7 @@ class JournalStorage(BaseStorage):
                 intermediate_values=intermediate_values,
                 datetime_start=datetime_start,
                 datetime_complete=datetime_complete,
+                values=values,
             )
 
             self._study_id_to_trial_ids[study_id].append(trial_id)
@@ -731,7 +734,12 @@ class JournalStorage(BaseStorage):
         else:
             log["has_template_trial"] = True
             log["state"] = template_trial.state
-            log["value"] = template_trial.value
+            if template_trial.values is not None and len(template_trial.values) > 1:
+                log["value"] = None
+                log["values"] = template_trial.values
+            else:
+                log["value"] = template_trial.value
+                log["values"] = None
             log["datetime_start"] = (
                 template_trial.datetime_start.isoformat()
                 if template_trial.datetime_start is not None

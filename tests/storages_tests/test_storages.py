@@ -1100,6 +1100,9 @@ def test_get_trial_id_from_study_id_trial_number(storage_mode: str) -> None:
 def test_pickle_storage(storage_mode: str) -> None:
     if "redis" in storage_mode:
         pytest.skip("Redis storage is not picklable")
+    
+    if "journal" in storage_mode:
+        pytest.skip("Journal storage is not picklable")
 
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study()
