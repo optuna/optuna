@@ -266,7 +266,7 @@ class JournalStorage(BaseStorage):
                 ):
                     assert k1 == k2
                     dist = json_to_distribution(dist)
-                    params[k1] = dist.to_internal_repr(param)
+                    params[k1] = dist.to_external_repr(param)
                     distributions[k1] = dist
                 user_attrs = log["user_attrs"]
                 system_attrs = log["system_attrs"]
@@ -314,11 +314,11 @@ class JournalStorage(BaseStorage):
                 return
 
             param_name = log["param_name"]
-            param_value_external = log["param_value_external"]
+            param_value_internal = log["param_value_internal"]
             distribution = json_to_distribution(log["distribution"])
 
-            self._trials[trial_id].params[param_name] = distribution.to_internal_repr(
-                param_value_external
+            self._trials[trial_id].params[param_name] = distribution.to_external_repr(
+                param_value_internal
             )
             self._trials[trial_id].distributions[param_name] = distribution
 
@@ -750,7 +750,7 @@ class JournalStorage(BaseStorage):
                 template_trial.params.items(), template_trial.distributions.items()
             ):
                 assert k1 == k2
-                params[k1] = dist.to_external_repr(param)
+                params[k1] = dist.to_internal_repr(param)
                 distributions[k1] = distribution_to_json(dist)
 
             log["params"] = params
@@ -797,7 +797,7 @@ class JournalStorage(BaseStorage):
         log = self._create_operation_log(JournalOperation.SET_TRIAL_PARAM)
         log["trial_id"] = trial_id
         log["param_name"] = param_name
-        log["param_value_external"] = distribution.to_external_repr(param_value_internal)
+        log["param_value_internal"] = param_value_internal
         log["distribution"] = distribution_to_json(distribution)
 
         with self._thread_lock:
