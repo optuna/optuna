@@ -4,6 +4,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 
+from optuna.storages._journal.base import BaseLogStorage
 from optuna.storages._journal.file_lock import BaseFileLock
 from optuna.storages._journal.file_lock import OpenLock
 
@@ -12,7 +13,7 @@ def get_file_lock(file_name: str) -> BaseFileLock:
     return OpenLock("./openlock", file_name)
 
 
-class FileStorage:
+class FileStorage(BaseLogStorage):
     def __init__(self, file_name: str):
         self._filename: str = os.path.join(".", file_name)
         open(self._filename, "a").close()  # Create a file if it does not exist
