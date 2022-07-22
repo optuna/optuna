@@ -3,11 +3,12 @@ import os
 from typing import Any
 from typing import Dict
 from typing import List
+
 from optuna.storages._journal.file_lock import BaseFileLock
 from optuna.storages._journal.file_lock import OpenLock
 
 
-def get_file_lock(file_name) -> BaseFileLock:
+def get_file_lock(file_name: str) -> BaseFileLock:
     return OpenLock("./openlock", file_name)
 
 

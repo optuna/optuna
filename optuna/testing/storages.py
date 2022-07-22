@@ -12,6 +12,7 @@ import optuna
 from optuna import storages
 from optuna.storages._journal.storage import JournalStorage
 
+
 STORAGE_MODES = [
     "inmemory",
     "sqlite",

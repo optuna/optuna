@@ -106,7 +106,7 @@ class JournalStorage(BaseStorage):
         These attribute behaviors may become user customizable in the future.
     """
 
-    def __init__(self, log_file_name) -> None:
+    def __init__(self, log_file_name: str) -> None:
         self._host_name = socket.gethostname()
         self._host_ip = socket.gethostbyname(self._host_name)
         self._p_id = os.getpid()
@@ -128,27 +128,18 @@ class JournalStorage(BaseStorage):
         self._study_id_to_trial_ids: Dict[int, List[int]] = dict()
         self._next_study_id: int = 0
 
-        # (thread-safe)
-        self._thread_local = threading.local()
-        self._thread_local._buffered_logs = []
-        self._thread_local._id = threading.get_ident()
-
         # Lock for controlling multiple threads
         self._thread_lock = threading.Lock()
 
     def _create_operation_log(self, op_code: JournalOperation) -> Dict[str, Any]:
         return {
-            "log_id": str(uuid.uuid4()) + "--" + str(self._thread_local._id),
+            "log_id": str(uuid.uuid4()) + "--" + str(threading.get_ident()),
             "op_code": op_code,
             "me": self._me,
         }
 
-    def _buffer_log(self, log: Dict[str, Any]) -> None:
-        self._thread_local._buffered_logs.append(log)
-
-    def _flush_logs(self) -> None:
-        self._backend.append_logs(self._thread_local._buffered_logs)
-        self._thread_local._buffered_logs = []
+    def _write_log(self, log: Dict[str, Any]) -> None:
+        self._backend.append_logs([log])
 
     def _push_log_replay_result(self, log: Dict[str, Any], result: Any) -> None:
         if log["me"] == self._me:
@@ -172,7 +163,7 @@ class JournalStorage(BaseStorage):
 
             fs = FrozenStudy(
                 study_name=study_name,
-                direction=None,
+                direction=StudyDirection.NOT_SET,
                 user_attrs={},
                 system_attrs={},
                 study_id=study_id,
@@ -236,6 +227,15 @@ class JournalStorage(BaseStorage):
                 return
 
             directions = log["directions"]
+
+            current_directions = self._studies[study_id]._directions
+            if (
+                current_directions[0] != StudyDirection.NOT_SET
+                and current_directions != directions
+            ):
+                self._push_log_replay_result(log, ValueError(""))
+                return
+
             self._studies[study_id]._directions = directions
 
             self._push_log_replay_result(log, None)
@@ -248,30 +248,54 @@ class JournalStorage(BaseStorage):
                 return
 
             trial_id = len(self._trials)
-
+            number = len(self._study_id_to_trial_ids[study_id])
+            state = TrialState.RUNNING
+            params = {}
+            distributions = {}
             user_attrs = {}
             system_attrs = {}
+            value = None
             intermediate_values = {}
-            state = TrialState.RUNNING
+            datetime_start: Optional[Any] = datetime.datetime.now()
+            datetime_complete = None
 
             if log["has_template_trial"]:
+                state = TrialState(log["state"])
+                for (k1, param), (k2, dist) in zip(
+                    log["params"].items(), log["distributions"].items()
+                ):
+                    assert k1 == k2
+                    dist = json_to_distribution(dist)
+                    params[k1] = dist.to_internal_repr(param)
+                    distributions[k1] = dist
                 user_attrs = log["user_attrs"]
                 system_attrs = log["system_attrs"]
-                intermediate_values = log["intermediate_values"]
-                state = log["state"]
+                value = log["value"]
+                for k, v in log["intermediate_values"].items():
+                    intermediate_values[int(k)] = v
+                datetime_start = (
+                    datetime.datetime.fromisoformat(log["datetime_start"])
+                    if log["datetime_start"] is not None
+                    else None
+                )
+                datetime_complete = (
+                    datetime.datetime.fromisoformat(log["datetime_complete"])
+                    if log["datetime_complete"] is not None
+                    else None
+                )
 
             self._trials[trial_id] = FrozenTrial(
                 trial_id=trial_id,
-                number=-1,
+                number=number,
                 state=state,
-                params={},
-                distributions={},
+                params=params,
+                distributions=distributions,
                 user_attrs=user_attrs,
                 system_attrs=system_attrs,
-                value=None,
+                value=value,
                 intermediate_values=intermediate_values,
-                datetime_start=datetime.datetime.now(),
-                datetime_complete=None,
+                datetime_start=datetime_start,
+                datetime_complete=datetime_complete,
             )
 
             self._study_id_to_trial_ids[study_id].append(trial_id)
@@ -311,16 +335,29 @@ class JournalStorage(BaseStorage):
                 self._push_log_replay_result(log, RuntimeError(""))
                 return
 
-            state = log["state"]
+            state = TrialState(log["state"])
             values = log["values"]
 
             if state == self._trials[trial_id].state and state == TrialState.RUNNING:
                 self._push_log_replay_result(log, False)
-            else:
-                self._trials[trial_id].state = state
-                if values is not None:
-                    self._trials[trial_id].values = values
-                self._push_log_replay_result(log, True)
+                return
+
+            if state == TrialState.RUNNING:
+                self._trials[trial_id].datetime_start = datetime.datetime.fromisoformat(
+                    log["datetime_start"]
+                )
+
+            if state.is_finished():
+                self._trials[trial_id].datetime_complete = datetime.datetime.fromisoformat(
+                    log["datetime_complete"]
+                )
+
+            self._trials[trial_id].state = state
+            if values is not None:
+                self._trials[trial_id].values = values
+
+            self._push_log_replay_result(log, True)
+            return
 
         elif op == JournalOperation.SET_TRIAL_INTERMEDIATE_VALUE:
             trial_id = log["trial_id"]
@@ -413,10 +450,8 @@ class JournalStorage(BaseStorage):
         """
         log = self._create_operation_log(JournalOperation.CREATE_STUDY)
         log["study_name"] = self._create_unique_study_name() if study_name is None else study_name
-        self._buffer_log(log)
-        self._flush_logs()
-
         with self._thread_lock:
+            self._write_log(log)
             self._sync_with_backend()
 
             result = self._pop_log_replay_result(log)
@@ -440,10 +475,8 @@ class JournalStorage(BaseStorage):
         log = self._create_operation_log(JournalOperation.DELETE_STUDY)
         log["study_id"] = study_id
 
-        self._buffer_log(log)
-        self._flush_logs()
-
         with self._thread_lock:
+            self._write_log(log)
             self._sync_with_backend()
 
             result = self._pop_log_replay_result(log)
@@ -474,10 +507,8 @@ class JournalStorage(BaseStorage):
         log["study_id"] = study_id
         log["user_attr"] = {key: value}
 
-        self._buffer_log(log)
-        self._flush_logs()
-
         with self._thread_lock:
+            self._write_log(log)
             self._sync_with_backend()
 
             result = self._pop_log_replay_result(log)
@@ -508,10 +539,8 @@ class JournalStorage(BaseStorage):
         log["study_id"] = study_id
         log["system_attr"] = {key: value}
 
-        self._buffer_log(log)
-        self._flush_logs()
-
         with self._thread_lock:
+            self._write_log(log)
             self._sync_with_backend()
 
             result = self._pop_log_replay_result(log)
@@ -544,10 +573,8 @@ class JournalStorage(BaseStorage):
         log["study_id"] = study_id
         log["directions"] = directions
 
-        self._buffer_log(log)
-        self._flush_logs()
-
         with self._thread_lock:
+            self._write_log(log)
             self._sync_with_backend()
 
             result = self._pop_log_replay_result(log)
@@ -703,15 +730,37 @@ class JournalStorage(BaseStorage):
             log["has_template_trial"] = False
         else:
             log["has_template_trial"] = True
+            log["state"] = template_trial.state
+            log["value"] = template_trial.value
+            log["datetime_start"] = (
+                template_trial.datetime_start.isoformat()
+                if template_trial.datetime_start is not None
+                else None
+            )
+            log["datetime_complete"] = (
+                template_trial.datetime_complete.isoformat()
+                if template_trial.datetime_complete is not None
+                else None
+            )
+
+            params = {}
+            distributions = {}
+
+            for (k1, param), (k2, dist) in zip(
+                template_trial.params.items(), template_trial.distributions.items()
+            ):
+                assert k1 == k2
+                params[k1] = dist.to_external_repr(param)
+                distributions[k1] = distribution_to_json(dist)
+
+            log["params"] = params
+            log["distributions"] = distributions
             log["user_attrs"] = template_trial.user_attrs
             log["system_attrs"] = template_trial.system_attrs
             log["intermediate_values"] = template_trial.intermediate_values
-            log["state"] = template_trial.state
-
-        self._buffer_log(log)
-        self._flush_logs()
 
         with self._thread_lock:
+            self._write_log(log)
             self._sync_with_backend()
             result = self._pop_log_replay_result(log)
             if isinstance(result, Exception):
@@ -751,10 +800,8 @@ class JournalStorage(BaseStorage):
         log["param_value_external"] = distribution.to_external_repr(param_value_internal)
         log["distribution"] = distribution_to_json(distribution)
 
-        self._buffer_log(log)
-        self._flush_logs()
-
         with self._thread_lock:
+            self._write_log(log)
             self._sync_with_backend()
 
             result = self._pop_log_replay_result(log)
@@ -878,10 +925,13 @@ class JournalStorage(BaseStorage):
         log["state"] = state
         log["values"] = values
 
-        self._buffer_log(log)
-        self._flush_logs()
+        if state == TrialState.RUNNING:
+            log["datetime_start"] = datetime.datetime.now().isoformat()
+        elif state.is_finished():
+            log["datetime_complete"] = datetime.datetime.now().isoformat()
 
         with self._thread_lock:
+            self._write_log(log)
             self._sync_with_backend()
 
             result = self._pop_log_replay_result(log)
@@ -917,10 +967,8 @@ class JournalStorage(BaseStorage):
         log["step"] = step
         log["intermediate_value"] = intermediate_value
 
-        self._buffer_log(log)
-        self._flush_logs()
-
         with self._thread_lock:
+            self._write_log(log)
             self._sync_with_backend()
 
             result = self._pop_log_replay_result(log)
@@ -953,10 +1001,8 @@ class JournalStorage(BaseStorage):
         log["trial_id"] = trial_id
         log["user_attr"] = {key: value}
 
-        self._buffer_log(log)
-        self._flush_logs()
-
         with self._thread_lock:
+            self._write_log(log)
             self._sync_with_backend()
             result = self._pop_log_replay_result(log)
             if isinstance(result, Exception):
@@ -988,10 +1034,8 @@ class JournalStorage(BaseStorage):
         log["trial_id"] = trial_id
         log["system_attr"] = {key: value}
 
-        self._buffer_log(log)
-        self._flush_logs()
-
         with self._thread_lock:
+            self._write_log(log)
             self._sync_with_backend()
             result = self._pop_log_replay_result(log)
             if isinstance(result, Exception):

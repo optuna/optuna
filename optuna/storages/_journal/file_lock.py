@@ -4,11 +4,11 @@ import os
 
 
 class BaseFileLock(metaclass=abc.ABCMeta):
-    @abc.abstractclassmethod
+    @abc.abstractmethod
     def acquire(self, blocking: bool, timeout: int) -> bool:
         raise NotImplementedError
 
-    @abc.abstractclassmethod
+    @abc.abstractmethod
     def release(self) -> None:
         raise NotImplementedError
 

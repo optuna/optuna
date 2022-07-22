@@ -47,8 +47,7 @@ class FrozenStudy:
     ):
         self.study_name = study_name
         if direction is None and directions is None:
-            # raise ValueError("Specify one of `direction` and `directions`.")
-            directions = []
+            raise ValueError("Specify one of `direction` and `directions`.")
         elif directions is not None:
             self._directions = list(directions)
         elif direction is not None:
