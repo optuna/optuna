@@ -47,7 +47,7 @@ def test_get_storage() -> None:
     )
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_create_new_study(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -68,7 +68,7 @@ def test_create_new_study(storage_mode: str) -> None:
         assert all(s.study_name.startswith(DEFAULT_STUDY_NAME_PREFIX) for s in frozen_studies)
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_create_new_study_unique_id(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -86,7 +86,7 @@ def test_create_new_study_unique_id(storage_mode: str) -> None:
         assert {s._study_id for s in frozen_studies} == {study_id, study_id3}
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_create_new_study_with_name(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -102,7 +102,7 @@ def test_create_new_study_with_name(storage_mode: str) -> None:
             storage.create_new_study(study_name)
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_delete_study(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -127,7 +127,7 @@ def test_delete_study(storage_mode: str) -> None:
             storage.delete_study(study_id)
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_delete_study_after_create_multiple_studies(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -143,7 +143,7 @@ def test_delete_study_after_create_multiple_studies(storage_mode: str) -> None:
         assert study_id3 in studies
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -165,7 +165,7 @@ def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode: str) ->
             storage.get_study_name_from_id(study_id + 1)
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_and_get_study_directions(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -224,7 +224,7 @@ def test_set_and_get_study_directions(storage_mode: str) -> None:
                 storage.set_study_directions(non_existent_study_id, (StudyDirection.NOT_SET,))
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_and_get_study_user_attrs(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -253,7 +253,7 @@ def test_set_and_get_study_user_attrs(storage_mode: str) -> None:
             storage.set_study_user_attr(non_existent_study_id, "key", "value")
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_and_get_study_system_attrs(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -282,7 +282,7 @@ def test_set_and_get_study_system_attrs(storage_mode: str) -> None:
             storage.set_study_system_attr(non_existent_study_id, "key", "value")
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_study_user_and_system_attrs_confusion(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -299,7 +299,7 @@ def test_study_user_and_system_attrs_confusion(storage_mode: str) -> None:
         assert storage.get_study_system_attrs(study_id) == {}
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_create_new_trial(storage_mode: str) -> None:
     def _check_trials(
         trials: List[FrozenTrial],
@@ -359,7 +359,7 @@ def test_create_new_trial(storage_mode: str) -> None:
         assert len({t._trial_id for t in trials}) == 2 * n_trial_in_study
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_create_new_trial_with_template_trial(storage_mode: str) -> None:
 
     start_time = datetime.now()
@@ -418,7 +418,7 @@ def test_create_new_trial_with_template_trial(storage_mode: str) -> None:
         assert len({t._trial_id for t in trials}) == 2 * n_trial_in_study
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_trial_number_from_id(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -435,7 +435,7 @@ def test_get_trial_number_from_id(storage_mode: str) -> None:
             storage.get_trial_number_from_id(trial_id + 1)
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_trial_state_values_for_state(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -479,7 +479,7 @@ def test_set_trial_state_values_for_state(storage_mode: str) -> None:
                     storage.set_trial_state_values(trial_id, state=state2)
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_trial_param_and_get_trial_params(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -505,7 +505,7 @@ def test_get_trial_param_and_get_trial_params(storage_mode: str) -> None:
             storage.get_trial_param(existent_trial_id, "dummy-key")
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_trial_param(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -576,7 +576,7 @@ def test_set_trial_param(storage_mode: str) -> None:
             storage.set_trial_param(non_existent_trial_id, "x", 0.1, distribution_x)
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_trial_state_values_for_values(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -618,7 +618,7 @@ def test_set_trial_state_values_for_values(storage_mode: str) -> None:
             storage.set_trial_state_values(trial_id_1, state=TrialState.COMPLETE, values=(1,))
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_trial_intermediate_value(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -663,7 +663,7 @@ def test_set_trial_intermediate_value(storage_mode: str) -> None:
             storage.set_trial_intermediate_value(trial_id_1, 0, 0.2)
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_trial_user_attrs(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -679,7 +679,7 @@ def test_get_trial_user_attrs(storage_mode: str) -> None:
             storage.get_trial_user_attrs(non_existent_trial)
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_trial_user_attr(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -715,7 +715,7 @@ def test_set_trial_user_attr(storage_mode: str) -> None:
             storage.set_trial_user_attr(trial_id_1, "key", "value")
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_trial_system_attrs(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -731,7 +731,7 @@ def test_get_trial_system_attrs(storage_mode: str) -> None:
             storage.get_trial_system_attrs(non_existent_trial)
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_trial_system_attr(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -769,7 +769,7 @@ def test_set_trial_system_attr(storage_mode: str) -> None:
             storage.set_trial_system_attr(trial_id_1, "key", "value")
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_all_studies(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -789,7 +789,7 @@ def test_get_all_studies(storage_mode: str) -> None:
             assert frozen_study.system_attrs == expected_frozen_study.system_attrs
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_trial(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -807,7 +807,7 @@ def test_get_trial(storage_mode: str) -> None:
             storage.get_trial(non_existent_trial_id)
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_all_trials(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -824,7 +824,7 @@ def test_get_all_trials(storage_mode: str) -> None:
             storage.get_all_trials(non_existent_study_id)
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_all_trials_deepcopy_option(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -842,7 +842,7 @@ def test_get_all_trials_deepcopy_option(storage_mode: str) -> None:
             assert trials0_original == trials1
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_all_trials_state_option(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -883,7 +883,7 @@ def test_get_all_trials_state_option(storage_mode: str) -> None:
             assert len(trials) == 0
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_n_trials(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -896,7 +896,7 @@ def test_get_n_trials(storage_mode: str) -> None:
             assert storage.get_n_trials(non_existent_study_id)
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_n_trials_state_option(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -925,7 +925,7 @@ def test_get_n_trials_state_option(storage_mode: str) -> None:
             assert storage.get_n_trials(study_id, s) == 0
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_best_trial(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -1049,7 +1049,7 @@ def _generate_trial(generator: random.Random) -> FrozenTrial:
     )
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_best_trial_for_multi_objective_optimization(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -1067,7 +1067,7 @@ def test_get_best_trial_for_multi_objective_optimization(storage_mode: str) -> N
             storage.get_best_trial(study_id)
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_trial_id_from_study_id_trial_number(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -1096,11 +1096,11 @@ def test_get_trial_id_from_study_id_trial_number(storage_mode: str) -> None:
         )
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_pickle_storage(storage_mode: str) -> None:
     if "redis" in storage_mode:
         pytest.skip("Redis storage is not picklable")
-    
+
     if "journal" in storage_mode:
         pytest.skip("Journal storage is not picklable")
 
@@ -1123,7 +1123,7 @@ def test_pickle_storage(storage_mode: str) -> None:
             assert storage._version_manager != restored_storage._version_manager
 
 
-@pytest.mark.parametrize("storage_mode", ["journal"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_check_trial_is_updatable(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study()

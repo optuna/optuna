@@ -16,9 +16,9 @@ from typing import Union
 import uuid
 
 from optuna.distributions import BaseDistribution
+from optuna.distributions import check_distribution_compatibility
 from optuna.distributions import distribution_to_json
 from optuna.distributions import json_to_distribution
-from optuna.distributions import check_distribution_compatibility
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages import BaseStorage
 from optuna.storages._journal.file import FileStorage
