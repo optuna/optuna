@@ -76,3 +76,9 @@ class FirstTrialOnlyRandomSampler(optuna.samplers.RandomSampler):
         return super(FirstTrialOnlyRandomSampler, self).sample_independent(
             study, trial, param_name, param_distribution
         )
+
+
+class FixedSeedRandomSampler(optuna.samplers.RandomSampler):
+    def __init__(self) -> None:
+        seed = 42
+        super().__init__(seed)

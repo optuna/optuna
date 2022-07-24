@@ -23,6 +23,7 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.testing.pruners import DeterministicPruner
 from optuna.testing.samplers import DeterministicRelativeSampler
+from optuna.testing.samplers import FixedSeedRandomSampler
 from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
 from optuna.trial import Trial
@@ -31,7 +32,7 @@ from optuna.trial import Trial
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_check_distribution_suggest_float(storage_mode: str) -> None:
 
-    sampler = samplers.RandomSampler()
+    sampler = FixedSeedRandomSampler()
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
@@ -64,7 +65,7 @@ def test_check_distribution_suggest_float(storage_mode: str) -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_check_distribution_suggest_uniform(storage_mode: str) -> None:
 
-    sampler = samplers.RandomSampler()
+    sampler = FixedSeedRandomSampler()
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
@@ -88,7 +89,7 @@ def test_check_distribution_suggest_uniform(storage_mode: str) -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_check_distribution_suggest_loguniform(storage_mode: str) -> None:
 
-    sampler = samplers.RandomSampler()
+    sampler = FixedSeedRandomSampler()
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
@@ -112,7 +113,7 @@ def test_check_distribution_suggest_loguniform(storage_mode: str) -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_check_distribution_suggest_discrete_uniform(storage_mode: str) -> None:
 
-    sampler = samplers.RandomSampler()
+    sampler = FixedSeedRandomSampler()
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
@@ -137,7 +138,7 @@ def test_check_distribution_suggest_discrete_uniform(storage_mode: str) -> None:
 @pytest.mark.parametrize("enable_log", [False, True])
 def test_check_distribution_suggest_int(storage_mode: str, enable_log: bool) -> None:
 
-    sampler = samplers.RandomSampler()
+    sampler = FixedSeedRandomSampler()
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
@@ -161,7 +162,7 @@ def test_check_distribution_suggest_int(storage_mode: str, enable_log: bool) -> 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_check_distribution_suggest_categorical(storage_mode: str) -> None:
 
-    sampler = samplers.RandomSampler()
+    sampler = FixedSeedRandomSampler()
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
@@ -184,7 +185,7 @@ def test_suggest_uniform(storage_mode: str) -> None:
 
     mock = Mock()
     mock.side_effect = [1.0, 2.0]
-    sampler = samplers.RandomSampler()
+    sampler = FixedSeedRandomSampler()
 
     with patch.object(sampler, "sample_independent", mock) as mock_object, StorageSupplier(
         storage_mode
@@ -211,7 +212,7 @@ def test_suggest_loguniform(storage_mode: str) -> None:
 
     mock = Mock()
     mock.side_effect = [1.0, 2.0]
-    sampler = samplers.RandomSampler()
+    sampler = FixedSeedRandomSampler()
 
     with patch.object(sampler, "sample_independent", mock) as mock_object, StorageSupplier(
         storage_mode
@@ -232,7 +233,7 @@ def test_suggest_discrete_uniform(storage_mode: str) -> None:
 
     mock = Mock()
     mock.side_effect = [1.0, 2.0]
-    sampler = samplers.RandomSampler()
+    sampler = FixedSeedRandomSampler()
 
     with patch.object(sampler, "sample_independent", mock) as mock_object, StorageSupplier(
         storage_mode
@@ -320,7 +321,7 @@ def test_suggest_low_equals_high(storage_mode: str) -> None:
 )
 def test_suggest_discrete_uniform_range(storage_mode: str, range_config: Dict[str, float]) -> None:
 
-    sampler = samplers.RandomSampler()
+    sampler = FixedSeedRandomSampler()
 
     # Check upper endpoints.
     mock = Mock()
@@ -372,7 +373,7 @@ def test_suggest_int(storage_mode: str) -> None:
 
     mock = Mock()
     mock.side_effect = [1, 2]
-    sampler = samplers.RandomSampler()
+    sampler = FixedSeedRandomSampler()
 
     with patch.object(sampler, "sample_independent", mock) as mock_object, StorageSupplier(
         storage_mode
@@ -399,7 +400,7 @@ def test_suggest_int(storage_mode: str) -> None:
 )
 def test_suggest_int_range(storage_mode: str, range_config: Dict[str, int]) -> None:
 
-    sampler = samplers.RandomSampler()
+    sampler = FixedSeedRandomSampler()
 
     # Check upper endpoints.
     mock = Mock()
@@ -452,7 +453,7 @@ def test_suggest_int_log(storage_mode: str) -> None:
 
     mock = Mock()
     mock.side_effect = [1, 2]
-    sampler = samplers.RandomSampler()
+    sampler = FixedSeedRandomSampler()
 
     with patch.object(sampler, "sample_independent", mock) as mock_object, StorageSupplier(
         storage_mode
