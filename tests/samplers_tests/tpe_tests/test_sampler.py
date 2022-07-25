@@ -1,5 +1,3 @@
-import multiprocessing
-from multiprocessing.managers import DictProxy
 import random
 from typing import Callable
 from typing import Dict
@@ -20,7 +18,6 @@ from optuna import distributions
 from optuna import TrialPruned
 from optuna.samplers import _tpe
 from optuna.samplers import TPESampler
-from optuna.study.study import create_study
 from optuna.trial import Trial
 
 
@@ -136,32 +133,6 @@ def test_sample_relative_empty_input(multivariate: bool) -> None:
     study = optuna.create_study()
     frozen_trial = Mock(spec=[])
     assert sampler.sample_relative(study, frozen_trial, {}) == {}
-
-
-def test_sample_relative_seed_fix() -> None:
-    study = optuna.create_study()
-    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
-    past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
-
-    # Prepare a trial and a sample for later checks.
-    trial = frozen_trial_factory(8)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        suggestion = sampler.sample_relative(study, trial, {"param-a": dist})
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        assert sampler.sample_relative(study, trial, {"param-a": dist}) == suggestion
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(n_startup_trials=5, seed=1, multivariate=True)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        assert sampler.sample_relative(study, trial, {"param-a": dist}) != suggestion
 
 
 def test_sample_relative_prior() -> None:
@@ -469,26 +440,6 @@ def test_sample_relative_pruned_state() -> None:
         suggestions.append(sampler.sample_relative(study, trial, {"param-a": dist})["param-a"])
 
     assert len(set(suggestions)) == 3
-
-
-def test_sample_independent_seed_fix() -> None:
-    study = optuna.create_study()
-    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
-    past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
-
-    # Prepare a trial and a sample for later checks.
-    trial = frozen_trial_factory(8)
-    sampler = TPESampler(n_startup_trials=5, seed=0)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        suggestion = sampler.sample_independent(study, trial, "param-a", dist)
-
-    sampler = TPESampler(n_startup_trials=5, seed=0)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        assert sampler.sample_independent(study, trial, "param-a", dist) == suggestion
-
-    sampler = TPESampler(n_startup_trials=5, seed=1)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
 
 def test_sample_independent_prior() -> None:
@@ -1112,36 +1063,6 @@ def test_invalid_multivariate_and_group() -> None:
 def test_group_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         _ = TPESampler(multivariate=True, group=True)
-
-
-# This function is used only in test_group_deterministic_iteration, but declared at top-level
-# because local function cannot be pickled, which occurs within multiprocessing.
-def run_tpe(k: int, sequence_dict: DictProxy, hash_dict: DictProxy) -> None:
-    hash_dict[k] = hash("nondeterministic hash")
-    sampler = TPESampler(n_startup_trials=1, seed=2, multivariate=True, group=True)
-    study = create_study(sampler=sampler)
-    study.optimize(
-        lambda t: np.sum([t.suggest_int(f"x{i}", 0, 10) for i in range(10)]), n_trials=2
-    )
-    sequence_dict[k] = list(study.trials[-1].params.values())
-
-
-def test_group_deterministic_iteration() -> None:
-    # Multiprocessing supports three way to start a process.
-    # We use `spawn` option to create a child process as a fresh python process.
-    # For more detail, see https://github.com/optuna/optuna/pull/3187#issuecomment-997673037.
-    multiprocessing.set_start_method("spawn", force=True)
-    manager = multiprocessing.Manager()
-    sequence_dict: DictProxy = manager.dict()
-    hash_dict: DictProxy = manager.dict()
-    for i in range(3):
-        p = multiprocessing.Process(target=run_tpe, args=(i, sequence_dict, hash_dict))
-        p.start()
-        p.join()
-    # Hashes are expected to be different because string hashing is nondeterministic per process.
-    assert not (hash_dict[0] == hash_dict[1] == hash_dict[2])
-    # But the sequences are expected to be the same.
-    assert sequence_dict[0] == sequence_dict[1] == sequence_dict[2]
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])

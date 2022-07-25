@@ -669,7 +669,18 @@ def test_get_parallel_coordinate_info_with_log_scale_and_str_and_numeric_categor
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
 def test_color_map(direction: str) -> None:
-    study = prepare_study_with_trials(with_c_d=False, direction=direction)
+    study = create_study(direction=direction)
+    for i in range(3):
+        study.add_trial(
+            create_trial(
+                value=float(i),
+                params={"param_a": float(i), "param_b": float(i)},
+                distributions={
+                    "param_a": FloatDistribution(0.0, 3.0),
+                    "param_b": FloatDistribution(0.0, 3.0),
+                },
+            )
+        )
 
     # `target` is `None`.
     line = plotly_plot_parallel_coordinate(study).data[0]["line"]
@@ -685,7 +696,18 @@ def test_color_map(direction: str) -> None:
     assert line["reversescale"]
 
     # Multi-objective optimization.
-    study = prepare_study_with_trials(with_c_d=False, n_objectives=2, direction=direction)
+    study = create_study(directions=[direction, direction])
+    for i in range(3):
+        study.add_trial(
+            create_trial(
+                values=[float(i), float(i)],
+                params={"param_a": float(i), "param_b": float(i)},
+                distributions={
+                    "param_a": FloatDistribution(0.0, 3.0),
+                    "param_b": FloatDistribution(0.0, 3.0),
+                },
+            )
+        )
     line = plotly_plot_parallel_coordinate(study, target=lambda t: t.number).data[0]["line"]
     assert COLOR_SCALE == [v[1] for v in line["colorscale"]]
     assert line["reversescale"]
