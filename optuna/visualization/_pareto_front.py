@@ -220,7 +220,7 @@ def _get_pareto_front_info(
             "`axis_order` has been deprecated in v3.0.0. "
             "This feature will be removed in v5.0.0. "
             "See https://github.com/optuna/optuna/releases/tag/v3.0.0.",
-            DeprecationWarning,
+            FutureWarning,
         )
 
     if targets is not None and axis_order is not None:
