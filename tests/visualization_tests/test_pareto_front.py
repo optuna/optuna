@@ -62,14 +62,14 @@ def create_study_2d() -> Study:
 
 def create_study_3d() -> Study:
 
-    study = optuna.create_study(directions=["minimize", "minimize"])
+    study = optuna.create_study(directions=["minimize", "minimize", "minimize"])
 
-    study.enqueue_trial({"x": 1, "y": 2, "z": 1})
-    study.enqueue_trial({"x": 1, "y": 1, "z": 2})
-    study.enqueue_trial({"x": 0, "y": 2, "z": 3})
-    study.enqueue_trial({"x": 1, "y": 0, "z": 4})
+    study.enqueue_trial({"x": 1, "y": 2})
+    study.enqueue_trial({"x": 1, "y": 1})
+    study.enqueue_trial({"x": 0, "y": 2})
+    study.enqueue_trial({"x": 1, "y": 0})
     study.optimize(
-        lambda t: [t.suggest_int("x", 0, 2), t.suggest_int("y", 0, 2), t.suggest_int("z", 0, 5)],
+        lambda t: [t.suggest_int("x", 0, 2), t.suggest_int("y", 0, 2), 1.0],
         n_trials=4,
     )
     return study
@@ -154,6 +154,12 @@ def test_get_pareto_front_info_constrained(
     )
 
 
+def test_get_pareto_front_info_3d() -> None:
+    study = create_study_3d()
+    info = _get_pareto_front_info(study=study)
+    assert info.n_targets == 3
+
+
 def test_get_pareto_front_info_invalid_number_of_target_names() -> None:
     study = optuna.create_study(directions=["minimize", "minimize"])
     with pytest.raises(ValueError):
@@ -187,6 +193,16 @@ def test_get_pareto_front_info_using_axis_order_and_targets() -> None:
             study=study,
             axis_order=[0, 1, 2],
             targets=lambda t: (t.values[0], t.values[1], t.values[2]),
+        )
+
+
+def test_constraints_func_experimental_warning() -> None:
+    study = optuna.create_study(directions=["minimize", "minimize"])
+
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        _get_pareto_front_info(
+            study=study,
+            constraints_func=lambda _: [1.0],
         )
 
 
