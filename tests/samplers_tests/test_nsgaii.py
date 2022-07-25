@@ -29,7 +29,9 @@ from optuna.samplers.nsgaii import UNDXCrossover
 from optuna.samplers.nsgaii import UniformCrossover
 from optuna.samplers.nsgaii import VSBXCrossover
 from optuna.samplers.nsgaii._crossover import _inlined_categorical_uniform_crossover
+from optuna.samplers.nsgaii._sampler import _constrained_dominates
 from optuna.samplers.nsgaii._sampler import _CONSTRAINTS_KEY
+from optuna.study._multi_objective import _dominates
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 
@@ -178,6 +180,151 @@ def test_constraints_func_nan() -> None:
     assert all(0 <= x <= 1 for x in trials[0].params.values())  # The params are normal.
     assert trials[0].values == list(trials[0].params.values())  # The values are normal.
     assert trials[0].system_attrs[_CONSTRAINTS_KEY] is None  # None is set for constraints.
+
+
+@pytest.mark.parametrize("direction1", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
+@pytest.mark.parametrize("direction2", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
+@pytest.mark.parametrize(
+    "constraints_list",
+    [
+        [[]],  # empty constraint
+        [[-float("inf")], [-1], [0]],  # single constraint
+        [
+            [c1, c2] for c1 in [-float("inf"), -1, 0] for c2 in [-float("inf"), -1, 0]
+        ],  # multiple constraints
+    ],
+)
+def test_constrained_dominates_feasible_vs_feasible(
+    direction1: StudyDirection, direction2: StudyDirection, constraints_list: List[List[float]]
+) -> None:
+    directions = [direction1, direction2]
+    # Check all pairs of trials consisting of these values, i.e.,
+    # [-inf, -inf], [-inf, -1], [-inf, 1], [-inf, inf], [-1, -inf], ...
+    values_list = [
+        [x, y]
+        for x in [-float("inf"), -1, 1, float("inf")]
+        for y in [-float("inf"), -1, 1, float("inf")]
+    ]
+    values_constraints_list = [(vs, cs) for vs in values_list for cs in constraints_list]
+
+    # The results of _constrained_dominates match _dominates in all feasible cases.
+    for (values1, constraints1) in values_constraints_list:
+        for (values2, constraints2) in values_constraints_list:
+            t1 = _create_frozen_trial(0, values1, constraints1)
+            t2 = _create_frozen_trial(1, values2, constraints2)
+            assert _constrained_dominates(t1, t2, directions) == _dominates(t1, t2, directions)
+
+
+@pytest.mark.parametrize("direction", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
+def test_constrained_dominates_feasible_vs_infeasible(
+    direction: StudyDirection,
+) -> None:
+
+    # Check all pairs of trials consisting of these constraint values.
+    constraints_1d_feasible = [-float("inf"), -1, 0]
+    constraints_1d_infeasible = [float("nan"), 2, float("inf")]
+
+    directions = [direction]
+
+    # Feasible constraints.
+    constraints_list1 = [
+        [c1, c2] for c1 in constraints_1d_feasible for c2 in constraints_1d_feasible
+    ]
+    # Infeasible constraints.
+    constraints_list2 = [
+        [c1, c2]
+        for c1 in constraints_1d_feasible + constraints_1d_infeasible
+        for c2 in constraints_1d_infeasible
+    ]
+
+    # In the following code, we test that the feasible trials always dominate
+    # the infeasible trials.
+    for constraints1 in constraints_list1:
+        for constraints2 in constraints_list2:
+            t1 = _create_frozen_trial(0, [0], constraints1)
+            t2 = _create_frozen_trial(1, [1], constraints2)
+            assert _constrained_dominates(t1, t2, directions)
+            assert not _constrained_dominates(t2, t1, directions)
+
+            t1 = _create_frozen_trial(0, [1], constraints1)
+            t2 = _create_frozen_trial(1, [0], constraints2)
+            assert _constrained_dominates(t1, t2, directions)
+            assert not _constrained_dominates(t2, t1, directions)
+
+
+@pytest.mark.parametrize("direction", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
+def test_constrained_dominates_infeasible_vs_infeasible(direction: StudyDirection) -> None:
+    inf = float("inf")
+    directions = [direction]
+
+    # The following table illustrates the violations of some constraint values.
+    # When both trials are infeasible, the trial with smaller violation dominates
+    # the one with larger violation.
+    #
+    #                       c2
+    #      ╔═════╤═════╤═════╤═════╤═════╤═════╗
+    #      ║     │ -1  │  0  │  1  │  2  │  ∞  ║
+    #      ╟─────┼─────┼─────┼─────┼─────┼─────╢
+    #      ║ -1  │           │  1  │  2  │  ∞  ║
+    #      ╟─────┼─feasible ─┼─────┼─────┼─────╢
+    #      ║  0  │           │  1  │  2  │  ∞  ║
+    # c1   ╟─────┼─────┼─────┼─────┼─────┼─────╢
+    #      ║  1  │  1  │  1  │  2  │  3  │  ∞  ║
+    #      ╟─────┼─────┼─────┼─────┼─────┼─────╢
+    #      ║  2  │  2  │  2  │  3  │  4  │  ∞  ║
+    #      ╟─────┼─────┼─────┼─────┼─────┼─────╢
+    #      ║  ∞  │  ∞  │  ∞  │  ∞  │  ∞  │  ∞  ║
+    #      ╚═════╧═════╧═════╧═════╧═════╧═════╝
+    #
+
+    # Check all pairs of these constraints.
+    constraints_infeasible_sorted: List[List[List[float]]]
+    constraints_infeasible_sorted = [
+        # These constraints have violation 1.
+        [[1, -inf], [1, -1], [1, 0], [0, 1], [-1, 1], [-inf, 1]],
+        # These constraints have violation 2.
+        [[2, -inf], [2, -1], [2, 0], [1, 1], [0, 2], [-1, 2], [-inf, 2]],
+        # These constraints have violation 3.
+        [[3, -inf], [3, -1], [3, 0], [2, 1], [1, 2], [0, 3], [-1, 3], [-inf, 3]],
+        # These constraints have violation inf.
+        [
+            [-inf, inf],
+            [-1, inf],
+            [0, inf],
+            [1, inf],
+            [inf, inf],
+            [inf, 1],
+            [inf, 0],
+            [inf, -1],
+            [inf, -inf],
+        ],
+    ]
+
+    # Check that constraints with smaller violations dominate constraints with larger violation.
+    for i in range(len(constraints_infeasible_sorted)):
+        for j in range(i + 1, len(constraints_infeasible_sorted)):
+            # Every constraint in constraints_infeasible_sorted[i] dominates
+            # every constraint in constraints_infeasible_sorted[j].
+            for constraints1 in constraints_infeasible_sorted[i]:
+                for constraints2 in constraints_infeasible_sorted[j]:
+                    t1 = _create_frozen_trial(0, [0], constraints1)
+                    t2 = _create_frozen_trial(1, [1], constraints2)
+                    assert _constrained_dominates(t1, t2, directions)
+                    assert not _constrained_dominates(t2, t1, directions)
+
+                    t1 = _create_frozen_trial(0, [1], constraints1)
+                    t2 = _create_frozen_trial(1, [0], constraints2)
+                    assert _constrained_dominates(t1, t2, directions)
+                    assert not _constrained_dominates(t2, t1, directions)
+
+    # Check that constraints with same violations are incomparable.
+    for constraints_with_same_violations in constraints_infeasible_sorted:
+        for constraints1 in constraints_with_same_violations:
+            for constraints2 in constraints_with_same_violations:
+                t1 = _create_frozen_trial(0, [0], constraints1)
+                t2 = _create_frozen_trial(1, [1], constraints2)
+                assert not _constrained_dominates(t1, t2, directions)
+                assert not _constrained_dominates(t2, t1, directions)
 
 
 def test_fast_non_dominated_sort() -> None:
@@ -533,12 +680,12 @@ def test_constraints_func_experimental_warning() -> None:
 
 # TODO(ohta): Consider to move this utility function to `optuna.testing` module.
 def _create_frozen_trial(
-    number: int, values: List[float], constraints: Optional[List[float]] = None
+    number: int, values: Sequence[float], constraints: Optional[Sequence[float]] = None
 ) -> optuna.trial.FrozenTrial:
     trial = optuna.trial.create_trial(
         state=optuna.trial.TrialState.COMPLETE,
-        values=values,
-        system_attrs={} if constraints is None else {_CONSTRAINTS_KEY: constraints},
+        values=list(values),
+        system_attrs={} if constraints is None else {_CONSTRAINTS_KEY: list(constraints)},
     )
     trial.number = number
     trial._trial_id = number

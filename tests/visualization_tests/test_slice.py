@@ -3,7 +3,6 @@ import pytest
 from optuna.distributions import FloatDistribution
 from optuna.study import create_study
 from optuna.testing.objectives import fail_objective
-from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
 from optuna.visualization import plot_slice
 from optuna.visualization._utils import COLOR_SCALE
@@ -23,7 +22,34 @@ def test_plot_slice() -> None:
     figure = plot_slice(study)
     assert len(figure.data) == 0
 
-    study = prepare_study_with_trials(with_c_d=False)
+    study = create_study(direction="minimize")
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"param_a": 1.0, "param_b": 2.0},
+            distributions={
+                "param_a": FloatDistribution(0.0, 3.0),
+                "param_b": FloatDistribution(0.0, 3.0),
+            },
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=2.0,
+            params={"param_b": 0.0},
+            distributions={"param_b": FloatDistribution(0.0, 3.0)},
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=1.0,
+            params={"param_a": 2.5, "param_b": 1.0},
+            distributions={
+                "param_a": FloatDistribution(0.0, 3.0),
+                "param_b": FloatDistribution(0.0, 3.0),
+            },
+        )
+    )
 
     # Test with a trial.
     figure = plot_slice(study)
@@ -91,7 +117,18 @@ def test_plot_slice_log_scale() -> None:
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
 def test_color_map(direction: str) -> None:
-    study = prepare_study_with_trials(with_c_d=False, direction=direction)
+    study = create_study(direction=direction)
+    for i in range(3):
+        study.add_trial(
+            create_trial(
+                value=float(i),
+                params={"param_a": float(i), "param_b": float(i)},
+                distributions={
+                    "param_a": FloatDistribution(0.0, 3.0),
+                    "param_b": FloatDistribution(0.0, 3.0),
+                },
+            )
+        )
 
     # Since `plot_slice`'s colormap depends on only trial.number, `reversecale` is not in the plot.
     marker = plot_slice(study).data[0]["marker"]
