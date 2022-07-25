@@ -65,39 +65,6 @@ def test_fanova_importance_evaluator_max_depth() -> None:
     assert param_importance != param_importance_different_max_depth
 
 
-def test_fanova_importance_evaluator_seed() -> None:
-    study = create_study(sampler=RandomSampler(seed=0))
-    study.optimize(objective, n_trials=3)
-
-    evaluator = FanovaImportanceEvaluator(seed=2)
-    param_importance = evaluator.evaluate(study, params=params, target=get_value)
-
-    evaluator = FanovaImportanceEvaluator(seed=2)
-    param_importance_same_seed = evaluator.evaluate(study, params=params, target=get_value)
-    assert param_importance == param_importance_same_seed
-
-    evaluator = FanovaImportanceEvaluator(seed=3)
-    param_importance_different_seed = evaluator.evaluate(study, params=params, target=get_value)
-    assert param_importance != param_importance_different_seed
-
-
-def test_fanova_importance_evaluator_with_target() -> None:
-    # Assumes that `seed` can be fixed to reproduce identical results.
-
-    study = create_study(sampler=RandomSampler(seed=0))
-    study.optimize(objective, n_trials=3)
-
-    evaluator = FanovaImportanceEvaluator(seed=0)
-    param_importance = evaluator.evaluate(study, params=params, target=get_value)
-    param_importance_with_target = evaluator.evaluate(
-        study,
-        params=params,
-        target=lambda t: t.params["x1"] + t.params["x2"],
-    )
-
-    assert param_importance != param_importance_with_target
-
-
 @pytest.mark.parametrize("inf_value", [float("inf"), -float("inf")])
 def test_fanova_importance_evaluator_with_infinite(inf_value: float) -> None:
     # The test ensures that trials with infinite values are ignored to calculate importance scores.

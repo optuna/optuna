@@ -23,6 +23,9 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
+NUM_SAMPLES_X_AXIS = 100
+
+
 class _EDFLineInfo(NamedTuple):
     study_name: str
     y_values: np.ndarray
@@ -176,7 +179,7 @@ def _get_edf_info(
 
     min_x_value = np.min(np.concatenate(all_values))
     max_x_value = np.max(np.concatenate(all_values))
-    x_values = np.linspace(min_x_value, max_x_value, 100)
+    x_values = np.linspace(min_x_value, max_x_value, NUM_SAMPLES_X_AXIS)
 
     edf_line_info_list = []
     for (study_name, values) in zip(study_names, all_values):

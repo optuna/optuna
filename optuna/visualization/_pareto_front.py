@@ -33,6 +33,8 @@ class _ParetoFrontInfo(NamedTuple):
     non_best_trials_with_values: List[Tuple[FrozenTrial, List[float]]]
     infeasible_trials_with_values: List[Tuple[FrozenTrial, List[float]]]
     axis_order: List[int]
+    include_dominated_trials: bool
+    has_constraints_func: bool
 
 
 def plot_pareto_front(
@@ -87,6 +89,11 @@ def plot_pareto_front(
         axis_order:
             A list of indices indicating the axis order. If :obj:`None` is specified,
             default order is used. ``axis_order`` and ``targets`` cannot be used at the same time.
+
+            .. warning::
+                Deprecated in v3.0.0. This feature will be removed in the future. The removal of
+                this feature is currently scheduled for v5.0.0, but this schedule is subject to
+                change. See https://github.com/optuna/optuna/releases/tag/v3.0.0.
         constraints_func:
             An optional function that computes the objective constraints. It must take a
             :class:`~optuna.trial.FrozenTrial` and return the constraints. The return value must
@@ -123,8 +130,13 @@ def plot_pareto_front(
     info = _get_pareto_front_info(
         study, target_names, include_dominated_trials, axis_order, constraints_func, targets
     )
+    return _get_pareto_front_plot(info)
 
-    if constraints_func is None:
+
+def _get_pareto_front_plot(info: _ParetoFrontInfo) -> "go.Figure":
+    include_dominated_trials = info.include_dominated_trials
+    has_constraints_func = info.has_constraints_func
+    if not has_constraints_func:
         data = [
             _make_scatter_object(
                 info.n_targets,
@@ -208,7 +220,7 @@ def _get_pareto_front_info(
             "`axis_order` has been deprecated in v3.0.0. "
             "This feature will be removed in v5.0.0. "
             "See https://github.com/optuna/optuna/releases/tag/v3.0.0.",
-            DeprecationWarning,
+            FutureWarning,
         )
 
     if targets is not None and axis_order is not None:
@@ -335,6 +347,8 @@ def _get_pareto_front_info(
         non_best_trials_with_values=non_best_trials_with_values,
         infeasible_trials_with_values=infeasible_trials_with_values,
         axis_order=axis_order,
+        include_dominated_trials=include_dominated_trials,
+        has_constraints_func=constraints_func is not None,
     )
 
 

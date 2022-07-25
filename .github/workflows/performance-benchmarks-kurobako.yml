@@ -19,6 +19,10 @@ on:
         description: 'Pruner Arguments List: A list of pruner keyword arguments. Should be a whitespace-separated list of json format dictionaries.'
         required: false
         default: '{}'
+      budget:
+        description: 'Number of Trials if the pruning is not enabled. If the pruning is enabled, the total number of steps is equal to `budget * (steps per trial)`.'
+        required: false
+        default: '80'
       n-runs:
         description: 'Number of Studies'
         required: false
@@ -119,6 +123,7 @@ jobs:
         python benchmarks/run_kurobako.py \
           --path-to-kurobako "." \
           --name-prefix "" \
+          --budget ${{ github.event.inputs.budget }} \
           --n-runs ${{ github.event.inputs.n-runs }} \
           --n-jobs 10 \
           --n-concurrency ${{ github.event.inputs.n-concurrency }} \

@@ -19,9 +19,9 @@ with optuna._imports.try_import() as _imports:
     from pytorch_lightning.callbacks import Callback
 
 if not _imports.is_successful():
-    Callback = object  # NOQA
-    LightningModule = object  # NOQA
-    Trainer = object  # NOQA
+    Callback = object  # type: ignore  # NOQA
+    LightningModule = object  # type: ignore  # NOQA
+    Trainer = object  # type: ignore  # NOQA
 
 
 class PyTorchLightningPruningCallback(Callback):
@@ -57,7 +57,9 @@ class PyTorchLightningPruningCallback(Callback):
         self.is_ddp_backend = False
 
     def on_init_start(self, trainer: Trainer) -> None:
-        self.is_ddp_backend = trainer._accelerator_connector.distributed_backend is not None
+        self.is_ddp_backend = (
+            trainer._accelerator_connector.distributed_backend is not None  # type: ignore
+        )
         if self.is_ddp_backend:
             if version.parse(pl.__version__) < version.parse("1.5.0"):
                 raise ValueError("PyTorch Lightning>=1.5.0 is required in DDP.")

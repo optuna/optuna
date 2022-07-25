@@ -1097,19 +1097,6 @@ def test_get_trial_id_from_study_id_trial_number(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_read_trials_from_remote_storage(storage_mode: str) -> None:
-
-    with StorageSupplier(storage_mode) as storage:
-
-        study_id = storage.create_new_study()
-        storage.read_trials_from_remote_storage(study_id)
-
-        # Non-existent study.
-        with pytest.raises(KeyError):
-            storage.read_trials_from_remote_storage(study_id + 1)
-
-
-@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_pickle_storage(storage_mode: str) -> None:
     if "redis" in storage_mode:
         pytest.skip("Redis storage is not picklable")
