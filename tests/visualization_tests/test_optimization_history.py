@@ -34,6 +34,27 @@ def test_warn_default_target_name_with_customized_target(direction: str, error_b
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
+@pytest.mark.parametrize("error_bar", [False, True])
+def test_ignore_failed_trials(direction: str, error_bar: bool) -> None:
+    # Single study.
+    study = create_study(direction=direction)
+    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
+    info_list = _get_optimization_history_info_list(
+        study, target=None, target_name="Objective Value", error_bar=error_bar
+    )
+    assert len(info_list) == 0
+
+    # Multiple studies.
+    studies = [create_study(direction=direction) for _ in range(10)]
+    for study in studies:
+        study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
+    info_list = _get_optimization_history_info_list(
+        studies, target=None, target_name="Objective Value", error_bar=error_bar
+    )
+    assert len(info_list) == 0
+
+
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
 @pytest.mark.parametrize("target_name", ["Objective Value", "Target Name"])
 def test_plot_optimization_history(direction: str, target_name: str) -> None:
     # Test with no trial.
@@ -73,12 +94,6 @@ def test_plot_optimization_history(direction: str, target_name: str) -> None:
     assert len(figure.data) == 1
     assert np.array_equal(figure.data[0].x, [0, 1, 2])
     assert np.array_equal(figure.data[0].y, [0.0, 1.0, 2.0])
-
-    # Ignore failed trials.
-    study = create_study(direction=direction)
-    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
-    figure = plot_optimization_history(study, target_name=target_name)
-    assert len(figure.data) == 0
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
@@ -129,13 +144,6 @@ def test_plot_optimization_history_with_multiple_studies(direction: str, target_
     assert np.array_equal(figure.data[0].x, [0, 1, 2])
     assert np.array_equal(figure.data[0].y, [0, 1, 2])
 
-    # Ignore failed trials.
-    studies = [create_study(direction=direction) for _ in range(n_studies)]
-    for study in studies:
-        study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
-    figure = plot_optimization_history(studies, target_name=target_name)
-    assert len(figure.data) == 0
-
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
 @pytest.mark.parametrize("target_name", ["Objective Value", "Target Name"])
@@ -183,13 +191,6 @@ def test_plot_optimization_history_with_error_bar(direction: str, target_name: s
     assert len(figure.data) == 1
     assert np.array_equal(figure.data[0].x, [0, 1, 2])
     assert np.array_equal(figure.data[0].y, [0, 1, 2])
-
-    # Ignore failed trials.
-    studies = [create_study(direction=direction) for _ in range(n_studies)]
-    for study in studies:
-        study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
-    figure = plot_optimization_history(studies, error_bar=True, target_name=target_name)
-    assert len(figure.data) == 0
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
