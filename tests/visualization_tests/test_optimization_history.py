@@ -5,6 +5,7 @@ from optuna.study import create_study
 from optuna.testing.objectives import fail_objective
 from optuna.trial import Trial
 from optuna.visualization import plot_optimization_history
+from optuna.visualization._optimization_history import _get_optimization_history_info_list
 
 
 def test_target_is_none_and_study_is_multi_obj() -> None:
@@ -12,6 +13,24 @@ def test_target_is_none_and_study_is_multi_obj() -> None:
     study = create_study(directions=["minimize", "minimize"])
     with pytest.raises(ValueError):
         plot_optimization_history(study)
+
+
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+@pytest.mark.parametrize("error_bar", [False, True])
+def test_warn_default_target_name_with_customized_target(direction: str, error_bar: bool) -> None:
+    # Single study.
+    study = create_study(direction=direction)
+    with pytest.warns(UserWarning):
+        _get_optimization_history_info_list(
+            study, target=lambda t: t.number, target_name="Objective Value", error_bar=error_bar
+        )
+
+    # Multiple studies.
+    studies = [create_study(direction=direction) for _ in range(10)]
+    with pytest.warns(UserWarning):
+        _get_optimization_history_info_list(
+            studies, target=lambda t: t.number, target_name="Objective Value", error_bar=error_bar
+        )
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
@@ -50,8 +69,7 @@ def test_plot_optimization_history(direction: str, target_name: str) -> None:
     assert figure.layout.yaxis.title.text == target_name
 
     # Test customized target.
-    with pytest.warns(UserWarning):
-        figure = plot_optimization_history(study, target=lambda t: t.number)
+    figure = plot_optimization_history(study, target=lambda t: t.number, target_name=target_name)
     assert len(figure.data) == 1
     assert np.array_equal(figure.data[0].x, [0, 1, 2])
     assert np.array_equal(figure.data[0].y, [0.0, 1.0, 2.0])
@@ -106,8 +124,7 @@ def test_plot_optimization_history_with_multiple_studies(direction: str, target_
     assert figure.layout.yaxis.title.text == target_name
 
     # Test customized target.
-    with pytest.warns(UserWarning):
-        figure = plot_optimization_history(studies, target=lambda t: t.number)
+    figure = plot_optimization_history(studies, target=lambda t: t.number, target_name=target_name)
     assert len(figure.data) == 1 * n_studies
     assert np.array_equal(figure.data[0].x, [0, 1, 2])
     assert np.array_equal(figure.data[0].y, [0, 1, 2])
@@ -160,8 +177,9 @@ def test_plot_optimization_history_with_error_bar(direction: str, target_name: s
     assert figure.layout.yaxis.title.text == target_name
 
     # Test customized target.
-    with pytest.warns(UserWarning):
-        figure = plot_optimization_history(studies, target=lambda t: t.number, error_bar=True)
+    figure = plot_optimization_history(
+        studies, target=lambda t: t.number, error_bar=True, target_name=target_name
+    )
     assert len(figure.data) == 1
     assert np.array_equal(figure.data[0].x, [0, 1, 2])
     assert np.array_equal(figure.data[0].y, [0, 1, 2])
