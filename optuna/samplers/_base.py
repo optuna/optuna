@@ -1,11 +1,12 @@
 import abc
-import numpy as np
 from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import Optional
 from typing import Sequence
 import warnings
+
+import numpy as np
 
 from optuna.distributions import BaseDistribution
 from optuna.study import Study
