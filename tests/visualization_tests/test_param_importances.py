@@ -30,7 +30,7 @@ def test_plot_param_importances() -> None:
     figure = plot_param_importances(study)
     assert len(figure.data) == 0
 
-    study = prepare_study_with_trials(with_c_d=True)
+    study = prepare_study_with_trials()
 
     # Test with a trial.
     figure = plot_param_importances(study)

@@ -34,7 +34,7 @@ def test_plot_param_importances() -> None:
     assert len(figure.get_lines()) == 0
     plt.savefig(BytesIO())
 
-    study = prepare_study_with_trials(with_c_d=True)
+    study = prepare_study_with_trials()
 
     # Test with a trial.
     figure = plot_param_importances(study)

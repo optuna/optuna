@@ -89,6 +89,11 @@ def plot_pareto_front(
         axis_order:
             A list of indices indicating the axis order. If :obj:`None` is specified,
             default order is used. ``axis_order`` and ``targets`` cannot be used at the same time.
+
+            .. warning::
+                Deprecated in v3.0.0. This feature will be removed in the future. The removal of
+                this feature is currently scheduled for v5.0.0, but this schedule is subject to
+                change. See https://github.com/optuna/optuna/releases/tag/v3.0.0.
         constraints_func:
             An optional function that computes the objective constraints. It must take a
             :class:`~optuna.trial.FrozenTrial` and return the constraints. The return value must
@@ -209,7 +214,7 @@ def _get_pareto_front_info(
             "`axis_order` has been deprecated in v3.0.0. "
             "This feature will be removed in v5.0.0. "
             "See https://github.com/optuna/optuna/releases/tag/v3.0.0.",
-            DeprecationWarning,
+            FutureWarning,
         )
 
     if targets is not None and axis_order is not None:
