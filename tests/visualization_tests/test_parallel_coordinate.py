@@ -194,7 +194,6 @@ def test_plot_parallel_coordinate_customized_target_name(
         [create_study, None],
         [prepare_study_with_trials, None],
         [prepare_study_with_trials, []],
-        [prepare_study_with_trials, ["param_a"]],
         [prepare_study_with_trials, ["param_a", "param_b"]],
         [prepare_study_with_trials, ["param_a", "param_b", "param_c"]],
         [prepare_study_with_trials, ["param_a", "param_b", "param_c", "param_d"]],
@@ -239,10 +238,27 @@ def test_get_parallel_coordinate_info() -> None:
         target_name="Objective Value",
     )
 
-    study = prepare_study_with_trials(with_c_d=False)
+    study = prepare_study_with_trials()
+
+    # Test with no parameters.
+    info = _get_parallel_coordinate_info(study, params=[])
+    assert info == _ParallelCoordinateInfo(
+        dim_objective=_DimensionInfo(
+            label="Objective Value",
+            values=(0.0, 2.0, 1.0),
+            range=(0.0, 2.0),
+            is_log=False,
+            is_cat=False,
+            tickvals=[],
+            ticktext=[],
+        ),
+        dims_params=[],
+        reverse_scale=True,
+        target_name="Objective Value",
+    )
 
     # Test with a trial.
-    info = _get_parallel_coordinate_info(study)
+    info = _get_parallel_coordinate_info(study, params=["param_a", "param_b"])
     assert info == _ParallelCoordinateInfo(
         dim_objective=_DimensionInfo(
             label="Objective Value",
@@ -335,7 +351,9 @@ def test_get_parallel_coordinate_info() -> None:
     )
 
     # Test with a customized target name.
-    info = _get_parallel_coordinate_info(study, target_name="Target Name")
+    info = _get_parallel_coordinate_info(
+        study, params=["param_a", "param_b"], target_name="Target Name"
+    )
     assert info == _ParallelCoordinateInfo(
         dim_objective=_DimensionInfo(
             label="Target Name",
