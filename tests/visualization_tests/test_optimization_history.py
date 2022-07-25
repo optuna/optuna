@@ -35,6 +35,24 @@ def test_warn_default_target_name_with_customized_target(direction: str, error_b
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
 @pytest.mark.parametrize("error_bar", [False, True])
+def test_info_with_no_trials(direction: str, error_bar: bool) -> None:
+    # Single study.
+    study = create_study(direction=direction)
+    info_list = _get_optimization_history_info_list(
+        study, target=None, target_name="Objective Value", error_bar=error_bar
+    )
+    assert len(info_list) == 0
+
+    # Multiple studies.
+    studies = [create_study(direction=direction) for _ in range(10)]
+    info_list = _get_optimization_history_info_list(
+        studies, target=None, target_name="Objective Value", error_bar=error_bar
+    )
+    assert len(info_list) == 0
+
+
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+@pytest.mark.parametrize("error_bar", [False, True])
 def test_ignore_failed_trials(direction: str, error_bar: bool) -> None:
     # Single study.
     study = create_study(direction=direction)
@@ -57,11 +75,6 @@ def test_ignore_failed_trials(direction: str, error_bar: bool) -> None:
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
 @pytest.mark.parametrize("target_name", ["Objective Value", "Target Name"])
 def test_plot_optimization_history(direction: str, target_name: str) -> None:
-    # Test with no trial.
-    study = create_study(direction=direction)
-    figure = plot_optimization_history(study, target_name=target_name)
-    assert len(figure.data) == 0
-
     def objective(trial: Trial) -> float:
 
         if trial.number == 0:
@@ -100,11 +113,6 @@ def test_plot_optimization_history(direction: str, target_name: str) -> None:
 @pytest.mark.parametrize("target_name", ["Objective Value", "Target Name"])
 def test_plot_optimization_history_with_multiple_studies(direction: str, target_name: str) -> None:
     n_studies = 10
-
-    # Test with no trial.
-    studies = [create_study(direction=direction) for _ in range(n_studies)]
-    figure = plot_optimization_history(studies, target_name=target_name)
-    assert len(figure.data) == 0
 
     def objective(trial: Trial) -> float:
 
@@ -149,11 +157,6 @@ def test_plot_optimization_history_with_multiple_studies(direction: str, target_
 @pytest.mark.parametrize("target_name", ["Objective Value", "Target Name"])
 def test_plot_optimization_history_with_error_bar(direction: str, target_name: str) -> None:
     n_studies = 10
-
-    # Test with no trial.
-    studies = [create_study(direction=direction) for _ in range(n_studies)]
-    figure = plot_optimization_history(studies, error_bar=True, target_name=target_name)
-    assert len(figure.data) == 0
 
     def objective(trial: Trial) -> float:
 
