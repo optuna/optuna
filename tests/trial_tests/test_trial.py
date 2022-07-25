@@ -181,23 +181,26 @@ def test_check_distribution_suggest_categorical(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_uniform(storage_mode: str) -> None:
+    low = 0.0
+    high = 3.0
+    x = 1.0
+    y = 2.0
 
-    mock = Mock()
-    mock.side_effect = [1.0, 2.0]
-    sampler = samplers.RandomSampler()
+    relative_search_space = {
+        "x": FloatDistribution(low=low, high=high),
+        "y": FloatDistribution(low=low, high=high),
+    }
+    relative_params = {"x": x, "y": y}
+    sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
 
-    with patch.object(sampler, "sample_independent", mock) as mock_object, StorageSupplier(
-        storage_mode
-    ) as storage:
+    with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = FloatDistribution(low=0.0, high=3.0)
 
-        assert trial._suggest("x", distribution) == 1.0  # Test suggesting a param.
-        assert trial._suggest("x", distribution) == 1.0  # Test suggesting the same param.
-        assert trial._suggest("y", distribution) == 2.0  # Test suggesting a different param.
-        assert trial.params == {"x": 1.0, "y": 2.0}
-        assert mock_object.call_count == 2
+        assert trial.suggest_uniform("x", low, high) == x  # Test suggesting a param.
+        assert trial.suggest_uniform("x", low, high) == x  # Test suggesting the same param.
+        assert trial.suggest_uniform("y", low, high) == y  # Test suggesting a different param.
+        assert trial.params == {"x": x, "y": y}
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -209,43 +212,58 @@ def test_suggest_loguniform(storage_mode: str) -> None:
     with pytest.raises(ValueError):
         FloatDistribution(low=0.0, high=0.9, log=True)
 
-    mock = Mock()
-    mock.side_effect = [1.0, 2.0]
-    sampler = samplers.RandomSampler()
+    low = 0.1
+    high = 4.0
+    x = 1.0
+    y = 2.0
 
-    with patch.object(sampler, "sample_independent", mock) as mock_object, StorageSupplier(
-        storage_mode
-    ) as storage:
+    relative_search_space = {
+        "x": FloatDistribution(low=low, high=high, log=True),
+        "y": FloatDistribution(low=low, high=high, log=True),
+    }
+    relative_params = {"x": x, "y": y}
+    sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
+
+    with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = FloatDistribution(low=0.1, high=4.0, log=True)
 
-        assert trial._suggest("x", distribution) == 1.0  # Test suggesting a param.
-        assert trial._suggest("x", distribution) == 1.0  # Test suggesting the same param.
-        assert trial._suggest("y", distribution) == 2.0  # Test suggesting a different param.
-        assert trial.params == {"x": 1.0, "y": 2.0}
-        assert mock_object.call_count == 2
+        assert trial.suggest_loguniform("x", low, high) == x  # Test suggesting a param.
+        assert trial.suggest_loguniform("x", low, high) == x  # Test suggesting the same param.
+        assert trial.suggest_loguniform("y", low, high) == y  # Test suggesting a different param.
+        assert trial.params == {"x": x, "y": y}
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_discrete_uniform(storage_mode: str) -> None:
 
-    mock = Mock()
-    mock.side_effect = [1.0, 2.0]
-    sampler = samplers.RandomSampler()
+    low = 0.0
+    high = 3.0
+    step = 1.0
+    x = 1.0
+    y = 2.0
 
-    with patch.object(sampler, "sample_independent", mock) as mock_object, StorageSupplier(
-        storage_mode
-    ) as storage:
+    relative_search_space = {
+        "x": FloatDistribution(low=low, high=high, step=step),
+        "y": FloatDistribution(low=low, high=high, step=step),
+    }
+    relative_params = {"x": x, "y": y}
+    sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
+
+    with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = FloatDistribution(low=0.0, high=3.0, step=1.0)
 
-        assert trial._suggest("x", distribution) == 1.0  # Test suggesting a param.
-        assert trial._suggest("x", distribution) == 1.0  # Test suggesting the same param.
-        assert trial._suggest("y", distribution) == 2.0  # Test suggesting a different param.
-        assert trial.params == {"x": 1.0, "y": 2.0}
-        assert mock_object.call_count == 2
+        assert (
+            trial.suggest_discrete_uniform("x", low, high, step) == x
+        )  # Test suggesting a param.
+        assert (
+            trial.suggest_discrete_uniform("x", low, high, step) == x
+        )  # Test suggesting the same param.
+        assert (
+            trial.suggest_discrete_uniform("y", low, high, step) == y
+        )  # Test suggesting a different param.
+        assert trial.params == {"x": x, "y": y}
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -370,22 +388,26 @@ def test_suggest_float_invalid_step() -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_int(storage_mode: str) -> None:
 
-    mock = Mock()
-    mock.side_effect = [1, 2]
-    sampler = samplers.RandomSampler()
+    low = 0
+    high = 3
+    x = 1
+    y = 2
 
-    with patch.object(sampler, "sample_independent", mock) as mock_object, StorageSupplier(
-        storage_mode
-    ) as storage:
+    relative_search_space = {
+        "x": IntDistribution(low=low, high=high),
+        "y": IntDistribution(low=low, high=high),
+    }
+    relative_params = {"x": x, "y": y}
+    sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
+
+    with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = IntDistribution(low=0, high=3)
 
-        assert trial._suggest("x", distribution) == 1  # Test suggesting a param.
-        assert trial._suggest("x", distribution) == 1  # Test suggesting the same param.
-        assert trial._suggest("y", distribution) == 2  # Test suggesting a different param.
-        assert trial.params == {"x": 1, "y": 2}
-        assert mock_object.call_count == 2
+        assert trial.suggest_int("x", low, high) == x  # Test suggesting a param.
+        assert trial.suggest_int("x", low, high) == x  # Test suggesting the same param.
+        assert trial.suggest_int("y", low, high) == y  # Test suggesting a different param.
+        assert trial.params == {"x": x, "y": y}
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -450,23 +472,30 @@ def test_suggest_int_invalid_step() -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_int_log(storage_mode: str) -> None:
 
-    mock = Mock()
-    mock.side_effect = [1, 2]
-    sampler = samplers.RandomSampler()
+    low = 1
+    high = 3
+    x = 1
+    y = 2
 
-    with patch.object(sampler, "sample_independent", mock) as mock_object, StorageSupplier(
-        storage_mode
-    ) as storage:
+    relative_search_space = {
+        "x": IntDistribution(low=low, high=high, log=True),
+        "y": IntDistribution(low=low, high=high, log=True),
+    }
+    relative_params = {"x": x, "y": y}
+    sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
+
+    with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = IntDistribution(low=1, high=3, log=True)
 
-        assert trial._suggest("x", distribution) == 1  # Test suggesting a param.
-        assert trial._suggest("x", distribution) == 1  # Test suggesting the same param.
-        assert trial._suggest("y", distribution) == 2  # Test suggesting a different param.
-        assert trial.params == {"x": 1, "y": 2}
-        assert mock_object.call_count == 2
+        assert trial.suggest_int("x", low, high, log=True) == x  # Test suggesting a param.
+        assert trial.suggest_int("x", low, high, log=True) == x  # Test suggesting the same param.
+        assert (
+            trial.suggest_int("y", low, high, log=True) == y
+        )  # Test suggesting a different param.
+        assert trial.params == {"x": x, "y": y}
 
+    sampler = samplers.RandomSampler()
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
