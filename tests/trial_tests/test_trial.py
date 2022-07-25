@@ -495,9 +495,9 @@ def test_suggest_int_log(storage_mode: str) -> None:
         )  # Test suggesting a different param.
         assert trial.params == {"x": x, "y": y}
 
-    sampler = samplers.RandomSampler()
+    sampler1 = samplers.RandomSampler()
     with StorageSupplier(storage_mode) as storage:
-        study = create_study(storage=storage, sampler=sampler)
+        study = create_study(storage=storage, sampler=sampler1)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
         with warnings.catch_warnings():
             # UserWarning will be raised since [0.5, 10] is not divisible by 1.
@@ -506,7 +506,7 @@ def test_suggest_int_log(storage_mode: str) -> None:
                 trial.suggest_int("z", 0.5, 10, log=True)  # type: ignore
 
     with StorageSupplier(storage_mode) as storage:
-        study = create_study(storage=storage, sampler=sampler)
+        study = create_study(storage=storage, sampler=sampler1)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
         with pytest.raises(ValueError):
             trial.suggest_int("w", 1, 3, step=2, log=True)
