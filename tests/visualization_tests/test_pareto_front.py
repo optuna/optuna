@@ -155,10 +155,42 @@ def test_get_pareto_front_info_constrained(
     )
 
 
-def test_get_pareto_front_info_3d() -> None:
+@pytest.mark.parametrize("include_dominated_trials", [False, True])
+@pytest.mark.parametrize("axis_order", [None, [0, 1, 2], [2, 1, 0]])
+@pytest.mark.parametrize("targets", [None, lambda t: (t.values[0], t.values[1], t.values[2])])
+@pytest.mark.parametrize("target_names", [None, ["Foo", "Bar", "Baz"]])
+def test_get_pareto_front_info_3d(
+    include_dominated_trials: bool,
+    axis_order: Optional[List[int]],
+    targets: Optional[Callable[[FrozenTrial], Sequence[float]]],
+    target_names: Optional[List[str]],
+) -> None:
+    if axis_order is not None and targets is not None:
+        pytest.skip("skip using both axis_order and targets")
+
     study = create_study_3d()
-    info = _get_pareto_front_info(study=study)
-    assert info.n_targets == 3
+    trials = study.get_trials(deepcopy=False)
+
+    info = _get_pareto_front_info(
+        study=study,
+        include_dominated_trials=include_dominated_trials,
+        axis_order=axis_order,
+        targets=targets,
+        target_names=target_names,
+    )
+
+    assert info == _ParetoFrontInfo(
+        n_targets=3,
+        target_names=target_names or ["Objective 0", "Objective 1", "Objective 2"],
+        best_trials_with_values=[(trials[2], [0, 2, 1]), (trials[3], [1, 0, 1])],
+        non_best_trials_with_values=[(trials[0], [1, 2, 1]), (trials[1], [1, 1, 1])]
+        if include_dominated_trials
+        else [],
+        infeasible_trials_with_values=[],
+        axis_order=axis_order or [0, 1, 2],
+        include_dominated_trials=include_dominated_trials,
+        has_constraints_func=False,
+    )
 
 
 def test_get_pareto_front_info_invalid_number_of_target_names() -> None:
