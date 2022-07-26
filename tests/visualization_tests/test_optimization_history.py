@@ -224,8 +224,8 @@ def test_error_bar_in_optimization_history(direction: str) -> None:
     info_list = _get_optimization_history_info_list(
         studies, target=None, target_name="Objective Value", error_bar=True
     )
-    mean = np.mean(suggested_params)
-    std = np.std(suggested_params)
+    mean = np.mean(suggested_params).item()
+    std = np.std(suggested_params).item()
     assert info_list == [
         _OptimizationHistoryInfo(
             [0],
