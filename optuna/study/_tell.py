@@ -26,19 +26,19 @@ def _check_and_convert_to_values(
     n_objectives: int, original_value: Optional[Union[float, Sequence[float]]], trial_number: int
 ) -> Tuple[Optional[List[float]], Optional[str]]:
     if isinstance(original_value, Sequence):
-        if n_objectives != len(original_value):
-            return (
-                None,
-                (
-                    f"The number of the values "
-                    f"{len(original_value)} did not match the number of the objectives "
-                    f"{n_objectives}."
-                ),
-            )
-        else:
-            _original_values: Sequence[Optional[float]] = list(original_value)
+        _original_values: Sequence[Optional[float]] = list(original_value)
     else:
         _original_values = [original_value]
+
+    if n_objectives != len(_original_values):
+        return (
+            None,
+            (
+                f"The number of the values "
+                f"{len(_original_values)} did not match the number of the objectives "
+                f"{n_objectives}."
+            ),
+        )
 
     _checked_values = []
     for v in _original_values:
