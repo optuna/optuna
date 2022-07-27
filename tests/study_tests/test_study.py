@@ -1417,6 +1417,22 @@ def test_tell_invalid() -> None:
     with pytest.raises(ValueError):
         study.tell(study.ask(), state=TrialState.COMPLETE)
 
+    # Invalid values for completions.
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), "a", state=TrialState.COMPLETE)  # type: ignore
+
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), None, state=TrialState.COMPLETE)
+
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), [], state=TrialState.COMPLETE)
+
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), [1.0, 2.0], state=TrialState.COMPLETE)
+
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), float("nan"), state=TrialState.COMPLETE)
+
     # `state` must be None or finished state
     with pytest.raises(ValueError):
         study.tell(study.ask(), state=TrialState.RUNNING)
