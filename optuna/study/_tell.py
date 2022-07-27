@@ -158,6 +158,8 @@ def _tell_with_warning(
             f"Finished trial has values {frozen_trial.values} and state {frozen_trial.state}."
         )
         return copy.deepcopy(frozen_trial)
+    elif frozen_trial.state == TrialState.WAITING:
+        raise ValueError("Cannot tell a waiting trial.")
 
     if state == TrialState.PRUNED:
         # Register the last intermediate value if present as the value of the trial.
