@@ -192,8 +192,6 @@ def test_plot_parallel_coordinate_customized_target_name(
     "specific_create_study, params",
     [
         [create_study, None],
-        [prepare_study_with_trials, None],
-        [prepare_study_with_trials, []],
         [prepare_study_with_trials, ["param_a", "param_b"]],
         [prepare_study_with_trials, ["param_a", "param_b", "param_c"]],
         [prepare_study_with_trials, ["param_a", "param_b", "param_c", "param_d"]],
