@@ -255,7 +255,7 @@ class _FanovaTree:
         return self._get_node_left_child(node_index), self._get_node_right_child(node_index)
 
     def _get_node_value(self, node_index: int) -> float:
-        return float(self._tree.value[node_index])
+        return self._tree.value[node_index].item()
 
     def _get_node_split_threshold(self, node_index: int) -> float:
         return self._tree.threshold[node_index]
