@@ -235,41 +235,41 @@ def test_error_bar_in_optimization_history(direction: str) -> None:
     ]
 
 
-@pytest.mark.parametrize("target_name", ["Objective Value", "Target Name"])
-@pytest.mark.parametrize(
-    "info_list",
-    [
-        [],  # Empty info.
-        [  # Vanilla.
-            _OptimizationHistoryInfo(
-                [0, 1, 2],
-                _ValuesInfo([1.0, 2.0, 0.0], None, "Dummy"),
-                None,
-            )
-        ],
-        [  # With best values.
-            _OptimizationHistoryInfo(
-                [0, 1, 2],
-                _ValuesInfo([1.0, 2.0, 0.0], None, "Dummy"),
-                _ValuesInfo([1.0, 1.0, 1.0], None, "Best Value"),
-            )
-        ],
-        [  # With error bar.
-            _OptimizationHistoryInfo(
-                [0, 1, 2],
-                _ValuesInfo([1.0, 2.0, 0.0], [1.0, 2.0, 0.0], "Dummy"),
-                None,
-            )
-        ],
-        [  # With best values and error bar.
-            _OptimizationHistoryInfo(
-                [0, 1, 2],
-                _ValuesInfo([1.0, 2.0, 0.0], [1.0, 2.0, 0.0], "Dummy"),
-                _ValuesInfo([1.0, 1.0, 1.0], [1.0, 2.0, 0.0], "Best Value"),
-            )
-        ],
+optimization_history_info_lists = [
+    [],  # Empty info.
+    [  # Vanilla.
+        _OptimizationHistoryInfo(
+            [0, 1, 2],
+            _ValuesInfo([1.0, 2.0, 0.0], None, "Dummy"),
+            None,
+        )
     ],
-)
+    [  # With best values.
+        _OptimizationHistoryInfo(
+            [0, 1, 2],
+            _ValuesInfo([1.0, 2.0, 0.0], None, "Dummy"),
+            _ValuesInfo([1.0, 1.0, 1.0], None, "Best Value"),
+        )
+    ],
+    [  # With error bar.
+        _OptimizationHistoryInfo(
+            [0, 1, 2],
+            _ValuesInfo([1.0, 2.0, 0.0], [1.0, 2.0, 0.0], "Dummy"),
+            None,
+        )
+    ],
+    [  # With best values and error bar.
+        _OptimizationHistoryInfo(
+            [0, 1, 2],
+            _ValuesInfo([1.0, 2.0, 0.0], [1.0, 2.0, 0.0], "Dummy"),
+            _ValuesInfo([1.0, 1.0, 1.0], [1.0, 2.0, 0.0], "Best Value"),
+        )
+    ],
+]
+
+
+@pytest.mark.parametrize("target_name", ["Objective Value", "Target Name"])
+@pytest.mark.parametrize("info_list", optimization_history_info_lists)
 def test_get_optimization_history_plot(
     target_name: str, info_list: List[_OptimizationHistoryInfo]
 ) -> None:
