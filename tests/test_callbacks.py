@@ -1,13 +1,12 @@
+from typing import Any
+from typing import Dict
 import warnings
-from typing import Dict, Any
 
 import pytest
 
 from optuna import create_study
-from optuna.distributions import IntDistribution, FloatDistribution, CategoricalDistribution
 from optuna.study import MaxTrialsCallback
 from optuna.testing.objectives import pruned_objective
-from optuna.testing.samplers import DeterministicRelativeSampler
 from optuna.trial import Trial
 from optuna.trial import TrialState
 
@@ -35,10 +34,13 @@ def objective_for_warn_unused_parameter_callback_tests(trial: Trial) -> float:
     return 1.0
 
 
-@pytest.mark.parametrize("param", [
-    {"x0": 0, "x1": 0, "x2": "foo"},  # enqueue all valid parameters
-    {"x0": 0},  # enqueue partial valid parameters
-])
+@pytest.mark.parametrize(
+    "param",
+    [
+        {"x0": 0, "x1": 0, "x2": "foo"},  # enqueue all valid parameters
+        {"x0": 0},  # enqueue partial valid parameters
+    ],
+)
 def test_warn_unused_parameter_callback_raise_no_warnings(param: Dict[str, Any]) -> None:
     study = create_study()
     study.enqueue_trial(param)
@@ -46,10 +48,13 @@ def test_warn_unused_parameter_callback_raise_no_warnings(param: Dict[str, Any])
         study.optimize(objective_for_warn_unused_parameter_callback_tests, n_trials=1)
 
 
-@pytest.mark.parametrize("param", [
-    {"x0": 0, "x1": 0, "x2": "foo", "x3": 0},  # x3 is not exist in search space
-    {"x0": -1},  # x0 is invalid
-])
+@pytest.mark.parametrize(
+    "param",
+    [
+        {"x0": 0, "x1": 0, "x2": "foo", "x3": 0},  # x3 is not exist in search space
+        {"x0": -1},  # x0 is invalid
+    ],
+)
 def test_warn_unused_parameter_callback_raise_warnings(param: Dict[str, Any]) -> None:
     study = create_study()
     study.enqueue_trial(param)
