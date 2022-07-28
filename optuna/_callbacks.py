@@ -1,3 +1,4 @@
+import warnings
 from typing import Container
 from typing import List
 from typing import Optional
@@ -167,3 +168,19 @@ class RetryFailedTrialCallback:
             If the specified trial is not a retry of any trial, returns an empty list.
         """
         return trial.system_attrs.get("retry_history", [])
+
+
+def warn_unused_parameter_callback(study: "optuna.study.Study", trial: FrozenTrial) -> None:
+    fixed_params = trial.system_attrs.get("fixed_params")
+    if fixed_params is None:
+        return
+
+    for param_name, param_value in fixed_params.items():
+        distribution = trial.distributions.get(param_name)
+        if distribution is None:
+            warnings.warn(f"Parameter '{param_name}' is not sampled at trial {trial.number}.")
+            continue
+
+        param_value_internal_repr = distribution.to_internal_repr(param_value)
+        if not distribution._contains(param_value_internal_repr):
+            warnings.warn(f"Parameter '{param_name}' is not used at trial {trial.number}.")

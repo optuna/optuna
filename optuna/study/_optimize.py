@@ -23,6 +23,7 @@ from optuna import exceptions
 from optuna import logging
 from optuna import progress_bar as pbar_module
 from optuna import trial as trial_module
+from optuna._callbacks import warn_unused_parameter_callback
 from optuna.storages._heartbeat import get_heartbeat_thread
 from optuna.storages._heartbeat import is_heartbeat_enabled
 from optuna.study._tell import _tell_with_warning
@@ -60,6 +61,9 @@ def _optimize(
     progress_bar = pbar_module._ProgressBar(show_progress_bar, n_trials, timeout)
 
     study._stop_flag = False
+
+    callbacks = callbacks or []
+    callbacks.append(warn_unused_parameter_callback)
 
     try:
         if n_jobs == 1:
@@ -128,7 +132,7 @@ def _optimize_sequential(
     n_trials: Optional[int],
     timeout: Optional[float],
     catch: Tuple[Type[Exception], ...],
-    callbacks: Optional[List[Callable[["optuna.Study", FrozenTrial], None]]],
+    callbacks: List[Callable[["optuna.Study", FrozenTrial], None]],
     gc_after_trial: bool,
     reseed_sampler_rng: bool,
     time_start: Optional[datetime.datetime],
@@ -166,9 +170,8 @@ def _optimize_sequential(
             if gc_after_trial:
                 gc.collect()
 
-        if callbacks is not None:
-            for callback in callbacks:
-                callback(study, frozen_trial)
+        for callback in callbacks:
+            callback(study, frozen_trial)
 
         if progress_bar is not None:
             progress_bar.update((datetime.datetime.now() - time_start).total_seconds())
