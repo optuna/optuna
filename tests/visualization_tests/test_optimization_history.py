@@ -46,14 +46,14 @@ def test_info_with_no_trials(direction: str, error_bar: bool) -> None:
     info_list = _get_optimization_history_info_list(
         study, target=None, target_name="Objective Value", error_bar=error_bar
     )
-    assert len(info_list) == 0
+    assert info_list == []
 
     # Multiple studies.
     studies = [create_study(direction=direction) for _ in range(10)]
     info_list = _get_optimization_history_info_list(
         studies, target=None, target_name="Objective Value", error_bar=error_bar
     )
-    assert len(info_list) == 0
+    assert info_list == []
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
@@ -65,7 +65,7 @@ def test_ignore_failed_trials(direction: str, error_bar: bool) -> None:
     info_list = _get_optimization_history_info_list(
         study, target=None, target_name="Objective Value", error_bar=error_bar
     )
-    assert len(info_list) == 0
+    assert info_list == []
 
     # Multiple studies.
     studies = [create_study(direction=direction) for _ in range(10)]
@@ -74,7 +74,7 @@ def test_ignore_failed_trials(direction: str, error_bar: bool) -> None:
     info_list = _get_optimization_history_info_list(
         studies, target=None, target_name="Objective Value", error_bar=error_bar
     )
-    assert len(info_list) == 0
+    assert info_list == []
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
