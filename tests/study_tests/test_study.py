@@ -1453,6 +1453,11 @@ def test_tell_invalid() -> None:
     with pytest.raises(ValueError):
         study.tell(study.ask().number + 1, 1.0)
 
+    # Waiting trial cannot be told.
+    with pytest.raises(ValueError):
+        study.enqueue_trial({})
+        study.tell(study.trials[-1].number, 1.0)
+
     # It must be Trial or int for trial.
     with pytest.raises(TypeError):
         study.tell("1", 1.0)  # type: ignore
