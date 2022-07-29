@@ -89,7 +89,7 @@ def test_get_param_importances(
         study.optimize(objective, n_trials=3)
 
         param_importance = get_param_importances(
-            study, evaluator=evaluator_init_func(), normalize_importances=normalize
+            study, evaluator=evaluator_init_func(), normalize=normalize
         )
 
         assert isinstance(param_importance, OrderedDict)
@@ -137,7 +137,7 @@ def test_get_param_importances_with_params(
         study.optimize(objective, n_trials=10)
 
         param_importance = get_param_importances(
-            study, evaluator=evaluator_init_func(), params=params, normalize_importances=normalize
+            study, evaluator=evaluator_init_func(), params=params, normalize=normalize
         )
 
         assert isinstance(param_importance, OrderedDict)
@@ -179,7 +179,7 @@ def test_get_param_importances_with_target(
             study,
             evaluator=evaluator_init_func(),
             target=lambda t: t.params["x1"] + t.params["x2"],
-            normalize_importances=normalize,
+            normalize=normalize,
         )
 
         assert isinstance(param_importance, OrderedDict)
