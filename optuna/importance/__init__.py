@@ -2,7 +2,7 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import OrderedDict
+from collections import OrderedDict
 
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova import FanovaImportanceEvaluator
