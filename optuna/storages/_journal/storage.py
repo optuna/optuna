@@ -122,13 +122,11 @@ class JournalStorage(BaseStorage):
         # trial-id - FrozenTrial dict (thread-unsafe)
         self._trials: Dict[int, FrozenTrial] = dict()
 
-        # replay result
-        self._replay_result_of_logs_created_by_me: Dict[str, Any] = dict()
-
         # study-id - [trial-id] dict (thread-unsafe)
         self._study_id_to_trial_ids: Dict[int, List[int]] = dict()
         self._trial_id_to_study_id: Dict[int, int] = dict()
         self._next_study_id: int = 0
+        self._trial_ids_owned_by_me: List[int] = []
 
         # Lock for controlling multiple threads
         self._thread_lock = threading.Lock()
@@ -143,13 +141,9 @@ class JournalStorage(BaseStorage):
     def _write_log(self, log: Dict[str, Any]) -> None:
         self._backend.append_logs([log])
 
-    def _push_log_replay_result(self, log: Dict[str, Any], result: Any) -> None:
+    def _raise_error_if_log_issued_by_me(self, log: Dict[str, Any], err: Exception) -> None:
         if log["me"] == self._me:
-            self._replay_result_of_logs_created_by_me[log["log_id"]] = result
-
-    def _pop_log_replay_result(self, log: Dict[str, Any]) -> Any:
-        assert log["me"] == self._me
-        return self._replay_result_of_logs_created_by_me.pop(log["log_id"])
+            raise err
 
     def _apply_log(self, log: Dict[str, Any]) -> None:
         op = log["op_code"]
@@ -157,7 +151,7 @@ class JournalStorage(BaseStorage):
             study_name = log["study_name"]
 
             if study_name in [s.study_name for s in self._studies.values()]:
-                self._push_log_replay_result(log, DuplicatedStudyError(""))
+                self._raise_error_if_log_issued_by_me(log, DuplicatedStudyError(""))
                 return
 
             study_id = self._next_study_id
@@ -174,26 +168,21 @@ class JournalStorage(BaseStorage):
             self._studies[study_id] = fs
             self._study_id_to_trial_ids[study_id] = []
 
-            self._push_log_replay_result(log, study_id)
-
         elif op == JournalOperation.DELETE_STUDY:
             study_id = log["study_id"]
-
             if study_id not in self._studies.keys():
-                self._push_log_replay_result(log, KeyError(""))
+                self._raise_error_if_log_issued_by_me(log, KeyError(""))
                 return
 
             fs = self._studies.pop(study_id)
 
             assert fs._study_id == study_id
 
-            self._push_log_replay_result(log, None)
-
         elif op == JournalOperation.SET_STUDY_USER_ATTR:
             study_id = log["study_id"]
 
             if study_id not in self._studies.keys():
-                self._push_log_replay_result(log, KeyError(""))
+                self._raise_error_if_log_issued_by_me(log, KeyError(""))
                 return
 
             user_attr = "user_attr"
@@ -203,13 +192,11 @@ class JournalStorage(BaseStorage):
 
             self._studies[study_id].user_attrs[key] = value
 
-            self._push_log_replay_result(log, None)
-
         elif op == JournalOperation.SET_STUDY_SYSTEM_ATTR:
             study_id = log["study_id"]
 
             if study_id not in self._studies.keys():
-                self._push_log_replay_result(log, KeyError(""))
+                self._raise_error_if_log_issued_by_me(log, KeyError(""))
                 return
 
             system_attr = "system_attr"
@@ -219,13 +206,11 @@ class JournalStorage(BaseStorage):
 
             self._studies[study_id].system_attrs[key] = value
 
-            self._push_log_replay_result(log, None)
-
         elif op == JournalOperation.SET_STUDY_DIRECTIONS:
             study_id = log["study_id"]
 
             if study_id not in self._studies.keys():
-                self._push_log_replay_result(log, KeyError(""))
+                self._raise_error_if_log_issued_by_me(log, KeyError(""))
                 return
 
             directions = log["directions"]
@@ -235,18 +220,16 @@ class JournalStorage(BaseStorage):
                 current_directions[0] != StudyDirection.NOT_SET
                 and current_directions != directions
             ):
-                self._push_log_replay_result(log, ValueError(""))
+                self._raise_error_if_log_issued_by_me(log, ValueError(""))
                 return
 
-            self._studies[study_id]._directions = directions
-
-            self._push_log_replay_result(log, None)
+            self._studies[study_id]._directions = [StudyDirection(d) for d in directions]
 
         elif op == JournalOperation.CREATE_TRIAL:
             study_id = log["study_id"]
 
             if study_id not in self._studies.keys():
-                self._push_log_replay_result(log, KeyError(""))
+                self._raise_error_if_log_issued_by_me(log, KeyError(""))
                 return
 
             trial_id = len(self._trials)
@@ -305,17 +288,19 @@ class JournalStorage(BaseStorage):
 
             self._study_id_to_trial_ids[study_id].append(trial_id)
             self._trial_id_to_study_id[trial_id] = study_id
-            self._push_log_replay_result(log, trial_id)
+
+            if log["me"] == self._me:
+                self._trial_ids_owned_by_me.append(trial_id)
 
         elif op == JournalOperation.SET_TRIAL_PARAM:
             trial_id = log["trial_id"]
 
             if trial_id not in self._trials.keys():
-                self._push_log_replay_result(log, KeyError(""))
+                self._raise_error_if_log_issued_by_me(log, KeyError(""))
                 return
 
             if self._trials[trial_id].state.is_finished():
-                self._push_log_replay_result(log, RuntimeError(""))
+                self._raise_error_if_log_issued_by_me(log, RuntimeError(""))
                 return
 
             param_name = log["param_name"]
@@ -332,7 +317,7 @@ class JournalStorage(BaseStorage):
                             prev_trial.distributions[param_name], distribution
                         )
                     except Exception as e:
-                        self._push_log_replay_result(log, e)
+                        self._raise_error_if_log_issued_by_me(log, e)
                         return
                     break
 
@@ -341,24 +326,21 @@ class JournalStorage(BaseStorage):
             )
             self._trials[trial_id].distributions[param_name] = distribution
 
-            self._push_log_replay_result(log, None)
-
         elif op == JournalOperation.SET_TRIAL_STATE_VALUES:
             trial_id = log["trial_id"]
 
             if trial_id not in self._trials.keys():
-                self._push_log_replay_result(log, KeyError(""))
+                self._raise_error_if_log_issued_by_me(log, KeyError(""))
                 return
 
             if self._trials[trial_id].state.is_finished():
-                self._push_log_replay_result(log, RuntimeError(""))
+                self._raise_error_if_log_issued_by_me(log, RuntimeError(""))
                 return
 
             state = TrialState(log["state"])
             values = log["values"]
 
             if state == self._trials[trial_id].state and state == TrialState.RUNNING:
-                self._push_log_replay_result(log, False)
                 return
 
             if state == TrialState.RUNNING:
@@ -375,34 +357,32 @@ class JournalStorage(BaseStorage):
             if values is not None:
                 self._trials[trial_id].values = values
 
-            self._push_log_replay_result(log, True)
             return
 
         elif op == JournalOperation.SET_TRIAL_INTERMEDIATE_VALUE:
             trial_id = log["trial_id"]
 
             if trial_id not in self._trials.keys():
-                self._push_log_replay_result(log, KeyError(""))
+                self._raise_error_if_log_issued_by_me(log, KeyError(""))
                 return
 
             if self._trials[trial_id].state.is_finished():
-                self._push_log_replay_result(log, RuntimeError(""))
+                self._raise_error_if_log_issued_by_me(log, RuntimeError(""))
                 return
 
             step = log["step"]
             intermediate_value = log["intermediate_value"]
             self._trials[trial_id].intermediate_values[step] = intermediate_value
-            self._push_log_replay_result(log, None)
 
         elif op == JournalOperation.SET_TRIAL_USER_ATTR:
             trial_id = log["trial_id"]
 
             if trial_id not in self._trials.keys():
-                self._push_log_replay_result(log, KeyError(""))
+                self._raise_error_if_log_issued_by_me(log, KeyError(""))
                 return
 
             if self._trials[trial_id].state.is_finished():
-                self._push_log_replay_result(log, RuntimeError(""))
+                self._raise_error_if_log_issued_by_me(log, RuntimeError(""))
                 return
 
             user_attr = "user_attr"
@@ -412,17 +392,15 @@ class JournalStorage(BaseStorage):
 
             self._trials[trial_id].user_attrs[key] = value
 
-            self._push_log_replay_result(log, None)
-
         elif op == JournalOperation.SET_TRIAL_SYSTEM_ATTR:
             trial_id = log["trial_id"]
 
             if trial_id not in self._trials.keys():
-                self._push_log_replay_result(log, KeyError(""))
+                self._raise_error_if_log_issued_by_me(log, KeyError(""))
                 return
 
             if self._trials[trial_id].state.is_finished():
-                self._push_log_replay_result(log, RuntimeError(""))
+                self._raise_error_if_log_issued_by_me(log, RuntimeError(""))
                 return
 
             system_attr = "system_attr"
@@ -432,16 +410,14 @@ class JournalStorage(BaseStorage):
 
             self._trials[trial_id].system_attrs[key] = value
 
-            self._push_log_replay_result(log, None)
-
         else:
             raise RuntimeError("No corresponding log operation to op_code:{}".format(op))
 
     def _sync_with_backend(self) -> None:
         logs = self._backend.get_unread_logs(self._log_number_read)
         for log in logs:
-            self._apply_log(log)
             self._log_number_read += 1
+            self._apply_log(log)
 
     # TODO(wattlebirdaz): Guarantee uniqueness.
     def _create_unique_study_name(self) -> str:
@@ -473,12 +449,10 @@ class JournalStorage(BaseStorage):
             self._write_log(log)
             self._sync_with_backend()
 
-            result = self._pop_log_replay_result(log)
-            if isinstance(result, Exception):
-                raise result
-            else:
-                assert isinstance(result, int)
-                return result
+            for frozen_study in self._studies.values():
+                if frozen_study.study_name == log["study_name"]:
+                    return frozen_study._study_id
+            raise RuntimeError("")
 
     def delete_study(self, study_id: int) -> None:
         """Delete a study.
@@ -493,17 +467,9 @@ class JournalStorage(BaseStorage):
         """
         log = self._create_operation_log(JournalOperation.DELETE_STUDY)
         log["study_id"] = study_id
-
         with self._thread_lock:
             self._write_log(log)
             self._sync_with_backend()
-
-            result = self._pop_log_replay_result(log)
-            if isinstance(result, Exception):
-                raise result
-            else:
-                assert result is None
-                return
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
         """Register a user-defined attribute to a study.
@@ -530,13 +496,6 @@ class JournalStorage(BaseStorage):
             self._write_log(log)
             self._sync_with_backend()
 
-            result = self._pop_log_replay_result(log)
-            if isinstance(result, Exception):
-                raise result
-            else:
-                assert result is None
-                return
-
     def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
         """Register an optuna-internal attribute to a study.
 
@@ -561,13 +520,6 @@ class JournalStorage(BaseStorage):
         with self._thread_lock:
             self._write_log(log)
             self._sync_with_backend()
-
-            result = self._pop_log_replay_result(log)
-            if isinstance(result, Exception):
-                raise result
-            else:
-                assert result is None
-                return
 
     def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
         """Register optimization problem directions to a study.
@@ -595,13 +547,6 @@ class JournalStorage(BaseStorage):
         with self._thread_lock:
             self._write_log(log)
             self._sync_with_backend()
-
-            result = self._pop_log_replay_result(log)
-            if isinstance(result, Exception):
-                raise result
-            else:
-                assert result is None
-                return
 
     # Basic study access
 
@@ -786,12 +731,7 @@ class JournalStorage(BaseStorage):
         with self._thread_lock:
             self._write_log(log)
             self._sync_with_backend()
-            result = self._pop_log_replay_result(log)
-            if isinstance(result, Exception):
-                raise result
-            else:
-                assert isinstance(result, int)
-                return result
+            return self._trial_ids_owned_by_me[-1]
 
     def set_trial_param(
         self,
@@ -827,13 +767,6 @@ class JournalStorage(BaseStorage):
         with self._thread_lock:
             self._write_log(log)
             self._sync_with_backend()
-
-            result = self._pop_log_replay_result(log)
-            if isinstance(result, Exception):
-                raise result
-            else:
-                assert result is None
-                return
 
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
         """Read the trial ID of a trial.
@@ -958,12 +891,10 @@ class JournalStorage(BaseStorage):
             self._write_log(log)
             self._sync_with_backend()
 
-            result = self._pop_log_replay_result(log)
-            if isinstance(result, Exception):
-                raise result
+            if state == TrialState.RUNNING and trial_id in self._trial_ids_owned_by_me:
+                return False
             else:
-                assert isinstance(result, bool)
-                return result
+                return True
 
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
@@ -995,13 +926,6 @@ class JournalStorage(BaseStorage):
             self._write_log(log)
             self._sync_with_backend()
 
-            result = self._pop_log_replay_result(log)
-            if isinstance(result, Exception):
-                raise result
-            else:
-                assert result is None
-                return
-
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
         """Set a user-defined attribute to a trial.
 
@@ -1028,12 +952,6 @@ class JournalStorage(BaseStorage):
         with self._thread_lock:
             self._write_log(log)
             self._sync_with_backend()
-            result = self._pop_log_replay_result(log)
-            if isinstance(result, Exception):
-                raise result
-            else:
-                assert result is None
-                return
 
     def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
         """Set an optuna-internal attribute to a trial.
@@ -1061,12 +979,6 @@ class JournalStorage(BaseStorage):
         with self._thread_lock:
             self._write_log(log)
             self._sync_with_backend()
-            result = self._pop_log_replay_result(log)
-            if isinstance(result, Exception):
-                raise result
-            else:
-                assert result is None
-                return
 
     # Basic trial access
 
