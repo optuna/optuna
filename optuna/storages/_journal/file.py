@@ -3,42 +3,38 @@ import os
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Optional
 
 from optuna.storages._journal.base import BaseLogStorage
 from optuna.storages._journal.file_lock import BaseFileLock
 from optuna.storages._journal.file_lock import OpenLock
-# from optuna.storages._journal.file_lock import LinkLock
-
-
-def get_file_lock(file_name: str) -> BaseFileLock:
-    # return LinkLock("./linklock", file_name)
-    return OpenLock("./openlock", file_name)
 
 
 class FileStorage(BaseLogStorage):
-    def __init__(self, file_name: str):
-        self._filename: str = os.path.join(".", file_name)
-        open(self._filename, "a").close()  # Create a file if it does not exist
-        self._lock_file_name = file_name + "--lockfile"
+    def __init__(self, file_path: str, lock_obj: Optional[BaseFileLock] = None) -> None:
+        self._file_path: str = file_path
+        open(self._file_path, "a").close()  # Create a file if it does not exist
+
+        base_dir = os.path.dirname(file_path)
+        lock_filename = os.path.basename(file_path) + ".lock"
+        self._lock = lock_obj or OpenLock(base_dir, lock_filename)
 
     # TODO(wattlebirdaz): Use seek instead of readlines to achieve better performance.
     def get_unread_logs(self, log_number_read: int = 0) -> List[Dict[str, Any]]:
         # log_number starts from 1.
         # The default log_number_read == 0 means no logs have been read by the caller.
-        lock = get_file_lock(self._lock_file_name)
-
-        lock.acquire()
-        with open(self._filename, "r") as f:
+        self._lock.acquire()
+        with open(self._file_path, "r") as f:
             lines = f.readlines()
 
         if len(lines) < log_number_read:
-            lock.release()
+            self._lock.release()
             raise RuntimeError("log_number too big")
         elif len(lines) == log_number_read:
-            lock.release()
+            self._lock.release()
             return []
         else:
-            lock.release()
+            self._lock.release()
             return [json.loads(line) for line in lines[log_number_read:]]
 
     def append_logs(self, logs: List[Dict[str, Any]]) -> None:
@@ -46,11 +42,10 @@ class FileStorage(BaseLogStorage):
         for log in logs:
             what_to_write += json.dumps(log) + "\n"
 
-        lock = get_file_lock(self._lock_file_name)
-        lock.acquire()
+        self._lock.acquire()
 
-        with open(self._filename, "a") as f:
+        with open(self._file_path, "a") as f:
             f.write(what_to_write)
             os.fsync(f.fileno())
 
-        lock.release()
+        self._lock.release()
