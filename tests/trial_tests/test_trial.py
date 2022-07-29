@@ -1,6 +1,7 @@
 import datetime
 import math
 import tempfile
+from typing import Any
 from typing import cast
 from typing import Dict
 from typing import List
@@ -13,6 +14,7 @@ import warnings
 import numpy as np
 import pytest
 
+import optuna
 from optuna import create_study
 from optuna import distributions
 from optuna import load_study
@@ -22,7 +24,6 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.testing.pruners import DeterministicPruner
-from optuna.testing.samplers import DeterministicRelativeSampler
 from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
 from optuna.trial import Trial
@@ -522,14 +523,33 @@ def test_should_prune() -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_relative_parameters(storage_mode: str) -> None:
 
-    relative_search_space = {
-        "x": FloatDistribution(low=5, high=6),
-        "y": FloatDistribution(low=5, high=6),
-    }
-    relative_params = {"x": 5.5, "y": 5.5, "z": 5.5}
+    class SamplerStubForTestRelativeParameters(samplers.BaseSampler):
+        def infer_relative_search_space(
+            self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial"
+        ) -> Dict[str, distributions.BaseDistribution]:
+            return {
+                "x": FloatDistribution(low=5, high=6),
+                "y": FloatDistribution(low=5, high=6),
+            }
 
-    sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
+        def sample_relative(
+            self,
+            study: "optuna.study.Study",
+            trial: "optuna.trial.FrozenTrial",
+            search_space: Dict[str, distributions.BaseDistribution],
+        ) -> Dict[str, Any]:
+            return {"x": 5.5, "y": 5.5, "z": 5.5}
 
+        def sample_independent(
+            self,
+            study: "optuna.study.Study",
+            trial: "optuna.trial.FrozenTrial",
+            param_name: str,
+            param_distribution: distributions.BaseDistribution,
+        ) -> Any:
+            return 5.0
+
+    sampler = SamplerStubForTestRelativeParameters()
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
 

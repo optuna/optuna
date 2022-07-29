@@ -17,7 +17,6 @@ from optuna import create_trial
 from optuna._transform import _SearchSpaceTransform
 from optuna.samplers._cmaes import _concat_optimizer_attrs
 from optuna.samplers._cmaes import _split_optimizer_str
-from optuna.testing.samplers import DeterministicRelativeSampler
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -41,7 +40,7 @@ def test_init_cmaes_opts(
         sigma0=0.1,
         seed=1,
         n_startup_trials=1,
-        independent_sampler=DeterministicRelativeSampler({}, {}),
+        independent_sampler=optuna.samplers.RandomSampler(),
         use_separable_cma=use_separable_cma,
         popsize=popsize,
     )
@@ -176,7 +175,7 @@ def test_infer_relative_search_space_1d() -> None:
 
 
 def test_sample_relative_1d() -> None:
-    independent_sampler = DeterministicRelativeSampler({}, {})
+    independent_sampler = optuna.samplers.RandomSampler()
     sampler = optuna.samplers.CmaEsSampler(independent_sampler=independent_sampler)
     study = optuna.create_study(sampler=sampler)
 
@@ -189,7 +188,7 @@ def test_sample_relative_1d() -> None:
 
 
 def test_sample_relative_n_startup_trials() -> None:
-    independent_sampler = DeterministicRelativeSampler({}, {})
+    independent_sampler = optuna.samplers.RandomSampler()
     sampler = optuna.samplers.CmaEsSampler(
         n_startup_trials=2, independent_sampler=independent_sampler
     )
@@ -272,7 +271,7 @@ def test_population_size_is_multiplied_when_enable_ipop(popsize: Optional[int]) 
         sigma0=0.1,
         seed=1,
         n_startup_trials=1,
-        independent_sampler=DeterministicRelativeSampler({}, {}),
+        independent_sampler=optuna.samplers.RandomSampler(),
         restart_strategy="ipop",
         popsize=popsize,
         inc_popsize=inc_popsize,

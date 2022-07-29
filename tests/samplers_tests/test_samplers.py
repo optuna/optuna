@@ -28,7 +28,7 @@ from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.testing.objectives import fail_objective
 from optuna.testing.objectives import pruned_objective
-from optuna.testing.samplers import DeterministicRelativeSampler
+from optuna.testing.samplers import DeterministicSampler
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState
@@ -684,7 +684,7 @@ def test_after_trial() -> None:
     n_calls = 0
     n_trials = 3
 
-    class SamplerAfterTrial(DeterministicRelativeSampler):
+    class SamplerAfterTrial(optuna.samplers.RandomSampler):
         def after_trial(
             self,
             study: Study,
@@ -701,7 +701,7 @@ def test_after_trial() -> None:
             nonlocal n_calls
             n_calls += 1
 
-    sampler = SamplerAfterTrial({}, {})
+    sampler = SamplerAfterTrial()
     study = optuna.create_study(directions=["minimize", "minimize"], sampler=sampler)
 
     study.optimize(lambda t: [t.suggest_float("y", -3, 3), t.suggest_int("x", 0, 10)], n_trials=3)
@@ -713,7 +713,7 @@ def test_after_trial_pruning() -> None:
     n_calls = 0
     n_trials = 3
 
-    class SamplerAfterTrial(DeterministicRelativeSampler):
+    class SamplerAfterTrial(DeterministicSampler):
         def after_trial(
             self,
             study: Study,
@@ -729,7 +729,7 @@ def test_after_trial_pruning() -> None:
             nonlocal n_calls
             n_calls += 1
 
-    sampler = SamplerAfterTrial({}, {})
+    sampler = SamplerAfterTrial({})
     study = optuna.create_study(directions=["minimize", "minimize"], sampler=sampler)
 
     study.optimize(pruned_objective, n_trials=n_trials)
@@ -741,7 +741,7 @@ def test_after_trial_failing() -> None:
     n_calls = 0
     n_trials = 3
 
-    class SamplerAfterTrial(DeterministicRelativeSampler):
+    class SamplerAfterTrial(DeterministicSampler):
         def after_trial(
             self,
             study: Study,
@@ -757,7 +757,7 @@ def test_after_trial_failing() -> None:
             nonlocal n_calls
             n_calls += 1
 
-    sampler = SamplerAfterTrial({}, {})
+    sampler = SamplerAfterTrial({})
     study = optuna.create_study(directions=["minimize", "minimize"], sampler=sampler)
 
     with pytest.raises(ValueError):
@@ -771,7 +771,7 @@ def test_after_trial_failing_in_after_trial() -> None:
     n_calls = 0
     n_trials = 3
 
-    class SamplerAfterTrialAlwaysFail(DeterministicRelativeSampler):
+    class SamplerAfterTrialAlwaysFail(DeterministicSampler):
         def after_trial(
             self,
             study: Study,
@@ -783,7 +783,7 @@ def test_after_trial_failing_in_after_trial() -> None:
             n_calls += 1
             raise NotImplementedError  # Arbitrary error for testing purpose.
 
-    sampler = SamplerAfterTrialAlwaysFail({}, {})
+    sampler = SamplerAfterTrialAlwaysFail({})
     study = optuna.create_study(sampler=sampler)
 
     with pytest.raises(NotImplementedError):
@@ -792,7 +792,7 @@ def test_after_trial_failing_in_after_trial() -> None:
     assert len(study.trials) == 1
     assert n_calls == 1
 
-    sampler = SamplerAfterTrialAlwaysFail({}, {})
+    sampler = SamplerAfterTrialAlwaysFail({})
     study = optuna.create_study(sampler=sampler)
 
     # Not affected by `catch`.
@@ -808,7 +808,7 @@ def test_after_trial_failing_in_after_trial() -> None:
 def test_after_trial_with_study_tell() -> None:
     n_calls = 0
 
-    class SamplerAfterTrial(DeterministicRelativeSampler):
+    class SamplerAfterTrial(DeterministicSampler):
         def after_trial(
             self,
             study: Study,
@@ -819,7 +819,7 @@ def test_after_trial_with_study_tell() -> None:
             nonlocal n_calls
             n_calls += 1
 
-    sampler = SamplerAfterTrial({}, {})
+    sampler = SamplerAfterTrial({})
     study = optuna.create_study(sampler=sampler)
 
     assert n_calls == 0

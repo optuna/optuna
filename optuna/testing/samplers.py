@@ -2,23 +2,17 @@ from typing import Any
 from typing import Dict
 
 import optuna
-from optuna import distributions
 from optuna.distributions import BaseDistribution
 
 
-class DeterministicRelativeSampler(optuna.samplers.BaseSampler):
-    def __init__(
-        self, relative_search_space: Dict[str, BaseDistribution], relative_params: Dict[str, Any]
-    ) -> None:
-
-        self.relative_search_space = relative_search_space
-        self.relative_params = relative_params
+class DeterministicSampler(optuna.samplers.BaseSampler):
+    def __init__(self, params: Dict[str, Any]) -> None:
+        self.params = params
 
     def infer_relative_search_space(
         self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial"
     ) -> Dict[str, BaseDistribution]:
-
-        return self.relative_search_space
+        return {}
 
     def sample_relative(
         self,
@@ -26,8 +20,7 @@ class DeterministicRelativeSampler(optuna.samplers.BaseSampler):
         trial: "optuna.trial.FrozenTrial",
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
-
-        return self.relative_params
+        return {}
 
     def sample_independent(
         self,
@@ -36,16 +29,8 @@ class DeterministicRelativeSampler(optuna.samplers.BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
-
-        if isinstance(
-            param_distribution, (distributions.FloatDistribution, distributions.IntDistribution)
-        ):
-            param_value: Any = param_distribution.low
-        elif isinstance(param_distribution, distributions.CategoricalDistribution):
-            param_value = param_distribution.choices[0]
-        else:
-            raise NotImplementedError
-
+        param_value = self.params[param_name]
+        assert param_distribution._contains(param_value)
         return param_value
 
 

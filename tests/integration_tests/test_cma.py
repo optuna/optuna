@@ -16,7 +16,6 @@ from optuna.distributions import IntDistribution
 from optuna.integration.cma import _Optimizer
 from optuna.study._study_direction import StudyDirection
 from optuna.testing.distributions import UnsupportedDistribution
-from optuna.testing.samplers import DeterministicRelativeSampler
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -36,7 +35,7 @@ class TestPyCmaSampler:
             cma_stds={"x": 1, "y": 1},
             seed=1,
             cma_opts={"popsize": 5},
-            independent_sampler=DeterministicRelativeSampler({}, {}),
+            independent_sampler=optuna.samplers.RandomSampler(),
         )
         study = optuna.create_study(sampler=sampler)
 
@@ -79,7 +78,7 @@ class TestPyCmaSampler:
     @staticmethod
     def test_sample_relative_1d() -> None:
 
-        independent_sampler = DeterministicRelativeSampler({}, {})
+        independent_sampler = optuna.samplers.RandomSampler()
         sampler = optuna.integration.PyCmaSampler(independent_sampler=independent_sampler)
         study = optuna.create_study(sampler=sampler)
 
@@ -93,7 +92,7 @@ class TestPyCmaSampler:
     @staticmethod
     def test_sample_relative_n_startup_trials() -> None:
 
-        independent_sampler = DeterministicRelativeSampler({}, {})
+        independent_sampler = optuna.samplers.RandomSampler()
         sampler = optuna.integration.PyCmaSampler(
             n_startup_trials=2, independent_sampler=independent_sampler
         )

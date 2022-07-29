@@ -22,7 +22,7 @@ from optuna.storages import BaseStorage
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.testing.pruners import DeterministicPruner
-from optuna.testing.samplers import DeterministicRelativeSampler
+from optuna.testing.samplers import DeterministicSampler
 from optuna.testing.storages import StorageSupplier
 from optuna.trial import Trial
 from optuna.trial import TrialState
@@ -222,13 +222,8 @@ class TestChainerMNStudy:
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     def test_relative_sampling(storage_mode: str, comm: CommunicatorBase) -> None:
 
-        relative_search_space = {
-            "x": distributions.FloatDistribution(low=-10, high=10),
-            "y": distributions.FloatDistribution(low=20, high=30, log=True),
-            "z": distributions.CategoricalDistribution(choices=(-1.0, 1.0)),
-        }
         relative_params = {"x": 1.0, "y": 25.0, "z": -1.0}
-        sampler = DeterministicRelativeSampler(relative_search_space, relative_params)
+        sampler = DeterministicSampler(relative_params)
 
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm, sampler=sampler)
