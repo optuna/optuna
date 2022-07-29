@@ -498,7 +498,7 @@ class JournalStorage(BaseStorage):
             self._sync_with_backend()
             frozen_study = [fs for fs in self._studies.values() if fs.study_name == study_name]
             if len(frozen_study) == 0:
-                raise KeyError("")
+                raise KeyError(NOT_FOUND_MSG)
             assert len(frozen_study) == 1
             return frozen_study[0]._study_id
 
@@ -506,7 +506,7 @@ class JournalStorage(BaseStorage):
         with self._thread_lock:
             self._sync_with_backend()
             if study_id not in self._studies.keys():
-                raise KeyError("")
+                raise KeyError(NOT_FOUND_MSG)
             else:
                 return self._studies[study_id].study_name
 
@@ -514,7 +514,7 @@ class JournalStorage(BaseStorage):
         with self._thread_lock:
             self._sync_with_backend()
             if study_id not in self._studies.keys():
-                raise KeyError("")
+                raise KeyError(NOT_FOUND_MSG)
             else:
                 return self._studies[study_id].directions
 
@@ -522,7 +522,7 @@ class JournalStorage(BaseStorage):
         with self._thread_lock:
             self._sync_with_backend()
             if study_id not in self._studies.keys():
-                raise KeyError("")
+                raise KeyError(NOT_FOUND_MSG)
             else:
                 return self._studies[study_id].user_attrs
 
@@ -530,7 +530,7 @@ class JournalStorage(BaseStorage):
         with self._thread_lock:
             self._sync_with_backend()
             if study_id not in self._studies.keys():
-                raise KeyError("")
+                raise KeyError(NOT_FOUND_MSG)
             else:
                 return self._studies[study_id].system_attrs
 
@@ -608,7 +608,11 @@ class JournalStorage(BaseStorage):
         with self._thread_lock:
             self._sync_with_backend()
             if len(self._study_id_to_trial_ids[study_id]) <= trial_number:
-                raise KeyError("")
+                raise KeyError(
+                    "No trial with trial number {} exists in study with study_id {}.".format(
+                        trial_number, study_id
+                    )
+                )
             return self._study_id_to_trial_ids[study_id][trial_number]
 
     def get_trial_number_from_id(self, trial_id: int) -> int:
@@ -618,7 +622,7 @@ class JournalStorage(BaseStorage):
                 trial.number for trial in self._trials.values() if trial._trial_id == trial_id
             ]
             if len(trial_number) != 1:
-                raise KeyError("")
+                raise KeyError(NOT_FOUND_MSG)
             else:
                 return trial_number[0]
 
@@ -629,7 +633,7 @@ class JournalStorage(BaseStorage):
                 trial for trial in self._trials.values() if trial._trial_id == trial_id
             ]
             if len(frozen_trial) != 1 or param_name not in frozen_trial[0].distributions.keys():
-                raise KeyError("")
+                raise KeyError(NOT_FOUND_MSG)
             return (
                 frozen_trial[0]
                 .distributions[param_name]
@@ -701,7 +705,7 @@ class JournalStorage(BaseStorage):
                 trial for trial in self._trials.values() if trial._trial_id == trial_id
             ]
             if len(frozen_trial) != 1:
-                raise KeyError("")
+                raise KeyError(NOT_FOUND_MSG)
             else:
                 return frozen_trial[0]
 
@@ -714,7 +718,7 @@ class JournalStorage(BaseStorage):
         with self._thread_lock:
             self._sync_with_backend()
             if study_id not in self._study_id_to_trial_ids.keys():
-                raise KeyError("")
+                raise KeyError(NOT_FOUND_MSG)
 
             frozen_trials = []
 
@@ -745,7 +749,7 @@ class JournalStorage(BaseStorage):
         with self._thread_lock:
             self._sync_with_backend()
             if study_id not in self._study_id_to_trial_ids.keys():
-                raise KeyError("")
+                raise KeyError(NOT_FOUND_MSG)
 
             frozen_trials = []
 
@@ -763,7 +767,7 @@ class JournalStorage(BaseStorage):
         with self._thread_lock:
             self._sync_with_backend()
             if study_id not in self._study_id_to_trial_ids.keys():
-                raise KeyError("")
+                raise KeyError(NOT_FOUND_MSG)
 
             frozen_trials = []
 
@@ -795,7 +799,7 @@ class JournalStorage(BaseStorage):
                 trial for trial in self._trials.values() if trial._trial_id == trial_id
             ]
             if len(frozen_trial) != 1:
-                raise KeyError("")
+                raise KeyError(NOT_FOUND_MSG)
             else:
                 return frozen_trial[0].params
 
@@ -805,7 +809,7 @@ class JournalStorage(BaseStorage):
                 trial for trial in self._trials.values() if trial._trial_id == trial_id
             ]
             if len(frozen_trial) != 1:
-                raise KeyError("")
+                raise KeyError(NOT_FOUND_MSG)
             else:
                 return frozen_trial[0].user_attrs
 
@@ -815,7 +819,7 @@ class JournalStorage(BaseStorage):
                 trial for trial in self._trials.values() if trial._trial_id == trial_id
             ]
             if len(frozen_trial) != 1:
-                raise KeyError("")
+                raise KeyError(NOT_FOUND_MSG)
             else:
                 return frozen_trial[0].system_attrs
 
@@ -829,7 +833,7 @@ class JournalStorage(BaseStorage):
                     trial for trial in self._trials.values() if trial._trial_id == trial_id
                 ]
                 if len(frozen_trial) != 1:
-                    raise KeyError("")
+                    raise KeyError(NOT_FOUND_MSG)
 
                 trial = frozen_trial[0]
                 raise RuntimeError(
