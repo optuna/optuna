@@ -172,6 +172,9 @@ def _tell_with_warning(
         len(study.directions), values, trial_number
     )
 
+    if state == TrialState.COMPLETE and values_conversion_failure_message is not None:
+        raise ValueError(values_conversion_failure_message)
+
     if state is None:
         if values_conversion_failure_message is None:
             state = TrialState.COMPLETE
