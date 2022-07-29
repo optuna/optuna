@@ -5,7 +5,7 @@ import os
 
 class BaseFileLock(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def acquire(self, blocking: bool, timeout: int) -> bool:
+    def acquire(self, blocking: bool) -> bool:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -13,7 +13,7 @@ class BaseFileLock(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
-class LinkLock1(BaseFileLock):
+class LinkLock(BaseFileLock):
     def __init__(self, dir: str, lockfile: str) -> None:
         try:
             os.makedirs(dir)
@@ -26,13 +26,9 @@ class LinkLock1(BaseFileLock):
 
         open(self._lockfile, "a").close()  # Create file if it does not exist
 
-    # TODO(wattlebirdaz): Implement timeout feature.
-    def acquire(self, blocking: bool = True, timeout: int = -1) -> bool:
+    def acquire(self, blocking: bool = True) -> bool:
         if blocking:
-            if timeout != -1:
-                raise RuntimeError("timeout feature not supported")
-            timeout_ = 10000000 if timeout == -1 else timeout
-            while timeout_ > 0:
+            while True:
                 try:
                     os.link(self._lockfile, self._linkfile)
                     return True
@@ -41,8 +37,6 @@ class LinkLock1(BaseFileLock):
                         continue
                     else:
                         raise err
-            else:
-                raise RuntimeError("Error: timeout")
         else:
             try:
                 os.link(self._lockfile, self._linkfile)
@@ -69,13 +63,9 @@ class OpenLock(BaseFileLock):
                 raise RuntimeError("Error: mkdir")
         self._lockfile = os.path.join(dir, lockfile)
 
-    # TODO(wattlebirdaz): Implement timeout feature.
-    def acquire(self, blocking: bool = True, timeout: int = -1) -> bool:
+    def acquire(self, blocking: bool = True) -> bool:
         if blocking:
-            if timeout != -1:
-                raise RuntimeError("timeout feature not supported")
-            timeout_ = 10000000 if timeout == -1 else timeout
-            while timeout_ > 0:
+            while True:
                 try:
                     open_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
                     os.close(os.open(self._lockfile, open_flags))
@@ -85,8 +75,6 @@ class OpenLock(BaseFileLock):
                         continue
                     else:
                         raise err
-            else:
-                raise RuntimeError("Error: timeout")
         else:
             try:
                 open_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY

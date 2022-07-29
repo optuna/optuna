@@ -7,9 +7,11 @@ from typing import List
 from optuna.storages._journal.base import BaseLogStorage
 from optuna.storages._journal.file_lock import BaseFileLock
 from optuna.storages._journal.file_lock import OpenLock
+# from optuna.storages._journal.file_lock import LinkLock
 
 
 def get_file_lock(file_name: str) -> BaseFileLock:
+    # return LinkLock("./linklock", file_name)
     return OpenLock("./openlock", file_name)
 
 
@@ -21,8 +23,8 @@ class FileStorage(BaseLogStorage):
 
     # TODO(wattlebirdaz): Use seek instead of readlines to achieve better performance.
     def get_unread_logs(self, log_number_read: int = 0) -> List[Dict[str, Any]]:
-        # log_number starts from 1
-        # The default log_number_read == 0 means no logs have been read by the caller
+        # log_number starts from 1.
+        # The default log_number_read == 0 means no logs have been read by the caller.
         lock = get_file_lock(self._lock_file_name)
 
         lock.acquire()
