@@ -4,6 +4,7 @@ from typing import Callable
 from typing import List
 from typing import Tuple
 
+import numpy as np
 import pytest
 
 import optuna
@@ -62,9 +63,9 @@ def test_get_param_importance_target_is_none_and_study_is_multi_obj(
 
 @parametrize_evaluator
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+@pytest.mark.parametrize("normalize", [True, False])
 def test_get_param_importances(
-    storage_mode: str,
-    evaluator_init_func: Callable[[], BaseImportanceEvaluator],
+    storage_mode: str, evaluator_init_func: Callable[[], BaseImportanceEvaluator], normalize: bool
 ) -> None:
     def objective(trial: Trial) -> float:
         x1 = trial.suggest_float("x1", 0.1, 3)
@@ -87,7 +88,9 @@ def test_get_param_importances(
         study = create_study(storage=storage, sampler=samplers.RandomSampler())
         study.optimize(objective, n_trials=3)
 
-        param_importance = get_param_importances(study, evaluator=evaluator_init_func())
+        param_importance = get_param_importances(
+            study, evaluator=evaluator_init_func(), normalize_importances=normalize
+        )
 
         assert isinstance(param_importance, OrderedDict)
         assert len(param_importance) == 6
@@ -103,15 +106,19 @@ def test_get_param_importances(
 
         # Sanity check for param importances
         assert all(0 <= x < float("inf") for x in param_importance.values())
+        if normalize:
+            assert len(param_importance) == 0 or np.isclose(sum(param_importance.values()), 1.0)
 
 
 @parametrize_evaluator
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 @pytest.mark.parametrize("params", [[], ["x1"], ["x1", "x3"], ["x1", "x4"]])
+@pytest.mark.parametrize("normalize", [True, False])
 def test_get_param_importances_with_params(
     storage_mode: str,
     params: List[str],
     evaluator_init_func: Callable[[], BaseImportanceEvaluator],
+    normalize: bool,
 ) -> None:
     def objective(trial: Trial) -> float:
         x1 = trial.suggest_float("x1", 0.1, 3)
@@ -130,7 +137,7 @@ def test_get_param_importances_with_params(
         study.optimize(objective, n_trials=10)
 
         param_importance = get_param_importances(
-            study, evaluator=evaluator_init_func(), params=params
+            study, evaluator=evaluator_init_func(), params=params, normalize_importances=normalize
         )
 
         assert isinstance(param_importance, OrderedDict)
@@ -142,13 +149,15 @@ def test_get_param_importances_with_params(
 
         # Sanity check for param importances
         assert all(0 <= x < float("inf") for x in param_importance.values())
+        if normalize:
+            assert len(param_importance) == 0 or np.isclose(sum(param_importance.values()), 1.0)
 
 
 @parametrize_evaluator
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+@pytest.mark.parametrize("normalize", [True, False])
 def test_get_param_importances_with_target(
-    storage_mode: str,
-    evaluator_init_func: Callable[[], BaseImportanceEvaluator],
+    storage_mode: str, evaluator_init_func: Callable[[], BaseImportanceEvaluator], normalize: bool
 ) -> None:
     def objective(trial: Trial) -> float:
         x1 = trial.suggest_float("x1", 0.1, 3)
@@ -170,6 +179,7 @@ def test_get_param_importances_with_target(
             study,
             evaluator=evaluator_init_func(),
             target=lambda t: t.params["x1"] + t.params["x2"],
+            normalize_importances=normalize,
         )
 
         assert isinstance(param_importance, OrderedDict)
@@ -184,6 +194,8 @@ def test_get_param_importances_with_target(
 
         # Sanity check for param importances
         assert all(0 <= x < float("inf") for x in param_importance.values())
+        if normalize:
+            assert len(param_importance) == 0 or np.isclose(sum(param_importance.values()), 1.0)
 
 
 @parametrize_evaluator

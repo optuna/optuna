@@ -2,6 +2,7 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import OrderedDict
 
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova import FanovaImportanceEvaluator
@@ -24,6 +25,7 @@ def get_param_importances(
     evaluator: Optional[BaseImportanceEvaluator] = None,
     params: Optional[List[str]] = None,
     target: Optional[Callable[[FrozenTrial], float]] = None,
+    normalize_importances: bool = True,
 ) -> Dict[str, float]:
     """Evaluate parameter importances based on completed trials in the given study.
 
@@ -87,4 +89,13 @@ def get_param_importances(
     if not isinstance(evaluator, BaseImportanceEvaluator):
         raise TypeError("Evaluator must be a subclass of BaseImportanceEvaluator.")
 
-    return evaluator.evaluate(study, params=params, target=target)
+    res = evaluator.evaluate(study, params=params, target=target)
+    if normalize_importances:
+        s = sum(res.values())
+        if s == 0.0:
+            n_params = len(res)
+            return OrderedDict((param, 1.0 / n_params) for param in res.keys())
+        else:
+            return OrderedDict((param, value / s) for (param, value) in res.items())
+    else:
+        return res
