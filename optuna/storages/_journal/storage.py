@@ -891,7 +891,7 @@ class JournalStorage(BaseStorage):
             self._write_log(log)
             self._sync_with_backend()
 
-            if state == TrialState.RUNNING and trial_id in self._trial_ids_owned_by_me:
+            if state == TrialState.RUNNING and trial_id not in self._trial_ids_owned_by_me:
                 return False
             else:
                 return True
