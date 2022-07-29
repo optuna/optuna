@@ -5,15 +5,11 @@ import os
 import socket
 import threading
 from typing import Any
-from typing import cast
 from typing import Container
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import Tuple
-from typing import Union
-import uuid
 
 from optuna.distributions import BaseDistribution
 from optuna.distributions import check_distribution_compatibility
@@ -21,7 +17,7 @@ from optuna.distributions import distribution_to_json
 from optuna.distributions import json_to_distribution
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages import BaseStorage
-from optuna.storages._journal.file import FileStorage
+from optuna.storages._journal.base import BaseJournalLogStorage
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -45,7 +41,7 @@ class JournalOperation(enum.IntEnum):
 
 
 class JournalStorage(BaseStorage):
-    def __init__(self, log_file_name: str) -> None:
+    def __init__(self, log_storage: BaseJournalLogStorage) -> None:
         self._pid = (
             socket.gethostname()
             + "--"
@@ -55,7 +51,7 @@ class JournalStorage(BaseStorage):
         )
 
         self._log_number_read: int = 0
-        self._backend = FileStorage(log_file_name)
+        self._backend = log_storage
 
         # In-memory replayed results
         self._studies: Dict[int, FrozenStudy] = dict()
@@ -615,31 +611,6 @@ class JournalStorage(BaseStorage):
                 )
             return self._study_id_to_trial_ids[study_id][trial_number]
 
-    def get_trial_number_from_id(self, trial_id: int) -> int:
-        with self._thread_lock:
-            self._sync_with_backend()
-            trial_number = [
-                trial.number for trial in self._trials.values() if trial._trial_id == trial_id
-            ]
-            if len(trial_number) != 1:
-                raise KeyError(NOT_FOUND_MSG)
-            else:
-                return trial_number[0]
-
-    def get_trial_param(self, trial_id: int, param_name: str) -> float:
-        with self._thread_lock:
-            self._sync_with_backend()
-            frozen_trial = [
-                trial for trial in self._trials.values() if trial._trial_id == trial_id
-            ]
-            if len(frozen_trial) != 1 or param_name not in frozen_trial[0].distributions.keys():
-                raise KeyError(NOT_FOUND_MSG)
-            return (
-                frozen_trial[0]
-                .distributions[param_name]
-                .to_internal_repr(frozen_trial[0].params[param_name])
-            )
-
     def set_trial_state_values(
         self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
     ) -> bool:
@@ -737,105 +708,3 @@ class JournalStorage(BaseStorage):
                             frozen_trials.append(trial)
 
             return frozen_trials
-
-    def get_n_trials(
-        self,
-        study_id: int,
-        state: Optional[Union[Tuple[TrialState, ...], TrialState]] = None,
-    ) -> int:
-        if isinstance(state, TrialState):
-            state = (state,)
-
-        with self._thread_lock:
-            self._sync_with_backend()
-            if study_id not in self._study_id_to_trial_ids.keys():
-                raise KeyError(NOT_FOUND_MSG)
-
-            frozen_trials = []
-
-            for trial_id in self._study_id_to_trial_ids[study_id]:
-                trial = self._trials[trial_id]
-                if state is None:
-                    frozen_trials.append(trial)
-                else:
-                    if trial.state in state:
-                        frozen_trials.append(trial)
-
-            return len(frozen_trials)
-
-    def get_best_trial(self, study_id: int) -> FrozenTrial:
-        with self._thread_lock:
-            self._sync_with_backend()
-            if study_id not in self._study_id_to_trial_ids.keys():
-                raise KeyError(NOT_FOUND_MSG)
-
-            frozen_trials = []
-
-            for trial_id in self._study_id_to_trial_ids[study_id]:
-                trial = self._trials[trial_id]
-                if trial.state is TrialState.COMPLETE:
-                    frozen_trials.append(trial)
-
-            if len(frozen_trials) == 0:
-                raise ValueError("No trials are completed yet.")
-
-            directions = self._studies[study_id].directions
-            if len(directions) > 1:
-                raise RuntimeError(
-                    "Best trial can be obtained only for single-objective optimization."
-                )
-            direction = directions[0]
-
-            if direction == StudyDirection.MAXIMIZE:
-                best_trial = max(frozen_trials, key=lambda t: cast(float, t.value))
-            else:
-                best_trial = min(frozen_trials, key=lambda t: cast(float, t.value))
-
-            return best_trial
-
-    def get_trial_params(self, trial_id: int) -> Dict[str, Any]:
-        with self._thread_lock:
-            frozen_trial = [
-                trial for trial in self._trials.values() if trial._trial_id == trial_id
-            ]
-            if len(frozen_trial) != 1:
-                raise KeyError(NOT_FOUND_MSG)
-            else:
-                return frozen_trial[0].params
-
-    def get_trial_user_attrs(self, trial_id: int) -> Dict[str, Any]:
-        with self._thread_lock:
-            frozen_trial = [
-                trial for trial in self._trials.values() if trial._trial_id == trial_id
-            ]
-            if len(frozen_trial) != 1:
-                raise KeyError(NOT_FOUND_MSG)
-            else:
-                return frozen_trial[0].user_attrs
-
-    def get_trial_system_attrs(self, trial_id: int) -> Dict[str, Any]:
-        with self._thread_lock:
-            frozen_trial = [
-                trial for trial in self._trials.values() if trial._trial_id == trial_id
-            ]
-            if len(frozen_trial) != 1:
-                raise KeyError(NOT_FOUND_MSG)
-            else:
-                return frozen_trial[0].system_attrs
-
-    def remove_session(self) -> None:
-        pass
-
-    def check_trial_is_updatable(self, trial_id: int, trial_state: TrialState) -> None:
-        if trial_state.is_finished():
-            with self._thread_lock:
-                frozen_trial = [
-                    trial for trial in self._trials.values() if trial._trial_id == trial_id
-                ]
-                if len(frozen_trial) != 1:
-                    raise KeyError(NOT_FOUND_MSG)
-
-                trial = frozen_trial[0]
-                raise RuntimeError(
-                    "Trial#{} has already finished and can not be updated.".format(trial.number)
-                )

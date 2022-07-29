@@ -1,3 +1,5 @@
+import abc
+import errno
 import json
 import os
 from typing import Any
@@ -5,22 +7,111 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
-from optuna.storages._journal.base import BaseLogStorage
-from optuna.storages._journal.file_lock import BaseFileLock
-from optuna.storages._journal.file_lock import OpenLock
+from optuna.storages._journal.base import BaseJournalLogStorage
 
 
-class FileStorage(BaseLogStorage):
+LOCK_FILE_SUFFIX = ".lock"
+
+
+class BaseFileLock(abc.ABC):
+    @abc.abstractmethod
+    def acquire(self, blocking: bool) -> bool:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def release(self) -> None:
+        raise NotImplementedError
+
+
+class LinkLock(BaseFileLock):
+    def __init__(self, filepath: str) -> None:
+        self._lock_target_file = filepath
+        self._lockfile = filepath + LOCK_FILE_SUFFIX
+
+        try:
+            os.makedirs(os.path.dirname(self._lockfile))
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise RuntimeError("Error: mkdir")
+
+        open(self._lock_target_file, "a").close()  # Create file if it does not exist
+
+    def acquire(self, blocking: bool = True) -> bool:
+        if blocking:
+            while True:
+                try:
+                    os.link(self._lock_target_file, self._lockfile)
+                    return True
+                except OSError as err:
+                    if err.errno == errno.EEXIST:
+                        continue
+                    else:
+                        raise err
+        else:
+            try:
+                os.link(self._lock_target_file, self._lockfile)
+                return True
+            except OSError as err:
+                if err.errno == errno.EEXIST:
+                    return False
+                else:
+                    raise err
+
+    def release(self) -> None:
+        try:
+            os.unlink(self._lockfile)
+        except OSError:
+            raise RuntimeError("Error: did not possess lock")
+
+
+class OpenLock(BaseFileLock):
+    def __init__(self, filepath: str) -> None:
+        self._lockfile = filepath + LOCK_FILE_SUFFIX
+
+        try:
+            os.makedirs(os.path.dirname(filepath))
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise RuntimeError("Error: mkdir")
+
+    def acquire(self, blocking: bool = True) -> bool:
+        if blocking:
+            while True:
+                try:
+                    open_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
+                    os.close(os.open(self._lockfile, open_flags))
+                    return True
+                except OSError as err:
+                    if err.errno == errno.EEXIST:
+                        continue
+                    else:
+                        raise err
+        else:
+            try:
+                open_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
+                os.close(os.open(self._lockfile, open_flags))
+                return True
+            except OSError as err:
+                if err.errno == errno.EEXIST:
+                    return False
+                else:
+                    raise err
+
+    def release(self) -> None:
+        try:
+            os.unlink(self._lockfile)
+        except OSError:
+            raise RuntimeError("Error: did not possess lock")
+
+
+class JournalFileStorage(BaseJournalLogStorage):
     def __init__(self, file_path: str, lock_obj: Optional[BaseFileLock] = None) -> None:
         self._file_path: str = file_path
+        self._lock = lock_obj or OpenLock(self._file_path)
         open(self._file_path, "a").close()  # Create a file if it does not exist
 
-        base_dir = os.path.dirname(file_path)
-        lock_filename = os.path.basename(file_path) + ".lock"
-        self._lock = lock_obj or OpenLock(base_dir, lock_filename)
-
     # TODO(wattlebirdaz): Use seek instead of readlines to achieve better performance.
-    def get_unread_logs(self, log_number_read: int = 0) -> List[Dict[str, Any]]:
+    def get_unread_logs(self, log_number_read: int) -> List[Dict[str, Any]]:
         # log_number starts from 1.
         # The default log_number_read == 0 means no logs have been read by the caller.
         self._lock.acquire()
