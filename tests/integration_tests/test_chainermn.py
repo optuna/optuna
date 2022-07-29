@@ -222,8 +222,8 @@ class TestChainerMNStudy:
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     def test_relative_sampling(storage_mode: str, comm: CommunicatorBase) -> None:
 
-        relative_params = {"x": 1.0, "y": 25.0, "z": -1.0}
-        sampler = DeterministicSampler(relative_params)
+        params = {"x": 1.0, "y": 25.0, "z": -1.0}
+        sampler = DeterministicSampler(params)
 
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm, sampler=sampler)
@@ -237,9 +237,9 @@ class TestChainerMNStudy:
             # Assert trial counts.
             assert len(mn_study.trials) == n_trials
 
-            # Assert the parameters in `relative_params` have been suggested among all nodes.
+            # Assert the parameters in `params` have been suggested among all nodes.
             for trial in mn_study.trials:
-                assert trial.params == relative_params
+                assert trial.params == params
 
     @staticmethod
     def _create_shared_study(

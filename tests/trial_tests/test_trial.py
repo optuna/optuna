@@ -522,7 +522,6 @@ def test_should_prune() -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_relative_parameters(storage_mode: str) -> None:
-
     class SamplerStubForTestRelativeParameters(samplers.BaseSampler):
         def infer_relative_search_space(
             self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial"

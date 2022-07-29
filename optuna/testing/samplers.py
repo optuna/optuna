@@ -30,7 +30,7 @@ class DeterministicSampler(optuna.samplers.BaseSampler):
         param_distribution: BaseDistribution,
     ) -> Any:
         param_value = self.params[param_name]
-        assert param_distribution._contains(param_value)
+        assert param_distribution._contains(param_distribution.to_internal_repr(param_value))
         return param_value
 
 
