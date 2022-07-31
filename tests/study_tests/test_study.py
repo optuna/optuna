@@ -1417,6 +1417,22 @@ def test_tell_invalid() -> None:
     with pytest.raises(ValueError):
         study.tell(study.ask(), state=TrialState.COMPLETE)
 
+    # Invalid values for completions.
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), "a", state=TrialState.COMPLETE)  # type: ignore
+
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), None, state=TrialState.COMPLETE)
+
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), [], state=TrialState.COMPLETE)
+
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), [1.0, 2.0], state=TrialState.COMPLETE)
+
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), float("nan"), state=TrialState.COMPLETE)
+
     # `state` must be None or finished state
     with pytest.raises(ValueError):
         study.tell(study.ask(), state=TrialState.RUNNING)
@@ -1436,6 +1452,11 @@ def test_tell_invalid() -> None:
     # Trial that has not been asked for cannot be told.
     with pytest.raises(ValueError):
         study.tell(study.ask().number + 1, 1.0)
+
+    # Waiting trial cannot be told.
+    with pytest.raises(ValueError):
+        study.enqueue_trial({})
+        study.tell(study.trials[-1].number, 1.0)
 
     # It must be Trial or int for trial.
     with pytest.raises(TypeError):

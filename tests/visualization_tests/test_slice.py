@@ -13,7 +13,6 @@ from optuna.distributions import FloatDistribution
 from optuna.study import create_study
 from optuna.study import Study
 from optuna.testing.objectives import fail_objective
-from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
 from optuna.visualization import plot_slice as plotly_plot_slice
 from optuna.visualization._plotly_imports import go
@@ -401,7 +400,18 @@ def test_get_slice_plot_info_nonfinite_multiobjective(objective: int, value: flo
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
 def test_color_map(direction: str) -> None:
-    study = prepare_study_with_trials(with_c_d=False, direction=direction)
+    study = create_study(direction=direction)
+    for i in range(3):
+        study.add_trial(
+            create_trial(
+                value=float(i),
+                params={"param_a": float(i), "param_b": float(i)},
+                distributions={
+                    "param_a": FloatDistribution(0.0, 3.0),
+                    "param_b": FloatDistribution(0.0, 3.0),
+                },
+            )
+        )
 
     # Since `plot_slice`'s colormap depends on only trial.number, `reversecale` is not in the plot.
     marker = plotly_plot_slice(study).data[0]["marker"]

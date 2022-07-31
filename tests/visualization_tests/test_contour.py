@@ -458,7 +458,7 @@ def test_get_contour_info_mixture_category_types() -> None:
 @pytest.mark.parametrize("value", [float("inf"), -float("inf")])
 def test_get_contour_info_nonfinite_removed(value: float) -> None:
 
-    study = prepare_study_with_trials(with_c_d=True, value_for_first_trial=value)
+    study = prepare_study_with_trials(value_for_first_trial=value)
     info = _get_contour_info(study, params=["param_b", "param_d"])
     assert info == _ContourInfo(
         sorted_params=["param_b", "param_d"],
@@ -494,7 +494,7 @@ def test_get_contour_info_nonfinite_removed(value: float) -> None:
 @pytest.mark.parametrize("value", (float("inf"), -float("inf")))
 def test_get_contour_info_nonfinite_multiobjective(objective: int, value: float) -> None:
 
-    study = prepare_study_with_trials(with_c_d=True, n_objectives=2, value_for_first_trial=value)
+    study = prepare_study_with_trials(n_objectives=2, value_for_first_trial=value)
     info = _get_contour_info(
         study, params=["param_b", "param_d"], target=lambda t: t.values[objective]
     )
@@ -530,7 +530,18 @@ def test_get_contour_info_nonfinite_multiobjective(objective: int, value: float)
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
 def test_color_map(direction: str) -> None:
-    study = prepare_study_with_trials(with_c_d=False, direction=direction)
+    study = create_study(direction=direction)
+    for i in range(3):
+        study.add_trial(
+            create_trial(
+                value=float(i),
+                params={"param_a": float(i), "param_b": float(i)},
+                distributions={
+                    "param_a": FloatDistribution(0.0, 3.0),
+                    "param_b": FloatDistribution(0.0, 3.0),
+                },
+            )
+        )
 
     # `target` is `None`.
     contour = plotly_plot_contour(study).data[0]
@@ -546,7 +557,18 @@ def test_color_map(direction: str) -> None:
     assert contour["reversescale"]
 
     # Multi-objective optimization.
-    study = prepare_study_with_trials(with_c_d=False, n_objectives=2, direction=direction)
+    study = create_study(directions=[direction, direction])
+    for i in range(3):
+        study.add_trial(
+            create_trial(
+                values=[float(i), float(i)],
+                params={"param_a": float(i), "param_b": float(i)},
+                distributions={
+                    "param_a": FloatDistribution(0.0, 3.0),
+                    "param_b": FloatDistribution(0.0, 3.0),
+                },
+            )
+        )
     contour = plotly_plot_contour(study, target=lambda t: t.number).data[0]
     assert COLOR_SCALE == [v[1] for v in contour["colorscale"]]
     assert contour["reversescale"]

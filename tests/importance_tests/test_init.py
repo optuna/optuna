@@ -1,5 +1,5 @@
 from collections import OrderedDict
-import math
+from typing import Any
 from typing import Callable
 from typing import List
 from typing import Tuple
@@ -12,6 +12,8 @@ from optuna.importance import BaseImportanceEvaluator
 from optuna.importance import FanovaImportanceEvaluator
 from optuna.importance import get_param_importances
 from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
+import optuna.integration.shap
+from optuna.samplers import RandomSampler
 from optuna.study import create_study
 from optuna.testing.objectives import pruned_objective
 from optuna.testing.storages import STORAGE_MODES
@@ -19,9 +21,12 @@ from optuna.testing.storages import StorageSupplier
 from optuna.trial import Trial
 
 
-parametrize_evaluator = pytest.mark.parametrize(
-    "evaluator_init_func", [MeanDecreaseImpurityImportanceEvaluator, FanovaImportanceEvaluator]
-)
+evaluators = [MeanDecreaseImpurityImportanceEvaluator, FanovaImportanceEvaluator]
+
+if optuna.integration.shap._imports.is_successful():
+    evaluators += [optuna.integration.shap.ShapleyImportanceEvaluator]
+
+parametrize_evaluator = pytest.mark.parametrize("evaluator_init_func", evaluators)
 
 
 @parametrize_evaluator
@@ -95,7 +100,9 @@ def test_get_param_importances(
             assert isinstance(importance, float)
             assert importance <= prev_importance
             prev_importance = importance
-        assert math.isclose(1.0, sum(i for i in param_importance.values()), abs_tol=1e-5)
+
+        # Sanity check for param importances
+        assert all(0 <= x < float("inf") for x in param_importance.values())
 
 
 @parametrize_evaluator
@@ -132,8 +139,9 @@ def test_get_param_importances_with_params(
         for param_name, importance in param_importance.items():
             assert isinstance(param_name, str)
             assert isinstance(importance, float)
-        if len(param_importance) > 0:
-            assert math.isclose(1.0, sum(i for i in param_importance.values()), abs_tol=1e-5)
+
+        # Sanity check for param importances
+        assert all(0 <= x < float("inf") for x in param_importance.values())
 
 
 @parametrize_evaluator
@@ -173,7 +181,9 @@ def test_get_param_importances_with_target(
             assert isinstance(importance, float)
             assert importance <= prev_importance
             prev_importance = importance
-        assert math.isclose(1.0, sum(param_importance.values()), abs_tol=1e-5)
+
+        # Sanity check for param importances
+        assert all(0 <= x < float("inf") for x in param_importance.values())
 
 
 @parametrize_evaluator
@@ -265,5 +275,50 @@ def test_get_param_importances_empty_search_space(
 
     assert len(param_importance) == 2
     assert all([param in param_importance for param in ["x", "y"]])
-    assert param_importance["x"] == 1.0
+    assert param_importance["x"] > 0.0
     assert param_importance["y"] == 0.0
+
+
+@parametrize_evaluator
+def test_importance_evaluator_seed(evaluator_init_func: Any) -> None:
+    def objective(trial: Trial) -> float:
+        x1 = trial.suggest_float("x1", 0.1, 3)
+        x2 = trial.suggest_float("x2", 0.1, 3, log=True)
+        x3 = trial.suggest_float("x3", 2, 4, log=True)
+        return x1 + x2 * x3
+
+    study = create_study(sampler=RandomSampler(seed=0))
+    study.optimize(objective, n_trials=3)
+
+    evaluator = evaluator_init_func(seed=2)
+    param_importance = evaluator.evaluate(study)
+
+    evaluator = evaluator_init_func(seed=2)
+    param_importance_same_seed = evaluator.evaluate(study)
+    assert param_importance == param_importance_same_seed
+
+    evaluator = evaluator_init_func(seed=3)
+    param_importance_different_seed = evaluator.evaluate(study)
+    assert param_importance != param_importance_different_seed
+
+
+@parametrize_evaluator
+def test_importance_evaluator_with_target(evaluator_init_func: Any) -> None:
+    def objective(trial: Trial) -> float:
+        x1 = trial.suggest_float("x1", 0.1, 3)
+        x2 = trial.suggest_float("x2", 0.1, 3, log=True)
+        x3 = trial.suggest_float("x3", 2, 4, log=True)
+        return x1 + x2 * x3
+
+    # Assumes that `seed` can be fixed to reproduce identical results.
+    study = create_study(sampler=RandomSampler(seed=0))
+    study.optimize(objective, n_trials=3)
+
+    evaluator = evaluator_init_func(seed=0)
+    param_importance = evaluator.evaluate(study)
+    param_importance_with_target = evaluator.evaluate(
+        study,
+        target=lambda t: t.params["x1"] + t.params["x2"],
+    )
+
+    assert param_importance != param_importance_with_target

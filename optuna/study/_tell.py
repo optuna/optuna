@@ -158,6 +158,8 @@ def _tell_with_warning(
             f"Finished trial has values {frozen_trial.values} and state {frozen_trial.state}."
         )
         return copy.deepcopy(frozen_trial)
+    elif frozen_trial.state == TrialState.WAITING:
+        raise ValueError("Cannot tell a waiting trial.")
 
     if state == TrialState.PRUNED:
         # Register the last intermediate value if present as the value of the trial.
@@ -171,6 +173,9 @@ def _tell_with_warning(
     values, values_conversion_failure_message = _check_and_convert_to_values(
         len(study.directions), values, trial_number
     )
+
+    if state == TrialState.COMPLETE and values_conversion_failure_message is not None:
+        raise ValueError(values_conversion_failure_message)
 
     if state is None:
         if values_conversion_failure_message is None:
