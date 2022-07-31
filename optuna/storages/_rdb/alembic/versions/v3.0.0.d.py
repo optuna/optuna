@@ -6,15 +6,16 @@ Create Date: 2022-06-02 09:57:22.818798
 
 """
 import enum
-
-import numpy as np
-from alembic import op
-import sqlalchemy as sa
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import orm
+from tkinter import W
 from typing import Optional
 from typing import Tuple
+
+from alembic import op
+import numpy as np
+import sqlalchemy as sa
+from sqlalchemy import orm
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.declarative import declarative_base
 
 
 # revision identifiers, used by Alembic.

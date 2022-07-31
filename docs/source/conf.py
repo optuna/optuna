@@ -17,9 +17,9 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 import pkg_resources
-
 import plotly.io as pio
 from sphinx_gallery.sorting import FileNameSortKey
+
 
 __version__ = pkg_resources.get_distribution("optuna").version
 

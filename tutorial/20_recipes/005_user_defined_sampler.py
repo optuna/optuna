@@ -41,6 +41,7 @@ For example, the following code defines a sampler based on
 """
 
 import numpy as np
+
 import optuna
 
 

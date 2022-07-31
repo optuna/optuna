@@ -57,8 +57,8 @@ last reported as the value of the trial.
 
 import numpy as np
 from sklearn.datasets import load_iris
-from sklearn.model_selection import train_test_split
 from sklearn.linear_model import SGDClassifier
+from sklearn.model_selection import train_test_split
 
 import optuna
 from optuna.pruners import BasePruner

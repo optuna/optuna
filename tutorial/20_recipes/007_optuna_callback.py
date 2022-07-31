@@ -55,6 +55,7 @@ def objective(trial):
 import logging
 import sys
 
+
 # Add stream handler of stdout to show the messages
 optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
 

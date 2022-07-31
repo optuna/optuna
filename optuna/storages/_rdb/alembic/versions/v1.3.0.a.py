@@ -9,10 +9,10 @@ import json
 
 from alembic import op
 import sqlalchemy as sa
-
+from sqlalchemy import orm
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import orm
+
 
 # revision identifiers, used by Alembic.
 revision = "v1.3.0.a"

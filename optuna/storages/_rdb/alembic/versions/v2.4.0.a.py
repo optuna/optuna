@@ -5,20 +5,20 @@ Revises: v1.3.0.a
 Create Date: 2020-11-17 02:16:16.536171
 
 """
-from alembic import op
-import sqlalchemy as sa
 from typing import Any
 
+from alembic import op
+import sqlalchemy as sa
 from sqlalchemy import Column
 from sqlalchemy import Enum
 from sqlalchemy import Float
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
+from sqlalchemy import orm
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import orm
 
 from optuna.study import StudyDirection
 

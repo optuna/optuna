@@ -96,6 +96,7 @@ study.enqueue_trial(
 import logging
 import sys
 
+
 # Add stream handler of stdout to show the messages to see Optuna works expectedly.
 optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
 study.optimize(objective, n_trials=100, timeout=600)

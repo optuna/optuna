@@ -13,6 +13,8 @@ please refer to the tutorial of :ref:`multi_objective`.
 """
 
 ###################################################################################################
+from tkinter import W
+
 import lightgbm as lgb
 import numpy as np
 import sklearn.datasets
@@ -30,6 +32,7 @@ from optuna.visualization import plot_optimization_history
 from optuna.visualization import plot_parallel_coordinate
 from optuna.visualization import plot_param_importances
 from optuna.visualization import plot_slice
+
 
 SEED = 42
 
