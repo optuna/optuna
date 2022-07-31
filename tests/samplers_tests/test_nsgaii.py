@@ -129,9 +129,7 @@ def test_constraints_func_none() -> None:
         assert _CONSTRAINTS_KEY not in trial.system_attrs
 
 
-@pytest.mark.parametrize(
-    "constraint_value", [-1.0, 0.0, 1.0, -float("inf"), float("inf"), float("nan")]
-)
+@pytest.mark.parametrize("constraint_value", [-1.0, 0.0, 1.0, -float("inf"), float("inf")])
 def test_constraints_func(constraint_value: float) -> None:
     n_trials = 4
     n_objectives = 2
@@ -156,7 +154,16 @@ def test_constraints_func(constraint_value: float) -> None:
     assert constraints_func_call_count == n_trials
     for trial in study.trials:
         for x, y in zip(trial.system_attrs[_CONSTRAINTS_KEY], (constraint_value + trial.number,)):
-            assert _nan_equal(x, y)
+            assert x == y
+
+
+def test_constrained_dominates_with_nan_constraint() -> None:
+    directions = [StudyDirection.MINIMIZE, StudyDirection.MINIMIZE]
+
+    t1 = _create_frozen_trial(0, [1], [0, float("nan")])
+    t2 = _create_frozen_trial(0, [0], [1, -1])
+    with pytest.raises(ValueError):
+        _constrained_dominates(t1, t2, directions)
 
 
 @pytest.mark.parametrize("direction1", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
