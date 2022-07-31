@@ -13,6 +13,7 @@ from optuna.distributions import FloatDistribution
 from optuna.study import create_study
 from optuna.study import Study
 from optuna.testing.objectives import fail_objective
+from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
 from optuna.visualization import plot_slice as plotly_plot_slice
 from optuna.visualization._plotly_imports import go
@@ -118,7 +119,7 @@ def test_target_is_none_and_study_is_multi_obj() -> None:
 
     study = create_study(directions=["minimize", "minimize"])
     with pytest.raises(ValueError):
-        _get_slice_plot_info(study, None, None, "Objective Value")
+        _get_slice_plot_info(study, None, target=None, target_name="Objective Value")
 
 
 @pytest.mark.parametrize(
@@ -337,7 +338,7 @@ def test_get_slice_plot_info_mixture_category_types() -> None:
 @pytest.mark.parametrize("value", [float("inf"), -float("inf")])
 def test_get_slice_plot_info_nonfinite_removed(value: float) -> None:
 
-    study = prepare_study_with_trials(with_c_d=True, value_for_first_trial=value)
+    study = prepare_study_with_trials(value_for_first_trial=value)
     info = _get_slice_plot_info(
         study, params=["param_b", "param_d"], target=None, target_name="Objective Value"
     )
@@ -368,7 +369,7 @@ def test_get_slice_plot_info_nonfinite_removed(value: float) -> None:
 @pytest.mark.parametrize("value", (float("inf"), -float("inf")))
 def test_get_slice_plot_info_nonfinite_multiobjective(objective: int, value: float) -> None:
 
-    study = prepare_study_with_trials(with_c_d=True, n_objectives=2, value_for_first_trial=value)
+    study = prepare_study_with_trials(n_objectives=2, value_for_first_trial=value)
     info = _get_slice_plot_info(
         study,
         params=["param_b", "param_d"],
