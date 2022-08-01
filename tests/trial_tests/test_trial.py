@@ -181,26 +181,22 @@ def test_check_distribution_suggest_categorical(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_uniform(storage_mode: str) -> None:
-    low = 0.0
-    high = 3.0
-    x = 1.0
-    y = 2.0
 
     relative_search_space = {
-        "x": FloatDistribution(low=low, high=high),
-        "y": FloatDistribution(low=low, high=high),
+        "x": FloatDistribution(low=0.0, high=3.0),
+        "y": FloatDistribution(low=0.0, high=3.0),
     }
-    relative_params = {"x": x, "y": y}
+    relative_params = {"x": 1.0, "y": 2.0}
     sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
 
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
-        assert trial.suggest_uniform("x", low, high) == x  # Test suggesting a param.
-        assert trial.suggest_uniform("x", low, high) == x  # Test suggesting the same param.
-        assert trial.suggest_uniform("y", low, high) == y  # Test suggesting a different param.
-        assert trial.params == {"x": x, "y": y}
+        assert trial.suggest_uniform("x", 0.0, 3.0) == 1.0  # Test suggesting a param.
+        assert trial.suggest_uniform("x", 0.0, 3.0) == 1.0  # Test suggesting the same param.
+        assert trial.suggest_uniform("y", 0.0, 3.0) == 2.0  # Test suggesting a different param.
+        assert trial.params == {"x": 1.0, "y": 2.0}
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -212,42 +208,31 @@ def test_suggest_loguniform(storage_mode: str) -> None:
     with pytest.raises(ValueError):
         FloatDistribution(low=0.0, high=0.9, log=True)
 
-    low = 0.1
-    high = 4.0
-    x = 1.0
-    y = 2.0
-
     relative_search_space = {
-        "x": FloatDistribution(low=low, high=high, log=True),
-        "y": FloatDistribution(low=low, high=high, log=True),
+        "x": FloatDistribution(low=0.1, high=4.0, log=True),
+        "y": FloatDistribution(low=0.1, high=4.0, log=True),
     }
-    relative_params = {"x": x, "y": y}
+    relative_params = {"x": 1.0, "y": 2.0}
     sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
 
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
-        assert trial.suggest_loguniform("x", low, high) == x  # Test suggesting a param.
-        assert trial.suggest_loguniform("x", low, high) == x  # Test suggesting the same param.
-        assert trial.suggest_loguniform("y", low, high) == y  # Test suggesting a different param.
-        assert trial.params == {"x": x, "y": y}
+        assert trial.suggest_loguniform("x", 0.1, 4.0) == 1.0  # Test suggesting a param.
+        assert trial.suggest_loguniform("x", 0.1, 4.0) == 1.0  # Test suggesting the same param.
+        assert trial.suggest_loguniform("y", 0.1, 4.0) == 2.0  # Test suggesting a different param.
+        assert trial.params == {"x": 1.0, "y": 2.0}
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_discrete_uniform(storage_mode: str) -> None:
 
-    low = 0.0
-    high = 3.0
-    step = 1.0
-    x = 1.0
-    y = 2.0
-
     relative_search_space = {
-        "x": FloatDistribution(low=low, high=high, step=step),
-        "y": FloatDistribution(low=low, high=high, step=step),
+        "x": FloatDistribution(low=0.0, high=3.0, step=1.0),
+        "y": FloatDistribution(low=0.0, high=3.0, step=1.0),
     }
-    relative_params = {"x": x, "y": y}
+    relative_params = {"x": 1.0, "y": 2.0}
     sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
 
     with StorageSupplier(storage_mode) as storage:
@@ -255,15 +240,15 @@ def test_suggest_discrete_uniform(storage_mode: str) -> None:
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
         assert (
-            trial.suggest_discrete_uniform("x", low, high, step) == x
+            trial.suggest_discrete_uniform("x", 0.0, 3.0, 1.0) == 1.0
         )  # Test suggesting a param.
         assert (
-            trial.suggest_discrete_uniform("x", low, high, step) == x
+            trial.suggest_discrete_uniform("x", 0.0, 3.0, 1.0) == 1.0
         )  # Test suggesting the same param.
         assert (
-            trial.suggest_discrete_uniform("y", low, high, step) == y
+            trial.suggest_discrete_uniform("y", 0.0, 3.0, 1.0) == 2.0
         )  # Test suggesting a different param.
-        assert trial.params == {"x": x, "y": y}
+        assert trial.params == {"x": 1.0, "y": 2.0}
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -388,26 +373,21 @@ def test_suggest_float_invalid_step() -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_int(storage_mode: str) -> None:
 
-    low = 0
-    high = 3
-    x = 1
-    y = 2
-
     relative_search_space = {
-        "x": IntDistribution(low=low, high=high),
-        "y": IntDistribution(low=low, high=high),
+        "x": IntDistribution(low=0, high=3),
+        "y": IntDistribution(low=0, high=3),
     }
-    relative_params = {"x": x, "y": y}
+    relative_params = {"x": 1, "y": 2}
     sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
 
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
-        assert trial.suggest_int("x", low, high) == x  # Test suggesting a param.
-        assert trial.suggest_int("x", low, high) == x  # Test suggesting the same param.
-        assert trial.suggest_int("y", low, high) == y  # Test suggesting a different param.
-        assert trial.params == {"x": x, "y": y}
+        assert trial.suggest_int("x", 0, 3) == 1  # Test suggesting a param.
+        assert trial.suggest_int("x", 0, 3) == 1  # Test suggesting the same param.
+        assert trial.suggest_int("y", 0, 3) == 2  # Test suggesting a different param.
+        assert trial.params == {"x": 1, "y": 2}
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -472,32 +452,29 @@ def test_suggest_int_invalid_step() -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_int_log(storage_mode: str) -> None:
 
-    low = 1
-    high = 3
-    x = 1
-    y = 2
-
     relative_search_space = {
-        "x": IntDistribution(low=low, high=high, log=True),
-        "y": IntDistribution(low=low, high=high, log=True),
+        "x": IntDistribution(low=1, high=3, log=True),
+        "y": IntDistribution(low=1, high=3, log=True),
     }
-    relative_params = {"x": x, "y": y}
+    relative_params = {"x": 1, "y": 2}
     sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
 
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
-        assert trial.suggest_int("x", low, high, log=True) == x  # Test suggesting a param.
-        assert trial.suggest_int("x", low, high, log=True) == x  # Test suggesting the same param.
-        assert (
-            trial.suggest_int("y", low, high, log=True) == y
-        )  # Test suggesting a different param.
-        assert trial.params == {"x": x, "y": y}
+        assert trial.suggest_int("x", 1, 3, log=True) == 1  # Test suggesting a param.
+        assert trial.suggest_int("x", 1, 3, log=True) == 1  # Test suggesting the same param.
+        assert trial.suggest_int("y", 1, 3, log=True) == 2  # Test suggesting a different param.
+        assert trial.params == {"x": 1, "y": 2}
 
-    sampler1 = samplers.RandomSampler()
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_suggest_int_log_invalid_range(storage_mode: str) -> None:
+
+    sampler = samplers.RandomSampler()
     with StorageSupplier(storage_mode) as storage:
-        study = create_study(storage=storage, sampler=sampler1)
+        study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
         with warnings.catch_warnings():
             # UserWarning will be raised since [0.5, 10] is not divisible by 1.
@@ -506,7 +483,7 @@ def test_suggest_int_log(storage_mode: str) -> None:
                 trial.suggest_int("z", 0.5, 10, log=True)  # type: ignore
 
     with StorageSupplier(storage_mode) as storage:
-        study = create_study(storage=storage, sampler=sampler1)
+        study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
         with pytest.raises(ValueError):
             trial.suggest_int("w", 1, 3, step=2, log=True)
