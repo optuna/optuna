@@ -166,6 +166,31 @@ def test_constrained_dominates_with_nan_constraint() -> None:
         _constrained_dominates(t1, t2, directions)
 
 
+def test_constraints_func_nan() -> None:
+    n_trials = 4
+    n_objectives = 2
+
+    def constraints_func(_: FrozenTrial) -> Sequence[float]:
+        return (float("nan"),)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = NSGAIISampler(population_size=2, constraints_func=constraints_func)
+
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
+    with pytest.raises(ValueError):
+        study.optimize(
+            lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)],
+            n_trials=n_trials,
+        )
+
+    trials = study.get_trials()
+    assert len(trials) == 1  # The error stops optimization, but completed trials are recorded.
+    assert all(0 <= x <= 1 for x in trials[0].params.values())  # The params are normal.
+    assert trials[0].values == list(trials[0].params.values())  # The values are normal.
+    assert trials[0].system_attrs[_CONSTRAINTS_KEY] is None  # None is set for constraints.
+
+
 @pytest.mark.parametrize("direction1", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
 @pytest.mark.parametrize("direction2", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
 @pytest.mark.parametrize(
@@ -206,7 +231,7 @@ def test_constrained_dominates_feasible_vs_infeasible(
 
     # Check all pairs of trials consisting of these constraint values.
     constraints_1d_feasible = [-float("inf"), -1, 0]
-    constraints_1d_infeasible = [float("nan"), 2, float("inf")]
+    constraints_1d_infeasible = [2, float("inf")]
 
     directions = [direction]
 
