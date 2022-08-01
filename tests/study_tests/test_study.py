@@ -1409,6 +1409,12 @@ def test_tell_multi_objective_automatically_fail() -> None:
         assert study.trials[-1].state == TrialState.FAIL
         assert study.trials[-1].values is None
 
+    with pytest.warns(UserWarning):
+        study.tell(study.ask(), 1.0)
+        assert len(study.trials) == 6
+        assert study.trials[-1].state == TrialState.FAIL
+        assert study.trials[-1].values is None
+
 
 def test_tell_invalid() -> None:
     study = create_study()
@@ -1452,6 +1458,11 @@ def test_tell_invalid() -> None:
     # Trial that has not been asked for cannot be told.
     with pytest.raises(ValueError):
         study.tell(study.ask().number + 1, 1.0)
+
+    # Waiting trial cannot be told.
+    with pytest.raises(ValueError):
+        study.enqueue_trial({})
+        study.tell(study.trials[-1].number, 1.0)
 
     # It must be Trial or int for trial.
     with pytest.raises(TypeError):
