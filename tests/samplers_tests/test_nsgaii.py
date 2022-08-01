@@ -231,7 +231,7 @@ def test_constrained_dominates_feasible_vs_infeasible(
 
     # Check all pairs of trials consisting of these constraint values.
     constraints_1d_feasible = [-float("inf"), -1, 0]
-    constraints_1d_infeasible = [float("nan"), 2, float("inf")]
+    constraints_1d_infeasible = [2, float("inf")]
 
     directions = [direction]
 
