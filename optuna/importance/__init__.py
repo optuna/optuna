@@ -3,7 +3,9 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+import warnings
 
+from optuna.exceptions import ExperimentalWarning
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova import FanovaImportanceEvaluator
 from optuna.importance._mean_decrease_impurity import MeanDecreaseImpurityImportanceEvaluator
@@ -82,6 +84,11 @@ def get_param_importances(
             normalized to 1.0.
             Defaults to :obj:`True`.
 
+            .. note::
+                Added in v3.0.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v3.0.0.
+
     Returns:
         An :class:`collections.OrderedDict` where the keys are parameter names and the values are
         assessed importances.
@@ -102,4 +109,9 @@ def get_param_importances(
         else:
             return OrderedDict((param, value / s) for (param, value) in res.items())
     else:
+        warnings.warn(
+            "`normalize` option is an experimental feature."
+            " The interface can change in the future.",
+            ExperimentalWarning,
+        )
         return res

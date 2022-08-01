@@ -9,6 +9,7 @@ import pytest
 
 import optuna
 from optuna import samplers
+from optuna.exceptions import ExperimentalWarning
 from optuna.importance import BaseImportanceEvaluator
 from optuna.importance import FanovaImportanceEvaluator
 from optuna.importance import get_param_importances
@@ -151,6 +152,17 @@ def test_get_param_importances_with_params(
         assert all(0 <= x < float("inf") for x in param_importance.values())
         if normalize:
             assert len(param_importance) == 0 or np.isclose(sum(param_importance.values()), 1.0)
+
+
+def test_get_param_importances_unnormalized_experimental() -> None:
+    def objective(trial: Trial) -> float:
+        x1 = trial.suggest_float("x1", 0.1, 3)
+        return x1**2
+
+    study = create_study()
+    study.optimize(objective, n_trials=4)
+    with pytest.warns(ExperimentalWarning):
+        get_param_importances(study, normalize=False)
 
 
 @parametrize_evaluator
