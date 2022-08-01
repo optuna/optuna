@@ -143,7 +143,7 @@ def partial_report(args: argparse.Namespace) -> None:
         for path in [eval_path, time_path]:
             with open(os.path.join(path, study), "r") as file:
                 data = json.load(file)
-                df = Dataset.from_dict(data["data"]).to_dataframe()  # type: ignore
+                df = Dataset.from_dict(data["data"]).to_dataframe()
                 df = df.droplevel("suggestion")
 
             for argument, meatadata in data["meta"]["args"].items():
