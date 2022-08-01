@@ -108,7 +108,7 @@ def test_get_param_importances(
         # Sanity check for param importances
         assert all(0 <= x < float("inf") for x in param_importance.values())
         if normalize:
-            assert len(param_importance) == 0 or np.isclose(sum(param_importance.values()), 1.0)
+            assert np.isclose(sum(param_importance.values()), 1.0)
 
 
 @parametrize_evaluator
@@ -207,7 +207,7 @@ def test_get_param_importances_with_target(
         # Sanity check for param importances
         assert all(0 <= x < float("inf") for x in param_importance.values())
         if normalize:
-            assert len(param_importance) == 0 or np.isclose(sum(param_importance.values()), 1.0)
+            assert np.isclose(sum(param_importance.values()), 1.0)
 
 
 @parametrize_evaluator
