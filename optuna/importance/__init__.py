@@ -37,7 +37,7 @@ def get_param_importances(
     mean that the parameters are more important.
     The returned dictionary is of type :class:`collections.OrderedDict` and is ordered by
     its values in a descending order.
-    If ``normalize`` is :obj:`True`, the sum of the importance values are normalized to 1.0.
+    By default, the sum of the importance values are normalized to 1.0.
 
     If ``params`` is :obj:`None`, all parameter that are present in all of the completed trials are
     assessed.
