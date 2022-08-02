@@ -72,7 +72,7 @@ def test_invalid_qmc_type(qmc_type: str) -> None:
     sys.version_info < (3, 7, 0), reason="QMCSampler is not supported in Python 3.6"
 )
 def test_initial_seeding() -> None:
-    with patch.object(optuna.samplers.QMCSampler, "_log_asyncronous_seeding") as mock_log_async:
+    with patch.object(optuna.samplers.QMCSampler, "_log_asynchronous_seeding") as mock_log_async:
         sampler = _init_QMCSampler_without_exp_warning(scramble=True)
     mock_log_async.assert_called_once()
     assert isinstance(sampler._seed, int)
@@ -160,16 +160,16 @@ def test_sample_independent() -> None:
 @pytest.mark.skipif(
     sys.version_info < (3, 7, 0), reason="QMCSampler is not supported in Python 3.6"
 )
-def test_warn_asyncronous_seeding() -> None:
+def test_warn_asynchronous_seeding() -> None:
     # Relative sampling of `QMCSampler` does not support categorical distribution.
     # Thus, `independent_sampler.sample_independent` is called twice.
     # '_log_independent_sampling is not called in the first trial so called once in total.
     objective: Callable[[Trial], Any] = lambda t: t.suggest_categorical("x", [1.0, 2.0])
 
-    with patch.object(optuna.samplers.QMCSampler, "_log_asyncronous_seeding") as mock_log_async:
+    with patch.object(optuna.samplers.QMCSampler, "_log_asynchronous_seeding") as mock_log_async:
 
         sampler = _init_QMCSampler_without_exp_warning(
-            scramble=True, warn_asyncronous_seeding=False
+            scramble=True, warn_asynchronous_seeding=False
         )
         study = optuna.create_study(sampler=sampler)
         study.optimize(objective, n_trials=2)
@@ -388,20 +388,19 @@ def test_sample_qmc(qmc_type: str) -> None:
 )
 def test_find_sample_id() -> None:
 
-    search_space = _SEARCH_SPACE.copy()
     sampler = _init_QMCSampler_without_exp_warning(qmc_type="halton", seed=0)
     study = optuna.create_study()
     for i in range(5):
-        assert sampler._find_sample_id(study, search_space) == i
+        assert sampler._find_sample_id(study) == i
 
     # Change seed but without scramble. The hash should remain the same.
     with patch.object(sampler, "_seed", 1) as _:
-        assert sampler._find_sample_id(study, search_space) == 5
+        assert sampler._find_sample_id(study) == 5
 
         # Seed is considered only when scrambling is enabled
         with patch.object(sampler, "_scramble", True) as _:
-            assert sampler._find_sample_id(study, search_space) == 0
+            assert sampler._find_sample_id(study) == 0
 
     # Change qmc_type
     with patch.object(sampler, "_qmc_type", "sobol") as _:
-        assert sampler._find_sample_id(study, search_space) == 0
+        assert sampler._find_sample_id(study) == 0
