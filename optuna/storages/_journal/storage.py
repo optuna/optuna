@@ -180,16 +180,20 @@ class JournalStorage(BaseStorage):
         trial_id = len(self._trials)
         distributions = (
             {}
-            if "distributions" in log
+            if "distributions" not in log
             else {k: json_to_distribution(v) for k, v in log["distributions"].items()}
         )
         params = (
             {}
-            if "params" in log
+            if "params" not in log
             else {
                 k: distributions[k].to_external_repr(param) for k, param in log["params"].items()
             }
         )
+        if log["datetime_start"] is not None:
+            datetime_start = datetime.datetime.fromisoformat(log["datetime_start"])
+        else:
+            datetime_start = None
         if "datetime_complete" in log:
             datetime_complete = datetime.datetime.fromisoformat(log["datetime_complete"])
         else:
@@ -205,7 +209,7 @@ class JournalStorage(BaseStorage):
             system_attrs=log.get("system_attrs", {}),
             value=log.get("value", None),
             intermediate_values={int(k): v for k, v in log.get("intermediate_values", {}).items()},
-            datetime_start=datetime.datetime.fromisoformat(log["datetime_start"]),
+            datetime_start=datetime_start,
             datetime_complete=datetime_complete,
             values=log.get("values", None),
         )
@@ -382,34 +386,24 @@ class JournalStorage(BaseStorage):
         op = log["op_code"]
         if op == JournalOperation.CREATE_STUDY:
             self._apply_create_study(log)
-
         elif op == JournalOperation.DELETE_STUDY:
             self._apply_delete_study(log)
-
         elif op == JournalOperation.SET_STUDY_USER_ATTR:
             self._apply_set_study_user_attr(log)
-
         elif op == JournalOperation.SET_STUDY_SYSTEM_ATTR:
             self._apply_set_study_system_attr(log)
-
         elif op == JournalOperation.SET_STUDY_DIRECTIONS:
             self._apply_set_study_directions(log)
-
         elif op == JournalOperation.CREATE_TRIAL:
             self._apply_create_trial(log)
-
         elif op == JournalOperation.SET_TRIAL_PARAM:
             self._apply_set_trial_param(log)
-
         elif op == JournalOperation.SET_TRIAL_STATE_VALUES:
             self._apply_set_trial_state_values(log)
-
         elif op == JournalOperation.SET_TRIAL_INTERMEDIATE_VALUE:
             self._apply_set_trial_intermediate_value(log)
-
         elif op == JournalOperation.SET_TRIAL_USER_ATTR:
             self._apply_set_trial_user_attr(log)
-
         elif op == JournalOperation.SET_TRIAL_SYSTEM_ATTR:
             self._apply_set_trial_system_attr(log)
         else:
@@ -541,21 +535,18 @@ class JournalStorage(BaseStorage):
                 log["values"] = None
             if template_trial.datetime_start:
                 log["datetime_start"] = template_trial.datetime_start.isoformat()
+            else:
+                log["datetime_start"] = None
             if template_trial.datetime_complete:
                 log["datetime_complete"] = template_trial.datetime_complete.isoformat()
 
-            params = {}
-            distributions = {}
-
-            for (k1, param), (k2, dist) in zip(
-                template_trial.params.items(), template_trial.distributions.items()
-            ):
-                assert k1 == k2
-                params[k1] = dist.to_internal_repr(param)
-                distributions[k1] = distribution_to_json(dist)
-
-            log["params"] = params
-            log["distributions"] = distributions
+            log["distributions"] = {
+                k: distribution_to_json(dist) for k, dist in template_trial.distributions.items()
+            }
+            log["params"] = {
+                k: template_trial.distributions[k].to_internal_repr(param)
+                for k, param in template_trial.params.items()
+            }
             log["user_attrs"] = template_trial.user_attrs
             log["system_attrs"] = template_trial.system_attrs
             log["intermediate_values"] = template_trial.intermediate_values
