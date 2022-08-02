@@ -273,10 +273,12 @@ class JournalStorage(BaseStorage):
                     return
                 break
 
-        self._trials[trial_id].params[param_name] = distribution.to_external_repr(
-            param_value_internal
-        )
-        self._trials[trial_id].distributions[param_name] = distribution
+        trial = copy.copy(self._trials[trial_id])
+        trial.params = copy.copy(trial.params)
+        trial.params[param_name] = distribution.to_external_repr(param_value_internal)
+        trial.distributions = copy.copy(trial.distributions)
+        trial.distributions[param_name] = distribution
+        self._trials[trial_id] = trial
 
     def _apply_set_trial_state_values(self, log: Dict[str, Any]) -> None:
         trial_id = log["trial_id"]
@@ -302,20 +304,18 @@ class JournalStorage(BaseStorage):
         if state == self._trials[trial_id].state and state == TrialState.RUNNING:
             return
 
+        trial = copy.copy(self._trials[trial_id])
         if state == TrialState.RUNNING:
-            self._trials[trial_id].datetime_start = datetime.datetime.fromisoformat(
-                log["datetime_start"]
-            )
+            trial.datetime_start = datetime.datetime.fromisoformat(log["datetime_start"])
 
         if state.is_finished():
-            self._trials[trial_id].datetime_complete = datetime.datetime.fromisoformat(
-                log["datetime_complete"]
-            )
+            trial.datetime_complete = datetime.datetime.fromisoformat(log["datetime_complete"])
 
-        self._trials[trial_id].state = state
+        trial.state = state
         if values is not None:
-            self._trials[trial_id].values = values
+            trial.values = values
 
+        self._trials[trial_id] = trial
         return
 
     def _apply_set_trial_intermediate_value(self, log: Dict[str, Any]) -> None:
@@ -338,7 +338,10 @@ class JournalStorage(BaseStorage):
 
         step = log["step"]
         intermediate_value = log["intermediate_value"]
-        self._trials[trial_id].intermediate_values[step] = intermediate_value
+        trial = copy.copy(self._trials[trial_id])
+        trial.intermediate_values = copy.copy(trial.intermediate_values)
+        trial.intermediate_values[step] = intermediate_value
+        self._trials[trial_id] = trial
 
     def _apply_set_trial_user_attr(self, log: Dict[str, Any]) -> None:
         trial_id = log["trial_id"]
@@ -363,7 +366,10 @@ class JournalStorage(BaseStorage):
 
         ((key, value),) = log[user_attr].items()
 
-        self._trials[trial_id].user_attrs[key] = value
+        trial = copy.copy(self._trials[trial_id])
+        trial.user_attrs = copy.copy(trial.user_attrs)
+        trial.user_attrs[key] = value
+        self._trials[trial_id] = trial
 
     def _apply_set_trial_system_attr(self, log: Dict[str, Any]) -> None:
         trial_id = log["trial_id"]
@@ -388,7 +394,10 @@ class JournalStorage(BaseStorage):
 
         ((key, value),) = log[system_attr].items()
 
-        self._trials[trial_id].system_attrs[key] = value
+        trial = copy.copy(self._trials[trial_id])
+        trial.system_attrs = copy.copy(trial.system_attrs)
+        trial.system_attrs[key] = value
+        self._trials[trial_id] = trial
 
     def _apply_log(self, log: Dict[str, Any]) -> None:
         op = log["op_code"]
@@ -409,6 +418,7 @@ class JournalStorage(BaseStorage):
 
         elif op == JournalOperation.CREATE_TRIAL:
             self._apply_create_trial(log)
+
         elif op == JournalOperation.SET_TRIAL_PARAM:
             self._apply_set_trial_param(log)
 
