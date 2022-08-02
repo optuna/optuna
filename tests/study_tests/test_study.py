@@ -1478,7 +1478,7 @@ def test_tell_duplicate_tell() -> None:
     # Should not panic when passthrough is enabled.
     study.tell(trial, 1.0, skip_if_finished=True)
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         study.tell(trial, 1.0, skip_if_finished=False)
 
 

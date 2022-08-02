@@ -133,11 +133,6 @@ def _tell_with_warning(
     """
 
     frozen_trial = _get_frozen_trial(study, trial)
-
-    _check_state_and_values(state, values)
-
-    warning_message = None
-
     if frozen_trial.state.is_finished() and skip_if_finished:
         _logger.info(
             f"Skipped telling trial {frozen_trial.number} with values "
@@ -145,8 +140,12 @@ def _tell_with_warning(
             f"Finished trial has values {frozen_trial.values} and state {frozen_trial.state}."
         )
         return copy.deepcopy(frozen_trial)
-    elif frozen_trial.state == TrialState.WAITING:
-        raise ValueError("Cannot tell a waiting trial.")
+    elif frozen_trial.state != TrialState.RUNNING:
+        raise ValueError(f"Cannot tell a {frozen_trial.state.name} trial.")
+
+    _check_state_and_values(state, values)
+
+    warning_message = None
 
     if state == TrialState.COMPLETE:
         assert values is not None
