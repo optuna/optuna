@@ -1,9 +1,7 @@
 import copy
 import math
-from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import Tuple
 from typing import Union
 import warnings
 
@@ -22,59 +20,41 @@ STUDY_TELL_WARNING_KEY = "STUDY_TELL_WARNING"
 _logger = logging.get_logger(__name__)
 
 
-def _check_and_convert_to_values(
-    n_objectives: int, original_value: Optional[Union[float, Sequence[float]]], trial_number: int
-) -> Tuple[Optional[List[float]], Optional[str]]:
-    if isinstance(original_value, Sequence):
-        _original_values: Sequence[Optional[float]] = list(original_value)
+def _check_values(
+    study: "optuna.Study", value_or_values: Union[float, Sequence[float]]
+) -> Optional[str]:
+    if isinstance(value_or_values, Sequence):
+        values = value_or_values
     else:
-        _original_values = [original_value]
+        values = [value_or_values]
 
-    if n_objectives != len(_original_values):
+    if len(study.directions) != len(values):
         return (
-            None,
-            (
-                f"The number of the values "
-                f"{len(_original_values)} did not match the number of the objectives "
-                f"{n_objectives}."
-            ),
+            f"The number of the values {len(values)} did not match the number of the objectives "
+            f"{len(study.directions)}."
         )
 
-    _checked_values = []
-    for v in _original_values:
-        checked_v, failure_message = _check_single_value(v, trial_number)
+    for v in values:
+        failure_message = _check_single_value(v)
         if failure_message is not None:
             # TODO(Imamura): Construct error message taking into account all values and do not
-            #  early return
-            # `value` is assumed to be ignored on failure so we can set it to any value.
-            return None, failure_message
-        elif isinstance(checked_v, float):
-            _checked_values.append(checked_v)
-        else:
-            assert False
+            # early return `value` is assumed to be ignored on failure so we can set it to any
+            # value.
+            return failure_message
 
-    return _checked_values, None
+    return None
 
 
-def _check_single_value(
-    original_value: Optional[float], trial_number: int
-) -> Tuple[Optional[float], Optional[str]]:
-    value = None
-    failure_message = None
-
+def _check_single_value(value: float) -> Optional[str]:
     try:
-        value = float(original_value)  # type: ignore
-    except (
-        ValueError,
-        TypeError,
-    ):
-        failure_message = f"The value {repr(original_value)} could not be cast to float."
+        float(value)
+    except (ValueError, TypeError):
+        return f"The value {repr(value)} could not be cast to float."
 
-    if value is not None and math.isnan(value):
-        value = None
-        failure_message = f"The value {original_value} is not acceptable."
+    if math.isnan(value):
+        return f"The value {value} is not acceptable."
 
-    return value, failure_message
+    return None
 
 
 def _tell_with_warning(
@@ -168,26 +148,38 @@ def _tell_with_warning(
 
         last_step = frozen_trial.last_step
         if last_step is not None:
-            values = [frozen_trial.intermediate_values[last_step]]
+            value = frozen_trial.intermediate_values[last_step]
+            # intermediate_values can be unacceptable value, i.e., NaN.
+            if _check_values(study, value) is None:
+                values = [value]
 
-    values, values_conversion_failure_message = _check_and_convert_to_values(
-        len(study.directions), values, trial_number
-    )
+    if state == TrialState.COMPLETE:
+        assert values is not None
 
-    if state == TrialState.COMPLETE and values_conversion_failure_message is not None:
-        raise ValueError(values_conversion_failure_message)
+        values_conversion_failure_message = _check_values(study, values)
+        if values_conversion_failure_message is not None:
+            raise ValueError(values_conversion_failure_message)
 
     if state is None:
+        if values is None:
+            values_conversion_failure_message = "The value None could not be cast to float."
+        else:
+            values_conversion_failure_message = _check_values(study, values)
+
         if values_conversion_failure_message is None:
             state = TrialState.COMPLETE
         else:
             state = TrialState.FAIL
+            values = None
             if not suppress_warning:
                 warnings.warn(values_conversion_failure_message)
             else:
                 warning_message = values_conversion_failure_message
 
     assert state is not None
+
+    if values is not None and not isinstance(values, Sequence):
+        values = [values]
 
     try:
         # Sampler defined trial post-processing.
