@@ -148,7 +148,13 @@ def _tell_with_warning(
     elif frozen_trial.state == TrialState.WAITING:
         raise ValueError("Cannot tell a waiting trial.")
 
-    if state == TrialState.PRUNED:
+    if state == TrialState.COMPLETE:
+        assert values is not None
+
+        values_conversion_failure_message = _check_values(study, values)
+        if values_conversion_failure_message is not None:
+            raise ValueError(values_conversion_failure_message)
+    elif state == TrialState.PRUNED:
         # Register the last intermediate value if present as the value of the trial.
         # TODO(hvy): Whether a pruned trials should have an actual value can be discussed.
         assert values is None
@@ -159,15 +165,7 @@ def _tell_with_warning(
             # intermediate_values can be unacceptable value, i.e., NaN.
             if _check_values(study, value) is None:
                 values = [value]
-
-    if state == TrialState.COMPLETE:
-        assert values is not None
-
-        values_conversion_failure_message = _check_values(study, values)
-        if values_conversion_failure_message is not None:
-            raise ValueError(values_conversion_failure_message)
-
-    if state is None:
+    elif state is None:
         if values is None:
             values_conversion_failure_message = "The value None could not be cast to float."
         else:
