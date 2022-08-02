@@ -23,6 +23,7 @@ from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
+
 NOT_FOUND_MSG = "Record does not exist."
 
 

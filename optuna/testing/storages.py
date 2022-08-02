@@ -11,6 +11,7 @@ import fakeredis
 import optuna
 from optuna.storages import JournalFileStorage
 
+
 STORAGE_MODES = [
     "inmemory",
     "sqlite",

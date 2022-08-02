@@ -15,7 +15,7 @@ LOCK_FILE_SUFFIX = ".lock"
 
 class BaseFileLock(abc.ABC):
     @abc.abstractmethod
-    def acquire(self, blocking: bool) -> bool:
+    def acquire(self, blocking: bool = True) -> bool:
         raise NotImplementedError
 
     @abc.abstractmethod
