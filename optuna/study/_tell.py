@@ -71,7 +71,7 @@ def _check_state_and_values(
                 "Values were told. Values cannot be specified when state is "
                 "TrialState.PRUNED or TrialState.FAIL."
             )
-    elif state is not None:
+    elif state in (TrialState.RUNNING, TrialState.WAITING):
         raise ValueError(f"Cannot tell with state {state}.")
 
 
