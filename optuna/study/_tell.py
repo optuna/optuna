@@ -20,6 +20,43 @@ STUDY_TELL_WARNING_KEY = "STUDY_TELL_WARNING"
 _logger = logging.get_logger(__name__)
 
 
+def _get_frozen_trial(study: "optuna.Study", trial: Union[trial_module.Trial, int]) -> FrozenTrial:
+    if isinstance(trial, trial_module.Trial):
+        trial_id = trial._trial_id
+    elif isinstance(trial, int):
+        trial_number = trial
+        try:
+            trial_id = study._storage.get_trial_id_from_study_id_trial_number(
+                study._study_id, trial_number
+            )
+        except NotImplementedError as e:
+            warnings.warn(
+                "Study.tell may be slow because the trial was represented by its number but "
+                f"the storage {study._storage.__class__.__name__} does not implement the "
+                "method required to map numbers back. Please provide the trial object "
+                "to avoid performance degradation."
+            )
+
+            trials = study.get_trials(deepcopy=False)
+
+            if len(trials) <= trial_number:
+                raise ValueError(
+                    f"Cannot tell for trial with number {trial_number} since it has not been "
+                    "created."
+                ) from e
+
+            trial_id = trials[trial_number]._trial_id
+        except KeyError as e:
+            raise ValueError(
+                f"Cannot tell for trial with number {trial_number} since it has not been "
+                "created."
+            ) from e
+    else:
+        raise TypeError("Trial must be a trial object or trial number.")
+
+    return study._storage.get_trial(trial_id)
+
+
 def _check_values(
     study: "optuna.Study", value_or_values: Union[float, Sequence[float]]
 ) -> Optional[str]:
@@ -77,9 +114,6 @@ def _tell_with_warning(
             Study.optimize.
     """
 
-    if not isinstance(trial, (trial_module.Trial, int)):
-        raise TypeError("Trial must be a trial object or trial number.")
-
     if state == TrialState.COMPLETE:
         if values is None:
             raise ValueError(
@@ -94,46 +128,12 @@ def _tell_with_warning(
     elif state is not None:
         raise ValueError(f"Cannot tell with state {state}.")
 
-    if isinstance(trial, trial_module.Trial):
-        trial_number = trial.number
-        trial_id = trial._trial_id
-    elif isinstance(trial, int):
-        trial_number = trial
-        try:
-            trial_id = study._storage.get_trial_id_from_study_id_trial_number(
-                study._study_id, trial_number
-            )
-        except NotImplementedError as e:
-            warnings.warn(
-                "Study.tell may be slow because the trial was represented by its number but "
-                f"the storage {study._storage.__class__.__name__} does not implement the "
-                "method required to map numbers back. Please provide the trial object "
-                "to avoid performance degradation."
-            )
-
-            trials = study.get_trials(deepcopy=False)
-
-            if len(trials) <= trial_number:
-                raise ValueError(
-                    f"Cannot tell for trial with number {trial_number} since it has not been "
-                    "created."
-                ) from e
-
-            trial_id = trials[trial_number]._trial_id
-        except KeyError as e:
-            raise ValueError(
-                f"Cannot tell for trial with number {trial_number} since it has not been "
-                "created."
-            ) from e
-    else:
-        assert False, "Should not reach."
-
-    frozen_trial = study._storage.get_trial(trial_id)
+    frozen_trial = _get_frozen_trial(study, trial)
     warning_message = None
 
     if frozen_trial.state.is_finished() and skip_if_finished:
         _logger.info(
-            f"Skipped telling trial {trial_number} with values "
+            f"Skipped telling trial {frozen_trial.number} with values "
             f"{values} and state {state} since trial was already finished. "
             f"Finished trial has values {frozen_trial.values} and state {frozen_trial.state}."
         )
@@ -186,9 +186,9 @@ def _tell_with_warning(
         study = pruners._filter_study(study, frozen_trial)
         study.sampler.after_trial(study, frozen_trial, state, values)
     finally:
-        study._storage.set_trial_state_values(trial_id, state, values)
+        study._storage.set_trial_state_values(frozen_trial._trial_id, state, values)
 
-    frozen_trial = copy.deepcopy(study._storage.get_trial(trial_id))
+    frozen_trial = copy.deepcopy(study._storage.get_trial(frozen_trial._trial_id))
 
     if warning_message is not None:
         frozen_trial.set_system_attr(STUDY_TELL_WARNING_KEY, warning_message)
