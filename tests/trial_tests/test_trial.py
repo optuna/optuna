@@ -24,6 +24,7 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.testing.pruners import DeterministicPruner
+from optuna.testing.samplers import DeterministicSampler
 from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
 from optuna.trial import Trial
@@ -183,12 +184,7 @@ def test_check_distribution_suggest_categorical(storage_mode: str) -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_uniform(storage_mode: str) -> None:
 
-    relative_search_space = {
-        "x": FloatDistribution(low=0.0, high=3.0),
-        "y": FloatDistribution(low=0.0, high=3.0),
-    }
-    relative_params = {"x": 1.0, "y": 2.0}
-    sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
+    sampler = DeterministicSampler({"x": 1.0, "y": 2.0})
 
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
@@ -209,12 +205,7 @@ def test_suggest_loguniform(storage_mode: str) -> None:
     with pytest.raises(ValueError):
         FloatDistribution(low=0.0, high=0.9, log=True)
 
-    relative_search_space = {
-        "x": FloatDistribution(low=0.1, high=4.0, log=True),
-        "y": FloatDistribution(low=0.1, high=4.0, log=True),
-    }
-    relative_params = {"x": 1.0, "y": 2.0}
-    sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
+    sampler = DeterministicSampler({"x": 1.0, "y": 2.0})
 
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
@@ -229,12 +220,7 @@ def test_suggest_loguniform(storage_mode: str) -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_discrete_uniform(storage_mode: str) -> None:
 
-    relative_search_space = {
-        "x": FloatDistribution(low=0.0, high=3.0, step=1.0),
-        "y": FloatDistribution(low=0.0, high=3.0, step=1.0),
-    }
-    relative_params = {"x": 1.0, "y": 2.0}
-    sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
+    sampler = DeterministicSampler({"x": 1.0, "y": 2.0})
 
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
@@ -374,12 +360,7 @@ def test_suggest_float_invalid_step() -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_int(storage_mode: str) -> None:
 
-    relative_search_space = {
-        "x": IntDistribution(low=0, high=3),
-        "y": IntDistribution(low=0, high=3),
-    }
-    relative_params = {"x": 1, "y": 2}
-    sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
+    sampler = DeterministicSampler({"x": 1, "y": 2})
 
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
@@ -453,12 +434,7 @@ def test_suggest_int_invalid_step() -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_int_log(storage_mode: str) -> None:
 
-    relative_search_space = {
-        "x": IntDistribution(low=1, high=3, log=True),
-        "y": IntDistribution(low=1, high=3, log=True),
-    }
-    relative_params = {"x": 1, "y": 2}
-    sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
+    sampler = DeterministicSampler({"x": 1, "y": 2})
 
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
@@ -562,17 +538,17 @@ def test_relative_parameters(storage_mode: str) -> None:
 
             return Trial(study, study._storage.create_new_trial(study._study_id))
 
-        # Suggested from `relative_params`.
+        # Suggested by `sample_relative`.
         trial0 = create_trial()
         distribution0 = FloatDistribution(low=0, high=100)
         assert trial0._suggest("x", distribution0) == 5.5
 
-        # Not suggested from `relative_params` (due to unknown parameter name).
+        # Not suggested by `sample_relative` (due to unknown parameter name).
         trial1 = create_trial()
         distribution1 = distribution0
         assert trial1._suggest("w", distribution1) != 5.5
 
-        # Not suggested from `relative_params` (due to incompatible value range).
+        # Not suggested by `sample_relative` (due to incompatible value range).
         trial2 = create_trial()
         distribution2 = FloatDistribution(low=0, high=5)
         assert trial2._suggest("x", distribution2) != 5.5
@@ -583,7 +559,7 @@ def test_relative_parameters(storage_mode: str) -> None:
         with pytest.raises(ValueError):
             trial3._suggest("y", distribution3)
 
-        # Error ('z' is included in `relative_params` but not in `relative_search_space`).
+        # Error ('z' is included in `sample_relative` but not in `infer_relative_search_space`).
         trial4 = create_trial()
         distribution4 = FloatDistribution(low=0, high=10)
         with pytest.raises(ValueError):
