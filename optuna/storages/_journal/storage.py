@@ -178,57 +178,36 @@ class JournalStorage(BaseStorage):
             return
 
         trial_id = len(self._trials)
-        number = len(self._study_id_to_trial_ids[study_id])
-        state = TrialState.RUNNING
-        params = {}
-        distributions = {}
-        user_attrs = {}
-        system_attrs = {}
-        value = None
-        values = None
-        intermediate_values = {}
-        datetime_start: Optional[Any] = datetime.datetime.now()
-        datetime_complete = None
-
-        if log["has_template_trial"]:
-            state = TrialState(log["state"])
-            for (k1, param), (k2, dist) in zip(
-                log["params"].items(), log["distributions"].items()
-            ):
-                assert k1 == k2
-                dist = json_to_distribution(dist)
-                params[k1] = dist.to_external_repr(param)
-                distributions[k1] = dist
-            user_attrs = log["user_attrs"]
-            system_attrs = log["system_attrs"]
-            value = log["value"]
-            values = log["values"]
-            for k, v in log["intermediate_values"].items():
-                intermediate_values[int(k)] = v
-            datetime_start = (
-                datetime.datetime.fromisoformat(log["datetime_start"])
-                if log["datetime_start"] is not None
-                else None
-            )
-            datetime_complete = (
-                datetime.datetime.fromisoformat(log["datetime_complete"])
-                if log["datetime_complete"] is not None
-                else None
-            )
+        distributions = (
+            {}
+            if "distributions" in log
+            else {k: json_to_distribution(v) for k, v in log["distributions"].items()}
+        )
+        params = (
+            {}
+            if "params" in log
+            else {
+                k: distributions[k].to_external_repr(param) for k, param in log["params"].items()
+            }
+        )
+        if "datetime_complete" in log:
+            datetime_complete = datetime.datetime.fromisoformat(log["datetime_complete"])
+        else:
+            datetime_complete = None
 
         self._trials[trial_id] = FrozenTrial(
             trial_id=trial_id,
-            number=number,
-            state=state,
+            number=len(self._study_id_to_trial_ids[study_id]),
+            state=TrialState(log.get("state", TrialState.RUNNING.value)),
             params=params,
             distributions=distributions,
-            user_attrs=user_attrs,
-            system_attrs=system_attrs,
-            value=value,
-            intermediate_values=intermediate_values,
-            datetime_start=datetime_start,
+            user_attrs=log.get("user_attrs", {}),
+            system_attrs=log.get("system_attrs", {}),
+            value=log.get("value", None),
+            intermediate_values={int(k): v for k, v in log.get("intermediate_values", {}).items()},
+            datetime_start=datetime.datetime.fromisoformat(log["datetime_start"]),
             datetime_complete=datetime_complete,
-            values=values,
+            values=log.get("values", None),
         )
 
         self._study_id_to_trial_ids[study_id].append(trial_id)
@@ -550,11 +529,9 @@ class JournalStorage(BaseStorage):
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
         log = self._create_operation_log(JournalOperation.CREATE_TRIAL)
         log["study_id"] = study_id
+        log["datetime_start"] = datetime.datetime.now().isoformat()
 
-        if template_trial is None:
-            log["has_template_trial"] = False
-        else:
-            log["has_template_trial"] = True
+        if template_trial:
             log["state"] = template_trial.state
             if template_trial.values is not None and len(template_trial.values) > 1:
                 log["value"] = None
@@ -562,16 +539,10 @@ class JournalStorage(BaseStorage):
             else:
                 log["value"] = template_trial.value
                 log["values"] = None
-            log["datetime_start"] = (
-                template_trial.datetime_start.isoformat()
-                if template_trial.datetime_start is not None
-                else None
-            )
-            log["datetime_complete"] = (
-                template_trial.datetime_complete.isoformat()
-                if template_trial.datetime_complete is not None
-                else None
-            )
+            if template_trial.datetime_start:
+                log["datetime_start"] = template_trial.datetime_start.isoformat()
+            if template_trial.datetime_complete:
+                log["datetime_complete"] = template_trial.datetime_complete.isoformat()
 
             params = {}
             distributions = {}
