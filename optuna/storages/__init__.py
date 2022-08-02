@@ -6,6 +6,7 @@ from optuna.storages._cached_storage import _CachedStorage
 from optuna.storages._heartbeat import fail_stale_trials
 from optuna.storages._in_memory import InMemoryStorage
 from optuna.storages._journal.storage import JournalStorage
+from optuna.storages._journal.file import JournalFileStorage
 from optuna.storages._rdb.storage import RDBStorage
 from optuna.storages._redis import RedisStorage
 
@@ -16,6 +17,7 @@ __all__ = [
     "RDBStorage",
     "RedisStorage",
     "JournalStorage",
+    "JournalFileStorage",
     "RetryFailedTrialCallback",
     "_CachedStorage",
     "fail_stale_trials",

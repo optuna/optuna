@@ -9,7 +9,7 @@ from typing import Union
 import fakeredis
 
 import optuna
-
+from optuna.storages import JournalFileStorage
 
 STORAGE_MODES = [
     "inmemory",
@@ -72,7 +72,8 @@ class StorageSupplier:
                 else redis_storage
             )
         elif "journal" in self.storage_specifier:
-            return optuna.storages.JournalStorage(tempfile.NamedTemporaryFile().name)
+            file_storage = JournalFileStorage(tempfile.NamedTemporaryFile().name)
+            return optuna.storages.JournalStorage(file_storage)
         else:
             assert False
 

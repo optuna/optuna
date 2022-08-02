@@ -4,9 +4,9 @@ from typing import Dict
 from typing import List
 
 
-class BaseLogStorage(object, metaclass=abc.ABCMeta):
+class BaseJournalLogStorage(abc.ABC):
     @abc.abstractmethod
-    def get_unread_logs(self, log_number_read: int = 0) -> List[Dict[str, Any]]:
+    def get_unread_logs(self, log_number_read: int) -> List[Dict[str, Any]]:
         raise NotImplementedError
 
     @abc.abstractmethod
