@@ -153,11 +153,13 @@ class JournalFileStorage(BaseJournalLogStorage):
         # The default log_number_read == 0 means no logs have been read by the caller.
 
         with self._lock:
+            logs = []
             with open(self._file_path, "r") as f:
-                lines = f.readlines()
-
-            assert len(lines) >= log_number_read
-            return [json.loads(line) for line in lines[log_number_read:]]
+                for lineno, line in enumerate(f):
+                    if lineno < log_number_read:
+                        continue
+                    logs.append(json.loads(line))
+            return logs
 
     def append_logs(self, logs: List[Dict[str, Any]]) -> None:
         what_to_write = ""
