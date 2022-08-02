@@ -2,10 +2,12 @@ import abc
 import errno
 import json
 import os
+from types import TracebackType
 from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Type
 
 from optuna.storages._journal.base import BaseJournalLogStorage
 
@@ -20,6 +22,19 @@ class BaseFileLock(abc.ABC):
 
     @abc.abstractmethod
     def release(self) -> None:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def __enter__(self) -> bool:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def __exit__(
+        self,
+        type: Optional[Type[BaseException]],
+        value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> None:
         raise NotImplementedError
 
 
@@ -63,6 +78,17 @@ class LinkLock(BaseFileLock):
         except OSError:
             raise RuntimeError("Error: did not possess lock")
 
+    def __enter__(self) -> bool:
+        return self.acquire()
+
+    def __exit__(
+        self,
+        type: Optional[Type[BaseException]],
+        value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> None:
+        return self.release()
+
 
 class OpenLock(BaseFileLock):
     def __init__(self, filepath: str) -> None:
@@ -103,6 +129,17 @@ class OpenLock(BaseFileLock):
         except OSError:
             raise RuntimeError("Error: did not possess lock")
 
+    def __enter__(self) -> bool:
+        return self.acquire()
+
+    def __exit__(
+        self,
+        type: Optional[Type[BaseException]],
+        value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> None:
+        return self.release()
+
 
 class JournalFileStorage(BaseJournalLogStorage):
     def __init__(self, file_path: str, lock_obj: Optional[BaseFileLock] = None) -> None:
@@ -114,18 +151,12 @@ class JournalFileStorage(BaseJournalLogStorage):
     def get_unread_logs(self, log_number_read: int) -> List[Dict[str, Any]]:
         # log_number starts from 1.
         # The default log_number_read == 0 means no logs have been read by the caller.
-        self._lock.acquire()
-        with open(self._file_path, "r") as f:
-            lines = f.readlines()
 
-        if len(lines) < log_number_read:
-            self._lock.release()
-            raise RuntimeError("log_number too big")
-        elif len(lines) == log_number_read:
-            self._lock.release()
-            return []
-        else:
-            self._lock.release()
+        with self._lock:
+            with open(self._file_path, "r") as f:
+                lines = f.readlines()
+
+            assert len(lines) >= log_number_read
             return [json.loads(line) for line in lines[log_number_read:]]
 
     def append_logs(self, logs: List[Dict[str, Any]]) -> None:
@@ -133,10 +164,7 @@ class JournalFileStorage(BaseJournalLogStorage):
         for log in logs:
             what_to_write += json.dumps(log) + "\n"
 
-        self._lock.acquire()
-
-        with open(self._file_path, "a") as f:
-            f.write(what_to_write)
-            os.fsync(f.fileno())
-
-        self._lock.release()
+        with self._lock:
+            with open(self._file_path, "a") as f:
+                f.write(what_to_write)
+                os.fsync(f.fileno())
