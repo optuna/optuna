@@ -57,6 +57,24 @@ def _get_frozen_trial(study: "optuna.Study", trial: Union[trial_module.Trial, in
     return study._storage.get_trial(trial_id)
 
 
+def _check_state_and_values(
+    state: Optional[TrialState], values: Optional[Union[float, Sequence[float]]]
+) -> None:
+    if state == TrialState.COMPLETE:
+        if values is None:
+            raise ValueError(
+                "No values were told. Values are required when state is TrialState.COMPLETE."
+            )
+    elif state in (TrialState.PRUNED, TrialState.FAIL):
+        if values is not None:
+            raise ValueError(
+                "Values were told. Values cannot be specified when state is "
+                "TrialState.PRUNED or TrialState.FAIL."
+            )
+    elif state is not None:
+        raise ValueError(f"Cannot tell with state {state}.")
+
+
 def _check_values(
     study: "optuna.Study", value_or_values: Union[float, Sequence[float]]
 ) -> Optional[str]:
@@ -114,21 +132,10 @@ def _tell_with_warning(
             Study.optimize.
     """
 
-    if state == TrialState.COMPLETE:
-        if values is None:
-            raise ValueError(
-                "No values were told. Values are required when state is TrialState.COMPLETE."
-            )
-    elif state in (TrialState.PRUNED, TrialState.FAIL):
-        if values is not None:
-            raise ValueError(
-                "Values were told. Values cannot be specified when state is "
-                "TrialState.PRUNED or TrialState.FAIL."
-            )
-    elif state is not None:
-        raise ValueError(f"Cannot tell with state {state}.")
-
     frozen_trial = _get_frozen_trial(study, trial)
+
+    _check_state_and_values(state, values)
+
     warning_message = None
 
     if frozen_trial.state.is_finished() and skip_if_finished:
