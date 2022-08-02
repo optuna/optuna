@@ -67,7 +67,7 @@ class LinkLock(BaseFileLock):
                 os.link(self._lock_target_file, self._lockfile)
                 return True
             except OSError as err:
-                if err.errno == errno.EEXIST:
+                if err.errno == errno.EEXIST or err.errno == errno.ENOENT:
                     return False
                 else:
                     raise err
