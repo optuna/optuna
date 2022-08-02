@@ -111,6 +111,7 @@ class JournalStorage(BaseStorage):
 
     def _apply_delete_study(self, log: Dict[str, Any]) -> None:
         study_id = log["study_id"]
+
         if study_id not in self._studies.keys():
             self._raise_error_if_log_issued_by_this_process(log, KeyError(NOT_FOUND_MSG))
             return
@@ -416,9 +417,8 @@ class JournalStorage(BaseStorage):
             self._apply_log(log)
 
     def _create_unique_study_name(self) -> str:
-        DEFAULT_STUDY_NAME_PREFIX = "no-name-"
         self._study_name_suffix_num += 1
-        return DEFAULT_STUDY_NAME_PREFIX + self._pid + "-" + str(self._study_name_suffix_num)
+        return "no-name-" + self._pid + "-" + str(self._study_name_suffix_num)
 
     # Basic study manipulation
 
@@ -482,42 +482,38 @@ class JournalStorage(BaseStorage):
             assert len(frozen_study) == 1
             return frozen_study[0]._study_id
 
+    def _raise_if_not_found_in_studies(self, study_id: int) -> None:
+        if study_id not in self._studies.keys():
+            raise KeyError(NOT_FOUND_MSG)
+
     def get_study_name_from_id(self, study_id: int) -> str:
         with self._thread_lock:
             self._sync_with_backend()
-            if study_id not in self._studies.keys():
-                raise KeyError(NOT_FOUND_MSG)
-            else:
-                return self._studies[study_id].study_name
+            self._raise_if_not_found_in_studies(study_id)
+            return self._studies[study_id].study_name
 
     def get_study_directions(self, study_id: int) -> List[StudyDirection]:
         with self._thread_lock:
             self._sync_with_backend()
-            if study_id not in self._studies.keys():
-                raise KeyError(NOT_FOUND_MSG)
-            else:
-                return self._studies[study_id].directions
+            self._raise_if_not_found_in_studies(study_id)
+            return self._studies[study_id].directions
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
         with self._thread_lock:
             self._sync_with_backend()
-            if study_id not in self._studies.keys():
-                raise KeyError(NOT_FOUND_MSG)
-            else:
-                return self._studies[study_id].user_attrs
+            self._raise_if_not_found_in_studies(study_id)
+            return self._studies[study_id].user_attrs
 
     def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
         with self._thread_lock:
             self._sync_with_backend()
-            if study_id not in self._studies.keys():
-                raise KeyError(NOT_FOUND_MSG)
-            else:
-                return self._studies[study_id].system_attrs
+            self._raise_if_not_found_in_studies(study_id)
+            return self._studies[study_id].system_attrs
 
     def get_all_studies(self) -> List[FrozenStudy]:
         with self._thread_lock:
             self._sync_with_backend()
-            return list(self._studies.values())
+            return copy.deepcopy(list(self._studies.values()))
 
     # Basic trial manipulation
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
