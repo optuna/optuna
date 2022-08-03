@@ -131,9 +131,7 @@ def test_constraints_func_none() -> None:
         assert _CONSTRAINTS_KEY not in trial.system_attrs
 
 
-@pytest.mark.parametrize(
-    "constraint_value", [-1.0, 0.0, 1.0, -float("inf"), float("inf"), float("nan")]
-)
+@pytest.mark.parametrize("constraint_value", [-1.0, 0.0, 1.0, -float("inf"), float("inf")])
 def test_constraints_func(constraint_value: float) -> None:
     n_trials = 4
     n_objectives = 2
@@ -158,7 +156,41 @@ def test_constraints_func(constraint_value: float) -> None:
     assert constraints_func_call_count == n_trials
     for trial in study.trials:
         for x, y in zip(trial.system_attrs[_CONSTRAINTS_KEY], (constraint_value + trial.number,)):
-            assert _nan_equal(x, y)
+            assert x == y
+
+
+def test_constrained_dominates_with_nan_constraint() -> None:
+    directions = [StudyDirection.MINIMIZE, StudyDirection.MINIMIZE]
+
+    t1 = _create_frozen_trial(0, [1], [0, float("nan")])
+    t2 = _create_frozen_trial(0, [0], [1, -1])
+    with pytest.raises(ValueError):
+        _constrained_dominates(t1, t2, directions)
+
+
+def test_constraints_func_nan() -> None:
+    n_trials = 4
+    n_objectives = 2
+
+    def constraints_func(_: FrozenTrial) -> Sequence[float]:
+        return (float("nan"),)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = NSGAIISampler(population_size=2, constraints_func=constraints_func)
+
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
+    with pytest.raises(ValueError):
+        study.optimize(
+            lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)],
+            n_trials=n_trials,
+        )
+
+    trials = study.get_trials()
+    assert len(trials) == 1  # The error stops optimization, but completed trials are recorded.
+    assert all(0 <= x <= 1 for x in trials[0].params.values())  # The params are normal.
+    assert trials[0].values == list(trials[0].params.values())  # The values are normal.
+    assert trials[0].system_attrs[_CONSTRAINTS_KEY] is None  # None is set for constraints.
 
 
 @pytest.mark.parametrize("direction1", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
@@ -201,7 +233,7 @@ def test_constrained_dominates_feasible_vs_infeasible(
 
     # Check all pairs of trials consisting of these constraint values.
     constraints_1d_feasible = [-float("inf"), -1, 0]
-    constraints_1d_infeasible = [float("nan"), 2, float("inf")]
+    constraints_1d_infeasible = [2, float("inf")]
 
     directions = [direction]
 
