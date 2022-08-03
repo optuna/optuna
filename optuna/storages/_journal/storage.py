@@ -11,6 +11,7 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 
+from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
 from optuna.distributions import check_distribution_compatibility
 from optuna.distributions import distribution_to_json
@@ -41,6 +42,7 @@ class JournalOperation(enum.IntEnum):
     SET_TRIAL_SYSTEM_ATTR = 10
 
 
+@experimental_class("3.1.0")
 class JournalStorage(BaseStorage):
     def __init__(self, log_storage: BaseJournalLogStorage) -> None:
         self._pid = (

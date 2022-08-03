@@ -9,6 +9,7 @@ from typing import List
 from typing import Optional
 from typing import Type
 
+from optuna._experimental import experimental_class
 from optuna.storages._journal.base import BaseJournalLogStorage
 
 
@@ -17,7 +18,7 @@ LOCK_FILE_SUFFIX = ".lock"
 
 class BaseFileLock(abc.ABC):
     @abc.abstractmethod
-    def acquire(self, blocking: bool = True) -> bool:
+    def acquire(self) -> bool:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -51,26 +52,19 @@ class LinkLock(BaseFileLock):
 
         open(self._lock_target_file, "a").close()  # Create file if it does not exist
 
-    def acquire(self, blocking: bool = True) -> bool:
-        def _acquire() -> bool:
+    def acquire(self) -> bool:
+        while True:
             try:
                 os.link(self._lock_target_file, self._lockfile)
                 return True
             except OSError as err:
                 if err.errno == errno.EEXIST or err.errno == errno.ENOENT:
-                    return False
+                    continue
                 else:
                     raise err
             except BaseException:
                 os.unlink(self._lockfile)
                 raise
-
-        if blocking:
-            while not _acquire():
-                continue
-            return True
-        else:
-            return _acquire()
 
     def release(self) -> None:
         try:
@@ -100,27 +94,20 @@ class OpenLock(BaseFileLock):
             if e.errno != errno.EEXIST:
                 raise RuntimeError("Error: mkdir")
 
-    def acquire(self, blocking: bool = True) -> bool:
-        def _acquire() -> bool:
+    def acquire(self) -> bool:
+        while True:
             try:
                 open_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
                 os.close(os.open(self._lockfile, open_flags))
                 return True
             except OSError as err:
                 if err.errno == errno.EEXIST:
-                    return False
+                    continue
                 else:
                     raise err
             except BaseException:
                 os.unlink(self._lockfile)
                 raise
-
-        if blocking:
-            while not _acquire():
-                continue
-            return True
-        else:
-            return _acquire()
 
     def release(self) -> None:
         try:
@@ -140,6 +127,7 @@ class OpenLock(BaseFileLock):
         return self.release()
 
 
+@experimental_class("3.1.0")
 class JournalFileStorage(BaseJournalLogStorage):
     def __init__(self, file_path: str, lock_obj: Optional[BaseFileLock] = None) -> None:
         self._file_path: str = file_path
