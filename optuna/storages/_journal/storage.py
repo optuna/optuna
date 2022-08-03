@@ -1,6 +1,7 @@
 import copy
 import datetime
 import enum
+import json
 import os
 import socket
 import threading
@@ -11,6 +12,7 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 
+from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
 from optuna.distributions import check_distribution_compatibility
 from optuna.distributions import distribution_to_json
@@ -41,6 +43,7 @@ class JournalOperation(enum.IntEnum):
     SET_TRIAL_SYSTEM_ATTR = 10
 
 
+@experimental_class("3.1.0")
 class JournalStorage(BaseStorage):
     def __init__(self, log_storage: BaseJournalLogStorage) -> None:
         self._pid = (
@@ -65,14 +68,8 @@ class JournalStorage(BaseStorage):
         self._thread_lock = threading.Lock()
         self._study_name_suffix_num = -1
 
-    def _create_operation_log(self, op_code: JournalOperation) -> Dict[str, Any]:
-        return {
-            "op_code": op_code,
-            "pid": self._pid,
-        }
-
-    def _write_log(self, log: Dict[str, Any]) -> None:
-        self._backend.append_logs([log])
+    def _write_log(self, op_code: int, extra_fields: Dict[str, Any]) -> None:
+        self._backend.append_logs([{"op_code": op_code, "pid": self._pid, **extra_fields}])
 
     def _raise_error_if_log_issued_by_this_process(
         self, log: Dict[str, Any], err: Exception
@@ -373,14 +370,12 @@ class JournalStorage(BaseStorage):
             )
             return
 
-        system_attr = "system_attr"
-        assert len(log[system_attr].items()) == 1
-
-        ((key, value),) = log[system_attr].items()
-
+        assert len(log["system_attr"]) == 1
         trial = copy.copy(self._trials[trial_id])
-        trial.system_attrs = copy.copy(trial.system_attrs)
-        trial.system_attrs[key] = value
+        trial.system_attrs = {
+            **copy.copy(trial.system_attrs),
+            **log["system_attr"],
+        }
         self._trials[trial_id] = trial
 
     def _apply_log(self, log: Dict[str, Any]) -> None:
@@ -423,52 +418,37 @@ class JournalStorage(BaseStorage):
     # Basic study manipulation
 
     def create_new_study(self, study_name: Optional[str] = None) -> int:
-        log = self._create_operation_log(JournalOperation.CREATE_STUDY)
-
         with self._thread_lock:
-            log["study_name"] = (
-                self._create_unique_study_name() if study_name is None else study_name
-            )
-            self._write_log(log)
+            study_name = study_name or self._create_unique_study_name()
+            self._write_log(JournalOperation.CREATE_STUDY, {"study_name": study_name})
             self._sync_with_backend()
 
             for frozen_study in self._studies.values():
-                if frozen_study.study_name == log["study_name"]:
+                if frozen_study.study_name == study_name:
                     return frozen_study._study_id
             assert False, "Should not reach."
 
     def delete_study(self, study_id: int) -> None:
-        log = self._create_operation_log(JournalOperation.DELETE_STUDY)
-        log["study_id"] = study_id
         with self._thread_lock:
-            self._write_log(log)
+            self._write_log(JournalOperation.DELETE_STUDY, {"study_id": study_id})
             self._sync_with_backend()
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
-        log = self._create_operation_log(JournalOperation.SET_STUDY_USER_ATTR)
-        log["study_id"] = study_id
-        log["user_attr"] = {key: value}
-
         with self._thread_lock:
-            self._write_log(log)
+            log = {"study_id": study_id, "user_attr": {key: value}}
+            self._write_log(JournalOperation.SET_STUDY_USER_ATTR, log)
             self._sync_with_backend()
 
     def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
-        log = self._create_operation_log(JournalOperation.SET_STUDY_SYSTEM_ATTR)
-        log["study_id"] = study_id
-        log["system_attr"] = {key: value}
-
         with self._thread_lock:
-            self._write_log(log)
+            log = {"study_id": study_id, "system_attr": {key: value}}
+            self._write_log(JournalOperation.SET_STUDY_SYSTEM_ATTR, log)
             self._sync_with_backend()
 
     def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
-        log = self._create_operation_log(JournalOperation.SET_STUDY_DIRECTIONS)
-        log["study_id"] = study_id
-        log["directions"] = directions
-
         with self._thread_lock:
-            self._write_log(log)
+            log = {"study_id": study_id, "directions": directions}
+            self._write_log(JournalOperation.SET_STUDY_DIRECTIONS, log)
             self._sync_with_backend()
 
     # Basic study access
@@ -517,9 +497,7 @@ class JournalStorage(BaseStorage):
 
     # Basic trial manipulation
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
-        log = self._create_operation_log(JournalOperation.CREATE_TRIAL)
-        log["study_id"] = study_id
-        log["datetime_start"] = datetime.datetime.now().isoformat()
+        log = {"study_id": study_id, "datetime_start": datetime.datetime.now().isoformat()}
 
         if template_trial:
             log["state"] = template_trial.state
@@ -548,7 +526,7 @@ class JournalStorage(BaseStorage):
             log["intermediate_values"] = template_trial.intermediate_values
 
         with self._thread_lock:
-            self._write_log(log)
+            self._write_log(JournalOperation.CREATE_TRIAL, log)
             self._sync_with_backend()
             return self._trial_ids_owned_by_this_process[-1]
 
@@ -559,14 +537,15 @@ class JournalStorage(BaseStorage):
         param_value_internal: float,
         distribution: BaseDistribution,
     ) -> None:
-        log = self._create_operation_log(JournalOperation.SET_TRIAL_PARAM)
-        log["trial_id"] = trial_id
-        log["param_name"] = param_name
-        log["param_value_internal"] = param_value_internal
-        log["distribution"] = distribution_to_json(distribution)
+        log = {
+            "trial_id": trial_id,
+            "param_name": param_name,
+            "param_value_internal": param_value_internal,
+            "distribution": distribution_to_json(distribution),
+        }
 
         with self._thread_lock:
-            self._write_log(log)
+            self._write_log(JournalOperation.SET_TRIAL_PARAM, log)
             self._sync_with_backend()
 
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
@@ -583,10 +562,11 @@ class JournalStorage(BaseStorage):
     def set_trial_state_values(
         self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
     ) -> bool:
-        log = self._create_operation_log(JournalOperation.SET_TRIAL_STATE_VALUES)
-        log["trial_id"] = trial_id
-        log["state"] = state
-        log["values"] = values
+        log = {
+            "trial_id": trial_id,
+            "state": state,
+            "values": values,
+        }
 
         if state == TrialState.RUNNING:
             log["datetime_start"] = datetime.datetime.now().isoformat()
@@ -594,7 +574,7 @@ class JournalStorage(BaseStorage):
             log["datetime_complete"] = datetime.datetime.now().isoformat()
 
         with self._thread_lock:
-            self._write_log(log)
+            self._write_log(JournalOperation.SET_TRIAL_STATE_VALUES, log)
             self._sync_with_backend()
 
             if (
@@ -608,31 +588,34 @@ class JournalStorage(BaseStorage):
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
     ) -> None:
-        log = self._create_operation_log(JournalOperation.SET_TRIAL_INTERMEDIATE_VALUE)
-        log["trial_id"] = trial_id
-        log["step"] = step
-        log["intermediate_value"] = intermediate_value
+        log = {
+            "trial_id": trial_id,
+            "step": step,
+            "intermediate_value": intermediate_value,
+        }
 
         with self._thread_lock:
-            self._write_log(log)
+            self._write_log(JournalOperation.SET_TRIAL_INTERMEDIATE_VALUE, log)
             self._sync_with_backend()
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
-        log = self._create_operation_log(JournalOperation.SET_TRIAL_USER_ATTR)
-        log["trial_id"] = trial_id
-        log["user_attr"] = {key: value}
+        log = {
+            "trial_id": trial_id,
+            "user_attr": {key: value},
+        }
 
         with self._thread_lock:
-            self._write_log(log)
+            self._write_log(JournalOperation.SET_TRIAL_USER_ATTR, log)
             self._sync_with_backend()
 
     def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
-        log = self._create_operation_log(JournalOperation.SET_TRIAL_SYSTEM_ATTR)
-        log["trial_id"] = trial_id
-        log["system_attr"] = {key: value}
+        log = {
+            "trial_id": trial_id,
+            "system_attr": {key: value},
+        }
 
         with self._thread_lock:
-            self._write_log(log)
+            self._write_log(JournalOperation.SET_TRIAL_SYSTEM_ATTR, log)
             self._sync_with_backend()
 
     # Basic trial access
@@ -664,16 +647,10 @@ class JournalStorage(BaseStorage):
 
             for trial_id in self._study_id_to_trial_ids[study_id]:
                 trial = self._trials[trial_id]
-                if states is None:
+                if states is None or trial.state in states:
                     if deepcopy:
                         frozen_trials.append(copy.deepcopy(trial))
                     else:
                         frozen_trials.append(trial)
-                else:
-                    if trial.state in states:
-                        if deepcopy:
-                            frozen_trials.append(copy.deepcopy(trial))
-                        else:
-                            frozen_trials.append(trial)
 
             return frozen_trials
