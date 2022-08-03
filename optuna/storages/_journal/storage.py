@@ -1,7 +1,6 @@
 import copy
 import datetime
 import enum
-import json
 import os
 import socket
 import threading
@@ -71,9 +70,7 @@ class JournalStorage(BaseStorage):
     def _write_log(self, op_code: int, extra_fields: Dict[str, Any]) -> None:
         self._backend.append_logs([{"op_code": op_code, "pid": self._pid, **extra_fields}])
 
-    def _raise_error_if_log_issued_by_this_process(
-        self, log: Dict[str, Any], err: Exception
-    ) -> None:
+    def _raise_if_log_issued_by_pid(self, log: Dict[str, Any], err: Exception) -> None:
         if log["pid"] == self._pid:
             raise err
 
@@ -81,7 +78,7 @@ class JournalStorage(BaseStorage):
         study_name = log["study_name"]
 
         if study_name in [s.study_name for s in self._studies.values()]:
-            self._raise_error_if_log_issued_by_this_process(
+            self._raise_if_log_issued_by_pid(
                 log,
                 DuplicatedStudyError(
                     "Another study with name '{}' already exists. "
@@ -95,68 +92,53 @@ class JournalStorage(BaseStorage):
         study_id = self._next_study_id
         self._next_study_id += 1
 
-        fs = FrozenStudy(
+        self._studies[study_id] = FrozenStudy(
             study_name=study_name,
             direction=StudyDirection.NOT_SET,
             user_attrs={},
             system_attrs={},
             study_id=study_id,
         )
-
-        self._studies[study_id] = fs
         self._study_id_to_trial_ids[study_id] = []
+
+    def _study_exists(self, study_id: int, log: Dict[str, Any]) -> bool:
+        if study_id not in self._studies:
+            self._raise_if_log_issued_by_pid(log, KeyError(NOT_FOUND_MSG))
+            return False
+        return True
 
     def _apply_delete_study(self, log: Dict[str, Any]) -> None:
         study_id = log["study_id"]
 
-        if study_id not in self._studies.keys():
-            self._raise_error_if_log_issued_by_this_process(log, KeyError(NOT_FOUND_MSG))
-            return
-
-        fs = self._studies.pop(study_id)
-
-        assert fs._study_id == study_id
+        if self._study_exists(study_id, log):
+            fs = self._studies.pop(study_id)
+            assert fs._study_id == study_id
 
     def _apply_set_study_user_attr(self, log: Dict[str, Any]) -> None:
         study_id = log["study_id"]
 
-        if study_id not in self._studies.keys():
-            self._raise_error_if_log_issued_by_this_process(log, KeyError(NOT_FOUND_MSG))
-            return
-
-        user_attr = "user_attr"
-        assert len(log[user_attr].items()) == 1
-
-        ((key, value),) = log[user_attr].items()
-
-        self._studies[study_id].user_attrs[key] = value
+        if self._study_exists(study_id, log):
+            assert len(log["user_attr"]) == 1
+            self._studies[study_id].user_attrs.update(log["user_attr"])
 
     def _apply_set_study_system_attr(self, log: Dict[str, Any]) -> None:
         study_id = log["study_id"]
 
-        if study_id not in self._studies.keys():
-            self._raise_error_if_log_issued_by_this_process(log, KeyError(NOT_FOUND_MSG))
-            return
-
-        system_attr = "system_attr"
-        assert len(log[system_attr].items()) == 1
-
-        ((key, value),) = log[system_attr].items()
-
-        self._studies[study_id].system_attrs[key] = value
+        if self._study_exists(study_id, log):
+            assert len(log["system_attr"]) == 1
+            self._studies[study_id].system_attrs.update(log["system_attr"])
 
     def _apply_set_study_directions(self, log: Dict[str, Any]) -> None:
         study_id = log["study_id"]
 
-        if study_id not in self._studies.keys():
-            self._raise_error_if_log_issued_by_this_process(log, KeyError(NOT_FOUND_MSG))
+        if not self._study_exists(study_id, log):
             return
 
         directions = [StudyDirection(d) for d in log["directions"]]
 
         current_directions = self._studies[study_id]._directions
         if current_directions[0] != StudyDirection.NOT_SET and current_directions != directions:
-            self._raise_error_if_log_issued_by_this_process(
+            self._raise_if_log_issued_by_pid(
                 log,
                 ValueError(
                     "Cannot overwrite study direction from {} to {}.".format(
@@ -171,8 +153,7 @@ class JournalStorage(BaseStorage):
     def _apply_create_trial(self, log: Dict[str, Any]) -> None:
         study_id = log["study_id"]
 
-        if study_id not in self._studies.keys():
-            self._raise_error_if_log_issued_by_this_process(log, KeyError(NOT_FOUND_MSG))
+        if not self._study_exists(study_id, log):
             return
 
         trial_id = len(self._trials)
@@ -218,15 +199,12 @@ class JournalStorage(BaseStorage):
         if log["pid"] == self._pid:
             self._trial_ids_owned_by_this_process.append(trial_id)
 
-    def _apply_set_trial_param(self, log: Dict[str, Any]) -> None:
-        trial_id = log["trial_id"]
-
-        if trial_id not in self._trials.keys():
-            self._raise_error_if_log_issued_by_this_process(log, KeyError(NOT_FOUND_MSG))
-            return
-
-        if self._trials[trial_id].state.is_finished():
-            self._raise_error_if_log_issued_by_this_process(
+    def _trial_exists_and_updatable(self, trial_id: int, log: Dict[str, Any]) -> bool:
+        if trial_id not in self._trials:
+            self._raise_if_log_issued_by_pid(log, KeyError(NOT_FOUND_MSG))
+            return False
+        elif self._trials[trial_id].state.is_finished():
+            self._raise_if_log_issued_by_pid(
                 log,
                 RuntimeError(
                     "Trial#{} has already finished and can not be updated.".format(
@@ -234,6 +212,14 @@ class JournalStorage(BaseStorage):
                     )
                 ),
             )
+            return False
+        else:
+            return True
+
+    def _apply_set_trial_param(self, log: Dict[str, Any]) -> None:
+        trial_id = log["trial_id"]
+
+        if not self._trial_exists_and_updatable(trial_id, log):
             return
 
         param_name = log["param_name"]
@@ -250,51 +236,36 @@ class JournalStorage(BaseStorage):
                         prev_trial.distributions[param_name], distribution
                     )
                 except Exception as e:
-                    self._raise_error_if_log_issued_by_this_process(log, e)
+                    self._raise_if_log_issued_by_pid(log, e)
                     return
                 break
 
         trial = copy.copy(self._trials[trial_id])
-        trial.params = copy.copy(trial.params)
-        trial.params[param_name] = distribution.to_external_repr(param_value_internal)
-        trial.distributions = copy.copy(trial.distributions)
-        trial.distributions[param_name] = distribution
+        trial.params = {
+            **copy.copy(trial.params),
+            param_name: distribution.to_external_repr(param_value_internal),
+        }
+        trial.distributions = {**copy.copy(trial.distributions), param_name: distribution}
         self._trials[trial_id] = trial
 
     def _apply_set_trial_state_values(self, log: Dict[str, Any]) -> None:
         trial_id = log["trial_id"]
 
-        if trial_id not in self._trials.keys():
-            self._raise_error_if_log_issued_by_this_process(log, KeyError(NOT_FOUND_MSG))
-            return
-
-        if self._trials[trial_id].state.is_finished():
-            self._raise_error_if_log_issued_by_this_process(
-                log,
-                RuntimeError(
-                    "Trial#{} has already finished and can not be updated.".format(
-                        self._trials[trial_id].number
-                    )
-                ),
-            )
+        if not self._trial_exists_and_updatable(trial_id, log):
             return
 
         state = TrialState(log["state"])
-        values = log["values"]
-
         if state == self._trials[trial_id].state and state == TrialState.RUNNING:
             return
 
         trial = copy.copy(self._trials[trial_id])
         if state == TrialState.RUNNING:
             trial.datetime_start = datetime.datetime.fromisoformat(log["datetime_start"])
-
         if state.is_finished():
             trial.datetime_complete = datetime.datetime.fromisoformat(log["datetime_complete"])
-
         trial.state = state
-        if values is not None:
-            trial.values = values
+        if log["values"] is not None:
+            trial.values = log["values"]
 
         self._trials[trial_id] = trial
         return
@@ -302,81 +273,34 @@ class JournalStorage(BaseStorage):
     def _apply_set_trial_intermediate_value(self, log: Dict[str, Any]) -> None:
         trial_id = log["trial_id"]
 
-        if trial_id not in self._trials.keys():
-            self._raise_error_if_log_issued_by_this_process(log, KeyError(NOT_FOUND_MSG))
-            return
-
-        if self._trials[trial_id].state.is_finished():
-            self._raise_error_if_log_issued_by_this_process(
-                log,
-                RuntimeError(
-                    "Trial#{} has already finished and can not be updated.".format(
-                        self._trials[trial_id].number
-                    )
-                ),
-            )
-            return
-
-        step = log["step"]
-        intermediate_value = log["intermediate_value"]
-        trial = copy.copy(self._trials[trial_id])
-        trial.intermediate_values = copy.copy(trial.intermediate_values)
-        trial.intermediate_values[step] = intermediate_value
-        self._trials[trial_id] = trial
+        if self._trial_exists_and_updatable(trial_id, log):
+            trial = copy.copy(self._trials[trial_id])
+            trial.intermediate_values = {
+                **copy.copy(trial.intermediate_values),
+                log["step"]: log["intermediate_value"],
+            }
+            self._trials[trial_id] = trial
 
     def _apply_set_trial_user_attr(self, log: Dict[str, Any]) -> None:
         trial_id = log["trial_id"]
 
-        if trial_id not in self._trials.keys():
-            self._raise_error_if_log_issued_by_this_process(log, KeyError(NOT_FOUND_MSG))
-            return
-
-        if self._trials[trial_id].state.is_finished():
-            self._raise_error_if_log_issued_by_this_process(
-                log,
-                RuntimeError(
-                    "Trial#{} has already finished and can not be updated.".format(
-                        self._trials[trial_id].number
-                    )
-                ),
-            )
-            return
-
-        user_attr = "user_attr"
-        assert len(log[user_attr].items()) == 1
-
-        ((key, value),) = log[user_attr].items()
-
-        trial = copy.copy(self._trials[trial_id])
-        trial.user_attrs = copy.copy(trial.user_attrs)
-        trial.user_attrs[key] = value
-        self._trials[trial_id] = trial
+        if self._trial_exists_and_updatable(trial_id, log):
+            assert len(log["user_attr"]) == 1
+            trial = copy.copy(self._trials[trial_id])
+            trial.user_attrs = {**copy.copy(trial.user_attrs), **log["user_attr"]}
+            self._trials[trial_id] = trial
 
     def _apply_set_trial_system_attr(self, log: Dict[str, Any]) -> None:
         trial_id = log["trial_id"]
 
-        if trial_id not in self._trials.keys():
-            self._raise_error_if_log_issued_by_this_process(log, KeyError(NOT_FOUND_MSG))
-            return
-
-        if self._trials[trial_id].state.is_finished():
-            self._raise_error_if_log_issued_by_this_process(
-                log,
-                RuntimeError(
-                    "Trial#{} has already finished and can not be updated.".format(
-                        self._trials[trial_id].number
-                    )
-                ),
-            )
-            return
-
-        assert len(log["system_attr"]) == 1
-        trial = copy.copy(self._trials[trial_id])
-        trial.system_attrs = {
-            **copy.copy(trial.system_attrs),
-            **log["system_attr"],
-        }
-        self._trials[trial_id] = trial
+        if self._trial_exists_and_updatable(trial_id, log):
+            assert len(log["system_attr"]) == 1
+            trial = copy.copy(self._trials[trial_id])
+            trial.system_attrs = {
+                **copy.copy(trial.system_attrs),
+                **log["system_attr"],
+            }
+            self._trials[trial_id] = trial
 
     def _apply_log(self, log: Dict[str, Any]) -> None:
         op = log["op_code"]
@@ -434,20 +358,20 @@ class JournalStorage(BaseStorage):
             self._sync_with_backend()
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
+        log: Dict[str, Any] = {"study_id": study_id, "user_attr": {key: value}}
         with self._thread_lock:
-            log = {"study_id": study_id, "user_attr": {key: value}}
             self._write_log(JournalOperation.SET_STUDY_USER_ATTR, log)
             self._sync_with_backend()
 
     def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
+        log: Dict[str, Any] = {"study_id": study_id, "system_attr": {key: value}}
         with self._thread_lock:
-            log = {"study_id": study_id, "system_attr": {key: value}}
             self._write_log(JournalOperation.SET_STUDY_SYSTEM_ATTR, log)
             self._sync_with_backend()
 
     def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
+        log: Dict[str, Any] = {"study_id": study_id, "directions": directions}
         with self._thread_lock:
-            log = {"study_id": study_id, "directions": directions}
             self._write_log(JournalOperation.SET_STUDY_DIRECTIONS, log)
             self._sync_with_backend()
 
@@ -497,7 +421,10 @@ class JournalStorage(BaseStorage):
 
     # Basic trial manipulation
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
-        log = {"study_id": study_id, "datetime_start": datetime.datetime.now().isoformat()}
+        log: Dict[str, Any] = {
+            "study_id": study_id,
+            "datetime_start": datetime.datetime.now().isoformat(),
+        }
 
         if template_trial:
             log["state"] = template_trial.state
@@ -537,7 +464,7 @@ class JournalStorage(BaseStorage):
         param_value_internal: float,
         distribution: BaseDistribution,
     ) -> None:
-        log = {
+        log: Dict[str, Any] = {
             "trial_id": trial_id,
             "param_name": param_name,
             "param_value_internal": param_value_internal,
@@ -562,7 +489,7 @@ class JournalStorage(BaseStorage):
     def set_trial_state_values(
         self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
     ) -> bool:
-        log = {
+        log: Dict[str, Any] = {
             "trial_id": trial_id,
             "state": state,
             "values": values,
@@ -588,7 +515,7 @@ class JournalStorage(BaseStorage):
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
     ) -> None:
-        log = {
+        log: Dict[str, Any] = {
             "trial_id": trial_id,
             "step": step,
             "intermediate_value": intermediate_value,
@@ -599,7 +526,7 @@ class JournalStorage(BaseStorage):
             self._sync_with_backend()
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
-        log = {
+        log: Dict[str, Any] = {
             "trial_id": trial_id,
             "user_attr": {key: value},
         }
@@ -609,7 +536,7 @@ class JournalStorage(BaseStorage):
             self._sync_with_backend()
 
     def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
-        log = {
+        log: Dict[str, Any] = {
             "trial_id": trial_id,
             "system_attr": {key: value},
         }
@@ -621,7 +548,6 @@ class JournalStorage(BaseStorage):
     # Basic trial access
 
     def get_trial(self, trial_id: int) -> FrozenTrial:
-
         with self._thread_lock:
             self._sync_with_backend()
             frozen_trial = [
@@ -640,8 +566,7 @@ class JournalStorage(BaseStorage):
     ) -> List[FrozenTrial]:
         with self._thread_lock:
             self._sync_with_backend()
-            if study_id not in self._study_id_to_trial_ids.keys():
-                raise KeyError(NOT_FOUND_MSG)
+            self._raise_if_not_found_in_studies(study_id)
 
             frozen_trials = []
 
