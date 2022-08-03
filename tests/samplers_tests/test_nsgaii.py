@@ -333,19 +333,20 @@ def _check_non_dominated_sort(
                 )
 
 
-@pytest.mark.parametrize("values_dim", [1, 2, 3])
-def test_fast_non_dominated_sort_no_constraints(values_dim: int) -> None:
+@pytest.mark.parametrize("direction1", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
+@pytest.mark.parametrize("direction2", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
+def test_fast_non_dominated_sort_no_constraints(
+    direction1: StudyDirection, direction2: StudyDirection
+) -> None:
     sampler = NSGAIISampler()
 
-    values = itertools.product(
-        [10, 20, 20, 30, float("inf"), float("inf"), -float("inf")], repeat=values_dim
-    )
-    for directions in itertools.product(
-        [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE], repeat=values_dim
-    ):
-        trials = [_create_frozen_trial(i, list(v)) for i, v in enumerate(values)]
-        population_per_rank = sampler._fast_non_dominated_sort(copy.copy(trials), list(directions))
-        _check_non_dominated_sort(trials, list(directions), population_per_rank)
+    directions = [direction1, direction2]
+    value_list = [10, 20, 20, 30, float("inf"), float("inf"), -float("inf")]
+    values = [[v1, v2] for v1 in value_list for v2 in value_list]
+
+    trials = [_create_frozen_trial(i, v) for i, v in enumerate(values)]
+    population_per_rank = sampler._fast_non_dominated_sort(copy.copy(trials), directions)
+    _check_non_dominated_sort(trials, directions, population_per_rank)
 
 
 @pytest.mark.parametrize("values_dim", [1, 2])
