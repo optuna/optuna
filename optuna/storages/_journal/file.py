@@ -52,20 +52,7 @@ class LinkLock(BaseFileLock):
         open(self._lock_target_file, "a").close()  # Create file if it does not exist
 
     def acquire(self, blocking: bool = True) -> bool:
-        if blocking:
-            while True:
-                try:
-                    os.link(self._lock_target_file, self._lockfile)
-                    return True
-                except OSError as err:
-                    if err.errno == errno.EEXIST or err.errno == errno.ENOENT:
-                        continue
-                    else:
-                        raise err
-                except BaseException:
-                    os.unlink(self._lockfile)
-                    raise
-        else:
+        def _acquire() -> bool:
             try:
                 os.link(self._lock_target_file, self._lockfile)
                 return True
@@ -77,6 +64,13 @@ class LinkLock(BaseFileLock):
             except BaseException:
                 os.unlink(self._lockfile)
                 raise
+
+        if blocking:
+            while not _acquire():
+                continue
+            return True
+        else:
+            return _acquire()
 
     def release(self) -> None:
         try:
@@ -107,21 +101,7 @@ class OpenLock(BaseFileLock):
                 raise RuntimeError("Error: mkdir")
 
     def acquire(self, blocking: bool = True) -> bool:
-        if blocking:
-            while True:
-                try:
-                    open_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
-                    os.close(os.open(self._lockfile, open_flags))
-                    return True
-                except OSError as err:
-                    if err.errno == errno.EEXIST:
-                        continue
-                    else:
-                        raise err
-                except BaseException:
-                    os.unlink(self._lockfile)
-                    raise
-        else:
+        def _acquire() -> bool:
             try:
                 open_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
                 os.close(os.open(self._lockfile, open_flags))
@@ -134,6 +114,13 @@ class OpenLock(BaseFileLock):
             except BaseException:
                 os.unlink(self._lockfile)
                 raise
+
+        if blocking:
+            while not _acquire():
+                continue
+            return True
+        else:
+            return _acquire()
 
     def release(self) -> None:
         try:
