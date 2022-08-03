@@ -182,8 +182,11 @@ def _tell_with_warning(
 
     assert state is not None
 
-    if values is not None and not isinstance(values, Sequence):
-        values = [values]
+    if values is not None:
+        if isinstance(values, Sequence):
+            values = [float(value) for value in values]
+        else:
+            values = [float(values)]
 
     try:
         # Sampler defined trial post-processing.
