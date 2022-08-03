@@ -62,6 +62,9 @@ class LinkLock(BaseFileLock):
                         continue
                     else:
                         raise err
+                except BaseException:
+                    os.unlink(self._lockfile)
+                    raise
         else:
             try:
                 os.link(self._lock_target_file, self._lockfile)
@@ -71,6 +74,9 @@ class LinkLock(BaseFileLock):
                     return False
                 else:
                     raise err
+            except BaseException:
+                os.unlink(self._lockfile)
+                raise
 
     def release(self) -> None:
         try:
@@ -112,6 +118,9 @@ class OpenLock(BaseFileLock):
                         continue
                     else:
                         raise err
+                except BaseException:
+                    os.unlink(self._lockfile)
+                    raise
         else:
             try:
                 open_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
@@ -122,6 +131,9 @@ class OpenLock(BaseFileLock):
                     return False
                 else:
                     raise err
+            except BaseException:
+                os.unlink(self._lockfile)
+                raise
 
     def release(self) -> None:
         try:
