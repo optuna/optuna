@@ -79,7 +79,6 @@ def test_catboost_pruning_callback_init_param(metric: str, eval_set_index: int) 
     assert study.trials[0].value == 1.0
 
 
-@pytest.mark.skip(reason="Temporally skip due to unknown CatBoost error.")
 @pytest.mark.parametrize(
     "metric, eval_set_index",
     [
