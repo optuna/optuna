@@ -7,6 +7,7 @@ from pytest import LogCaptureFixture
 import optuna
 from optuna.distributions import FloatDistribution
 from optuna.study import create_study
+from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -173,3 +174,10 @@ def test_filter_inf_trials_message(caplog: LogCaptureFixture, with_message: bool
         assert n_filtered_as_inf == 1
     else:
         assert msg not in caplog.text
+
+
+def test_filter_nonfinite_with_invalid_target() -> None:
+    study = prepare_study_with_trials()
+    trials = study.get_trials(states=(TrialState.COMPLETE,))
+    with pytest.raises(ValueError):
+        _filter_nonfinite(trials, target=lambda t: "invalid target")  # type: ignore

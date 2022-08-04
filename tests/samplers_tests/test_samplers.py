@@ -1,4 +1,6 @@
 from collections import OrderedDict
+import multiprocessing
+from multiprocessing.managers import DictProxy
 import pickle
 import sys
 from typing import Any
@@ -84,6 +86,20 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
         else [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)]
     ),
 )
+sampler_class_with_seed: List[Callable] = [
+    lambda seed: optuna.samplers.RandomSampler(seed=seed),
+    lambda seed: optuna.samplers.TPESampler(seed=seed),
+    lambda seed: optuna.samplers.TPESampler(multivariate=True, seed=seed),
+    lambda seed: optuna.samplers.CmaEsSampler(seed=seed),
+    lambda seed: optuna.integration.SkoptSampler(seed=seed),
+    lambda seed: optuna.integration.PyCmaSampler(seed=seed),
+    lambda seed: optuna.samplers.NSGAIISampler(seed=seed),
+]
+# TODO(kstoneriv3): Update this after the support for Python 3.6 is stopped.
+if sys.version_info >= (3, 7, 0):
+    sampler_class_with_seed.append(lambda seed: optuna.samplers.QMCSampler(seed=seed))
+    sampler_class_with_seed.append(lambda seed: optuna.integration.BoTorchSampler(seed=seed))
+parametrize_sampler_with_seed = pytest.mark.parametrize("sampler_class", sampler_class_with_seed)
 
 
 @pytest.mark.parametrize(
@@ -925,3 +941,98 @@ def test_dynamic_range_objective(
 
     assert len(study.trials) == 20
     assert all(t.state == TrialState.COMPLETE for t in study.trials)
+
+
+@parametrize_sampler_with_seed
+def test_reproducible(sampler_class: Callable[[int], BaseSampler]) -> None:
+    def objective(trial: Trial) -> float:
+        a = trial.suggest_float("a", 1, 9)
+        b = trial.suggest_float("b", 1, 9, log=True)
+        c = trial.suggest_float("c", 1, 9, step=1)
+        d = trial.suggest_int("d", 1, 9)
+        e = trial.suggest_int("e", 1, 9, log=True)
+        f = trial.suggest_int("f", 1, 9, step=2)
+        g = cast(int, trial.suggest_categorical("g", range(1, 10)))
+        return a + b + c + d + e + f + g
+
+    study = optuna.create_study(sampler=sampler_class(1))
+    study.optimize(objective, n_trials=20)
+
+    study_same_seed = optuna.create_study(sampler=sampler_class(1))
+    study_same_seed.optimize(objective, n_trials=20)
+    for i in range(20):
+        assert study.trials[i].params == study_same_seed.trials[i].params
+
+    study_different_seed = optuna.create_study(sampler=sampler_class(2))
+    study_different_seed.optimize(objective, n_trials=20)
+    assert any(
+        [study.trials[i].params != study_different_seed.trials[i].params for i in range(20)]
+    )
+
+
+@parametrize_sampler_with_seed
+def test_reseed_rng_change_sampling(sampler_class: Callable[[int], BaseSampler]) -> None:
+    def objective(trial: Trial) -> float:
+        a = trial.suggest_float("a", 1, 9)
+        b = trial.suggest_float("b", 1, 9, log=True)
+        c = trial.suggest_float("c", 1, 9, step=1)
+        d = trial.suggest_int("d", 1, 9)
+        e = trial.suggest_int("e", 1, 9, log=True)
+        f = trial.suggest_int("f", 1, 9, step=2)
+        g = cast(int, trial.suggest_categorical("g", range(1, 10)))
+        return a + b + c + d + e + f + g
+
+    sampler = sampler_class(1)
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(objective, n_trials=20)
+
+    sampler_different_seed = sampler_class(1)
+    sampler_different_seed.reseed_rng()
+    study_different_seed = optuna.create_study(sampler=sampler_different_seed)
+    study_different_seed.optimize(objective, n_trials=20)
+    assert any(
+        [study.trials[i].params != study_different_seed.trials[i].params for i in range(20)]
+    )
+
+
+# This function is used only in test_reproducible_in_other_process, but declared at top-level
+# because local function cannot be pickled, which occurs within multiprocessing.
+def run_optimize(
+    k: int, sampler_class_index: int, sequence_dict: DictProxy, hash_dict: DictProxy
+) -> None:
+    def objective(trial: Trial) -> float:
+        a = trial.suggest_float("a", 1, 9)
+        b = trial.suggest_float("b", 1, 9, log=True)
+        c = trial.suggest_float("c", 1, 9, step=1)
+        d = trial.suggest_int("d", 1, 9)
+        e = trial.suggest_int("e", 1, 9, log=True)
+        f = trial.suggest_int("f", 1, 9, step=2)
+        g = cast(int, trial.suggest_categorical("g", range(1, 10)))
+        return a + b + c + d + e + f + g
+
+    hash_dict[k] = hash("nondeterministic hash")
+    sampler = sampler_class_with_seed[sampler_class_index](1)
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(objective, n_trials=20)
+    sequence_dict[k] = list(study.trials[-1].params.values())
+
+
+@pytest.mark.parametrize("sampler_class_index", range(len(sampler_class_with_seed)))
+def test_reproducible_in_other_process(sampler_class_index: int) -> None:
+    # Multiprocessing supports three way to start a process.
+    # We use `spawn` option to create a child process as a fresh python process.
+    # For more detail, see https://github.com/optuna/optuna/pull/3187#issuecomment-997673037.
+    multiprocessing.set_start_method("spawn", force=True)
+    manager = multiprocessing.Manager()
+    sequence_dict: DictProxy = manager.dict()
+    hash_dict: DictProxy = manager.dict()
+    for i in range(3):
+        p = multiprocessing.Process(
+            target=run_optimize, args=(i, sampler_class_index, sequence_dict, hash_dict)
+        )
+        p.start()
+        p.join()
+    # Hashes are expected to be different because string hashing is nondeterministic per process.
+    assert not (hash_dict[0] == hash_dict[1] == hash_dict[2])
+    # But the sequences are expected to be the same.
+    assert sequence_dict[0] == sequence_dict[1] == sequence_dict[2]
