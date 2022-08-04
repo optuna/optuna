@@ -18,7 +18,6 @@ from optuna import distributions
 from optuna import load_study
 from optuna import samplers
 from optuna import storages
-from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
@@ -26,10 +25,7 @@ from optuna.testing.pruners import DeterministicPruner
 from optuna.testing.samplers import DeterministicRelativeSampler
 from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
-from optuna.trial import create_trial
-from optuna.trial import FrozenTrial
 from optuna.trial import Trial
-from optuna.trial import TrialState
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -186,22 +182,21 @@ def test_check_distribution_suggest_categorical(storage_mode: str) -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_uniform(storage_mode: str) -> None:
 
-    mock = Mock()
-    mock.side_effect = [1.0, 2.0]
-    sampler = samplers.RandomSampler()
+    relative_search_space = {
+        "x": FloatDistribution(low=0.0, high=3.0),
+        "y": FloatDistribution(low=0.0, high=3.0),
+    }
+    relative_params = {"x": 1.0, "y": 2.0}
+    sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
 
-    with patch.object(sampler, "sample_independent", mock) as mock_object, StorageSupplier(
-        storage_mode
-    ) as storage:
+    with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = FloatDistribution(low=0.0, high=3.0)
 
-        assert trial._suggest("x", distribution) == 1.0  # Test suggesting a param.
-        assert trial._suggest("x", distribution) == 1.0  # Test suggesting the same param.
-        assert trial._suggest("y", distribution) == 2.0  # Test suggesting a different param.
+        assert trial.suggest_uniform("x", 0.0, 3.0) == 1.0  # Test suggesting a param.
+        assert trial.suggest_uniform("x", 0.0, 3.0) == 1.0  # Test suggesting the same param.
+        assert trial.suggest_uniform("y", 0.0, 3.0) == 2.0  # Test suggesting a different param.
         assert trial.params == {"x": 1.0, "y": 2.0}
-        assert mock_object.call_count == 2
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -213,43 +208,47 @@ def test_suggest_loguniform(storage_mode: str) -> None:
     with pytest.raises(ValueError):
         FloatDistribution(low=0.0, high=0.9, log=True)
 
-    mock = Mock()
-    mock.side_effect = [1.0, 2.0]
-    sampler = samplers.RandomSampler()
+    relative_search_space = {
+        "x": FloatDistribution(low=0.1, high=4.0, log=True),
+        "y": FloatDistribution(low=0.1, high=4.0, log=True),
+    }
+    relative_params = {"x": 1.0, "y": 2.0}
+    sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
 
-    with patch.object(sampler, "sample_independent", mock) as mock_object, StorageSupplier(
-        storage_mode
-    ) as storage:
+    with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = FloatDistribution(low=0.1, high=4.0, log=True)
 
-        assert trial._suggest("x", distribution) == 1.0  # Test suggesting a param.
-        assert trial._suggest("x", distribution) == 1.0  # Test suggesting the same param.
-        assert trial._suggest("y", distribution) == 2.0  # Test suggesting a different param.
+        assert trial.suggest_loguniform("x", 0.1, 4.0) == 1.0  # Test suggesting a param.
+        assert trial.suggest_loguniform("x", 0.1, 4.0) == 1.0  # Test suggesting the same param.
+        assert trial.suggest_loguniform("y", 0.1, 4.0) == 2.0  # Test suggesting a different param.
         assert trial.params == {"x": 1.0, "y": 2.0}
-        assert mock_object.call_count == 2
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_discrete_uniform(storage_mode: str) -> None:
 
-    mock = Mock()
-    mock.side_effect = [1.0, 2.0]
-    sampler = samplers.RandomSampler()
+    relative_search_space = {
+        "x": FloatDistribution(low=0.0, high=3.0, step=1.0),
+        "y": FloatDistribution(low=0.0, high=3.0, step=1.0),
+    }
+    relative_params = {"x": 1.0, "y": 2.0}
+    sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
 
-    with patch.object(sampler, "sample_independent", mock) as mock_object, StorageSupplier(
-        storage_mode
-    ) as storage:
+    with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = FloatDistribution(low=0.0, high=3.0, step=1.0)
 
-        assert trial._suggest("x", distribution) == 1.0  # Test suggesting a param.
-        assert trial._suggest("x", distribution) == 1.0  # Test suggesting the same param.
-        assert trial._suggest("y", distribution) == 2.0  # Test suggesting a different param.
+        assert (
+            trial.suggest_discrete_uniform("x", 0.0, 3.0, 1.0) == 1.0
+        )  # Test suggesting a param.
+        assert (
+            trial.suggest_discrete_uniform("x", 0.0, 3.0, 1.0) == 1.0
+        )  # Test suggesting the same param.
+        assert (
+            trial.suggest_discrete_uniform("y", 0.0, 3.0, 1.0) == 2.0
+        )  # Test suggesting a different param.
         assert trial.params == {"x": 1.0, "y": 2.0}
-        assert mock_object.call_count == 2
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -374,22 +373,21 @@ def test_suggest_float_invalid_step() -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_int(storage_mode: str) -> None:
 
-    mock = Mock()
-    mock.side_effect = [1, 2]
-    sampler = samplers.RandomSampler()
+    relative_search_space = {
+        "x": IntDistribution(low=0, high=3),
+        "y": IntDistribution(low=0, high=3),
+    }
+    relative_params = {"x": 1, "y": 2}
+    sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
 
-    with patch.object(sampler, "sample_independent", mock) as mock_object, StorageSupplier(
-        storage_mode
-    ) as storage:
+    with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = IntDistribution(low=0, high=3)
 
-        assert trial._suggest("x", distribution) == 1  # Test suggesting a param.
-        assert trial._suggest("x", distribution) == 1  # Test suggesting the same param.
-        assert trial._suggest("y", distribution) == 2  # Test suggesting a different param.
+        assert trial.suggest_int("x", 0, 3) == 1  # Test suggesting a param.
+        assert trial.suggest_int("x", 0, 3) == 1  # Test suggesting the same param.
+        assert trial.suggest_int("y", 0, 3) == 2  # Test suggesting a different param.
         assert trial.params == {"x": 1, "y": 2}
-        assert mock_object.call_count == 2
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -454,23 +452,27 @@ def test_suggest_int_invalid_step() -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_int_log(storage_mode: str) -> None:
 
-    mock = Mock()
-    mock.side_effect = [1, 2]
-    sampler = samplers.RandomSampler()
+    relative_search_space = {
+        "x": IntDistribution(low=1, high=3, log=True),
+        "y": IntDistribution(low=1, high=3, log=True),
+    }
+    relative_params = {"x": 1, "y": 2}
+    sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
 
-    with patch.object(sampler, "sample_independent", mock) as mock_object, StorageSupplier(
-        storage_mode
-    ) as storage:
+    with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = IntDistribution(low=1, high=3, log=True)
 
-        assert trial._suggest("x", distribution) == 1  # Test suggesting a param.
-        assert trial._suggest("x", distribution) == 1  # Test suggesting the same param.
-        assert trial._suggest("y", distribution) == 2  # Test suggesting a different param.
+        assert trial.suggest_int("x", 1, 3, log=True) == 1  # Test suggesting a param.
+        assert trial.suggest_int("x", 1, 3, log=True) == 1  # Test suggesting the same param.
+        assert trial.suggest_int("y", 1, 3, log=True) == 2  # Test suggesting a different param.
         assert trial.params == {"x": 1, "y": 2}
-        assert mock_object.call_count == 2
 
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_suggest_int_log_invalid_range(storage_mode: str) -> None:
+
+    sampler = samplers.RandomSampler()
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
@@ -640,110 +642,6 @@ def test_study_id() -> None:
     trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
     assert trial._study_id == trial.study._study_id
-
-
-# TODO(hvy): Write exhaustive test include invalid combinations when feature is no longer
-# experimental.
-@pytest.mark.parametrize("state", [TrialState.COMPLETE, TrialState.FAIL])
-def test_create_trial(state: TrialState) -> None:
-    value = 0.2
-    params = {"x": 10}
-    distributions: Dict[str, BaseDistribution] = {"x": FloatDistribution(5, 12)}
-    user_attrs = {"foo": "bar"}
-    system_attrs = {"baz": "qux"}
-    intermediate_values = {0: 0.0, 1: 0.1, 2: 0.1}
-
-    trial = create_trial(
-        state=state,
-        value=value,
-        params=params,
-        distributions=distributions,
-        user_attrs=user_attrs,
-        system_attrs=system_attrs,
-        intermediate_values=intermediate_values,
-    )
-
-    assert isinstance(trial, FrozenTrial)
-    assert trial.state == state
-    assert trial.value == value
-    assert trial.params == params
-    assert trial.distributions == distributions
-    assert trial.user_attrs == user_attrs
-    assert trial.system_attrs == system_attrs
-    assert trial.intermediate_values == intermediate_values
-    assert trial.datetime_start is not None
-    assert (trial.datetime_complete is not None) == state.is_finished()
-
-    with pytest.raises(ValueError):
-        create_trial(state=state, value=value, values=(value,))
-
-
-# Deprecated distributions are internally converted to corresponding distributions.
-def test_create_trial_distribution_conversion() -> None:
-    fixed_params = {
-        "ud": 0,
-        "dud": 2,
-        "lud": 1,
-        "id": 0,
-        "idd": 2,
-        "ild": 1,
-    }
-
-    fixed_distributions = {
-        "ud": distributions.UniformDistribution(low=0, high=10),
-        "dud": distributions.DiscreteUniformDistribution(low=0, high=10, q=2),
-        "lud": distributions.LogUniformDistribution(low=1, high=10),
-        "id": distributions.IntUniformDistribution(low=0, high=10),
-        "idd": distributions.IntUniformDistribution(low=0, high=10, step=2),
-        "ild": distributions.IntLogUniformDistribution(low=1, high=10),
-    }
-
-    with pytest.warns(
-        FutureWarning,
-        match="See https://github.com/optuna/optuna/issues/2941",
-    ) as record:
-
-        trial = create_trial(params=fixed_params, distributions=fixed_distributions, value=1)
-        assert len(record) == 6
-
-    expected_distributions = {
-        "ud": distributions.FloatDistribution(low=0, high=10, log=False, step=None),
-        "dud": distributions.FloatDistribution(low=0, high=10, log=False, step=2),
-        "lud": distributions.FloatDistribution(low=1, high=10, log=True, step=None),
-        "id": distributions.IntDistribution(low=0, high=10, log=False, step=1),
-        "idd": distributions.IntDistribution(low=0, high=10, log=False, step=2),
-        "ild": distributions.IntDistribution(low=1, high=10, log=True, step=1),
-    }
-
-    assert trial.distributions == expected_distributions
-
-
-# It confirms that ask doesn't convert non-deprecated distributions.
-def test_create_trial_distribution_conversion_noop() -> None:
-    fixed_params = {
-        "ud": 0,
-        "dud": 2,
-        "lud": 1,
-        "id": 0,
-        "idd": 2,
-        "ild": 1,
-        "cd": "a",
-    }
-
-    fixed_distributions = {
-        "ud": distributions.FloatDistribution(low=0, high=10, log=False, step=None),
-        "dud": distributions.FloatDistribution(low=0, high=10, log=False, step=2),
-        "lud": distributions.FloatDistribution(low=1, high=10, log=True, step=None),
-        "id": distributions.IntDistribution(low=0, high=10, log=False, step=1),
-        "idd": distributions.IntDistribution(low=0, high=10, log=False, step=2),
-        "ild": distributions.IntDistribution(low=1, high=10, log=True, step=1),
-        "cd": distributions.CategoricalDistribution(choices=["a", "b", "c"]),
-    }
-
-    trial = create_trial(params=fixed_params, distributions=fixed_distributions, value=1)
-
-    # Check fixed_distributions doesn't change.
-    assert trial.distributions == fixed_distributions
 
 
 def test_suggest_with_multi_objectives() -> None:

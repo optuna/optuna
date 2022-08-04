@@ -495,6 +495,9 @@ def _constrained_dominates(
     assert isinstance(constraints0, (list, tuple))
     assert isinstance(constraints1, (list, tuple))
 
+    if np.any(np.isnan(constraints0)) or np.any(np.isnan(constraints1)):
+        raise ValueError("NaN is not acceptable as constraint value.")
+
     if len(constraints0) != len(constraints1):
         raise ValueError("Trials with different numbers of constraints cannot be compared.")
 
