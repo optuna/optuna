@@ -527,36 +527,3 @@ def test_multiobjective_raises_on_name_mismatch(tmpdir: py.path.local, metrics: 
 
     with pytest.raises(ValueError):
         study.optimize(_multiobjective_func, n_trials=1, callbacks=[mlflc])
-
-
-def test_chunk_info(tmpdir: py.path.local) -> None:
-
-    num_objective = mlflow.utils.validation.MAX_METRICS_PER_BATCH + 1
-    num_params = mlflow.utils.validation.MAX_PARAMS_TAGS_PER_BATCH + 1
-
-    def objective(trial: optuna.trial.Trial) -> Tuple[float, ...]:
-        for i in range(num_params):
-            trial.suggest_float(f"x_{i}", 0, 1)
-
-        return tuple([1.0] * num_objective)
-
-    tracking_uri = f"file:{tmpdir}"
-    study_name = "my_study"
-    n_trials = 1
-
-    mlflc = MLflowCallback(tracking_uri=tracking_uri)
-    study = optuna.create_study(study_name=study_name, directions=["maximize"] * num_objective)
-    study.optimize(objective, n_trials=n_trials, callbacks=[mlflc])
-
-    mlfl_client = MlflowClient(tracking_uri)
-    experiment = mlfl_client.list_experiments()[0]
-    run_infos = mlfl_client.list_run_infos(experiment.experiment_id)
-    assert len(run_infos) == n_trials
-
-    run = mlfl_client.get_run(run_infos[0].run_id)
-    run_dict = run.to_dictionary()
-
-    # The `tags` contains param's distributions and other information too, such as trial number.
-    assert len(run_dict["data"]["tags"]) > num_params
-    assert len(run_dict["data"]["params"]) == num_params
-    assert len(run_dict["data"]["metrics"]) == num_objective
