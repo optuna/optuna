@@ -22,7 +22,6 @@ from optuna.storages import BaseStorage
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.testing.pruners import DeterministicPruner
-from optuna.testing.samplers import DeterministicSampler
 from optuna.testing.storages import StorageSupplier
 from optuna.trial import Trial
 from optuna.trial import TrialState
@@ -217,29 +216,6 @@ class TestChainerMNStudy:
             # Assert failed trial count.
             failed_trials = [t for t in mn_study.trials if t.state == TrialState.FAIL]
             assert len(failed_trials) == n_trials + 1
-
-    @staticmethod
-    @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-    def test_relative_sampling(storage_mode: str, comm: CommunicatorBase) -> None:
-
-        params = {"x": 1.0, "y": 25.0, "z": -1.0}
-        sampler = DeterministicSampler(params)
-
-        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
-            study = TestChainerMNStudy._create_shared_study(storage, comm, sampler=sampler)
-            mn_study = ChainerMNStudy(study, comm)
-
-            # Invoke optimize.
-            n_trials = 20
-            func = Func()
-            mn_study.optimize(func, n_trials=n_trials)
-
-            # Assert trial counts.
-            assert len(mn_study.trials) == n_trials
-
-            # Assert the parameters in `params` have been suggested among all nodes.
-            for trial in mn_study.trials:
-                assert trial.params == params
 
     @staticmethod
     def _create_shared_study(
