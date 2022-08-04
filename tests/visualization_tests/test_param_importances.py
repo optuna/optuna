@@ -20,6 +20,7 @@ from optuna.trial import create_trial
 from optuna.trial import Trial
 from optuna.visualization import plot_param_importances as plotly_plot_param_importances
 from optuna.visualization._param_importances import _get_importances_info
+from optuna.visualization._param_importances import _ImportancesInfo
 from optuna.visualization._plotly_imports import go
 from optuna.visualization.matplotlib import plot_param_importances as plt_plot_param_importances
 from optuna.visualization.matplotlib._matplotlib_imports import Axes
@@ -43,16 +44,6 @@ def test_target_is_none_and_study_is_multi_obj() -> None:
         _get_importances_info(
             study=study, evaluator=None, params=None, target=None, target_name="Objective Value"
         )
-
-
-def test_get_param_importances_info_for_one_trial() -> None:
-    # Cannot obtain importance scores from one complete trial.
-
-    study = create_study()
-    study.optimize(lambda t: t.suggest_float("x", 0, 1), n_trials=1)
-
-    with pytest.raises(ValueError):
-        _get_importances_info(study, None, None, None, "Objective Value")
 
 
 @parametrize_plot_param_importances
@@ -83,9 +74,6 @@ def test_plot_param_importances_customized_target_name(
     [
         [],
         ["param_a"],
-        ["param_a", "param_b"],
-        ["param_a", "param_b", "param_c"],
-        ["param_a", "param_b", "param_c", "param_d"],
         None,
     ],
 )
@@ -125,9 +113,9 @@ def test_get_param_importances_info_empty(
     info = _get_importances_info(
         study, None, params=params, target=None, target_name="Objective Value"
     )
-    assert len(info.importance_values) == 0
-    assert len(info.param_names) == 0
-    assert len(info.importance_labels) == 0
+    assert info == _ImportancesInfo(
+        importance_values=[], param_names=[], importance_labels=[], target_name="Objective Value"
+    )
 
 
 def test_switch_label_when_param_insignificant() -> None:
