@@ -91,7 +91,7 @@ def get_lock_file(lock_obj: BaseFileLock) -> Iterator[None]:
 class JournalFileStorage(BaseJournalLogStorage):
     def __init__(self, file_path: str, lock_obj: Optional[BaseFileLock] = None) -> None:
         self._file_path: str = file_path
-        self._lock = lock_obj or OpenLock(self._file_path)
+        self._lock = lock_obj or LinkLock(self._file_path)
         open(self._file_path, "a").close()  # Create a file if it does not exist
 
     def get_unread_logs(self, log_number_read: int) -> List[Dict[str, Any]]:
