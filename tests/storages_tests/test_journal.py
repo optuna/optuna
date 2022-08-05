@@ -1,5 +1,6 @@
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
+import tempfile
 from types import TracebackType
 from typing import Any
 from typing import IO
@@ -12,6 +13,7 @@ import optuna
 from optuna.storages._journal.file import BaseFileLock
 from optuna.storages._journal.file import LinkLock
 from optuna.storages._journal.file import OpenLock
+
 
 LOG_STORAGE = {
     "file_with_open_lock",
@@ -26,6 +28,7 @@ class JournalLogStorageSupplier:
 
     def __enter__(self) -> optuna.storages.JournalFileStorage:
         if self.storage_type.startswith("file"):
+            self.tempfile = tempfile.NamedTemporaryFile()
             lock: BaseFileLock
             if self.storage_type == "file_with_open_lock":
                 lock = OpenLock(self.tempfile.name)
@@ -64,19 +67,3 @@ def test_concurrent_append_logs(log_storage_type: str) -> None:
 
         assert len(storage.get_unread_logs(0)) == num_records
         assert all(record == r for r in storage.get_unread_logs(0))
-
-
-@pytest.mark.parametrize("log_storage_type", LOG_STORAGE)
-def test_concurrent_get_unread_logs(log_storage_type: str) -> None:
-    num_executors = 10
-    num_records = 30
-    record = {"key": "value"}
-
-    with JournalLogStorageSupplier(log_storage_type) as storage:
-        storage.append_logs([record for _ in range(num_records)])
-
-        with ProcessPoolExecutor(num_executors) as pool:
-            results = pool.map(storage.get_unread_logs, [i for i in range(num_records)])
-
-            for i, r in enumerate(results):
-                assert num_records - i == len(r)

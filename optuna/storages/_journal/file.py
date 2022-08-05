@@ -5,6 +5,7 @@ import json
 import os
 from typing import Any
 from typing import Dict
+from typing import Iterator
 from typing import List
 from typing import Optional
 
@@ -48,7 +49,7 @@ class LinkLock(BaseFileLock):
         try:
             os.unlink(self._lockfile)
         except OSError as e:
-            raise RuntimeError("Error: did not possess lock") from e
+            raise RuntimeError("Error: did not possess lock")
 
 
 class OpenLock(BaseFileLock):
@@ -78,7 +79,7 @@ class OpenLock(BaseFileLock):
 
 
 @contextmanager
-def get_lock_file(lock_obj: BaseFileLock):
+def get_lock_file(lock_obj: BaseFileLock) -> Iterator[None]:
     lock_obj.acquire()
     try:
         yield
