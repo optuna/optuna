@@ -48,7 +48,7 @@ class LinkLock(BaseFileLock):
     def release(self) -> None:
         try:
             os.unlink(self._lockfile)
-        except OSError as e:
+        except OSError:
             raise RuntimeError("Error: did not possess lock")
 
 

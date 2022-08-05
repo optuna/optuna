@@ -1,8 +1,6 @@
 import copy
 import datetime
 import enum
-import os
-import socket
 import threading
 from typing import Any
 from typing import Container
@@ -10,6 +8,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
+import uuid
 
 from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
@@ -44,15 +43,35 @@ class JournalOperation(enum.IntEnum):
 
 @experimental_class("3.1.0")
 class JournalStorage(BaseStorage):
-    def __init__(self, log_storage: BaseJournalLogStorage) -> None:
-        self._pid = (
-            socket.gethostname()
-            + "--"
-            + socket.gethostbyname(socket.gethostname())
-            + "--"
-            + str(os.getpid())
-        )
+    """Storage class for Journal storage backend.
 
+    Note that library users can instantiate this class, but the attributes
+    provided by this class are not supposed to be directly accessed by them.
+
+    Journal storages writes a record of every operation to the database as it is executed and
+    at the same time, keeps a latest snapshot of the database in-memory. If the database crashes
+    for any reason, the storage can re-establish the contents in memory by replaying the
+    operations stored from the beggining.
+
+    Journal storage has several benefits over the conventional value logging storages.
+    1. The number of IOs can be reduced because of larger granularity of logs.
+    2. Journal storage has simpler backend API than value logging storages.
+    3. Journal storage keeps a snapshot in-memory so no need to add more cache.
+
+    Example:
+
+        .. code::
+
+            storage = JournalStorage(JournalFileStorage("./log_file))
+
+            study = optuna.create_study(storage=storage)
+
+    """
+
+    threading.Lock()
+
+    def __init__(self, log_storage: BaseJournalLogStorage) -> None:
+        self._pid = str(uuid.uuid4())
         self._log_number_read: int = 0
         self._backend = log_storage
 
