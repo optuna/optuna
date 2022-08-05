@@ -70,7 +70,7 @@ class JournalFileOpenLock(JournalFileBaseLock):
 
     On acquiring the lock, open system call is called with the O_EXCL option to create an exclusive
     file. The file is deleted when the lock is released. This class is only supported when using
-    when using NFSv3 or later on kernel 2.6 or later. In prior NFS environments, use
+    NFSv3 or later on kernel 2.6 or later. In prior NFS environments, use
     `~optuna.storages.JournalFileLinkLock`.
 
     Args:
