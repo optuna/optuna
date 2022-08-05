@@ -35,7 +35,6 @@ class TestPyCmaSampler:
             cma_stds={"x": 1, "y": 1},
             seed=1,
             cma_opts={"popsize": 5},
-            independent_sampler=optuna.samplers.RandomSampler(),
         )
         study = optuna.create_study(sampler=sampler)
 
