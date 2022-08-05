@@ -17,7 +17,6 @@ from optuna import TrialPruned
 from optuna.integration.chainermn import ChainerMNStudy
 from optuna.integration.chainermn import ChainerMNTrial
 from optuna.pruners import BasePruner
-from optuna.samplers import BaseSampler
 from optuna.storages import BaseStorage
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage

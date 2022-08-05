@@ -40,7 +40,6 @@ def test_init_cmaes_opts(
         sigma0=0.1,
         seed=1,
         n_startup_trials=1,
-        independent_sampler=optuna.samplers.RandomSampler(),
         use_separable_cma=use_separable_cma,
         popsize=popsize,
     )
@@ -271,7 +270,6 @@ def test_population_size_is_multiplied_when_enable_ipop(popsize: Optional[int]) 
         sigma0=0.1,
         seed=1,
         n_startup_trials=1,
-        independent_sampler=optuna.samplers.RandomSampler(),
         restart_strategy="ipop",
         popsize=popsize,
         inc_popsize=inc_popsize,
