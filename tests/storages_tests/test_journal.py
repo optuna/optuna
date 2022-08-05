@@ -10,9 +10,7 @@ from typing import Type
 import pytest
 
 import optuna
-from optuna.storages._journal.file import JournalFileLinkLock
-from optuna.storages._journal.file import JournalFileLockType
-from optuna.storages._journal.file import JournalFileOpenLock
+from optuna.storages._journal.file import JournalFileBaseLock
 
 
 LOG_STORAGE = {
@@ -29,11 +27,11 @@ class JournalLogStorageSupplier:
     def __enter__(self) -> optuna.storages.JournalFileStorage:
         if self.storage_type.startswith("file"):
             self.tempfile = tempfile.NamedTemporaryFile()
-            lock: JournalFileLockType
+            lock: JournalFileBaseLock
             if self.storage_type == "file_with_open_lock":
-                lock = JournalFileOpenLock(self.tempfile.name)
+                lock = optuna.storages.JournalFileOpenLock(self.tempfile.name)
             elif self.storage_type == "file_with_link_lock":
-                lock = JournalFileLinkLock(self.tempfile.name)
+                lock = optuna.storages.JournalFileLinkLock(self.tempfile.name)
             else:
                 raise Exception("Must not reach here")
             return optuna.storages.JournalFileStorage(self.tempfile.name, lock)

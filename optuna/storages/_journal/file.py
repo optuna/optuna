@@ -16,7 +16,7 @@ from optuna.storages._journal.base import BaseJournalLogStorage
 LOCK_FILE_SUFFIX = ".lock"
 
 
-class JournalFileLockType(abc.ABC):
+class JournalFileBaseLock(abc.ABC):
     @abc.abstractmethod
     def acquire(self) -> bool:
         raise NotImplementedError
@@ -26,7 +26,7 @@ class JournalFileLockType(abc.ABC):
         raise NotImplementedError
 
 
-class JournalFileLinkLock(JournalFileLockType):
+class JournalFileLinkLock(JournalFileBaseLock):
     def __init__(self, filepath: str) -> None:
         self._lock_target_file = filepath
         self._lockfile = filepath + LOCK_FILE_SUFFIX
@@ -52,7 +52,7 @@ class JournalFileLinkLock(JournalFileLockType):
             raise RuntimeError("Error: did not possess lock")
 
 
-class JournalFileOpenLock(JournalFileLockType):
+class JournalFileOpenLock(JournalFileBaseLock):
     def __init__(self, filepath: str) -> None:
         self._lockfile = filepath + LOCK_FILE_SUFFIX
 
@@ -79,7 +79,7 @@ class JournalFileOpenLock(JournalFileLockType):
 
 
 @contextmanager
-def get_lock_file(lock_obj: JournalFileLockType) -> Iterator[None]:
+def get_lock_file(lock_obj: JournalFileBaseLock) -> Iterator[None]:
     lock_obj.acquire()
     try:
         yield
@@ -89,7 +89,7 @@ def get_lock_file(lock_obj: JournalFileLockType) -> Iterator[None]:
 
 @experimental_class("3.1.0")
 class JournalFileStorage(BaseJournalLogStorage):
-    def __init__(self, file_path: str, lock_obj: Optional[JournalFileLockType] = None) -> None:
+    def __init__(self, file_path: str, lock_obj: Optional[JournalFileBaseLock] = None) -> None:
         self._file_path: str = file_path
         self._lock = lock_obj or JournalFileLinkLock(self._file_path)
         open(self._file_path, "a").close()  # Create a file if it does not exist
