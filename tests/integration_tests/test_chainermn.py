@@ -222,13 +222,12 @@ class TestChainerMNStudy:
         storage: BaseStorage,
         comm: CommunicatorBase,
         pruner: Optional[BasePruner] = None,
-        sampler: Optional[BaseSampler] = None,
     ) -> Study:
 
         name_local = create_study(storage=storage).study_name if comm.rank == 0 else None
         name_bcast = comm.mpi_comm.bcast(name_local)
 
-        return Study(name_bcast, storage, pruner=pruner, sampler=sampler)
+        return Study(name_bcast, storage, pruner=pruner)
 
     @staticmethod
     def _check_multi_node(comm: CommunicatorBase) -> None:
