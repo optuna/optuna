@@ -26,7 +26,19 @@ class JournalFileBaseLock(abc.ABC):
         raise NotImplementedError
 
 
+@experimental_class("3.1.0")
 class JournalFileLinkLock(JournalFileBaseLock):
+    """Lock class for synchronizing processes.
+
+    On acquiring the lock, link system call is called to create an exclusive file. The file is
+    deleted when the lock is released. In NFS environments prior to NFSv3, use this instead of
+    `~optuna.storages.JournalFileOpenLock`
+
+    Args:
+        filepath:
+            The path of the file whose race condition must be protected.
+    """
+
     def __init__(self, filepath: str) -> None:
         self._lock_target_file = filepath
         self._lockfile = filepath + LOCK_FILE_SUFFIX
@@ -52,7 +64,20 @@ class JournalFileLinkLock(JournalFileBaseLock):
             raise RuntimeError("Error: did not possess lock")
 
 
+@experimental_class("3.1.0")
 class JournalFileOpenLock(JournalFileBaseLock):
+    """Lock class for synchronizing processes.
+
+    On acquiring the lock, open system call is called with the O_EXCL option to create an exclusive
+    file. The file is deleted when the lock is released. This class is only supported when using
+    when using NFSv3 or later on kernel 2.6 or later. In prior NFS environments, use
+    `~optuna.storages.JournalFileLinkLock`.
+
+    Args:
+        filepath:
+            The path of the file whose race condition must be protected.
+    """
+
     def __init__(self, filepath: str) -> None:
         self._lockfile = filepath + LOCK_FILE_SUFFIX
 
