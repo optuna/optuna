@@ -6,7 +6,7 @@ from typing import List
 
 class BaseJournalLogStorage(abc.ABC):
     @abc.abstractmethod
-    def get_unread_logs(self, log_number_read: int) -> List[Dict[str, Any]]:
+    def read_logs(self, log_number_from: int) -> List[Dict[str, Any]]:
         raise NotImplementedError
 
     @abc.abstractmethod

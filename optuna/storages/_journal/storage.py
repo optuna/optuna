@@ -349,7 +349,7 @@ class JournalStorage(BaseStorage):
             raise RuntimeError("No corresponding log operation to op_code:{}".format(op))
 
     def _sync_with_backend(self) -> None:
-        logs = self._backend.get_unread_logs(self._log_number_read)
+        logs = self._backend.read_logs(self._log_number_read)
         for log in logs:
             self._log_number_read += 1
             self._apply_log(log)

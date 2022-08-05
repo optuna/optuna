@@ -119,15 +119,15 @@ class JournalFileStorage(BaseJournalLogStorage):
         self._lock = lock_obj or JournalFileLinkLock(self._file_path)
         open(self._file_path, "a").close()  # Create a file if it does not exist
 
-    def get_unread_logs(self, log_number_read: int) -> List[Dict[str, Any]]:
+    def read_logs(self, log_number_from: int) -> List[Dict[str, Any]]:
         # log_number starts from 1.
-        # The default log_number_read == 0 means no logs have been read by the caller.
+        # The default log_number_from == 0 means no logs have been read by the caller.
 
         with get_lock_file(self._lock):
             logs = []
             with open(self._file_path, "r") as f:
                 for lineno, line in enumerate(f):
-                    if lineno < log_number_read:
+                    if lineno < log_number_from:
                         continue
                     logs.append(json.loads(line))
             return logs

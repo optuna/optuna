@@ -56,12 +56,12 @@ def test_concurrent_append_logs(log_storage_type: str) -> None:
         with ProcessPoolExecutor(num_executors) as pool:
             pool.map(storage.append_logs, [[record] for _ in range(num_records)], timeout=20)
 
-        assert len(storage.get_unread_logs(0)) == num_records
-        assert all(record == r for r in storage.get_unread_logs(0))
+        assert len(storage.read_logs(0)) == num_records
+        assert all(record == r for r in storage.read_logs(0))
 
     with JournalLogStorageSupplier(log_storage_type) as storage:
         with ThreadPoolExecutor(num_executors) as pool:
             pool.map(storage.append_logs, [[record] for _ in range(num_records)], timeout=20)
 
-        assert len(storage.get_unread_logs(0)) == num_records
-        assert all(record == r for r in storage.get_unread_logs(0))
+        assert len(storage.read_logs(0)) == num_records
+        assert all(record == r for r in storage.read_logs(0))
