@@ -276,7 +276,6 @@ class MLflowCallback:
             if len(value) > max_val_length:
                 tags[key] = "{}...".format(value[: max_val_length - 3])
 
-        # This sets the tags for MLflow.
         mlflow.set_tags(tags)
 
     def _log_metrics(self, values: Optional[List[float]]) -> None:
