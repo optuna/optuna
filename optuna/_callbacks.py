@@ -2,11 +2,17 @@ from typing import Container
 from typing import List
 from typing import Optional
 
+import numpy as np
+
 import optuna
+from optuna import logging
 from optuna._experimental import experimental_class
 from optuna._experimental import experimental_func
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+_logger = logging.get_logger(__name__)
 
 
 class MaxTrialsCallback:
@@ -167,3 +173,36 @@ class RetryFailedTrialCallback:
             If the specified trial is not a retry of any trial, returns an empty list.
         """
         return trial.system_attrs.get("retry_history", [])
+
+
+class GetNaNTrialParamsCallback:
+    """Print the parameters of the trial that returned NaN.
+
+    This callback is useful when you want to find out
+    the parameters of the trial that returned NaN.
+
+    Example:
+
+        .. testcode::
+
+            import optuna
+            from optuna.study import GetNaNTrialParamsCallback
+
+
+            def objective(trial):
+                x = trial.suggest_float("x", -1, 1)
+                return x**2
+
+
+            study = optuna.create_study()
+            study.optimize(
+                objective,
+                callbacks=[GetNaNTrialParamsCallback()],
+            )
+    """
+
+    def __call__(self, study: "optuna.study.Study", trial: FrozenTrial) -> None:
+        if trial.value is not None and np.isnan(trial.value):
+            _logger.info(
+                "Parameters of failed trial {} are: {}".format(trial.number, trial.params)
+            )
