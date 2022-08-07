@@ -193,7 +193,7 @@ class Study:
     @property
     def directions(self) -> List[StudyDirection]:
         """Return the directions of the study.
-        
+
         Returns:
             A list of :class:`~optuna.study.StudyDirection` objects.
         """
@@ -212,7 +212,7 @@ class Study:
             A list of :class:`~optuna.trial.FrozenTrial` objects.
             -- seealso::
                 See :func:`~optuna.study.Study.get_trails` for related method.
-                
+
         """
 
         return self.get_trials(deepcopy=True, states=None)
