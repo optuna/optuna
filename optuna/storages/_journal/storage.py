@@ -41,6 +41,10 @@ class JournalOperation(enum.IntEnum):
     SET_TRIAL_SYSTEM_ATTR = 10
 
 
+def datetime_from_isoformat(datetime_str: str) -> datetime.datetime:
+    return datetime.datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S.%f")
+
+
 @experimental_class("3.1.0")
 class JournalStorage(BaseStorage):
     """Storage class for Journal storage backend.
@@ -189,11 +193,11 @@ class JournalStorage(BaseStorage):
             }
         )
         if log["datetime_start"] is not None:
-            datetime_start = datetime.datetime.fromisoformat(log["datetime_start"])
+            datetime_start = datetime_from_isoformat(log["datetime_start"])
         else:
             datetime_start = None
         if "datetime_complete" in log:
-            datetime_complete = datetime.datetime.fromisoformat(log["datetime_complete"])
+            datetime_complete = datetime_from_isoformat(log["datetime_complete"])
         else:
             datetime_complete = None
 
@@ -279,9 +283,9 @@ class JournalStorage(BaseStorage):
 
         trial = copy.copy(self._trials[trial_id])
         if state == TrialState.RUNNING:
-            trial.datetime_start = datetime.datetime.fromisoformat(log["datetime_start"])
+            trial.datetime_start = datetime_from_isoformat(log["datetime_start"])
         if state.is_finished():
-            trial.datetime_complete = datetime.datetime.fromisoformat(log["datetime_complete"])
+            trial.datetime_complete = datetime_from_isoformat(log["datetime_complete"])
         trial.state = state
         if log["values"] is not None:
             trial.values = log["values"]
