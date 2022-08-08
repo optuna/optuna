@@ -210,7 +210,7 @@ class Study:
 
         Returns:
             A list of :class:`~optuna.trial.FrozenTrial` objects.
-            -- seealso::
+            .. seealso::
                 See :func:`~optuna.study.Study.get_trails` for related method.
 
         """
@@ -225,7 +225,7 @@ class Study:
         """Return all trials in the study.
 
         The returned trials are ordered by trial number.
-        -- seealso::
+        .. seealso::
             See :func:`~optuna.study.Study.trails` for related method.
 
         Example:
