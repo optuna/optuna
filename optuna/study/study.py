@@ -226,6 +226,7 @@ class Study:
         """Return all trials in the study.
 
         The returned trials are ordered by trial number.
+
         .. seealso::
             See :attr:`~optuna.study.Study.trials` for related method.
 
