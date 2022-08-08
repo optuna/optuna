@@ -17,12 +17,10 @@ from optuna import TrialPruned
 from optuna.integration.chainermn import ChainerMNStudy
 from optuna.integration.chainermn import ChainerMNTrial
 from optuna.pruners import BasePruner
-from optuna.samplers import BaseSampler
 from optuna.storages import BaseStorage
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.testing.pruners import DeterministicPruner
-from optuna.testing.samplers import DeterministicRelativeSampler
 from optuna.testing.storages import StorageSupplier
 from optuna.trial import Trial
 from optuna.trial import TrialState
@@ -219,45 +217,16 @@ class TestChainerMNStudy:
             assert len(failed_trials) == n_trials + 1
 
     @staticmethod
-    @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-    def test_relative_sampling(storage_mode: str, comm: CommunicatorBase) -> None:
-
-        relative_search_space = {
-            "x": distributions.FloatDistribution(low=-10, high=10),
-            "y": distributions.FloatDistribution(low=20, high=30, log=True),
-            "z": distributions.CategoricalDistribution(choices=(-1.0, 1.0)),
-        }
-        relative_params = {"x": 1.0, "y": 25.0, "z": -1.0}
-        sampler = DeterministicRelativeSampler(relative_search_space, relative_params)
-
-        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
-            study = TestChainerMNStudy._create_shared_study(storage, comm, sampler=sampler)
-            mn_study = ChainerMNStudy(study, comm)
-
-            # Invoke optimize.
-            n_trials = 20
-            func = Func()
-            mn_study.optimize(func, n_trials=n_trials)
-
-            # Assert trial counts.
-            assert len(mn_study.trials) == n_trials
-
-            # Assert the parameters in `relative_params` have been suggested among all nodes.
-            for trial in mn_study.trials:
-                assert trial.params == relative_params
-
-    @staticmethod
     def _create_shared_study(
         storage: BaseStorage,
         comm: CommunicatorBase,
         pruner: Optional[BasePruner] = None,
-        sampler: Optional[BaseSampler] = None,
     ) -> Study:
 
         name_local = create_study(storage=storage).study_name if comm.rank == 0 else None
         name_bcast = comm.mpi_comm.bcast(name_local)
 
-        return Study(name_bcast, storage, pruner=pruner, sampler=sampler)
+        return Study(name_bcast, storage, pruner=pruner)
 
     @staticmethod
     def _check_multi_node(comm: CommunicatorBase) -> None:
