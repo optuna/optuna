@@ -378,7 +378,7 @@ def test_fast_non_dominated_sort_no_constraints(
 
     trials = [_create_frozen_trial(i, v) for i, v in enumerate(values)]
     population_per_rank = sampler._fast_non_dominated_sort(copy.copy(trials), directions)
-    _check_non_dominated_sort(trials, directions, population_per_rank)
+    _assert_population_per_rank(trials, directions, population_per_rank)
 
 
 def test_fast_non_dominated_sort_with_constraints() -> None:
@@ -398,7 +398,7 @@ def test_fast_non_dominated_sort_with_constraints() -> None:
     ]
     directions = [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
     population_per_rank = sampler._fast_non_dominated_sort(copy.copy(trials), directions)
-    _check_non_dominated_sort(trials, directions, population_per_rank)
+    _assert_population_per_rank(trials, directions, population_per_rank)
 
 
 @pytest.mark.parametrize(
@@ -431,7 +431,7 @@ def test_fast_non_dominated_sort_missing_constraint_values(
             population_per_rank = sampler._fast_non_dominated_sort(
                 copy.copy(trials), list(directions)
             )
-        _check_non_dominated_sort(trials, list(directions), population_per_rank)
+        _assert_population_per_rank(trials, list(directions), population_per_rank)
 
 
 @pytest.mark.parametrize("n_dims", [1, 2, 3])
