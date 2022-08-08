@@ -338,7 +338,7 @@ def test_constrained_dominates_infeasible_vs_infeasible(direction: StudyDirectio
                 assert not _constrained_dominates(t2, t1, directions)
 
 
-def _check_non_dominated_sort(
+def _assert_population_per_rank(
     trials: List[FrozenTrial],
     direction: List[StudyDirection],
     population_per_rank: List[List[FrozenTrial]],
