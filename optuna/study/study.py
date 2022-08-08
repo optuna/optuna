@@ -210,8 +210,9 @@ class Study:
 
         Returns:
             A list of :class:`~optuna.trial.FrozenTrial` objects.
+
             .. seealso::
-                See :func:`~optuna.study.Study.get_trails` for related method.
+                See :func:`~optuna.study.Study.get_trials` for related method.
 
         """
 
