@@ -228,7 +228,7 @@ class Study:
         The returned trials are ordered by trial number.
 
         .. seealso::
-            See :attr:`~optuna.study.Study.trials` for related method.
+            See :attr:`~optuna.study.Study.trials` for related property.
 
         Example:
             .. testcode::
