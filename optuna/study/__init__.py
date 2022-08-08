@@ -1,4 +1,3 @@
-from optuna._callbacks import GetNaNTrialParamsCallback
 from optuna._callbacks import MaxTrialsCallback
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
@@ -11,7 +10,6 @@ from optuna.study.study import Study
 
 
 __all__ = [
-    "GetNaNTrialParamsCallback",
     "MaxTrialsCallback",
     "StudyDirection",
     "StudySummary",
