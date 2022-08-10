@@ -10,6 +10,7 @@ from typing import Optional
 from typing import Sequence
 import uuid
 
+import optuna
 from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
 from optuna.distributions import check_distribution_compatibility
@@ -23,6 +24,8 @@ from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
+
+_logger = optuna.logging.get_logger(__name__)
 
 NOT_FOUND_MSG = "Record does not exist."
 
@@ -372,6 +375,7 @@ class JournalStorage(BaseStorage):
 
             for frozen_study in self._studies.values():
                 if frozen_study.study_name == study_name:
+                    _logger.info("A new study created in JournalStorage with name: {}".format(study_name))
                     return frozen_study._study_id
             assert False, "Should not reach."
 
