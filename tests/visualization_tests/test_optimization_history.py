@@ -126,31 +126,24 @@ def test_get_optimization_history_info_list_with_multiple_studies(
     direction: str, target_name: str
 ) -> None:
     n_studies = 10
-
-    def objective(trial: Trial) -> float:
-
-        if trial.number == 0:
-            return 1.0
-        elif trial.number == 1:
-            return 2.0
-        elif trial.number == 2:
-            return 0.0
-        return 0.0
+    base_values = [1.0, 2.0, 0.0]
+    base_best_values = [1.0, 1.0, 0.0] if direction == "minimize" else [1.0, 2.0, 2.0]
 
     # Test with trials.
     studies = [create_study(direction=direction) for _ in range(n_studies)]
-    for study in studies:
-        study.optimize(objective, n_trials=3)
+    for i, study in enumerate(studies):
+        study.optimize(lambda t: base_values[t.number] + i, n_trials=3)
     info_list = _get_optimization_history_info_list(
         studies, target=None, target_name=target_name, error_bar=False
     )
 
-    best_values = [1.0, 1.0, 0.0] if direction == "minimize" else [1.0, 2.0, 2.0]
     for i, info in enumerate(info_list):
+        values_i = [v + i for v in base_values]
+        best_values_i = [v + i for v in base_best_values]
         assert info == _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo([1.0, 2.0, 0.0], None, f"{target_name} of {studies[i].study_name}"),
-            _ValuesInfo(best_values, None, f"Best Value of {studies[i].study_name}"),
+            _ValuesInfo(values_i, None, f"{target_name} of {studies[i].study_name}"),
+            _ValuesInfo(best_values_i, None, f"Best Value of {studies[i].study_name}"),
         )
 
     # Test customized target.
