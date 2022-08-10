@@ -41,7 +41,7 @@ class _DimensionInfo(NamedTuple):
     is_log: bool
     is_cat: bool
     tickvals: List[Union[int, float]]
-    ticktext: List[Union[int, str]]
+    ticktext: List[str]
 
 
 class _ParallelCoordinateInfo(NamedTuple):
@@ -235,15 +235,15 @@ def _get_parallel_coordinate_info(
         elif _is_categorical(trials, p_name):
             vocab: DefaultDict[Union[int, str], int] = defaultdict(lambda: len(vocab))
 
-            ticktext: List[Union[int, str]]
+            ticktext: List[str]
             if _is_numerical(trials, p_name):
                 _ = [vocab[v] for v in sorted(values)]
                 values = [vocab[v] for v in values]
-                ticktext = list(sorted(vocab.keys()))
+                ticktext = [str(v) for v in list(sorted(vocab.keys()))]
                 numeric_cat_params_indices.append(dim_index)
             else:
                 values = [vocab[v] for v in values]
-                ticktext = list(sorted(vocab.keys(), key=lambda x: vocab[x]))
+                ticktext = [str(v) for v in list(sorted(vocab.keys(), key=lambda x: vocab[x]))]
             dim = _DimensionInfo(
                 label=_truncate_label(p_name),
                 values=tuple(values),
