@@ -353,7 +353,7 @@ class JournalStorage(BaseStorage):
         elif op == JournalOperation.SET_TRIAL_SYSTEM_ATTR:
             self._apply_set_trial_system_attr(log)
         else:
-            raise RuntimeError("No corresponding log operation to op_code:{}".format(op))
+            assert False, "Should not reach."
 
     def _sync_with_backend(self) -> None:
         logs = self._backend.read_logs(self._log_number_read)
