@@ -114,6 +114,9 @@ def get_lock_file(lock_obj: JournalFileBaseLock) -> Iterator[None]:
 
 @experimental_class("3.1.0")
 class JournalFileStorage(BaseJournalLogStorage):
+    """
+    Write docstring
+    """
     def __init__(self, file_path: str, lock_obj: Optional[JournalFileBaseLock] = None) -> None:
         self._file_path: str = file_path
         self._lock = lock_obj or JournalFileLinkLock(self._file_path)
