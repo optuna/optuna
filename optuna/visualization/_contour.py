@@ -103,6 +103,10 @@ def plot_contour(
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
+
+    .. note::
+        The colormap is reversed when the ``target`` argument isn't :obj:`None` or ``direction``
+        of :class:`~optuna.study.Study` is ``minimize``.
     """
 
     _imports.check()
