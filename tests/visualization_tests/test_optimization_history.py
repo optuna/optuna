@@ -244,6 +244,18 @@ optimization_history_info_lists = [
             None,
         )
     ],
+    [  # Multiple.
+        _OptimizationHistoryInfo(
+            [0, 1, 2],
+            _ValuesInfo([1.0, 2.0, 0.0], None, "Dummy"),
+            None,
+        ),
+        _OptimizationHistoryInfo(
+            [0, 1, 2],
+            _ValuesInfo([1.0, 1.0, 1.0], None, "Dummy"),
+            None,
+        ),
+    ],
     [  # With best values.
         _OptimizationHistoryInfo(
             [0, 1, 2],
