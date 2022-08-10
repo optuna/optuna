@@ -18,6 +18,7 @@ from optuna.distributions import distribution_to_json
 from optuna.distributions import json_to_distribution
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages import BaseStorage
+from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages._journal.base import BaseJournalLogStorage
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
@@ -91,7 +92,6 @@ class JournalStorage(BaseStorage):
         self._trial_ids_owned_by_this_process: List[int] = []
 
         self._thread_lock = threading.Lock()
-        self._study_name_suffix_num = -1
 
     def _write_log(self, op_code: int, extra_fields: Dict[str, Any]) -> None:
         self._backend.append_logs([{"op_code": op_code, "pid": self._pid, **extra_fields}])
@@ -361,21 +361,17 @@ class JournalStorage(BaseStorage):
             self._log_number_read += 1
             self._apply_log(log)
 
-    def _create_unique_study_name(self) -> str:
-        self._study_name_suffix_num += 1
-        return "no-name-" + self._pid + "-" + str(self._study_name_suffix_num)
-
     # Basic study manipulation
 
     def create_new_study(self, study_name: Optional[str] = None) -> int:
+        study_name = study_name or DEFAULT_STUDY_NAME_PREFIX + str(uuid.uuid4())
         with self._thread_lock:
-            study_name = study_name or self._create_unique_study_name()
             self._write_log(JournalOperation.CREATE_STUDY, {"study_name": study_name})
             self._sync_with_backend()
 
             for frozen_study in self._studies.values():
                 if frozen_study.study_name == study_name:
-                    _logger.info("A new study created in JournalStorage with name: {}".format(study_name))
+                    _logger.info("A new study created in Journal with name: {}".format(study_name))
                     return frozen_study._study_id
             assert False, "Should not reach."
 
