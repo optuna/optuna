@@ -1,8 +1,10 @@
+from io import BytesIO
 from typing import List
 
 import pytest
 
 from optuna.visualization._optimization_history import _OptimizationHistoryInfo
+from optuna.visualization.matplotlib._matplotlib_imports import plt
 from optuna.visualization.matplotlib._optimization_history import _get_optimization_history_plot
 from tests.visualization_tests.test_optimization_history import optimization_history_info_lists
 
@@ -21,3 +23,4 @@ def test_get_optimization_history_plot(
             expected_legends.append(info.best_values_info.label_name)
     legends = [legend.get_text() for legend in figure.legend().get_texts()]
     assert sorted(legends) == sorted(expected_legends)
+    plt.savefig(BytesIO())
