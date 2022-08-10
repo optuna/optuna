@@ -11,7 +11,6 @@ from skopt.space import space
 
 import optuna
 from optuna import distributions
-from optuna.testing.samplers import DeterministicRelativeSampler
 from optuna.trial import FrozenTrial
 
 
@@ -151,7 +150,7 @@ def _objective(trial: optuna.trial.Trial) -> float:
 
 def test_sample_relative_n_startup_trials() -> None:
 
-    independent_sampler = DeterministicRelativeSampler({}, {})
+    independent_sampler = optuna.samplers.RandomSampler()
     sampler = optuna.integration.SkoptSampler(
         n_startup_trials=2, independent_sampler=independent_sampler
     )

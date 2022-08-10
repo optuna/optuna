@@ -44,7 +44,7 @@ class QMCSampler(BaseSampler):
     <https://scipy.github.io/devdocs/reference/stats.qmc.html>`_.
 
     .. note:
-        If your search space contains categorical parameters, it samples the catagorical
+        If your search space contains categorical parameters, it samples the categorical
         parameters by its `independent_sampler` without using QMC algorithm.
 
     .. note::
@@ -111,7 +111,7 @@ class QMCSampler(BaseSampler):
             Note that the parameters of the first trial in a study are sampled via an
             independent sampler in most cases, so no warning messages are emitted in such cases.
 
-        warn_asyncronous_seeding:
+        warn_asynchronous_seeding:
             If this is :obj:`True`, a warning message is emitted when the scrambling
             (randomization) is applied to the QMC sequence and the random seed of the sampler is
             not set manually.
@@ -120,7 +120,7 @@ class QMCSampler(BaseSampler):
                 When using parallel and/or distributed optimization without manually
                 setting the seed, the seed is set randomly for each instances of
                 :class:`~optuna.samplers.QMCSampler` for different workers, which ends up
-                asyncronous seeding for multiple samplers used in the optimization.
+                asynchronous seeding for multiple samplers used in the optimization.
 
             .. seealso::
                 See parameter ``seed`` in :class:`~optuna.samplers.QMCSampler`.
@@ -153,7 +153,7 @@ class QMCSampler(BaseSampler):
         scramble: bool = False,  # default is False for simplicity in distributed environment.
         seed: Optional[int] = None,
         independent_sampler: Optional[BaseSampler] = None,
-        warn_asyncronous_seeding: bool = True,
+        warn_asynchronous_seeding: bool = True,
         warn_independent_sampling: bool = True,
     ) -> None:
 
@@ -181,9 +181,9 @@ class QMCSampler(BaseSampler):
             )
             raise ValueError(message)
 
-        if seed is None and scramble and warn_asyncronous_seeding:
+        if seed is None and scramble and warn_asynchronous_seeding:
             # Sobol/Halton sequences without scrambling do not use seed.
-            self._log_asyncronous_seeding()
+            self._log_asynchronous_seeding()
 
     def reseed_rng(self) -> None:
 
@@ -222,7 +222,7 @@ class QMCSampler(BaseSampler):
         return search_space
 
     @staticmethod
-    def _log_asyncronous_seeding() -> None:
+    def _log_asynchronous_seeding() -> None:
         _logger.warning(
             "No seed is provided for `QMCSampler` and the seed is set randomly. "
             "If you are running multiple `QMCSampler`s in parallel and/or distributed "
@@ -283,7 +283,7 @@ class QMCSampler(BaseSampler):
         # Lazy import because the `scipy.stats.qmc` is slow to import.
         qmc_module = _LazyImport("scipy.stats.qmc")
 
-        sample_id = self._find_sample_id(study, search_space)
+        sample_id = self._find_sample_id(study)
         d = len(search_space)
 
         if self._qmc_type == "halton":
@@ -299,7 +299,7 @@ class QMCSampler(BaseSampler):
 
         return sample
 
-    def _find_sample_id(self, study: Study, search_space: Dict[str, BaseDistribution]) -> int:
+    def _find_sample_id(self, study: Study) -> int:
 
         qmc_id = ""
         qmc_id += self._qmc_type

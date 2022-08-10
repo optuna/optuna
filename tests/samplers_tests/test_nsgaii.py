@@ -1,4 +1,6 @@
 from collections import Counter
+import copy
+import itertools
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -129,9 +131,7 @@ def test_constraints_func_none() -> None:
         assert _CONSTRAINTS_KEY not in trial.system_attrs
 
 
-@pytest.mark.parametrize(
-    "constraint_value", [-1.0, 0.0, 1.0, -float("inf"), float("inf"), float("nan")]
-)
+@pytest.mark.parametrize("constraint_value", [-1.0, 0.0, 1.0, -float("inf"), float("inf")])
 def test_constraints_func(constraint_value: float) -> None:
     n_trials = 4
     n_objectives = 2
@@ -156,7 +156,41 @@ def test_constraints_func(constraint_value: float) -> None:
     assert constraints_func_call_count == n_trials
     for trial in study.trials:
         for x, y in zip(trial.system_attrs[_CONSTRAINTS_KEY], (constraint_value + trial.number,)):
-            assert _nan_equal(x, y)
+            assert x == y
+
+
+def test_constrained_dominates_with_nan_constraint() -> None:
+    directions = [StudyDirection.MINIMIZE, StudyDirection.MINIMIZE]
+
+    t1 = _create_frozen_trial(0, [1], [0, float("nan")])
+    t2 = _create_frozen_trial(0, [0], [1, -1])
+    with pytest.raises(ValueError):
+        _constrained_dominates(t1, t2, directions)
+
+
+def test_constraints_func_nan() -> None:
+    n_trials = 4
+    n_objectives = 2
+
+    def constraints_func(_: FrozenTrial) -> Sequence[float]:
+        return (float("nan"),)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = NSGAIISampler(population_size=2, constraints_func=constraints_func)
+
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
+    with pytest.raises(ValueError):
+        study.optimize(
+            lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)],
+            n_trials=n_trials,
+        )
+
+    trials = study.get_trials()
+    assert len(trials) == 1  # The error stops optimization, but completed trials are recorded.
+    assert all(0 <= x <= 1 for x in trials[0].params.values())  # The params are normal.
+    assert trials[0].values == list(trials[0].params.values())  # The values are normal.
+    assert trials[0].system_attrs[_CONSTRAINTS_KEY] is None  # None is set for constraints.
 
 
 @pytest.mark.parametrize("direction1", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
@@ -199,7 +233,7 @@ def test_constrained_dominates_feasible_vs_infeasible(
 
     # Check all pairs of trials consisting of these constraint values.
     constraints_1d_feasible = [-float("inf"), -1, 0]
-    constraints_1d_infeasible = [float("nan"), 2, float("inf")]
+    constraints_1d_infeasible = [2, float("inf")]
 
     directions = [direction]
 
@@ -304,266 +338,111 @@ def test_constrained_dominates_infeasible_vs_infeasible(direction: StudyDirectio
                 assert not _constrained_dominates(t2, t1, directions)
 
 
-def test_fast_non_dominated_sort() -> None:
+def _assert_population_per_rank(
+    trials: List[FrozenTrial],
+    direction: List[StudyDirection],
+    population_per_rank: List[List[FrozenTrial]],
+) -> None:
+    # Check that the number of trials do not change.
+    flattened = [trial for rank in population_per_rank for trial in rank]
+    assert len(flattened) == len(trials)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)
+        # Check that the trials in the same rank do not dominate each other.
+        for i in range(len(population_per_rank)):
+            for trial1 in population_per_rank[i]:
+                for trial2 in population_per_rank[i]:
+
+                    assert not _constrained_dominates(trial1, trial2, direction)
+
+        # Check that each trial is dominated by some trial in the rank above.
+        for i in range(len(population_per_rank) - 1):
+            for trial2 in population_per_rank[i + 1]:
+                assert any(
+                    _constrained_dominates(trial1, trial2, direction)
+                    for trial1 in population_per_rank[i]
+                )
+
+
+@pytest.mark.parametrize("direction1", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
+@pytest.mark.parametrize("direction2", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
+def test_fast_non_dominated_sort_no_constraints(
+    direction1: StudyDirection, direction2: StudyDirection
+) -> None:
     sampler = NSGAIISampler()
 
-    # Single objective.
-    directions = [StudyDirection.MINIMIZE]
-    trials = [
-        _create_frozen_trial(0, [10]),
-        _create_frozen_trial(1, [20]),
-        _create_frozen_trial(2, [20]),
-        _create_frozen_trial(3, [30]),
-    ]
-    population_per_rank = sampler._fast_non_dominated_sort(trials, directions)
-    assert [{t.number for t in population} for population in population_per_rank] == [
-        {0},
-        {1, 2},
-        {3},
-    ]
+    directions = [direction1, direction2]
+    value_list = [10, 20, 20, 30, float("inf"), float("inf"), -float("inf")]
+    values = [[v1, v2] for v1 in value_list for v2 in value_list]
 
-    # Two objective.
-    directions = [StudyDirection.MAXIMIZE, StudyDirection.MAXIMIZE]
-    trials = [
-        _create_frozen_trial(0, [10, 30]),
-        _create_frozen_trial(1, [10, 10]),
-        _create_frozen_trial(2, [20, 20]),
-        _create_frozen_trial(3, [30, 10]),
-        _create_frozen_trial(4, [15, 15]),
-    ]
-    population_per_rank = sampler._fast_non_dominated_sort(trials, directions)
-    assert [{t.number for t in population} for population in population_per_rank] == [
-        {0, 2, 3},
-        {4},
-        {1},
-    ]
-
-    # Three objective.
-    directions = [StudyDirection.MAXIMIZE, StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
-    trials = [
-        _create_frozen_trial(0, [5, 5, 4]),
-        _create_frozen_trial(1, [5, 5, 5]),
-        _create_frozen_trial(2, [9, 9, 0]),
-        _create_frozen_trial(3, [5, 7, 5]),
-        _create_frozen_trial(4, [0, 0, 9]),
-        _create_frozen_trial(5, [0, 9, 9]),
-    ]
-    population_per_rank = sampler._fast_non_dominated_sort(trials, directions)
-    assert [{t.number for t in population} for population in population_per_rank] == [
-        {2},
-        {0, 3, 5},
-        {1},
-        {4},
-    ]
+    trials = [_create_frozen_trial(i, v) for i, v in enumerate(values)]
+    population_per_rank = sampler._fast_non_dominated_sort(copy.copy(trials), directions)
+    _assert_population_per_rank(trials, directions, population_per_rank)
 
 
-def test_fast_non_dominated_sort_constrained_feasible() -> None:
+def test_fast_non_dominated_sort_with_constraints() -> None:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = NSGAIISampler(constraints_func=lambda _: [0])
 
-    # Single objective.
-    directions = [StudyDirection.MINIMIZE]
+    value_list = [10, 20, 20, 30, float("inf"), float("inf"), -float("inf")]
+    values = [[v1, v2] for v1 in value_list for v2 in value_list]
+
+    constraint_list = [-float("inf"), -2, 0, 1, 2, 3, float("inf")]
+    constraints = [[c1, c2] for c1 in constraint_list for c2 in constraint_list]
+
     trials = [
-        _create_frozen_trial(0, [10], [0]),
-        _create_frozen_trial(1, [20], [0]),
-        _create_frozen_trial(2, [20], [0]),
-        _create_frozen_trial(3, [30], [0]),
+        _create_frozen_trial(i, v, c)
+        for i, (v, c) in enumerate(itertools.product(values, constraints))
     ]
-    population_per_rank = sampler._fast_non_dominated_sort(trials, directions)
-    assert [{t.number for t in population} for population in population_per_rank] == [
-        {0},
-        {1, 2},
-        {3},
-    ]
-
-    # Two objective.
-    directions = [StudyDirection.MAXIMIZE, StudyDirection.MAXIMIZE]
-    trials = [
-        _create_frozen_trial(0, [10, 30], [0]),
-        _create_frozen_trial(1, [10, 10], [0]),
-        _create_frozen_trial(2, [20, 20], [0]),
-        _create_frozen_trial(3, [30, 10], [0]),
-        _create_frozen_trial(4, [15, 15], [0]),
-    ]
-    population_per_rank = sampler._fast_non_dominated_sort(trials, directions)
-    assert [{t.number for t in population} for population in population_per_rank] == [
-        {0, 2, 3},
-        {4},
-        {1},
-    ]
-
-    # Three objective.
-    directions = [StudyDirection.MAXIMIZE, StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
-    trials = [
-        _create_frozen_trial(0, [5, 5, 4], [0]),
-        _create_frozen_trial(1, [5, 5, 5], [0]),
-        _create_frozen_trial(2, [9, 9, 0], [0]),
-        _create_frozen_trial(3, [5, 7, 5], [0]),
-        _create_frozen_trial(4, [0, 0, 9], [0]),
-        _create_frozen_trial(5, [0, 9, 9], [0]),
-    ]
-    population_per_rank = sampler._fast_non_dominated_sort(trials, directions)
-    assert [{t.number for t in population} for population in population_per_rank] == [
-        {2},
-        {0, 3, 5},
-        {1},
-        {4},
-    ]
+    directions = [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
+    population_per_rank = sampler._fast_non_dominated_sort(copy.copy(trials), directions)
+    _assert_population_per_rank(trials, directions, population_per_rank)
 
 
-def test_fast_non_dominated_sort_constrained_infeasible() -> None:
+@pytest.mark.parametrize(
+    "values_and_constraints",
+    [
+        [([10], None), ([20], None), ([20], [0]), ([20], [1]), ([30], [-1])],
+        [
+            ([50, 30], None),
+            ([30, 50], None),
+            ([20, 20], [3, 3]),
+            ([30, 10], [0, -1]),
+            ([15, 15], [4, 4]),
+        ],
+    ],
+)
+def test_fast_non_dominated_sort_missing_constraint_values(
+    values_and_constraints: List[Tuple[List[float], List[float]]]
+) -> None:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = NSGAIISampler(constraints_func=lambda _: [0])
 
-    # Single objective.
-    directions = [StudyDirection.MINIMIZE]
-    trials = [
-        _create_frozen_trial(0, [10], [1]),
-        _create_frozen_trial(1, [20], [3]),
-        _create_frozen_trial(2, [20], [2]),
-        _create_frozen_trial(3, [30], [1]),
-    ]
-    population_per_rank = sampler._fast_non_dominated_sort(trials, directions)
-    assert [{t.number for t in population} for population in population_per_rank] == [
-        {0, 3},
-        {2},
-        {1},
-    ]
+    values_dim = len(values_and_constraints[0][0])
+    for directions in itertools.product(
+        [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE], repeat=values_dim
+    ):
+        trials = [_create_frozen_trial(i, v, c) for i, (v, c) in enumerate(values_and_constraints)]
 
-    # Two objective.
-    directions = [StudyDirection.MAXIMIZE, StudyDirection.MAXIMIZE]
-    trials = [
-        _create_frozen_trial(0, [10, 30], [1, 1]),
-        _create_frozen_trial(1, [10, 10], [2, 2]),
-        _create_frozen_trial(2, [20, 20], [3, 3]),
-        _create_frozen_trial(3, [30, 10], [2, 4]),
-        _create_frozen_trial(4, [15, 15], [4, 4]),
-    ]
-    population_per_rank = sampler._fast_non_dominated_sort(trials, directions)
-    assert [{t.number for t in population} for population in population_per_rank] == [
-        {0},
-        {1},
-        {2, 3},
-        {4},
-    ]
-
-    # Three objective.
-    directions = [StudyDirection.MAXIMIZE, StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
-    trials = [
-        _create_frozen_trial(0, [5, 5, 4], [1, 1, 1]),
-        _create_frozen_trial(1, [5, 5, 5], [1, 1, 1]),
-        _create_frozen_trial(2, [9, 9, 0], [3, 3, 3]),
-        _create_frozen_trial(3, [5, 7, 5], [2, 2, 2]),
-        _create_frozen_trial(4, [0, 0, 9], [1, 1, 4]),
-        _create_frozen_trial(5, [0, 9, 9], [2, 1, 3]),
-    ]
-    population_per_rank = sampler._fast_non_dominated_sort(trials, directions)
-    assert [{t.number for t in population} for population in population_per_rank] == [
-        {0, 1},
-        {3, 4, 5},
-        {2},
-    ]
+        with pytest.warns(UserWarning):
+            population_per_rank = sampler._fast_non_dominated_sort(
+                copy.copy(trials), list(directions)
+            )
+        _assert_population_per_rank(trials, list(directions), population_per_rank)
 
 
-def test_fast_non_dominated_sort_constrained_feasible_infeasible() -> None:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = NSGAIISampler(constraints_func=lambda _: [0])
-
-    # Single objective.
-    directions = [StudyDirection.MINIMIZE]
-    trials = [
-        _create_frozen_trial(0, [10], [0]),
-        _create_frozen_trial(1, [20], [-1]),
-        _create_frozen_trial(2, [20], [-2]),
-        _create_frozen_trial(3, [30], [1]),
-    ]
-    population_per_rank = sampler._fast_non_dominated_sort(trials, directions)
-    assert [{t.number for t in population} for population in population_per_rank] == [
-        {0},
-        {1, 2},
-        {3},
-    ]
-
-    # Two objective.
-    directions = [StudyDirection.MAXIMIZE, StudyDirection.MAXIMIZE]
-    trials = [
-        _create_frozen_trial(0, [10, 30], [-1, -1]),
-        _create_frozen_trial(1, [10, 10], [-2, -2]),
-        _create_frozen_trial(2, [20, 20], [3, 3]),
-        _create_frozen_trial(3, [30, 10], [6, -1]),
-        _create_frozen_trial(4, [15, 15], [4, 4]),
-    ]
-    population_per_rank = sampler._fast_non_dominated_sort(trials, directions)
-    assert [{t.number for t in population} for population in population_per_rank] == [
-        {0},
-        {1},
-        {2, 3},
-        {4},
-    ]
-
-    # Three objective.
-    directions = [StudyDirection.MAXIMIZE, StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
-    trials = [
-        _create_frozen_trial(0, [5, 5, 4], [-1, -1, -1]),
-        _create_frozen_trial(1, [5, 5, 5], [1, 1, -1]),
-        _create_frozen_trial(2, [9, 9, 0], [1, -1, -1]),
-        _create_frozen_trial(3, [5, 7, 5], [-1, -1, -1]),
-        _create_frozen_trial(4, [0, 0, 9], [-1, -1, -1]),
-        _create_frozen_trial(5, [0, 9, 9], [-1, -1, -1]),
-    ]
-    population_per_rank = sampler._fast_non_dominated_sort(trials, directions)
-    assert [{t.number for t in population} for population in population_per_rank] == [
-        {0, 3, 5},
-        {4},
-        {2},
-        {1},
-    ]
-
-
-def test_fast_non_dominated_sort_missing_constraint_values() -> None:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = NSGAIISampler(constraints_func=lambda _: [0])
-
-    # Single objective.
-    directions = [StudyDirection.MINIMIZE]
-    trials = [
-        _create_frozen_trial(0, [10]),
-        _create_frozen_trial(1, [20]),
-        _create_frozen_trial(2, [20], [0]),
-        _create_frozen_trial(3, [20], [1]),
-        _create_frozen_trial(4, [30], [-1]),
-    ]
-    with pytest.warns(UserWarning):
-        population_per_rank = sampler._fast_non_dominated_sort(trials, directions)
-    assert [{t.number for t in population} for population in population_per_rank] == [
-        {2},
-        {4},
-        {3},
-        {0},
-        {1},
-    ]
-
-    # Two objectives.
-    directions = [StudyDirection.MAXIMIZE, StudyDirection.MAXIMIZE]
-    trials = [
-        _create_frozen_trial(0, [50, 30]),
-        _create_frozen_trial(1, [30, 50]),
-        _create_frozen_trial(2, [20, 20], [3, 3]),
-        _create_frozen_trial(3, [30, 10], [0, -1]),
-        _create_frozen_trial(4, [15, 15], [4, 4]),
-    ]
-    with pytest.warns(UserWarning):
-        population_per_rank = sampler._fast_non_dominated_sort(trials, directions)
-    assert [{t.number for t in population} for population in population_per_rank] == [
-        {3},
-        {2},
-        {4},
-        {0, 1},
-    ]
+@pytest.mark.parametrize("n_dims", [1, 2, 3])
+def test_fast_non_dominated_sort_empty(n_dims: int) -> None:
+    for directions in itertools.product(
+        [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE], repeat=n_dims
+    ):
+        trials: List[FrozenTrial] = []
+        sampler = NSGAIISampler()
+        population_per_rank = sampler._fast_non_dominated_sort(trials, list(directions))
+        assert population_per_rank == []
 
 
 @pytest.mark.parametrize(
