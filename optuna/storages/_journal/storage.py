@@ -17,6 +17,7 @@ from optuna.distributions import distribution_to_json
 from optuna.distributions import json_to_distribution
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages import BaseStorage
+from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages._journal.base import BaseJournalLogStorage
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
@@ -42,6 +43,7 @@ class JournalOperation(enum.IntEnum):
 
 
 def datetime_from_isoformat(datetime_str: str) -> datetime.datetime:
+    # TODO(wattlebirdaz): Use datetime.fromisoformat after dropped Python 3.6 support.
     return datetime.datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S.%f")
 
 
@@ -72,23 +74,20 @@ class JournalStorage(BaseStorage):
 
     """
 
-    threading.Lock()
-
     def __init__(self, log_storage: BaseJournalLogStorage) -> None:
         self._pid = str(uuid.uuid4())
         self._log_number_read: int = 0
         self._backend = log_storage
 
         # In-memory replayed results
-        self._studies: Dict[int, FrozenStudy] = dict()
-        self._trials: Dict[int, FrozenTrial] = dict()
-        self._study_id_to_trial_ids: Dict[int, List[int]] = dict()
-        self._trial_id_to_study_id: Dict[int, int] = dict()
+        self._studies: Dict[int, FrozenStudy] = {}
+        self._trials: Dict[int, FrozenTrial] = {}
+        self._study_id_to_trial_ids: Dict[int, List[int]] = {}
+        self._trial_id_to_study_id: Dict[int, int] = {}
         self._next_study_id: int = 0
         self._trial_ids_owned_by_this_process: List[int] = []
 
         self._thread_lock = threading.Lock()
-        self._study_name_suffix_num = -1
 
     def _write_log(self, op_code: int, extra_fields: Dict[str, Any]) -> None:
         self._backend.append_logs([{"op_code": op_code, "pid": self._pid, **extra_fields}])
@@ -358,15 +357,12 @@ class JournalStorage(BaseStorage):
             self._log_number_read += 1
             self._apply_log(log)
 
-    def _create_unique_study_name(self) -> str:
-        self._study_name_suffix_num += 1
-        return "no-name-" + self._pid + "-" + str(self._study_name_suffix_num)
-
     # Basic study manipulation
 
     def create_new_study(self, study_name: Optional[str] = None) -> int:
         with self._thread_lock:
-            study_name = study_name or self._create_unique_study_name()
+            if study_name is None:
+                study_name = DEFAULT_STUDY_NAME_PREFIX + str(uuid.uuid4())
             self._write_log(JournalOperation.CREATE_STUDY, {"study_name": study_name})
             self._sync_with_backend()
 
@@ -403,38 +399,37 @@ class JournalStorage(BaseStorage):
     def get_study_id_from_name(self, study_name: str) -> int:
         with self._thread_lock:
             self._sync_with_backend()
-            frozen_study = [fs for fs in self._studies.values() if fs.study_name == study_name]
-            if len(frozen_study) == 0:
-                raise KeyError(NOT_FOUND_MSG)
-            assert len(frozen_study) == 1
-            return frozen_study[0]._study_id
-
-    def _raise_if_not_found_in_studies(self, study_id: int) -> None:
-        if study_id not in self._studies.keys():
+            for study_id, study in self._studies.items():
+                if study.study_name == study_name:
+                    return study_id
             raise KeyError(NOT_FOUND_MSG)
 
     def get_study_name_from_id(self, study_id: int) -> str:
         with self._thread_lock:
             self._sync_with_backend()
-            self._raise_if_not_found_in_studies(study_id)
+            if study_id not in self._studies:
+                raise KeyError(NOT_FOUND_MSG)
             return self._studies[study_id].study_name
 
     def get_study_directions(self, study_id: int) -> List[StudyDirection]:
         with self._thread_lock:
             self._sync_with_backend()
-            self._raise_if_not_found_in_studies(study_id)
+            if study_id not in self._studies:
+                raise KeyError(NOT_FOUND_MSG)
             return self._studies[study_id].directions
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
         with self._thread_lock:
             self._sync_with_backend()
-            self._raise_if_not_found_in_studies(study_id)
+            if study_id not in self._studies:
+                raise KeyError(NOT_FOUND_MSG)
             return self._studies[study_id].user_attrs
 
     def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
         with self._thread_lock:
             self._sync_with_backend()
-            self._raise_if_not_found_in_studies(study_id)
+            if study_id not in self._studies:
+                raise KeyError(NOT_FOUND_MSG)
             return self._studies[study_id].system_attrs
 
     def get_all_studies(self) -> List[FrozenStudy]:
@@ -527,13 +522,10 @@ class JournalStorage(BaseStorage):
             self._write_log(JournalOperation.SET_TRIAL_STATE_VALUES, log)
             self._sync_with_backend()
 
-            if (
-                state == TrialState.RUNNING
-                and trial_id not in self._trial_ids_owned_by_this_process
-            ):
-                return False
-            else:
-                return True
+            return (
+                state != TrialState.RUNNING
+                or trial_id in self._trial_ids_owned_by_this_process
+            )
 
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
@@ -573,13 +565,10 @@ class JournalStorage(BaseStorage):
     def get_trial(self, trial_id: int) -> FrozenTrial:
         with self._thread_lock:
             self._sync_with_backend()
-            frozen_trial = [
-                trial for trial in self._trials.values() if trial._trial_id == trial_id
-            ]
-            if len(frozen_trial) != 1:
-                raise KeyError(NOT_FOUND_MSG)
-            else:
-                return frozen_trial[0]
+            for _trial_id in self._trials:
+                if trial_id == _trial_id:
+                    return self._trials[trial_id]
+            raise KeyError(NOT_FOUND_MSG)
 
     def get_all_trials(
         self,
@@ -589,10 +578,10 @@ class JournalStorage(BaseStorage):
     ) -> List[FrozenTrial]:
         with self._thread_lock:
             self._sync_with_backend()
-            self._raise_if_not_found_in_studies(study_id)
+            if study_id not in self._study_id_to_trial_ids:
+                raise KeyError(NOT_FOUND_MSG)
 
             frozen_trials = []
-
             for trial_id in self._study_id_to_trial_ids[study_id]:
                 trial = self._trials[trial_id]
                 if states is None or trial.state in states:
