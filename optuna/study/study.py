@@ -210,6 +210,10 @@ class Study:
 
         Returns:
             A list of :class:`~optuna.trial.FrozenTrial` objects.
+
+            .. seealso::
+                See :func:`~optuna.study.Study.get_trials` for related method.
+
         """
 
         return self.get_trials(deepcopy=True, states=None)
@@ -222,6 +226,9 @@ class Study:
         """Return all trials in the study.
 
         The returned trials are ordered by trial number.
+
+        .. seealso::
+            See :attr:`~optuna.study.Study.trials` for related property.
 
         Example:
             .. testcode::
