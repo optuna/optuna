@@ -14,3 +14,10 @@ def test_get_optimization_history_plot(
 ) -> None:
     figure = _get_optimization_history_plot(info_list, target_name=target_name)
     assert figure.get_ylabel() == target_name
+    expected_legends = []
+    for info in info_list:
+        expected_legends.append(info.values_info.label_name)
+        if info.best_values_info is not None:
+            expected_legends.append(info.best_values_info.label_name)
+    legends = [legend.get_text() for legend in figure.legend().get_texts()]
+    assert sorted(legends) == sorted(expected_legends)
