@@ -30,16 +30,6 @@ def _check_and_convert_to_values(
     else:
         _original_values = [original_value]
 
-    if n_objectives != len(_original_values):
-        return (
-            None,
-            (
-                f"The number of the values "
-                f"{len(_original_values)} did not match the number of the objectives "
-                f"{n_objectives}."
-            ),
-        )
-
     _checked_values = []
     for v in _original_values:
         checked_v, failure_message = _check_single_value(v, trial_number)
@@ -52,6 +42,16 @@ def _check_and_convert_to_values(
             _checked_values.append(checked_v)
         else:
             assert False
+
+    if n_objectives != len(_original_values):
+        return (
+            None,
+            (
+                f"The number of the values "
+                f"{len(_checked_values)} did not match the number of the objectives "
+                f"{n_objectives}."
+            ),
+        )
 
     return _checked_values, None
 
