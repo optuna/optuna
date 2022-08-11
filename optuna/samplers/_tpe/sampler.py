@@ -206,6 +206,10 @@ class TPESampler(BaseSampler):
                 workers is high.
 
             .. note::
+                This feature can be used for only single-objective optimization; this argument is
+                ignored for multi-objective optimization.
+
+            .. note::
                 Added in v2.8.0 as an experimental feature. The interface may change in newer
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.8.0.
