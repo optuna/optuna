@@ -85,6 +85,9 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
     optuna.samplers.IntersectionSearchSpace
     optuna.samplers.intersection_search_space
 
+.. note::
+    The following :mod:`optuna.samplers.nsgaii` module defines crossover operations used by :class:`~optuna.samplers.NSGAIISampler`.
+
 .. toctree::
     :maxdepth: 1
 
