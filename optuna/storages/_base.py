@@ -331,6 +331,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
+    @abc.abstractmethod
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
         """Read the trial ID of a trial.
 
@@ -579,8 +580,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             :exc:`ValueError`:
                 If no trials have been completed.
         """
-        all_trials = self.get_all_trials(study_id, deepcopy=False)
-        all_trials = [t for t in all_trials if t.state is TrialState.COMPLETE]
+        all_trials = self.get_all_trials(study_id, deepcopy=False, states=[TrialState.COMPLETE])
 
         if len(all_trials) == 0:
             raise ValueError("No trials are completed yet.")
