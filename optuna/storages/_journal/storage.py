@@ -79,10 +79,13 @@ class JournalStorage(BaseStorage):
 
     def __init__(self, log_storage: BaseJournalLogStorage) -> None:
         self._pid = str(uuid.uuid4())
-        self._log_number_read: int = 0
+
         self._backend = log_storage
         self._thread_lock = threading.Lock()
         self._replay_result = JournalStorageReplayResult(self._pid)
+
+        with self._thread_lock:
+            self._sync_with_backend()
 
     def _write_log(self, op_code: int, extra_fields: Dict[str, Any]) -> None:
         self._backend.append_logs([{"op_code": op_code, "pid": self._pid, **extra_fields}])
