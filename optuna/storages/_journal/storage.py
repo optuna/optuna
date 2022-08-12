@@ -525,10 +525,7 @@ class JournalStorage(BaseStorage):
             self._write_log(JournalOperation.SET_TRIAL_STATE_VALUES, log)
             self._sync_with_backend()
 
-            return (
-                state != TrialState.RUNNING
-                or trial_id in self._trial_ids_owned_by_this_process
-            )
+            return state != TrialState.RUNNING or trial_id in self._trial_ids_owned_by_this_process
 
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
