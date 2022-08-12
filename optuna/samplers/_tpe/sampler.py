@@ -397,14 +397,16 @@ class TPESampler(BaseSampler):
         # `None` items are intentionally converted to `nan` and then filtered out.
         # For `nan` conversion, the dtype must be float.
         config_values = {k: np.asarray(v, dtype=float) for k, v in values.items()}
-        below = _build_observation_dict(config_values, indices_below)
-        above = _build_observation_dict(config_values, indices_above)
+        param_mask = ~np.isnan(list(config_values.values())[0])
+        param_mask_below, param_mask_above = param_mask[indices_below], param_mask[indices_above]
+        below = {k: v[indices_below[param_mask_below]] for k, v in config_values.items()}
+        above = {k: v[indices_above[param_mask_above]] for k, v in config_values.items()}
 
         # We then sample by maximizing log likelihood ratio.
         if study._is_multi_objective():
             weights_below = _calculate_weights_below_for_multi_objective(
-                config_values, scores, indices_below, violations
-            )
+                scores, indices_below, violations
+            )[param_mask_below]
             mpe_below = _ParzenEstimator(
                 below, search_space, self._parzen_estimator_parameters, weights_below
             )
@@ -450,13 +452,15 @@ class TPESampler(BaseSampler):
         # `None` items are intentionally converted to `nan` and then filtered out.
         # For `nan` conversion, the dtype must be float.
         config_values = {k: np.asarray(v, dtype=float) for k, v in values.items()}
-        below = _build_observation_dict(config_values, indices_below)
-        above = _build_observation_dict(config_values, indices_above)
+        param_mask = ~np.isnan(list(config_values.values())[0])
+        param_mask_below, param_mask_above = param_mask[indices_below], param_mask[indices_above]
+        below = {k: v[indices_below[param_mask_below]] for k, v in config_values.items()}
+        above = {k: v[indices_above[param_mask_above]] for k, v in config_values.items()}
 
         if study._is_multi_objective():
             weights_below = _calculate_weights_below_for_multi_objective(
-                config_values, scores, indices_below, violations
-            )
+                scores, indices_below, violations
+            )[param_mask_below]
             mpe_below = _ParzenEstimator(
                 below,
                 {param_name: param_distribution},
@@ -768,18 +772,6 @@ def _split_observation_pairs(
     return indices_below, indices_above
 
 
-def _build_observation_dict(
-    config_values: Dict[str, np.ndarray], indices: np.ndarray
-) -> Dict[str, np.ndarray]:
-
-    observation_dict = {}
-    for param_name, param_val in config_values.items():
-        param_values = param_val[indices]
-        observation_dict[param_name] = param_values[~np.isnan(param_values)]
-
-    return observation_dict
-
-
 def _compute_hypervolume(solution_set: np.ndarray, reference_point: np.ndarray) -> float:
     return WFG().compute(solution_set, reference_point)
 
@@ -827,7 +819,6 @@ def _solve_hssp(
 
 
 def _calculate_weights_below_for_multi_objective(
-    config_values: Dict[str, np.ndarray],
     loss_vals: List[Tuple[float, List[float]]],
     indices: np.ndarray,
     violations: Optional[List[float]],
@@ -869,9 +860,7 @@ def _calculate_weights_below_for_multi_objective(
         contributions += EPS
         weights_below = np.clip(contributions / np.max(contributions), 0, 1)
 
-    cvals = list(config_values.values())[0][indices]
     # For now, EPS weight is assigned to infeasible trials.
     weights_below_all = np.full(len(indices), EPS)
     weights_below_all[feasible_mask] = weights_below
-    weights_below_all = weights_below_all[~np.isnan(cvals)]
     return weights_below_all
