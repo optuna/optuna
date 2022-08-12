@@ -81,23 +81,305 @@ class JournalStorage(BaseStorage):
         self._pid = str(uuid.uuid4())
         self._log_number_read: int = 0
         self._backend = log_storage
+        self._thread_lock = threading.Lock()
+        self._state = JournalStorageReplayResult(self._pid)
 
-        # In-memory replayed results
+    def _write_log(self, op_code: int, extra_fields: Dict[str, Any]) -> None:
+        self._backend.append_logs([{"op_code": op_code, "pid": self._pid, **extra_fields}])
+
+    def _sync_with_backend(self) -> None:
+        logs = self._backend.read_logs(self._state.log_number_read)
+        self._state.apply_logs(logs)
+
+    def create_new_study(self, study_name: Optional[str] = None) -> int:
+        with self._thread_lock:
+            if study_name is None:
+                study_name = DEFAULT_STUDY_NAME_PREFIX + str(uuid.uuid4())
+            self._write_log(JournalOperation.CREATE_STUDY, {"study_name": study_name})
+            self._sync_with_backend()
+
+            for frozen_study in self._state.get_all_studies():
+                if frozen_study.study_name == study_name:
+                    return frozen_study._study_id
+            assert False, "Should not reach."
+
+    def delete_study(self, study_id: int) -> None:
+        with self._thread_lock:
+            self._write_log(JournalOperation.DELETE_STUDY, {"study_id": study_id})
+            self._sync_with_backend()
+
+    def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
+        log: Dict[str, Any] = {"study_id": study_id, "user_attr": {key: value}}
+        with self._thread_lock:
+            self._write_log(JournalOperation.SET_STUDY_USER_ATTR, log)
+            self._sync_with_backend()
+
+    def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
+        log: Dict[str, Any] = {"study_id": study_id, "system_attr": {key: value}}
+        with self._thread_lock:
+            self._write_log(JournalOperation.SET_STUDY_SYSTEM_ATTR, log)
+            self._sync_with_backend()
+
+    def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
+        log: Dict[str, Any] = {"study_id": study_id, "directions": directions}
+        with self._thread_lock:
+            self._write_log(JournalOperation.SET_STUDY_DIRECTIONS, log)
+            self._sync_with_backend()
+
+    def get_study_id_from_name(self, study_name: str) -> int:
+        with self._thread_lock:
+            self._sync_with_backend()
+            for study in self._state.get_all_studies():
+                if study.study_name == study_name:
+                    return study._study_id
+            raise KeyError(NOT_FOUND_MSG)
+
+    def get_study_name_from_id(self, study_id: int) -> str:
+        with self._thread_lock:
+            self._sync_with_backend()
+            return self._state.get_study(study_id).study_name
+
+    def get_study_directions(self, study_id: int) -> List[StudyDirection]:
+        with self._thread_lock:
+            self._sync_with_backend()
+            return self._state.get_study(study_id).directions
+
+    def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
+        with self._thread_lock:
+            self._sync_with_backend()
+            return self._state.get_study(study_id).user_attrs
+
+    def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
+        with self._thread_lock:
+            self._sync_with_backend()
+            return self._state.get_study(study_id).system_attrs
+
+    def get_all_studies(self) -> List[FrozenStudy]:
+        with self._thread_lock:
+            self._sync_with_backend()
+            return copy.deepcopy(self._state.get_all_studies())
+
+    # Basic trial manipulation
+    def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
+        log: Dict[str, Any] = {
+            "study_id": study_id,
+            "datetime_start": datetime.datetime.now().isoformat(),
+        }
+
+        if template_trial:
+            log["state"] = template_trial.state
+            if template_trial.values is not None and len(template_trial.values) > 1:
+                log["value"] = None
+                log["values"] = template_trial.values
+            else:
+                log["value"] = template_trial.value
+                log["values"] = None
+            if template_trial.datetime_start:
+                log["datetime_start"] = template_trial.datetime_start.isoformat()
+            else:
+                log["datetime_start"] = None
+            if template_trial.datetime_complete:
+                log["datetime_complete"] = template_trial.datetime_complete.isoformat()
+
+            log["distributions"] = {
+                k: distribution_to_json(dist) for k, dist in template_trial.distributions.items()
+            }
+            log["params"] = {
+                k: template_trial.distributions[k].to_internal_repr(param)
+                for k, param in template_trial.params.items()
+            }
+            log["user_attrs"] = template_trial.user_attrs
+            log["system_attrs"] = template_trial.system_attrs
+            log["intermediate_values"] = template_trial.intermediate_values
+
+        with self._thread_lock:
+            self._write_log(JournalOperation.CREATE_TRIAL, log)
+            self._sync_with_backend()
+            return self._state._trial_ids_owned_by_this_process[-1]
+
+    def set_trial_param(
+        self,
+        trial_id: int,
+        param_name: str,
+        param_value_internal: float,
+        distribution: BaseDistribution,
+    ) -> None:
+        log: Dict[str, Any] = {
+            "trial_id": trial_id,
+            "param_name": param_name,
+            "param_value_internal": param_value_internal,
+            "distribution": distribution_to_json(distribution),
+        }
+
+        with self._thread_lock:
+            self._write_log(JournalOperation.SET_TRIAL_PARAM, log)
+            self._sync_with_backend()
+
+    def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
+        with self._thread_lock:
+            self._sync_with_backend()
+            if len(self._state._study_id_to_trial_ids[study_id]) <= trial_number:
+                raise KeyError(
+                    "No trial with trial number {} exists in study with study_id {}.".format(
+                        trial_number, study_id
+                    )
+                )
+            return self._state._study_id_to_trial_ids[study_id][trial_number]
+
+    def set_trial_state_values(
+        self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
+    ) -> bool:
+        log: Dict[str, Any] = {
+            "trial_id": trial_id,
+            "state": state,
+            "values": values,
+        }
+
+        if state == TrialState.RUNNING:
+            log["datetime_start"] = datetime.datetime.now().isoformat()
+        elif state.is_finished():
+            log["datetime_complete"] = datetime.datetime.now().isoformat()
+
+        with self._thread_lock:
+            self._write_log(JournalOperation.SET_TRIAL_STATE_VALUES, log)
+            self._sync_with_backend()
+
+            if (
+                state == TrialState.RUNNING
+                and trial_id not in self._state._trial_ids_owned_by_this_process
+            ):
+                return False
+            else:
+                return True
+
+    def set_trial_intermediate_value(
+        self, trial_id: int, step: int, intermediate_value: float
+    ) -> None:
+        log: Dict[str, Any] = {
+            "trial_id": trial_id,
+            "step": step,
+            "intermediate_value": intermediate_value,
+        }
+
+        with self._thread_lock:
+            self._write_log(JournalOperation.SET_TRIAL_INTERMEDIATE_VALUE, log)
+            self._sync_with_backend()
+
+    def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
+        log: Dict[str, Any] = {
+            "trial_id": trial_id,
+            "user_attr": {key: value},
+        }
+
+        with self._thread_lock:
+            self._write_log(JournalOperation.SET_TRIAL_USER_ATTR, log)
+            self._sync_with_backend()
+
+    def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
+        log: Dict[str, Any] = {
+            "trial_id": trial_id,
+            "system_attr": {key: value},
+        }
+
+        with self._thread_lock:
+            self._write_log(JournalOperation.SET_TRIAL_SYSTEM_ATTR, log)
+            self._sync_with_backend()
+
+    def get_trial(self, trial_id: int) -> FrozenTrial:
+        with self._thread_lock:
+            self._sync_with_backend()
+            return self._state.get_trial(trial_id)
+
+    def get_all_trials(
+        self,
+        study_id: int,
+        deepcopy: bool = True,
+        states: Optional[Container[TrialState]] = None,
+    ) -> List[FrozenTrial]:
+        with self._thread_lock:
+            self._sync_with_backend()
+            frozen_trials = self._state.get_all_trials(study_id, states)
+            if deepcopy:
+                return copy.deepcopy(frozen_trials)
+            return frozen_trials
+
+
+class JournalStorageReplayResult:
+    def __init__(self, pid: str) -> None:
+        self.log_number_read = 0
+        self._pid = pid
         self._studies: Dict[int, FrozenStudy] = {}
         self._trials: Dict[int, FrozenTrial] = {}
+
         self._study_id_to_trial_ids: Dict[int, List[int]] = {}
         self._trial_id_to_study_id: Dict[int, int] = {}
         self._next_study_id: int = 0
         self._trial_ids_owned_by_this_process: List[int] = []
 
-        self._thread_lock = threading.Lock()
+    def apply_logs(self, logs: List[Dict[str, Any]]) -> None:
+        for log in logs:
+            self.log_number_read += 1
+            op = log["op_code"]
+            if op == JournalOperation.CREATE_STUDY:
+                self._apply_create_study(log)
+            elif op == JournalOperation.DELETE_STUDY:
+                self._apply_delete_study(log)
+            elif op == JournalOperation.SET_STUDY_USER_ATTR:
+                self._apply_set_study_user_attr(log)
+            elif op == JournalOperation.SET_STUDY_SYSTEM_ATTR:
+                self._apply_set_study_system_attr(log)
+            elif op == JournalOperation.SET_STUDY_DIRECTIONS:
+                self._apply_set_study_directions(log)
+            elif op == JournalOperation.CREATE_TRIAL:
+                self._apply_create_trial(log)
+            elif op == JournalOperation.SET_TRIAL_PARAM:
+                self._apply_set_trial_param(log)
+            elif op == JournalOperation.SET_TRIAL_STATE_VALUES:
+                self._apply_set_trial_state_values(log)
+            elif op == JournalOperation.SET_TRIAL_INTERMEDIATE_VALUE:
+                self._apply_set_trial_intermediate_value(log)
+            elif op == JournalOperation.SET_TRIAL_USER_ATTR:
+                self._apply_set_trial_user_attr(log)
+            elif op == JournalOperation.SET_TRIAL_SYSTEM_ATTR:
+                self._apply_set_trial_system_attr(log)
+            else:
+                assert False, "Should not reach."
 
-    def _write_log(self, op_code: int, extra_fields: Dict[str, Any]) -> None:
-        self._backend.append_logs([{"op_code": op_code, "pid": self._pid, **extra_fields}])
+    def get_study(self, study_id: int) -> FrozenStudy:
+        if study_id not in self._studies:
+            raise KeyError(NOT_FOUND_MSG)
+        return self._studies[study_id]
+
+    def get_all_studies(self) -> List[FrozenStudy]:
+        return list(self._studies.values())
+
+    def get_trial(self, trial_id: int) -> FrozenTrial:
+        if trial_id not in self._trials:
+            raise KeyError(NOT_FOUND_MSG)
+        return self._trials[trial_id]
+
+    def get_all_trials(
+        self, study_id: int, states: Optional[Container[TrialState]]
+    ) -> List[FrozenTrial]:
+        if study_id not in self._studies:
+            raise KeyError(NOT_FOUND_MSG)
+
+        frozen_trials: List[FrozenTrial] = []
+        for trial_id in self._study_id_to_trial_ids[study_id]:
+            trial = self._trials[trial_id]
+            if states is None or trial.state in states:
+                frozen_trials.append(trial)
+        return frozen_trials
 
     def _raise_if_log_issued_by_pid(self, log: Dict[str, Any], err: Exception) -> None:
         if log["pid"] == self._pid:
             raise err
+
+    def _study_exists(self, study_id: int, log: Dict[str, Any]) -> bool:
+        if study_id not in self._studies:
+            self._raise_if_log_issued_by_pid(log, KeyError(NOT_FOUND_MSG))
+            return False
+        return True
 
     def _apply_create_study(self, log: Dict[str, Any]) -> None:
         study_name = log["study_name"]
@@ -125,12 +407,6 @@ class JournalStorage(BaseStorage):
             study_id=study_id,
         )
         self._study_id_to_trial_ids[study_id] = []
-
-    def _study_exists(self, study_id: int, log: Dict[str, Any]) -> bool:
-        if study_id not in self._studies:
-            self._raise_if_log_issued_by_pid(log, KeyError(NOT_FOUND_MSG))
-            return False
-        return True
 
     def _apply_delete_study(self, log: Dict[str, Any]) -> None:
         study_id = log["study_id"]
@@ -224,23 +500,6 @@ class JournalStorage(BaseStorage):
         if log["pid"] == self._pid:
             self._trial_ids_owned_by_this_process.append(trial_id)
 
-    def _trial_exists_and_updatable(self, trial_id: int, log: Dict[str, Any]) -> bool:
-        if trial_id not in self._trials:
-            self._raise_if_log_issued_by_pid(log, KeyError(NOT_FOUND_MSG))
-            return False
-        elif self._trials[trial_id].state.is_finished():
-            self._raise_if_log_issued_by_pid(
-                log,
-                RuntimeError(
-                    "Trial#{} has already finished and can not be updated.".format(
-                        self._trials[trial_id].number
-                    )
-                ),
-            )
-            return False
-        else:
-            return True
-
     def _apply_set_trial_param(self, log: Dict[str, Any]) -> None:
         trial_id = log["trial_id"]
 
@@ -327,267 +586,19 @@ class JournalStorage(BaseStorage):
             }
             self._trials[trial_id] = trial
 
-    def _apply_log(self, log: Dict[str, Any]) -> None:
-        op = log["op_code"]
-        if op == JournalOperation.CREATE_STUDY:
-            self._apply_create_study(log)
-        elif op == JournalOperation.DELETE_STUDY:
-            self._apply_delete_study(log)
-        elif op == JournalOperation.SET_STUDY_USER_ATTR:
-            self._apply_set_study_user_attr(log)
-        elif op == JournalOperation.SET_STUDY_SYSTEM_ATTR:
-            self._apply_set_study_system_attr(log)
-        elif op == JournalOperation.SET_STUDY_DIRECTIONS:
-            self._apply_set_study_directions(log)
-        elif op == JournalOperation.CREATE_TRIAL:
-            self._apply_create_trial(log)
-        elif op == JournalOperation.SET_TRIAL_PARAM:
-            self._apply_set_trial_param(log)
-        elif op == JournalOperation.SET_TRIAL_STATE_VALUES:
-            self._apply_set_trial_state_values(log)
-        elif op == JournalOperation.SET_TRIAL_INTERMEDIATE_VALUE:
-            self._apply_set_trial_intermediate_value(log)
-        elif op == JournalOperation.SET_TRIAL_USER_ATTR:
-            self._apply_set_trial_user_attr(log)
-        elif op == JournalOperation.SET_TRIAL_SYSTEM_ATTR:
-            self._apply_set_trial_system_attr(log)
-        else:
-            assert False, "Should not reach."
-
-    def _sync_with_backend(self) -> None:
-        logs = self._backend.read_logs(self._log_number_read)
-        for log in logs:
-            self._log_number_read += 1
-            self._apply_log(log)
-
-    # Basic study manipulation
-
-    def create_new_study(self, study_name: Optional[str] = None) -> int:
-        study_name = study_name or DEFAULT_STUDY_NAME_PREFIX + str(uuid.uuid4())
-        with self._thread_lock:
-            self._write_log(JournalOperation.CREATE_STUDY, {"study_name": study_name})
-            self._sync_with_backend()
-
-            for frozen_study in self._studies.values():
-                if frozen_study.study_name == study_name:
-                    _logger.info("A new study created in Journal with name: {}".format(study_name))
-                    return frozen_study._study_id
-            assert False, "Should not reach."
-
-    def delete_study(self, study_id: int) -> None:
-        with self._thread_lock:
-            self._write_log(JournalOperation.DELETE_STUDY, {"study_id": study_id})
-            self._sync_with_backend()
-
-    def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
-        log: Dict[str, Any] = {"study_id": study_id, "user_attr": {key: value}}
-        with self._thread_lock:
-            self._write_log(JournalOperation.SET_STUDY_USER_ATTR, log)
-            self._sync_with_backend()
-
-    def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
-        log: Dict[str, Any] = {"study_id": study_id, "system_attr": {key: value}}
-        with self._thread_lock:
-            self._write_log(JournalOperation.SET_STUDY_SYSTEM_ATTR, log)
-            self._sync_with_backend()
-
-    def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
-        log: Dict[str, Any] = {"study_id": study_id, "directions": directions}
-        with self._thread_lock:
-            self._write_log(JournalOperation.SET_STUDY_DIRECTIONS, log)
-            self._sync_with_backend()
-
-    # Basic study access
-
-    def get_study_id_from_name(self, study_name: str) -> int:
-        with self._thread_lock:
-            self._sync_with_backend()
-            for study_id, study in self._studies.items():
-                if study.study_name == study_name:
-                    return study_id
-            raise KeyError(NOT_FOUND_MSG)
-
-    def get_study_name_from_id(self, study_id: int) -> str:
-        with self._thread_lock:
-            self._sync_with_backend()
-            if study_id not in self._studies:
-                raise KeyError(NOT_FOUND_MSG)
-            return self._studies[study_id].study_name
-
-    def get_study_directions(self, study_id: int) -> List[StudyDirection]:
-        with self._thread_lock:
-            self._sync_with_backend()
-            if study_id not in self._studies:
-                raise KeyError(NOT_FOUND_MSG)
-            return self._studies[study_id].directions
-
-    def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
-        with self._thread_lock:
-            self._sync_with_backend()
-            if study_id not in self._studies:
-                raise KeyError(NOT_FOUND_MSG)
-            return self._studies[study_id].user_attrs
-
-    def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
-        with self._thread_lock:
-            self._sync_with_backend()
-            if study_id not in self._studies:
-                raise KeyError(NOT_FOUND_MSG)
-            return self._studies[study_id].system_attrs
-
-    def get_all_studies(self) -> List[FrozenStudy]:
-        with self._thread_lock:
-            self._sync_with_backend()
-            return copy.deepcopy(list(self._studies.values()))
-
-    # Basic trial manipulation
-    def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
-        log: Dict[str, Any] = {
-            "study_id": study_id,
-            "datetime_start": datetime.datetime.now().isoformat(),
-        }
-
-        if template_trial:
-            log["state"] = template_trial.state
-            if template_trial.values is not None and len(template_trial.values) > 1:
-                log["value"] = None
-                log["values"] = template_trial.values
-            else:
-                log["value"] = template_trial.value
-                log["values"] = None
-            if template_trial.datetime_start:
-                log["datetime_start"] = template_trial.datetime_start.isoformat()
-            else:
-                log["datetime_start"] = None
-            if template_trial.datetime_complete:
-                log["datetime_complete"] = template_trial.datetime_complete.isoformat()
-
-            log["distributions"] = {
-                k: distribution_to_json(dist) for k, dist in template_trial.distributions.items()
-            }
-            log["params"] = {
-                k: template_trial.distributions[k].to_internal_repr(param)
-                for k, param in template_trial.params.items()
-            }
-            log["user_attrs"] = template_trial.user_attrs
-            log["system_attrs"] = template_trial.system_attrs
-            log["intermediate_values"] = template_trial.intermediate_values
-
-        with self._thread_lock:
-            self._write_log(JournalOperation.CREATE_TRIAL, log)
-            self._sync_with_backend()
-            return self._trial_ids_owned_by_this_process[-1]
-
-    def set_trial_param(
-        self,
-        trial_id: int,
-        param_name: str,
-        param_value_internal: float,
-        distribution: BaseDistribution,
-    ) -> None:
-        log: Dict[str, Any] = {
-            "trial_id": trial_id,
-            "param_name": param_name,
-            "param_value_internal": param_value_internal,
-            "distribution": distribution_to_json(distribution),
-        }
-
-        with self._thread_lock:
-            self._write_log(JournalOperation.SET_TRIAL_PARAM, log)
-            self._sync_with_backend()
-
-    def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
-        with self._thread_lock:
-            self._sync_with_backend()
-            if len(self._study_id_to_trial_ids[study_id]) <= trial_number:
-                raise KeyError(
-                    "No trial with trial number {} exists in study with study_id {}.".format(
-                        trial_number, study_id
+    def _trial_exists_and_updatable(self, trial_id: int, log: Dict[str, Any]) -> bool:
+        if trial_id not in self._trials:
+            self._raise_if_log_issued_by_pid(log, KeyError(NOT_FOUND_MSG))
+            return False
+        elif self._trials[trial_id].state.is_finished():
+            self._raise_if_log_issued_by_pid(
+                log,
+                RuntimeError(
+                    "Trial#{} has already finished and can not be updated.".format(
+                        self._trials[trial_id].number
                     )
-                )
-            return self._study_id_to_trial_ids[study_id][trial_number]
-
-    def set_trial_state_values(
-        self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
-    ) -> bool:
-        log: Dict[str, Any] = {
-            "trial_id": trial_id,
-            "state": state,
-            "values": values,
-        }
-
-        if state == TrialState.RUNNING:
-            log["datetime_start"] = datetime.datetime.now().isoformat()
-        elif state.is_finished():
-            log["datetime_complete"] = datetime.datetime.now().isoformat()
-
-        with self._thread_lock:
-            self._write_log(JournalOperation.SET_TRIAL_STATE_VALUES, log)
-            self._sync_with_backend()
-
-            return state != TrialState.RUNNING or trial_id in self._trial_ids_owned_by_this_process
-
-    def set_trial_intermediate_value(
-        self, trial_id: int, step: int, intermediate_value: float
-    ) -> None:
-        log: Dict[str, Any] = {
-            "trial_id": trial_id,
-            "step": step,
-            "intermediate_value": intermediate_value,
-        }
-
-        with self._thread_lock:
-            self._write_log(JournalOperation.SET_TRIAL_INTERMEDIATE_VALUE, log)
-            self._sync_with_backend()
-
-    def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
-        log: Dict[str, Any] = {
-            "trial_id": trial_id,
-            "user_attr": {key: value},
-        }
-
-        with self._thread_lock:
-            self._write_log(JournalOperation.SET_TRIAL_USER_ATTR, log)
-            self._sync_with_backend()
-
-    def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
-        log: Dict[str, Any] = {
-            "trial_id": trial_id,
-            "system_attr": {key: value},
-        }
-
-        with self._thread_lock:
-            self._write_log(JournalOperation.SET_TRIAL_SYSTEM_ATTR, log)
-            self._sync_with_backend()
-
-    # Basic trial access
-
-    def get_trial(self, trial_id: int) -> FrozenTrial:
-        with self._thread_lock:
-            self._sync_with_backend()
-            for _trial_id in self._trials:
-                if trial_id == _trial_id:
-                    return self._trials[trial_id]
-            raise KeyError(NOT_FOUND_MSG)
-
-    def get_all_trials(
-        self,
-        study_id: int,
-        deepcopy: bool = True,
-        states: Optional[Container[TrialState]] = None,
-    ) -> List[FrozenTrial]:
-        with self._thread_lock:
-            self._sync_with_backend()
-            if study_id not in self._study_id_to_trial_ids:
-                raise KeyError(NOT_FOUND_MSG)
-
-            frozen_trials = []
-            for trial_id in self._study_id_to_trial_ids[study_id]:
-                trial = self._trials[trial_id]
-                if states is None or trial.state in states:
-                    if deepcopy:
-                        frozen_trials.append(copy.deepcopy(trial))
-                    else:
-                        frozen_trials.append(trial)
-
-            return frozen_trials
+                ),
+            )
+            return False
+        else:
+            return True
