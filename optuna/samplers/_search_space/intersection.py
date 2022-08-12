@@ -83,15 +83,11 @@ class IntersectionSearchSpace:
                 self._search_space = copy.copy(trial.distributions)
                 continue
 
-            delete_list = []
-            for param_name, param_distribution in self._search_space.items():
-                if param_name not in trial.distributions:
-                    delete_list.append(param_name)
-                elif trial.distributions[param_name] != param_distribution:
-                    delete_list.append(param_name)
-
-            for param_name in delete_list:
-                del self._search_space[param_name]
+            self._search_space = {
+                name: distribution
+                for name, distribution in self._search_space.items()
+                if name in trial.distributions and trial.distributions[name] == distribution
+            }
 
         self._cursor = next_cursor
         search_space = self._search_space or {}
