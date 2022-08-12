@@ -4,7 +4,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import Union
 import warnings
 
 from optuna import distributions
@@ -12,6 +11,7 @@ from optuna import logging
 from optuna._deprecated import deprecated_func
 from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.distributions import BaseDistribution
+from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
@@ -21,8 +21,6 @@ from optuna.trial._state import TrialState
 
 _logger = logging.get_logger(__name__)
 _suggest_deprecated_msg = "Use :func:`~optuna.trial.FrozenTrial.suggest_float` instead."
-
-CategoricalChoiceType = Union[None, bool, int, float, str]
 
 
 class FrozenTrial(BaseTrial):
