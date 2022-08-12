@@ -82,14 +82,14 @@ class JournalStorage(BaseStorage):
         self._log_number_read: int = 0
         self._backend = log_storage
         self._thread_lock = threading.Lock()
-        self._state = JournalStorageReplayResult(self._pid)
+        self._replay_result = JournalStorageReplayResult(self._pid)
 
     def _write_log(self, op_code: int, extra_fields: Dict[str, Any]) -> None:
         self._backend.append_logs([{"op_code": op_code, "pid": self._pid, **extra_fields}])
 
     def _sync_with_backend(self) -> None:
-        logs = self._backend.read_logs(self._state.log_number_read)
-        self._state.apply_logs(logs)
+        logs = self._backend.read_logs(self._replay_result.log_number_read)
+        self._replay_result.apply_logs(logs)
 
     def create_new_study(self, study_name: Optional[str] = None) -> int:
         study_name = study_name or DEFAULT_STUDY_NAME_PREFIX + str(uuid.uuid4())
@@ -98,7 +98,7 @@ class JournalStorage(BaseStorage):
             self._write_log(JournalOperation.CREATE_STUDY, {"study_name": study_name})
             self._sync_with_backend()
 
-            for frozen_study in self._state.get_all_studies():
+            for frozen_study in self._replay_result.get_all_studies():
                 if frozen_study.study_name == study_name:
                     _logger.info("A new study created in Journal with name: {}".format(study_name))
                     return frozen_study._study_id
@@ -130,7 +130,7 @@ class JournalStorage(BaseStorage):
     def get_study_id_from_name(self, study_name: str) -> int:
         with self._thread_lock:
             self._sync_with_backend()
-            for study in self._state.get_all_studies():
+            for study in self._replay_result.get_all_studies():
                 if study.study_name == study_name:
                     return study._study_id
             raise KeyError(NOT_FOUND_MSG)
@@ -138,27 +138,27 @@ class JournalStorage(BaseStorage):
     def get_study_name_from_id(self, study_id: int) -> str:
         with self._thread_lock:
             self._sync_with_backend()
-            return self._state.get_study(study_id).study_name
+            return self._replay_result.get_study(study_id).study_name
 
     def get_study_directions(self, study_id: int) -> List[StudyDirection]:
         with self._thread_lock:
             self._sync_with_backend()
-            return self._state.get_study(study_id).directions
+            return self._replay_result.get_study(study_id).directions
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
         with self._thread_lock:
             self._sync_with_backend()
-            return self._state.get_study(study_id).user_attrs
+            return self._replay_result.get_study(study_id).user_attrs
 
     def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
         with self._thread_lock:
             self._sync_with_backend()
-            return self._state.get_study(study_id).system_attrs
+            return self._replay_result.get_study(study_id).system_attrs
 
     def get_all_studies(self) -> List[FrozenStudy]:
         with self._thread_lock:
             self._sync_with_backend()
-            return copy.deepcopy(self._state.get_all_studies())
+            return copy.deepcopy(self._replay_result.get_all_studies())
 
     # Basic trial manipulation
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
@@ -196,7 +196,7 @@ class JournalStorage(BaseStorage):
         with self._thread_lock:
             self._write_log(JournalOperation.CREATE_TRIAL, log)
             self._sync_with_backend()
-            return self._state._trial_ids_owned_by_this_process[-1]
+            return self._replay_result._trial_ids_owned_by_this_process[-1]
 
     def set_trial_param(
         self,
@@ -219,13 +219,13 @@ class JournalStorage(BaseStorage):
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
         with self._thread_lock:
             self._sync_with_backend()
-            if len(self._state._study_id_to_trial_ids[study_id]) <= trial_number:
+            if len(self._replay_result._study_id_to_trial_ids[study_id]) <= trial_number:
                 raise KeyError(
                     "No trial with trial number {} exists in study with study_id {}.".format(
                         trial_number, study_id
                     )
                 )
-            return self._state._study_id_to_trial_ids[study_id][trial_number]
+            return self._replay_result._study_id_to_trial_ids[study_id][trial_number]
 
     def set_trial_state_values(
         self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
@@ -247,7 +247,7 @@ class JournalStorage(BaseStorage):
 
             if (
                 state == TrialState.RUNNING
-                and trial_id not in self._state._trial_ids_owned_by_this_process
+                and trial_id not in self._replay_result._trial_ids_owned_by_this_process
             ):
                 return False
             else:
@@ -289,7 +289,7 @@ class JournalStorage(BaseStorage):
     def get_trial(self, trial_id: int) -> FrozenTrial:
         with self._thread_lock:
             self._sync_with_backend()
-            return self._state.get_trial(trial_id)
+            return self._replay_result.get_trial(trial_id)
 
     def get_all_trials(
         self,
@@ -299,7 +299,7 @@ class JournalStorage(BaseStorage):
     ) -> List[FrozenTrial]:
         with self._thread_lock:
             self._sync_with_backend()
-            frozen_trials = self._state.get_all_trials(study_id, states)
+            frozen_trials = self._replay_result.get_all_trials(study_id, states)
             if deepcopy:
                 return copy.deepcopy(frozen_trials)
             return frozen_trials
