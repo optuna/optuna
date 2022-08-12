@@ -92,14 +92,15 @@ class JournalStorage(BaseStorage):
         self._state.apply_logs(logs)
 
     def create_new_study(self, study_name: Optional[str] = None) -> int:
+        study_name = study_name or DEFAULT_STUDY_NAME_PREFIX + str(uuid.uuid4())
+
         with self._thread_lock:
-            if study_name is None:
-                study_name = DEFAULT_STUDY_NAME_PREFIX + str(uuid.uuid4())
             self._write_log(JournalOperation.CREATE_STUDY, {"study_name": study_name})
             self._sync_with_backend()
 
             for frozen_study in self._state.get_all_studies():
                 if frozen_study.study_name == study_name:
+                    _logger.info("A new study created in Journal with name: {}".format(study_name))
                     return frozen_study._study_id
             assert False, "Should not reach."
 
