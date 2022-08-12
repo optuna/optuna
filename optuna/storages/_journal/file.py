@@ -114,7 +114,16 @@ def get_lock_file(lock_obj: JournalFileBaseLock) -> Iterator[None]:
 
 @experimental_class("3.1.0")
 class JournalFileStorage(BaseJournalLogStorage):
-    """TODO(wattlebirdaz): Write docstring"""
+    """File storage class for Journal log backend.
+
+    Args:
+        file_path:
+            Path of file to persist the log to.
+
+        lock_obj:
+            Lock object for process exclusivity.
+
+    """
 
     def __init__(self, file_path: str, lock_obj: Optional[JournalFileBaseLock] = None) -> None:
         self._file_path: str = file_path
