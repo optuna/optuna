@@ -79,7 +79,7 @@ def _check_single_value(
 
 def _tell_with_warning(
     study: "optuna.Study",
-    trial: Union[trial_module.Trial, int],
+    trial: Union[trial_module.Trial, trial_module.FrozenTrial, int],
     values: Optional[Union[float, Sequence[float]]] = None,
     state: Optional[TrialState] = None,
     skip_if_finished: bool = False,
@@ -97,7 +97,7 @@ def _tell_with_warning(
             Study.optimize.
     """
 
-    if not isinstance(trial, (trial_module.Trial, int)):
+    if not isinstance(trial, (trial_module.Trial, trial_module.FrozenTrial, int)):
         raise TypeError("Trial must be a trial object or trial number.")
 
     if state == TrialState.COMPLETE:
@@ -114,7 +114,7 @@ def _tell_with_warning(
     elif state is not None:
         raise ValueError(f"Cannot tell with state {state}.")
 
-    if isinstance(trial, trial_module.Trial):
+    if isinstance(trial, (trial_module.Trial, trial_module.FrozenTrial)):
         trial_number = trial.number
         trial_id = trial._trial_id
     elif isinstance(trial, int):
@@ -148,7 +148,12 @@ def _tell_with_warning(
     else:
         assert False, "Should not reach."
 
-    frozen_trial = study._storage.get_trial(trial_id)
+    if isinstance(trial, trial_module.FrozenTrial):
+        # avoid accessing storage if already have the frozen trial
+        frozen_trial = trial
+    else:
+        frozen_trial = study._storage.get_trial(trial_id)
+
     warning_message = None
 
     if frozen_trial.state.is_finished() and skip_if_finished:
