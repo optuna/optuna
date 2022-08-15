@@ -129,17 +129,15 @@ class JournalFileStorage(BaseJournalLogStorage):
         self._file_path: str = file_path
         self._lock = lock_obj or JournalFileLinkLock(self._file_path)
         open(self._file_path, "a").close()  # Create a file if it does not exist
-        self._logno_offset: List[int] = [0]
 
     def read_logs(self, log_number_from: int) -> List[Dict[str, Any]]:
         with get_lock_file(self._lock):
             logs = []
             with open(self._file_path, "r") as f:
-                f.seek(self._logno_offset[log_number_from])
-                for line in f.readlines():
-                    self._logno_offset.append(self._logno_offset[-1] + len(line))
+                for lineno, line in enumerate(f):
+                    if lineno < log_number_from:
+                        continue
                     logs.append(json.loads(line))
-
             return logs
 
     def append_logs(self, logs: List[Dict[str, Any]]) -> None:
