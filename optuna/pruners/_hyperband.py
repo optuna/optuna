@@ -132,7 +132,7 @@ class HyperbandPruner(BasePruner):
             See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
         bootstrap_count:
             Parameter specifying the number of trials required in a rung before any trial can be
-            promoted. Incompatible with ``max_resouce`` is ``"auto"``.
+            promoted. Incompatible with ``max_resource`` is ``"auto"``.
             See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
     """
 
