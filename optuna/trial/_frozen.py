@@ -114,7 +114,7 @@ class FrozenTrial(BaseTrial):
         params:
             Dictionary that contains suggested parameters.
         distributions:
-            Dictionary that contains parameter distributions.
+            Dictionary that contains the distributions of :attr:`params`.
         user_attrs:
             Dictionary that contains the attributes of the :class:`~optuna.trial.Trial` set with
             :func:`optuna.trial.Trial.set_user_attr`.
@@ -427,7 +427,6 @@ class FrozenTrial(BaseTrial):
 
     @property
     def distributions(self) -> Dict[str, BaseDistribution]:
-        """Dictionary that contains the distributions of :attr:`params`."""
 
         return self._distributions
 
