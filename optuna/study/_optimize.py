@@ -239,8 +239,8 @@ def _log_failed_trial(
     trial: FrozenTrial, message: Union[str, Warning], exc_info: Any = None
 ) -> None:
     _logger.warning(
-        "Trial {} failed because of the following error: {} and following parameters: {}.".format(
-            trial.number, message, trial.params
+        "Trial {} failed with parameters: {} because of the following error: {}.".format(
+            trial.number, trial.params, message
         ),
         exc_info=exc_info,
     )
