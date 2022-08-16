@@ -123,8 +123,6 @@ class FrozenTrial(BaseTrial):
             :func:`optuna.trial.Trial.set_system_attr`.
         intermediate_values:
             Intermediate objective values set with :func:`optuna.trial.Trial.report`.
-        trial_id:
-            ID of the :class:`~optuna.trial.Trial`
     """
 
     def __init__(
