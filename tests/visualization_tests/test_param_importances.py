@@ -99,9 +99,6 @@ def test_plot_param_importances(
     [
         [],
         ["param_a"],
-        ["param_a", "param_b"],
-        ["param_a", "param_b", "param_c"],
-        ["param_a", "param_b", "param_c", "param_d"],
         None,
     ],
 )
