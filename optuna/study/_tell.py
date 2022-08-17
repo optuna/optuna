@@ -90,24 +90,15 @@ def _check_values(
         )
 
     for v in values:
-        failure_message = _check_single_value(v)
-        if failure_message is not None:
-            # TODO(Imamura): Construct error message taking into account all values and do not
-            # early return `value` is assumed to be ignored on failure so we can set it to any
-            # value.
-            return failure_message
+        # TODO(Imamura): Construct error message taking into account all values and do not early
+        # return `value` is assumed to be ignored on failure so we can set it to any value.
+        try:
+            float(v)
+        except (ValueError, TypeError):
+            return f"The value {repr(v)} could not be cast to float."
 
-    return None
-
-
-def _check_single_value(value: float) -> Optional[str]:
-    try:
-        float(value)
-    except (ValueError, TypeError):
-        return f"The value {repr(value)} could not be cast to float."
-
-    if math.isnan(value):
-        return f"The value {value} is not acceptable."
+        if math.isnan(v):
+            return f"The value {v} is not acceptable."
 
     return None
 
