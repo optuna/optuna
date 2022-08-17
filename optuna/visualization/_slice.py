@@ -11,6 +11,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _check_plot_args
+from optuna.visualization._utils import _filter_nonfinite
 from optuna.visualization._utils import _is_log_scale
 from optuna.visualization._utils import _is_numerical
 
@@ -70,7 +71,11 @@ def _get_slice_plot_info(
     target_name: str,
 ) -> _SlicePlotInfo:
 
-    trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+    _check_plot_args(study, target, target_name)
+
+    trials = _filter_nonfinite(
+        study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
+    )
 
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
@@ -152,7 +157,6 @@ def plot_slice(
     """
 
     _imports.check()
-    _check_plot_args(study, target, target_name)
     return _get_slice_plot(_get_slice_plot_info(study, params, target, target_name))
 
 
@@ -172,17 +176,17 @@ def _get_slice_plot(info: _SlicePlotInfo) -> "go.Figure":
         figure = make_subplots(rows=1, cols=len(info.subplots), shared_yaxes=True)
         figure.update_layout(layout)
         showscale = True  # showscale option only needs to be specified once.
-        for i, subplot_info in enumerate(info.subplots):
+        for column_index, subplot_info in enumerate(info.subplots, start=1):
             trace = _generate_slice_subplot(subplot_info)
             trace.update(marker={"showscale": showscale})  # showscale's default is True.
             if showscale:
                 showscale = False
-            figure.add_trace(trace, row=1, col=i + 1)
-            figure.update_xaxes(title_text=subplot_info.param_name, row=1, col=i + 1)
-            if i == 0:
-                figure.update_yaxes(title_text=info.target_name, row=1, col=1)
+            figure.add_trace(trace, row=1, col=column_index)
+            figure.update_xaxes(title_text=subplot_info.param_name, row=1, col=column_index)
+            if column_index == 1:
+                figure.update_yaxes(title_text=info.target_name, row=1, col=column_index)
             if subplot_info.is_log:
-                figure.update_xaxes(type="log", row=1, col=i + 1)
+                figure.update_xaxes(type="log", row=1, col=column_index)
         if len(info.subplots) > 3:
             # Ensure that each subplot has a minimum width without relying on autusizing.
             figure.update_layout(width=300 * len(info.subplots))
