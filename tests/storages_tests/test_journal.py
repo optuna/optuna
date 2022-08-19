@@ -31,7 +31,7 @@ class JournalLogStorageSupplier:
             if self.storage_type == "file_with_open_lock":
                 lock = optuna.storages.JournalFileOpenLock(self.tempfile.name)
             elif self.storage_type == "file_with_link_lock":
-                lock = optuna.storages.JournalFileLinkLock(self.tempfile.name)
+                lock = optuna.storages.JournalFileSymlinkLock(self.tempfile.name)
             else:
                 raise Exception("Must not reach here")
             return optuna.storages.JournalFileStorage(self.tempfile.name, lock)

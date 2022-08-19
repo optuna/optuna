@@ -8,12 +8,14 @@ from typing import Dict
 from typing import Iterator
 from typing import List
 from typing import Optional
+import uuid
 
 from optuna._experimental import experimental_class
 from optuna.storages._journal.base import BaseJournalLogStorage
 
 
 LOCK_FILE_SUFFIX = ".lock"
+RENAME_FILE_SUFFIX = ".rename"
 
 
 class JournalFileBaseLock(abc.ABC):
@@ -27,7 +29,7 @@ class JournalFileBaseLock(abc.ABC):
 
 
 @experimental_class("3.1.0")
-class JournalFileLinkLock(JournalFileBaseLock):
+class JournalFileSymlinkLock(JournalFileBaseLock):
     """Lock class for synchronizing processes.
 
     On acquiring the lock, link system call is called to create an exclusive file. The file is
@@ -42,26 +44,31 @@ class JournalFileLinkLock(JournalFileBaseLock):
     def __init__(self, filepath: str) -> None:
         self._lock_target_file = filepath
         self._lockfile = filepath + LOCK_FILE_SUFFIX
+        self._lockrenamefile = self._lockfile + str(uuid.uuid4()) + RENAME_FILE_SUFFIX
 
     def acquire(self) -> bool:
         while True:
             try:
-                os.link(self._lock_target_file, self._lockfile)
+                os.symlink(self._lock_target_file, self._lockfile)
                 return True
             except OSError as err:
-                if err.errno == errno.EEXIST or err.errno == errno.ENOENT:
+                if err.errno == errno.EEXIST:
                     continue
                 else:
                     raise err
             except BaseException:
-                os.unlink(self._lockfile)
+                self.release()
                 raise
 
     def release(self) -> None:
         try:
-            os.unlink(self._lockfile)
+            os.rename(self._lockfile, self._lockrenamefile)
+            os.unlink(self._lockrenamefile)
         except OSError:
             raise RuntimeError("Error: did not possess lock")
+        except BaseException:
+            os.unlink(self._lockrenamefile)
+            raise
 
 
 @experimental_class("3.1.0")
@@ -71,7 +78,7 @@ class JournalFileOpenLock(JournalFileBaseLock):
     On acquiring the lock, open system call is called with the O_EXCL option to create an exclusive
     file. The file is deleted when the lock is released. This class is only supported when using
     NFSv3 or later on kernel 2.6 or later. In prior NFS environments, use
-    `~optuna.storages.JournalFileLinkLock`.
+    `~optuna.storages.JournalFileSymlinkLock`.
 
     Args:
         filepath:
@@ -80,6 +87,7 @@ class JournalFileOpenLock(JournalFileBaseLock):
 
     def __init__(self, filepath: str) -> None:
         self._lockfile = filepath + LOCK_FILE_SUFFIX
+        self._lockrenamefile = self._lockfile + str(uuid.uuid4()) + RENAME_FILE_SUFFIX
 
     def acquire(self) -> bool:
         while True:
@@ -93,14 +101,18 @@ class JournalFileOpenLock(JournalFileBaseLock):
                 else:
                     raise err
             except BaseException:
-                os.unlink(self._lockfile)
+                self.release()
                 raise
 
     def release(self) -> None:
         try:
-            os.unlink(self._lockfile)
+            os.rename(self._lockfile, self._lockrenamefile)
+            os.unlink(self._lockrenamefile)
         except OSError:
             raise RuntimeError("Error: did not possess lock")
+        except BaseException:
+            os.unlink(self._lockrenamefile)
+            raise
 
 
 @contextmanager
@@ -127,7 +139,7 @@ class JournalFileStorage(BaseJournalLogStorage):
 
     def __init__(self, file_path: str, lock_obj: Optional[JournalFileBaseLock] = None) -> None:
         self._file_path: str = file_path
-        self._lock = lock_obj or JournalFileLinkLock(self._file_path)
+        self._lock = lock_obj or JournalFileSymlinkLock(self._file_path)
         open(self._file_path, "a").close()  # Create a file if it does not exist
 
     def read_logs(self, log_number_from: int) -> List[Dict[str, Any]]:
