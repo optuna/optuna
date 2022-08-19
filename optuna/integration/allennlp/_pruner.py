@@ -10,6 +10,7 @@ from optuna import load_study
 from optuna import pruners
 from optuna import Trial
 from optuna import TrialPruned
+from optuna._experimental import experimental_class
 from optuna._imports import try_import
 from optuna.integration.allennlp._variables import _VariableManager
 from optuna.integration.allennlp._variables import OPTUNA_ALLENNLP_DISTRIBUTED_FLAG
@@ -71,6 +72,7 @@ def _create_pruner(
     return pruner(**pruner_kwargs)
 
 
+@experimental_class("2.0.0")
 @TrainerCallback.register("optuna_pruner")
 class AllenNLPPruningCallback(TrainerCallback):
     """AllenNLP callback to prune unpromising trials.

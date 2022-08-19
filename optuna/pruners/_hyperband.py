@@ -54,7 +54,7 @@ class HyperbandPruner(BasePruner):
         of Hyperband and is automatically determined by ``min_resource``, ``max_resource`` and
         ``reduction_factor`` as
         `The number of brackets = floor(log_{reduction_factor}(max_resource / min_resource)) + 1`.
-        Please set ``reduction_factor`` so that the number of brackets is not too large (about 4 ~
+        Please set ``reduction_factor`` so that the number of brackets is not too large (about 4 –
         6 in most use cases). Please see Section 3.6 of the `original paper
         <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_ for the detail.
 
@@ -132,7 +132,7 @@ class HyperbandPruner(BasePruner):
             See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
         bootstrap_count:
             Parameter specifying the number of trials required in a rung before any trial can be
-            promoted. Incompatible with ``max_resouce`` is ``"auto"``.
+            promoted. Incompatible with ``max_resource`` is ``"auto"``.
             See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
     """
 

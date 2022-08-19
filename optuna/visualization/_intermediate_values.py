@@ -97,10 +97,10 @@ def plot_intermediate_values(study: Study) -> "go.Figure":
     """
 
     _imports.check()
-    return _get_intermediate_plot(study)
+    return _get_intermediate_plot(_get_intermediate_plot_info(study))
 
 
-def _get_intermediate_plot(study: Study) -> "go.Figure":
+def _get_intermediate_plot(info: _IntermediatePlotInfo) -> "go.Figure":
 
     layout = go.Layout(
         title="Intermediate Values Plot",
@@ -109,7 +109,6 @@ def _get_intermediate_plot(study: Study) -> "go.Figure":
         showlegend=False,
     )
 
-    info = _get_intermediate_plot_info(study)
     trial_infos = info.trial_infos
 
     if len(trial_infos) == 0:

@@ -6,6 +6,8 @@ from typing import Optional
 from typing import Sequence
 import warnings
 
+import numpy as np
+
 from optuna.distributions import BaseDistribution
 from optuna.study import Study
 from optuna.trial import FrozenTrial
@@ -212,6 +214,8 @@ def _process_constraints_after_trial(
     constraints = None
     try:
         con = constraints_func(trial)
+        if np.any(np.isnan(con)):
+            raise ValueError("Constraint values cannot be NaN.")
         if not isinstance(con, (tuple, list)):
             warnings.warn(
                 f"Constraints should be a sequence of floats but got {type(con).__name__}."

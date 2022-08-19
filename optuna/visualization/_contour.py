@@ -103,6 +103,10 @@ def plot_contour(
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
+
+    .. note::
+        The colormap is reversed when the ``target`` argument isn't :obj:`None` or ``direction``
+        of :class:`~optuna.study.Study` is ``minimize``.
     """
 
     _imports.check()
@@ -324,13 +328,8 @@ def _get_contour_subplot_info(
             value = trial.value
         else:
             value = target(trial)
+        assert value is not None
 
-        if isinstance(value, int):
-            value = float(value)
-        elif not isinstance(value, float):
-            raise ValueError(
-                f"Trial{trial.number} has COMPLETE state, but its target value is non-numeric."
-            )
         z_values[(x_i, y_i)] = value
 
     return _SubContourInfo(xaxis=xaxis, yaxis=yaxis, z_values=z_values)
