@@ -199,33 +199,72 @@ def test_get_pareto_front_info_invalid_number_of_target_names() -> None:
         _get_pareto_front_info(study=study, target_names=["Foo"])
 
 
-@pytest.mark.parametrize("n_dims", [0, 1, 4])
-def test_get_pareto_front_info_unsupported_dimensions(n_dims: int) -> None:
+@pytest.mark.parametrize("n_dims", [1, 4])
+@pytest.mark.parametrize("include_dominated_trials", [False, True])
+@pytest.mark.parametrize("constraints_func", [None, lambda _: [-1.0]])
+def test_get_pareto_front_info_unsupported_dimensions(
+    n_dims: int,
+    include_dominated_trials: bool,
+    constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]],
+) -> None:
+    study = optuna.create_study(directions=["minimize"] * n_dims)
     with pytest.raises(ValueError):
-        _get_pareto_front_info(study=optuna.create_study(directions=["minimize"] * n_dims))
+        _get_pareto_front_info(
+            study=study,
+            include_dominated_trials=include_dominated_trials,
+            constraints_func=constraints_func,
+        )
 
 
 @pytest.mark.parametrize("axis_order", [[0, 1, 1], [0, 0], [0, 2], [-1, 1]])
-def test_get_pareto_front_info_invalid_axis_order(axis_order: List[int]) -> None:
+@pytest.mark.parametrize("include_dominated_trials", [False, True])
+@pytest.mark.parametrize("constraints_func", [None, lambda _: [-1.0]])
+def test_get_pareto_front_info_invalid_axis_order(
+    axis_order: List[int],
+    include_dominated_trials: bool,
+    constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]],
+) -> None:
     study = optuna.create_study(directions=["minimize", "minimize"])
     with pytest.raises(ValueError):
-        _get_pareto_front_info(study=study, axis_order=axis_order)
+        _get_pareto_front_info(
+            study=study,
+            include_dominated_trials=include_dominated_trials,
+            axis_order=axis_order,
+            constraints_func=constraints_func,
+        )
 
 
-def test_get_pareto_front_info_invalid_target_values() -> None:
+@pytest.mark.parametrize("include_dominated_trials", [False, True])
+@pytest.mark.parametrize("constraints_func", [None, lambda _: [-1.0]])
+def test_get_pareto_front_info_invalid_target_values(
+    include_dominated_trials: bool,
+    constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]],
+) -> None:
     study = optuna.create_study(directions=["minimize", "minimize"])
     study.optimize(lambda _: [0, 0], n_trials=3)
     with pytest.raises(ValueError):
-        _get_pareto_front_info(study=study, targets=lambda t: t.values[0])
+        _get_pareto_front_info(
+            study=study,
+            targets=lambda t: t.values[0],
+            include_dominated_trials=include_dominated_trials,
+            constraints_func=constraints_func,
+        )
 
 
-def test_get_pareto_front_info_using_axis_order_and_targets() -> None:
+@pytest.mark.parametrize("include_dominated_trials", [False, True])
+@pytest.mark.parametrize("constraints_func", [None, lambda _: [-1.0]])
+def test_get_pareto_front_info_using_axis_order_and_targets(
+    include_dominated_trials: bool,
+    constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]],
+) -> None:
     study = optuna.create_study(directions=["minimize", "minimize", "minimize"])
     with pytest.raises(ValueError):
         _get_pareto_front_info(
             study=study,
             axis_order=[0, 1, 2],
             targets=lambda t: (t.values[0], t.values[1], t.values[2]),
+            include_dominated_trials=include_dominated_trials,
+            constraints_func=constraints_func,
         )
 
 
