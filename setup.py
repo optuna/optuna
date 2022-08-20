@@ -67,17 +67,13 @@ def get_extras_require() -> Dict[str, List[str]]:
         ],
         "document": [
             "cma",
+            "fvcore",
             "lightgbm",
             "matplotlib",
             "mlflow",
-            # TODO(nzw0301): Remove onnx if thop adds onnx to its dependencies.
-            "onnx",
             "pandas",
             "pillow",
             "plotly>=4.0.0",  # optuna/visualization.
-            # TODO(nzw0301): Remove protobuf after
-            # https://github.com/onnx/onnx/issues/4239 is resolved.
-            "protobuf<=3.20.1",
             "scikit-learn",
             "scikit-optimize",
             "sphinx",
@@ -85,7 +81,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "sphinx-gallery",
             "sphinx-plotly-directive",
             "sphinx_rtd_theme",
-            "thop",
             "torch==1.11.0 ; python_version>'3.6'",
             "torchaudio==0.11.0 ; python_version>'3.6'",
             "torchvision==0.12.0 ; python_version>'3.6'",
