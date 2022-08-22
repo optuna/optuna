@@ -347,7 +347,14 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             :exc:`KeyError`:
                 If no trial with the matching ``study_id`` and ``trial_number`` exists.
         """
-        raise NotImplementedError
+        trials = self.get_all_trials(study_id, deepcopy=False)
+        if len(trials) <= trial_number:
+            raise KeyError(
+                "No trial with trial number {} exists in study with study_id {}.".format(
+                    trial_number, study_id
+                )
+            )
+        return trials[trial_number]._trial_id
 
     def get_trial_number_from_id(self, trial_id: int) -> int:
         """Read the trial number of a trial.
