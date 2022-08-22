@@ -8,9 +8,9 @@ class BaseJournalLogStorage(abc.ABC):
     """Base class for Journal storages.
 
     Storage classes implementing this base class must guarantee process safety. Thread-safety
-    need not be guaranteed. Use `~optuna.storages.JournalFileSymlinkLock` or
-    `~optuna.storages.JournalFileOpenLock` to create a critical section if your storage does not
-    natively support multi-process query executions.
+    need not be guaranteed. Use :class:`~optuna.storages.JournalFileSymlinkLock` or
+    :class:`~optuna.storages.JournalFileOpenLock` to create a critical section if your storage
+    does not natively support multi-process query executions.
 
     """
 

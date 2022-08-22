@@ -30,11 +30,11 @@ class JournalFileBaseLock(abc.ABC):
 
 @experimental_class("3.1.0")
 class JournalFileSymlinkLock(JournalFileBaseLock):
-    """Lock class for synchronizing processes.
+    """Lock class for synchronizing processes for NFSv2 or later.
 
     On acquiring the lock, link system call is called to create an exclusive file. The file is
     deleted when the lock is released. In NFS environments prior to NFSv3, use this instead of
-    `~optuna.storages.JournalFileOpenLock`
+    :class:`~optuna.storages.JournalFileOpenLock`
 
     Args:
         filepath:
@@ -73,12 +73,12 @@ class JournalFileSymlinkLock(JournalFileBaseLock):
 
 @experimental_class("3.1.0")
 class JournalFileOpenLock(JournalFileBaseLock):
-    """Lock class for synchronizing processes.
+    """Lock class for synchronizing processes for NFSv3 or later.
 
     On acquiring the lock, open system call is called with the O_EXCL option to create an exclusive
     file. The file is deleted when the lock is released. This class is only supported when using
     NFSv3 or later on kernel 2.6 or later. In prior NFS environments, use
-    `~optuna.storages.JournalFileSymlinkLock`.
+    :class:`~optuna.storages.JournalFileSymlinkLock`.
 
     Args:
         filepath:
