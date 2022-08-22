@@ -331,7 +331,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-    @abc.abstractmethod
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
         """Read the trial ID of a trial.
 
