@@ -199,7 +199,7 @@ class JournalStorage(BaseStorage):
         with self._thread_lock:
             self._write_log(JournalOperation.CREATE_TRIAL, log)
             self._sync_with_backend()
-            return self._replay_result._trial_ids_owned_by_this_process[-1]
+            return self._replay_result._last_created_trial_id_by_this_process
 
     def set_trial_param(
         self,
@@ -501,8 +501,11 @@ class JournalStorageReplayResult:
         self._study_id_to_trial_ids[study_id].append(trial_id)
         self._trial_id_to_study_id[trial_id] = study_id
 
-        if log["pid"] == self._pid:
+        if log["pid"] == self._pid and self._trials[trial_id].state == TrialState.RUNNING:
             self._trial_ids_owned_by_this_process.append(trial_id)
+
+        if log["pid"] == self._pid:
+            self._last_created_trial_id_by_this_process = trial_id
 
     def _apply_set_trial_param(self, log: Dict[str, Any]) -> None:
         trial_id = log["trial_id"]
@@ -549,6 +552,7 @@ class JournalStorageReplayResult:
         trial = copy.copy(self._trials[trial_id])
         if state == TrialState.RUNNING:
             trial.datetime_start = datetime_from_isoformat(log["datetime_start"])
+            self._trial_ids_owned_by_this_process.append(trial_id)
         if state.is_finished():
             trial.datetime_complete = datetime_from_isoformat(log["datetime_complete"])
         trial.state = state
