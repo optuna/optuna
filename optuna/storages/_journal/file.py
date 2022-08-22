@@ -141,15 +141,27 @@ class JournalFileStorage(BaseJournalLogStorage):
         self._file_path: str = file_path
         self._lock = lock_obj or JournalFileSymlinkLock(self._file_path)
         open(self._file_path, "a").close()  # Create a file if it does not exist
+        self._log_number_offset: Dict[int, int] = {0: 0}
 
     def read_logs(self, log_number_from: int) -> List[Dict[str, Any]]:
         with get_lock_file(self._lock):
             logs = []
             with open(self._file_path, "r") as f:
-                for lineno, line in enumerate(f):
-                    if lineno < log_number_from:
+                log_number_start = 0
+                if log_number_from in self._log_number_offset:
+                    f.seek(self._log_number_offset[log_number_from])
+                    log_number_start = log_number_from
+
+                for log_number, line in enumerate(f, start=log_number_start):
+                    if log_number + 1 not in self._log_number_offset:
+                        byte_len = len(line.encode("utf-8"))
+                        self._log_number_offset[log_number + 1] = (
+                            self._log_number_offset[log_number] + byte_len
+                        )
+                    if log_number < log_number_from:
                         continue
                     logs.append(json.loads(line))
+
             return logs
 
     def append_logs(self, logs: List[Dict[str, Any]]) -> None:
@@ -158,6 +170,6 @@ class JournalFileStorage(BaseJournalLogStorage):
             for log in logs:
                 what_to_write += json.dumps(log) + "\n"
 
-            with open(self._file_path, "a") as f:
+            with open(self._file_path, "a", encoding="utf-8") as f:
                 f.write(what_to_write)
                 os.fsync(f.fileno())
