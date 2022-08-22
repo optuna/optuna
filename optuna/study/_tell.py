@@ -123,6 +123,7 @@ def _tell_with_warning(
             Study.optimize.
     """
 
+    # Validate the trial argument.
     frozen_trial = _get_frozen_trial(study, trial)
     if frozen_trial.state.is_finished() and skip_if_finished:
         _logger.info(
@@ -134,6 +135,7 @@ def _tell_with_warning(
     elif frozen_trial.state != TrialState.RUNNING:
         raise ValueError(f"Cannot tell a {frozen_trial.state.name} trial.")
 
+    # Validate the state and values arguments.
     _check_state_and_values(state, values)
 
     warning_message = None
@@ -173,12 +175,14 @@ def _tell_with_warning(
 
     assert state is not None
 
+    # Cast values to float or list of floats.
     if values is not None:
         if isinstance(values, Sequence):
             values = [float(value) for value in values]
         else:
             values = [float(values)]
 
+    # Post-processing and storing the trial.
     try:
         # Sampler defined trial post-processing.
         study = pruners._filter_study(study, frozen_trial)
