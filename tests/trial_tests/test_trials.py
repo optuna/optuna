@@ -62,6 +62,7 @@ def test_suggest_float(trial_type: type) -> None:
         trial.suggest_float("y", 0.0, 1.0)
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("trial_type", [FixedTrial, FrozenTrial])
 def test_suggest_uniform(trial_type: type) -> None:
 
@@ -77,6 +78,7 @@ def test_suggest_uniform(trial_type: type) -> None:
         trial.suggest_uniform("y", 0.0, 1.0)
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("trial_type", [FixedTrial, FrozenTrial])
 def test_suggest_loguniform(trial_type: type) -> None:
 
@@ -91,6 +93,7 @@ def test_suggest_loguniform(trial_type: type) -> None:
         trial.suggest_loguniform("y", 0.0, 1.0)
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("trial_type", [FixedTrial, FrozenTrial])
 def test_suggest_discrete_uniform(trial_type: type) -> None:
 

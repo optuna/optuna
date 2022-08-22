@@ -76,6 +76,7 @@ def test_repr() -> None:
     assert trial == eval(repr(trial))
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_sampling(storage_mode: str) -> None:
     def objective(trial: BaseTrial) -> float:
@@ -195,12 +196,12 @@ def test_params() -> None:
         distributions={"x": FloatDistribution(0, 10)},
     )
 
-    assert trial.suggest_uniform("x", 0, 10) == 1
+    assert trial.suggest_float("x", 0, 10) == 1
     assert trial.params == params
 
     params = {"x": 2}
     trial.params = params
-    assert trial.suggest_uniform("x", 0, 10) == 2
+    assert trial.suggest_float("x", 0, 10) == 2
     assert trial.params == params
 
 
@@ -335,6 +336,7 @@ def test_create_trial(state: TrialState) -> None:
 
 
 # Deprecated distributions are internally converted to corresponding distributions.
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 def test_create_trial_distribution_conversion() -> None:
     fixed_params = {
         "ud": 0,

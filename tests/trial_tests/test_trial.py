@@ -30,6 +30,8 @@ from optuna.testing.storages import StorageSupplier
 from optuna.trial import Trial
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_check_distribution_suggest_float(storage_mode: str) -> None:
 
@@ -63,6 +65,8 @@ def test_check_distribution_suggest_float(storage_mode: str) -> None:
             trial.suggest_int("x1", 10, 20)
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_check_distribution_suggest_uniform(storage_mode: str) -> None:
 
@@ -87,6 +91,8 @@ def test_check_distribution_suggest_uniform(storage_mode: str) -> None:
             trial.suggest_int("x", 10, 20)
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_check_distribution_suggest_loguniform(storage_mode: str) -> None:
 
@@ -111,6 +117,8 @@ def test_check_distribution_suggest_loguniform(storage_mode: str) -> None:
             trial.suggest_int("x", 10, 20)
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_check_distribution_suggest_discrete_uniform(storage_mode: str) -> None:
 
@@ -135,6 +143,8 @@ def test_check_distribution_suggest_discrete_uniform(storage_mode: str) -> None:
             trial.suggest_int("x", 10, 20, 2)
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 @pytest.mark.parametrize("enable_log", [False, True])
 def test_check_distribution_suggest_int(storage_mode: str, enable_log: bool) -> None:
@@ -160,6 +170,7 @@ def test_check_distribution_suggest_int(storage_mode: str, enable_log: bool) -> 
             trial.suggest_float("x", 10, 20, log=enable_log)
 
 
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_check_distribution_suggest_categorical(storage_mode: str) -> None:
 
@@ -181,6 +192,7 @@ def test_check_distribution_suggest_categorical(storage_mode: str) -> None:
             trial.suggest_int("x", 10, 20)
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_uniform(storage_mode: str) -> None:
 
@@ -196,6 +208,7 @@ def test_suggest_uniform(storage_mode: str) -> None:
         assert trial.params == {"x": 1.0, "y": 2.0}
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_loguniform(storage_mode: str) -> None:
 
@@ -217,6 +230,8 @@ def test_suggest_loguniform(storage_mode: str) -> None:
         assert trial.params == {"x": 1.0, "y": 2.0}
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_discrete_uniform(storage_mode: str) -> None:
 
@@ -238,6 +253,7 @@ def test_suggest_discrete_uniform(storage_mode: str) -> None:
         assert trial.params == {"x": 1.0, "y": 2.0}
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_low_equals_high(storage_mode: str) -> None:
 
