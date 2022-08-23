@@ -186,13 +186,9 @@ def test_check_distribution_compatibility() -> None:
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS["il"], distributions.IntDistribution(low=1, high=13, log=True)
     )
-    with warnings.catch_warnings():
-        # When `step` is 2, UserWarning will be raised since the range is not divisible by 2.
-        # The range will be replaced with [-3, 1].
-        warnings.simplefilter("ignore", category=UserWarning)
-        distributions.check_distribution_compatibility(
-            EXAMPLE_DISTRIBUTIONS["id"], distributions.IntDistribution(low=-3, high=2, step=2)
-        )
+    distributions.check_distribution_compatibility(
+        EXAMPLE_DISTRIBUTIONS["id"], distributions.IntDistribution(low=-3, high=1, step=2)
+    )
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS["f"], distributions.FloatDistribution(low=-3.0, high=-2.0)
     )
