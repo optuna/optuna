@@ -76,14 +76,13 @@ def test_repr() -> None:
     assert trial == eval(repr(trial))
 
 
-@pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_sampling(storage_mode: str) -> None:
     def objective(trial: BaseTrial) -> float:
 
-        a = trial.suggest_uniform("a", 0.0, 10.0)
-        b = trial.suggest_loguniform("b", 0.1, 10.0)
-        c = trial.suggest_discrete_uniform("c", 0.0, 10.0, 1.0)
+        a = trial.suggest_float("a", 0.0, 10.0)
+        b = trial.suggest_float("b", 0.1, 10.0, log=True)
+        c = trial.suggest_float("c", 0.0, 10.0, step=1.0)
         d = trial.suggest_int("d", 0, 10)
         e = trial.suggest_categorical("e", [0, 1, 2])
         f = trial.suggest_int("f", 1, 10, log=True)
