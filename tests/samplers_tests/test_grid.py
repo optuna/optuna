@@ -37,7 +37,7 @@ def test_study_optimize_with_single_search_space() -> None:
     search_space = {
         "b": np.arange(-0.1, 0.1, 0.05),
         "c": ("x", "y", None, 1, 2.0),
-        "d": [-0.5, 0.5],
+        "d": [5.0, 5.0],
         "e": [0.1],
         "a": list(range(0, 100, 20)),
     }

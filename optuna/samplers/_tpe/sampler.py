@@ -714,7 +714,7 @@ def _split_observation_pairs(
             (infeasible_idx,) = (violation_1d > 0).nonzero()
             assert len(feasible_idx) >= n_below
             feasible_below, feasible_above = _split_observation_pairs(
-                list(np.array(loss_vals)[feasible_idx]), n_below, None
+                [loss_vals[i] for i in feasible_idx], n_below, None
             )
             indices_below = feasible_idx[feasible_below]
             indices_above = np.concatenate([feasible_idx[feasible_above], infeasible_idx])
