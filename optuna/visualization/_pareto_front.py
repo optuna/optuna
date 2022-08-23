@@ -156,12 +156,6 @@ def _get_pareto_front_plot(info: _ParetoFrontInfo) -> "go.Figure":
             ),
         ]
     else:
-        warnings.warn(
-            "``constraints_func`` argument is an experimental feature."
-            " The interface can change in the future.",
-            ExperimentalWarning,
-        )
-
         data = [
             _make_scatter_object(
                 info.n_targets,
@@ -230,6 +224,11 @@ def _get_pareto_front_info(
         )
 
     if constraints_func is not None:
+        warnings.warn(
+            "``constraints_func`` argument is an experimental feature."
+            " The interface can change in the future.",
+            ExperimentalWarning,
+        )
         feasible_trials = []
         infeasible_trials = []
         for trial in study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)):
