@@ -5,6 +5,7 @@ from typing import Callable
 from typing import Dict
 from typing import Optional
 from typing import Type
+import warnings
 
 import pytest
 
@@ -22,7 +23,6 @@ from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.testing.pruners import DeterministicPruner
 from optuna.testing.storages import StorageSupplier
-from optuna.trial import Trial
 from optuna.trial import TrialState
 
 
@@ -265,7 +265,8 @@ class TestChainerMNTrial:
 
                 assert x1 == x2
 
-                with pytest.raises(ValueError):
+                with pytest.raises(ValueError), warnings.catch_warnings():
+                    warnings.simplefilter("ignore", category=RuntimeWarning)
                     mn_trial.suggest_float("x1", low1, high1, log=True)
 
             low2 = 1e-7
@@ -279,7 +280,8 @@ class TestChainerMNTrial:
                 x4 = mn_trial.suggest_float("x2", low2, high2, log=True)
                 assert x3 == x4
 
-                with pytest.raises(ValueError):
+                with pytest.raises(ValueError), warnings.catch_warnings():
+                    warnings.simplefilter("ignore", category=RuntimeWarning)
                     mn_trial.suggest_float("x2", low2, high2)
 
     @staticmethod
@@ -300,7 +302,11 @@ class TestChainerMNTrial:
                 x2 = mn_trial.suggest_float("x", low, high, step=step)
                 assert x1 == x2
 
-                mn_trial.suggest_float("x", low, high)
+                if comm.rank == 0:
+                    with pytest.warns(RuntimeWarning):
+                        mn_trial.suggest_float("x", low, high)
+                else:
+                    mn_trial.suggest_float("x", low, high)
 
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -323,7 +329,8 @@ class TestChainerMNTrial:
                 x2 = mn_trial.suggest_int("x", low, high, step=step, log=enable_log)
                 assert x1 == x2
 
-                with pytest.raises(ValueError):
+                with pytest.raises(ValueError), warnings.catch_warnings():
+                    warnings.simplefilter("ignore", category=RuntimeWarning)
                     mn_trial.suggest_float("x", low, high)
 
     @staticmethod
@@ -333,7 +340,7 @@ class TestChainerMNTrial:
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
             low = 1
-            high = 10
+            high = 9
             step = 2
             for _ in range(10):
                 mn_trial = _create_new_chainermn_trial(study, comm)
@@ -344,7 +351,8 @@ class TestChainerMNTrial:
                 x2 = mn_trial.suggest_int("x", low, high, step=step, log=False)
                 assert x1 == x2
 
-                with pytest.raises(ValueError):
+                with pytest.raises(ValueError), warnings.catch_warnings():
+                    warnings.simplefilter("ignore", category=RuntimeWarning)
                     mn_trial.suggest_float("x", low, high)
 
     @staticmethod
@@ -363,7 +371,8 @@ class TestChainerMNTrial:
                 x2 = mn_trial.suggest_categorical("x", choices)
                 assert x1 == x2
 
-                with pytest.raises(ValueError):
+                with pytest.raises(ValueError), warnings.catch_warnings():
+                    warnings.simplefilter("ignore", category=RuntimeWarning)
                     mn_trial.suggest_float("x", 0.0, 1.0)
 
     @staticmethod
@@ -458,8 +467,7 @@ def _create_new_chainermn_trial(
 ) -> integration.chainermn.ChainerMNTrial:
 
     if comm.rank == 0:
-        trial_id = study._storage.create_new_trial(study._study_id)
-        trial = Trial(study, trial_id)
+        trial = study.ask()
         mn_trial = integration.chainermn.ChainerMNTrial(trial, comm)
     else:
         mn_trial = integration.chainermn.ChainerMNTrial(None, comm)
