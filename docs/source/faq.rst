@@ -174,13 +174,15 @@ For example, you can save SVM models trained in the objective function as follow
 How can I obtain reproducible optimization results?
 ---------------------------------------------------
 
-To make the parameters suggested by Optuna reproducible, you can specify a fixed random seed via ``seed`` argument of :class:`~optuna.samplers.RandomSampler` or :class:`~optuna.samplers.TPESampler` as follows:
+To make the parameters suggested by Optuna reproducible, you can specify a fixed random seed via ``seed`` argument of an instance of :mod:`~optuna.samplers` as follows:
 
 .. code-block:: python
 
     sampler = TPESampler(seed=10)  # Make the sampler behave in a deterministic way.
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective)
+
+To make the pruning by :class:`~optuna.pruners.HyperbandPruner` reproducible, you can specify ``study_name`` of :class:`~optuna.study.Study` and `hash seed <https://docs.python.org/3/using/cmdline.html#envvar-PYTHONHASHSEED>`_.
 
 However, there are two caveats.
 

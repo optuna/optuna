@@ -179,6 +179,9 @@ autodoc_default_options = {
     "exclude-members": "with_traceback",
 }
 
+# sphinx_copybutton option to not copy prompt.
+copybutton_prompt_text = "$ "
+
 # Sphinx Gallery
 pio.renderers.default = "sphinx_gallery"
 

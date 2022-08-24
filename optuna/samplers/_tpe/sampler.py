@@ -191,12 +191,12 @@ class TPESampler(BaseSampler):
 
             .. note::
                 Abnormally terminated trials often leave behind a record with a state of
-                `RUNNING` in the storage.
+                ``RUNNING`` in the storage.
                 Such "zombie" trial parameters will be avoided by the constant liar algorithm
                 during subsequent sampling.
                 When using an :class:`~optuna.storages.RDBStorage`, it is possible to enable the
                 ``heartbeat_interval`` to change the records for abnormally terminated trials to
-                `FAIL`.
+                ``FAIL``.
 
             .. note::
                 It is recommended to set this value to :obj:`True` during distributed
@@ -204,6 +204,10 @@ class TPESampler(BaseSampler):
                 configurations. In particular, if each objective function evaluation is costly
                 and the durations of the running states are significant, and/or the number of
                 workers is high.
+
+            .. note::
+                This feature can be used for only single-objective optimization; this argument is
+                ignored for multi-objective optimization.
 
             .. note::
                 Added in v2.8.0 as an experimental feature. The interface may change in newer
