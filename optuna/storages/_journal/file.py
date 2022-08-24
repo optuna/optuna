@@ -151,23 +151,29 @@ class JournalFileStorage(BaseJournalLogStorage):
         self._log_number_offset: Dict[int, int] = {0: 0}
 
     def read_logs(self, log_number_from: int) -> List[Dict[str, Any]]:
-        with get_lock_file(self._lock):
-            logs = []
-            with open(self._file_path, "r") as f:
-                log_number_start = 0
-                if log_number_from in self._log_number_offset:
-                    f.seek(self._log_number_offset[log_number_from])
-                    log_number_start = log_number_from
+        logs = []
+        with open(self._file_path, "r") as f:
+            log_number_start = 0
+            if log_number_from in self._log_number_offset:
+                f.seek(self._log_number_offset[log_number_from])
+                log_number_start = log_number_from
 
-                for log_number, line in enumerate(f, start=log_number_start):
-                    if log_number + 1 not in self._log_number_offset:
-                        byte_len = len(line.encode("utf-8"))
-                        self._log_number_offset[log_number + 1] = (
-                            self._log_number_offset[log_number] + byte_len
-                        )
-                    if log_number < log_number_from:
-                        continue
+            last_decode_error = None
+            for log_number, line in enumerate(f, start=log_number_start):
+                if last_decode_error is not None:
+                    raise last_decode_error
+                if log_number + 1 not in self._log_number_offset:
+                    byte_len = len(line.encode("utf-8"))
+                    self._log_number_offset[log_number + 1] = (
+                        self._log_number_offset[log_number] + byte_len
+                    )
+                if log_number < log_number_from:
+                    continue
+                try:
                     logs.append(json.loads(line))
+                except json.JSONDecodeError as err:
+                    last_decode_error = err
+                    del self._log_number_offset[log_number + 1]
 
             return logs
 
