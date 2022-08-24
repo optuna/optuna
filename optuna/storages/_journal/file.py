@@ -3,6 +3,7 @@ from contextlib import contextmanager
 import errno
 import json
 import os
+import time
 from typing import Any
 from typing import Dict
 from typing import Iterator
@@ -47,12 +48,15 @@ class JournalFileSymlinkLock(JournalFileBaseLock):
         self._lockrenamefile = self._lockfile + str(uuid.uuid4()) + RENAME_FILE_SUFFIX
 
     def acquire(self) -> bool:
+        sleep_secs = 0.001
         while True:
             try:
                 os.symlink(self._lock_target_file, self._lockfile)
                 return True
             except OSError as err:
                 if err.errno == errno.EEXIST:
+                    time.sleep(sleep_secs)
+                    sleep_secs = min(sleep_secs * 2, 1)
                     continue
                 else:
                     raise err
@@ -90,6 +94,7 @@ class JournalFileOpenLock(JournalFileBaseLock):
         self._lockrenamefile = self._lockfile + str(uuid.uuid4()) + RENAME_FILE_SUFFIX
 
     def acquire(self) -> bool:
+        sleep_secs = 0.001
         while True:
             try:
                 open_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
@@ -97,6 +102,8 @@ class JournalFileOpenLock(JournalFileBaseLock):
                 return True
             except OSError as err:
                 if err.errno == errno.EEXIST:
+                    time.sleep(sleep_secs)
+                    sleep_secs = min(sleep_secs * 2, 1)
                     continue
                 else:
                     raise err
