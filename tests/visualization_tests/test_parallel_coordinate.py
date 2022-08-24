@@ -24,7 +24,6 @@ from optuna.visualization._parallel_coordinate import _get_parallel_coordinate_i
 from optuna.visualization._parallel_coordinate import _ParallelCoordinateInfo
 from optuna.visualization._plotly_imports import go
 from optuna.visualization._utils import COLOR_SCALE
-from optuna.visualization.matplotlib._matplotlib_imports import Axes
 from optuna.visualization.matplotlib._matplotlib_imports import plt
 
 
@@ -174,17 +173,14 @@ def test_target_is_none_and_study_is_multi_obj() -> None:
         _get_parallel_coordinate_info(study)
 
 
-@parametrize_plot_parallel_coordinate
-def test_plot_parallel_coordinate_customized_target_name(
-    plot_parallel_coordinate: Callable[..., Any]
-) -> None:
+def test_plot_parallel_coordinate_customized_target_name() -> None:
 
     study = prepare_study_with_trials()
-    figure = plot_parallel_coordinate(study, target_name="Target Name")
-    if isinstance(figure, go.Figure):
-        assert figure.data[0]["dimensions"][0]["label"] == "Target Name"
-    elif isinstance(figure, Axes):
-        assert figure.get_figure().axes[1].get_ylabel() == "Target Name"
+    figure = plotly_plot_parallel_coordinate(study, target_name="Target Name")
+    assert figure.data[0]["dimensions"][0]["label"] == "Target Name"
+
+    figure = matplotlib.plot_parallel_coordinate(study, target_name="Target Name")
+    assert figure.get_figure().axes[1].get_ylabel() == "Target Name"
 
 
 @parametrize_plot_parallel_coordinate
@@ -386,7 +382,7 @@ def test_get_parallel_coordinate_info() -> None:
         target_name="Target Name",
     )
 
-    # Test with wrong params that do not exist in trials
+    # Test with wrong params that do not exist in trials.
     with pytest.raises(ValueError, match="Parameter optuna does not exist in your study."):
         _get_parallel_coordinate_info(study, params=["optuna", "optuna"])
 
@@ -528,7 +524,7 @@ def test_get_parallel_coordinate_info_log_params() -> None:
     )
 
 
-def test_get_parallel_coordinate_info_unique_hyper_param() -> None:
+def test_get_parallel_coordinate_info_unique_param() -> None:
     # Test case when one unique value is suggested during the optimization.
 
     study_categorical_params = create_study()
@@ -544,7 +540,7 @@ def test_get_parallel_coordinate_info_unique_hyper_param() -> None:
         )
     )
 
-    # Both hyperparameters contain unique values.
+    # Both parameters contain unique values.
     info = _get_parallel_coordinate_info(study_categorical_params)
     assert info == _ParallelCoordinateInfo(
         dim_objective=_DimensionInfo(
