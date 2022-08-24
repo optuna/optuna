@@ -6,6 +6,7 @@ from typing import Callable
 from typing import List
 from typing import Optional
 from typing import Sequence
+import warnings
 
 import numpy as np
 import pytest
@@ -91,14 +92,15 @@ def test_get_pareto_front_info_unconstrained(
 
     study = create_study_2d()
     trials = study.get_trials(deepcopy=False)
-
-    info = _get_pareto_front_info(
-        study=study,
-        include_dominated_trials=include_dominated_trials,
-        axis_order=axis_order,
-        targets=targets,
-        target_names=target_names,
-    )
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=FutureWarning)
+        info = _get_pareto_front_info(
+            study=study,
+            include_dominated_trials=include_dominated_trials,
+            axis_order=axis_order,
+            targets=targets,
+            target_names=target_names,
+        )
 
     assert info == _ParetoFrontInfo(
         n_targets=2,
@@ -134,14 +136,16 @@ def test_get_pareto_front_info_constrained(
     def constraints_func(t: FrozenTrial) -> Sequence[float]:
         return [1.0] if t.params["x"] == 1 and t.params["y"] == 0 else [-1.0]
 
-    info = _get_pareto_front_info(
-        study=study,
-        include_dominated_trials=include_dominated_trials,
-        axis_order=axis_order,
-        targets=targets,
-        target_names=target_names,
-        constraints_func=constraints_func,
-    )
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=FutureWarning)
+        info = _get_pareto_front_info(
+            study=study,
+            include_dominated_trials=include_dominated_trials,
+            axis_order=axis_order,
+            targets=targets,
+            target_names=target_names,
+            constraints_func=constraints_func,
+        )
 
     assert info == _ParetoFrontInfo(
         n_targets=2,
@@ -171,13 +175,15 @@ def test_get_pareto_front_info_3d(
     study = create_study_3d()
     trials = study.get_trials(deepcopy=False)
 
-    info = _get_pareto_front_info(
-        study=study,
-        include_dominated_trials=include_dominated_trials,
-        axis_order=axis_order,
-        targets=targets,
-        target_names=target_names,
-    )
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=FutureWarning)
+        info = _get_pareto_front_info(
+            study=study,
+            include_dominated_trials=include_dominated_trials,
+            axis_order=axis_order,
+            targets=targets,
+            target_names=target_names,
+        )
 
     assert info == _ParetoFrontInfo(
         n_targets=3,
@@ -193,12 +199,14 @@ def test_get_pareto_front_info_3d(
     )
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 def test_get_pareto_front_info_invalid_number_of_target_names() -> None:
     study = optuna.create_study(directions=["minimize", "minimize"])
     with pytest.raises(ValueError):
         _get_pareto_front_info(study=study, target_names=["Foo"])
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("n_dims", [1, 4])
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
 @pytest.mark.parametrize("constraints_func", [None, lambda _: [-1.0]])
@@ -216,6 +224,7 @@ def test_get_pareto_front_info_unsupported_dimensions(
         )
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("axis_order", [[0, 1, 1], [0, 0], [0, 2], [-1, 1]])
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
 @pytest.mark.parametrize("constraints_func", [None, lambda _: [-1.0]])
@@ -234,6 +243,7 @@ def test_get_pareto_front_info_invalid_axis_order(
         )
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
 @pytest.mark.parametrize("constraints_func", [None, lambda _: [-1.0]])
 def test_get_pareto_front_info_invalid_target_values(
@@ -251,6 +261,7 @@ def test_get_pareto_front_info_invalid_target_values(
         )
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
 @pytest.mark.parametrize("constraints_func", [None, lambda _: [-1.0]])
 def test_get_pareto_front_info_using_axis_order_and_targets(

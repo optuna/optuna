@@ -122,7 +122,7 @@ def _get_parallel_coordinate_plot(info: _ParallelCoordinateInfo) -> "Axes":
     segments = [np.column_stack([x, y]) for x, y in zip(xs, dims_obj_base)]
     lc = LineCollection(segments, cmap=cmap)
     lc.set_array(np.asarray(info.dim_objective.values))
-    axcb = fig.colorbar(lc, pad=0.1)
+    axcb = fig.colorbar(lc, ax == ax, pad=0.1)
     axcb.set_label(target_name)
     var_names = [info.dim_objective.label] + [dim.label for dim in info.dims_params]
     plt.xticks(range(n_params + 1), var_names, rotation=330)
