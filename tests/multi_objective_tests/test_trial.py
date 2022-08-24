@@ -11,6 +11,9 @@ from optuna.study._study_direction import StudyDirection
 from optuna.trial import TrialState
 
 
+pytestmark = pytest.mark.filterwarnings("ignore::FutureWarning")
+
+
 def test_suggest() -> None:
     study = optuna.multi_objective.create_study(["maximize", "maximize"])
 

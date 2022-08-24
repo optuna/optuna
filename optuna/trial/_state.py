@@ -29,5 +29,9 @@ class TrialState(enum.Enum):
         return str(self)
 
     def is_finished(self) -> bool:
+        """Return a bool value to represent whether the trial state is unfinished or not.
+
+        The unfinished state is either ``RUNNING`` or ``WAITING``.
+        """
 
         return self != TrialState.RUNNING and self != TrialState.WAITING

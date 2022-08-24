@@ -129,8 +129,8 @@ def get_extras_require() -> Dict[str, List[str]]:
         ],
         "test": [
             "codecov",
-            "fakeredis<=1.7.1; python_version<'3.8'",
-            "fakeredis ; python_version>='3.8'",
+            "fakeredis<=1.7.1; python_version<'3.7'",
+            "fakeredis ; python_version>='3.7'",
             "kaleido",
             "pytest",
         ],

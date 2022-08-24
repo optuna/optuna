@@ -113,12 +113,16 @@ class FrozenTrial(BaseTrial):
             Datetime where the :class:`~optuna.trial.Trial` finished.
         params:
             Dictionary that contains suggested parameters.
+        distributions:
+            Dictionary that contains the distributions of :attr:`params`.
         user_attrs:
             Dictionary that contains the attributes of the :class:`~optuna.trial.Trial` set with
             :func:`optuna.trial.Trial.set_user_attr`.
+        system_attrs:
+            Dictionary that contains the attributes of the :class:`~optuna.trial.Trial` set with
+            :func:`optuna.trial.Trial.set_system_attr`.
         intermediate_values:
             Intermediate objective values set with :func:`optuna.trial.Trial.report`.
-
     """
 
     def __init__(
@@ -421,7 +425,6 @@ class FrozenTrial(BaseTrial):
 
     @property
     def distributions(self) -> Dict[str, BaseDistribution]:
-        """Dictionary that contains the distributions of :attr:`params`."""
 
         return self._distributions
 

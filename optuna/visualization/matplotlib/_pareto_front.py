@@ -105,7 +105,10 @@ def plot_pareto_front(
     info = _get_pareto_front_info(
         study, target_names, include_dominated_trials, axis_order, constraints_func, targets
     )
+    return _get_pareto_front_plot(info)
 
+
+def _get_pareto_front_plot(info: _ParetoFrontInfo) -> "Axes":
     if info.n_targets == 2:
         return _get_pareto_front_2d(info)
     elif info.n_targets == 3:
