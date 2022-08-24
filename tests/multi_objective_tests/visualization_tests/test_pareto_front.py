@@ -10,6 +10,9 @@ import optuna
 from optuna.multi_objective.visualization import plot_pareto_front
 
 
+pytestmark = pytest.mark.filterwarnings("ignore::FutureWarning")
+
+
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
 @pytest.mark.parametrize("axis_order", [None, [0, 1], [1, 0]])
 def test_plot_pareto_front_2d(

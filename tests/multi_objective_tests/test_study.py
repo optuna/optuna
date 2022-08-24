@@ -10,6 +10,9 @@ from optuna.study._study_direction import StudyDirection
 from optuna.testing.storages import StorageSupplier
 
 
+pytestmark = pytest.mark.filterwarnings("ignore::FutureWarning")
+
+
 def test_create_study() -> None:
     study = optuna.multi_objective.create_study(["maximize"])
     assert study.n_objectives == 1
