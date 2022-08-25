@@ -227,9 +227,9 @@ def test_multi_objective_sample_int_distributions(log: bool, step: int) -> None:
     random.seed(128)
 
     def int_value_fn(idx: int) -> float:
-        return random.randint(1, 100)
+        return random.randint(1, 99)
 
-    int_dist = optuna.distributions.IntDistribution(1, 100, log, step)
+    int_dist = optuna.distributions.IntDistribution(1, 99, log, step)
     past_trials = [
         frozen_trial_factory(
             i, [random.random(), random.random()], dist=int_dist, value_fn=int_value_fn
@@ -240,7 +240,7 @@ def test_multi_objective_sample_int_distributions(log: bool, step: int) -> None:
     trial = frozen_trial_factory(16, [0, 0])
     sampler = TPESampler(seed=0)
     int_suggestion = suggest(sampler, study, trial, int_dist, past_trials)
-    assert 1 <= int_suggestion <= 100
+    assert 1 <= int_suggestion <= 99
     assert isinstance(int_suggestion, int)
 
 
