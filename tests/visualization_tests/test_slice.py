@@ -209,6 +209,7 @@ def test_get_slice_plot_info_params(params: Optional[List[str]]) -> None:
     )
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_get_slice_plot_info_customized_target() -> None:
     params = ["param_a"]
     study = prepare_study_with_trials()
@@ -365,6 +366,7 @@ def test_get_slice_plot_info_nonfinite_removed(value: float) -> None:
     )
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize("objective", (0, 1))
 @pytest.mark.parametrize("value", (float("inf"), -float("inf")))
 def test_get_slice_plot_info_nonfinite_multiobjective(objective: int, value: float) -> None:
