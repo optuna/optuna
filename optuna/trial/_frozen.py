@@ -26,10 +26,16 @@ _suggest_deprecated_msg = "Use :func:`~optuna.trial.FrozenTrial.suggest_float` i
 class FrozenTrial(BaseTrial):
     """Status and results of a :class:`~optuna.trial.Trial`.
 
-    This object has the same methods as :class:`~optuna.trial.Trial`, and it suggests the same
-    parameter values as in :attr:`params`; it does not sample any value from a distribution.
-    In contrast to :class:`~optuna.trial.Trial`,
-    :class:`~optuna.trial.FrozenTrial` does not depend on :class:`~optuna.study.Study`, and it is
+    An object of this class has the same methods as :class:`~optuna.trial.Trial`, but is not
+    associated with, nor has any references to a :class:`~optuna.study.Study`.
+
+    It is therefore not possible to make persistent changes to a storage from this object by
+    itself, for instance by using :func:`~optuna.trial.FrozenTrial.set_user_attr`.
+
+    It will suggest the parameter values stored in :attr:`params` and will not sample values from
+    any distributions.
+
+    It can be passed to objective functions (see :func:`~optuna.study.Study.optimize`) and is
     useful for deploying optimization results.
 
     Example:
