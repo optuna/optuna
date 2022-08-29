@@ -255,4 +255,4 @@ def _log_failed_trial(
         exc_info=exc_info,
     )
 
-    _logger.warning("Trial {} failed with value {}.".format(trial.number, value_or_values))
+    _logger.warning("Trial {} failed with value {}.".format(trial.number, repr(value_or_values)))
