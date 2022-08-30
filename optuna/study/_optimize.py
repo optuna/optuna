@@ -251,7 +251,9 @@ def _log_failed_trial(
     value_or_values: Any = None,
 ) -> None:
     _logger.warning(
-        "Trial {} failed because of the following error: {}".format(trial.number, message),
+        "Trial {} failed with parameters: {} because of the following error: {}.".format(
+            trial.number, trial.params, message
+        ),
         exc_info=exc_info,
     )
 
