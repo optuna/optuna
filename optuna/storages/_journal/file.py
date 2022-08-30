@@ -11,7 +11,6 @@ from typing import List
 from typing import Optional
 import uuid
 
-from optuna._experimental import experimental_class
 from optuna.storages._journal.base import BaseJournalLogStorage
 
 
@@ -29,7 +28,6 @@ class JournalFileBaseLock(abc.ABC):
         raise NotImplementedError
 
 
-@experimental_class("3.1.0")
 class JournalFileSymlinkLock(JournalFileBaseLock):
     """Lock class for synchronizing processes for NFSv2 or later.
 
@@ -75,7 +73,6 @@ class JournalFileSymlinkLock(JournalFileBaseLock):
             raise
 
 
-@experimental_class("3.1.0")
 class JournalFileOpenLock(JournalFileBaseLock):
     """Lock class for synchronizing processes for NFSv3 or later.
 
@@ -131,7 +128,6 @@ def get_lock_file(lock_obj: JournalFileBaseLock) -> Iterator[None]:
         lock_obj.release()
 
 
-@experimental_class("3.1.0")
 class JournalFileStorage(BaseJournalLogStorage):
     """File storage class for Journal log backend.
 
