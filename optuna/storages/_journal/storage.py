@@ -78,7 +78,9 @@ class JournalStorage(BaseStorage):
                 ...
 
 
-            storage = JournalStorage(JournalFileStorage("./log_file"))
+            storage = optuna.storages.JournalStorage(
+                optuna.storages.JournalFileStorage("./log_file"),
+            )
 
             study = optuna.create_study(storage=storage)
             study.optimize(objective)
