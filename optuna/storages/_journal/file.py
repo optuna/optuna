@@ -49,7 +49,7 @@ class JournalFileSymlinkLock(JournalFileBaseLock):
         """Acquire a lock in a blocking way by creating a symbolic link of a file.
 
         Returns:
-            :obj:`True` if it succeeds in creating a symbolic link of `self._lock_target_file`.
+            :obj:`True` if it succeeded in creating a symbolic link of `self._lock_target_file`.
 
         """
         sleep_secs = 0.001
@@ -102,7 +102,7 @@ class JournalFileOpenLock(JournalFileBaseLock):
         """Acquire a lock in a blocking way by creating a lock file.
 
         Returns:
-            :obj:`True` if it succeeds in creating `self._lock_file`
+            :obj:`True` if it succeeded in creating a `self._lock_file`
 
         """
         sleep_secs = 0.001
@@ -123,7 +123,7 @@ class JournalFileOpenLock(JournalFileBaseLock):
                 raise
 
     def release(self) -> None:
-        """Release a lock by removing the symbolic link."""
+        """Release a lock by removing the created file."""
 
         try:
             os.rename(self._lock_file, self._lock_rename_file)
