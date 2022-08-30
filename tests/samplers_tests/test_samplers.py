@@ -349,7 +349,7 @@ def test_categorical(
         FloatDistribution(-10, 10, step=0.5),
         IntDistribution(3, 10),
         IntDistribution(1, 100, log=True),
-        IntDistribution(3, 10, step=2),
+        IntDistribution(3, 9, step=2),
     ],
 )
 @pytest.mark.parametrize(
@@ -360,7 +360,7 @@ def test_categorical(
         FloatDistribution(-10, 10, step=0.5),
         IntDistribution(3, 10),
         IntDistribution(1, 100, log=True),
-        IntDistribution(3, 10, step=2),
+        IntDistribution(3, 9, step=2),
     ],
 )
 def test_sample_relative_numerical(

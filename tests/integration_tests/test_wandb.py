@@ -200,7 +200,7 @@ def test_values_registered_on_epoch_with_logging(
         wandb.run.log({"result": result})
         return result
 
-    study.enqueue_trial({"x": 2, "y": 25})
+    study.enqueue_trial({"x": 2, "y": 3})
     study.optimize(_decorated_objective, n_trials=1, callbacks=[wandbc])
 
     logged_in_decorator = wandb.run.log.mock_calls[0][1][0]
@@ -270,7 +270,7 @@ def test_multiobjective_values_registered_on_epoch_with_logging(
         return result0, result1
 
     study = optuna.create_study(directions=["minimize", "maximize"])
-    study.enqueue_trial({"x": 2, "y": 24})
+    study.enqueue_trial({"x": 2, "y": 3})
     study.optimize(_decorated_objective, n_trials=1, callbacks=[wandbc])
 
     logged_in_decorator = wandb.run.log.mock_calls[0][1][0]

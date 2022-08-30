@@ -7,6 +7,7 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 from unittest.mock import patch
+import warnings
 
 import pytest
 from sqlalchemy.exc import IntegrityError
@@ -195,7 +196,9 @@ def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
         storage = RDBStorage(storage_url, skip_compatibility_check=True, skip_table_creation=True)
         assert storage.get_current_version() == f"v{optuna_version}"
         head_version = storage.get_head_version()
-        storage.upgrade()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=FutureWarning)
+            storage.upgrade()
         assert head_version == storage.get_current_version()
 
         # Create a new study.
@@ -242,7 +245,9 @@ def test_upgrade_multi_objective_optimization(optuna_version: str) -> None:
         storage = RDBStorage(storage_url, skip_compatibility_check=True, skip_table_creation=True)
         assert storage.get_current_version() == f"v{optuna_version}"
         head_version = storage.get_head_version()
-        storage.upgrade()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=FutureWarning)
+            storage.upgrade()
         assert head_version == storage.get_current_version()
 
         # Create a new study.
@@ -288,7 +293,9 @@ def test_upgrade_distributions(optuna_version: str) -> None:
         storage = RDBStorage(storage_url, skip_compatibility_check=True, skip_table_creation=True)
         assert storage.get_current_version() == f"v{optuna_version}"
         head_version = storage.get_head_version()
-        storage.upgrade()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=FutureWarning)
+            storage.upgrade()
         assert head_version == storage.get_current_version()
 
         new_study = load_study(storage=storage, study_name="schema migration")
@@ -302,7 +309,9 @@ def test_upgrade_distributions(optuna_version: str) -> None:
         assert isinstance(new_distribution_dict["z"], CategoricalDistribution)
 
         # Check if Study.optimize can run on new storage.
-        new_study.optimize(objective_test_upgrade_distributions, n_trials=1)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UserWarning)
+            new_study.optimize(objective_test_upgrade_distributions, n_trials=1)
 
 
 def test_record_heartbeat() -> None:

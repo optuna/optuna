@@ -8,6 +8,7 @@ Create Date: 2021-11-21 23:48:42.424430
 from typing import Any
 from typing import List
 
+import sqlalchemy as sa
 from alembic import op
 from sqlalchemy import Column
 from sqlalchemy import DateTime
@@ -19,7 +20,6 @@ from sqlalchemy import orm
 from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy import UniqueConstraint
-from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -139,7 +139,7 @@ def persist(session: orm.Session, distributions: List[BaseDistribution]) -> None
 
 def upgrade() -> None:
     bind = op.get_bind()
-    inspector = Inspector.from_engine(bind)
+    inspector = sa.inspect(bind)
     tables = inspector.get_table_names()
 
     assert "trial_params" in tables
@@ -168,7 +168,7 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     bind = op.get_bind()
-    inspector = Inspector.from_engine(bind)
+    inspector = sa.inspect(bind)
     tables = inspector.get_table_names()
 
     assert "trial_params" in tables

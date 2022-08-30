@@ -121,7 +121,7 @@ def test_distribution_to_json() -> None:
 
 def test_check_distribution_compatibility() -> None:
 
-    # test the same distribution
+    # Test the same distribution.
     for key in EXAMPLE_JSONS:
         distributions.check_distribution_compatibility(
             EXAMPLE_DISTRIBUTIONS[key], EXAMPLE_DISTRIBUTIONS[key]
@@ -132,7 +132,7 @@ def test_check_distribution_compatibility() -> None:
             EXAMPLE_DISTRIBUTIONS[key], distributions.json_to_distribution(EXAMPLE_JSONS[key])
         )
 
-    # test different distribution classes
+    # Test different distribution classes.
     pytest.raises(
         ValueError,
         lambda: distributions.check_distribution_compatibility(
@@ -140,7 +140,7 @@ def test_check_distribution_compatibility() -> None:
         ),
     )
 
-    # test compatibility between IntDistributions.
+    # Test compatibility between IntDistributions.
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS["id"], EXAMPLE_DISTRIBUTIONS["i"]
     )
@@ -155,7 +155,7 @@ def test_check_distribution_compatibility() -> None:
             EXAMPLE_DISTRIBUTIONS["il"], EXAMPLE_DISTRIBUTIONS["id"]
         )
 
-    # test compatibility between FloatDistributions.
+    # Test compatibility between FloatDistributions.
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS["fd"], EXAMPLE_DISTRIBUTIONS["f"]
     )
@@ -170,7 +170,7 @@ def test_check_distribution_compatibility() -> None:
             EXAMPLE_DISTRIBUTIONS["fl"], EXAMPLE_DISTRIBUTIONS["fd"]
         )
 
-    # test dynamic value range (CategoricalDistribution)
+    # Test dynamic value range (CategoricalDistribution).
     pytest.raises(
         ValueError,
         lambda: distributions.check_distribution_compatibility(
@@ -179,7 +179,7 @@ def test_check_distribution_compatibility() -> None:
         ),
     )
 
-    # test dynamic value range (except CategoricalDistribution)
+    # Test dynamic value range (except CategoricalDistribution).
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS["i"], distributions.IntDistribution(low=-3, high=2)
     )
@@ -187,7 +187,7 @@ def test_check_distribution_compatibility() -> None:
         EXAMPLE_DISTRIBUTIONS["il"], distributions.IntDistribution(low=1, high=13, log=True)
     )
     distributions.check_distribution_compatibility(
-        EXAMPLE_DISTRIBUTIONS["id"], distributions.IntDistribution(low=-3, high=2, step=2)
+        EXAMPLE_DISTRIBUTIONS["id"], distributions.IntDistribution(low=-3, high=1, step=2)
     )
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS["f"], distributions.FloatDistribution(low=-3.0, high=-2.0)
@@ -247,7 +247,11 @@ def test_categorical_internal_representation() -> None:
     ],
 )
 def test_int_contains(expected: bool, value: float, step: int) -> None:
-    i = distributions.IntDistribution(low=1, high=10, step=step)
+    with warnings.catch_warnings():
+        # When `step` is 2, UserWarning will be raised since the range is not divisible by 2.
+        # The range will be replaced with [1, 9].
+        warnings.simplefilter("ignore", category=UserWarning)
+        i = distributions.IntDistribution(low=1, high=10, step=step)
     assert i._contains(value) == expected
 
 
@@ -353,7 +357,11 @@ def test_int_single(expected: bool, low: int, high: int, log: bool, step: int) -
 def test_float_single(
     expected: bool, low: float, high: float, log: bool, step: Optional[float]
 ) -> None:
-    distribution = distributions.FloatDistribution(low=low, high=high, log=log, step=step)
+    with warnings.catch_warnings():
+        # When `step` is 0.3, UserWarning will be raised since the range is not divisible by 0.3.
+        # The range will be replaced with [2.22, 2.24].
+        warnings.simplefilter("ignore", category=UserWarning)
+        distribution = distributions.FloatDistribution(low=low, high=high, log=log, step=step)
     assert distribution.single() == expected
 
 
@@ -486,6 +494,7 @@ def test_categorical_distribution_different_sequence_types() -> None:
     assert c1 == c2
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 def test_convert_old_distribution_to_new_distribution() -> None:
     ud = distributions.UniformDistribution(low=0, high=10)
     assert distributions._convert_old_distribution_to_new_distribution(
