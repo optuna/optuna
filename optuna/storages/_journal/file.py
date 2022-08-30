@@ -42,14 +42,20 @@ class JournalFileSymlinkLock(JournalFileBaseLock):
 
     def __init__(self, filepath: str) -> None:
         self._lock_target_file = filepath
-        self._lockfile = filepath + LOCK_FILE_SUFFIX
-        self._lockrenamefile = self._lockfile + str(uuid.uuid4()) + RENAME_FILE_SUFFIX
+        self._lock_file = filepath + LOCK_FILE_SUFFIX
+        self._lock_rename_file = self._lock_file + str(uuid.uuid4()) + RENAME_FILE_SUFFIX
 
     def acquire(self) -> bool:
+        """Acquire a lock in a blocking way by creating a symbolic link of a file.
+
+        Returns:
+            :obj:`True` if it succeeds in creating a symbolic link of `self._lock_target_file`.
+
+        """
         sleep_secs = 0.001
         while True:
             try:
-                os.symlink(self._lock_target_file, self._lockfile)
+                os.symlink(self._lock_target_file, self._lock_file)
                 return True
             except OSError as err:
                 if err.errno == errno.EEXIST:
@@ -63,13 +69,15 @@ class JournalFileSymlinkLock(JournalFileBaseLock):
                 raise
 
     def release(self) -> None:
+        """Release a lock by removing the symbolic link."""
+
         try:
-            os.rename(self._lockfile, self._lockrenamefile)
-            os.unlink(self._lockrenamefile)
+            os.rename(self._lock_file, self._lock_rename_file)
+            os.unlink(self._lock_rename_file)
         except OSError:
             raise RuntimeError("Error: did not possess lock")
         except BaseException:
-            os.unlink(self._lockrenamefile)
+            os.unlink(self._lock_rename_file)
             raise
 
 
@@ -87,15 +95,21 @@ class JournalFileOpenLock(JournalFileBaseLock):
     """
 
     def __init__(self, filepath: str) -> None:
-        self._lockfile = filepath + LOCK_FILE_SUFFIX
-        self._lockrenamefile = self._lockfile + str(uuid.uuid4()) + RENAME_FILE_SUFFIX
+        self._lock_file = filepath + LOCK_FILE_SUFFIX
+        self._lock_rename_file = self._lock_file + str(uuid.uuid4()) + RENAME_FILE_SUFFIX
 
     def acquire(self) -> bool:
+        """Acquire a lock in a blocking way by creating a lock file.
+
+        Returns:
+            :obj:`True` if it succeeds in creating `self._lock_file`
+
+        """
         sleep_secs = 0.001
         while True:
             try:
                 open_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
-                os.close(os.open(self._lockfile, open_flags))
+                os.close(os.open(self._lock_file, open_flags))
                 return True
             except OSError as err:
                 if err.errno == errno.EEXIST:
@@ -109,13 +123,15 @@ class JournalFileOpenLock(JournalFileBaseLock):
                 raise
 
     def release(self) -> None:
+        """Release a lock by removing the symbolic link."""
+
         try:
-            os.rename(self._lockfile, self._lockrenamefile)
-            os.unlink(self._lockrenamefile)
+            os.rename(self._lock_file, self._lock_rename_file)
+            os.unlink(self._lock_rename_file)
         except OSError:
             raise RuntimeError("Error: did not possess lock")
         except BaseException:
-            os.unlink(self._lockrenamefile)
+            os.unlink(self._lock_rename_file)
             raise
 
 
