@@ -71,10 +71,17 @@ class JournalStorage(BaseStorage):
 
         .. code::
 
+            import optuna
+
+
+            def objective(trial):
+                ...
+
+
             storage = JournalStorage(JournalFileStorage("./log_file"))
 
             study = optuna.create_study(storage=storage)
-
+            study.optimize(objective)
     """
 
     def __init__(self, log_storage: BaseJournalLogStorage) -> None:
