@@ -191,10 +191,7 @@ class JournalFileStorage(BaseJournalLogStorage):
 
     def append_logs(self, logs: List[Dict[str, Any]]) -> None:
         with get_lock_file(self._lock):
-            what_to_write = ""
-            for log in logs:
-                what_to_write += json.dumps(log) + "\n"
-
+            what_to_write = "\n".join([json.dumps(log) for log in logs])
             with open(self._file_path, "a", encoding="utf-8") as f:
                 f.write(what_to_write)
                 os.fsync(f.fileno())

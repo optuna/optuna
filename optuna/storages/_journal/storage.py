@@ -462,18 +462,12 @@ class JournalStorageReplayResult:
             return
 
         trial_id = len(self._trials)
-        distributions = (
-            {}
-            if "distributions" not in log
-            else {k: json_to_distribution(v) for k, v in log["distributions"].items()}
-        )
-        params = (
-            {}
-            if "params" not in log
-            else {
-                k: distributions[k].to_external_repr(param) for k, param in log["params"].items()
-            }
-        )
+        distributions = {}
+        if "distributions" in log:
+            distributions = {k: json_to_distribution(v) for k, v in log["distributions"].items()}
+        params = {}
+        if "params" in log:
+            params = {k: distributions[k].to_external_repr(p) for k, p in log["params"].items()}
         if log["datetime_start"] is not None:
             datetime_start = datetime_from_isoformat(log["datetime_start"])
         else:
