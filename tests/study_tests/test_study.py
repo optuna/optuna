@@ -1485,22 +1485,12 @@ def test_tell_duplicate_tell() -> None:
 def test_tell_storage_not_implemented_trial_number() -> None:
     with StorageSupplier("inmemory") as storage:
 
-        with patch.object(
-            storage,
-            "get_trial_id_from_study_id_trial_number",
-            side_effect=NotImplementedError,
-        ):
-            study = create_study(storage=storage)
+        study = create_study(storage=storage)
+        study.tell(study.ask(), 1.0)
+        study.tell(study.ask().number, 1.0)
 
-            study.tell(study.ask(), 1.0)
-
-            # Storage missing implementation for method required to map trial numbers back to
-            # trial IDs.
-            with pytest.warns(UserWarning):
-                study.tell(study.ask().number, 1.0)
-
-            with pytest.raises(ValueError):
-                study.tell(study.ask().number + 1, 1.0)
+        with pytest.raises(ValueError):
+            study.tell(study.ask().number + 1, 1.0)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
