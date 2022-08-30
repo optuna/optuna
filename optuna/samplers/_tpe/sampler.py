@@ -396,6 +396,10 @@ class TPESampler(BaseSampler):
         indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n), violations)
         # `None` items are intentionally converted to `nan` and then filtered out.
         # For `nan` conversion, the dtype must be float.
+        # In the call of `sample_relative`, this logic makes sense because we only have the
+        # intersection search space or group decomposed search space. This means one parameter
+        # misses the one trial, then the other parameter must miss the trial, in this call of
+        # `sample_relative`.
         config_values = {k: np.asarray(v, dtype=float) for k, v in values.items()}
         param_mask = ~np.isnan(list(config_values.values())[0])
         param_mask_below, param_mask_above = param_mask[indices_below], param_mask[indices_above]
@@ -451,6 +455,7 @@ class TPESampler(BaseSampler):
         indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n), violations)
         # `None` items are intentionally converted to `nan` and then filtered out.
         # For `nan` conversion, the dtype must be float.
+        # In the call of `sample_independent`, we only have one parameter so the logic makes sense.
         config_values = {k: np.asarray(v, dtype=float) for k, v in values.items()}
         param_mask = ~np.isnan(list(config_values.values())[0])
         param_mask_below, param_mask_above = param_mask[indices_below], param_mask[indices_above]
@@ -823,12 +828,6 @@ def _calculate_weights_below_for_multi_objective(
     indices: np.ndarray,
     violations: Optional[List[float]],
 ) -> np.ndarray:
-    # Multi-objective TPE only sees the first parameter to determine the weights.
-    # In the call of `sample_relative`, this logic makes sense because we only have the
-    # intersection search space or group decomposed search space. This means one parameter
-    # misses the one trial, then the other parameter must miss the trial, in this call of
-    # `sample_relative`.
-    # In the call of `sample_independent`, we only have one parameter so the logic makes sense.
     if violations is None:
         feasible_mask = np.ones(len(indices), dtype=bool)
     else:
