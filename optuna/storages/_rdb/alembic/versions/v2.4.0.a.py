@@ -15,7 +15,6 @@ from sqlalchemy import Float
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import UniqueConstraint
-from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import orm
@@ -77,7 +76,7 @@ class TrialIntermediateValueModel(BaseModel):
 
 def upgrade():
     bind = op.get_bind()
-    inspector = Inspector.from_engine(bind)
+    inspector = sa.inspect(bind)
     tables = inspector.get_table_names()
 
     if "study_directions" not in tables:

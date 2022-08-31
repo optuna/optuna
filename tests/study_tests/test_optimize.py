@@ -64,34 +64,21 @@ def test_run_trial_automatically_fail(storage_mode: str, caplog: LogCaptureFixtu
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
 
-        caplog.clear()
         frozen_trial = _optimize._run_trial(study, lambda _: float("nan"), catch=())
         assert frozen_trial.state == TrialState.FAIL
         assert frozen_trial.value is None
-        assert "Trial 0 failed because of the following error:" in caplog.text
-        assert "The value nan is not acceptable." in caplog.text
 
-        caplog.clear()
         frozen_trial = _optimize._run_trial(study, lambda _: None, catch=())  # type: ignore[arg-type,return-value] # noqa: E501
         assert frozen_trial.state == TrialState.FAIL
         assert frozen_trial.value is None
-        assert "Trial 1 failed because of the following error:" in caplog.text
-        assert "The value None could not be cast to float." in caplog.text
 
-        caplog.clear()
         frozen_trial = _optimize._run_trial(study, lambda _: object(), catch=())  # type: ignore[arg-type,return-value] # noqa: E501
         assert frozen_trial.state == TrialState.FAIL
         assert frozen_trial.value is None
-        assert "Trial 2 failed because of the following error:" in caplog.text
-        assert "The value <object object at" in caplog.text
-        assert "> could not be cast to float." in caplog.text
 
-        caplog.clear()
         frozen_trial = _optimize._run_trial(study, lambda _: [0, 1], catch=())
         assert frozen_trial.state == TrialState.FAIL
         assert frozen_trial.value is None
-        assert "Trial 3 failed because of the following error: The number" in caplog.text
-        assert "of the values 2 did not match the number of the objectives 1." in caplog.text
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)

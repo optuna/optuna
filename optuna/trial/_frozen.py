@@ -4,7 +4,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import Union
 import warnings
 
 from optuna import distributions
@@ -12,6 +11,7 @@ from optuna import logging
 from optuna._deprecated import deprecated_func
 from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.distributions import BaseDistribution
+from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
@@ -22,16 +22,20 @@ from optuna.trial._state import TrialState
 _logger = logging.get_logger(__name__)
 _suggest_deprecated_msg = "Use :func:`~optuna.trial.FrozenTrial.suggest_float` instead."
 
-CategoricalChoiceType = Union[None, bool, int, float, str]
-
 
 class FrozenTrial(BaseTrial):
     """Status and results of a :class:`~optuna.trial.Trial`.
 
-    This object has the same methods as :class:`~optuna.trial.Trial`, and it suggests the same
-    parameter values as in :attr:`params`; it does not sample any value from a distribution.
-    In contrast to :class:`~optuna.trial.Trial`,
-    :class:`~optuna.trial.FrozenTrial` does not depend on :class:`~optuna.study.Study`, and it is
+    An object of this class has the same methods as :class:`~optuna.trial.Trial`, but is not
+    associated with, nor has any references to a :class:`~optuna.study.Study`.
+
+    It is therefore not possible to make persistent changes to a storage from this object by
+    itself, for instance by using :func:`~optuna.trial.FrozenTrial.set_user_attr`.
+
+    It will suggest the parameter values stored in :attr:`params` and will not sample values from
+    any distributions.
+
+    It can be passed to objective functions (see :func:`~optuna.study.Study.optimize`) and is
     useful for deploying optimization results.
 
     Example:
@@ -115,12 +119,16 @@ class FrozenTrial(BaseTrial):
             Datetime where the :class:`~optuna.trial.Trial` finished.
         params:
             Dictionary that contains suggested parameters.
+        distributions:
+            Dictionary that contains the distributions of :attr:`params`.
         user_attrs:
             Dictionary that contains the attributes of the :class:`~optuna.trial.Trial` set with
             :func:`optuna.trial.Trial.set_user_attr`.
+        system_attrs:
+            Dictionary that contains the attributes of the :class:`~optuna.trial.Trial` set with
+            :func:`optuna.trial.Trial.set_system_attr`.
         intermediate_values:
             Intermediate objective values set with :func:`optuna.trial.Trial.report`.
-
     """
 
     def __init__(
@@ -423,7 +431,6 @@ class FrozenTrial(BaseTrial):
 
     @property
     def distributions(self) -> Dict[str, BaseDistribution]:
-        """Dictionary that contains the distributions of :attr:`params`."""
 
         return self._distributions
 

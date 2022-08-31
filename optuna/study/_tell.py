@@ -83,12 +83,6 @@ def _check_values(
     else:
         values = [value_or_values]
 
-    if len(study.directions) != len(values):
-        return (
-            f"The number of the values {len(values)} did not match the number of the objectives "
-            f"{len(study.directions)}."
-        )
-
     for v in values:
         # TODO(Imamura): Construct error message taking into account all values and do not early
         # return `value` is assumed to be ignored on failure so we can set it to any value.
@@ -99,6 +93,12 @@ def _check_values(
 
         if math.isnan(v):
             return f"The value {v} is not acceptable."
+
+    if len(study.directions) != len(values):
+        return (
+            f"The number of the values {len(values)} did not match the number of the objectives "
+            f"{len(study.directions)}."
+        )
 
     return None
 

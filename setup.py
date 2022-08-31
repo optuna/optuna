@@ -39,7 +39,7 @@ def get_install_requires() -> List[str]:
         "scipy!=1.4.0,<1.9.0" if sys.version[:3] == "3.6" else "scipy>=1.7.0,<1.9.0",
         "sqlalchemy>=1.1.0",
         "tqdm",
-        "typing_extensions",
+        "typing_extensions>=3.10.0.0",
         "PyYAML",  # Only used in `optuna/cli.py`.
     ]
     return requirements
@@ -129,8 +129,8 @@ def get_extras_require() -> Dict[str, List[str]]:
         ],
         "test": [
             "codecov",
-            "fakeredis<=1.7.1; python_version<'3.8'",
-            "fakeredis ; python_version>='3.8'",
+            "fakeredis<=1.7.1; python_version<'3.7'",
+            "fakeredis ; python_version>='3.7'",
             "kaleido",
             "pytest",
         ],

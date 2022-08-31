@@ -116,7 +116,7 @@ def _get_skipped_trial_numbers(
     """Utility function for ``plot_parallel_coordinate``.
 
     If trial's parameters do not contain a parameter in ``used_param_names``,
-    ``plot_parallel_coordinate`` methods do not use such trails.
+    ``plot_parallel_coordinate`` methods do not use such trials.
 
     Args:
         trials:
