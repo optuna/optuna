@@ -18,6 +18,7 @@ import warnings
 
 import numpy as np
 
+import optuna
 from optuna import exceptions
 from optuna import logging
 from optuna import pruners
@@ -262,6 +263,10 @@ class Study:
             self._storage.read_trials_from_remote_storage(self._study_id)
 
         return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy, states=states)
+
+    def get_n_trials(self) -> int:
+        state = (state for state in optuna.trial.TrialState)
+        return self._storage.get_n_trials(study_id=self._study_id,state=state)
 
     @property
     def user_attrs(self) -> Dict[str, Any]:

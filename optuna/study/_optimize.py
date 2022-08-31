@@ -147,7 +147,7 @@ def _optimize_sequential(
             break
 
         if n_trials is not None:
-            if i_trial >= n_trials:
+            if study.get_n_trials() >= n_trials:
                 break
             i_trial += 1
 
