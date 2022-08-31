@@ -34,7 +34,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     A storage class instance can be shared among multiple threads, and must therefore be
     thread-safe. It must guarantee that data instance read from the storage must not be modified
     by subsequent writes. For example, `FrozenTrial` instance returned by `get_trial`
-    should not be updated by the following `set_trial_xxx`. This is usually achieved by replacing
+    should not be updated by the subsequent `set_trial_xxx`. This is usually achieved by replacing
     the old data with a copy on `set_trial_xxx`.
 
     A storage class can also assume that data instance returned are never modified by its user.
