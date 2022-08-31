@@ -266,7 +266,7 @@ class Study:
 
     def get_n_trials(self) -> int:
         state = (state for state in optuna.trial.TrialState)
-        return self._storage.get_n_trials(study_id=self._study_id,state=state)
+        return self._storage.get_n_trials(study_id=self._study_id, state=state)
 
     @property
     def user_attrs(self) -> Dict[str, Any]:
