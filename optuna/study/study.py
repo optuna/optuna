@@ -265,8 +265,10 @@ class Study:
         return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy, states=states)
 
     def get_n_trials(self) -> int:
-        state = (state for state in optuna.trial.TrialState)
-        return self._storage.get_n_trials(study_id=self._study_id, state=state)
+        states = []
+        for state in optuna.trial.TrialState:
+            states.append(state)
+        return self._storage.get_n_trials(study_id=self._study_id, state=tuple(states))
 
     @property
     def user_attrs(self) -> Dict[str, Any]:
