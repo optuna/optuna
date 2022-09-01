@@ -18,7 +18,6 @@ from typing import Type
 from typing import Union
 import warnings
 
-
 import optuna
 from optuna import exceptions
 from optuna import logging
