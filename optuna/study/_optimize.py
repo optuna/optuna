@@ -99,7 +99,7 @@ def _optimize_parallel(
     reseed_sampler_rng: bool,
     time_start: Optional[datetime.datetime],
     progress_bar: Optional[pbar_module._ProgressBar],
-):
+) -> None:
     if reseed_sampler_rng:
         study.sampler.reseed_rng()
 
