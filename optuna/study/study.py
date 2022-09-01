@@ -443,7 +443,8 @@ class Study:
         catch: Tuple[Type[Exception], ...] = (),
         callbacks: Optional[List[Callable[["Study", FrozenTrial], None]]] = None,
         gc_after_trial: bool = False,
-        show_progress_bar: bool = False,):
+        show_progress_bar: bool = False,
+    ):
         _optimize(
             study=self,
             func=func,
