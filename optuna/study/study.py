@@ -434,7 +434,8 @@ class Study:
             show_progress_bar=show_progress_bar,
         )
 
-    def optimize_parallel( self,
+    def optimize_parallel(
+        self,
         func: ObjectiveFuncType,
         n_trials: Optional[int] = None,
         timeout: Optional[float] = None,
