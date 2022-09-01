@@ -149,7 +149,7 @@ def _optimize(
     callbacks: Optional[List[Callable[["optuna.Study", FrozenTrial], None]]] = None,
     gc_after_trial: bool = False,
     show_progress_bar: bool = False,
-    optimize_function: Optional[Callable] = _optimize_sequential,
+    optimize_function: Callable = _optimize_sequential,
 ) -> None:
     if not isinstance(catch, tuple):
         raise TypeError(
