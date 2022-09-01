@@ -32,8 +32,8 @@ from optuna.distributions import BaseDistribution
 from optuna.storages._cached_storage import _CachedStorage
 from optuna.storages._heartbeat import is_heartbeat_enabled
 from optuna.study._multi_objective import _get_pareto_front_trials
-from optuna.study._optimize import _optimize_parallel
 from optuna.study._optimize import _optimize
+from optuna.study._optimize import _optimize_parallel
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary  # NOQA
 from optuna.study._tell import _tell_with_warning
