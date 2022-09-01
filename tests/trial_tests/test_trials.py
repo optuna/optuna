@@ -171,7 +171,7 @@ def test_suggest_categorical(trial_type: type) -> None:
             lambda trial, *args: trial.suggest_int(*args, log=True),
             IntDistribution(1, 10, log=True),
         ),
-        (lambda trial, *args: trial.suggest_int(*args, step=2), IntDistribution(1, 10, step=2)),
+        (lambda trial, *args: trial.suggest_int(*args, step=2), IntDistribution(1, 9, step=2)),
         (lambda trial, *args: trial.suggest_float(*args), FloatDistribution(1, 10)),
         (
             lambda trial, *args: trial.suggest_float(*args, log=True),
