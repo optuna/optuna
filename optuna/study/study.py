@@ -453,7 +453,7 @@ class Study:
             callbacks=callbacks,
             gc_after_trial=gc_after_trial,
             show_progress_bar=show_progress_bar,
-            optimize_function=_optimize_parallel
+            optimize_function=_optimize_parallel,
         )
 
     def ask(
