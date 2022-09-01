@@ -915,6 +915,33 @@ def test_split_observation_pairs_with_constraints_below_include_infeasible() -> 
     assert list(indices_above) == [3]
 
 
+def test_split_observation_pairs_multi() -> None:
+    indices_below, indices_above = _tpe.sampler._split_observation_pairs(
+        [
+            (-float("inf"), [-2.0, -1.0]),
+            (-float("inf"), [3.0, 3.0]),
+            (-float("inf"), [0.0, 1.0]),
+            (-float("inf"), [-1.0, 0.0]),
+        ],
+        2,
+        None,
+    )
+    assert list(indices_below) == [0, 3]
+    assert list(indices_above) == [1, 2]
+
+
+def test_split_observation_pairs_multi_with_all_indices_below() -> None:
+    indices_below, indices_above = _tpe.sampler._split_observation_pairs(
+        [
+            (-float("inf"), [1.0, 1.0]),
+        ],
+        1,
+        None,
+    )
+    assert list(indices_below) == [0]
+    assert list(indices_above) == []
+
+
 def test_build_observation_dict() -> None:
     observation_dict = _tpe.sampler._build_observation_dict(
         {
