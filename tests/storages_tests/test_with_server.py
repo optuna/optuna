@@ -155,6 +155,6 @@ def test_multiprocess(storage_url: str) -> None:
     study = optuna.load_study(study_name=study_name, storage=storage_url)
 
     trials = study.trials
-    assert len(trials) == 20
+    assert len(trials) == n_workers * 20
 
     _check_trials(trials)

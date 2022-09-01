@@ -18,7 +18,6 @@ import warnings
 
 import numpy as np
 
-import optuna
 from optuna import exceptions
 from optuna import logging
 from optuna import pruners
@@ -33,7 +32,7 @@ from optuna.distributions import BaseDistribution
 from optuna.storages._cached_storage import _CachedStorage
 from optuna.storages._heartbeat import is_heartbeat_enabled
 from optuna.study._multi_objective import _get_pareto_front_trials
-from optuna.study._optimize import _optimize
+from optuna.study._optimize import _optimize, _optimize_parallel
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary  # NOQA
 from optuna.study._tell import _tell_with_warning
@@ -266,7 +265,7 @@ class Study:
 
     def get_n_trials(self) -> int:
         states = []
-        for state in optuna.trial.TrialState:
+        for state in TrialState:
             states.append(state)
         return self._storage.get_n_trials(study_id=self._study_id, state=tuple(states))
 
@@ -433,6 +432,28 @@ class Study:
             callbacks=callbacks,
             gc_after_trial=gc_after_trial,
             show_progress_bar=show_progress_bar,
+        )
+
+    def optimize_parallel( self,
+        func: ObjectiveFuncType,
+        n_trials: Optional[int] = None,
+        timeout: Optional[float] = None,
+        n_jobs: int = 1,
+        catch: Tuple[Type[Exception], ...] = (),
+        callbacks: Optional[List[Callable[["Study", FrozenTrial], None]]] = None,
+        gc_after_trial: bool = False,
+        show_progress_bar: bool = False,):
+        _optimize(
+            study=self,
+            func=func,
+            n_trials=n_trials,
+            timeout=timeout,
+            n_jobs=n_jobs,
+            catch=catch,
+            callbacks=callbacks,
+            gc_after_trial=gc_after_trial,
+            show_progress_bar=show_progress_bar,
+            optimize_function=_optimize_parallel
         )
 
     def ask(
