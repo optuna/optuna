@@ -62,8 +62,7 @@ class JournalFileSymlinkLock(JournalFileBaseLock):
                     time.sleep(sleep_secs)
                     sleep_secs = min(sleep_secs * 2, 1)
                     continue
-                else:
-                    raise err
+                raise err
             except BaseException:
                 self.release()
                 raise
@@ -116,8 +115,7 @@ class JournalFileOpenLock(JournalFileBaseLock):
                     time.sleep(sleep_secs)
                     sleep_secs = min(sleep_secs * 2, 1)
                     continue
-                else:
-                    raise err
+                raise err
             except BaseException:
                 self.release()
                 raise
