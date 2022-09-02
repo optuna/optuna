@@ -63,7 +63,7 @@ class Func:
             x_max = self.x_max
             self.x_max *= 0.9
 
-        # Sleep for testing parallelism
+        # Sleep for testing parallelism.
         if self.sleep_sec is not None:
             time.sleep(self.sleep_sec)
 
@@ -958,7 +958,7 @@ def test_callbacks(n_jobs: int) -> None:
     # Empty callback list.
     study.optimize(objective, callbacks=[], n_trials=10, n_jobs=n_jobs)
 
-    # A callback.
+    # One callback.
     values = []
     callbacks = [with_lock(lambda study, trial: values.append(trial.value))]
     study.optimize(objective, callbacks=callbacks, n_trials=10, n_jobs=n_jobs)
@@ -1207,6 +1207,7 @@ def test_ask_fixed_search_space() -> None:
 
 
 # Deprecated distributions are internally converted to corresponding distributions.
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 def test_ask_distribution_conversion() -> None:
     fixed_distributions = {
         "ud": distributions.UniformDistribution(low=0, high=10),
@@ -1439,19 +1440,19 @@ def test_tell_invalid() -> None:
     with pytest.raises(ValueError):
         study.tell(study.ask(), float("nan"), state=TrialState.COMPLETE)
 
-    # `state` must be None or finished state
+    # `state` must be None or finished state.
     with pytest.raises(ValueError):
         study.tell(study.ask(), state=TrialState.RUNNING)
 
-    # `state` must be None or finished state
+    # `state` must be None or finished state.
     with pytest.raises(ValueError):
         study.tell(study.ask(), state=TrialState.WAITING)
 
-    # `value` must be None for `TrialState.PRUNED`
+    # `value` must be None for `TrialState.PRUNED`.
     with pytest.raises(ValueError):
         study.tell(study.ask(), values=1, state=TrialState.PRUNED)
 
-    # `value` must be None for `TrialState.FAIL`
+    # `value` must be None for `TrialState.FAIL`.
     with pytest.raises(ValueError):
         study.tell(study.ask(), values=1, state=TrialState.FAIL)
 
@@ -1482,6 +1483,7 @@ def test_tell_duplicate_tell() -> None:
         study.tell(trial, 1.0, skip_if_finished=False)
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_tell_storage_not_implemented_trial_number() -> None:
     with StorageSupplier("inmemory") as storage:
 
@@ -1530,15 +1532,15 @@ def test_study_summary_datetime_start_calculation(storage_mode: str) -> None:
             x = trial.suggest_int("x", -10, 10)
             return x
 
-        # StudySummary datetime_start tests
+        # StudySummary datetime_start tests.
         study = create_study(storage=storage)
         study.enqueue_trial(params={"x": 1})
 
-        # Study summary with only enqueued trials should have null datetime_start
+        # Study summary with only enqueued trials should have null datetime_start.
         summaries = get_all_study_summaries(study._storage, include_best_trial=True)
         assert summaries[0].datetime_start is None
 
-        # Study summary with completed trials should have nonnull datetime_start
+        # Study summary with completed trials should have nonnull datetime_start.
         study.optimize(objective, n_trials=1)
         study.enqueue_trial(params={"x": 1}, skip_if_exists=False)
         summaries = get_all_study_summaries(study._storage, include_best_trial=True)
