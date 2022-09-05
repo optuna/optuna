@@ -36,7 +36,7 @@ def get_install_requires() -> List[str]:
         "numpy",
         "packaging>=20.0",
         # TODO(kstoneriv3): remove this after deprecation of Python 3.6
-        "scipy!=1.4.0,<1.9.0" if sys.version[:3] == "3.6" else "scipy>=1.7.0,<1.9.0",
+        "scipy!=1.4.0" if sys.version[:3] == "3.6" else "scipy>=1.7.0",
         "sqlalchemy>=1.1.0",
         "tqdm",
         "typing_extensions>=3.10.0.0",
