@@ -603,7 +603,11 @@ class Study:
         """
 
         return _tell_with_warning(
-            study=self, trial=trial, values=values, state=state, skip_if_finished=skip_if_finished
+            study=self,
+            trial=trial,
+            value_or_values=values,
+            state=state,
+            skip_if_finished=skip_if_finished,
         )
 
     def set_user_attr(self, key: str, value: Any) -> None:

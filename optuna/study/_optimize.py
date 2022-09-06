@@ -206,7 +206,11 @@ def _run_trial(
     # `_tell_with_warning` may raise during trial post-processing.
     try:
         frozen_trial = _tell_with_warning(
-            study=study, trial=trial, values=value_or_values, state=state, suppress_warning=True
+            study=study,
+            trial=trial,
+            value_or_values=value_or_values,
+            state=state,
+            suppress_warning=True,
         )
     except Exception:
         frozen_trial = study._storage.get_trial(trial._trial_id)

@@ -75,14 +75,7 @@ def _check_state_and_values(
         raise ValueError(f"Cannot tell with state {state}.")
 
 
-def _check_values(
-    study: "optuna.Study", value_or_values: Union[float, Sequence[float]]
-) -> Optional[str]:
-    if isinstance(value_or_values, Sequence):
-        values = value_or_values
-    else:
-        values = [value_or_values]
-
+def _check_values(study: "optuna.Study", values: Sequence[float]) -> Optional[str]:
     for v in values:
         # TODO(Imamura): Construct error message taking into account all values and do not early
         # return `value` is assumed to be ignored on failure so we can set it to any value.
@@ -106,7 +99,7 @@ def _check_values(
 def _tell_with_warning(
     study: "optuna.Study",
     trial: Union[trial_module.Trial, int],
-    values: Optional[Union[float, Sequence[float]]] = None,
+    value_or_values: Optional[Union[float, Sequence[float]]] = None,
     state: Optional[TrialState] = None,
     skip_if_finished: bool = False,
     suppress_warning: bool = False,
@@ -128,7 +121,7 @@ def _tell_with_warning(
     if frozen_trial.state.is_finished() and skip_if_finished:
         _logger.info(
             f"Skipped telling trial {frozen_trial.number} with values "
-            f"{values} and state {state} since trial was already finished. "
+            f"{value_or_values} and state {state} since trial was already finished. "
             f"Finished trial has values {frozen_trial.values} and state {frozen_trial.state}."
         )
         return copy.deepcopy(frozen_trial)
@@ -136,6 +129,14 @@ def _tell_with_warning(
         raise ValueError(f"Cannot tell a {frozen_trial.state.name} trial.")
 
     # Validate the state and values arguments.
+    values: Optional[Sequence[float]]
+    if value_or_values is None:
+        values = None
+    elif isinstance(value_or_values, Sequence):
+        values = value_or_values
+    else:
+        values = [value_or_values]
+
     _check_state_and_values(state, values)
 
     warning_message = None
@@ -155,7 +156,7 @@ def _tell_with_warning(
         if last_step is not None:
             value = frozen_trial.intermediate_values[last_step]
             # intermediate_values can be unacceptable value, i.e., NaN.
-            if _check_values(study, value) is None:
+            if _check_values(study, [value]) is None:
                 values = [value]
     elif state is None:
         if values is None:
@@ -174,13 +175,6 @@ def _tell_with_warning(
                 warning_message = values_conversion_failure_message
 
     assert state is not None
-
-    # Cast values to float or list of floats.
-    if values is not None:
-        if isinstance(values, Sequence):
-            values = [float(value) for value in values]
-        else:
-            values = [float(values)]
 
     # Post-processing and storing the trial.
     try:
