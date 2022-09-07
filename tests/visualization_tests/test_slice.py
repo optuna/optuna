@@ -75,6 +75,7 @@ def _create_study_mixture_category_types() -> Study:
     return study
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 @parametrize_plot_slice
 def test_plot_slice_customized_target_name(plot_slice: Callable[..., Any]) -> None:
 
@@ -101,6 +102,8 @@ def test_plot_slice_customized_target_name(plot_slice: Callable[..., Any]) -> No
         [_create_study_mixture_category_types, None],
     ],
 )
+
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_plot_slice(
     plot_slice: Callable[..., Any],
     specific_create_study: Callable[[], Study],
@@ -213,10 +216,10 @@ def test_get_slice_plot_info_customized_target() -> None:
     params = ["param_a"]
     study = prepare_study_with_trials()
     info = _get_slice_plot_info(
-        study, params=params, target=lambda t: t.params["param_d"], target_name="Objective Value"
+        study, params=params, target=lambda t: t.params["param_d"], target_name="Testing Customized Target"
     )
     assert info == _SlicePlotInfo(
-        target_name="Objective Value",
+        target_name="Testing Customized Target",
         subplots=[
             _SliceSubplotInfo(
                 param_name="param_a",
@@ -374,10 +377,10 @@ def test_get_slice_plot_info_nonfinite_multiobjective(objective: int, value: flo
         study,
         params=["param_b", "param_d"],
         target=lambda t: t.values[objective],
-        target_name="Objective Value",
+        target_name="Testing Nonfinite Multiobjective",
     )
     assert info == _SlicePlotInfo(
-        target_name="Objective Value",
+        target_name="Testing Nonfinite Multiobjective",
         subplots=[
             _SliceSubplotInfo(
                 param_name="param_b",
