@@ -75,7 +75,7 @@ def _check_state_and_values(
         raise ValueError(f"Cannot tell with state {state}.")
 
 
-def _check_values(study: "optuna.Study", values: Sequence[float]) -> Optional[str]:
+def _check_values_are_feasible(study: "optuna.Study", values: Sequence[float]) -> Optional[str]:
     for v in values:
         # TODO(Imamura): Construct error message taking into account all values and do not early
         # return `value` is assumed to be ignored on failure so we can set it to any value.
@@ -144,7 +144,7 @@ def _tell_with_warning(
     if state == TrialState.COMPLETE:
         assert values is not None
 
-        values_conversion_failure_message = _check_values(study, values)
+        values_conversion_failure_message = _check_values_are_feasible(study, values)
         if values_conversion_failure_message is not None:
             raise ValueError(values_conversion_failure_message)
     elif state == TrialState.PRUNED:
@@ -156,13 +156,13 @@ def _tell_with_warning(
         if last_step is not None:
             last_intermediate_value = frozen_trial.intermediate_values[last_step]
             # intermediate_values can be unacceptable value, i.e., NaN.
-            if _check_values(study, [last_intermediate_value]) is None:
+            if _check_values_are_feasible(study, [last_intermediate_value]) is None:
                 values = [last_intermediate_value]
     elif state is None:
         if values is None:
             values_conversion_failure_message = "The value None could not be cast to float."
         else:
-            values_conversion_failure_message = _check_values(study, values)
+            values_conversion_failure_message = _check_values_are_feasible(study, values)
 
         if values_conversion_failure_message is None:
             state = TrialState.COMPLETE
