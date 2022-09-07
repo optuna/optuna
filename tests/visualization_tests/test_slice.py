@@ -221,7 +221,7 @@ def test_get_slice_plot_info_customized_target() -> None:
         target_name="param_d",
     )
     assert info == _SlicePlotInfo(
-        target_name="Testing Customized Target",
+        target_name="param_d",
         subplots=[
             _SliceSubplotInfo(
                 param_name="param_a",
