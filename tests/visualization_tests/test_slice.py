@@ -215,7 +215,10 @@ def test_get_slice_plot_info_customized_target() -> None:
     params = ["param_a"]
     study = prepare_study_with_trials()
     info = _get_slice_plot_info(
-        study, params=params, target=lambda t: t.params["param_d"], target_name="Testing Customized Target"
+        study, 
+        params=params, 
+        target=lambda t: t.params["param_d"], 
+        target_name="Testing Customized Target"
     )
     assert info == _SlicePlotInfo(
         target_name="Testing Customized Target",
