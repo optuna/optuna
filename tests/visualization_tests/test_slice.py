@@ -101,7 +101,6 @@ def test_plot_slice_customized_target_name(plot_slice: Callable[..., Any]) -> No
         [_create_study_mixture_category_types, None],
     ],
 )
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_plot_slice(
     plot_slice: Callable[..., Any],
     specific_create_study: Callable[[], Study],
