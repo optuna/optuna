@@ -380,7 +380,7 @@ def test_get_slice_plot_info_nonfinite_multiobjective(objective: int, value: flo
         target_name="Target Name",
     )
     assert info == _SlicePlotInfo(
-        target_name="Testing Nonfinite Multiobjective",
+        target_name="Target Name",
         subplots=[
             _SliceSubplotInfo(
                 param_name="param_b",
