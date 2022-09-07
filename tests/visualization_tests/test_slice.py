@@ -75,7 +75,6 @@ def _create_study_mixture_category_types() -> Study:
     return study
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 @parametrize_plot_slice
 def test_plot_slice_customized_target_name(plot_slice: Callable[..., Any]) -> None:
 
