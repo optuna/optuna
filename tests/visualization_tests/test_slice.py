@@ -379,7 +379,7 @@ def test_get_slice_plot_info_nonfinite_multiobjective(objective: int, value: flo
         study,
         params=["param_b", "param_d"],
         target=lambda t: t.values[objective],
-        target_name="Testing Nonfinite Multiobjective",
+        target_name="Target Name",
     )
     assert info == _SlicePlotInfo(
         target_name="Testing Nonfinite Multiobjective",
