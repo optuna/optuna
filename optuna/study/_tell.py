@@ -176,6 +176,11 @@ def _tell_with_warning(
 
     assert state is not None
 
+    # Cast values to list of floats.
+    if values is not None:
+        # values have beed checked to be castable to floats in _check_values_are_feasible.
+        values = [float(value) for value in values]
+
     # Post-processing and storing the trial.
     try:
         # Sampler defined trial post-processing.
