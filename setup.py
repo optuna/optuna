@@ -29,7 +29,7 @@ def get_long_description() -> str:
 def get_install_requires() -> List[str]:
 
     requirements = [
-        "alembic",
+        "alembic>=1.5.0",
         "cliff",
         "cmaes>=0.8.2",
         "colorlog",
@@ -37,7 +37,7 @@ def get_install_requires() -> List[str]:
         "packaging>=20.0",
         # TODO(kstoneriv3): remove this after deprecation of Python 3.6
         "scipy!=1.4.0" if sys.version[:3] == "3.6" else "scipy>=1.7.0",
-        "sqlalchemy>=1.1.0",
+        "sqlalchemy>=1.3.0",
         "tqdm",
         "typing_extensions>=3.10.0.0",
         "PyYAML",  # Only used in `optuna/cli.py`.
