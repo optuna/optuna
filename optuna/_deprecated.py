@@ -7,14 +7,19 @@ from typing import TypeVar
 import warnings
 
 from packaging import version
-from typing_extensions import ParamSpec
 
 from optuna._experimental import _get_docstring_indent
 from optuna._experimental import _validate_version
 
 
+try:
+    from typing_extensions import ParamSpec
+
+    FP = ParamSpec("FP")
+except ImportError:
+    FP = Any
+
 FT = TypeVar("FT")
-FP = ParamSpec("FP")
 CT = TypeVar("CT")
 
 

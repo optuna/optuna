@@ -6,13 +6,18 @@ from typing import Optional
 from typing import TypeVar
 import warnings
 
-from typing_extensions import ParamSpec
-
 from optuna.exceptions import ExperimentalWarning
 
 
+try:
+    from typing_extensions import ParamSpec
+
+    FP = ParamSpec("FP")
+except ImportError:
+    FP = Any
+
+
 FT = TypeVar("FT")
-FP = ParamSpec("FP")
 CT = TypeVar("CT")
 
 _EXPERIMENTAL_NOTE_TEMPLATE = """

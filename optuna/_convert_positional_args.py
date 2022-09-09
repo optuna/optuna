@@ -6,11 +6,16 @@ from typing import Sequence
 from typing import TypeVar
 import warnings
 
-from typing_extensions import ParamSpec
+
+try:
+    from typing_extensions import ParamSpec
+
+    _P = ParamSpec("_P")
+except ImportError:
+    _P = Any
 
 
 _T = TypeVar("_T")
-_P = ParamSpec("_P")
 
 
 def convert_positional_args(

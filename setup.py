@@ -39,7 +39,7 @@ def get_install_requires() -> List[str]:
         "scipy!=1.4.0" if sys.version[:3] == "3.6" else "scipy>=1.7.0",
         "sqlalchemy>=1.1.0",
         "tqdm",
-        "typing_extensions>=3.10.0.0",
+        "typing_extensions",
         "PyYAML",  # Only used in `optuna/cli.py`.
     ]
     return requirements

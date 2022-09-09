@@ -8,8 +8,6 @@ from typing import Optional
 from typing import Sequence
 from typing import TypeVar
 
-from typing_extensions import ParamSpec
-
 import optuna
 from optuna._deprecated import deprecated_func
 from optuna._experimental import experimental_class
@@ -23,8 +21,15 @@ with try_import() as _imports:
     import torch.distributed as dist
 
 
+try:
+    from typing_extensions import ParamSpec
+
+    _P = ParamSpec("_P")
+except ImportError:
+    _P = Any
+
+
 _T = TypeVar("_T")
-_P = ParamSpec("_P")
 
 
 _suggest_deprecated_msg = (
