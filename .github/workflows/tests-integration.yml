@@ -18,7 +18,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.7', '3.8', '3.9', '3.10']
 
     steps:
     - name: Checkout
@@ -59,22 +59,5 @@ jobs:
 
     - name: Tests
       run: |
-        if [ ${{ matrix.python-version }} = 3.6 ]; then
-          pytest tests/integration_tests \
-            --ignore tests/integration_tests/allennlp_tests/ \
-            --ignore tests/integration_tests/test_botorch.py \
-            --ignore tests/integration_tests/test_catalyst.py \
-            --ignore tests/integration_tests/test_fastaiv2.py \
-            --ignore tests/integration_tests/test_keras.py \
-            --ignore tests/integration_tests/test_pytorch_distributed.py \
-            --ignore tests/integration_tests/test_pytorch_ignite.py \
-            --ignore tests/integration_tests/test_pytorch_lightning.py \
-            --ignore tests/integration_tests/test_skorch.py \
-            --ignore tests/integration_tests/test_tensorboard.py \
-            --ignore tests/integration_tests/test_tensorflow.py \
-            --ignore tests/integration_tests/test_tfkeras.py
-
-        else
-          pytest -s tests/integration_tests \
-            --ignore tests/integration_tests/test_pytorch_lightning.py
-        fi
+        pytest -s tests/integration_tests \
+          --ignore tests/integration_tests/test_pytorch_lightning.py
