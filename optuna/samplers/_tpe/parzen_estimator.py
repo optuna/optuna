@@ -184,8 +184,10 @@ class _ParzenEstimator:
                 assert mus is not None
                 assert sigmas is not None
 
-                cdf_func = _ParzenEstimator._normal_cdf
-                p_accept = cdf_func(high, mus, sigmas) - cdf_func(low, mus, sigmas)
+                cdf_func = _ParzenEstimator._trunc_normal_cdf
+                p_accept = cdf_func(high, mus, sigmas, low, high) - cdf_func(
+                    low, mus, sigmas, low, high
+                )
                 if q is None:
                     distance = samples[:, None] - mus
                     mahalanobis = distance / np.maximum(sigmas, EPS)
@@ -195,9 +197,9 @@ class _ParzenEstimator:
                 else:
                     upper_bound = np.minimum(samples + q / 2.0, high)
                     lower_bound = np.maximum(samples - q / 2.0, low)
-                    cdf = cdf_func(upper_bound[:, None], mus[None], sigmas[None]) - cdf_func(
-                        lower_bound[:, None], mus[None], sigmas[None]
-                    )
+                    cdf = cdf_func(
+                        upper_bound[:, None], mus[None], sigmas[None], low, high
+                    ) - cdf_func(lower_bound[:, None], mus[None], sigmas[None], low, high)
                     log_pdf = np.log(cdf + EPS) - np.log(p_accept + EPS)
             component_log_pdf += log_pdf
         ret = special.logsumexp(component_log_pdf + np.log(self._weights), axis=1)
@@ -458,13 +460,19 @@ class _ParzenEstimator:
         return mus, sigmas
 
     @staticmethod
-    def _normal_cdf(x: np.ndarray, mu: np.ndarray, sigma: np.ndarray) -> np.ndarray:
+    def _trunc_normal_cdf(
+        x: np.ndarray,
+        mu: np.ndarray,
+        sigma: np.ndarray,
+        pre_trunc_low: np.ndarray,
+        pre_trunc_high: np.ndarray,
+    ) -> np.ndarray:
 
         mu, sigma = map(np.asarray, (mu, sigma))
-        denominator = x - mu
-        numerator = np.maximum(np.sqrt(2) * sigma, EPS)
-        z = denominator / numerator
-        return 0.5 * (1 + special.erf(z))
+        trunc_low = (pre_trunc_low - mu) / sigma
+        trunc_high = (pre_trunc_high - mu) / sigma
+
+        return stats.truncnorm.cdf(x, trunc_low, trunc_high, loc=mu, scale=sigma)
 
     @staticmethod
     def _sample_from_categorical_dist(
