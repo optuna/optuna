@@ -52,8 +52,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "asv>=0.5.0",
             "botorch",
             "cma",
-            # TODO(nzw0301): Remove gpytorch if botorch supports gpytorch>1.8.
-            "gpytorch<1.9.0",
             "scikit-optimize",
             "virtualenv",
         ],
@@ -102,8 +100,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "chainer>=5.0.0",
             "cma",
             "fastai ; python_version>'3.6'",
-            # TODO(nzw0301): Remove gpytorch if botorch supports gpytorch>1.8.
-            "gpytorch<1.9.0 ; python_version>'3.6'",
             "lightgbm",
             "mlflow",
             "mpi4py",
