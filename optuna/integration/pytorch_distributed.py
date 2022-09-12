@@ -26,7 +26,7 @@ try:
 
     _P = ParamSpec("_P")
 except ImportError:
-    _P = Any
+    pass
 
 
 _T = TypeVar("_T")
@@ -37,7 +37,7 @@ _suggest_deprecated_msg = (
 )
 
 
-def broadcast_properties(f: Callable[_P, _T]) -> Callable[_P, _T]:
+def broadcast_properties(f: "Callable[_P, _T]") -> "Callable[_P, _T]":
     """Method decorator to fetch updated trial properties from rank 0 after ``f`` is run.
 
     This decorator ensures trial properties (params, distributions, etc.) on all distributed
@@ -47,7 +47,7 @@ def broadcast_properties(f: Callable[_P, _T]) -> Callable[_P, _T]:
     """
 
     @functools.wraps(f)
-    def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> _T:
+    def wrapped(*args: "_P.args", **kwargs: "_P.kwargs") -> _T:
         # TODO(nlgranger): Remove type ignore after mypy includes
         # https://github.com/python/mypy/pull/12668
         self: TorchDistributedTrial = args[0]  # type: ignore

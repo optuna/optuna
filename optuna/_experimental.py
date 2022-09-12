@@ -14,7 +14,7 @@ try:
 
     FP = ParamSpec("FP")
 except ImportError:
-    FP = Any
+    pass
 
 
 FT = TypeVar("FT")
@@ -45,7 +45,7 @@ def _get_docstring_indent(docstring: str) -> str:
 def experimental_func(
     version: str,
     name: Optional[str] = None,
-) -> Callable[[Callable[FP, FT]], Callable[FP, FT]]:
+) -> "Callable[[Callable[FP, FT]], Callable[FP, FT]]":
     """Decorate function as experimental.
 
     Args:
@@ -55,7 +55,7 @@ def experimental_func(
 
     _validate_version(version)
 
-    def decorator(func: Callable[FP, FT]) -> Callable[FP, FT]:
+    def decorator(func: "Callable[FP, FT]") -> "Callable[FP, FT]":
         if func.__doc__ is None:
             func.__doc__ = ""
 

@@ -17,7 +17,7 @@ try:
 
     FP = ParamSpec("FP")
 except ImportError:
-    FP = Any
+    pass
 
 FT = TypeVar("FT")
 CT = TypeVar("CT")
@@ -57,7 +57,7 @@ def deprecated_func(
     removed_version: str,
     name: Optional[str] = None,
     text: Optional[str] = None,
-) -> Callable[[Callable[FP, FT]], Callable[FP, FT]]:
+) -> "Callable[[Callable[FP, FT]], Callable[FP, FT]]":
     """Decorate function as deprecated.
 
     Args:
@@ -86,7 +86,7 @@ def deprecated_func(
     _validate_version(removed_version)
     _validate_two_version(deprecated_version, removed_version)
 
-    def decorator(func: Callable[FP, FT]) -> Callable[FP, FT]:
+    def decorator(func: "Callable[FP, FT]") -> "Callable[FP, FT]":
         if func.__doc__ is None:
             func.__doc__ = ""
 

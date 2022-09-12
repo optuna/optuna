@@ -12,7 +12,7 @@ try:
 
     _P = ParamSpec("_P")
 except ImportError:
-    _P = Any
+    pass
 
 
 _T = TypeVar("_T")
@@ -22,7 +22,7 @@ def convert_positional_args(
     *,
     previous_positional_arg_names: Sequence[str],
     warning_stacklevel: int = 2,
-) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]:
+) -> "Callable[[Callable[_P, _T]], Callable[_P, _T]]":
     """Convert positional arguments to keyword arguments.
 
     Args:
@@ -30,7 +30,7 @@ def convert_positional_args(
         warning_stacklevel: Level of the stack trace where decorated function locates.
     """
 
-    def converter_decorator(func: Callable[_P, _T]) -> Callable[_P, _T]:
+    def converter_decorator(func: "Callable[_P, _T]") -> "Callable[_P, _T]":
 
         assert set(previous_positional_arg_names).issubset(set(signature(func).parameters)), (
             f"{set(previous_positional_arg_names)} is not a subset of"
