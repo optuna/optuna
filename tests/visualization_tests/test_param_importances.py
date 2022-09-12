@@ -199,7 +199,7 @@ def test_multi_objective_trial_with_infinite_value_ignored(
         return x1, x2 * x3
 
     seed = 13
-    target_name = "Objective Value"
+    target_name = "Target Name"
 
     study = create_study(directions=["minimize", "minimize"], sampler=RandomSampler(seed=seed))
     study.optimize(_multi_objective_function, n_trials=n_trial)
