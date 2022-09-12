@@ -173,7 +173,9 @@ def test_nonfinite_removed(value: float) -> None:
 def test_nonfinite_multiobjective(objective: int, value: float) -> None:
 
     study = prepare_study_with_trials(n_objectives=2, value_for_first_trial=value)
-    edf_info = _get_edf_info(study, target=lambda t: t.values[objective], target_name="Target Name")
+    edf_info = _get_edf_info(
+        study, target=lambda t: t.values[objective], target_name="Target Name"
+    )
     assert all(np.isfinite(edf_info.x_values))
 
 

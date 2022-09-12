@@ -703,7 +703,9 @@ def test_color_map(direction: str) -> None:
         assert not line["reversescale"]
 
     # When `target` is not `None`, `reversescale` is always `True`.
-    line = plotly_plot_parallel_coordinate(study, target=lambda t: t.number, target_name="Target Name").data[0]["line"]
+    line = plotly_plot_parallel_coordinate(
+        study, target=lambda t: t.number, target_name="Target Name"
+    ).data[0]["line"]
     assert COLOR_SCALE == [v[1] for v in line["colorscale"]]
     assert line["reversescale"]
 
@@ -720,7 +722,9 @@ def test_color_map(direction: str) -> None:
                 },
             )
         )
-    line = plotly_plot_parallel_coordinate(study, target=lambda t: t.number, target_name="Target Name").data[0]["line"]
+    line = plotly_plot_parallel_coordinate(
+        study, target=lambda t: t.number, target_name="Target Name"
+    ).data[0]["line"]
     assert COLOR_SCALE == [v[1] for v in line["colorscale"]]
     assert line["reversescale"]
 
@@ -778,5 +782,7 @@ def test_nonfinite_removed(value: float) -> None:
 def test_nonfinite_multiobjective(objective: int, value: float) -> None:
 
     study = prepare_study_with_trials(n_objectives=2, value_for_first_trial=value)
-    info = _get_parallel_coordinate_info(study, target=lambda t: t.values[objective], target_name="Target Name")
+    info = _get_parallel_coordinate_info(
+        study, target=lambda t: t.values[objective], target_name="Target Name"
+    )
     assert all(np.isfinite(info.dim_objective.values))
