@@ -109,8 +109,6 @@ jobs:
         with:
           path: ~/.cache/pip
           key: old-deps-${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
-          restore-keys: |
-            old-deps${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
 
       - name: Install
         run: |
