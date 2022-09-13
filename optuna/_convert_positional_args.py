@@ -3,21 +3,23 @@ from inspect import signature
 from typing import Any
 from typing import Callable
 from typing import Sequence
+from typing import TYPE_CHECKING
 from typing import TypeVar
 import warnings
 
-from typing_extensions import ParamSpec
 
+if TYPE_CHECKING:
+    from typing_extensions import ParamSpec
 
-_T = TypeVar("_T")
-_P = ParamSpec("_P")
+    _P = ParamSpec("_P")
+    _T = TypeVar("_T")
 
 
 def convert_positional_args(
     *,
     previous_positional_arg_names: Sequence[str],
     warning_stacklevel: int = 2,
-) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]:
+) -> "Callable[[Callable[_P, _T]], Callable[_P, _T]]":
     """Convert positional arguments to keyword arguments.
 
     Args:
@@ -25,7 +27,7 @@ def convert_positional_args(
         warning_stacklevel: Level of the stack trace where decorated function locates.
     """
 
-    def converter_decorator(func: Callable[_P, _T]) -> Callable[_P, _T]:
+    def converter_decorator(func: "Callable[_P, _T]") -> "Callable[_P, _T]":
 
         assert set(previous_positional_arg_names).issubset(set(signature(func).parameters)), (
             f"{set(previous_positional_arg_names)} is not a subset of"
@@ -33,7 +35,7 @@ def convert_positional_args(
         )
 
         @wraps(func)
-        def converter_wrapper(*args: Any, **kwargs: Any) -> _T:
+        def converter_wrapper(*args: Any, **kwargs: Any) -> "_T":
 
             if len(args) >= 1:
                 warnings.warn(
