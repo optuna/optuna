@@ -7,14 +7,14 @@ Multi-objective Optimization with Optuna
 This tutorial showcases Optuna's multi-objective optimization feature by
 optimizing the validation accuracy of Fashion MNIST dataset and the FLOPS of the model implemented in PyTorch.
 
-We use `thop <https://github.com/Lyken17/pytorch-OpCounter>`_ to measure FLOPS.
+We use `fvcore <https://github.com/facebookresearch/fvcore>`_ to measure FLOPS.
 """
 
-import thop
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
+from fvcore.nn import FlopCountAnalysis
 
 import optuna
 
@@ -67,7 +67,7 @@ def eval_model(model, valid_loader):
 
     accuracy = correct / N_VALID_EXAMPLES
 
-    flops, _ = thop.profile(model, inputs=(torch.randn(1, 28 * 28).to(DEVICE),), verbose=False)
+    flops = FlopCountAnalysis(model, inputs=(torch.randn(1, 28 * 28).to(DEVICE),)).total()
     return flops, accuracy
 
 
