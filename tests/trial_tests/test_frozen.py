@@ -80,9 +80,9 @@ def test_repr() -> None:
 def test_sampling(storage_mode: str) -> None:
     def objective(trial: BaseTrial) -> float:
 
-        a = trial.suggest_uniform("a", 0.0, 10.0)
-        b = trial.suggest_loguniform("b", 0.1, 10.0)
-        c = trial.suggest_discrete_uniform("c", 0.0, 10.0, 1.0)
+        a = trial.suggest_float("a", 0.0, 10.0)
+        b = trial.suggest_float("b", 0.1, 10.0, log=True)
+        c = trial.suggest_float("c", 0.0, 10.0, step=1.0)
         d = trial.suggest_int("d", 0, 10)
         e = trial.suggest_categorical("e", [0, 1, 2])
         f = trial.suggest_int("f", 1, 10, log=True)
@@ -195,12 +195,12 @@ def test_params() -> None:
         distributions={"x": FloatDistribution(0, 10)},
     )
 
-    assert trial.suggest_uniform("x", 0, 10) == 1
+    assert trial.suggest_float("x", 0, 10) == 1
     assert trial.params == params
 
     params = {"x": 2}
     trial.params = params
-    assert trial.suggest_uniform("x", 0, 10) == 2
+    assert trial.suggest_float("x", 0, 10) == 2
     assert trial.params == params
 
 
@@ -335,6 +335,7 @@ def test_create_trial(state: TrialState) -> None:
 
 
 # Deprecated distributions are internally converted to corresponding distributions.
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 def test_create_trial_distribution_conversion() -> None:
     fixed_params = {
         "ud": 0,
