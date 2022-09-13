@@ -655,20 +655,20 @@ def check_distribution_compatibility(
         )
 
 
-def _adjust_discrete_uniform_high(low: float, high: float, q: float) -> float:
+def _adjust_discrete_uniform_high(low: float, high: float, step: float) -> float:
     d_high = decimal.Decimal(str(high))
     d_low = decimal.Decimal(str(low))
-    d_q = decimal.Decimal(str(q))
+    d_step = decimal.Decimal(str(step))
 
     d_r = d_high - d_low
 
-    if d_r % d_q != decimal.Decimal("0"):
+    if d_r % d_step != decimal.Decimal("0"):
         old_high = high
-        high = float((d_r // d_q) * d_q + d_low)
+        high = float((d_r // d_step) * d_step + d_low)
         warnings.warn(
-            "The distribution is specified by [{low}, {old_high}] and q={step}, but the range "
-            "is not divisible by `q`. It will be replaced by [{low}, {high}].".format(
-                low=low, old_high=old_high, high=high, step=q
+            "The distribution is specified by [{low}, {old_high}] and step={step}, but the range "
+            "is not divisible by `step`. It will be replaced by [{low}, {high}].".format(
+                low=low, old_high=old_high, high=high, step=step
             )
         )
 

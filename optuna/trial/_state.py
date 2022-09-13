@@ -1,7 +1,7 @@
 import enum
 
 
-class TrialState(enum.Enum):
+class TrialState(enum.IntEnum):
     """State of a :class:`~optuna.trial.Trial`.
 
     Attributes:

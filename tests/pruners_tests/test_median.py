@@ -37,6 +37,7 @@ def test_median_pruner_intermediate_values(direction_value: Tuple[str, float]) -
     assert trial.should_prune()
 
 
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 def test_median_pruner_intermediate_values_nan() -> None:
 
     pruner = optuna.pruners.MedianPruner(0, 0)

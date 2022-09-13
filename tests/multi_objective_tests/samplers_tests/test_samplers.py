@@ -13,6 +13,8 @@ from optuna.distributions import IntDistribution
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
 
 
+pytestmark = pytest.mark.filterwarnings("ignore::FutureWarning")
+
 parametrize_sampler = pytest.mark.parametrize(
     "sampler_class",
     [

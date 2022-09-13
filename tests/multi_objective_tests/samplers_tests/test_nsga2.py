@@ -10,6 +10,9 @@ from optuna import multi_objective
 from optuna.study._study_direction import StudyDirection
 
 
+pytestmark = pytest.mark.filterwarnings("ignore::FutureWarning")
+
+
 def test_population_size() -> None:
     # Set `population_size` to 10.
     sampler = multi_objective.samplers.NSGAIIMultiObjectiveSampler(population_size=10)

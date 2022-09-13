@@ -52,7 +52,10 @@ def test_float_to_int() -> None:
         study.sampler = PartialFixedSampler(
             fixed_params={"y": fixed_y}, base_sampler=study.sampler
         )
-    study.optimize(objective, n_trials=1)
+    # Since `fixed_y` is out-of-the-range value in the corresponding suggest_int,
+    # `UserWarning` will occur.
+    with pytest.warns(UserWarning):
+        study.optimize(objective, n_trials=1)
     assert study.trials[0].params["y"] == int(fixed_y)
 
 

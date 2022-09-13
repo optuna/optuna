@@ -714,7 +714,7 @@ def _split_observation_pairs(
             (infeasible_idx,) = (violation_1d > 0).nonzero()
             assert len(feasible_idx) >= n_below
             feasible_below, feasible_above = _split_observation_pairs(
-                list(np.array(loss_vals)[feasible_idx]), n_below, None
+                [loss_vals[i] for i in feasible_idx], n_below, None
             )
             indices_below = feasible_idx[feasible_below]
             indices_above = np.concatenate([feasible_idx[feasible_above], infeasible_idx])
@@ -748,7 +748,7 @@ def _split_observation_pairs(
         # Nondomination rank-based selection
         i = 0
         last_idx = 0
-        while last_idx + sum(nondomination_ranks == i) <= n_below:
+        while last_idx < n_below and last_idx + sum(nondomination_ranks == i) <= n_below:
             length = indices[nondomination_ranks == i].shape[0]
             indices_below[last_idx : last_idx + length] = indices[nondomination_ranks == i]
             last_idx += length

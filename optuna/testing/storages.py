@@ -9,6 +9,7 @@ from typing import Union
 import fakeredis
 
 import optuna
+from optuna.storages import JournalFileStorage
 
 
 STORAGE_MODES = [
@@ -17,6 +18,7 @@ STORAGE_MODES = [
     "cached_sqlite",
     "redis",
     "cached_redis",
+    "journal",
 ]
 
 STORAGE_MODES_HEARTBEAT = [
@@ -43,8 +45,8 @@ class StorageSupplier:
         optuna.storages._CachedStorage,
         optuna.storages.RDBStorage,
         optuna.storages.RedisStorage,
+        optuna.storages.JournalStorage,
     ]:
-
         if self.storage_specifier == "inmemory":
             if len(self.extra_args) > 0:
                 raise ValueError("InMemoryStorage does not accept any arguments!")
@@ -70,6 +72,9 @@ class StorageSupplier:
                 if "cached" in self.storage_specifier
                 else redis_storage
             )
+        elif "journal" in self.storage_specifier:
+            file_storage = JournalFileStorage(tempfile.NamedTemporaryFile().name)
+            return optuna.storages.JournalStorage(file_storage)
         else:
             assert False
 

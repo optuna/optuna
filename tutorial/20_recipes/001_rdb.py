@@ -55,6 +55,24 @@ study = optuna.create_study(study_name=study_name, storage=storage_name, load_if
 study.optimize(objective, n_trials=3)
 
 ###################################################################################################
+# Note that the storage doesn't store the state of the instance of :mod:`~optuna.samplers`.
+# When we resume a study with a sampler whose ``seed`` argument is specified for
+# reproducibility, you need to restore the sampler with using ``pickle`` as follows::
+#
+#     import pickle
+#
+#     # Save the sampler with pickle to be loaded later.
+#     with open("sampler.pkl", "wb") as fout:
+#         pickle.dump(study.sampler, fout)
+#
+#     restored_sampler = pickle.load(open("sampler.pkl", "rb"))
+#     study = optuna.create_study(
+#         study_name=study_name, storage=storage_name, load_if_exists=True, sampler=restored_sampler
+#     )
+#     study.optimize(objective, n_trials=3)
+#
+
+###################################################################################################
 # Experimental History
 # --------------------
 #
