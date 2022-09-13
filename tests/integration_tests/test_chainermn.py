@@ -5,7 +5,6 @@ from typing import Callable
 from typing import Dict
 from typing import Optional
 from typing import Type
-import warnings
 
 import pytest
 
@@ -265,8 +264,7 @@ class TestChainerMNTrial:
 
                 assert x1 == x2
 
-                with pytest.raises(ValueError), warnings.catch_warnings():
-                    warnings.simplefilter("ignore", category=RuntimeWarning)
+                with pytest.raises(ValueError):
                     mn_trial.suggest_float("x1", low1, high1, log=True)
 
             low2 = 1e-7
@@ -280,8 +278,7 @@ class TestChainerMNTrial:
                 x4 = mn_trial.suggest_float("x2", low2, high2, log=True)
                 assert x3 == x4
 
-                with pytest.raises(ValueError), warnings.catch_warnings():
-                    warnings.simplefilter("ignore", category=RuntimeWarning)
+                with pytest.raises(ValueError):
                     mn_trial.suggest_float("x2", low2, high2)
 
     @staticmethod
@@ -329,8 +326,7 @@ class TestChainerMNTrial:
                 x2 = mn_trial.suggest_int("x", low, high, step=step, log=enable_log)
                 assert x1 == x2
 
-                with pytest.raises(ValueError), warnings.catch_warnings():
-                    warnings.simplefilter("ignore", category=RuntimeWarning)
+                with pytest.raises(ValueError):
                     mn_trial.suggest_float("x", low, high)
 
     @staticmethod
@@ -351,8 +347,7 @@ class TestChainerMNTrial:
                 x2 = mn_trial.suggest_int("x", low, high, step=step, log=False)
                 assert x1 == x2
 
-                with pytest.raises(ValueError), warnings.catch_warnings():
-                    warnings.simplefilter("ignore", category=RuntimeWarning)
+                with pytest.raises(ValueError):
                     mn_trial.suggest_float("x", low, high)
 
     @staticmethod
@@ -371,8 +366,7 @@ class TestChainerMNTrial:
                 x2 = mn_trial.suggest_categorical("x", choices)
                 assert x1 == x2
 
-                with pytest.raises(ValueError), warnings.catch_warnings():
-                    warnings.simplefilter("ignore", category=RuntimeWarning)
+                with pytest.raises(ValueError):
                     mn_trial.suggest_float("x", 0.0, 1.0)
 
     @staticmethod
