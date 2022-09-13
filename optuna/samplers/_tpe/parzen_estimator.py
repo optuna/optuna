@@ -175,17 +175,20 @@ class _ParzenEstimator:
                 assert mus is not None
                 assert sigmas is not None
 
-                cdf_func = _ParzenEstimator._trunc_normal_cdf
-                p_accept = cdf_func(high, mus, sigmas, low, high) - cdf_func(
-                    low, mus, sigmas, low, high
-                )
                 if q is None:
-                    distance = samples[:, None] - mus
-                    mahalanobis = distance / np.maximum(sigmas, EPS)
-                    z = np.sqrt(2 * np.pi) * sigmas
-                    coefficient = 1 / z / p_accept
-                    log_pdf = -0.5 * mahalanobis**2 + np.log(coefficient)
+                    log_pdf = stats.truncnorm.logpdf(
+                        samples[:, None],
+                        (low - mus) / sigmas,
+                        (high - mus) / sigmas,
+                        loc=mus,
+                        scale=sigmas,
+                    )
                 else:
+                    cdf_func = _ParzenEstimator._trunc_normal_cdf
+                    p_accept = cdf_func(high, mus, sigmas, low, high) - cdf_func(
+                        low, mus, sigmas, low, high
+                    )
+
                     upper_bound = np.minimum(samples + q / 2.0, high)
                     lower_bound = np.maximum(samples - q / 2.0, low)
                     cdf = cdf_func(
