@@ -1482,17 +1482,6 @@ def test_tell_duplicate_tell() -> None:
         study.tell(trial, 1.0, skip_if_finished=False)
 
 
-def test_tell_storage_not_implemented_trial_number() -> None:
-    with StorageSupplier("inmemory") as storage:
-
-        study = create_study(storage=storage)
-        study.tell(study.ask(), 1.0)
-        study.tell(study.ask().number, 1.0)
-
-        with pytest.raises(ValueError):
-            study.tell(study.ask().number + 1, 1.0)
-
-
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_enqueued_trial_datetime_start(storage_mode: str) -> None:
 
