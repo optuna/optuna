@@ -29,23 +29,6 @@ def _get_frozen_trial(study: "optuna.Study", trial: Union[trial_module.Trial, in
             trial_id = study._storage.get_trial_id_from_study_id_trial_number(
                 study._study_id, trial_number
             )
-        except NotImplementedError as e:
-            warnings.warn(
-                "Study.tell may be slow because the trial was represented by its number but "
-                f"the storage {study._storage.__class__.__name__} does not implement the "
-                "method required to map numbers back. Please provide the trial object "
-                "to avoid performance degradation."
-            )
-
-            trials = study.get_trials(deepcopy=False)
-
-            if len(trials) <= trial_number:
-                raise ValueError(
-                    f"Cannot tell for trial with number {trial_number} since it has not been "
-                    "created."
-                ) from e
-
-            trial_id = trials[trial_number]._trial_id
         except KeyError as e:
             raise ValueError(
                 f"Cannot tell for trial with number {trial_number} since it has not been "
