@@ -6,9 +6,8 @@ from typing import Callable
 from typing import Dict
 from typing import Optional
 from typing import Sequence
+from typing import TYPE_CHECKING
 from typing import TypeVar
-
-from typing_extensions import ParamSpec
 
 import optuna
 from optuna._deprecated import deprecated_func
@@ -23,8 +22,11 @@ with try_import() as _imports:
     import torch.distributed as dist
 
 
-_T = TypeVar("_T")
-_P = ParamSpec("_P")
+if TYPE_CHECKING:
+    from typing_extensions import ParamSpec
+
+    _T = TypeVar("_T")
+    _P = ParamSpec("_P")
 
 
 _suggest_deprecated_msg = (
@@ -32,7 +34,7 @@ _suggest_deprecated_msg = (
 )
 
 
-def broadcast_properties(f: Callable[_P, _T]) -> Callable[_P, _T]:
+def broadcast_properties(f: "Callable[_P, _T]") -> "Callable[_P, _T]":
     """Method decorator to fetch updated trial properties from rank 0 after ``f`` is run.
 
     This decorator ensures trial properties (params, distributions, etc.) on all distributed
@@ -42,7 +44,7 @@ def broadcast_properties(f: Callable[_P, _T]) -> Callable[_P, _T]:
     """
 
     @functools.wraps(f)
-    def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> _T:
+    def wrapped(*args: "_P.args", **kwargs: "_P.kwargs") -> "_T":
         # TODO(nlgranger): Remove type ignore after mypy includes
         # https://github.com/python/mypy/pull/12668
         self: TorchDistributedTrial = args[0]  # type: ignore
