@@ -157,7 +157,7 @@ class GridSampler(BaseSampler):
 
         # In distributed optimization, multiple workers may simultaneously pick up the same grid.
         # To make the conflict less frequent, the grid is chosen randomly.
-        grid_id = self._rng.choice(target_grids)
+        grid_id = int(self._rng.choice(target_grids))
 
         study._storage.set_trial_system_attr(trial._trial_id, "search_space", self._search_space)
         study._storage.set_trial_system_attr(trial._trial_id, "grid_id", grid_id)

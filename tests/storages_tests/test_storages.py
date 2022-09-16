@@ -1101,6 +1101,9 @@ def test_pickle_storage(storage_mode: str) -> None:
     if "redis" in storage_mode:
         pytest.skip("Redis storage is not picklable")
 
+    if "journal" in storage_mode:
+        pytest.skip("Journal storage is not picklable")
+
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study()
         storage.set_study_system_attr(study_id, "key", "pickle")

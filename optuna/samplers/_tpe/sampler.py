@@ -748,7 +748,7 @@ def _split_observation_pairs(
         # Nondomination rank-based selection
         i = 0
         last_idx = 0
-        while last_idx + sum(nondomination_ranks == i) <= n_below:
+        while last_idx < n_below and last_idx + sum(nondomination_ranks == i) <= n_below:
             length = indices[nondomination_ranks == i].shape[0]
             indices_below[last_idx : last_idx + length] = indices[nondomination_ranks == i]
             last_idx += length
