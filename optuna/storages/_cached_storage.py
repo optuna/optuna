@@ -60,7 +60,7 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
     the `state` attribute of `T`.
     The same applies for `user_attrs', 'system_attrs' and 'intermediate_values` attributes.
 
-    Current implementation of :class:`~optuna.storages._CachedStorage` assumes that each
+    The current implementation of :class:`~optuna.storages._CachedStorage` assumes that each
     RUNNING trial is only modified from a single process.
     When a user modifies a RUNNING trial from multiple processes, the internal state of the storage
     may become inconsistent. Consequences are undefined.
