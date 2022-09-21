@@ -82,6 +82,40 @@ def get_logger(name: str) -> logging.Logger:
 def get_verbosity() -> int:
     """Return the current level for the Optuna's root logger.
 
+    Example:
+
+        Get the default verbosity level.
+
+        .. testsetup::
+
+            def objective(trial):
+                x = trial.suggest_float("x", -100, 100)
+                y = trial.suggest_categorical("y", [-1, 0, 1])
+                return x**2 + y
+
+        .. testcode::
+
+            import optuna
+
+            # The default verbosity level of Optuna is `optuna.logging.INFO`.
+            print(optuna.logging.get_verbosity())
+            # 20
+            print(optuna.logging.INFO)
+            # 20
+
+            # There are logs of the INFO level.
+            study = optuna.create_study()
+            study.optimize(objective, n_trials=5)
+            # [I 2021-10-31 05:35:17,232] A new study created ...
+            # [I 2021-10-31 05:35:17,238] Trial 0 finished with value: ...
+            # [I 2021-10-31 05:35:17,245] Trial 1 finished with value: ...
+            # ...
+
+        .. testoutput::
+           :hide:
+
+           20
+           20
     Returns:
         Logging level, e.g., ``optuna.logging.DEBUG`` and ``optuna.logging.INFO``.
 
@@ -101,6 +135,36 @@ def get_verbosity() -> int:
 
 def set_verbosity(verbosity: int) -> None:
     """Set the level for the Optuna's root logger.
+
+    Example:
+
+        Set the logging level ``optuna.logging.WARNING``.
+
+        .. testsetup::
+
+            def objective(trial):
+                x = trial.suggest_int("x", -10, 10)
+                return x**2
+
+        .. testcode::
+
+            import optuna
+
+            # There are INFO level logs.
+            study = optuna.create_study()
+            study.optimize(objective, n_trials=10)
+            # [I 2021-10-31 02:59:35,088] Trial 0 finished with value: 16.0 ...
+            # [I 2021-10-31 02:59:35,091] Trial 1 finished with value: 1.0 ...
+            # [I 2021-10-31 02:59:35,096] Trial 2 finished with value: 1.0 ...
+
+            # Setting the logging level WARNING, the INFO logs are suppressed.
+            optuna.logging.set_verbosity(optuna.logging.WARNING)
+            study.optimize(objective, n_trials=10)
+
+        .. testcleanup::
+
+            optuna.logging.set_verbosity(optuna.logging.INFO)
+
 
     Args:
         verbosity:
@@ -132,7 +196,7 @@ def disable_default_handler() -> None:
             def objective(trial):
                 x = trial.suggest_float("x", -100, 100)
                 y = trial.suggest_categorical("y", [-1, 0, 1])
-                return x ** 2 + y
+                return x**2 + y
 
         .. testcode::
 
@@ -186,7 +250,7 @@ def disable_propagation() -> None:
             def objective(trial):
                 x = trial.suggest_float("x", -100, 100)
                 y = trial.suggest_categorical("y", [-1, 0, 1])
-                return x ** 2 + y
+                return x**2 + y
 
         .. testcode::
 
@@ -239,7 +303,7 @@ def enable_propagation() -> None:
             def objective(trial):
                 x = trial.suggest_float("x", -100, 100)
                 y = trial.suggest_categorical("y", [-1, 0, 1])
-                return x ** 2 + y
+                return x**2 + y
 
         .. testcode::
 

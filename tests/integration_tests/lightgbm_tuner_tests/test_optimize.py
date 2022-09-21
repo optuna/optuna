@@ -10,6 +10,7 @@ from typing import Union
 from unittest import mock
 import warnings
 
+from lightgbm import log_evaluation
 import numpy as np
 import pytest
 import sklearn.datasets
@@ -32,7 +33,7 @@ def turnoff_train(metric: str = "binary_logloss") -> Generator[None, None, None]
     unexpected_value = 0.5
     dummy_num_iterations = 1234
 
-    class DummyBooster(object):
+    class DummyBooster:
         def __init__(self) -> None:
 
             self.best_score = {
@@ -59,7 +60,7 @@ def turnoff_cv(metric: str = "binary_logloss") -> Generator[None, None, None]:
         yield
 
 
-class TestOptunaObjective(object):
+class TestOptunaObjective:
     def test_init_(self) -> None:
 
         target_param_names = ["learning_rate"]  # Invalid parameter name.
@@ -95,7 +96,7 @@ class TestOptunaObjective(object):
             assert study.best_value == 0.5
 
 
-class TestOptunaObjectiveCV(object):
+class TestOptunaObjectiveCV:
     def test_call(self) -> None:
         target_param_names = ["lambda_l1"]
         lgbm_params: Dict[str, Any] = {}
@@ -119,12 +120,12 @@ class TestOptunaObjectiveCV(object):
             assert study.best_value == 0.5
 
 
-class TestBaseTuner(object):
+class TestBaseTuner:
     def test_get_booster_best_score(self) -> None:
 
         expected_value = 1.0
 
-        class DummyBooster(object):
+        class DummyBooster:
             def __init__(self) -> None:
 
                 self.best_score = {"valid_0": {"binary_logloss": expected_value}}
@@ -171,7 +172,7 @@ class TestBaseTuner(object):
 
         expected_value = 1.0
 
-        class DummyBooster(object):
+        class DummyBooster:
             def __init__(self) -> None:
 
                 self.best_score = {"dev": {"binary_logloss": expected_value}}
@@ -188,7 +189,7 @@ class TestBaseTuner(object):
         unexpected_value = 0.5
         expected_value = 1.0
 
-        class DummyBooster(object):
+        class DummyBooster:
             def __init__(self) -> None:
 
                 self.best_score = {
@@ -270,7 +271,7 @@ class TestBaseTuner(object):
             tuner._metric_with_eval_at("ndcg")
 
 
-class TestLightGBMTuner(object):
+class TestLightGBMTuner:
     def _get_tuner_object(
         self,
         params: Dict[str, Any] = {},
@@ -449,10 +450,7 @@ class TestLightGBMTuner(object):
 
     def test_tune_num_leaves_negative_max_depth(self) -> None:
 
-        params: Dict[str, Any] = {
-            "metric": "binary_logloss",
-            "max_depth": -1,
-        }
+        params: Dict[str, Any] = {"metric": "binary_logloss", "max_depth": -1, "verbose": -1}
         X_trn = np.random.uniform(10, size=(10, 5))
         y_trn = np.random.randint(2, size=10)
         train_dataset = lgb.Dataset(X_trn, label=y_trn)
@@ -464,6 +462,7 @@ class TestLightGBMTuner(object):
             num_boost_round=3,
             early_stopping_rounds=2,
             valid_sets=valid_dataset,
+            callbacks=[log_evaluation(-1)],
         )
         runner.tune_num_leaves()
         assert len(runner.study.trials) == 20
@@ -550,7 +549,9 @@ class TestLightGBMTuner(object):
         dataset = lgb.Dataset(np.zeros((10, 10)))
 
         study = optuna.create_study()
-        tuner = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
+        tuner = LightGBMTuner(
+            params, dataset, valid_sets=dataset, study=study, callbacks=[log_evaluation(-1)]
+        )
 
         with mock.patch.object(_BaseTuner, "_get_booster_best_score", return_value=1.0):
             tuner.tune_regularization_factors()
@@ -591,6 +592,7 @@ class TestLightGBMTuner(object):
                 valid_sets=dataset,
                 study=study,
                 verbosity=verbosity,
+                callbacks=[log_evaluation(-1)],
                 time_budget=1,
             )
 
@@ -611,6 +613,7 @@ class TestLightGBMTuner(object):
             dataset,
             valid_sets=dataset,
             study=study,
+            callbacks=[log_evaluation(-1)],
             time_budget=1,
             show_progress_bar=show_progress_bar,
         )
@@ -629,7 +632,9 @@ class TestLightGBMTuner(object):
         dataset = lgb.Dataset(np.zeros((10, 10)))
 
         study = optuna.create_study()
-        tuner = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
+        tuner = LightGBMTuner(
+            params, dataset, valid_sets=dataset, study=study, callbacks=[log_evaluation(-1)]
+        )
 
         with pytest.raises(ValueError):
             tuner.get_best_booster()
@@ -639,10 +644,6 @@ class TestLightGBMTuner(object):
 
         best_booster = tuner.get_best_booster()
         assert best_booster.params["lambda_l1"] != unexpected_value
-
-        # TODO(toshihikoyanase): Remove this check when LightGBMTuner.best_booster is removed.
-        with pytest.warns(FutureWarning):
-            tuner.best_booster
 
         tuner2 = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
 
@@ -667,7 +668,12 @@ class TestLightGBMTuner(object):
         study = optuna.create_study()
         with TemporaryDirectory() as tmpdir:
             tuner = LightGBMTuner(
-                params, dataset, valid_sets=dataset, study=study, model_dir=tmpdir
+                params,
+                dataset,
+                valid_sets=dataset,
+                study=study,
+                model_dir=tmpdir,
+                callbacks=[log_evaluation(-1)],
             )
 
             with mock.patch.object(_BaseTuner, "_get_booster_best_score", return_value=0.0):
@@ -727,7 +733,12 @@ class TestLightGBMTuner(object):
 
         study = optuna.create_study()
         tuner = LightGBMTuner(
-            params, dataset, valid_sets=dataset, study=study, optuna_callbacks=[callback_mock]
+            params,
+            dataset,
+            valid_sets=dataset,
+            study=study,
+            callbacks=[log_evaluation(-1)],
+            optuna_callbacks=[callback_mock],
         )
 
         with mock.patch.object(_BaseTuner, "_get_booster_best_score", return_value=1.0):
@@ -736,9 +747,9 @@ class TestLightGBMTuner(object):
         assert callback_mock.call_count == 10
 
     def test_tune_best_score_reproducibility(self) -> None:
-        boston = sklearn.datasets.load_boston()
+        california = sklearn.datasets.fetch_california_housing()
         X_trainval, X_test, y_trainval, y_test = train_test_split(
-            boston.data, boston.target, random_state=0
+            california.data, california.target, random_state=0
         )
 
         train = lgb.Dataset(X_trainval, y_trainval)
@@ -758,6 +769,7 @@ class TestLightGBMTuner(object):
             valid_sets=valid,
             early_stopping_rounds=3,
             optuna_seed=10,
+            callbacks=[log_evaluation(-1)],
         )
         tuner_first_try.run()
         best_score_first_try = tuner_first_try.best_score
@@ -768,6 +780,7 @@ class TestLightGBMTuner(object):
             valid_sets=valid,
             early_stopping_rounds=3,
             optuna_seed=10,
+            callbacks=[log_evaluation(-1)],
         )
         tuner_second_try.run()
         best_score_second_try = tuner_second_try.best_score
@@ -775,7 +788,7 @@ class TestLightGBMTuner(object):
         assert best_score_second_try == best_score_first_try
 
 
-class TestLightGBMTunerCV(object):
+class TestLightGBMTunerCV:
     def _get_tunercv_object(
         self,
         params: Dict[str, Any] = {},
@@ -1056,9 +1069,9 @@ class TestLightGBMTunerCV(object):
                 tuner3.get_best_booster()
 
     def test_tune_best_score_reproducibility(self) -> None:
-        boston = sklearn.datasets.load_boston()
+        california = sklearn.datasets.fetch_california_housing()
         X_trainval, X_test, y_trainval, y_test = train_test_split(
-            boston.data, boston.target, random_state=0
+            california.data, california.target, random_state=0
         )
 
         train = lgb.Dataset(X_trainval, y_trainval)

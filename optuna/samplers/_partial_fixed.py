@@ -4,7 +4,7 @@ from typing import Optional
 from typing import Sequence
 import warnings
 
-from optuna._experimental import experimental
+from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
 from optuna.study import Study
@@ -12,7 +12,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
-@experimental("2.4.0")
+@experimental_class("2.4.0")
 class PartialFixedSampler(BaseSampler):
     """Sampler with partially fixed parameters.
 
@@ -20,7 +20,7 @@ class PartialFixedSampler(BaseSampler):
 
     Example:
 
-         After several steps of optimization, you can fix the value of ``y`` and re-optimize it.
+        After several steps of optimization, you can fix the value of ``y`` and re-optimize it.
 
         .. testcode::
 
@@ -30,7 +30,7 @@ class PartialFixedSampler(BaseSampler):
             def objective(trial):
                 x = trial.suggest_float("x", -1, 1)
                 y = trial.suggest_int("y", -1, 1)
-                return x ** 2 + y
+                return x**2 + y
 
 
             study = optuna.create_study()

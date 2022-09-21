@@ -7,6 +7,7 @@ import time
 from typing import Any
 from typing import Callable
 from typing import cast
+from typing import Container
 from typing import Dict
 from typing import Generator
 from typing import Iterator
@@ -17,11 +18,9 @@ from typing import Union
 import warnings
 
 import numpy as np
-from packaging import version
 import tqdm
 
 import optuna
-from optuna._deprecated import deprecated
 from optuna._imports import try_import
 from optuna.integration._lightgbm_tuner.alias import _handling_alias_metrics
 from optuna.integration._lightgbm_tuner.alias import _handling_alias_parameters
@@ -62,7 +61,7 @@ _DEFAULT_LIGHTGBM_PARAMETERS = {
 _logger = optuna.logging.get_logger(__name__)
 
 
-class _BaseTuner(object):
+class _BaseTuner:
     def __init__(
         self,
         lgbm_params: Optional[Dict[str, Any]] = None,
@@ -211,7 +210,7 @@ class _OptunaObjective(_BaseTuner):
             self.lgbm_params["lambda_l2"] = trial.suggest_float("lambda_l2", 1e-8, 10.0, log=True)
         if "num_leaves" in self.target_param_names:
             tree_depth = self.lgbm_params.get("max_depth", _DEFAULT_TUNER_TREE_DEPTH)
-            max_num_leaves = 2 ** tree_depth if tree_depth > 0 else 2 ** _DEFAULT_TUNER_TREE_DEPTH
+            max_num_leaves = 2**tree_depth if tree_depth > 0 else 2**_DEFAULT_TUNER_TREE_DEPTH
             self.lgbm_params["num_leaves"] = trial.suggest_int("num_leaves", 2, max_num_leaves)
         if "feature_fraction" in self.target_param_names:
             # `GridSampler` is used for sampling feature_fraction value.
@@ -361,7 +360,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         feature_name: str = "auto",
         categorical_feature: str = "auto",
         early_stopping_rounds: Optional[int] = None,
-        verbose_eval: Optional[Union[bool, int]] = True,
+        verbose_eval: Optional[Union[bool, int, str]] = None,
         callbacks: Optional[List[Callable[..., Any]]] = None,
         time_budget: Optional[int] = None,
         sample_size: Optional[int] = None,
@@ -698,7 +697,7 @@ class _LightGBMBaseTuner(_BaseTuner):
             def get_trials(
                 self,
                 deepcopy: bool = True,
-                states: Optional[Tuple[TrialState, ...]] = None,
+                states: Optional[Container[TrialState]] = None,
             ) -> List[optuna.trial.FrozenTrial]:
 
                 trials = super().get_trials(deepcopy=deepcopy, states=states)
@@ -758,7 +757,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
         optuna_callbacks:
             List of Optuna callback functions that are invoked at the end of each trial.
             Each function must accept two parameters with the following types in this order:
-            :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
+            :class:`~optuna.study.Study` and :class:`~optuna.trial.FrozenTrial`.
             Please note that this is not a ``callbacks`` argument of `lightgbm.train()`_ .
 
         model_dir:
@@ -814,7 +813,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
         categorical_feature: str = "auto",
         early_stopping_rounds: Optional[int] = None,
         evals_result: Optional[Dict[Any, Any]] = None,
-        verbose_eval: Optional[Union[bool, int]] = True,
+        verbose_eval: Optional[Union[bool, int, str]] = "warn",
         learning_rates: Optional[List[float]] = None,
         keep_training_booster: bool = False,
         callbacks: Optional[List[Callable[..., Any]]] = None,
@@ -860,19 +859,6 @@ class LightGBMTuner(_LightGBMBaseTuner):
 
         if valid_sets is None:
             raise ValueError("`valid_sets` is required.")
-
-    @property  # type: ignore
-    @deprecated(
-        "1.4.0",
-        text=(
-            "Please get the best booster via "
-            ":class:`~optuna.integration.lightgbm.LightGBMTuner.get_best_booster` instead."
-        ),
-    )
-    def best_booster(self) -> "lgb.Booster":
-        """Return the best booster."""
-
-        return self.get_best_booster()
 
     def _create_objective(
         self,
@@ -924,7 +910,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         optuna_callbacks:
             List of Optuna callback functions that are invoked at the end of each trial.
             Each function must accept two parameters with the following types in this order:
-            :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
+            :class:`~optuna.study.Study` and :class:`~optuna.trial.FrozenTrial`.
             Please note that this is not a ``callbacks`` argument of `lightgbm.train()`_ .
 
         model_dir:
@@ -993,7 +979,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         categorical_feature: str = "auto",
         early_stopping_rounds: Optional[int] = None,
         fpreproc: Optional[Callable[..., Any]] = None,
-        verbose_eval: Optional[Union[bool, int]] = True,
+        verbose_eval: Optional[Union[bool, int]] = None,
         show_stdv: bool = True,
         seed: int = 0,
         callbacks: Optional[List[Callable[..., Any]]] = None,
@@ -1004,7 +990,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         verbosity: Optional[int] = None,
         show_progress_bar: bool = True,
         model_dir: Optional[str] = None,
-        return_cvbooster: Optional[bool] = None,
+        return_cvbooster: bool = False,
         *,
         optuna_seed: Optional[int] = None,
     ) -> None:
@@ -1037,10 +1023,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         self.lgbm_kwargs["show_stdv"] = show_stdv
         self.lgbm_kwargs["seed"] = seed
         self.lgbm_kwargs["fpreproc"] = fpreproc
-        if return_cvbooster is not None:
-            if version.parse(lgb.__version__) < version.parse("3.0.0"):
-                raise ValueError("return_cvbooster requires lightgbm>=3.0.0.")
-            self.lgbm_kwargs["return_cvbooster"] = return_cvbooster
+        self.lgbm_kwargs["return_cvbooster"] = return_cvbooster
 
     def _create_objective(
         self,

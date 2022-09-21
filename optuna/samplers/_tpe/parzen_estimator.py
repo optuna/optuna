@@ -3,25 +3,30 @@ from typing import Dict
 from typing import NamedTuple
 from typing import Optional
 from typing import Tuple
+from typing import TYPE_CHECKING
 
 import numpy as np
-import scipy.special
-from scipy.stats import truncnorm
 
 from optuna import distributions
+from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
+
+
+if TYPE_CHECKING:
+    import scipy.special as special
+    import scipy.stats as stats
+else:
+    special = _LazyImport("scipy.special")
+    stats = _LazyImport("scipy.stats")
 
 
 EPS = 1e-12
 SIGMA0_MAGNITUDE = 0.2
 
 _DISTRIBUTION_CLASSES = (
-    distributions.UniformDistribution,
-    distributions.LogUniformDistribution,
-    distributions.DiscreteUniformDistribution,
-    distributions.IntUniformDistribution,
-    distributions.IntLogUniformDistribution,
     distributions.CategoricalDistribution,
+    distributions.FloatDistribution,
+    distributions.IntDistribution,
 )
 
 
@@ -125,7 +130,7 @@ class _ParzenEstimator:
                     samples = np.where(
                         samples < high,
                         samples,
-                        truncnorm.rvs(
+                        stats.truncnorm.rvs(
                             trunc_low,
                             trunc_high,
                             size=size,
@@ -169,8 +174,8 @@ class _ParzenEstimator:
                 log_pdf = np.log(categorical_weights.T[samples, :])
             else:
                 # We restore parameters of parzen estimators.
-                low = self._low[param_name]
-                high = self._high[param_name]
+                low = np.asarray(self._low[param_name])
+                high = np.asarray(self._high[param_name])
                 q = self._q[param_name]
                 mus = self._mus[param_name]
                 sigmas = self._sigmas[param_name]
@@ -186,7 +191,7 @@ class _ParzenEstimator:
                     mahalanobis = distance / np.maximum(sigmas, EPS)
                     z = np.sqrt(2 * np.pi) * sigmas
                     coefficient = 1 / z / p_accept
-                    log_pdf = -0.5 * mahalanobis ** 2 + np.log(coefficient)
+                    log_pdf = -0.5 * mahalanobis**2 + np.log(coefficient)
                 else:
                     upper_bound = np.minimum(samples + q / 2.0, high)
                     lower_bound = np.maximum(samples - q / 2.0, low)
@@ -195,7 +200,7 @@ class _ParzenEstimator:
                     )
                     log_pdf = np.log(cdf + EPS) - np.log(p_accept + EPS)
             component_log_pdf += log_pdf
-        ret = scipy.special.logsumexp(component_log_pdf + np.log(self._weights), axis=1)
+        ret = special.logsumexp(component_log_pdf + np.log(self._weights), axis=1)
         return ret
 
     def _calculate_weights(self, predetermined_weights: Optional[np.ndarray]) -> np.ndarray:
@@ -211,6 +216,22 @@ class _ParzenEstimator:
 
         if predetermined_weights is None:
             w = weights_func(n_observations)[:n_observations]
+            if w is not None:
+                if np.any(w < 0):
+                    raise ValueError(
+                        f"The `weights` function is not allowed to return negative values {w}. "
+                        + f"The argument of the `weights` function is {n_observations}."
+                    )
+                if len(w) > 0 and np.sum(w) <= 0:
+                    raise ValueError(
+                        f"The `weight` function is not allowed to return all-zero values {w}."
+                        + f" The argument of the `weights` function is {n_observations}."
+                    )
+                if not np.all(np.isfinite(w)):
+                    raise ValueError(
+                        "The `weights`function is not allowed to return infinite or NaN values "
+                        + f"{w}. The argument of the `weights` function is {n_observations}."
+                    )
         else:
             w = predetermined_weights[:n_observations]
 
@@ -230,34 +251,33 @@ class _ParzenEstimator:
     ) -> Tuple[Optional[float], Optional[float], Optional[float]]:
 
         # We calculate low and high.
-        if isinstance(distribution, distributions.UniformDistribution):
-            low = distribution.low
-            high = distribution.high
-            q = None
-        elif isinstance(distribution, distributions.LogUniformDistribution):
-            low = np.log(distribution.low)
-            high = np.log(distribution.high)
-            q = None
-        elif isinstance(distribution, distributions.DiscreteUniformDistribution):
-            q = distribution.q
-            low = distribution.low - 0.5 * q
-            high = distribution.high + 0.5 * q
-        elif isinstance(distribution, distributions.IntUniformDistribution):
-            q = distribution.step
-            low = distribution.low - 0.5 * q
-            high = distribution.high + 0.5 * q
-        elif isinstance(distribution, distributions.IntLogUniformDistribution):
-            low = np.log(distribution.low - 0.5)
-            high = np.log(distribution.high + 0.5)
-            q = None
+        if isinstance(distribution, distributions.FloatDistribution):
+            if distribution.log:
+                low = np.log(distribution.low)
+                high = np.log(distribution.high)
+                q = None
+            elif distribution.step is not None:
+                q = distribution.step
+                low = distribution.low - 0.5 * q
+                high = distribution.high + 0.5 * q
+            else:
+                low = distribution.low
+                high = distribution.high
+                q = None
+        elif isinstance(distribution, distributions.IntDistribution):
+            if distribution.log:
+                low = np.log(distribution.low - 0.5)
+                high = np.log(distribution.high + 0.5)
+                q = None
+            else:
+                q = distribution.step
+                low = distribution.low - 0.5 * q
+                high = distribution.high + 0.5 * q
         else:
             distribution_list = [
-                distributions.UniformDistribution.__name__,
-                distributions.LogUniformDistribution.__name__,
-                distributions.DiscreteUniformDistribution.__name__,
-                distributions.IntUniformDistribution.__name__,
-                distributions.IntLogUniformDistribution.__name__,
                 distributions.CategoricalDistribution.__name__,
+                distributions.FloatDistribution.__name__,
+                distributions.IntDistribution.__name__,
             ]
             raise NotImplementedError(
                 "The distribution {} is not implemented. "
@@ -279,9 +299,10 @@ class _ParzenEstimator:
             assert isinstance(distribution, _DISTRIBUTION_CLASSES)
             if isinstance(
                 distribution,
-                (distributions.LogUniformDistribution, distributions.IntLogUniformDistribution),
+                (distributions.FloatDistribution, distributions.IntDistribution),
             ):
-                samples = np.log(samples)
+                if distribution.log:
+                    samples = np.log(samples)
 
             transformed[param_name] = samples
         return transformed
@@ -295,29 +316,31 @@ class _ParzenEstimator:
             distribution = self._search_space[param_name]
 
             assert isinstance(distribution, _DISTRIBUTION_CLASSES)
-            if isinstance(distribution, distributions.UniformDistribution):
-                transformed[param_name] = samples
-            elif isinstance(distribution, distributions.LogUniformDistribution):
-                transformed[param_name] = np.exp(samples)
-            elif isinstance(distribution, distributions.DiscreteUniformDistribution):
-                q = self._q[param_name]
-                assert q is not None
-                samples = np.round((samples - distribution.low) / q) * q + distribution.low
-                transformed[param_name] = np.asarray(
-                    np.clip(samples, distribution.low, distribution.high)
-                )
-            elif isinstance(distribution, distributions.IntUniformDistribution):
-                q = self._q[param_name]
-                assert q is not None
-                samples = np.round((samples - distribution.low) / q) * q + distribution.low
-                transformed[param_name] = np.asarray(
-                    np.clip(samples, distribution.low, distribution.high)
-                )
-            elif isinstance(distribution, distributions.IntLogUniformDistribution):
-                samples = np.round(np.exp(samples))
-                transformed[param_name] = np.asarray(
-                    np.clip(samples, distribution.low, distribution.high)
-                )
+            if isinstance(distribution, distributions.FloatDistribution):
+                if distribution.log:
+                    transformed[param_name] = np.exp(samples)
+                elif distribution.step is not None:
+                    q = self._q[param_name]
+                    assert q is not None
+                    samples = np.round((samples - distribution.low) / q) * q + distribution.low
+                    transformed[param_name] = np.asarray(
+                        np.clip(samples, distribution.low, distribution.high)
+                    )
+                else:
+                    transformed[param_name] = samples
+            elif isinstance(distribution, distributions.IntDistribution):
+                if distribution.log:
+                    samples = np.round(np.exp(samples))
+                    transformed[param_name] = np.asarray(
+                        np.clip(samples, distribution.low, distribution.high)
+                    )
+                else:
+                    q = self._q[param_name]
+                    assert q is not None
+                    samples = np.round((samples - distribution.low) / q) * q + distribution.low
+                    transformed[param_name] = np.asarray(
+                        np.clip(samples, distribution.low, distribution.high)
+                    )
             elif isinstance(distribution, distributions.CategoricalDistribution):
                 transformed[param_name] = samples
 
@@ -435,13 +458,13 @@ class _ParzenEstimator:
         return mus, sigmas
 
     @staticmethod
-    def _normal_cdf(x: float, mu: np.ndarray, sigma: np.ndarray) -> np.ndarray:
+    def _normal_cdf(x: np.ndarray, mu: np.ndarray, sigma: np.ndarray) -> np.ndarray:
 
         mu, sigma = map(np.asarray, (mu, sigma))
         denominator = x - mu
         numerator = np.maximum(np.sqrt(2) * sigma, EPS)
         z = denominator / numerator
-        return 0.5 * (1 + scipy.special.erf(z))
+        return 0.5 * (1 + special.erf(z))
 
     @staticmethod
     def _sample_from_categorical_dist(

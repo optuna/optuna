@@ -1,8 +1,9 @@
 from typing import List
 
-from optuna._experimental import experimental
+from optuna._experimental import experimental_func
 from optuna.distributions import CategoricalDistribution
-from optuna.distributions import LogUniformDistribution
+from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 from optuna.trial import FrozenTrial
 from optuna.visualization.matplotlib import _matplotlib_imports
 
@@ -10,7 +11,7 @@ from optuna.visualization.matplotlib import _matplotlib_imports
 __all__ = ["is_available"]
 
 
-@experimental("2.2.0")
+@experimental_func("2.2.0")
 def is_available() -> bool:
     """Returns whether visualization with Matplotlib is available or not.
 
@@ -30,11 +31,15 @@ def is_available() -> bool:
 
 def _is_log_scale(trials: List[FrozenTrial], param: str) -> bool:
 
-    return any(
-        isinstance(t.distributions[param], LogUniformDistribution)
-        for t in trials
-        if param in t.params
-    )
+    for trial in trials:
+        if param in trial.params:
+            dist = trial.distributions[param]
+
+            if isinstance(dist, (FloatDistribution, IntDistribution)):
+                if dist.log:
+                    return True
+
+    return False
 
 
 def _is_categorical(trials: List[FrozenTrial], param: str) -> bool:

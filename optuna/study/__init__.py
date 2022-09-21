@@ -1,7 +1,6 @@
 from optuna._callbacks import MaxTrialsCallback
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
-from optuna.study.study import BaseStudy
 from optuna.study.study import copy_study
 from optuna.study.study import create_study
 from optuna.study.study import delete_study
@@ -19,6 +18,5 @@ __all__ = [
     "delete_study",
     "get_all_study_summaries",
     "load_study",
-    "BaseStudy",
     "Study",
 ]

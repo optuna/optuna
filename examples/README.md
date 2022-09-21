@@ -12,7 +12,8 @@ This page contains a list of example codes written with Optuna. The example file
 * [AllenNLP](https://github.com/optuna/optuna-examples/blob/main/allennlp/allennlp_simple.py)
 * [AllenNLP (Jsonnet)](https://github.com/optuna/optuna-examples/blob/main/allennlp/allennlp_jsonnet.py)
 * [Catalyst](https://github.com/optuna/optuna-examples/blob/main/pytorch/catalyst_simple.py)
-* [CatBoost](https://github.com/optuna/optuna-examples/blob/main/catboost/catboost_simple.py)
+* [CatBoost without pruning](https://github.com/optuna/optuna-examples/blob/main/catboost/catboost_simple.py)
+* [CatBoost with pruning](https://github.com/optuna/optuna-examples/blob/main/catboost/catboost_pruning.py)
 * [Chainer](https://github.com/optuna/optuna-examples/blob/main/chainer/chainer_simple.py)
 * [ChainerMN](https://github.com/optuna/optuna-examples/blob/main/chainer/chainermn_simple.py)
 * [Dask-ML](https://github.com/optuna/optuna-examples/blob/main/dask_ml/dask_ml_simple.py)
@@ -85,6 +86,10 @@ In addition, integration modules are available for the following libraries, prov
 ### Examples of MLflow
 
 * [Tracking optimization process with MLflow](https://github.com/optuna/optuna-examples/blob/main/mlflow/keras_mlflow.py)
+
+### Examples of Weights & Biases
+
+* [Tracking optimization process with Weights & Biases](https://github.com/optuna/optuna-examples/blob/main/wandb/wandb_simple.py)
 
 ### Examples of Hydra
 

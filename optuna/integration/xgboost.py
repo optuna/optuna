@@ -17,7 +17,7 @@ _doc = """Callback for XGBoost to prune unpromising trials.
 
     See `the example <https://github.com/optuna/optuna-examples/blob/main/
     xgboost/xgboost_integration.py>`__
-    if you want to add a pruning callback which observes validation AUC of
+    if you want to add a pruning callback which observes validation accuracy of
     a XGBoost model.
 
     Args:
@@ -35,7 +35,7 @@ _doc = """Callback for XGBoost to prune unpromising trials.
 
 if _imports.is_successful() and use_callback_cls:
 
-    class XGBoostPruningCallback(xgb.callback.TrainingCallback):  # type: ignore
+    class XGBoostPruningCallback(xgb.callback.TrainingCallback):
         __doc__ = _doc
 
         def __init__(self, trial: optuna.trial.Trial, observation_key: str) -> None:
@@ -74,10 +74,9 @@ if _imports.is_successful() and use_callback_cls:
             # The training should not stop.
             return False
 
-
 elif _imports.is_successful():
 
-    def _get_callback_context(env: "xgb.core.CallbackEnv") -> str:
+    def _get_callback_context(env: "xgb.core.CallbackEnv") -> str:  # type: ignore
         """Return whether the current callback context is cv or train.
 
         .. note::
@@ -98,7 +97,7 @@ elif _imports.is_successful():
             self._trial = trial
             self._observation_key = observation_key
 
-        def __call__(self, env: "xgb.core.CallbackEnv") -> None:
+        def __call__(self, env: "xgb.core.CallbackEnv") -> None:  # type: ignore
 
             context = _get_callback_context(env)
             evaluation_result_list = env.evaluation_result_list
@@ -113,7 +112,6 @@ elif _imports.is_successful():
             if self._trial.should_prune():
                 message = "Trial was pruned at iteration {}.".format(env.iteration)
                 raise optuna.TrialPruned(message)
-
 
 else:
 

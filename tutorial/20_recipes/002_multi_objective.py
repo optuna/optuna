@@ -7,14 +7,14 @@ Multi-objective Optimization with Optuna
 This tutorial showcases Optuna's multi-objective optimization feature by
 optimizing the validation accuracy of Fashion MNIST dataset and the FLOPS of the model implemented in PyTorch.
 
-We use `thop <https://github.com/Lyken17/pytorch-OpCounter>`_ to measure FLOPS.
+We use `fvcore <https://github.com/facebookresearch/fvcore>`_ to measure FLOPS.
 """
 
-import thop
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
+from fvcore.nn import FlopCountAnalysis
 
 import optuna
 
@@ -67,7 +67,7 @@ def eval_model(model, valid_loader):
 
     accuracy = correct / N_VALID_EXAMPLES
 
-    flops, _ = thop.profile(model, inputs=(torch.randn(1, 28 * 28).to(DEVICE),), verbose=False)
+    flops = FlopCountAnalysis(model, inputs=(torch.randn(1, 28 * 28).to(DEVICE),)).total()
     return flops, accuracy
 
 
@@ -119,9 +119,22 @@ print("Number of finished trials: ", len(study.trials))
 
 
 ###################################################################################################
-# Check trials on pareto front visually
+# Check trials on Pareto front visually.
 optuna.visualization.plot_pareto_front(study, target_names=["FLOPS", "accuracy"])
 
+
+###################################################################################################
+# Fetch the list of trials on the Pareto front with :attr:`~optuna.study.Study.best_trials`.
+#
+# For example, the following code shows the number of trials on the Pareto front and picks the trial with the highest accuracy.
+
+print(f"Number of trials on the Pareto front: {len(study.best_trials)}")
+
+trial_with_highest_accuracy = max(study.best_trials, key=lambda t: t.values[1])
+print(f"Trial with highest accuracy: ")
+print(f"\tnumber: {trial_with_highest_accuracy.number}")
+print(f"\tparams: {trial_with_highest_accuracy.params}")
+print(f"\tvalues: {trial_with_highest_accuracy.values}")
 
 ###################################################################################################
 # Learn which hyperparameters are affecting the flops most with hyperparameter importance.

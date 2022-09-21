@@ -1,0 +1,11 @@
+name: "\U00002753Questions"
+description: Don't use GitHub Issues to ask support questions.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # PLEASE USE GITHUB DISCUSSIONS
+        Don't use GitHub Issues to ask support questions. Use the [GitHub Discussions](https://github.com/optuna/optuna/discussions/categories/q-a) for that.
+  - type: textarea
+    attributes:
+      label: "Don't use GitHub Issues to ask support questions."

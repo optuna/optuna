@@ -1,8 +1,8 @@
 """
 .. _reuse_best_trial:
 
-Re-use the best values
-==========================
+Re-use the best trial
+======================
 
 In some cases, you may want to re-evaluate the objective function with the best
 hyperparameters again after the hyperparameter optimization.
@@ -36,7 +36,7 @@ def objective(trial):
     X, y = make_classification(n_features=10, random_state=1)
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1)
 
-    C = trial.suggest_loguniform("C", 1e-7, 10.0)
+    C = trial.suggest_float("C", 1e-7, 10.0, log=True)
 
     clf = LogisticRegression(C=C)
     clf.fit(X_train, y_train)
@@ -61,7 +61,7 @@ def detailed_objective(trial):
     X, y = make_classification(n_features=10, random_state=1)
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1)
 
-    C = trial.suggest_loguniform("C", 1e-7, 10.0)
+    C = trial.suggest_float("C", 1e-7, 10.0, log=True)
 
     clf = LogisticRegression(C=C)
     clf.fit(X_train, y_train)
@@ -92,3 +92,8 @@ detailed_objective(study.best_trial)  # calculate acc, f1, recall, and precision
 # and behaves differently from :class:`~optuna.trial.Trial` in some situations.
 # For example, pruning does not work because :class:`~optuna.trial.FrozenTrial.should_prune`
 # always returns ``False``.
+#
+# .. note::
+#     For multi-objective optimization as demonstrated by :ref:`multi_objective`,
+#     :attr:`~optuna.study.Study.best_trials` returns a list of :class:`~optuna.trial.FrozenTrial`
+#     on Pareto front. So we can re-use each trial in the list by the similar way above.

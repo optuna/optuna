@@ -1,18 +1,16 @@
-from collections import OrderedDict
 from typing import Callable
 from typing import List
 from typing import Optional
 
 import numpy as np
 
-import optuna
-from optuna._experimental import experimental
+from optuna._experimental import experimental_func
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
-from optuna.trial import TrialState
-from optuna.visualization._utils import _check_plot_args
+from optuna.visualization._param_importances import _get_importances_info
+from optuna.visualization._param_importances import _ImportancesInfo
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 
@@ -25,7 +23,10 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
-@experimental("2.2.0")
+AXES_PADDING_RATIO = 1.05
+
+
+@experimental_func("2.2.0")
 def plot_param_importances(
     study: Study,
     evaluator: Optional[BaseImportanceEvaluator] = None,
@@ -86,49 +87,28 @@ def plot_param_importances(
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
-
-    Raises:
-        :exc:`ValueError`:
-            If ``target`` is :obj:`None` and ``study`` is being used for multi-objective
-            optimization.
     """
 
     _imports.check()
-    _check_plot_args(study, target, target_name)
-    return _get_param_importance_plot(study, evaluator, params, target, target_name)
+
+    importances_info = _get_importances_info(study, evaluator, params, target, target_name)
+    return _get_importances_plot(importances_info)
 
 
-def _get_param_importance_plot(
-    study: Study,
-    evaluator: Optional[BaseImportanceEvaluator] = None,
-    params: Optional[List[str]] = None,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
-    target_name: str = "Objective Value",
-) -> "Axes":
-
+def _get_importances_plot(info: _ImportancesInfo) -> "Axes":
     # Set up the graph style.
-    _, ax = plt.subplots()
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
+    fig, ax = plt.subplots()
     ax.set_title("Hyperparameter Importances")
-    ax.set_xlabel(f"Importance for {target_name}")
+    ax.set_xlabel(f"Importance for {info.target_name}")
     ax.set_ylabel("Hyperparameter")
 
-    # Prepare data for plotting.
-    # Importances cannot be evaluated without completed trials.
-    # Return an empty figure for consistency with other visualization functions.
-    trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
-    if len(trials) == 0:
-        _logger.warning("Study instance does not contain completed trials.")
-        return ax
-
-    importances = optuna.importance.get_param_importances(
-        study, evaluator=evaluator, params=params, target=target
-    )
-
-    importances = OrderedDict(reversed(list(importances.items())))
-    importance_values = list(importances.values())
-    param_names = list(importances.keys())
+    param_names = info.param_names
     pos = np.arange(len(param_names))
+    importance_values = info.importance_values
+
+    if len(importance_values) == 0:
+        return ax
 
     # Draw horizontal bars.
     ax.barh(
@@ -138,5 +118,19 @@ def _get_param_importance_plot(
         color=cm.get_cmap("tab20c")(0),
         tick_label=param_names,
     )
+
+    renderer = fig.canvas.get_renderer()
+    for idx, (val, label) in enumerate(zip(importance_values, info.importance_labels)):
+        text = ax.text(val, idx, label, va="center")
+
+        # Sometimes horizontal axis needs to be re-scaled
+        # to avoid text going over plot area.
+        bbox = text.get_window_extent(renderer)
+        bbox = bbox.transformed(ax.transData.inverted())
+        _, plot_xmax = ax.get_xlim()
+        bbox_xmax = bbox.xmax
+
+        if bbox_xmax > plot_xmax:
+            ax.set_xlim(xmax=AXES_PADDING_RATIO * bbox_xmax)
 
     return ax

@@ -45,6 +45,15 @@ Catalyst
 
    optuna.integration.CatalystPruningCallback
 
+CatBoost
+--------
+
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
+
+   optuna.integration.CatBoostPruningCallback
+
 Chainer
 -------
 
@@ -162,6 +171,15 @@ scikit-optimize
    :nosignatures:
 
    optuna.integration.SkoptSampler
+
+SHAP
+---------------
+
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
+
+   optuna.integration.ShapleyImportanceEvaluator
 
 skorch
 ------

@@ -11,7 +11,6 @@ from skopt.space import space
 
 import optuna
 from optuna import distributions
-from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.trial import FrozenTrial
 
 
@@ -87,19 +86,19 @@ def test_is_compatible() -> None:
 
     study.optimize(lambda t: t.suggest_float("p0", 0, 10), n_trials=1)
     search_space = optuna.samplers.intersection_search_space(study)
-    assert search_space == {"p0": distributions.UniformDistribution(low=0, high=10)}
+    assert search_space == {"p0": distributions.FloatDistribution(low=0, high=10)}
 
     optimizer = optuna.integration.skopt._Optimizer(search_space, {})
 
     # Compatible.
     trial = _create_frozen_trial(
-        {"p0": 5}, {"p0": distributions.UniformDistribution(low=0, high=10)}
+        {"p0": 5}, {"p0": distributions.FloatDistribution(low=0, high=10)}
     )
     assert optimizer._is_compatible(trial)
 
     # Compatible.
     trial = _create_frozen_trial(
-        {"p0": 5}, {"p0": distributions.UniformDistribution(low=0, high=100)}
+        {"p0": 5}, {"p0": distributions.FloatDistribution(low=0, high=100)}
     )
     assert optimizer._is_compatible(trial)
 
@@ -107,41 +106,28 @@ def test_is_compatible() -> None:
     trial = _create_frozen_trial(
         {"p0": 5, "p1": 7},
         {
-            "p0": distributions.UniformDistribution(low=0, high=10),
-            "p1": distributions.UniformDistribution(low=0, high=10),
+            "p0": distributions.FloatDistribution(low=0, high=10),
+            "p1": distributions.FloatDistribution(low=0, high=10),
         },
     )
     assert optimizer._is_compatible(trial)
 
     # Incompatible ('p0' doesn't exist).
     trial = _create_frozen_trial(
-        {"p1": 5}, {"p1": distributions.UniformDistribution(low=0, high=10)}
+        {"p1": 5}, {"p1": distributions.FloatDistribution(low=0, high=10)}
     )
     assert not optimizer._is_compatible(trial)
 
     # Incompatible (the value of 'p0' is out of range).
     trial = _create_frozen_trial(
-        {"p0": 20}, {"p0": distributions.UniformDistribution(low=0, high=100)}
+        {"p0": 20}, {"p0": distributions.FloatDistribution(low=0, high=100)}
     )
     assert not optimizer._is_compatible(trial)
 
     # Error (different distribution class).
-    trial = _create_frozen_trial(
-        {"p0": 5}, {"p0": distributions.IntUniformDistribution(low=0, high=10)}
-    )
+    trial = _create_frozen_trial({"p0": 5}, {"p0": distributions.IntDistribution(low=0, high=10)})
     with pytest.raises(ValueError):
         optimizer._is_compatible(trial)
-
-
-def test_reseed_rng() -> None:
-    sampler = optuna.integration.SkoptSampler()
-    sampler._independent_sampler.reseed_rng()
-
-    with patch.object(
-        sampler._independent_sampler, "reseed_rng", wraps=sampler._independent_sampler.reseed_rng
-    ) as mock_object:
-        sampler.reseed_rng()
-        assert mock_object.call_count == 1
 
 
 def _objective(trial: optuna.trial.Trial) -> float:
@@ -164,7 +150,7 @@ def _objective(trial: optuna.trial.Trial) -> float:
 
 def test_sample_relative_n_startup_trials() -> None:
 
-    independent_sampler = DeterministicRelativeSampler({}, {})
+    independent_sampler = optuna.samplers.RandomSampler()
     sampler = optuna.integration.SkoptSampler(
         n_startup_trials=2, independent_sampler=independent_sampler
     )

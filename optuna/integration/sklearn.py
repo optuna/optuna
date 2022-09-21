@@ -22,8 +22,9 @@ from optuna import logging
 from optuna import samplers
 from optuna import study as study_module
 from optuna import TrialPruned
-from optuna._experimental import experimental
+from optuna._experimental import experimental_class
 from optuna._imports import try_import
+from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
@@ -130,7 +131,7 @@ def _safe_indexing(
     return sklearn_safe_indexing(X, indices)
 
 
-class _Objective(object):
+class _Objective:
     """Callable that implements objective function.
 
     Args:
@@ -248,7 +249,8 @@ class _Objective(object):
 
         if is_classifier(estimator):
             partial_fit_params = self.fit_params.copy()
-            classes = np.unique(self.y)
+            y = self.y.values if isinstance(self.y, pd.Series) else self.y
+            classes = np.unique(y)
 
             partial_fit_params.setdefault("classes", classes)
 
@@ -356,7 +358,7 @@ class _Objective(object):
             trial.set_user_attr("std_{}".format(name), np.nanstd(array))
 
 
-@experimental("0.17.0")
+@experimental_class("0.17.0")
 class OptunaSearchCV(BaseEstimator):
     """Hyperparameter search with cross-validation.
 
@@ -406,13 +408,6 @@ class OptunaSearchCV(BaseEstimator):
                     `Python's GIL <https://wiki.python.org/moin/GlobalInterpreterLock>`_.
                     It is recommended to use :ref:`process-based parallelization<distributed>`
                     if ``func`` is CPU bound.
-
-                .. warning::
-                    Deprecated in v2.7.0. This feature will be removed in the future.
-                    It is recommended to use :ref:`process-based parallelization<distributed>`.
-                    The removal of this feature is currently scheduled for v4.0.0, but this
-                    schedule is subject to change.
-                    See https://github.com/optuna/optuna/releases/tag/v2.7.0.
 
         n_trials:
             Number of trials. If :obj:`None`, there is no limitation on the
@@ -468,6 +463,16 @@ class OptunaSearchCV(BaseEstimator):
         verbose:
             Verbosity level. The higher, the more messages.
 
+        callbacks:
+            List of callback functions that are invoked at the end of each trial. Each function
+            must accept two parameters with the following types in this order:
+            :class:`~optuna.study.Study` and :class:`~optuna.trial.FrozenTrial`.
+
+            .. seealso::
+
+                See the tutorial of :ref:`optuna_callback` for how to use and implement
+                callback functions.
+
     Attributes:
         best_estimator_:
             Estimator that was chosen by the search. This is present only if
@@ -498,11 +503,18 @@ class OptunaSearchCV(BaseEstimator):
             from sklearn.svm import SVC
 
             clf = SVC(gamma="auto")
-            param_distributions = {"C": optuna.distributions.LogUniformDistribution(1e-10, 1e10)}
+            param_distributions = {
+                "C": optuna.distributions.FloatDistribution(1e-10, 1e10, log=True)
+            }
             optuna_search = optuna.integration.OptunaSearchCV(clf, param_distributions)
             X, y = load_iris(return_X_y=True)
             optuna_search.fit(X, y)
             y_pred = optuna_search.predict(X)
+
+    .. note::
+        By following the scikit-learn convention for scorers, the direction of optimization is
+        ``maximize``. See https://scikit-learn.org/stable/modules/model_evaluation.html.
+        For the minimization problem, please multiply ``-1``.
     """
 
     _required_parameters = ["estimator", "param_distributions"]
@@ -514,11 +526,12 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def best_index_(self) -> int:
-        """Index which corresponds to the best candidate parameter setting."""
+        """Trial number which corresponds to the best candidate parameter setting.
 
-        df = self.trials_dataframe()
+        Retuned value is equivant to ``optuna_search.best_trial_.number``.
+        """
 
-        return df["value"].idxmin()
+        return self.best_trial_.number
 
     @property
     def best_params_(self) -> Dict[str, Any]:
@@ -692,9 +705,20 @@ class OptunaSearchCV(BaseEstimator):
         subsample: Union[float, int] = 1.0,
         timeout: Optional[float] = None,
         verbose: int = 0,
+        callbacks: Optional[List[Callable[[study_module.Study, FrozenTrial], None]]] = None,
     ) -> None:
 
         _imports.check()
+
+        if not isinstance(param_distributions, dict):
+            raise TypeError("param_distributions must be a dictionary.")
+
+        # TODO(himkt): Remove this method with the deletion of deprecated distributions.
+        # https://github.com/optuna/optuna/issues/2941
+        param_distributions = {
+            key: _convert_old_distribution_to_new_distribution(dist)
+            for key, dist in param_distributions.items()
+        }
 
         self.cv = cv
         self.enable_pruning = enable_pruning
@@ -712,6 +736,7 @@ class OptunaSearchCV(BaseEstimator):
         self.subsample = subsample
         self.timeout = timeout
         self.verbose = verbose
+        self.callbacks = callbacks
 
     def _check_is_fitted(self) -> None:
 
@@ -726,9 +751,6 @@ class OptunaSearchCV(BaseEstimator):
 
         if not hasattr(self.estimator, "fit"):
             raise ValueError("estimator must be a scikit-learn estimator.")
-
-        if type(self.param_distributions) is not dict:
-            raise ValueError("param_distributions must be a dictionary.")
 
         for name, distribution in self.param_distributions.items():
             if not isinstance(distribution, distributions.BaseDistribution):
@@ -838,7 +860,7 @@ class OptunaSearchCV(BaseEstimator):
             fit_params_res = _check_fit_params(X, fit_params, self.sample_indices_)
 
         classifier = is_classifier(self.estimator)
-        cv = check_cv(self.cv, y_res, classifier)
+        cv = check_cv(self.cv, y_res, classifier=classifier)
 
         self.n_splits_ = cv.get_n_splits(X_res, y_res, groups=groups_res)
         self.scorer_ = check_scoring(self.estimator, scoring=self.scoring)
@@ -873,7 +895,11 @@ class OptunaSearchCV(BaseEstimator):
         )
 
         self.study_.optimize(
-            objective, n_jobs=self.n_jobs, n_trials=self.n_trials, timeout=self.timeout
+            objective,
+            n_jobs=self.n_jobs,
+            n_trials=self.n_trials,
+            timeout=self.timeout,
+            callbacks=self.callbacks,
         )
 
         _logger.info("Finished hyperparemeter search!")

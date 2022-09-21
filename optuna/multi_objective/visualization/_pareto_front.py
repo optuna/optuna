@@ -4,7 +4,7 @@ from typing import Optional
 
 import optuna
 from optuna import multi_objective
-from optuna._deprecated import deprecated
+from optuna._deprecated import deprecated_func
 from optuna.multi_objective.study import MultiObjectiveStudy
 from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
 from optuna.trial import TrialState
@@ -17,7 +17,7 @@ if _imports.is_successful():
 _logger = optuna.logging.get_logger(__name__)
 
 
-@deprecated("2.4.0", "4.0.0")
+@deprecated_func("2.4.0", "4.0.0")
 def plot_pareto_front(
     study: MultiObjectiveStudy,
     names: Optional[List[str]] = None,
@@ -53,7 +53,7 @@ def plot_pareto_front(
     Args:
         study:
             A :class:`~optuna.multi_objective.study.MultiObjectiveStudy` object whose trials
-            are plotted for their objective values.
+            are plotted for their objective values. ``study.n_objectives`` must be eigher 2 or 3.
         names:
             Objective name list used as the axis titles. If :obj:`None` is specified,
             "Objective {objective_index}" is used instead.
@@ -67,9 +67,6 @@ def plot_pareto_front(
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
 
-    Raises:
-        :exc:`ValueError`:
-            If the number of objectives of ``study`` isn't 2 or 3.
     """
 
     _imports.check()

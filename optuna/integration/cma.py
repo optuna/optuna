@@ -1,26 +1,23 @@
 import math
 import random
 from typing import Any
+from typing import Container
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import Set
 
 import numpy
 
 import optuna
 from optuna import distributions
 from optuna import logging
-from optuna._deprecated import deprecated
+from optuna._deprecated import deprecated_class
 from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
-from optuna.distributions import DiscreteUniformDistribution
-from optuna.distributions import IntLogUniformDistribution
-from optuna.distributions import IntUniformDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
+from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.study import StudyDirection
@@ -34,6 +31,8 @@ with try_import() as _imports:
 _logger = logging.get_logger(__name__)
 
 _EPS = 1e-10
+
+_cma_deprecated_msg = "This class is renamed to :class:`~optuna.integration.PyCmaSampler`."
 
 
 class PyCmaSampler(BaseSampler):
@@ -51,7 +50,7 @@ class PyCmaSampler(BaseSampler):
             def objective(trial):
                 x = trial.suggest_float("x", -1, 1)
                 y = trial.suggest_int("y", -1, 1)
-                return x ** 2 + y
+                return x**2 + y
 
 
             sampler = optuna.integration.PyCmaSampler()
@@ -143,7 +142,7 @@ class PyCmaSampler(BaseSampler):
         self._sigma0 = sigma0
         self._cma_stds = cma_stds
         if seed is None:
-            seed = random.randint(1, 2 ** 32)
+            seed = random.randint(1, 2**32)
         self._cma_opts = cma_opts or {}
         self._cma_opts["seed"] = seed
         self._cma_opts.setdefault("verbose", -2)
@@ -154,7 +153,7 @@ class PyCmaSampler(BaseSampler):
 
     def reseed_rng(self) -> None:
 
-        self._cma_opts["seed"] = random.randint(1, 2 ** 32)
+        self._cma_opts["seed"] = random.randint(1, 2**32)
         self._independent_sampler.reseed_rng()
 
     def infer_relative_search_space(
@@ -184,7 +183,7 @@ class PyCmaSampler(BaseSampler):
         self._raise_error_if_multi_objective(study)
 
         if self._warn_independent_sampling:
-            complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+            complete_trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
             if len(complete_trials) >= self._n_startup_trials:
                 self._log_independent_sampling(trial, param_name)
 
@@ -211,7 +210,7 @@ class PyCmaSampler(BaseSampler):
             self._warn_independent_sampling = False
             return {}
 
-        complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+        complete_trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
         if len(complete_trials) < self._n_startup_trials:
             return {}
 
@@ -235,19 +234,23 @@ class PyCmaSampler(BaseSampler):
 
         x0: Dict[str, Any] = {}
         for name, distribution in search_space.items():
-            if isinstance(distribution, UniformDistribution):
-                x0[name] = numpy.mean([distribution.high, distribution.low])
-            elif isinstance(distribution, DiscreteUniformDistribution):
-                x0[name] = numpy.mean([distribution.high, distribution.low])
-            elif isinstance(distribution, IntUniformDistribution):
-                x0[name] = int(numpy.mean([distribution.high, distribution.low]))
-            elif isinstance(distribution, (LogUniformDistribution, IntLogUniformDistribution)):
-                log_high = math.log(distribution.high)
-                log_low = math.log(distribution.low)
-                x0[name] = math.exp(numpy.mean([log_high, log_low]))
+            if isinstance(distribution, FloatDistribution):
+                if distribution.log:
+                    log_high = math.log(distribution.high)
+                    log_low = math.log(distribution.low)
+                    x0[name] = math.exp(numpy.mean([log_high, log_low]))
+                else:
+                    x0[name] = numpy.mean([distribution.high, distribution.low])
             elif isinstance(distribution, CategoricalDistribution):
                 index = (len(distribution.choices) - 1) // 2
                 x0[name] = distribution.choices[index]
+            elif isinstance(distribution, IntDistribution):
+                if distribution.log:
+                    log_high = math.log(distribution.high)
+                    log_low = math.log(distribution.low)
+                    x0[name] = math.exp(numpy.mean([log_high, log_low]))
+                else:
+                    x0[name] = int(numpy.mean([distribution.high, distribution.low]))
             else:
                 raise NotImplementedError(
                     "The distribution {} is not implemented.".format(distribution)
@@ -259,16 +262,13 @@ class PyCmaSampler(BaseSampler):
 
         sigma0s = []
         for name, distribution in search_space.items():
-            if isinstance(distribution, UniformDistribution):
-                sigma0s.append((distribution.high - distribution.low) / 6)
-            elif isinstance(distribution, DiscreteUniformDistribution):
-                sigma0s.append((distribution.high - distribution.low) / 6)
-            elif isinstance(distribution, IntUniformDistribution):
-                sigma0s.append((distribution.high - distribution.low) / 6)
-            elif isinstance(distribution, (LogUniformDistribution, IntLogUniformDistribution)):
-                log_high = math.log(distribution.high)
-                log_low = math.log(distribution.low)
-                sigma0s.append((log_high - log_low) / 6)
+            if isinstance(distribution, (IntDistribution, FloatDistribution)):
+                if distribution.log:
+                    log_high = math.log(distribution.high)
+                    log_low = math.log(distribution.low)
+                    sigma0s.append((log_high - log_low) / 6)
+                else:
+                    sigma0s.append((distribution.high - distribution.low) / 6)
             elif isinstance(distribution, CategoricalDistribution):
                 sigma0s.append((len(distribution.choices) - 1) / 6)
             else:
@@ -302,7 +302,7 @@ class PyCmaSampler(BaseSampler):
         self._independent_sampler.after_trial(study, trial, state, values)
 
 
-class _Optimizer(object):
+class _Optimizer:
     def __init__(
         self,
         search_space: Dict[str, BaseDistribution],
@@ -324,19 +324,21 @@ class _Optimizer(object):
                 # TODO(Yanase): Support one-hot representation.
                 lows.append(-0.5)
                 highs.append(len(dist.choices) - 0.5)
-            elif isinstance(dist, (UniformDistribution, LogUniformDistribution)):
-                lows.append(self._to_cma_params(search_space, param_name, dist.low))
-                highs.append(self._to_cma_params(search_space, param_name, dist.high) - _EPS)
-            elif isinstance(dist, DiscreteUniformDistribution):
-                r = dist.high - dist.low
-                lows.append(0 - 0.5 * dist.q)
-                highs.append(r + 0.5 * dist.q)
-            elif isinstance(dist, IntUniformDistribution):
-                lows.append(dist.low - 0.5 * dist.step)
-                highs.append(dist.high + 0.5 * dist.step)
-            elif isinstance(dist, IntLogUniformDistribution):
-                lows.append(self._to_cma_params(search_space, param_name, dist.low - 0.5))
-                highs.append(self._to_cma_params(search_space, param_name, dist.high + 0.5))
+            elif isinstance(dist, FloatDistribution):
+                if dist.step is not None:
+                    r = dist.high - dist.low
+                    lows.append(0 - 0.5 * dist.step)
+                    highs.append(r + 0.5 * dist.step)
+                else:
+                    lows.append(self._to_cma_params(search_space, param_name, dist.low))
+                    highs.append(self._to_cma_params(search_space, param_name, dist.high) - _EPS)
+            elif isinstance(dist, IntDistribution):
+                if dist.log:
+                    lows.append(self._to_cma_params(search_space, param_name, dist.low - 0.5))
+                    highs.append(self._to_cma_params(search_space, param_name, dist.high + 0.5))
+                else:
+                    lows.append(dist.low - 0.5 * dist.step)
+                    highs.append(dist.high + 0.5 * dist.step)
             else:
                 raise NotImplementedError("The distribution {} is not implemented.".format(dist))
 
@@ -429,7 +431,7 @@ class _Optimizer(object):
         self,
         trials: List[FrozenTrial],
         last_told: int = -1,
-        target_states: Optional[Set[TrialState]] = None,
+        target_states: Optional[Container[TrialState]] = None,
     ) -> List[FrozenTrial]:
 
         target_trials = [t for t in trials if t.number > last_told]
@@ -445,10 +447,15 @@ class _Optimizer(object):
     ) -> float:
 
         dist = search_space[param_name]
-        if isinstance(dist, (LogUniformDistribution, IntLogUniformDistribution)):
-            return math.log(optuna_param_value)
-        elif isinstance(dist, DiscreteUniformDistribution):
-            return optuna_param_value - dist.low
+
+        if isinstance(dist, IntDistribution):
+            if dist.log:
+                return math.log(optuna_param_value)
+        elif isinstance(dist, FloatDistribution):
+            if dist.log:
+                return math.log(optuna_param_value)
+            elif dist.step is not None:
+                return optuna_param_value - dist.low
         elif isinstance(dist, CategoricalDistribution):
             return dist.choices.index(optuna_param_value)
         return optuna_param_value
@@ -459,28 +466,32 @@ class _Optimizer(object):
     ) -> Any:
 
         dist = search_space[param_name]
-        if isinstance(dist, LogUniformDistribution):
-            return math.exp(cma_param_value)
-        if isinstance(dist, DiscreteUniformDistribution):
-            v = numpy.round(cma_param_value / dist.q) * dist.q + dist.low
-            # v may slightly exceed range due to round-off errors.
-            return float(min(max(v, dist.low), dist.high))
-        if isinstance(dist, IntUniformDistribution):
-            r = numpy.round((cma_param_value - dist.low) / dist.step)
-            v = r * dist.step + dist.low
-            return int(v)
-        if isinstance(dist, IntLogUniformDistribution):
-            exp_value = math.exp(cma_param_value)
-            v = numpy.round(exp_value)
-            return int(min(max(v, dist.low), dist.high))
+        if isinstance(dist, FloatDistribution):
+            if dist.log:
+                return math.exp(cma_param_value)
+            elif dist.step is not None:
+                v = numpy.round(cma_param_value / dist.step) * dist.step + dist.low
+                return float(min(max(v, dist.low), dist.high))
+            else:
+                return float(cma_param_value)
 
-        if isinstance(dist, CategoricalDistribution):
+        elif isinstance(dist, IntDistribution):
+            if dist.log:
+                exp_value = math.exp(cma_param_value)
+                v = numpy.round(exp_value)
+                return int(min(max(v, dist.low), dist.high))
+            else:
+                r = numpy.round((cma_param_value - dist.low) / dist.step)
+                v = r * dist.step + dist.low
+                return int(v)
+
+        elif isinstance(dist, CategoricalDistribution):
             v = int(numpy.round(cma_param_value))
             return dist.choices[v]
         return cma_param_value
 
 
-@deprecated("2.0.0", text="This class is renamed to :class:`~optuna.integration.PyCmaSampler`.")
+@deprecated_class("2.0.0", "4.0.0", text=_cma_deprecated_msg)
 class CmaEsSampler(PyCmaSampler):
     """Wrapper class of PyCmaSampler for backward compatibility."""
 

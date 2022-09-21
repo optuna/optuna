@@ -3,12 +3,12 @@ from typing import Optional
 import numpy as np
 
 import optuna
-from optuna._experimental import experimental
+from optuna._experimental import experimental_class
 from optuna.pruners import BasePruner
 from optuna.study._study_direction import StudyDirection
 
 
-@experimental("2.8.0")
+@experimental_class("2.8.0")
 class PatientPruner(BasePruner):
     """Pruner which wraps another pruner with tolerance.
 

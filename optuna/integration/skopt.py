@@ -1,4 +1,5 @@
 import copy
+import random
 from typing import Any
 from typing import Dict
 from typing import List
@@ -41,7 +42,7 @@ class SkoptSampler(BaseSampler):
             def objective(trial):
                 x = trial.suggest_float("x", -10, 10)
                 y = trial.suggest_int("y", 0, 10)
-                return x ** 2 + y
+                return x**2 + y
 
 
             sampler = optuna.integration.SkoptSampler()
@@ -98,6 +99,9 @@ class SkoptSampler(BaseSampler):
                 evaluation of the objective function is relatively faster than each sampling. On
                 the other hand, it is suggested to set this flag :obj:`True` when each evaluation
                 of the objective function is relatively slower than each sampling.
+
+        seed:
+            Seed for random number generator.
     """
 
     def __init__(
@@ -108,6 +112,7 @@ class SkoptSampler(BaseSampler):
         n_startup_trials: int = 1,
         *,
         consider_pruned_trials: bool = False,
+        seed: Optional[int] = None,
     ) -> None:
 
         _imports.check()
@@ -116,7 +121,7 @@ class SkoptSampler(BaseSampler):
         if "dimensions" in self._skopt_kwargs:
             del self._skopt_kwargs["dimensions"]
 
-        self._independent_sampler = independent_sampler or samplers.RandomSampler()
+        self._independent_sampler = independent_sampler or samplers.RandomSampler(seed=seed)
         self._warn_independent_sampling = warn_independent_sampling
         self._n_startup_trials = n_startup_trials
         self._search_space = samplers.IntersectionSearchSpace()
@@ -129,8 +134,12 @@ class SkoptSampler(BaseSampler):
                 ExperimentalWarning,
             )
 
+        if seed is not None and "random_state" not in self._skopt_kwargs:
+            self._skopt_kwargs["random_state"] = seed
+
     def reseed_rng(self) -> None:
 
+        self._skopt_kwargs["random_state"] = random.randint(1, 2**32)
         self._independent_sampler.reseed_rng()
 
     def infer_relative_search_space(
@@ -234,7 +243,7 @@ class SkoptSampler(BaseSampler):
         self._independent_sampler.after_trial(study, trial, state, values)
 
 
-class _Optimizer(object):
+class _Optimizer:
     def __init__(
         self, search_space: Dict[str, distributions.BaseDistribution], skopt_kwargs: Dict[str, Any]
     ) -> None:
@@ -243,26 +252,27 @@ class _Optimizer(object):
 
         dimensions = []
         for name, distribution in sorted(self._search_space.items()):
-            if isinstance(distribution, distributions.UniformDistribution):
-                # Convert the upper bound from exclusive (optuna) to inclusive (skopt).
-                high = np.nextafter(distribution.high, float("-inf"))
-                dimension = space.Real(distribution.low, high)
-            elif isinstance(distribution, distributions.LogUniformDistribution):
-                # Convert the upper bound from exclusive (optuna) to inclusive (skopt).
-                high = np.nextafter(distribution.high, float("-inf"))
-                dimension = space.Real(distribution.low, high, prior="log-uniform")
-            elif isinstance(distribution, distributions.IntUniformDistribution):
-                count = (distribution.high - distribution.low) // distribution.step
-                dimension = space.Integer(0, count)
-            elif isinstance(distribution, distributions.IntLogUniformDistribution):
-                low = distribution.low - 0.5
-                high = distribution.high + 0.5
-                dimension = space.Real(low, high, prior="log-uniform")
-            elif isinstance(distribution, distributions.DiscreteUniformDistribution):
-                count = int((distribution.high - distribution.low) // distribution.q)
-                dimension = space.Integer(0, count)
+            if isinstance(distribution, distributions.IntDistribution):
+                if distribution.log:
+                    low = distribution.low - 0.5
+                    high = distribution.high + 0.5
+                    dimension = space.Real(low, high, prior="log-uniform")
+                else:
+                    count = (distribution.high - distribution.low) // distribution.step
+                    dimension = space.Integer(0, count)
             elif isinstance(distribution, distributions.CategoricalDistribution):
                 dimension = space.Categorical(distribution.choices)
+            elif isinstance(distribution, distributions.FloatDistribution):
+                # Convert the upper bound from exclusive (optuna) to inclusive (skopt).
+                if distribution.log:
+                    high = np.nextafter(distribution.high, float("-inf"))
+                    dimension = space.Real(distribution.low, high, prior="log-uniform")
+                elif distribution.step is not None:
+                    count = int((distribution.high - distribution.low) // distribution.step)
+                    dimension = space.Integer(0, count)
+                else:
+                    high = np.nextafter(distribution.high, float("-inf"))
+                    dimension = space.Real(distribution.low, high)
             else:
                 raise NotImplementedError(
                     "The distribution {} is not implemented.".format(distribution)
@@ -292,13 +302,17 @@ class _Optimizer(object):
         params = {}
         param_values = self._optimizer.ask()
         for (name, distribution), value in zip(sorted(self._search_space.items()), param_values):
-            if isinstance(distribution, distributions.DiscreteUniformDistribution):
-                value = value * distribution.q + distribution.low
-            if isinstance(distribution, distributions.IntUniformDistribution):
-                value = value * distribution.step + distribution.low
-            if isinstance(distribution, distributions.IntLogUniformDistribution):
-                value = int(np.round(value))
-                value = min(max(value, distribution.low), distribution.high)
+            if isinstance(distribution, distributions.FloatDistribution):
+                # Type of value is np.floating, so cast it to Python's built-in float.
+                value = float(value)
+                if distribution.step is not None:
+                    value = value * distribution.step + distribution.low
+            elif isinstance(distribution, distributions.IntDistribution):
+                if distribution.log:
+                    value = int(np.round(value))
+                    value = min(max(value, distribution.low), distribution.high)
+                else:
+                    value = int(value * distribution.step + distribution.low)
 
             params[name] = value
 
@@ -332,10 +346,12 @@ class _Optimizer(object):
         for name, distribution in sorted(self._search_space.items()):
             param_value = trial.params[name]
 
-            if isinstance(distribution, distributions.DiscreteUniformDistribution):
-                param_value = (param_value - distribution.low) // distribution.q
-            if isinstance(distribution, distributions.IntUniformDistribution):
-                param_value = (param_value - distribution.low) // distribution.step
+            if isinstance(distribution, distributions.FloatDistribution):
+                if distribution.step is not None:
+                    param_value = (param_value - distribution.low) // distribution.step
+            elif isinstance(distribution, distributions.IntDistribution):
+                if not distribution.log:
+                    param_value = (param_value - distribution.low) // distribution.step
 
             param_values.append(param_value)
 

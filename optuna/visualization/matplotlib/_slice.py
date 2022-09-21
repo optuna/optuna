@@ -1,20 +1,17 @@
 import math
+from typing import Any
 from typing import Callable
-from typing import cast
 from typing import List
 from typing import Optional
 from typing import Tuple
-from typing import Union
 
-from optuna._experimental import experimental
-from optuna.logging import get_logger
+from optuna._experimental import experimental_func
 from optuna.study import Study
 from optuna.trial import FrozenTrial
-from optuna.trial import TrialState
-from optuna.visualization._utils import _check_plot_args
+from optuna.visualization._slice import _get_slice_plot_info
+from optuna.visualization._slice import _SlicePlotInfo
+from optuna.visualization._slice import _SliceSubplotInfo
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
-from optuna.visualization.matplotlib._utils import _is_log_scale
-from optuna.visualization.matplotlib._utils import _is_numerical
 
 
 if _imports.is_successful():
@@ -24,10 +21,8 @@ if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import PathCollection
     from optuna.visualization.matplotlib._matplotlib_imports import plt
 
-_logger = get_logger(__name__)
 
-
-@experimental("2.2.0")
+@experimental_func("2.2.0")
 def plot_slice(
     study: Study,
     params: Optional[List[str]] = None,
@@ -78,123 +73,83 @@ def plot_slice(
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
-
-    Raises:
-        :exc:`ValueError`:
-            If ``target`` is :obj:`None` and ``study`` is being used for multi-objective
-            optimization.
     """
 
     _imports.check()
-    _check_plot_args(study, target, target_name)
-    return _get_slice_plot(study, params, target, target_name)
+    return _get_slice_plot(_get_slice_plot_info(study, params, target, target_name))
 
 
-def _get_slice_plot(
-    study: Study,
-    params: Optional[List[str]] = None,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
-    target_name: str = "Objective Value",
-) -> "Axes":
+def _get_slice_plot(info: _SlicePlotInfo) -> "Axes":
 
-    # Calculate basic numbers for plotting.
-    trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
-
-    if len(trials) == 0:
-        _logger.warning("Your study does not have any completed trials.")
+    if len(info.subplots) == 0:
         _, ax = plt.subplots()
         return ax
-
-    all_params = {p_name for t in trials for p_name in t.params.keys()}
-    if params is None:
-        sorted_params = sorted(all_params)
-    else:
-        for input_p_name in params:
-            if input_p_name not in all_params:
-                raise ValueError("Parameter {} does not exist in your study.".format(input_p_name))
-        sorted_params = sorted(set(params))
-
-    n_params = len(sorted_params)
 
     # Set up the graph style.
     cmap = plt.get_cmap("Blues")
     padding_ratio = 0.05
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
 
-    # Prepare data.
-    if target is None:
-        obj_values = [cast(float, t.value) for t in trials]
-    else:
-        obj_values = [target(t) for t in trials]
-
-    if n_params == 1:
+    if len(info.subplots) == 1:
         # Set up the graph style.
         fig, axs = plt.subplots()
         axs.set_title("Slice Plot")
 
         # Draw a scatter plot.
-        sc = _generate_slice_subplot(
-            trials, sorted_params[0], axs, cmap, padding_ratio, obj_values, target_name
-        )
+        sc = _generate_slice_subplot(info.subplots[0], axs, cmap, padding_ratio, info.target_name)
     else:
         # Set up the graph style.
         min_figwidth = matplotlib.rcParams["figure.figsize"][0] / 2
         fighight = matplotlib.rcParams["figure.figsize"][1]
         # Ensure that each subplot has a minimum width without relying on auto-sizing.
         fig, axs = plt.subplots(
-            1, n_params, sharey=True, figsize=(min_figwidth * n_params, fighight)
+            1,
+            len(info.subplots),
+            sharey=True,
+            figsize=(min_figwidth * len(info.subplots), fighight),
         )
         fig.suptitle("Slice Plot")
 
         # Draw scatter plots.
-        for i, param in enumerate(sorted_params):
+        for i, subplot in enumerate(info.subplots):
             ax = axs[i]
-            sc = _generate_slice_subplot(
-                trials, param, ax, cmap, padding_ratio, obj_values, target_name
-            )
+            sc = _generate_slice_subplot(subplot, ax, cmap, padding_ratio, info.target_name)
 
     axcb = fig.colorbar(sc, ax=axs)
-    axcb.set_label("#Trials")
+    axcb.set_label("Trial")
 
     return axs
 
 
 def _generate_slice_subplot(
-    trials: List[FrozenTrial],
-    param: str,
+    subplot_info: _SliceSubplotInfo,
     ax: "Axes",
     cmap: "Colormap",
     padding_ratio: float,
-    obj_values: List[Union[int, float]],
     target_name: str,
 ) -> "PathCollection":
-    x_values = []
-    y_values = []
-    trial_numbers = []
+    ax.set(xlabel=subplot_info.param_name, ylabel=target_name)
+    x_values = subplot_info.x
     scale = None
-    for t, obj_v in zip(trials, obj_values):
-        if param in t.params:
-            x_values.append(t.params[param])
-            y_values.append(obj_v)
-            trial_numbers.append(t.number)
-    ax.set(xlabel=param, ylabel=target_name)
-    if _is_log_scale(trials, param):
+    if subplot_info.is_log:
         ax.set_xscale("log")
         scale = "log"
-    elif not _is_numerical(trials, param):
-        x_values = [str(x) for x in x_values]
+    elif not subplot_info.is_numerical:
+        x_values = [str(x) for x in subplot_info.x]
         scale = "categorical"
     xlim = _calc_lim_with_padding(x_values, padding_ratio, scale)
     ax.set_xlim(xlim[0], xlim[1])
-    sc = ax.scatter(x_values, y_values, c=trial_numbers, cmap=cmap, edgecolors="grey")
+    sc = ax.scatter(
+        x_values, subplot_info.y, c=subplot_info.trial_numbers, cmap=cmap, edgecolors="grey"
+    )
     ax.label_outer()
 
     return sc
 
 
 def _calc_lim_with_padding(
-    values: List[Union[int, float]], padding_ratio: float, scale: Optional[str] = None
-) -> Tuple[Union[int, float], Union[int, float]]:
+    values: List[Any], padding_ratio: float, scale: Optional[str]
+) -> Tuple[float, float]:
     value_max = max(values)
     value_min = min(values)
     if scale == "log":

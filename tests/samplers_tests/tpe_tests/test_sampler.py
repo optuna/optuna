@@ -1,7 +1,9 @@
 import random
 from typing import Callable
 from typing import Dict
+from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Union
 from unittest.mock import Mock
 from unittest.mock import patch
@@ -32,6 +34,11 @@ def test_hyperopt_parameters(use_hyperband: bool) -> None:
 def test_multivariate_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         optuna.samplers.TPESampler(multivariate=True)
+
+
+def test_constraints_func_experimental_warning() -> None:
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        optuna.samplers.TPESampler(constraints_func=lambda _: (0,))
 
 
 def test_warn_independent_sampling(capsys: _pytest.capture.CaptureFixture) -> None:
@@ -81,12 +88,12 @@ def test_warn_independent_sampling_group(capsys: _pytest.capture.CaptureFixture)
 def test_infer_relative_search_space() -> None:
     sampler = TPESampler()
     search_space = {
-        "a": distributions.UniformDistribution(1.0, 100.0),
-        "b": distributions.LogUniformDistribution(1.0, 100.0),
-        "c": distributions.DiscreteUniformDistribution(1.0, 100.0, 3.0),
-        "d": distributions.IntUniformDistribution(1, 100),
-        "e": distributions.IntUniformDistribution(0, 100, step=2),
-        "f": distributions.IntLogUniformDistribution(1, 100),
+        "a": distributions.FloatDistribution(1.0, 100.0),
+        "b": distributions.FloatDistribution(1.0, 100.0, log=True),
+        "c": distributions.FloatDistribution(1.0, 100.0, step=3.0),
+        "d": distributions.IntDistribution(1, 100),
+        "e": distributions.IntDistribution(0, 100, step=2),
+        "f": distributions.IntDistribution(1, 100, log=True),
         "g": distributions.CategoricalDistribution(["x", "y", "z"]),
     }
 
@@ -128,35 +135,9 @@ def test_sample_relative_empty_input(multivariate: bool) -> None:
     assert sampler.sample_relative(study, frozen_trial, {}) == {}
 
 
-def test_sample_relative_seed_fix() -> None:
-    study = optuna.create_study()
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
-    past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
-
-    # Prepare a trial and a sample for later checks.
-    trial = frozen_trial_factory(8)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        suggestion = sampler.sample_relative(study, trial, {"param-a": dist})
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        assert sampler.sample_relative(study, trial, {"param-a": dist}) == suggestion
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(n_startup_trials=5, seed=1, multivariate=True)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        assert sampler.sample_relative(study, trial, {"param-a": dist}) != suggestion
-
-
 def test_sample_relative_prior() -> None:
     study = optuna.create_study()
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
 
     # Prepare a trial and a sample for later checks.
@@ -182,7 +163,7 @@ def test_sample_relative_prior() -> None:
 
 def test_sample_relative_n_startup_trial() -> None:
     study = optuna.create_study()
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
 
     trial = frozen_trial_factory(8)
@@ -199,7 +180,7 @@ def test_sample_relative_n_startup_trial() -> None:
 
 def test_sample_relative_misc_arguments() -> None:
     study = optuna.create_study()
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 40)]
 
     # Prepare a trial and a sample for later checks.
@@ -226,7 +207,7 @@ def test_sample_relative_misc_arguments() -> None:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = TPESampler(
-            weights=lambda n: np.asarray([i ** 2 + 1 for i in range(n)]),
+            weights=lambda n: np.asarray([i**2 + 1 for i in range(n)]),
             n_startup_trials=5,
             seed=0,
             multivariate=True,
@@ -239,7 +220,7 @@ def test_sample_relative_uniform_distributions() -> None:
     study = optuna.create_study()
 
     # Prepare sample from uniform distribution for cheking other distributions.
-    uni_dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    uni_dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=uni_dist) for i in range(1, 8)]
     trial = frozen_trial_factory(8)
     with warnings.catch_warnings():
@@ -255,7 +236,7 @@ def test_sample_relative_log_uniform_distributions() -> None:
 
     study = optuna.create_study()
 
-    uni_dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    uni_dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=uni_dist) for i in range(1, 8)]
     trial = frozen_trial_factory(8)
     with warnings.catch_warnings():
@@ -265,7 +246,7 @@ def test_sample_relative_log_uniform_distributions() -> None:
         uniform_suggestion = sampler.sample_relative(study, trial, {"param-a": uni_dist})
 
     # Test sample from log-uniform is different from uniform.
-    log_dist = optuna.distributions.LogUniformDistribution(1.0, 100.0)
+    log_dist = optuna.distributions.FloatDistribution(1.0, 100.0, log=True)
     past_trials = [frozen_trial_factory(i, dist=log_dist) for i in range(1, 8)]
     trial = frozen_trial_factory(8)
     with warnings.catch_warnings():
@@ -281,7 +262,7 @@ def test_sample_relative_disrete_uniform_distributions() -> None:
     """Test samples from discrete have expected intervals."""
 
     study = optuna.create_study()
-    disc_dist = optuna.distributions.DiscreteUniformDistribution(1.0, 100.0, 0.1)
+    disc_dist = optuna.distributions.FloatDistribution(1.0, 100.0, step=0.1)
 
     def value_fn(idx: int) -> float:
         random.seed(idx)
@@ -334,7 +315,7 @@ def test_sample_relative_int_uniform_distributions(step: int) -> None:
         random.seed(idx)
         return step * random.randint(0, 100 // step)
 
-    int_dist = optuna.distributions.IntUniformDistribution(0, 100, step=step)
+    int_dist = optuna.distributions.IntDistribution(0, 100, step=step)
     past_trials = [
         frozen_trial_factory(i, dist=int_dist, value_fn=int_value_fn) for i in range(1, 8)
     ]
@@ -358,7 +339,7 @@ def test_sample_relative_int_loguniform_distributions() -> None:
         random.seed(idx)
         return random.randint(0, 100)
 
-    intlog_dist = optuna.distributions.IntLogUniformDistribution(1, 100)
+    intlog_dist = optuna.distributions.IntDistribution(1, 100, log=True)
     past_trials = [
         frozen_trial_factory(i, dist=intlog_dist, value_fn=int_value_fn) for i in range(1, 8)
     ]
@@ -384,7 +365,7 @@ def test_sample_relative_int_loguniform_distributions() -> None:
 def test_sample_relative_handle_unsuccessful_states(
     state: optuna.trial.TrialState,
 ) -> None:
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
 
     # Prepare sampling result for later tests.
     study = optuna.create_study()
@@ -415,7 +396,7 @@ def test_sample_relative_handle_unsuccessful_states(
 def test_sample_relative_ignored_states() -> None:
     """Tests FAIL, RUNNING, and WAITING states are equally."""
 
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
 
     suggestions = []
     for state in [
@@ -439,7 +420,7 @@ def test_sample_relative_ignored_states() -> None:
 def test_sample_relative_pruned_state() -> None:
     """Tests PRUNED state is treated differently from both FAIL and COMPLETE."""
 
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
 
     suggestions = []
     for state in [
@@ -461,29 +442,9 @@ def test_sample_relative_pruned_state() -> None:
     assert len(set(suggestions)) == 3
 
 
-def test_sample_independent_seed_fix() -> None:
-    study = optuna.create_study()
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
-    past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
-
-    # Prepare a trial and a sample for later checks.
-    trial = frozen_trial_factory(8)
-    sampler = TPESampler(n_startup_trials=5, seed=0)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        suggestion = sampler.sample_independent(study, trial, "param-a", dist)
-
-    sampler = TPESampler(n_startup_trials=5, seed=0)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        assert sampler.sample_independent(study, trial, "param-a", dist) == suggestion
-
-    sampler = TPESampler(n_startup_trials=5, seed=1)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
-
-
 def test_sample_independent_prior() -> None:
     study = optuna.create_study()
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
 
     # Prepare a trial and a sample for later checks.
@@ -503,7 +464,7 @@ def test_sample_independent_prior() -> None:
 
 def test_sample_independent_n_startup_trial() -> None:
     study = optuna.create_study()
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
 
     trial = frozen_trial_factory(8)
@@ -525,7 +486,7 @@ def test_sample_independent_n_startup_trial() -> None:
 
 def test_sample_independent_misc_arguments() -> None:
     study = optuna.create_study()
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
 
     # Prepare a trial and a sample for later checks.
@@ -554,7 +515,7 @@ def test_sample_independent_uniform_distributions() -> None:
     study = optuna.create_study()
 
     # Prepare sample from uniform distribution for cheking other distributions.
-    uni_dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    uni_dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=uni_dist) for i in range(1, 8)]
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0)
@@ -568,7 +529,7 @@ def test_sample_independent_log_uniform_distributions() -> None:
 
     study = optuna.create_study()
 
-    uni_dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    uni_dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=uni_dist) for i in range(1, 8)]
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0)
@@ -576,7 +537,7 @@ def test_sample_independent_log_uniform_distributions() -> None:
         uniform_suggestion = sampler.sample_independent(study, trial, "param-a", uni_dist)
 
     # Test sample from log-uniform is different from uniform.
-    log_dist = optuna.distributions.LogUniformDistribution(1.0, 100.0)
+    log_dist = optuna.distributions.FloatDistribution(1.0, 100.0, log=True)
     past_trials = [frozen_trial_factory(i, dist=log_dist) for i in range(1, 8)]
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0)
@@ -590,7 +551,7 @@ def test_sample_independent_disrete_uniform_distributions() -> None:
     """Test samples from discrete have expected intervals."""
 
     study = optuna.create_study()
-    disc_dist = optuna.distributions.DiscreteUniformDistribution(1.0, 100.0, 0.1)
+    disc_dist = optuna.distributions.FloatDistribution(1.0, 100.0, step=0.1)
 
     def value_fn(idx: int) -> float:
         random.seed(idx)
@@ -637,7 +598,7 @@ def test_sample_independent_int_uniform_distributions() -> None:
         random.seed(idx)
         return random.randint(0, 100)
 
-    int_dist = optuna.distributions.IntUniformDistribution(1, 100)
+    int_dist = optuna.distributions.IntDistribution(1, 100)
     past_trials = [
         frozen_trial_factory(i, dist=int_dist, value_fn=int_value_fn) for i in range(1, 8)
     ]
@@ -658,7 +619,7 @@ def test_sample_independent_int_loguniform_distributions() -> None:
         random.seed(idx)
         return random.randint(0, 100)
 
-    intlog_dist = optuna.distributions.IntLogUniformDistribution(1, 100)
+    intlog_dist = optuna.distributions.IntDistribution(1, 100, log=True)
     past_trials = [
         frozen_trial_factory(i, dist=intlog_dist, value_fn=int_value_fn) for i in range(1, 8)
     ]
@@ -680,7 +641,7 @@ def test_sample_independent_int_loguniform_distributions() -> None:
     ],
 )
 def test_sample_independent_handle_unsuccessful_states(state: optuna.trial.TrialState) -> None:
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
 
     # Prepare sampling result for later tests.
     study = optuna.create_study()
@@ -707,7 +668,7 @@ def test_sample_independent_handle_unsuccessful_states(state: optuna.trial.Trial
 def test_sample_independent_ignored_states() -> None:
     """Tests FAIL, RUNNING, and WAITING states are equally."""
 
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
 
     suggestions = []
     for state in [
@@ -730,7 +691,7 @@ def test_sample_independent_ignored_states() -> None:
 def test_sample_independent_pruned_state() -> None:
     """Tests PRUNED state is treated differently from both FAIL and COMPLETE."""
 
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
 
     suggestions = []
     for state in [
@@ -750,12 +711,35 @@ def test_sample_independent_pruned_state() -> None:
     assert len(set(suggestions)) == 3
 
 
-def test_get_observation_pairs() -> None:
+def test_constrained_sample_independent_zero_startup() -> None:
+    """Tests TPESampler with constrained option works when n_startup_trials=0."""
+    study = optuna.create_study()
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
+    trial = frozen_trial_factory(30)
+    sampler = TPESampler(n_startup_trials=0, seed=2, constraints_func=lambda _: (0,))
+    sampler.sample_independent(study, trial, "param-a", dist)
+
+
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+@pytest.mark.parametrize(
+    "constraints_enabled, constraints_func, expected_violations",
+    [
+        (False, None, None),
+        (True, lambda trial: [(-1, -1), (0, -1), (1, -1), (2, -1)][trial.number], [0, 0, 1, 2]),
+    ],
+)
+def test_get_observation_pairs(
+    direction: str,
+    constraints_enabled: bool,
+    constraints_func: Optional[Callable[[optuna.trial.FrozenTrial], Sequence[float]]],
+    expected_violations: List[float],
+) -> None:
     def objective(trial: Trial) -> float:
 
         x = trial.suggest_int("x", 5, 5)
+        z = trial.suggest_categorical("z", [None])
         if trial.number == 0:
-            return x
+            return x * int(z is None)
         elif trial.number == 1:
             trial.report(1, 4)
             trial.report(2, 7)
@@ -768,56 +752,76 @@ def test_get_observation_pairs() -> None:
         else:
             raise RuntimeError()
 
-    # Test direction=minimize.
-    study = optuna.create_study(direction="minimize")
+    sampler = TPESampler(constraints_func=constraints_func)
+    study = optuna.create_study(direction=direction, sampler=sampler)
     study.optimize(objective, n_trials=5, catch=(RuntimeError,))
 
+    sign = 1 if direction == "minimize" else -1
     scores = [
-        (-float("inf"), [5.0]),  # COMPLETE
-        (-7, [2]),  # PRUNED (with intermediate values)
+        (-float("inf"), [sign * 5.0]),  # COMPLETE
+        (-7, [sign * 2]),  # PRUNED (with intermediate values)
         (-3, [float("inf")]),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-        (float("inf"), [0.0]),  # PRUNED (without intermediate values)
+        (float("inf"), [sign * 0.0]),  # PRUNED (without intermediate values)
     ]
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], False) == (
+    assert _tpe.sampler._get_observation_pairs(
+        study, ["x"], False, constraints_enabled=constraints_enabled
+    ) == (
         {"x": [5.0, 5.0, 5.0, 5.0]},
         scores,
+        expected_violations,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["y"], False) == (
+    assert _tpe.sampler._get_observation_pairs(
+        study, ["y"], False, constraints_enabled=constraints_enabled
+    ) == (
         {"y": [None, None, None, None]},
         scores,
+        expected_violations,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], True) == (
+    assert _tpe.sampler._get_observation_pairs(
+        study, ["z"], False, constraints_enabled=constraints_enabled
+    ) == (
+        {"z": [0, 0, 0, 0]},  # The internal representation of 'None' for z is 0
+        scores,
+        expected_violations,
+    )
+    assert _tpe.sampler._get_observation_pairs(
+        study, ["x"], True, constraints_enabled=constraints_enabled
+    ) == (
         {"x": [5.0, 5.0, 5.0, 5.0]},
         scores,
+        expected_violations,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["y"], True) == ({"y": []}, [])
-
-    # Test direction=maximize.
-    study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=4)
-    study._storage.create_new_trial(study._study_id)  # Create a running trial.
-    scores = [
-        (-float("inf"), [-5.0]),  # COMPLETE
-        (-7, [-2]),  # PRUNED (with intermediate values)
-        (-3, [float("inf")]),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-        (float("inf"), [0.0]),  # PRUNED (without intermediate values)
-    ]
-
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], False) == (
-        {"x": [5.0, 5.0, 5.0, 5.0]},
+    assert _tpe.sampler._get_observation_pairs(
+        study, ["y"], True, constraints_enabled=constraints_enabled
+    ) == (
+        {"y": []},
+        [],
+        [] if constraints_enabled else expected_violations,
+    )
+    assert _tpe.sampler._get_observation_pairs(
+        study, ["z"], True, constraints_enabled=constraints_enabled
+    ) == (
+        {"z": [0, 0, 0, 0]},  # The internal representation of 'None' for z is 0
         scores,
+        expected_violations,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["y"], False) == (
-        {"y": [None, None, None, None]},
-        scores,
-    )
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], True) == (
-        {"x": [5.0, 5.0, 5.0, 5.0]},
-        scores,
-    )
-    assert _tpe.sampler._get_observation_pairs(study, ["y"], True) == ({"y": []}, [])
 
-    def objective2(trial: Trial) -> float:
+
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+@pytest.mark.parametrize(
+    "constraints_enabled, constraints_func, expected_violations",
+    [
+        (False, None, None),
+        (True, lambda trial: [(-1, -1), (0, -1), (1, -1), (2, -1)][trial.number], [0, 0, 1, 2]),
+    ],
+)
+def test_get_observation_pairs_multi(
+    direction: str,
+    constraints_enabled: bool,
+    constraints_func: Optional[Callable[[optuna.trial.FrozenTrial], Sequence[float]]],
+    expected_violations: List[float],
+) -> None:
+    def objective(trial: Trial) -> float:
 
         x = trial.suggest_int("x", 5, 5)
         y = trial.suggest_int("y", 6, 6)
@@ -835,39 +839,25 @@ def test_get_observation_pairs() -> None:
         else:
             raise RuntimeError()
 
-    # Test direction=minimize.
-    study = optuna.create_study(direction="minimize")
-    study.optimize(objective2, n_trials=5, catch=(RuntimeError,))
+    sampler = TPESampler(constraints_func=constraints_func)
+    study = optuna.create_study(direction=direction, sampler=sampler)
+    study.optimize(objective, n_trials=5, catch=(RuntimeError,))
 
-    assert _tpe.sampler._get_observation_pairs(study, ["x", "y"], True) == (
+    sign = 1 if direction == "minimize" else -1
+    assert _tpe.sampler._get_observation_pairs(
+        study, ["x", "y"], True, constraints_enabled=constraints_enabled
+    ) == (
         {"x": [5.0, 5.0, 5.0, 5.0], "y": [6.0, 6.0, 6.0, 6.0]},
         [
-            (-float("inf"), [11.0]),  # COMPLETE
-            (-7, [2]),  # PRUNED (with intermediate values)
+            (-float("inf"), [sign * 11.0]),  # COMPLETE
+            (-7, [sign * 2]),  # PRUNED (with intermediate values)
             (
                 -3,
                 [float("inf")],
             ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-            (float("inf"), [0.0]),  # PRUNED (without intermediate values)
+            (float("inf"), [sign * 0.0]),  # PRUNED (without intermediate values)
         ],
-    )
-
-    # Test direction=maximize.
-    study = optuna.create_study(direction="maximize")
-    study.optimize(objective2, n_trials=4)
-    study._storage.create_new_trial(study._study_id)  # Create a running trial.
-
-    assert _tpe.sampler._get_observation_pairs(study, ["x", "y"], True) == (
-        {"x": [5.0, 5.0, 5.0, 5.0], "y": [6.0, 6.0, 6.0, 6.0]},
-        [
-            (-float("inf"), [-11.0]),  # COMPLETE
-            (-7, [-2]),  # PRUNED (with intermediate values)
-            (
-                -3,
-                [float("inf")],
-            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-            (float("inf"), [0.0]),  # PRUNED (without intermediate values)
-        ],
+        expected_violations,
     )
 
 
@@ -883,9 +873,46 @@ def test_split_observation_pairs() -> None:
             (-float("inf"), [-5.0]),  # COMPLETE
         ],
         2,
+        None,
     )
     assert list(indices_below) == [0, 3]
     assert list(indices_above) == [1, 2]
+
+
+def test_split_observation_pairs_with_constraints_below_all_feasible() -> None:
+    indices_below, indices_above = _tpe.sampler._split_observation_pairs(
+        [
+            (-7, [-2]),  # PRUNED (with intermediate values)
+            (float("inf"), [0.0]),  # PRUNED (without intermediate values)
+            (
+                -3,
+                [float("inf")],
+            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (-float("inf"), [-5.0]),  # COMPLETE
+        ],
+        1,
+        [1, 0, 0, 2],
+    )
+    assert list(indices_below) == [2]
+    assert list(indices_above) == [0, 1, 3]
+
+
+def test_split_observation_pairs_with_constraints_below_include_infeasible() -> None:
+    indices_below, indices_above = _tpe.sampler._split_observation_pairs(
+        [
+            (-7, [-2]),  # PRUNED (with intermediate values)
+            (float("inf"), [0.0]),  # PRUNED (without intermediate values)
+            (
+                -3,
+                [float("inf")],
+            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (-float("inf"), [-5.0]),  # COMPLETE
+        ],
+        3,
+        [1, 0, 0, 2],
+    )
+    assert list(indices_below) == [0, 1, 2]
+    assert list(indices_above) == [3]
 
 
 def test_build_observation_dict() -> None:
@@ -903,7 +930,7 @@ def test_build_observation_dict() -> None:
 
 def frozen_trial_factory(
     idx: int,
-    dist: optuna.distributions.BaseDistribution = optuna.distributions.UniformDistribution(
+    dist: optuna.distributions.BaseDistribution = optuna.distributions.FloatDistribution(
         1.0, 100.0
     ),
     state_fn: Callable[
@@ -940,18 +967,6 @@ def build_state_fn(state: optuna.trial.TrialState) -> Callable[[int], optuna.tri
     return state_fn
 
 
-def test_reseed_rng() -> None:
-    sampler = TPESampler()
-    original_seed = sampler._rng.seed
-
-    with patch.object(
-        sampler._random_sampler, "reseed_rng", wraps=sampler._random_sampler.reseed_rng
-    ) as mock_object:
-        sampler.reseed_rng()
-        assert mock_object.call_count == 1
-        assert original_seed != sampler._rng.seed
-
-
 def test_call_after_trial_of_random_sampler() -> None:
     sampler = TPESampler()
     study = optuna.create_study(sampler=sampler)
@@ -965,11 +980,11 @@ def test_call_after_trial_of_random_sampler() -> None:
 def test_mixed_relative_search_space_pruned_and_completed_trials() -> None:
     def objective(trial: Trial) -> float:
         if trial.number == 0:
-            trial.suggest_uniform("param1", 0, 1)
+            trial.suggest_float("param1", 0, 1)
             raise optuna.exceptions.TrialPruned()
 
         if trial.number == 1:
-            trial.suggest_uniform("param2", 0, 1)
+            trial.suggest_float("param2", 0, 1)
             return 0
 
         return 0
@@ -989,9 +1004,7 @@ def test_group() -> None:
     with patch.object(sampler, "_sample_relative", wraps=sampler._sample_relative) as mock:
         study.optimize(lambda t: t.suggest_int("x", 0, 10), n_trials=2)
         assert mock.call_count == 1
-    assert study.trials[-1].distributions == {
-        "x": distributions.IntUniformDistribution(low=0, high=10)
-    }
+    assert study.trials[-1].distributions == {"x": distributions.IntDistribution(low=0, high=10)}
 
     with patch.object(sampler, "_sample_relative", wraps=sampler._sample_relative) as mock:
         study.optimize(
@@ -999,8 +1012,8 @@ def test_group() -> None:
         )
         assert mock.call_count == 1
     assert study.trials[-1].distributions == {
-        "y": distributions.IntUniformDistribution(low=0, high=10),
-        "z": distributions.UniformDistribution(low=-3, high=3),
+        "y": distributions.IntDistribution(low=0, high=10),
+        "z": distributions.FloatDistribution(low=-3, high=3),
     }
 
     with patch.object(sampler, "_sample_relative", wraps=sampler._sample_relative) as mock:
@@ -1013,17 +1026,17 @@ def test_group() -> None:
         )
         assert mock.call_count == 2
     assert study.trials[-1].distributions == {
-        "u": distributions.LogUniformDistribution(low=1e-2, high=1e2),
+        "u": distributions.FloatDistribution(low=1e-2, high=1e2, log=True),
         "v": distributions.CategoricalDistribution(choices=["A", "B", "C"]),
-        "y": distributions.IntUniformDistribution(low=0, high=10),
-        "z": distributions.UniformDistribution(low=-3, high=3),
+        "y": distributions.IntDistribution(low=0, high=10),
+        "z": distributions.FloatDistribution(low=-3, high=3),
     }
 
     with patch.object(sampler, "_sample_relative", wraps=sampler._sample_relative) as mock:
         study.optimize(lambda t: t.suggest_float("u", 1e-2, 1e2, log=True), n_trials=1)
         assert mock.call_count == 3
     assert study.trials[-1].distributions == {
-        "u": distributions.LogUniformDistribution(low=1e-2, high=1e2)
+        "u": distributions.FloatDistribution(low=1e-2, high=1e2, log=True)
     }
 
     with patch.object(sampler, "_sample_relative", wraps=sampler._sample_relative) as mock:
@@ -1032,16 +1045,14 @@ def test_group() -> None:
         )
         assert mock.call_count == 4
     assert study.trials[-1].distributions == {
-        "y": distributions.IntUniformDistribution(low=0, high=10),
-        "w": distributions.IntLogUniformDistribution(low=2, high=8),
+        "y": distributions.IntDistribution(low=0, high=10),
+        "w": distributions.IntDistribution(low=2, high=8, log=True),
     }
 
     with patch.object(sampler, "_sample_relative", wraps=sampler._sample_relative) as mock:
         study.optimize(lambda t: t.suggest_int("x", 0, 10), n_trials=1)
         assert mock.call_count == 6
-    assert study.trials[-1].distributions == {
-        "x": distributions.IntUniformDistribution(low=0, high=10)
-    }
+    assert study.trials[-1].distributions == {"x": distributions.IntDistribution(low=0, high=10)}
 
 
 def test_invalid_multivariate_and_group() -> None:
@@ -1079,10 +1090,12 @@ def test_constant_liar_observation_pairs(direction: str, multivariate: bool) -> 
     ) == (
         {"x": []},
         [],
+        None,
     )
     assert _tpe.sampler._get_observation_pairs(study, ["x"], multivariate, constant_liar=True) == (
         {"x": [2]},
         expected_values,
+        None,
     )
 
 

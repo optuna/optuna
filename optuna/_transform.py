@@ -10,11 +10,8 @@ import numpy
 
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
-from optuna.distributions import DiscreteUniformDistribution
-from optuna.distributions import IntLogUniformDistribution
-from optuna.distributions import IntUniformDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
+from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 
 
 class _SearchSpaceTransform:
@@ -186,41 +183,34 @@ def _transform_search_space(
         elif isinstance(
             d,
             (
-                UniformDistribution,
-                LogUniformDistribution,
-                DiscreteUniformDistribution,
-                IntUniformDistribution,
-                IntLogUniformDistribution,
+                FloatDistribution,
+                IntDistribution,
             ),
         ):
-            if isinstance(d, UniformDistribution):
-                bds = (
-                    _transform_numerical_param(d.low, d, transform_log),
-                    _transform_numerical_param(d.high, d, transform_log),
-                )
-            elif isinstance(d, LogUniformDistribution):
-                bds = (
-                    _transform_numerical_param(d.low, d, transform_log),
-                    _transform_numerical_param(d.high, d, transform_log),
-                )
-            elif isinstance(d, DiscreteUniformDistribution):
-                half_step = 0.5 * d.q if transform_step else 0.0
-                bds = (
-                    _transform_numerical_param(d.low, d, transform_log) - half_step,
-                    _transform_numerical_param(d.high, d, transform_log) + half_step,
-                )
-            elif isinstance(d, IntUniformDistribution):
+            if isinstance(d, FloatDistribution):
+                if d.step is not None:
+                    half_step = 0.5 * d.step if transform_step else 0.0
+                    bds = (
+                        _transform_numerical_param(d.low, d, transform_log) - half_step,
+                        _transform_numerical_param(d.high, d, transform_log) + half_step,
+                    )
+                else:
+                    bds = (
+                        _transform_numerical_param(d.low, d, transform_log),
+                        _transform_numerical_param(d.high, d, transform_log),
+                    )
+            elif isinstance(d, IntDistribution):
                 half_step = 0.5 * d.step if transform_step else 0.0
-                bds = (
-                    _transform_numerical_param(d.low, d, transform_log) - half_step,
-                    _transform_numerical_param(d.high, d, transform_log) + half_step,
-                )
-            elif isinstance(d, IntLogUniformDistribution):
-                half_step = 0.5 if transform_step else 0.0
-                bds = (
-                    _transform_numerical_param(d.low - half_step, d, transform_log),
-                    _transform_numerical_param(d.high + half_step, d, transform_log),
-                )
+                if d.log:
+                    bds = (
+                        _transform_numerical_param(d.low - half_step, d, transform_log),
+                        _transform_numerical_param(d.high + half_step, d, transform_log),
+                    )
+                else:
+                    bds = (
+                        _transform_numerical_param(d.low, d, transform_log) - half_step,
+                        _transform_numerical_param(d.high, d, transform_log) + half_step,
+                    )
             else:
                 assert False, "Should not reach. Unexpected distribution."
 
@@ -244,16 +234,16 @@ def _transform_numerical_param(
 
     if isinstance(d, CategoricalDistribution):
         assert False, "Should not reach. Should be one-hot encoded."
-    elif isinstance(d, UniformDistribution):
-        trans_param = float(param)
-    elif isinstance(d, LogUniformDistribution):
-        trans_param = math.log(param) if transform_log else float(param)
-    elif isinstance(d, DiscreteUniformDistribution):
-        trans_param = float(param)
-    elif isinstance(d, IntUniformDistribution):
-        trans_param = float(param)
-    elif isinstance(d, IntLogUniformDistribution):
-        trans_param = math.log(param) if transform_log else float(param)
+    elif isinstance(d, FloatDistribution):
+        if d.log:
+            trans_param = math.log(param) if transform_log else float(param)
+        else:
+            trans_param = float(param)
+    elif isinstance(d, IntDistribution):
+        if d.log:
+            trans_param = math.log(param) if transform_log else float(param)
+        else:
+            trans_param = float(param)
     else:
         assert False, "Should not reach. Unexpected distribution."
 
@@ -267,23 +257,36 @@ def _untransform_numerical_param(
 
     if isinstance(d, CategoricalDistribution):
         assert False, "Should not reach. Should be one-hot encoded."
-    elif isinstance(d, UniformDistribution):
-        param = min(trans_param, numpy.nextafter(d.high, d.high - 1))
-    elif isinstance(d, LogUniformDistribution):
-        param = math.exp(trans_param) if transform_log else trans_param
-        param = min(param, numpy.nextafter(d.high, d.high - 1))
-    elif isinstance(d, DiscreteUniformDistribution):
-        # Clip since result may slightly exceed range due to round-off errors.
-        param = float(
-            min(max(numpy.round((trans_param - d.low) / d.q) * d.q + d.low, d.low), d.high)
-        )
-    elif isinstance(d, IntUniformDistribution):
-        param = int(numpy.round((trans_param - d.low) / d.step) * d.step + d.low)
-    elif isinstance(d, IntLogUniformDistribution):
-        if transform_log:
-            param = int(min(max(numpy.round(math.exp(trans_param)), d.low), d.high))
+    elif isinstance(d, FloatDistribution):
+        if d.log:
+            param = math.exp(trans_param) if transform_log else trans_param
+            if d.single():
+                pass
+            else:
+                param = min(param, numpy.nextafter(d.high, d.high - 1))
+        elif d.step is not None:
+            param = float(
+                numpy.clip(
+                    numpy.round((trans_param - d.low) / d.step) * d.step + d.low, d.low, d.high
+                )
+            )
         else:
-            param = int(trans_param)
+            if d.single():
+                param = trans_param
+            else:
+                param = min(trans_param, numpy.nextafter(d.high, d.high - 1))
+    elif isinstance(d, IntDistribution):
+        if d.log:
+            if transform_log:
+                param = int(numpy.clip(numpy.round(math.exp(trans_param)), d.low, d.high))
+            else:
+                param = int(trans_param)
+        else:
+            param = int(
+                numpy.clip(
+                    numpy.round((trans_param - d.low) / d.step) * d.step + d.low, d.low, d.high
+                )
+            )
     else:
         assert False, "Should not reach. Unexpected distribution."
 

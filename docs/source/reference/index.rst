@@ -13,9 +13,8 @@ API Reference
     logging
     multi_objective/index
     pruners
-    samplers
+    samplers/index
     storages
-    structs
     study
     trial
     visualization/index

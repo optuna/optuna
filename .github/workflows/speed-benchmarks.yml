@@ -45,4 +45,4 @@ jobs:
 
     - name: Speed benchmarks
       run: |
-        asv run
+        asv run --strict

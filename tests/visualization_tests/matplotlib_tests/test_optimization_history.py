@@ -1,57 +1,26 @@
+from io import BytesIO
+from typing import List
+
 import pytest
 
-from optuna.study import create_study
-from optuna.trial import Trial
-from optuna.visualization.matplotlib import plot_optimization_history
+from optuna.visualization._optimization_history import _OptimizationHistoryInfo
+from optuna.visualization.matplotlib._matplotlib_imports import plt
+from optuna.visualization.matplotlib._optimization_history import _get_optimization_history_plot
+from tests.visualization_tests.test_optimization_history import optimization_history_info_lists
 
 
-def test_target_is_none_and_study_is_multi_obj() -> None:
-
-    study = create_study(directions=["minimize", "minimize"])
-    with pytest.raises(ValueError):
-        plot_optimization_history(study)
-
-
-@pytest.mark.parametrize("direction", ["minimize", "maximize"])
-def test_plot_optimization_history(direction: str) -> None:
-    # Test with no trial.
-    study = create_study(direction=direction)
-    figure = plot_optimization_history(study)
-    assert len(figure.get_lines()) == 0
-
-    def objective(trial: Trial) -> float:
-
-        if trial.number == 0:
-            return 1.0
-        elif trial.number == 1:
-            return 2.0
-        elif trial.number == 2:
-            return 0.0
-        return 0.0
-
-    # Test with a trial.
-    study = create_study(direction=direction)
-    study.optimize(objective, n_trials=3)
-    figure = plot_optimization_history(study)
-    assert len(figure.get_lines()) == 1
-    assert list(figure.get_lines()[0].get_xdata()) == [0, 1, 2]
-
-    # Test customized target.
-    with pytest.warns(UserWarning):
-        figure = plot_optimization_history(study, target=lambda t: t.number)
-    assert len(figure.get_lines()) == 0
-
-    # Test customized target name.
-    figure = plot_optimization_history(study, target_name="Target Name")
-    assert len(figure.get_lines()) == 1
-    assert figure.yaxis.label.get_text() == "Target Name"
-
-    # Ignore failed trials.
-    def fail_objective(_: Trial) -> float:
-        raise ValueError
-
-    study = create_study(direction=direction)
-    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
-
-    figure = plot_optimization_history(study)
-    assert len(figure.get_lines()) == 0
+@pytest.mark.parametrize("target_name", ["Objective Value", "Target Name"])
+@pytest.mark.parametrize("info_list", optimization_history_info_lists)
+def test_get_optimization_history_plot(
+    target_name: str, info_list: List[_OptimizationHistoryInfo]
+) -> None:
+    figure = _get_optimization_history_plot(info_list, target_name=target_name)
+    assert figure.get_ylabel() == target_name
+    expected_legends = []
+    for info in info_list:
+        expected_legends.append(info.values_info.label_name)
+        if info.best_values_info is not None:
+            expected_legends.append(info.best_values_info.label_name)
+    legends = [legend.get_text() for legend in figure.legend().get_texts()]
+    assert sorted(legends) == sorted(expected_legends)
+    plt.savefig(BytesIO())

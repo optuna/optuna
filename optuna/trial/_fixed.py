@@ -3,18 +3,19 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Sequence
-from typing import Union
+import warnings
 
 from optuna import distributions
+from optuna._deprecated import deprecated_func
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
-from optuna.distributions import DiscreteUniformDistribution
-from optuna.distributions import IntLogUniformDistribution
-from optuna.distributions import IntUniformDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
+from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 from optuna.trial._base import BaseTrial
+
+
+_suggest_deprecated_msg = "Use :func:`~optuna.trial.FixedTrial.suggest_float` instead."
 
 
 class FixedTrial(BaseTrial):
@@ -36,9 +37,9 @@ class FixedTrial(BaseTrial):
 
 
             def objective(trial):
-                x = trial.suggest_uniform("x", -100, 100)
+                x = trial.suggest_float("x", -100, 100)
                 y = trial.suggest_categorical("y", [-1, 0, 1])
-                return x ** 2 + y
+                return x**2 + y
 
 
             assert objective(optuna.trial.FixedTrial({"x": 1, "y": 0})) == 1
@@ -75,46 +76,25 @@ class FixedTrial(BaseTrial):
         log: bool = False,
     ) -> float:
 
-        if step is not None:
-            if log:
-                raise ValueError("The parameter `step` is not supported when `log` is True.")
-            else:
-                return self._suggest(name, DiscreteUniformDistribution(low=low, high=high, q=step))
-        else:
-            if log:
-                return self._suggest(name, LogUniformDistribution(low=low, high=high))
-            else:
-                return self._suggest(name, UniformDistribution(low=low, high=high))
+        return self._suggest(name, FloatDistribution(low, high, log=log, step=step))
 
+    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
 
-        return self._suggest(name, UniformDistribution(low=low, high=high))
+        return self.suggest_float(name, low, high)
 
+    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
 
-        return self._suggest(name, LogUniformDistribution(low=low, high=high))
+        return self.suggest_float(name, low, high, log=True)
 
+    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
-        discrete = DiscreteUniformDistribution(low=low, high=high, q=q)
-        return self._suggest(name, discrete)
+
+        return self.suggest_float(name, low, high, step=q)
 
     def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
-        if step != 1:
-            if log:
-                raise ValueError(
-                    "The parameter `step != 1` is not supported when `log` is True."
-                    "The specified `step` is {}.".format(step)
-                )
-            else:
-                distribution: Union[
-                    IntUniformDistribution, IntLogUniformDistribution
-                ] = IntUniformDistribution(low=low, high=high, step=step)
-        else:
-            if log:
-                distribution = IntLogUniformDistribution(low=low, high=high)
-            else:
-                distribution = IntUniformDistribution(low=low, high=high, step=step)
-        return int(self._suggest(name, distribution))
+        return int(self._suggest(name, IntDistribution(low, high, log=log, step=step)))
 
     def suggest_categorical(
         self, name: str, choices: Sequence[CategoricalChoiceType]
@@ -149,7 +129,7 @@ class FixedTrial(BaseTrial):
         value = self._params[name]
         param_value_in_internal_repr = distribution.to_internal_repr(value)
         if not distribution._contains(param_value_in_internal_repr):
-            raise ValueError(
+            warnings.warn(
                 "The value {} of the parameter '{}' is out of "
                 "the range of the distribution {}.".format(value, name, distribution)
             )

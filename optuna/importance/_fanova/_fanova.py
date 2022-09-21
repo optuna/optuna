@@ -12,14 +12,10 @@ Differences include relying on scikit-learn to fit random forests
 This stands in contrast to the original implementation which is partially written in C++.
 Since Python runtime overhead may become noticeable, included are instead several
 optimizations, e.g. vectorized NumPy functions to compute the marginals, instead of keeping all
-running statistics. Known cases include assessing higher order importances, e.g. pairwise
-importances, this is due to the fact that the number of partitions to visit grows exponentially,
-or when assessing categorical features with a larger number of choices since each choice is
-given a unique one-hot encoded raw feature.
-
+running statistics. Known cases include assessing categorical features with a larger
+number of choices since each choice is given a unique one-hot encoded raw feature.
 """
 
-import itertools
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -36,7 +32,7 @@ with try_import() as _imports:
     from sklearn.ensemble import RandomForestRegressor
 
 
-class _Fanova(object):
+class _Fanova:
     def __init__(
         self,
         n_trees: int,
@@ -55,7 +51,7 @@ class _Fanova(object):
             random_state=seed,
         )
         self._trees: Optional[List[_FanovaTree]] = None
-        self._variances: Optional[Dict[Tuple[int, ...], numpy.ndarray]] = None
+        self._variances: Optional[Dict[int, numpy.ndarray]] = None
         self._column_to_encoded_columns: Optional[List[numpy.ndarray]] = None
 
     def fit(
@@ -80,51 +76,37 @@ class _Fanova(object):
             # This could occur if for instance `X.shape[0] == 1`.
             raise RuntimeError("Encountered zero total variance in all trees.")
 
-    def get_importance(self, features: Tuple[int, ...]) -> Tuple[float, float]:
+    def get_importance(self, feature: int) -> Tuple[float, float]:
         # Assert that `fit` has been called.
         assert self._trees is not None
         assert self._variances is not None
 
-        self._compute_variances(features)
+        self._compute_variances(feature)
 
         fractions: Union[List[float], numpy.ndarray] = []
 
         for tree_index, tree in enumerate(self._trees):
             tree_variance = tree.variance
             if tree_variance > 0.0:
-                fraction = self._variances[features][tree_index] / tree_variance
+                fraction = self._variances[feature][tree_index] / tree_variance
                 fractions = numpy.append(fractions, fraction)
 
         fractions = numpy.asarray(fractions)
 
         return float(fractions.mean()), float(fractions.std())
 
-    def _compute_variances(self, features: Tuple[int, ...]) -> None:
+    def _compute_variances(self, feature: int) -> None:
         assert self._trees is not None
         assert self._variances is not None
         assert self._column_to_encoded_columns is not None
 
-        if features in self._variances:
+        if feature in self._variances:
             return
 
-        for k in range(1, len(features)):
-            for sub_features in itertools.combinations(features, k):
-                if sub_features not in self._variances:
-                    self._compute_variances(sub_features)
-
-        raw_features = numpy.concatenate([self._column_to_encoded_columns[f] for f in features])
-
+        raw_features = self._column_to_encoded_columns[feature]
         variances = numpy.empty(len(self._trees), dtype=numpy.float64)
 
         for tree_index, tree in enumerate(self._trees):
             marginal_variance = tree.get_marginal_variance(raw_features)
-
-            # See `fANOVA.__compute_marginals` in
-            # https://github.com/automl/fanova/blob/master/fanova/fanova.py.
-            for k in range(1, len(features)):
-                for sub_features in itertools.combinations(features, k):
-                    marginal_variance -= self._variances[sub_features][tree_index]
-
-            variances[tree_index] = numpy.clip(marginal_variance, 0.0, numpy.inf)
-
-        self._variances[features] = variances
+            variances[tree_index] = numpy.clip(marginal_variance, 0.0, None)
+        self._variances[feature] = variances

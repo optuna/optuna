@@ -12,7 +12,7 @@ from optuna.study._study_direction import StudyDirection
 _logger = logging.get_logger(__name__)
 
 
-class StudySummary(object):
+class StudySummary:
     """Basic attributes and aggregated results of a :class:`~optuna.study.Study`.
 
     See also :func:`optuna.study.get_all_study_summaries`.
@@ -28,7 +28,8 @@ class StudySummary(object):
         directions:
             A sequence of :class:`~optuna.study.StudyDirection` objects.
         best_trial:
-            :class:`FrozenTrial` with best objective value in the :class:`~optuna.study.Study`.
+            :class:`optuna.trial.FrozenTrial` with best objective value in the
+            :class:`~optuna.study.Study`.
         user_attrs:
             Dictionary that contains the attributes of the :class:`~optuna.study.Study` set with
             :func:`optuna.study.Study.set_user_attr`.

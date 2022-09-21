@@ -26,14 +26,23 @@ If you feel like giving a hand, here are some ways:
     - __Contribution to Optuna includes not only sending pull requests, but also writing down your comments on issues and pull requests by others, and joining conversations/discussions on [Gitter](https://gitter.im/optuna/optuna).__
     - Also, sharing how you enjoy Optuna is a huge contribution! If you write a blog, let us know about it!
 
-If you write code, we have some conventions as follows.
 
-- [Guidelines](#guidelines)
+## Pull Request Guidelines
+
+If you make a pull request, please follow the guidelines below:
+
+- [Setup Optuna](#setup-optuna)
+- [Checking the Format, Coding Style, and Type Hints](#checking-the-format-coding-style-and-type-hints)
+- [Documentation](#documentation)
 - [Unit Tests](#unit-tests)
 - [Continuous Integration and Local Verification](#continuous-integration-and-local-verification)
 - [Creating a Pull Request](#creating-a-pull-request)
 
-## Guidelines
+Detailed conventions and policies to write, test, and maintain Optuna code are described in the [Optuna Wiki](https://github.com/optuna/optuna/wiki).
+
+- [Coding Style Conventions](https://github.com/optuna/optuna/wiki/Coding-Style-Conventions)
+- [Deprecation Policy](https://github.com/optuna/optuna/wiki/Deprecation-policy)
+- [Test Policy](https://github.com/optuna/optuna/wiki/Test-Policy)
 
 ### Setup Optuna
 
@@ -105,6 +114,9 @@ Whether you edit any tutorial or not doesn't matter.
 
 To avoid having to run the tutorials, you may download executed tutorial artifacts named "tutorial" from our CI (see the capture below) and put them in `docs/build` before
 extracting the files in the zip to `docs/source/tutorial` directory.
+Note that the CI runs with Python 3.8 and the generated artifacts contain pickle files.
+The pickle files are serialized with [the protocol version 5](https://docs.python.org/3/library/pickle.html#data-stream-format) so you will see the error with Python 3.7 or older.
+Please use Python 3.8 or later if you build the documentation with artifacts.
 
 ![image](https://user-images.githubusercontent.com/16191443/107472296-0b211400-6bb2-11eb-9203-e2c42ce499ad.png)
 
@@ -127,13 +139,22 @@ Two specific conventions and limitations for Optuna tutorials:
 2. Execution time of the new content needs to be less than three minutes. This limitation derives from Read The Docs. If your content runs some hyperparameter optimization, set the `timeout` to 180 or less. You can check this limitation on [Read the Docs - Build Process](https://docs.readthedocs.io/en/stable/builds.html).
 
 
-## Unit Tests
+### Unit Tests
 
 When adding a new feature or fixing a bug, you also need to write sufficient test code.
 We use [pytest](https://pytest.org/) as the testing framework and
 unit tests are stored under the [tests directory](./tests).
 
-You can run all your tests as follows:
+Please install some required packages at first.
+```bash
+# Install required packages to test all modules without visualization and integration modules.
+pip install ".[test]"
+
+# Install required packages to test all modules including visualization and integration modules.
+pip install ".[optional,integration]" -f https://download.pytorch.org/whl/torch_stable.html
+```
+
+You can run your tests as follows:
 
 ```bash
 # Run all the unit tests.
@@ -141,43 +162,25 @@ pytest
 
 # Run all the unit tests defined in the specified test file.
 pytest tests/${TARGET_TEST_FILE_NAME}
+
+# Run the unit test function with the specified name defined in the specified test file.
+pytest tests/${TARGET_TEST_FILE_NAME} -k ${TARGET_TEST_FUNCTION_NAME}
 ```
 
-## Continuous Integration and Local Verification
+See also the [Optuna Test Policy](https://github.com/optuna/optuna/wiki/Test-Policy), which describes the principles to write and maintain Optuna tests to meet certain quality requirements.
+
+### Continuous Integration and Local Verification
 
 Optuna repository uses GitHub Actions and CircleCI.
 
 Currently, we are migrating to GitHub Actions but still we use CircleCI for testing `document`
 because it makes it much easier to check built documentation.
 
-### Local Verification
+### Creating a Pull Request
 
-By installing [`act`](https://github.com/nektos/act#installation) and Docker, you can run
-tests written for GitHub Actions locally.
+When you are ready to create a pull request, please try to keep the following in mind.
 
-```bash
-JOB_NAME=checks
-act -j $JOB_NAME
-```
-
-Currently, you can run the following jobs: `documentation` and `doctest` may not be executable depending on your choice of docker image of act.
-
-- `checks`
-  - Checking the format, coding style, and type hints
-- `tests`
-  - Runs unit tests
-- `documentation`
-  - Builds documentation including tutorial
-- `doctest`
-  - Runs doctest
-
-## Creating a Pull Request
-
-When you are ready to create a pull request, please try to keep the following in mind:
-
-### Title
-
-The title of your pull request should
+First, the **title** of your pull request should:
 
 - briefly describe and reflect the changes
 - wrap any code with backticks
@@ -185,14 +188,23 @@ The title of your pull request should
 
 *The title will be directly visible in the release notes.*
 
-#### Example
+For example:
 
-Introduces Tree-structured Parzen Estimator to `optuna.samplers`
+- Introduces Tree-structured Parzen Estimator to `optuna.samplers`
 
-### Description
-
-The description of your pull request should
+Second, the **description** of your pull request should:
 
 - describe the motivation
 - describe the changes
 - if still work-in-progress, describe remaining tasks
+
+## Learning Optuna's Implementation
+
+With Optuna actively being developed and the amount of code growing,
+it has become difficult to get a hold of the overall flow from reading the code.
+So we created a tiny program called [Minituna](https://github.com/CyberAgentAILab/minituna).
+Once you get a good understanding of how Minituna is designed, it will not be too difficult to read the Optuna code.
+We encourage you to practice reading the Minituna code with the following article.
+
+[An Introduction to the Implementation of Optuna, a Hyperparameter Optimization Framework](https://medium.com/optuna/an-introduction-to-the-implementation-of-optuna-a-hyperparameter-optimization-framework-33995d9ec354)
+

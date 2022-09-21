@@ -1,12 +1,15 @@
 """
 .. _visualization:
 
-Quick Visualization for Hyperparameter Optimization Analysis
-============================================================
+5. Quick Visualization for Hyperparameter Optimization Analysis
+===============================================================
 
 Optuna provides various visualization features in :mod:`optuna.visualization` to analyze optimization results visually.
 
 This tutorial walks you through this module by visualizing the history of lightgbm model for breast cancer dataset.
+
+For visualizing multi-objective optimization (i.e., the usage of :func:`optuna.visualization.plot_pareto_front`),
+please refer to the tutorial of :ref:`multi_objective`.
 """
 
 ###################################################################################################
@@ -17,6 +20,9 @@ import sklearn.metrics
 from sklearn.model_selection import train_test_split
 
 import optuna
+
+# You can use Matplotlib instead of Plotly for visualization by simply replacing `optuna.visualization` with
+# `optuna.visualization.matplotlib` in the following examples.
 from optuna.visualization import plot_contour
 from optuna.visualization import plot_edf
 from optuna.visualization import plot_intermediate_values

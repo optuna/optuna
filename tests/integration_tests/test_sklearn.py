@@ -1,8 +1,12 @@
+from unittest.mock import MagicMock
+import warnings
+
 import numpy as np
 import pytest
 import scipy as sp
 from sklearn.datasets import make_blobs
 from sklearn.decomposition import PCA
+from sklearn.exceptions import ConvergenceWarning
 from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import SGDClassifier
@@ -47,7 +51,7 @@ def test_optuna_search(enable_pruning: bool, fit_params: str) -> None:
 
     X, y = make_blobs(n_samples=10)
     est = SGDClassifier(max_iter=5, tol=1e-03)
-    param_dist = {"alpha": distributions.LogUniformDistribution(1e-04, 1e03)}
+    param_dist = {"alpha": distributions.FloatDistribution(1e-04, 1e03, log=True)}
     optuna_search = integration.OptunaSearchCV(
         est,
         param_dist,
@@ -78,7 +82,7 @@ def test_optuna_search_properties() -> None:
 
     X, y = make_blobs(n_samples=10)
     est = LogisticRegression(tol=1e-03)
-    param_dist = {"C": distributions.LogUniformDistribution(1e-04, 1e03)}
+    param_dist = {"C": distributions.FloatDistribution(1e-04, 1e03, log=True)}
 
     optuna_search = integration.OptunaSearchCV(
         est, param_dist, cv=3, error_score="raise", random_state=0, return_train_score=True
@@ -132,24 +136,6 @@ def test_optuna_search_invalid_estimator() -> None:
     )
 
     with pytest.raises(ValueError, match="estimator must be a scikit-learn estimator."):
-        optuna_search.fit(X)
-
-
-def test_optuna_search_invalid_param_dist() -> None:
-
-    X, y = make_blobs(n_samples=10)
-    est = KernelDensity()
-    param_dist = ["kernel", distributions.CategoricalDistribution(("gaussian", "linear"))]
-    optuna_search = integration.OptunaSearchCV(
-        est,
-        param_dist,  # type: ignore
-        cv=3,
-        error_score="raise",
-        random_state=0,
-        return_train_score=True,
-    )
-
-    with pytest.raises(ValueError, match="param_distributions must be a dictionary."):
         optuna_search.fit(X)
 
 
@@ -273,7 +259,7 @@ def test_objective_y_None() -> None:
         return_train_score=True,
     )
 
-    with pytest.raises(ValueError, match="y cannot be None"):
+    with pytest.raises(ValueError):
         optuna_search.fit(X)
 
 
@@ -320,3 +306,75 @@ def test_objective_error_score_invalid() -> None:
 
     with pytest.raises(ValueError, match="error_score must be 'raise' or numeric."):
         optuna_search.fit(X)
+
+
+# TODO(himkt): Remove this method with the deletion of deprecated distributions.
+# https://github.com/optuna/optuna/issues/2941
+@pytest.mark.filterwarnings("ignore::FutureWarning")
+def test_optuna_search_convert_deprecated_distribution() -> None:
+
+    param_dist = {
+        "ud": distributions.UniformDistribution(low=0, high=10),
+        "dud": distributions.DiscreteUniformDistribution(low=0, high=10, q=2),
+        "lud": distributions.LogUniformDistribution(low=1, high=10),
+        "id": distributions.IntUniformDistribution(low=0, high=10),
+        "idd": distributions.IntUniformDistribution(low=0, high=10, step=2),
+        "ild": distributions.IntLogUniformDistribution(low=1, high=10),
+    }
+
+    expected_param_dist = {
+        "ud": distributions.FloatDistribution(low=0, high=10, log=False, step=None),
+        "dud": distributions.FloatDistribution(low=0, high=10, log=False, step=2),
+        "lud": distributions.FloatDistribution(low=1, high=10, log=True, step=None),
+        "id": distributions.IntDistribution(low=0, high=10, log=False, step=1),
+        "idd": distributions.IntDistribution(low=0, high=10, log=False, step=2),
+        "ild": distributions.IntDistribution(low=1, high=10, log=True, step=1),
+    }
+
+    optuna_search = integration.OptunaSearchCV(
+        KernelDensity(),
+        param_dist,
+    )
+
+    assert optuna_search.param_distributions == expected_param_dist
+
+    # It confirms that ask doesn't convert non-deprecated distributions.
+    optuna_search = integration.OptunaSearchCV(
+        KernelDensity(),
+        expected_param_dist,
+    )
+
+    assert optuna_search.param_distributions == expected_param_dist
+
+
+def test_callbacks() -> None:
+    callbacks = []
+
+    for _ in range(2):
+        callback = MagicMock()
+        callback.__call__ = MagicMock(return_value=None)  # type: ignore
+        callbacks.append(callback)
+
+    n_trials = 5
+    X, y = make_blobs(n_samples=10)
+    est = SGDClassifier(max_iter=5, tol=1e-03)
+    param_dist = {"alpha": distributions.FloatDistribution(1e-04, 1e03, log=True)}
+    optuna_search = integration.OptunaSearchCV(
+        est,
+        param_dist,
+        cv=3,
+        enable_pruning=True,
+        max_iter=5,
+        n_trials=n_trials,
+        error_score=np.nan,
+        callbacks=callbacks,  # type: ignore
+    )
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=ConvergenceWarning)
+        optuna_search.fit(X, y)
+
+    for callback in callbacks:
+        for trial in optuna_search.trials_:
+            callback.assert_any_call(optuna_search.study_, trial)
+        assert callback.call_count == n_trials

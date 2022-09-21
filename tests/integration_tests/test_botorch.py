@@ -12,6 +12,7 @@ import optuna
 from optuna import integration
 from optuna.integration import BoTorchSampler
 from optuna.samplers import RandomSampler
+from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.storages import RDBStorage
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
@@ -70,24 +71,6 @@ def test_botorch_candidates_func() -> None:
 
     assert len(study.trials) == n_trials
     assert candidates_func_call_count == n_trials - n_startup_trials
-
-
-def test_botorch_candidates_func_invalid_type() -> None:
-    def candidates_func(
-        train_x: torch.Tensor,
-        train_obj: torch.Tensor,
-        train_con: Optional[torch.Tensor],
-        bounds: torch.Tensor,
-    ) -> torch.Tensor:
-        # Must be a `torch.Tensor`, not a list.
-        return torch.rand(1).tolist()  # type: ignore
-
-    sampler = BoTorchSampler(candidates_func=candidates_func, n_startup_trials=1)
-
-    study = optuna.create_study(direction="minimize", sampler=sampler)
-
-    with pytest.raises(TypeError):
-        study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=3)
 
 
 def test_botorch_candidates_func_invalid_batch_size() -> None:
@@ -171,19 +154,6 @@ def test_botorch_constraints_func_none(n_objectives: int) -> None:
     assert constraints_func_call_count == n_trials
 
 
-def test_botorch_constraints_func_invalid_type() -> None:
-    def constraints_func(trial: FrozenTrial) -> Sequence[float]:
-        x0 = trial.params["x0"]
-        return x0 - 0.5  # Not a tuple, but it should be.
-
-    sampler = BoTorchSampler(constraints_func=constraints_func)
-
-    study = optuna.create_study(direction="minimize", sampler=sampler)
-
-    with pytest.raises(TypeError):
-        study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=3)
-
-
 def test_botorch_constraints_func_invalid_inconsistent_n_constraints() -> None:
     def constraints_func(trial: FrozenTrial) -> Sequence[float]:
         x0 = trial.params["x0"]
@@ -213,7 +183,7 @@ def test_botorch_constraints_func_raises() -> None:
     assert len(study.trials) == 2
 
     for trial in study.trials:
-        sys_con = trial.system_attrs["botorch:constraints"]
+        sys_con = trial.system_attrs[_CONSTRAINTS_KEY]
 
         expected_sys_con: Optional[Tuple[int]]
 
@@ -366,7 +336,7 @@ def test_botorch_constraints_func_late() -> None:
     study.sampler = sampler
 
     # Warns when `train_con` contains NaN. Should not raise but will with NaN for previous trials
-    # that were not computed with contraints.
+    # that were not computed with constraints.
     with pytest.warns(UserWarning):
         study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=2)
 
@@ -413,7 +383,7 @@ def test_botorch_distributions() -> None:
 
 def test_botorch_invalid_different_studies() -> None:
     # Using the same sampler with different studies should yield an error since the sampler is
-    # stateful holding the computed constraints. Two studies are considefered different if their
+    # stateful holding the computed constraints. Two studies are considered different if their
     # IDs differ.
     # We use the RDB storage since this check does not work for the in-memory storage where all
     # study IDs are identically 0.
@@ -427,18 +397,6 @@ def test_botorch_invalid_different_studies() -> None:
     other_study = optuna.create_study(direction="minimize", sampler=sampler, storage=storage)
     with pytest.raises(RuntimeError):
         other_study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=3)
-
-
-def test_reseed_rng() -> None:
-    independent_sampler = RandomSampler()
-    sampler = BoTorchSampler(independent_sampler=independent_sampler)
-    original_independent_sampler_seed = cast(RandomSampler, sampler._independent_sampler)._rng.seed
-
-    sampler.reseed_rng()
-    assert (
-        original_independent_sampler_seed
-        != cast(RandomSampler, sampler._independent_sampler)._rng.seed
-    )
 
 
 def test_call_after_trial_of_independent_sampler() -> None:

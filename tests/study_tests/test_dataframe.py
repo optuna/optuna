@@ -6,8 +6,8 @@ import pytest
 from optuna import create_study
 from optuna import create_trial
 from optuna import Trial
-from optuna.testing.storage import STORAGE_MODES
-from optuna.testing.storage import StorageSupplier
+from optuna.testing.storages import STORAGE_MODES
+from optuna.testing.storages import StorageSupplier
 from optuna.trial import TrialState
 
 
@@ -171,7 +171,7 @@ def test_trials_dataframe_with_multi_objective_optimization(
         x = trial.suggest_float("x", 1, 1)
         y = trial.suggest_float("y", 2, 2)
 
-        return x + y, x ** 2 + y ** 2  # 3, 5
+        return x + y, x**2 + y**2  # 3, 5
 
     study = create_study(directions=["minimize", "maximize"])
     study.optimize(f, n_trials=3)

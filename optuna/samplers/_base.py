@@ -1,8 +1,12 @@
 import abc
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import Optional
 from typing import Sequence
+import warnings
+
+import numpy as np
 
 from optuna.distributions import BaseDistribution
 from optuna.study import Study
@@ -36,7 +40,7 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
     The following figure depicts the lifetime of a trial and how the above three methods are
     called in the trial.
 
-    .. image:: ../../../image/sampling-sequence.png
+    .. image:: ../../../../image/sampling-sequence.png
 
     |
 
@@ -193,3 +197,35 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
                 "If the study is being used for multi-objective optimization, "
                 f"{self.__class__.__name__} cannot be used."
             )
+
+
+_CONSTRAINTS_KEY = "constraints"
+
+
+def _process_constraints_after_trial(
+    constraints_func: Callable[[FrozenTrial], Sequence[float]],
+    study: Study,
+    trial: FrozenTrial,
+    state: TrialState,
+) -> None:
+    if state not in [TrialState.COMPLETE, TrialState.PRUNED]:
+        return
+
+    constraints = None
+    try:
+        con = constraints_func(trial)
+        if np.any(np.isnan(con)):
+            raise ValueError("Constraint values cannot be NaN.")
+        if not isinstance(con, (tuple, list)):
+            warnings.warn(
+                f"Constraints should be a sequence of floats but got {type(con).__name__}."
+            )
+        constraints = tuple(con)
+    finally:
+        assert constraints is None or isinstance(constraints, tuple)
+
+        study._storage.set_trial_system_attr(
+            trial._trial_id,
+            _CONSTRAINTS_KEY,
+            constraints,
+        )

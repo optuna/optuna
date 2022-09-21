@@ -4,26 +4,23 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Sequence
-from typing import Union
 import warnings
 
 import optuna
 from optuna import distributions
 from optuna import logging
 from optuna import pruners
+from optuna._deprecated import deprecated_func
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
-from optuna.distributions import DiscreteUniformDistribution
-from optuna.distributions import IntLogUniformDistribution
-from optuna.distributions import IntUniformDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
+from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 from optuna.trial._base import BaseTrial
-from optuna.trial._state import TrialState
 
 
 _logger = logging.get_logger(__name__)
+_suggest_deprecated_msg = "Use :func:`~optuna.trial.Trial.suggest_float` instead."
 
 
 class Trial(BaseTrial):
@@ -78,16 +75,7 @@ class Trial(BaseTrial):
     ) -> float:
         """Suggest a value for the floating point parameter.
 
-        Note that this is a wrapper method for :func:`~optuna.trial.Trial.suggest_uniform`,
-        :func:`~optuna.trial.Trial.suggest_loguniform` and
-        :func:`~optuna.trial.Trial.suggest_discrete_uniform`.
-
         .. versionadded:: 1.3.0
-
-        .. seealso::
-            Please see also :func:`~optuna.trial.Trial.suggest_uniform`,
-            :func:`~optuna.trial.Trial.suggest_loguniform` and
-            :func:`~optuna.trial.Trial.suggest_discrete_uniform`.
 
         Example:
 
@@ -134,49 +122,40 @@ class Trial(BaseTrial):
                 A parameter name.
             low:
                 Lower endpoint of the range of suggested values. ``low`` is included in the range.
+                ``low`` must be less than or equal to ``high``. If ``log`` is :obj:`True`,
+                ``low`` must be larger than 0.
             high:
-                Upper endpoint of the range of suggested values. ``high`` is excluded from the
-                range.
-
-                .. note::
-                    If ``step`` is specified, ``high`` is included as well as ``low`` because
-                    this method falls back to :func:`~optuna.trial.Trial.suggest_discrete_uniform`.
-
+                Upper endpoint of the range of suggested values. ``high`` is included in the range.
+                ``high`` must be greater than or equal to ``low``.
             step:
                 A step of discretization.
 
                 .. note::
                     The ``step`` and ``log`` arguments cannot be used at the same time. To set
-                    the ``step`` argument to a float number, set the ``log`` argument to ``False``.
+                    the ``step`` argument to a float number, set the ``log`` argument to
+                    :obj:`False`.
             log:
                 A flag to sample the value from the log domain or not.
                 If ``log`` is true, the value is sampled from the range in the log domain.
                 Otherwise, the value is sampled from the range in the linear domain.
-                See also :func:`suggest_uniform` and :func:`suggest_loguniform`.
 
                 .. note::
                     The ``step`` and ``log`` arguments cannot be used at the same time. To set
-                    the ``log`` argument to ``True``, set the ``step`` argument to ``None``.
-
-        Raises:
-            :exc:`ValueError`:
-                If ``step is not None`` and ``log = True`` are specified.
+                    the ``log`` argument to :obj:`True`, set the ``step`` argument to :obj:`None`.
 
         Returns:
             A suggested float value.
+
+        .. seealso::
+            :ref:`configurations` tutorial describes more details and flexible usages.
         """
 
-        if step is not None:
-            if log:
-                raise ValueError("The parameter `step` is not supported when `log` is True.")
-            else:
-                return self.suggest_discrete_uniform(name, low, high, step)
-        else:
-            if log:
-                return self.suggest_loguniform(name, low, high)
-            else:
-                return self.suggest_uniform(name, low, high)
+        distribution = FloatDistribution(low, high, log=log, step=step)
+        suggested_value = self._suggest(name, distribution)
+        self._check_distribution(name, distribution)
+        return suggested_value
 
+    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
         """Suggest a value for the continuous parameter.
 
@@ -184,58 +163,21 @@ class Trial(BaseTrial):
         in the linear domain. When :math:`\\mathsf{low} = \\mathsf{high}`, the value of
         :math:`\\mathsf{low}` will be returned.
 
-        Example:
-
-            Suggest a momentum for neural network training.
-
-            .. testcode::
-
-                import numpy as np
-                from sklearn.datasets import load_iris
-                from sklearn.model_selection import train_test_split
-                from sklearn.neural_network import MLPClassifier
-
-                import optuna
-
-                X, y = load_iris(return_X_y=True)
-                X_train, X_valid, y_train, y_valid = train_test_split(X, y)
-
-
-                def objective(trial):
-                    momentum = trial.suggest_uniform("momentum", 0.0, 1.0)
-                    clf = MLPClassifier(
-                        hidden_layer_sizes=(100, 50),
-                        momentum=momentum,
-                        solver="sgd",
-                        random_state=0,
-                    )
-                    clf.fit(X_train, y_train)
-
-                    return clf.score(X_valid, y_valid)
-
-
-                study = optuna.create_study(direction="maximize")
-                study.optimize(objective, n_trials=3)
-
         Args:
             name:
                 A parameter name.
             low:
                 Lower endpoint of the range of suggested values. ``low`` is included in the range.
             high:
-                Upper endpoint of the range of suggested values. ``high`` is excluded from the
-                range.
+                Upper endpoint of the range of suggested values. ``high`` is included in the range.
 
         Returns:
             A suggested float value.
         """
 
-        distribution = UniformDistribution(low=low, high=high)
+        return self.suggest_float(name, low, high)
 
-        self._check_distribution(name, distribution)
-
-        return self._suggest(name, distribution)
-
+    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
         """Suggest a value for the continuous parameter.
 
@@ -243,53 +185,21 @@ class Trial(BaseTrial):
         in the log domain. When :math:`\\mathsf{low} = \\mathsf{high}`, the value of
         :math:`\\mathsf{low}` will be returned.
 
-        Example:
-
-            Suggest penalty parameter ``C`` of `SVC <https://scikit-learn.org/stable/modules/
-            generated/sklearn.svm.SVC.html>`_.
-
-            .. testcode::
-
-                import numpy as np
-                from sklearn.datasets import load_iris
-                from sklearn.model_selection import train_test_split
-                from sklearn.svm import SVC
-
-                import optuna
-
-                X, y = load_iris(return_X_y=True)
-                X_train, X_valid, y_train, y_valid = train_test_split(X, y)
-
-
-                def objective(trial):
-                    c = trial.suggest_loguniform("c", 1e-5, 1e2)
-                    clf = SVC(C=c, gamma="scale", random_state=0)
-                    clf.fit(X_train, y_train)
-                    return clf.score(X_valid, y_valid)
-
-
-                study = optuna.create_study(direction="maximize")
-                study.optimize(objective, n_trials=3)
-
         Args:
             name:
                 A parameter name.
             low:
                 Lower endpoint of the range of suggested values. ``low`` is included in the range.
             high:
-                Upper endpoint of the range of suggested values. ``high`` is excluded from the
-                range.
+                Upper endpoint of the range of suggested values. ``high`` is included in the range.
 
         Returns:
             A suggested float value.
         """
 
-        distribution = LogUniformDistribution(low=low, high=high)
+        return self.suggest_float(name, low, high, log=True)
 
-        self._check_distribution(name, distribution)
-
-        return self._suggest(name, distribution)
-
+    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
         """Suggest a value for the discrete parameter.
 
@@ -301,35 +211,6 @@ class Trial(BaseTrial):
         where :math:`k` denotes an integer. Note that :math:`high` may be changed due to round-off
         errors if :math:`q` is not an integer. Please check warning messages to find the changed
         values.
-
-        Example:
-
-            Suggest a fraction of samples used for fitting the individual learners of
-            `GradientBoostingClassifier <https://scikit-learn.org/stable/modules/generated/
-            sklearn.ensemble.GradientBoostingClassifier.html>`_.
-
-            .. testcode::
-
-                import numpy as np
-                from sklearn.datasets import load_iris
-                from sklearn.ensemble import GradientBoostingClassifier
-                from sklearn.model_selection import train_test_split
-
-                import optuna
-
-                X, y = load_iris(return_X_y=True)
-                X_train, X_valid, y_train, y_valid = train_test_split(X, y)
-
-
-                def objective(trial):
-                    subsample = trial.suggest_discrete_uniform("subsample", 0.1, 1.0, 0.1)
-                    clf = GradientBoostingClassifier(subsample=subsample, random_state=0)
-                    clf.fit(X_train, y_train)
-                    return clf.score(X_valid, y_valid)
-
-
-                study = optuna.create_study(direction="maximize")
-                study.optimize(objective, n_trials=3)
 
         Args:
             name:
@@ -345,11 +226,7 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        distribution = DiscreteUniformDistribution(low=low, high=high, q=q)
-
-        self._check_distribution(name, distribution)
-
-        return self._suggest(name, distribution)
+        return self.suggest_float(name, low, high, step=q)
 
     def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
         """Suggest a value for the integer parameter.
@@ -389,8 +266,11 @@ class Trial(BaseTrial):
                 A parameter name.
             low:
                 Lower endpoint of the range of suggested values. ``low`` is included in the range.
+                ``low`` must be less than or equal to ``high``. If ``log`` is :obj:`True`,
+                ``low`` must be larger than 0.
             high:
                 Upper endpoint of the range of suggested values. ``high`` is included in the range.
+                ``high`` must be greater than or equal to ``low``.
             step:
                 A step of discretization.
 
@@ -408,7 +288,7 @@ class Trial(BaseTrial):
                 .. note::
                     The ``step != 1`` and ``log`` arguments cannot be used at the same time.
                     To set the ``step`` argument :math:`\\mathsf{step} \\ge 2`, set the
-                    ``log`` argument to ``False``.
+                    ``log`` argument to :obj:`False`.
             log:
                 A flag to sample the value from the log domain or not.
 
@@ -424,32 +304,16 @@ class Trial(BaseTrial):
 
                 .. note::
                     The ``step != 1`` and ``log`` arguments cannot be used at the same time.
-                    To set the ``log`` argument to ``True``, set the ``step`` argument to 1.
+                    To set the ``log`` argument to :obj:`True`, set the ``step`` argument to 1.
 
-        Raises:
-            :exc:`ValueError`:
-                If ``step != 1`` and ``log = True`` are specified.
+        .. seealso::
+            :ref:`configurations` tutorial describes more details and flexible usages.
         """
 
-        if step != 1:
-            if log:
-                raise ValueError(
-                    "The parameter `step != 1` is not supported when `log` is True."
-                    "The specified `step` is {}.".format(step)
-                )
-            else:
-                distribution: Union[
-                    IntUniformDistribution, IntLogUniformDistribution
-                ] = IntUniformDistribution(low=low, high=high, step=step)
-        else:
-            if log:
-                distribution = IntLogUniformDistribution(low=low, high=high)
-            else:
-                distribution = IntUniformDistribution(low=low, high=high, step=step)
-
+        distribution = IntDistribution(low=low, high=high, log=log, step=step)
+        suggested_value = int(self._suggest(name, distribution))
         self._check_distribution(name, distribution)
-
-        return int(self._suggest(name, distribution))
+        return suggested_value
 
     def suggest_categorical(
         self, name: str, choices: Sequence[CategoricalChoiceType]
@@ -498,6 +362,9 @@ class Trial(BaseTrial):
 
         Returns:
             A suggested value.
+
+        .. seealso::
+            :ref:`configurations` tutorial describes more details and flexible usages.
         """
         # There is no need to call self._check_distribution because
         # CategoricalDistribution does not support dynamic value space.
@@ -517,6 +384,15 @@ class Trial(BaseTrial):
             The reported value is converted to ``float`` type by applying ``float()``
             function internally. Thus, it accepts all float-like types (e.g., ``numpy.float32``).
             If the conversion fails, a ``TypeError`` is raised.
+
+        .. note::
+            If this method is called multiple times at the same ``step`` in a trial,
+            the reported ``value`` only the first time is stored and the reported values
+            from the second time are ignored.
+
+        .. note::
+            :func:`~optuna.trial.Trial.report` does not support multi-objective
+            optimization.
 
         Example:
 
@@ -560,10 +436,7 @@ class Trial(BaseTrial):
                 assume that ``step`` starts at zero. For example,
                 :class:`~optuna.pruners.MedianPruner` simply checks if ``step`` is less than
                 ``n_warmup_steps`` as the warmup mechanism.
-
-        Raises:
-            :exc:`NotImplementedError`:
-                If trial is being used for multi-objective optimization.
+                ``step`` must be a positive integer.
         """
 
         if len(self.study.directions) > 1:
@@ -611,13 +484,13 @@ class Trial(BaseTrial):
         .. seealso::
             Please refer to the example code in :func:`optuna.trial.Trial.report`.
 
+        .. note::
+            :func:`~optuna.trial.Trial.should_prune` does not support multi-objective
+            optimization.
+
         Returns:
             A boolean value. If :obj:`True`, the trial should be pruned according to the
             configured pruning algorithm. Otherwise, the trial should continue.
-
-        Raises:
-            :exc:`NotImplementedError`:
-                If trial is being used for multi-objective optimization.
         """
 
         if len(self.study.directions) > 1:
@@ -632,6 +505,10 @@ class Trial(BaseTrial):
         """Set user attributes to the trial.
 
         The user attributes in the trial can be access via :func:`optuna.trial.Trial.user_attrs`.
+
+        .. seealso::
+
+            See the recipe on :ref:`attributes`.
 
         Example:
 
@@ -652,7 +529,7 @@ class Trial(BaseTrial):
 
                 def objective(trial):
                     trial.set_user_attr("BATCHSIZE", 128)
-                    momentum = trial.suggest_uniform("momentum", 0, 1.0)
+                    momentum = trial.suggest_float("momentum", 0, 1.0)
                     clf = MLPClassifier(
                         hidden_layer_sizes=(100, 50),
                         batch_size=trial.user_attrs["BATCHSIZE"],
@@ -743,7 +620,7 @@ class Trial(BaseTrial):
                 "Fixed parameter '{}' with value {} is out of range "
                 "for distribution {}.".format(name, param_value, distribution)
             )
-        return contained
+        return True
 
     def _is_relative_param(self, name: str, distribution: BaseDistribution) -> bool:
 
@@ -773,22 +650,12 @@ class Trial(BaseTrial):
                 'Inconsistent parameter values for distribution with name "{}"! '
                 "This might be a configuration mistake. "
                 "Optuna allows to call the same distribution with the same "
-                "name more then once in a trial. "
+                "name more than once in a trial. "
                 "When the parameter values are inconsistent optuna only "
                 "uses the values of the first call and ignores all following. "
                 "Using these values: {}".format(name, old_distribution._asdict()),
                 RuntimeWarning,
             )
-
-    def _after_func(self, state: TrialState, values: Optional[Sequence[float]]) -> None:
-        # This method is called right before `Study._tell`.
-        storage = self.storage
-        trial_id = self._trial_id
-
-        trial = storage.get_trial(trial_id)
-
-        study = pruners._filter_study(self.study, trial)
-        self.study.sampler.after_trial(study, trial, state, values)
 
     @property
     def params(self) -> Dict[str, Any]:

@@ -1,19 +1,13 @@
-import itertools
 from typing import Callable
-from typing import cast
-from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Union
 
-import numpy as np
-
-from optuna._experimental import experimental
+from optuna._experimental import experimental_func
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
-from optuna.trial import TrialState
-from optuna.visualization._utils import _check_plot_args
+from optuna.visualization._edf import _get_edf_info
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 
@@ -24,7 +18,7 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
-@experimental("2.2.0")
+@experimental_func("2.2.0")
 def plot_edf(
     study: Union[Study, Sequence[Study]],
     *,
@@ -32,6 +26,8 @@ def plot_edf(
     target_name: str = "Objective Value",
 ) -> "Axes":
     """Plot the objective value EDF (empirical distribution function) of a study with Matplotlib.
+
+    Note that only the complete trials are considered when plotting the EDF.
 
     .. seealso::
         Please refer to :func:`optuna.visualization.plot_edf` for an example,
@@ -97,29 +93,9 @@ def plot_edf(
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
-
-    Raises:
-        :exc:`ValueError`:
-            If ``target`` is :obj:`None` and ``study`` is being used for multi-objective
-            optimization.
     """
 
     _imports.check()
-
-    if isinstance(study, Study):
-        studies = [study]
-    else:
-        studies = list(study)
-
-    _check_plot_args(studies, target, target_name)
-    return _get_edf_plot(studies, target, target_name)
-
-
-def _get_edf_plot(
-    studies: List[Study],
-    target: Optional[Callable[[FrozenTrial], float]] = None,
-    target_name: str = "Objective Value",
-) -> "Axes":
 
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
@@ -130,52 +106,16 @@ def _get_edf_plot(
     ax.set_ylim(0, 1)
     cmap = plt.get_cmap("tab20")  # Use tab20 colormap for multiple line plots.
 
-    # Prepare data for plotting.
-    if len(studies) == 0:
-        _logger.warning("There are no studies.")
+    info = _get_edf_info(study, target, target_name)
+    edf_lines = info.lines
+
+    if len(edf_lines) == 0:
         return ax
 
-    all_trials = list(
-        itertools.chain.from_iterable(
-            (
-                trial
-                for trial in study.get_trials(deepcopy=False)
-                if trial.state == TrialState.COMPLETE
-            )
-            for study in studies
-        )
-    )
+    for i, (study_name, y_values) in enumerate(edf_lines):
+        ax.plot(info.x_values, y_values, color=cmap(i), alpha=0.7, label=study_name)
 
-    if len(all_trials) == 0:
-        _logger.warning("There are no complete trials.")
-        return ax
-
-    if target is None:
-
-        def _target(t: FrozenTrial) -> float:
-            return cast(float, t.value)
-
-        target = _target
-
-    min_x_value = min(target(trial) for trial in all_trials)
-    max_x_value = max(target(trial) for trial in all_trials)
-    x_values = np.linspace(min_x_value, max_x_value, 100)
-
-    # Draw multiple line plots.
-    for i, study in enumerate(studies):
-        values = np.asarray(
-            [
-                target(trial)
-                for trial in study.get_trials(deepcopy=False)
-                if trial.state == TrialState.COMPLETE
-            ]
-        )
-
-        y_values = np.sum(values[:, np.newaxis] <= x_values, axis=0) / values.size
-
-        ax.plot(x_values, y_values, color=cmap(i), alpha=0.7, label=study.study_name)
-
-    if len(studies) >= 2:
+    if len(edf_lines) >= 2:
         ax.legend()
 
     return ax

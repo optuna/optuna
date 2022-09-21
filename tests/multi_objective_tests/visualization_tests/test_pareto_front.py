@@ -1,12 +1,16 @@
 import itertools
 from typing import List
 from typing import Optional
+from typing import Tuple
 
 import numpy as np
 import pytest
 
 import optuna
 from optuna.multi_objective.visualization import plot_pareto_front
+
+
+pytestmark = pytest.mark.filterwarnings("ignore::FutureWarning")
 
 
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
@@ -37,9 +41,10 @@ def test_plot_pareto_front_2d(
         axis_order=axis_order,
     )
     assert len(figure.data) == 1
+    data: List[Tuple[int, ...]]
     if include_dominated_trials:
         # The last elements come from dominated trial that is enqueued firstly.
-        data = [(1, 0, 1), (0, 1, 1)]  # type: ignore
+        data = [(1, 0, 1), (0, 1, 1)]
         if axis_order is None:
             assert figure.data[0]["x"] == data[0]
             assert figure.data[0]["y"] == data[1]
@@ -47,7 +52,7 @@ def test_plot_pareto_front_2d(
             assert figure.data[0]["x"] == data[axis_order[0]]
             assert figure.data[0]["y"] == data[axis_order[1]]
     else:
-        data = [(1, 0), (0, 1)]  # type: ignore
+        data = [(1, 0), (0, 1)]
         if axis_order is None:
             assert figure.data[0]["x"] == data[0]
             assert figure.data[0]["y"] == data[1]
@@ -127,9 +132,10 @@ def test_plot_pareto_front_3d(
         axis_order=axis_order,
     )
     assert len(figure.data) == 1
+    data: List[Tuple[int, ...]]
     if include_dominated_trials:
         # The last elements come from dominated trial that is enqueued firstly.
-        data = [(1, 1, 1), (0, 1, 1), (1, 0, 1)]  # type: ignore
+        data = [(1, 1, 1), (0, 1, 1), (1, 0, 1)]
         if axis_order is None:
             assert figure.data[0]["x"] == data[0]
             assert figure.data[0]["y"] == data[1]
@@ -139,7 +145,7 @@ def test_plot_pareto_front_3d(
             assert figure.data[0]["y"] == data[axis_order[1]]
             assert figure.data[0]["z"] == data[axis_order[2]]
     else:
-        data = [(1, 1), (0, 1), (1, 0)]  # type: ignore
+        data = [(1, 1), (0, 1), (1, 0)]
         if axis_order is None:
             assert figure.data[0]["x"] == data[0]
             assert figure.data[0]["y"] == data[1]

@@ -4,11 +4,11 @@ import pytest
 
 from optuna import create_study
 from optuna import TrialPruned
-from optuna.distributions import IntUniformDistribution
-from optuna.distributions import UniformDistribution
+from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 from optuna.samplers import intersection_search_space
 from optuna.samplers import IntersectionSearchSpace
-from optuna.testing.storage import StorageSupplier
+from optuna.testing.storages import StorageSupplier
 from optuna.trial import Trial
 
 
@@ -20,19 +20,26 @@ def test_intersection_search_space() -> None:
     assert search_space.calculate(study) == {}
     assert search_space.calculate(study) == intersection_search_space(study)
 
+    # Waiting trial.
+    study.enqueue_trial(
+        {"y": 0, "x": 5}, {"y": FloatDistribution(-3, 3), "x": IntDistribution(0, 10)}
+    )
+    assert search_space.calculate(study) == {}
+    assert search_space.calculate(study) == intersection_search_space(study)
+
     # First trial.
     study.optimize(lambda t: t.suggest_float("y", -3, 3) + t.suggest_int("x", 0, 10), n_trials=1)
     assert search_space.calculate(study) == {
-        "x": IntUniformDistribution(low=0, high=10),
-        "y": UniformDistribution(low=-3, high=3),
+        "x": IntDistribution(low=0, high=10),
+        "y": FloatDistribution(low=-3, high=3),
     }
     assert search_space.calculate(study) == intersection_search_space(study)
 
     # Returning sorted `OrderedDict` instead of `dict`.
     assert search_space.calculate(study, ordered_dict=True) == OrderedDict(
         [
-            ("x", IntUniformDistribution(low=0, high=10)),
-            ("y", UniformDistribution(low=-3, high=3)),
+            ("x", IntDistribution(low=0, high=10)),
+            ("y", FloatDistribution(low=-3, high=3)),
         ]
     )
     assert search_space.calculate(study, ordered_dict=True) == intersection_search_space(
@@ -41,7 +48,7 @@ def test_intersection_search_space() -> None:
 
     # Second trial (only 'y' parameter is suggested in this trial).
     study.optimize(lambda t: t.suggest_float("y", -3, 3), n_trials=1)
-    assert search_space.calculate(study) == {"y": UniformDistribution(low=-3, high=3)}
+    assert search_space.calculate(study) == {"y": FloatDistribution(low=-3, high=3)}
     assert search_space.calculate(study) == intersection_search_space(study)
 
     # Failed or pruned trials are not considered in the calculation of
@@ -53,7 +60,7 @@ def test_intersection_search_space() -> None:
 
     study.optimize(lambda t: objective(t, RuntimeError()), n_trials=1, catch=(RuntimeError,))
     study.optimize(lambda t: objective(t, TrialPruned()), n_trials=1)
-    assert search_space.calculate(study) == {"y": UniformDistribution(low=-3, high=3)}
+    assert search_space.calculate(study) == {"y": FloatDistribution(low=-3, high=3)}
     assert search_space.calculate(study) == intersection_search_space(study)
 
     # If two parameters have the same name but different distributions,

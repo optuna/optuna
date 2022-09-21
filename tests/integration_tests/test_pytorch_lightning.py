@@ -1,6 +1,10 @@
+from typing import Any
+from typing import cast
 from typing import Dict
 from typing import List
+from typing import Union
 
+import numpy as np
 import pytest
 import pytorch_lightning as pl
 import torch
@@ -9,8 +13,8 @@ import torch.nn.functional as F
 
 import optuna
 from optuna.integration import PyTorchLightningPruningCallback
-from optuna.testing.integration import create_running_trial
-from optuna.testing.integration import DeterministicPruner
+from optuna.testing.pruners import DeterministicPruner
+from optuna.testing.storages import StorageSupplier
 
 
 class Model(pl.LightningModule):
@@ -42,9 +46,19 @@ class Model(pl.LightningModule):
         accuracy = pred.eq(target.view_as(pred)).double().mean()
         return {"validation_accuracy": accuracy}
 
-    def validation_epoch_end(self, outputs: List[Dict[str, torch.Tensor]]) -> None:
+    def validation_epoch_end(
+        self,
+        outputs: Union[
+            List[Union[torch.Tensor, Dict[str, Any]]],
+            List[List[Union[torch.Tensor, Dict[str, Any]]]],
+        ],
+    ) -> None:
+        if not len(outputs):
+            return
 
-        accuracy = sum(x["validation_accuracy"] for x in outputs) / len(outputs)
+        accuracy = sum(
+            x["validation_accuracy"] for x in cast(List[Dict[str, torch.Tensor]], outputs)
+        ) / len(outputs)
         self.log("accuracy", accuracy)
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
@@ -67,13 +81,34 @@ class Model(pl.LightningModule):
         return torch.utils.data.DataLoader(dataset, batch_size=1)
 
 
+class ModelDDP(Model):
+    def __init__(self) -> None:
+
+        super().__init__()
+
+    def validation_step(  # type: ignore
+        self, batch: List[torch.Tensor], batch_nb: int
+    ) -> Dict[str, torch.Tensor]:
+
+        data, target = batch
+        output = self.forward(data)
+        pred = output.argmax(dim=1, keepdim=True)
+        accuracy = pred.eq(target.view_as(pred)).double().mean()
+
+        if self.local_rank == 0:
+            accuracy = torch.tensor(0.3)
+        elif self.local_rank == 1:
+            accuracy = torch.tensor(0.6)
+
+        self.log("accuracy", accuracy, sync_dist=True)
+
+
 def test_pytorch_lightning_pruning_callback() -> None:
     def objective(trial: optuna.trial.Trial) -> float:
 
         trainer = pl.Trainer(
-            min_epochs=0,  # Required to fire the callback after the first epoch.
             max_epochs=2,
-            checkpoint_callback=False,
+            enable_checkpointing=False,
             callbacks=[PyTorchLightningPruningCallback(trial, monitor="accuracy")],
         )
 
@@ -95,16 +130,75 @@ def test_pytorch_lightning_pruning_callback() -> None:
 def test_pytorch_lightning_pruning_callback_monitor_is_invalid() -> None:
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
-    trial = create_running_trial(study, 1.0)
+    trial = study.ask()
     callback = PyTorchLightningPruningCallback(trial, "InvalidMonitor")
 
     trainer = pl.Trainer(
-        min_epochs=0,  # Required to fire the callback after the first epoch.
         max_epochs=1,
-        checkpoint_callback=False,
+        enable_checkpointing=False,
         callbacks=[callback],
     )
     model = Model()
 
     with pytest.warns(UserWarning):
         callback.on_validation_end(trainer, model)
+
+
+@pytest.mark.parametrize("storage_mode", ["sqlite", "cached_sqlite"])
+def test_pytorch_lightning_pruning_callback_ddp_monitor(
+    storage_mode: str,
+) -> None:
+    def objective(trial: optuna.trial.Trial) -> float:
+
+        trainer = pl.Trainer(
+            max_epochs=2,
+            accelerator="ddp_cpu",
+            num_processes=2,
+            enable_checkpointing=False,
+            callbacks=[PyTorchLightningPruningCallback(trial, monitor="accuracy")],
+        )
+
+        model = ModelDDP()
+        trainer.fit(model)
+
+        return 1.0
+
+    with StorageSupplier(storage_mode) as storage:
+        study = optuna.create_study(storage=storage, pruner=DeterministicPruner(True))
+        study.optimize(objective, n_trials=1)
+        assert study.trials[0].state == optuna.trial.TrialState.PRUNED
+        assert list(study.trials[0].intermediate_values.keys()) == [0]
+        np.testing.assert_almost_equal(study.trials[0].intermediate_values[0], 0.45)
+
+        study = optuna.create_study(storage=storage, pruner=DeterministicPruner(False))
+        study.optimize(objective, n_trials=1)
+        assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
+        assert study.trials[0].value == 1.0
+        assert list(study.trials[0].intermediate_values.keys()) == [0, 1]
+        np.testing.assert_almost_equal(study.trials[0].intermediate_values[0], 0.45)
+        np.testing.assert_almost_equal(study.trials[0].intermediate_values[1], 0.45)
+
+
+@pytest.mark.parametrize("storage_mode", ["inmemory", "redis"])
+def test_pytorch_lightning_pruning_callback_ddp_unsupported_storage(
+    storage_mode: str,
+) -> None:
+    def objective(trial: optuna.trial.Trial) -> float:
+
+        trainer = pl.Trainer(
+            max_epochs=1,
+            accelerator="ddp_cpu",
+            num_processes=2,
+            enable_checkpointing=False,
+            callbacks=[PyTorchLightningPruningCallback(trial, monitor="accuracy")],
+        )
+
+        model = ModelDDP()
+        trainer.fit(model)
+
+        return 1.0
+
+    with StorageSupplier(storage_mode) as storage:
+        study = optuna.create_study(storage=storage, pruner=DeterministicPruner(True))
+        with pytest.raises(ValueError):
+            study.optimize(objective, n_trials=1)

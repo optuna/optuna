@@ -1,30 +1,35 @@
-import pickle
+import os
+import shutil
 import sys
 import tempfile
 import time
 from typing import Any
 from typing import Dict
-from typing import List
 from typing import Optional
 from unittest.mock import patch
+import warnings
 
 import pytest
 from sqlalchemy.exc import IntegrityError
 
+import optuna
 from optuna import create_study
-from optuna import version
+from optuna import load_study
 from optuna.distributions import CategoricalDistribution
-from optuna.distributions import UniformDistribution
+from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 from optuna.storages import RDBStorage
 from optuna.storages._rdb.models import SCHEMA_VERSION
 from optuna.storages._rdb.models import TrialHeartbeatModel
 from optuna.storages._rdb.models import VersionInfoModel
 from optuna.storages._rdb.storage import _create_scoped_session
-from optuna.testing.storage import StorageSupplier
+from optuna.testing.storages import StorageSupplier
 from optuna.testing.threading import _TestableThread
-from optuna.trial import FrozenTrial
 from optuna.trial import Trial
-from optuna.trial import TrialState
+
+from .create_db import mo_objective_test_upgrade
+from .create_db import objective_test_upgrade
+from .create_db import objective_test_upgrade_distributions
 
 
 def test_init() -> None:
@@ -34,10 +39,14 @@ def test_init() -> None:
 
     version_info = session.query(VersionInfoModel).first()
     assert version_info.schema_version == SCHEMA_VERSION
-    assert version_info.library_version == version.__version__
+    assert version_info.library_version == optuna.version.__version__
 
     assert storage.get_current_version() == storage.get_head_version()
     assert storage.get_all_versions() == [
+        "v3.0.0.d",
+        "v3.0.0.c",
+        "v3.0.0.b",
+        "v3.0.0.a",
         "v2.6.0.a",
         "v2.4.0.a",
         "v1.3.0.a",
@@ -82,9 +91,6 @@ def test_init_db_module_import_error() -> None:
 def test_engine_kwargs() -> None:
 
     create_test_storage(engine_kwargs={"pool_size": 5})
-
-    with pytest.raises(TypeError):
-        create_test_storage(engine_kwargs={"wrong_key": "wrong_value"})
 
 
 @pytest.mark.parametrize(
@@ -142,18 +148,6 @@ def create_test_storage(engine_kwargs: Optional[Dict[str, Any]] = None) -> RDBSt
     return storage
 
 
-def test_pickle_storage() -> None:
-
-    storage = create_test_storage()
-    restored_storage = pickle.loads(pickle.dumps(storage))
-    assert storage.url == restored_storage.url
-    assert storage.engine_kwargs == restored_storage.engine_kwargs
-    assert storage.skip_compatibility_check == restored_storage.skip_compatibility_check
-    assert storage.engine != restored_storage.engine
-    assert storage.scoped_session != restored_storage.scoped_session
-    assert storage._version_manager != restored_storage._version_manager
-
-
 def test_create_scoped_session() -> None:
 
     storage = create_test_storage()
@@ -165,7 +159,7 @@ def test_create_scoped_session() -> None:
             session.add(v)
 
 
-def test_upgrade() -> None:
+def test_upgrade_identity() -> None:
 
     storage = create_test_storage()
 
@@ -178,126 +172,146 @@ def test_upgrade() -> None:
 
 
 @pytest.mark.parametrize(
-    "fields_to_modify, kwargs",
+    "optuna_version",
     [
-        (
-            {"state": TrialState.COMPLETE, "datetime_complete": None},
-            {"state": TrialState.COMPLETE},
-        ),
-        ({"_values": [1.1]}, {"values": [1.1]}),
-        ({"_values": [1.1, 2.2]}, {"values": [1.1, 2.2]}),
-        ({"intermediate_values": {1: 2.3, 3: 2.5}}, {"intermediate_values": {1: 2.3, 3: 2.5}}),
-        (
-            {
-                "params": {"paramA": 3, "paramB": "bar"},
-                "_distributions": {
-                    "paramA": UniformDistribution(0, 3),
-                    "paramB": CategoricalDistribution(("foo", "bar")),
-                },
-            },
-            {
-                "params": {
-                    "paramA": UniformDistribution(0, 3).to_internal_repr(3),
-                    "paramB": CategoricalDistribution(["foo", "bar"]).to_internal_repr("bar"),
-                },
-                "distributions_": {
-                    "paramA": UniformDistribution(0, 3),
-                    "paramB": CategoricalDistribution(["foo", "bar"]),
-                },
-            },
-        ),
-        (
-            {"user_attrs": {"attrA": 2.3, "attrB": "foo"}},
-            {"user_attrs": {"attrA": 2.3, "attrB": "foo"}},
-        ),
-        (
-            {"system_attrs": {"attrC": 2.3, "attrB": "bar"}},
-            {"system_attrs": {"attrC": 2.3, "attrB": "bar"}},
-        ),
+        "0.9.0.a",
+        "1.2.0.a",
+        "1.3.0.a",
+        "2.4.0.a",
+        "2.6.0.a",
+        "3.0.0.a",
+        "3.0.0.b",
+        "3.0.0.c",
+        "3.0.0.d",
     ],
 )
-def test_update_trial(fields_to_modify: Dict[str, Any], kwargs: Dict[str, Any]) -> None:
-
-    storage = create_test_storage()
-    study_id = storage.create_new_study()
-
-    trial_id = storage.create_new_trial(study_id)
-    trial_before_update = storage.get_trial(trial_id)
-    storage._update_trial(trial_id, **kwargs)
-    trial_after_update = storage.get_trial(trial_id)
-    for field in FrozenTrial._ordered_fields:
-        if field not in fields_to_modify:
-            assert getattr(trial_before_update, field) == getattr(trial_after_update, field)
-        for key, value in fields_to_modify.items():
-            if value is not None:
-                assert getattr(trial_after_update, key) == value
-
-
-@pytest.mark.parametrize("values1, values2", [([0.1], [1.1]), ([0.1, 0.2], [1.1, 1.2])])
-def test_update_trial_second_write(values1: List[float], values2: List[float]) -> None:
-
-    storage = create_test_storage()
-    study_id = storage.create_new_study()
-    template = FrozenTrial(
-        number=1,
-        state=TrialState.RUNNING,
-        value=None,
-        values=values1,
-        datetime_start=None,
-        datetime_complete=None,
-        params={"paramA": 0.1, "paramB": 1.1},
-        distributions={"paramA": UniformDistribution(0, 1), "paramB": UniformDistribution(0, 2)},
-        user_attrs={"userA": 2, "userB": 3},
-        system_attrs={"sysA": 4, "sysB": 5},
-        intermediate_values={3: 1.2, 5: 9.2},
-        trial_id=1,
+def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
+    src_db_file = os.path.join(
+        os.path.dirname(__file__), "test_upgrade_assets", f"{optuna_version}.db"
     )
-    trial_id = storage.create_new_trial(study_id, template)
-    trial_before_update = storage.get_trial(trial_id)
-    storage._update_trial(
-        trial_id,
-        state=None,
-        values=values2,
-        intermediate_values={3: 2.3, 7: 3.3},
-        params={"paramA": 0.2, "paramC": 2.3},
-        distributions_={"paramA": UniformDistribution(0, 1), "paramC": UniformDistribution(0, 4)},
-        user_attrs={"userA": 1, "userC": "attr"},
-        system_attrs={"sysA": 6, "sysC": 8},
+    with tempfile.TemporaryDirectory() as workdir:
+        shutil.copyfile(src_db_file, f"{workdir}/sqlite.db")
+        storage_url = f"sqlite:///{workdir}/sqlite.db"
+
+        storage = RDBStorage(storage_url, skip_compatibility_check=True, skip_table_creation=True)
+        assert storage.get_current_version() == f"v{optuna_version}"
+        head_version = storage.get_head_version()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=FutureWarning)
+            storage.upgrade()
+        assert head_version == storage.get_current_version()
+
+        # Create a new study.
+        study = create_study(storage=storage)
+        assert len(study.trials) == 0
+        study.optimize(objective_test_upgrade, n_trials=1)
+        assert len(study.trials) == 1
+
+        # Check empty study.
+        study = load_study(storage=storage, study_name="single_empty")
+        assert len(study.trials) == 0
+        study.optimize(objective_test_upgrade, n_trials=1)
+        assert len(study.trials) == 1
+
+        # Resume single objective optimization.
+        study = load_study(storage=storage, study_name="single")
+        assert len(study.trials) == 1
+        study.optimize(objective_test_upgrade, n_trials=1)
+        assert len(study.trials) == 2
+        for trial in study.trials:
+            assert trial.system_attrs["a"] == 0
+            assert trial.user_attrs["b"] == 1
+            assert trial.intermediate_values[0] == 0.5
+            assert -5 <= trial.params["x"] <= 5
+            assert 0 <= trial.params["y"] <= 10
+            assert trial.params["z"] in (-5, 0, 5)
+            assert trial.value is not None and 0 <= trial.value <= 150
+
+        assert study.system_attrs["c"] == 2
+        assert study.user_attrs["d"] == 3
+
+
+@pytest.mark.parametrize(
+    "optuna_version", ["2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c", "3.0.0.d"]
+)
+def test_upgrade_multi_objective_optimization(optuna_version: str) -> None:
+    src_db_file = os.path.join(
+        os.path.dirname(__file__), "test_upgrade_assets", f"{optuna_version}.db"
     )
-    trial_after_update = storage.get_trial(trial_id)
-    expected_attrs = {
-        "_trial_id": trial_before_update._trial_id,
-        "number": trial_before_update.number,
-        "state": TrialState.RUNNING,
-        "values": values2,
-        "params": {"paramA": 0.2, "paramB": 1.1, "paramC": 2.3},
-        "intermediate_values": {3: 2.3, 5: 9.2, 7: 3.3},
-        "_distributions": {
-            "paramA": UniformDistribution(0, 1),
-            "paramB": UniformDistribution(0, 2),
-            "paramC": UniformDistribution(0, 4),
-        },
-        "user_attrs": {"userA": 1, "userB": 3, "userC": "attr"},
-        "system_attrs": {"sysA": 6, "sysB": 5, "sysC": 8},
-    }
-    for key, value in expected_attrs.items():
-        assert getattr(trial_after_update, key) == value
+    with tempfile.TemporaryDirectory() as workdir:
+        shutil.copyfile(src_db_file, f"{workdir}/sqlite.db")
+        storage_url = f"sqlite:///{workdir}/sqlite.db"
+
+        storage = RDBStorage(storage_url, skip_compatibility_check=True, skip_table_creation=True)
+        assert storage.get_current_version() == f"v{optuna_version}"
+        head_version = storage.get_head_version()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=FutureWarning)
+            storage.upgrade()
+        assert head_version == storage.get_current_version()
+
+        # Create a new study.
+        study = create_study(storage=storage, directions=["minimize", "minimize"])
+        assert len(study.trials) == 0
+        study.optimize(mo_objective_test_upgrade, n_trials=1)
+        assert len(study.trials) == 1
+
+        # Check empty study.
+        study = load_study(storage=storage, study_name="multi_empty")
+        assert len(study.trials) == 0
+        study.optimize(mo_objective_test_upgrade, n_trials=1)
+        assert len(study.trials) == 1
+
+        # Resume multi-objective optimization.
+        study = load_study(storage=storage, study_name="multi")
+        assert len(study.trials) == 1
+        study.optimize(mo_objective_test_upgrade, n_trials=1)
+        assert len(study.trials) == 2
+        for trial in study.trials:
+            assert trial.system_attrs["a"] == 0
+            assert trial.user_attrs["b"] == 1
+            assert -5 <= trial.params["x"] <= 5
+            assert 0 <= trial.params["y"] <= 10
+            assert trial.params["z"] in (-5, 0, 5)
+            assert -5 <= trial.values[0] < 5
+            assert 0 <= trial.values[1] <= 150
+        assert study.system_attrs["c"] == 2
+        assert study.user_attrs["d"] == 3
 
 
-def test_get_trials_excluded_trial_ids() -> None:
+@pytest.mark.parametrize(
+    "optuna_version", ["2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c", "3.0.0.d"]
+)
+def test_upgrade_distributions(optuna_version: str) -> None:
+    src_db_file = os.path.join(
+        os.path.dirname(__file__), "test_upgrade_assets", f"{optuna_version}.db"
+    )
+    with tempfile.TemporaryDirectory() as workdir:
+        shutil.copyfile(src_db_file, f"{workdir}/sqlite.db")
+        storage_url = f"sqlite:///{workdir}/sqlite.db"
 
-    storage = create_test_storage()
-    study_id = storage.create_new_study()
+        storage = RDBStorage(storage_url, skip_compatibility_check=True, skip_table_creation=True)
+        assert storage.get_current_version() == f"v{optuna_version}"
+        head_version = storage.get_head_version()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=FutureWarning)
+            storage.upgrade()
+        assert head_version == storage.get_current_version()
 
-    storage.create_new_trial(study_id)
+        new_study = load_study(storage=storage, study_name="schema migration")
+        new_distribution_dict = new_study.trials[0]._distributions
 
-    trials = storage._get_trials(study_id, states=None, excluded_trial_ids=set())
-    assert len(trials) == 1
+        assert isinstance(new_distribution_dict["x1"], FloatDistribution)
+        assert isinstance(new_distribution_dict["x2"], FloatDistribution)
+        assert isinstance(new_distribution_dict["x3"], FloatDistribution)
+        assert isinstance(new_distribution_dict["y1"], IntDistribution)
+        assert isinstance(new_distribution_dict["y2"], IntDistribution)
+        assert isinstance(new_distribution_dict["z"], CategoricalDistribution)
 
-    # A large exclusion list used to raise errors. Check that it is not an issue.
-    # See https://github.com/optuna/optuna/issues/1457.
-    trials = storage._get_trials(study_id, states=None, excluded_trial_ids=set(range(500000)))
-    assert len(trials) == 0
+        # Check if Study.optimize can run on new storage.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UserWarning)
+            new_study.optimize(objective_test_upgrade_distributions, n_trials=1)
 
 
 def test_record_heartbeat() -> None:
@@ -315,7 +329,7 @@ def test_record_heartbeat() -> None:
         storage.heartbeat_interval = heartbeat_interval
         study = create_study(storage=storage)
         # Exceptions raised in spawned threads are caught by `_TestableThread`.
-        with patch("optuna.study._optimize.Thread", _TestableThread):
+        with patch("optuna.storages._heartbeat.Thread", _TestableThread):
             study.optimize(objective, n_trials=n_trials)
 
         trial_heartbeats = []
@@ -328,5 +342,11 @@ def test_record_heartbeat() -> None:
                 trial_heartbeats.append(heartbeat_model.heartbeat)
 
         assert len(trial_heartbeats) == n_trials
+        trials = study.trials
         for i in range(n_trials - 1):
-            assert (trial_heartbeats[i + 1] - trial_heartbeats[i]).seconds - sleep_sec <= 1
+            datetime_start = trials[i + 1].datetime_start
+            prev_datetime_complete = trials[i].datetime_complete
+            assert datetime_start is not None and prev_datetime_complete is not None
+            trial_prep = (datetime_start - prev_datetime_complete).seconds
+            heartbeats_interval = (trial_heartbeats[i + 1] - trial_heartbeats[i]).seconds
+            assert heartbeats_interval - sleep_sec - trial_prep <= 1

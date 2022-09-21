@@ -8,7 +8,7 @@ import numpy as np
 
 import optuna
 from optuna import multi_objective
-from optuna._deprecated import deprecated
+from optuna._deprecated import deprecated_class
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.multi_objective.samplers import _MultiObjectiveSamplerAdapter
@@ -22,7 +22,7 @@ from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 
 
-@deprecated("2.4.0", "4.0.0")
+@deprecated_class("2.4.0", "4.0.0")
 class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
     """Multi-objective sampler using the MOTPE algorithm.
 
@@ -32,23 +32,18 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
 
     - `Multiobjective tree-structured parzen estimator for computationally expensive optimization
       problems <https://dl.acm.org/doi/abs/10.1145/3377930.3389817>`_
+    - `Multiobjective Tree-Structured Parzen Estimator <https://doi.org/10.1613/jair.1.13188>`_
 
     Args:
         consider_prior:
             Enhance the stability of Parzen estimator by imposing a Gaussian prior when
             :obj:`True`. The prior is only effective if the sampling distribution is
-            either :class:`~optuna.distributions.UniformDistribution`,
-            :class:`~optuna.distributions.DiscreteUniformDistribution`,
-            :class:`~optuna.distributions.LogUniformDistribution`,
-            :class:`~optuna.distributions.IntUniformDistribution`,
-            or :class:`~optuna.distributions.IntLogUniformDistribution`.
+            either :class:`~optuna.distributions.FloatDistribution`,
+            or :class:`~optuna.distributions.IntDistribution`.
         prior_weight:
             The weight of the prior. This argument is used in
-            :class:`~optuna.distributions.UniformDistribution`,
-            :class:`~optuna.distributions.DiscreteUniformDistribution`,
-            :class:`~optuna.distributions.LogUniformDistribution`,
-            :class:`~optuna.distributions.IntUniformDistribution`,
-            :class:`~optuna.distributions.IntLogUniformDistribution`, and
+            :class:`~optuna.distributions.FloatDistribution`,
+            :class:`~optuna.distributions.IntDistribution`, and
             :class:`~optuna.distributions.CategoricalDistribution`.
         consider_magic_clip:
             Enable a heuristic to limit the smallest variances of Gaussians used in
@@ -183,7 +178,7 @@ def _create_trial(mo_trial: "multi_objective.trial.FrozenMultiObjectiveTrial") -
         warnings.simplefilter("ignore", ExperimentalWarning)
         trial = create_trial(
             state=mo_trial.state,
-            values=mo_trial.values,
+            values=mo_trial.values,  # type: ignore
             params=mo_trial.params,
             distributions=mo_trial.distributions,
             user_attrs=mo_trial.user_attrs,

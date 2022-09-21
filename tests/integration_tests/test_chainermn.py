@@ -17,13 +17,11 @@ from optuna import TrialPruned
 from optuna.integration.chainermn import ChainerMNStudy
 from optuna.integration.chainermn import ChainerMNTrial
 from optuna.pruners import BasePruner
-from optuna.samplers import BaseSampler
 from optuna.storages import BaseStorage
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
-from optuna.testing.integration import DeterministicPruner
-from optuna.testing.sampler import DeterministicRelativeSampler
-from optuna.testing.storage import StorageSupplier
+from optuna.testing.pruners import DeterministicPruner
+from optuna.testing.storages import StorageSupplier
 from optuna.trial import Trial
 from optuna.trial import TrialState
 
@@ -40,7 +38,7 @@ STORAGE_MODES = ["sqlite"]
 PRUNER_INIT_FUNCS = [lambda: pruners.MedianPruner(), lambda: pruners.SuccessiveHalvingPruner()]
 
 
-class Func(object):
+class Func:
     def __init__(self) -> None:
 
         self.suggested_values: Dict[int, Dict[str, Any]] = {}
@@ -101,7 +99,7 @@ def comm() -> CommunicatorBase:
     return chainermn.create_communicator("naive")
 
 
-class TestChainerMNStudy(object):
+class TestChainerMNStudy:
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     def test_init(storage_mode: str, comm: CommunicatorBase) -> None:
@@ -120,7 +118,7 @@ class TestChainerMNStudy(object):
 
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             # Create study_name for each rank.
-            name = create_study(storage).study_name
+            name = create_study(storage=storage).study_name
             study = Study(name, storage)
 
             with pytest.raises(ValueError):
@@ -129,7 +127,7 @@ class TestChainerMNStudy(object):
     @staticmethod
     def test_init_with_incompatible_storage(comm: CommunicatorBase) -> None:
 
-        study = create_study(InMemoryStorage(), study_name="in-memory-study")
+        study = create_study(storage=InMemoryStorage(), study_name="in-memory-study")
 
         with pytest.raises(ValueError):
             ChainerMNStudy(study, comm)
@@ -219,47 +217,16 @@ class TestChainerMNStudy(object):
             assert len(failed_trials) == n_trials + 1
 
     @staticmethod
-    @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-    def test_relative_sampling(storage_mode: str, comm: CommunicatorBase) -> None:
-
-        relative_search_space = {
-            "x": distributions.UniformDistribution(low=-10, high=10),
-            "y": distributions.LogUniformDistribution(low=20, high=30),
-            "z": distributions.CategoricalDistribution(choices=(-1.0, 1.0)),
-        }
-        relative_params = {"x": 1.0, "y": 25.0, "z": -1.0}
-        sampler = DeterministicRelativeSampler(
-            relative_search_space, relative_params  # type: ignore
-        )
-
-        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
-            study = TestChainerMNStudy._create_shared_study(storage, comm, sampler=sampler)
-            mn_study = ChainerMNStudy(study, comm)
-
-            # Invoke optimize.
-            n_trials = 20
-            func = Func()
-            mn_study.optimize(func, n_trials=n_trials)
-
-            # Assert trial counts.
-            assert len(mn_study.trials) == n_trials
-
-            # Assert the parameters in `relative_params` have been suggested among all nodes.
-            for trial in mn_study.trials:
-                assert trial.params == relative_params
-
-    @staticmethod
     def _create_shared_study(
         storage: BaseStorage,
         comm: CommunicatorBase,
         pruner: Optional[BasePruner] = None,
-        sampler: Optional[BaseSampler] = None,
     ) -> Study:
 
-        name_local = create_study(storage).study_name if comm.rank == 0 else None
+        name_local = create_study(storage=storage).study_name if comm.rank == 0 else None
         name_bcast = comm.mpi_comm.bcast(name_local)
 
-        return Study(name_bcast, storage, pruner=pruner, sampler=sampler)
+        return Study(name_bcast, storage, pruner=pruner)
 
     @staticmethod
     def _check_multi_node(comm: CommunicatorBase) -> None:
@@ -268,7 +235,7 @@ class TestChainerMNStudy(object):
             pytest.skip("This test is for multi-node only.")
 
 
-class TestChainerMNTrial(object):
+class TestChainerMNTrial:
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     def test_init(storage_mode: str, comm: CommunicatorBase) -> None:
@@ -299,7 +266,7 @@ class TestChainerMNTrial(object):
                 assert x1 == x2
 
                 with pytest.raises(ValueError):
-                    mn_trial.suggest_loguniform("x1", low1, high1)
+                    mn_trial.suggest_float("x1", low1, high1, log=True)
 
             low2 = 1e-7
             high2 = 1e-2
@@ -309,8 +276,7 @@ class TestChainerMNTrial(object):
                 x3 = mn_trial.suggest_float("x2", low2, high2, log=True)
                 assert low2 <= x3 <= high2
 
-                x4 = mn_trial.suggest_loguniform("x2", low2, high2)
-
+                x4 = mn_trial.suggest_float("x2", low2, high2, log=True)
                 assert x3 == x4
 
                 with pytest.raises(ValueError):
@@ -318,64 +284,23 @@ class TestChainerMNTrial(object):
 
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-    def test_suggest_uniform(storage_mode: str, comm: CommunicatorBase) -> None:
-
-        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
-            study = TestChainerMNStudy._create_shared_study(storage, comm)
-            low = 0.5
-            high = 1.0
-            for _ in range(10):
-                mn_trial = _create_new_chainermn_trial(study, comm)
-
-                x1 = mn_trial.suggest_float("x", low, high)
-                assert low <= x1 <= high
-
-                x2 = mn_trial.suggest_float("x", low, high)
-                assert x1 == x2
-
-                with pytest.raises(ValueError):
-                    mn_trial.suggest_loguniform("x", low, high)
-
-    @staticmethod
-    @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-    def test_suggest_loguniform(storage_mode: str, comm: CommunicatorBase) -> None:
-
-        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
-            study = TestChainerMNStudy._create_shared_study(storage, comm)
-            low = 1e-7
-            high = 1e-2
-            for _ in range(10):
-                mn_trial = _create_new_chainermn_trial(study, comm)
-
-                x1 = mn_trial.suggest_loguniform("x", low, high)
-                assert low <= x1 <= high
-
-                x2 = mn_trial.suggest_loguniform("x", low, high)
-                assert x1 == x2
-
-                with pytest.raises(ValueError):
-                    mn_trial.suggest_float("x", low, high)
-
-    @staticmethod
-    @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-    def test_suggest_discrete_uniform(storage_mode: str, comm: CommunicatorBase) -> None:
+    def test_suggest_float_with_step(storage_mode: str, comm: CommunicatorBase) -> None:
 
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
             low = 0.0
             high = 10.0
-            q = 1.0
+            step = 1.0
             for _ in range(10):
                 mn_trial = _create_new_chainermn_trial(study, comm)
 
-                x1 = mn_trial.suggest_discrete_uniform("x", low, high, q)
+                x1 = mn_trial.suggest_float("x", low, high, step=step)
                 assert low <= x1 <= high
 
-                x2 = mn_trial.suggest_discrete_uniform("x", low, high, q)
+                x2 = mn_trial.suggest_float("x", low, high, step=step)
                 assert x1 == x2
 
-                with pytest.raises(ValueError):
-                    mn_trial.suggest_float("x", low, high)
+                mn_trial.suggest_float("x", low, high)
 
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)

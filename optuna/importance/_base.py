@@ -1,10 +1,16 @@
 import abc
 from collections import OrderedDict
 from typing import Callable
+from typing import cast
+from typing import Collection
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Union
 
+import numpy
+
+from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.samplers import intersection_search_space
 from optuna.study import Study
@@ -56,17 +62,14 @@ class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
             An :class:`collections.OrderedDict` where the keys are parameter names and the values
             are assessed importances.
 
-        Raises:
-            :exc:`ValueError`:
-                If ``target`` is :obj:`None` and ``study`` is being used for multi-objective
-                optimization.
         """
         # TODO(hvy): Reconsider the interface as logic might violate DRY among multiple evaluators.
         raise NotImplementedError
 
 
 def _get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, BaseDistribution]:
-    _check_evaluate_args(study, params)
+    completed_trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+    _check_evaluate_args(completed_trials, params)
 
     if params is None:
         return intersection_search_space(study, ordered_dict=True)
@@ -77,10 +80,7 @@ def _get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, B
 
     # Compute the search space based on the subset of trials containing all parameters.
     distributions = None
-    for trial in study.trials:
-        if trial.state != TrialState.COMPLETE:
-            continue
-
+    for trial in completed_trials:
         trial_distributions = trial.distributions
         if not all(name in trial_distributions for name in params_not_none):
             continue
@@ -110,8 +110,7 @@ def _get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, B
     return distributions
 
 
-def _check_evaluate_args(study: Study, params: Optional[List[str]]) -> None:
-    completed_trials = list(filter(lambda t: t.state == TrialState.COMPLETE, study.trials))
+def _check_evaluate_args(completed_trials: List[FrozenTrial], params: Optional[List[str]]) -> None:
     if len(completed_trials) == 0:
         raise ValueError("Cannot evaluate parameter importances without completed trials.")
     if len(completed_trials) == 1:
@@ -139,3 +138,44 @@ def _check_evaluate_args(study: Study, params: Optional[List[str]]) -> None:
                     "Study must contain completed trials with all specified parameters. "
                     "Specified parameters: {}.".format(params)
                 )
+
+
+def _get_filtered_trials(
+    study: Study, params: Collection[str], target: Optional[Callable[[FrozenTrial], float]]
+) -> List[FrozenTrial]:
+    trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+    return [
+        trial
+        for trial in trials
+        if set(params) <= set(trial.params)
+        and numpy.isfinite(target(trial) if target is not None else cast(float, trial.value))
+    ]
+
+
+def _param_importances_to_dict(
+    params: Collection[str], param_importances: Union[numpy.ndarray, float]
+) -> Dict[str, float]:
+    return {
+        name: value
+        for name, value in zip(params, numpy.broadcast_to(param_importances, (len(params),)))
+    }
+
+
+def _get_trans_params(trials: List[FrozenTrial], trans: _SearchSpaceTransform) -> numpy.ndarray:
+    return numpy.array([trans.transform(trial.params) for trial in trials])
+
+
+def _get_target_values(
+    trials: List[FrozenTrial], target: Optional[Callable[[FrozenTrial], float]]
+) -> numpy.ndarray:
+    return numpy.array([target(trial) if target is not None else trial.value for trial in trials])
+
+
+def _sort_dict_by_importance(param_importances: Dict[str, float]) -> Dict[str, float]:
+    return OrderedDict(
+        reversed(
+            sorted(
+                param_importances.items(), key=lambda name_and_importance: name_and_importance[1]
+            )
+        )
+    )

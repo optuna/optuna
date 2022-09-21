@@ -2,6 +2,7 @@ import pickle
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Optional
 from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
@@ -16,7 +17,6 @@ from optuna import create_trial
 from optuna._transform import _SearchSpaceTransform
 from optuna.samplers._cmaes import _concat_optimizer_attrs
 from optuna.samplers._cmaes import _split_optimizer_str
-from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -31,14 +31,17 @@ def test_consider_pruned_trials_experimental_warning() -> None:
     "use_separable_cma, cma_class_str",
     [(False, "optuna.samplers._cmaes.CMA"), (True, "optuna.samplers._cmaes.SepCMA")],
 )
-def test_init_cmaes_opts(use_separable_cma: bool, cma_class_str: str) -> None:
+@pytest.mark.parametrize("popsize", [None, 8])
+def test_init_cmaes_opts(
+    use_separable_cma: bool, cma_class_str: str, popsize: Optional[int]
+) -> None:
     sampler = optuna.samplers.CmaEsSampler(
         x0={"x": 0, "y": 0},
         sigma0=0.1,
         seed=1,
         n_startup_trials=1,
-        independent_sampler=DeterministicRelativeSampler({}, {}),
         use_separable_cma=use_separable_cma,
+        popsize=popsize,
     )
     study = optuna.create_study(sampler=sampler)
 
@@ -46,7 +49,6 @@ def test_init_cmaes_opts(use_separable_cma: bool, cma_class_str: str) -> None:
         cma_obj = MagicMock()
         cma_obj.ask.return_value = np.array((-1, -1))
         cma_obj.generation = 0
-        cma_obj.population_size = 5
         cma_class.return_value = cma_obj
         study.optimize(
             lambda t: t.suggest_float("x", -1, 1) + t.suggest_float("y", -1, 1), n_trials=2
@@ -58,9 +60,9 @@ def test_init_cmaes_opts(use_separable_cma: bool, cma_class_str: str) -> None:
         assert np.array_equal(actual_kwargs["mean"], np.array([0, 0]))
         assert actual_kwargs["sigma"] == 0.1
         assert np.allclose(actual_kwargs["bounds"], np.array([(-1, 1), (-1, 1)]))
-        assert actual_kwargs["seed"] == np.random.RandomState(1).randint(1, 2 ** 32)
+        assert actual_kwargs["seed"] == np.random.RandomState(1).randint(1, 2**32)
         assert actual_kwargs["n_max_resampling"] == 10 * 2
-        assert actual_kwargs["population_size"] is None
+        assert actual_kwargs["population_size"] == popsize
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
@@ -69,7 +71,7 @@ def test_warm_starting_cmaes(mock_func_ws: MagicMock) -> None:
     def objective(trial: optuna.Trial) -> float:
         x = trial.suggest_float("x", -10, 10)
         y = trial.suggest_float("y", -10, 10)
-        return x ** 2 + y
+        return x**2 + y
 
     source_study = optuna.create_study()
     source_study.optimize(objective, 20)
@@ -89,7 +91,7 @@ def test_warm_starting_cmaes_maximize(mock_func_ws: MagicMock) -> None:
         x = trial.suggest_float("x", -10, 10)
         y = trial.suggest_float("y", -10, 10)
         # Objective values are negative.
-        return -(x ** 2) - (y - 5) ** 2
+        return -(x**2) - (y - 5) ** 2
 
     source_study = optuna.create_study(direction="maximize")
     source_study.optimize(objective, 20)
@@ -172,7 +174,7 @@ def test_infer_relative_search_space_1d() -> None:
 
 
 def test_sample_relative_1d() -> None:
-    independent_sampler = DeterministicRelativeSampler({}, {})
+    independent_sampler = optuna.samplers.RandomSampler()
     sampler = optuna.samplers.CmaEsSampler(independent_sampler=independent_sampler)
     study = optuna.create_study(sampler=sampler)
 
@@ -185,7 +187,7 @@ def test_sample_relative_1d() -> None:
 
 
 def test_sample_relative_n_startup_trials() -> None:
-    independent_sampler = DeterministicRelativeSampler({}, {})
+    independent_sampler = optuna.samplers.RandomSampler()
     sampler = optuna.samplers.CmaEsSampler(
         n_startup_trials=2, independent_sampler=independent_sampler
     )
@@ -208,16 +210,6 @@ def test_sample_relative_n_startup_trials() -> None:
         study.optimize(objective, n_trials=4, catch=(Exception,))
         assert mock_independent.call_count == 6  # The objective function has two parameters.
         assert mock_relative.call_count == 4
-
-
-def test_reseed_rng() -> None:
-    sampler = optuna.samplers.CmaEsSampler()
-
-    with patch.object(
-        sampler._independent_sampler, "reseed_rng", wraps=sampler._independent_sampler.reseed_rng
-    ) as mock_object:
-        sampler.reseed_rng()
-        assert mock_object.call_count == 1
 
 
 def test_get_trials() -> None:
@@ -270,15 +262,16 @@ def _create_trials() -> List[FrozenTrial]:
     return trials
 
 
-def test_population_size_is_multiplied_when_enable_ipop() -> None:
+@pytest.mark.parametrize("popsize", [None, 16])
+def test_population_size_is_multiplied_when_enable_ipop(popsize: Optional[int]) -> None:
     inc_popsize = 2
     sampler = optuna.samplers.CmaEsSampler(
         x0={"x": 0, "y": 0},
         sigma0=0.1,
         seed=1,
         n_startup_trials=1,
-        independent_sampler=DeterministicRelativeSampler({}, {}),
         restart_strategy="ipop",
+        popsize=popsize,
         inc_popsize=inc_popsize,
     )
     study = optuna.create_study(sampler=sampler)
@@ -300,16 +293,17 @@ def test_population_size_is_multiplied_when_enable_ipop() -> None:
             mean=np.array([-1, -1], dtype=float),
             sigma=1.3,
             bounds=np.array([[-1, 1], [-1, 1]], dtype=float),
+            population_size=popsize,  # Already tested by test_init_cmaes_opts().
         )
         cma_obj.should_stop = should_stop_mock
         cma_class_mock.return_value = cma_obj
 
-        popsize = cma_obj.population_size
-        study.optimize(objective, n_trials=2 + popsize)
+        initial_popsize = cma_obj.population_size
+        study.optimize(objective, n_trials=2 + initial_popsize)
         assert cma_obj.should_stop.call_count == 1
 
         _, actual_kwargs = cma_class_mock.call_args
-        assert actual_kwargs["population_size"] == inc_popsize * popsize
+        assert actual_kwargs["population_size"] == inc_popsize * initial_popsize
 
 
 def test_restore_optimizer_keeps_backward_compatibility() -> None:
@@ -387,7 +381,7 @@ def test_call_after_trial_of_base_sampler() -> None:
 def test_is_compatible_search_space() -> None:
     transform = _SearchSpaceTransform(
         {
-            "x0": optuna.distributions.UniformDistribution(2, 3),
+            "x0": optuna.distributions.FloatDistribution(2, 3),
             "x1": optuna.distributions.CategoricalDistribution(["foo", "bar", "baz", "qux"]),
         }
     )
@@ -396,7 +390,7 @@ def test_is_compatible_search_space() -> None:
         transform,
         {
             "x1": optuna.distributions.CategoricalDistribution(["foo", "bar", "baz", "qux"]),
-            "x0": optuna.distributions.UniformDistribution(2, 3),
+            "x0": optuna.distributions.FloatDistribution(2, 3),
         },
     )
 
@@ -404,7 +398,7 @@ def test_is_compatible_search_space() -> None:
     assert not optuna.samplers._cmaes._is_compatible_search_space(
         transform,
         {
-            "x0": optuna.distributions.UniformDistribution(2, 3),
+            "x0": optuna.distributions.FloatDistribution(2, 3),
             "foo": optuna.distributions.CategoricalDistribution(["foo", "bar", "baz", "qux"]),
         },
     )
@@ -413,9 +407,9 @@ def test_is_compatible_search_space() -> None:
     assert not optuna.samplers._cmaes._is_compatible_search_space(
         transform,
         {
-            "x0": optuna.distributions.UniformDistribution(2, 3),
+            "x0": optuna.distributions.FloatDistribution(2, 3),
             "x1": optuna.distributions.CategoricalDistribution(["foo", "bar", "baz", "qux"]),
-            "x2": optuna.distributions.DiscreteUniformDistribution(2, 3, q=0.1),
+            "x2": optuna.distributions.FloatDistribution(2, 3, step=0.1),
         },
     )
 

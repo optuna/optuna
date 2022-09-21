@@ -1,6 +1,5 @@
 from typing import List
 from typing import Tuple
-from unittest.mock import patch
 import uuid
 
 import _pytest.capture
@@ -8,7 +7,10 @@ import pytest
 
 import optuna
 from optuna.study._study_direction import StudyDirection
-from optuna.testing.storage import StorageSupplier
+from optuna.testing.storages import StorageSupplier
+
+
+pytestmark = pytest.mark.filterwarnings("ignore::FutureWarning")
 
 
 def test_create_study() -> None:
@@ -165,27 +167,3 @@ def test_log_completed_trial(capsys: _pytest.capture.CaptureFixture) -> None:
     study.optimize(lambda t: (1.0, 1.0), n_trials=1)
     _, err = capsys.readouterr()
     assert "Trial 2" in err
-
-
-def test_log_completed_trial_skip_storage_access() -> None:
-
-    study = optuna.multi_objective.create_study(["minimize", "maximize"])
-
-    new_trial_id = study._study._storage.create_new_trial(study._study._study_id)
-    trial = optuna.Trial(study._study, new_trial_id)
-    storage = study._storage
-
-    with patch.object(storage, "get_trial", wraps=storage.get_trial) as mock_object:
-        optuna.multi_objective.study._log_completed_trial(study, trial, [1.0])
-        # Trial.params and MultiObjectiveTrial._get_values access storage.
-        assert mock_object.call_count == 2
-
-    optuna.logging.set_verbosity(optuna.logging.WARNING)
-    with patch.object(storage, "get_trial", wraps=storage.get_trial) as mock_object:
-        optuna.multi_objective.study._log_completed_trial(study, trial, [1.0])
-        assert mock_object.call_count == 0
-
-    optuna.logging.set_verbosity(optuna.logging.DEBUG)
-    with patch.object(storage, "get_trial", wraps=storage.get_trial) as mock_object:
-        optuna.multi_objective.study._log_completed_trial(study, trial, [1.0])
-        assert mock_object.call_count == 2

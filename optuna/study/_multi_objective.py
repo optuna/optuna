@@ -8,8 +8,10 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
-def _get_pareto_front_trials_2d(study: "optuna.study.BaseStudy") -> List[FrozenTrial]:
-    trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
+def _get_pareto_front_trials_2d(
+    trials: Sequence[FrozenTrial], directions: Sequence[StudyDirection]
+) -> List[FrozenTrial]:
+    trials = [trial for trial in trials if trial.state == TrialState.COMPLETE]
 
     n_trials = len(trials)
     if n_trials == 0:
@@ -17,8 +19,8 @@ def _get_pareto_front_trials_2d(study: "optuna.study.BaseStudy") -> List[FrozenT
 
     trials.sort(
         key=lambda trial: (
-            _normalize_value(trial.values[0], study.directions[0]),
-            _normalize_value(trial.values[1], study.directions[1]),
+            _normalize_value(trial.values[0], directions[0]),
+            _normalize_value(trial.values[1], directions[1]),
         ),
     )
 
@@ -26,7 +28,7 @@ def _get_pareto_front_trials_2d(study: "optuna.study.BaseStudy") -> List[FrozenT
     pareto_front = [last_nondominated_trial]
     for i in range(1, n_trials):
         trial = trials[i]
-        if _dominates(last_nondominated_trial, trial, study.directions):
+        if _dominates(last_nondominated_trial, trial, directions):
             continue
         pareto_front.append(trial)
         last_nondominated_trial = trial
@@ -35,15 +37,17 @@ def _get_pareto_front_trials_2d(study: "optuna.study.BaseStudy") -> List[FrozenT
     return pareto_front
 
 
-def _get_pareto_front_trials_nd(study: "optuna.study.BaseStudy") -> List[FrozenTrial]:
+def _get_pareto_front_trials_nd(
+    trials: Sequence[FrozenTrial], directions: Sequence[StudyDirection]
+) -> List[FrozenTrial]:
     pareto_front = []
-    trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+    trials = [t for t in trials if t.state == TrialState.COMPLETE]
 
     # TODO(vincent): Optimize (use the fast non dominated sort defined in the NSGA-II paper).
     for trial in trials:
         dominated = False
         for other in trials:
-            if _dominates(other, trial, study.directions):
+            if _dominates(other, trial, directions):
                 dominated = True
                 break
 
@@ -53,10 +57,16 @@ def _get_pareto_front_trials_nd(study: "optuna.study.BaseStudy") -> List[FrozenT
     return pareto_front
 
 
-def _get_pareto_front_trials(study: "optuna.study.BaseStudy") -> List[FrozenTrial]:
-    if len(study.directions) == 2:
-        return _get_pareto_front_trials_2d(study)  # Log-linear in number of trials.
-    return _get_pareto_front_trials_nd(study)  # Quadratic in number of trials.
+def _get_pareto_front_trials_by_trials(
+    trials: Sequence[FrozenTrial], directions: Sequence[StudyDirection]
+) -> List[FrozenTrial]:
+    if len(directions) == 2:
+        return _get_pareto_front_trials_2d(trials, directions)  # Log-linear in number of trials.
+    return _get_pareto_front_trials_nd(trials, directions)  # Quadratic in number of trials.
+
+
+def _get_pareto_front_trials(study: "optuna.study.Study") -> List[FrozenTrial]:
+    return _get_pareto_front_trials_by_trials(study.trials, study.directions)
 
 
 def _dominates(

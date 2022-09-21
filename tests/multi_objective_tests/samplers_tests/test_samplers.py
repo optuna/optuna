@@ -1,17 +1,19 @@
 from typing import Callable
+from unittest.mock import patch
 
 import numpy as np
 import pytest
 
 import optuna
 from optuna import multi_objective
+from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
-from optuna.distributions import DiscreteUniformDistribution
-from optuna.distributions import IntUniformDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
+from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
 
+
+pytestmark = pytest.mark.filterwarnings("ignore::FutureWarning")
 
 parametrize_sampler = pytest.mark.parametrize(
     "sampler_class",
@@ -26,25 +28,25 @@ parametrize_sampler = pytest.mark.parametrize(
 @pytest.mark.parametrize(
     "distribution",
     [
-        UniformDistribution(-1.0, 1.0),
-        UniformDistribution(0.0, 1.0),
-        UniformDistribution(-1.0, 0.0),
-        LogUniformDistribution(1e-7, 1.0),
-        DiscreteUniformDistribution(-10, 10, 0.1),
-        DiscreteUniformDistribution(-10.2, 10.2, 0.1),
-        IntUniformDistribution(-10, 10),
-        IntUniformDistribution(0, 10),
-        IntUniformDistribution(-10, 0),
-        IntUniformDistribution(-10, 10, 2),
-        IntUniformDistribution(0, 10, 2),
-        IntUniformDistribution(-10, 0, 2),
+        FloatDistribution(-1.0, 1.0),
+        FloatDistribution(0.0, 1.0),
+        FloatDistribution(-1.0, 0.0),
+        FloatDistribution(1e-7, 1.0, log=True),
+        FloatDistribution(-10, 10, step=0.1),
+        FloatDistribution(-10.2, 10.2, step=0.1),
+        IntDistribution(-10, 10),
+        IntDistribution(0, 10),
+        IntDistribution(-10, 0),
+        IntDistribution(-10, 10, step=2),
+        IntDistribution(0, 10, step=2),
+        IntDistribution(-10, 0, step=2),
         CategoricalDistribution((1, 2, 3)),
         CategoricalDistribution(("a", "b", "c")),
         CategoricalDistribution((1, "a")),
     ],
 )
 def test_sample_independent(
-    sampler_class: Callable[[], BaseMultiObjectiveSampler], distribution: UniformDistribution
+    sampler_class: Callable[[], BaseMultiObjectiveSampler], distribution: BaseDistribution
 ) -> None:
     study = optuna.multi_objective.study.create_study(
         ["minimize", "maximize"], sampler=sampler_class()
@@ -59,21 +61,39 @@ def test_sample_independent(
             # Please see https://github.com/optuna/optuna/pull/393 why this assertion is needed.
             assert not isinstance(value, np.floating)
 
-        if isinstance(distribution, DiscreteUniformDistribution):
-            # Check the value is a multiple of `distribution.q` which is
-            # the quantization interval of the distribution.
-            value -= distribution.low
-            value /= distribution.q
-            round_value = np.round(value)
-            np.testing.assert_almost_equal(round_value, value)
+        if isinstance(distribution, FloatDistribution):
+            if distribution.step is not None:
+                # Check the value is a multiple of `distribution.q` which is
+                # the quantization interval of the distribution.
+                value -= distribution.low
+                value /= distribution.step
+                round_value = np.round(value)
+                np.testing.assert_almost_equal(round_value, value)
 
 
 def test_random_mo_sampler_reseed_rng() -> None:
     sampler = optuna.multi_objective.samplers.RandomMultiObjectiveSampler()
-    original_seed = sampler._sampler._rng.seed
+    original_random_state = sampler._sampler._rng.get_state()
 
-    sampler.reseed_rng()
-    assert original_seed != sampler._sampler._rng.seed
+    with patch.object(
+        sampler._sampler, "reseed_rng", wraps=sampler._sampler.reseed_rng
+    ) as mock_object:
+        sampler.reseed_rng()
+        assert mock_object.call_count == 1
+    assert str(original_random_state) != str(sampler._sampler._rng.get_state())
+
+
+@pytest.mark.parametrize(
+    "sampler_class",
+    [
+        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
+        optuna.multi_objective.samplers.NSGAIIMultiObjectiveSampler,
+        optuna.multi_objective.samplers.MOTPEMultiObjectiveSampler,
+    ],
+)
+def test_deprecated_warning(sampler_class: Callable[[], BaseMultiObjectiveSampler]) -> None:
+    with pytest.warns(FutureWarning):
+        sampler_class()
 
 
 def _create_new_trial(

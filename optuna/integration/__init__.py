@@ -9,6 +9,7 @@ _import_structure = {
     "allennlp": ["AllenNLPExecutor", "AllenNLPPruningCallback"],
     "botorch": ["BoTorchSampler"],
     "catalyst": ["CatalystPruningCallback"],
+    "catboost": ["CatBoostPruningCallback"],
     "chainer": ["ChainerPruningExtension"],
     "chainermn": ["ChainerMNStudy"],
     "cma": ["CmaEsSampler", "PyCmaSampler"],
@@ -21,6 +22,7 @@ _import_structure = {
     "pytorch_ignite": ["PyTorchIgnitePruningHandler"],
     "pytorch_lightning": ["PyTorchLightningPruningCallback"],
     "sklearn": ["OptunaSearchCV"],
+    "shap": ["ShapleyImportanceEvaluator"],
     "skorch": ["SkorchPruningCallback"],
     "mxnet": ["MXNetPruningCallback"],
     "skopt": ["SkoptSampler"],
@@ -41,6 +43,7 @@ if TYPE_CHECKING:
     from optuna.integration.allennlp import AllenNLPPruningCallback  # NOQA
     from optuna.integration.botorch import BoTorchSampler  # NOQA
     from optuna.integration.catalyst import CatalystPruningCallback  # NOQA
+    from optuna.integration.catboost import CatBoostPruningCallback  # NOQA
     from optuna.integration.chainer import ChainerPruningExtension  # NOQA
     from optuna.integration.chainermn import ChainerMNStudy  # NOQA
     from optuna.integration.cma import CmaEsSampler  # NOQA
@@ -59,6 +62,7 @@ if TYPE_CHECKING:
     from optuna.integration.pytorch_distributed import TorchDistributedTrial  # NOQA
     from optuna.integration.pytorch_ignite import PyTorchIgnitePruningHandler  # NOQA
     from optuna.integration.pytorch_lightning import PyTorchLightningPruningCallback  # NOQA
+    from optuna.integration.shap import ShapleyImportanceEvaluator  # NOQA
     from optuna.integration.sklearn import OptunaSearchCV  # NOQA
     from optuna.integration.skopt import SkoptSampler  # NOQA
     from optuna.integration.skorch import SkorchPruningCallback  # NOQA

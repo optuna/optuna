@@ -22,14 +22,12 @@ def _get_best_intermediate_result_over_steps(
 
 
 def _get_percentile_intermediate_result_over_trials(
-    all_trials: List["optuna.trial.FrozenTrial"],
+    completed_trials: List["optuna.trial.FrozenTrial"],
     direction: StudyDirection,
     step: int,
     percentile: float,
     n_min_trials: int,
 ) -> float:
-
-    completed_trials = [t for t in all_trials if t.state == TrialState.COMPLETE]
 
     if len(completed_trials) == 0:
         raise ValueError("No trials have been completed.")
@@ -176,8 +174,8 @@ class PercentilePruner(BasePruner):
 
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
 
-        all_trials = study.get_trials(deepcopy=False)
-        n_trials = len([t for t in all_trials if t.state == TrialState.COMPLETE])
+        completed_trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+        n_trials = len(completed_trials)
 
         if n_trials == 0:
             return False
@@ -204,7 +202,7 @@ class PercentilePruner(BasePruner):
             return True
 
         p = _get_percentile_intermediate_result_over_trials(
-            all_trials, direction, step, self._percentile, self._n_min_trials
+            completed_trials, direction, step, self._percentile, self._n_min_trials
         )
         if math.isnan(p):
             return False

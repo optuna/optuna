@@ -14,6 +14,10 @@ on:
       - setup.py
       - .github/workflows/dockerimage.yml
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
+  cancel-in-progress: true
+
 env:
   DOCKER_HUB_BASE_NAME: optuna/optuna
 
@@ -23,13 +27,13 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    # TODO (crcrpar): Remove `exclude` once integration works with Python 3.9.
+    # TODO (nzw0301): Remove `exclude` once integration works with Python 3.10.
     strategy:
       matrix:
-        python_version: ['3.6', '3.7', '3.8', '3.9']
+        python_version: ['3.6', '3.7', '3.8', '3.9', '3.10']
         build_type: ['', 'dev']  # "dev" installs all the dependencies including pytest.
         exclude:
-        - python_version: '3.9'
+        - python_version: '3.10'
           build_type: 'dev'
 
     # This action cannot be executed in the forked repository.

@@ -11,6 +11,9 @@ from optuna.study._study_direction import StudyDirection
 from optuna.trial import TrialState
 
 
+pytestmark = pytest.mark.filterwarnings("ignore::FutureWarning")
+
+
 def test_suggest() -> None:
     study = optuna.multi_objective.create_study(["maximize", "maximize"])
 
@@ -118,7 +121,7 @@ def test_params_and_distributions() -> None:
 
         assert set(trial.params.keys()) == {"x"}
         assert set(trial.distributions.keys()) == {"x"}
-        assert isinstance(trial.distributions["x"], optuna.distributions.UniformDistribution)
+        assert isinstance(trial.distributions["x"], optuna.distributions.FloatDistribution)
 
         return [x, x, x]
 
@@ -127,7 +130,7 @@ def test_params_and_distributions() -> None:
     trial = study.trials[0]
     assert set(trial.params.keys()) == {"x"}
     assert set(trial.distributions.keys()) == {"x"}
-    assert isinstance(trial.distributions["x"], optuna.distributions.UniformDistribution)
+    assert isinstance(trial.distributions["x"], optuna.distributions.FloatDistribution)
 
 
 def test_datetime() -> None:

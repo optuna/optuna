@@ -3,7 +3,7 @@ from typing import Optional
 
 import numpy as np
 
-from optuna._deprecated import deprecated
+from optuna._deprecated import deprecated_class
 from optuna.samplers._tpe.sampler import TPESampler
 
 
@@ -18,7 +18,7 @@ def _default_weights_above(x: int) -> np.ndarray:
     return np.ones(x)
 
 
-@deprecated("2.9.0")
+@deprecated_class("2.9.0", "4.0.0")
 class MOTPESampler(TPESampler):
     """Multi-objective sampler using the MOTPE algorithm.
 
@@ -28,23 +28,18 @@ class MOTPESampler(TPESampler):
 
     - `Multiobjective tree-structured parzen estimator for computationally expensive optimization
       problems <https://dl.acm.org/doi/abs/10.1145/3377930.3389817>`_
+    - `Multiobjective Tree-Structured Parzen Estimator <https://doi.org/10.1613/jair.1.13188>`_
 
     Args:
         consider_prior:
             Enhance the stability of Parzen estimator by imposing a Gaussian prior when
             :obj:`True`. The prior is only effective if the sampling distribution is
-            either :class:`~optuna.distributions.UniformDistribution`,
-            :class:`~optuna.distributions.DiscreteUniformDistribution`,
-            :class:`~optuna.distributions.LogUniformDistribution`,
-            :class:`~optuna.distributions.IntUniformDistribution`,
-            or :class:`~optuna.distributions.IntLogUniformDistribution`.
+            either :class:`~optuna.distributions.FloatDistribution`,
+            or :class:`~optuna.distributions.IntDistribution`.
         prior_weight:
             The weight of the prior. This argument is used in
-            :class:`~optuna.distributions.UniformDistribution`,
-            :class:`~optuna.distributions.DiscreteUniformDistribution`,
-            :class:`~optuna.distributions.LogUniformDistribution`,
-            :class:`~optuna.distributions.IntUniformDistribution`,
-            :class:`~optuna.distributions.IntLogUniformDistribution`, and
+            :class:`~optuna.distributions.FloatDistribution`,
+            :class:`~optuna.distributions.IntDistribution`, and
             :class:`~optuna.distributions.CategoricalDistribution`.
         consider_magic_clip:
             Enable a heuristic to limit the smallest variances of Gaussians used in

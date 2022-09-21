@@ -1,22 +1,27 @@
+from collections.abc import Mapping
 import copy
 from datetime import datetime
 import pickle
 from typing import Any
 from typing import Callable
 from typing import cast
+from typing import Container
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import Tuple
+from typing import Set
+from typing import Union
 
 import optuna
 from optuna import distributions
 from optuna import exceptions
-from optuna._experimental import experimental
+from optuna._experimental import experimental_class
 from optuna._imports import try_import
 from optuna.storages import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages._heartbeat import BaseHeartbeat
+from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
@@ -30,8 +35,8 @@ with try_import() as _imports:
     import redis
 
 
-@experimental("1.4.0")
-class RedisStorage(BaseStorage):
+@experimental_class("1.4.0")
+class RedisStorage(BaseStorage, BaseHeartbeat):
     """Storage class for Redis backend.
 
     Note that library users can instantiate this class, but the attributes
@@ -59,11 +64,20 @@ class RedisStorage(BaseStorage):
             study.optimize(objective)
 
     Args:
-        url: URL of the redis storage, password and db are optional. (ie: redis://localhost:6379)
+        url:
+            URL of the redis storage, password and db are optional. (ie: redis://localhost:6379)
         heartbeat_interval:
             Interval to record the heartbeat. It is recorded every ``interval`` seconds.
+            ``heartbeat_interval`` must be :obj:`None` or a positive integer.
+
+            .. note::
+                The heartbeat is supposed to be used with :meth:`~optuna.study.Study.optimize`.
+                If you use :meth:`~optuna.study.Study.ask` and
+                :meth:`~optuna.study.Study.tell` instead, it will not work.
+
         grace_period:
             Grace period before a running trial is failed from the last heartbeat.
+            ``grace_period`` must be :obj:`None` or a positive integer.
             If it is :obj:`None`, the grace period will be `2 * heartbeat_interval`.
         failed_trial_callback:
             A callback function that is invoked after failing each stale trial.
@@ -79,9 +93,6 @@ class RedisStorage(BaseStorage):
         make sure Redis in installed and running.
         Please execute ``$ pip install -U redis`` to install redis python library.
 
-    Raises:
-        :exc:`ValueError`:
-            If the given `heartbeat_interval` or `grace_period` is not a positive integer.
     """
 
     def __init__(
@@ -102,9 +113,9 @@ class RedisStorage(BaseStorage):
 
         self._url = url
         self._redis = redis.Redis.from_url(url)
-        self._heartbeat_interval = heartbeat_interval
-        self._grace_period = grace_period
-        self._failed_trial_callback = failed_trial_callback
+        self.heartbeat_interval = heartbeat_interval
+        self.grace_period = grace_period
+        self.failed_trial_callback = failed_trial_callback
 
     def create_new_study(self, study_name: Optional[str] = None) -> int:
 
@@ -129,7 +140,7 @@ class RedisStorage(BaseStorage):
                 "study_id:{:010d}:directions".format(study_id),
                 pickle.dumps([StudyDirection.NOT_SET]),
             )
-
+            # TODO(wattlebirdaz): Replace StudySummary with FrozenStudy.
             study_summary = StudySummary(
                 study_name=study_name,
                 direction=StudyDirection.NOT_SET,
@@ -187,11 +198,14 @@ class RedisStorage(BaseStorage):
 
         self._redis.set(self._key_study_summary(study_id), pickle.dumps(study_summary))
 
-    def _get_study_summary(self, study_id: int) -> StudySummary:
+    def _get_study_summary(self, study_id: int, include_best_trial: bool = True) -> StudySummary:
 
         summary_pkl = self._redis.get(self._key_study_summary(study_id))
         assert summary_pkl is not None
-        return pickle.loads(summary_pkl)
+        summary = pickle.loads(summary_pkl)
+        if not include_best_trial:
+            summary.best_trial = None
+        return summary
 
     def _del_study_summary(self, study_id: int) -> None:
 
@@ -220,13 +234,15 @@ class RedisStorage(BaseStorage):
                     )
                 )
 
-        with self._redis.pipeline() as pipe:
-            pipe.multi()
-            pipe.set(self._key_study_direction(study_id), pickle.dumps(directions))
-            study_summary = self._get_study_summary(study_id)
-            study_summary._directions = list(directions)
-            pipe.set(self._key_study_summary(study_id), pickle.dumps(study_summary))
-            pipe.execute()
+        queries: Mapping[Union[str, bytes], Union[bytes, float, int, str]]
+        queries = dict()
+
+        queries[self._key_study_direction(study_id)] = pickle.dumps(directions)
+        study_summary = self._get_study_summary(study_id)
+        study_summary._directions = list(directions)
+        queries[self._key_study_summary(study_id)] = pickle.dumps(study_summary)
+
+        self._redis.mset(queries)
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
 
@@ -252,7 +268,7 @@ class RedisStorage(BaseStorage):
         assert study_id_pkl is not None
         return pickle.loads(study_id_pkl)
 
-    def get_study_id_from_trial_id(self, trial_id: int) -> int:
+    def _get_study_id_from_trial_id(self, trial_id: int) -> int:
 
         study_id_pkl = self._redis.get("trial_id:{:010d}:study_id".format(trial_id))
         if study_id_pkl is None:
@@ -280,14 +296,14 @@ class RedisStorage(BaseStorage):
         self._check_study_id(study_id)
 
         study_summary = self._get_study_summary(study_id)
-        return copy.deepcopy(study_summary.user_attrs)
+        return study_summary.user_attrs
 
     def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
 
         self._check_study_id(study_id)
 
         study_summary = self._get_study_summary(study_id)
-        return copy.deepcopy(study_summary.system_attrs)
+        return study_summary.system_attrs
 
     @staticmethod
     def _key_study_param_distribution(study_id: int) -> str:
@@ -309,17 +325,49 @@ class RedisStorage(BaseStorage):
             self._key_study_param_distribution(study_id), pickle.dumps(param_distribution)
         )
 
-    def get_all_study_summaries(self) -> List[StudySummary]:
-
-        study_summaries = []
+    def get_all_studies(self) -> List[FrozenStudy]:
+        queries = []
         study_ids = [pickle.loads(sid) for sid in self._redis.lrange("study_list", 0, -1)]
         for study_id in study_ids:
-            study_summary = self._get_study_summary(study_id)
-            study_summaries.append(study_summary)
+            queries.append(self._key_study_summary(study_id))
 
-        return study_summaries
+        frozen_studies = []
+        summary_pkls = self._redis.mget(queries)
+        for summary_pkl in summary_pkls:
+            assert summary_pkl is not None
+            summary = pickle.loads(summary_pkl)
+            frozen_studies.append(
+                FrozenStudy(
+                    study_name=summary.study_name,
+                    direction=summary.direction,
+                    user_attrs=summary.user_attrs,
+                    system_attrs=summary.system_attrs,
+                    study_id=summary._study_id,
+                    directions=summary.directions,
+                )
+            )
+
+        return frozen_studies
 
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
+
+        return self._create_new_trial(study_id, template_trial)._trial_id
+
+    def _create_new_trial(
+        self, study_id: int, template_trial: Optional[FrozenTrial] = None
+    ) -> FrozenTrial:
+        """Create a new trial and returns a :class:`~optuna.trial.FrozenTrial`.
+
+        Args:
+            study_id:
+                Study id.
+            template_trial:
+                A :class:`~optuna.trial.FrozenTrial` with default values for trial attributes.
+
+        Returns:
+            A :class:`~optuna.trial.FrozenTrial` instance.
+
+        """
 
         self._check_study_id(study_id)
 
@@ -348,7 +396,7 @@ class RedisStorage(BaseStorage):
             study_summary.n_trials = len(self._get_study_trials(study_id))
             min_datetime_start = min(
                 [
-                    cast(datetime, t.datetime_start)
+                    t.datetime_start
                     for t in self.get_all_trials(study_id)
                     if t.datetime_start is not None
                 ],
@@ -361,7 +409,7 @@ class RedisStorage(BaseStorage):
         if trial.state.is_finished():
             self._update_cache(trial_id)
 
-        return trial_id
+        return trial
 
     @staticmethod
     def _create_running_trial() -> FrozenTrial:
@@ -380,34 +428,6 @@ class RedisStorage(BaseStorage):
             datetime_complete=None,
         )
 
-    def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
-
-        self._check_trial_id(trial_id)
-        trial = self.get_trial(trial_id)
-        self.check_trial_is_updatable(trial_id, trial.state)
-
-        if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
-            return False
-
-        trial.state = state
-
-        if state == TrialState.RUNNING:
-            trial.datetime_start = datetime.now()
-
-        if state.is_finished():
-            trial.datetime_complete = datetime.now()
-            self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
-            self._update_cache(trial_id)
-
-            # To ensure that there are no failed trials with heartbeats in the DB
-            # under any circumstances
-            study_id = self.get_study_id_from_trial_id(trial_id)
-            self._redis.hdel(self._key_study_heartbeats(study_id), str(trial_id))
-        else:
-            self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
-
-        return True
-
     def set_trial_param(
         self,
         trial_id: int,
@@ -416,11 +436,10 @@ class RedisStorage(BaseStorage):
         distribution: distributions.BaseDistribution,
     ) -> None:
 
-        self._check_trial_id(trial_id)
         self.check_trial_is_updatable(trial_id, self.get_trial(trial_id).state)
 
         # Check param distribution compatibility with previous trial(s).
-        study_id = self.get_study_id_from_trial_id(trial_id)
+        study_id = self._get_study_id_from_trial_id(trial_id)
         param_distribution = self._get_study_param_distribution(study_id)
         if param_name in param_distribution:
             distributions.check_distribution_compatibility(
@@ -429,19 +448,19 @@ class RedisStorage(BaseStorage):
 
         trial = self.get_trial(trial_id)
 
-        with self._redis.pipeline() as pipe:
-            pipe.multi()
-            # Set study param distribution.
-            param_distribution[param_name] = distribution
-            pipe.set(
-                self._key_study_param_distribution(study_id), pickle.dumps(param_distribution)
-            )
+        queries: Mapping[Union[str, bytes], Union[bytes, float, int, str]]
+        queries = dict()
 
-            # Set params.
-            trial.params[param_name] = distribution.to_external_repr(param_value_internal)
-            trial.distributions[param_name] = distribution
-            pipe.set(self._key_trial(trial_id), pickle.dumps(trial))
-            pipe.execute()
+        # Set study param distribution.
+        param_distribution[param_name] = distribution
+        queries[self._key_study_param_distribution(study_id)] = pickle.dumps(param_distribution)
+
+        # Set params.
+        trial.params[param_name] = distribution.to_external_repr(param_value_internal)
+        trial.distributions[param_name] = distribution
+        queries[self._key_trial(trial_id)] = pickle.dumps(trial)
+
+        self._redis.mset(queries)
 
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
 
@@ -454,10 +473,6 @@ class RedisStorage(BaseStorage):
             )
 
         return trial_ids[trial_number]
-
-    def get_trial_number_from_id(self, trial_id: int) -> int:
-
-        return self.get_trial(trial_id).number
 
     @staticmethod
     def _key_best_trial(study_id: int) -> str:
@@ -475,7 +490,7 @@ class RedisStorage(BaseStorage):
 
             _direction = self.get_study_directions(study_id)
             if len(_direction) > 1:
-                raise ValueError(
+                raise RuntimeError(
                     "Best trial can be obtained only for single-objective optimization."
                 )
             direction = _direction[0]
@@ -496,35 +511,65 @@ class RedisStorage(BaseStorage):
 
     def _set_best_trial(self, study_id: int, trial_id: int) -> None:
 
-        with self._redis.pipeline() as pipe:
-            pipe.multi()
-            pipe.set(self._key_best_trial(study_id), pickle.dumps(trial_id))
+        queries: Mapping[Union[str, bytes], Union[bytes, float, int, str]]
+        queries = dict()
 
-            study_summary = self._get_study_summary(study_id)
-            study_summary.best_trial = self.get_trial(trial_id)
-            pipe.set(self._key_study_summary(study_id), pickle.dumps(study_summary))
-            pipe.execute()
+        queries[self._key_best_trial(study_id)] = pickle.dumps(trial_id)
+        study_summary = self._get_study_summary(study_id)
+        study_summary.best_trial = self.get_trial(trial_id)
+        queries[self._key_study_summary(study_id)] = pickle.dumps(study_summary)
 
-    def get_trial_param(self, trial_id: int, param_name: str) -> float:
+        self._redis.mset(queries)
 
-        distribution = self.get_trial(trial_id).distributions[param_name]
-        return distribution.to_internal_repr(self.get_trial(trial_id).params[param_name])
+    def _check_and_set_param_distribution(
+        self,
+        study_id: int,
+        trial_id: int,
+        param_name: str,
+        param_value_internal: float,
+        distribution: distributions.BaseDistribution,
+    ) -> None:
 
-    def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
+        self._check_study_id(study_id)
+        self.set_trial_param(trial_id, param_name, param_value_internal, distribution)
 
-        self._check_trial_id(trial_id)
+    def set_trial_state_values(
+        self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
+    ) -> bool:
+
         trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        trial.values = values
-        self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
+        if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
+            return False
+
+        trial.state = state
+        if values is not None:
+            trial.values = values
+
+        if state == TrialState.RUNNING:
+            trial.datetime_start = datetime.now()
+
+        if state.is_finished():
+            trial.datetime_complete = datetime.now()
+            self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
+            self._update_cache(trial_id)
+
+            # To ensure that there are no failed trials with heartbeats in the DB
+            # under any circumstances
+            study_id = self._get_study_id_from_trial_id(trial_id)
+            self._redis.hdel(self._key_study_heartbeats(study_id), str(trial_id))
+        else:
+            self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
+
+        return True
 
     def _update_cache(self, trial_id: int) -> None:
 
         trial = self.get_trial(trial_id)
         if trial.state != TrialState.COMPLETE:
             return
-        study_id = self.get_study_id_from_trial_id(trial_id)
+        study_id = self._get_study_id_from_trial_id(trial_id)
 
         _direction = self.get_study_directions(study_id)
         if len(_direction) > 1:
@@ -557,7 +602,6 @@ class RedisStorage(BaseStorage):
         self, trial_id: int, step: int, intermediate_value: float
     ) -> None:
 
-        self._check_trial_id(trial_id)
         frozen_trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, frozen_trial.state)
         frozen_trial.intermediate_values[step] = intermediate_value
@@ -565,7 +609,6 @@ class RedisStorage(BaseStorage):
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
 
-        self._check_trial_id(trial_id)
         trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, trial.state)
         trial.user_attrs[key] = value
@@ -573,7 +616,6 @@ class RedisStorage(BaseStorage):
 
     def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
 
-        self._check_trial_id(trial_id)
         trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, trial.state)
         trial.system_attrs[key] = value
@@ -596,14 +638,6 @@ class RedisStorage(BaseStorage):
 
         self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
 
-    def _del_trial(self, trial_id: int) -> None:
-
-        with self._redis.pipeline() as pipe:
-            pipe.multi()
-            pipe.delete(self._key_trial(trial_id))
-            pipe.delete("trial_id:{:010d}:study_id".format(trial_id))
-            pipe.execute()
-
     def _get_study_trials(self, study_id: int) -> List[int]:
 
         self._check_study_id(study_id)
@@ -615,26 +649,36 @@ class RedisStorage(BaseStorage):
         self,
         study_id: int,
         deepcopy: bool = True,
-        states: Optional[Tuple[TrialState, ...]] = None,
+        states: Optional[Container[TrialState]] = None,
+    ) -> List[FrozenTrial]:
+        # Redis will copy data from storage with `mget`.
+        # No further copying is required even if the deepcopy option is true.
+        return self._get_trials(study_id, states, set())
+
+    def _get_trials(
+        self,
+        study_id: int,
+        states: Optional[Container[TrialState]],
+        excluded_trial_ids: Set[int],
     ) -> List[FrozenTrial]:
 
         self._check_study_id(study_id)
 
-        trials = []
-        trial_ids = self._get_study_trials(study_id)
+        queries = []
+        trial_ids = set(self._get_study_trials(study_id)) - excluded_trial_ids
         for trial_id in trial_ids:
-            frozen_trial = self.get_trial(trial_id)
+            queries.append(self._key_trial(trial_id))
+
+        trials = []
+        frozen_trial_pkls = self._redis.mget(queries)
+        for frozen_trial_pkl in frozen_trial_pkls:
+            assert frozen_trial_pkl is not None
+            frozen_trial = pickle.loads(frozen_trial_pkl)
 
             if states is None or frozen_trial.state in states:
                 trials.append(frozen_trial)
 
-        if deepcopy:
-            return copy.deepcopy(trials)
-        else:
-            return trials
-
-    def read_trials_from_remote_storage(self, study_id: int) -> None:
-        self._check_study_id(study_id)
+        return trials
 
     def _check_study_id(self, study_id: int) -> None:
 
@@ -644,31 +688,23 @@ class RedisStorage(BaseStorage):
     def _check_trial_id(self, trial_id: int) -> None:
 
         if not self._redis.exists(self._key_trial(trial_id)):
-            raise KeyError("study_id {} does not exist.".format(trial_id))
+            raise KeyError("trial_id {} does not exist.".format(trial_id))
 
     def record_heartbeat(self, trial_id: int) -> None:
-        study_id = self.get_study_id_from_trial_id(trial_id)
+        study_id = self._get_study_id_from_trial_id(trial_id)
         self._redis.hset(
             self._key_study_heartbeats(study_id),
             str(trial_id),
             pickle.dumps(self._get_redis_time()),
         )
 
-    def fail_stale_trials(self, study_id: int) -> List[int]:
-        confirmed = []
-        for trial_id in self._get_stale_trial_ids(study_id):
-            if self.set_trial_state(trial_id, TrialState.FAIL):
-                confirmed.append(trial_id)
-
-        return confirmed
-
     def _get_stale_trial_ids(self, study_id: int) -> List[int]:
-        assert self._heartbeat_interval is not None
+        assert self.heartbeat_interval is not None
 
-        if self._grace_period is None:
-            grace_period = 2 * self._heartbeat_interval
+        if self.grace_period is None:
+            grace_period = 2 * self.heartbeat_interval
         else:
-            grace_period = self._grace_period
+            grace_period = self.grace_period
 
         current_time = self._get_redis_time()
         heartbeats = self._redis.hgetall(self._key_study_heartbeats(study_id))
@@ -684,15 +720,12 @@ class RedisStorage(BaseStorage):
         seconds, microseconds = self._redis.time()
         return seconds + microseconds * 1e-6
 
-    def _is_heartbeat_supported(self) -> bool:
-        return True
-
     def get_heartbeat_interval(self) -> Optional[int]:
-        return self._heartbeat_interval
+        return self.heartbeat_interval
 
     @staticmethod
     def _key_study_heartbeats(study_id: int) -> str:
         return "study_id:{:010d}:heartbeats".format(study_id)
 
     def get_failed_trial_callback(self) -> Optional[Callable[["optuna.Study", FrozenTrial], None]]:
-        return self._failed_trial_callback
+        return self.failed_trial_callback

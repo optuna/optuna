@@ -28,7 +28,7 @@ class RandomSampler(BaseSampler):
 
             def objective(trial):
                 x = trial.suggest_float("x", -5, 5)
-                return x ** 2
+                return x**2
 
 
             study = optuna.create_study(sampler=RandomSampler())
@@ -44,7 +44,7 @@ class RandomSampler(BaseSampler):
 
     def reseed_rng(self) -> None:
 
-        self._rng = numpy.random.RandomState()
+        self._rng.seed()
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial

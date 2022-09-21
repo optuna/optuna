@@ -1,8 +1,8 @@
 """
 .. _distributed:
 
-Easy Parallelization
-====================
+4. Easy Parallelization
+=======================
 
 It's straightforward to parallelize :func:`optuna.study.Study.optimize`.
 
@@ -18,7 +18,7 @@ To just see how parallel optimization works in Optuna, check the below video.
 
 .. raw:: html
 
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/J_aymk4YXhg?start=427" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/J_aymk4YXhg?start=427" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 
 Create a Study
@@ -78,6 +78,9 @@ Process 2 (the same command as process 1):
     [I 2020-07-21 13:45:03,748] Trial 1 finished with value: 0.028194513284051464 and parameters: {'x': 1.8320877810162361}. Best is trial 1 with value: 0.028194513284051464.
     [I 2020-07-21 13:45:05,783] Trial 3 finished with value: 24.45966755098074 and parameters: {'x': 6.945671597566982}. Best is trial 1 with value: 0.028194513284051464.
     ...
+
+.. note::
+    ``n_trials`` is the number of trials each process will run, not the total number of trials across all processes. For example, the script given above runs 100 trials for each process, 100 trials * 2 processes = 200 trials. :class:`optuna.study.MaxTrialsCallback` can ensure how many times trials will be performed across all processes.
 
 .. note::
     We do not recommend SQLite for distributed optimizations at scale because it may cause deadlocks and serious performance issues. Please consider to use another database engine like PostgreSQL or MySQL.

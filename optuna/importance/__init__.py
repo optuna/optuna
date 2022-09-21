@@ -1,8 +1,11 @@
+from collections import OrderedDict
 from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+import warnings
 
+from optuna.exceptions import ExperimentalWarning
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova import FanovaImportanceEvaluator
 from optuna.importance._mean_decrease_impurity import MeanDecreaseImpurityImportanceEvaluator
@@ -24,16 +27,17 @@ def get_param_importances(
     evaluator: Optional[BaseImportanceEvaluator] = None,
     params: Optional[List[str]] = None,
     target: Optional[Callable[[FrozenTrial], float]] = None,
+    normalize: bool = True,
 ) -> Dict[str, float]:
     """Evaluate parameter importances based on completed trials in the given study.
 
     The parameter importances are returned as a dictionary where the keys consist of parameter
     names and their values importances.
-    The importances are represented by floating point numbers that sum to 1.0 over the entire
-    dictionary.
-    The higher the value, the more important.
+    The importances are represented by non-negative floating point numbers, where higher values
+    mean that the parameters are more important.
     The returned dictionary is of type :class:`collections.OrderedDict` and is ordered by
     its values in a descending order.
+    By default, the sum of the importance values are normalized to 1.0.
 
     If ``params`` is :obj:`None`, all parameter that are present in all of the completed trials are
     assessed.
@@ -68,21 +72,27 @@ def get_param_importances(
         target:
             A function to specify the value to evaluate importances.
             If it is :obj:`None` and ``study`` is being used for single-objective optimization,
-            the objective values are used.
+            the objective values are used. ``target`` must be specified if ``study`` is being
+            used for multi-objective optimization.
 
             .. note::
                 Specify this argument if ``study`` is being used for multi-objective
                 optimization. For example, to get the hyperparameter importance of the first
                 objective, use ``target=lambda t: t.values[0]`` for the target parameter.
+        normalize:
+            A boolean option to specify whether the sum of the importance values should be
+            normalized to 1.0.
+            Defaults to :obj:`True`.
+
+            .. note::
+                Added in v3.0.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v3.0.0.
 
     Returns:
         An :class:`collections.OrderedDict` where the keys are parameter names and the values are
         assessed importances.
 
-    Raises:
-        :exc:`ValueError`:
-            If ``target`` is :obj:`None` and ``study`` is being used for multi-objective
-            optimization.
     """
     if evaluator is None:
         evaluator = FanovaImportanceEvaluator()
@@ -90,4 +100,18 @@ def get_param_importances(
     if not isinstance(evaluator, BaseImportanceEvaluator):
         raise TypeError("Evaluator must be a subclass of BaseImportanceEvaluator.")
 
-    return evaluator.evaluate(study, params=params, target=target)
+    res = evaluator.evaluate(study, params=params, target=target)
+    if normalize:
+        s = sum(res.values())
+        if s == 0.0:
+            n_params = len(res)
+            return OrderedDict((param, 1.0 / n_params) for param in res.keys())
+        else:
+            return OrderedDict((param, value / s) for (param, value) in res.items())
+    else:
+        warnings.warn(
+            "`normalize` option is an experimental feature."
+            " The interface can change in the future.",
+            ExperimentalWarning,
+        )
+        return res

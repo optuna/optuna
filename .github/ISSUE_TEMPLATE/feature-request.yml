@@ -1,0 +1,38 @@
+name: "\U0001F4A1Feature request"
+description: Suggest an idea for Optuna.
+labels: ["feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time for your feature requests! Please write a clear and concise description of the feature proposal.
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: |
+        Please write the motivation for the proposal.
+        If your feature request is related to a problem, please describe a clear and concise description of what the problem is.
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Please write a detailed description of the new feature.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives (optional)
+      description: Please write a clear and concise description of any alternative solutions or features you've considered.
+    validations:
+      required: false
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context (optional)
+      description:  Please add any other context or screenshots about the feature request here.
+    validations:
+      required: false

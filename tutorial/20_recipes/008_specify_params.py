@@ -6,7 +6,7 @@ Specify Hyperparameters Manually
 
 It's natural that you have some specific sets of hyperparameters to try first such as initial learning rate
 values and the number of leaves.
-Also, it's also possible that you've already tried those sets before having Optuna find better
+Also, it's possible that you've already tried those sets before having Optuna find better
 sets of hyperparameters.
 
 Optuna provides two APIs to support such cases:
@@ -14,6 +14,9 @@ Optuna provides two APIs to support such cases:
 1. Passing those sets of hyperparameters and let Optuna evaluate them - :func:`~optuna.study.Study.enqueue_trial`
 2. Adding the results of those sets as completed ``Trial``\\s - :func:`~optuna.study.Study.add_trial`
 
+.. _enqueue_trial_tutorial:
+
+---------------------------------------------------------
 First Scenario: Have Optuna evaluate your hyperparameters
 ---------------------------------------------------------
 
@@ -98,6 +101,9 @@ optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout)
 study.optimize(objective, n_trials=100, timeout=600)
 
 ###################################################################################################
+# .. _add_trial_tutorial:
+#
+# ----------------------------------------------------------------------
 # Second scenario: Have Optuna utilize already evaluated hyperparameters
 # ----------------------------------------------------------------------
 #
@@ -119,9 +125,9 @@ study.add_trial(
             "min_child_samples": 20,
         },
         distributions={
-            "bagging_fraction": optuna.distributions.UniformDistribution(0.4, 1.0 + 1e-12),
-            "bagging_freq": optuna.distributions.IntUniformDistribution(0, 7),
-            "min_child_samples": optuna.distributions.IntUniformDistribution(5, 100),
+            "bagging_fraction": optuna.distributions.FloatDistribution(0.4, 1.0 + 1e-12),
+            "bagging_freq": optuna.distributions.IntDistribution(0, 7),
+            "min_child_samples": optuna.distributions.IntDistribution(5, 100),
         },
         value=0.94,
     )
@@ -134,9 +140,9 @@ study.add_trial(
             "min_child_samples": 20,
         },
         distributions={
-            "bagging_fraction": optuna.distributions.UniformDistribution(0.4, 1.0 + 1e-12),
-            "bagging_freq": optuna.distributions.IntUniformDistribution(0, 7),
-            "min_child_samples": optuna.distributions.IntUniformDistribution(5, 100),
+            "bagging_fraction": optuna.distributions.FloatDistribution(0.4, 1.0 + 1e-12),
+            "bagging_freq": optuna.distributions.IntDistribution(0, 7),
+            "min_child_samples": optuna.distributions.IntDistribution(5, 100),
         },
         value=0.95,
     )

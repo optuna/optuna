@@ -1,7 +1,8 @@
-from optuna._experimental import experimental
+from optuna._experimental import experimental_func
 from optuna.logging import get_logger
 from optuna.study import Study
-from optuna.trial import TrialState
+from optuna.visualization._intermediate_values import _get_intermediate_plot_info
+from optuna.visualization._intermediate_values import _IntermediatePlotInfo
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 
@@ -12,7 +13,7 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
-@experimental("2.2.0")
+@experimental_func("2.2.0")
 def plot_intermediate_values(study: Study) -> "Axes":
     """Plot intermediate values of all trials in a study with Matplotlib.
 
@@ -74,10 +75,10 @@ def plot_intermediate_values(study: Study) -> "Axes":
     """
 
     _imports.check()
-    return _get_intermediate_plot(study)
+    return _get_intermediate_plot(_get_intermediate_plot_info(study))
 
 
-def _get_intermediate_plot(study: Study) -> "Axes":
+def _get_intermediate_plot(info: _IntermediatePlotInfo) -> "Axes":
 
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
@@ -87,35 +88,18 @@ def _get_intermediate_plot(study: Study) -> "Axes":
     ax.set_ylabel("Intermediate Value")
     cmap = plt.get_cmap("tab20")  # Use tab20 colormap for multiple line plots.
 
-    # Prepare data for plotting.
-    target_state = [TrialState.PRUNED, TrialState.COMPLETE, TrialState.RUNNING]
-    trials = [trial for trial in study.trials if trial.state in target_state]
+    trial_infos = info.trial_infos
 
-    if len(trials) == 0:
-        _logger.warning("Study instance does not contain trials.")
-        return ax
-
-    # Draw multiple line plots.
-    traces = []
-    for i, trial in enumerate(trials):
-        if trial.intermediate_values:
-            sorted_intermediate_values = sorted(trial.intermediate_values.items())
-            trace = ax.plot(
-                tuple((x for x, _ in sorted_intermediate_values)),
-                tuple((y for _, y in sorted_intermediate_values)),
-                color=cmap(i),
-                alpha=0.7,
-                label="Trial{}".format(trial.number),
-            )
-            traces.append(trace)
-
-    if not traces:
-        _logger.warning(
-            "You need to set up the pruning feature to utilize `plot_intermediate_values()`"
+    for i, tinfo in enumerate(trial_infos):
+        ax.plot(
+            tuple((x for x, _ in tinfo.sorted_intermediate_values)),
+            tuple((y for _, y in tinfo.sorted_intermediate_values)),
+            color=cmap(i),
+            alpha=0.7,
+            label="Trial{}".format(tinfo.trial_number),
         )
-        return ax
 
-    if len(trials) >= 2:
+    if len(trial_infos) >= 2:
         ax.legend(bbox_to_anchor=(1.05, 1), loc="upper left", borderaxespad=0.0)
 
     return ax

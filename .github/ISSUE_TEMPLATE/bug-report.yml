@@ -1,0 +1,62 @@
+name: "\U0001F41BBug report"
+description: Create a report to help us improve Optuna.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! Please write a clear and concise description of what the bug is.
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      description: Please write a clear and concise description of what you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: |
+        Please give us your environment information. You can get this information by typing the following.
+        ```
+        python3 -c 'import optuna; print(f"- Optuna version:{optuna.__version__}")'
+        python3 -c 'import platform; print(f"- Python version:{platform.python_version()}")'
+        python3 -c 'import platform; print(f"- OS:{platform.platform()}")'
+        ```
+      value: |
+        - Optuna version:
+        - Python version:
+        - OS:
+        - (Optional) Other libraries and their versions:
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error messages, stack traces, or logs
+      description: Please copy and paste any relevant error messages, stack traces, or log output.
+      render: shell
+    validations:
+       required: true
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Please provide how we reproduce your reported bugs. If possible, it is highly recommended to provide the reproducible example codes.
+      value: |
+        1.
+        2.
+        3.
+        ```python
+        # python code
+        ```
+    validations:
+      required: true
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context (optional)
+      description: Please provide additional contexts if you have.
+    validations:
+      required: false

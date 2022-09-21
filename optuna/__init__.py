@@ -1,11 +1,7 @@
-import importlib
-import types
-from typing import Any
 from typing import TYPE_CHECKING
 
 from optuna import distributions
 from optuna import exceptions
-from optuna import importance
 from optuna import integration
 from optuna import logging
 from optuna import multi_objective
@@ -15,7 +11,7 @@ from optuna import storages
 from optuna import study
 from optuna import trial
 from optuna import version
-from optuna import visualization
+from optuna._imports import _LazyImport
 from optuna.exceptions import TrialPruned
 from optuna.study import copy_study
 from optuna.study import create_study
@@ -56,36 +52,5 @@ __all__ = [
 ]
 
 
-class _LazyImport(types.ModuleType):
-    """Module wrapper for lazy import.
-
-    This class wraps specified module and lazily import it when they are actually accessed.
-    Otherwise, `import optuna` becomes slower because it imports all submodules and
-    their dependencies (e.g., bokeh) all at once.
-    Within this project's usage, importlib override this module's attribute on the first
-    access and the imported submodule is directly accessed from the second access.
-
-    Args:
-        name: Name of module to apply lazy import.
-    """
-
-    def __init__(self, name: str) -> None:
-        super().__init__(name)
-        self._name = name
-
-    def _load(self) -> types.ModuleType:
-        module = importlib.import_module(self._name)
-        self.__dict__.update(module.__dict__)
-        return module
-
-    def __getattr__(self, item: str) -> Any:
-        return getattr(self._load(), item)
-
-
-if TYPE_CHECKING:
-    from optuna import dashboard  # NOQA
-else:
-    dashboard = _LazyImport("optuna.dashboard")
-
-structs = _LazyImport("optuna.structs")
-type_checking = _LazyImport("optuna.type_checking")
+importance = _LazyImport("optuna.importance")
+visualization = _LazyImport("optuna.visualization")

@@ -5,6 +5,7 @@ from typing import Dict
 from typing import Optional
 from typing import Sequence
 
+from optuna._deprecated import deprecated_func
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 
@@ -28,16 +29,19 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
 
         raise NotImplementedError
 
+    @deprecated_func("3.0.0", "6.0.0")
     @abc.abstractmethod
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
 
         raise NotImplementedError
 
+    @deprecated_func("3.0.0", "6.0.0")
     @abc.abstractmethod
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
 
         raise NotImplementedError
 
+    @deprecated_func("3.0.0", "6.0.0")
     @abc.abstractmethod
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
 

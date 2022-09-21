@@ -11,7 +11,7 @@ import torch.nn.functional as F
 
 import optuna
 from optuna.integration import FastAIV2PruningCallback
-from optuna.testing.integration import DeterministicPruner
+from optuna.testing.pruners import DeterministicPruner
 
 
 def _generate_dummy_dataset() -> torch.utils.data.DataLoader:

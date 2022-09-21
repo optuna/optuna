@@ -8,11 +8,15 @@ import numpy
 
 from optuna._transform import _SearchSpaceTransform
 from optuna.importance._base import _get_distributions
+from optuna.importance._base import _get_filtered_trials
+from optuna.importance._base import _get_target_values
+from optuna.importance._base import _get_trans_params
+from optuna.importance._base import _param_importances_to_dict
+from optuna.importance._base import _sort_dict_by_importance
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova._fanova import _Fanova
 from optuna.study import Study
 from optuna.trial import FrozenTrial
-from optuna.trial import TrialState
 
 
 class FanovaImportanceEvaluator(BaseImportanceEvaluator):
@@ -22,19 +26,21 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
     `An Efficient Approach for Assessing Hyperparameter Importance
     <http://proceedings.mlr.press/v32/hutter14.html>`_.
 
-    Given a study, fANOVA fits a random forest regression model that predicts the objective value
-    given a parameter configuration. The more accurate this model is, the more reliable the
-    importances assessed by this class are.
+    fANOVA fits a random forest regression model that predicts the objective values
+    of :class:`~optuna.trial.TrialState.COMPLETE` trials given their parameter configurations.
+    The more accurate this model is, the more reliable the importances assessed
+    by this class are.
+
+    .. note::
+
+        This class takes over 1 minute when given a study that contains 1000+ trials.
+        We published `optuna-fast-fanova <https://github.com/optuna/optuna-fast-fanova>`_ library,
+        that is a Cython accelerated fANOVA implementation. By using it, you can get hyperparameter
+        importances within a few seconds.
 
     .. note::
 
         Requires the `sklearn <https://github.com/scikit-learn/scikit-learn>`_ Python package.
-
-    .. note::
-
-        Pairwise and higher order importances are not supported through this class. They can be
-        computed using :class:`~optuna.importance._fanova._fanova._Fanova` directly but is not
-        recommended as interfaces may change without prior notice.
 
     .. note::
 
@@ -84,60 +90,48 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
                 "`target=lambda t: t.values[0]` for the first objective value."
             )
 
-        distributions = _get_distributions(study, params)
-        if len(distributions) == 0:
+        distributions = _get_distributions(study, params=params)
+        if params is None:
+            params = list(distributions.keys())
+        assert params is not None
+
+        # fANOVA does not support parameter distributions with a single value.
+        # However, there is no reason to calculate parameter importance in such case anyway,
+        # since it will always be 0 as the parameter is constant in the objective function.
+        non_single_distributions = {
+            name: dist for name, dist in distributions.items() if not dist.single()
+        }
+        single_distributions = {
+            name: dist for name, dist in distributions.items() if dist.single()
+        }
+
+        if len(non_single_distributions) == 0:
             return OrderedDict()
 
-        trials = []
-        for trial in study.trials:
-            if trial.state != TrialState.COMPLETE:
-                continue
-            if any(name not in trial.params for name in distributions.keys()):
-                continue
-            trials.append(trial)
+        trials: List[FrozenTrial] = _get_filtered_trials(study, params=params, target=target)
 
-        trans = _SearchSpaceTransform(distributions, transform_log=False, transform_step=False)
+        trans = _SearchSpaceTransform(
+            non_single_distributions, transform_log=False, transform_step=False
+        )
 
-        n_trials = len(trials)
-        trans_params = numpy.empty((n_trials, trans.bounds.shape[0]), dtype=numpy.float64)
-        trans_values = numpy.empty(n_trials, dtype=numpy.float64)
-
-        for trial_idx, trial in enumerate(trials):
-            trans_params[trial_idx] = trans.transform(trial.params)
-            trans_values[trial_idx] = trial.value if target is None else target(trial)
-
-        trans_bounds = trans.bounds
-        column_to_encoded_columns = trans.column_to_encoded_columns
-
-        if trans_params.size == 0:  # `params` were given but as an empty list.
-            return OrderedDict()
-
-        # Many (deep) copies of the search spaces are required during the tree traversal and using
-        # Optuna distributions will create a bottleneck.
-        # Therefore, search spaces (parameter distributions) are represented by a single
-        # `numpy.ndarray`, coupled with a list of flags that indicate whether they are categorical
-        # or not.
+        trans_params: numpy.ndarray = _get_trans_params(trials, trans)
+        target_values: numpy.ndarray = _get_target_values(trials, target)
 
         evaluator = self._evaluator
         evaluator.fit(
             X=trans_params,
-            y=trans_values,
-            search_spaces=trans_bounds,
-            column_to_encoded_columns=column_to_encoded_columns,
+            y=target_values,
+            search_spaces=trans.bounds,
+            column_to_encoded_columns=trans.column_to_encoded_columns,
         )
-
-        importances = {}
-        for i, name in enumerate(distributions.keys()):
-            importance, _ = evaluator.get_importance((i,))
-            importances[name] = importance
-
-        total_importance = sum(importances.values())
-        for name in importances:
-            importances[name] /= total_importance
-
-        sorted_importances = OrderedDict(
-            reversed(
-                sorted(importances.items(), key=lambda name_and_importance: name_and_importance[1])
-            )
+        param_importances = numpy.array(
+            [evaluator.get_importance(i)[0] for i in range(len(non_single_distributions))]
         )
-        return sorted_importances
+        param_importances /= numpy.sum(param_importances)
+
+        return _sort_dict_by_importance(
+            {
+                **_param_importances_to_dict(non_single_distributions.keys(), param_importances),
+                **_param_importances_to_dict(single_distributions.keys(), 0.0),
+            }
+        )

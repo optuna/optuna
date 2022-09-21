@@ -23,9 +23,7 @@ if [ $? -eq 1 ] ; then
 fi
 command -v mypy &> /dev/null
 if [ $? -eq 1 ] ; then
-  # TODO(toshihikoyanase): Unpin mypy after resolving the following issue:
-  # https://github.com/optuna/optuna/issues/2240.
-  missing_dependencies+=(mypy==0.790)
+  missing_dependencies+=(mypy)
 fi
 if [ ! ${#missing_dependencies[@]} -eq 0 ]; then
   echo "The following dependencies are missing:" "${missing_dependencies[@]}"
@@ -44,7 +42,7 @@ do
   esac
 done
 
-target="examples optuna tests benchmarks"
+target="optuna tests benchmarks"
 mypy_target="optuna tests benchmarks"
 res_all=0
 

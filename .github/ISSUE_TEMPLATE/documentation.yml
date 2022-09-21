@@ -1,0 +1,12 @@
+name: "\U0001f4d6Documentation"
+description: Report an issue related to https://optuna.readthedocs.io/.
+labels: ["document"]
+body:
+  - type: textarea
+    id: explanation
+    attributes:
+      label: What is an issue?
+      description: Thanks for taking time to raise an issue! Please write a clear and concise description of what content in https://optuna.readthedocs.io/ is an issue.
+    validations:
+      required: true
+

@@ -17,22 +17,12 @@ with try_import() as _imports:
 
 # Required for type annotation in `Study.trials_dataframe`.
 if not _imports.is_successful():
-    pd = object  # type: ignore # NOQA
+    pd = object  # NOQA
 
 
-def _trials_dataframe(
-    study: "optuna.Study", attrs: Tuple[str, ...], multi_index: bool
-) -> "pd.DataFrame":
-    _imports.check()
-
-    trials = study.get_trials(deepcopy=False)
-
-    # If no trials, return an empty dataframe.
-    if not len(trials):
-        return pd.DataFrame()
-
-    if "value" in attrs and study._is_multi_objective():
-        attrs = tuple("values" if attr == "value" else attr for attr in attrs)
+def _create_records_and_aggregate_column(
+    study: "optuna.Study", attrs: Tuple[str, ...]
+) -> Tuple[List[Dict[Tuple[str, str], Any]], List[Tuple[str, str]]]:
 
     attrs_to_df_columns: Dict[str, str] = collections.OrderedDict()
     for attr in attrs:
@@ -49,16 +39,13 @@ def _trials_dataframe(
     column_agg: DefaultDict[str, Set] = collections.defaultdict(set)
     non_nested_attr = ""
 
-    def _create_record_and_aggregate_column(
-        trial: "optuna.trial.FrozenTrial",
-    ) -> Dict[Tuple[str, str], Any]:
-
+    records = []
+    for trial in study.get_trials(deepcopy=False):
         record = {}
         for attr, df_column in attrs_to_df_columns.items():
             value = getattr(trial, attr)
             if isinstance(value, TrialState):
-                # Convert TrialState to str and remove the common prefix.
-                value = str(value).split(".")[-1]
+                value = value.name
             if isinstance(value, dict):
                 for nested_attr, nested_value in value.items():
                     record[(df_column, nested_attr)] = nested_value
@@ -77,20 +64,39 @@ def _trials_dataframe(
             else:
                 record[(df_column, non_nested_attr)] = value
                 column_agg[attr].add((df_column, non_nested_attr))
-        return record
 
-    records = [_create_record_and_aggregate_column(trial) for trial in trials]
+        records.append(record)
 
     columns: List[Tuple[str, str]] = sum(
         (sorted(column_agg[k]) for k in attrs if k in column_agg), []
     )
 
+    return records, columns
+
+
+def _flatten_columns(columns: List[Tuple[str, str]]) -> List[str]:
+    # Flatten the `MultiIndex` columns where names are concatenated with underscores.
+    # Filtering is required to omit non-nested columns avoiding unwanted trailing underscores.
+    return ["_".join(filter(lambda c: c, map(lambda c: str(c), col))) for col in columns]
+
+
+def _trials_dataframe(
+    study: "optuna.Study", attrs: Tuple[str, ...], multi_index: bool
+) -> "pd.DataFrame":
+    _imports.check()
+
+    # If no trials, return an empty dataframe.
+    if len(study.get_trials(deepcopy=False)) == 0:
+        return pd.DataFrame()
+
+    if "value" in attrs and study._is_multi_objective():
+        attrs = tuple("values" if attr == "value" else attr for attr in attrs)
+
+    records, columns = _create_records_and_aggregate_column(study, attrs)
+
     df = pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
 
     if not multi_index:
-        # Flatten the `MultiIndex` columns where names are concatenated with underscores.
-        # Filtering is required to omit non-nested columns avoiding unwanted trailing
-        # underscores.
-        df.columns = ["_".join(filter(lambda c: c, map(lambda c: str(c), col))) for col in columns]
+        df.columns = _flatten_columns(columns)
 
     return df

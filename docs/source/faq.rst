@@ -25,7 +25,7 @@ First, callable classes can be used for that purpose as follows:
     import optuna
 
 
-    class Objective(object):
+    class Objective:
         def __init__(self, min_x, max_x):
             # Hold this implementation specific arguments as the fields of the class.
             self.min_x = min_x
@@ -93,7 +93,7 @@ Please see :ref:`rdb` for more details.
 How can I save and resume studies?
 ----------------------------------------------------
 
-There are two ways of persisting studies, which depends if you are using
+There are two ways of persisting studies, which depend if you are using
 in-memory storage (default) or remote databases (RDB). In-memory studies can be
 saved and loaded like usual Python objects using ``pickle`` or ``joblib``. For
 example, using ``joblib``:
@@ -114,7 +114,10 @@ And to resume the study:
     for key, value in study.best_trial.params.items():
         print(f"    {key}: {value}")
 
-If you are using RDBs, see :ref:`rdb` for more details.
+Note that Optuna does not support saving/reloading across different Optuna
+versions with ``pickle``. To save/reload a study across different Optuna versions,
+please use RDBs and `upgrade storage schema <reference/cli.html#storage-upgrade>`_
+if necessary. If you are using RDBs, see :ref:`rdb` for more details.
 
 How to suppress log messages of Optuna?
 ---------------------------------------
@@ -171,13 +174,15 @@ For example, you can save SVM models trained in the objective function as follow
 How can I obtain reproducible optimization results?
 ---------------------------------------------------
 
-To make the parameters suggested by Optuna reproducible, you can specify a fixed random seed via ``seed`` argument of :class:`~optuna.samplers.RandomSampler` or :class:`~optuna.samplers.TPESampler` as follows:
+To make the parameters suggested by Optuna reproducible, you can specify a fixed random seed via ``seed`` argument of an instance of :mod:`~optuna.samplers` as follows:
 
 .. code-block:: python
 
     sampler = TPESampler(seed=10)  # Make the sampler behave in a deterministic way.
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective)
+
+To make the pruning by :class:`~optuna.pruners.HyperbandPruner` reproducible, you can specify ``study_name`` of :class:`~optuna.study.Study` and `hash seed <https://docs.python.org/3/using/cmdline.html#envvar-PYTHONHASHSEED>`_.
 
 However, there are two caveats.
 
@@ -254,7 +259,8 @@ The behavior when altered is defined by each sampler individually.
 How can I use two GPUs for evaluating two trials simultaneously?
 ----------------------------------------------------------------
 
-If your optimization target supports GPU (CUDA) acceleration and you want to specify which GPU is used, the easiest way is to set ``CUDA_VISIBLE_DEVICES`` environment variable:
+If your optimization target supports GPU (CUDA) acceleration and you want to specify which GPU is used in your script,
+``main.py``, the easiest way is to set ``CUDA_VISIBLE_DEVICES`` environment variable:
 
 .. code-block:: bash
 
@@ -262,13 +268,13 @@ If your optimization target supports GPU (CUDA) acceleration and you want to spe
     #
     # Specify to use the first GPU, and run an optimization.
     $ export CUDA_VISIBLE_DEVICES=0
-    $ optuna study optimize foo.py objective --study-name foo --storage sqlite:///example.db
+    $ python main.py
 
     # On another terminal.
     #
     # Specify to use the second GPU, and run another optimization.
     $ export CUDA_VISIBLE_DEVICES=1
-    $ optuna study optimize bar.py objective --study-name bar --storage sqlite:///example.db
+    $ python main.py
 
 Please refer to `CUDA C Programming Guide <https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars>`_ for further details.
 
@@ -336,7 +342,7 @@ Note that the above examples are similar to running the garbage collector inside
 How can I output a log only when the best value is updated?
 -----------------------------------------------------------
 
-Here's how to replace the logging feature of optuna and with your own logging callback function.
+Here's how to replace the logging feature of optuna with your own logging callback function.
 The implemented callback can be passed to :func:`~optuna.study.Study.optimize`.
 Here's an example:
 
@@ -369,6 +375,9 @@ Here's an example:
 
     study = optuna.create_study()
     study.optimize(objective, n_trials=100, callbacks=[logging_callback])
+
+Note that this callback may show incorrect values when you try to optimize an objective function with ``n_jobs!=1``
+(or other forms of distributed optimization) due to its reads and writes to storage that are prone to race conditions.
 
 How do I suggest variables which represent the proportion, that is, are in accordance with Dirichlet distribution?
 ------------------------------------------------------------------------------------------------------------------
@@ -422,3 +431,163 @@ This method is justified in the following way:
 First, if we apply the transformation :math:`x = - \log (u)` to the variable :math:`u` sampled from the uniform distribution :math:`Uni(0, 1)` in the interval :math:`[0, 1]`, the variable :math:`x` will follow the exponential distribution :math:`Exp(1)` with scale parameter :math:`1`.
 Furthermore, for :math:`n` variables :math:`x[0], ..., x[n-1]` that follow the exponential distribution of scale parameter :math:`1` independently, normalizing them with :math:`p[i] = x[i] / \sum_i x[i]`, the vector :math:`p` follows the Dirichlet distribution :math:`Dir(\alpha)` of scale parameter :math:`\alpha = (1, ..., 1)`.
 You can verify the transformation by calculating the elements of the Jacobian.
+
+How can I optimize a model with some constraints?
+-------------------------------------------------
+
+When you want to optimize a model with constraints, you can use the following classes, :class:`~optuna.samplers.NSGAIISampler` or :class:`~optuna.integration.BoTorchSampler`.
+The following example is a benchmark of Binh and Korn function, a multi-objective optimization, with constraints using :class:`~optuna.samplers.NSGAIISampler`. This one has two constraints :math:`c_0 = (x-5)^2 + y^2 - 25 \le 0` and :math:`c_1 = -(x - 8)^2 - (y + 3)^2 + 7.7 \le 0` and finds the optimal solution satisfying these constraints.
+
+
+.. code-block:: python
+
+    import optuna
+
+
+    def objective(trial):
+        # Binh and Korn function with constraints.
+        x = trial.suggest_float("x", -15, 30)
+        y = trial.suggest_float("y", -15, 30)
+
+        # Constraints which are considered feasible if less than or equal to zero.
+        # The feasible region is basically the intersection of a circle centered at (x=5, y=0)
+        # and the complement to a circle centered at (x=8, y=-3).
+        c0 = (x - 5) ** 2 + y ** 2 - 25
+        c1 = -((x - 8) ** 2) - (y + 3) ** 2 + 7.7
+
+        # Store the constraints as user attributes so that they can be restored after optimization.
+        trial.set_user_attr("constraint", (c0, c1))
+
+        v0 = 4 * x ** 2 + 4 * y ** 2
+        v1 = (x - 5) ** 2 + (y - 5) ** 2
+
+        return v0, v1
+
+
+    def constraints(trial):
+        return trial.user_attrs["constraint"]
+
+
+    sampler = optuna.samplers.NSGAIISampler(constraints_func=constraints)
+    study = optuna.create_study(
+        directions=["minimize", "minimize"],
+        sampler=sampler,
+    )
+    study.optimize(objective, n_trials=32, timeout=600)
+
+    print("Number of finished trials: ", len(study.trials))
+
+    print("Pareto front:")
+
+    trials = sorted(study.best_trials, key=lambda t: t.values)
+
+    for trial in trials:
+        print("  Trial#{}".format(trial.number))
+        print(
+            "    Values: Values={}, Constraint={}".format(
+                trial.values, trial.user_attrs["constraint"][0]
+            )
+        )
+        print("    Params: {}".format(trial.params))
+
+If you are interested in the exmaple for :class:`~optuna.integration.BoTorchSampler`, please refer to `this sample code <https://github.com/optuna/optuna-examples/blob/main/multi_objective/botorch_simple.py>`_.
+
+
+There are two kinds of constrained optimizations, one with soft constraints and the other with hard constraints.
+Soft constraints do not have to be satisfied, but an objective function is penalized if they are unsatisfied. On the other hand, hard constraints must be satisfied.
+
+Optuna is adopting the soft one and **DOES NOT** support the hard one. In other words, Optuna **DOES NOT** have built-in samplers for the hard constraints.
+
+How can I parallelize optimization?
+-----------------------------------
+
+The variations of parallelization are in the following three cases.
+
+1. Multi-threading parallelization with single node
+2. Multi-processing parallelization with single node
+3. Multi-processing parallelization with multiple nodes
+
+1. Multi-threading parallelization with a single node
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Parallelization can be achieved by setting the argument ``n_jobs`` in :func:`optuna.study.Study.optimize`.
+However, the python code will not be faster due to GIL because :func:`optuna.study.Study.optimize` with ``n_jobs!=1`` uses multi-threading.
+
+While optimizing, it will be faster in limited situations, such as waiting for other server requests or C/C++ processing with numpy, etc., but it will not be faster in other cases.
+
+For more information about 1., see APIReference_.
+
+.. _APIReference: https://optuna.readthedocs.io/en/stable/reference/index.html
+
+2. Multi-processing parallelization with single node
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This can be achieved by using file-based RDBs (such as SQLite) and client/server RDBs (such as PostgreSQL and MySQL).
+However, if you are in the environment where you can not install an RDB, you can not run multi-processing parallelization with single node. When you really want to do it, please request it as a GitHub issue. If we receive a lot of requests, we may provide a solution for it.
+
+For more information about 2., see TutorialEasyParallelization_.
+
+.. _TutorialEasyParallelization: https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/004_distributed.html
+
+3. Multi-processing parallelization with multiple nodes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This can be achieved by using client/server RDBs (such as PostgreSQL and MySQL).
+However, if you are in the environment where you can not install a client/server RDB, you can not run multi-processing parallelization with multiple nodes.
+
+For more information about 3., see TutorialEasyParallelization_.
+
+.. _heartbeat_monitoring:
+
+Can I monitor trials and make them failed automatically when they are killed unexpectedly?
+------------------------------------------------------------------------------------------
+
+.. note::
+
+  Heartbeat mechanism is experimental. API would change in the future.
+
+A process running a trial could be killed unexpectedly, typically by a job scheduler in a cluster environment.
+If trials are killed unexpectedly, they will be left on the storage with their states `RUNNING` until we remove them or update their state manually.
+For such a case, Optuna supports monitoring trials using `heartbeat <https://en.wikipedia.org/wiki/Heartbeat_(computing)>`_ mechanism.
+Using heartbeat, if a process running a trial is killed unexpectedly,
+Optuna will automatically change the state of the trial that was running on that process to :obj:`~optuna.trial.TrialState.FAIL`
+from :obj:`~optuna.trial.TrialState.RUNNING`.
+
+.. code-block:: python
+
+    import optuna
+
+    def objective(trial):
+        (Very time-consuming computation)
+
+    # Recording heartbeats every 60 seconds.
+    # Other processes' trials where more than 120 seconds have passed
+    # since the last heartbeat was recorded will be automatically failed.
+    storage = optuna.storages.RDBStorage(url="sqlite:///:memory:", heartbeat_interval=60, grace_period=120)
+    study = optuna.create_study(storage=storage)
+    study.optimize(objective, n_trials=100)
+
+.. note::
+
+  The heartbeat is supposed to be used with :meth:`~optuna.study.Study.optimize`. If you use :meth:`~optuna.study.Study.ask` and
+  :meth:`~optuna.study.Study.tell`, please change the state of the killed trials by calling :meth:`~optuna.study.Study.tell`
+  explicitly.
+
+You can also execute a callback function to process the failed trial.
+Optuna provides a callback to retry failed trials as :class:`~optuna.storages.RetryFailedTrialCallback`.
+Note that a callback is invoked at a beginning of each trial, which means :class:`~optuna.storages.RetryFailedTrialCallback`
+will retry failed trials when a new trial starts to evaluate.
+
+.. code-block:: python
+
+    import optuna
+    from optuna.storages import RetryFailedTrialCallback
+
+    storage = optuna.storages.RDBStorage(
+        url="sqlite:///:memory:",
+        heartbeat_interval=60,
+        grace_period=120,
+        failed_trial_callback=RetryFailedTrialCallback(max_retry=3),
+    )
+
+    study = optuna.create_study(storage=storage)
