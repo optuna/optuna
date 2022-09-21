@@ -461,9 +461,6 @@ class DaskStorage(BaseStorage):
         # scheduler registration process. We use ``storage=None`` below by convention.
         return (DaskStorage, (None, self.name))
 
-    def get_study_class(self) -> Type[Study]:
-        return DaskStudy
-
     def get_base_storage(self) -> BaseStorage:
         """Retrieve underlying Optuna storage instance from the scheduler.
 
@@ -720,6 +717,15 @@ class DaskStorage(BaseStorage):
 
 @experimental_class("3.0.3")
 class DaskStudy(Study):
+    def __init__(self, study: Study):
+        self.__study = study
+        super().__init__(
+            study_name=study.study_name,
+            storage=study._storage,
+            sampler=study.sampler,
+            pruner=study.pruner,
+        )
+
     def optimize(  # type: ignore
         self,
         func: ObjectiveFuncType,
@@ -742,7 +748,7 @@ class DaskStudy(Study):
         futures = [
             client.submit(
                 _optimize,
-                self,
+                self.__study,
                 func,
                 n_trials=1,
                 timeout=None,

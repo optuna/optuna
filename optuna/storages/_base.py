@@ -7,7 +7,6 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
-from typing import Type
 from typing import Union
 
 from optuna.distributions import BaseDistribution
@@ -145,11 +144,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
                 is the opposite direction or :obj:`~optuna.study.StudyDirection.NOT_SET`.
         """
         raise NotImplementedError
-
-    def get_study_class(self) -> Type["optuna.study.Study"]:
-        from optuna.study import Study
-
-        return Study
 
     # Basic study access
 
