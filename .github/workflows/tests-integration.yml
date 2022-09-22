@@ -18,6 +18,8 @@ jobs:
 
     strategy:
       matrix:
+        # FIXME: Remove `fail-fast` below before merging
+        fail-fast: false
         python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
 
     steps:
