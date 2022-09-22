@@ -1,7 +1,7 @@
 import asyncio
 import datetime
 import inspect
-from typing import Any
+from typing import Any, Iterable
 from typing import Callable
 from typing import Container
 from typing import Dict
@@ -704,7 +704,7 @@ class DaskStorage(BaseStorage):
         return self.client.sync(self._get_trial, trial_id=trial_id)
 
     async def _get_all_trials(
-        self, study_id: int, deepcopy: bool = True, states: Optional[Container[TrialState]] = None
+        self, study_id: int, deepcopy: bool = True, states: Optional[Iterable[TrialState]] = None
     ) -> List[FrozenTrial]:
         serialized_states = None
         if states is not None:
@@ -799,7 +799,7 @@ def create_study(
     load_if_exists: bool = False,
     directions: Optional[Sequence[Union[str, StudyDirection]]] = None,
     client: Optional["distributed.Client"] = None,
-):
+) -> Study:
     study = optuna.create_study(
         storage=DaskStorage(storage, client=client),
         sampler=sampler,
