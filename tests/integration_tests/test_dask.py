@@ -69,7 +69,7 @@ def client() -> Client:
 
 def test_experimental(client: Client) -> None:
     with pytest.warns(optuna._experimental.ExperimentalWarning):
-        DaskStorage()
+        study = optuna.integration.dask.create_study()
 
 
 @gen_cluster(client=True)
@@ -101,9 +101,7 @@ def test_name_unique(client: Client) -> None:
 
 
 def test_create_study_daskstudy(client: Client) -> None:
-    storage = DaskStorage()
-    study = optuna.create_study(storage=storage)
-    study = DaskStudy(study)
+    study = optuna.integration.dask.create_study()
     assert type(study) is DaskStudy
     assert type(study._storage) is DaskStorage
 
@@ -111,16 +109,13 @@ def test_create_study_daskstudy(client: Client) -> None:
 @pytest.mark.parametrize("storage_specifier", STORAGE_MODES)
 def test_daskstudy_optimize(client: Client, storage_specifier: str) -> None:
     with get_storage_url(storage_specifier) as url:
-        storage = DaskStorage(url)
-        study = optuna.create_study(storage=storage)
-        study = DaskStudy(study)
+        study = optuna.integration.dask.create_study()
         study.optimize(objective, n_trials=10)
         assert len(study.trials) == 10
 
 
 def test_daskstudy_optimize_timeout(client: Client) -> None:
-    study = optuna.create_study(storage=DaskStorage())
-    study = DaskStudy(study)
+    study = optuna.integration.dask.create_study()
     with pytest.raises(asyncio.TimeoutError):
         study.optimize(objective_slow, n_trials=10, timeout=0.1)
 
@@ -138,9 +133,8 @@ def test_get_base_storage(client: Client, storage_specifier: str) -> None:
 def test_study_direction_best_value(client: Client, direction: str) -> None:
     # Regression test for https://github.com/jrbourbeau/dask-optuna/issues/15
     pytest.importorskip("pandas")
-    dask_storage = DaskStorage()
-    study = optuna.create_study(storage=dask_storage, direction=direction)
-    study = DaskStudy(study)
+
+    study = optuna.integration.dask.create_study(direction=direction)
     study.optimize(objective, n_trials=10)
 
     # Ensure that study.best_value matches up with the expected value from

@@ -15,7 +15,9 @@ from typing import Union
 import uuid
 
 import optuna
-from optuna._experimental import experimental_class
+from optuna import pruners
+from optuna import storages
+from optuna._experimental import experimental_func
 from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
 from optuna.distributions import distribution_to_json
@@ -390,7 +392,6 @@ def _use_basestorage_doc(func: Callable) -> Callable:
     return func
 
 
-@experimental_class("3.0.3")
 class DaskStorage(BaseStorage):
     """Dask-compatible storage class.
 
@@ -715,7 +716,6 @@ class DaskStorage(BaseStorage):
         )
 
 
-@experimental_class("3.0.3")
 class DaskStudy(Study):
     def __init__(self, study: Study):
         self.__study = study
@@ -762,3 +762,28 @@ class DaskStudy(Study):
         ]
 
         distributed.wait(futures, timeout=timeout)
+
+
+@experimental_func("3.0.3")
+def create_study(
+    *,
+    storage: Optional[Union[str, storages.BaseStorage]] = None,
+    sampler: Optional["samplers.BaseSampler"] = None,
+    pruner: Optional[pruners.BasePruner] = None,
+    study_name: Optional[str] = None,
+    direction: Optional[Union[str, StudyDirection]] = None,
+    load_if_exists: bool = False,
+    directions: Optional[Sequence[Union[str, StudyDirection]]] = None,
+    client: Optional["distributed.Client"] = None,
+):
+    study = optuna.create_study(
+        storage=DaskStorage(storage, client=client),
+        sampler=sampler,
+        pruner=pruner,
+        study_name=study_name,
+        direction=direction,
+        load_if_exists=load_if_exists,
+        directions=directions,
+    )
+
+    return DaskStudy(study)
