@@ -28,7 +28,7 @@ from optuna.storages import BaseStorage
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.study._frozen import FrozenStudy
-from optuna.study._optimize import _optimize
+from optuna.study._optimize import _optimize_sequential
 from optuna.study.study import ObjectiveFuncType
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -764,15 +764,17 @@ class DaskStudy(Study):
 
         futures = [
             client.submit(
-                _optimize,
+                _optimize_sequential,
                 self.__study,
                 func,
                 n_trials=1,
                 timeout=None,
-                n_jobs=1,
                 catch=catch,
                 callbacks=callbacks,
                 gc_after_trial=gc_after_trial,
+                reseed_sampler_rng=True,
+                time_start=None,
+                progress_bar=False,
                 pure=False,
             )
             for _ in range(n_trials)
