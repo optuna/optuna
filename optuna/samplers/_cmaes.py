@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import copy
 import math
 import pickle
@@ -12,6 +13,7 @@ from typing import Union
 import warnings
 
 from cmaes import CMA
+from cmaes import CMAwM
 from cmaes import get_warm_start_mgd
 from cmaes import SepCMA
 import numpy as np
@@ -34,7 +36,7 @@ _EPS = 1e-10
 _SYSTEM_ATTR_MAX_LENGTH = 2045
 
 
-CmaClass = Union[CMA, SepCMA]
+CmaClass = Union[CMA, SepCMA, CMAwM]
 
 
 class CmaEsSampler(BaseSampler):
@@ -205,6 +207,7 @@ class CmaEsSampler(BaseSampler):
         popsize: Optional[int] = None,
         inc_popsize: int = 2,
         use_separable_cma: bool = False,
+        use_cma_with_margin: bool = False,  # TODO: Combination with use_separable_cma.
         source_trials: Optional[List[FrozenTrial]] = None,
     ) -> None:
         self._x0 = x0
@@ -219,6 +222,7 @@ class CmaEsSampler(BaseSampler):
         self._popsize = popsize
         self._inc_popsize = inc_popsize
         self._use_separable_cma = use_separable_cma
+        self._use_cma_with_margin = use_cma_with_margin
         self._source_trials = source_trials
 
         if self._restart_strategy:
@@ -298,7 +302,14 @@ class CmaEsSampler(BaseSampler):
                 continue
             search_space[name] = distribution
 
-        return search_space
+        # Move parameters of FloatDistribution to the top.
+        separated_search_space = OrderedDict()
+        for Dist in [optuna.distributions.FloatDistribution, optuna.distributions.IntDistribution]:
+            for name, distribution in search_space.items():
+                if isinstance(distribution, Dist):
+                    separated_search_space[name] = distribution
+        assert len(separated_search_space) == len(search_space)
+        return separated_search_space
 
     def sample_relative(
         self,
@@ -359,7 +370,10 @@ class CmaEsSampler(BaseSampler):
             solutions: List[Tuple[np.ndarray, float]] = []
             for t in solution_trials[: optimizer.population_size]:
                 assert t.value is not None, "completed trials must have a value"
-                x = trans.transform(t.params)
+                if isinstance(optimizer, CMAwM):
+                    x = t.system_attrs["x_for_tell"]
+                else:
+                    x = trans.transform(t.params)
                 y = t.value if study.direction == StudyDirection.MINIMIZE else -t.value
                 solutions.append((x, y))
 
@@ -382,7 +396,11 @@ class CmaEsSampler(BaseSampler):
         # Caution: optimizer should update its seed value.
         seed = self._cma_rng.randint(1, 2**16) + trial.number
         optimizer._rng.seed(seed)
-        params = optimizer.ask()
+        if isinstance(optimizer, CMAwM):
+            params, x_for_tell = optimizer.ask()
+            study._storage.set_trial_system_attr(trial._trial_id, "x_for_tell", x_for_tell)
+        else:
+            params = optimizer.ask()
 
         study._storage.set_trial_system_attr(
             trial._trial_id, generation_attr_key, optimizer.generation
@@ -479,6 +497,22 @@ class CmaEsSampler(BaseSampler):
                 mean=mean,
                 sigma=sigma0,
                 bounds=trans.bounds,
+                seed=self._cma_rng.randint(1, 2**31 - 2),
+                n_max_resampling=10 * n_dimension,
+                population_size=population_size,
+            )
+
+        if self._use_cma_with_margin:
+            n_continuous = sum(
+                isinstance(dist, optuna.distributions.FloatDistribution)
+                for dist in trans._search_space.values()
+            )
+            return CMAwM(
+                mean=mean,
+                sigma=sigma0,
+                cov=cov,
+                discrete_space=trans.bounds[n_continuous:],
+                continuous_space=trans.bounds[:n_continuous],
                 seed=self._cma_rng.randint(1, 2**31 - 2),
                 n_max_resampling=10 * n_dimension,
                 population_size=population_size,

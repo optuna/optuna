@@ -31,7 +31,7 @@ def get_install_requires() -> List[str]:
     requirements = [
         "alembic>=1.5.0",
         "cliff",
-        "cmaes>=0.8.2",
+        "cmaes@git+https://github.com/CyberAgentAILab/cmaes.git#3938dee69ebb707cf68ad7aaebd299001dec0ce7",
         "colorlog",
         "numpy",
         "packaging>=20.0",
