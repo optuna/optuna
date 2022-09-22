@@ -16,6 +16,7 @@ import uuid
 
 import optuna
 from optuna import pruners
+from optuna import samplers
 from optuna import storages
 from optuna._experimental import experimental_func
 from optuna._imports import try_import
@@ -138,6 +139,7 @@ class _OptunaSchedulerExtension:
 
     def create_new_study(
         self,
+        comm: "distributed.comm.tcp.TCP",
         storage_name: str,
         study_name: Optional[str] = None,
     ) -> int:
@@ -145,6 +147,7 @@ class _OptunaSchedulerExtension:
 
     def delete_study(
         self,
+        comm: "distributed.comm.tcp.TCP",
         storage_name: str,
         study_id: int,
     ) -> None:
@@ -152,6 +155,7 @@ class _OptunaSchedulerExtension:
 
     def set_study_user_attr(
         self,
+        comm: "distributed.comm.tcp.TCP",
         storage_name: str,
         study_id: int,
         key: str,
@@ -163,6 +167,7 @@ class _OptunaSchedulerExtension:
 
     def set_study_system_attr(
         self,
+        comm: "distributed.comm.tcp.TCP",
         storage_name: str,
         study_id: int,
         key: str,
@@ -176,6 +181,7 @@ class _OptunaSchedulerExtension:
 
     def set_study_directions(
         self,
+        comm: "distributed.comm.tcp.TCP",
         storage_name: str,
         study_id: int,
         directions: List[str],
@@ -187,6 +193,7 @@ class _OptunaSchedulerExtension:
 
     def get_study_id_from_name(
         self,
+        comm: "distributed.comm.tcp.TCP",
         storage_name: str,
         study_name: str,
     ) -> int:
@@ -194,6 +201,7 @@ class _OptunaSchedulerExtension:
 
     def get_study_name_from_id(
         self,
+        comm: "distributed.comm.tcp.TCP",
         storage_name: str,
         study_id: int,
     ) -> str:
@@ -201,6 +209,7 @@ class _OptunaSchedulerExtension:
 
     def get_study_directions(
         self,
+        comm: "distributed.comm.tcp.TCP",
         storage_name: str,
         study_id: int,
     ) -> List[str]:
@@ -209,6 +218,7 @@ class _OptunaSchedulerExtension:
 
     def get_study_user_attrs(
         self,
+        comm: "distributed.comm.tcp.TCP",
         storage_name: str,
         study_id: int,
     ) -> Dict[str, Any]:
@@ -216,16 +226,20 @@ class _OptunaSchedulerExtension:
 
     def get_study_system_attrs(
         self,
+        comm: "distributed.comm.tcp.TCP",
         storage_name: str,
         study_id: int,
     ) -> Dict[str, Any]:
         return self.get_storage(storage_name).get_study_system_attrs(study_id=study_id)
 
-    def get_all_studies(self, storage_name: str) -> List[FrozenStudy]:
+    def get_all_studies(
+        self, comm: "distributed.comm.tcp.TCP", storage_name: str
+    ) -> List[FrozenStudy]:
         return self.get_storage(storage_name).get_all_studies()
 
     def create_new_trial(
         self,
+        comm: "distributed.comm.tcp.TCP",
         storage_name: str,
         study_id: int,
         template_trial: Optional[FrozenTrial] = None,
@@ -237,6 +251,7 @@ class _OptunaSchedulerExtension:
 
     def set_trial_param(
         self,
+        comm: "distributed.comm.tcp.TCP",
         storage_name: str,
         trial_id: int,
         param_name: str,
@@ -251,7 +266,7 @@ class _OptunaSchedulerExtension:
         )
 
     def get_trial_id_from_study_id_trial_number(
-        self, storage_name: str, study_id: int, trial_number: int
+        self, comm: "distributed.comm.tcp.TCP", storage_name: str, study_id: int, trial_number: int
     ) -> int:
         return self.get_storage(storage_name).get_trial_id_from_study_id_trial_number(
             study_id=study_id,
@@ -260,6 +275,7 @@ class _OptunaSchedulerExtension:
 
     def get_trial_number_from_id(
         self,
+        comm: "distributed.comm.tcp.TCP",
         storage_name: str,
         trial_id: int,
     ) -> int:
@@ -267,6 +283,7 @@ class _OptunaSchedulerExtension:
 
     def get_trial_param(
         self,
+        comm: "distributed.comm.tcp.TCP",
         storage_name: str,
         trial_id: int,
         param_name: str,
@@ -278,6 +295,7 @@ class _OptunaSchedulerExtension:
 
     def set_trial_state_values(
         self,
+        comm: "distributed.comm.tcp.TCP",
         storage_name: str,
         trial_id: int,
         state: str,
@@ -291,6 +309,7 @@ class _OptunaSchedulerExtension:
 
     def set_trial_intermediate_value(
         self,
+        comm: "distributed.comm.tcp.TCP",
         storage_name: str,
         trial_id: int,
         step: int,
@@ -304,6 +323,7 @@ class _OptunaSchedulerExtension:
 
     def set_trial_user_attr(
         self,
+        comm: "distributed.comm.tcp.TCP",
         storage_name: str,
         trial_id: int,
         key: str,
@@ -317,6 +337,7 @@ class _OptunaSchedulerExtension:
 
     def set_trial_system_attr(
         self,
+        comm: "distributed.comm.tcp.TCP",
         storage_name: str,
         trial_id: int,
         key: str,
@@ -330,6 +351,7 @@ class _OptunaSchedulerExtension:
 
     def get_trial(
         self,
+        comm: "distributed.comm.tcp.TCP",
         storage_name: str,
         trial_id: int,
     ) -> dict:
@@ -338,6 +360,7 @@ class _OptunaSchedulerExtension:
 
     def get_all_trials(
         self,
+        comm: "distributed.comm.tcp.TCP",
         storage_name: str,
         study_id: int,
         deepcopy: bool = True,
@@ -355,6 +378,7 @@ class _OptunaSchedulerExtension:
 
     def get_n_trials(
         self,
+        comm: "distributed.comm.tcp.TCP",
         storage_name: str,
         study_id: int,
         state: Optional[TrialState] = None,

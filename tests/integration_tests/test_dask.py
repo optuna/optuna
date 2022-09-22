@@ -69,7 +69,7 @@ def client() -> Client:
 
 def test_experimental(client: Client) -> None:
     with pytest.warns(optuna._experimental.ExperimentalWarning):
-        study = optuna.integration.dask.create_study()
+        optuna.integration.dask.create_study()
 
 
 @gen_cluster(client=True)
@@ -109,7 +109,7 @@ def test_create_study_daskstudy(client: Client) -> None:
 @pytest.mark.parametrize("storage_specifier", STORAGE_MODES)
 def test_daskstudy_optimize(client: Client, storage_specifier: str) -> None:
     with get_storage_url(storage_specifier) as url:
-        study = optuna.integration.dask.create_study()
+        study = optuna.integration.dask.create_study(storage=url)
         study.optimize(objective, n_trials=10)
         assert len(study.trials) == 10
 
