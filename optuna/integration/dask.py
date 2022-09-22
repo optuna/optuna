@@ -60,18 +60,10 @@ def _deserialize_trialstate(state: str) -> TrialState:
 
 def _serialize_frozentrial(trial: FrozenTrial) -> dict:
     data = trial.__dict__.copy()
-    data["state"] = data["state"].name
-    for attr in [
-        "trial_id",
-        "number",
-        "params",
-        "user_attrs",
-        "system_attrs",
-        "distributions",
-        "datetime_start",
-        "values",
-    ]:
-        data[attr] = data.pop(f"_{attr}")
+    data["state"] = _serialize_trialstate(data["state"])
+    attrs = [a for a in data.keys() if a.startswith("_")]
+    for attr in attrs:
+        data[attr[1:]] = data.pop(attr)
     data["distributions"] = {k: distribution_to_json(v) for k, v in data["distributions"].items()}
     if data["datetime_start"] is not None:
         data["datetime_start"] = _serialize_datetime(data["datetime_start"])
