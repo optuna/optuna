@@ -75,7 +75,9 @@ def upgrade():
             batch_op.add_column(
                 sa.Column(
                     "intermediate_value_type",
-                    sa.Enum("FINITE", "INF_POS", "INF_NEG", "NAN", name="trialintermediatevaluetype"),
+                    sa.Enum(
+                        "FINITE", "INF_POS", "INF_NEG", "NAN", name="trialintermediatevaluetype"
+                    ),
                     nullable=False,
                     server_default="FINITE",
                 ),
