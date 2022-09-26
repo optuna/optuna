@@ -102,7 +102,16 @@ def upgrade():
 
     session = orm.Session(bind=bind)
     try:
-        records = session.query(TrialValueModel).all()
+        records = (
+            session.query(TrialValueModel)
+            .filter(
+                sa.or_(
+                    TrialValueModel.value > RDB_MAX_FLOAT - 1,
+                    TrialValueModel.value < RDB_MIN_FLOAT + 1,
+                )
+            )
+            .all()
+        )
         mapping = []
         for r in records:
             value: float
