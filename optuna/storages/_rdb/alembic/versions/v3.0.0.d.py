@@ -71,6 +71,8 @@ class TrialValueModel(BaseModel):
 
 def upgrade():
     bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    column_names = [c["name"] for c in inspector.get_columns("trial_values")]
 
     sa.Enum(TrialValueModel.TrialValueType).create(bind, checkfirst=True)
 
@@ -78,27 +80,28 @@ def upgrade():
     # ADD COLUMN <col_name> ... DEFAULT "FINITE"', but seemingly Alembic
     # does not support such a SQL statement. So first add a column with schema-level
     # default value setting, then remove it by `batch_op.alter_column()`.
-    with op.batch_alter_table("trial_values") as batch_op:
-        batch_op.add_column(
-            sa.Column(
+    if "value_type" not in column_names:
+        with op.batch_alter_table("trial_values") as batch_op:
+            batch_op.add_column(
+                sa.Column(
+                    "value_type",
+                    sa.Enum("FINITE", "INF_POS", "INF_NEG", name="trialvaluetype"),
+                    nullable=False,
+                    server_default="FINITE",
+                ),
+            )
+        with op.batch_alter_table("trial_values") as batch_op:
+            batch_op.alter_column(
                 "value_type",
-                sa.Enum("FINITE", "INF_POS", "INF_NEG", name="trialvaluetype"),
-                nullable=False,
-                server_default="FINITE",
-            ),
-        )
-    with op.batch_alter_table("trial_values") as batch_op:
-        batch_op.alter_column(
-            "value_type",
-            existing_type=sa.Enum("FINITE", "INF_POS", "INF_NEG", name="trialvaluetype"),
-            existing_nullable=False,
-            server_default=None,
-        )
-        batch_op.alter_column(
-            "value",
-            existing_type=sa.Float(precision=FLOAT_PRECISION),
-            nullable=True,
-        )
+                existing_type=sa.Enum("FINITE", "INF_POS", "INF_NEG", name="trialvaluetype"),
+                existing_nullable=False,
+                server_default=None,
+            )
+            batch_op.alter_column(
+                "value",
+                existing_type=sa.Float(precision=FLOAT_PRECISION),
+                nullable=True,
+            )
 
     session = orm.Session(bind=bind)
     try:
