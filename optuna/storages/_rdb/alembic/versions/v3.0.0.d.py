@@ -106,8 +106,8 @@ def upgrade():
             session.query(TrialValueModel)
             .filter(
                 sa.or_(
-                    TrialValueModel.value > RDB_MAX_FLOAT - 1,
-                    TrialValueModel.value < RDB_MIN_FLOAT + 1,
+                    TrialValueModel.value > 1e16,
+                    TrialValueModel.value < -1e16,
                     TrialValueModel.value.is_(None),
                 )
             )

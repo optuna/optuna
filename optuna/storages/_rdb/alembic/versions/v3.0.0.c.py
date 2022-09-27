@@ -93,8 +93,8 @@ def upgrade():
             session.query(IntermediateValueModel)
             .filter(
                 sa.or_(
-                    IntermediateValueModel.intermediate_value > RDB_MAX_FLOAT - 1,
-                    IntermediateValueModel.intermediate_value < RDB_MIN_FLOAT + 1,
+                    IntermediateValueModel.intermediate_value > 1e16,
+                    IntermediateValueModel.intermediate_value < -1e16,
                     IntermediateValueModel.intermediate_value.is_(None),
                 )
             )
