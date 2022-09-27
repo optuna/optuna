@@ -108,6 +108,7 @@ def upgrade():
                 sa.or_(
                     TrialValueModel.value > RDB_MAX_FLOAT - 1,
                     TrialValueModel.value < RDB_MIN_FLOAT + 1,
+                    TrialValueModel.value.is_(None),
                 )
             )
             .all()
