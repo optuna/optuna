@@ -23,22 +23,18 @@ class Model(pl.LightningModule):
         super().__init__()
         self._model = nn.Sequential(nn.Linear(4, 8))
 
-    def forward(self, data: torch.Tensor) -> torch.Tensor:  # type: ignore
+    def forward(self, data: torch.Tensor) -> torch.Tensor:
 
         return self._model(data)
 
-    def training_step(  # type: ignore
-        self, batch: List[torch.Tensor], batch_nb: int
-    ) -> Dict[str, torch.Tensor]:
+    def training_step(self, batch: List[torch.Tensor], batch_nb: int) -> Dict[str, torch.Tensor]:
 
         data, target = batch
         output = self.forward(data)
         loss = F.nll_loss(output, target)
         return {"loss": loss}
 
-    def validation_step(  # type: ignore
-        self, batch: List[torch.Tensor], batch_nb: int
-    ) -> Dict[str, torch.Tensor]:
+    def validation_step(self, batch: List[torch.Tensor], batch_nb: int) -> Dict[str, torch.Tensor]:
 
         data, target = batch
         output = self.forward(data)
