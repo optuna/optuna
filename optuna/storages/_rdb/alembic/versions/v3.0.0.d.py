@@ -108,7 +108,6 @@ def upgrade():
                 sa.or_(
                     TrialValueModel.value > 1e16,
                     TrialValueModel.value < -1e16,
-                    TrialValueModel.value.is_(None),
                 )
             )
             .all()
