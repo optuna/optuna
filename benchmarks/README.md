@@ -163,7 +163,7 @@ Benchmark run can be started with
 
 Allowed models are `[kNN, SVM, DT, RF, MLP-sgd, ada, linear]` and allowed datasets are `[breast, digits, iris, wine, diabetes]`. For more details on default parameters please refer to `benchmarks/run_bayesmark.py`. Markdown report can be generated after benchmark has been completed by running
 ```bash
-% python benchmarks/report_bayesmark.py
+% python benchmarks/bayesmark/report_bayesmark.py
 ```
 
 You'll find benchmark artifacts in `plots` and `report` directories.
