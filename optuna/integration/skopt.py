@@ -177,6 +177,10 @@ class SkoptSampler(BaseSampler):
             return {}
 
         optimizer = _Optimizer(search_space, self._skopt_kwargs)
+
+        if "random_state" in self._skopt_kwargs:
+            self._skopt_kwargs["random_state"] += 1
+
         optimizer.tell(study, complete_trials)
         return optimizer.ask()
 
