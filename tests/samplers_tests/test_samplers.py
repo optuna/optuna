@@ -1,6 +1,7 @@
 from collections import OrderedDict
 import multiprocessing
 from multiprocessing.managers import DictProxy
+import os
 import pickle
 import sys
 from typing import Any
@@ -1018,6 +1019,10 @@ def run_optimize(
 
 @pytest.mark.parametrize("sampler_class_index", range(len(sampler_class_with_seed)))
 def test_reproducible_in_other_process(sampler_class_index: int) -> None:
+    # This test should be tested without `PYTHONHASHSEED`. However, tox sets the
+    # environmental variable "PYTHONHASHSEED" by default.
+    os.unsetenv("PYTHONHASHSEED")
+
     # Multiprocessing supports three way to start a process.
     # We use `spawn` option to create a child process as a fresh python process.
     # For more detail, see https://github.com/optuna/optuna/pull/3187#issuecomment-997673037.
