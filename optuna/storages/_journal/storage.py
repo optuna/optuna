@@ -321,7 +321,7 @@ class JournalStorage(BaseStorage):
 
 
 class JournalStorageReplayResult:
-    def __init__(self, worker_id_prefix) -> None:
+    def __init__(self, worker_id_prefix: str) -> None:
         self.log_number_read = 0
         self._worker_id_prefix = worker_id_prefix
         self._studies: Dict[int, FrozenStudy] = {}
