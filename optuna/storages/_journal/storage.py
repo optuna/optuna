@@ -87,17 +87,17 @@ class JournalStorage(BaseStorage):
     """
 
     def __init__(self, log_storage: BaseJournalLogStorage) -> None:
-        self._pid = str(uuid.uuid4())
-
+        self._worker_id_prefix = str(uuid.uuid4()) + "-"
         self._backend = log_storage
         self._thread_lock = threading.Lock()
-        self._replay_result = JournalStorageReplayResult(self._pid)
+        self._replay_result = JournalStorageReplayResult(self._worker_id_prefix)
 
         with self._thread_lock:
             self._sync_with_backend()
 
     def _write_log(self, op_code: int, extra_fields: Dict[str, Any]) -> None:
-        self._backend.append_logs([{"op_code": op_code, "pid": self._pid, **extra_fields}])
+        worker_id = self._worker_id_prefix + str(threading.get_ident())
+        self._backend.append_logs([{"op_code": op_code, "worker_id": worker_id, **extra_fields}])
 
     def _sync_with_backend(self) -> None:
         logs = self._backend.read_logs(self._replay_result.log_number_read)
@@ -263,7 +263,7 @@ class JournalStorage(BaseStorage):
 
             if (
                 state == TrialState.RUNNING
-                and trial_id not in self._replay_result._trial_ids_owned_by_this_process
+                and trial_id != self._replay_result._trial_ids.get(threading.get_ident())
             ):
                 return False
             else:
@@ -322,16 +322,16 @@ class JournalStorage(BaseStorage):
 
 
 class JournalStorageReplayResult:
-    def __init__(self, pid: str) -> None:
+    def __init__(self, worker_id_prefix) -> None:
         self.log_number_read = 0
-        self._pid = pid
+        self._worker_id_prefix = worker_id_prefix
         self._studies: Dict[int, FrozenStudy] = {}
         self._trials: Dict[int, FrozenTrial] = {}
 
         self._study_id_to_trial_ids: Dict[int, List[int]] = {}
         self._trial_id_to_study_id: Dict[int, int] = {}
         self._next_study_id: int = 0
-        self._trial_ids_owned_by_this_process: List[int] = []
+        self._trial_ids: Dict[int, int] = {}  # thread_id to trial_id
 
     def apply_logs(self, logs: List[Dict[str, Any]]) -> None:
         for log in logs:
@@ -388,13 +388,13 @@ class JournalStorageReplayResult:
                 frozen_trials.append(trial)
         return frozen_trials
 
-    def _raise_if_log_issued_by_pid(self, log: Dict[str, Any], err: Exception) -> None:
-        if log["pid"] == self._pid:
+    def _raise_if_log_issued_by_this_worker(self, log: Dict[str, Any], err: Exception) -> None:
+        if log["worker_id"] == self._worker_id_prefix + str(threading.get_ident()):
             raise err
 
     def _study_exists(self, study_id: int, log: Dict[str, Any]) -> bool:
         if study_id not in self._studies:
-            self._raise_if_log_issued_by_pid(log, KeyError(NOT_FOUND_MSG))
+            self._raise_if_log_issued_by_this_worker(log, KeyError(NOT_FOUND_MSG))
             return False
         return True
 
@@ -402,7 +402,7 @@ class JournalStorageReplayResult:
         study_name = log["study_name"]
 
         if study_name in [s.study_name for s in self._studies.values()]:
-            self._raise_if_log_issued_by_pid(
+            self._raise_if_log_issued_by_this_worker(
                 log,
                 DuplicatedStudyError(
                     "Another study with name '{}' already exists. "
@@ -456,7 +456,7 @@ class JournalStorageReplayResult:
 
         current_directions = self._studies[study_id]._directions
         if current_directions[0] != StudyDirection.NOT_SET and current_directions != directions:
-            self._raise_if_log_issued_by_pid(
+            self._raise_if_log_issued_by_this_worker(
                 log,
                 ValueError(
                     "Cannot overwrite study direction from {} to {}.".format(
@@ -508,10 +508,11 @@ class JournalStorageReplayResult:
         self._study_id_to_trial_ids[study_id].append(trial_id)
         self._trial_id_to_study_id[trial_id] = study_id
 
-        if log["pid"] == self._pid and self._trials[trial_id].state == TrialState.RUNNING:
-            self._trial_ids_owned_by_this_process.append(trial_id)
+        worker_id = self._worker_id_prefix + str(threading.get_ident())
+        if log["worker_id"] == worker_id and self._trials[trial_id].state == TrialState.RUNNING:
+            self._trial_ids[threading.get_ident()] = trial_id
 
-        if log["pid"] == self._pid:
+        if log["worker_id"] == worker_id:
             self._last_created_trial_id_by_this_process = trial_id
 
     def _apply_set_trial_param(self, log: Dict[str, Any]) -> None:
@@ -534,7 +535,7 @@ class JournalStorageReplayResult:
                         prev_trial.distributions[param_name], distribution
                     )
                 except Exception as e:
-                    self._raise_if_log_issued_by_pid(log, e)
+                    self._raise_if_log_issued_by_this_worker(log, e)
                     return
                 break
 
@@ -559,7 +560,7 @@ class JournalStorageReplayResult:
         trial = copy.copy(self._trials[trial_id])
         if state == TrialState.RUNNING:
             trial.datetime_start = datetime_from_isoformat(log["datetime_start"])
-            self._trial_ids_owned_by_this_process.append(trial_id)
+            self._trial_ids[threading.get_ident()] = trial_id
         if state.is_finished():
             trial.datetime_complete = datetime_from_isoformat(log["datetime_complete"])
         trial.state = state
@@ -603,10 +604,10 @@ class JournalStorageReplayResult:
 
     def _trial_exists_and_updatable(self, trial_id: int, log: Dict[str, Any]) -> bool:
         if trial_id not in self._trials:
-            self._raise_if_log_issued_by_pid(log, KeyError(NOT_FOUND_MSG))
+            self._raise_if_log_issued_by_this_worker(log, KeyError(NOT_FOUND_MSG))
             return False
         elif self._trials[trial_id].state.is_finished():
-            self._raise_if_log_issued_by_pid(
+            self._raise_if_log_issued_by_this_worker(
                 log,
                 RuntimeError(
                     "Trial#{} has already finished and can not be updated.".format(
