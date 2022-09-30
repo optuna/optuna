@@ -193,6 +193,10 @@ class _ParzenEstimator:
                         scale=sigmas,
                     )
                 else:
+                    # TODO(nzw0301): Simplify the logic by following
+                    # https://github.com/optuna/optuna/pull/3985#issuecomment-1253637444
+                    # when we can assume scipy 1.9.2 is commonly used, which includes
+                    # accurate logcdf https://github.com/scipy/scipy/pull/17064.
                     cdf_func = _ParzenEstimator._trunc_normal_cdf
                     p_accept = cdf_func(high, mus, sigmas, low, high) - cdf_func(
                         low, mus, sigmas, low, high
