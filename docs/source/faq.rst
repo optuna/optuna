@@ -522,7 +522,7 @@ For more information about 1., see APIReference_.
 2. Multi-processing parallelization with single node
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This can be achieved by using file-based RDBs (such as SQLite) and client/server RDBs (such as PostgreSQL and MySQL).
+This can be achieved by using :class:`~optuna.storages.JournalFileStorage` and client/server RDBs (such as PostgreSQL and MySQL).
 However, if you are in the environment where you can not install an RDB, you can not run multi-processing parallelization with single node. When you really want to do it, please request it as a GitHub issue. If we receive a lot of requests, we may provide a solution for it.
 
 For more information about 2., see TutorialEasyParallelization_.
@@ -536,6 +536,32 @@ This can be achieved by using client/server RDBs (such as PostgreSQL and MySQL).
 However, if you are in the environment where you can not install a client/server RDB, you can not run multi-processing parallelization with multiple nodes.
 
 For more information about 3., see TutorialEasyParallelization_.
+
+.. _sqlite_concurrency:
+
+How can I solve the error that occurs when performing parallel optimization with SQLite3?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+We would never recommend SQLite3 for parallel optimization in following reasons.
+
+- To concurrently evaluate trials enqueued by :func:`~optuna.study.Study.enqueue_trial`, :class:`~optuna.storages.RDBStorage` uses `SELECT ... FOR UPDATE` query.
+  However, as you can see `here <https://github.com/sqlalchemy/sqlalchemy/blob/rel_1_4_41/lib/sqlalchemy/dialects/sqlite/base.py#L1265-L1267>`_, it doesn't work with SQLite3 since there is no low-level locking support.
+- Due to the restriction of SQLite3 and Python DB-API, As described in `the documentation of SQLAlchemy <https://docs.sqlalchemy.org/en/14/dialects/sqlite.html#sqlite-concurrency>`_,
+  SQLite3 (and pysqlite driver) is not good at handling high-level of concurrency. It may raise "database is locked" error.
+- For distributed optimization via NFS, SQLite3 does not work since it depends on `fcntl()`, which is broken on many NFS implementations.
+
+If you want to use a file-based Optuna storage for these scenarios, please consider using :class:`~optuna.storages.JournalFileStorage` instead.
+
+.. code-block:: python
+
+   import optuna
+   from optuna.storages import JournalStorage, JournalFileStorage
+
+   storage = JournalStorage(JournalFileStorage("optuna-journal.log"))
+   study = optuna.create_study(storage=storage)
+   ...
+
+See `the Medium blog post <https://medium.com/optuna/distributed-optimization-via-nfs-using-optunas-new-operation-based-logging-storage-9815f9c3f932>`_ for details.
 
 .. _heartbeat_monitoring:
 
