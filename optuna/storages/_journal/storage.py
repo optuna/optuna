@@ -261,9 +261,8 @@ class JournalStorage(BaseStorage):
             self._write_log(JournalOperation.SET_TRIAL_STATE_VALUES, log)
             self._sync_with_backend()
 
-            if (
-                state == TrialState.RUNNING
-                and trial_id != self._replay_result._trial_ids.get(threading.get_ident())
+            if state == TrialState.RUNNING and trial_id != self._replay_result._trial_ids.get(
+                threading.get_ident()
             ):
                 return False
             else:
