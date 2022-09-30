@@ -1,3 +1,5 @@
+from concurrent.futures import as_completed
+from concurrent.futures import ThreadPoolExecutor
 import copy
 from datetime import datetime
 import pickle
@@ -1098,6 +1100,28 @@ def test_get_trial_id_from_study_id_trial_number(storage_mode: str) -> None:
         assert trial_id == storage.get_trial_id_from_study_id_trial_number(
             study_id, trial_number=0
         )
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_set_trial_state_values_thread_safe(storage_mode: str) -> None:
+    if "sqlite" == storage_mode or "cached_sqlite" == storage_mode:
+        pytest.skip("set_trial_state_values is not thread-safe on SQLite3")
+
+    with StorageSupplier(storage_mode) as storage:
+        study = optuna.create_study(storage=storage)
+        for i in range(10):
+            study.enqueue_trial({"i": i})
+
+        trial_id_set = set()
+        with ThreadPoolExecutor(10) as pool:
+            futures = []
+            for i in range(10):
+                future = pool.submit(study._pop_waiting_trial_id)
+                futures.append(future)
+
+            for future in as_completed(futures):
+                trial_id_set.add(future.result())
+        assert len(trial_id_set) == 10
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
