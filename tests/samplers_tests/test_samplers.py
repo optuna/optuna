@@ -1021,7 +1021,9 @@ def run_optimize(
 def test_reproducible_in_other_process(sampler_class_index: int) -> None:
     # This test should be tested without `PYTHONHASHSEED`. However, tox sets the
     # environmental variable "PYTHONHASHSEED" by default.
-    os.unsetenv("PYTHONHASHSEED")
+    hash_seed = os.getenv("PYTHONHASHSEED")
+    if hash_seed is not None:
+        del os.environ["PYTHONHASHSEED"]
 
     # Multiprocessing supports three way to start a process.
     # We use `spawn` option to create a child process as a fresh python process.
@@ -1040,3 +1042,6 @@ def test_reproducible_in_other_process(sampler_class_index: int) -> None:
     assert not (hash_dict[0] == hash_dict[1] == hash_dict[2])
     # But the sequences are expected to be the same.
     assert sequence_dict[0] == sequence_dict[1] == sequence_dict[2]
+
+    if hash_seed is not None:
+        os.environ["PYTHONHASHSEED"] = hash_seed
