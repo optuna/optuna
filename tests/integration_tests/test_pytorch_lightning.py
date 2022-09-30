@@ -6,30 +6,40 @@ from typing import Union
 
 import numpy as np
 import pytest
-import pytorch_lightning as pl
-import torch
-from torch import nn
-import torch.nn.functional as F
 
 import optuna
+from optuna._imports import try_import
 from optuna.integration import PyTorchLightningPruningCallback
 from optuna.testing.pruners import DeterministicPruner
 from optuna.testing.storages import StorageSupplier
 
 
-class Model(pl.LightningModule):
+with try_import() as _imports:
+    import pytorch_lightning as pl
+    from pytorch_lightning import LightningModule
+    import torch
+    from torch import nn
+    import torch.nn.functional as F
+
+if not _imports.is_successful():
+    LightningModule = object  # type: ignore # NOQA
+
+pytestmark = pytest.mark.integration
+
+
+class Model(LightningModule):
     def __init__(self) -> None:
 
         super().__init__()
         self._model = nn.Sequential(nn.Linear(4, 8))
 
-    def forward(self, data: torch.Tensor) -> torch.Tensor:  # type: ignore
+    def forward(self, data: "torch.Tensor") -> "torch.Tensor":  # type: ignore
 
         return self._model(data)
 
     def training_step(  # type: ignore
-        self, batch: List[torch.Tensor], batch_nb: int
-    ) -> Dict[str, torch.Tensor]:
+        self, batch: List["torch.Tensor"], batch_nb: int
+    ) -> Dict[str, "torch.Tensor"]:
 
         data, target = batch
         output = self.forward(data)
@@ -37,8 +47,8 @@ class Model(pl.LightningModule):
         return {"loss": loss}
 
     def validation_step(  # type: ignore
-        self, batch: List[torch.Tensor], batch_nb: int
-    ) -> Dict[str, torch.Tensor]:
+        self, batch: List["torch.Tensor"], batch_nb: int
+    ) -> Dict[str, "torch.Tensor"]:
 
         data, target = batch
         output = self.forward(data)
@@ -49,31 +59,31 @@ class Model(pl.LightningModule):
     def validation_epoch_end(
         self,
         outputs: Union[
-            List[Union[torch.Tensor, Dict[str, Any]]],
-            List[List[Union[torch.Tensor, Dict[str, Any]]]],
+            List[Union["torch.Tensor", Dict[str, Any]]],
+            List[List[Union["torch.Tensor", Dict[str, Any]]]],
         ],
     ) -> None:
         if not len(outputs):
             return
 
         accuracy = sum(
-            x["validation_accuracy"] for x in cast(List[Dict[str, torch.Tensor]], outputs)
+            x["validation_accuracy"] for x in cast(List[Dict[str, "torch.Tensor"]], outputs)
         ) / len(outputs)
         self.log("accuracy", accuracy)
 
-    def configure_optimizers(self) -> torch.optim.Optimizer:
+    def configure_optimizers(self) -> "torch.optim.Optimizer":
 
         return torch.optim.SGD(self._model.parameters(), lr=1e-2)
 
-    def train_dataloader(self) -> torch.utils.data.DataLoader:
+    def train_dataloader(self) -> "torch.utils.data.DataLoader":
 
         return self._generate_dummy_dataset()
 
-    def val_dataloader(self) -> torch.utils.data.DataLoader:
+    def val_dataloader(self) -> "torch.utils.data.DataLoader":
 
         return self._generate_dummy_dataset()
 
-    def _generate_dummy_dataset(self) -> torch.utils.data.DataLoader:
+    def _generate_dummy_dataset(self) -> "torch.utils.data.DataLoader":
 
         data = torch.zeros(3, 4, dtype=torch.float32)
         target = torch.zeros(3, dtype=torch.int64)
@@ -87,8 +97,8 @@ class ModelDDP(Model):
         super().__init__()
 
     def validation_step(  # type: ignore
-        self, batch: List[torch.Tensor], batch_nb: int
-    ) -> Dict[str, torch.Tensor]:
+        self, batch: List["torch.Tensor"], batch_nb: int
+    ) -> Dict[str, "torch.Tensor"]:
 
         data, target = batch
         output = self.forward(data)

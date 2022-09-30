@@ -30,4 +30,7 @@ order_by_type = 'False'
 [tool.pytest.ini_options]
 addopts = "--color=yes"
 filterwarnings = 'ignore::optuna.exceptions.ExperimentalWarning'
-markers = ["skip_coverage: marks tests are skipped when calculating the coverage"]
+markers = [
+    "skip_coverage: marks tests are skipped when calculating the coverage",
+    "integration: marks tests are related to integration",
+]

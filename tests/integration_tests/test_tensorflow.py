@@ -4,14 +4,21 @@ import typing
 from unittest.mock import patch
 
 import numpy as np
-import tensorflow as tf
+import pytest
 
 import optuna
+from optuna._imports import try_import
 from optuna.integration import TensorFlowPruningHook
 from optuna.testing.pruners import DeterministicPruner
 
 
-def fixed_value_input_fn() -> typing.Tuple[typing.Dict[str, tf.Tensor], tf.Tensor]:
+with try_import():
+    import tensorflow as tf
+
+pytestmark = pytest.mark.integration
+
+
+def fixed_value_input_fn() -> typing.Tuple[typing.Dict[str, "tf.Tensor"], "tf.Tensor"]:
 
     x_train = np.zeros([16, 20])
     y_train = np.zeros(16)

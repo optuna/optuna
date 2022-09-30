@@ -1,6 +1,9 @@
 import pytest
 
 
+pytestmark = pytest.mark.integration
+
+
 def test_import() -> None:
 
     from optuna.integration import chainer  # NOQA

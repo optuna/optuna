@@ -6,24 +6,30 @@ from typing import Type
 from typing import Union
 from unittest import mock
 
-import _jsonnet
-import allennlp.data
-import allennlp.data.dataset_readers
-import allennlp.data.tokenizers
-import allennlp.models
-import allennlp.modules
-import allennlp.modules.seq2vec_encoders
-import allennlp.modules.text_field_embedders
-import allennlp.training
-import psutil
 import pytest
-import torch.optim
 
 import optuna
+from optuna._imports import try_import
 from optuna.integration.allennlp import AllenNLPPruningCallback
 from optuna.integration.allennlp._pruner import _create_pruner
 from optuna.integration.allennlp._variables import _VariableManager
 from optuna.testing.pruners import DeterministicPruner
+
+
+with try_import():
+    import _jsonnet
+    import allennlp.data
+    import allennlp.data.dataset_readers
+    import allennlp.data.tokenizers
+    import allennlp.models
+    import allennlp.modules
+    import allennlp.modules.seq2vec_encoders
+    import allennlp.modules.text_field_embedders
+    import allennlp.training
+    import psutil
+    import torch.optim
+
+pytestmark = pytest.mark.integration
 
 
 def test_build_params() -> None:
