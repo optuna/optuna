@@ -1,5 +1,5 @@
 name: "\U0001F6A7Code fix"
-description: Suggest a code fix of Optuna.
+description: Suggest a code fix that does not change the behaviors of Optuna, such as code refactoring.
 labels: ["code-fix"]
 body:
   - type: markdown
