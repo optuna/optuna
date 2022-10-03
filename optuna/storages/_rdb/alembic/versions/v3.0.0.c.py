@@ -82,15 +82,15 @@ def upgrade():
                     server_default="FINITE",
                 ),
             )
-        with op.batch_alter_table("trial_intermediate_values") as batch_op:
-            batch_op.alter_column(
-                "intermediate_value_type",
-                existing_type=sa.Enum(
-                    "FINITE", "INF_POS", "INF_NEG", "NAN", name="trialintermediatevaluetype"
-                ),
-                existing_nullable=False,
-                server_default=None,
-            )
+    with op.batch_alter_table("trial_intermediate_values") as batch_op:
+        batch_op.alter_column(
+            "intermediate_value_type",
+            existing_type=sa.Enum(
+                "FINITE", "INF_POS", "INF_NEG", "NAN", name="trialintermediatevaluetype"
+            ),
+            existing_nullable=False,
+            server_default=None,
+        )
 
     session = orm.Session(bind=bind)
     try:
