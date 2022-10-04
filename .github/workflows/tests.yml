@@ -69,8 +69,7 @@ jobs:
 
     # TODO(nzw): Move `run` part to the end of `Install` after Optuna drops Python 3.6 support.
     - name: Install PyTorch and BoTorch.
-      # TODO(nzw0301): Remove gpytorch if botorch supports gpytorch>1.8.
-      run: pip install botorch "gpytorch<1.9.0" torch==1.11.0 --extra-index-url https://download.pytorch.org/whl/cpu
+      run: pip install botorch torch==1.11.0 --extra-index-url https://download.pytorch.org/whl/cpu
       if: matrix.python-version != '3.6'
 
     - name: Tests
