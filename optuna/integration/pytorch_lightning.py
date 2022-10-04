@@ -58,7 +58,7 @@ class PyTorchLightningPruningCallback(Callback):
 
     def on_init_start(self, trainer: Trainer) -> None:
         self.is_ddp_backend = (
-            trainer.strategy == "ddp" or trainer.strategy = "ddp_find_unused_parameters_false"  # type: ignore
+            trainer.strategy == "ddp" or trainer.strategy == "ddp_find_unused_parameters_false"  # type: ignore
         )
         if self.is_ddp_backend:
             if version.parse(pl.__version__) < version.parse("1.5.0"):
