@@ -33,6 +33,8 @@ def get_install_requires() -> List[str]:
         "cliff",
         "cmaes>=0.8.2",
         "colorlog",
+        # TODO(HideakiImamura): remove this after the fix by `cliff` or `stevedore`
+        "importlib-metadata<5.0.0",
         "numpy",
         "packaging>=20.0",
         # TODO(kstoneriv3): remove this after deprecation of Python 3.6
