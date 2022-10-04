@@ -774,7 +774,7 @@ class DaskStudy(Study):
                 gc_after_trial=gc_after_trial,
                 reseed_sampler_rng=True,
                 time_start=None,
-                progress_bar=False,
+                progress_bar=None,
                 pure=False,
             )
             for _ in range(n_trials)
