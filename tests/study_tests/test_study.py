@@ -2,6 +2,8 @@ import copy
 import itertools
 import multiprocessing
 import pickle
+import subprocess
+import tempfile
 import threading
 import time
 from typing import Any
@@ -1520,3 +1522,45 @@ def test_study_summary_datetime_start_calculation(storage_mode: str) -> None:
         study.enqueue_trial(params={"x": 1}, skip_if_exists=False)
         summaries = get_all_study_summaries(study._storage, include_best_trial=True)
         assert summaries[0].datetime_start is not None
+
+
+def test_study_tell_process() -> None:
+
+    with tempfile.NamedTemporaryFile() as tf:
+        # Creating a study and ask for a new trial
+        db_url = "sqlite:///{}".format(tf.name)
+        study = create_study(storage=db_url)
+        trial = study.ask()
+
+        # testing that a tell can be called from another process
+        subprocess.check_output(
+            [
+                "optuna",
+                "tell",
+                "--storage",
+                db_url,
+                "--trial-number",
+                str(trial.number),
+                "--values",
+                "1.2",
+            ]
+        )
+
+        assert len(study.trials) == 1
+        assert study.best_trial.state == TrialState.COMPLETE
+        assert study.best_value == 1.2
+
+        # Error when updating a finished trial. Called from another process
+        ret = subprocess.run(
+            [
+                "optuna",
+                "tell",
+                "--storage",
+                db_url,
+                "--trial-number",
+                str(trial.number),
+                "--values",
+                "1.2",
+            ]
+        )
+        assert ret.returncode != 0
