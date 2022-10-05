@@ -507,11 +507,20 @@ class CmaEsSampler(BaseSampler):
                 isinstance(dist, optuna.distributions.FloatDistribution)
                 for dist in trans._search_space.values()
             )
+            max_discrete = int(
+                (trans.bounds[n_continuous:, 1] - trans.bounds[n_continuous:, 0]).max()
+            )
+            discrete_space = np.full((len(trans.bounds) - n_continuous, max_discrete), np.nan)
+            for i, (low, high) in enumerate(trans.bounds[n_continuous:]):
+                discrete_space[i, : round(high - low)] = np.arange(
+                    round(low + 0.5), round(high + 0.5)
+                )
+
             return CMAwM(
                 mean=mean,
                 sigma=sigma0,
                 cov=cov,
-                discrete_space=trans.bounds[n_continuous:],
+                discrete_space=discrete_space,
                 continuous_space=trans.bounds[:n_continuous],
                 seed=self._cma_rng.randint(1, 2**31 - 2),
                 n_max_resampling=10 * n_dimension,
