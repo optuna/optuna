@@ -34,7 +34,7 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
 +----------------------------------+---------------+---------------+----------------------+----------------+----------------------------------------+---------------+----------------+
 | Constrained optimization         |       ❌      |      ❌       |          ✅          |       ❌       |                   ✅                   |       ❌      |       ✅       |
 +----------------------------------+---------------+---------------+----------------------+----------------+----------------------------------------+---------------+----------------+
-| Time complexity (per trial) (*)  |  :math:`O(d)` | :math:`O(dn)` | :math:`O(dn \log n)` | :math:`O(d^3)` |              :math:`O(mnp)`            | :math:`O(dn)` | :math:`O(n^3)` |
+| Time complexity (per trial) (*)  |  :math:`O(d)` | :math:`O(dn)` | :math:`O(dn \log n)` | :math:`O(d^3)` |              :math:`O(mp^2)` (***)            | :math:`O(dn)` | :math:`O(n^3)` |
 +----------------------------------+---------------+---------------+----------------------+----------------+----------------------------------------+---------------+----------------+
 | Recommended budgets (#trials)    | as many as    | number of     |      100 – 1000      |  1000 – 10000  |                100 – 10000             | as many as    |    10 – 100    |
 | (**)                             | one likes     | combinations  |                      |                |                                        | one likes     |                |
@@ -51,6 +51,9 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
     From another perspective, with the exception of :class:`~optuna.samplers.NSGAIISampler`, all time complexity is written for single-objective optimization.
 
     (**): The budget depends on the number of parameters and the number of objectives.
+
+    (***): This time complexity assumes that the number of population size :math:`p` and the number of parallelization are regular.
+    This means that the number of parallelization should not exceed the number of population size :math:`p`.
 
 .. note::
     For float, integer, or categorical parameters, see :ref:`configurations` tutorial.
