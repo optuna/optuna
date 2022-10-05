@@ -544,11 +544,12 @@ How can I solve the error that occurs when performing parallel optimization with
 
 We would never recommend SQLite3 for parallel optimization in following reasons.
 
-- To concurrently evaluate trials enqueued by :func:`~optuna.study.Study.enqueue_trial`, :class:`~optuna.storages.RDBStorage` uses `SELECT ... FOR UPDATE` query.
-  However, as you can see `here <https://github.com/sqlalchemy/sqlalchemy/blob/rel_1_4_41/lib/sqlalchemy/dialects/sqlite/base.py#L1265-L1267>`_, it doesn't work with SQLite3 since there is no low-level locking support.
-- Due to the restriction of SQLite3 and Python DB-API, As described in `the documentation of SQLAlchemy <https://docs.sqlalchemy.org/en/14/dialects/sqlite.html#sqlite-concurrency>`_,
-  SQLite3 (and pysqlite driver) is not good at handling high-level of concurrency. It may raise "database is locked" error.
-- For distributed optimization via NFS, SQLite3 does not work since it depends on `fcntl()`, which is broken on many NFS implementations.
+- To concurrently evaluate trials enqueued by :func:`~optuna.study.Study.enqueue_trial`, :class:`~optuna.storages.RDBStorage` uses `SELECT ... FOR UPDATE` syntax, which is unsupported in `SQLite3 <https://github.com/sqlalchemy/sqlalchemy/blob/rel_1_4_41/lib/sqlalchemy/dialects/sqlite/base.py#L1265-L1267>`_.
+- As described in `the SQLAlchemy's documentation <https://docs.sqlalchemy.org/en/14/dialects/sqlite.html#sqlite-concurrency>`_,
+  SQLite3 (and pysqlite driver) does not support a high level of concurrency.
+  You may get a "database is locked" error, which occurs when one thread or process has an exclusive lock on a database connection (in reality a file handle) and another thread times out waiting for the lock to be released.
+  You can increase the default `timeout <https://docs.python.org/3/library/sqlite3.html#sqlite3.connect>`_ value like `optuna.storages.RDBStorage("sqlite:///example.db", engine_kwargs={"connect_args": {"timeout": 20.0}})` though.
+- For distributed optimization via NFS, SQLite3 does not work as described at `FAQ section of sqlite.org <https://www.sqlite.org/faq.html#q5>`_.
 
 If you want to use a file-based Optuna storage for these scenarios, please consider using :class:`~optuna.storages.JournalFileStorage` instead.
 
