@@ -522,8 +522,7 @@ For more information about 1., see APIReference_.
 2. Multi-processing parallelization with single node
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This can be achieved by using :class:`~optuna.storages.JournalFileStorage` and client/server RDBs (such as PostgreSQL and MySQL).
-However, if you are in the environment where you can not install an RDB, you can not run multi-processing parallelization with single node. When you really want to do it, please request it as a GitHub issue. If we receive a lot of requests, we may provide a solution for it.
+This can be achieved by using :class:`~optuna.storages.JournalFileStorage` or client/server RDBs (such as PostgreSQL and MySQL).
 
 For more information about 2., see TutorialEasyParallelization_.
 
@@ -542,7 +541,7 @@ For more information about 3., see TutorialEasyParallelization_.
 How can I solve the error that occurs when performing parallel optimization with SQLite3?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-We would never recommend SQLite3 for parallel optimization in following reasons.
+We would never recommend SQLite3 for parallel optimization in the following reasons.
 
 - To concurrently evaluate trials enqueued by :func:`~optuna.study.Study.enqueue_trial`, :class:`~optuna.storages.RDBStorage` uses `SELECT ... FOR UPDATE` syntax, which is unsupported in `SQLite3 <https://github.com/sqlalchemy/sqlalchemy/blob/rel_1_4_41/lib/sqlalchemy/dialects/sqlite/base.py#L1265-L1267>`_.
 - As described in `the SQLAlchemy's documentation <https://docs.sqlalchemy.org/en/14/dialects/sqlite.html#sqlite-concurrency>`_,
