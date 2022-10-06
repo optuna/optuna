@@ -70,7 +70,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         "document": [
             "cma",
             "lightgbm",
-            "matplotlib",
+            "matplotlib!=3.6.0",
             "mlflow",
             # TODO(nzw0301): Remove onnx if thop adds onnx to its dependencies.
             "onnx",
@@ -122,7 +122,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "xgboost",
         ],
         "optional": [
-            "matplotlib",  # optuna/visualization/matplotlib
+            "matplotlib!=3.6.0",  # optuna/visualization/matplotlib
             "pandas",  # optuna/study.py
             "plotly>=4.0.0",  # optuna/visualization.
             "redis",  # optuna/storages/redis.py.
