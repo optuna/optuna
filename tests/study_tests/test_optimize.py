@@ -151,7 +151,7 @@ def test_run_trial_invoke_tell_with_suppressing_warning(storage_mode: str) -> No
             mock_obj.assert_called_once_with(
                 study=mock.ANY,
                 trial=mock.ANY,
-                values=mock.ANY,
+                value_or_values=mock.ANY,
                 state=mock.ANY,
                 suppress_warning=True,
             )

@@ -29,17 +29,18 @@ def get_long_description() -> str:
 def get_install_requires() -> List[str]:
 
     requirements = [
-        "alembic",
+        "alembic>=1.5.0",
         "cliff",
         "cmaes>=0.8.2",
         "colorlog",
+        # TODO(HideakiImamura): remove this after the fix by `cliff` or `stevedore`
+        "importlib-metadata<5.0.0",
         "numpy",
         "packaging>=20.0",
         # TODO(kstoneriv3): remove this after deprecation of Python 3.6
         "scipy!=1.4.0" if sys.version[:3] == "3.6" else "scipy>=1.7.0",
-        "sqlalchemy>=1.1.0",
+        "sqlalchemy>=1.3.0",
         "tqdm",
-        "typing_extensions>=3.10.0.0",
         "PyYAML",  # Only used in `optuna/cli.py`.
     ]
     return requirements
@@ -52,8 +53,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "asv>=0.5.0",
             "botorch",
             "cma",
-            # TODO(nzw0301): Remove gpytorch if botorch supports gpytorch>1.8.
-            "gpytorch<1.9.0",
             "scikit-optimize",
             "virtualenv",
         ],
@@ -66,20 +65,17 @@ def get_extras_require() -> Dict[str, List[str]]:
             "types-PyYAML",
             "types-redis",
             "types-setuptools",
+            "typing_extensions>=3.10.0.0",
         ],
         "document": [
             "cma",
+            "fvcore",
             "lightgbm",
             "matplotlib",
             "mlflow",
-            # TODO(nzw0301): Remove onnx if thop adds onnx to its dependencies.
-            "onnx",
             "pandas",
             "pillow",
             "plotly>=4.0.0",  # optuna/visualization.
-            # TODO(nzw0301): Remove protobuf after
-            # https://github.com/onnx/onnx/issues/4239 is resolved.
-            "protobuf<=3.20.1",
             "scikit-learn",
             "scikit-optimize",
             "sphinx",
@@ -87,7 +83,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "sphinx-gallery",
             "sphinx-plotly-directive",
             "sphinx_rtd_theme",
-            "thop",
             "torch==1.11.0 ; python_version>'3.6'",
             "torchaudio==0.11.0 ; python_version>'3.6'",
             "torchvision==0.12.0 ; python_version>'3.6'",
@@ -102,8 +97,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "chainer>=5.0.0",
             "cma",
             "fastai ; python_version>'3.6'",
-            # TODO(nzw0301): Remove gpytorch if botorch supports gpytorch>1.8.
-            "gpytorch<1.9.0 ; python_version>'3.6'",
             "lightgbm",
             "mlflow",
             "mpi4py",

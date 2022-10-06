@@ -24,14 +24,20 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     This class is not supposed to be directly accessed by library users.
 
-    A storage class abstracts a backend database and provides library internal interfaces to
+    This class abstracts a backend database and provides internal interfaces to
     read/write histories of studies and trials.
+
+    A storage class implementing this class must meet the following requirements.
 
     **Thread safety**
 
-    A storage class can be shared among multiple threads, and must therefore be thread-safe.
-    It must guarantee that return values such as `FrozenTrial`s are never modified.
-    A storage class can assume that return values are never modified by its user.
+    A storage class instance can be shared among multiple threads, and must therefore be
+    thread-safe. It must guarantee that a data instance read from the storage must not be modified
+    by subsequent writes. For example, `FrozenTrial` instance returned by `get_trial`
+    should not be updated by the subsequent `set_trial_xxx`. This is usually achieved by replacing
+    the old data with a copy on `set_trial_xxx`.
+
+    A storage class can also assume that a data instance returned are never modified by its user.
     When a user modifies a return value from a storage class, the internal state of the storage
     may become inconsistent. Consequences are undefined.
 
@@ -39,49 +45,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     Trials in finished states are not allowed to be modified.
     Trials in the WAITING state are not allowed to be modified except for the `state` field.
-    A storage class can assume that each RUNNING trial is only modified from a single process.
-    When a user modifies a RUNNING trial from multiple processes, the internal state of the storage
-    may become inconsistent. Consequences are undefined.
-    A storage class is not intended for inter-process communication.
-    Consequently, users using optuna with MPI or other multi-process programs must make sure that
-    only one process is used to access the optuna interface.
-
-    **Consistency models**
-
-    A storage class must support the monotonic-reads consistency model, that is, if a
-    process reads data `X`, any successive reads on data `X` cannot return older values.
-    It must support read-your-writes, that is, if a process writes to data `X`,
-    any successive reads on data `X` from the same process must read the written
-    value or one of the more recent values.
-
-    **Stronger consistency requirements for special data**
-
-    Under a multi-worker setting, a storage class must return the latest values of any attributes
-    of a study and a trial. Generally, typical storages naturally hold this requirement. However,
-    :class:`~optuna.storages._CachedStorage` does not, so we introduce the
-    `read_trials_from_remote_storage(study_id)` method in the class. The detailed explanation how
-    :class:`~optuna.storages._CachedStorage` aquires this requirement, is available at
-    the docstring.
-
-    .. note::
-
-        These attribute behaviors may become user customizable in the future.
-
-    **Data persistence**
-
-    A storage class does not guarantee that write operations are logged into a persistent
-    storage, even when write methods succeed.
-    Thus, when process failure occurs, some writes might be lost.
-    As exceptions, when a persistent storage is available, any writes on any attributes
-    of `Study` and writes on `state` of `Trial` are guaranteed to be persistent.
-    Additionally, any preceding writes on any attributes of `Trial` are guaranteed to
-    be written into a persistent storage before writes on `state` of `Trial` succeed.
-    The same applies for `param`, `user_attrs', 'system_attrs' and 'intermediate_values`
-    attributes.
-
-    .. note::
-
-        These attribute behaviors may become user customizable in the future.
     """
 
     # Basic study manipulation
@@ -347,7 +310,14 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             :exc:`KeyError`:
                 If no trial with the matching ``study_id`` and ``trial_number`` exists.
         """
-        raise NotImplementedError
+        trials = self.get_all_trials(study_id, deepcopy=False)
+        if len(trials) <= trial_number:
+            raise KeyError(
+                "No trial with trial number {} exists in study with study_id {}.".format(
+                    trial_number, study_id
+                )
+            )
+        return trials[trial_number]._trial_id
 
     def get_trial_number_from_id(self, trial_id: int) -> int:
         """Read the trial number of a trial.

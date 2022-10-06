@@ -151,9 +151,9 @@ class Trial(BaseTrial):
         """
 
         distribution = FloatDistribution(low, high, log=log, step=step)
+        suggested_value = self._suggest(name, distribution)
         self._check_distribution(name, distribution)
-
-        return self._suggest(name, distribution)
+        return suggested_value
 
     @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
@@ -311,8 +311,9 @@ class Trial(BaseTrial):
         """
 
         distribution = IntDistribution(low=low, high=high, log=log, step=step)
+        suggested_value = int(self._suggest(name, distribution))
         self._check_distribution(name, distribution)
-        return int(self._suggest(name, distribution))
+        return suggested_value
 
     def suggest_categorical(
         self, name: str, choices: Sequence[CategoricalChoiceType]

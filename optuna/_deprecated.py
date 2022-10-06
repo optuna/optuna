@@ -3,19 +3,22 @@ import textwrap
 from typing import Any
 from typing import Callable
 from typing import Optional
+from typing import TYPE_CHECKING
 from typing import TypeVar
 import warnings
 
 from packaging import version
-from typing_extensions import ParamSpec
 
 from optuna._experimental import _get_docstring_indent
 from optuna._experimental import _validate_version
 
 
-FT = TypeVar("FT")
-FP = ParamSpec("FP")
-CT = TypeVar("CT")
+if TYPE_CHECKING:
+    from typing_extensions import ParamSpec
+
+    FT = TypeVar("FT")
+    FP = ParamSpec("FP")
+    CT = TypeVar("CT")
 
 
 _DEPRECATION_NOTE_TEMPLATE = """
@@ -52,7 +55,7 @@ def deprecated_func(
     removed_version: str,
     name: Optional[str] = None,
     text: Optional[str] = None,
-) -> Callable[[Callable[FP, FT]], Callable[FP, FT]]:
+) -> "Callable[[Callable[FP, FT]], Callable[FP, FT]]":
     """Decorate function as deprecated.
 
     Args:
@@ -81,7 +84,7 @@ def deprecated_func(
     _validate_version(removed_version)
     _validate_two_version(deprecated_version, removed_version)
 
-    def decorator(func: Callable[FP, FT]) -> Callable[FP, FT]:
+    def decorator(func: "Callable[FP, FT]") -> "Callable[FP, FT]":
         if func.__doc__ is None:
             func.__doc__ = ""
 
@@ -92,7 +95,7 @@ def deprecated_func(
         func.__doc__ = func.__doc__.strip() + textwrap.indent(note, indent) + indent
 
         @functools.wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> FT:
+        def wrapper(*args: Any, **kwargs: Any) -> "FT":
             """Decorates a function as deprecated.
 
             This decorator is supposed to be applied to the deprecated function.
@@ -119,7 +122,7 @@ def deprecated_class(
     removed_version: str,
     name: Optional[str] = None,
     text: Optional[str] = None,
-) -> Callable[[CT], CT]:
+) -> "Callable[[CT], CT]":
     """Decorate class as deprecated.
 
     Args:
@@ -148,8 +151,8 @@ def deprecated_class(
     _validate_version(removed_version)
     _validate_two_version(deprecated_version, removed_version)
 
-    def decorator(cls: CT) -> CT:
-        def wrapper(cls: CT) -> CT:
+    def decorator(cls: "CT") -> "CT":
+        def wrapper(cls: "CT") -> "CT":
             """Decorates a class as deprecated.
 
             This decorator is supposed to be applied to the deprecated class.

@@ -39,9 +39,9 @@ from optuna.trial import TrialState
 CallbackFuncType = Callable[[Study, FrozenTrial], None]
 
 
-def func(trial: Trial, x_max: float = 1.0) -> float:
+def func(trial: Trial) -> float:
 
-    x = trial.suggest_float("x", -x_max, x_max)
+    x = trial.suggest_float("x", -10.0, 10.0)
     y = trial.suggest_float("y", 20, 30, log=True)
     z = trial.suggest_categorical("z", (-1.0, 1.0))
     assert isinstance(z, float)
@@ -54,20 +54,17 @@ class Func:
         self.n_calls = 0
         self.sleep_sec = sleep_sec
         self.lock = threading.Lock()
-        self.x_max = 10.0
 
     def __call__(self, trial: Trial) -> float:
 
         with self.lock:
             self.n_calls += 1
-            x_max = self.x_max
-            self.x_max *= 0.9
 
         # Sleep for testing parallelism.
         if self.sleep_sec is not None:
             time.sleep(self.sleep_sec)
 
-        value = func(trial, x_max)
+        value = func(trial)
         check_params(trial.params)
         return value
 
@@ -1479,30 +1476,8 @@ def test_tell_duplicate_tell() -> None:
     # Should not panic when passthrough is enabled.
     study.tell(trial, 1.0, skip_if_finished=True)
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         study.tell(trial, 1.0, skip_if_finished=False)
-
-
-@pytest.mark.filterwarnings("ignore::UserWarning")
-def test_tell_storage_not_implemented_trial_number() -> None:
-    with StorageSupplier("inmemory") as storage:
-
-        with patch.object(
-            storage,
-            "get_trial_id_from_study_id_trial_number",
-            side_effect=NotImplementedError,
-        ):
-            study = create_study(storage=storage)
-
-            study.tell(study.ask(), 1.0)
-
-            # Storage missing implementation for method required to map trial numbers back to
-            # trial IDs.
-            with pytest.warns(UserWarning):
-                study.tell(study.ask().number, 1.0)
-
-            with pytest.raises(ValueError):
-                study.tell(study.ask().number + 1, 1.0)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)

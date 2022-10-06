@@ -7,7 +7,7 @@ def test_params() -> None:
     trial = FixedTrial(params)
     assert trial.params == {}
 
-    assert trial.suggest_uniform("x", 0, 10) == 1
+    assert trial.suggest_float("x", 0, 10) == 1
     assert trial.params == params
 
 

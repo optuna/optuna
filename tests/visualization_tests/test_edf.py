@@ -150,7 +150,7 @@ def test_get_edf_info(n_studies: int, target: Callable[[optuna.trial.FrozenTrial
         study.optimize(lambda t: t.suggest_float("x", 0, max_target), n_trials=n_trials)
         studies.append(study)
 
-    info = _get_edf_info(studies, target=target)
+    info = _get_edf_info(studies, target=target, target_name="Target Name")
     assert info.x_values.shape == (NUM_SAMPLES_X_AXIS,)
     assert all([0 <= x <= max_target for x in info.x_values])
     assert len(info.lines) == n_studies
@@ -173,7 +173,9 @@ def test_nonfinite_removed(value: float) -> None:
 def test_nonfinite_multiobjective(objective: int, value: float) -> None:
 
     study = prepare_study_with_trials(n_objectives=2, value_for_first_trial=value)
-    edf_info = _get_edf_info(study, target=lambda t: t.values[objective])
+    edf_info = _get_edf_info(
+        study, target=lambda t: t.values[objective], target_name="Target Name"
+    )
     assert all(np.isfinite(edf_info.x_values))
 
 
