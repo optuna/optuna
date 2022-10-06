@@ -1,0 +1,31 @@
+name: "\U0001F6A7Code fix"
+description: Suggest a code fix that does not change the behaviors of Optuna, such as code refactoring.
+labels: ["code-fix"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to raise a new issue! Please write a clear and concise description of the code fix.
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: |
+        Please write the motivation for the proposal.
+        If your code fix is related to a problem, please describe a clear and concise description of what the problem is.
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggestion
+      description: Please explain your suggestion for the code change.
+    validations:
+      required: true
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context (optional)
+      description: Please provide additional contexts if you have.
+    validations:
+      required: false
