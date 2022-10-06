@@ -539,7 +539,7 @@ For more information about 3., see TutorialEasyParallelization_.
 .. _sqlite_concurrency:
 
 How can I solve the error that occurs when performing parallel optimization with SQLite3?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------------------------------------------------------------------------
 
 We would never recommend SQLite3 for parallel optimization in the following reasons.
 
