@@ -61,7 +61,6 @@ def _optimize(
 
     progress_bar = pbar_module._ProgressBar(show_progress_bar, n_trials, timeout)
 
-    _in_optimize_loop.set(True)
     study._stop_flag = False
 
     try:
@@ -137,6 +136,7 @@ def _optimize_sequential(
     time_start: Optional[datetime.datetime],
     progress_bar: Optional[pbar_module._ProgressBar],
 ) -> None:
+    _in_optimize_loop.set(True)
     if reseed_sampler_rng:
         study.sampler.reseed_rng()
 
