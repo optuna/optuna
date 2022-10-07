@@ -18,14 +18,15 @@ STORAGE_MODES = [
     "cached_sqlite",
     "redis",
     "cached_redis",
+    "datastore",
     "journal",
 ]
 
 STORAGE_MODES_HEARTBEAT = [
-    "sqlite",
-    "cached_sqlite",
-    "redis",
-    "cached_redis",
+    # "sqlite",
+    # "cached_sqlite",
+    # "redis",
+    # "cached_redis",
 ]
 
 SQLITE3_TIMEOUT = 300
@@ -45,6 +46,7 @@ class StorageSupplier:
         optuna.storages._CachedStorage,
         optuna.storages.RDBStorage,
         optuna.storages.RedisStorage,
+        optuna.storages.DatastoreStorage,
         optuna.storages.JournalStorage,
     ]:
         if self.storage_specifier == "inmemory":
@@ -72,6 +74,10 @@ class StorageSupplier:
                 if "cached" in self.storage_specifier
                 else redis_storage
             )
+        elif "datastore" in self.storage_specifier:
+            datastore_storage = optuna.storages.DatastoreStorage(namespace="optuna.unit.testing" ,**self.extra_args)
+            self.datastore_storage = datastore_storage
+            return datastore_storage
         elif "journal" in self.storage_specifier:
             file_storage = JournalFileStorage(tempfile.NamedTemporaryFile().name)
             return optuna.storages.JournalStorage(file_storage)
@@ -84,3 +90,7 @@ class StorageSupplier:
 
         if self.tempfile:
             self.tempfile.close()
+        if hasattr(self, 'datastore_storage'):
+            for study in self.datastore_storage.get_all_studies():
+                self.datastore_storage.delete_study(study._study_id)
+

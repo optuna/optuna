@@ -20,6 +20,7 @@ from optuna.storages import BaseStorage
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.storages import RedisStorage
+from optuna.storages import DatastoreStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
@@ -45,6 +46,7 @@ def test_get_storage() -> None:
     assert isinstance(
         optuna.storages.get_storage("redis://test_user:passwd@localhost:6379/0"), _CachedStorage
     )
+    assert isinstance(optuna.storages.get_storage("datastore"), DatastoreStorage)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -1107,6 +1109,9 @@ def test_pickle_storage(storage_mode: str) -> None:
 
     if "journal" in storage_mode:
         pytest.skip("Journal storage is not picklable")
+
+    if "datastore" in storage_mode:
+        pytest.skip("ndb.Model is not picklable")
 
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study()

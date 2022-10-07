@@ -12,6 +12,7 @@ from optuna.storages._journal.file import JournalFileSymlinkLock
 from optuna.storages._journal.storage import JournalStorage
 from optuna.storages._rdb.storage import RDBStorage
 from optuna.storages._redis import RedisStorage
+from optuna.storages._gcp_datastore import DatastoreStorage
 
 
 __all__ = [
@@ -20,6 +21,7 @@ __all__ = [
     "InMemoryStorage",
     "RDBStorage",
     "RedisStorage",
+    "DatastoreStorage",
     "JournalStorage",
     "JournalFileSymlinkLock",
     "JournalFileOpenLock",
@@ -38,6 +40,8 @@ def get_storage(storage: Union[None, str, BaseStorage]) -> BaseStorage:
     if isinstance(storage, str):
         if storage.startswith("redis"):
             return _CachedStorage(RedisStorage(storage))
+        elif storage == "datastore":
+            return DatastoreStorage()
         else:
             return _CachedStorage(RDBStorage(storage))
     elif isinstance(storage, (RDBStorage, RedisStorage)):
