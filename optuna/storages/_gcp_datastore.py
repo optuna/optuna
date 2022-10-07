@@ -17,7 +17,9 @@ import copy
 class OptunaNDBTrial(ndb.Model):
     study_id = ndb.IntegerProperty(required=True)
     number = ndb.IntegerProperty(required=True, default=-1, indexed=True)
-    state = ndb.IntegerProperty(required=True, choices=[s.value for s in TrialState], default=TrialState.RUNNING.value)
+    state = ndb.IntegerProperty(
+        required=True, choices=[s.value for s in TrialState], default=TrialState.RUNNING.value
+    )
     values = ndb.FloatProperty(repeated=True)
     datetime_start = ndb.DateTimeProperty()
     datetime_complete = ndb.DateTimeProperty()
@@ -40,68 +42,76 @@ class OptunaNDBStudy(ndb.Model):
 class DatastoreStorage(BaseStorage):
     """Storage class for Google Cloud Datastore backend.
 
-        Example:
+    Example:
 
-            We create an :class:`~optuna.storages.DatastoreStorage` instance.
+        We create an :class:`~optuna.storages.DatastoreStorage` instance.
 
-            .. code::
+        .. code::
 
-                import optuna
-
-
-                def objective(trial):
-                    ...
+            import optuna
 
 
-                storage = optuna.storages.DatastoreStorage()
+            def objective(trial):
+                ...
 
-                study = optuna.create_study(storage=storage)
-                study.optimize(objective)
-        Args:
-            gcp_project:
-                The name of the Google Cloud project where your Datastore resource will be used with Optuna.
-                If not provided, the project will be chosen from using the environment variable GOOGLE_APPLICATION_CREDENTIALS mechanism.
 
-            namespace:
-                The namespace withing Datastore to persist the OptunaNDBTrial and OptunaNDBStudy entities within Datastore.
-                If not provide, the 'default' namespace in Datastore is used.
+            storage = optuna.storages.DatastoreStorage()
 
-            gcp_credentials: Credentials
-                If a Google Cloud Credentials object is provided, this object will be used to authenticate with Datastore.
-                If not provided, the credential will be provided from the environment variable GOOGLE_APPLICATION_CREDENTIALS mechanism.
+            study = optuna.create_study(storage=storage)
+            study.optimize(objective)
+    Args:
+        gcp_project:
+            The name of the Google Cloud project where your Datastore resource will be used with Optuna.
+            If not provided, the project will be chosen from using the environment variable GOOGLE_APPLICATION_CREDENTIALS mechanism.
 
-        .. note::
-            If you use plan to use Datastore as a storage mechanism for optuna,
-            a Google Cloud account is required along with a proper credentials mechanism.
-            Please execute ``$ pip install -U google-cloud-ndb`` to install the required python libraries.
-        """
+        namespace:
+            The namespace withing Datastore to persist the OptunaNDBTrial and OptunaNDBStudy entities within Datastore.
+            If not provide, the 'default' namespace in Datastore is used.
 
-    def __init__(self, gcp_project: str = None, namespace: str = None, gcp_credentials: Credentials = None) -> None:
-        self.ndb_client = ndb.Client(project=gcp_project, namespace=namespace, credentials=gcp_credentials)
+        gcp_credentials: Credentials
+            If a Google Cloud Credentials object is provided, this object will be used to authenticate with Datastore.
+            If not provided, the credential will be provided from the environment variable GOOGLE_APPLICATION_CREDENTIALS mechanism.
+
+    .. note::
+        If you use plan to use Datastore as a storage mechanism for optuna,
+        a Google Cloud account is required along with a proper credentials mechanism.
+        Please execute ``$ pip install -U google-cloud-ndb`` to install the required python libraries.
+    """
+
+    def __init__(
+        self, gcp_project: str = None, namespace: str = None, gcp_credentials: Credentials = None
+    ) -> None:
+        self.ndb_client = ndb.Client(
+            project=gcp_project, namespace=namespace, credentials=gcp_credentials
+        )
 
     @staticmethod
     def ndb_study_to_optuna_study(ndb_study: OptunaNDBStudy) -> FrozenStudy:
         directions = [StudyDirection(d) for d in ndb_study.directions]
-        frozen_study = FrozenStudy(study_id=ndb_study.key.id(),
-                                   study_name=ndb_study.study_name,
-                                   user_attrs=ndb_study.user_attrs,
-                                   system_attrs=ndb_study.system_attrs,
-                                   directions=directions,
-                                   direction=None)
+        frozen_study = FrozenStudy(
+            study_id=ndb_study.key.id(),
+            study_name=ndb_study.study_name,
+            user_attrs=ndb_study.user_attrs,
+            system_attrs=ndb_study.system_attrs,
+            directions=directions,
+            direction=None,
+        )
         return frozen_study
 
     @staticmethod
     def optuna_trial_to_ndb_trial(trial: FrozenTrial, study_id: int):
-        ndb_trial = OptunaNDBTrial(study_id=study_id,
-                                   number=trial.number,
-                                   state=trial.state.value,
-                                   params=trial.params,
-                                   distributions=trial.distributions,
-                                   user_attrs=trial.user_attrs,
-                                   system_attrs=trial.system_attrs,
-                                   intermediate_values=trial.intermediate_values,
-                                   datetime_start=trial.datetime_start,
-                                   datetime_complete=trial.datetime_complete)
+        ndb_trial = OptunaNDBTrial(
+            study_id=study_id,
+            number=trial.number,
+            state=trial.state.value,
+            params=trial.params,
+            distributions=trial.distributions,
+            user_attrs=trial.user_attrs,
+            system_attrs=trial.system_attrs,
+            intermediate_values=trial.intermediate_values,
+            datetime_start=trial.datetime_start,
+            datetime_complete=trial.datetime_complete,
+        )
         if trial.values is not None and len(trial.values) > 0:
             ndb_trial.values = trial.values
         return ndb_trial
@@ -111,18 +121,20 @@ class DatastoreStorage(BaseStorage):
         # convert distributions
         for param in ndb_trial.distributions:
             ndb_trial.distributions[param] = json_to_distribution(ndb_trial.distributions[param])
-        frozen_trial = FrozenTrial(number=ndb_trial.number,
-                                   state=TrialState(ndb_trial.state),
-                                   value=None,
-                                   values=ndb_trial.values,
-                                   datetime_start=ndb_trial.datetime_start,
-                                   datetime_complete=ndb_trial.datetime_complete,
-                                   params=ndb_trial.params,
-                                   distributions=ndb_trial.distributions,
-                                   user_attrs=ndb_trial.user_attrs,
-                                   system_attrs=ndb_trial.system_attrs,
-                                   intermediate_values={int(k): v for k, v in ndb_trial.intermediate_values.items()},
-                                   trial_id=ndb_trial.key.id())
+        frozen_trial = FrozenTrial(
+            number=ndb_trial.number,
+            state=TrialState(ndb_trial.state),
+            value=None,
+            values=ndb_trial.values,
+            datetime_start=ndb_trial.datetime_start,
+            datetime_complete=ndb_trial.datetime_complete,
+            params=ndb_trial.params,
+            distributions=ndb_trial.distributions,
+            user_attrs=ndb_trial.user_attrs,
+            system_attrs=ndb_trial.system_attrs,
+            intermediate_values={int(k): v for k, v in ndb_trial.intermediate_values.items()},
+            trial_id=ndb_trial.key.id(),
+        )
         if frozen_trial.values is not None and len(frozen_trial.values) < 1:
             frozen_trial.values = None
         return frozen_trial
@@ -157,9 +169,12 @@ class DatastoreStorage(BaseStorage):
             results = OptunaNDBStudy.query().filter(OptunaNDBStudy.study_name == study_name).get()
             if results is not None and (type(results) is OptunaNDBStudy or len(results) > 0):
                 from optuna.exceptions import DuplicatedStudyError
+
                 raise DuplicatedStudyError(f"Study with name {study_name} already exists.")
 
-            study = OptunaNDBStudy(study_name=study_name, trials=[], directions=[StudyDirection.NOT_SET.value])
+            study = OptunaNDBStudy(
+                study_name=study_name, trials=[], directions=[StudyDirection.NOT_SET.value]
+            )
             study.put()
             study_id = study.key.id()
             return study_id
@@ -185,8 +200,12 @@ class DatastoreStorage(BaseStorage):
             if study is None:
                 raise KeyError(f"Study with id {study_id} not found in Datastore")
 
-            if StudyDirection(study.directions[0]) != StudyDirection.NOT_SET and [StudyDirection(d) for d in study.directions] != list(directions):
-                raise ValueError(f"Cannot overwrite study direction from {study.directions} to {directions}.")
+            if StudyDirection(study.directions[0]) != StudyDirection.NOT_SET and [
+                StudyDirection(d) for d in study.directions
+            ] != list(directions):
+                raise ValueError(
+                    f"Cannot overwrite study direction from {study.directions} to {directions}."
+                )
 
             if len(directions) == 0:
                 study.directions = [StudyDirection.NOT_SET.value]
@@ -203,7 +222,9 @@ class DatastoreStorage(BaseStorage):
 
             return study.study_name
 
-    def get_all_trials(self, study_id: int, deepcopy: bool = True, states: Optional[Container[TrialState]] = None) -> List[FrozenTrial]:
+    def get_all_trials(
+        self, study_id: int, deepcopy: bool = True, states: Optional[Container[TrialState]] = None
+    ) -> List[FrozenTrial]:
         with self.ndb_client.context():
             study = OptunaNDBStudy.get_by_id(study_id)
             if study is None:
@@ -234,7 +255,9 @@ class DatastoreStorage(BaseStorage):
 
                 distributions_dict = dict()
                 for param in template_trial.distributions:
-                    distributions_dict[param] = distribution_to_json(template_trial.distributions[param])
+                    distributions_dict[param] = distribution_to_json(
+                        template_trial.distributions[param]
+                    )
                 trial.distributions = distributions_dict
 
             trial.number = len(study.trials)
@@ -246,7 +269,13 @@ class DatastoreStorage(BaseStorage):
             study.put()
             return trial_id
 
-    def set_trial_param(self, trial_id: int, param_name: str, param_value_internal: float, distribution: BaseDistribution) -> None:
+    def set_trial_param(
+        self,
+        trial_id: int,
+        param_name: str,
+        param_value_internal: float,
+        distribution: BaseDistribution,
+    ) -> None:
         with self.ndb_client.context():
             trial = OptunaNDBTrial.get_by_id(trial_id)
             if trial is None:
@@ -257,7 +286,9 @@ class DatastoreStorage(BaseStorage):
             study = OptunaNDBStudy.get_by_id(trial.study_id)
 
             if param_name in study.param_distribution:
-                distributions.check_distribution_compatibility(json_to_distribution(study.param_distribution[param_name]), distribution)
+                distributions.check_distribution_compatibility(
+                    json_to_distribution(study.param_distribution[param_name]), distribution
+                )
 
             trial.params[param_name] = distribution.to_external_repr(param_value_internal)
             trial.distributions[param_name] = distribution_to_json(distribution)
@@ -284,7 +315,9 @@ class DatastoreStorage(BaseStorage):
 
             return [StudyDirection(d) for d in study.directions]
 
-    def set_trial_state_values(self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None) -> bool:
+    def set_trial_state_values(
+        self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
+    ) -> bool:
         with self.ndb_client.context():
             trial = OptunaNDBTrial.get_by_id(trial_id)
             if trial is None:
@@ -345,7 +378,9 @@ class DatastoreStorage(BaseStorage):
                 raise KeyError(f"Study ID {trial_id} not found in Datastore")
             key.delete()
 
-    def set_trial_intermediate_value(self, trial_id: int, step: int, intermediate_value: float) -> None:
+    def set_trial_intermediate_value(
+        self, trial_id: int, step: int, intermediate_value: float
+    ) -> None:
         with self.ndb_client.context():
             trial = OptunaNDBTrial.get_by_id(trial_id)
             if trial is None:
@@ -421,13 +456,17 @@ class DatastoreStorage(BaseStorage):
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
         with self.ndb_client.context():
             if study_id < 1:
-                raise KeyError(f"Study ID {study_id} not found in Datastore. Google Datastore ids must not be zero.")
+                raise KeyError(
+                    f"Study ID {study_id} not found in Datastore. Google Datastore ids must not be zero."
+                )
             study = OptunaNDBStudy.get_by_id(study_id)
             if study is None:
                 raise KeyError(f"Study with id {study_id} not found in Datastore")
 
             if len(study.trials) < 1:
-                raise KeyError(f"No trial with trial number {trial_number} exists in study with study_id {study_id}.")
+                raise KeyError(
+                    f"No trial with trial number {trial_number} exists in study with study_id {study_id}."
+                )
 
             for trial_id in study.trials:
                 trial = OptunaNDBTrial.get_by_id(trial_id)

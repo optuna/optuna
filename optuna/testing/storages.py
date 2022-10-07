@@ -75,7 +75,9 @@ class StorageSupplier:
                 else redis_storage
             )
         elif "datastore" in self.storage_specifier:
-            datastore_storage = optuna.storages.DatastoreStorage(namespace="optuna.unit.testing" ,**self.extra_args)
+            datastore_storage = optuna.storages.DatastoreStorage(
+                namespace="optuna.unit.testing", **self.extra_args
+            )
             self.datastore_storage = datastore_storage
             return datastore_storage
         elif "journal" in self.storage_specifier:
@@ -90,7 +92,6 @@ class StorageSupplier:
 
         if self.tempfile:
             self.tempfile.close()
-        if hasattr(self, 'datastore_storage'):
+        if hasattr(self, "datastore_storage"):
             for study in self.datastore_storage.get_all_studies():
                 self.datastore_storage.delete_study(study._study_id)
-
