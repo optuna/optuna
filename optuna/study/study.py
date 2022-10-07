@@ -1,6 +1,6 @@
+from contextvars import copy_context
 import copy
 from numbers import Real
-import threading
 from typing import Any
 from typing import Callable
 from typing import cast
@@ -32,6 +32,7 @@ from optuna.distributions import BaseDistribution
 from optuna.storages._cached_storage import _CachedStorage
 from optuna.storages._heartbeat import is_heartbeat_enabled
 from optuna.study._multi_objective import _get_pareto_front_trials
+from optuna.study._optimize import _in_optimize_loop
 from optuna.study._optimize import _optimize
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary  # NOQA
@@ -82,19 +83,7 @@ class Study:
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
 
-        self._optimize_lock = threading.Lock()
         self._stop_flag = False
-
-    def __getstate__(self) -> Dict[Any, Any]:
-
-        state = self.__dict__.copy()
-        del state["_optimize_lock"]
-        return state
-
-    def __setstate__(self, state: Dict[Any, Any]) -> None:
-
-        self.__dict__.update(state)
-        self._optimize_lock = threading.Lock()
 
     @property
     def best_params(self) -> Dict[str, Any]:
@@ -416,7 +405,9 @@ class Study:
                 If nested invocation of this method occurs.
         """
 
-        _optimize(
+        ctx = copy_context()
+        ctx.run(
+            _optimize,
             study=self,
             func=func,
             n_trials=n_trials,
@@ -494,9 +485,8 @@ class Study:
             A :class:`~optuna.trial.Trial`.
         """
 
-        if not self._optimize_lock.locked():
-            if is_heartbeat_enabled(self._storage):
-                warnings.warn("Heartbeat of storage is supposed to be used with Study.optimize.")
+        if not _in_optimize_loop.get() and is_heartbeat_enabled(self._storage):
+            warnings.warn("Heartbeat of storage is supposed to be used with Study.optimize.")
 
         fixed_distributions = fixed_distributions or {}
         fixed_distributions = {
@@ -760,8 +750,7 @@ class Study:
 
         """
 
-        if self._optimize_lock.acquire(False):
-            self._optimize_lock.release()
+        if not _in_optimize_loop.get():
             raise RuntimeError(
                 "`Study.stop` is supposed to be invoked inside an objective function or a "
                 "callback."

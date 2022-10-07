@@ -2,6 +2,7 @@ from concurrent.futures import FIRST_COMPLETED
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import wait
+from contextvars import ContextVar
 import datetime
 import gc
 import itertools
@@ -32,6 +33,7 @@ from optuna.trial import TrialState
 
 
 _logger = logging.get_logger(__name__)
+_in_optimize_loop = ContextVar("_in_optimize_loop", default=False)
 
 
 def _optimize(
@@ -50,7 +52,7 @@ def _optimize(
             "The catch argument is of type '{}' but must be a tuple.".format(type(catch).__name__)
         )
 
-    if not study._optimize_lock.acquire(False):
+    if _in_optimize_loop.get():
         raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
 
     if show_progress_bar and n_trials is None and timeout is not None and n_jobs != 1:
@@ -59,6 +61,7 @@ def _optimize(
 
     progress_bar = pbar_module._ProgressBar(show_progress_bar, n_trials, timeout)
 
+    _in_optimize_loop.set(True)
     study._stop_flag = False
 
     try:
@@ -118,7 +121,7 @@ def _optimize(
                         )
                     )
     finally:
-        study._optimize_lock.release()
+        _in_optimize_loop.set(False)
         progress_bar.close()
 
 
