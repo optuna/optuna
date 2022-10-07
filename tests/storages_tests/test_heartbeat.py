@@ -231,7 +231,6 @@ def test_fail_stale_trials(storage_mode: str, grace_period: Optional[int]) -> No
         check_keep_trial_state_in_running(study)
 
         storage.record_heartbeat(trial._trial_id)
-
         check_keep_trial_state_in_running(study)
 
         time.sleep(_grace_period + 1)
