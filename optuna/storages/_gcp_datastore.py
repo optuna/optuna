@@ -1,17 +1,26 @@
-from typing import Optional, Container, List, Any, Sequence, Dict
-from optuna.distributions import distribution_to_json, json_to_distribution, BaseDistribution
-from optuna.trial import TrialState, FrozenTrial
-from optuna.study._frozen import FrozenStudy
-from optuna.storages import BaseStorage
-from optuna.study import StudyDirection
-from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
-from optuna import distributions
-
-from google.cloud import ndb
-from google.auth.credentials import Credentials
-from datetime import datetime
-from uuid import uuid4
 import copy
+from datetime import datetime
+from typing import Any
+from typing import Container
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Sequence
+from uuid import uuid4
+
+from google.auth.credentials import Credentials
+from google.cloud import ndb
+
+from optuna import distributions
+from optuna.distributions import BaseDistribution
+from optuna.distributions import distribution_to_json
+from optuna.distributions import json_to_distribution
+from optuna.storages import BaseStorage
+from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.study import StudyDirection
+from optuna.study._frozen import FrozenStudy
+from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 
 
 class OptunaNDBTrial(ndb.Model):
@@ -40,7 +49,13 @@ class OptunaNDBStudy(ndb.Model):
 
 
 class DatastoreStorage(BaseStorage):
-    """Storage class for Google Cloud Datastore backend.
+    """Storage class for Google Cloud Datastore backend.  The easiest way to use Google Cloud
+    Datastore as your storage for Optuna is to use the environmental variable mechanism as
+    explained here: https://cloud.google.com/docs/authentication/provide-credentials-adc
+    Once your environment variable GOOGLE_APPLICATION_CREDENTIALS is properly setup,
+    :class:`~optuna.storages.DatastoreStorage` will get your project name and credentials
+    using this mechanism.
+
 
     Example:
 
@@ -61,25 +76,33 @@ class DatastoreStorage(BaseStorage):
             study.optimize(objective)
     Args:
         gcp_project:
-            The name of the Google Cloud project where your Datastore resource will be used with Optuna.
-            If not provided, the project will be chosen from using the environment variable GOOGLE_APPLICATION_CREDENTIALS mechanism.
+            The name of the Google Cloud project where your Datastore resource will be used
+            with Optuna. If not provided, the project will be chosen from using the environment
+            variable GOOGLE_APPLICATION_CREDENTIALS mechanism as explained here:
+            https://cloud.google.com/docs/authentication/provide-credentials-adc
 
         namespace:
-            The namespace withing Datastore to persist the OptunaNDBTrial and OptunaNDBStudy entities within Datastore.
-            If not provide, the 'default' namespace in Datastore is used.
+            The namespace withing Datastore to persist the OptunaNDBTrial and OptunaNDBStudy
+            entities within Datastore. If not provide, the 'default' namespace in Datastore
+            is used.
 
         gcp_credentials: Credentials
-            If a Google Cloud Credentials object is provided, this object will be used to authenticate with Datastore.
-            If not provided, the credential will be provided from the environment variable GOOGLE_APPLICATION_CREDENTIALS mechanism.
+            If a Google Cloud Credentials object is provided, this object will be used to
+            authenticate with Datastore. If not provided, the credential will be provided
+            from the environment variable GOOGLE_APPLICATION_CREDENTIALS mechanism as
+            explained here: https://cloud.google.com/docs/authentication/provide-credentials-adc
 
     .. note::
-        If you use plan to use Datastore as a storage mechanism for optuna,
-        a Google Cloud account is required along with a proper credentials mechanism.
-        Please execute ``$ pip install -U google-cloud-ndb`` to install the required python libraries.
+        If you use plan to use Datastore as a storage mechanism for optuna, a Google Cloud
+        account is required along with a proper credentials mechanism. Please execute
+        ``$ pip install -U google-cloud-ndb`` to install the required python libraries.
     """
 
     def __init__(
-        self, gcp_project: str = None, namespace: str = None, gcp_credentials: Credentials = None
+        self,
+        gcp_project: Optional[str] = None,
+        namespace: Optional[str] = None,
+        gcp_credentials: Optional[Credentials] = None,
     ) -> None:
         self.ndb_client = ndb.Client(
             project=gcp_project, namespace=namespace, credentials=gcp_credentials
@@ -99,19 +122,26 @@ class DatastoreStorage(BaseStorage):
         return frozen_study
 
     @staticmethod
-    def optuna_trial_to_ndb_trial(trial: FrozenTrial, study_id: int):
+    def optuna_trial_to_ndb_trial(trial: FrozenTrial, study_id: int) -> OptunaNDBTrial:
+
+        # convert distribution objects to dicts for Datastore
+        distributions_dict = dict()
+        for param in trial.distributions:
+            distributions_dict[param] = distribution_to_json(trial.distributions[param])
+
         ndb_trial = OptunaNDBTrial(
             study_id=study_id,
             number=trial.number,
             state=trial.state.value,
             params=trial.params,
-            distributions=trial.distributions,
+            distributions=distributions_dict,
             user_attrs=trial.user_attrs,
             system_attrs=trial.system_attrs,
             intermediate_values=trial.intermediate_values,
             datetime_start=trial.datetime_start,
             datetime_complete=trial.datetime_complete,
         )
+
         if trial.values is not None and len(trial.values) > 0:
             ndb_trial.values = trial.values
         return ndb_trial
@@ -249,19 +279,12 @@ class DatastoreStorage(BaseStorage):
                 raise KeyError(f"Study with id {study_id} not found in Datastore")
 
             if template_trial is None:
-                trial = self._create_running_trial()
+                frozen_trial = self._create_running_trial()
             else:
-                trial = copy.deepcopy(template_trial)
+                frozen_trial = copy.deepcopy(template_trial)
 
-                distributions_dict = dict()
-                for param in template_trial.distributions:
-                    distributions_dict[param] = distribution_to_json(
-                        template_trial.distributions[param]
-                    )
-                trial.distributions = distributions_dict
-
-            trial.number = len(study.trials)
-            ndb_trial = self.optuna_trial_to_ndb_trial(trial=trial, study_id=study_id)
+            frozen_trial.number = len(study.trials)
+            ndb_trial = self.optuna_trial_to_ndb_trial(trial=frozen_trial, study_id=study_id)
             ndb_trial.put()
             trial_id = ndb_trial.key.id()
 
@@ -332,7 +355,7 @@ class DatastoreStorage(BaseStorage):
 
             if values is None and (trial.values is None or len(trial.values) < 1):
                 trial.values = []
-            elif type(values) == float or type(values) == int:
+            elif type(values) in [float, int]:
                 trial.values = [values]
             else:
                 trial.values = values
@@ -457,7 +480,8 @@ class DatastoreStorage(BaseStorage):
         with self.ndb_client.context():
             if study_id < 1:
                 raise KeyError(
-                    f"Study ID {study_id} not found in Datastore. Google Datastore ids must not be zero."
+                    f"""Study ID {study_id} not found in Datastore.
+                    Google Datastore ids must non-zero."""
                 )
             study = OptunaNDBStudy.get_by_id(study_id)
             if study is None:
@@ -465,10 +489,16 @@ class DatastoreStorage(BaseStorage):
 
             if len(study.trials) < 1:
                 raise KeyError(
-                    f"No trial with trial number {trial_number} exists in study with study_id {study_id}."
+                    f"""Trial number {trial_number} does not exists
+                     in study with study_id {study_id}."""
                 )
 
             for trial_id in study.trials:
                 trial = OptunaNDBTrial.get_by_id(trial_id)
                 if trial.number == trial_number:
                     return trial_id
+
+            raise KeyError(
+                f"""Trial number {trial_number} does not exists
+                                 in study with study_id {study_id}."""
+            )

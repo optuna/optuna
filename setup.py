@@ -121,7 +121,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pandas",  # optuna/study.py
             "plotly>=4.0.0",  # optuna/visualization.
             "redis",  # optuna/storages/redis.py.
-            "google-cloud-ndb",  # optuna/storages/datastore.py.
+            "google-cloud-ndb>=1.11.0",  # optuna/storages/datastore.py.
             "scikit-learn>=0.24.2",
             # optuna/visualization/param_importances.py.
         ],

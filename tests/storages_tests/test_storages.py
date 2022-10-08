@@ -17,10 +17,10 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.storages import _CachedStorage
 from optuna.storages import BaseStorage
+from optuna.storages import DatastoreStorage
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.storages import RedisStorage
-from optuna.storages import DatastoreStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection

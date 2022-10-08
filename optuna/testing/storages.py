@@ -23,10 +23,10 @@ STORAGE_MODES = [
 ]
 
 STORAGE_MODES_HEARTBEAT = [
-    # "sqlite",
-    # "cached_sqlite",
-    # "redis",
-    # "cached_redis",
+    "sqlite",
+    "cached_sqlite",
+    "redis",
+    "cached_redis",
 ]
 
 SQLITE3_TIMEOUT = 300

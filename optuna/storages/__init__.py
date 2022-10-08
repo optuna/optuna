@@ -3,6 +3,7 @@ from typing import Union
 from optuna._callbacks import RetryFailedTrialCallback
 from optuna.storages._base import BaseStorage
 from optuna.storages._cached_storage import _CachedStorage
+from optuna.storages._gcp_datastore import DatastoreStorage
 from optuna.storages._heartbeat import fail_stale_trials
 from optuna.storages._in_memory import InMemoryStorage
 from optuna.storages._journal.base import BaseJournalLogStorage
@@ -12,7 +13,6 @@ from optuna.storages._journal.file import JournalFileSymlinkLock
 from optuna.storages._journal.storage import JournalStorage
 from optuna.storages._rdb.storage import RDBStorage
 from optuna.storages._redis import RedisStorage
-from optuna.storages._gcp_datastore import DatastoreStorage
 
 
 __all__ = [
