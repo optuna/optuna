@@ -507,18 +507,6 @@ def test_copy_study_to_study_name(from_storage_mode: str, to_storage_mode: str) 
         _ = load_study(study_name="bar", storage=to_storage)
 
 
-def test_nested_optimization() -> None:
-    def objective(trial: Trial) -> float:
-
-        with pytest.raises(RuntimeError):
-            trial.study.optimize(lambda _: 0.0, n_trials=1)
-
-        return 1.0
-
-    study = create_study()
-    study.optimize(objective, n_trials=10, catch=())
-
-
 def test_stop_in_objective() -> None:
 
     # Test stopping the optimization: it should stop once the trial number reaches 4.
