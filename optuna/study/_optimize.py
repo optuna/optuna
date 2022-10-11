@@ -52,9 +52,6 @@ def _optimize(
             "The catch argument is of type '{}' but must be a tuple.".format(type(catch).__name__)
         )
 
-    if _in_optimize_loop.get():
-        raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
-
     if show_progress_bar and n_trials is None and timeout is not None and n_jobs != 1:
         warnings.warn("The timeout-based progress bar is not supported with n_jobs != 1.")
         show_progress_bar = False

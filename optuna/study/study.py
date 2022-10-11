@@ -399,10 +399,6 @@ class Study:
                 Currently, progress bar is experimental feature and disabled
                 when ``n_trials`` is :obj:`None`, ``timeout`` not is :obj:`None`, and
                 ``n_jobs`` :math:`\\ne 1`.
-
-        Raises:
-            RuntimeError:
-                If nested invocation of this method occurs.
         """
 
         ctx = copy_context()
