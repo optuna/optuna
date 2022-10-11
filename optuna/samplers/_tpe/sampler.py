@@ -386,7 +386,7 @@ class TPESampler(BaseSampler):
         values, scores, violations = _get_observation_pairs(
             study,
             param_names,
-            self._multivariate,
+            self._group,
             self._constant_liar,
             self._constraints_func is not None,
         )
@@ -436,7 +436,7 @@ class TPESampler(BaseSampler):
         values, scores, violations = _get_observation_pairs(
             study,
             [param_name],
-            self._multivariate,
+            self._group,
             self._constant_liar,
             self._constraints_func is not None,
         )
@@ -609,9 +609,6 @@ def _get_observation_pairs(
     as the third element (:obj:`None` otherwise). Each value is a float of 0 or greater and a
     trial is feasible if and only if its violation score is 0.
     """
-
-    if len(param_names) > 1:
-        assert multivariate
 
     signs = []
     for d in study.directions:
