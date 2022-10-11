@@ -94,11 +94,23 @@ def upgrade():
 
     session = orm.Session(bind=bind)
     try:
-        records = session.query(IntermediateValueModel).all()
+        records = (
+            session.query(IntermediateValueModel)
+            .filter(
+                sa.or_(
+                    IntermediateValueModel.intermediate_value > 1e16,
+                    IntermediateValueModel.intermediate_value < -1e16,
+                    IntermediateValueModel.intermediate_value.is_(None),
+                )
+            )
+            .all()
+        )
         mapping = []
         for r in records:
             value: float
-            if np.isclose(r.intermediate_value, RDB_MAX_FLOAT) or np.isposinf(
+            if r.intermediate_value is None or np.isnan(r.intermediate_value):
+                value = float("nan")
+            elif np.isclose(r.intermediate_value, RDB_MAX_FLOAT) or np.isposinf(
                 r.intermediate_value
             ):
                 value = float("inf")
@@ -106,8 +118,6 @@ def upgrade():
                 r.intermediate_value
             ):
                 value = float("-inf")
-            elif np.isnan(r.intermediate_value):
-                value = float("nan")
             else:
                 value = r.intermediate_value
             (
