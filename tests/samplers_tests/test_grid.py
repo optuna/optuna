@@ -112,8 +112,8 @@ def test_study_optimize_with_numpy_related_search_space() -> None:
         "b": np.arange(-0.1, 0.1, 0.05),
     }
     with StorageSupplier("sqlite") as storage:
-        study = optuna.create_study(  # type: ignore
-            sampler=samplers.GridSampler(search_space),
+        study = optuna.create_study(
+            sampler=samplers.GridSampler(search_space),  # type: ignore
             storage=storage,
         )
         study.optimize(objective, n_trials=None)
