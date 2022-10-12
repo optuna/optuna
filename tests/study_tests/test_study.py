@@ -2,7 +2,6 @@ import copy
 import itertools
 import multiprocessing
 import pickle
-import subprocess
 import tempfile
 import threading
 import time
@@ -1524,6 +1523,10 @@ def test_study_summary_datetime_start_calculation(storage_mode: str) -> None:
         assert summaries[0].datetime_start is not None
 
 
+def _process_tell(st: Study, tr: Trial, values: float):
+    st.tell(tr, values)
+
+
 def test_study_tell_process() -> None:
 
     with tempfile.NamedTemporaryFile() as tf:
@@ -1532,35 +1535,17 @@ def test_study_tell_process() -> None:
         study = create_study(storage=db_url)
         trial = study.ask()
 
-        # testing that a tell can be called from another process
-        subprocess.check_output(
-            [
-                "optuna",
-                "tell",
-                "--storage",
-                db_url,
-                "--trial-number",
-                str(trial.number),
-                "--values",
-                "1.2",
-            ]
-        )
+        process_data = [(study, trial, 1.2)]
+
+        pool = multiprocessing.Pool()
+        pool.starmap(_process_tell, process_data)
 
         assert len(study.trials) == 1
         assert study.best_trial.state == TrialState.COMPLETE
         assert study.best_value == 1.2
 
-        # Error when updating a finished trial. Called from another process
-        ret = subprocess.run(
-            [
-                "optuna",
-                "tell",
-                "--storage",
-                db_url,
-                "--trial-number",
-                str(trial.number),
-                "--values",
-                "1.2",
-            ]
-        )
-        assert ret.returncode != 0
+        try:
+            pool.starmap(_process_tell, [(study, trial, 1.2)])
+            assert False  # Should fail because the trial0 is already finished
+        except RuntimeError:
+            assert True
