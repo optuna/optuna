@@ -50,7 +50,7 @@ def _optimize(
             "The catch argument is of type '{}' but must be a tuple.".format(type(catch).__name__)
         )
 
-    if not study._optimize_lock.acquire(False):
+    if study._thread_local.in_optimize_loop:
         raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
 
     if show_progress_bar and n_trials is None and timeout is not None and n_jobs != 1:
@@ -118,7 +118,7 @@ def _optimize(
                         )
                     )
     finally:
-        study._optimize_lock.release()
+        study._thread_local.in_optimize_loop = False
         progress_bar.close()
 
 
@@ -134,6 +134,7 @@ def _optimize_sequential(
     time_start: Optional[datetime.datetime],
     progress_bar: Optional[pbar_module._ProgressBar],
 ) -> None:
+    study._thread_local.in_optimize_loop = True
     if reseed_sampler_rng:
         study.sampler.reseed_rng()
 

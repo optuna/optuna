@@ -53,6 +53,10 @@ ObjectiveFuncType = Callable[[trial_module.Trial], Union[float, Sequence[float]]
 _logger = logging.get_logger(__name__)
 
 
+class ThreadLocalStudyAttribute(threading.local):
+    in_optimize_loop: bool = False
+
+
 class Study:
     """A study corresponds to an optimization task, i.e., a set of trials.
 
@@ -82,19 +86,19 @@ class Study:
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
 
-        self._optimize_lock = threading.Lock()
+        self._thread_local = ThreadLocalStudyAttribute()
         self._stop_flag = False
 
     def __getstate__(self) -> Dict[Any, Any]:
 
         state = self.__dict__.copy()
-        del state["_optimize_lock"]
+        del state["_thread_local"]
         return state
 
     def __setstate__(self, state: Dict[Any, Any]) -> None:
 
         self.__dict__.update(state)
-        self._optimize_lock = threading.Lock()
+        self._thread_local = ThreadLocalStudyAttribute()
 
     @property
     def best_params(self) -> Dict[str, Any]:
@@ -494,9 +498,8 @@ class Study:
             A :class:`~optuna.trial.Trial`.
         """
 
-        if not self._optimize_lock.locked():
-            if is_heartbeat_enabled(self._storage):
-                warnings.warn("Heartbeat of storage is supposed to be used with Study.optimize.")
+        if not self._thread_local.in_optimize_loop and is_heartbeat_enabled(self._storage):
+            warnings.warn("Heartbeat of storage is supposed to be used with Study.optimize.")
 
         fixed_distributions = fixed_distributions or {}
         fixed_distributions = {
@@ -760,8 +763,7 @@ class Study:
 
         """
 
-        if self._optimize_lock.acquire(False):
-            self._optimize_lock.release()
+        if not self._thread_local.in_optimize_loop:
             raise RuntimeError(
                 "`Study.stop` is supposed to be invoked inside an objective function or a "
                 "callback."
