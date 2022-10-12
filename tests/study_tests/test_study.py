@@ -1523,7 +1523,7 @@ def test_study_summary_datetime_start_calculation(storage_mode: str) -> None:
         assert summaries[0].datetime_start is not None
 
 
-def _process_tell(st: Study, tr: Trial, values: float):
+def _process_tell(st: Study, tr: Trial, values: float) -> None:
     st.tell(tr, values)
 
 
