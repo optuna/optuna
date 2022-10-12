@@ -53,7 +53,7 @@ ObjectiveFuncType = Callable[[trial_module.Trial], Union[float, Sequence[float]]
 _logger = logging.get_logger(__name__)
 
 
-class ThreadLocalStudyAttribute(threading.local):
+class _ThreadLocalStudyAttribute(threading.local):
     in_optimize_loop: bool = False
 
 
@@ -86,7 +86,7 @@ class Study:
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
 
-        self._thread_local = ThreadLocalStudyAttribute()
+        self._thread_local = _ThreadLocalStudyAttribute()
         self._stop_flag = False
 
     def __getstate__(self) -> Dict[Any, Any]:
@@ -98,7 +98,7 @@ class Study:
     def __setstate__(self, state: Dict[Any, Any]) -> None:
 
         self.__dict__.update(state)
-        self._thread_local = ThreadLocalStudyAttribute()
+        self._thread_local = _ThreadLocalStudyAttribute()
 
     @property
     def best_params(self) -> Dict[str, Any]:
