@@ -134,6 +134,8 @@ def _optimize_sequential(
     time_start: Optional[datetime.datetime],
     progress_bar: Optional[pbar_module._ProgressBar],
 ) -> None:
+    # Here we set `in_optimize_loop = True`, not at the beginning of the `_optimize()` function.
+    # Because it is a thread-local object and `n_jobs` option spawns new threads.
     study._thread_local.in_optimize_loop = True
     if reseed_sampler_rng:
         study.sampler.reseed_rng()
