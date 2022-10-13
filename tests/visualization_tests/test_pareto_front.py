@@ -199,14 +199,12 @@ def test_get_pareto_front_info_3d(
     )
 
 
-@pytest.mark.filterwarnings("ignore::FutureWarning")
 def test_get_pareto_front_info_invalid_number_of_target_names() -> None:
     study = optuna.create_study(directions=["minimize", "minimize"])
     with pytest.raises(ValueError):
         _get_pareto_front_info(study=study, target_names=["Foo"])
 
 
-@pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("n_dims", [1, 4])
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
 @pytest.mark.parametrize("constraints_func", [None, lambda _: [-1.0]])
@@ -243,7 +241,6 @@ def test_get_pareto_front_info_invalid_axis_order(
         )
 
 
-@pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
 @pytest.mark.parametrize("constraints_func", [None, lambda _: [-1.0]])
 def test_get_pareto_front_info_invalid_target_values(
