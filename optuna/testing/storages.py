@@ -13,20 +13,20 @@ from optuna.storages import JournalFileStorage
 
 
 STORAGE_MODES = [
-    "inmemory",
-    "sqlite",
-    "cached_sqlite",
-    "redis",
-    "cached_redis",
+    # "inmemory",
+    # "sqlite",
+    # "cached_sqlite",
+    # "redis",
+    # "cached_redis",
     "datastore",
-    "journal",
+    # "journal",
 ]
 
 STORAGE_MODES_HEARTBEAT = [
-    "sqlite",
-    "cached_sqlite",
-    "redis",
-    "cached_redis",
+    # "sqlite",
+    # "cached_sqlite",
+    # "redis",
+    # "cached_redis",
 ]
 
 SQLITE3_TIMEOUT = 300
@@ -79,6 +79,8 @@ class StorageSupplier:
                 namespace="optuna.unit.testing", **self.extra_args
             )
             self.datastore_storage = datastore_storage
+            # Datastore Emulator Requirements
+
             return datastore_storage
         elif "journal" in self.storage_specifier:
             file_storage = JournalFileStorage(tempfile.NamedTemporaryFile().name)

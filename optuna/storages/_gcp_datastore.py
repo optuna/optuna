@@ -100,12 +100,12 @@ class DatastoreStorage(BaseStorage):
 
     def __init__(
         self,
-        gcp_project: Optional[str] = None,
+        project: Optional[str] = None,
         namespace: Optional[str] = None,
-        gcp_credentials: Optional[Credentials] = None,
+        credentials: Optional[Credentials] = None,
     ) -> None:
         self.ndb_client = ndb.Client(
-            project=gcp_project, namespace=namespace, credentials=gcp_credentials
+            project=project, namespace=namespace, credentials=credentials
         )
 
     @staticmethod

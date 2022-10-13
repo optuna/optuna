@@ -42,6 +42,7 @@ def get_install_requires() -> List[str]:
         "sqlalchemy>=1.3.0",
         "tqdm",
         "PyYAML",  # Only used in `optuna/cli.py`.
+        "google-cloud-ndb>=1.11.0"
     ]
     return requirements
 
@@ -148,18 +149,18 @@ def find_any_distribution(pkgs: List[str]) -> Optional[pkg_resources.Distributio
 
 
 setup(
-    name="optuna",
+    name="optuna-hyperscale",
     version=get_version(),
-    description="A hyperparameter optimization framework",
+    description="A hyperscaled fork of Optuna: a hyperparameter optimization framework",
     long_description=get_long_description(),
     long_description_content_type="text/markdown",
-    author="Takuya Akiba",
-    author_email="akiba@preferred.jp",
-    url="https://optuna.org/",
+    author="William Hill",
+    author_email="william.c.hill@gmail.com",
+    url="https://github.com/will-hill/optuna-datastore",
     project_urls={
-        "Source": "https://github.com/optuna/optuna",
+        "Source": "https://github.com/will-hill/optuna-datastore",
         "Documentation": "https://optuna.readthedocs.io",
-        "Bug Tracker": "https://github.com/optuna/optuna/issues",
+        "Bug Tracker": "https://github.com/will-hill/optuna-datastore/issues",
     },
     packages=find_packages(exclude=("tests", "tests.*", "benchmarks")),
     package_data={
@@ -170,7 +171,7 @@ setup(
             "py.typed",
         ]
     },
-    python_requires=">=3.6",
+    python_requires=">=3.9",
     install_requires=get_install_requires(),
     extras_require=get_extras_require(),
     entry_points={
@@ -195,9 +196,6 @@ setup(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3 :: Only",
@@ -206,6 +204,6 @@ setup(
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Topic :: Software Development",
         "Topic :: Software Development :: Libraries",
-        "Topic :: Software Development :: Libraries :: Python Modules",
+        "Topic :: Software Development :: Libraries :: Python Modules"
     ],
 )
