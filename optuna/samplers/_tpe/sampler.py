@@ -392,7 +392,7 @@ class TPESampler(BaseSampler):
         )
 
         # If the number of samples is insufficient, we run random trial.
-        n = len(scores)
+        n = sum(1 for (s, v) in scores if s < float("inf")) # ignore running trials
         if n < self._n_startup_trials:
             return {}
 
@@ -441,7 +441,7 @@ class TPESampler(BaseSampler):
             self._constraints_func is not None,
         )
 
-        n = len(scores)
+        n = sum(1 for (s, v) in scores if s < float("inf")) # ignore running trials
 
         self._log_independent_sampling(n, trial, param_name)
 
@@ -652,13 +652,13 @@ def _get_observation_pairs(
                 else:
                     score = (-step, [signs[0] * intermediate_value])
             else:
-                score = (float("inf"), [0.0])
+                score = (1, [0.0])
         elif trial.state is TrialState.RUNNING:
             if study._is_multi_objective():
                 continue
 
             assert constant_liar
-            score = (-float("inf"), [signs[0] * float("inf")])
+            score = (float("inf"), [signs[0] * float("inf")])
         else:
             assert False
         scores.append(score)
