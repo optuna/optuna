@@ -559,7 +559,9 @@ class JournalStorageReplayResult:
         trial = copy.copy(self._trials[trial_id])
         if state == TrialState.RUNNING:
             trial.datetime_start = datetime_from_isoformat(log["datetime_start"])
-            self._trial_ids[threading.get_ident()] = trial_id
+            worker_id = self._worker_id_prefix + str(threading.get_ident())
+            if log["worker_id"] == worker_id:
+                self._trial_ids[threading.get_ident()] = trial_id
         if state.is_finished():
             trial.datetime_complete = datetime_from_isoformat(log["datetime_complete"])
         trial.state = state
@@ -567,7 +569,6 @@ class JournalStorageReplayResult:
             trial.values = log["values"]
 
         self._trials[trial_id] = trial
-        return
 
     def _apply_set_trial_intermediate_value(self, log: Dict[str, Any]) -> None:
         trial_id = log["trial_id"]
