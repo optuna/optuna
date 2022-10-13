@@ -1039,9 +1039,9 @@ def test_reproducible_in_other_process(sampler_class_index: int) -> None:
         p.start()
         p.join()
     # Hashes are expected to be different because string hashing is nondeterministic per process.
+    if hash_seed is not None:
+        os.environ["PYTHONHASHSEED"] = hash_seed
+
     assert not (hash_dict[0] == hash_dict[1] == hash_dict[2])
     # But the sequences are expected to be the same.
     assert sequence_dict[0] == sequence_dict[1] == sequence_dict[2]
-
-    if hash_seed is not None:
-        os.environ["PYTHONHASHSEED"] = hash_seed
