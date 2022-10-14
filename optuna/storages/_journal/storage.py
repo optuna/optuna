@@ -261,8 +261,10 @@ class JournalStorage(BaseStorage):
             self._write_log(JournalOperation.SET_TRIAL_STATE_VALUES, log)
             self._sync_with_backend()
 
-            if state == TrialState.RUNNING and trial_id != self._replay_result._trial_ids.get(
-                threading.get_ident()
+            if (
+                state == TrialState.RUNNING
+                and trial_id
+                != self._replay_result._thread_id_to_owned_trial_id.get(threading.get_ident())
             ):
                 return False
             else:
@@ -330,7 +332,7 @@ class JournalStorageReplayResult:
         self._study_id_to_trial_ids: Dict[int, List[int]] = {}
         self._trial_id_to_study_id: Dict[int, int] = {}
         self._next_study_id: int = 0
-        self._trial_ids: Dict[int, int] = {}  # thread_id to trial_id
+        self._thread_id_to_owned_trial_id: Dict[int, int] = {}
 
     def apply_logs(self, logs: List[Dict[str, Any]]) -> None:
         for log in logs:
@@ -387,29 +389,27 @@ class JournalStorageReplayResult:
                 frozen_trials.append(trial)
         return frozen_trials
 
-    def _raise_if_log_issued_by_this_worker(self, log: Dict[str, Any], err: Exception) -> None:
-        if log["worker_id"] == self._worker_id_prefix + str(threading.get_ident()):
-            raise err
+    def _is_issued_by_this_worker(self, log: Dict[str, Any]) -> bool:
+        return log["worker_id"] == self._worker_id_prefix + str(threading.get_ident())
 
     def _study_exists(self, study_id: int, log: Dict[str, Any]) -> bool:
-        if study_id not in self._studies:
-            self._raise_if_log_issued_by_this_worker(log, KeyError(NOT_FOUND_MSG))
-            return False
-        return True
+        if study_id in self._studies:
+            return True
+        if self._is_issued_by_this_worker(log):
+            raise KeyError(NOT_FOUND_MSG)
+        return False
 
     def _apply_create_study(self, log: Dict[str, Any]) -> None:
         study_name = log["study_name"]
 
         if study_name in [s.study_name for s in self._studies.values()]:
-            self._raise_if_log_issued_by_this_worker(
-                log,
-                DuplicatedStudyError(
+            if self._is_issued_by_this_worker(log):
+                raise DuplicatedStudyError(
                     "Another study with name '{}' already exists. "
                     "Please specify a different name, or reuse the existing one "
                     "by setting `load_if_exists` (for Python API) or "
                     "`--skip-if-exists` flag (for CLI).".format(study_name)
-                ),
-            )
+                )
             return
 
         study_id = self._next_study_id
@@ -455,14 +455,12 @@ class JournalStorageReplayResult:
 
         current_directions = self._studies[study_id]._directions
         if current_directions[0] != StudyDirection.NOT_SET and current_directions != directions:
-            self._raise_if_log_issued_by_this_worker(
-                log,
+            if self._is_issued_by_this_worker(log):
                 ValueError(
                     "Cannot overwrite study direction from {} to {}.".format(
                         current_directions, directions
                     )
-                ),
-            )
+                )
             return
 
         self._studies[study_id]._directions = [StudyDirection(d) for d in directions]
@@ -507,12 +505,10 @@ class JournalStorageReplayResult:
         self._study_id_to_trial_ids[study_id].append(trial_id)
         self._trial_id_to_study_id[trial_id] = study_id
 
-        worker_id = self._worker_id_prefix + str(threading.get_ident())
-        if log["worker_id"] == worker_id and self._trials[trial_id].state == TrialState.RUNNING:
-            self._trial_ids[threading.get_ident()] = trial_id
-
-        if log["worker_id"] == worker_id:
+        if self._is_issued_by_this_worker(log):
             self._last_created_trial_id_by_this_process = trial_id
+            if self._trials[trial_id].state == TrialState.RUNNING:
+                self._thread_id_to_owned_trial_id[threading.get_ident()] = trial_id
 
     def _apply_set_trial_param(self, log: Dict[str, Any]) -> None:
         trial_id = log["trial_id"]
@@ -533,8 +529,9 @@ class JournalStorageReplayResult:
                     check_distribution_compatibility(
                         prev_trial.distributions[param_name], distribution
                     )
-                except Exception as e:
-                    self._raise_if_log_issued_by_this_worker(log, e)
+                except Exception:
+                    if self._is_issued_by_this_worker(log):
+                        raise
                     return
                 break
 
@@ -559,9 +556,8 @@ class JournalStorageReplayResult:
         trial = copy.copy(self._trials[trial_id])
         if state == TrialState.RUNNING:
             trial.datetime_start = datetime_from_isoformat(log["datetime_start"])
-            worker_id = self._worker_id_prefix + str(threading.get_ident())
-            if log["worker_id"] == worker_id:
-                self._trial_ids[threading.get_ident()] = trial_id
+            if self._is_issued_by_this_worker(log):
+                self._thread_id_to_owned_trial_id[threading.get_ident()] = trial_id
         if state.is_finished():
             trial.datetime_complete = datetime_from_isoformat(log["datetime_complete"])
         trial.state = state
@@ -604,17 +600,16 @@ class JournalStorageReplayResult:
 
     def _trial_exists_and_updatable(self, trial_id: int, log: Dict[str, Any]) -> bool:
         if trial_id not in self._trials:
-            self._raise_if_log_issued_by_this_worker(log, KeyError(NOT_FOUND_MSG))
+            if self._is_issued_by_this_worker(log):
+                raise KeyError(NOT_FOUND_MSG)
             return False
         elif self._trials[trial_id].state.is_finished():
-            self._raise_if_log_issued_by_this_worker(
-                log,
-                RuntimeError(
+            if self._is_issued_by_this_worker(log):
+                raise RuntimeError(
                     "Trial#{} has already finished and can not be updated.".format(
                         self._trials[trial_id].number
                     )
-                ),
-            )
+                )
             return False
         else:
             return True
