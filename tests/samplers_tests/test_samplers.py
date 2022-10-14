@@ -1019,8 +1019,9 @@ def run_optimize(
 
 @pytest.mark.parametrize("sampler_class_index", range(len(sampler_class_with_seed)))
 def test_reproducible_in_other_process(sampler_class_index: int) -> None:
-    # This test should be tested without `PYTHONHASHSEED`. However, tox sets the
-    # environmental variable "PYTHONHASHSEED" by default.
+    # This test should be tested without `PYTHONHASHSEED`. However, some tool such as tox
+    # set the environmental variable "PYTHONHASHSEED" by default.
+
     hash_seed = os.getenv("PYTHONHASHSEED")
     if hash_seed is not None:
         del os.environ["PYTHONHASHSEED"]
@@ -1038,10 +1039,11 @@ def test_reproducible_in_other_process(sampler_class_index: int) -> None:
         )
         p.start()
         p.join()
-    # Hashes are expected to be different because string hashing is nondeterministic per process.
+
     if hash_seed is not None:
         os.environ["PYTHONHASHSEED"] = hash_seed
 
+    # Hashes are expected to be different because string hashing is nondeterministic per process.
     assert not (hash_dict[0] == hash_dict[1] == hash_dict[2])
     # But the sequences are expected to be the same.
     assert sequence_dict[0] == sequence_dict[1] == sequence_dict[2]
