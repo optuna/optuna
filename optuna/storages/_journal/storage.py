@@ -456,7 +456,7 @@ class JournalStorageReplayResult:
         current_directions = self._studies[study_id]._directions
         if current_directions[0] != StudyDirection.NOT_SET and current_directions != directions:
             if self._is_issued_by_this_worker(log):
-                ValueError(
+                raise ValueError(
                     "Cannot overwrite study direction from {} to {}.".format(
                         current_directions, directions
                     )
