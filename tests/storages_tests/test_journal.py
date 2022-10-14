@@ -68,7 +68,7 @@ def test_concurrent_append_logs(log_storage_type: str) -> None:
         assert all(record == r for r in storage.read_logs(0))
 
 
-def pop_waiting_trial(file_path: str, study_name: str) -> int:
+def pop_waiting_trial(file_path: str, study_name: str) -> Optional[int]:
     file_storage = optuna.storages.JournalFileStorage(file_path)
     storage = optuna.storages.JournalStorage(file_storage)
     study = optuna.load_study(storage=storage, study_name=study_name)
@@ -91,5 +91,7 @@ def test_set_trial_state_values_multiprocess_safe() -> None:
                 futures.append(future)
 
             for future in as_completed(futures):
-                trial_id_set.add(future.result())
+                trial_id = future.result()
+                if trial_id is not None:
+                    trial_id_set.add(trial_id)
         assert len(trial_id_set) == 10
