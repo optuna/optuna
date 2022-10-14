@@ -386,14 +386,15 @@ class TPESampler(BaseSampler):
         values, scores, violations = _get_observation_pairs(
             study,
             param_names,
-            self._multivariate,
+            False,
             self._constant_liar,
             self._constraints_func is not None,
         )
 
         # If the number of samples is insufficient, we run random trial.
         n = len(scores)
-        if n < self._n_startup_trials:
+        n_sampled = sum(v is not None for v in list(values.values())[0])
+        if n_sampled < self._n_startup_trials:
             return {}
 
         # We divide data into below and above.
@@ -436,16 +437,17 @@ class TPESampler(BaseSampler):
         values, scores, violations = _get_observation_pairs(
             study,
             [param_name],
-            self._multivariate,
+            False,
             self._constant_liar,
             self._constraints_func is not None,
         )
 
+        n_sampled = sum(v is not None for v in values[param_name])
         n = len(scores)
 
-        self._log_independent_sampling(n, trial, param_name)
+        self._log_independent_sampling(n_sampled, trial, param_name)
 
-        if n < self._n_startup_trials:
+        if n_sampled < self._n_startup_trials:
             return self._random_sampler.sample_independent(
                 study, trial, param_name, param_distribution
             )
@@ -609,9 +611,6 @@ def _get_observation_pairs(
     as the third element (:obj:`None` otherwise). Each value is a float of 0 or greater and a
     trial is feasible if and only if its violation score is 0.
     """
-
-    if len(param_names) > 1:
-        assert multivariate
 
     signs = []
     for d in study.directions:
