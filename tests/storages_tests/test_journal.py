@@ -75,7 +75,7 @@ def pop_waiting_trial(file_path: str, study_name: str) -> Optional[int]:
     return study._pop_waiting_trial_id()
 
 
-def test_set_trial_state_values_multiprocess_safe() -> None:
+def test_pop_waiting_trial_multiprocess_safe() -> None:
     with tempfile.NamedTemporaryFile() as file:
         file_storage = optuna.storages.JournalFileStorage(file.name)
         storage = optuna.storages.JournalStorage(file_storage)

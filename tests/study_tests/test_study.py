@@ -1527,7 +1527,7 @@ def test_study_summary_datetime_start_calculation(storage_mode: str) -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_pop_waiting_trial_thread_safe(storage_mode: str) -> None:
     if "sqlite" == storage_mode or "cached_sqlite" == storage_mode:
-        pytest.skip("set_trial_state_values is not thread-safe on SQLite3")
+        pytest.skip("study._pop_waiting_trial is not thread-safe on SQLite3")
 
     num_enqueued = 10
     with StorageSupplier(storage_mode) as storage:
