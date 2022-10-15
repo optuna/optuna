@@ -5,7 +5,7 @@ import pickle
 import tempfile
 import threading
 import time
-from typing import Any
+from typing import Any, Union
 from typing import Callable
 from typing import Dict
 from typing import List
@@ -1523,29 +1523,37 @@ def test_study_summary_datetime_start_calculation(storage_mode: str) -> None:
         assert summaries[0].datetime_start is not None
 
 
-def _process_tell(st: Study, tr: Trial, values: float) -> None:
+def _process_tell(st: Study, tr: Union[Trial, int], values: float) -> None:
     st.tell(tr, values)
 
 
 def test_study_tell_process() -> None:
 
+    pool = multiprocessing.Pool()
+
     with tempfile.NamedTemporaryFile() as tf:
         # Creating a study and ask for a new trial
         db_url = "sqlite:///{}".format(tf.name)
         study = create_study(storage=db_url)
-        trial = study.ask()
+        trial0 = study.ask()
 
-        process_data = [(study, trial, 1.2)]
-
-        pool = multiprocessing.Pool()
-        pool.starmap(_process_tell, process_data)
+        # Test normal behaviour
+        pool.starmap(_process_tell, [(study, trial0, 1.2)])
 
         assert len(study.trials) == 1
         assert study.best_trial.state == TrialState.COMPLETE
         assert study.best_value == 1.2
 
+        # Test study.tell using trial number
+        _ = study.ask()
+        pool.starmap(_process_tell, [(study, 1, 1.5)])
+
+        assert len(study.trials) == 2
+        assert study.best_trial.state == TrialState.COMPLETE
+        assert study.best_value == 1.2
+
         try:
-            pool.starmap(_process_tell, [(study, trial, 1.2)])
+            pool.starmap(_process_tell, [(study, trial0, 1.2)])
             assert False  # Should fail because the trial0 is already finished
         except RuntimeError:
             assert True
