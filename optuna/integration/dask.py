@@ -741,7 +741,6 @@ class DaskStorage(BaseStorage):
 
 class DaskStudy(Study):
     def __init__(self, study: Study):
-        self.__study = study
         super().__init__(
             study_name=study.study_name,
             storage=study._storage,
@@ -791,10 +790,10 @@ class DaskStudy(Study):
             distributed.wait(futures, timeout=timeout)
         finally:
             # Make sure `_OPTIMIZATION_STOP` is always reset back to `False`
-            self.__study.set_system_attr("_OPTIMIZATION_STOP", False)
+            self.set_system_attr("_OPTIMIZATION_STOP", False)
 
     def stop(self) -> None:
-        self.__study.set_system_attr("_OPTIMIZATION_STOP", True)
+        self.set_system_attr("_OPTIMIZATION_STOP", True)
 
 
 def _optimize(study: DaskStudy, *args: Any, **kwargs: Any) -> None:
