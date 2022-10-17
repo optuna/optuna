@@ -768,26 +768,39 @@ class DaskStudy(Study):
 
         client = client or distributed.default_client()
 
-        futures = [
-            client.submit(
-                _optimize_sequential,
-                self.__study,
-                func,
-                n_trials=1,
-                timeout=None,
-                catch=catch,
-                callbacks=callbacks,
-                gc_after_trial=gc_after_trial,
-                reseed_sampler_rng=True,
-                time_start=None,
-                progress_bar=None,
-                key=f"optuna-optimize-trial-{uuid.uuid4()}",
-                pure=False,
-            )
-            for _ in range(n_trials)
-        ]
+        try:
+            futures = [
+                client.submit(
+                    _optimize,
+                    self,
+                    func,
+                    n_trials=1,
+                    timeout=None,
+                    catch=catch,
+                    callbacks=callbacks,
+                    gc_after_trial=gc_after_trial,
+                    reseed_sampler_rng=True,
+                    time_start=None,
+                    progress_bar=None,
+                    key=f"optuna-optimize-trial-{uuid.uuid4()}",
+                    pure=False,
+                )
+                for _ in range(n_trials)
+            ]
 
-        distributed.wait(futures, timeout=timeout)
+            distributed.wait(futures, timeout=timeout)
+        finally:
+            # Make sure `_OPTIMIZATION_STOP` is always reset back to `False`
+            self.__study.set_system_attr("_OPTIMIZATION_STOP", False)
+
+    def stop(self) -> None:
+        self.__study.set_system_attr("_OPTIMIZATION_STOP", True)
+
+
+def _optimize(study: DaskStudy, *args: Any, **kwargs: Any) -> None:
+    # Similar to `_optimize_sequential` but also sets `study._stop_flag`
+    study._stop_flag = study.system_attrs.get("_OPTIMIZATION_STOP", False)
+    return _optimize_sequential(study, *args, **kwargs)
 
 
 @experimental_func("3.0.3")

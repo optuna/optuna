@@ -14,10 +14,12 @@ import numpy as np
 import pytest
 
 import optuna
+from optuna import Study
 from optuna.distributions import FloatDistribution
 from optuna.integration.dask import _OptunaSchedulerExtension
 from optuna.integration.dask import DaskStorage
 from optuna.integration.dask import DaskStudy
+from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState
 
@@ -265,3 +267,23 @@ def test_study_enqueue_trial(client: Client) -> None:
     assert study.trials[0].params == {"x": 5}
     assert study.trials[1].params == {"x": 0}
     assert study.trials[1].user_attrs == {"memo": "optimal"}
+
+
+def _callback_stop(study: Study, trial: FrozenTrial) -> None:
+    if trial.number >= 4:
+        study.stop()
+
+
+def test_study_stop() -> None:
+    # In the single threaded case, `stop()` is exact
+    with Client(n_workers=1, threads_per_worker=1, dashboard_address=":0"):
+        study = optuna.integration.dask.create_study()
+        study.optimize(lambda _: 1.0, n_trials=100, callbacks=[_callback_stop])
+        assert len(study.trials) == 5
+
+    # In the multi-threaded case, `stop()` is approximate
+    with Client(n_workers=2, threads_per_worker=2, dashboard_address=":0") as client:
+        study = optuna.integration.dask.create_study()
+        study.optimize(lambda _: 1.0, n_trials=100, callbacks=[_callback_stop])
+        nthreads = sum(client.nthreads().values())
+        assert len(study.trials) <= nthreads * 2
