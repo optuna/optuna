@@ -235,11 +235,14 @@ class _OptunaSchedulerExtension:
         comm: "distributed.comm.tcp.TCP",
         storage_name: str,
         study_id: int,
-        template_trial: Optional[FrozenTrial] = None,
+        template_trial: Optional[dict] = None,
     ) -> int:
+        deserialized_template_trial = None
+        if template_trial is not None:
+            deserialized_template_trial = _deserialize_frozentrial(template_trial)
         return self.get_storage(storage_name).create_new_trial(
             study_id=study_id,
-            template_trial=template_trial,
+            template_trial=deserialized_template_trial,
         )
 
     def set_trial_param(
@@ -590,11 +593,14 @@ class DaskStorage(BaseStorage):
 
     @_use_basestorage_doc
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
+        serialized_template_trial = None
+        if template_trial is not None:
+            serialized_template_trial = _serialize_frozentrial(template_trial)
         return self.client.sync(
             self.client.scheduler.optuna_create_new_trial,
             storage_name=self.name,
             study_id=study_id,
-            template_trial=template_trial,
+            template_trial=serialized_template_trial,
         )
 
     @_use_basestorage_doc
@@ -775,6 +781,7 @@ class DaskStudy(Study):
                 reseed_sampler_rng=True,
                 time_start=None,
                 progress_bar=None,
+                key=f"optuna-optimize-trial-{uuid.uuid4()}",
                 pure=False,
             )
             for _ in range(n_trials)
