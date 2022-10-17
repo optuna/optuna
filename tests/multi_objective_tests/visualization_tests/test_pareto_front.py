@@ -99,9 +99,7 @@ def test_plot_pareto_front_2d(
 
 
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
-@pytest.mark.parametrize(
-    "axis_order", [None] + list(itertools.permutations(range(3), 3))  # type: ignore
-)
+@pytest.mark.parametrize("axis_order", [None] + list(itertools.permutations(range(3), 3)))
 def test_plot_pareto_front_3d(
     include_dominated_trials: bool, axis_order: Optional[List[int]]
 ) -> None:
