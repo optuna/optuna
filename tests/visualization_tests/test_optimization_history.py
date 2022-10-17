@@ -79,8 +79,9 @@ def test_ignore_failed_trials(direction: str, error_bar: bool) -> None:
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-@pytest.mark.parametrize("target_name", ["Objective Value", "Target Name"])
-def test_get_optimization_history_info_list(direction: str, target_name: str) -> None:
+def test_get_optimization_history_info_list(direction: str) -> None:
+    target_name = "Target Name"
+
     def objective(trial: Trial) -> float:
 
         if trial.number == 0:
@@ -121,13 +122,11 @@ def test_get_optimization_history_info_list(direction: str, target_name: str) ->
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-@pytest.mark.parametrize("target_name", ["Objective Value", "Target Name"])
-def test_get_optimization_history_info_list_with_multiple_studies(
-    direction: str, target_name: str
-) -> None:
+def test_get_optimization_history_info_list_with_multiple_studies(direction: str) -> None:
     n_studies = 10
     base_values = [1.0, 2.0, 0.0]
     base_best_values = [1.0, 1.0, 0.0] if direction == "minimize" else [1.0, 2.0, 2.0]
+    target_name = "Target Name"
 
     # Test with trials.
     studies = [create_study(direction=direction) for _ in range(n_studies)]
@@ -159,11 +158,9 @@ def test_get_optimization_history_info_list_with_multiple_studies(
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-@pytest.mark.parametrize("target_name", ["Objective Value", "Target Name"])
-def test_get_optimization_history_info_list_with_error_bar(
-    direction: str, target_name: str
-) -> None:
+def test_get_optimization_history_info_list_with_error_bar(direction: str) -> None:
     n_studies = 10
+    target_name = "Target Name"
 
     def objective(trial: Trial) -> float:
 

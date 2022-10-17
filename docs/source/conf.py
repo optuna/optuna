@@ -17,8 +17,10 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 import pkg_resources
+import warnings
 
 import plotly.io as pio
+from sklearn.exceptions import ConvergenceWarning
 from sphinx_gallery.sorting import FileNameSortKey
 
 __version__ = pkg_resources.get_distribution("optuna").version
@@ -205,3 +207,7 @@ plotly_include_source = True
 plotly_formats = ["html"]
 plotly_html_show_formats = False
 plotly_html_show_source_link = False
+
+# Not showing common warning messages as in
+# https://sphinx-gallery.github.io/stable/configuration.html#removing-warnings.
+warnings.filterwarnings("ignore", category=ConvergenceWarning, module="sklearn")

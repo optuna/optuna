@@ -176,7 +176,7 @@ class JournalStorage(BaseStorage):
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
         log: Dict[str, Any] = {
             "study_id": study_id,
-            "datetime_start": datetime.datetime.now().isoformat(),
+            "datetime_start": datetime.datetime.now().isoformat(timespec="microseconds"),
         }
 
         if template_trial:
@@ -188,11 +188,15 @@ class JournalStorage(BaseStorage):
                 log["value"] = template_trial.value
                 log["values"] = None
             if template_trial.datetime_start:
-                log["datetime_start"] = template_trial.datetime_start.isoformat()
+                log["datetime_start"] = template_trial.datetime_start.isoformat(
+                    timespec="microseconds"
+                )
             else:
                 log["datetime_start"] = None
             if template_trial.datetime_complete:
-                log["datetime_complete"] = template_trial.datetime_complete.isoformat()
+                log["datetime_complete"] = template_trial.datetime_complete.isoformat(
+                    timespec="microseconds"
+                )
 
             log["distributions"] = {
                 k: distribution_to_json(dist) for k, dist in template_trial.distributions.items()
@@ -249,9 +253,9 @@ class JournalStorage(BaseStorage):
         }
 
         if state == TrialState.RUNNING:
-            log["datetime_start"] = datetime.datetime.now().isoformat()
+            log["datetime_start"] = datetime.datetime.now().isoformat(timespec="microseconds")
         elif state.is_finished():
-            log["datetime_complete"] = datetime.datetime.now().isoformat()
+            log["datetime_complete"] = datetime.datetime.now().isoformat(timespec="microseconds")
 
         with self._thread_lock:
             self._write_log(JournalOperation.SET_TRIAL_STATE_VALUES, log)

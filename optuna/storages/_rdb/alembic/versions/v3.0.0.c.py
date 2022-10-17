@@ -61,6 +61,8 @@ class IntermediateValueModel(BaseModel):
 
 def upgrade():
     bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    column_names = [c["name"] for c in inspector.get_columns("trial_intermediate_values")]
 
     sa.Enum(IntermediateValueModel.TrialIntermediateValueType).create(bind, checkfirst=True)
 
@@ -68,15 +70,18 @@ def upgrade():
     # ADD COLUMN <col_name> ... DEFAULT "FINITE_OR_NAN"', but seemingly Alembic
     # does not support such a SQL statement. So first add a column with schema-level
     # default value setting, then remove it by `batch_op.alter_column()`.
-    with op.batch_alter_table("trial_intermediate_values") as batch_op:
-        batch_op.add_column(
-            sa.Column(
-                "intermediate_value_type",
-                sa.Enum("FINITE", "INF_POS", "INF_NEG", "NAN", name="trialintermediatevaluetype"),
-                nullable=False,
-                server_default="FINITE",
-            ),
-        )
+    if "intermediate_value_type" not in column_names:
+        with op.batch_alter_table("trial_intermediate_values") as batch_op:
+            batch_op.add_column(
+                sa.Column(
+                    "intermediate_value_type",
+                    sa.Enum(
+                        "FINITE", "INF_POS", "INF_NEG", "NAN", name="trialintermediatevaluetype"
+                    ),
+                    nullable=False,
+                    server_default="FINITE",
+                ),
+            )
     with op.batch_alter_table("trial_intermediate_values") as batch_op:
         batch_op.alter_column(
             "intermediate_value_type",
@@ -89,11 +94,23 @@ def upgrade():
 
     session = orm.Session(bind=bind)
     try:
-        records = session.query(IntermediateValueModel).all()
+        records = (
+            session.query(IntermediateValueModel)
+            .filter(
+                sa.or_(
+                    IntermediateValueModel.intermediate_value > 1e16,
+                    IntermediateValueModel.intermediate_value < -1e16,
+                    IntermediateValueModel.intermediate_value.is_(None),
+                )
+            )
+            .all()
+        )
         mapping = []
         for r in records:
             value: float
-            if np.isclose(r.intermediate_value, RDB_MAX_FLOAT) or np.isposinf(
+            if r.intermediate_value is None or np.isnan(r.intermediate_value):
+                value = float("nan")
+            elif np.isclose(r.intermediate_value, RDB_MAX_FLOAT) or np.isposinf(
                 r.intermediate_value
             ):
                 value = float("inf")
@@ -101,8 +118,6 @@ def upgrade():
                 r.intermediate_value
             ):
                 value = float("-inf")
-            elif np.isnan(r.intermediate_value):
-                value = float("nan")
             else:
                 value = r.intermediate_value
             (

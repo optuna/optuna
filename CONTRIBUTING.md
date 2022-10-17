@@ -68,15 +68,7 @@ Type hints, [PEP484](https://www.python.org/dev/peps/pep-0484/), are checked wit
 You can check the format, coding style, and type hints at the same time just by executing a script `formats.sh`.
 If your environment is missing some dependencies such as black, blackdoc, flake8, isort or mypy,
 you will be asked to install them.
-
-You can also check them using [tox](https://tox.readthedocs.io/en/latest/) like below.
-
-```
-$ pip install tox
-$ tox -e flake8 -e black -e blackdoc -e isort -e mypy
-```
-
-If you catch format errors, you can automatically fix them by auto-formatters.
+The following commands automatically fix format errors by auto-formatters.
 
 ```bash
 # Install auto-formatters.

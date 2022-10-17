@@ -136,6 +136,7 @@ class SkoptSampler(BaseSampler):
 
         if seed is not None and "random_state" not in self._skopt_kwargs:
             self._skopt_kwargs["random_state"] = seed
+        self._rng: Optional[np.random.RandomState] = None
 
     def reseed_rng(self) -> None:
 
@@ -177,8 +178,12 @@ class SkoptSampler(BaseSampler):
             return {}
 
         optimizer = _Optimizer(search_space, self._skopt_kwargs)
+        if self._rng is not None:
+            optimizer._optimizer.rng = self._rng
         optimizer.tell(study, complete_trials)
-        return optimizer.ask()
+        params = optimizer.ask()
+        self._rng = optimizer._optimizer.rng
+        return params
 
     def sample_independent(
         self,
