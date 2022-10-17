@@ -80,13 +80,14 @@ def test_pop_waiting_trial_multiprocess_safe() -> None:
         file_storage = optuna.storages.JournalFileStorage(file.name)
         storage = optuna.storages.JournalStorage(file_storage)
         study = optuna.create_study(storage=storage)
-        for i in range(10):
+        num_enqueued = 10
+        for i in range(num_enqueued):
             study.enqueue_trial({"i": i})
 
         trial_id_set = set()
         with ProcessPoolExecutor(10) as pool:
             futures = []
-            for i in range(10):
+            for i in range(num_enqueued):
                 future = pool.submit(pop_waiting_trial, file.name, study.study_name)
                 futures.append(future)
 
@@ -94,4 +95,4 @@ def test_pop_waiting_trial_multiprocess_safe() -> None:
                 trial_id = future.result()
                 if trial_id is not None:
                     trial_id_set.add(trial_id)
-        assert len(trial_id_set) == 10
+        assert len(trial_id_set) == num_enqueued
