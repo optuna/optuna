@@ -82,13 +82,9 @@ optimization *studies*.
 Communication
 -------------
 
+-  `GitHub Discussions <https://github.com/optuna/optuna/discussions>`__ for questions.
 -  `GitHub Issues <https://github.com/optuna/optuna/issues>`__ for bug
-   reports, feature requests and questions.
--  `Gitter <https://gitter.im/optuna/optuna>`__ for interactive chat
-   with developers.
--  `Stack
-   Overflow <https://stackoverflow.com/questions/tagged/optuna>`__ for
-   questions.
+   reports and feature requests.
 
 Contribution
 ------------
