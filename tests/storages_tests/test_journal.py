@@ -7,6 +7,7 @@ from typing import IO
 from typing import Optional
 from typing import Type
 
+import fakeredis
 import pytest
 
 import optuna
@@ -14,8 +15,9 @@ from optuna.storages._journal.file import JournalFileBaseLock
 
 
 LOG_STORAGE = {
-    "file_with_open_lock",
-    "file_with_link_lock",
+    # "file_with_open_lock",
+    # "file_with_link_lock",
+    "redis",
 }
 
 
@@ -24,7 +26,7 @@ class JournalLogStorageSupplier:
         self.storage_type = storage_type
         self.tempfile: Optional[IO[Any]] = None
 
-    def __enter__(self) -> optuna.storages.JournalFileStorage:
+    def __enter__(self) -> optuna.storages.BaseJournalLogStorage:
         if self.storage_type.startswith("file"):
             self.tempfile = tempfile.NamedTemporaryFile()
             lock: JournalFileBaseLock
@@ -35,6 +37,10 @@ class JournalLogStorageSupplier:
             else:
                 raise Exception("Must not reach here")
             return optuna.storages.JournalFileStorage(self.tempfile.name, lock)
+        elif self.storage_type.startswith("redis"):
+            journal_redis_storage = optuna.storages.JournalRedisStorage("redis://localhost")
+            journal_redis_storage._redis = fakeredis.FakeStrictRedis()
+            return journal_redis_storage
         else:
             raise RuntimeError("Unknown log storage type: {}".format(self.storage_type))
 
