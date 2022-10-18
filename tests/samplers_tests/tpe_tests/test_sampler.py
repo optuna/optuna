@@ -764,99 +764,24 @@ def test_get_observation_pairs(
         (float("inf"), [sign * 0.0]),  # PRUNED (without intermediate values)
     ]
     assert _tpe.sampler._get_observation_pairs(
-        study, ["x"], False, constraints_enabled=constraints_enabled
+        study, ["x"], constraints_enabled=constraints_enabled
     ) == (
         {"x": [5.0, 5.0, 5.0, 5.0]},
         scores,
         expected_violations,
     )
     assert _tpe.sampler._get_observation_pairs(
-        study, ["y"], False, constraints_enabled=constraints_enabled
+        study, ["y"], constraints_enabled=constraints_enabled
     ) == (
         {"y": [None, None, None, None]},
         scores,
         expected_violations,
     )
     assert _tpe.sampler._get_observation_pairs(
-        study, ["z"], False, constraints_enabled=constraints_enabled
+        study, ["z"], constraints_enabled=constraints_enabled
     ) == (
         {"z": [0, 0, 0, 0]},  # The internal representation of 'None' for z is 0
         scores,
-        expected_violations,
-    )
-    assert _tpe.sampler._get_observation_pairs(
-        study, ["x"], True, constraints_enabled=constraints_enabled
-    ) == (
-        {"x": [5.0, 5.0, 5.0, 5.0]},
-        scores,
-        expected_violations,
-    )
-    assert _tpe.sampler._get_observation_pairs(
-        study, ["y"], True, constraints_enabled=constraints_enabled
-    ) == (
-        {"y": []},
-        [],
-        [] if constraints_enabled else expected_violations,
-    )
-    assert _tpe.sampler._get_observation_pairs(
-        study, ["z"], True, constraints_enabled=constraints_enabled
-    ) == (
-        {"z": [0, 0, 0, 0]},  # The internal representation of 'None' for z is 0
-        scores,
-        expected_violations,
-    )
-
-
-@pytest.mark.parametrize("direction", ["minimize", "maximize"])
-@pytest.mark.parametrize(
-    "constraints_enabled, constraints_func, expected_violations",
-    [
-        (False, None, None),
-        (True, lambda trial: [(-1, -1), (0, -1), (1, -1), (2, -1)][trial.number], [0, 0, 1, 2]),
-    ],
-)
-def test_get_observation_pairs_multi(
-    direction: str,
-    constraints_enabled: bool,
-    constraints_func: Optional[Callable[[optuna.trial.FrozenTrial], Sequence[float]]],
-    expected_violations: List[float],
-) -> None:
-    def objective(trial: Trial) -> float:
-
-        x = trial.suggest_int("x", 5, 5)
-        y = trial.suggest_int("y", 6, 6)
-        if trial.number == 0:
-            return x + y
-        elif trial.number == 1:
-            trial.report(1, 4)
-            trial.report(2, 7)
-            raise TrialPruned()
-        elif trial.number == 2:
-            trial.report(float("nan"), 3)
-            raise TrialPruned()
-        elif trial.number == 3:
-            raise TrialPruned()
-        else:
-            raise RuntimeError()
-
-    sampler = TPESampler(constraints_func=constraints_func)
-    study = optuna.create_study(direction=direction, sampler=sampler)
-    study.optimize(objective, n_trials=5, catch=(RuntimeError,))
-
-    sign = 1 if direction == "minimize" else -1
-    assert _tpe.sampler._get_observation_pairs(
-        study, ["x", "y"], True, constraints_enabled=constraints_enabled
-    ) == (
-        {"x": [5.0, 5.0, 5.0, 5.0], "y": [6.0, 6.0, 6.0, 6.0]},
-        [
-            (-float("inf"), [sign * 11.0]),  # COMPLETE
-            (-7, [sign * 2]),  # PRUNED (with intermediate values)
-            (
-                -3,
-                [float("inf")],
-            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-            (float("inf"), [sign * 0.0]),  # PRUNED (without intermediate values)
-        ],
         expected_violations,
     )
 
@@ -1066,8 +991,7 @@ def test_group_experimental_warning() -> None:
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-@pytest.mark.parametrize("multivariate", [True, False])
-def test_constant_liar_observation_pairs(direction: str, multivariate: bool) -> None:
+def test_constant_liar_observation_pairs(direction: str) -> None:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = TPESampler(constant_liar=True)
@@ -1085,14 +1009,13 @@ def test_constant_liar_observation_pairs(direction: str, multivariate: bool) -> 
     # and `-float("inf")` during maximization.
     expected_values = [(-float("inf"), [float("inf") * (-1 if direction == "maximize" else 1)])]
 
-    assert _tpe.sampler._get_observation_pairs(
-        study, ["x"], multivariate, constant_liar=False
-    ) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["x"], constant_liar=False) == (
         {"x": []},
         [],
         None,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], multivariate, constant_liar=True) == (
+
+    assert _tpe.sampler._get_observation_pairs(study, ["x"], constant_liar=True) == (
         {"x": [2]},
         expected_values,
         None,

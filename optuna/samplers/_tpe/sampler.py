@@ -386,7 +386,6 @@ class TPESampler(BaseSampler):
         values, scores, violations = _get_observation_pairs(
             study,
             param_names,
-            False,
             self._constant_liar,
             self._constraints_func is not None,
         )
@@ -437,7 +436,6 @@ class TPESampler(BaseSampler):
         values, scores, violations = _get_observation_pairs(
             study,
             [param_name],
-            False,
             self._constant_liar,
             self._constraints_func is not None,
         )
@@ -582,7 +580,6 @@ def _calculate_nondomination_rank(loss_vals: np.ndarray) -> np.ndarray:
 def _get_observation_pairs(
     study: Study,
     param_names: List[str],
-    multivariate: bool,
     constant_liar: bool = False,  # TODO(hvy): Remove default value and fix unit tests.
     constraints_enabled: bool = False,
 ) -> Tuple[
@@ -629,12 +626,6 @@ def _get_observation_pairs(
     values: Dict[str, List[Optional[float]]] = {param_name: [] for param_name in param_names}
     violations: Optional[List[float]] = [] if constraints_enabled else None
     for trial in study.get_trials(deepcopy=False, states=states):
-        # If ``multivariate`` = True and ``group`` = True, we ignore the trials that are not
-        # included in each subspace.
-        # If ``multivariate`` = False, we skip the check.
-        if multivariate and any([param_name not in trial.params for param_name in param_names]):
-            continue
-
         # We extract score from the trial.
         if trial.state is TrialState.COMPLETE:
             if trial.values is None:
