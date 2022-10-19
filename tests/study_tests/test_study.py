@@ -1538,7 +1538,7 @@ def test_study_tell_process() -> None:
         study = create_study(storage=db_url)
         trial0 = study.ask()
 
-        # Test normal behaviour
+        # Test normal behaviour.
         pool.starmap(_process_tell, [(study, trial0, 1.2)])
 
         assert len(study.trials) == 1
