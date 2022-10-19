@@ -1545,7 +1545,7 @@ def test_study_tell_process() -> None:
         assert study.best_trial.state == TrialState.COMPLETE
         assert study.best_value == 1.2
 
-        # Test study.tell using trial number
+        # Test study.tell using trial number.
         _ = study.ask()
         pool.starmap(_process_tell, [(study, 1, 1.5)])
 
