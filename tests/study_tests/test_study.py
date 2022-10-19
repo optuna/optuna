@@ -1533,7 +1533,7 @@ def test_study_tell_process() -> None:
     pool = multiprocessing.Pool()
 
     with tempfile.NamedTemporaryFile() as tf:
-        # Creating a study and ask for a new trial
+        # Create a study and ask for a new trial.
         db_url = "sqlite:///{}".format(tf.name)
         study = create_study(storage=db_url)
         trial0 = study.ask()
