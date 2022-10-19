@@ -33,14 +33,18 @@ class JournalRedisStorage(BaseJournalLogStorage):
 
         if not self._redis.exists("log_number"):
             self._redis.set("log_number", -1)
-        max_log_number = int(self._redis.get("log_number"))
+        max_log_number_bytes = self._redis.get("log_number")
+        assert max_log_number_bytes is not None
+        max_log_number = int(max_log_number_bytes)
 
         logs = []
         last_decode_error = None
         for log_number in range(log_number_from, max_log_number + 1):
             if last_decode_error is not None:
                 raise last_decode_error
-            log = self._redis.get(self._key_log_id(log_number)).decode("utf-8")
+            log_bytes = self._redis.get(self._key_log_id(log_number))
+            assert log_bytes is not None
+            log = log_bytes.decode("utf-8")
             try:
                 logs.append(json.loads(log))
             except json.JSONDecodeError as err:
@@ -57,5 +61,5 @@ class JournalRedisStorage(BaseJournalLogStorage):
             self._redis.set(self._key_log_id(log_number), json.dumps(log))
 
     @staticmethod
-    def _key_log_id(log_number) -> str:
+    def _key_log_id(log_number: int) -> str:
         return f"log:{log_number}"
