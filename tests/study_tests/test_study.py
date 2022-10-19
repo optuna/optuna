@@ -1553,8 +1553,6 @@ def test_study_tell_process() -> None:
         assert study.best_trial.state == TrialState.COMPLETE
         assert study.best_value == 1.2
 
-        try:
+        # Should fail because the trial0 is already finished.
+        with pytest.raises(RuntimeError):
             pool.starmap(_process_tell, [(study, trial0, 1.2)])
-            assert False  # Should fail because the trial0 is already finished
-        except RuntimeError:
-            assert True
