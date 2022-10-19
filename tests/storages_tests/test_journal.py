@@ -15,8 +15,8 @@ from optuna.storages._journal.file import JournalFileBaseLock
 
 
 LOG_STORAGE = {
-    # "file_with_open_lock",
-    # "file_with_link_lock",
+    "file_with_open_lock",
+    "file_with_link_lock",
     "redis",
 }
 
@@ -53,7 +53,10 @@ class JournalLogStorageSupplier:
 
 
 @pytest.mark.parametrize("log_storage_type", LOG_STORAGE)
-def test_concurrent_append_logs(log_storage_type: str) -> None:
+def test_concurrent_append_logs_for_multi_processes(log_storage_type: str) -> None:
+    if log_storage_type == "redis":
+        pytest.skip("The `fakeredis` does not support multi process environments.")
+
     num_executors = 10
     num_records = 200
     record = {"key": "value"}
@@ -64,6 +67,13 @@ def test_concurrent_append_logs(log_storage_type: str) -> None:
 
         assert len(storage.read_logs(0)) == num_records
         assert all(record == r for r in storage.read_logs(0))
+
+
+@pytest.mark.parametrize("log_storage_type", LOG_STORAGE)
+def test_concurrent_append_logs_for_multi_threads(log_storage_type: str) -> None:
+    num_executors = 10
+    num_records = 200
+    record = {"key": "value"}
 
     with JournalLogStorageSupplier(log_storage_type) as storage:
         with ThreadPoolExecutor(num_executors) as pool:

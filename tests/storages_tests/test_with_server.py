@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 
 import optuna
+from optuna.storages import BaseStorage
 from optuna.storages import RDBStorage
 from optuna.storages import RedisStorage
 from optuna.trial import TrialState
@@ -30,11 +31,25 @@ def objective(trial: optuna.Trial) -> float:
     return f(x, y)
 
 
-def run_optimize(args: Tuple[str, str]) -> None:
+def get_storage(storage_url: str, storage_mode: str) -> Union[str, BaseStorage]:
+    if storage_mode == "RDB":
+        return storage_url
+    elif storage_mode == "journal-redis":
+        journal_redis_storage = optuna.storages.JournalRedisStorage(storage_url)
+        return optuna.storages.JournalStorage(journal_redis_storage)
+    else:
+        assert False, f"The mode {storage_mode} is not supported."
+
+
+def run_optimize(args: Tuple[str, str, str]) -> None:
     study_name = args[0]
     storage_url = args[1]
+    storage_mode = args[2]
     # Create a study
-    study = optuna.load_study(study_name=study_name, storage=storage_url)
+    study = optuna.load_study(
+        study_name=study_name,
+        storage=get_storage(storage_url, storage_mode),
+    )
     # Run optimization
     study.optimize(objective, n_trials=20)
 
@@ -49,6 +64,15 @@ def storage_url() -> str:
     except KeyError:
         pass
     return storage_url
+
+
+@pytest.fixture
+def storage_mode() -> str:
+    if "TEST_DB_MODE" not in os.environ:
+        storage_mode = "RDB"
+    else:
+        storage_mode = os.environ["TEST_DB_MODE"]
+    return storage_mode
 
 
 def _check_trials(trials: Sequence[optuna.trial.FrozenTrial]) -> None:
@@ -145,14 +169,16 @@ def test_store_nan_intermediate_values(storage_url: str) -> None:
     assert np.isnan(got_value)
 
 
-def test_multiprocess(storage_url: str) -> None:
+def test_multiprocess(storage_url: str, storage_mode: str) -> None:
     n_workers = 8
     study_name = _STUDY_NAME
-    optuna.create_study(storage=storage_url, study_name=study_name)
+    optuna.create_study(storage=get_storage(storage_url, storage_mode), study_name=study_name)
     with Pool(n_workers) as pool:
-        pool.map(run_optimize, [(study_name, storage_url)] * n_workers)
+        pool.map(run_optimize, [(study_name, storage_url, storage_mode)] * n_workers)
 
-    study = optuna.load_study(study_name=study_name, storage=storage_url)
+    study = optuna.load_study(
+        study_name=study_name, storage=get_storage(storage_url, storage_mode)
+    )
 
     trials = study.trials
     assert len(trials) == n_workers * 20

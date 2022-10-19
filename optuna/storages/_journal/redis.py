@@ -3,6 +3,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 
+from optuna._experimental import experimental_class
 from optuna._imports import try_import
 from optuna.storages._journal.base import BaseJournalLogStorage
 
@@ -11,6 +12,7 @@ with try_import() as _imports:
     import redis
 
 
+@experimental_class("3.1.0")
 class JournalRedisStorage(BaseJournalLogStorage):
     """Redis storage class for Journal log backend.
 
@@ -36,7 +38,6 @@ class JournalRedisStorage(BaseJournalLogStorage):
         logs = []
         last_decode_error = None
         for log_number in range(log_number_from, max_log_number + 1):
-            print(log_number)
             if last_decode_error is not None:
                 raise last_decode_error
             log = self._redis.get(self._key_log_id(log_number)).decode("utf-8")
