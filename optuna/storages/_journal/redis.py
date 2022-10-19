@@ -31,8 +31,7 @@ class JournalRedisStorage(BaseJournalLogStorage):
 
     def read_logs(self, log_number_from: int) -> List[Dict[str, Any]]:
 
-        if not self._redis.exists("log_number"):
-            self._redis.set("log_number", -1)
+        self._redis.setnx("log_number", -1)
         max_log_number_bytes = self._redis.get("log_number")
         assert max_log_number_bytes is not None
         max_log_number = int(max_log_number_bytes)
@@ -53,9 +52,7 @@ class JournalRedisStorage(BaseJournalLogStorage):
 
     def append_logs(self, logs: List[Dict[str, Any]]) -> None:
 
-        if not self._redis.exists("log_number"):
-            self._redis.set("log_number", -1)
-
+        self._redis.setnx("log_number", -1)
         for log in logs:
             log_number = self._redis.incr("log_number", 1)
             self._redis.set(self._key_log_id(log_number), json.dumps(log))

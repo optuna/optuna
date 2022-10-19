@@ -124,4 +124,4 @@ jobs:
         env:
           OMP_NUM_THREADS: 1
           TEST_DB_URL: redis://localhost:6379
-          TEST)DB_MODE: journal-redis
+          TEST_DB_MODE: journal-redis
