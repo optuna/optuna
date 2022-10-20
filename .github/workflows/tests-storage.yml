@@ -119,9 +119,9 @@ jobs:
         TEST_DB_URL: redis://localhost:6379
 
     - name: Tests Journal Redis
-        run: |
-          pytest tests/storages_tests/test_with_server.py
-        env:
-          OMP_NUM_THREADS: 1
-          TEST_DB_URL: redis://localhost:6379
-          TEST_DB_MODE: journal-redis
+      run: |
+        pytest tests/storages_tests/test_with_server.py
+      env:
+        OMP_NUM_THREADS: 1
+        TEST_DB_URL: redis://localhost:6379
+        TEST_DB_MODE: journal-redis

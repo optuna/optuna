@@ -1,4 +1,5 @@
 import json
+import time
 from typing import Any
 from typing import Dict
 from typing import List
@@ -31,23 +32,26 @@ class JournalRedisStorage(BaseJournalLogStorage):
 
     def read_logs(self, log_number_from: int) -> List[Dict[str, Any]]:
 
-        self._redis.setnx("log_number", -1)
         max_log_number_bytes = self._redis.get("log_number")
-        assert max_log_number_bytes is not None
+        if max_log_number_bytes is None:
+            return []
         max_log_number = int(max_log_number_bytes)
 
         logs = []
-        last_decode_error = None
         for log_number in range(log_number_from, max_log_number + 1):
-            if last_decode_error is not None:
-                raise last_decode_error
-            log_bytes = self._redis.get(self._key_log_id(log_number))
-            assert log_bytes is not None
+            sleep_secs = 0.1
+            while True:
+                log_bytes = self._redis.get(self._key_log_id(log_number))
+                if log_bytes is not None:
+                    break
+                time.sleep(sleep_secs)
+                sleep_secs = min(sleep_secs * 2, 10)
             log = log_bytes.decode("utf-8")
             try:
                 logs.append(json.loads(log))
             except json.JSONDecodeError as err:
-                last_decode_error = err
+                if log_number != max_log_number:
+                    raise err
         return logs
 
     def append_logs(self, logs: List[Dict[str, Any]]) -> None:

@@ -1,7 +1,6 @@
-from multiprocessing import Pool
+from concurrent.futures import ProcessPoolExecutor
 import os
 from typing import Sequence
-from typing import Tuple
 from typing import Union
 
 import numpy as np
@@ -41,17 +40,14 @@ def get_storage(storage_url: str, storage_mode: str) -> Union[str, BaseStorage]:
         assert False, f"The mode {storage_mode} is not supported."
 
 
-def run_optimize(args: Tuple[str, str, str]) -> None:
-    study_name = args[0]
-    storage_url = args[1]
-    storage_mode = args[2]
+def run_optimize(study_name: str, storage_url: str, storage_mode: str, n_trials: int) -> None:
     # Create a study
     study = optuna.load_study(
         study_name=study_name,
         storage=get_storage(storage_url, storage_mode),
     )
     # Run optimization
-    study.optimize(objective, n_trials=20)
+    study.optimize(objective, n_trials=n_trials)
 
 
 @pytest.fixture
@@ -171,16 +167,19 @@ def test_store_nan_intermediate_values(storage_url: str) -> None:
 
 def test_multiprocess(storage_url: str, storage_mode: str) -> None:
     n_workers = 8
+    n_trials = 20
     study_name = _STUDY_NAME
     optuna.create_study(storage=get_storage(storage_url, storage_mode), study_name=study_name)
-    with Pool(n_workers) as pool:
-        pool.map(run_optimize, [(study_name, storage_url, storage_mode)] * n_workers)
+    with ProcessPoolExecutor(n_workers) as pool:
+        pool.map(
+            run_optimize, *zip(*[[study_name, storage_url, storage_mode, n_trials]] * n_workers)
+        )
 
     study = optuna.load_study(
         study_name=study_name, storage=get_storage(storage_url, storage_mode)
     )
 
     trials = study.trials
-    assert len(trials) == n_workers * 20
+    assert len(trials) == n_workers * n_trials
 
     _check_trials(trials)
