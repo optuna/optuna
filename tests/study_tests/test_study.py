@@ -1528,7 +1528,7 @@ def _process_tell(study: Study, trial: Union[Trial, int], values: float) -> None
     study.tell(trial, values)
 
 
-def test_study_tell_process() -> None:
+def test_tell_from_another_process() -> None:
 
     pool = multiprocessing.Pool()
 
