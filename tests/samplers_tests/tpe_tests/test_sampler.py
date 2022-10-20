@@ -786,6 +786,60 @@ def test_get_observation_pairs(
     )
 
 
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+@pytest.mark.parametrize(
+    "constraints_enabled, constraints_func, expected_violations",
+    [
+        (False, None, None),
+        (True, lambda trial: [(-1, -1), (0, -1), (1, -1), (2, -1)][trial.number], [0, 0, 1, 2]),
+    ],
+)
+def test_get_observation_pairs_multi(
+    direction: str,
+    constraints_enabled: bool,
+    constraints_func: Optional[Callable[[optuna.trial.FrozenTrial], Sequence[float]]],
+    expected_violations: List[float],
+) -> None:
+    def objective(trial: Trial) -> float:
+
+        x = trial.suggest_int("x", 5, 5)
+        y = trial.suggest_int("y", 6, 6)
+        if trial.number == 0:
+            return x + y
+        elif trial.number == 1:
+            trial.report(1, 4)
+            trial.report(2, 7)
+            raise TrialPruned()
+        elif trial.number == 2:
+            trial.report(float("nan"), 3)
+            raise TrialPruned()
+        elif trial.number == 3:
+            raise TrialPruned()
+        else:
+            raise RuntimeError()
+
+    sampler = TPESampler(constraints_func=constraints_func)
+    study = optuna.create_study(direction=direction, sampler=sampler)
+    study.optimize(objective, n_trials=5, catch=(RuntimeError,))
+
+    sign = 1 if direction == "minimize" else -1
+    assert _tpe.sampler._get_observation_pairs(
+        study, ["x", "y"], constraints_enabled=constraints_enabled
+    ) == (
+        {"x": [5.0, 5.0, 5.0, 5.0], "y": [6.0, 6.0, 6.0, 6.0]},
+        [
+            (-float("inf"), [sign * 11.0]),  # COMPLETE
+            (-7, [sign * 2]),  # PRUNED (with intermediate values)
+            (
+                -3,
+                [float("inf")],
+            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (float("inf"), [sign * 0.0]),  # PRUNED (without intermediate values)
+        ],
+        expected_violations,
+    )
+
+
 def test_split_observation_pairs() -> None:
     indices_below, indices_above = _tpe.sampler._split_observation_pairs(
         [
