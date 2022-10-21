@@ -158,7 +158,7 @@ def test_store_infinite_values(
     assert storage.get_trial(trial_id).intermediate_values[1] == expected
 
 
-def test_store_nan_intermediate_values(storage_url: str) -> None:
+def test_store_nan_intermediate_values(storage_url: str, storage_mode: str) -> None:
 
     storage = get_storage(storage_url, storage_mode)
     study_id = storage.create_new_study()
