@@ -55,8 +55,16 @@ def storage_url() -> str:
     if "TEST_DB_URL" not in os.environ:
         pytest.skip("This test requires TEST_DB_URL.")
     storage_url = os.environ["TEST_DB_URL"]
+
+    if "TEST_DB_MODE" not in os.environ:
+        storage_mode = "RDB"
+    else:
+        storage_mode = os.environ["TEST_DB_MODE"]
+
     try:
-        optuna.study.delete_study(study_name=_STUDY_NAME, storage=storage_url)
+        optuna.study.delete_study(
+            study_name=_STUDY_NAME, storage=get_storage(storage_url, storage_mode)
+        )
     except KeyError:
         pass
     return storage_url

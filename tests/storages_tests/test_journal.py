@@ -15,8 +15,8 @@ from optuna.storages._journal.file import JournalFileBaseLock
 
 
 LOG_STORAGE = {
-    "file_with_open_lock",
-    "file_with_link_lock",
+    # "file_with_open_lock",
+    # "file_with_link_lock",
     "redis",
 }
 
