@@ -1,15 +1,12 @@
 from concurrent.futures import ProcessPoolExecutor
 import os
 from typing import Sequence
-from typing import Union
 
 import numpy as np
 import pytest
 
 import optuna
 from optuna.storages import BaseStorage
-from optuna.storages import RDBStorage
-from optuna.storages import RedisStorage
 from optuna.trial import TrialState
 
 
@@ -30,9 +27,12 @@ def objective(trial: optuna.Trial) -> float:
     return f(x, y)
 
 
-def get_storage(storage_url: str, storage_mode: str) -> Union[str, BaseStorage]:
+def get_storage(storage_url: str, storage_mode: str) -> BaseStorage:
     if storage_mode == "RDB":
-        return storage_url
+        if storage_url.startswith("redis"):
+            return optuna.storages.RedisStorage(url=storage_url)
+        else:
+            return optuna.storages.RDBStorage(url=storage_url)
     elif storage_mode == "journal-redis":
         journal_redis_storage = optuna.storages.JournalRedisStorage(storage_url)
         return optuna.storages.JournalStorage(journal_redis_storage)
@@ -116,11 +116,13 @@ def _check_trials(trials: Sequence[optuna.trial.FrozenTrial]) -> None:
     )
 
 
-def test_loaded_trials(storage_url: str) -> None:
+def test_loaded_trials(storage_url: str, storage_mode: str) -> None:
     # Please create the tables by placing this function before the multi-process tests.
 
     N_TRIALS = 20
-    study = optuna.create_study(study_name=_STUDY_NAME, storage=storage_url)
+    study = optuna.create_study(
+        study_name=_STUDY_NAME, storage=get_storage(storage_url, storage_mode)
+    )
     # Run optimization
     study.optimize(objective, n_trials=N_TRIALS)
 
@@ -130,7 +132,9 @@ def test_loaded_trials(storage_url: str) -> None:
     _check_trials(trials)
 
     # Create a new study to confirm the study can load trial properly.
-    loaded_study = optuna.load_study(study_name=_STUDY_NAME, storage=storage_url)
+    loaded_study = optuna.load_study(
+        study_name=_STUDY_NAME, storage=get_storage(storage_url, storage_mode)
+    )
     _check_trials(loaded_study.trials)
 
 
@@ -141,13 +145,11 @@ def test_loaded_trials(storage_url: str) -> None:
         (-float("inf"), -float("inf")),
     ],
 )
-def test_store_infinite_values(input_value: float, expected: float, storage_url: str) -> None:
+def test_store_infinite_values(
+    input_value: float, expected: float, storage_url: str, storage_mode: str
+) -> None:
 
-    storage: Union[RDBStorage, RedisStorage]
-    if storage_url.startswith("redis"):
-        storage = optuna.storages.RedisStorage(url=storage_url)
-    else:
-        storage = optuna.storages.RDBStorage(url=storage_url)
+    storage = get_storage(storage_url, storage_mode)
     study_id = storage.create_new_study()
     trial_id = storage.create_new_trial(study_id)
     storage.set_trial_intermediate_value(trial_id, 1, input_value)
@@ -158,11 +160,7 @@ def test_store_infinite_values(input_value: float, expected: float, storage_url:
 
 def test_store_nan_intermediate_values(storage_url: str) -> None:
 
-    storage: Union[RDBStorage, RedisStorage]
-    if storage_url.startswith("redis"):
-        storage = optuna.storages.RedisStorage(url=storage_url)
-    else:
-        storage = optuna.storages.RDBStorage(url=storage_url)
+    storage = get_storage(storage_url, storage_mode)
     study_id = storage.create_new_study()
     trial_id = storage.create_new_trial(study_id)
 
