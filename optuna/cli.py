@@ -6,7 +6,6 @@ This module is implemented using cliff. It follows
 If you want to add a new command, you also need to update `entry_points` in `setup.py`.
 c.f. https://docs.openstack.org/cliff/latest/user/demoapp.html#setup-py
 """
-
 from argparse import ArgumentParser  # NOQA
 from argparse import Namespace  # NOQA
 import datetime
@@ -14,6 +13,7 @@ from enum import Enum
 from importlib.machinery import SourceFileLoader
 import json
 import logging
+import os
 import sys
 import types
 from typing import Any
@@ -219,6 +219,664 @@ def _format_output(
             return yaml.safe_dump(values[0]).strip()
     else:
         raise CLIUsageError(f"Optuna CLI does not supported the {output_format} format.")
+
+
+class _NewBaseCommand:
+    def __init__(self) -> None:
+        self.logger = optuna.logging.get_logger(__name__)
+
+    def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
+        parser.add_argument("--storage", default=None, help="DB URL. (e.g. sqlite:///example.db)")
+        return parser
+
+    def take_action(self, parsed_args: Namespace) -> None:
+        raise NotImplementedError
+
+
+class _NewCreateStudy(_NewBaseCommand):
+    """Create a new study."""
+
+    def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
+        parser = super(_NewCreateStudy, self).add_arguments(parser)
+        parser.add_argument(
+            "--study-name",
+            default=None,
+            help="A human-readable name of a study to distinguish it from others.",
+        )
+        parser.add_argument(
+            "--direction",
+            default=None,
+            type=str,
+            choices=("minimize", "maximize"),
+            help="Set direction of optimization to a new study. Set 'minimize' "
+            "for minimization and 'maximize' for maximization.",
+        )
+        parser.add_argument(
+            "--skip-if-exists",
+            default=False,
+            action="store_true",
+            help="If specified, the creation of the study is skipped "
+            "without any error when the study name is duplicated.",
+        )
+        parser.add_argument(
+            "--directions",
+            type=str,
+            default=None,
+            choices=("minimize", "maximize"),
+            help="Set directions of optimization to a new study."
+            " Put whitespace between directions. Each direction should be"
+            ' either "minimize" or "maximize".',
+            nargs="+",
+        )
+        return parser
+
+    def take_action(self, parsed_args: Namespace) -> None:
+        storage_url = _check_storage_url(parsed_args.storage)
+        storage = optuna.storages.get_storage(storage_url)
+        study_name = optuna.create_study(
+            storage=storage,
+            study_name=parsed_args.study_name,
+            direction=parsed_args.direction,
+            directions=parsed_args.directions,
+            load_if_exists=parsed_args.skip_if_exists,
+        ).study_name
+        print(study_name)
+
+
+class _NewDeleteStudy(_NewBaseCommand):
+    """Delete a specified study."""
+
+    def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
+        parser = super(_NewDeleteStudy, self).add_arguments(parser)
+        parser.add_argument("--study-name", default=None, help="The name of the study to delete.")
+        return parser
+
+    def take_action(self, parsed_args: Namespace) -> None:
+        storage_url = _check_storage_url(parsed_args.storage)
+        storage = optuna.storages.get_storage(storage_url)
+        study_id = storage.get_study_id_from_name(parsed_args.study_name)
+        storage.delete_study(study_id)
+
+
+class _NewStudySetUserAttribute(_NewBaseCommand):
+    """Set a user attribute to a study."""
+
+    def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
+        parser = super(_NewStudySetUserAttribute, self).add_arguments(parser)
+        parser.add_argument(
+            "--study", default=None, help="This argument is deprecated. Use --study-name instead."
+        )
+        parser.add_argument(
+            "--study-name",
+            default=None,
+            help="The name of the study to set the user attribute to.",
+        )
+        parser.add_argument("--key", "-k", required=True, help="Key of the user attribute.")
+        parser.add_argument("--value", required=True, help="Value to be set.")
+        return parser
+
+    def take_action(self, parsed_args: Namespace) -> None:
+        storage_url = _check_storage_url(parsed_args.storage)
+
+        if parsed_args.study and parsed_args.study_name:
+            raise ValueError(
+                "Both `--study-name` and the deprecated `--study` was specified. "
+                "Please remove the `--study` flag."
+            )
+        elif parsed_args.study:
+            message = "The use of `--study` is deprecated. Please use `--study-name` instead."
+            warnings.warn(message, FutureWarning)
+            study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
+        elif parsed_args.study_name:
+            study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
+        else:
+            raise ValueError("Missing study name. Please use `--study-name`.")
+
+        study.set_user_attr(parsed_args.key, parsed_args.value)
+
+        self.logger.info("Attribute successfully written.")
+
+
+class _NewStudies(_NewBaseCommand):
+    """Show a list of studies."""
+
+    _study_list_header = [
+        ("name", ""),
+        ("direction", ""),
+        ("n_trials", ""),
+        ("datetime_start", ""),
+    ]
+
+    def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
+        parser = super(_NewStudies, self).add_arguments(parser)
+        parser.add_argument(
+            "-f",
+            "--format",
+            type=str,
+            choices=("json", "table", "yaml"),
+            default="table",
+            help="Output format.",
+        )
+        parser.add_argument(
+            "--flatten",
+            default=False,
+            action="store_true",
+            help="Flatten nested columns such as directions.",
+        )
+        return parser
+
+    def take_action(self, parsed_args: Namespace) -> None:
+
+        storage_url = _check_storage_url(parsed_args.storage)
+        summaries = optuna.get_all_study_summaries(storage_url, include_best_trial=False)
+
+        records = []
+        for s in summaries:
+            start = (
+                s.datetime_start.strftime(_DATETIME_FORMAT)
+                if s.datetime_start is not None
+                else None
+            )
+            record: Dict[Tuple[str, str], Any] = {}
+            record[("name", "")] = s.study_name
+            record[("direction", "")] = tuple(d.name for d in s.directions)
+            record[("n_trials", "")] = s.n_trials
+            record[("datetime_start", "")] = start
+            records.append(record)
+
+        print(
+            _format_output(
+                records, self._study_list_header, parsed_args.format, parsed_args.flatten
+            )
+        )
+
+
+class _NewTrials(_NewBaseCommand):
+    """Show a list of trials."""
+
+    def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
+        parser = super(_NewTrials, self).add_arguments(parser)
+        parser.add_argument(
+            "--study-name",
+            type=str,
+            required=True,
+            help="The name of the study which includes trials.",
+        )
+        parser.add_argument(
+            "-f",
+            "--format",
+            type=str,
+            choices=("json", "table", "yaml"),
+            default="table",
+            help="Output format.",
+        )
+        parser.add_argument(
+            "--flatten",
+            default=False,
+            action="store_true",
+            help="Flatten nested columns such as params and user_attrs.",
+        )
+        return parser
+
+    def take_action(self, parsed_args: Namespace) -> None:
+
+        warnings.warn(
+            "'trials' is an experimental CLI command. The interface can change in the future.",
+            ExperimentalWarning,
+        )
+
+        storage_url = _check_storage_url(parsed_args.storage)
+        study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
+        attrs = (
+            "number",
+            "value" if not study._is_multi_objective() else "values",
+            "datetime_start",
+            "datetime_complete",
+            "duration",
+            "params",
+            "user_attrs",
+            "state",
+        )
+
+        records, columns = _dataframe._create_records_and_aggregate_column(study, attrs)
+        print(_format_output(records, columns, parsed_args.format, parsed_args.flatten))
+
+
+class _NewBestTrial(_NewBaseCommand):
+    """Show the best trial."""
+
+    def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
+        parser = super(_NewBestTrial, self).add_arguments(parser)
+        parser.add_argument(
+            "--study-name",
+            type=str,
+            required=True,
+            help="The name of the study to get the best trial.",
+        )
+        parser.add_argument(
+            "-f",
+            "--format",
+            type=str,
+            choices=("json", "table", "yaml"),
+            default="table",
+            help="Output format.",
+        )
+        parser.add_argument(
+            "--flatten",
+            default=False,
+            action="store_true",
+            help="Flatten nested columns such as params and user_attrs.",
+        )
+        return parser
+
+    def take_action(self, parsed_args: Namespace) -> None:
+
+        warnings.warn(
+            "'best-trial' is an experimental CLI command. The interface can change in the future.",
+            ExperimentalWarning,
+        )
+
+        storage_url = _check_storage_url(parsed_args.storage)
+        study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
+        attrs = (
+            "number",
+            "value" if not study._is_multi_objective() else "values",
+            "datetime_start",
+            "datetime_complete",
+            "duration",
+            "params",
+            "user_attrs",
+            "state",
+        )
+
+        records, columns = _dataframe._create_records_and_aggregate_column(study, attrs)
+        print(
+            _format_output(
+                records[study.best_trial.number], columns, parsed_args.format, parsed_args.flatten
+            )
+        )
+
+
+class _NewBestTrials(_NewBaseCommand):
+    """Show a list of trials located at the Pareto front."""
+
+    def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
+        parser = super(_NewBestTrials, self).add_arguments(parser)
+        parser.add_argument(
+            "--study-name",
+            type=str,
+            required=True,
+            help="The name of the study to get the best trials (trials at the Pareto front).",
+        )
+        parser.add_argument(
+            "-f",
+            "--format",
+            type=str,
+            choices=("json", "table", "yaml"),
+            default="table",
+            help="Output format.",
+        )
+        parser.add_argument(
+            "--flatten",
+            default=False,
+            action="store_true",
+            help="Flatten nested columns such as params and user_attrs.",
+        )
+        return parser
+
+    def take_action(self, parsed_args: Namespace) -> None:
+
+        warnings.warn(
+            "'best-trials' is an experimental CLI command. The interface can change in the "
+            "future.",
+            ExperimentalWarning,
+        )
+
+        storage_url = _check_storage_url(parsed_args.storage)
+        study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
+        best_trials = [trial.number for trial in study.best_trials]
+        attrs = (
+            "number",
+            "value" if not study._is_multi_objective() else "values",
+            "datetime_start",
+            "datetime_complete",
+            "duration",
+            "params",
+            "user_attrs",
+            "state",
+        )
+
+        records, columns = _dataframe._create_records_and_aggregate_column(study, attrs)
+        best_records = list(filter(lambda record: record[("number", "")] in best_trials, records))
+        print(_format_output(best_records, columns, parsed_args.format, parsed_args.flatten))
+
+
+class _NewStudyOptimize(_NewBaseCommand):
+    """Start optimization of a study. Deprecated since version 2.0.0."""
+
+    def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
+        parser = super(_NewStudyOptimize, self).add_arguments(parser)
+        parser.add_argument(
+            "--n-trials",
+            type=int,
+            help="The number of trials. If this argument is not given, as many "
+            "trials run as possible.",
+        )
+        parser.add_argument(
+            "--timeout",
+            type=float,
+            help="Stop study after the given number of second(s). If this argument"
+            " is not given, as many trials run as possible.",
+        )
+        parser.add_argument(
+            "--n-jobs",
+            type=int,
+            default=1,
+            help="The number of parallel jobs. If this argument is set to -1, the "
+            "number is set to CPU counts.",
+        )
+        parser.add_argument(
+            "--study", default=None, help="This argument is deprecated. Use --study-name instead."
+        )
+        parser.add_argument(
+            "--study-name", default=None, help="The name of the study to start optimization on."
+        )
+        parser.add_argument(
+            "file",
+            help="Python script file where the objective function resides.",
+        )
+        parser.add_argument(
+            "method",
+            help="The method name of the objective function.",
+        )
+        return parser
+
+    def take_action(self, parsed_args: Namespace) -> int:
+
+        message = (
+            "The use of the `study optimize` command is deprecated. Please execute your Python "
+            "script directly instead."
+        )
+        warnings.warn(message, FutureWarning)
+
+        storage_url = _check_storage_url(parsed_args.storage)
+
+        if parsed_args.study and parsed_args.study_name:
+            raise ValueError(
+                "Both `--study-name` and the deprecated `--study` was specified. "
+                "Please remove the `--study` flag."
+            )
+        elif parsed_args.study:
+            message = "The use of `--study` is deprecated. Please use `--study-name` instead."
+            warnings.warn(message, FutureWarning)
+            study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
+        elif parsed_args.study_name:
+            study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
+        else:
+            raise ValueError("Missing study name. Please use `--study-name`.")
+
+        # We force enabling the debug flag. As we are going to execute user codes, we want to show
+        # exception stack traces by default.
+
+        # TODO: Add Debug mode and fix it
+        # self.app.options.debug = True
+
+        module_name = "optuna_target_module"
+        target_module = types.ModuleType(module_name)
+        loader = SourceFileLoader(module_name, parsed_args.file)
+        loader.exec_module(target_module)
+
+        try:
+            target_method = getattr(target_module, parsed_args.method)
+        except AttributeError:
+            self.logger.error(
+                "Method {} not found in file {}.".format(parsed_args.method, parsed_args.file)
+            )
+            return 1
+
+        study.optimize(
+            target_method,
+            n_trials=parsed_args.n_trials,
+            timeout=parsed_args.timeout,
+            n_jobs=parsed_args.n_jobs,
+        )
+        return 0
+
+
+class _NewStorageUpgrade(_NewBaseCommand):
+    """Upgrade the schema of a storage."""
+
+    def take_action(self, parsed_args: Namespace) -> None:
+
+        storage_url = _check_storage_url(parsed_args.storage)
+        if storage_url.startswith("redis"):
+            self.logger.info("This storage does not support upgrade yet.")
+            return
+        storage = RDBStorage(storage_url, skip_compatibility_check=True, skip_table_creation=True)
+        current_version = storage.get_current_version()
+        head_version = storage.get_head_version()
+        known_versions = storage.get_all_versions()
+        if current_version == head_version:
+            self.logger.info("This storage is up-to-date.")
+        elif current_version in known_versions:
+            self.logger.info("Upgrading the storage schema to the latest version.")
+            storage.upgrade()
+            self.logger.info("Completed to upgrade the storage.")
+        else:
+            warnings.warn(
+                "Your optuna version seems outdated against the storage version. "
+                "Please try updating optuna to the latest version by "
+                "`$ pip install -U optuna`."
+            )
+
+
+class _NewAsk(_NewBaseCommand):
+    """Create a new trial and suggest parameters."""
+
+    def get_parser(self, parser: ArgumentParser) -> ArgumentParser:
+        parser = super(_NewAsk, self).add_arguments(parser)
+        parser.add_argument("--study-name", type=str, help="Name of study.")
+        parser.add_argument(
+            "--direction",
+            type=str,
+            choices=("minimize", "maximize"),
+            help=(
+                "Direction of optimization. This argument is deprecated."
+                " Please create a study in advance."
+            ),
+        )
+        parser.add_argument(
+            "--directions",
+            type=str,
+            nargs="+",
+            choices=("minimize", "maximize"),
+            help=(
+                "Directions of optimization, if there are multiple objectives."
+                " This argument is deprecated. Please create a study in advance."
+            ),
+        )
+        parser.add_argument("--sampler", type=str, help="Class name of sampler object to create.")
+        parser.add_argument(
+            "--sampler-kwargs",
+            type=str,
+            help="Sampler object initialization keyword arguments as JSON.",
+        )
+        parser.add_argument(
+            "--search-space",
+            type=str,
+            help=(
+                "Search space as JSON. Keys are names and values are outputs from "
+                ":func:`~optuna.distributions.distribution_to_json`."
+            ),
+        )
+        parser.add_argument(
+            "-f",
+            "--format",
+            type=str,
+            choices=("json", "table", "yaml"),
+            default="json",
+            help="Output format.",
+        )
+        parser.add_argument(
+            "--flatten",
+            default=False,
+            action="store_true",
+            help="Flatten nested columns such as params.",
+        )
+        return parser
+
+    def take_action(self, parsed_args: Namespace) -> None:
+
+        warnings.warn(
+            "'ask' is an experimental CLI command. The interface can change in the future.",
+            ExperimentalWarning,
+        )
+
+        storage_url = _check_storage_url(parsed_args.storage)
+
+        create_study_kwargs = {
+            "storage": storage_url,
+            "study_name": parsed_args.study_name,
+            "direction": parsed_args.direction,
+            "directions": parsed_args.directions,
+            "load_if_exists": True,
+        }
+
+        if parsed_args.direction is not None or parsed_args.directions is not None:
+            message = (
+                "The `direction` and `directions` arguments of the `study ask` command are"
+                " deprecated because the command will no longer create a study when you specify"
+                " the arguments. Please create a study in advance."
+            )
+            warnings.warn(message, FutureWarning)
+
+        if parsed_args.sampler is not None:
+            if parsed_args.sampler_kwargs is not None:
+                sampler_kwargs = json.loads(parsed_args.sampler_kwargs)
+            else:
+                sampler_kwargs = {}
+            sampler_cls = getattr(optuna.samplers, parsed_args.sampler)
+            sampler = sampler_cls(**sampler_kwargs)
+            create_study_kwargs["sampler"] = sampler
+        else:
+            if parsed_args.sampler_kwargs is not None:
+                raise ValueError(
+                    "`--sampler_kwargs` is set without `--sampler`. Please specify `--sampler` as"
+                    " well or omit `--sampler-kwargs`."
+                )
+
+        if parsed_args.search_space is not None:
+            # The search space is expected to be a JSON serialized string, e.g.
+            # '{"x": {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}},
+            #   "y": ...}'.
+            search_space = {
+                name: optuna.distributions.json_to_distribution(json.dumps(dist))
+                for name, dist in json.loads(parsed_args.search_space).items()
+            }
+        else:
+            search_space = {}
+
+        try:
+            study = optuna.load_study(
+                study_name=create_study_kwargs["study_name"],
+                storage=create_study_kwargs["storage"],
+                sampler=create_study_kwargs.get("sampler"),
+            )
+            directions = None
+            if (
+                create_study_kwargs["direction"] is not None
+                and create_study_kwargs["directions"] is not None
+            ):
+                raise ValueError("Specify only one of `direction` and `directions`.")
+            if create_study_kwargs["direction"] is not None:
+                directions = [
+                    optuna.study.StudyDirection[create_study_kwargs["direction"].upper()]
+                ]
+            if create_study_kwargs["directions"] is not None:
+                directions = [
+                    optuna.study.StudyDirection[d.upper()]
+                    for d in create_study_kwargs["directions"]
+                ]
+            if directions is not None and study.directions != directions:
+                raise ValueError(
+                    f"Cannot overwrite study direction from {study.directions} to {directions}."
+                )
+
+        except KeyError:
+            study = optuna.create_study(**create_study_kwargs)
+        trial = study.ask(fixed_distributions=search_space)
+
+        self.logger.info(f"Asked trial {trial.number} with parameters {trial.params}.")
+
+        record: Dict[Tuple[str, str], Any] = {("number", ""): trial.number}
+        columns = [("number", "")]
+
+        if len(trial.params) == 0 and not parsed_args.flatten:
+            record[("params", "")] = {}
+            columns.append(("params", ""))
+        else:
+            for param_name, param_value in trial.params.items():
+                record[("params", param_name)] = param_value
+                columns.append(("params", param_name))
+
+        print(_format_output(record, columns, parsed_args.format, parsed_args.flatten))
+
+
+class _NewTell(_NewBaseCommand):
+    """Finish a trial, which was created by the ask command."""
+
+    def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
+        parser = super(_NewTell, self).add_arguments(parser)
+        parser.add_argument("--study-name", type=str, help="Name of study.")
+        parser.add_argument("--trial-number", type=int, help="Trial number.")
+        parser.add_argument("--values", type=float, nargs="+", help="Objective values.")
+        parser.add_argument(
+            "--state",
+            type=str,
+            help="Trial state.",
+            choices=("complete", "pruned", "fail"),
+        )
+        parser.add_argument(
+            "--skip-if-finished",
+            default=False,
+            action="store_true",
+            help="If specified, tell is skipped without any error when the trial is already "
+            "finished.",
+        )
+        return parser
+
+    def take_action(self, parsed_args: Namespace) -> int:
+
+        warnings.warn(
+            "'tell' is an experimental CLI command. The interface can change in the future.",
+            ExperimentalWarning,
+        )
+
+        storage_url = _check_storage_url(parsed_args.storage)
+
+        study = optuna.load_study(
+            storage=storage_url,
+            study_name=parsed_args.study_name,
+        )
+
+        if parsed_args.state is not None:
+            state: Optional[TrialState] = TrialState[parsed_args.state.upper()]
+        else:
+            state = None
+
+        trial_number = parsed_args.trial_number
+        values = parsed_args.values
+
+        study.tell(
+            trial=trial_number,
+            values=values,
+            state=state,
+            skip_if_finished=parsed_args.skip_if_finished,
+        )
+
+        self.logger.info(f"Told trial {trial_number} with values {values} and state {state}.")
+
+        return 0
 
 
 class _BaseCommand(Command):
@@ -929,5 +1587,53 @@ class _OptunaApp(App):
 
 def main() -> int:
 
+    parser = ArgumentParser(description="", add_help=False)
+    parser.add_argument("--storage", default=None, help="DB URL. (e.g. sqlite:///example.db)")
+    subparsers = parser.add_subparsers()
+
+    command_mapper = {
+        "create-study": _NewCreateStudy,
+        "delete-study": _NewDeleteStudy,
+        "study set-user-attr": _NewStudySetUserAttribute,
+        "studies": _NewStudies,
+        "trials": _NewTrials,
+        "best-trial": _NewBestTrial,
+        "best-trials": _NewBestTrials,
+        "study optimize": _NewStudyOptimize,
+        "storage upgrade": _NewStorageUpgrade,
+    }
+    for command_name, command_type in command_mapper.items():
+        command = command_type()
+        subparser = subparsers.add_parser(command_name)
+        subparser = command.add_arguments(subparser)
+        subparser.set_defaults(handler=command.take_action)
+
+    NAME = os.path.splitext(os.path.basename(sys.argv[0]))[0]
+    if NAME == "__main__":
+        NAME = os.path.split(os.path.dirname(sys.argv[0]))[-1]
+    logger = logging.getLogger(NAME)
+
     argv = sys.argv[1:] if len(sys.argv) > 1 else ["help"]
-    return _OptunaApp().run(argv)
+    argv_str = " ".join(argv)
+
+    begin, end = -1, -1
+    len_ = 0
+    for command_name in command_mapper:
+        begin_ = argv_str.find(command_name)
+        if begin_ != -1 and len(command_name) > len_:
+            begin = begin_
+            end = begin + len(command_name)
+            len_ = len(command_name)
+    argv_ = [argv_str[begin:end], *(argv_str[:begin] + argv_str[end:]).split(" ")]
+    argv_ = [arg for arg in argv_ if len(arg) != 0]
+
+    args = parser.parse_args(argv_)
+
+    try:
+        return args.handler(args)
+    except CLIUsageError as e:
+        logger.error(e)
+        parser.print_help()
+        return 1
+
+    # return _OptunaApp().run(argv)
