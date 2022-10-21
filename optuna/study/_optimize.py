@@ -174,7 +174,11 @@ def _optimize_sequential(
                 callback(study, frozen_trial)
 
         if progress_bar is not None:
-            progress_bar.update((datetime.datetime.now() - time_start).total_seconds())
+            elapsed_seconds = (datetime.datetime.now() - time_start).total_seconds()
+            best_trial = study.best_trial.number
+            best_value = study.best_trial.value
+
+            progress_bar.update(elapsed_seconds, best_trial, best_value)
 
     study._storage.remove_session()
 
