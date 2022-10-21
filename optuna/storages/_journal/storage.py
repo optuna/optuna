@@ -96,7 +96,7 @@ class JournalStorage(BaseStorage):
             self._sync_with_backend()
 
     def _write_log(self, op_code: int, extra_fields: Dict[str, Any]) -> None:
-        worker_id = self._worker_id_prefix + str(threading.get_ident())
+        worker_id = self._replay_result.worker_id
         self._backend.append_logs([{"op_code": op_code, "worker_id": worker_id, **extra_fields}])
 
     def _sync_with_backend(self) -> None:
@@ -261,11 +261,7 @@ class JournalStorage(BaseStorage):
             self._write_log(JournalOperation.SET_TRIAL_STATE_VALUES, log)
             self._sync_with_backend()
 
-            if (
-                state == TrialState.RUNNING
-                and trial_id
-                != self._replay_result._thread_id_to_owned_trial_id.get(threading.get_ident())
-            ):
+            if state == TrialState.RUNNING and trial_id != self._replay_result.owned_trial_id:
                 return False
             else:
                 return True
@@ -332,7 +328,7 @@ class JournalStorageReplayResult:
         self._study_id_to_trial_ids: Dict[int, List[int]] = {}
         self._trial_id_to_study_id: Dict[int, int] = {}
         self._next_study_id: int = 0
-        self._thread_id_to_owned_trial_id: Dict[int, int] = {}
+        self._worker_id_to_owned_trial_id: Dict[str, int] = {}
 
     def apply_logs(self, logs: List[Dict[str, Any]]) -> None:
         for log in logs:
@@ -389,8 +385,16 @@ class JournalStorageReplayResult:
                 frozen_trials.append(trial)
         return frozen_trials
 
+    @property
+    def worker_id(self) -> str:
+        return self._worker_id_prefix + str(threading.get_ident())
+
+    @property
+    def owned_trial_id(self) -> Optional[int]:
+        return self._worker_id_to_owned_trial_id.get(self.worker_id)
+
     def _is_issued_by_this_worker(self, log: Dict[str, Any]) -> bool:
-        return log["worker_id"] == self._worker_id_prefix + str(threading.get_ident())
+        return log["worker_id"] == self.worker_id
 
     def _study_exists(self, study_id: int, log: Dict[str, Any]) -> bool:
         if study_id in self._studies:
@@ -508,7 +512,7 @@ class JournalStorageReplayResult:
         if self._is_issued_by_this_worker(log):
             self._last_created_trial_id_by_this_process = trial_id
             if self._trials[trial_id].state == TrialState.RUNNING:
-                self._thread_id_to_owned_trial_id[threading.get_ident()] = trial_id
+                self._worker_id_to_owned_trial_id[self.worker_id] = trial_id
 
     def _apply_set_trial_param(self, log: Dict[str, Any]) -> None:
         trial_id = log["trial_id"]
@@ -557,7 +561,7 @@ class JournalStorageReplayResult:
         if state == TrialState.RUNNING:
             trial.datetime_start = datetime_from_isoformat(log["datetime_start"])
             if self._is_issued_by_this_worker(log):
-                self._thread_id_to_owned_trial_id[threading.get_ident()] = trial_id
+                self._worker_id_to_owned_trial_id[self.worker_id] = trial_id
         if state.is_finished():
             trial.datetime_complete = datetime_from_isoformat(log["datetime_complete"])
         trial.state = state
