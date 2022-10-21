@@ -1,4 +1,3 @@
-from collections import OrderedDict
 import copy
 import math
 import pickle
@@ -22,6 +21,8 @@ import optuna
 from optuna import logging
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
+from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.samplers import BaseSampler
 from optuna.study._study_direction import StudyDirection
@@ -291,25 +292,12 @@ class CmaEsSampler(BaseSampler):
                 # `Trial`.
                 continue
 
-            if not isinstance(
-                distribution,
-                (
-                    optuna.distributions.FloatDistribution,
-                    optuna.distributions.IntDistribution,
-                ),
-            ):
+            if not isinstance(distribution, (FloatDistribution, IntDistribution)):
                 # Categorical distribution is unsupported.
                 continue
             search_space[name] = distribution
 
-        # Move parameters of FloatDistribution to the top.
-        separated_search_space = OrderedDict()
-        for Dist in [optuna.distributions.FloatDistribution, optuna.distributions.IntDistribution]:
-            for name, distribution in search_space.items():
-                if isinstance(distribution, Dist):
-                    separated_search_space[name] = distribution
-        assert len(separated_search_space) == len(search_space)
-        return separated_search_space
+        return search_space
 
     def sample_relative(
         self,
@@ -337,7 +325,7 @@ class CmaEsSampler(BaseSampler):
             self._warn_independent_sampling = False
             return {}
 
-        trans = _SearchSpaceTransform(search_space)
+        trans = _SearchSpaceTransform(search_space, transform_step=not self._use_cma_with_margin)
 
         optimizer, n_restarts = self._restore_optimizer(completed_trials)
         if optimizer is None:
@@ -503,25 +491,18 @@ class CmaEsSampler(BaseSampler):
             )
 
         if self._use_cma_with_margin:
-            n_continuous = sum(
-                isinstance(dist, optuna.distributions.FloatDistribution)
-                for dist in trans._search_space.values()
-            )
-            max_discrete = int(
-                (trans.bounds[n_continuous:, 1] - trans.bounds[n_continuous:, 0]).max()
-            )
-            discrete_space = np.full((len(trans.bounds) - n_continuous, max_discrete), np.nan)
-            for i, (low, high) in enumerate(trans.bounds[n_continuous:]):
-                discrete_space[i, : round(high - low)] = np.arange(
-                    round(low + 0.5), round(high + 0.5)
-                )
+            steps = []
+            for dist in trans._search_space.values():
+                assert isinstance(dist, (IntDistribution, FloatDistribution))
+                # Set step 0.0 for continuous search space.
+                steps.append(0.0 if dist.step is None else dist.step)
 
             return CMAwM(
                 mean=mean,
                 sigma=sigma0,
+                bounds=trans.bounds,
+                steps=np.array(steps, dtype=float),
                 cov=cov,
-                discrete_space=discrete_space,
-                continuous_space=trans.bounds[:n_continuous],
                 seed=self._cma_rng.randint(1, 2**31 - 2),
                 n_max_resampling=10 * n_dimension,
                 population_size=population_size,
