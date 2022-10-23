@@ -1531,10 +1531,9 @@ def test_tell_from_another_process() -> None:
 
     pool = multiprocessing.Pool()
 
-    with tempfile.NamedTemporaryFile() as tf:
+    with StorageSupplier("sqlite") as storage:
         # Create a study and ask for a new trial.
-        db_url = "sqlite:///{}".format(tf.name)
-        study = create_study(storage=db_url)
+        study = create_study(storage=storage)
         trial0 = study.ask()
 
         # Test normal behaviour.
