@@ -392,7 +392,7 @@ class TPESampler(BaseSampler):
         )
 
         # If the number of samples is insufficient, we run random trial.
-        n = sum(1 for (s, v) in scores if s < float("inf"))  # ignore running trials
+        n = sum(s < float("inf") for s, v in scores)  # Ignore running trials.
         if n < self._n_startup_trials:
             return {}
 
