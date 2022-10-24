@@ -56,7 +56,7 @@ class UnivariateGaussianDistribution(BaseProbabilityDistribution):
     def log_pdf(self, x: Any) -> float:
         a = (self._low - self._mu) / self._sigma
         b = (self._high - self._mu) / self._sigma
-        return stats.truncnorm(a, b, loc=self._mu, scale=self._sigma).cdf(x)
+        return stats.truncnorm(a, b, loc=self._mu, scale=self._sigma).logpdf(x)
 
 
 class DiscreteUnivariateGaussianDistribution(BaseProbabilityDistribution):
@@ -76,7 +76,7 @@ class DiscreteUnivariateGaussianDistribution(BaseProbabilityDistribution):
         x0 = self._align_to_step(x)
         lb = (x0 - self._gaussian._low) / self._gaussian._sigma
         ub = (x0 + self._gaussian._low) / self._gaussian._sigma
-        return stats.truncnorm(a, b).cdf(ub) - stats.truncnorm(a, b).cdf(lb)
+        return np.log(stats.truncnorm(a, b).cdf(ub) - stats.truncnorm(a, b).cdf(lb))
 
 
 class ProductDistribution(BaseProbabilityDistribution):
