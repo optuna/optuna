@@ -2,8 +2,8 @@ from typing import Callable
 from typing import List
 from typing import Optional
 
-import numpy as np
 import matplotlib
+import numpy as np
 
 from optuna._experimental import experimental_func
 from optuna.importance._base import BaseImportanceEvaluator
