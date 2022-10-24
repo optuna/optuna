@@ -441,7 +441,7 @@ class TPESampler(BaseSampler):
             self._constraints_func is not None,
         )
 
-        n = sum(1 for (s, v) in scores if s < float("inf"))  # ignore running trials
+        n = sum(s < float("inf") for s, v in scores)  # Ignore running trials.
 
         self._log_independent_sampling(n, trial, param_name)
 
