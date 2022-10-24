@@ -1,36 +1,36 @@
-from typing import Callable
-from typing import Dict
-from typing import List
-from unittest.mock import patch
+# from typing import Callable
+# from typing import Dict
+# from typing import List
+# from unittest.mock import patch
 
-import numpy as np
-import pytest
+# import numpy as np
+# import pytest
 
-from optuna import distributions
-from optuna.samplers._tpe.parzen_estimator_old import _ParzenEstimator
-from optuna.samplers._tpe.parzen_estimator_old import _ParzenEstimatorParameters
-from optuna.samplers._tpe.sampler import default_weights
+# from optuna import distributions
+# from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
+# from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
+# from optuna.samplers._tpe.sampler import default_weights
 
 
-SEARCH_SPACE = {
-    "a": distributions.FloatDistribution(1.0, 100.0),
-    "b": distributions.FloatDistribution(1.0, 100.0, log=True),
-    "c": distributions.FloatDistribution(1.0, 100.0, step=3.0),
-    "d": distributions.IntDistribution(1, 100),
-    "e": distributions.IntDistribution(1, 100, log=True),
-    "f": distributions.CategoricalDistribution(["x", "y", "z"]),
-    "g": distributions.CategoricalDistribution([0.0, float("inf"), float("nan"), None]),
-}
+# SEARCH_SPACE = {
+#     "a": distributions.FloatDistribution(1.0, 100.0),
+#     "b": distributions.FloatDistribution(1.0, 100.0, log=True),
+#     "c": distributions.FloatDistribution(1.0, 100.0, step=3.0),
+#     "d": distributions.IntDistribution(1, 100),
+#     "e": distributions.IntDistribution(1, 100, log=True),
+#     "f": distributions.CategoricalDistribution(["x", "y", "z"]),
+#     "g": distributions.CategoricalDistribution([0.0, float("inf"), float("nan"), None]),
+# }
 
-MULTIVARIATE_SAMPLES = {
-    "a": np.array([1.0]),
-    "b": np.array([1.0]),
-    "c": np.array([1.0]),
-    "d": np.array([1]),
-    "e": np.array([1]),
-    "f": np.array([1]),
-    "g": np.array([1]),
-}
+# MULTIVARIATE_SAMPLES = {
+#     "a": np.array([1.0]),
+#     "b": np.array([1.0]),
+#     "c": np.array([1.0]),
+#     "d": np.array([1]),
+#     "e": np.array([1]),
+#     "f": np.array([1]),
+#     "g": np.array([1]),
+# }
 
 # _PRECOMPUTE_SIGMAS0 = "optuna.samplers._tpe.parzen_estimator._ParzenEstimator._precompute_sigmas0"
 
@@ -225,171 +225,171 @@ MULTIVARIATE_SAMPLES = {
 #     assert np.all(log_pdf >= output_log_pdf)
 
 
-@pytest.mark.parametrize("mus", (np.asarray([]), np.asarray([0.4]), np.asarray([-0.4, 0.4])))
-@pytest.mark.parametrize("prior_weight", [1.0, 0.01, 100.0])
-@pytest.mark.parametrize("prior", (True, False))
-@pytest.mark.parametrize("magic_clip", (True, False))
-@pytest.mark.parametrize("endpoints", (True, False))
-@pytest.mark.parametrize("multivariate", (True, False))
-def test_calculate_shape_check(
-    mus: np.ndarray,
-    prior_weight: float,
-    prior: bool,
-    magic_clip: bool,
-    endpoints: bool,
-    multivariate: bool,
-) -> None:
+# @pytest.mark.parametrize("mus", (np.asarray([]), np.asarray([0.4]), np.asarray([-0.4, 0.4])))
+# @pytest.mark.parametrize("prior_weight", [1.0, 0.01, 100.0])
+# @pytest.mark.parametrize("prior", (True, False))
+# @pytest.mark.parametrize("magic_clip", (True, False))
+# @pytest.mark.parametrize("endpoints", (True, False))
+# @pytest.mark.parametrize("multivariate", (True, False))
+# def test_calculate_shape_check(
+#     mus: np.ndarray,
+#     prior_weight: float,
+#     prior: bool,
+#     magic_clip: bool,
+#     endpoints: bool,
+#     multivariate: bool,
+# ) -> None:
 
-    parameters = _ParzenEstimatorParameters(
-        prior_weight=prior_weight,
-        consider_prior=prior,
-        consider_magic_clip=magic_clip,
-        consider_endpoints=endpoints,
-        weights=default_weights,
-        multivariate=multivariate,
-    )
-    mpe = _ParzenEstimator(
-        {"a": mus}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
-    )
-    s_weights, s_mus, s_sigmas = mpe._weights, mpe._mus["a"], mpe._sigmas["a"]
+#     parameters = _ParzenEstimatorParameters(
+#         prior_weight=prior_weight,
+#         consider_prior=prior,
+#         consider_magic_clip=magic_clip,
+#         consider_endpoints=endpoints,
+#         weights=default_weights,
+#         multivariate=multivariate,
+#     )
+#     mpe = _ParzenEstimator(
+#         {"a": mus}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
+#     )
+#     s_weights, s_mus, s_sigmas = mpe._weights, mpe._mus["a"], mpe._sigmas["a"]
 
-    # Result contains an additional value for a prior distribution if prior is True or
-    # len(mus) == 0 (in this case, prior is always used).
-    assert s_mus is not None
-    assert s_sigmas is not None
-    assert len(s_weights) == len(mus) + int(prior) if len(mus) > 0 else len(mus) + 1
-    assert len(s_mus) == len(mus) + int(prior) if len(mus) > 0 else len(mus) + 1
-    assert len(s_sigmas) == len(mus) + int(prior) if len(mus) > 0 else len(mus) + 1
-
-
-@pytest.mark.parametrize("prior_weight", [None, -1.0, 0.0])
-@pytest.mark.parametrize("mus", (np.asarray([]), np.asarray([0.4]), np.asarray([-0.4, 0.4])))
-def test_invalid_prior_weight(prior_weight: float, mus: np.ndarray) -> None:
-
-    parameters = _ParzenEstimatorParameters(
-        prior_weight=prior_weight,
-        consider_prior=True,
-        consider_magic_clip=False,
-        consider_endpoints=False,
-        weights=default_weights,
-        multivariate=False,
-    )
-    mpe = _ParzenEstimator(
-        {"a": mus}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
-    )
-    weights = mpe._weights
-    assert len(weights) == len(mus) + 1
-
-    # TODO(HideakiImamura): After modifying the body to raise an error, modify the test as well.
-    if prior_weight is None:
-        assert all([np.isnan(w) for w in weights])
+#     # Result contains an additional value for a prior distribution if prior is True or
+#     # len(mus) == 0 (in this case, prior is always used).
+#     assert s_mus is not None
+#     assert s_sigmas is not None
+#     assert len(s_weights) == len(mus) + int(prior) if len(mus) > 0 else len(mus) + 1
+#     assert len(s_mus) == len(mus) + int(prior) if len(mus) > 0 else len(mus) + 1
+#     assert len(s_sigmas) == len(mus) + int(prior) if len(mus) > 0 else len(mus) + 1
 
 
-# TODO(ytsmiling): Improve test coverage for weights.
-@pytest.mark.parametrize(
-    "mus, flags, expected",
-    [
-        [
-            np.asarray([]),
-            {"prior": False, "magic_clip": False, "endpoints": True},
-            {"weights": [1.0], "mus": [0.0], "sigmas": [2.0]},
-        ],
-        [
-            np.asarray([]),
-            {"prior": True, "magic_clip": False, "endpoints": True},
-            {"weights": [1.0], "mus": [0.0], "sigmas": [2.0]},
-        ],
-        [
-            np.asarray([0.4]),
-            {"prior": True, "magic_clip": False, "endpoints": True},
-            {"weights": [0.5, 0.5], "mus": [0.4, 0.0], "sigmas": [0.6, 2.0]},
-        ],
-        [
-            np.asarray([-0.4]),
-            {"prior": True, "magic_clip": False, "endpoints": True},
-            {"weights": [0.5, 0.5], "mus": [-0.4, 0.0], "sigmas": [0.6, 2.0]},
-        ],
-        [
-            np.asarray([-0.4, 0.4]),
-            {"prior": True, "magic_clip": False, "endpoints": True},
-            {"weights": [1.0 / 3] * 3, "mus": [-0.4, 0.4, 0.0], "sigmas": [0.6, 0.6, 2.0]},
-        ],
-        [
-            np.asarray([-0.4, 0.4]),
-            {"prior": True, "magic_clip": False, "endpoints": False},
-            {"weights": [1.0 / 3] * 3, "mus": [-0.4, 0.4, 0.0], "sigmas": [0.4, 0.4, 2.0]},
-        ],
-        [
-            np.asarray([-0.4, 0.4]),
-            {"prior": False, "magic_clip": False, "endpoints": True},
-            {"weights": [0.5, 0.5], "mus": [-0.4, 0.4], "sigmas": [0.8, 0.8]},
-        ],
-        [
-            np.asarray([-0.4, 0.4, 0.41, 0.42]),
-            {"prior": False, "magic_clip": False, "endpoints": True},
-            {
-                "weights": [0.25, 0.25, 0.25, 0.25],
-                "mus": [-0.4, 0.4, 0.41, 0.42],
-                "sigmas": [0.8, 0.8, 0.01, 0.58],
-            },
-        ],
-        [
-            np.asarray([-0.4, 0.4, 0.41, 0.42]),
-            {"prior": False, "magic_clip": True, "endpoints": True},
-            {
-                "weights": [0.25, 0.25, 0.25, 0.25],
-                "mus": [-0.4, 0.4, 0.41, 0.42],
-                "sigmas": [0.8, 0.8, 0.4, 0.58],
-            },
-        ],
-    ],
-)
-def test_calculate(
-    mus: np.ndarray, flags: Dict[str, bool], expected: Dict[str, List[float]]
-) -> None:
+# @pytest.mark.parametrize("prior_weight", [None, -1.0, 0.0])
+# @pytest.mark.parametrize("mus", (np.asarray([]), np.asarray([0.4]), np.asarray([-0.4, 0.4])))
+# def test_invalid_prior_weight(prior_weight: float, mus: np.ndarray) -> None:
 
-    parameters = _ParzenEstimatorParameters(
-        prior_weight=1.0,
-        consider_prior=flags["prior"],
-        consider_magic_clip=flags["magic_clip"],
-        consider_endpoints=flags["endpoints"],
-        weights=default_weights,
-        multivariate=False,
-    )
-    mpe = _ParzenEstimator(
-        {"a": mus}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
-    )
-    s_weights, s_mus, s_sigmas = mpe._weights, mpe._mus["a"], mpe._sigmas["a"]
+#     parameters = _ParzenEstimatorParameters(
+#         prior_weight=prior_weight,
+#         consider_prior=True,
+#         consider_magic_clip=False,
+#         consider_endpoints=False,
+#         weights=default_weights,
+#         multivariate=False,
+#     )
+#     mpe = _ParzenEstimator(
+#         {"a": mus}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
+#     )
+#     weights = mpe._weights
+#     assert len(weights) == len(mus) + 1
 
-    # Result contains an additional value for a prior distribution if consider_prior is True.
-    assert isinstance(s_weights, np.ndarray)
-    assert isinstance(s_mus, np.ndarray)
-    assert isinstance(s_sigmas, np.ndarray)
-    np.testing.assert_almost_equal(s_weights, expected["weights"])
-    np.testing.assert_almost_equal(s_mus, expected["mus"])
-    np.testing.assert_almost_equal(s_sigmas, expected["sigmas"])
+#     # TODO(HideakiImamura): After modifying the body to raise an error, modify the test as well.
+#     if prior_weight is None:
+#         assert all([np.isnan(w) for w in weights])
 
 
-@pytest.mark.parametrize(
-    "weights",
-    [
-        lambda x: np.zeros(x),
-        lambda x: -np.ones(x),
-        lambda x: float("inf") * np.ones(x),
-        lambda x: -float("inf") * np.ones(x),
-        lambda x: np.asarray([float("nan") for _ in range(x)]),
-    ],
-)
-def test_invalid_weights(weights: Callable[[int], np.ndarray]) -> None:
-    parameters = _ParzenEstimatorParameters(
-        prior_weight=1.0,
-        consider_prior=False,
-        consider_magic_clip=False,
-        consider_endpoints=False,
-        weights=weights,
-        multivariate=False,
-    )
-    with pytest.raises(ValueError):
-        _ParzenEstimator(
-            {"a": np.asarray([0.0])}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
-        )
+# # TODO(ytsmiling): Improve test coverage for weights.
+# @pytest.mark.parametrize(
+#     "mus, flags, expected",
+#     [
+#         [
+#             np.asarray([]),
+#             {"prior": False, "magic_clip": False, "endpoints": True},
+#             {"weights": [1.0], "mus": [0.0], "sigmas": [2.0]},
+#         ],
+#         [
+#             np.asarray([]),
+#             {"prior": True, "magic_clip": False, "endpoints": True},
+#             {"weights": [1.0], "mus": [0.0], "sigmas": [2.0]},
+#         ],
+#         [
+#             np.asarray([0.4]),
+#             {"prior": True, "magic_clip": False, "endpoints": True},
+#             {"weights": [0.5, 0.5], "mus": [0.4, 0.0], "sigmas": [0.6, 2.0]},
+#         ],
+#         [
+#             np.asarray([-0.4]),
+#             {"prior": True, "magic_clip": False, "endpoints": True},
+#             {"weights": [0.5, 0.5], "mus": [-0.4, 0.0], "sigmas": [0.6, 2.0]},
+#         ],
+#         [
+#             np.asarray([-0.4, 0.4]),
+#             {"prior": True, "magic_clip": False, "endpoints": True},
+#             {"weights": [1.0 / 3] * 3, "mus": [-0.4, 0.4, 0.0], "sigmas": [0.6, 0.6, 2.0]},
+#         ],
+#         [
+#             np.asarray([-0.4, 0.4]),
+#             {"prior": True, "magic_clip": False, "endpoints": False},
+#             {"weights": [1.0 / 3] * 3, "mus": [-0.4, 0.4, 0.0], "sigmas": [0.4, 0.4, 2.0]},
+#         ],
+#         [
+#             np.asarray([-0.4, 0.4]),
+#             {"prior": False, "magic_clip": False, "endpoints": True},
+#             {"weights": [0.5, 0.5], "mus": [-0.4, 0.4], "sigmas": [0.8, 0.8]},
+#         ],
+#         [
+#             np.asarray([-0.4, 0.4, 0.41, 0.42]),
+#             {"prior": False, "magic_clip": False, "endpoints": True},
+#             {
+#                 "weights": [0.25, 0.25, 0.25, 0.25],
+#                 "mus": [-0.4, 0.4, 0.41, 0.42],
+#                 "sigmas": [0.8, 0.8, 0.01, 0.58],
+#             },
+#         ],
+#         [
+#             np.asarray([-0.4, 0.4, 0.41, 0.42]),
+#             {"prior": False, "magic_clip": True, "endpoints": True},
+#             {
+#                 "weights": [0.25, 0.25, 0.25, 0.25],
+#                 "mus": [-0.4, 0.4, 0.41, 0.42],
+#                 "sigmas": [0.8, 0.8, 0.4, 0.58],
+#             },
+#         ],
+#     ],
+# )
+# def test_calculate(
+#     mus: np.ndarray, flags: Dict[str, bool], expected: Dict[str, List[float]]
+# ) -> None:
+
+#     parameters = _ParzenEstimatorParameters(
+#         prior_weight=1.0,
+#         consider_prior=flags["prior"],
+#         consider_magic_clip=flags["magic_clip"],
+#         consider_endpoints=flags["endpoints"],
+#         weights=default_weights,
+#         multivariate=False,
+#     )
+#     mpe = _ParzenEstimator(
+#         {"a": mus}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
+#     )
+#     s_weights, s_mus, s_sigmas = mpe._weights, mpe._mus["a"], mpe._sigmas["a"]
+
+#     # Result contains an additional value for a prior distribution if consider_prior is True.
+#     assert isinstance(s_weights, np.ndarray)
+#     assert isinstance(s_mus, np.ndarray)
+#     assert isinstance(s_sigmas, np.ndarray)
+#     np.testing.assert_almost_equal(s_weights, expected["weights"])
+#     np.testing.assert_almost_equal(s_mus, expected["mus"])
+#     np.testing.assert_almost_equal(s_sigmas, expected["sigmas"])
+
+
+# @pytest.mark.parametrize(
+#     "weights",
+#     [
+#         lambda x: np.zeros(x),
+#         lambda x: -np.ones(x),
+#         lambda x: float("inf") * np.ones(x),
+#         lambda x: -float("inf") * np.ones(x),
+#         lambda x: np.asarray([float("nan") for _ in range(x)]),
+#     ],
+# )
+# def test_invalid_weights(weights: Callable[[int], np.ndarray]) -> None:
+#     parameters = _ParzenEstimatorParameters(
+#         prior_weight=1.0,
+#         consider_prior=False,
+#         consider_magic_clip=False,
+#         consider_endpoints=False,
+#         weights=weights,
+#         multivariate=False,
+#     )
+#     with pytest.raises(ValueError):
+#         _ParzenEstimator(
+#             {"a": np.asarray([0.0])}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
+#         )
