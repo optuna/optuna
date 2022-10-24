@@ -3,6 +3,7 @@ from typing import List
 from typing import Optional
 
 import numpy as np
+import matplotlib
 
 from optuna._experimental import experimental_func
 from optuna.importance._base import BaseImportanceEvaluator
@@ -115,7 +116,7 @@ def _get_importances_plot(info: _ImportancesInfo) -> "Axes":
         pos,
         importance_values,
         align="center",
-        color=cm.get_cmap("tab20c")(0),
+        color=matplotlib.colormaps.get_cmap(cm),
         tick_label=param_names,
     )
 
