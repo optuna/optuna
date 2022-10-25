@@ -42,6 +42,16 @@ class CategoricalDistribution(BaseProbabilityDistribution):
         return np.log(self._weights[x])
 
 
+def _normal_cdf(x: float, mu: float, sigma: float) -> float:
+    return 0.5 * (1 + special.erf((x - mu) / max(np.sqrt(2) * sigma, EPS)))
+
+# def _normal_cdf(x: np.ndarray, mu: np.ndarray, sigma: np.ndarray) -> np.ndarray:
+#     mu, sigma = map(np.asarray, (mu, sigma))
+#     denominator = x - mu
+#     numerator = np.maximum(np.sqrt(2) * sigma, EPS)
+#     z = denominator / numerator
+#     return 0.5 * (1 + special.erf(z))
+
 class UnivariateGaussianDistribution(BaseProbabilityDistribution):
     def __init__(self, mu: float, sigma: float, low: float, high: float) -> None:
         self._mu = mu
@@ -56,13 +66,14 @@ class UnivariateGaussianDistribution(BaseProbabilityDistribution):
         b = (self._high - self._mu) / self._sigma
         ret = float("nan")
         while not self._low <= ret <= self._high:
-            ret = stats.truncnorm(a, b, loc=self._mu, scale=self._sigma).rvs(random_state=rng)
+            ret = stats.truncnorm.rvs(a=a, b=b, loc=self._mu, scale=self._sigma, random_state=rng)
         return ret
 
     def log_pdf(self, x: Any) -> float:
-        a = (self._low - self._mu) / self._sigma
-        b = (self._high - self._mu) / self._sigma
-        return stats.truncnorm(a, b, loc=self._mu, scale=self._sigma).logpdf(x)
+        p_accept = _normal_cdf(self._high, self._mu, self._sigma) - _normal_cdf(
+            self._low, self._mu, self._sigma)
+        return -0.5 * np.log(2 * np.pi) - np.log(self._sigma) - 0.5 * ((x - self._mu) / self._sigma) ** 2 - np.log(p_accept)
+        # return stats.truncnorm.logpdf(x, a=a, b=b, loc=self._mu, scale=self._sigma)
 
 
 class DiscreteUnivariateGaussianDistribution(BaseProbabilityDistribution):
@@ -82,12 +93,16 @@ class DiscreteUnivariateGaussianDistribution(BaseProbabilityDistribution):
         return self._align_to_step(gaussian.sample(rng))
 
     def log_pdf(self, x: Any) -> float:
-        a = (self._low - self._step / 2 - self._mu) / self._sigma
-        b = (self._high + self._step / 2 - self._mu) / self._sigma
-        x0 = self._align_to_step(x)
-        lb = (x0 - self._step / 2 - self._mu) / self._sigma
-        ub = (x0 + self._step / 2 - self._mu) / self._sigma
-        return np.log(stats.truncnorm(a, b).cdf(ub) - stats.truncnorm(a, b).cdf(lb))
+        # x0 = self._align_to_step(x)
+        x0 = x
+        low_with_margin = self._low - self._step / 2
+        high_with_margin = self._high + self._step / 2
+        lb = max(x0 - self._step / 2, low_with_margin)
+        ub = min(x0 + self._step / 2, high_with_margin)
+        return np.log(
+            (_normal_cdf(ub, self._mu, self._sigma) - _normal_cdf(lb, self._mu, self._sigma)) /
+            (_normal_cdf(high_with_margin, self._mu, self._sigma) - _normal_cdf(low_with_margin, self._mu, self._sigma) + EPS)
+        )
 
 
 class ProductDistribution(BaseProbabilityDistribution):
@@ -98,9 +113,9 @@ class ProductDistribution(BaseProbabilityDistribution):
         return [distribution.sample(rng) for distribution in self._distributions]
 
     def log_pdf(self, x: List[Any]) -> float:
-        return sum(
+        return np.sum([
             distribution.log_pdf(item) for distribution, item in zip(self._distributions, x)
-        )
+        ])
 
 
 class MixtureDistribution(BaseProbabilityDistribution):

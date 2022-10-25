@@ -35,11 +35,11 @@ parametrize_search_space = pytest.mark.parametrize("search_space", [{
     "x2": FloatDistribution(1, 10, step=0.2),
     "x3": IntDistribution(1, 10),
     },
-    # {
-    # "x0": CategoricalDistribution(choices=[-1, 0, 1]),
-    # "x1": FloatDistribution(1, 10, log=True),
-    # "x2": FloatDistribution(1, 10), #, step=0.2),
-    # "x3": IntDistribution(1, 10, log=True),}
+    {
+    "x0": CategoricalDistribution(choices=[-1, 0, 1]),
+    "x1": FloatDistribution(1, 10, log=True),
+    "x2": FloatDistribution(1, 10, step=0.2),
+    "x3": IntDistribution(1, 10, log=True),}
     ])
 
 
@@ -166,6 +166,21 @@ def test_sample_unchanged(
 
 
 
+def assert_two_distributions_equal(samples1: np.ndarray, samples2: np.ndarray, p_limit: float) -> None:
+    k = 2.0 ** np.arange(-10, 10)
+    fs1 = np.vstack((np.sin(k[:, None] * samples1[None, :]),
+                np.cos(k[:, None] * samples1[None, :])))
+
+    fs2 = np.vstack((np.sin(k[:, None] * samples2[None, :]),
+                np.cos(k[:, None] * samples2[None, :])))
+    m1 = fs1.mean(axis=1)
+    m2 = fs2.mean(axis=1)
+    s1 = fs1.std(axis=1, ddof=1) / np.sqrt(len(samples1))
+    s2 = fs2.std(axis=1, ddof=1) / np.sqrt(len(samples2))
+    z = (m1 - m2) / np.sqrt(s1**2 + s2**2)
+    p = 2 * stats.norm.cdf(-np.abs(z))
+    assert np.all(p > p_limit)
+
 @parametrize_observations
 @parametrize_search_space
 @pytest.mark.parametrize("consider_prior", [True, False])
@@ -188,6 +203,7 @@ def test_sample_distribution_unchanged(
 ):
     seed = 0
     N = 1000
+    p_limit = 0.001
 
     old_pe = old_parzen_estimator._ParzenEstimator(
         observations=observations,
@@ -221,21 +237,9 @@ def test_sample_distribution_unchanged(
 
     new_samples = new_pe.sample(rng=np.random.RandomState(seed), size=N)
 
+    
     for param_name in search_space.keys():
-        k = 2.0 ** np.arange(-10, 10)
-        old_fs = np.vstack((np.sin(k[:, None] * old_samples[param_name][None, :]),
-                    np.cos(k[:, None] * old_samples[param_name][None, :])))
-
-        new_fs = np.vstack((np.sin(k[:, None] * new_samples[param_name][None, :]),
-                    np.cos(k[:, None] * new_samples[param_name][None, :])))
-        old_m = old_fs.mean(axis=1)
-        new_m = new_fs.mean(axis=1)
-        old_s = old_fs.std(axis=1, ddof=1)
-        new_s = new_fs.std(axis=1, ddof=1)
-        z = (new_m - old_m) / np.sqrt(old_s ** 2 + new_s ** 2)
-        p = 2 * stats.norm.cdf(-np.abs(z))
-
-        assert np.all(p > 0.0001)
+        assert_two_distributions_equal(old_samples[param_name], new_samples[param_name], p_limit)
 
     
 
