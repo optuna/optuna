@@ -45,11 +45,6 @@ def get_storage() -> BaseStorage:
     else:
         assert False, f"The mode {storage_mode} is not supported."
 
-    try:
-        optuna.study.delete_study(study_name=_STUDY_NAME, storage=storage)
-    except KeyError:
-        pass
-
     return storage
 
 
@@ -99,9 +94,14 @@ def _check_trials(trials: Sequence[optuna.trial.FrozenTrial]) -> None:
 
 def test_loaded_trials() -> None:
     # Please create the tables by placing this function before the multi-process tests.
+    storage = get_storage()
+    try:
+        optuna.study.delete_study(study_name=_STUDY_NAME, storage=storage)
+    except KeyError:
+        pass
 
     N_TRIALS = 20
-    study = optuna.create_study(study_name=_STUDY_NAME, storage=get_storage())
+    study = optuna.create_study(study_name=_STUDY_NAME, storage=storage)
     # Run optimization
     study.optimize(objective, n_trials=N_TRIALS)
 
@@ -111,7 +111,7 @@ def test_loaded_trials() -> None:
     _check_trials(trials)
 
     # Create a new study to confirm the study can load trial properly.
-    loaded_study = optuna.load_study(study_name=_STUDY_NAME, storage=get_storage())
+    loaded_study = optuna.load_study(study_name=_STUDY_NAME, storage=storage)
     _check_trials(loaded_study.trials)
 
 
@@ -125,6 +125,10 @@ def test_loaded_trials() -> None:
 def test_store_infinite_values(input_value: float, expected: float) -> None:
 
     storage = get_storage()
+    try:
+        optuna.study.delete_study(study_name=_STUDY_NAME, storage=storage)
+    except KeyError:
+        pass
     study_id = storage.create_new_study()
     trial_id = storage.create_new_trial(study_id)
     storage.set_trial_intermediate_value(trial_id, 1, input_value)
@@ -136,6 +140,10 @@ def test_store_infinite_values(input_value: float, expected: float) -> None:
 def test_store_nan_intermediate_values() -> None:
 
     storage = get_storage()
+    try:
+        optuna.study.delete_study(study_name=_STUDY_NAME, storage=storage)
+    except KeyError:
+        pass
     study_id = storage.create_new_study()
     trial_id = storage.create_new_trial(study_id)
 
@@ -150,11 +158,16 @@ def test_multiprocess() -> None:
     n_workers = 8
     n_trials = 20
     study_name = _STUDY_NAME
-    optuna.create_study(storage=get_storage(), study_name=study_name)
+    storage = get_storage()
+    try:
+        optuna.study.delete_study(study_name=_STUDY_NAME, storage=storage)
+    except KeyError:
+        pass
+    optuna.create_study(storage=storage, study_name=study_name)
     with ProcessPoolExecutor(n_workers) as pool:
         pool.map(run_optimize, *zip(*[[study_name, n_trials]] * n_workers))
 
-    study = optuna.load_study(study_name=study_name, storage=get_storage())
+    study = optuna.load_study(study_name=study_name, storage=storage)
 
     trials = study.trials
     assert len(trials) == n_workers * n_trials
