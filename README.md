@@ -9,7 +9,6 @@
 [![CircleCI](https://circleci.com/gh/optuna/optuna.svg?style=svg)](https://circleci.com/gh/optuna/optuna)
 [![Read the Docs](https://readthedocs.org/projects/optuna/badge/?version=stable)](https://optuna.readthedocs.io/en/stable/)
 [![Codecov](https://codecov.io/gh/optuna/optuna/branch/master/graph/badge.svg)](https://codecov.io/gh/optuna/optuna/branch/master)
-[![Gitter chat](https://badges.gitter.im/optuna/gitter.svg)](https://gitter.im/optuna/optuna)
 
 [**Website**](https://optuna.org/)
 | [**Docs**](https://optuna.readthedocs.io/en/stable/)
@@ -146,13 +145,9 @@ Also, we also provide Optuna docker images on [DockerHub](https://hub.docker.com
 
 - [GitHub Discussions] for questions.
 - [GitHub Issues] for bug reports and feature requests.
-- [Gitter] for interactive chat with developers.
-- [Stack Overflow] for questions.
 
 [GitHub Discussions]: https://github.com/optuna/optuna/discussions
 [GitHub issues]: https://github.com/optuna/optuna/issues
-[Gitter]: https://gitter.im/optuna/optuna
-[Stack Overflow]: https://stackoverflow.com/questions/tagged/optuna
 
 
 ## Contribution

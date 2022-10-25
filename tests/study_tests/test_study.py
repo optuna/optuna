@@ -1,3 +1,5 @@
+from concurrent.futures import as_completed
+from concurrent.futures import ThreadPoolExecutor
 import copy
 import itertools
 import multiprocessing
@@ -171,6 +173,17 @@ def test_optimize_parallel(n_trials: int, n_jobs: int, storage_mode: str) -> Non
         check_study(study)
 
 
+def test_optimize_with_thread_pool_executor() -> None:
+    def objective(t: Trial) -> float:
+        return t.suggest_float("x", -10, 10)
+
+    study = create_study()
+    with ThreadPoolExecutor(max_workers=5) as pool:
+        for _ in range(10):
+            pool.submit(study.optimize, objective, n_trials=10)
+    assert len(study.trials) == 100
+
+
 @pytest.mark.parametrize(
     "n_trials, n_jobs, storage_mode",
     itertools.product(
@@ -246,6 +259,21 @@ def test_optimize_with_reseeding(n_jobs: int, storage_mode: str) -> None:
         with patch.object(sampler, "reseed_rng", wraps=sampler.reseed_rng) as mock_object:
             study.optimize(f, n_trials=1, n_jobs=2)
             assert mock_object.call_count == 1
+
+
+def test_call_another_study_optimize_in_optimize() -> None:
+    def inner_objective(t: Trial) -> float:
+        return t.suggest_float("x", -10, 10)
+
+    def objective(t: Trial) -> float:
+        inner_study = create_study()
+        inner_study.enqueue_trial({"x": t.suggest_int("initial_point", -10, 10)})
+        inner_study.optimize(inner_objective, n_trials=10)
+        return inner_study.best_value
+
+    study = create_study()
+    study.optimize(objective, n_trials=10)
+    assert len(study.trials) == 10
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -1520,3 +1548,26 @@ def test_study_summary_datetime_start_calculation(storage_mode: str) -> None:
         study.enqueue_trial(params={"x": 1}, skip_if_exists=False)
         summaries = get_all_study_summaries(study._storage, include_best_trial=True)
         assert summaries[0].datetime_start is not None
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_pop_waiting_trial_thread_safe(storage_mode: str) -> None:
+    if "sqlite" == storage_mode or "cached_sqlite" == storage_mode:
+        pytest.skip("study._pop_waiting_trial is not thread-safe on SQLite3")
+
+    num_enqueued = 10
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        for i in range(num_enqueued):
+            study.enqueue_trial({"i": i})
+
+        trial_id_set = set()
+        with ThreadPoolExecutor(10) as pool:
+            futures = []
+            for i in range(num_enqueued):
+                future = pool.submit(study._pop_waiting_trial_id)
+                futures.append(future)
+
+            for future in as_completed(futures):
+                trial_id_set.add(future.result())
+        assert len(trial_id_set) == num_enqueued
