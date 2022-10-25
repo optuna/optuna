@@ -73,7 +73,6 @@ class _ParzenEstimator:
             )
             for param in search_space
         ]
-        print(weights)
         self._mixture_distribution = MixtureDistribution(
             [
                 (weights[i], ProductDistribution([dists[i] for dists in product_distributions]))
@@ -281,7 +280,6 @@ class _ParzenEstimator:
         step: Optional[float],
         parameters: _ParzenEstimatorParameters,
     ) -> List[BaseProbabilityDistribution]:
-
         n_observations = len(observations)
         consider_prior = parameters.consider_prior
         consider_endpoints = parameters.consider_endpoints
@@ -294,7 +292,7 @@ class _ParzenEstimator:
             consider_prior = True
 
         prior_mu = 0.5 * (low + high)
-        prior_sigma = 1.0 * (high - low)
+        prior_sigma = 1.0 * (high - low + (step or 0))
 
         if consider_prior:
             mus = np.empty(n_observations + 1)
@@ -309,15 +307,15 @@ class _ParzenEstimator:
             sigmas[:] = (
                 SIGMA0_MAGNITUDE
                 * max(n_observations, 1) ** (-1.0 / (len(self._search_space) + 4))
-                * (high - low)
+                * (high - low + (step or 0))
             )
         else:
             sorted_indices = np.argsort(mus)
             sorted_mus = mus[sorted_indices]
             sorted_mus_with_endpoints = np.empty(len(mus) + 2, dtype=float)
-            sorted_mus_with_endpoints[0] = low
-            sorted_mus_with_endpoints[1:-1] = sorted_mus
-            sorted_mus_with_endpoints[-1] = high
+            sorted_mus_with_endpoints[0] = low - (step or 0) / 2
+            sorted_mus_with_endpoints[1:-1] = sorted_mus 
+            sorted_mus_with_endpoints[-1] = high + (step or 0) / 2
 
             sorted_sigmas = np.maximum(
                 sorted_mus_with_endpoints[1:-1] - sorted_mus_with_endpoints[0:-2],
@@ -331,9 +329,9 @@ class _ParzenEstimator:
             sigmas[:] = sorted_sigmas[np.argsort(sorted_indices)]
 
         # We adjust the range of the 'sigmas' according to the 'consider_magic_clip' flag.
-        maxsigma = 1.0 * (high - low)
+        maxsigma = 1.0 * (high - low + (step or 0))
         if consider_magic_clip:
-            minsigma = 1.0 * (high - low) / min(100.0, (1.0 + len(mus)))
+            minsigma = 1.0 * (high - low + (step or 0)) / min(100.0, (1.0 + len(mus)))
         else:
             minsigma = EPS
         sigmas = np.asarray(np.clip(sigmas, minsigma, maxsigma))

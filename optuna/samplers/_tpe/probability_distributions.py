@@ -1,4 +1,5 @@
 import abc
+from asyncore import loop
 from typing import Any
 from typing import List
 from typing import Tuple
@@ -49,9 +50,14 @@ class UnivariateGaussianDistribution(BaseProbabilityDistribution):
         self._high = high
 
     def sample(self, rng: np.random.RandomState) -> Any:
+        if self._low >= self._high:
+            return self._low
         a = (self._low - self._mu) / self._sigma
         b = (self._high - self._mu) / self._sigma
-        return stats.truncnorm(a, b, loc=self._mu, scale=self._sigma).rvs(random_state=rng)
+        ret = float("nan")
+        while not self._low <= ret <= self._high:
+            ret = stats.truncnorm(a, b, loc=self._mu, scale=self._sigma).rvs(random_state=rng)
+        return ret
 
     def log_pdf(self, x: Any) -> float:
         a = (self._low - self._mu) / self._sigma
@@ -61,21 +67,26 @@ class UnivariateGaussianDistribution(BaseProbabilityDistribution):
 
 class DiscreteUnivariateGaussianDistribution(BaseProbabilityDistribution):
     def __init__(self, mu: float, sigma: float, low: float, high: float, step: float) -> None:
-        self._gaussian = UnivariateGaussianDistribution(mu, sigma, low - step / 2, high + step / 2)
+        self._mu = mu
+        self._sigma = sigma
+        self._low = low
+        self._high = high
         self._step = step
 
     def _align_to_step(self, x: float) -> float:
-        return np.round((x - self._gaussian._low) / self._step) * self._step + self._gaussian._low
+        return np.clip(np.round((x - self._low) / self._step) * self._step + self._low,
+                        self._low, self._high)
 
     def sample(self, rng: np.random.RandomState) -> Any:
-        return self._align_to_step(self._gaussian.sample(rng))
+        gaussian = UnivariateGaussianDistribution(self._mu, self._sigma, self._low - self._step / 2, self._high + self._step / 2)
+        return self._align_to_step(gaussian.sample(rng))
 
     def log_pdf(self, x: Any) -> float:
-        a = (self._gaussian._low - self._gaussian._mu) / self._gaussian._sigma
-        b = (self._gaussian._high - self._gaussian._mu) / self._gaussian._sigma
+        a = (self._low - self._step / 2 - self._mu) / self._sigma
+        b = (self._high + self._step / 2 - self._mu) / self._sigma
         x0 = self._align_to_step(x)
-        lb = (x0 - self._gaussian._low) / self._gaussian._sigma
-        ub = (x0 + self._gaussian._low) / self._gaussian._sigma
+        lb = (x0 - self._step / 2 - self._mu) / self._sigma
+        ub = (x0 + self._step / 2 - self._mu) / self._sigma
         return np.log(stats.truncnorm(a, b).cdf(ub) - stats.truncnorm(a, b).cdf(lb))
 
 
