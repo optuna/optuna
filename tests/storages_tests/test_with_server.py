@@ -27,56 +27,37 @@ def objective(trial: optuna.Trial) -> float:
     return f(x, y)
 
 
-def get_storage(storage_url: str, storage_mode: str) -> BaseStorage:
-    if storage_mode == "RDB":
-        if storage_url.startswith("redis"):
-            return optuna.storages.RedisStorage(url=storage_url)
-        else:
-            return optuna.storages.RDBStorage(url=storage_url)
-    elif storage_mode == "journal-redis":
-        journal_redis_storage = optuna.storages.JournalRedisStorage(storage_url)
-        return optuna.storages.JournalStorage(journal_redis_storage)
-    else:
-        assert False, f"The mode {storage_mode} is not supported."
-
-
-def run_optimize(study_name: str, storage_url: str, storage_mode: str, n_trials: int) -> None:
-    # Create a study
-    study = optuna.load_study(
-        study_name=study_name,
-        storage=get_storage(storage_url, storage_mode),
-    )
-    # Run optimization
-    study.optimize(objective, n_trials=n_trials)
-
-
-@pytest.fixture
-def storage_url() -> str:
+def get_storage() -> BaseStorage:
     if "TEST_DB_URL" not in os.environ:
         pytest.skip("This test requires TEST_DB_URL.")
     storage_url = os.environ["TEST_DB_URL"]
+    storage_mode = os.environ.get("TEST_DB_MODE", "")
 
-    if "TEST_DB_MODE" not in os.environ:
-        storage_mode = "RDB"
+    storage: BaseStorage
+    if storage_mode == "":
+        if storage_url.startswith("redis"):
+            storage = optuna.storages.RedisStorage(url=storage_url)
+        else:
+            storage = optuna.storages.RDBStorage(url=storage_url)
+    elif storage_mode == "journal-redis":
+        journal_redis_storage = optuna.storages.JournalRedisStorage(storage_url)
+        storage = optuna.storages.JournalStorage(journal_redis_storage)
     else:
-        storage_mode = os.environ["TEST_DB_MODE"]
+        assert False, f"The mode {storage_mode} is not supported."
 
     try:
-        optuna.study.delete_study(
-            study_name=_STUDY_NAME, storage=get_storage(storage_url, storage_mode)
-        )
+        optuna.study.delete_study(study_name=_STUDY_NAME, storage=storage)
     except KeyError:
         pass
-    return storage_url
+
+    return storage
 
 
-@pytest.fixture
-def storage_mode() -> str:
-    if "TEST_DB_MODE" not in os.environ:
-        storage_mode = "RDB"
-    else:
-        storage_mode = os.environ["TEST_DB_MODE"]
-    return storage_mode
+def run_optimize(study_name: str, n_trials: int) -> None:
+    # Create a study
+    study = optuna.load_study(study_name=study_name, storage=get_storage())
+    # Run optimization
+    study.optimize(objective, n_trials=n_trials)
 
 
 def _check_trials(trials: Sequence[optuna.trial.FrozenTrial]) -> None:
@@ -116,13 +97,11 @@ def _check_trials(trials: Sequence[optuna.trial.FrozenTrial]) -> None:
     )
 
 
-def test_loaded_trials(storage_url: str, storage_mode: str) -> None:
+def test_loaded_trials() -> None:
     # Please create the tables by placing this function before the multi-process tests.
 
     N_TRIALS = 20
-    study = optuna.create_study(
-        study_name=_STUDY_NAME, storage=get_storage(storage_url, storage_mode)
-    )
+    study = optuna.create_study(study_name=_STUDY_NAME, storage=get_storage())
     # Run optimization
     study.optimize(objective, n_trials=N_TRIALS)
 
@@ -132,9 +111,7 @@ def test_loaded_trials(storage_url: str, storage_mode: str) -> None:
     _check_trials(trials)
 
     # Create a new study to confirm the study can load trial properly.
-    loaded_study = optuna.load_study(
-        study_name=_STUDY_NAME, storage=get_storage(storage_url, storage_mode)
-    )
+    loaded_study = optuna.load_study(study_name=_STUDY_NAME, storage=get_storage())
     _check_trials(loaded_study.trials)
 
 
@@ -145,11 +122,9 @@ def test_loaded_trials(storage_url: str, storage_mode: str) -> None:
         (-float("inf"), -float("inf")),
     ],
 )
-def test_store_infinite_values(
-    input_value: float, expected: float, storage_url: str, storage_mode: str
-) -> None:
+def test_store_infinite_values(input_value: float, expected: float) -> None:
 
-    storage = get_storage(storage_url, storage_mode)
+    storage = get_storage()
     study_id = storage.create_new_study()
     trial_id = storage.create_new_trial(study_id)
     storage.set_trial_intermediate_value(trial_id, 1, input_value)
@@ -158,9 +133,9 @@ def test_store_infinite_values(
     assert storage.get_trial(trial_id).intermediate_values[1] == expected
 
 
-def test_store_nan_intermediate_values(storage_url: str, storage_mode: str) -> None:
+def test_store_nan_intermediate_values() -> None:
 
-    storage = get_storage(storage_url, storage_mode)
+    storage = get_storage()
     study_id = storage.create_new_study()
     trial_id = storage.create_new_trial(study_id)
 
@@ -171,19 +146,15 @@ def test_store_nan_intermediate_values(storage_url: str, storage_mode: str) -> N
     assert np.isnan(got_value)
 
 
-def test_multiprocess(storage_url: str, storage_mode: str) -> None:
+def test_multiprocess() -> None:
     n_workers = 8
     n_trials = 20
     study_name = _STUDY_NAME
-    optuna.create_study(storage=get_storage(storage_url, storage_mode), study_name=study_name)
+    optuna.create_study(storage=get_storage(), study_name=study_name)
     with ProcessPoolExecutor(n_workers) as pool:
-        pool.map(
-            run_optimize, *zip(*[[study_name, storage_url, storage_mode, n_trials]] * n_workers)
-        )
+        pool.map(run_optimize, *zip(*[[study_name, n_trials]] * n_workers))
 
-    study = optuna.load_study(
-        study_name=study_name, storage=get_storage(storage_url, storage_mode)
-    )
+    study = optuna.load_study(study_name=study_name, storage=get_storage())
 
     trials = study.trials
     assert len(trials) == n_workers * n_trials

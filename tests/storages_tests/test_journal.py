@@ -16,9 +16,10 @@ from optuna.storages._journal.file import JournalFileBaseLock
 
 
 LOG_STORAGE = {
-    # "file_with_open_lock",
-    # "file_with_link_lock",
-    "redis",
+    "file_with_open_lock",
+    "file_with_link_lock",
+    "redis_default",
+    "redis_with_use_cluster",
 }
 
 
@@ -39,7 +40,10 @@ class JournalLogStorageSupplier:
                 raise Exception("Must not reach here")
             return optuna.storages.JournalFileStorage(self.tempfile.name, lock)
         elif self.storage_type.startswith("redis"):
-            journal_redis_storage = optuna.storages.JournalRedisStorage("redis://localhost")
+            use_cluster = self.storage_type == "redis_with_use_cluster"
+            journal_redis_storage = optuna.storages.JournalRedisStorage(
+                "redis://localhost", use_cluster
+            )
             journal_redis_storage._redis = fakeredis.FakeStrictRedis()
             return journal_redis_storage
         else:
@@ -55,7 +59,7 @@ class JournalLogStorageSupplier:
 
 @pytest.mark.parametrize("log_storage_type", LOG_STORAGE)
 def test_concurrent_append_logs_for_multi_processes(log_storage_type: str) -> None:
-    if log_storage_type == "redis":
+    if log_storage_type.startswith("redis"):
         pytest.skip("The `fakeredis` does not support multi process environments.")
 
     num_executors = 10

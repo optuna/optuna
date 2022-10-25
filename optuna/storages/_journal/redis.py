@@ -19,13 +19,14 @@ class JournalRedisStorage(BaseJournalLogStorage):
 
     Args:
         url:
-            URL of the redis storage, password and db are optional. (ie: redis://localhost:6379)
+            URL of the redis storage, password and db are optional.
+            (ie: ``redis://localhost:6379``)
         use_cluster:
             Flag whether you use the Redis cluster. If this is :obj:`False`, it is assumed that
             you use the standalone Redis server and ensured that a write operation is atomic. This
             provides the consistency of the preserved logs. If this is :obj:`True`, it is assumed
             that you use the Redis cluster and not ensured that a write operation is atomic. This
-            means the preserved logs can be inconsistent in distributed optimization, and may
+            means the preserved logs can be inconsistent due to network errors, and may
             cause errors.
         prefix:
             Prefix of the preserved key of logs. This is useful when multiple users work on one
