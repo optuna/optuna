@@ -1,3 +1,4 @@
+from concurrent.futures import as_completed
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
 import tempfile
@@ -81,3 +82,33 @@ def test_concurrent_append_logs_for_multi_threads(log_storage_type: str) -> None
 
         assert len(storage.read_logs(0)) == num_records
         assert all(record == r for r in storage.read_logs(0))
+
+
+def pop_waiting_trial(file_path: str, study_name: str) -> Optional[int]:
+    file_storage = optuna.storages.JournalFileStorage(file_path)
+    storage = optuna.storages.JournalStorage(file_storage)
+    study = optuna.load_study(storage=storage, study_name=study_name)
+    return study._pop_waiting_trial_id()
+
+
+def test_pop_waiting_trial_multiprocess_safe() -> None:
+    with tempfile.NamedTemporaryFile() as file:
+        file_storage = optuna.storages.JournalFileStorage(file.name)
+        storage = optuna.storages.JournalStorage(file_storage)
+        study = optuna.create_study(storage=storage)
+        num_enqueued = 10
+        for i in range(num_enqueued):
+            study.enqueue_trial({"i": i})
+
+        trial_id_set = set()
+        with ProcessPoolExecutor(10) as pool:
+            futures = []
+            for i in range(num_enqueued):
+                future = pool.submit(pop_waiting_trial, file.name, study.study_name)
+                futures.append(future)
+
+            for future in as_completed(futures):
+                trial_id = future.result()
+                if trial_id is not None:
+                    trial_id_set.add(trial_id)
+        assert len(trial_id_set) == num_enqueued

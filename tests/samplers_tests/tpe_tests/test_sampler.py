@@ -761,7 +761,7 @@ def test_get_observation_pairs(
         (-float("inf"), [sign * 5.0]),  # COMPLETE
         (-7, [sign * 2]),  # PRUNED (with intermediate values)
         (-3, [float("inf")]),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-        (float("inf"), [sign * 0.0]),  # PRUNED (without intermediate values)
+        (1, [sign * 0.0]),  # PRUNED (without intermediate values)
     ]
     assert _tpe.sampler._get_observation_pairs(
         study, ["x"], False, constraints_enabled=constraints_enabled
@@ -855,7 +855,7 @@ def test_get_observation_pairs_multi(
                 -3,
                 [float("inf")],
             ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-            (float("inf"), [sign * 0.0]),  # PRUNED (without intermediate values)
+            (1, [sign * 0.0]),  # PRUNED (without intermediate values)
         ],
         expected_violations,
     )
@@ -1083,7 +1083,7 @@ def test_constant_liar_observation_pairs(direction: str, multivariate: bool) -> 
 
     # The value of the constant liar should be penalizing, i.e. `float("inf")` during minimization
     # and `-float("inf")` during maximization.
-    expected_values = [(-float("inf"), [float("inf") * (-1 if direction == "maximize" else 1)])]
+    expected_values = [(float("inf"), [float("inf") * (-1 if direction == "maximize" else 1)])]
 
     assert _tpe.sampler._get_observation_pairs(
         study, ["x"], multivariate, constant_liar=False
