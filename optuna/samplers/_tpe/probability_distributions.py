@@ -17,12 +17,6 @@ else:
     special = _LazyImport("scipy.special")
     stats = _LazyImport("scipy.stats")
 
-EPS = 1e-12
-
-
-def _normal_cdf(x: float, mu: float, sigma: float) -> float:
-    return 0.5 * (1 + special.erf((x - mu) / np.maximum(np.sqrt(2) * sigma, EPS)))
-
 def _sample(distribution: np.ndarray, rng: np.random.RandomState, size: Tuple[int, ...] = ()) -> np.ndarray:
     _METHOD = {
         "categorical": _categorical_sample,
@@ -72,20 +66,26 @@ def _truncnorm_distribution(mu: np.ndarray, sigma: np.ndarray, low: np.ndarray, 
                                     ("high", np.float64)])
     return np.rec.fromarrays([inner], names="truncnorm")
 
+
+EPS = 1e-12
+def _normal_cdf(x: float, mu: float, sigma: float) -> float:
+    return 0.5 * (1 + special.erf((x - mu) / np.maximum(np.sqrt(2) * sigma, EPS)))
+
 def _truncnorm_sample(inner: np.ndarray, rng: np.random.RandomState, size: Tuple[int, ...]) -> np.ndarray:
+    mu, sigma, low, high = inner["mu"], inner["sigma"], inner["low"], inner["high"]
     return stats.truncnorm.rvs(
-        a=(inner["low"] - inner["mu"]) / inner["sigma"],
-        b=(inner["high"] - inner["mu"]) / inner["sigma"],
-        loc=inner["mu"],
-        scale=inner["sigma"],
+        a=(low - mu) / sigma,
+        b=(high - mu) / sigma,
+        loc=mu,
+        scale=sigma,
         size=size + inner.shape,
         random_state=rng,
     )
 
 def _truncnorm_logpdf(inner: np.ndarray, x: np.ndarray) -> np.ndarray:
-    p_accept = _normal_cdf(inner["high"], inner["mu"], inner["sigma"]) - _normal_cdf(
-        inner["low"], inner["mu"], inner["sigma"])
-    return -0.5 * np.log(2 * np.pi) - np.log(inner["sigma"]) - 0.5 * ((x - inner["mu"]) / inner["sigma"]) ** 2 - np.log(p_accept)
+    mu, sigma, low, high = inner["mu"], inner["sigma"], inner["low"], inner["high"]
+    p_accept = _normal_cdf(high, mu, sigma) - _normal_cdf(low, mu, sigma)
+    return -0.5 * np.log(2 * np.pi) - np.log(sigma) - 0.5 * ((x - mu) / sigma) ** 2 - np.log(p_accept)
 
 
 # discrete_truncnorm
@@ -99,27 +99,22 @@ def _discrete_truncnorm_distribution(mu: np.ndarray, sigma: np.ndarray, low: np.
     return np.rec.fromarrays([inner], names="discrete_truncnorm")
 
 def _discrete_truncnorm_sample(inner: np.ndarray, rng: np.random.RandomState, size: Tuple[int, ...]) -> np.ndarray:
+    mu, sigma, low, high, step = inner["mu"], inner["sigma"], inner["low"], inner["high"], inner["step"]
     samples = stats.truncnorm.rvs(
-        a=(inner["low"] - inner["step"] / 2 - inner["mu"]) / inner["sigma"],
-        b=(inner["high"] + inner["step"] / 2 - inner["mu"]) / inner["sigma"],
-        loc=inner["mu"],
-        scale=inner["sigma"],
+        a=(low - step / 2 - mu) / sigma,
+        b=(high + step / 2 - mu) / sigma,
+        loc=mu,
+        scale=sigma,
         size=size + inner.shape,
         random_state=rng,
     )
-    return np.clip(np.round(samples / inner["step"]) * inner["step"],
-                    inner["low"], inner["high"])
+    return np.clip(np.round(samples / step) * step, low, high)
 
 def _discrete_truncnorm_logpdf(inner: np.ndarray, x: np.ndarray) -> np.ndarray:
-    low_with_margin = inner["low"] - inner["step"] / 2
-    high_with_margin = inner["high"] + inner["step"] / 2
-    lb = np.maximum(x - inner["step"] / 2, low_with_margin)
-    ub = np.minimum(x + inner["step"] / 2, high_with_margin)
-    mu = inner["mu"]
-    sigma = inner["sigma"]
+    mu, sigma, low, high, step = inner["mu"], inner["sigma"], inner["low"], inner["high"], inner["step"]
     return np.log(
-        (_normal_cdf(ub, mu, sigma) - _normal_cdf(lb, mu, sigma)) /
-        (_normal_cdf(high_with_margin, mu, sigma) - _normal_cdf(low_with_margin, mu, sigma) + EPS)
+        (_normal_cdf(x + step / 2, mu, sigma) - _normal_cdf(x - step / 2, mu, sigma)) /
+        (_normal_cdf(high + step / 2, mu, sigma) - _normal_cdf(low - step / 2, mu, sigma) + EPS)
     )
 
 
@@ -139,9 +134,9 @@ def _product_logpdf(inner: np.ndarray, x: np.ndarray) -> np.ndarray:
 
 
 # mixture
-def _mixture_distribution(distributions: np.ndarray, weights: np.ndarray) -> np.ndarray:
+def _mixture_distribution(weights: np.ndarray, distributions: np.ndarray) -> np.ndarray:
     weights /= np.sum(weights, axis=-1, keepdims=True)
-    inner = np.rec.fromarrays([distributions, weights], names=["distribution", "weight"])
+    inner = np.rec.fromarrays([weights, distributions], names=[ "weight", "distribution"])
     return np.rec.fromarrays([inner], dtype=[("mixture", inner.dtype, (inner.shape[-1],))])
 
 def _mixture_sample(inner: np.ndarray, rng: np.random.RandomState, size: Tuple[int, ...]) -> np.ndarray:
