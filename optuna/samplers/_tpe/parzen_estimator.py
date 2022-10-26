@@ -8,7 +8,7 @@ from typing import Tuple
 import numpy as np
 
 from optuna.distributions import BaseDistribution, CategoricalDistribution, FloatDistribution, IntDistribution
-from optuna.samplers._tpe.probability_distributions import _categorical_distribution, _discrete_truncnorm_distribution, _truncnorm_distribution, _product_distribution, _mixture_distribution, _sample, _logpdf
+from optuna.samplers._tpe.probability_distributions import _categorical_distribution, _discrete_truncnorm_distribution, _truncnorm_distribution, _product_distribution, _mixture_distribution, _sample_mixture, _logpdf_mixture
 
 EPS = 1e-12
 class _ParzenEstimatorParameters(
@@ -56,13 +56,12 @@ class _ParzenEstimator:
 
     
     def sample(self, rng: np.random.RandomState, size: int) -> Dict[str, np.ndarray]:
-        sampled = _sample(self._mixture_distribution, rng, (size,))
+        sampled = _sample_mixture(self._mixture_distribution, rng, (size,))
         return self._transform_from_uniform(sampled)
 
     def log_pdf(self, samples_dict: Dict[str, np.ndarray]) -> np.ndarray:
         transformed_samples_sa = self._transform_to_uniform(samples_dict)
-        return _logpdf(np.broadcast_to(self._mixture_distribution, transformed_samples_sa.shape, subok=True),
-                        transformed_samples_sa)
+        return _logpdf_mixture(self._mixture_distribution, transformed_samples_sa)
 
 
     @staticmethod

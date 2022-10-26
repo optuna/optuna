@@ -52,14 +52,12 @@ parametrize_predetermined_weights = pytest.mark.parametrize("predetermined_weigh
 @parametrize_observations
 @parametrize_search_space
 @parametrize_test_points
-@pytest.mark.parametrize("consider_prior", [True])
-# @pytest.mark.parametrize("consider_prior", [True, False])
+@pytest.mark.parametrize("consider_prior", [True, False])
 @pytest.mark.parametrize("prior_weight", [1.0, 2.0])
 @pytest.mark.parametrize("consider_magic_clip", [True, False])
 @pytest.mark.parametrize("consider_endpoints", [True, False])
 @pytest.mark.parametrize("weights", [default_weights, lambda x: np.ones(x)])
-# @pytest.mark.parametrize("multivariate", [True, False])
-@pytest.mark.parametrize("multivariate", [False])
+@pytest.mark.parametrize("multivariate", [True, False])
 @parametrize_predetermined_weights
 def test_logpdf_unchanged(
     observations: Dict[str, np.ndarray],
