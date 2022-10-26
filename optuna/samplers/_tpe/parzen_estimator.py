@@ -10,13 +10,7 @@ import numpy as np
 
 from optuna import distributions
 from optuna.distributions import BaseDistribution
-from optuna.samplers._tpe.probability_distributions import BaseProbabilityDistribution
-from optuna.samplers._tpe.probability_distributions import CategoricalDistribution
-from optuna.samplers._tpe.probability_distributions import DiscreteUnivariateGaussianDistribution
-from optuna.samplers._tpe.probability_distributions import MixtureDistribution
-from optuna.samplers._tpe.probability_distributions import ProductDistribution
-from optuna.samplers._tpe.probability_distributions import UnivariateGaussianDistribution
-
+from optuna.samplers._tpe.probability_distributions import _categorical_distribution, _discrete_truncnorm_distribution, _truncnorm_distribution, _product_distribution, _mixture_distribution, _sample, _logpdf
 
 EPS = 1e-12
 SIGMA0_MAGNITUDE = 0.2
@@ -66,45 +60,23 @@ class _ParzenEstimator:
             observations, search_space
         )
 
-        product_distributions: List[List[BaseProbabilityDistribution]]
-        product_distributions = [
-            self._calculate_distributions(
-                transformed_observations[param], search_space[param], parameters
-            )
-            for param in search_space
-        ]
-        self._mixture_distribution = MixtureDistribution(
-            [
-                (weights[i], ProductDistribution([dists[i] for dists in product_distributions]))
-                for i in range(weights.size)
-            ]
-        )
+        
+        product_distributions = _product_distribution(
+            {param: self._calculate_distributions(transformed_observations[param], search_space[param], parameters)
+             for param in search_space})
+        
+        self._mixture_distribution = _mixture_distribution(product_distributions, weights)
 
     def sample(self, rng: np.random.RandomState, size: int) -> Dict[str, np.ndarray]:
-        sampled = [self._mixture_distribution.sample(rng) for _ in range(size)]
-        return _ParzenEstimator._transform_from_uniform(
-            {
-                param_name: np.array([sample[i] for sample in sampled])
-                for i, param_name in enumerate(self._search_space)
-            },
-            self._search_space,
-        )
+        sampled = _sample(self._mixture_distribution, rng, (size,))
+        return _ParzenEstimator._transform_from_uniform(sampled,self._search_space)
 
     def log_pdf(self, samples_dict: Dict[str, np.ndarray]) -> np.ndarray:
-        n_samples = len(next(iter(samples_dict.values())))
-        transformed_samples_dict = _ParzenEstimator._transform_to_uniform(
+        transformed_samples_sa = _ParzenEstimator._transform_to_uniform(
             samples_dict, self._search_space
         )
-        transformed_samples = [
-            [transformed_samples_dict[param_name][i] for param_name in self._search_space]
-            for i in range(n_samples)
-        ]
-        return np.array(
-            [
-                self._mixture_distribution.log_pdf(transformed_sample)
-                for transformed_sample in transformed_samples
-            ]
-        )
+        return _logpdf(np.broadcast_to(self._mixture_distribution, transformed_samples_sa.shape, subok=True),
+                        transformed_samples_sa)
 
     @classmethod
     def _calculate_weights(
@@ -157,9 +129,9 @@ class _ParzenEstimator:
     @classmethod
     def _transform_to_uniform(
         cls, samples_dict: Dict[str, np.ndarray], search_space: Dict[str, BaseDistribution]
-    ) -> Dict[str, np.ndarray]:
+    ) -> np.ndarray:
 
-        transformed = {}
+        transformed_dict = {}
         for param_name, samples in samples_dict.items():
             distribution = search_space[param_name]
 
@@ -171,16 +143,19 @@ class _ParzenEstimator:
                 if distribution.log:
                     samples = np.log(samples)
 
-            transformed[param_name] = samples
-        return transformed
+            transformed_dict[param_name] = samples
+
+        return np.rec.fromarrays(list(transformed_dict.values()),
+                                names=list(transformed_dict.keys()))
 
     @classmethod
     def _transform_from_uniform(
-        self, samples_dict: Dict[str, np.ndarray], search_space: Dict[str, BaseDistribution]
+        self, samples_sa: np.ndarray, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, np.ndarray]:
 
         transformed = {}
-        for param_name, samples in samples_dict.items():
+        for param_name in samples_sa.dtype.names:
+            samples = samples_sa[param_name]
             distribution = search_space[param_name]
 
             assert isinstance(distribution, _DISTRIBUTION_CLASSES)
@@ -217,7 +192,7 @@ class _ParzenEstimator:
         transformed_observations: np.ndarray,
         search_space: BaseDistribution,
         parameters: _ParzenEstimatorParameters,
-    ) -> List[BaseProbabilityDistribution]:
+    ) -> np.ndarray:
         assert isinstance(search_space, _DISTRIBUTION_CLASSES)
         if isinstance(search_space, distributions.CategoricalDistribution):
             return self._calculate_categorical_distributions(
@@ -248,7 +223,7 @@ class _ParzenEstimator:
         observations: np.ndarray,
         choices: Tuple[Any, ...],
         parameters: _ParzenEstimatorParameters,
-    ) -> List[BaseProbabilityDistribution]:
+    ) -> np.ndarray:
 
         # TODO(kstoneriv3): This the bandwidth selection rule might not be optimal.
         observations = observations.astype(int)
@@ -270,7 +245,7 @@ class _ParzenEstimator:
         weights = np.full(shape, fill_value=value)
         weights[np.arange(n_observations), observations] += 1
         weights /= weights.sum(axis=1, keepdims=True)
-        return [CategoricalDistribution(w) for w in weights]
+        return _categorical_distribution(weights)
 
     def _calculate_numerical_distributions(
         self,
@@ -279,7 +254,7 @@ class _ParzenEstimator:
         high: float,
         step: Optional[float],
         parameters: _ParzenEstimatorParameters,
-    ) -> List[BaseProbabilityDistribution]:
+    ) -> np.ndarray:
         n_observations = len(observations)
         consider_prior = parameters.consider_prior
         consider_endpoints = parameters.consider_endpoints
@@ -339,13 +314,19 @@ class _ParzenEstimator:
         if consider_prior:
             sigmas[n_observations] = prior_sigma
 
+        shape = mus.shape
         if step is None:
-            return [
-                UnivariateGaussianDistribution(mu, sigma, low, high)
-                for mu, sigma in zip(mus, sigmas)
-            ]
+            return _truncnorm_distribution(
+                mus, 
+                sigmas, 
+                np.broadcast_to(low, shape, subok=True),
+                np.broadcast_to(high, shape, subok=True),
+            )
         else:
-            return [
-                DiscreteUnivariateGaussianDistribution(mu, sigma, low, high, step)
-                for mu, sigma in zip(mus, sigmas)
-            ]
+            return _discrete_truncnorm_distribution(
+                mus, 
+                sigmas, 
+                np.broadcast_to(low, shape, subok=True),
+                np.broadcast_to(high, shape, subok=True),
+                np.broadcast_to(step, shape, subok=True),
+            )
