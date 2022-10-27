@@ -386,6 +386,8 @@ class BoTorchSampler(BaseSampler):
             conditional.
         seed:
             Seed for random number generator.
+        device:
+            PyTorch's device instance to store input and output data of BoTorch.
     """
 
     def __init__(
@@ -406,6 +408,7 @@ class BoTorchSampler(BaseSampler):
         n_startup_trials: int = 10,
         independent_sampler: Optional[BaseSampler] = None,
         seed: Optional[int] = None,
+        device: "torch.device" = torch.device("cpu"),
     ):
         _imports.check()
 
@@ -417,6 +420,7 @@ class BoTorchSampler(BaseSampler):
 
         self._study_id: Optional[int] = None
         self._search_space = IntersectionSearchSpace()
+        self._device = device
 
     def infer_relative_search_space(
         self,
@@ -505,11 +509,11 @@ class BoTorchSampler(BaseSampler):
                     "constraints. Constraints passed to `candidates_func` will contain NaN."
                 )
 
-        values = torch.from_numpy(values)
-        params = torch.from_numpy(params)
+        values = torch.from_numpy(values).to(self._device)
+        params = torch.from_numpy(params).to(self._device)
         if con is not None:
-            con = torch.from_numpy(con)
-        bounds = torch.from_numpy(bounds)
+            con = torch.from_numpy(con).to(self._device)
+        bounds = torch.from_numpy(bounds).to(self._device)
 
         if con is not None:
             if con.dim() == 1:
@@ -546,7 +550,7 @@ class BoTorchSampler(BaseSampler):
                 f"{candidates.size(0)}, bounds: {bounds.size(1)}."
             )
 
-        return trans.untransform(candidates.numpy())
+        return trans.untransform(candidates.cpu().numpy())
 
     def sample_independent(
         self,
