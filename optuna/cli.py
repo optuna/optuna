@@ -220,7 +220,7 @@ def _format_output(
         raise CLIUsageError(f"Optuna CLI does not supported the {output_format} format.")
 
 
-def _add_common_argument(parser: ArgumentParser) -> ArgumentParser:
+def _add_common_arguments(parser: ArgumentParser) -> ArgumentParser:
     parser.add_argument("--storage", default=None, help="DB URL. (e.g. sqlite:///example.db)")
     verbose_group = parser.add_mutually_exclusive_group()
     verbose_group.add_argument(
@@ -247,7 +247,7 @@ class _BaseCommand:
         self.logger = optuna.logging.get_logger(__name__)
 
     def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
-        parser = _add_common_argument(parser)
+        # parser = _add_common_arguments(parser)
         return parser
 
     def take_action(self, parsed_args: Namespace) -> int:
@@ -941,6 +941,9 @@ def _get_preprocessed_argv() -> List[str]:
 
 
 def _add_commands(parser: ArgumentParser) -> ArgumentParser:
+    parent_parser = ArgumentParser(add_help=False)
+    parent_parser = _add_common_arguments(parent_parser)
+
     subparsers = parser.add_subparsers()
     eps = entry_points(group="optuna.command")
     for ep in eps:
@@ -948,7 +951,7 @@ def _add_commands(parser: ArgumentParser) -> ArgumentParser:
         command_type = ep.value.split(":")[1]
         command = globals()[command_type]()
 
-        subparser = subparsers.add_parser(command_name)
+        subparser = subparsers.add_parser(command_name, parents=[parent_parser])
         subparser = command.add_arguments(subparser)
         subparser.set_defaults(handler=command.take_action)
 
@@ -960,6 +963,9 @@ def _add_commands(parser: ArgumentParser) -> ArgumentParser:
 
 
 def _set_verbosity(args: argparse.Namespace) -> None:
+    if "verbose_level" not in args:
+        return
+
     logging_level = {
         0: logging.WARNING,
         1: logging.INFO,
@@ -969,8 +975,7 @@ def _set_verbosity(args: argparse.Namespace) -> None:
 
 
 def main() -> int:
-    parser = ArgumentParser(description="")
-    parser = _add_common_argument(parser)
+    parser = ArgumentParser(description="", add_help=False)
     parser = _add_commands(parser)
 
     argv = _get_preprocessed_argv()
