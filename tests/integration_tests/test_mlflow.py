@@ -393,11 +393,12 @@ def test_log_mlflow_tags(tmpdir: py.path.local) -> None:
     assert all([tags[key] == str(value) for key, value in expected_tags.items()])
 
 
-def test_track_in_mlflow_decorator(tmpdir: py.path.local) -> None:
+@pytest.mark.parametrize("n_jobs", [1, 2, 4, 6])
+def test_track_in_mlflow_decorator(tmpdir: py.path.local, n_jobs: int) -> None:
 
     tracking_uri = f"file:{tmpdir}"
     study_name = "my_study"
-    n_trials = 3
+    n_trials = n_jobs * 2
 
     metric_name = "additional_metric"
     metric = 3.14
@@ -418,7 +419,7 @@ def test_track_in_mlflow_decorator(tmpdir: py.path.local) -> None:
     tracked_objective = mlflc.track_in_mlflow()(_objective_func)
 
     study = optuna.create_study(study_name=study_name)
-    study.optimize(tracked_objective, n_trials=n_trials, callbacks=[mlflc])
+    study.optimize(tracked_objective, n_trials=n_trials, callbacks=[mlflc], n_jobs=n_jobs)
 
     mlfl_client = MlflowClient(tracking_uri)
     experiments = mlfl_client.list_experiments()
