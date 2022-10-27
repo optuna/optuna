@@ -888,6 +888,8 @@ class _Tell(_BaseCommand):
 
 def _get_preprocessed_argv() -> List[str]:
     argv = sys.argv[1:] if len(sys.argv) > 1 else ["help"]
+    if argv == ["-h"] or argv == ["--help"]:
+        argv = ["help"]
 
     def _get_last_possible_command_index(argv: List[str]) -> int:
         for i, arg in enumerate(argv):
@@ -977,6 +979,7 @@ def main() -> int:
     parser.add_argument(
         "--version", action="version", version="{0} {1}".format("optuna", optuna.__version__)
     )
+    parser.add_argument("-h", "--help", action="store_true", help="show help and exit")
 
     parser = _add_commands(parser)
 
