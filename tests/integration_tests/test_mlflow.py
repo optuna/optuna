@@ -268,6 +268,18 @@ def test_nest_trials(tmpdir: py.path.local) -> None:
     assert all(set(r.data.metrics.keys()) == {"value"} for r in child_runs)
 
 
+@pytest.mark.parametrize("n_jobs", [2, 4, 6])
+def test_multiple_jobs(tmpdir: py.path.local, n_jobs: int) -> None:
+    tracking_uri = f"file:{tmpdir}"
+    study_name = "my_study"
+    # The race-condition usually happens after first trial for each job
+    n_trials = n_jobs * 2
+
+    mlflc = MLflowCallback(tracking_uri=tracking_uri)
+    study = optuna.create_study(study_name=study_name)
+    study.optimize(_objective_func, n_trials=n_trials, callbacks=[mlflc], n_jobs=n_jobs)
+
+
 def test_mlflow_callback_fails_when_nest_trials_is_false_and_active_run_exists(
     tmpdir: py.path.local,
 ) -> None:
