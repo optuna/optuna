@@ -279,6 +279,14 @@ def test_multiple_jobs(tmpdir: py.path.local, n_jobs: int) -> None:
     study = optuna.create_study(study_name=study_name)
     study.optimize(_objective_func, n_trials=n_trials, callbacks=[mlflc], n_jobs=n_jobs)
 
+    mlfl_client = MlflowClient(tracking_uri)
+    assert len(mlfl_client.list_experiments()) == 1
+
+    experiment = mlfl_client.list_experiments()[0]
+    runs = mlfl_client.list_run_infos(experiment.experiment_id)
+
+    assert len(runs) == n_trials
+
 
 def test_mlflow_callback_fails_when_nest_trials_is_false_and_active_run_exists(
     tmpdir: py.path.local,
