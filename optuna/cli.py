@@ -15,7 +15,6 @@ from importlib.machinery import SourceFileLoader
 from importlib.metadata import entry_points
 import json
 import logging
-import os
 import sys
 import types
 from typing import Any
@@ -220,34 +219,11 @@ def _format_output(
         raise CLIUsageError(f"Optuna CLI does not supported the {output_format} format.")
 
 
-def _add_common_arguments(parser: ArgumentParser) -> ArgumentParser:
-    parser.add_argument("--storage", default=None, help="DB URL. (e.g. sqlite:///example.db)")
-    verbose_group = parser.add_mutually_exclusive_group()
-    verbose_group.add_argument(
-        "-v",
-        "--verbose",
-        action="count",
-        dest="verbose_level",
-        default=1,
-        help="Increase verbosity of output. Can be repeated.",
-    )
-    verbose_group.add_argument(
-        "-q",
-        "--quiet",
-        action="store_const",
-        dest="verbose_level",
-        const=0,
-        help="Suppress output except warnings and errors.",
-    )
-    return parser
-
-
 class _BaseCommand:
     def __init__(self) -> None:
         self.logger = optuna.logging.get_logger(__name__)
 
     def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
-        # parser = _add_common_arguments(parser)
         return parser
 
     def take_action(self, parsed_args: Namespace) -> int:
@@ -940,6 +916,28 @@ def _get_preprocessed_argv() -> List[str]:
     return argv
 
 
+def _add_common_arguments(parser: ArgumentParser) -> ArgumentParser:
+    parser.add_argument("--storage", default=None, help="DB URL. (e.g. sqlite:///example.db)")
+    verbose_group = parser.add_mutually_exclusive_group()
+    verbose_group.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        dest="verbose_level",
+        default=1,
+        help="Increase verbosity of output. Can be repeated.",
+    )
+    verbose_group.add_argument(
+        "-q",
+        "--quiet",
+        action="store_const",
+        dest="verbose_level",
+        const=0,
+        help="Suppress output except warnings and errors.",
+    )
+    return parser
+
+
 def _add_commands(parser: ArgumentParser) -> ArgumentParser:
     parent_parser = ArgumentParser(add_help=False)
     parent_parser = _add_common_arguments(parent_parser)
@@ -976,16 +974,17 @@ def _set_verbosity(args: argparse.Namespace) -> None:
 
 def main() -> int:
     parser = ArgumentParser(description="", add_help=False)
+    parser.add_argument(
+        "--version", action="version", version="{0} {1}".format("optuna", optuna.__version__)
+    )
+
     parser = _add_commands(parser)
 
     argv = _get_preprocessed_argv()
     args = parser.parse_args(argv)
     _set_verbosity(args)
 
-    NAME = os.path.splitext(os.path.basename(sys.argv[0]))[0]
-    if NAME == "__main__":
-        NAME = os.path.split(os.path.dirname(sys.argv[0]))[-1]
-    logger = logging.getLogger(NAME)
+    logger = logging.getLogger("optuna")
 
     try:
         return args.handler(args)
