@@ -33,7 +33,7 @@ _logger = optuna.logging.get_logger(__name__)
 
 NOT_FOUND_MSG = "Record does not exist."
 # A heuristic interval number to dump snapshots
-SNAPSHOT_INTERVAL = 10
+SNAPSHOT_INTERVAL = 100
 
 
 class JournalOperation(enum.IntEnum):
