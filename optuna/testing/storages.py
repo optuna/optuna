@@ -19,6 +19,7 @@ STORAGE_MODES = [
     "redis",
     "cached_redis",
     "journal",
+    "journal_redis",
 ]
 
 STORAGE_MODES_HEARTBEAT = [
@@ -64,6 +65,10 @@ class StorageSupplier:
                 if "cached" in self.storage_specifier
                 else rdb_storage
             )
+        elif self.storage_specifier == "journal_redis":
+            journal_redis_storage = optuna.storages.JournalRedisStorage("redis://localhost")
+            journal_redis_storage._redis = fakeredis.FakeStrictRedis()
+            return optuna.storages.JournalStorage(journal_redis_storage)
         elif "redis" in self.storage_specifier:
             redis_storage = optuna.storages.RedisStorage("redis://localhost", **self.extra_args)
             redis_storage._redis = fakeredis.FakeStrictRedis()
