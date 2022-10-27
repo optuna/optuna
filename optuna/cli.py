@@ -910,7 +910,9 @@ class _Tell(_BaseCommand):
         return 0
 
 
-def _preprocess_argv(argv: List[str]) -> List[str]:
+def _get_preprocessed_argv() -> List[str]:
+    argv = sys.argv[1:] if len(sys.argv) > 1 else ["help"]
+
     def _get_last_possible_command_index(argv: List[str]) -> int:
         for i, arg in enumerate(argv):
             if arg.startswith("-"):
@@ -971,8 +973,8 @@ def main() -> int:
     parser = _add_common_argument(parser)
     parser = _add_commands(parser)
 
-    argv = sys.argv[1:] if len(sys.argv) > 1 else ["help"]
-    args = parser.parse_args(_preprocess_argv(argv))
+    argv = _get_preprocessed_argv()
+    args = parser.parse_args(argv)
     _set_verbosity(args)
 
     NAME = os.path.splitext(os.path.basename(sys.argv[0]))[0]
