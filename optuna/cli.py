@@ -6,7 +6,6 @@ This module is implemented using cliff. It follows
 If you want to add a new command, you also need to update `entry_points` in `setup.py`.
 c.f. https://docs.openstack.org/cliff/latest/user/demoapp.html#setup-py
 """
-import argparse
 from argparse import ArgumentParser  # NOQA
 from argparse import Namespace  # NOQA
 import datetime
@@ -234,7 +233,6 @@ class _CreateStudy(_BaseCommand):
     """Create a new study."""
 
     def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
-        parser = super(_CreateStudy, self).add_arguments(parser)
         parser.add_argument(
             "--study-name",
             default=None,
@@ -285,7 +283,6 @@ class _DeleteStudy(_BaseCommand):
     """Delete a specified study."""
 
     def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
-        parser = super(_DeleteStudy, self).add_arguments(parser)
         parser.add_argument("--study-name", default=None, help="The name of the study to delete.")
         return parser
 
@@ -301,7 +298,6 @@ class _StudySetUserAttribute(_BaseCommand):
     """Set a user attribute to a study."""
 
     def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
-        parser = super(_StudySetUserAttribute, self).add_arguments(parser)
         parser.add_argument(
             "--study", default=None, help="This argument is deprecated. Use --study-name instead."
         )
@@ -348,7 +344,6 @@ class _Studies(_BaseCommand):
     ]
 
     def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
-        parser = super(_Studies, self).add_arguments(parser)
         parser.add_argument(
             "-f",
             "--format",
@@ -396,7 +391,6 @@ class _Trials(_BaseCommand):
     """Show a list of trials."""
 
     def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
-        parser = super(_Trials, self).add_arguments(parser)
         parser.add_argument(
             "--study-name",
             type=str,
@@ -449,7 +443,6 @@ class _BestTrial(_BaseCommand):
     """Show the best trial."""
 
     def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
-        parser = super(_BestTrial, self).add_arguments(parser)
         parser.add_argument(
             "--study-name",
             type=str,
@@ -505,7 +498,6 @@ class _BestTrials(_BaseCommand):
     """Show a list of trials located at the Pareto front."""
 
     def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
-        parser = super(_BestTrials, self).add_arguments(parser)
         parser.add_argument(
             "--study-name",
             type=str,
@@ -560,7 +552,6 @@ class _StudyOptimize(_BaseCommand):
     """Start optimization of a study. Deprecated since version 2.0.0."""
 
     def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
-        parser = super(_StudyOptimize, self).add_arguments(parser)
         parser.add_argument(
             "--n-trials",
             type=int,
@@ -680,7 +671,6 @@ class _Ask(_BaseCommand):
     """Create a new trial and suggest parameters."""
 
     def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
-        parser = super(_Ask, self).add_arguments(parser)
         parser.add_argument("--study-name", type=str, help="Name of study.")
         parser.add_argument(
             "--direction",
@@ -833,7 +823,6 @@ class _Tell(_BaseCommand):
     """Finish a trial, which was created by the ask command."""
 
     def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
-        parser = super(_Tell, self).add_arguments(parser)
         parser.add_argument("--study-name", type=str, help="Name of study.")
         parser.add_argument("--trial-number", type=int, help="Trial number.")
         parser.add_argument("--values", type=float, nargs="+", help="Objective values.")
@@ -955,14 +944,14 @@ def _add_commands(parser: ArgumentParser) -> ArgumentParser:
         subparser = command.add_arguments(subparser)
         subparser.set_defaults(handler=command.take_action)
 
-    def _print_help(args: Any) -> None:
+    def _print_help(args: Namespace) -> None:
         parser.print_help()
 
     subparsers.add_parser("help").set_defaults(handler=_print_help)
     return parser
 
 
-def _set_verbosity(args: argparse.Namespace) -> None:
+def _set_verbosity(args: Namespace) -> None:
     if "verbose_level" not in args:
         return
 
