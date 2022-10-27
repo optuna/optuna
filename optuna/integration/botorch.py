@@ -387,7 +387,8 @@ class BoTorchSampler(BaseSampler):
         seed:
             Seed for random number generator.
         device:
-            PyTorch's device instance to store input and output data of BoTorch.
+            A ``torch.device`` to store input and output data of BoTorch. Please set a CUDA device
+            if you fasten sampling.
     """
 
     def __init__(
@@ -408,7 +409,7 @@ class BoTorchSampler(BaseSampler):
         n_startup_trials: int = 10,
         independent_sampler: Optional[BaseSampler] = None,
         seed: Optional[int] = None,
-        device: "torch.device" = torch.device("cpu"),
+        device: Optional["torch.device"] = None,
     ):
         _imports.check()
 
@@ -420,7 +421,7 @@ class BoTorchSampler(BaseSampler):
 
         self._study_id: Optional[int] = None
         self._search_space = IntersectionSearchSpace()
-        self._device = device
+        self._device = device if device is not None else torch.device("cpu")
 
     def infer_relative_search_space(
         self,
