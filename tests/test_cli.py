@@ -98,6 +98,7 @@ def test_create_study_command() -> None:
         # Create study.
         command = ["optuna", "create-study", "--storage", storage_url]
         subprocess.check_call(command)
+
         # Command output should be in name string format (no-name + UUID).
         study_name = str(subprocess.check_output(command).decode().strip())
         name_re = r"^no-name-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
@@ -127,6 +128,7 @@ def test_create_study_command_with_study_name() -> None:
 
 @pytest.mark.skip_coverage
 def test_create_study_command_without_storage_url() -> None:
+
     with pytest.raises(subprocess.CalledProcessError) as err:
         subprocess.check_output(["optuna", "create-study"])
     usage = err.value.output.decode()
@@ -981,7 +983,6 @@ def test_empty_argv() -> None:
     assert command_empty_output == command_help_output
 
 
-"""
 def test_check_storage_url() -> None:
 
     storage_in_args = "sqlite:///args.db"
@@ -1560,4 +1561,3 @@ def test_configure_logging_verbosity(verbosity: str, expected: bool) -> None:
         result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         error_message = result.stderr.decode()
         assert ("A new study created in RDB with name" in error_message) == expected
-"""

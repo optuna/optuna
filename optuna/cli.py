@@ -227,6 +227,23 @@ class _NewBaseCommand:
 
     def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
         parser.add_argument("--storage", default=None, help="DB URL. (e.g. sqlite:///example.db)")
+        verbose_group = parser.add_mutually_exclusive_group()
+        verbose_group.add_argument(
+            "-v",
+            "--verbose",
+            action="count",
+            dest="verbose_level",
+            default=1,
+            help="Increase verbosity of output. Can be repeated.",
+        )
+        verbose_group.add_argument(
+            "-q",
+            "--quiet",
+            action="store_const",
+            dest="verbose_level",
+            const=0,
+            help="Suppress output except warnings and errors.",
+        )
         return parser
 
     def take_action(self, parsed_args: Namespace) -> None:
@@ -673,7 +690,7 @@ class _NewStorageUpgrade(_NewBaseCommand):
 class _NewAsk(_NewBaseCommand):
     """Create a new trial and suggest parameters."""
 
-    def get_parser(self, parser: ArgumentParser) -> ArgumentParser:
+    def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
         parser = super(_NewAsk, self).add_arguments(parser)
         parser.add_argument("--study-name", type=str, help="Name of study.")
         parser.add_argument(
@@ -1587,8 +1604,26 @@ class _OptunaApp(App):
 
 def main() -> int:
 
-    parser = ArgumentParser(description="", add_help=False)
+    parser = ArgumentParser(description="")
     parser.add_argument("--storage", default=None, help="DB URL. (e.g. sqlite:///example.db)")
+    verbose_group = parser.add_mutually_exclusive_group()
+    verbose_group.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        dest="verbose_level",
+        default=1,
+        help="Increase verbosity of output. Can be repeated.",
+    )
+    verbose_group.add_argument(
+        "-q",
+        "--quiet",
+        action="store_const",
+        dest="verbose_level",
+        const=0,
+        help="Suppress output except warnings and errors.",
+    )
+
     subparsers = parser.add_subparsers()
 
     command_mapper = {
@@ -1601,12 +1636,20 @@ def main() -> int:
         "best-trials": _NewBestTrials,
         "study optimize": _NewStudyOptimize,
         "storage upgrade": _NewStorageUpgrade,
+        "ask": _NewAsk,
+        "tell": _NewTell,
     }
     for command_name, command_type in command_mapper.items():
         command = command_type()
         subparser = subparsers.add_parser(command_name)
         subparser = command.add_arguments(subparser)
         subparser.set_defaults(handler=command.take_action)
+    subparser = subparsers.add_parser("help")
+
+    def print_help(argv):
+        parser.print_help()
+
+    subparser.set_defaults(handler=print_help)
 
     NAME = os.path.splitext(os.path.basename(sys.argv[0]))[0]
     if NAME == "__main__":
@@ -1614,20 +1657,43 @@ def main() -> int:
     logger = logging.getLogger(NAME)
 
     argv = sys.argv[1:] if len(sys.argv) > 1 else ["help"]
-    argv_str = " ".join(argv)
 
-    begin, end = -1, -1
+    def _get_last_possible_command_index(argv):
+        for i, arg in enumerate(argv):
+            if arg.startswith("-"):
+                return i
+        return len(argv)
+
+    last_possible_command_index = _get_last_possible_command_index(argv)
+    command_candidate = argv[:last_possible_command_index]
+    options = argv[last_possible_command_index:]
+
+    command_candidate_str = " ".join(command_candidate)
+
     len_ = 0
     for command_name in command_mapper:
-        begin_ = argv_str.find(command_name)
-        if begin_ != -1 and len(command_name) > len_:
-            begin = begin_
-            end = begin + len(command_name)
-            len_ = len(command_name)
-    argv_ = [argv_str[begin:end], *(argv_str[:begin] + argv_str[end:]).split(" ")]
+        if command_candidate_str.startswith(command_name):
+            len_ = max(len_, len(command_name))
+
+    cmd = command_candidate_str[:len_]
+    rest = command_candidate_str[len_:]
+    options = command_candidate_str[len_:].split(" ") + options
+    argv_ = [cmd] + options
     argv_ = [arg for arg in argv_ if len(arg) != 0]
 
     args = parser.parse_args(argv_)
+
+    root_logger = logging.getLogger()
+    stream_handler = logging.StreamHandler(sys.stderr)
+    logging_level = {
+        0: logging.WARNING,
+        1: logging.INFO,
+        2: logging.DEBUG,
+    }.get(args.verbose_level, logging.DEBUG)
+    stream_handler.setLevel(logging_level)
+    stream_handler.setFormatter(optuna.logging.create_default_formatter())
+    optuna.logging.set_verbosity(stream_handler.level)
+    root_logger.addHandler(stream_handler)
 
     try:
         return args.handler(args)
