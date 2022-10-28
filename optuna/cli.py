@@ -910,11 +910,11 @@ def _add_commands(main_parser: ArgumentParser, parent_parser: ArgumentParser) ->
     subparsers = main_parser.add_subparsers()
 
     for (command_name, command_type) in _COMMANDS.items():
-        command_instance = command_type()
+        command = command_type()
 
         subparser = subparsers.add_parser(command_name, parents=[parent_parser])
-        subparser = command_instance.add_arguments(subparser)
-        subparser.set_defaults(handler=command_instance.take_action)
+        subparser = command.add_arguments(subparser)
+        subparser.set_defaults(handler=command.take_action)
 
     def _print_help(args: Namespace) -> None:
         main_parser.print_help()
@@ -963,10 +963,10 @@ def _get_preprocessed_argv() -> List[str]:
                 command_indices = command_candidate_to_indices[command_candidate]
                 current_longest_command_length = command_length
 
-    command = [arg for i, arg in enumerate(argv) if i in command_indices]
+    preprocessed_command = " ".join([arg for i, arg in enumerate(argv) if i in command_indices])
     options = [arg for i, arg in enumerate(argv) if i not in command_indices]
 
-    preprocessed_argv = [" ".join(command)] + options
+    preprocessed_argv = [preprocessed_command] + options
     preprocessed_argv = [arg for arg in preprocessed_argv if arg != ""]
     return preprocessed_argv
 
