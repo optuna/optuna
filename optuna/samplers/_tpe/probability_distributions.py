@@ -110,8 +110,6 @@ def _logpdf_univariate(distribution: np.ndarray, x: np.ndarray) -> np.ndarray:
     return _METHOD[distribution_type](distribution[distribution_type], x)
 
 
-
-
 # product
 def _product_distribution(distributions: Dict[str, np.ndarray]) -> np.ndarray:
     return np.rec.fromarrays(list(distributions.values()), names=list(distributions.keys()))
@@ -127,9 +125,9 @@ def _logpdf_product(product_dist: np.ndarray, x: np.ndarray) -> np.ndarray:
 
 
 # mixture
-def _mixture_distribution(weights: np.ndarray, distributions: np.ndarray) -> np.ndarray:
+def _mixture_distribution(weights: np.ndarray, product_distrs: np.ndarray) -> np.ndarray:
     weights /= np.sum(weights, axis=-1, keepdims=True)
-    return np.rec.fromarrays([weights, distributions], names=[ "weight", "distribution"])
+    return np.rec.fromarrays([weights, product_distrs], names=["weight", "distribution"])
 
 
 def _sample_mixture(mixture_dist: np.ndarray, rng: np.random.RandomState, size: Tuple[int, ...] = ()) -> np.ndarray:
