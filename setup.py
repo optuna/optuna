@@ -76,6 +76,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-learn",
             "scikit-optimize",
             "sphinx",
+            "sphinx-argparse",
             "sphinx-copybutton",
             "sphinx-gallery",
             "sphinx-plotly-directive",

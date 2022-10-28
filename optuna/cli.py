@@ -6,6 +6,7 @@ from argparse import Namespace  # NOQA
 import datetime
 from enum import Enum
 from importlib.machinery import SourceFileLoader
+import inspect
 import json
 import logging
 import sys
@@ -921,14 +922,18 @@ def _add_commands(main_parser: ArgumentParser, parent_parser: ArgumentParser) ->
 
     for (command_name, command_type) in _COMMANDS.items():
         command = command_type()
-        subparser = subparsers.add_parser(command_name, parents=[parent_parser])
+        subparser = subparsers.add_parser(
+            command_name, parents=[parent_parser], help=inspect.getdoc(command_type)
+        )
         subparser = command.add_arguments(subparser)
         subparser.set_defaults(handler=command.take_action)
 
     def _print_help(args: Namespace) -> None:
         main_parser.print_help()
 
-    subparsers.add_parser("help").set_defaults(handler=_print_help)
+    subparsers.add_parser("help", help="Show help message and exit.").set_defaults(
+        handler=_print_help
+    )
     return main_parser
 
 

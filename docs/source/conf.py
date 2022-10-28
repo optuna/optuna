@@ -55,6 +55,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
+    "sphinxarg.ext",
     "sphinx_copybutton",
     "sphinx_gallery.gen_gallery",
     "matplotlib.sphinxext.plot_directive",
