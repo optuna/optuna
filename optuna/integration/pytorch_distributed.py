@@ -33,6 +33,8 @@ _suggest_deprecated_msg = (
     "Use :func:`~optuna.integration.TorchDistributedTrial.suggest_float` instead."
 )
 
+_g_dist = [None]
+
 
 def broadcast_properties(f: "Callable[_P, _T]") -> "Callable[_P, _T]":
     """Method decorator to fetch updated trial properties from rank 0 after ``f`` is run.
@@ -110,7 +112,14 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
         _imports.check()
 
-        if dist.get_rank() == 0:  # type: ignore
+        if _g_dist[0] is None:
+            default_pg = dist.group.WORLD
+            if dist.get_backend(default_pg) == "nccl":
+                _g_dist[0] = dist.new_group("gloo")
+            else:
+                _g_dist[0] = default_pg
+
+        if dist.get_rank(_g_dist[0]) == 0:  # type: ignore
             if not isinstance(trial, optuna.trial.Trial):
                 raise ValueError(
                     "Rank 0 node expects an optuna.trial.Trial instance as the trial argument."
@@ -143,7 +152,6 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         log: bool = False,
     ) -> float:
         def func() -> float:
-
             assert self._delegate is not None
             return self._delegate.suggest_float(name, low, high, step=step, log=log)
 
@@ -167,7 +175,6 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     @broadcast_properties
     def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
         def func() -> float:
-
             assert self._delegate is not None
             return self._delegate.suggest_int(name, low, high, step=step, log=log)
 
@@ -176,7 +183,6 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     @broadcast_properties
     def suggest_categorical(self, name: str, choices: Sequence["CategoricalChoiceType"]) -> Any:
         def func() -> CategoricalChoiceType:
-
             assert self._delegate is not None
             return self._delegate.suggest_categorical(name, choices)
 
@@ -185,7 +191,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     @broadcast_properties
     def report(self, value: float, step: int) -> None:
         err = None
-        if dist.get_rank() == 0:  # type: ignore
+        if dist.get_rank(_g_dist[0]) == 0:  # type: ignore
             try:
                 assert self._delegate is not None
                 self._delegate.report(value, step)
@@ -201,7 +207,6 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     @broadcast_properties
     def should_prune(self) -> bool:
         def func() -> bool:
-
             assert self._delegate is not None
             # Some pruners return numpy.bool_, which is incompatible with bool.
             return bool(self._delegate.should_prune())
@@ -213,7 +218,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     @broadcast_properties
     def set_user_attr(self, key: str, value: Any) -> None:
         err = None
-        if dist.get_rank() == 0:  # type: ignore
+        if dist.get_rank(_g_dist[0]) == 0:  # type: ignore
             try:
                 assert self._delegate is not None
                 self._delegate.set_user_attr(key, value)
@@ -230,7 +235,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     def set_system_attr(self, key: str, value: Any) -> None:
         err = None
 
-        if dist.get_rank() == 0:  # type: ignore
+        if dist.get_rank(_g_dist[0]) == 0:  # type: ignore
             try:
                 assert self._delegate is not None
                 self._delegate.set_system_attr(key, value)
@@ -269,37 +274,37 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
     def _call_and_communicate(self, func: Callable, dtype: "torch.dtype") -> Any:
         buffer = torch.empty(1, dtype=dtype)
-        rank = dist.get_rank()  # type: ignore
+        rank = dist.get_rank(_g_dist[0])  # type: ignore
         if rank == 0:
             result = func()
             buffer[0] = result
         if self._device is not None:
             buffer = buffer.to(self._device)
-        dist.broadcast(buffer, src=0)  # type: ignore
+        dist.broadcast(buffer, src=0, group=_g_dist[0])  # type: ignore
         return buffer.item()
 
     def _call_and_communicate_obj(self, func: Callable) -> Any:
-        rank = dist.get_rank()  # type: ignore
+        rank = dist.get_rank(_g_dist[0])  # type: ignore
         result = func() if rank == 0 else None
         return self._broadcast(result)
 
     def _broadcast(self, value: Optional[Any]) -> Any:
         buffer = None
         size_buffer = torch.empty(1, dtype=torch.int)
-        rank = dist.get_rank()  # type: ignore
+        rank = dist.get_rank(_g_dist[0])  # type: ignore
         if rank == 0:
             buffer = _to_tensor(value)
             size_buffer[0] = buffer.shape[0]
         if self._device is not None:
             size_buffer = size_buffer.to(self._device)
-        dist.broadcast(size_buffer, src=0)  # type: ignore
+        dist.broadcast(size_buffer, src=0, group=_g_dist[0])  # type: ignore
         buffer_size = int(size_buffer.item())
         if rank != 0:
             buffer = torch.empty(buffer_size, dtype=torch.uint8)
         assert buffer is not None
         if self._device is not None:
             buffer = buffer.to(self._device)
-        dist.broadcast(buffer, src=0)  # type: ignore
+        dist.broadcast(buffer, src=0, group=_g_dist[0])  # type: ignore
         return _from_tensor(buffer)
 
 
