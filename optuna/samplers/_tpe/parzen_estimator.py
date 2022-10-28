@@ -8,7 +8,7 @@ from typing import Tuple
 import numpy as np
 
 from optuna.distributions import BaseDistribution, CategoricalDistribution, FloatDistribution, IntDistribution
-from optuna.samplers._tpe.probability_distributions import _categorical_distribution, _discrete_truncnorm_distribution, _truncnorm_distribution, _product_distribution, _mixture_distribution, _sample_mixture, _logpdf_mixture
+from optuna.samplers._tpe.probability_distributions import _BaseVectorizedDistributions, _VectorizedCategoricalDistributions, _VectorizedTruncNormDistributions, _VectorizedDiscreteTruncNormDistributions, _MixtureOfProductDistribution
 
 EPS = 1e-12
 class _ParzenEstimatorParameters(
@@ -36,7 +36,7 @@ class _ParzenEstimator:
     ) -> None:
         self._search_space = search_space
 
-        transformed_observations = self._transform_to_uniform(observations)
+        transformed_observations = self._transform(observations)
 
         assert predetermined_weights is None or len(transformed_observations) == len(predetermined_weights)
         weights = predetermined_weights if predetermined_weights is not None \
@@ -45,23 +45,22 @@ class _ParzenEstimator:
         if parameters.consider_prior or len(transformed_observations) == 0:
             weights = np.append(weights, [parameters.prior_weight])
 
-        self._mixture_distribution = _mixture_distribution(
+        self._mixture_distribution = _MixtureOfProductDistribution(
                 weights=weights,
-                distributions=_product_distribution(
-                                {param: self._calculate_distributions(
-                                            transformed_observations[param], 
+                distributions=[self._calculate_distributions(
+                                            transformed_observations[:, i], 
                                             search_space[param],
                                             parameters)
-                                    for param in search_space}))
+                                    for i, param in enumerate(search_space)])
 
     
     def sample(self, rng: np.random.RandomState, size: int) -> Dict[str, np.ndarray]:
-        sampled = _sample_mixture(self._mixture_distribution, rng, (size,))
-        return self._transform_from_uniform(sampled)
+        sampled = self._mixture_distribution.sample(rng, size)
+        return self._untransform(sampled)
 
     def log_pdf(self, samples_dict: Dict[str, np.ndarray]) -> np.ndarray:
-        transformed_samples_sa = self._transform_to_uniform(samples_dict)
-        return _logpdf_mixture(self._mixture_distribution, transformed_samples_sa)
+        transformed_samples = self._transform(samples_dict)
+        return self._mixture_distribution.log_pdf(transformed_samples)
 
 
     @staticmethod
@@ -91,18 +90,17 @@ class _ParzenEstimator:
     def _is_log(dist: BaseDistribution) -> bool:
         return isinstance(dist, (FloatDistribution, IntDistribution)) and dist.log
 
-    def _transform_to_uniform(self, samples_dict: Dict[str, np.ndarray]) -> np.ndarray:
-        return np.rec.fromarrays([np.log(samples_dict[param]) 
-                                            if self._is_log(self._search_space[param]) 
-                                            else samples_dict[param] 
-                                        for param in self._search_space],
-                                    names=list(self._search_space.keys()))
+    def _transform(self, samples_dict: Dict[str, np.ndarray]) -> np.ndarray:
+        return np.array([np.log(samples_dict[param]) 
+                            if self._is_log(self._search_space[param]) 
+                            else samples_dict[param] 
+                        for param in self._search_space]).T
 
-    def _transform_from_uniform(self, samples_sa: np.ndarray) -> Dict[str, np.ndarray]:
-        res = {param: np.exp(samples_sa[param]) 
+    def _untransform(self, samples_array: np.ndarray) -> Dict[str, np.ndarray]:
+        res = {param: np.exp(samples_array[:, i]) 
                         if self._is_log(self._search_space[param]) 
-                        else samples_sa[param] 
-                for param in self._search_space}
+                        else samples_array[:, i] 
+                for i, param in enumerate(self._search_space)}
 
         # TODO(contramundum53): Remove this line after fixing log-Int hack.
         return {param: np.clip(
@@ -116,7 +114,7 @@ class _ParzenEstimator:
         transformed_observations: np.ndarray,
         search_space: BaseDistribution,
         parameters: _ParzenEstimatorParameters,
-    ) -> np.ndarray:
+    ) -> _BaseVectorizedDistributions:
         if isinstance(search_space, CategoricalDistribution):
             return self._calculate_categorical_distributions(
                 transformed_observations, search_space.choices, parameters
@@ -146,7 +144,7 @@ class _ParzenEstimator:
         observations: np.ndarray,
         choices: Tuple[Any, ...],
         parameters: _ParzenEstimatorParameters,
-    ) -> np.ndarray:
+    ) -> _BaseVectorizedDistributions:
 
         consider_prior = parameters.consider_prior or len(observations) == 0
 
@@ -156,7 +154,7 @@ class _ParzenEstimator:
 
         weights[np.arange(len(observations)), observations.astype(int)] += 1
         weights /= weights.sum(axis=1, keepdims=True)
-        return _categorical_distribution(weights)
+        return _VectorizedCategoricalDistributions(weights)
 
     def _calculate_numerical_distributions(
         self,
@@ -165,7 +163,7 @@ class _ParzenEstimator:
         high: float,
         step: Optional[float],
         parameters: _ParzenEstimatorParameters,
-    ) -> np.ndarray:
+    ) -> _BaseVectorizedDistributions:
         step = step or 0
 
         mus = observations
@@ -220,17 +218,6 @@ class _ParzenEstimator:
             sigmas = np.append(sigmas, [prior_sigma])
 
         if step == 0:
-            return _truncnorm_distribution(
-                mus, 
-                sigmas, 
-                np.full(shape=len(mus), fill_value=low),
-                np.full(shape=len(mus), fill_value=high),
-            )
+            return _VectorizedTruncNormDistributions(mus, sigmas, low,high)
         else:
-            return _discrete_truncnorm_distribution(
-                mus, 
-                sigmas, 
-                np.full(shape=len(mus), fill_value=low),
-                np.full(shape=len(mus), fill_value=high),
-                np.full(shape=len(mus), fill_value=step),
-            )
+            return _VectorizedDiscreteTruncNormDistributions(mus, sigmas, low, high, step)
