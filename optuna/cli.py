@@ -903,6 +903,18 @@ def _get_preprocessed_argv() -> List[str]:
     return argv
 
 
+def _set_verbosity(args: Namespace) -> None:
+    if "verbose_level" not in args:
+        return
+
+    logging_level = {
+        0: logging.WARNING,
+        1: logging.INFO,
+        2: logging.DEBUG,
+    }.get(args.verbose_level, logging.DEBUG)
+    optuna.logging.set_verbosity(logging_level)
+
+
 def _add_common_arguments(parser: ArgumentParser) -> ArgumentParser:
     parser.add_argument("--storage", default=None, help="DB URL. (e.g. sqlite:///example.db)")
     verbose_group = parser.add_mutually_exclusive_group()
@@ -925,11 +937,8 @@ def _add_common_arguments(parser: ArgumentParser) -> ArgumentParser:
     return parser
 
 
-def _add_commands(parser: ArgumentParser) -> ArgumentParser:
-    parent_parser = ArgumentParser(add_help=False)
-    parent_parser = _add_common_arguments(parent_parser)
-
-    subparsers = parser.add_subparsers()
+def _add_commands(main_parser: ArgumentParser, parent_parser: ArgumentParser) -> ArgumentParser:
+    subparsers = main_parser.add_subparsers()
     eps = entry_points(group="optuna.command")
     for ep in eps:
         command_name = ep.name
@@ -941,39 +950,34 @@ def _add_commands(parser: ArgumentParser) -> ArgumentParser:
         subparser.set_defaults(handler=command.take_action)
 
     def _print_help(args: Namespace) -> None:
-        parser.print_help()
+        main_parser.print_help()
 
     subparsers.add_parser("help").set_defaults(handler=_print_help)
-    return parser
+    return main_parser
 
 
-def _set_verbosity(args: Namespace) -> None:
-    if "verbose_level" not in args:
-        return
+def _get_parser(description: str = "") -> ArgumentParser:
+    parent_parser = ArgumentParser(add_help=False)
+    parent_parser = _add_common_arguments(parent_parser)
 
-    logging_level = {
-        0: logging.WARNING,
-        1: logging.INFO,
-        2: logging.DEBUG,
-    }.get(args.verbose_level, logging.DEBUG)
-    optuna.logging.set_verbosity(logging_level)
+    main_parser = ArgumentParser(description=description, parents=[parent_parser])
+    main_parser.add_argument(
+        "--version", action="version", version="{0} {1}".format("optuna", optuna.__version__)
+    )
+
+    main_parser = _add_commands(main_parser, parent_parser)
+    return main_parser
 
 
 def main() -> int:
-    parser = ArgumentParser(description="", add_help=False)
-    parser.add_argument(
-        "--version", action="version", version="{0} {1}".format("optuna", optuna.__version__)
-    )
-    parser.add_argument("-h", "--help", action="store_true", help="show help and exit")
-
-    parser = _add_commands(parser)
+    parser = _get_parser()
 
     argv = _get_preprocessed_argv()
     args = parser.parse_args(argv)
+
     _set_verbosity(args)
 
     logger = logging.getLogger("optuna")
-
     try:
         return args.handler(args)
     except CLIUsageError as e:
