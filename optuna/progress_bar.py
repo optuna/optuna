@@ -8,6 +8,7 @@ from tqdm.auto import tqdm
 from optuna import logging as optuna_logging
 from optuna._experimental import experimental_func
 
+
 if TYPE_CHECKING:
     from optuna.study import Study
 
