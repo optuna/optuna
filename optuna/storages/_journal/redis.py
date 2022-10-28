@@ -4,12 +4,11 @@ from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
-from typing import Optional
 
 from optuna._experimental import experimental_class
 from optuna._imports import try_import
-from optuna.storages._journal.base import BaseJournalLogStorage
 from optuna.storages._journal.base import BaseJournalLogSnapshot
+from optuna.storages._journal.base import BaseJournalLogStorage
 from optuna.storages._journal.base import SnapshotRestoreError
 
 
@@ -91,10 +90,10 @@ class JournalRedisStorage(BaseJournalLogStorage, BaseJournalLogSnapshot):
         snapshot_version = self._redis.incr(f"{self._prefix}:snapshot_version", 1)
         self._redis.set(self._key_snapshot(snapshot_version), snapshot)
 
-    def load_snapshot(self, loader: Callable[[bytes], None]) -> Optional[bytes]:
+    def load_snapshot(self, loader: Callable[[bytes], None]) -> None:
         snapshot_version_bytes = self._redis.get(f"{self._prefix}:snapshot_version")
         if snapshot_version_bytes is None:
-            return None
+            return
         snapshot_version = int(snapshot_version_bytes)
 
         while snapshot_version >= 0:
@@ -103,6 +102,7 @@ class JournalRedisStorage(BaseJournalLogStorage, BaseJournalLogSnapshot):
                 try:
                     loader(snapshot_bytes)
                 except SnapshotRestoreError:
+                    snapshot_version -= 1
                     continue
                 return
             snapshot_version -= 1

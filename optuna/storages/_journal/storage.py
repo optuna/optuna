@@ -20,8 +20,8 @@ from optuna.distributions import json_to_distribution
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
-from optuna.storages._journal.base import BaseJournalLogStorage
 from optuna.storages._journal.base import BaseJournalLogSnapshot
+from optuna.storages._journal.base import BaseJournalLogStorage
 from optuna.storages._journal.base import SnapshotRestoreError
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
@@ -106,9 +106,11 @@ class JournalStorage(BaseStorage):
         try:
             r: Optional[JournalStorageReplayResult] = pickle.loads(snapshot)
         except Exception as e:
-            raise SnapshotRestoreError("Failed to restore JournalStorageReplayResult") from e
+            raise SnapshotRestoreError("Failed to restore `JournalStorageReplayResult`.") from e
         if r is None:
             return
+        if not isinstance(r, JournalStorageReplayResult):
+            raise SnapshotRestoreError("The restored object is not `JournalStorageReplayResult`.")
         r._worker_id_prefix = self._worker_id_prefix
         r._worker_id_to_owned_trial_id = {}
         self._replay_result = r
@@ -235,7 +237,8 @@ class JournalStorage(BaseStorage):
         # Dump snapshot here.
         if (
             isinstance(self._backend, BaseJournalLogSnapshot)
-            and trial_id != 0 and trial_id % SNAPSHOT_INTERVAL == 0
+            and trial_id != 0
+            and trial_id % SNAPSHOT_INTERVAL == 0
         ):
             self._backend.save_snapshot(pickle.dumps(self._replay_result))
         return trial_id

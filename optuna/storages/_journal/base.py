@@ -3,7 +3,6 @@ from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
-from typing import Optional
 
 
 class BaseJournalLogStorage(abc.ABC):
@@ -47,6 +46,7 @@ class BaseJournalLogStorage(abc.ABC):
 
 class SnapshotRestoreError(Exception):
     """Exception for BaseJournalLogSnapshot."""
+
     pass
 
 
@@ -56,6 +56,7 @@ class BaseJournalLogSnapshot(abc.ABC):
     Storage classes implementing this base class may work faster when
     constructing the internal state from the large amount of logs.
     """
+
     @abc.abstractmethod
     def save_snapshot(self, snapshot: bytes) -> None:
         """Save snapshot to the backend.
