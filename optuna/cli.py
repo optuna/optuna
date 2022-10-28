@@ -607,9 +607,7 @@ class _StudyOptimize(_BaseCommand):
 
         # We force enabling the debug flag. As we are going to execute user codes, we want to show
         # exception stack traces by default.
-
-        # TODO(Add Debug mode and fix it)
-        # self.app.options.debug = True
+        parsed_args.debug = True
 
         module_name = "optuna_target_module"
         target_module = types.ModuleType(module_name)
@@ -909,6 +907,12 @@ def _add_common_arguments(parser: ArgumentParser) -> ArgumentParser:
         default=None,
         help="Specify a file to log output. Disabled by default.",
     )
+    parser.add_argument(
+        "--debug",
+        default=False,
+        action="store_true",
+        help="Show tracebacks on errors.",
+    )
     return parser
 
 
@@ -943,10 +947,10 @@ def _get_parser(description: str = "") -> ArgumentParser:
     return main_parser
 
 
-def _get_preprocessed_argv() -> List[str]:
+def _preprocess_argv(argv: List[str]) -> List[str]:
     # Some preprocess is necessary for argv because some subcommand includes space
     # (e.g. optuna study optimize, optuna storage upgrade, ...)
-    argv = sys.argv[1:] if len(sys.argv) > 1 else ["help"]
+    argv = argv[1:] if len(argv) > 1 else ["help"]
 
     # Some command consists of two strings
     command_candidate_to_indices: Dict[str, List[int]] = {}
@@ -1011,22 +1015,26 @@ def _set_log_file(args: Namespace) -> None:
 def main() -> int:
     parser = _get_parser()
 
-    argv = _get_preprocessed_argv()
-    args = parser.parse_args(argv)
+    argv = sys.argv
+    preprocessed_argv = _preprocess_argv(argv)
+    args = parser.parse_args(preprocessed_argv)
 
     _set_verbosity(args)
     _set_log_file(args)
-
     logger = logging.getLogger("optuna")
     try:
         return args.handler(args)
-    except AttributeError:
-        # Error for cases that -v/-q/--storage/--log-file option is specified
-        # without any subcommand
-        logger.error("expect one command")
-        parser.print_help()
-        return 1
     except CLIUsageError as e:
-        logger.error(e)
+        if args.debug:
+            logger.exception(e)
+        else:
+            logger.error(e)
+            parser.print_help()
+        return 1
+    except AttributeError:
+        # Exception for the case -v/--verbose/-q/--quiet/--log-file/--debug
+        # without any subcommand
+        argv_str = " ".join(argv[1:])
+        logger.error(f"'{argv_str}' is not an optuna command. see 'optuna --help'")
         parser.print_help()
         return 1
