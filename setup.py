@@ -30,7 +30,6 @@ def get_install_requires() -> List[str]:
 
     requirements = [
         "alembic>=1.5.0",
-        "cliff",
         "cmaes>=0.8.2",
         "colorlog",
         "numpy",

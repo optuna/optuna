@@ -921,7 +921,6 @@ def _add_commands(main_parser: ArgumentParser, parent_parser: ArgumentParser) ->
 
     for (command_name, command_type) in _COMMANDS.items():
         command = command_type()
-
         subparser = subparsers.add_parser(command_name, parents=[parent_parser])
         subparser = command.add_arguments(subparser)
         subparser.set_defaults(handler=command.take_action)
@@ -1021,6 +1020,7 @@ def main() -> int:
 
     _set_verbosity(args)
     _set_log_file(args)
+
     logger = logging.getLogger("optuna")
     try:
         return args.handler(args)
