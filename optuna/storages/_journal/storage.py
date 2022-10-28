@@ -131,9 +131,20 @@ class JournalStorage(BaseStorage):
             self._sync_with_backend()
 
             for frozen_study in self._replay_result.get_all_studies():
-                if frozen_study.study_name == study_name:
-                    _logger.info("A new study created in Journal with name: {}".format(study_name))
-                    return frozen_study._study_id
+                if frozen_study.study_name != study_name:
+                    continue
+
+                _logger.info("A new study created in Journal with name: {}".format(study_name))
+                study_id = frozen_study._study_id
+
+                # Dump snapshot here.
+                if (
+                    isinstance(self._backend, BaseJournalLogSnapshot)
+                    and study_id != 0
+                    and study_id % SNAPSHOT_INTERVAL == 0
+                ):
+                    self._backend.save_snapshot(pickle.dumps(self._replay_result))
+                return study_id
             assert False, "Should not reach."
 
     def delete_study(self, study_id: int) -> None:

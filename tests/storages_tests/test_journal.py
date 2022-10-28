@@ -205,6 +205,21 @@ def test_snapshot(storage_mode: str, kwargs: Dict[str, Any]) -> None:
                         == storage2._replay_result.log_number_read
                     )
 
+            # The snapshot is saved here.
+            _ = storage1.create_new_study()
+
+            # The number of read logs are same thanks to the snapshot without `sync_with_backend`.
+            with mock.patch(
+                "optuna.storages._journal.storage.JournalStorage._sync_with_backend"
+            ) as m:
+                with StorageSupplier(storage_mode, **kwargs) as storage2:
+                    assert isinstance(storage2, optuna.storages.JournalStorage)
+                    m.assert_called_once()
+                    assert (
+                        storage1._replay_result.log_number_read
+                        == storage2._replay_result.log_number_read
+                    )
+
 
 @pytest.mark.parametrize("storage_mode", JOURNAL_STORAGE_SUPPORTING_SNAPSHOT)
 def test_invalid_snapshot(storage_mode: str) -> None:
