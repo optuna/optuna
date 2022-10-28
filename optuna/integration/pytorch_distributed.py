@@ -115,7 +115,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         if _g_dist[0] is None:
             default_pg = dist.group.WORLD
             if dist.get_backend(default_pg) == "nccl":
-                _g_dist[0] = dist.new_group("gloo")
+                _g_dist[0] = dist.new_group(backend="gloo")
             else:
                 _g_dist[0] = default_pg
 
