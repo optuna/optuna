@@ -932,34 +932,35 @@ def _get_preprocessed_argv() -> List[str]:
     # Some preprocess is necessary for argv because some subcommand includes space
     # (e.g. optuna study optimize, optuna storage upgrade, ...)
     argv = sys.argv[1:] if len(sys.argv) > 1 else ["help"]
-    if argv == ["-h"] or argv == ["--help"]:
-        argv = ["help"]
 
-    def _get_last_possible_command_index(argv: List[str]) -> int:
-        for i, arg in enumerate(argv):
-            if arg.startswith("-"):
-                return i
-        return len(argv)
-
-    last_possible_command_index = _get_last_possible_command_index(argv)
-    command_candidate = argv[:last_possible_command_index]
-    options = argv[last_possible_command_index:]
-
-    command_candidate_str = " ".join(command_candidate)
+    # Some command consists of two strings
+    command_candidate_to_indices: Dict[str, List[int]] = {}
+    for i in range(len(argv)):
+        command_candidate_to_indices[argv[i]] = [i]
+        for j in range(i + 1, len(argv)):
+            command_candidate_to_indices[" ".join([argv[i], argv[j]])] = [i, j]
 
     eps = entry_points(group="optuna.command")
+    command_indices = []
+    current_longest_command_length = 0
+    for command_candidate in command_candidate_to_indices:
+        for ep in eps:
+            command_name = ep.name
+            command_length = len(command_name)
+            # Find the longest possible command
+            if (
+                command_name == command_candidate
+                and command_length > current_longest_command_length
+            ):
+                command_indices = command_candidate_to_indices[command_candidate]
+                current_longest_command_length = command_length
 
-    len_ = 0
-    for ep in eps:
-        command_name = ep.name
-        if command_candidate_str.startswith(command_name):
-            len_ = max(len_, len(command_name))
+    command = [arg for i, arg in enumerate(argv) if i in command_indices]
+    options = [arg for i, arg in enumerate(argv) if i not in command_indices]
 
-    cmd = command_candidate_str[:len_]
-    options = command_candidate_str[len_:].split(" ") + options
-    argv = [cmd] + options
-    argv = [arg for arg in argv if len(arg) != 0]
-    return argv
+    preprocessed_argv = [" ".join(command)] + options
+    preprocessed_argv = [arg for arg in preprocessed_argv if arg != ""]
+    return preprocessed_argv
 
 
 def _set_verbosity(args: Namespace) -> None:
