@@ -33,7 +33,6 @@ def get_install_requires() -> List[str]:
         "cliff",
         "cmaes>=0.8.2",
         "colorlog",
-        "importlib-metadata",
         "numpy",
         "packaging>=20.0",
         # TODO(kstoneriv3): remove this after deprecation of Python 3.6
@@ -173,19 +172,6 @@ setup(
     extras_require=get_extras_require(),
     entry_points={
         "console_scripts": ["optuna = optuna.cli:main"],
-        "optuna.command": [
-            "create-study = optuna.cli:_CreateStudy",
-            "delete-study = optuna.cli:_DeleteStudy",
-            "study set-user-attr = optuna.cli:_StudySetUserAttribute",
-            "studies = optuna.cli:_Studies",
-            "trials = optuna.cli:_Trials",
-            "best-trial = optuna.cli:_BestTrial",
-            "best-trials = optuna.cli:_BestTrials",
-            "study optimize = optuna.cli:_StudyOptimize",
-            "storage upgrade = optuna.cli:_StorageUpgrade",
-            "ask = optuna.cli:_Ask",
-            "tell = optuna.cli:_Tell",
-        ],
     },
     classifiers=[
         "Development Status :: 5 - Production/Stable",

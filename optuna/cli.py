@@ -1,13 +1,11 @@
 """Optuna CLI module.
-
-If you want to add a new command, you also need to update `entry_points` in `setup.py`.
+If you want to add a new command, you also need to update the constant `_COMMANDS`
 """
 from argparse import ArgumentParser  # NOQA
 from argparse import Namespace  # NOQA
 import datetime
 from enum import Enum
 from importlib.machinery import SourceFileLoader
-from importlib.metadata import entry_points
 import json
 import logging
 import sys
@@ -871,6 +869,21 @@ class _Tell(_BaseCommand):
         return 0
 
 
+_COMMANDS: Dict[str, type] = {
+    "create-study": _CreateStudy,
+    "delete-study": _DeleteStudy,
+    "study set-user-attr": _StudySetUserAttribute,
+    "studies": _Studies,
+    "trials": _Trials,
+    "best-trial": _BestTrial,
+    "best-trials": _BestTrials,
+    "study optimize": _StudyOptimize,
+    "storage upgrade": _StorageUpgrade,
+    "ask": _Ask,
+    "tell": _Tell,
+}
+
+
 def _add_common_arguments(parser: ArgumentParser) -> ArgumentParser:
     parser.add_argument("--storage", default=None, help="DB URL. (e.g. sqlite:///example.db)")
     verbose_group = parser.add_mutually_exclusive_group()
@@ -896,15 +909,12 @@ def _add_common_arguments(parser: ArgumentParser) -> ArgumentParser:
 def _add_commands(main_parser: ArgumentParser, parent_parser: ArgumentParser) -> ArgumentParser:
     subparsers = main_parser.add_subparsers()
 
-    eps = entry_points(group="optuna.command")
-    for ep in eps:
-        command_name = ep.name
-        command_type = ep.value.split(":")[1]
-        command = globals()[command_type]()
+    for (command_name, command_type) in _COMMANDS.items():
+        command_instance = command_type()
 
         subparser = subparsers.add_parser(command_name, parents=[parent_parser])
-        subparser = command.add_arguments(subparser)
-        subparser.set_defaults(handler=command.take_action)
+        subparser = command_instance.add_arguments(subparser)
+        subparser.set_defaults(handler=command_instance.take_action)
 
     def _print_help(args: Namespace) -> None:
         main_parser.print_help()
@@ -940,12 +950,10 @@ def _get_preprocessed_argv() -> List[str]:
         for j in range(i + 1, len(argv)):
             command_candidate_to_indices[" ".join([argv[i], argv[j]])] = [i, j]
 
-    eps = entry_points(group="optuna.command")
     command_indices = []
     current_longest_command_length = 0
     for command_candidate in command_candidate_to_indices:
-        for ep in eps:
-            command_name = ep.name
+        for command_name in _COMMANDS:
             command_length = len(command_name)
             # Find the longest possible command
             if (
