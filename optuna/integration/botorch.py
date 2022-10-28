@@ -328,8 +328,6 @@ def _get_default_candidates_func(
         return qei_candidates_func
 
 
-# TODO(hvy): Allow utilizing GPUs via some parameter, not having to rewrite the callback
-# functions.
 @experimental_class("2.4.0")
 class BoTorchSampler(BaseSampler):
     """A sampler that uses BoTorch, a Bayesian optimization library built on top of PyTorch.
