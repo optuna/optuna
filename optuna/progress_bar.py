@@ -1,12 +1,15 @@
 import logging
 from typing import Any
 from typing import Optional
+from typing import TYPE_CHECKING
 
 from tqdm.auto import tqdm
 
 from optuna import logging as optuna_logging
 from optuna._experimental import experimental_func
 
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 _tqdm_handler: Optional["_TqdmLoggingHandler"] = None
 
@@ -37,7 +40,10 @@ class _ProgressBar:
     """
 
     def __init__(
-        self, is_valid: bool, n_trials: Optional[int] = None, timeout: Optional[float] = None
+        self,
+        is_valid: bool,
+        n_trials: Optional[int] = None,
+        timeout: Optional[float] = None,
     ) -> None:
 
         self._is_valid = is_valid and (n_trials or timeout) is not None
@@ -75,25 +81,21 @@ class _ProgressBar:
         optuna_logging.disable_default_handler()
         optuna_logging._get_library_root_logger().addHandler(_tqdm_handler)
 
-    def update(self, elapsed_seconds: float, best_trial: int, best_value: Optional[float]) -> None:
+    def update(self, elapsed_seconds: float, study: "Study") -> None:
         """Update the progress bars if ``is_valid`` is :obj:`True`.
 
         Args:
             elapsed_seconds:
                 The time past since :func:`~optuna.study.Study.optimize` started.
-            best_trial:
-                The number of the current best trial.
-            best_value:
-                The score of the current best trial.
+            study:
+                The current study object
         """
 
-        if self._is_valid:
-            if self._n_trials is None and self._timeout is None:
-                assert False
-
-            msg = f"Best trial: {best_trial}. Best value: {best_value}"
+        if not study._is_multi_objective():
+            msg = f"Best trial: {study.best_trial.number}. Best value: {study.best_value}"
             self._progress_bar.set_description(msg)
 
+        if self._is_valid:
             if self._n_trials is not None:
                 self._progress_bar.update(1)
                 if self._timeout is not None:
@@ -109,6 +111,9 @@ class _ProgressBar:
 
                 self._progress_bar.update(time_diff)
                 self._last_elapsed_seconds = elapsed_seconds
+
+            else:
+                assert False
 
     def close(self) -> None:
         """Close progress bars."""
