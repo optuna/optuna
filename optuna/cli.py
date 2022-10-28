@@ -903,6 +903,12 @@ def _add_common_arguments(parser: ArgumentParser) -> ArgumentParser:
         const=0,
         help="Suppress output except warnings and errors.",
     )
+    parser.add_argument(
+        "--log-file",
+        action="store",
+        default=None,
+        help="Specify a file to log output. Disabled by default.",
+    )
     return parser
 
 
@@ -933,7 +939,6 @@ def _get_parser(description: str = "") -> ArgumentParser:
     main_parser.add_argument(
         "--version", action="version", version="{0} {1}".format("optuna", optuna.__version__)
     )
-
     main_parser = _add_commands(main_parser, parent_parser)
     return main_parser
 
@@ -972,15 +977,35 @@ def _get_preprocessed_argv() -> List[str]:
 
 
 def _set_verbosity(args: Namespace) -> None:
-    if "verbose_level" not in args:
-        return
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG)
+    stream_handler = logging.StreamHandler(sys.stderr)
 
     logging_level = {
         0: logging.WARNING,
         1: logging.INFO,
         2: logging.DEBUG,
     }.get(args.verbose_level, logging.DEBUG)
+
+    stream_handler.setLevel(logging_level)
+    stream_handler.setFormatter(optuna.logging.create_default_formatter())
+    root_logger.addHandler(stream_handler)
+
     optuna.logging.set_verbosity(logging_level)
+
+
+def _set_log_file(args: Namespace) -> None:
+    if args.log_file is None:
+        return
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG)
+
+    file_handler = logging.FileHandler(
+        filename=args.log_file,
+    )
+    file_handler.setFormatter(optuna.logging.create_default_formatter())
+    root_logger.addHandler(file_handler)
 
 
 def main() -> int:
@@ -990,12 +1015,14 @@ def main() -> int:
     args = parser.parse_args(argv)
 
     _set_verbosity(args)
+    _set_log_file(args)
 
     logger = logging.getLogger("optuna")
     try:
         return args.handler(args)
     except AttributeError:
-        # Error for cases that -v/-q/--storage option is specified without any subcommand
+        # Error for cases that -v/-q/--storage/--log-file option is specified
+        # without any subcommand
         logger.error("expect one command")
         parser.print_help()
         return 1
