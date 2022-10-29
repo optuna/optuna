@@ -89,14 +89,14 @@ class _ProgressBar:
             elapsed_seconds:
                 The time past since :func:`~optuna.study.Study.optimize` started.
             study:
-                The current study object
+                The current study object.
         """
 
-        if not study._is_multi_objective():
-            msg = f"Best trial: {study.best_trial.number}. Best value: {study.best_value}"
-            self._progress_bar.set_description(msg)
-
         if self._is_valid:
+            if not study._is_multi_objective():
+                msg = f"Best trial: {study.best_trial.number}. Best value: {study.best_value}"
+                self._progress_bar.set_description(msg)
+
             if self._n_trials is not None:
                 self._progress_bar.update(1)
                 if self._timeout is not None:
