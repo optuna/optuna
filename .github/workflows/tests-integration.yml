@@ -59,5 +59,4 @@ jobs:
 
     - name: Tests
       run: |
-        pytest -s tests/integration_tests \
-          --ignore tests/integration_tests/test_pytorch_lightning.py
+        pytest -s tests/integration_tests 
