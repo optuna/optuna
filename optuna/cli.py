@@ -917,8 +917,11 @@ def _add_common_arguments(parser: ArgumentParser) -> ArgumentParser:
     return parser
 
 
-def _add_commands(main_parser: ArgumentParser, parent_parser: ArgumentParser) -> ArgumentParser:
+def _add_commands(
+    main_parser: ArgumentParser, parent_parser: ArgumentParser
+) -> Tuple[ArgumentParser, Dict[str, ArgumentParser]]:
     subparsers = main_parser.add_subparsers()
+    command_name_to_subparser = {}
 
     for (command_name, command_type) in _COMMANDS.items():
         command = command_type()
@@ -927,6 +930,7 @@ def _add_commands(main_parser: ArgumentParser, parent_parser: ArgumentParser) ->
         )
         subparser = command.add_arguments(subparser)
         subparser.set_defaults(handler=command.take_action)
+        command_name_to_subparser[command_name] = subparser
 
     def _print_help(args: Namespace) -> None:
         main_parser.print_help()
@@ -934,10 +938,10 @@ def _add_commands(main_parser: ArgumentParser, parent_parser: ArgumentParser) ->
     subparsers.add_parser("help", help="Show help message and exit.").set_defaults(
         handler=_print_help
     )
-    return main_parser
+    return main_parser, command_name_to_subparser
 
 
-def _get_parser(description: str = "") -> ArgumentParser:
+def _get_parser(description: str = "") -> Tuple[ArgumentParser, Dict[str, ArgumentParser]]:
     # Use parent_parser is necessary to avoid namespace conflict for -h/--help
     # between main_parser and subparser
     parent_parser = ArgumentParser(add_help=False)
@@ -947,11 +951,11 @@ def _get_parser(description: str = "") -> ArgumentParser:
     main_parser.add_argument(
         "--version", action="version", version="{0} {1}".format("optuna", optuna.__version__)
     )
-    main_parser = _add_commands(main_parser, parent_parser)
-    return main_parser
+    main_parser, command_name_to_subparser = _add_commands(main_parser, parent_parser)
+    return main_parser, command_name_to_subparser
 
 
-def _preprocess_argv(argv: List[str]) -> List[str]:
+def _preprocess_argv(argv: List[str]) -> Tuple[List[str], Tuple[str, List[str]]]:
     # Some preprocess is necessary for argv because some subcommand includes space
     # (e.g. optuna study optimize, optuna storage upgrade, ...)
     argv = argv[1:] if len(argv) > 1 else ["help"]
@@ -976,12 +980,14 @@ def _preprocess_argv(argv: List[str]) -> List[str]:
                 command_indices = command_candidate_to_indices[command_candidate]
                 current_longest_command_length = command_length
 
-    preprocessed_command = " ".join([arg for i, arg in enumerate(argv) if i in command_indices])
+    preprocessed_command_name = " ".join(
+        [arg for i, arg in enumerate(argv) if i in command_indices]
+    )
     options = [arg for i, arg in enumerate(argv) if i not in command_indices]
 
-    preprocessed_argv = [preprocessed_command] + options
+    preprocessed_argv = [preprocessed_command_name] + options
     preprocessed_argv = [arg for arg in preprocessed_argv if arg != ""]
-    return preprocessed_argv
+    return preprocessed_argv, (preprocessed_command_name, options)
 
 
 def _set_verbosity(args: Namespace) -> None:
@@ -1017,10 +1023,10 @@ def _set_log_file(args: Namespace) -> None:
 
 
 def main() -> int:
-    parser = _get_parser()
+    parser, command_name_to_subparser = _get_parser()
 
     argv = sys.argv
-    preprocessed_argv = _preprocess_argv(argv)
+    preprocessed_argv, (command_name, _) = _preprocess_argv(argv)
     args = parser.parse_args(preprocessed_argv)
 
     _set_verbosity(args)
@@ -1034,7 +1040,7 @@ def main() -> int:
             logger.exception(e)
         else:
             logger.error(e)
-            parser.print_help()
+            command_name_to_subparser[command_name].print_help()
         return 1
     except AttributeError:
         # Exception for the case -v/--verbose/-q/--quiet/--log-file/--debug
