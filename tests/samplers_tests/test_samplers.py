@@ -942,8 +942,10 @@ def test_dynamic_range_objective(
     assert all(t.state == TrialState.COMPLETE for t in study.trials)
 
 
+# We add tests for constant objective functions to ensure the reproducibility of sorting.
 @parametrize_sampler_with_seed
-def test_reproducible(sampler_class: Callable[[int], BaseSampler]) -> None:
+@pytest.mark.parametrize("objective_func", [lambda *args: sum(args), lambda *args: 0.0])
+def test_reproducible(sampler_class: Callable[[int], BaseSampler], objective_func: Any) -> None:
     def objective(trial: Trial) -> float:
         a = trial.suggest_float("a", 1, 9)
         b = trial.suggest_float("b", 1, 9, log=True)
@@ -952,7 +954,7 @@ def test_reproducible(sampler_class: Callable[[int], BaseSampler]) -> None:
         e = trial.suggest_int("e", 1, 9, log=True)
         f = trial.suggest_int("f", 1, 9, step=2)
         g = cast(int, trial.suggest_categorical("g", range(1, 10)))
-        return a + b + c + d + e + f + g
+        return objective_func(a, b, c, d, e, f, g)
 
     study = optuna.create_study(sampler=sampler_class(1))
     study.optimize(objective, n_trials=20)
