@@ -97,8 +97,8 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
             rank-0 node and set :obj:`None` in the other rank node.
         group:
             A `torch.distributed.ProcessGroup` to communicate with the other nodes.
-            TorchDistributedTrial use CPU tensors to communicate, make sure pg support CPU
-            tensor communications.
+            TorchDistributedTrial use CPU tensors to communicate, make sure the group
+            supports CPU tensors communications.
 
             Use `gloo` backend when pg is None
             Create a global `gloo` backend when pg is None and WORLD is nccl.
