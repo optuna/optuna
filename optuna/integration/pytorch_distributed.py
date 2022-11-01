@@ -100,8 +100,8 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
             TorchDistributedTrial use CPU tensors to communicate, make sure the group
             supports CPU tensors communications.
 
-            Use `gloo` backend when pg is None
-            Create a global `gloo` backend when pg is None and WORLD is nccl.
+            Use `gloo` backend when group is None.
+            Create a global `gloo` backend when group is None and WORLD is nccl.
 
     .. note::
         The methods of :class:`~optuna.integration.TorchDistributedTrial` are expected to be
