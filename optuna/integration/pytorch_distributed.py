@@ -95,7 +95,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         trial:
             A :class:`~optuna.trial.Trial` object or :obj:`None`. Please set trial object in
             rank-0 node and set :obj:`None` in the other rank node.
-        pg:
+        group:
             A `torch.distributed.ProcessGroup` to communicate with the other nodes.
             TorchDistributedTrial use CPU tensors to communicate, make sure pg support CPU
             tensor communications.
