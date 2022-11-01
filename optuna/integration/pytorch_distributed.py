@@ -4,6 +4,7 @@ import pickle
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import TYPE_CHECKING
@@ -21,19 +22,17 @@ with try_import() as _imports:
     import torch
     import torch.distributed as dist
 
-
 if TYPE_CHECKING:
     from typing_extensions import ParamSpec
 
     _T = TypeVar("_T")
     _P = ParamSpec("_P")
 
-
 _suggest_deprecated_msg = (
     "Use :func:`~optuna.integration.TorchDistributedTrial.suggest_float` instead."
 )
 
-_g_pg = [None]
+_g_pg: List[Optional["torch.distributed.ProcessGroup"]] = [None]
 
 
 def broadcast_properties(f: "Callable[_P, _T]") -> "Callable[_P, _T]":
@@ -111,21 +110,28 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     """
 
     def __init__(
-        self, trial: Optional[optuna.trial.Trial], group: Optional["torch.distributed.ProcessGroup"] = None
+        self,
+        trial: Optional[optuna.trial.Trial],
+        group: Optional["torch.distributed.ProcessGroup"] = None,
     ) -> None:
 
         _imports.check()
 
         if group is not None:
-            self._group = group
+            self._group: "torch.distributed.ProcessGroup" = group
         else:
             if _g_pg[0] is None:
-                default_pg = dist.group.WORLD
-                if dist.get_backend(default_pg) == "nccl":
-                    _g_pg[0] = dist.new_group(backend="gloo")
+                if dist.group.WORLD is None:
+                    raise RuntimeError("torch distributed is not initialized.")
+                default_pg: "torch.distributed.ProcessGroup" = dist.group.WORLD
+                if dist.get_backend(default_pg) == "nccl":  # type: ignore
+                    new_group: "torch.distributed.ProcessGroup" = dist.new_group(
+                        backend="gloo"
+                    )  # type: ignore
+                    _g_pg[0] = new_group
                 else:
                     _g_pg[0] = default_pg
-            self._group = _g_pg[0]
+            self._group = _g_pg[0]  # type: ignore
 
         if dist.get_rank(self._group) == 0:  # type: ignore
             if not isinstance(trial, optuna.trial.Trial):
