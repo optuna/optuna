@@ -419,7 +419,7 @@ class BoTorchSampler(BaseSampler):
 
         self._study_id: Optional[int] = None
         self._search_space = IntersectionSearchSpace()
-        self._device = device if device is not None else torch.device("cpu")
+        self._device = device or torch.device("cpu")
 
     def infer_relative_search_space(
         self,
