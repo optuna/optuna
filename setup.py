@@ -71,7 +71,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "cma",
             "fvcore",
             "lightgbm",
-            "matplotlib",
+            "matplotlib!=3.6.0",
             "mlflow",
             "pandas",
             "pillow",
@@ -117,7 +117,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "xgboost",
         ],
         "optional": [
-            "matplotlib",  # optuna/visualization/matplotlib
+            "matplotlib!=3.6.0",  # optuna/visualization/matplotlib
             "pandas",  # optuna/study.py
             "plotly>=4.0.0",  # optuna/visualization.
             "redis",  # optuna/storages/redis.py.
@@ -126,8 +126,8 @@ def get_extras_require() -> Dict[str, List[str]]:
         ],
         "test": [
             "codecov",
-            "fakeredis<=1.7.1; python_version<'3.7'",
-            "fakeredis ; python_version>='3.7'",
+            "fakeredis[lua]<=1.7.1; python_version<'3.7'",
+            "fakeredis[lua] ; python_version>='3.7'",
             "kaleido",
             "pytest",
         ],

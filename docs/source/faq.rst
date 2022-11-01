@@ -522,8 +522,7 @@ For more information about 1., see APIReference_.
 2. Multi-processing parallelization with single node
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This can be achieved by using file-based RDBs (such as SQLite) and client/server RDBs (such as PostgreSQL and MySQL).
-However, if you are in the environment where you can not install an RDB, you can not run multi-processing parallelization with single node. When you really want to do it, please request it as a GitHub issue. If we receive a lot of requests, we may provide a solution for it.
+This can be achieved by using :class:`~optuna.storages.JournalFileStorage` or client/server RDBs (such as PostgreSQL and MySQL).
 
 For more information about 2., see TutorialEasyParallelization_.
 
@@ -536,6 +535,33 @@ This can be achieved by using client/server RDBs (such as PostgreSQL and MySQL).
 However, if you are in the environment where you can not install a client/server RDB, you can not run multi-processing parallelization with multiple nodes.
 
 For more information about 3., see TutorialEasyParallelization_.
+
+.. _sqlite_concurrency:
+
+How can I solve the error that occurs when performing parallel optimization with SQLite3?
+-----------------------------------------------------------------------------------------
+
+We would never recommend SQLite3 for parallel optimization in the following reasons.
+
+- To concurrently evaluate trials enqueued by :func:`~optuna.study.Study.enqueue_trial`, :class:`~optuna.storages.RDBStorage` uses `SELECT ... FOR UPDATE` syntax, which is unsupported in `SQLite3 <https://github.com/sqlalchemy/sqlalchemy/blob/rel_1_4_41/lib/sqlalchemy/dialects/sqlite/base.py#L1265-L1267>`_.
+- As described in `the SQLAlchemy's documentation <https://docs.sqlalchemy.org/en/14/dialects/sqlite.html#sqlite-concurrency>`_,
+  SQLite3 (and pysqlite driver) does not support a high level of concurrency.
+  You may get a "database is locked" error, which occurs when one thread or process has an exclusive lock on a database connection (in reality a file handle) and another thread times out waiting for the lock to be released.
+  You can increase the default `timeout <https://docs.python.org/3/library/sqlite3.html#sqlite3.connect>`_ value like `optuna.storages.RDBStorage("sqlite:///example.db", engine_kwargs={"connect_args": {"timeout": 20.0}})` though.
+- For distributed optimization via NFS, SQLite3 does not work as described at `FAQ section of sqlite.org <https://www.sqlite.org/faq.html#q5>`_.
+
+If you want to use a file-based Optuna storage for these scenarios, please consider using :class:`~optuna.storages.JournalFileStorage` instead.
+
+.. code-block:: python
+
+   import optuna
+   from optuna.storages import JournalStorage, JournalFileStorage
+
+   storage = JournalStorage(JournalFileStorage("optuna-journal.log"))
+   study = optuna.create_study(storage=storage)
+   ...
+
+See `the Medium blog post <https://medium.com/optuna/distributed-optimization-via-nfs-using-optunas-new-operation-based-logging-storage-9815f9c3f932>`_ for details.
 
 .. _heartbeat_monitoring:
 

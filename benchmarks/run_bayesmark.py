@@ -58,9 +58,10 @@ def make_plots(args: argparse.Namespace) -> None:
 
     filename = f"{args.dataset}-{args.model}-partial-report.json"
     df = pd.read_json(os.path.join("partial", filename))
+    df["best_value"] = df.groupby(["opt", "uuid"]).generalization.cummin()
     summaries = (
         df.groupby(["opt", "iter"])
-        .generalization.agg(["mean", "std"])
+        .best_value.agg(["mean", "std"])
         .rename(columns={"mean": "best_mean", "std": "best_std"})
         .reset_index()
     )
@@ -91,25 +92,21 @@ def make_plot(
 ) -> None:
 
     start = 0 if plot_warmup else 10
-    argpos = summary.best_mean.expanding().apply(np.argmin).astype(int)
-    best_found = summary.best_mean.values[argpos.values]
-    sdev = summary.best_std.values[argpos.values]
-
-    if len(best_found) <= start:
+    if len(summary.best_mean) <= start:
         return
 
     ax.fill_between(
-        np.arange(len(best_found))[start:],
-        (best_found - sdev)[start:],
-        (best_found + sdev)[start:],
+        np.arange(len(summary.best_mean))[start:],
+        (summary.best_mean - summary.best_std)[start:],
+        (summary.best_mean + summary.best_std)[start:],
         color=color,
         alpha=0.25,
         step="mid",
     )
 
     ax.plot(
-        np.arange(len(best_found))[start:],
-        best_found[start:],
+        np.arange(len(summary.best_mean))[start:],
+        summary.best_mean[start:],
         color=color,
         label=optimizer,
         drawstyle="steps-mid",

@@ -17,3 +17,4 @@ The :mod:`~optuna.storages` module defines a :class:`~optuna.storages.BaseStorag
    optuna.storages.JournalFileStorage
    optuna.storages.JournalFileSymlinkLock
    optuna.storages.JournalFileOpenLock
+   optuna.storages.JournalRedisStorage

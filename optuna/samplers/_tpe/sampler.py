@@ -392,7 +392,7 @@ class TPESampler(BaseSampler):
         )
 
         # If the number of samples is insufficient, we run random trial.
-        n = len(scores)
+        n = sum(s < float("inf") for s, v in scores)  # Ignore running trials.
         if n < self._n_startup_trials:
             return {}
 
@@ -441,7 +441,7 @@ class TPESampler(BaseSampler):
             self._constraints_func is not None,
         )
 
-        n = len(scores)
+        n = sum(s < float("inf") for s, v in scores)  # Ignore running trials.
 
         self._log_independent_sampling(n, trial, param_name)
 
@@ -652,13 +652,13 @@ def _get_observation_pairs(
                 else:
                     score = (-step, [signs[0] * intermediate_value])
             else:
-                score = (float("inf"), [0.0])
+                score = (1, [0.0])
         elif trial.state is TrialState.RUNNING:
             if study._is_multi_objective():
                 continue
 
             assert constant_liar
-            score = (-float("inf"), [signs[0] * float("inf")])
+            score = (float("inf"), [signs[0] * float("inf")])
         else:
             assert False
         scores.append(score)
@@ -702,7 +702,7 @@ def _split_observation_pairs(
     # 3. Feasible trials are sorted by loss_vals.
     if violations is not None:
         violation_1d = np.array(violations, dtype=float)
-        idx = violation_1d.argsort()
+        idx = violation_1d.argsort(kind="stable")
         if n_below >= len(idx) or violation_1d[idx[n_below]] > 0:
             # Below is filled by all feasible trials and trials with smaller violation values.
             indices_below = idx[:n_below]
@@ -730,7 +730,7 @@ def _split_observation_pairs(
             [(s, v[0]) for s, v in loss_vals], dtype=[("step", float), ("score", float)]
         )
 
-        index_loss_ascending = np.argsort(loss_values)
+        index_loss_ascending = np.argsort(loss_values, kind="stable")
         # `np.sort` is used to keep chronological order.
         indices_below = np.sort(index_loss_ascending[:n_below])
         indices_above = np.sort(index_loss_ascending[n_below:])

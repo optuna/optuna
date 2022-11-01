@@ -168,6 +168,10 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         pool_pre_ping
 
     .. note::
+        We would never recommend SQLite3 for parallel optimization.
+        Please see the FAQ :ref:`sqlite_concurrency` for details.
+
+    .. note::
         Mainly in a cluster environment, running trials are often killed unexpectedly.
         If you want to detect a failure of trials, please use the heartbeat
         mechanism. Set ``heartbeat_interval``, ``grace_period``, and ``failed_trial_callback``

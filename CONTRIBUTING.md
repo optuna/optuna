@@ -8,7 +8,7 @@ We want to
 - implement features that make what you want to do possible and/or easy.
 - write more tutorials and [examples](https://github.com/optuna/optuna-examples) that help you get familiar with Optuna.
 - make issues and pull requests on GitHub fruitful.
-- have more conversations and discussions on Gitter.
+- have more conversations and discussions on [GitHub Discussions](https://github.com/optuna/optuna/discussions).
 
 We need your help and everything about Optuna you have in your mind pushes this project forward.
 Join Us!
@@ -23,7 +23,7 @@ If you feel like giving a hand, here are some ways:
 - Fix/Improve documentation
     - Documentation gets outdated easily and can always be better, so feel free to fix and improve
 - Let us and the Optuna community know your ideas and thoughts.
-    - __Contribution to Optuna includes not only sending pull requests, but also writing down your comments on issues and pull requests by others, and joining conversations/discussions on [Gitter](https://gitter.im/optuna/optuna).__
+    - __Contribution to Optuna includes not only sending pull requests, but also writing down your comments on issues and pull requests by others, and joining conversations/discussions on [GitHub Discussions](https://github.com/optuna/optuna/discussions).__
     - Also, sharing how you enjoy Optuna is a huge contribution! If you write a blog, let us know about it!
 
 
@@ -68,15 +68,7 @@ Type hints, [PEP484](https://www.python.org/dev/peps/pep-0484/), are checked wit
 You can check the format, coding style, and type hints at the same time just by executing a script `formats.sh`.
 If your environment is missing some dependencies such as black, blackdoc, flake8, isort or mypy,
 you will be asked to install them.
-
-You can also check them using [tox](https://tox.readthedocs.io/en/latest/) like below.
-
-```
-$ pip install tox
-$ tox -e flake8 -e black -e blackdoc -e isort -e mypy
-```
-
-If you catch format errors, you can automatically fix them by auto-formatters.
+The following commands automatically fix format errors by auto-formatters.
 
 ```bash
 # Install auto-formatters.
