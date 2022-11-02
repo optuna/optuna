@@ -1,8 +1,8 @@
 """Optuna CLI module.
 If you want to add a new command, you also need to update the constant `_COMMANDS`
 """
-from argparse import ArgumentParser  # NOQA
-from argparse import Namespace  # NOQA
+from argparse import ArgumentParser
+from argparse import Namespace
 import datetime
 from enum import Enum
 from importlib.machinery import SourceFileLoader
