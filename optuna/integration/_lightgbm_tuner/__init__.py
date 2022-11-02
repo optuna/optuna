@@ -2,13 +2,15 @@ from typing import Any
 
 from optuna.integration._lightgbm_tuner.optimize import _imports
 from optuna.integration._lightgbm_tuner.optimize import LightGBMTuner
-from optuna.integration._lightgbm_tuner.optimize import LightGBMTunerCV  # NOQA
+from optuna.integration._lightgbm_tuner.optimize import LightGBMTunerCV
 
 
 if _imports.is_successful():
-    from optuna.integration._lightgbm_tuner.sklearn import LGBMClassifier  # NOQA
-    from optuna.integration._lightgbm_tuner.sklearn import LGBMModel  # NOQA
-    from optuna.integration._lightgbm_tuner.sklearn import LGBMRegressor  # NOQA
+    from optuna.integration._lightgbm_tuner.sklearn import LGBMClassifier
+    from optuna.integration._lightgbm_tuner.sklearn import LGBMModel
+    from optuna.integration._lightgbm_tuner.sklearn import LGBMRegressor
+
+    __all__ = ["LightGBMTuner", "LightGBMTunerCV", "LGBMClassifier", "LGBMModel", "LGBMRegressor"]
 
 
 def train(*args: Any, **kwargs: Any) -> Any:
