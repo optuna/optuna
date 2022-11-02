@@ -105,19 +105,22 @@ else:
 
     sys.modules[__name__] = _IntegrationModule(__name__)
 
-# fmt: off
 __all__ = [
-    "AllenNLPExecutor", "AllenNLPPruningCallback",
+    "AllenNLPExecutor",
+    "AllenNLPPruningCallback",
     "BoTorchSampler",
     "CatalystPruningCallback",
     "CatBoostPruningCallback",
     "ChainerPruningExtension",
     "ChainerMNStudy",
-    "CmaEsSampler", "PyCmaSampler",
+    "CmaEsSampler",
+    "PyCmaSampler",
     "MLflowCallback",
     "WeightsAndBiasesCallback",
     "KerasPruningCallback",
-    "LightGBMPruningCallback", "LightGBMTuner", "LightGBMTunerCV",
+    "LightGBMPruningCallback",
+    "LightGBMTuner",
+    "LightGBMTunerCV",
     "TorchDistributedTrial",
     "PyTorchIgnitePruningHandler",
     "PyTorchLightningPruningCallback",
@@ -131,5 +134,6 @@ __all__ = [
     "TFKerasPruningCallback",
     "XGBoostPruningCallback",
     "FastAIV1PruningCallback",
-    "FastAIV2PruningCallback", "FastAIPruningCallback",
+    "FastAIV2PruningCallback",
+    "FastAIPruningCallback",
 ]
