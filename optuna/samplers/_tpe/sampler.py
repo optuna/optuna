@@ -391,7 +391,7 @@ class TPESampler(BaseSampler):
         )
 
         # If the number of samples is insufficient, we run random trial.
-        n = sum(step < float("inf") for step, _ in scores)  # Ignore running trials.
+        n = sum(s < float("inf") for s, v in scores)  # Ignore running trials.
         if n < self._n_startup_trials:
             return {}
 
@@ -439,7 +439,7 @@ class TPESampler(BaseSampler):
             self._constraints_func is not None,
         )
 
-        n = sum(step < float("inf") for step, _ in scores)  # Ignore running trials.
+        n = sum(s < float("inf") for s, v in scores)  # Ignore running trials.
 
         # Avoid independent warning at the first sampling of `param_name` when `group=True`.
         if any(param is not None for param in values[param_name]):
