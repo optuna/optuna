@@ -391,13 +391,8 @@ class TPESampler(BaseSampler):
         )
 
         # If the number of samples is insufficient, we run random trial.
-        # Ignore running trials for the following counts.
-        n = sum(step < float("inf") for step, _ in scores)
-        n_sampled = sum(
-            step < float("inf") and param is not None
-            for (step, _), param in zip(scores, list(values.values())[0])
-        )
-        if n_sampled < self._n_startup_trials:
+        n = sum(step < float("inf") for step, _ in scores)  # Ignore running trials.
+        if n < self._n_startup_trials:
             return {}
 
         # We divide data into below and above.
@@ -444,16 +439,13 @@ class TPESampler(BaseSampler):
             self._constraints_func is not None,
         )
 
-        # Ignore running trials for the following counts.
-        n = sum(step < float("inf") for step, _ in scores)
-        n_sampled = sum(
-            step < float("inf") and param is not None
-            for (step, _), param in zip(scores, values[param_name])
-        )
+        n = sum(step < float("inf") for step, _ in scores)  # Ignore running trials.
 
-        self._log_independent_sampling(n_sampled, trial, param_name)
+        # Avoid independent warning at the first sampling of `param_name` when `group=True`.
+        if any(param is not None for param in values[param_name]):
+            self._log_independent_sampling(n, trial, param_name)
 
-        if n_sampled < self._n_startup_trials:
+        if n < self._n_startup_trials:
             return self._random_sampler.sample_independent(
                 study, trial, param_name, param_distribution
             )
