@@ -51,7 +51,7 @@ def _log_sum(log_p: float, log_q: float) -> float:
 def _log_diff(log_p: float, log_q: float) -> float:
     # returns log(q - p).
     # assuming that log_q is always greater than log_q
-    return math.log1p(-math.exp(log_p - log_q)) + log_q
+    return math.log1p(-math.exp(log_q - log_p)) + log_p
 
 
 def _ndtr(a: float) -> float:
@@ -105,7 +105,7 @@ def _log_gauss_mass(a: float, b: float) -> float:
     # symmetry and work only in the left tail
 
     def mass_case_left(a: float, b: float) -> float:
-        return _log_diff(_log_ndtr(a), _log_ndtr(b))
+        return _log_diff(_log_ndtr(b), _log_ndtr(a))
 
     def mass_case_right(a: float, b: float) -> float:
         return mass_case_left(-b, -a)

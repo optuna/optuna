@@ -11,7 +11,7 @@ import optuna.samplers._tpe._truncnorm as truncnorm_ours
     sys.version_info < (3, 8, 0), reason="SciPy 1.9.2 is not supported in Python 3.7"
 )
 @pytest.mark.parametrize(
-    "a,b", [(-np.inf, np.inf), (-10, +10), (-1e-3, +1e-3), (10, 100), (-100, -10)]
+    "a,b", [(-np.inf, np.inf), (-10, +10), (-1, +1), (-1e-3, +1e-3), (10, 100), (-100, -10)]
 )
 def test_ppf(a: float, b: float) -> None:
     for x in np.concatenate(
@@ -26,7 +26,7 @@ def test_ppf(a: float, b: float) -> None:
     sys.version_info < (3, 8, 0), reason="SciPy 1.9.2 is not supported in Python 3.7"
 )
 @pytest.mark.parametrize(
-    "a,b", [(-np.inf, np.inf), (-1e-3, +1e-3), (-10, +10), (10, 100), (-100, -10)]
+    "a,b", [(-np.inf, np.inf), (-10, +10), (-1, +1), (-1e-3, +1e-3), (10, 100), (-100, -10)]
 )
 def test_logpdf(a: float, b: float) -> None:
     for x in np.concatenate(
