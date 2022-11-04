@@ -37,6 +37,8 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
+      env:
+        AGENT_TOOLSDIRECTORY: /opt/hostedtoolcache
 
     - name: Setup cache
       uses: actions/cache@v2
