@@ -1589,6 +1589,10 @@ def test_pop_waiting_trial_thread_safe(storage_mode: str) -> None:
     if "sqlite" == storage_mode or "cached_sqlite" == storage_mode:
         pytest.skip("study._pop_waiting_trial is not thread-safe on SQLite3")
 
+    if "redis" == storage_mode:
+        # TODO(c-bata): Make RedisStorage.set_trial_state_values() concurrent-safe.
+        pytest.skip("study._pop_waiting_trial is broken at RedisStorage")
+
     num_enqueued = 10
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
