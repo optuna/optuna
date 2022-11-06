@@ -191,12 +191,20 @@ class FloatDistribution(BaseDistribution):
 
     def to_internal_repr(self, param_value_in_external_repr: float) -> float:
         try:
-            return float(param_value_in_external_repr)
+            internal_repr = float(param_value_in_external_repr)
         except (ValueError, TypeError) as e:
             raise ValueError(
                 f"'{param_value_in_external_repr}' is not a valid type. "
                 "float-castable value is expected."
             ) from e
+
+        if np.isnan(internal_repr):
+            raise ValueError(f"`{param_value_in_external_repr}` is invalid value.")
+        if self.log and internal_repr <= 0.0:
+            raise ValueError(
+                f"`{param_value_in_external_repr}` is invalid value for the case log=True."
+            )
+        return internal_repr
 
 
 @deprecated_class("3.0.0", "6.0.0", text=_float_distribution_deprecated_msg)
@@ -375,12 +383,20 @@ class IntDistribution(BaseDistribution):
 
     def to_internal_repr(self, param_value_in_external_repr: int) -> float:
         try:
-            return float(param_value_in_external_repr)
+            internal_repr = float(param_value_in_external_repr)
         except (ValueError, TypeError) as e:
             raise ValueError(
                 f"'{param_value_in_external_repr}' is not a valid type. "
                 "float-castable value is expected."
             ) from e
+
+        if np.isnan(internal_repr):
+            raise ValueError(f"`{param_value_in_external_repr}` is invalid value.")
+        if self.log and internal_repr <= 0.0:
+            raise ValueError(
+                f"`{param_value_in_external_repr}` is invalid value for the case log=True."
+            )
+        return internal_repr
 
     def single(self) -> bool:
         if self.log:
