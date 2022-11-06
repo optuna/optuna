@@ -97,7 +97,7 @@ class PyTorchLightningPruningCallback(Callback):
         if trainer.is_global_zero:
             self._trial.report(current_score.item(), step=epoch)
             should_stop = self._trial.should_prune()
-        should_stop = trainer.training_type_plugin.broadcast(should_stop)
+        should_stop = trainer.strategy.broadcast(should_stop)
         if not should_stop:
             return
 
