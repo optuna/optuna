@@ -686,8 +686,10 @@ class _LightGBMBaseTuner(_BaseTuner):
                 self,
                 deepcopy: bool = True,
                 states: Optional[Container[TrialState]] = None,
+                use_cache: bool = False,
             ) -> List[optuna.trial.FrozenTrial]:
-                trials = super().get_trials(deepcopy=deepcopy, states=states)
+
+                trials = super().get_trials(deepcopy=deepcopy, states=states, use_cache=use_cache)
                 return [t for t in trials if t.system_attrs.get(_STEP_NAME_KEY) == self._step_name]
 
             @property
