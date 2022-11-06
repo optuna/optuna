@@ -135,4 +135,3 @@ def test_pickle_dump_and_load() -> None:
             loaded_storage = pickle.load(f)
         study_id = loaded_storage.get_study_id_from_name(study.study_name)
         assert len(loaded_storage.get_all_trials(study_id=study_id)) == num_enqueued
-

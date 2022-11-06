@@ -95,12 +95,12 @@ class JournalStorage(BaseStorage):
         with self._thread_lock:
             self._sync_with_backend()
 
-    def __getstate__(self):
+    def __getstate__(self) -> Dict[Any, Any]:
         state = self.__dict__.copy()
         del state["_thread_lock"]
         return state
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: Dict[Any, Any]) -> None:
         self.__dict__.update(state)
         self._thread_lock = threading.Lock()
 
