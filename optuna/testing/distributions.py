@@ -18,4 +18,4 @@ class UnsupportedDistribution(BaseDistribution):
         return {}
 
     def to_internal_repr(self, param_value_in_external_repr: Any) -> float:
-        return param_value_in_external_repr
+        return float(param_value_in_external_repr)
