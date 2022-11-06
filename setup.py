@@ -28,6 +28,8 @@ def get_long_description() -> str:
 
 def get_install_requires() -> List[str]:
 
+    # When you update a lower bound of a dependency,
+    # please update `test-with-lower` in `.github/workflows/tests.yml` as well.
     requirements = [
         "alembic>=1.5.0",
         "cliff",
