@@ -629,7 +629,7 @@ def _get_observation_pairs(
     scores = []
     values: Dict[str, List[Optional[float]]] = {param_name: [] for param_name in param_names}
     violations: Optional[List[float]] = [] if constraints_enabled else None
-    for trial in study.get_trials(deepcopy=False, states=states):
+    for trial in study.get_trials(deepcopy=False, states=states, use_cache=True):
         # If ``multivariate`` = True and ``group`` = True, we ignore the trials that are not
         # included in each subspace.
         # If ``multivariate`` = False, we skip the check.
