@@ -1,4 +1,3 @@
-import copy
 import decimal
 from typing import Any
 from typing import Dict
@@ -7,6 +6,7 @@ from typing import Sequence
 
 import numpy as np
 
+from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
@@ -17,6 +17,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
+@experimental_class("3.1.0")
 class BruteForceSampler(BaseSampler):
     """Sampler using brute force.
 
@@ -64,13 +65,12 @@ class BruteForceSampler(BaseSampler):
         param_distribution: BaseDistribution,
     ) -> Any:
         candidates = _enumerate_candidates(param_distribution)
-        if len(candidates) == 0:
-            raise ValueError("empty candidates")
+        assert len(candidates) > 0
 
         self._rng.shuffle(candidates)
 
         for value in candidates[1:]:
-            params = copy.deepcopy(trial.params)
+            params = trial.params.copy()
             params[param_name] = value
             study.enqueue_trial(params, skip_if_exists=True)
 
