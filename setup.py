@@ -2,9 +2,7 @@ import os
 import sys
 from typing import Dict
 from typing import List
-from typing import Optional
 
-import pkg_resources
 from setuptools import find_packages
 from setuptools import setup
 
@@ -134,16 +132,6 @@ def get_extras_require() -> Dict[str, List[str]]:
     }
 
     return requirements
-
-
-def find_any_distribution(pkgs: List[str]) -> Optional[pkg_resources.Distribution]:
-
-    for pkg in pkgs:
-        try:
-            return pkg_resources.get_distribution(pkg)
-        except pkg_resources.DistributionNotFound:
-            pass
-    return None
 
 
 setup(

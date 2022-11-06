@@ -203,7 +203,7 @@ def test_check_distribution_compatibility() -> None:
 @pytest.mark.parametrize(
     "value", (0, 1, 4, 10, 11, 1.1, "1", "1.1", "-1.0", True, False, np.ones(1), np.array([1.1]))
 )
-def test_int_internal_representation(value: int) -> None:
+def test_int_internal_representation(value: Any) -> None:
     i = distributions.IntDistribution(low=1, high=10)
 
     if isinstance(value, int):
@@ -236,7 +236,7 @@ def test_int_internal_representation_error(value: Any, kwargs: Dict[str, Any]) -
     "value",
     (1.99, 2.0, 4.5, 7, 7.1, 1, "1", "1.1", "-1.0", True, False, np.ones(1), np.array([1.1])),
 )
-def test_float_internal_representation(value: float) -> None:
+def test_float_internal_representation(value: Any) -> None:
     f = distributions.FloatDistribution(low=2.0, high=7.0)
 
     if isinstance(value, float):
