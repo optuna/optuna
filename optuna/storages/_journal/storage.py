@@ -95,6 +95,15 @@ class JournalStorage(BaseStorage):
         with self._thread_lock:
             self._sync_with_backend()
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        del state["_thread_lock"]
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self._thread_lock = threading.Lock()
+
     def _write_log(self, op_code: int, extra_fields: Dict[str, Any]) -> None:
         worker_id = self._replay_result.worker_id
         self._backend.append_logs([{"op_code": op_code, "worker_id": worker_id, **extra_fields}])

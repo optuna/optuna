@@ -1,6 +1,8 @@
 from concurrent.futures import as_completed
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
+import os
+import pickle
 import tempfile
 from types import TracebackType
 from typing import Any
@@ -116,3 +118,21 @@ def test_pop_waiting_trial_multiprocess_safe() -> None:
                 if trial_id is not None:
                     trial_id_set.add(trial_id)
         assert len(trial_id_set) == num_enqueued
+
+
+def test_pickle_dump_and_load() -> None:
+    with tempfile.TemporaryDirectory() as workdir:
+        file_name = os.path.join(workdir, "journal.log")
+        file_storage = optuna.storages.JournalFileStorage(file_name)
+        storage = optuna.storages.JournalStorage(file_storage)
+        study = optuna.create_study(storage=storage)
+        num_enqueued = 10
+        for i in range(num_enqueued):
+            study.enqueue_trial({"i": i})
+        with open(os.path.join(workdir, "pickled.pkl"), "wb") as f:
+            pickle.dump(storage, f)
+        with open(os.path.join(workdir, "pickled.pkl"), "rb") as f:
+            loaded_storage = pickle.load(f)
+        study_id = loaded_storage.get_study_id_from_name(study.study_name)
+        assert len(loaded_storage.get_all_trials(study_id=study_id)) == num_enqueued
+
