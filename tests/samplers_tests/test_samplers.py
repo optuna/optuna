@@ -58,7 +58,12 @@ parametrize_sampler = pytest.mark.parametrize(
     + (
         []
         if sys.version_info < (3, 7, 0)
-        else [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)]
+        else [
+            pytest.param(
+                lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
+                marks=pytest.mark.slow,
+            )
+        ]
     ),
 )
 parametrize_relative_sampler = pytest.mark.parametrize(
@@ -82,7 +87,12 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
     + (
         []
         if sys.version_info < (3, 7, 0)
-        else [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)]
+        else [
+            pytest.param(
+                lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
+                marks=pytest.mark.slow,
+            )
+        ]
     ),
 )
 sampler_class_with_seed: List[Callable] = [
@@ -97,7 +107,11 @@ sampler_class_with_seed: List[Callable] = [
 # TODO(kstoneriv3): Update this after the support for Python 3.6 is stopped.
 if sys.version_info >= (3, 7, 0):
     sampler_class_with_seed.append(lambda seed: optuna.samplers.QMCSampler(seed=seed))
-    sampler_class_with_seed.append(lambda seed: optuna.integration.BoTorchSampler(seed=seed))
+    sampler_class_with_seed.append(
+        pytest.param(
+            lambda seed: optuna.integration.BoTorchSampler(seed=seed), marks=pytest.mark.slow
+        )
+    )
 parametrize_sampler_with_seed = pytest.mark.parametrize("sampler_class", sampler_class_with_seed)
 
 
@@ -139,7 +153,14 @@ parametrize_sampler_with_seed = pytest.mark.parametrize("sampler_class", sampler
     + (
         []
         if sys.version_info >= (3, 10, 0) or sys.version_info < (3, 7, 0)
-        else [(lambda: optuna.integration.BoTorchSampler(n_startup_trials=0), False, True)]
+        else [
+            pytest.param(
+                lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
+                False,
+                True,
+                marks=pytest.mark.slow,
+            ),
+        ]
     ),
 )
 def test_sampler_reseed_rng(
@@ -891,7 +912,6 @@ def test_conditional_parameter_objective(sampler_class: Callable[[], BaseSampler
     assert all(t.state == TrialState.COMPLETE for t in study.trials)
 
 
-@pytest.mark.slow
 @parametrize_sampler
 @parametrize_suggest_method("x")
 @parametrize_suggest_method("y")
