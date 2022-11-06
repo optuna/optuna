@@ -348,7 +348,9 @@ class NSGAIISampler(BaseSampler):
         if self._constraints_func is not None:
             for _trial in population:
                 _constraints = _trial.system_attrs.get(_CONSTRAINTS_KEY)
-                if np.any(np.isnan(_constraints)):
+                if _constraints is None:
+                    continue
+                if np.any(np.isnan(np.array(_constraints))):
                     raise ValueError("NaN is not acceptable as constraint value.")
 
         dominated_count: DefaultDict[int, int] = defaultdict(int)
