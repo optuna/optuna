@@ -351,6 +351,7 @@ class NSGAIISampler(BaseSampler):
                 raise ValueError("NaN is not acceptable as constraint value.")
         dominated_count: DefaultDict[int, int] = defaultdict(int)
         dominates_list = defaultdict(list)
+
         dominates = _dominates if self._constraints_func is None else _constrained_dominates
 
         for p, q in itertools.combinations(population, 2):
