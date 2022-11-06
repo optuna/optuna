@@ -1,7 +1,6 @@
 from concurrent.futures import as_completed
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
-import os
 import pickle
 import tempfile
 from types import TracebackType
@@ -120,18 +119,21 @@ def test_pop_waiting_trial_multiprocess_safe() -> None:
         assert len(trial_id_set) == num_enqueued
 
 
-def test_pickle_dump_and_load() -> None:
-    with tempfile.TemporaryDirectory() as workdir:
-        file_name = os.path.join(workdir, "journal.log")
-        file_storage = optuna.storages.JournalFileStorage(file_name)
+@pytest.mark.parametrize("log_storage_type", LOG_STORAGE)
+def test_pickle_dump_and_load(log_storage_type: str) -> None:
+    if log_storage_type.startswith("redis"):
+        pytest.skip("The `fakeredis` does not support multi process environments.")
+
+    with JournalLogStorageSupplier(log_storage_type) as file_storage:
         storage = optuna.storages.JournalStorage(file_storage)
         study = optuna.create_study(storage=storage)
         num_enqueued = 10
         for i in range(num_enqueued):
             study.enqueue_trial({"i": i})
-        with open(os.path.join(workdir, "pickled.pkl"), "wb") as f:
-            pickle.dump(storage, f)
-        with open(os.path.join(workdir, "pickled.pkl"), "rb") as f:
-            loaded_storage = pickle.load(f)
+        loaded_storage = pickle.loads(pickle.dumps(storage))
         study_id = loaded_storage.get_study_id_from_name(study.study_name)
-        assert len(loaded_storage.get_all_trials(study_id=study_id)) == num_enqueued
+        loaded_trials = loaded_storage.get_all_trials(study_id=study_id)
+        assert len(loaded_trials) == num_enqueued
+        trials = storage.get_all_trials(study_id=study_id)
+        for trial, loaded_trial in zip(trials, loaded_trials):
+            assert trial == loaded_trial
