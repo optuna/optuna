@@ -1,7 +1,6 @@
 from concurrent.futures import as_completed
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
-import pickle
 import tempfile
 from types import TracebackType
 from typing import Any
@@ -117,23 +116,3 @@ def test_pop_waiting_trial_multiprocess_safe() -> None:
                 if trial_id is not None:
                     trial_id_set.add(trial_id)
         assert len(trial_id_set) == num_enqueued
-
-
-@pytest.mark.parametrize("log_storage_type", LOG_STORAGE)
-def test_pickle_dump_and_load(log_storage_type: str) -> None:
-    if log_storage_type.startswith("redis"):
-        pytest.skip("The `JournalRedisStorage` is not pickalable.")
-
-    with JournalLogStorageSupplier(log_storage_type) as file_storage:
-        storage = optuna.storages.JournalStorage(file_storage)
-        study = optuna.create_study(storage=storage)
-        num_enqueued = 10
-        for i in range(num_enqueued):
-            study.enqueue_trial({"i": i})
-        loaded_storage = pickle.loads(pickle.dumps(storage))
-        study_id = loaded_storage.get_study_id_from_name(study.study_name)
-        loaded_trials = loaded_storage.get_all_trials(study_id=study_id)
-        assert len(loaded_trials) == num_enqueued
-        trials = storage.get_all_trials(study_id=study_id)
-        for trial, loaded_trial in zip(trials, loaded_trials):
-            assert trial == loaded_trial
