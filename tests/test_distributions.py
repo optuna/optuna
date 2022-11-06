@@ -256,7 +256,8 @@ def test_float_internal_representation(value: Any) -> None:
         (set(), {}),
         (np.ones(2), {}),
         (np.nan, {}),
-        (0, dict(log=True)),
+        (0.0, dict(log=True)),
+        (-1.0, dict(log=True)),
     ],
 )
 def test_float_internal_representation_error(value: Any, kwargs: Dict[str, Any]) -> None:
