@@ -17,6 +17,7 @@ with optuna._imports.try_import() as _imports:
     from pytorch_lightning import LightningModule
     from pytorch_lightning import Trainer
     from pytorch_lightning.callbacks import Callback
+    from pytorch_lightning.strategies import ParallelStrategy
 
 if not _imports.is_successful():
     Callback = object  # type: ignore  # NOQA
@@ -57,9 +58,9 @@ class PyTorchLightningPruningCallback(Callback):
         self.is_ddp_backend = False
 
     def setup(self, trainer: Trainer, pl_module: LightningModule, stage: str) -> None:
-        self.is_ddp_backend = (
-            trainer._accelerator_connector.distributed_backend is not None  # type: ignore
-        )
+        # It is better to compare with `DDPStrategy`, but not all DDP strategies are its children.
+        self.is_ddp_backend = isinstance(trainer._accelerator_connector.strategy, ParallelStrategy)
+
         if self.is_ddp_backend:
             if version.parse(pl.__version__) < version.parse("1.5.0"):
                 raise ValueError("PyTorch Lightning>=1.5.0 is required in DDP.")
