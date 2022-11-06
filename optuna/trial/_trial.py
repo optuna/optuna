@@ -597,7 +597,7 @@ class Trial(BaseTrial):
                     study, trial, name, distribution
                 )
 
-            # param_value is validated here (invalid value like np.nan raises ValueError)
+            # `param_value` is validated here (invalid value like `np.nan` raises ValueError).
             param_value_in_internal_repr = distribution.to_internal_repr(param_value)
             storage.set_trial_param(trial_id, name, param_value_in_internal_repr, distribution)
 
