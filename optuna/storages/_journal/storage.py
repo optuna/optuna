@@ -97,11 +97,15 @@ class JournalStorage(BaseStorage):
 
     def __getstate__(self) -> Dict[Any, Any]:
         state = self.__dict__.copy()
+        del state["_worker_id_prefix"]
+        del state["_replay_result"]
         del state["_thread_lock"]
         return state
 
     def __setstate__(self, state: Dict[Any, Any]) -> None:
         self.__dict__.update(state)
+        self._worker_id_prefix = str(uuid.uuid4()) + "-"
+        self._replay_result = JournalStorageReplayResult(self._worker_id_prefix)
         self._thread_lock = threading.Lock()
 
     def _write_log(self, op_code: int, extra_fields: Dict[str, Any]) -> None:
