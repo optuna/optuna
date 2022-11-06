@@ -111,21 +111,19 @@ class PyTorchLightningPruningCallback(Callback):
                 self._trial.set_system_attr(_PRUNED_KEY, True)
                 self._trial.set_system_attr(_EPOCH_KEY, epoch)
 
-    def on_fit_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
+    def post_process(self, trial: optuna.trial.Trial) -> None:
         if not self.is_ddp_backend:
             return
 
         # Because on_validation_end is executed in spawned processes,
         # _trial.report is necessary to update the memory in main process, not to update the RDB.
-        _trial_id = self._trial._trial_id
-        _study = self._trial.study
-        _trial = _study._storage._backend.get_trial(_trial_id)  # type: ignore
+        _trial = trial.study._storage._backend.get_trial(trial._trial_id)  # type: ignore
         is_pruned = _trial.system_attrs.get(_PRUNED_KEY)
         epoch = _trial.system_attrs.get(_EPOCH_KEY)
         intermediate_values = _trial.intermediate_values
         for step, value in intermediate_values.items():
-            self._trial.report(value, step=step)
+            trial.report(value, step=step)
 
         if is_pruned:
-            message = "Trial was pruned at epoch {}.".format(epoch)
-            raise optuna.TrialPruned(message)
+            _message = "Trial was pruned at epoch {}.".format(epoch)
+            raise optuna.TrialPruned(_message)
