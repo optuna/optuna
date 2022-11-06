@@ -345,10 +345,12 @@ class NSGAIISampler(BaseSampler):
         population: List[FrozenTrial],
         directions: List[optuna.study.StudyDirection],
     ) -> List[List[FrozenTrial]]:
-        for _trial in population:
-            _constraints = _trial.system_attrs.get(_CONSTRAINTS_KEY)
-            if np.any(np.isnan(_constraints)):
-                raise ValueError("NaN is not acceptable as constraint value.")
+        if self._constraints_func is not None:
+            for _trial in population:
+                _constraints = _trial.system_attrs.get(_CONSTRAINTS_KEY)
+                if np.any(np.isnan(_constraints)):
+                    raise ValueError("NaN is not acceptable as constraint value.")
+
         dominated_count: DefaultDict[int, int] = defaultdict(int)
         dominates_list = defaultdict(list)
 
