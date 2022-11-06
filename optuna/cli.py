@@ -343,7 +343,7 @@ class _Studies(_BaseCommand):
 
     _study_list_header = [
         ("name", ""),
-        ("user-attr", ""),
+        ("user_attrs", ""),
         ("direction", ""),
         ("n_trials", ""),
         ("datetime_start", ""),
@@ -382,7 +382,7 @@ class _Studies(_BaseCommand):
             )
             record: Dict[Tuple[str, str], Any] = {}
             record[("name", "")] = s.study_name
-            record[("user_attr", "")] = s.user_attrs
+            record[("user_attrs", "")] = s.user_attrs
             record[("direction", "")] = tuple(d.name for d in s.directions)
             record[("n_trials", "")] = s.n_trials
             record[("datetime_start", "")] = start

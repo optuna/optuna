@@ -295,7 +295,7 @@ def test_studies_command(output_format: Optional[str]) -> None:
         output = str(subprocess.check_output(command).decode().strip())
         studies = _parse_output(output, output_format or "table")
 
-        expected_keys = ["name", "direction", "n_trials", "datetime_start"]
+        expected_keys = ["name", "user_attrs", "direction", "n_trials", "datetime_start"]
 
         assert len(studies) == 2
         for study in studies:
@@ -351,15 +351,17 @@ def test_studies_command_flatten(output_format: Optional[str]) -> None:
         if output_format is None or output_format == "table":
             expected_keys_1 = expected_keys_2 = [
                 "name",
+                "user_attrs",
                 "direction_0",
                 "direction_1",
                 "n_trials",
                 "datetime_start",
             ]
         else:
-            expected_keys_1 = ["name", "direction_0", "n_trials", "datetime_start"]
+            expected_keys_1 = ["name", "user_attrs", "direction_0", "n_trials", "datetime_start"]
             expected_keys_2 = [
                 "name",
+                "user_attrs",
                 "direction_0",
                 "direction_1",
                 "n_trials",
