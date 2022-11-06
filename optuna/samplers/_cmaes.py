@@ -299,28 +299,15 @@ class CmaEsSampler(BaseSampler):
         if self._group:
             assert self._group_decomposed_search_space is not None
             self._search_space_group = self._group_decomposed_search_space.calculate(study)
-            sub_spaces = self._search_space_group.search_spaces
-        else:
-            sub_spaces = [self._search_space.calculate(study)]
+            for sub_space in self._search_space_group.search_spaces:
+                # Sort keys because Python's string hashing is nondeterministic.
+                for name, distribution in sorted(sub_space.items()):
+                    if _is_valid_distribution_for_cmaes_relative_sampling(distribution):
+                        search_space[name] = distribution
+            return search_space
 
-        for sub_space in sub_spaces:
-            # Sort keys because Python's string hashing is nondeterministic.
-            for name, distribution in sorted(sub_space.items()):
-                if distribution.single():
-                    # `cma` cannot handle distributions that contain just a single value, so we skip
-                    # them. Note that the parameter values for such distributions are sampled in
-                    # `Trial`.
-                    continue
-
-                if not isinstance(
-                    distribution,
-                    (
-                        optuna.distributions.FloatDistribution,
-                        optuna.distributions.IntDistribution,
-                    ),
-                ):
-                    # Categorical distribution is unsupported.
-                    continue
+        for name, distribution in self._search_space.calculate(study).items():
+            if _is_valid_distribution_for_cmaes_relative_sampling(distribution):
                 search_space[name] = distribution
 
         return search_space
@@ -335,18 +322,18 @@ class CmaEsSampler(BaseSampler):
         if self._group:
             assert self._search_space_group is not None
             params = {}
-            for sub_space in self._search_space_group.search_spaces:
+            for group_index, sub_space in enumerate(self._search_space_group.search_spaces):
                 search_space = {}
                 # Sort keys because Python's string hashing is nondeterministic.
                 for name, distribution in sorted(sub_space.items()):
-                    if not distribution.single():
+                    if _is_valid_distribution_for_cmaes_relative_sampling(distribution):
                         search_space[name] = distribution
-                params.update(self._sample_relative(study, trial, search_space))
+                params.update(self._sample_relative(study, trial, search_space, group_index))
             return params
         else:
             return self._sample_relative(study, trial, search_space)
 
-    def _get_attr_keys(self, search_space: Dict[str, BaseDistribution]) -> Tuple[str, str, str]:
+    def _get_attr_keys(self, group_index: Optional[int]) -> Tuple[str, str, str]:
         if not self._use_separable_cma:
             optimizer_attr_key = "cma:optimizer"
             n_restarts_attr_key = "cma:n_restarts"
@@ -360,10 +347,11 @@ class CmaEsSampler(BaseSampler):
             generation_attr_key_template = "cma:restart_{n_restarts}:generation"
 
         if self._group:
-            group_suffix = "group_" + "_".join(search_space.keys())
-            optimizer_attr_key += group_suffix
-            optimizer_attr_key += group_suffix
-            generation_attr_key_template += group_suffix
+            assert self._search_space_group is not None
+            n_group = len(self._search_space_group.search_spaces)
+            optimizer_attr_key += ":n_group_{}:group_{}".format(n_group, group_index)
+            optimizer_attr_key += ":n_group_{}:group_{}".format(n_group, group_index)
+            generation_attr_key_template += ":n_group_{}".format(n_group)
 
         return optimizer_attr_key, n_restarts_attr_key, generation_attr_key_template
 
@@ -372,6 +360,7 @@ class CmaEsSampler(BaseSampler):
         study: "optuna.Study",
         trial: "optuna.trial.FrozenTrial",
         search_space: Dict[str, BaseDistribution],
+        group_index: Optional[int] = None,
     ) -> Dict[str, Any]:
 
         self._raise_error_if_multi_objective(study)
@@ -395,7 +384,7 @@ class CmaEsSampler(BaseSampler):
 
         trans = _SearchSpaceTransform(search_space)
 
-        optimizer_attr_key, n_restarts_attr_key, generation_attr_key_template = self._get_attr_keys(search_space)
+        optimizer_attr_key, n_restarts_attr_key, generation_attr_key_template = self._get_attr_keys(group_index)
 
         optimizer, n_restarts = self._restore_optimizer(completed_trials, optimizer_attr_key, n_restarts_attr_key)
         if optimizer is None:
@@ -419,13 +408,13 @@ class CmaEsSampler(BaseSampler):
         solution_trials = [
             t
             for t in completed_trials
-            if optimizer.generation == t.system_attrs.get(generation_attr_key, -1)
+            if optimizer.generation == t.system_attrs.get(generation_attr_key, -1) and set(search_space.keys()) <= set(t.params.keys())
         ]
         if len(solution_trials) >= optimizer.population_size:
             solutions: List[Tuple[np.ndarray, float]] = []
             for t in solution_trials[: optimizer.population_size]:
                 assert t.value is not None, "completed trials must have a value"
-                x = trans.transform(t.params)
+                x = trans.transform({key: t.params[key] for key in search_space.keys()})
                 y = t.value if study.direction == StudyDirection.MINIMIZE else -t.value
                 solutions.append((x, y))
 
@@ -638,3 +627,23 @@ def _concat_optimizer_attrs(optimizer_attr_key: str, optimizer_attrs: Dict[str, 
     return "".join(
         optimizer_attrs[optimizer_attr_key + ":{}".format(i)] for i in range(len(optimizer_attrs))
     )
+
+
+def _is_valid_distribution_for_cmaes_relative_sampling(distribution: BaseDistribution):
+    if distribution.single():
+        # `cma` cannot handle distributions that contain just a single value, so we skip
+        # them. Note that the parameter values for such distributions are sampled in
+        # `Trial`.
+        return False
+
+    if not isinstance(
+        distribution,
+        (
+            optuna.distributions.FloatDistribution,
+            optuna.distributions.IntDistribution,
+        ),
+    ):
+        # Categorical distribution is unsupported.
+        return False
+
+    return True
