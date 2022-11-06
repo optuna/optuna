@@ -122,7 +122,7 @@ def test_pop_waiting_trial_multiprocess_safe() -> None:
 @pytest.mark.parametrize("log_storage_type", LOG_STORAGE)
 def test_pickle_dump_and_load(log_storage_type: str) -> None:
     if log_storage_type.startswith("redis"):
-        pytest.skip("The `fakeredis` does not support multi process environments.")
+        pytest.skip("The `JournalRedisStorage` is not pickalable.")
 
     with JournalLogStorageSupplier(log_storage_type) as file_storage:
         storage = optuna.storages.JournalStorage(file_storage)
