@@ -891,6 +891,7 @@ def test_conditional_parameter_objective(sampler_class: Callable[[], BaseSampler
     assert all(t.state == TrialState.COMPLETE for t in study.trials)
 
 
+@pytest.mark.slow
 @parametrize_sampler
 @parametrize_suggest_method("x")
 @parametrize_suggest_method("y")
