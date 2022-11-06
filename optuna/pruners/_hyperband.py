@@ -1,3 +1,4 @@
+import binascii
 import math
 from typing import Container
 from typing import List
@@ -250,7 +251,10 @@ class HyperbandPruner(BasePruner):
             return 0
 
         assert self._n_brackets is not None
-        n = trial.number % self._total_trial_allocation_budget
+        n = (
+            binascii.crc32("{}_{}".format(study.study_name, trial.number).encode())
+            % self._total_trial_allocation_budget
+        )
         for bracket_id in range(self._n_brackets):
             n -= self._trial_allocation_budgets[bracket_id]
             if n < 0:
