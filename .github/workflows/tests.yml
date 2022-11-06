@@ -74,4 +74,4 @@ jobs:
 
     - name: Tests
       run: |
-        pytest tests --ignore tests/integration_tests
+        pytest tests --ignore tests/integration_tests --durations=0 -m "not slow"
