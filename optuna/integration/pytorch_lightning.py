@@ -56,7 +56,7 @@ class PyTorchLightningPruningCallback(Callback):
         self.monitor = monitor
         self.is_ddp_backend = False
 
-    def on_init_start(self, trainer: Trainer) -> None:
+    def setup(self, trainer: Trainer, pl_module: LightningModule, stage: str) -> None:
         self.is_ddp_backend = (
             trainer._accelerator_connector.distributed_backend is not None  # type: ignore
         )
