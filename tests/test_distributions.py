@@ -261,7 +261,6 @@ def test_float_internal_representation(value: Any) -> None:
 )
 def test_float_internal_representation_error(value: Any, kwargs: Dict[str, Any]) -> None:
     f = distributions.FloatDistribution(low=2.0, high=7.0, **kwargs)
-    f = distributions.FloatDistribution(low=2.0, high=7.0, **kwargs)
     with pytest.raises(ValueError):
         f.to_internal_repr(value)
 
