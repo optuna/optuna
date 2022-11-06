@@ -523,7 +523,7 @@ class Study:
 
     def tell(
         self,
-        trial: Union[trial_module.Trial, int],f
+        trial: Union[trial_module.Trial, int],
         values: Optional[Union[float, Sequence[float]]] = None,
         state: Optional[TrialState] = None,
         skip_if_finished: bool = False,
@@ -808,10 +808,11 @@ class Study:
                 Parameter values to pass your objective function.
 
                 .. note::
-                    This method raises ValueError for invalid parameter values like not a number (e.g. `np.nan`),
+                    This method raises ValueError for invalid parameter values
+                    like not a number (e.g. `np.nan`),
                     non-positive value when parameter is log-scale,
                     value which cannot be casted to float for int/float distribution,
-                    categorical value which does not be included in choices for categorical distribution, etc.
+                    value which does not be included in choices for categorical distribution, etc.
 
             user_attrs:
                 A dictionary of user-specific attributes other than ``params``.
