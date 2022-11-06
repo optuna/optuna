@@ -692,7 +692,7 @@ def _split_observation_pairs(
     # 3. Feasible trials are sorted by loss_vals.
     if violations is not None:
         violation_1d = np.array(violations, dtype=float)
-        idx = violation_1d.argsort()
+        idx = violation_1d.argsort(kind="stable")
         if n_below >= len(idx) or violation_1d[idx[n_below]] > 0:
             # Below is filled by all feasible trials and trials with smaller violation values.
             indices_below = idx[:n_below]
@@ -720,7 +720,7 @@ def _split_observation_pairs(
             [(s, v[0]) for s, v in loss_vals], dtype=[("step", float), ("score", float)]
         )
 
-        index_loss_ascending = np.argsort(loss_values)
+        index_loss_ascending = np.argsort(loss_values, kind="stable")
         # `np.sort` is used to keep chronological order.
         indices_below = np.sort(index_loss_ascending[:n_below])
         indices_above = np.sort(index_loss_ascending[n_below:])

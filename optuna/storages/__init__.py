@@ -9,6 +9,7 @@ from optuna.storages._journal.base import BaseJournalLogStorage
 from optuna.storages._journal.file import JournalFileOpenLock
 from optuna.storages._journal.file import JournalFileStorage
 from optuna.storages._journal.file import JournalFileSymlinkLock
+from optuna.storages._journal.redis import JournalRedisStorage
 from optuna.storages._journal.storage import JournalStorage
 from optuna.storages._rdb.storage import RDBStorage
 from optuna.storages._redis import RedisStorage
@@ -24,6 +25,7 @@ __all__ = [
     "JournalFileSymlinkLock",
     "JournalFileOpenLock",
     "JournalFileStorage",
+    "JournalRedisStorage",
     "RetryFailedTrialCallback",
     "_CachedStorage",
     "fail_stale_trials",
