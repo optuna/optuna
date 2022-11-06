@@ -92,7 +92,7 @@ def _enumerate_candidates(param_distribution: BaseDistribution) -> Sequence[Any]
         if param_distribution.step is None:
             raise ValueError(
                 "FloatDistribution.step must be given for BruteForceSampler"
-                " (otherwise, the search space will be infinite)"
+                " (otherwise, the search space will be infinite)."
             )
         low = decimal.Decimal(str(param_distribution.low))
         high = decimal.Decimal(str(param_distribution.high))
@@ -112,4 +112,4 @@ def _enumerate_candidates(param_distribution: BaseDistribution) -> Sequence[Any]
     elif isinstance(param_distribution, CategoricalDistribution):
         return list(param_distribution.choices)
     else:
-        raise ValueError("unknown distribution")
+        raise ValueError(f"Unknown distribution {param_distribution}.")
