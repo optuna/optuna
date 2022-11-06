@@ -190,13 +190,13 @@ class FloatDistribution(BaseDistribution):
             return self.low <= value <= self.high and abs(k - round(k)) < 1.0e-8
 
     def to_internal_repr(self, param_value_in_external_repr: float) -> float:
-        error_message = f"'{param_value_in_external_repr}' is not a valid type. float is expected."
-        if isinstance(param_value_in_external_repr, str):
-            raise ValueError(error_message)
         try:
             return float(param_value_in_external_repr)
         except ValueError as e:
-            raise ValueError(error_message) from e
+            raise ValueError(
+                f"'{param_value_in_external_repr}' is not a valid type. "
+                "float-castable value is expected."
+            ) from e
 
 
 @deprecated_class("3.0.0", "6.0.0", text=_float_distribution_deprecated_msg)
@@ -374,13 +374,13 @@ class IntDistribution(BaseDistribution):
         return int(param_value_in_internal_repr)
 
     def to_internal_repr(self, param_value_in_external_repr: int) -> float:
-        error_message = f"'{param_value_in_external_repr}' is not a valid type. int is expected."
-        if isinstance(param_value_in_external_repr, str):
-            raise ValueError(error_message)
         try:
             return float(param_value_in_external_repr)
         except ValueError as e:
-            raise ValueError(error_message) from e
+            raise ValueError(
+                f"'{param_value_in_external_repr}' is not a valid type. "
+                "float-castable value is expected."
+            ) from e
 
     def single(self) -> bool:
         if self.log:
