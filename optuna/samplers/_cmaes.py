@@ -22,6 +22,8 @@ from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.samplers import BaseSampler
+from optuna.samplers._search_space.group_decomposed import _GroupDecomposedSearchSpace
+from optuna.samplers._search_space.group_decomposed import _SearchSpaceGroup
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -188,7 +190,8 @@ class CmaEsSampler(BaseSampler):
                 Added in v2.6.0 as an experimental feature. The interface may change in newer
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.6.0.
-
+        group:
+            # TODO
     """
 
     def __init__(
@@ -206,6 +209,7 @@ class CmaEsSampler(BaseSampler):
         inc_popsize: int = 2,
         use_separable_cma: bool = False,
         source_trials: Optional[List[FrozenTrial]] = None,
+        group: bool = False,
     ) -> None:
         self._x0 = x0
         self._sigma0 = sigma0
@@ -220,6 +224,9 @@ class CmaEsSampler(BaseSampler):
         self._inc_popsize = inc_popsize
         self._use_separable_cma = use_separable_cma
         self._source_trials = source_trials
+        self._group = group
+        self._group_decomposed_search_space: Optional[_GroupDecomposedSearchSpace] = None
+        self._search_space_group: Optional[_SearchSpaceGroup] = None
 
         if self._restart_strategy:
             warnings.warn(
@@ -272,6 +279,14 @@ class CmaEsSampler(BaseSampler):
                 )
             )
 
+        if group:
+            warnings.warn(
+                "``group`` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
+            self._group_decomposed_search_space = _GroupDecomposedSearchSpace()
+
     def reseed_rng(self) -> None:
         # _cma_rng doesn't require reseeding because the relative sampling reseeds in each trial.
         self._independent_sampler.reseed_rng()
@@ -280,27 +295,79 @@ class CmaEsSampler(BaseSampler):
         self, study: "optuna.Study", trial: "optuna.trial.FrozenTrial"
     ) -> Dict[str, BaseDistribution]:
         search_space: Dict[str, BaseDistribution] = {}
-        for name, distribution in self._search_space.calculate(study).items():
-            if distribution.single():
-                # `cma` cannot handle distributions that contain just a single value, so we skip
-                # them. Note that the parameter values for such distributions are sampled in
-                # `Trial`.
-                continue
 
-            if not isinstance(
-                distribution,
-                (
-                    optuna.distributions.FloatDistribution,
-                    optuna.distributions.IntDistribution,
-                ),
-            ):
-                # Categorical distribution is unsupported.
-                continue
-            search_space[name] = distribution
+        if self._group:
+            assert self._group_decomposed_search_space is not None
+            self._search_space_group = self._group_decomposed_search_space.calculate(study)
+            sub_spaces = self._search_space_group.search_spaces
+        else:
+            sub_spaces = [self._search_space.calculate(study)]
+
+        for sub_space in sub_spaces:
+            # Sort keys because Python's string hashing is nondeterministic.
+            for name, distribution in sorted(sub_space.items()):
+                if distribution.single():
+                    # `cma` cannot handle distributions that contain just a single value, so we skip
+                    # them. Note that the parameter values for such distributions are sampled in
+                    # `Trial`.
+                    continue
+
+                if not isinstance(
+                    distribution,
+                    (
+                        optuna.distributions.FloatDistribution,
+                        optuna.distributions.IntDistribution,
+                    ),
+                ):
+                    # Categorical distribution is unsupported.
+                    continue
+                search_space[name] = distribution
 
         return search_space
 
     def sample_relative(
+        self,
+        study: "optuna.Study",
+        trial: "optuna.trial.FrozenTrial",
+        search_space: Dict[str, BaseDistribution],
+    ) -> Dict[str, Any]:
+
+        if self._group:
+            assert self._search_space_group is not None
+            params = {}
+            for sub_space in self._search_space_group.search_spaces:
+                search_space = {}
+                # Sort keys because Python's string hashing is nondeterministic.
+                for name, distribution in sorted(sub_space.items()):
+                    if not distribution.single():
+                        search_space[name] = distribution
+                params.update(self._sample_relative(study, trial, search_space))
+            return params
+        else:
+            return self._sample_relative(study, trial, search_space)
+
+    def _get_attr_keys(self, search_space: Dict[str, BaseDistribution]) -> Tuple[str, str, str]:
+        if not self._use_separable_cma:
+            optimizer_attr_key = "cma:optimizer"
+            n_restarts_attr_key = "cma:n_restarts"
+        else:
+            optimizer_attr_key = "sepcma:optimizer"
+            n_restarts_attr_key = "sepcma:n_restarts"
+
+        if self._restart_strategy is None:
+            generation_attr_key_template = "cma:generation"  # For backward compatibility.
+        else:
+            generation_attr_key_template = "cma:restart_{n_restarts}:generation"
+
+        if self._group:
+            group_suffix = "group_" + "_".join(search_space.keys())
+            optimizer_attr_key += group_suffix
+            optimizer_attr_key += group_suffix
+            generation_attr_key_template += group_suffix
+
+        return optimizer_attr_key, n_restarts_attr_key, generation_attr_key_template
+
+    def _sample_relative(
         self,
         study: "optuna.Study",
         trial: "optuna.trial.FrozenTrial",
@@ -328,15 +395,14 @@ class CmaEsSampler(BaseSampler):
 
         trans = _SearchSpaceTransform(search_space)
 
-        optimizer, n_restarts = self._restore_optimizer(completed_trials)
+        optimizer_attr_key, n_restarts_attr_key, generation_attr_key_template = self._get_attr_keys(search_space)
+
+        optimizer, n_restarts = self._restore_optimizer(completed_trials, optimizer_attr_key, n_restarts_attr_key)
         if optimizer is None:
             n_restarts = 0
             optimizer = self._init_optimizer(trans, study.direction, population_size=self._popsize)
 
-        if self._restart_strategy is None:
-            generation_attr_key = "cma:generation"  # For backward compatibility.
-        else:
-            generation_attr_key = "cma:restart_{}:generation".format(n_restarts)
+        generation_attr_key = generation_attr_key_template.format(n_restarts=n_restarts)
 
         if optimizer.dim != len(trans.bounds):
             _logger.info(
@@ -367,7 +433,7 @@ class CmaEsSampler(BaseSampler):
 
             if self._restart_strategy == "ipop" and optimizer.should_stop():
                 n_restarts += 1
-                generation_attr_key = "cma:restart_{}:generation".format(n_restarts)
+                generation_attr_key = generation_attr_key_template.format(n_restarts=n_restarts)
                 popsize = optimizer.population_size * self._inc_popsize
                 optimizer = self._init_optimizer(
                     trans, study.direction, population_size=popsize, randomize_start_point=True
@@ -375,7 +441,7 @@ class CmaEsSampler(BaseSampler):
 
             # Store optimizer.
             optimizer_str = pickle.dumps(optimizer).hex()
-            optimizer_attrs = _split_optimizer_str(optimizer_str)
+            optimizer_attrs = _split_optimizer_str(optimizer_attr_key, optimizer_str)
             for key in optimizer_attrs:
                 study._storage.set_trial_system_attr(trial._trial_id, key, optimizer_attrs[key])
 
@@ -387,7 +453,7 @@ class CmaEsSampler(BaseSampler):
         study._storage.set_trial_system_attr(
             trial._trial_id, generation_attr_key, optimizer.generation
         )
-        study._storage.set_trial_system_attr(trial._trial_id, "cma:n_restarts", n_restarts)
+        study._storage.set_trial_system_attr(trial._trial_id, n_restarts_attr_key, n_restarts)
 
         external_values = trans.untransform(params)
 
@@ -396,20 +462,15 @@ class CmaEsSampler(BaseSampler):
     def _restore_optimizer(
         self,
         completed_trials: "List[optuna.trial.FrozenTrial]",
+        optimizer_attr_key: str,
+        n_restarts_attr_key: str,
     ) -> Tuple[Optional[CmaClass], int]:
-        if not self._use_separable_cma:
-            attr_key_optimizer = "cma:optimizer"
-            attr_key_n_restarts = "cma:n_restarts"
-        else:
-            attr_key_optimizer = "sepcma:optimizer"
-            attr_key_n_restarts = "sepcma:n_restarts"
-
         # Restore a previous CMA object.
         for trial in reversed(completed_trials):
             optimizer_attrs = {
                 key: value
                 for key, value in trial.system_attrs.items()
-                if key.startswith(attr_key_optimizer)
+                if key.startswith(optimizer_attr_key)
             }
             if len(optimizer_attrs) == 0:
                 continue
@@ -418,9 +479,9 @@ class CmaEsSampler(BaseSampler):
                 # Check "cma:optimizer" key for backward compatibility.
                 optimizer_str = optimizer_attrs["cma:optimizer"]
             else:
-                optimizer_str = _concat_optimizer_attrs(optimizer_attrs)
+                optimizer_str = _concat_optimizer_attrs(optimizer_attr_key, optimizer_attrs)
 
-            n_restarts: int = trial.system_attrs.get(attr_key_n_restarts, 0)
+            n_restarts: int = trial.system_attrs.get(n_restarts_attr_key, 0)
             return pickle.loads(bytes.fromhex(optimizer_str)), n_restarts
         return None, 0
 
@@ -556,13 +617,13 @@ class CmaEsSampler(BaseSampler):
         self._independent_sampler.after_trial(study, trial, state, values)
 
 
-def _split_optimizer_str(optimizer_str: str) -> Dict[str, str]:
+def _split_optimizer_str(optimizer_attr_key: str, optimizer_str: str) -> Dict[str, str]:
     optimizer_len = len(optimizer_str)
     attrs = {}
     for i in range(math.ceil(optimizer_len / _SYSTEM_ATTR_MAX_LENGTH)):
         start = i * _SYSTEM_ATTR_MAX_LENGTH
         end = min((i + 1) * _SYSTEM_ATTR_MAX_LENGTH, optimizer_len)
-        attrs["cma:optimizer:{}".format(i)] = optimizer_str[start:end]
+        attrs[optimizer_attr_key + ":{}".format(i)] = optimizer_str[start:end]
     return attrs
 
 
@@ -573,7 +634,7 @@ def _is_compatible_search_space(
     return intersection_size == len(trans._search_space) == len(search_space)
 
 
-def _concat_optimizer_attrs(optimizer_attrs: Dict[str, str]) -> str:
+def _concat_optimizer_attrs(optimizer_attr_key: str, optimizer_attrs: Dict[str, str]) -> str:
     return "".join(
-        optimizer_attrs["cma:optimizer:{}".format(i)] for i in range(len(optimizer_attrs))
+        optimizer_attrs[optimizer_attr_key + ":{}".format(i)] for i in range(len(optimizer_attrs))
     )
