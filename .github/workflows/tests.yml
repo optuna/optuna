@@ -72,6 +72,12 @@ jobs:
       run: pip install botorch torch==1.11.0 --extra-index-url https://download.pytorch.org/whl/cpu
       if: matrix.python-version != '3.6'
 
+    - name: Scheduled tests
+      if:  ${{ github.event_name == 'schedule' }}
+      run: |
+        pytest tests --ignore tests/integration_tests --durations=0
+
     - name: Tests
+      if:  ${{ github.event_name != 'schedule' }}
       run: |
         pytest tests --ignore tests/integration_tests --durations=0 -m "not slow"
