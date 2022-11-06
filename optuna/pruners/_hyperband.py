@@ -250,10 +250,7 @@ class HyperbandPruner(BasePruner):
             return 0
 
         assert self._n_brackets is not None
-        n = (
-            hash("{}_{}".format(study.study_name, trial.number))
-            % self._total_trial_allocation_budget
-        )
+        n = trial.number % self._total_trial_allocation_budget
         for bracket_id in range(self._n_brackets):
             n -= self._trial_allocation_budgets[bracket_id]
             if n < 0:
