@@ -53,8 +53,43 @@ ObjectiveFuncType = Callable[[trial_module.Trial], Union[float, Sequence[float]]
 _logger = logging.get_logger(__name__)
 
 
+class AllTrialsCache:
+    _is_active: bool
+    _cache: Optional[List["FrozenTrial"]]
+    _getter: Optional[Callable[[], List["FrozenTrial"]]]
+
+    def __init__(self) -> None:
+        self._is_active = False
+        self._cache = None
+        self._getter = None
+
+    def is_active(self) -> bool:
+        return self._is_active
+
+    def activate(self, getter: Callable[[], List["FrozenTrial"]]) -> None:
+        self._is_active = True
+        self._getter = getter
+
+    def deactivate(self) -> None:
+        self._is_active = False
+        self._cache = None
+        self._getter = None
+
+    def get(self) -> List["FrozenTrial"]:
+        assert self._is_active
+        if self._cache is None:
+            assert self._getter is not None
+            self._cache = self._getter()
+        return self._cache
+
+
 class _ThreadLocalStudyAttribute(threading.local):
-    in_optimize_loop: bool = False
+    in_optimize_loop: bool
+    cache_all_trials: AllTrialsCache
+
+    def __init__(self) -> None:
+        self.in_optimize_loop = False
+        self.cache_all_trials = AllTrialsCache()
 
 
 class Study:
@@ -226,6 +261,7 @@ class Study:
         self,
         deepcopy: bool = True,
         states: Optional[Container[TrialState]] = None,
+        use_cache: bool = False,
     ) -> List[FrozenTrial]:
         """Return all trials in the study.
 
@@ -258,10 +294,21 @@ class Study:
                 the study may corrupt and unexpected behavior may happen.
             states:
                 Trial states to filter on. If :obj:`None`, include all states.
+            use_cache:
+                If True, returns trials from an in-memory cache, which is cached
+                before evaluating the objective function.
 
         Returns:
             A list of :class:`~optuna.trial.FrozenTrial` objects.
         """
+        if use_cache and self._thread_local.cache_all_trials.is_active():
+            trials = self._thread_local.cache_all_trials.get()
+            if states is not None:
+                filtered_trials = [t for t in trials if t.state in states]
+            else:
+                filtered_trials = trials
+            return copy.deepcopy(filtered_trials) if deepcopy else filtered_trials
+
         if isinstance(self._storage, _CachedStorage):
             self._storage.read_trials_from_remote_storage(self._study_id)
 
