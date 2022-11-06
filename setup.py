@@ -103,7 +103,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mxnet",
             "pandas",
             "pytorch-ignite ; python_version>'3.6'",
-            "pytorch-lightning>=1.5.0 ; python_version>'3.6'",
+            "pytorch-lightning>=1.6.0 ; python_version>'3.6'",
             "scikit-learn>=0.24.2",
             "scikit-optimize",
             "shap",
