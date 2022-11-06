@@ -18,12 +18,12 @@ jobs:
         stale-pr-message: 'This pull request has not seen any recent activity.'
         close-issue-message: 'This issue was closed automatically because it had not seen any recent activity. If you want to discuss it, you can reopen it freely.'
         close-pr-message: 'This pull request was closed automatically because it had not seen any recent activity. If you want to discuss it, you can reopen it freely.'
-        days-before-issue-stale: 14
-        days-before-issue-close: 100
+        days-before-issue-stale: 300
+        days-before-issue-close: 0
         days-before-pr-stale: 7
         days-before-pr-close: 14
         stale-issue-label: 'stale'
         stale-pr-label: 'stale'
-        exempt-issue-labels: 'no-stale,description-checked'
+        exempt-issue-labels: 'no-stale'
         exempt-pr-labels: 'no-stale'
         operations-per-run: 1000
