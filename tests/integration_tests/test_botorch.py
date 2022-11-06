@@ -1,4 +1,3 @@
-from typing import cast
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -370,7 +369,7 @@ def test_botorch_distributions() -> None:
         x3 = trial.suggest_int("x3", 0, 2)
         x4 = trial.suggest_int("x4", 2, 4, log=True)
         x5 = trial.suggest_int("x5", 0, 4, step=2)
-        x6 = cast(float, trial.suggest_categorical("x6", [0.1, 0.2, 0.3]))
+        x6 = trial.suggest_categorical("x6", [0.1, 0.2, 0.3])
         return x0 + x1 + x2 + x3 + x4 + x5 + x6
 
     sampler = BoTorchSampler()
