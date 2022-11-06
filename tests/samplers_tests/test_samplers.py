@@ -957,17 +957,17 @@ def test_reproducible(sampler_class: Callable[[int], BaseSampler], objective_fun
         return objective_func(a, b, c, d, e, f, g)
 
     study = optuna.create_study(sampler=sampler_class(1))
-    study.optimize(objective, n_trials=20)
+    study.optimize(objective, n_trials=15)
 
     study_same_seed = optuna.create_study(sampler=sampler_class(1))
-    study_same_seed.optimize(objective, n_trials=20)
-    for i in range(20):
+    study_same_seed.optimize(objective, n_trials=15)
+    for i in range(15):
         assert study.trials[i].params == study_same_seed.trials[i].params
 
     study_different_seed = optuna.create_study(sampler=sampler_class(2))
-    study_different_seed.optimize(objective, n_trials=20)
+    study_different_seed.optimize(objective, n_trials=15)
     assert any(
-        [study.trials[i].params != study_different_seed.trials[i].params for i in range(20)]
+        [study.trials[i].params != study_different_seed.trials[i].params for i in range(15)]
     )
 
 
@@ -985,14 +985,14 @@ def test_reseed_rng_change_sampling(sampler_class: Callable[[int], BaseSampler])
 
     sampler = sampler_class(1)
     study = optuna.create_study(sampler=sampler)
-    study.optimize(objective, n_trials=20)
+    study.optimize(objective, n_trials=15)
 
     sampler_different_seed = sampler_class(1)
     sampler_different_seed.reseed_rng()
     study_different_seed = optuna.create_study(sampler=sampler_different_seed)
-    study_different_seed.optimize(objective, n_trials=20)
+    study_different_seed.optimize(objective, n_trials=15)
     assert any(
-        [study.trials[i].params != study_different_seed.trials[i].params for i in range(20)]
+        [study.trials[i].params != study_different_seed.trials[i].params for i in range(15)]
     )
 
 
@@ -1014,7 +1014,7 @@ def run_optimize(
     hash_dict[k] = hash("nondeterministic hash")
     sampler = sampler_class_with_seed[sampler_class_index](1)
     study = optuna.create_study(sampler=sampler)
-    study.optimize(objective, n_trials=20)
+    study.optimize(objective, n_trials=15)
     sequence_dict[k] = list(study.trials[-1].params.values())
 
 
