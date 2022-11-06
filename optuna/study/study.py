@@ -808,7 +808,7 @@ class Study:
                 Parameter values to pass your objective function.
 
                 .. note::
-                    This method raises ValueError for invalid parameter values
+                    This method raises ``ValueError`` for invalid parameter values
                     like not a number (e.g. ``np.nan``),
                     non-positive value when parameter is log-scale,
                     value which cannot be casted to float for int/float distribution,
