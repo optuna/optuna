@@ -192,7 +192,7 @@ class FloatDistribution(BaseDistribution):
     def to_internal_repr(self, param_value_in_external_repr: float) -> float:
         try:
             return float(param_value_in_external_repr)
-        except ValueError as e:
+        except (ValueError, TypeError) as e:
             raise ValueError(
                 f"'{param_value_in_external_repr}' is not a valid type. "
                 "float-castable value is expected."
@@ -376,7 +376,7 @@ class IntDistribution(BaseDistribution):
     def to_internal_repr(self, param_value_in_external_repr: int) -> float:
         try:
             return float(param_value_in_external_repr)
-        except ValueError as e:
+        except (ValueError, TypeError) as e:
             raise ValueError(
                 f"'{param_value_in_external_repr}' is not a valid type. "
                 "float-castable value is expected."

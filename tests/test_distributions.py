@@ -200,17 +200,45 @@ def test_check_distribution_compatibility() -> None:
     )
 
 
-@pytest.mark.parametrize("value", (0, 1, 4, 10, 11))
+@pytest.mark.parametrize(
+    "value", (0, 1, 4, 10, 11, 1.1, "1", "1.1", "-1.0", True, False, np.ones(1), np.array([1.1]))
+)
 def test_int_internal_representation(value: int) -> None:
-
     i = distributions.IntDistribution(low=1, high=10)
-    assert i.to_external_repr(i.to_internal_repr(value)) == value
+
+    if isinstance(value, int):
+        expected_value = value
+    else:
+        expected_value = int(float(value))
+    assert i.to_external_repr(i.to_internal_repr(value)) == expected_value
 
 
-@pytest.mark.parametrize("value", (1.99, 2.0, 4.5, 7, 7.1))
+@pytest.mark.parametrize("value", ("foo", (), [], {}, set(), np.ones(2)))
+def test_int_internal_representation_error(value: Any) -> None:
+    i = distributions.IntDistribution(low=1, high=10)
+    with pytest.raises(ValueError):
+        i.to_internal_repr(value)
+
+
+@pytest.mark.parametrize(
+    "value",
+    (1.99, 2.0, 4.5, 7, 7.1, 1, "1", "1.1", "-1.0", True, False, np.ones(1), np.array([1.1])),
+)
 def test_float_internal_representation(value: float) -> None:
     f = distributions.FloatDistribution(low=2.0, high=7.0)
-    assert f.to_external_repr(f.to_internal_repr(value)) == value
+
+    if isinstance(value, float):
+        expected_value = value
+    else:
+        expected_value = float(value)
+    assert f.to_external_repr(f.to_internal_repr(value)) == expected_value
+
+
+@pytest.mark.parametrize("value", ("foo", (), [], {}, set(), np.ones(2)))
+def test_float_internal_representation_error(value: Any) -> None:
+    f = distributions.FloatDistribution(low=2.0, high=7.0)
+    with pytest.raises(ValueError):
+        f.to_internal_repr(value)
 
 
 def test_categorical_internal_representation() -> None:
