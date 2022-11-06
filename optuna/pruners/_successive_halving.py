@@ -1,12 +1,18 @@
 import math
 from typing import List
 from typing import Optional
+from typing import overload
+from typing import TYPE_CHECKING
 from typing import Union
 
 import optuna
 from optuna.pruners._base import BasePruner
 from optuna.study._study_direction import StudyDirection
 from optuna.trial._state import TrialState
+
+
+if TYPE_CHECKING:
+    from typing_extensions import Literal
 
 
 class SuccessiveHalvingPruner(BasePruner):
@@ -109,9 +115,29 @@ class SuccessiveHalvingPruner(BasePruner):
             is considered for promotion into the next rung.
     """
 
+    @overload
     def __init__(
         self,
-        min_resource: Union[str, int] = "auto",
+        min_resource: "Literal['auto']" = "auto",
+        reduction_factor: int = 4,
+        min_early_stopping_rate: int = 0,
+        bootstrap_count: "Literal[0]" = 0,
+    ) -> None:
+        ...
+
+    @overload
+    def __init__(
+        self,
+        min_resource: int,
+        reduction_factor: int = 4,
+        min_early_stopping_rate: int = 0,
+        bootstrap_count: int = 0,
+    ) -> None:
+        ...
+
+    def __init__(
+        self,
+        min_resource: "Union[Literal['auto'], int]" = "auto",
         reduction_factor: int = 4,
         min_early_stopping_rate: int = 0,
         bootstrap_count: int = 0,

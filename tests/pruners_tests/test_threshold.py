@@ -62,7 +62,7 @@ def test_threshold_pruner_with_invalid_inputs() -> None:
         optuna.pruners.ThresholdPruner(lower=0.0, upper="val")  # type: ignore
 
     with pytest.raises(TypeError):
-        optuna.pruners.ThresholdPruner(lower=None, upper=None)
+        optuna.pruners.ThresholdPruner(lower=None, upper=None)  # type: ignore
 
 
 def test_threshold_pruner_with_nan() -> None:

@@ -1,10 +1,16 @@
 import math
 from typing import Any
 from typing import Optional
+from typing import overload
+from typing import TYPE_CHECKING
 
 import optuna
 from optuna.pruners import BasePruner
 from optuna.pruners._percentile import _is_first_in_interval_step
+
+
+if TYPE_CHECKING:
+    from typing_extensions import Literal
 
 
 def _check_value(value: Any) -> float:
@@ -76,6 +82,36 @@ class ThresholdPruner(BasePruner):
             will be postponed until a value is reported. Value must be at least 1.
 
     """
+
+    @overload
+    def __init__(
+        self,
+        lower: float = -float("inf"),
+        upper: "Literal[None]" = None,
+        n_warmup_steps: int = 0,
+        interval_steps: int = 1,
+    ) -> None:
+        ...
+
+    @overload
+    def __init__(
+        self,
+        lower: "Literal[None]" = None,
+        upper: float = float("inf"),
+        n_warmup_steps: int = 0,
+        interval_steps: int = 1,
+    ) -> None:
+        ...
+
+    @overload
+    def __init__(
+        self,
+        lower: float,
+        upper: float,
+        n_warmup_steps: int = 0,
+        interval_steps: int = 1,
+    ) -> None:
+        ...
 
     def __init__(
         self,

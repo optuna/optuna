@@ -131,7 +131,10 @@ def test_successive_halving_pruner_with_auto_min_resource(n_reports: int, n_tria
 def test_successive_halving_pruner_with_invalid_str_to_min_resource() -> None:
 
     with pytest.raises(ValueError):
-        optuna.pruners.SuccessiveHalvingPruner(min_resource="fixed")
+        # A string other than "auto" is not allowed.
+        # Because the __init__ uses a Literal type for the min_resource argument, we must ignore
+        # this type error.
+        optuna.pruners.SuccessiveHalvingPruner(min_resource="fixed")  # type: ignore
 
 
 def test_successive_halving_pruner_min_resource_parameter() -> None:
@@ -253,10 +256,15 @@ def test_successive_halving_pruner_min_early_stopping_rate_parameter() -> None:
 def test_successive_halving_pruner_bootstrap_parameter() -> None:
 
     with pytest.raises(ValueError):
-        optuna.pruners.SuccessiveHalvingPruner(bootstrap_count=-1)
+        # Because the default min_resource is "auto", the bootstrap_count must be zero.
+        # The type checker correctly detects this type error.
+        optuna.pruners.SuccessiveHalvingPruner(bootstrap_count=-1)  # type: ignore
 
     with pytest.raises(ValueError):
-        optuna.pruners.SuccessiveHalvingPruner(bootstrap_count=1, min_resource="auto")
+        # The type checker correctly catches this as a type error so we must ignore it.
+        optuna.pruners.SuccessiveHalvingPruner(
+            bootstrap_count=1, min_resource="auto"  # type: ignore
+        )
 
     pruner = optuna.pruners.SuccessiveHalvingPruner(
         min_resource=1, reduction_factor=2, bootstrap_count=1

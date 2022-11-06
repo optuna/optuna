@@ -3,6 +3,8 @@ import math
 from typing import Container
 from typing import List
 from typing import Optional
+from typing import overload
+from typing import TYPE_CHECKING
 from typing import Union
 
 import optuna
@@ -11,6 +13,9 @@ from optuna.pruners._base import BasePruner
 from optuna.pruners._successive_halving import SuccessiveHalvingPruner
 from optuna.trial._state import TrialState
 
+
+if TYPE_CHECKING:
+    from typing_extensions import Literal
 
 _logger = logging.get_logger(__name__)
 
@@ -136,10 +141,33 @@ class HyperbandPruner(BasePruner):
             See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
     """
 
+    @overload
     def __init__(
         self,
         min_resource: int = 1,
-        max_resource: Union[str, int] = "auto",
+        max_resource: "Literal['auto']" = "auto",
+        reduction_factor: int = 3,
+        bootstrap_count: "Literal[0]" = 0,
+    ) -> None:
+        ...
+
+    @overload
+    def __init__(
+        self,
+        min_resource: int = 1,
+        # NOTE: We must provide a defualt value or else we cannot write the arguments in order.
+        # This value is not used; if the case a default is not provided the original init is called
+        # and max_resource is set to "auto".
+        max_resource: int = 100,
+        reduction_factor: int = 3,
+        bootstrap_count: int = 0,
+    ) -> None:
+        ...
+
+    def __init__(
+        self,
+        min_resource: int = 1,
+        max_resource: "Union[Literal['auto'], int]" = "auto",
         reduction_factor: int = 3,
         bootstrap_count: int = 0,
     ) -> None:

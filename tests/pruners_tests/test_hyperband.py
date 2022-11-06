@@ -90,7 +90,10 @@ def test_hyperband_max_resource_is_auto() -> None:
 
 def test_hyperband_max_resource_value_error() -> None:
     with pytest.raises(ValueError):
-        _ = optuna.pruners.HyperbandPruner(max_resource="not_appropriate")
+        # A string other than "auto" is not allowed.
+        # Because the __init__ uses a Literal type for the min_resource argument, we must ignore
+        # this type error.
+        _ = optuna.pruners.HyperbandPruner(max_resource="not_appropriate")  # type: ignore
 
 
 @pytest.mark.parametrize(
@@ -215,7 +218,9 @@ def test_hyperband_no_call_of_filter_study_in_should_prune(
 
 def test_incompatibility_between_bootstrap_count_and_auto_max_resource() -> None:
     with pytest.raises(ValueError):
-        optuna.pruners.HyperbandPruner(max_resource="auto", bootstrap_count=1)
+        # Because min_resource is "auto", the bootstrap_count must be zero.
+        # The type checker correctly detects this type error.
+        optuna.pruners.HyperbandPruner(max_resource="auto", bootstrap_count=1)  # type: ignore
 
 
 def test_hyperband_pruner_and_grid_sampler() -> None:
