@@ -115,3 +115,23 @@ def test_call_after_trial_of_base_sampler() -> None:
     with patch.object(base_sampler, "after_trial", wraps=base_sampler.after_trial) as mock_object:
         study.optimize(lambda _: 1.0, n_trials=1)
         assert mock_object.call_count == 1
+
+
+def test_fixed_none_value_sampling()-> None:
+    def objective(trial):
+        x = trial.suggest_categorical("x", (None,0))
+        return 0
+
+    tpe = optuna.samplers.TPESampler()
+    
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        # In this following case , "x" should sample only `None`
+        sampler = optuna.samplers.PartialFixedSampler(
+            fixed_params={"x": None}, base_sampler=tpe)
+    
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(objective, n_trials=10)
+
+    for trial in range(10):
+        assert study.trials[trial].params["x"] == None
