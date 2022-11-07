@@ -1,4 +1,5 @@
 import copy
+from functools import cached_property
 from numbers import Real
 import threading
 from typing import Any
@@ -194,7 +195,7 @@ class Study:
 
         return self.directions[0]
 
-    @property
+    @cached_property
     def directions(self) -> List[StudyDirection]:
         """Return the directions of the study.
 
