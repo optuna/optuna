@@ -806,14 +806,6 @@ class Study:
         Args:
             params:
                 Parameter values to pass your objective function.
-
-                .. note::
-                    This method raises ``ValueError`` for invalid parameter values
-                    like not a number (e.g. ``np.nan``),
-                    non-positive value when parameter is log-scale,
-                    value which cannot be casted to float for int/float distribution,
-                    value which does not be included in choices for categorical distribution, etc.
-
             user_attrs:
                 A dictionary of user-specific attributes other than ``params``.
             skip_if_exists:
