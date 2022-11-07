@@ -1,3 +1,4 @@
+import binascii
 import math
 from typing import Container
 from typing import List
@@ -59,13 +60,6 @@ class HyperbandPruner(BasePruner):
         Please set ``reduction_factor`` so that the number of brackets is not too large (about 4 –
         6 in most use cases). Please see Section 3.6 of the `original paper
         <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_ for the detail.
-
-    .. note::
-        ``HyperbandPruner`` in Optuna randomly computes bracket ID for each trial with a hash
-        function taking ``study_name`` of :class:`~optuna.study.Study` and
-        :attr:`~optuna.trial.Trial.number`. Please specify ``study_name`` and
-        `hash seed <https://docs.python.org/3/using/cmdline.html#envvar-PYTHONHASHSEED>`_
-        to make pruning behavior reproducible.
 
     Example:
 
@@ -251,7 +245,7 @@ class HyperbandPruner(BasePruner):
 
         assert self._n_brackets is not None
         n = (
-            hash("{}_{}".format(study.study_name, trial.number))
+            binascii.crc32("{}_{}".format(study.study_name, trial.number).encode())
             % self._total_trial_allocation_budget
         )
         for bracket_id in range(self._n_brackets):

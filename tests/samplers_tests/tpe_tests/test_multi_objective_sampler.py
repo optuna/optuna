@@ -338,29 +338,25 @@ def test_multi_objective_get_observation_pairs(
         )
     )
 
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], multivariate, constant_liar) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["x"], constant_liar) == (
         {"x": [int_value, int_value]},
         [(-float("inf"), [objective_value, -objective_value]) for _ in range(2)],
         None,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["y"], multivariate, constant_liar) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["y"], constant_liar) == (
         {"y": [0, 0]},
         [(-float("inf"), [objective_value, -objective_value]) for _ in range(2)],
         None,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["x", "y"], True, constant_liar) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["x", "y"], constant_liar) == (
         {"x": [int_value, int_value], "y": [0, 0]},
         [(-float("inf"), [objective_value, -objective_value]) for _ in range(2)],
         None,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["z"], multivariate, constant_liar) == (
-        (
-            {"z": [None, None]},
-            [(-float("inf"), [objective_value, -objective_value]) for _ in range(2)],
-            None,
-        )
-        if not multivariate
-        else ({"z": []}, [], None)
+    assert _tpe.sampler._get_observation_pairs(study, ["z"], constant_liar) == (
+        {"z": [None, None]},
+        [(-float("inf"), [objective_value, -objective_value]) for _ in range(2)],
+        None,
     )
 
 
@@ -376,25 +372,15 @@ def test_multi_objective_get_observation_pairs_constrained(constraint_value: int
     study.optimize(objective, n_trials=5)
 
     violations = [max(0, constraint_value) for _ in range(5)]
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], False, constraints_enabled=True) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["x"], constraints_enabled=True) == (
         {"x": [5.0, 5.0, 5.0, 5.0, 5.0]},
         [(-float("inf"), [5.0, -5.0]) for _ in range(5)],
         violations,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["y"], False, constraints_enabled=True) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["y"], constraints_enabled=True) == (
         {"y": [None, None, None, None, None]},
         [(-float("inf"), [5.0, -5.0]) for _ in range(5)],
         violations,
-    )
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], True, constraints_enabled=True) == (
-        {"x": [5.0, 5.0, 5.0, 5.0, 5.0]},
-        [(-float("inf"), [5.0, -5.0]) for _ in range(5)],
-        violations,
-    )
-    assert _tpe.sampler._get_observation_pairs(study, ["y"], True, constraints_enabled=True) == (
-        {"y": []},
-        [],
-        [],
     )
 
 
