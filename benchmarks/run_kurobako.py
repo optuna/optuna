@@ -57,7 +57,7 @@ def run(args: argparse.Namespace) -> None:
 
     for sampler, sampler_kwargs in zip(sampler_list, sampler_kwargs_list):
         for pruner, pruner_kwargs in zip(pruner_list, pruner_kwargs_list):
-            name = f"{args.name_prefix}_{sampler}_{pruner}"
+            name = f"{args.name_prefix}_{sampler}_{pruner}_{args.name_suffix}"
             cmd = (
                 f"{kurobako_cmd} solver --name {name} optuna --loglevel debug "
                 f"--sampler {sampler} --sampler-kwargs {sampler_kwargs} "
@@ -96,6 +96,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--path-to-kurobako", type=str, default="")
     parser.add_argument("--name-prefix", type=str, default="")
+    parser.add_argument("--name-suffix", type=str, default="")
     parser.add_argument("--budget", type=int, default=80)
     parser.add_argument("--n-runs", type=int, default=100)
     parser.add_argument("--n-jobs", type=int, default=10)
