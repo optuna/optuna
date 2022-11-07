@@ -10,6 +10,7 @@ import numpy as np
 from optuna import distributions
 from optuna.distributions import BaseDistribution
 
+
 try:
     from scipy.stats import truncnorm
 except ImportError:

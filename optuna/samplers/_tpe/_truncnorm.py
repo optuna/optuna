@@ -150,9 +150,11 @@ def _ndtri_exp(y: float) -> float:
 
 
 def ppf(q: float, a: float, b: float) -> float:
+    if a == b:
+        return np.nan
     if q == 0:
         return a
-    elif q == 1:
+    if q == 1:
         return b
 
     def ppf_left(q: float, a: float, b: float) -> float:
@@ -170,6 +172,8 @@ def ppf(q: float, a: float, b: float) -> float:
 
 
 def logpdf(x: float, a: float, b: float) -> float:
+    if a == b:
+        return np.nan
     if x < a or b < x:
         return -np.inf
     return _norm_logpdf(x) - _log_gauss_mass(a, b)
