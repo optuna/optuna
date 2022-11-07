@@ -9,7 +9,11 @@ import numpy as np
 
 from optuna import distributions
 from optuna.distributions import BaseDistribution
-from optuna.samplers._tpe import _truncnorm
+
+try:
+    from scipy.stats import truncnorm
+except ImportError:
+    from optuna.samplers._tpe import _truncnorm as truncnorm
 
 
 EPS = 1e-12
@@ -122,7 +126,7 @@ class _ParzenEstimator:
                     out = []
                     for i in range(size):
                         u = float(rng.uniform(low=0, high=1, size=1))
-                        out.append(_truncnorm.ppf(u, trunc_low[i], trunc_high[i]))
+                        out.append(truncnorm.ppf(u, trunc_low[i], trunc_high[i]))
                     rvs = np.asarray(out) * sigmas[active] + mus[active]
                     samples = np.where(samples < high, samples, rvs)
             samples_dict[param_name] = samples
