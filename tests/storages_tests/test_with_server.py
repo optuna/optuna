@@ -167,14 +167,10 @@ def test_multiprocess(storage: BaseStorage) -> None:
 
 
 def test_pickle_storage(storage: BaseStorage) -> None:
-    storage_mode = os.environ.get("TEST_DB_MODE", "")
-    if storage_mode == "journal-redis":
-        pytest.skip("`JournalRedisStorage` is not pickalable.")
     study_id = storage.create_new_study()
     storage.set_study_system_attr(study_id, "key", "pickle")
 
     restored_storage = pickle.loads(pickle.dumps(storage))
-    print("study", restored_storage.get_all_studies())
 
     storage_system_attrs = storage.get_study_system_attrs(study_id)
     restored_storage_system_attrs = restored_storage.get_study_system_attrs(study_id)
