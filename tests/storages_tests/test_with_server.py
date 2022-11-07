@@ -1,15 +1,13 @@
-from multiprocessing import Pool
+from concurrent.futures import ProcessPoolExecutor
 import os
+import pickle
 from typing import Sequence
-from typing import Tuple
-from typing import Union
 
 import numpy as np
 import pytest
 
 import optuna
-from optuna.storages import RDBStorage
-from optuna.storages import RedisStorage
+from optuna.storages import BaseStorage
 from optuna.trial import TrialState
 
 
@@ -30,25 +28,42 @@ def objective(trial: optuna.Trial) -> float:
     return f(x, y)
 
 
-def run_optimize(args: Tuple[str, str]) -> None:
-    study_name = args[0]
-    storage_url = args[1]
-    # Create a study
-    study = optuna.load_study(study_name=study_name, storage=storage_url)
-    # Run optimization
-    study.optimize(objective, n_trials=20)
-
-
-@pytest.fixture
-def storage_url() -> str:
+def get_storage() -> BaseStorage:
     if "TEST_DB_URL" not in os.environ:
         pytest.skip("This test requires TEST_DB_URL.")
     storage_url = os.environ["TEST_DB_URL"]
+    storage_mode = os.environ.get("TEST_DB_MODE", "")
+
+    storage: BaseStorage
+    if storage_mode == "":
+        if storage_url.startswith("redis"):
+            storage = optuna.storages.RedisStorage(url=storage_url)
+        else:
+            storage = optuna.storages.RDBStorage(url=storage_url)
+    elif storage_mode == "journal-redis":
+        journal_redis_storage = optuna.storages.JournalRedisStorage(storage_url)
+        storage = optuna.storages.JournalStorage(journal_redis_storage)
+    else:
+        assert False, f"The mode {storage_mode} is not supported."
+
+    return storage
+
+
+@pytest.fixture
+def storage() -> BaseStorage:
+    storage = get_storage()
     try:
-        optuna.study.delete_study(study_name=_STUDY_NAME, storage=storage_url)
+        optuna.study.delete_study(study_name=_STUDY_NAME, storage=storage)
     except KeyError:
         pass
-    return storage_url
+    return storage
+
+
+def run_optimize(study_name: str, n_trials: int) -> None:
+    # Create a study
+    study = optuna.load_study(study_name=study_name, storage=get_storage())
+    # Run optimization
+    study.optimize(objective, n_trials=n_trials)
 
 
 def _check_trials(trials: Sequence[optuna.trial.FrozenTrial]) -> None:
@@ -88,11 +103,11 @@ def _check_trials(trials: Sequence[optuna.trial.FrozenTrial]) -> None:
     )
 
 
-def test_loaded_trials(storage_url: str) -> None:
+def test_loaded_trials(storage: BaseStorage) -> None:
     # Please create the tables by placing this function before the multi-process tests.
 
     N_TRIALS = 20
-    study = optuna.create_study(study_name=_STUDY_NAME, storage=storage_url)
+    study = optuna.create_study(study_name=_STUDY_NAME, storage=storage)
     # Run optimization
     study.optimize(objective, n_trials=N_TRIALS)
 
@@ -102,7 +117,7 @@ def test_loaded_trials(storage_url: str) -> None:
     _check_trials(trials)
 
     # Create a new study to confirm the study can load trial properly.
-    loaded_study = optuna.load_study(study_name=_STUDY_NAME, storage=storage_url)
+    loaded_study = optuna.load_study(study_name=_STUDY_NAME, storage=storage)
     _check_trials(loaded_study.trials)
 
 
@@ -113,13 +128,8 @@ def test_loaded_trials(storage_url: str) -> None:
         (-float("inf"), -float("inf")),
     ],
 )
-def test_store_infinite_values(input_value: float, expected: float, storage_url: str) -> None:
+def test_store_infinite_values(input_value: float, expected: float, storage: BaseStorage) -> None:
 
-    storage: Union[RDBStorage, RedisStorage]
-    if storage_url.startswith("redis"):
-        storage = optuna.storages.RedisStorage(url=storage_url)
-    else:
-        storage = optuna.storages.RDBStorage(url=storage_url)
     study_id = storage.create_new_study()
     trial_id = storage.create_new_trial(study_id)
     storage.set_trial_intermediate_value(trial_id, 1, input_value)
@@ -128,13 +138,8 @@ def test_store_infinite_values(input_value: float, expected: float, storage_url:
     assert storage.get_trial(trial_id).intermediate_values[1] == expected
 
 
-def test_store_nan_intermediate_values(storage_url: str) -> None:
+def test_store_nan_intermediate_values(storage: BaseStorage) -> None:
 
-    storage: Union[RDBStorage, RedisStorage]
-    if storage_url.startswith("redis"):
-        storage = optuna.storages.RedisStorage(url=storage_url)
-    else:
-        storage = optuna.storages.RDBStorage(url=storage_url)
     study_id = storage.create_new_study()
     trial_id = storage.create_new_trial(study_id)
 
@@ -145,16 +150,32 @@ def test_store_nan_intermediate_values(storage_url: str) -> None:
     assert np.isnan(got_value)
 
 
-def test_multiprocess(storage_url: str) -> None:
+def test_multiprocess(storage: BaseStorage) -> None:
     n_workers = 8
+    n_trials = 20
     study_name = _STUDY_NAME
-    optuna.create_study(storage=storage_url, study_name=study_name)
-    with Pool(n_workers) as pool:
-        pool.map(run_optimize, [(study_name, storage_url)] * n_workers)
+    optuna.create_study(storage=storage, study_name=study_name)
+    with ProcessPoolExecutor(n_workers) as pool:
+        pool.map(run_optimize, *zip(*[[study_name, n_trials]] * n_workers))
 
-    study = optuna.load_study(study_name=study_name, storage=storage_url)
+    study = optuna.load_study(study_name=study_name, storage=storage)
 
     trials = study.trials
-    assert len(trials) == n_workers * 20
+    assert len(trials) == n_workers * n_trials
 
     _check_trials(trials)
+
+
+def test_pickle_storage(storage: BaseStorage) -> None:
+    storage_mode = os.environ.get("TEST_DB_MODE", "")
+    if storage_mode == "journal-redis":
+        pytest.skip("`JournalRedisStorage` is not pickalable.")
+    study_id = storage.create_new_study()
+    storage.set_study_system_attr(study_id, "key", "pickle")
+
+    restored_storage = pickle.loads(pickle.dumps(storage))
+    print("study", restored_storage.get_all_studies())
+
+    storage_system_attrs = storage.get_study_system_attrs(study_id)
+    restored_storage_system_attrs = restored_storage.get_study_system_attrs(study_id)
+    assert storage_system_attrs == restored_storage_system_attrs == {"key": "pickle"}

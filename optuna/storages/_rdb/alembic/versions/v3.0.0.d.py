@@ -105,7 +105,16 @@ def upgrade():
 
     session = orm.Session(bind=bind)
     try:
-        records = session.query(TrialValueModel).all()
+        records = (
+            session.query(TrialValueModel)
+            .filter(
+                sa.or_(
+                    TrialValueModel.value > 1e16,
+                    TrialValueModel.value < -1e16,
+                )
+            )
+            .all()
+        )
         mapping = []
         for r in records:
             value: float
