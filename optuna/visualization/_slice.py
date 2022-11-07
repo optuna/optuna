@@ -195,9 +195,12 @@ def _get_slice_plot(info: _SlicePlotInfo) -> "go.Figure":
 
 
 def _generate_slice_subplot(subplot_info: _SliceSubplotInfo) -> "Scatter":
+    x = [x if x is not None else "None" for x in subplot_info.x]
+    y = [y if y is not None else "None" for y in subplot_info.y]
+
     return go.Scatter(
-        x=subplot_info.x,
-        y=subplot_info.y,
+        x=x,
+        y=y,
         mode="markers",
         marker={
             "line": {"width": 0.5, "color": "Grey"},

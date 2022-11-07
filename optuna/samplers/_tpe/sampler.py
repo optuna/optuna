@@ -386,7 +386,6 @@ class TPESampler(BaseSampler):
         values, scores, violations = _get_observation_pairs(
             study,
             param_names,
-            self._multivariate,
             self._constant_liar,
             self._constraints_func is not None,
         )
@@ -436,14 +435,15 @@ class TPESampler(BaseSampler):
         values, scores, violations = _get_observation_pairs(
             study,
             [param_name],
-            self._multivariate,
             self._constant_liar,
             self._constraints_func is not None,
         )
 
         n = sum(s < float("inf") for s, v in scores)  # Ignore running trials.
 
-        self._log_independent_sampling(n, trial, param_name)
+        # Avoid independent warning at the first sampling of `param_name` when `group=True`.
+        if any(param is not None for param in values[param_name]):
+            self._log_independent_sampling(n, trial, param_name)
 
         if n < self._n_startup_trials:
             return self._random_sampler.sample_independent(
@@ -580,7 +580,6 @@ def _calculate_nondomination_rank(loss_vals: np.ndarray) -> np.ndarray:
 def _get_observation_pairs(
     study: Study,
     param_names: List[str],
-    multivariate: bool,
     constant_liar: bool = False,  # TODO(hvy): Remove default value and fix unit tests.
     constraints_enabled: bool = False,
 ) -> Tuple[
@@ -610,9 +609,6 @@ def _get_observation_pairs(
     trial is feasible if and only if its violation score is 0.
     """
 
-    if len(param_names) > 1:
-        assert multivariate
-
     signs = []
     for d in study.directions:
         if d == StudyDirection.MINIMIZE:
@@ -630,12 +626,6 @@ def _get_observation_pairs(
     values: Dict[str, List[Optional[float]]] = {param_name: [] for param_name in param_names}
     violations: Optional[List[float]] = [] if constraints_enabled else None
     for trial in study.get_trials(deepcopy=False, states=states):
-        # If ``multivariate`` = True and ``group`` = True, we ignore the trials that are not
-        # included in each subspace.
-        # If ``multivariate`` = False, we skip the check.
-        if multivariate and any([param_name not in trial.params for param_name in param_names]):
-            continue
-
         # We extract score from the trial.
         if trial.state is TrialState.COMPLETE:
             if trial.values is None:
@@ -702,7 +692,7 @@ def _split_observation_pairs(
     # 3. Feasible trials are sorted by loss_vals.
     if violations is not None:
         violation_1d = np.array(violations, dtype=float)
-        idx = violation_1d.argsort()
+        idx = violation_1d.argsort(kind="stable")
         if n_below >= len(idx) or violation_1d[idx[n_below]] > 0:
             # Below is filled by all feasible trials and trials with smaller violation values.
             indices_below = idx[:n_below]
@@ -730,7 +720,7 @@ def _split_observation_pairs(
             [(s, v[0]) for s, v in loss_vals], dtype=[("step", float), ("score", float)]
         )
 
-        index_loss_ascending = np.argsort(loss_values)
+        index_loss_ascending = np.argsort(loss_values, kind="stable")
         # `np.sort` is used to keep chronological order.
         indices_below = np.sort(index_loss_ascending[:n_below])
         indices_above = np.sort(index_loss_ascending[n_below:])

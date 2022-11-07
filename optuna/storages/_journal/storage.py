@@ -102,6 +102,19 @@ class JournalStorage(BaseStorage):
                 self._backend.load_snapshot(self.restore_replay_result)
             self._sync_with_backend()
 
+    def __getstate__(self) -> Dict[Any, Any]:
+        state = self.__dict__.copy()
+        del state["_worker_id_prefix"]
+        del state["_replay_result"]
+        del state["_thread_lock"]
+        return state
+
+    def __setstate__(self, state: Dict[Any, Any]) -> None:
+        self.__dict__.update(state)
+        self._worker_id_prefix = str(uuid.uuid4()) + "-"
+        self._replay_result = JournalStorageReplayResult(self._worker_id_prefix)
+        self._thread_lock = threading.Lock()
+
     def restore_replay_result(self, snapshot: bytes) -> None:
         try:
             r: Optional[JournalStorageReplayResult] = pickle.loads(snapshot)

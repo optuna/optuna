@@ -45,6 +45,15 @@ class JournalRedisStorage(BaseJournalLogStorage, BaseJournalLogSnapshot):
         self._use_cluster = use_cluster
         self._prefix = prefix
 
+    def __getstate__(self) -> Dict[Any, Any]:
+        state = self.__dict__.copy()
+        del state["_redis"]
+        return state
+
+    def __setstate__(self, state: Dict[Any, Any]) -> None:
+        self.__dict__.update(state)
+        self._redis = redis.Redis.from_url(self._url)
+
     def read_logs(self, log_number_from: int) -> List[Dict[str, Any]]:
 
         max_log_number_bytes = self._redis.get(f"{self._prefix}:log_number")
