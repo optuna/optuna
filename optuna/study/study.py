@@ -1,5 +1,4 @@
 import copy
-from functools import cached_property
 from numbers import Real
 import threading
 from typing import Any
@@ -83,6 +82,7 @@ class Study:
         study_id = storage.get_study_id_from_name(study_name)
         self._study_id = study_id
         self._storage = storage
+        self._directions: Optional[List[StudyDirection]] = None
 
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
@@ -195,7 +195,7 @@ class Study:
 
         return self.directions[0]
 
-    @cached_property
+    @property
     def directions(self) -> List[StudyDirection]:
         """Return the directions of the study.
 
@@ -203,7 +203,9 @@ class Study:
             A list of :class:`~optuna.study.StudyDirection` objects.
         """
 
-        return self._storage.get_study_directions(self._study_id)
+        if not self._directions:
+            self._directions = self._storage.get_study_directions(self._study_id)
+        return self._directions
 
     @property
     def trials(self) -> List[FrozenTrial]:
