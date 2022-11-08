@@ -208,7 +208,7 @@ class CmaEsSampler(BaseSampler):
         popsize: Optional[int] = None,
         inc_popsize: int = 2,
         use_separable_cma: bool = False,
-        use_cma_with_margin: bool = False,  # TODO: Combination with use_separable_cma.
+        with_margin: bool = False,  # TODO: Combination with use_separable_cma.
         source_trials: Optional[List[FrozenTrial]] = None,
     ) -> None:
         self._x0 = x0
@@ -223,7 +223,7 @@ class CmaEsSampler(BaseSampler):
         self._popsize = popsize
         self._inc_popsize = inc_popsize
         self._use_separable_cma = use_separable_cma
-        self._use_cma_with_margin = use_cma_with_margin
+        self._with_margin = with_margin
         self._source_trials = source_trials
 
         if self._restart_strategy:
@@ -325,7 +325,7 @@ class CmaEsSampler(BaseSampler):
             self._warn_independent_sampling = False
             return {}
 
-        trans = _SearchSpaceTransform(search_space, transform_step=not self._use_cma_with_margin)
+        trans = _SearchSpaceTransform(search_space, transform_step=not self._with_margin)
 
         optimizer, n_restarts = self._restore_optimizer(completed_trials)
         if optimizer is None:
@@ -490,7 +490,7 @@ class CmaEsSampler(BaseSampler):
                 population_size=population_size,
             )
 
-        if self._use_cma_with_margin:
+        if self._with_margin:
             steps = []
             for dist in trans._search_space.values():
                 assert isinstance(dist, (IntDistribution, FloatDistribution))
