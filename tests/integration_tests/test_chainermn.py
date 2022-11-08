@@ -22,7 +22,6 @@ from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.testing.pruners import DeterministicPruner
 from optuna.testing.storages import StorageSupplier
-from optuna.trial import Trial
 from optuna.trial import TrialState
 
 
@@ -302,7 +301,11 @@ class TestChainerMNTrial:
                 x2 = mn_trial.suggest_float("x", low, high, step=step)
                 assert x1 == x2
 
-                mn_trial.suggest_float("x", low, high)
+                if comm.rank == 0:
+                    with pytest.warns(RuntimeWarning):
+                        mn_trial.suggest_float("x", low, high)
+                else:
+                    mn_trial.suggest_float("x", low, high)
 
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -335,7 +338,7 @@ class TestChainerMNTrial:
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
             low = 1
-            high = 10
+            high = 9
             step = 2
             for _ in range(10):
                 mn_trial = _create_new_chainermn_trial(study, comm)
@@ -460,8 +463,7 @@ def _create_new_chainermn_trial(
 ) -> integration.chainermn.ChainerMNTrial:
 
     if comm.rank == 0:
-        trial_id = study._storage.create_new_trial(study._study_id)
-        trial = Trial(study, trial_id)
+        trial = study.ask()
         mn_trial = integration.chainermn.ChainerMNTrial(trial, comm)
     else:
         mn_trial = integration.chainermn.ChainerMNTrial(None, comm)

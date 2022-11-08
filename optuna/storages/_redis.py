@@ -117,6 +117,15 @@ class RedisStorage(BaseStorage, BaseHeartbeat):
         self.grace_period = grace_period
         self.failed_trial_callback = failed_trial_callback
 
+    def __getstate__(self) -> Dict[Any, Any]:
+        state = self.__dict__.copy()
+        del state["_redis"]
+        return state
+
+    def __setstate__(self, state: Dict[Any, Any]) -> None:
+        self.__dict__.update(state)
+        self._redis = redis.Redis.from_url(self._url)
+
     def create_new_study(self, study_name: Optional[str] = None) -> int:
 
         if study_name is not None and self._redis.exists(self._key_study_name(study_name)):

@@ -192,4 +192,5 @@ class JournalFileStorage(BaseJournalLogStorage):
             what_to_write = "\n".join([json.dumps(log) for log in logs]) + "\n"
             with open(self._file_path, "a", encoding="utf-8") as f:
                 f.write(what_to_write)
+                f.flush()
                 os.fsync(f.fileno())

@@ -2,9 +2,7 @@ import os
 import sys
 from typing import Dict
 from typing import List
-from typing import Optional
 
-import pkg_resources
 from setuptools import find_packages
 from setuptools import setup
 
@@ -33,6 +31,8 @@ def get_install_requires() -> List[str]:
         "cliff",
         "cmaes>=0.8.2",
         "colorlog",
+        # TODO(HideakiImamura): remove this after the fix by `cliff` or `stevedore`
+        "importlib-metadata<5.0.0",
         "numpy",
         "packaging>=20.0",
         # TODO(kstoneriv3): remove this after deprecation of Python 3.6
@@ -69,7 +69,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "cma",
             "fvcore",
             "lightgbm",
-            "matplotlib",
+            "matplotlib!=3.6.0",
             "mlflow",
             "pandas",
             "pillow",
@@ -115,7 +115,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "xgboost",
         ],
         "optional": [
-            "matplotlib",  # optuna/visualization/matplotlib
+            "matplotlib!=3.6.0",  # optuna/visualization/matplotlib
             "pandas",  # optuna/study.py
             "plotly>=4.0.0",  # optuna/visualization.
             "redis",  # optuna/storages/redis.py.
@@ -124,24 +124,14 @@ def get_extras_require() -> Dict[str, List[str]]:
         ],
         "test": [
             "codecov",
-            "fakeredis<=1.7.1; python_version<'3.7'",
-            "fakeredis ; python_version>='3.7'",
+            "fakeredis[lua]<=1.7.1; python_version<'3.7'",
+            "fakeredis[lua] ; python_version>='3.7'",
             "kaleido",
             "pytest",
         ],
     }
 
     return requirements
-
-
-def find_any_distribution(pkgs: List[str]) -> Optional[pkg_resources.Distribution]:
-
-    for pkg in pkgs:
-        try:
-            return pkg_resources.get_distribution(pkg)
-        except pkg_resources.DistributionNotFound:
-            pass
-    return None
 
 
 setup(

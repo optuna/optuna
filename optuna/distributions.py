@@ -44,6 +44,7 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
 
         return param_value_in_internal_repr
 
+    @abc.abstractmethod
     def to_internal_repr(self, param_value_in_external_repr: Any) -> float:
         """Convert external representation of a parameter value into internal representation.
 
@@ -55,7 +56,7 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
             Optuna's internal representation of a parameter value.
         """
 
-        return param_value_in_external_repr
+        raise NotImplementedError
 
     @abc.abstractmethod
     def single(self) -> bool:
@@ -187,6 +188,15 @@ class FloatDistribution(BaseDistribution):
         else:
             k = (value - self.low) / self.step
             return self.low <= value <= self.high and abs(k - round(k)) < 1.0e-8
+
+    def to_internal_repr(self, param_value_in_external_repr: float) -> float:
+        try:
+            return float(param_value_in_external_repr)
+        except (ValueError, TypeError) as e:
+            raise ValueError(
+                f"'{param_value_in_external_repr}' is not a valid type. "
+                "float-castable value is expected."
+            ) from e
 
 
 @deprecated_class("3.0.0", "6.0.0", text=_float_distribution_deprecated_msg)
@@ -364,8 +374,13 @@ class IntDistribution(BaseDistribution):
         return int(param_value_in_internal_repr)
 
     def to_internal_repr(self, param_value_in_external_repr: int) -> float:
-
-        return float(param_value_in_external_repr)
+        try:
+            return float(param_value_in_external_repr)
+        except (ValueError, TypeError) as e:
+            raise ValueError(
+                f"'{param_value_in_external_repr}' is not a valid type. "
+                "float-castable value is expected."
+            ) from e
 
     def single(self) -> bool:
         if self.log:
