@@ -25,15 +25,15 @@ with try_import() as _imports:
             name="matplotlib",
         )
 
-    __all__ = [
-        "_imports",
-        "matplotlib",
-        "matplotlib_version",
-        "plt",
-        "Axes",
-        "LineCollection",
-        "PathCollection",
-        "Colormap",
-        "ContourSet",
-        "Rectangle",
-    ]
+__all__ = [
+    "_imports",
+    "matplotlib",
+    "matplotlib_version",
+    "plt",
+    "Axes",
+    "LineCollection",
+    "PathCollection",
+    "Colormap",
+    "ContourSet",
+    "Rectangle",
+]
