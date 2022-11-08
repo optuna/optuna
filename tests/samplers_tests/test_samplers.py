@@ -1,6 +1,7 @@
 from collections import OrderedDict
 import multiprocessing
 from multiprocessing.managers import DictProxy
+import os
 import pickle
 import sys
 from typing import Any
@@ -14,6 +15,7 @@ from typing import Union
 from unittest.mock import patch
 import warnings
 
+from _pytest.fixtures import SubRequest
 from _pytest.mark.structures import MarkDecorator
 import numpy as np
 import pytest
@@ -1018,8 +1020,29 @@ def run_optimize(
     sequence_dict[k] = list(study.trials[-1].params.values())
 
 
+@pytest.fixture
+def unset_seed_in_test(request: SubRequest) -> None:
+    # Unset the hashseed at beginning and restore it at end regardless of an exception in the test.
+    # See https://docs.pytest.org/en/stable/how-to/fixtures.html#adding-finalizers-directly
+    # for details.
+
+    hash_seed = os.getenv("PYTHONHASHSEED")
+    if hash_seed is not None:
+        del os.environ["PYTHONHASHSEED"]
+
+    def restore_seed() -> None:
+        if hash_seed is not None:
+            os.environ["PYTHONHASHSEED"] = hash_seed
+
+    request.addfinalizer(restore_seed)
+
+
 @pytest.mark.parametrize("sampler_class_index", range(len(sampler_class_with_seed)))
-def test_reproducible_in_other_process(sampler_class_index: int) -> None:
+def test_reproducible_in_other_process(sampler_class_index: int, unset_seed_in_test: None) -> None:
+    # This test should be tested without `PYTHONHASHSEED`. However, some tool such as tox
+    # set the environmental variable "PYTHONHASHSEED" by default.
+    # To do so, this test calls a finalizer: `unset_seed_in_test`.
+
     # Multiprocessing supports three way to start a process.
     # We use `spawn` option to create a child process as a fresh python process.
     # For more detail, see https://github.com/optuna/optuna/pull/3187#issuecomment-997673037.
@@ -1033,6 +1056,7 @@ def test_reproducible_in_other_process(sampler_class_index: int) -> None:
         )
         p.start()
         p.join()
+
     # Hashes are expected to be different because string hashing is nondeterministic per process.
     assert not (hash_dict[0] == hash_dict[1] == hash_dict[2])
     # But the sequences are expected to be the same.
