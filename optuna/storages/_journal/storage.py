@@ -117,7 +117,7 @@ class JournalStorage(BaseStorage):
     def restore_replay_result(self, snapshot: bytes) -> None:
         try:
             r: Optional[JournalStorageReplayResult] = pickle.loads(snapshot)
-        except pickle.UnpicklingError as e:
+        except pickle.UnpicklingError or KeyError as e:
             raise SnapshotRestoreError("Failed to restore `JournalStorageReplayResult`.") from e
         if r is None:
             return
