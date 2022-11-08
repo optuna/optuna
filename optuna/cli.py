@@ -972,7 +972,7 @@ def _preprocess_argv(argv: List[str]) -> Tuple[List[str], Tuple[str, List[str]]]
     for command_candidate in command_candidate_to_indices:
         for command_name in _COMMANDS:
             command_length = len(command_name)
-            # Find the longest possible command
+            # Find the longest possible command.
             if (
                 command_name == command_candidate
                 and command_length > current_longest_command_length
