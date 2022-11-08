@@ -87,9 +87,9 @@ def get_extras_require() -> Dict[str, List[str]]:
         "integration": [
             "allennlp>=2.2.0",
             # TODO(c-bata): Remove cached-path after allennllp supports v1.1.3
-            "cached-path<=1.1.2 ; python_version>'3.6'",
-            "botorch>=0.4.0 ; python_version>'3.6'",
-            "catalyst>=21.3 ; python_version>'3.6'",
+            "cached-path<=1.1.2",
+            "botorch>=0.4.0",
+            "catalyst>=21.3",
             "catboost>=0.26",
             "chainer>=5.0.0",
             "cma",
