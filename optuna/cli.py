@@ -214,13 +214,40 @@ def _format_output(
 
 
 class _BaseCommand:
+    """Base class for commands.
+
+    Note that commands class are not supposed to be called by library users.
+    They are used only in this file to manage optuna CLI commands.
+    """
+
     def __init__(self) -> None:
         self.logger = optuna.logging.get_logger(__name__)
 
     def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
+        """Add arguments required for each command.
+
+        Args:
+            parser:
+                `ArgumentParser` object to add arguments for the command by
+                `add_argument` method.
+        Returns:
+            `ArgumentParser` object which added some arguments.
+        """
+
         return parser
 
     def take_action(self, parsed_args: Namespace) -> int:
+        """Define action if the command is called.
+
+        Args:
+            parsed_args:
+                `Namespace` object including arguments specified by user.
+
+        Returns:
+            Running status of the action.
+            0 if this method finishes normally, otherwise 1.
+        """
+
         raise NotImplementedError
 
 
