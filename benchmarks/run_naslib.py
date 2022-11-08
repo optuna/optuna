@@ -50,11 +50,11 @@ def run(args: argparse.Namespace) -> None:
             f"pruner_list: {pruner_list}, pruner_kwargs_list: {pruner_kwargs_list}."
         )
 
-    for i, sampler, sampler_kwargs in enumerate(zip(sampler_list, sampler_kwargs_list)):
+    for i, (sampler, sampler_kwargs) in enumerate(zip(sampler_list, sampler_kwargs_list)):
         sampler_name = sampler
         if sampler_list.count(sampler) > 1:
             sampler_name += f"_{sampler_list[:i].count(sampler)}"
-        for j, pruner, pruner_kwargs in enumerate(zip(pruner_list, pruner_kwargs_list)):
+        for j, (pruner, pruner_kwargs) in enumerate(zip(pruner_list, pruner_kwargs_list)):
             pruner_name = pruner
             if pruner_list.count(pruner) > 1:
                 pruner_name += f"_{pruner_list[:j].count(pruner)}"
