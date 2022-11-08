@@ -123,7 +123,6 @@ jobs:
         python benchmarks/run_kurobako.py \
           --path-to-kurobako "." \
           --name-prefix "" \
-          --name-suffix "" \
           --budget ${{ github.event.inputs.budget }} \
           --n-runs ${{ github.event.inputs.n-runs }} \
           --n-jobs 10 \
