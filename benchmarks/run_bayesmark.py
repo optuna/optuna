@@ -1,5 +1,4 @@
 import argparse
-import itertools
 import json
 import os
 import subprocess
@@ -37,16 +36,16 @@ def run_benchmark(args: argparse.Namespace) -> None:
             f"pruner_list: {pruner_list}, pruner_keyword_arguments: {pruner_kwargs_list}."
         )
 
-    sampler_pruner_product = list(itertools.product(sampler_list, pruner_list))
-    counter = {x: 0 for x in set(sampler_pruner_product)}
 
-    config = dict()
-    for sampler, sampler_kwargs in zip(sampler_list, sampler_kwargs_list):
-        for pruner, pruner_kwargs in zip(pruner_list, pruner_kwargs_list):
-            optimizer_name = f"{args.name_prefix}_{sampler}_{pruner}"
-            if sampler_pruner_product.count((sampler, pruner)) > 1:
-                optimizer_name += f"_{counter[(sampler, pruner)]}"
-                counter[(sampler, pruner)] += 1
+    for i, sampler, sampler_kwargs in enumerate(zip(sampler_list, sampler_kwargs_list)):
+        sampler_name = sampler
+        if sampler_list.count(sampler) > 1:
+            sampler_name += f"_{sampler_list[:i].count(sampler)}"
+        for j, pruner, pruner_kwargs in enumerate(zip(pruner_list, pruner_kwargs_list)):
+            pruner_name = pruner
+            if pruner_list.count(pruner) > 1:
+                pruner_name += f"_{pruner_list[:j].count(pruner)}"
+            optimizer_name = f"{args.name_prefix}_{sampler_name}_{pruner_name}"
             optimizer_kwargs = {
                 "sampler": sampler,
                 "sampler_kwargs": json.loads(sampler_kwargs),
