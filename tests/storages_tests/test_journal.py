@@ -16,8 +16,8 @@ import pytest
 import optuna
 from optuna import create_study
 from optuna.storages import JournalStorage
-from optuna.storages._journal.base import SnapshotRestoreError
 from optuna.storages._journal.base import BaseJournalLogSnapshot
+from optuna.storages._journal.base import SnapshotRestoreError
 from optuna.storages._journal.file import JournalFileBaseLock
 from optuna.storages._journal.storage import JournalStorageReplayResult
 from optuna.testing.storages import StorageSupplier
