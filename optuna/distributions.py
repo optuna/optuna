@@ -128,6 +128,7 @@ class FloatDistribution(BaseDistribution):
             ``high`` must be greater than or equal to ``low``.
         log:
             If ``log`` is :obj:`True`, this distribution is in log-scaled domain.
+            In this case, all parameters enqueued to the distribution must be positive values.
             This parameter must be :obj:`False` when the parameter ``step`` is not :obj:`None`.
         step:
             A discretization step. ``step`` must be larger than 0.
@@ -339,6 +340,7 @@ class IntDistribution(BaseDistribution):
             ``high`` must be greater than or equal to ``low``.
         log:
             If ``log`` is :obj:`True`, this distribution is in log-scaled domain.
+            In this case, all parameters enqueued to the distribution must be positive values.
             This parameter must be :obj:`False` when the parameter ``step`` is not 1.
         step:
             A discretization step. ``step`` must be a positive integer. This parameter must be 1
