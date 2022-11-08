@@ -36,6 +36,7 @@ def run_benchmark(args: argparse.Namespace) -> None:
             f"pruner_list: {pruner_list}, pruner_keyword_arguments: {pruner_kwargs_list}."
         )
 
+    config = dict()
     for i, sampler, sampler_kwargs in enumerate(zip(sampler_list, sampler_kwargs_list)):
         sampler_name = sampler
         if sampler_list.count(sampler) > 1:
