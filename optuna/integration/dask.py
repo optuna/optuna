@@ -11,25 +11,18 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
-from typing import Type
 from typing import Union
 import uuid
 
 import optuna
-from optuna import pruners
-from optuna import samplers
-from optuna import storages
-from optuna._experimental import experimental_func
+from optuna._experimental import experimental_class
 from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
 from optuna.distributions import distribution_to_json
 from optuna.distributions import json_to_distribution
 from optuna.storages import BaseStorage
-from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.study._frozen import FrozenStudy
-from optuna.study._optimize import _optimize_sequential
-from optuna.study.study import ObjectiveFuncType
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -412,6 +405,7 @@ def _use_basestorage_doc(func: Callable) -> Callable:
     return func
 
 
+@experimental_class("3.0.4")
 class DaskStorage(BaseStorage):
     """Dask-compatible storage class.
 
@@ -737,91 +731,3 @@ class DaskStorage(BaseStorage):
             study_id=study_id,
             state=state,
         )
-
-
-class DaskStudy(Study):
-    def __init__(self, study: Study):
-        super().__init__(
-            study_name=study.study_name,
-            storage=study._storage,
-            sampler=study.sampler,
-            pruner=study.pruner,
-        )
-
-    def optimize(  # type: ignore
-        self,
-        func: ObjectiveFuncType,
-        n_trials: int = 1,
-        timeout: Optional[float] = None,
-        catch: Tuple[Type[Exception], ...] = (),
-        callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
-        gc_after_trial: bool = False,
-        client: Optional[distributed.Client] = None,
-    ) -> None:
-
-        if not isinstance(self._storage, DaskStorage):
-            raise TypeError(
-                "Expected storage to be of type dask_optuna.DaskStorage "
-                f"but got {type(self._storage)} instead"
-            )
-
-        client = client or distributed.default_client()
-
-        try:
-            futures = [
-                client.submit(
-                    _optimize,
-                    self,
-                    func,
-                    n_trials=1,
-                    timeout=None,
-                    catch=catch,
-                    callbacks=callbacks,
-                    gc_after_trial=gc_after_trial,
-                    reseed_sampler_rng=True,
-                    time_start=None,
-                    progress_bar=None,
-                    key=f"optuna-optimize-trial-{uuid.uuid4()}",
-                    pure=False,
-                )
-                for _ in range(n_trials)
-            ]
-
-            distributed.wait(futures, timeout=timeout)
-        finally:
-            # Make sure `_OPTIMIZATION_STOP` is always reset back to `False`
-            self.set_system_attr("_OPTIMIZATION_STOP", False)
-
-    def stop(self) -> None:
-        self.set_system_attr("_OPTIMIZATION_STOP", True)
-
-
-def _optimize(study: DaskStudy, *args: Any, **kwargs: Any) -> None:
-    # Similar to `_optimize_sequential` but also sets `study._stop_flag`
-    study._stop_flag = study.system_attrs.get("_OPTIMIZATION_STOP", False)
-    return _optimize_sequential(study, *args, **kwargs)
-
-
-@experimental_func("3.0.3")
-def create_study(
-    *,
-    storage: Optional[Union[str, storages.BaseStorage]] = None,
-    sampler: Optional["samplers.BaseSampler"] = None,
-    pruner: Optional[pruners.BasePruner] = None,
-    study_name: Optional[str] = None,
-    direction: Optional[Union[str, StudyDirection]] = None,
-    load_if_exists: bool = False,
-    directions: Optional[Sequence[Union[str, StudyDirection]]] = None,
-    client: Optional["distributed.Client"] = None,
-) -> Study:
-    study = optuna.create_study(
-        storage=DaskStorage(storage, client=client),
-        sampler=sampler,
-        pruner=pruner,
-        study_name=study_name,
-        direction=direction,
-        load_if_exists=load_if_exists,
-        directions=directions,
-    )
-
-    return DaskStudy(study)

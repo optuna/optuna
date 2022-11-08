@@ -13,7 +13,7 @@ _import_structure = {
     "chainer": ["ChainerPruningExtension"],
     "chainermn": ["ChainerMNStudy"],
     "cma": ["CmaEsSampler", "PyCmaSampler"],
-    "dask": ["DaskStorage", "DaskStudy"],
+    "dask": ["DaskStorage"],
     "mlflow": ["MLflowCallback"],
     "wandb": ["WeightsAndBiasesCallback"],
     "keras": ["KerasPruningCallback"],
@@ -49,7 +49,6 @@ if TYPE_CHECKING:
     from optuna.integration.cma import CmaEsSampler  # NOQA
     from optuna.integration.cma import PyCmaSampler  # NOQA
     from optuna.integration.dask import DaskStorage  # NOQA
-    from optuna.integration.dask import DaskStudy  # NOQA
     from optuna.integration.fastaiv1 import FastAIV1PruningCallback  # NOQA
     from optuna.integration.fastaiv2 import FastAIPruningCallback  # NOQA
     from optuna.integration.fastaiv2 import FastAIV2PruningCallback  # NOQA
