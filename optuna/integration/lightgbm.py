@@ -19,7 +19,7 @@ if _imports.is_successful():
     from optuna.integration._lightgbm_tuner import LightGBMTuner
     from optuna.integration._lightgbm_tuner import LightGBMTunerCV
 
-    __all__ = ["Dataset", "LightGBMTuner", "LightGBMTunerCV"]
+__all__ = ["Dataset", "LightGBMTuner", "LightGBMTunerCV"]
 
     _names_from_tuners = ["train", "LGBMModel", "LGBMClassifier", "LGBMRegressor"]
 
