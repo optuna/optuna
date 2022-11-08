@@ -26,6 +26,11 @@ def test_consider_pruned_trials_experimental_warning() -> None:
         optuna.samplers.CmaEsSampler(consider_pruned_trials=True)
 
 
+def test_with_margin_experimental_warning() -> None:
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        optuna.samplers.CmaEsSampler(with_margin=True)
+
+
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 @pytest.mark.parametrize(
     "use_separable_cma, cma_class_str",
@@ -134,6 +139,9 @@ def test_should_raise_exception() -> None:
         optuna.samplers.CmaEsSampler(
             restart_strategy="invalid-restart-strategy",
         )
+
+    with pytest.raises(ValueError):
+        optuna.samplers.CmaEsSampler(use_separable_cma=True, with_margin=True)
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")

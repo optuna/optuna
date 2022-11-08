@@ -208,7 +208,7 @@ class CmaEsSampler(BaseSampler):
         popsize: Optional[int] = None,
         inc_popsize: int = 2,
         use_separable_cma: bool = False,
-        with_margin: bool = False,  # TODO: Combination with use_separable_cma.
+        with_margin: bool = False,
         source_trials: Optional[List[FrozenTrial]] = None,
     ) -> None:
         self._x0 = x0
@@ -254,6 +254,13 @@ class CmaEsSampler(BaseSampler):
                 ExperimentalWarning,
             )
 
+        if self._with_margin:
+            warnings.warn(
+                "`with_margin` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
+
         if source_trials is not None and (x0 is not None or sigma0 is not None):
             raise ValueError(
                 "It is prohibited to pass `source_trials` argument when "
@@ -275,6 +282,12 @@ class CmaEsSampler(BaseSampler):
                 "restart_strategy={} is unsupported. Please specify: 'ipop' or None.".format(
                     restart_strategy
                 )
+            )
+
+        # TODO(knshnb): Support sep-CMA-ES with margin.
+        if self._use_separable_cma and self._with_margin:
+            raise ValueError(
+                "Currently, we do not support `use_separable_cma=True` and `with_margin=True`."
             )
 
     def reseed_rng(self) -> None:
