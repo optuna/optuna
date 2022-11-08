@@ -1,8 +1,8 @@
 """Optuna CLI module.
 If you want to add a new command, you also need to update the constant `_COMMANDS`
 """
-from argparse import ArgumentParser  # NOQA
-from argparse import Namespace  # NOQA
+from argparse import ArgumentParser
+from argparse import Namespace
 import datetime
 from enum import Enum
 from importlib.machinery import SourceFileLoader
@@ -868,7 +868,7 @@ class _Tell(_BaseCommand):
         return 0
 
 
-_COMMANDS: Dict[str, type] = {
+_COMMANDS: Dict[str, type[_BaseCommand]] = {
     "create-study": _CreateStudy,
     "delete-study": _DeleteStudy,
     "study set-user-attr": _StudySetUserAttribute,
@@ -942,8 +942,8 @@ def _add_commands(
 
 
 def _get_parser(description: str = "") -> Tuple[ArgumentParser, Dict[str, ArgumentParser]]:
-    # Use parent_parser is necessary to avoid namespace conflict for -h/--help
-    # between main_parser and subparser
+    # Use `parent_parser` is necessary to avoid namespace conflict for -h/--help
+    # between `main_parser` and `subparser`.
     parent_parser = ArgumentParser(add_help=False)
     parent_parser = _add_common_arguments(parent_parser)
 
@@ -960,7 +960,7 @@ def _preprocess_argv(argv: List[str]) -> Tuple[List[str], Tuple[str, List[str]]]
     # (e.g. optuna study optimize, optuna storage upgrade, ...)
     argv = argv[1:] if len(argv) > 1 else ["help"]
 
-    # Some command consists of two strings
+    # Some command consists of two strings.
     command_candidate_to_indices: Dict[str, List[int]] = {}
     for i in range(len(argv)):
         command_candidate_to_indices[argv[i]] = [i]
@@ -972,7 +972,7 @@ def _preprocess_argv(argv: List[str]) -> Tuple[List[str], Tuple[str, List[str]]]
     for command_candidate in command_candidate_to_indices:
         for command_name in _COMMANDS:
             command_length = len(command_name)
-            # Find the longest possible command
+            # Find the longest possible command.
             if (
                 command_name == command_candidate
                 and command_length > current_longest_command_length
@@ -1044,7 +1044,7 @@ def main() -> int:
         return 1
     except AttributeError:
         # Exception for the case -v/--verbose/-q/--quiet/--log-file/--debug
-        # without any subcommand
+        # without any subcommand.
         argv_str = " ".join(argv[1:])
         logger.error(f"'{argv_str}' is not an optuna command. see 'optuna --help'")
         parser.print_help()
