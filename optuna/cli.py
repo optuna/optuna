@@ -1044,7 +1044,7 @@ def main() -> int:
         return 1
     except AttributeError:
         # Exception for the case -v/--verbose/-q/--quiet/--log-file/--debug
-        # without any subcommand
+        # without any subcommand.
         argv_str = " ".join(argv[1:])
         logger.error(f"'{argv_str}' is not an optuna command. see 'optuna --help'")
         parser.print_help()
