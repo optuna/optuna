@@ -1,4 +1,5 @@
 import argparse
+import itertools
 import os
 import subprocess
 
@@ -55,9 +56,15 @@ def run(args: argparse.Namespace) -> None:
             f"pruner_list: {pruner_list}, pruner_keyword_arguments: {pruner_kwargs_list}."
         )
 
+    sampler_pruner_product = list(itertools.product(sampler_list, pruner_list))
+    counter = {x: 0 for x in set(sampler_pruner_product)}
+
     for sampler, sampler_kwargs in zip(sampler_list, sampler_kwargs_list):
         for pruner, pruner_kwargs in zip(pruner_list, pruner_kwargs_list):
-            name = f"{args.name_prefix}_{sampler}_{pruner}_{args.name_suffix}"
+            name = f"{args.name_prefix}_{sampler}_{pruner}"
+            if sampler_pruner_product.count((sampler, pruner)) > 1:
+                name += f"_{counter[(sampler, pruner)]}"
+                counter[(sampler, pruner)] += 1
             cmd = (
                 f"{kurobako_cmd} solver --name {name} optuna --loglevel debug "
                 f"--sampler {sampler} --sampler-kwargs {sampler_kwargs} "
@@ -96,7 +103,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--path-to-kurobako", type=str, default="")
     parser.add_argument("--name-prefix", type=str, default="")
-    parser.add_argument("--name-suffix", type=str, default="")
     parser.add_argument("--budget", type=int, default=80)
     parser.add_argument("--n-runs", type=int, default=100)
     parser.add_argument("--n-jobs", type=int, default=10)
