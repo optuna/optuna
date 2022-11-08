@@ -19,5 +19,5 @@ with try_import() as _imports:
             "For further information, please refer to the installation guide of plotly. ",
             name="plotly",
         )
-    else:
-        __all__ = ["_imports", "plotly", "go", "Contour", "Scatter", "make_subplots"]
+
+__all__ = ["_imports", "plotly", "go", "Contour", "Scatter", "make_subplots"]
