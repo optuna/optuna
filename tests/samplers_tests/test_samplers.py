@@ -942,8 +942,10 @@ def test_dynamic_range_objective(
     assert all(t.state == TrialState.COMPLETE for t in study.trials)
 
 
+# We add tests for constant objective functions to ensure the reproducibility of sorting.
 @parametrize_sampler_with_seed
-def test_reproducible(sampler_class: Callable[[int], BaseSampler]) -> None:
+@pytest.mark.parametrize("objective_func", [lambda *args: sum(args), lambda *args: 0.0])
+def test_reproducible(sampler_class: Callable[[int], BaseSampler], objective_func: Any) -> None:
     def objective(trial: Trial) -> float:
         a = trial.suggest_float("a", 1, 9)
         b = trial.suggest_float("b", 1, 9, log=True)
@@ -952,20 +954,20 @@ def test_reproducible(sampler_class: Callable[[int], BaseSampler]) -> None:
         e = trial.suggest_int("e", 1, 9, log=True)
         f = trial.suggest_int("f", 1, 9, step=2)
         g = cast(int, trial.suggest_categorical("g", range(1, 10)))
-        return a + b + c + d + e + f + g
+        return objective_func(a, b, c, d, e, f, g)
 
     study = optuna.create_study(sampler=sampler_class(1))
-    study.optimize(objective, n_trials=20)
+    study.optimize(objective, n_trials=15)
 
     study_same_seed = optuna.create_study(sampler=sampler_class(1))
-    study_same_seed.optimize(objective, n_trials=20)
-    for i in range(20):
+    study_same_seed.optimize(objective, n_trials=15)
+    for i in range(15):
         assert study.trials[i].params == study_same_seed.trials[i].params
 
     study_different_seed = optuna.create_study(sampler=sampler_class(2))
-    study_different_seed.optimize(objective, n_trials=20)
+    study_different_seed.optimize(objective, n_trials=15)
     assert any(
-        [study.trials[i].params != study_different_seed.trials[i].params for i in range(20)]
+        [study.trials[i].params != study_different_seed.trials[i].params for i in range(15)]
     )
 
 
@@ -983,14 +985,14 @@ def test_reseed_rng_change_sampling(sampler_class: Callable[[int], BaseSampler])
 
     sampler = sampler_class(1)
     study = optuna.create_study(sampler=sampler)
-    study.optimize(objective, n_trials=20)
+    study.optimize(objective, n_trials=15)
 
     sampler_different_seed = sampler_class(1)
     sampler_different_seed.reseed_rng()
     study_different_seed = optuna.create_study(sampler=sampler_different_seed)
-    study_different_seed.optimize(objective, n_trials=20)
+    study_different_seed.optimize(objective, n_trials=15)
     assert any(
-        [study.trials[i].params != study_different_seed.trials[i].params for i in range(20)]
+        [study.trials[i].params != study_different_seed.trials[i].params for i in range(15)]
     )
 
 
@@ -1012,7 +1014,7 @@ def run_optimize(
     hash_dict[k] = hash("nondeterministic hash")
     sampler = sampler_class_with_seed[sampler_class_index](1)
     study = optuna.create_study(sampler=sampler)
-    study.optimize(objective, n_trials=20)
+    study.optimize(objective, n_trials=15)
     sequence_dict[k] = list(study.trials[-1].params.values())
 
 
