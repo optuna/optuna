@@ -18,8 +18,13 @@ from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 
 
-with try_import():
+with try_import() as _imports:
     import torch
+
+if not _imports.is_successful():
+    from unittest.mock import MagicMock
+
+    torch = MagicMock()  # type: ignore # NOQA
 
 pytestmark = pytest.mark.integration
 
