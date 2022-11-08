@@ -960,7 +960,7 @@ def _preprocess_argv(argv: List[str]) -> Tuple[List[str], Tuple[str, List[str]]]
     # (e.g. optuna study optimize, optuna storage upgrade, ...)
     argv = argv[1:] if len(argv) > 1 else ["help"]
 
-    # Some command consists of two strings
+    # Some command consists of two strings.
     command_candidate_to_indices: Dict[str, List[int]] = {}
     for i in range(len(argv)):
         command_candidate_to_indices[argv[i]] = [i]
