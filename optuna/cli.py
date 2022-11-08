@@ -942,8 +942,8 @@ def _add_commands(
 
 
 def _get_parser(description: str = "") -> Tuple[ArgumentParser, Dict[str, ArgumentParser]]:
-    # Use parent_parser is necessary to avoid namespace conflict for -h/--help
-    # between main_parser and subparser
+    # Use `parent_parser` is necessary to avoid namespace conflict for -h/--help
+    # between `main_parser` and `subparser`.
     parent_parser = ArgumentParser(add_help=False)
     parent_parser = _add_common_arguments(parent_parser)
 
