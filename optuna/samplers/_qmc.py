@@ -62,10 +62,6 @@ class QMCSampler(BaseSampler):
         determined by the first trial of the study. Once the search space is determined, it cannot
         be changed afterwards.
 
-    .. note:
-        `QMCSampler` is not supported for Python 3.6 as it depends on `scipy.stat.qmc` module which
-        only supports Python 3.7 or the later versions.
-
     Args:
         qmc_type:
             The type of QMC sequence to be sampled. This must be one of
