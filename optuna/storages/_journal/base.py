@@ -55,7 +55,14 @@ class BaseJournalLogSnapshot(abc.ABC):
 
     Storage classes implementing this base class may work faster when
     constructing the internal state from the large amount of logs.
+
+    Args:
+        snapshot_interval: An interval of trials and studies to save a snapshot.
     """
+
+    def __init__(self, snapshot_interval: int) -> None:
+
+        self.snapshot_interval = snapshot_interval
 
     @abc.abstractmethod
     def save_snapshot(self, snapshot: bytes) -> None:

@@ -5,18 +5,21 @@ import pickle
 import tempfile
 from types import TracebackType
 from typing import Any
-from typing import Dict
 from typing import IO
 from typing import Optional
 from typing import Type
-from unittest import mock
+from unittest.mock import MagicMock
 
 import fakeredis
 import pytest
 
 import optuna
+from optuna import create_study
+from optuna.storages import JournalStorage
 from optuna.storages._journal.base import SnapshotRestoreError
+from optuna.storages._journal.base import BaseJournalLogSnapshot
 from optuna.storages._journal.file import JournalFileBaseLock
+from optuna.storages._journal.storage import JournalStorageReplayResult
 from optuna.testing.storages import StorageSupplier
 
 
@@ -130,105 +133,68 @@ def test_pop_waiting_trial_multiprocess_safe() -> None:
         assert len(trial_id_set) == num_enqueued
 
 
-@pytest.mark.parametrize("log_storage_type", LOG_STORAGE_SUPPORTING_SNAPSHOT)
-def test_load_snapshot(log_storage_type: str) -> None:
-    with JournalLogStorageSupplier(log_storage_type) as storage:
-        assert isinstance(storage, optuna.storages.JournalRedisStorage)
+@pytest.mark.parametrize("storage_mode", JOURNAL_STORAGE_SUPPORTING_SNAPSHOT)
+def test_save_snapshot_per_each_100_trials(storage_mode: str) -> None:
+    def objective(trial: optuna.Trial) -> float:
+        return trial.suggest_float("x", 0, 10)
 
-        class Loader(object):
-            def __init__(self) -> None:
-                self.n_called = 0
+    with StorageSupplier(storage_mode) as storage:
+        assert isinstance(storage, JournalStorage)
+        study = create_study(storage=storage)
+        journal_log_storage = storage._backend
+        assert isinstance(journal_log_storage, BaseJournalLogSnapshot)
+        loader = MagicMock()
 
-            def __call__(self, snapshot: bytes) -> None:
-                self.n_called += 1
-                raise SnapshotRestoreError
+        journal_log_storage.load_snapshot(loader)
+        assert loader.call_count == 0
 
-        loader = Loader()
+        study.optimize(objective, n_trials=2)
 
-        # Any snapshots are now saved, so `load_snapshot` is early returned.
-        storage.load_snapshot(loader)
-        assert loader.n_called == 0
-
-        storage.save_snapshot(pickle.dumps("dummy_snapshot"))
-        # After even one snapshot has been saved, the `loader` should be called.
-        storage.load_snapshot(loader)
-        assert loader.n_called == 1
-
-
-@pytest.mark.parametrize(
-    "storage_mode, kwargs",
-    zip(JOURNAL_STORAGE_SUPPORTING_SNAPSHOT, [{"redis": fakeredis.FakeStrictRedis()}]),
-)
-def test_snapshot(storage_mode: str, kwargs: Dict[str, Any]) -> None:
-    with mock.patch("optuna.storages._journal.storage.SNAPSHOT_INTERVAL", 1, create=True):
-        with StorageSupplier(storage_mode, **kwargs) as storage1:
-            assert isinstance(storage1, optuna.storages.JournalStorage)
-
-            study_id = storage1.create_new_study()
-
-            # The snapshot is not saved here.
-            storage1.create_new_trial(study_id)
-
-            # The number of read logs are same thanks to `sync_with_backend` without any snapshots.
-            with StorageSupplier(storage_mode, **kwargs) as storage2:
-                assert isinstance(storage2, optuna.storages.JournalStorage)
-                assert (
-                    storage1._replay_result.log_number_read
-                    == storage2._replay_result.log_number_read
-                )
-
-            # The number of read logs are not same since `sync_with_backend` is disabled and the
-            # snapshot was not saved.
-            with mock.patch(
-                "optuna.storages._journal.storage.JournalStorage._sync_with_backend"
-            ) as m:
-                with StorageSupplier(storage_mode, **kwargs) as storage2:
-                    assert isinstance(storage2, optuna.storages.JournalStorage)
-                    m.assert_called_once()
-                    assert (
-                        storage1._replay_result.log_number_read
-                        != storage2._replay_result.log_number_read
-                    )
-
-            # The snapshot is saved here.
-            storage1.create_new_trial(study_id)
-
-            # The number of read logs are same thanks to the snapshot without `sync_with_backend`.
-            with mock.patch(
-                "optuna.storages._journal.storage.JournalStorage._sync_with_backend"
-            ) as m:
-                with StorageSupplier(storage_mode, **kwargs) as storage2:
-                    assert isinstance(storage2, optuna.storages.JournalStorage)
-                    m.assert_called_once()
-                    assert (
-                        storage1._replay_result.log_number_read
-                        == storage2._replay_result.log_number_read
-                    )
-
-            # The snapshot is saved here.
-            _ = storage1.create_new_study()
-
-            # The number of read logs are same thanks to the snapshot without `sync_with_backend`.
-            with mock.patch(
-                "optuna.storages._journal.storage.JournalStorage._sync_with_backend"
-            ) as m:
-                with StorageSupplier(storage_mode, **kwargs) as storage2:
-                    assert isinstance(storage2, optuna.storages.JournalStorage)
-                    m.assert_called_once()
-                    assert (
-                        storage1._replay_result.log_number_read
-                        == storage2._replay_result.log_number_read
-                    )
+        journal_log_storage.load_snapshot(loader)
+        assert loader.call_count == 1
 
 
 @pytest.mark.parametrize("storage_mode", JOURNAL_STORAGE_SUPPORTING_SNAPSHOT)
-def test_invalid_snapshot(storage_mode: str) -> None:
+def test_save_snapshot_per_each_100_studies(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
-        assert isinstance(storage, optuna.storages.JournalStorage)
+        assert isinstance(storage, JournalStorage)
+        journal_log_storage = storage._backend
+        assert isinstance(journal_log_storage, BaseJournalLogSnapshot)
+        loader = MagicMock()
+
+        journal_log_storage.load_snapshot(loader)
+        assert loader.call_count == 0
+
+        for _ in range(2):
+            create_study(storage=storage)
+
+        journal_log_storage.load_snapshot(loader)
+        assert loader.call_count == 1
+
+
+@pytest.mark.parametrize("storage_mode", JOURNAL_STORAGE_SUPPORTING_SNAPSHOT)
+def test_check_replay_result_restored_from_snapshot(storage_mode: str) -> None:
+    with StorageSupplier(storage_mode) as storage1:
+        for _ in range(2):
+            create_study(storage=storage1)
+
+        assert isinstance(storage1, JournalStorage)
+        storage2 = optuna.storages.JournalStorage(storage1._backend)
+        assert len(storage1.get_all_studies()) == len(storage2.get_all_studies())
+        assert storage1._replay_result.log_number_read == storage2._replay_result.log_number_read
+
+
+@pytest.mark.parametrize("storage_mode", JOURNAL_STORAGE_SUPPORTING_SNAPSHOT)
+def test_snapshot_given(storage_mode: str) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        assert isinstance(storage, JournalStorage)
+        # Bytes object which is a valid pickled object.
+        storage.restore_replay_result(pickle.dumps(JournalStorageReplayResult("")))
+
         # Bytes object which cannot be unpickled is passed.
         with pytest.raises(SnapshotRestoreError):
             storage.restore_replay_result(b"hoge")
 
-        # Bytes object which can be pickeled but is not `JournalStorageReplayResult`.
+        # Bytes object which can be pickled but is not `JournalStorageReplayResult`.
         with pytest.raises(SnapshotRestoreError):
             storage.restore_replay_result(pickle.dumps("hoge"))

@@ -66,7 +66,9 @@ class StorageSupplier:
                 else rdb_storage
             )
         elif self.storage_specifier == "journal_redis":
-            journal_redis_storage = optuna.storages.JournalRedisStorage("redis://localhost")
+            journal_redis_storage = optuna.storages.JournalRedisStorage(
+                "redis://localhost", snapshot_interval=1
+            )
             journal_redis_storage._redis = self.extra_args.get(
                 "redis", fakeredis.FakeStrictRedis()
             )

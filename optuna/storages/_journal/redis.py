@@ -34,11 +34,17 @@ class JournalRedisStorage(BaseJournalLogStorage, BaseJournalLogSnapshot):
         prefix:
             Prefix of the preserved key of logs. This is useful when multiple users work on one
             Redis server.
+        snapshot_interval:
+            An interval of trials and studies to save a snapshot.
     """
 
-    def __init__(self, url: str, use_cluster: bool = False, prefix: str = "") -> None:
+    def __init__(
+        self, url: str, use_cluster: bool = False, prefix: str = "", snapshot_interval: int = 100
+    ) -> None:
 
         _imports.check()
+
+        super().__init__(snapshot_interval=snapshot_interval)
 
         self._url = url
         self._redis = redis.Redis.from_url(url)
@@ -95,29 +101,16 @@ class JournalRedisStorage(BaseJournalLogStorage, BaseJournalLogSnapshot):
                 self._redis.set(self._key_log_id(log_number), json.dumps(log))
 
     def save_snapshot(self, snapshot: bytes) -> None:
-        self._redis.setnx(f"{self._prefix}:snapshot_version", -1)
-        snapshot_version = self._redis.incr(f"{self._prefix}:snapshot_version", 1)
-        self._redis.set(self._key_snapshot(snapshot_version), snapshot)
+        self._redis.set(f"{self._prefix}:snapshot", snapshot)
 
     def load_snapshot(self, loader: Callable[[bytes], None]) -> None:
-        snapshot_version_bytes = self._redis.get(f"{self._prefix}:snapshot_version")
-        if snapshot_version_bytes is None:
+        snapshot_bytes = self._redis.get(f"{self._prefix}:snapshot")
+        if snapshot_bytes is None:
             return
-        snapshot_version = int(snapshot_version_bytes)
-
-        while snapshot_version >= 0:
-            snapshot_bytes = self._redis.get(self._key_snapshot(snapshot_version))
-            if snapshot_bytes is not None:
-                try:
-                    loader(snapshot_bytes)
-                except SnapshotRestoreError:
-                    snapshot_version -= 1
-                    continue
-                return
-            snapshot_version -= 1
+        try:
+            loader(snapshot_bytes)
+        except SnapshotRestoreError:
+            return
 
     def _key_log_id(self, log_number: int) -> str:
         return f"{self._prefix}:log:{log_number}"
-
-    def _key_snapshot(self, snapshot_version: int) -> str:
-        return f"{self._prefix}:snapshot:{snapshot_version}"

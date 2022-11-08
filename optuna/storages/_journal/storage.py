@@ -33,7 +33,6 @@ _logger = optuna.logging.get_logger(__name__)
 
 NOT_FOUND_MSG = "Record does not exist."
 # A heuristic interval number to dump snapshots
-SNAPSHOT_INTERVAL = 100
 
 
 class JournalOperation(enum.IntEnum):
@@ -118,7 +117,7 @@ class JournalStorage(BaseStorage):
     def restore_replay_result(self, snapshot: bytes) -> None:
         try:
             r: Optional[JournalStorageReplayResult] = pickle.loads(snapshot)
-        except Exception as e:
+        except pickle.UnpicklingError as e:
             raise SnapshotRestoreError("Failed to restore `JournalStorageReplayResult`.") from e
         if r is None:
             return
@@ -154,7 +153,7 @@ class JournalStorage(BaseStorage):
                 if (
                     isinstance(self._backend, BaseJournalLogSnapshot)
                     and study_id != 0
-                    and study_id % SNAPSHOT_INTERVAL == 0
+                    and study_id % self._backend.snapshot_interval == 0
                 ):
                     self._backend.save_snapshot(pickle.dumps(self._replay_result))
                 return study_id
@@ -262,7 +261,7 @@ class JournalStorage(BaseStorage):
         if (
             isinstance(self._backend, BaseJournalLogSnapshot)
             and trial_id != 0
-            and trial_id % SNAPSHOT_INTERVAL == 0
+            and trial_id % self._backend.snapshot_interval == 0
         ):
             self._backend.save_snapshot(pickle.dumps(self._replay_result))
         return trial_id
