@@ -54,13 +54,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install --progress-bar off -U setuptools
 
-    - name: Install dependencies with lower bound constraints
-      run: |
-        # Install dependencies with lower bound constraints.
-        pip install alembic==1.5.0 cmaes==0.8.2 packaging==20.0 sqlalchemy==1.3.0
-        pip install plotly==4.9.0 scikit-learn==0.24.2  # optional extras
-      if: ${{ matrix.use-lower-version }}
-
     - name: Install
       run: |
         # Install minimal dependencies and confirm that `import optuna` is successful.
@@ -81,6 +74,14 @@ jobs:
     - name: Install PyTorch and BoTorch.
       run: pip install botorch torch==1.11.0 --extra-index-url https://download.pytorch.org/whl/cpu
       if: matrix.python-version != '3.6'
+
+    - name: Install dependencies with lower bound constraints
+      run: |
+        # Install dependencies with lower bound constraints.
+        pip uninstall -y alembic cmaes packaging sqlalchemy plotly scikit-learn
+        pip install alembic==1.5.0 cmaes==0.8.2 packaging==20.0 sqlalchemy==1.3.0
+        pip install plotly==4.9.0 scikit-learn==0.24.2  # optional extras
+      if: ${{ matrix.use-lower-version }}
 
     - name: Tests
       run: |
