@@ -19,8 +19,6 @@ if _imports.is_successful():
     from optuna.integration._lightgbm_tuner import LightGBMTuner
     from optuna.integration._lightgbm_tuner import LightGBMTunerCV
 
-__all__ = ["Dataset", "LightGBMTuner", "LightGBMTunerCV"]
-
     _names_from_tuners = ["train", "LGBMModel", "LGBMClassifier", "LGBMRegressor"]
 
     # API from lightgbm.
@@ -37,6 +35,8 @@ else:
     setattr(sys.modules[__name__], "train", tuner.__dict__["train"])
     setattr(sys.modules[__name__], "LightGBMTuner", tuner.__dict__["LightGBMTuner"])
     setattr(sys.modules[__name__], "LightGBMTunerCV", tuner.__dict__["LightGBMTunerCV"])
+
+__all__ = ["Dataset", "LightGBMTuner", "LightGBMTunerCV"]
 
 
 class LightGBMPruningCallback:
