@@ -274,6 +274,7 @@ class HyperbandPruner(BasePruner):
                 "get_trials",
                 "directions",
                 "direction",
+                "_directions",
                 "_storage",
                 "_study_id",
                 "pruner",

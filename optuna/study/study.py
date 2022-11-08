@@ -203,7 +203,7 @@ class Study:
             A list of :class:`~optuna.study.StudyDirection` objects.
         """
 
-        if not self._directions:
+        if self._directions is None:
             self._directions = self._storage.get_study_directions(self._study_id)
         return self._directions
 
