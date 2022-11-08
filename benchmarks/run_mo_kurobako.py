@@ -65,7 +65,7 @@ def run(args: argparse.Namespace) -> None:
             f"sampler_list: {sampler_list}, sampler_kwargs_list: {sampler_kwargs_list}."
         )
 
-    for i, sampler, sampler_kwargs in enumerate(zip(sampler_list, sampler_kwargs_list)):
+    for i, (sampler, sampler_kwargs) in enumerate(zip(sampler_list, sampler_kwargs_list)):
         sampler_name = sampler
         if sampler_list.count(sampler) > 1:
             sampler_name += f"_{sampler_list[:i].count(sampler)}"
