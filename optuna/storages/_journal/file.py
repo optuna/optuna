@@ -174,7 +174,7 @@ class JournalFileStorage(BaseJournalLogStorage):
                     raise last_decode_error
                 if log_number + 1 not in self._log_number_offset:
                     # In text mode, platform-specific line endings (\n on Unix, \r\n on Windows)
-                    # converted to just \n. It causes the bug of on Windows platforms.
+                    # are converted to just \n. It causes the bug on Windows platforms.
                     # See https://docs.python.org/3/tutorial/inputoutput.html for details
                     byte_len = len((line.rstrip("\n") + os.linesep).encode("utf-8"))
 
@@ -193,7 +193,7 @@ class JournalFileStorage(BaseJournalLogStorage):
 
     def append_logs(self, logs: List[Dict[str, Any]]) -> None:
         with get_lock_file(self._lock):
-            what_to_write = os.linesep.join([json.dumps(log) for log in logs]) + os.linesep
+            what_to_write = "\n".join([json.dumps(log) for log in logs]) + "\n"
             with open(self._file_path, "a", encoding="utf-8") as f:
                 f.write(what_to_write)
                 f.flush()
