@@ -10,7 +10,7 @@ if _imports.is_successful():
     from optuna.integration._lightgbm_tuner.sklearn import LGBMModel
     from optuna.integration._lightgbm_tuner.sklearn import LGBMRegressor
 
-    __all__ = ["LightGBMTuner", "LightGBMTunerCV", "LGBMClassifier", "LGBMModel", "LGBMRegressor"]
+__all__ = ["LightGBMTuner", "LightGBMTunerCV", "LGBMClassifier", "LGBMModel", "LGBMRegressor"]
 
 
 def train(*args: Any, **kwargs: Any) -> Any:
