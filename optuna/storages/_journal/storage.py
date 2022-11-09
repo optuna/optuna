@@ -98,7 +98,12 @@ class JournalStorage(BaseStorage):
 
         with self._thread_lock:
             if isinstance(self._backend, BaseJournalLogSnapshot):
-                self._backend.load_snapshot(self.restore_replay_result)
+                snapshot = self._backend.load_snapshot()
+                if snapshot is not None:
+                    try:
+                        self.restore_replay_result(snapshot)
+                    except SnapshotRestoreError:
+                        pass
             self._sync_with_backend()
 
     def __getstate__(self) -> Dict[Any, Any]:

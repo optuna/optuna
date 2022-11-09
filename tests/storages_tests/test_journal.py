@@ -145,13 +145,11 @@ def test_save_snapshot_per_each_100_trials(storage_mode: str) -> None:
         assert isinstance(journal_log_storage, BaseJournalLogSnapshot)
         loader = MagicMock()
 
-        journal_log_storage.load_snapshot(loader)
-        assert loader.call_count == 0
+        assert journal_log_storage.load_snapshot() is None
 
         study.optimize(objective, n_trials=2)
 
-        journal_log_storage.load_snapshot(loader)
-        assert loader.call_count == 1
+        assert isinstance(journal_log_storage.load_snapshot(), bytes)
 
 
 @pytest.mark.parametrize("storage_mode", JOURNAL_STORAGE_SUPPORTING_SNAPSHOT)
@@ -162,14 +160,12 @@ def test_save_snapshot_per_each_100_studies(storage_mode: str) -> None:
         assert isinstance(journal_log_storage, BaseJournalLogSnapshot)
         loader = MagicMock()
 
-        journal_log_storage.load_snapshot(loader)
-        assert loader.call_count == 0
+        assert journal_log_storage.load_snapshot() is None
 
         for _ in range(2):
             create_study(storage=storage)
 
-        journal_log_storage.load_snapshot(loader)
-        assert loader.call_count == 1
+        assert isinstance(journal_log_storage.load_snapshot(), bytes)
 
 
 @pytest.mark.parametrize("storage_mode", JOURNAL_STORAGE_SUPPORTING_SNAPSHOT)

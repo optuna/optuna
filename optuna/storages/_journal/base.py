@@ -1,8 +1,8 @@
 import abc
 from typing import Any
-from typing import Callable
 from typing import Dict
 from typing import List
+from typing import Optional
 
 
 class BaseJournalLogStorage(abc.ABC):
@@ -74,15 +74,10 @@ class BaseJournalLogSnapshot(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def load_snapshot(self, loader: Callable[[bytes], None]) -> None:
+    def load_snapshot(self) -> Optional[bytes]:
         """Load snapshot from the backend.
 
-        Args:
-            loader: A callback function which accept one positional argument.
-                This callback is supposed to be called inside the
-                :meth:`~optuna.storages._journal.base.BaseJournalLogSnapshot.load_snapshot`
-                method.
-                This callback may raise :class:`optuna.storages._journal.base.SnapshotRestoreError`
-                when a serialized snapshot object is invalid or broken.
+        Returns:
+            A serialized snapshot (bytes) if found, otherwise :obj:`None`.
         """
         raise NotImplementedError
