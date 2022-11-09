@@ -895,7 +895,7 @@ class _Tell(_BaseCommand):
         return 0
 
 
-_COMMANDS: Dict[str, type[_BaseCommand]] = {
+_COMMANDS: Dict[str, _BaseCommand] = {
     "create-study": _CreateStudy,
     "delete-study": _DeleteStudy,
     "study set-user-attr": _StudySetUserAttribute,
