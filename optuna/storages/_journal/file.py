@@ -173,7 +173,11 @@ class JournalFileStorage(BaseJournalLogStorage):
                 if last_decode_error is not None:
                     raise last_decode_error
                 if log_number + 1 not in self._log_number_offset:
-                    byte_len = len(line.encode("utf-8"))
+                    # In text mode, platform-specific line endings (\n on Unix, \r\n on Windows)
+                    # converted to just \n. It causes the bug of on Windows platforms.
+                    # See https://docs.python.org/3/tutorial/inputoutput.html for details
+                    byte_len = len((line.rstrip("\n") + os.linesep).encode("utf-8"))
+
                     self._log_number_offset[log_number + 1] = (
                         self._log_number_offset[log_number] + byte_len
                     )
