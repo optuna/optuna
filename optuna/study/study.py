@@ -1170,9 +1170,8 @@ def create_study(
         sampler = samplers.NSGAIISampler()
 
     study_name = storage.get_study_name_from_id(study_id)
+    storage.set_study_directions(study_id, direction_objects)
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
-
-    study._storage.set_study_directions(study_id, direction_objects)
 
     return study
 
