@@ -1,4 +1,3 @@
-import sys
 from typing import Any
 from typing import Dict
 from typing import Optional
@@ -152,15 +151,6 @@ class QMCSampler(BaseSampler):
         warn_asynchronous_seeding: bool = True,
         warn_independent_sampling: bool = True,
     ) -> None:
-
-        version = sys.version_info
-        if version < (3, 7, 0):
-            version_txt = str(version[0]) + "." + str(version[1]) + "." + str(version[2])
-            message = (
-                f"`QMCSampler` is not supported for Python {version_txt}. "
-                "Consider using Python 3.7 or later."
-            )
-            raise ValueError(message)
 
         self._scramble = scramble
         self._seed = seed or np.random.PCG64().random_raw()
