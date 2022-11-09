@@ -41,7 +41,8 @@ def _try_crossover(
             [
                 [parent.params[p] for p in categorical_search_space]
                 for parent in [parents[0], parents[-1]]
-            ]
+            ],
+            dtype=object,
         )
 
         child_categorical_array = _inlined_categorical_uniform_crossover(

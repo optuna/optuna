@@ -33,6 +33,8 @@ def get_install_requires() -> List[str]:
         "cliff",
         "cmaes>=0.9.0",
         "colorlog",
+        # TODO(HideakiImamura): remove this after the fix by `cliff` or `stevedore`
+        "importlib-metadata<5.0.0",
         "numpy",
         "packaging>=20.0",
         # TODO(kstoneriv3): remove this after deprecation of Python 3.6
@@ -51,8 +53,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "asv>=0.5.0",
             "botorch",
             "cma",
-            # TODO(nzw0301): Remove gpytorch if botorch supports gpytorch>1.8.
-            "gpytorch<1.9.0",
             "scikit-optimize",
             "virtualenv",
         ],
@@ -71,7 +71,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "cma",
             "fvcore",
             "lightgbm",
-            "matplotlib",
+            "matplotlib!=3.6.0",
             "mlflow",
             "pandas",
             "pillow",
@@ -97,8 +97,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "chainer>=5.0.0",
             "cma",
             "fastai ; python_version>'3.6'",
-            # TODO(nzw0301): Remove gpytorch if botorch supports gpytorch>1.8.
-            "gpytorch<1.9.0 ; python_version>'3.6'",
             "lightgbm",
             "mlflow",
             "mpi4py",
@@ -119,7 +117,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "xgboost",
         ],
         "optional": [
-            "matplotlib",  # optuna/visualization/matplotlib
+            "matplotlib!=3.6.0",  # optuna/visualization/matplotlib
             "pandas",  # optuna/study.py
             "plotly>=4.0.0",  # optuna/visualization.
             "redis",  # optuna/storages/redis.py.

@@ -213,10 +213,13 @@ def test_get_slice_plot_info_customized_target() -> None:
     params = ["param_a"]
     study = prepare_study_with_trials()
     info = _get_slice_plot_info(
-        study, params=params, target=lambda t: t.params["param_d"], target_name="Objective Value"
+        study,
+        params=params,
+        target=lambda t: t.params["param_d"],
+        target_name="param_d",
     )
     assert info == _SlicePlotInfo(
-        target_name="Objective Value",
+        target_name="param_d",
         subplots=[
             _SliceSubplotInfo(
                 param_name="param_a",
@@ -374,10 +377,10 @@ def test_get_slice_plot_info_nonfinite_multiobjective(objective: int, value: flo
         study,
         params=["param_b", "param_d"],
         target=lambda t: t.values[objective],
-        target_name="Objective Value",
+        target_name="Target Name",
     )
     assert info == _SlicePlotInfo(
-        target_name="Objective Value",
+        target_name="Target Name",
         subplots=[
             _SliceSubplotInfo(
                 param_name="param_b",
