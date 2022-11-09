@@ -8,7 +8,6 @@ from typing import Any
 from typing import IO
 from typing import Optional
 from typing import Type
-from unittest.mock import MagicMock
 
 import fakeredis
 import pytest
@@ -143,7 +142,6 @@ def test_save_snapshot_per_each_100_trials(storage_mode: str) -> None:
         study = create_study(storage=storage)
         journal_log_storage = storage._backend
         assert isinstance(journal_log_storage, BaseJournalLogSnapshot)
-        loader = MagicMock()
 
         assert journal_log_storage.load_snapshot() is None
 
@@ -158,7 +156,6 @@ def test_save_snapshot_per_each_100_studies(storage_mode: str) -> None:
         assert isinstance(storage, JournalStorage)
         journal_log_storage = storage._backend
         assert isinstance(journal_log_storage, BaseJournalLogSnapshot)
-        loader = MagicMock()
 
         assert journal_log_storage.load_snapshot() is None
 
