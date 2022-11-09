@@ -44,20 +44,7 @@ def test_study_optimize_with_single_search_space() -> None:
 
 def test_study_optimize_with_infinite_search_space() -> None:
     def objective(trial: Trial) -> float:
-
-        a = trial.suggest_int("a", 0, 2)
-
-        if a == 0:
-            b = trial.suggest_float("b", -1.0, 1.0)
-            return a + b
-        elif a == 1:
-            c = trial.suggest_categorical("c", ["x", "y", None])
-            if c == "x":
-                return a + 1
-            else:
-                return a - 1
-        else:
-            return a * 2
+        return trial.suggest_float("a", 0, 2)
 
     study = optuna.create_study(sampler=samplers.BruteForceSampler())
 
