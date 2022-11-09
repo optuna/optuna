@@ -82,7 +82,7 @@ class Study:
         study_id = storage.get_study_id_from_name(study_name)
         self._study_id = study_id
         self._storage = storage
-        self._directions: Optional[List[StudyDirection]] = None
+        self._directions = storage.get_study_directions(study_id)
 
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
@@ -203,8 +203,6 @@ class Study:
             A list of :class:`~optuna.study.StudyDirection` objects.
         """
 
-        if self._directions is None:
-            self._directions = self._storage.get_study_directions(self._study_id)
         return self._directions
 
     @property
