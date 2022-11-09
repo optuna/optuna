@@ -16,6 +16,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import Type
 from typing import Union
 import warnings
 
@@ -895,7 +896,7 @@ class _Tell(_BaseCommand):
         return 0
 
 
-_COMMANDS: Dict[str, _BaseCommand] = {
+_COMMANDS: Dict[str, Type[_BaseCommand]] = {
     "create-study": _CreateStudy,
     "delete-study": _DeleteStudy,
     "study set-user-attr": _StudySetUserAttribute,
