@@ -118,9 +118,9 @@ def test_call_after_trial_of_base_sampler() -> None:
 
 
 def test_fixed_none_value_sampling() -> None:
-    def objective(trial: Trial) -> int:
+    def objective(trial: Trial) -> float:
         trial.suggest_categorical("x", (None, 0))
-        return 0
+        return 0.0
 
     tpe = optuna.samplers.TPESampler()
 
@@ -132,5 +132,5 @@ def test_fixed_none_value_sampling() -> None:
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=10)
 
-    for trial in range(10):
-        assert study.trials[trial].params["x"] is None
+    for trial in study.trials:
+        assert trial.params["x"] is None
