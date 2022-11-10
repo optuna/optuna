@@ -180,6 +180,15 @@ class CmaEsSampler(BaseSampler):
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.6.0.
 
+        with_margin:
+            If this is :obj:`True`, CMA-ES with margin is used.
+            Currently, this option cannot be used with ``use_separable_cma=True``.
+
+            .. note::
+                Added in v3.1.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v3.1.0.
+
         source_trials:
             This option is for Warm Starting CMA-ES, a method to transfer prior knowledge on
             similar HPO tasks through the initialization of CMA-ES. This method estimates a
