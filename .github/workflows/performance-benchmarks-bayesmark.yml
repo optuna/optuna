@@ -67,6 +67,7 @@ jobs:
         python benchmarks/run_bayesmark.py \
           --dataset ${{ matrix.dataset }} \
           --model ${{ matrix.model }} \
+          --name-prefix "" \
           --budget ${{ github.event.inputs.budget }} \
           --n-runs ${{ github.event.inputs.n-runs }} \
           --sampler-list '${{ github.event.inputs.sampler-list }}' \

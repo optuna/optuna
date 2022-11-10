@@ -1,6 +1,7 @@
 from collections import OrderedDict
 import multiprocessing
 from multiprocessing.managers import DictProxy
+import os
 import pickle
 import sys
 from typing import Any
@@ -14,6 +15,7 @@ from typing import Union
 from unittest.mock import patch
 import warnings
 
+from _pytest.fixtures import SubRequest
 from _pytest.mark.structures import MarkDecorator
 import numpy as np
 import pytest
@@ -45,21 +47,9 @@ parametrize_sampler = pytest.mark.parametrize(
         ),
         lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
         optuna.samplers.NSGAIISampler,
-    ]
-    # TODO(kstoneriv3): Update this after the support for Python 3.6 is stopped.
-    + (
-        []
-        if sys.version_info < (3, 7, 0)
-        else [
-            lambda: optuna.samplers.QMCSampler(),
-        ]
-    )
-    # TODO(nzw0301): Update this after the support for Python 3.6 is stopped.
-    + (
-        []
-        if sys.version_info < (3, 7, 0)
-        else [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)]
-    ),
+        lambda: optuna.samplers.QMCSampler(),
+        lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
+    ],
 )
 parametrize_relative_sampler = pytest.mark.parametrize(
     "relative_sampler_class",
@@ -77,13 +67,8 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
     [
         optuna.samplers.NSGAIISampler,
         lambda: optuna.samplers.TPESampler(n_startup_trials=0),
-    ]
-    # TODO(nzw0301): Update this after the support for Python 3.6 is stopped.
-    + (
-        []
-        if sys.version_info < (3, 7, 0)
-        else [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)]
-    ),
+        lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
+    ],
 )
 sampler_class_with_seed: List[Callable] = [
     lambda seed: optuna.samplers.RandomSampler(seed=seed),
@@ -93,11 +78,9 @@ sampler_class_with_seed: List[Callable] = [
     lambda seed: optuna.integration.SkoptSampler(seed=seed),
     lambda seed: optuna.integration.PyCmaSampler(seed=seed),
     lambda seed: optuna.samplers.NSGAIISampler(seed=seed),
+    lambda seed: optuna.samplers.QMCSampler(seed=seed),
+    lambda seed: optuna.integration.BoTorchSampler(seed=seed),
 ]
-# TODO(kstoneriv3): Update this after the support for Python 3.6 is stopped.
-if sys.version_info >= (3, 7, 0):
-    sampler_class_with_seed.append(lambda seed: optuna.samplers.QMCSampler(seed=seed))
-    sampler_class_with_seed.append(lambda seed: optuna.integration.BoTorchSampler(seed=seed))
 parametrize_sampler_with_seed = pytest.mark.parametrize("sampler_class", sampler_class_with_seed)
 
 
@@ -125,20 +108,12 @@ parametrize_sampler_with_seed = pytest.mark.parametrize("sampler_class", sampler
             True,
         ),
         (lambda: optuna.samplers.GridSampler(search_space={"x": [0]}), True, False),
+        (lambda: optuna.samplers.QMCSampler(), False, True),
     ]
-    # TODO(kstoneriv3): Update this after the support for Python 3.6 is stopped.
+    # TODO(nzw0301): Remove version constraints if BoTorch supports Python 3.10.
     + (
         []
-        if sys.version_info < (3, 7, 0)
-        else [
-            (lambda: optuna.samplers.QMCSampler(), False, True),
-        ]
-    )
-    # TODO(nzw0301): Remove version constraints if BoTorch supports Python 3.10
-    # or Optuna does not support Python 3.6.
-    + (
-        []
-        if sys.version_info >= (3, 10, 0) or sys.version_info < (3, 7, 0)
+        if sys.version_info >= (3, 10, 0)
         else [(lambda: optuna.integration.BoTorchSampler(n_startup_trials=0), False, True)]
     ),
 )
@@ -942,8 +917,10 @@ def test_dynamic_range_objective(
     assert all(t.state == TrialState.COMPLETE for t in study.trials)
 
 
+# We add tests for constant objective functions to ensure the reproducibility of sorting.
 @parametrize_sampler_with_seed
-def test_reproducible(sampler_class: Callable[[int], BaseSampler]) -> None:
+@pytest.mark.parametrize("objective_func", [lambda *args: sum(args), lambda *args: 0.0])
+def test_reproducible(sampler_class: Callable[[int], BaseSampler], objective_func: Any) -> None:
     def objective(trial: Trial) -> float:
         a = trial.suggest_float("a", 1, 9)
         b = trial.suggest_float("b", 1, 9, log=True)
@@ -952,20 +929,20 @@ def test_reproducible(sampler_class: Callable[[int], BaseSampler]) -> None:
         e = trial.suggest_int("e", 1, 9, log=True)
         f = trial.suggest_int("f", 1, 9, step=2)
         g = cast(int, trial.suggest_categorical("g", range(1, 10)))
-        return a + b + c + d + e + f + g
+        return objective_func(a, b, c, d, e, f, g)
 
     study = optuna.create_study(sampler=sampler_class(1))
-    study.optimize(objective, n_trials=20)
+    study.optimize(objective, n_trials=15)
 
     study_same_seed = optuna.create_study(sampler=sampler_class(1))
-    study_same_seed.optimize(objective, n_trials=20)
-    for i in range(20):
+    study_same_seed.optimize(objective, n_trials=15)
+    for i in range(15):
         assert study.trials[i].params == study_same_seed.trials[i].params
 
     study_different_seed = optuna.create_study(sampler=sampler_class(2))
-    study_different_seed.optimize(objective, n_trials=20)
+    study_different_seed.optimize(objective, n_trials=15)
     assert any(
-        [study.trials[i].params != study_different_seed.trials[i].params for i in range(20)]
+        [study.trials[i].params != study_different_seed.trials[i].params for i in range(15)]
     )
 
 
@@ -983,14 +960,14 @@ def test_reseed_rng_change_sampling(sampler_class: Callable[[int], BaseSampler])
 
     sampler = sampler_class(1)
     study = optuna.create_study(sampler=sampler)
-    study.optimize(objective, n_trials=20)
+    study.optimize(objective, n_trials=15)
 
     sampler_different_seed = sampler_class(1)
     sampler_different_seed.reseed_rng()
     study_different_seed = optuna.create_study(sampler=sampler_different_seed)
-    study_different_seed.optimize(objective, n_trials=20)
+    study_different_seed.optimize(objective, n_trials=15)
     assert any(
-        [study.trials[i].params != study_different_seed.trials[i].params for i in range(20)]
+        [study.trials[i].params != study_different_seed.trials[i].params for i in range(15)]
     )
 
 
@@ -1012,12 +989,33 @@ def run_optimize(
     hash_dict[k] = hash("nondeterministic hash")
     sampler = sampler_class_with_seed[sampler_class_index](1)
     study = optuna.create_study(sampler=sampler)
-    study.optimize(objective, n_trials=20)
+    study.optimize(objective, n_trials=15)
     sequence_dict[k] = list(study.trials[-1].params.values())
 
 
+@pytest.fixture
+def unset_seed_in_test(request: SubRequest) -> None:
+    # Unset the hashseed at beginning and restore it at end regardless of an exception in the test.
+    # See https://docs.pytest.org/en/stable/how-to/fixtures.html#adding-finalizers-directly
+    # for details.
+
+    hash_seed = os.getenv("PYTHONHASHSEED")
+    if hash_seed is not None:
+        del os.environ["PYTHONHASHSEED"]
+
+    def restore_seed() -> None:
+        if hash_seed is not None:
+            os.environ["PYTHONHASHSEED"] = hash_seed
+
+    request.addfinalizer(restore_seed)
+
+
 @pytest.mark.parametrize("sampler_class_index", range(len(sampler_class_with_seed)))
-def test_reproducible_in_other_process(sampler_class_index: int) -> None:
+def test_reproducible_in_other_process(sampler_class_index: int, unset_seed_in_test: None) -> None:
+    # This test should be tested without `PYTHONHASHSEED`. However, some tool such as tox
+    # set the environmental variable "PYTHONHASHSEED" by default.
+    # To do so, this test calls a finalizer: `unset_seed_in_test`.
+
     # Multiprocessing supports three way to start a process.
     # We use `spawn` option to create a child process as a fresh python process.
     # For more detail, see https://github.com/optuna/optuna/pull/3187#issuecomment-997673037.
@@ -1031,6 +1029,7 @@ def test_reproducible_in_other_process(sampler_class_index: int) -> None:
         )
         p.start()
         p.join()
+
     # Hashes are expected to be different because string hashing is nondeterministic per process.
     assert not (hash_dict[0] == hash_dict[1] == hash_dict[2])
     # But the sequences are expected to be the same.
