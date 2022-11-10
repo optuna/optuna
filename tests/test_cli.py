@@ -291,7 +291,7 @@ def test_studies_command(output_format: Optional[str]) -> None:
 
         expected_keys = ["name", "direction", "n_trials", "datetime_start"]
 
-        #Check user_attrs are not printed.
+        # Check user_attrs are not printed.
         if output_format is None or output_format == "table":
             assert list(studies[0].keys()) == expected_keys
         else:
@@ -360,9 +360,14 @@ def test_studies_command_flatten(output_format: Optional[str]) -> None:
         output = str(subprocess.check_output(command).decode().strip())
         studies = _parse_output(output, output_format or "table")
 
-        expected_keys_1 = ["name", "direction_0", "n_trials", "datetime_start",]
+        expected_keys_1 = [
+            "name",
+            "direction_0",
+            "n_trials",
+            "datetime_start",
+        ]
 
-        #Check user_attrs are not printed.
+        # Check user_attrs are not printed.
         if output_format is None or output_format == "table":
             assert list(studies[0].keys()) == expected_keys_1
         else:
