@@ -1,5 +1,4 @@
 import abc
-import io
 from contextlib import contextmanager
 import errno
 import json
@@ -181,7 +180,7 @@ class JournalFileStorage(BaseJournalLogStorage):
                 if log_number < log_number_from:
                     continue
                 try:
-                    logs.append(json.load(io.BytesIO(line)))
+                    logs.append(json.loads(line))
                 except json.JSONDecodeError as err:
                     last_decode_error = err
                     del self._log_number_offset[log_number + 1]
