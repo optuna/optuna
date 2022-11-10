@@ -166,22 +166,6 @@ class FrozenTrial(BaseTrial):
         self._distributions = distributions
         self._trial_id = trial_id
 
-    # Ordered list of fields required for `__repr__`, `__hash__` and dataframe creation.
-    # TODO(hvy): Remove this list in Python 3.7 as the order of `self.__dict__` is preserved.
-    _ordered_fields = [
-        "number",
-        "_values",
-        "datetime_start",
-        "datetime_complete",
-        "params",
-        "_distributions",
-        "user_attrs",
-        "system_attrs",
-        "intermediate_values",
-        "_trial_id",
-        "state",
-    ]
-
     def __eq__(self, other: Any) -> bool:
 
         if not isinstance(other, FrozenTrial):
@@ -204,7 +188,7 @@ class FrozenTrial(BaseTrial):
 
     def __hash__(self) -> int:
 
-        return hash(tuple(getattr(self, field) for field in self._ordered_fields))
+        return hash(tuple(getattr(self, field) for field in self.__dict__))
 
     def __repr__(self) -> str:
 
@@ -215,7 +199,7 @@ class FrozenTrial(BaseTrial):
                     field=field if not field.startswith("_") else field[1:],
                     value=repr(getattr(self, field)),
                 )
-                for field in self._ordered_fields
+                for field in self.__dict__
             )
             + ", value=None",
         )
