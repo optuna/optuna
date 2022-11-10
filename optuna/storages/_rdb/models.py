@@ -14,6 +14,7 @@ from sqlalchemy import Enum
 from sqlalchemy import Float
 from sqlalchemy import ForeignKey
 from sqlalchemy import func
+from sqlalchemy import Identity
 from sqlalchemy import Integer
 from sqlalchemy import orm
 from sqlalchemy import String
@@ -42,7 +43,7 @@ BaseModel: Any = declarative_base()
 
 class StudyModel(BaseModel):
     __tablename__ = "studies"
-    study_id = Column(Integer, primary_key=True)
+    study_id = Column(Integer, Identity(), primary_key=True)
     study_name = Column(String(MAX_INDEXED_STRING_LENGTH), index=True, unique=True, nullable=False)
 
     @classmethod
@@ -81,7 +82,7 @@ class StudyModel(BaseModel):
 class StudyDirectionModel(BaseModel):
     __tablename__ = "study_directions"
     __table_args__: Any = (UniqueConstraint("study_id", "objective"),)
-    study_direction_id = Column(Integer, primary_key=True)
+    study_direction_id = Column(Integer, Identity(), primary_key=True)
     direction = Column(Enum(StudyDirection), nullable=False)
     study_id = Column(Integer, ForeignKey("studies.study_id"), nullable=False)
     objective = Column(Integer, nullable=False)
@@ -112,7 +113,7 @@ class StudyDirectionModel(BaseModel):
 class StudyUserAttributeModel(BaseModel):
     __tablename__ = "study_user_attributes"
     __table_args__: Any = (UniqueConstraint("study_id", "key"),)
-    study_user_attribute_id = Column(Integer, primary_key=True)
+    study_user_attribute_id = Column(Integer, Identity(), primary_key=True)
     study_id = Column(Integer, ForeignKey("studies.study_id"))
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
     value_json = Column(Text())
@@ -146,7 +147,7 @@ class StudyUserAttributeModel(BaseModel):
 class StudySystemAttributeModel(BaseModel):
     __tablename__ = "study_system_attributes"
     __table_args__: Any = (UniqueConstraint("study_id", "key"),)
-    study_system_attribute_id = Column(Integer, primary_key=True)
+    study_system_attribute_id = Column(Integer, Identity(), primary_key=True)
     study_id = Column(Integer, ForeignKey("studies.study_id"))
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
     value_json = Column(Text())
@@ -179,7 +180,7 @@ class StudySystemAttributeModel(BaseModel):
 
 class TrialModel(BaseModel):
     __tablename__ = "trials"
-    trial_id = Column(Integer, primary_key=True)
+    trial_id = Column(Integer, Identity(), primary_key=True)
     # No `UniqueConstraint` is put on the `number` columns although it in practice is constrained
     # to be unique. This is to reduce code complexity as table-level locking would be required
     # otherwise. See https://github.com/optuna/optuna/pull/939#discussion_r387447632.
@@ -276,7 +277,7 @@ class TrialModel(BaseModel):
 class TrialUserAttributeModel(BaseModel):
     __tablename__ = "trial_user_attributes"
     __table_args__: Any = (UniqueConstraint("trial_id", "key"),)
-    trial_user_attribute_id = Column(Integer, primary_key=True)
+    trial_user_attribute_id = Column(Integer, Identity(), primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"))
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
     value_json = Column(Text())
@@ -310,7 +311,7 @@ class TrialUserAttributeModel(BaseModel):
 class TrialSystemAttributeModel(BaseModel):
     __tablename__ = "trial_system_attributes"
     __table_args__: Any = (UniqueConstraint("trial_id", "key"),)
-    trial_system_attribute_id = Column(Integer, primary_key=True)
+    trial_system_attribute_id = Column(Integer, Identity(), primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"))
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
     value_json = Column(Text())
@@ -344,7 +345,7 @@ class TrialSystemAttributeModel(BaseModel):
 class TrialParamModel(BaseModel):
     __tablename__ = "trial_params"
     __table_args__: Any = (UniqueConstraint("trial_id", "param_name"),)
-    param_id = Column(Integer, primary_key=True)
+    param_id = Column(Integer, Identity(), primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"))
     param_name = Column(String(MAX_INDEXED_STRING_LENGTH))
     param_value = Column(Float(precision=FLOAT_PRECISION))
@@ -420,7 +421,7 @@ class TrialValueModel(BaseModel):
 
     __tablename__ = "trial_values"
     __table_args__: Any = (UniqueConstraint("trial_id", "objective"),)
-    trial_value_id = Column(Integer, primary_key=True)
+    trial_value_id = Column(Integer, Identity(), primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
     objective = Column(Integer, nullable=False)
     value = Column(Float(precision=FLOAT_PRECISION), nullable=True)
@@ -488,7 +489,7 @@ class TrialIntermediateValueModel(BaseModel):
 
     __tablename__ = "trial_intermediate_values"
     __table_args__: Any = (UniqueConstraint("trial_id", "step"),)
-    trial_intermediate_value_id = Column(Integer, primary_key=True)
+    trial_intermediate_value_id = Column(Integer, Identity(), primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
     step = Column(Integer, nullable=False)
     intermediate_value = Column(Float(precision=FLOAT_PRECISION), nullable=True)
@@ -557,7 +558,7 @@ class TrialIntermediateValueModel(BaseModel):
 class TrialHeartbeatModel(BaseModel):
     __tablename__ = "trial_heartbeats"
     __table_args__: Any = (UniqueConstraint("trial_id"),)
-    trial_heartbeat_id = Column(Integer, primary_key=True)
+    trial_heartbeat_id = Column(Integer, Identity(), primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
     heartbeat = Column(DateTime, nullable=False, default=func.current_timestamp())
 
