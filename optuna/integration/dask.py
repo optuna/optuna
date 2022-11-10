@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 from typing import Any
 from typing import Container
 from typing import Dict
@@ -18,7 +19,6 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import distribution_to_json
 from optuna.distributions import json_to_distribution
 from optuna.storages import BaseStorage
-from optuna.storages._journal.storage import datetime_from_isoformat
 from optuna.study import StudyDirection
 from optuna.study._frozen import FrozenStudy
 from optuna.trial import FrozenTrial
@@ -50,9 +50,9 @@ def _deserialize_frozentrial(data: dict) -> FrozenTrial:
     data["state"] = TrialState[data["state"]]
     data["distributions"] = {k: json_to_distribution(v) for k, v in data["distributions"].items()}
     if data["datetime_start"] is not None:
-        data["datetime_start"] = datetime_from_isoformat(data["datetime_start"])
+        data["datetime_start"] = datetime.fromisoformat(data["datetime_start"])
     if data["datetime_complete"] is not None:
-        data["datetime_complete"] = datetime_from_isoformat(data["datetime_complete"])
+        data["datetime_complete"] = datetime.fromisoformat(data["datetime_complete"])
     trail = FrozenTrial(**data)
     return trail
 
