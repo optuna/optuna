@@ -347,6 +347,7 @@ class CmaEsSampler(BaseSampler):
             self._warn_independent_sampling = False
             return {}
 
+        # When `with_margin=True`, bounds in discrete dimensions are handled inside `CMAwM`.
         trans = _SearchSpaceTransform(search_space, transform_step=not self._with_margin)
 
         optimizer, n_restarts = self._restore_optimizer(completed_trials)
