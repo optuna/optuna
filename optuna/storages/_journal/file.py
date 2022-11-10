@@ -1,4 +1,5 @@
 import abc
+import io
 from contextlib import contextmanager
 import errno
 import json
@@ -162,7 +163,7 @@ class JournalFileStorage(BaseJournalLogStorage):
 
     def read_logs(self, log_number_from: int) -> List[Dict[str, Any]]:
         logs = []
-        with open(self._file_path, "r") as f:
+        with open(self._file_path, "rb") as f:
             log_number_start = 0
             if log_number_from in self._log_number_offset:
                 f.seek(self._log_number_offset[log_number_from])
@@ -173,18 +174,14 @@ class JournalFileStorage(BaseJournalLogStorage):
                 if last_decode_error is not None:
                     raise last_decode_error
                 if log_number + 1 not in self._log_number_offset:
-                    # In text mode, platform-specific line endings (\n on Unix, \r\n on Windows)
-                    # are converted to just \n. It causes the bug on Windows platforms.
-                    # See https://docs.python.org/3/tutorial/inputoutput.html for details
-                    byte_len = len((line.rstrip("\n") + os.linesep).encode("utf-8"))
-
+                    byte_len = len(line)
                     self._log_number_offset[log_number + 1] = (
                         self._log_number_offset[log_number] + byte_len
                     )
                 if log_number < log_number_from:
                     continue
                 try:
-                    logs.append(json.loads(line))
+                    logs.append(json.load(io.BytesIO(line)))
                 except json.JSONDecodeError as err:
                     last_decode_error = err
                     del self._log_number_offset[log_number + 1]
