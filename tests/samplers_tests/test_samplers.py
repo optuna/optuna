@@ -47,21 +47,9 @@ parametrize_sampler = pytest.mark.parametrize(
         ),
         lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
         optuna.samplers.NSGAIISampler,
-    ]
-    # TODO(kstoneriv3): Update this after the support for Python 3.6 is stopped.
-    + (
-        []
-        if sys.version_info < (3, 7, 0)
-        else [
-            lambda: optuna.samplers.QMCSampler(),
-        ]
-    )
-    # TODO(nzw0301): Update this after the support for Python 3.6 is stopped.
-    + (
-        []
-        if sys.version_info < (3, 7, 0)
-        else [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)]
-    ),
+        lambda: optuna.samplers.QMCSampler(),
+        lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
+    ],
 )
 parametrize_relative_sampler = pytest.mark.parametrize(
     "relative_sampler_class",
@@ -79,13 +67,8 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
     [
         optuna.samplers.NSGAIISampler,
         lambda: optuna.samplers.TPESampler(n_startup_trials=0),
-    ]
-    # TODO(nzw0301): Update this after the support for Python 3.6 is stopped.
-    + (
-        []
-        if sys.version_info < (3, 7, 0)
-        else [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)]
-    ),
+        lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
+    ],
 )
 sampler_class_with_seed: List[Callable] = [
     lambda seed: optuna.samplers.RandomSampler(seed=seed),
@@ -95,11 +78,9 @@ sampler_class_with_seed: List[Callable] = [
     lambda seed: optuna.integration.SkoptSampler(seed=seed),
     lambda seed: optuna.integration.PyCmaSampler(seed=seed),
     lambda seed: optuna.samplers.NSGAIISampler(seed=seed),
+    lambda seed: optuna.samplers.QMCSampler(seed=seed),
+    lambda seed: optuna.integration.BoTorchSampler(seed=seed),
 ]
-# TODO(kstoneriv3): Update this after the support for Python 3.6 is stopped.
-if sys.version_info >= (3, 7, 0):
-    sampler_class_with_seed.append(lambda seed: optuna.samplers.QMCSampler(seed=seed))
-    sampler_class_with_seed.append(lambda seed: optuna.integration.BoTorchSampler(seed=seed))
 parametrize_sampler_with_seed = pytest.mark.parametrize("sampler_class", sampler_class_with_seed)
 
 
@@ -127,20 +108,12 @@ parametrize_sampler_with_seed = pytest.mark.parametrize("sampler_class", sampler
             True,
         ),
         (lambda: optuna.samplers.GridSampler(search_space={"x": [0]}), True, False),
+        (lambda: optuna.samplers.QMCSampler(), False, True),
     ]
-    # TODO(kstoneriv3): Update this after the support for Python 3.6 is stopped.
+    # TODO(nzw0301): Remove version constraints if BoTorch supports Python 3.10.
     + (
         []
-        if sys.version_info < (3, 7, 0)
-        else [
-            (lambda: optuna.samplers.QMCSampler(), False, True),
-        ]
-    )
-    # TODO(nzw0301): Remove version constraints if BoTorch supports Python 3.10
-    # or Optuna does not support Python 3.6.
-    + (
-        []
-        if sys.version_info >= (3, 10, 0) or sys.version_info < (3, 7, 0)
+        if sys.version_info >= (3, 10, 0)
         else [(lambda: optuna.integration.BoTorchSampler(n_startup_trials=0), False, True)]
     ),
 )
