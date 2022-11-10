@@ -31,7 +31,6 @@ from optuna.trial import TrialState
 _logger = optuna.logging.get_logger(__name__)
 
 NOT_FOUND_MSG = "Record does not exist."
-# A heuristic interval number to dump snapshots
 
 
 class JournalOperation(enum.IntEnum):

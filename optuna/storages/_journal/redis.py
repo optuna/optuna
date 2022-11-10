@@ -33,17 +33,11 @@ class JournalRedisStorage(BaseJournalLogStorage, BaseJournalLogSnapshot):
         prefix:
             Prefix of the preserved key of logs. This is useful when multiple users work on one
             Redis server.
-        snapshot_interval:
-            An interval of trials and studies to save a snapshot.
     """
 
-    def __init__(
-        self, url: str, use_cluster: bool = False, prefix: str = "", snapshot_interval: int = 100
-    ) -> None:
+    def __init__(self, url: str, use_cluster: bool = False, prefix: str = "") -> None:
 
         _imports.check()
-
-        super().__init__(snapshot_interval=snapshot_interval)
 
         self._url = url
         self._redis = redis.Redis.from_url(url)
