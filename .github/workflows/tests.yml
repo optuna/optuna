@@ -71,9 +71,9 @@ jobs:
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' }}
       run: |
-        pytest tests --ignore tests/integration_tests --durations=0
+        pytest tests --ignore tests/integration_tests
 
     - name: Tests
       if:  ${{ github.event_name != 'schedule' }}
       run: |
-        pytest tests --ignore tests/integration_tests --durations=0 -m "not slow"
+        pytest tests --ignore tests/integration_tests -m "not slow"
