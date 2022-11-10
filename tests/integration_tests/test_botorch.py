@@ -410,3 +410,22 @@ def test_call_after_trial_of_independent_sampler() -> None:
     ) as mock_object:
         study.optimize(lambda _: 1.0, n_trials=1)
         assert mock_object.call_count == 1
+
+
+@pytest.mark.parametrize("device", [None, torch.device("cpu"), torch.device("cuda:0")])
+def test_device_argument(device: Optional[torch.device]) -> None:
+
+    sampler = BoTorchSampler(device=device)
+    if not torch.cuda.is_available() and sampler._device.type == "cuda":
+        pytest.skip(reason="GPU is unavailable.")
+
+    def objective(trial: Trial) -> float:
+        return trial.suggest_float("x", 0.0, 1.0)
+
+    def constraints_func(trial: FrozenTrial) -> Sequence[float]:
+        x0 = trial.params["x"]
+        return [x0 - 0.5]
+
+    sampler = BoTorchSampler(constraints_func=constraints_func, n_startup_trials=1)
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(objective, n_trials=3)

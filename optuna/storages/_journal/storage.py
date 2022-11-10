@@ -45,11 +45,6 @@ class JournalOperation(enum.IntEnum):
     SET_TRIAL_SYSTEM_ATTR = 10
 
 
-def datetime_from_isoformat(datetime_str: str) -> datetime.datetime:
-    # TODO(wattlebirdaz): Use datetime.fromisoformat after dropped Python 3.6 support.
-    return datetime.datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S.%f")
-
-
 @experimental_class("3.1.0")
 class JournalStorage(BaseStorage):
     """Storage class for Journal storage backend.
@@ -94,6 +89,19 @@ class JournalStorage(BaseStorage):
 
         with self._thread_lock:
             self._sync_with_backend()
+
+    def __getstate__(self) -> Dict[Any, Any]:
+        state = self.__dict__.copy()
+        del state["_worker_id_prefix"]
+        del state["_replay_result"]
+        del state["_thread_lock"]
+        return state
+
+    def __setstate__(self, state: Dict[Any, Any]) -> None:
+        self.__dict__.update(state)
+        self._worker_id_prefix = str(uuid.uuid4()) + "-"
+        self._replay_result = JournalStorageReplayResult(self._worker_id_prefix)
+        self._thread_lock = threading.Lock()
 
     def _write_log(self, op_code: int, extra_fields: Dict[str, Any]) -> None:
         worker_id = self._replay_result.worker_id
@@ -483,11 +491,11 @@ class JournalStorageReplayResult:
         if "params" in log:
             params = {k: distributions[k].to_external_repr(p) for k, p in log["params"].items()}
         if log["datetime_start"] is not None:
-            datetime_start = datetime_from_isoformat(log["datetime_start"])
+            datetime_start = datetime.datetime.fromisoformat(log["datetime_start"])
         else:
             datetime_start = None
         if "datetime_complete" in log:
-            datetime_complete = datetime_from_isoformat(log["datetime_complete"])
+            datetime_complete = datetime.datetime.fromisoformat(log["datetime_complete"])
         else:
             datetime_complete = None
 
@@ -559,11 +567,11 @@ class JournalStorageReplayResult:
 
         trial = copy.copy(self._trials[trial_id])
         if state == TrialState.RUNNING:
-            trial.datetime_start = datetime_from_isoformat(log["datetime_start"])
+            trial.datetime_start = datetime.datetime.fromisoformat(log["datetime_start"])
             if self._is_issued_by_this_worker(log):
                 self._worker_id_to_owned_trial_id[self.worker_id] = trial_id
         if state.is_finished():
-            trial.datetime_complete = datetime_from_isoformat(log["datetime_complete"])
+            trial.datetime_complete = datetime.datetime.fromisoformat(log["datetime_complete"])
         trial.state = state
         if log["values"] is not None:
             trial.values = log["values"]

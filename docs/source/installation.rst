@@ -1,7 +1,7 @@
 Installation
 ============
 
-Optuna supports Python 3.6 or newer.
+Optuna supports Python 3.7 or newer.
 
 We recommend to install Optuna via pip:
 
