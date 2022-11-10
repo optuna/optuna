@@ -362,7 +362,7 @@ def _register_with_scheduler(
         ext.storages[name] = optuna.storages.get_storage(storage)
 
 
-@experimental_class("3.0.4")
+@experimental_class("3.1.0")
 class DaskStorage(BaseStorage):
     """Dask-compatible storage class.
 
@@ -372,8 +372,8 @@ class DaskStorage(BaseStorage):
     the :obj:`DaskStorage` instance results in the same method being called on the underlying
     Optuna storage object.
 
-    See `this example <https://github.com/optuna/optuna/blob/master/
-    examples/dask_simple.py>`__
+    See `this example <https://github.com/optuna/optuna-examples/blob/master/
+    dask/dask_simple.py>`__
     for how to use :obj:`DaskStorage` to extend Optuna's in-memory storage class to run across
     multiple processes.
 
