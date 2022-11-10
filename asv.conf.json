@@ -71,9 +71,7 @@
     // pip (with all the conda available packages installed first,
     // followed by the pip installed packages).
     //
-    "matrix": {
-        "fakeredis": [""],
-    },
+    "matrix": {},
 
     // Combinations of libraries/python versions can be excluded/included
     // from the set to test. Each entry is a dictionary containing additional
