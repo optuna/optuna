@@ -47,32 +47,9 @@ parametrize_sampler = pytest.mark.parametrize(
         ),
         lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
         optuna.samplers.NSGAIISampler,
-<<<<<<< HEAD
-    ]
-    # TODO(kstoneriv3): Update this after the support for Python 3.6 is stopped.
-    + (
-        []
-        if sys.version_info < (3, 7, 0)
-        else [
-            lambda: optuna.samplers.QMCSampler(),
-        ]
-    )
-    # TODO(nzw0301): Update this after the support for Python 3.6 is stopped.
-    + (
-        []
-        if sys.version_info < (3, 7, 0)
-        else [
-            pytest.param(
-                lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
-                marks=pytest.mark.slow,
-            )
-        ]
-    ),
-=======
         lambda: optuna.samplers.QMCSampler(),
         lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
     ],
->>>>>>> master
 )
 parametrize_relative_sampler = pytest.mark.parametrize(
     "relative_sampler_class",
@@ -90,23 +67,8 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
     [
         optuna.samplers.NSGAIISampler,
         lambda: optuna.samplers.TPESampler(n_startup_trials=0),
-<<<<<<< HEAD
-    ]
-    # TODO(nzw0301): Update this after the support for Python 3.6 is stopped.
-    + (
-        []
-        if sys.version_info < (3, 7, 0)
-        else [
-            pytest.param(
-                lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
-                marks=pytest.mark.slow,
-            )
-        ]
-    ),
-=======
         lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
     ],
->>>>>>> master
 )
 sampler_class_with_seed: List[Callable] = [
     lambda seed: optuna.samplers.RandomSampler(seed=seed),
@@ -119,17 +81,6 @@ sampler_class_with_seed: List[Callable] = [
     lambda seed: optuna.samplers.QMCSampler(seed=seed),
     lambda seed: optuna.integration.BoTorchSampler(seed=seed),
 ]
-<<<<<<< HEAD
-# TODO(kstoneriv3): Update this after the support for Python 3.6 is stopped.
-if sys.version_info >= (3, 7, 0):
-    sampler_class_with_seed.append(lambda seed: optuna.samplers.QMCSampler(seed=seed))
-    sampler_class_with_seed.append(
-        pytest.param(
-            lambda seed: optuna.integration.BoTorchSampler(seed=seed), marks=pytest.mark.slow
-        )
-    )
-=======
->>>>>>> master
 parametrize_sampler_with_seed = pytest.mark.parametrize("sampler_class", sampler_class_with_seed)
 
 
@@ -162,20 +113,8 @@ parametrize_sampler_with_seed = pytest.mark.parametrize("sampler_class", sampler
     # TODO(nzw0301): Remove version constraints if BoTorch supports Python 3.10.
     + (
         []
-<<<<<<< HEAD
-        if sys.version_info >= (3, 10, 0) or sys.version_info < (3, 7, 0)
-        else [
-            pytest.param(
-                lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
-                False,
-                True,
-                marks=pytest.mark.slow,
-            ),
-        ]
-=======
         if sys.version_info >= (3, 10, 0)
         else [(lambda: optuna.integration.BoTorchSampler(n_startup_trials=0), False, True)]
->>>>>>> master
     ),
 )
 def test_sampler_reseed_rng(
@@ -1056,9 +995,6 @@ def run_optimize(
     sequence_dict[k] = list(study.trials[-1].params.values())
 
 
-<<<<<<< HEAD
-@pytest.mark.slow
-=======
 @pytest.fixture
 def unset_seed_in_test(request: SubRequest) -> None:
     # Unset the hashseed at beginning and restore it at end regardless of an exception in the test.
@@ -1076,7 +1012,7 @@ def unset_seed_in_test(request: SubRequest) -> None:
     request.addfinalizer(restore_seed)
 
 
->>>>>>> master
+@pytest.mark.slow
 @pytest.mark.parametrize("sampler_class_index", range(len(sampler_class_with_seed)))
 def test_reproducible_in_other_process(sampler_class_index: int, unset_seed_in_test: None) -> None:
     # This test should be tested without `PYTHONHASHSEED`. However, some tool such as tox
