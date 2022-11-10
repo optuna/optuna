@@ -19,6 +19,7 @@ concurrency:
 
 jobs:
   tests-mac:
+    if: (github.event_name == 'schedule' && github.repository == 'optuna/optuna') || (github.event_name != 'schedule')
     runs-on: macos-latest
 
     # Not intended for forks.
