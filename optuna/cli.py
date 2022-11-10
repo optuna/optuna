@@ -381,10 +381,10 @@ class _Studies(_BaseCommand):
             )
             record: Dict[Tuple[str, str], Any] = {}
             record[("name", "")] = s.study_name
-            record[("user_attrs", "")] = s.user_attrs
             record[("direction", "")] = tuple(d.name for d in s.directions)
             record[("n_trials", "")] = s.n_trials
-            record[("datetime_start", "")] = start            
+            record[("datetime_start", "")] = start
+            record[("user_attrs", "")] = s.user_attrs
             records.append(record)
 
         if any(r[("user_attrs", "")] != {} for r in records):

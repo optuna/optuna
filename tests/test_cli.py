@@ -281,12 +281,6 @@ def test_studies_command(output_format: Optional[str]) -> None:
         # First study.
         study_1 = optuna.create_study(storage=storage)
 
-        # Second study.
-        study_2 = optuna.create_study(
-            storage=storage, study_name="study_2", directions=["minimize", "maximize"]
-        )
-        study_2.optimize(objective_func_multi_objective, n_trials=10)
-
         # Run command.
         command = ["optuna", "studies", "--storage", storage_url]
         if output_format is not None:
@@ -295,7 +289,27 @@ def test_studies_command(output_format: Optional[str]) -> None:
         output = str(subprocess.check_output(command).decode().strip())
         studies = _parse_output(output, output_format or "table")
 
-        expected_keys = ["name", "user_attrs", "direction", "n_trials", "datetime_start"]
+        expected_keys = ["name", "direction", "n_trials", "datetime_start"]
+
+        #Check user_attrs are not printed.
+        if output_format is None or output_format == "table":
+            assert list(studies[0].keys()) == expected_keys
+        else:
+            assert set(studies[0].keys()) == set(expected_keys)
+
+        # Add a second study.
+        study_2 = optuna.create_study(
+            storage=storage, study_name="study_2", directions=["minimize", "maximize"]
+        )
+        study_2.optimize(objective_func_multi_objective, n_trials=10)
+        study_2.set_user_attr("key_1", "value_1")
+        study_2.set_user_attr("key_2", "value_2")
+
+        # Run command again to include second study.
+        output = str(subprocess.check_output(command).decode().strip())
+        studies = _parse_output(output, output_format or "table")
+
+        expected_keys = ["name", "direction", "n_trials", "datetime_start", "user_attrs"]
 
         assert len(studies) == 2
         for study in studies:
@@ -304,23 +318,27 @@ def test_studies_command(output_format: Optional[str]) -> None:
             else:
                 assert set(study.keys()) == set(expected_keys)
 
-        # Check study_name, direction, and n_trials for the first study.
+        # Check study_name, direction, n_trials and user_attrs for the first study.
         assert studies[0]["name"] == study_1.study_name
         if output_format is None or output_format == "table":
             assert studies[0]["n_trials"] == "0"
             assert eval(studies[0]["direction"]) == ("MINIMIZE",)
+            assert eval(studies[0]["user_attrs"]) == {}
         else:
             assert studies[0]["n_trials"] == 0
             assert studies[0]["direction"] == ["MINIMIZE"]
+            assert studies[0]["user_attrs"] == {}
 
-        # Check study_name, direction, and n_trials for the second study.
+        # Check study_name, direction, n_trials and user_attrs for the second study.
         assert studies[1]["name"] == study_2.study_name
         if output_format is None or output_format == "table":
             assert studies[1]["n_trials"] == "10"
             assert eval(studies[1]["direction"]) == ("MINIMIZE", "MAXIMIZE")
+            assert eval(studies[1]["user_attrs"]) == {"key_1": "value_1", "key_2": "value_2"}
         else:
             assert studies[1]["n_trials"] == 10
             assert studies[1]["direction"] == ["MINIMIZE", "MAXIMIZE"]
+            assert studies[1]["user_attrs"] == {"key_1": "value_1", "key_2": "value_2"}
 
 
 @pytest.mark.skip_coverage
@@ -334,12 +352,6 @@ def test_studies_command_flatten(output_format: Optional[str]) -> None:
         # First study.
         study_1 = optuna.create_study(storage=storage)
 
-        # Second study.
-        study_2 = optuna.create_study(
-            storage=storage, study_name="study_2", directions=["minimize", "maximize"]
-        )
-        study_2.optimize(objective_func_multi_objective, n_trials=10)
-
         # Run command.
         command = ["optuna", "studies", "--storage", storage_url, "--flatten"]
         if output_format is not None:
@@ -348,24 +360,44 @@ def test_studies_command_flatten(output_format: Optional[str]) -> None:
         output = str(subprocess.check_output(command).decode().strip())
         studies = _parse_output(output, output_format or "table")
 
+        expected_keys_1 = ["name", "direction_0", "n_trials", "datetime_start",]
+
+        #Check user_attrs are not printed.
+        if output_format is None or output_format == "table":
+            assert list(studies[0].keys()) == expected_keys_1
+        else:
+            assert set(studies[0].keys()) == set(expected_keys_1)
+
+        # Add a second study.
+        study_2 = optuna.create_study(
+            storage=storage, study_name="study_2", directions=["minimize", "maximize"]
+        )
+        study_2.optimize(objective_func_multi_objective, n_trials=10)
+        study_2.set_user_attr("key_1", "value_1")
+        study_2.set_user_attr("key_2", "value_2")
+
+        # Run command again to include second study.
+        output = str(subprocess.check_output(command).decode().strip())
+        studies = _parse_output(output, output_format or "table")
+
         if output_format is None or output_format == "table":
             expected_keys_1 = expected_keys_2 = [
                 "name",
-                "user_attrs",
                 "direction_0",
                 "direction_1",
                 "n_trials",
                 "datetime_start",
+                "user_attrs",
             ]
         else:
-            expected_keys_1 = ["name", "user_attrs", "direction_0", "n_trials", "datetime_start"]
+            expected_keys_1 = ["name", "direction_0", "n_trials", "datetime_start", "user_attrs"]
             expected_keys_2 = [
                 "name",
-                "user_attrs",
                 "direction_0",
                 "direction_1",
                 "n_trials",
                 "datetime_start",
+                "user_attrs",
             ]
 
         assert len(studies) == 2
@@ -376,20 +408,24 @@ def test_studies_command_flatten(output_format: Optional[str]) -> None:
             assert set(studies[0].keys()) == set(expected_keys_1)
             assert set(studies[1].keys()) == set(expected_keys_2)
 
-        # Check study_name, direction, and n_trials for the first study.
+        # Check study_name, direction, n_trials and user_attrs for the first study.
         assert studies[0]["name"] == study_1.study_name
         if output_format is None or output_format == "table":
             assert studies[0]["n_trials"] == "0"
+            assert studies[0]["user_attrs"] == "{}"
         else:
             assert studies[0]["n_trials"] == 0
+            assert studies[0]["user_attrs"] == {}
         assert studies[0]["direction_0"] == "MINIMIZE"
 
-        # Check study_name, direction, and n_trials for the second study.
+        # Check study_name, direction, n_trials and user_attrs for the second study.
         assert studies[1]["name"] == study_2.study_name
         if output_format is None or output_format == "table":
             assert studies[1]["n_trials"] == "10"
+            assert studies[1]["user_attrs"] == "{'key_1': 'value_1', 'key_2': 'value_2'}"
         else:
             assert studies[1]["n_trials"] == 10
+            assert studies[1]["user_attrs"] == {"key_1": "value_1", "key_2": "value_2"}
         assert studies[1]["direction_0"] == "MINIMIZE"
         assert studies[1]["direction_1"] == "MAXIMIZE"
 
