@@ -159,15 +159,6 @@ def test_constraints_func(constraint_value: float) -> None:
             assert x == y
 
 
-def test_constrained_dominates_with_nan_constraint() -> None:
-    directions = [StudyDirection.MINIMIZE, StudyDirection.MINIMIZE]
-
-    t1 = _create_frozen_trial(0, [1], [0, float("nan")])
-    t2 = _create_frozen_trial(0, [0], [1, -1])
-    with pytest.raises(ValueError):
-        _constrained_dominates(t1, t2, directions)
-
-
 def test_constraints_func_nan() -> None:
     n_trials = 4
     n_objectives = 2
@@ -399,6 +390,17 @@ def test_fast_non_dominated_sort_with_constraints() -> None:
     directions = [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
     population_per_rank = sampler._fast_non_dominated_sort(copy.copy(trials), directions)
     _assert_population_per_rank(trials, directions, population_per_rank)
+
+
+def test_fast_non_dominated_sort_with_nan_constraint() -> None:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = NSGAIISampler(constraints_func=lambda _: [0])
+    directions = [StudyDirection.MINIMIZE, StudyDirection.MINIMIZE]
+    with pytest.raises(ValueError):
+        sampler._fast_non_dominated_sort(
+            [_create_frozen_trial(0, [1], [0, float("nan")])], directions
+        )
 
 
 @pytest.mark.parametrize(
