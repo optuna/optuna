@@ -32,6 +32,7 @@ def get_install_requires() -> List[str]:
         "colorlog",
         # TODO(HideakiImamura): remove this after the fix by `cliff` or `stevedore`
         "importlib-metadata<5.0.0",
+        "more-itertools",
         "numpy",
         "packaging>=20.0",
         "scipy>=1.7.0",

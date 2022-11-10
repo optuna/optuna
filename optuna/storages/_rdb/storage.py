@@ -2,6 +2,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 import copy
 from datetime import datetime
+from itertools import chain
 import json
 import logging
 import os
@@ -16,6 +17,8 @@ from typing import Sequence
 from typing import Set
 from typing import TYPE_CHECKING
 import uuid
+
+import more_itertools
 
 import optuna
 from optuna import distributions
@@ -37,6 +40,11 @@ if TYPE_CHECKING:
     import alembic.migration as alembic_migration
     import alembic.script as alembic_script
     import sqlalchemy
+    import sqlalchemy.dialects.mssql as sqlalchemy_dialects_mssql
+    import sqlalchemy.dialects.mysql as sqlalchemy_dialects_mysql
+    import sqlalchemy.dialects.oracle as sqlalchemy_dialects_oracle
+    import sqlalchemy.dialects.postgresql as sqlalchemy_dialects_postgresql
+    import sqlalchemy.dialects.sqlite as sqlalchemy_dialects_sqlite
     import sqlalchemy.exc as sqlalchemy_exc
     import sqlalchemy.orm as sqlalchemy_orm
     import sqlalchemy.sql.functions as sqlalchemy_sql_functions
@@ -49,6 +57,11 @@ else:
     alembic_script = _LazyImport("alembic.script")
 
     sqlalchemy = _LazyImport("sqlalchemy")
+    sqlalchemy_dialects_mssql = _LazyImport("sqlalchemy.dialects.mssql")
+    sqlalchemy_dialects_mysql = _LazyImport("sqlalchemy.dialects.mysql")
+    sqlalchemy_dialects_oracle = _LazyImport("sqlalchemy.dialects.oracle")
+    sqlalchemy_dialects_postgresql = _LazyImport("sqlalchemy.dialects.postgresql")
+    sqlalchemy_dialects_sqlite = _LazyImport("sqlalchemy.dialects.sqlite")
     sqlalchemy_exc = _LazyImport("sqlalchemy.exc")
     sqlalchemy_orm = _LazyImport("sqlalchemy.orm")
     sqlalchemy_sql_functions = _LazyImport("sqlalchemy.sql.functions")
@@ -863,45 +876,38 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 for trial_id_tuple in trial_ids
                 if trial_id_tuple[0] not in excluded_trial_ids
             )
-            try:
-                trial_models = (
-                    session.query(models.TrialModel)
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.params))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.values))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.user_attributes))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.system_attributes))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.intermediate_values))
-                    .filter(
-                        models.TrialModel.trial_id.in_(trial_ids),
-                        models.TrialModel.study_id == study_id,
-                    )
-                    .order_by(models.TrialModel.trial_id)
-                    .all()
+            query = (
+                session.query(models.TrialModel)
+                .options(sqlalchemy_orm.selectinload(models.TrialModel.params))
+                .options(sqlalchemy_orm.selectinload(models.TrialModel.values))
+                .options(sqlalchemy_orm.selectinload(models.TrialModel.user_attributes))
+                .options(sqlalchemy_orm.selectinload(models.TrialModel.system_attributes))
+                .options(sqlalchemy_orm.selectinload(models.TrialModel.intermediate_values))
+                .filter(
+                    models.TrialModel.study_id == study_id,
                 )
-            except sqlalchemy_exc.OperationalError as e:
-                # Likely exceeding the number of maximum allowed variables using IN.
-                # This number differ between database dialects. For SQLite for instance, see
-                # https://www.sqlite.org/limits.html and the section describing
-                # SQLITE_MAX_VARIABLE_NUMBER.
-
-                _logger.warning(
-                    "Caught an error from sqlalchemy: {}. Falling back to a slower alternative. "
-                    "".format(str(e))
-                )
-
-                trial_models = (
-                    session.query(models.TrialModel)
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.params))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.values))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.user_attributes))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.system_attributes))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.intermediate_values))
-                    .filter(models.TrialModel.study_id == study_id)
-                    .order_by(models.TrialModel.trial_id)
-                    .all()
-                )
-                trial_models = [t for t in trial_models if t.trial_id in trial_ids]
-
+            )
+            bind = session.bind
+            if bind is None:
+                raise ValueError('"session.bind" is None')
+            dialect = bind.dialect
+            if isinstance(dialect, sqlalchemy_dialects_mssql.dialect):
+                max_params = 2100
+            elif isinstance(dialect, sqlalchemy_dialects_mysql.dialect):
+                max_params = 65535
+            elif isinstance(dialect, sqlalchemy_dialects_oracle.dialect):
+                max_params = 1000
+            elif isinstance(dialect, sqlalchemy_dialects_postgresql.dialect):
+                max_params = 32767
+            elif isinstance(dialect, sqlalchemy_dialects_sqlite.dialect):
+                max_params = 100
+            else:
+                max_params = 100  # conservative estimate
+            chunks = more_itertools.chunked(trial_ids, round(0.95 * max_params))
+            trial_model_chunks = (
+                query.filter(models.TrialModel.trial_id.in_(chunk)).all() for chunk in chunks
+            )
+            trial_models = sorted(chain(*trial_model_chunks), key=lambda x: x.trial_id)
             trials = [self._build_frozen_trial_from_trial_model(trial) for trial in trial_models]
 
         return trials
