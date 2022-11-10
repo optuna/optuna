@@ -9,6 +9,7 @@ from typing import IO
 from typing import Optional
 from typing import Type
 
+import _pytest.capture
 import fakeredis
 import pytest
 
@@ -16,7 +17,6 @@ import optuna
 from optuna import create_study
 from optuna.storages import JournalStorage
 from optuna.storages._journal.base import BaseJournalLogSnapshot
-from optuna.storages._journal.base import SnapshotRestoreError
 from optuna.storages._journal.file import JournalFileBaseLock
 from optuna.storages._journal.storage import JournalStorageReplayResult
 from optuna.testing.storages import StorageSupplier
@@ -178,16 +178,25 @@ def test_check_replay_result_restored_from_snapshot(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", JOURNAL_STORAGE_SUPPORTING_SNAPSHOT)
-def test_snapshot_given(storage_mode: str) -> None:
+def test_snapshot_given(storage_mode: str, capsys: _pytest.capture.CaptureFixture) -> None:
     with StorageSupplier(storage_mode) as storage:
         assert isinstance(storage, JournalStorage)
+        replay_result = JournalStorageReplayResult("")
         # Bytes object which is a valid pickled object.
-        storage.restore_replay_result(pickle.dumps(JournalStorageReplayResult("")))
+        storage.restore_replay_result(pickle.dumps(replay_result))
+        assert replay_result.log_number_read == storage._replay_result.log_number_read
+
+        # We need to reconstruct our default handler to properly capture stderr.
+        optuna.logging._reset_library_root_logger()
+        optuna.logging.enable_default_handler()
+        optuna.logging.set_verbosity(optuna.logging.WARNING)
 
         # Bytes object which cannot be unpickled is passed.
-        with pytest.raises(SnapshotRestoreError):
-            storage.restore_replay_result(b"hoge")
+        storage.restore_replay_result(b"hoge")
+        _, err = capsys.readouterr()
+        assert err
 
         # Bytes object which can be pickled but is not `JournalStorageReplayResult`.
-        with pytest.raises(SnapshotRestoreError):
-            storage.restore_replay_result(pickle.dumps("hoge"))
+        storage.restore_replay_result(pickle.dumps("hoge"))
+        _, err = capsys.readouterr()
+        assert err

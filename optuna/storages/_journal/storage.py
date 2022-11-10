@@ -22,7 +22,6 @@ from optuna.storages import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages._journal.base import BaseJournalLogSnapshot
 from optuna.storages._journal.base import BaseJournalLogStorage
-from optuna.storages._journal.base import SnapshotRestoreError
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -100,10 +99,7 @@ class JournalStorage(BaseStorage):
             if isinstance(self._backend, BaseJournalLogSnapshot):
                 snapshot = self._backend.load_snapshot()
                 if snapshot is not None:
-                    try:
-                        self.restore_replay_result(snapshot)
-                    except SnapshotRestoreError:
-                        pass
+                    self.restore_replay_result(snapshot)
             self._sync_with_backend()
 
     def __getstate__(self) -> Dict[Any, Any]:
@@ -122,12 +118,14 @@ class JournalStorage(BaseStorage):
     def restore_replay_result(self, snapshot: bytes) -> None:
         try:
             r: Optional[JournalStorageReplayResult] = pickle.loads(snapshot)
-        except (pickle.UnpicklingError, KeyError) as e:
-            raise SnapshotRestoreError("Failed to restore `JournalStorageReplayResult`.") from e
+        except (pickle.UnpicklingError, KeyError):
+            _logger.warning("Failed to restore `JournalStorageReplayResult`.")
+            return
         if r is None:
             return
         if not isinstance(r, JournalStorageReplayResult):
-            raise SnapshotRestoreError("The restored object is not `JournalStorageReplayResult`.")
+            _logger.warning("The restored object is not `JournalStorageReplayResult`.")
+            return
         r._worker_id_prefix = self._worker_id_prefix
         r._worker_id_to_owned_trial_id = {}
         self._replay_result = r

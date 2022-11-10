@@ -44,12 +44,6 @@ class BaseJournalLogStorage(abc.ABC):
         raise NotImplementedError
 
 
-class SnapshotRestoreError(Exception):
-    """Exception for BaseJournalLogSnapshot."""
-
-    pass
-
-
 class BaseJournalLogSnapshot(abc.ABC):
     """Optional base class for Journal storages.
 
