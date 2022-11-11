@@ -459,12 +459,11 @@ class TPESampler(BaseSampler):
         indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n), violations)
         # `None` items are intentionally converted to `nan` and then filtered out.
         # For `nan` conversion, the dtype must be float.
-        # In the call of `sample_independent`, we only have one parameter so the logic makes sense.
-        config_values = {k: np.asarray(v, dtype=float) for k, v in values.items()}
-        param_mask = ~np.isnan(list(config_values.values())[0])
+        config_value = np.asarray(values[param_name], dtype=float)
+        param_mask = ~np.isnan(config_value)
         param_mask_below, param_mask_above = param_mask[indices_below], param_mask[indices_above]
-        below = {k: v[indices_below[param_mask_below]] for k, v in config_values.items()}
-        above = {k: v[indices_above[param_mask_above]] for k, v in config_values.items()}
+        below = {param_name: config_value[indices_below[param_mask_below]]}
+        above = {param_name: config_value[indices_above[param_mask_above]]}
 
         if study._is_multi_objective():
             weights_below = _calculate_weights_below_for_multi_objective(
