@@ -98,7 +98,10 @@ sampler_class_with_seed: Dict[str, Tuple[Callable[[int], BaseSampler], bool]] = 
         False,
     ),
     "CmaEsSampler": (lambda seed: optuna.samplers.CmaEsSampler(seed=seed), False),
-    "separable CmaEsSampler": (lambda seed: optuna.samplers.CmaEsSampler(seed=seed, use_separable_cma=True), False),
+    "separable CmaEsSampler": (
+        lambda seed: optuna.samplers.CmaEsSampler(seed=seed, use_separable_cma=True),
+        False,
+    ),
     "SkoptSampler": (lambda seed: optuna.integration.SkoptSampler(seed=seed), True),
     "PyCmaSampler": (lambda seed: optuna.integration.PyCmaSampler(seed=seed), True),
     "NSGAIISampler": (lambda seed: optuna.samplers.NSGAIISampler(seed=seed), False),
