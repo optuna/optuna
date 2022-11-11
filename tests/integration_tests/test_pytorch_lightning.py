@@ -176,7 +176,7 @@ def test_pytorch_lightning_pruning_callback_ddp_monitor(
 
 
 def test_pytorch_lightning_pruning_callback_ddp_unsupported_storage() -> None:
-    storage_mode = "redis"
+    storage_mode = "inmemory"
 
     def objective(trial: optuna.trial.Trial) -> float:
 

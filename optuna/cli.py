@@ -655,9 +655,7 @@ class _StorageUpgrade(_BaseCommand):
 
         storage_url = _check_storage_url(self.app_args.storage)
         if storage_url.startswith("redis"):
-            self.logger.info(
-                "RedisStorage is removed at Optuna v3.1.0. Please use JournalRedisStorage instead."
-            )
+            self.logger.info("This storage does not support upgrade yet.")
             return
         storage = RDBStorage(storage_url, skip_compatibility_check=True, skip_table_creation=True)
         current_version = storage.get_current_version()

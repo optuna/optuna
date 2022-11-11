@@ -36,9 +36,10 @@ def get_storage(storage: Union[None, str, BaseStorage]) -> BaseStorage:
     if storage is None:
         return InMemoryStorage()
     if isinstance(storage, str):
-        assert not storage.startswith(
-            "redis"
-        ), "RedisStorage is removed at Optuna v3.1.0. Please use JournalRedisStorage instead."
+        if storage.startswith("redis"):
+            raise ValueError(
+                "RedisStorage is removed at Optuna v3.1.0. Please use JournalRedisStorage instead."
+            )
         return _CachedStorage(RDBStorage(storage))
     elif isinstance(storage, RDBStorage):
         return _CachedStorage(storage)
