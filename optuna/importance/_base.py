@@ -18,7 +18,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
-class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
+class BaseImportanceEvaluator(abc.ABC):
     """Abstract parameter importance evaluator."""
 
     @abc.abstractmethod
