@@ -3,17 +3,17 @@ from packaging import version
 from optuna._imports import try_import
 
 
-with try_import() as _imports:  # NOQA
+with try_import() as _imports:
     # TODO(ytknzw): Add specific imports.
-    import matplotlib  # NOQA
+    import matplotlib
     from matplotlib import __version__ as matplotlib_version
-    from matplotlib import pyplot as plt  # NOQA
-    from matplotlib.axes._axes import Axes  # NOQA
-    from matplotlib.collections import LineCollection  # NOQA
-    from matplotlib.collections import PathCollection  # NOQA
-    from matplotlib.colors import Colormap  # NOQA
-    from matplotlib.contour import ContourSet  # NOQA
-    from matplotlib.patches import Rectangle  # NOQA
+    from matplotlib import pyplot as plt
+    from matplotlib.axes._axes import Axes
+    from matplotlib.collections import LineCollection
+    from matplotlib.collections import PathCollection
+    from matplotlib.colors import Colormap
+    from matplotlib.contour import ContourSet
+    from matplotlib.patches import Rectangle
 
     # TODO(ytknzw): Set precise version.
     if version.parse(matplotlib_version) < version.parse("3.0.0"):
@@ -24,3 +24,16 @@ with try_import() as _imports:  # NOQA
             "For further information, please refer to the installation guide of Matplotlib. ",
             name="matplotlib",
         )
+
+__all__ = [
+    "_imports",
+    "matplotlib",
+    "matplotlib_version",
+    "plt",
+    "Axes",
+    "LineCollection",
+    "PathCollection",
+    "Colormap",
+    "ContourSet",
+    "Rectangle",
+]

@@ -129,5 +129,7 @@ def test_observation_exists() -> None:
 def test_get_float_value() -> None:
 
     assert 1.0 == ChainerPruningExtension._get_float_value(1.0)
-    assert 1.0 == ChainerPruningExtension._get_float_value(chainer.Variable(np.array([1.0])))
+    assert 1.0 == ChainerPruningExtension._get_float_value(
+        chainer.Variable(np.array([1.0]))  # type: ignore
+    )
     assert math.isnan(ChainerPruningExtension._get_float_value(float("nan")))

@@ -23,6 +23,7 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.samplers import BaseSampler
 from optuna.samplers import NSGAIISampler
+from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.samplers.nsgaii import BaseCrossover
 from optuna.samplers.nsgaii import BLXAlphaCrossover
 from optuna.samplers.nsgaii import SBXCrossover
@@ -32,7 +33,6 @@ from optuna.samplers.nsgaii import UniformCrossover
 from optuna.samplers.nsgaii import VSBXCrossover
 from optuna.samplers.nsgaii._crossover import _inlined_categorical_uniform_crossover
 from optuna.samplers.nsgaii._sampler import _constrained_dominates
-from optuna.samplers.nsgaii._sampler import _CONSTRAINTS_KEY
 from optuna.study._multi_objective import _dominates
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial

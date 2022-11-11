@@ -274,24 +274,27 @@ def test_allennlp_pruning_callback() -> None:
     with tempfile.TemporaryDirectory() as tmp_dir:
 
         def objective(trial: optuna.Trial) -> float:
-            reader = allennlp.data.dataset_readers.TextClassificationJsonReader(
-                tokenizer=allennlp.data.tokenizers.WhitespaceTokenizer(),
+            reader = allennlp.data.dataset_readers.TextClassificationJsonReader(  # type: ignore
+                tokenizer=allennlp.data.tokenizers.WhitespaceTokenizer(),  # type: ignore
             )
-            data_loader = allennlp.data.data_loaders.MultiProcessDataLoader(
+            data_loader = allennlp.data.data_loaders.MultiProcessDataLoader(  # type: ignore
                 reader=reader,
                 data_path="tests/integration_tests/allennlp_tests/pruning_test.jsonl",
                 batch_size=16,
             )
-            vocab = allennlp.data.Vocabulary.from_instances(data_loader.iter_instances())
+            vocab = allennlp.data.Vocabulary.from_instances(  # type: ignore
+                data_loader.iter_instances()
+            )
+
             data_loader.index_with(vocab)
 
-            embedder = allennlp.modules.text_field_embedders.BasicTextFieldEmbedder(
-                {"tokens": allennlp.modules.Embedding(50, vocab=vocab)}
+            embedder = allennlp.modules.text_field_embedders.BasicTextFieldEmbedder(  # type: ignore # NOQA
+                {"tokens": allennlp.modules.Embedding(50, vocab=vocab)}  # type: ignore
             )
-            encoder = allennlp.modules.seq2vec_encoders.GruSeq2VecEncoder(
+            encoder = allennlp.modules.seq2vec_encoders.GruSeq2VecEncoder(  # type: ignore
                 input_size=50, hidden_size=50
             )
-            model = allennlp.models.BasicClassifier(
+            model = allennlp.models.BasicClassifier(  # type: ignore
                 text_field_embedder=embedder, seq2vec_encoder=encoder, vocab=vocab
             )
             optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
