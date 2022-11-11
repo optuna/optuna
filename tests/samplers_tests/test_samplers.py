@@ -152,7 +152,6 @@ parametrize_sampler_name_with_seed = pytest.mark.parametrize(
         ),
         (lambda: optuna.samplers.GridSampler(search_space={"x": [0]}), True, False),
         (lambda: optuna.samplers.QMCSampler(), False, True),
-        (lambda: optuna.integration.BoTorchSampler(n_startup_trials=0), False, True),
         pytest.param(
             lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
             False,
