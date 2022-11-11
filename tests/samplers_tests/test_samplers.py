@@ -42,6 +42,7 @@ parametrize_sampler = pytest.mark.parametrize(
         lambda: optuna.samplers.TPESampler(n_startup_trials=0),
         lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
+        lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0, use_separable_cma=True),
         pytest.param(
             lambda: optuna.integration.SkoptSampler(
                 skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
@@ -65,6 +66,7 @@ parametrize_relative_sampler = pytest.mark.parametrize(
     [
         lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
+        lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0, use_separable_cma=True),
         pytest.param(
             lambda: optuna.integration.SkoptSampler(
                 skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
@@ -96,6 +98,7 @@ sampler_class_with_seed: Dict[str, Tuple[Callable[[int], BaseSampler], bool]] = 
         False,
     ),
     "CmaEsSampler": (lambda seed: optuna.samplers.CmaEsSampler(seed=seed), False),
+    "separable CmaEsSampler": (lambda seed: optuna.samplers.CmaEsSampler(seed=seed, use_separable_cma=True), False),
     "SkoptSampler": (lambda seed: optuna.integration.SkoptSampler(seed=seed), True),
     "PyCmaSampler": (lambda seed: optuna.integration.PyCmaSampler(seed=seed), True),
     "NSGAIISampler": (lambda seed: optuna.samplers.NSGAIISampler(seed=seed), False),
