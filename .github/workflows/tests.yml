@@ -14,6 +14,7 @@ concurrency:
 
 jobs:
   tests:
+    if: (github.event_name == 'schedule' && github.repository == 'optuna/optuna') || (github.event_name != 'schedule')
     runs-on: ubuntu-latest
 
     strategy:
@@ -68,6 +69,12 @@ jobs:
         pip install shap
         pip install botorch torch==1.11.0 --extra-index-url https://download.pytorch.org/whl/cpu
 
-    - name: Tests
+    - name: Scheduled tests
+      if:  ${{ github.event_name == 'schedule' }}
       run: |
         pytest tests --ignore tests/integration_tests
+
+    - name: Tests
+      if:  ${{ github.event_name != 'schedule' }}
+      run: |
+        pytest tests --ignore tests/integration_tests -m "not slow"

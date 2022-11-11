@@ -919,6 +919,7 @@ def test_dynamic_range_objective(
 
 # We add tests for constant objective functions to ensure the reproducibility of sorting.
 @parametrize_sampler_with_seed
+@pytest.mark.slow
 @pytest.mark.parametrize("objective_func", [lambda *args: sum(args), lambda *args: 0.0])
 def test_reproducible(sampler_class: Callable[[int], BaseSampler], objective_func: Any) -> None:
     def objective(trial: Trial) -> float:
@@ -946,6 +947,7 @@ def test_reproducible(sampler_class: Callable[[int], BaseSampler], objective_fun
     )
 
 
+@pytest.mark.slow
 @parametrize_sampler_with_seed
 def test_reseed_rng_change_sampling(sampler_class: Callable[[int], BaseSampler]) -> None:
     def objective(trial: Trial) -> float:
@@ -1010,6 +1012,7 @@ def unset_seed_in_test(request: SubRequest) -> None:
     request.addfinalizer(restore_seed)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("sampler_class_index", range(len(sampler_class_with_seed)))
 def test_reproducible_in_other_process(sampler_class_index: int, unset_seed_in_test: None) -> None:
     # This test should be tested without `PYTHONHASHSEED`. However, some tool such as tox
