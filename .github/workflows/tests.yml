@@ -62,19 +62,12 @@ jobs:
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
 
-        # Required for samplers_tests/test_samplers.py.
-        # TODO(hvy): Fix samplers_tests/test_samplers.py to not require optional dependencies and remove these installs.
-        pip install scikit-optimize
-        pip install cma
-        pip install shap
-        pip install botorch torch==1.11.0 --extra-index-url https://download.pytorch.org/whl/cpu
-
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' }}
       run: |
-        pytest tests --ignore tests/integration_tests
+        pytest tests -m "not integration"
 
     - name: Tests
       if:  ${{ github.event_name != 'schedule' }}
       run: |
-        pytest tests --ignore tests/integration_tests -m "not slow"
+        pytest tests -m "not integration and not slow"

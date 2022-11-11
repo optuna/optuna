@@ -4,18 +4,28 @@ import typing
 from unittest.mock import Mock
 from unittest.mock import patch
 
-import chainer
-import chainer.links as L
-from chainer.training import triggers
 import numpy as np
 import pytest
 
 import optuna
+from optuna._imports import try_import
 from optuna.integration.chainer import ChainerPruningExtension
 from optuna.testing.pruners import DeterministicPruner
 
 
-class FixedValueDataset(chainer.dataset.DatasetMixin):  # type: ignore
+with try_import() as _imports:
+    import chainer
+    from chainer.dataset import DatasetMixin
+    import chainer.links as L
+    from chainer.training import triggers
+
+if not _imports.is_successful():
+    DatasetMixin = object  # type: ignore # NOQA
+
+pytestmark = pytest.mark.integration
+
+
+class FixedValueDataset(DatasetMixin):
 
     size = 16
 

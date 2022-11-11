@@ -4,15 +4,21 @@ from typing import Optional
 from typing import Tuple
 from typing import Union
 
-import mlflow
-from mlflow.tracking import MlflowClient
-from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID
 import numpy as np
 import py
 import pytest
 
 import optuna
+from optuna._imports import try_import
 from optuna.integration.mlflow import MLflowCallback
+
+
+with try_import():
+    import mlflow
+    from mlflow.tracking import MlflowClient
+    from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID
+
+pytestmark = pytest.mark.integration
 
 
 def _objective_func(trial: optuna.trial.Trial) -> float:

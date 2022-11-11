@@ -5,10 +5,10 @@ from unittest.mock import call
 from unittest.mock import patch
 import warnings
 
-import cma
 import pytest
 
 import optuna
+from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
@@ -18,6 +18,12 @@ from optuna.study._study_direction import StudyDirection
 from optuna.testing.distributions import UnsupportedDistribution
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+with try_import():
+    import cma
+
+pytestmark = pytest.mark.integration
 
 
 def test_cmaes_deprecation_warning() -> None:
