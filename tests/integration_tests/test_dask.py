@@ -64,7 +64,7 @@ def client() -> Client:
 
 
 def test_experimental(client: Client) -> None:
-    with pytest.warns(optuna._experimental.ExperimentalWarning):
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
         DaskStorage()
 
 
