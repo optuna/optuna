@@ -134,7 +134,7 @@ def test_pop_waiting_trial_multiprocess_safe() -> None:
 
 
 @pytest.mark.parametrize("storage_mode", JOURNAL_STORAGE_SUPPORTING_SNAPSHOT)
-def test_save_snapshot_per_each_100_trials(storage_mode: str) -> None:
+def test_save_snapshot_per_each_trial(storage_mode: str) -> None:
     def objective(trial: optuna.Trial) -> float:
         return trial.suggest_float("x", 0, 10)
 
@@ -153,7 +153,7 @@ def test_save_snapshot_per_each_100_trials(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", JOURNAL_STORAGE_SUPPORTING_SNAPSHOT)
-def test_save_snapshot_per_each_100_studies(storage_mode: str) -> None:
+def test_save_snapshot_per_each_study(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         assert isinstance(storage, JournalStorage)
         journal_log_storage = storage._backend

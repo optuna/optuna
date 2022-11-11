@@ -129,6 +129,7 @@ class JournalStorage(BaseStorage):
             return
         r._worker_id_prefix = self._worker_id_prefix
         r._worker_id_to_owned_trial_id = {}
+        r._last_created_trial_id_by_this_process = -1
         self._replay_result = r
 
     def _write_log(self, op_code: int, extra_fields: Dict[str, Any]) -> None:
