@@ -847,7 +847,7 @@ class _Tell(_BaseCommand):
             "--skip-if-finished",
             default=False,
             action="store_true",
-            help="If specified, tell is skipped without any error when the trial is already"
+            help="If specified, tell is skipped without any error when the trial is already "
             "finished.",
         )
         return parser

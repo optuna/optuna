@@ -32,6 +32,11 @@ class CatBoostPruningCallback:
         after training manually unlike other pruning callbacks
         to raise :class:`optuna.TrialPruned`.
 
+    .. note::
+        This callback cannot be used with CatBoost on GPUs because CatBoost doesn't support
+        a user-defined callback for GPU.
+        Please refer to `CatBoost issue <https://github.com/catboost/catboost/issues/1792>`_.
+
     Args:
         trial:
             A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the

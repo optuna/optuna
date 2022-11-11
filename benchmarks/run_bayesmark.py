@@ -24,10 +24,28 @@ def run_benchmark(args: argparse.Namespace) -> None:
     pruner_list = args.pruner_list.split()
     pruner_kwargs_list = args.pruner_kwargs_list.split()
 
+    if len(sampler_list) != len(sampler_kwargs_list):
+        raise ValueError(
+            "The number of samplers does not match the given keyword arguments. \n"
+            f"sampler_list: {sampler_list}, sampler_kwargs_list: {sampler_kwargs_list}."
+        )
+
+    if len(pruner_list) != len(pruner_kwargs_list):
+        raise ValueError(
+            "The number of pruners does not match the given keyword arguments. \n"
+            f"pruner_list: {pruner_list}, pruner_keyword_arguments: {pruner_kwargs_list}."
+        )
+
     config = dict()
-    for sampler, sampler_kwargs in zip(sampler_list, sampler_kwargs_list):
-        for pruner, pruner_kwargs in zip(pruner_list, pruner_kwargs_list):
-            optimizer_name = f"{sampler}-{pruner}"
+    for i, (sampler, sampler_kwargs) in enumerate(zip(sampler_list, sampler_kwargs_list)):
+        sampler_name = sampler
+        if sampler_list.count(sampler) > 1:
+            sampler_name += f"_{sampler_list[:i].count(sampler)}"
+        for j, (pruner, pruner_kwargs) in enumerate(zip(pruner_list, pruner_kwargs_list)):
+            pruner_name = pruner
+            if pruner_list.count(pruner) > 1:
+                pruner_name += f"_{pruner_list[:j].count(pruner)}"
+            optimizer_name = f"{args.name_prefix}_{sampler_name}_{pruner_name}"
             optimizer_kwargs = {
                 "sampler": sampler,
                 "sampler_kwargs": json.loads(sampler_kwargs),
@@ -58,9 +76,10 @@ def make_plots(args: argparse.Namespace) -> None:
 
     filename = f"{args.dataset}-{args.model}-partial-report.json"
     df = pd.read_json(os.path.join("partial", filename))
+    df["best_value"] = df.groupby(["opt", "uuid"]).generalization.cummin()
     summaries = (
         df.groupby(["opt", "iter"])
-        .generalization.agg(["mean", "std"])
+        .best_value.agg(["mean", "std"])
         .rename(columns={"mean": "best_mean", "std": "best_std"})
         .reset_index()
     )
@@ -91,25 +110,21 @@ def make_plot(
 ) -> None:
 
     start = 0 if plot_warmup else 10
-    argpos = summary.best_mean.expanding().apply(np.argmin).astype(int)
-    best_found = summary.best_mean.values[argpos.values]
-    sdev = summary.best_std.values[argpos.values]
-
-    if len(best_found) <= start:
+    if len(summary.best_mean) <= start:
         return
 
     ax.fill_between(
-        np.arange(len(best_found))[start:],
-        (best_found - sdev)[start:],
-        (best_found + sdev)[start:],
+        np.arange(len(summary.best_mean))[start:],
+        (summary.best_mean - summary.best_std)[start:],
+        (summary.best_mean + summary.best_std)[start:],
         color=color,
         alpha=0.25,
         step="mid",
     )
 
     ax.plot(
-        np.arange(len(best_found))[start:],
-        best_found[start:],
+        np.arange(len(summary.best_mean))[start:],
+        summary.best_mean[start:],
         color=color,
         label=optimizer,
         drawstyle="steps-mid",
@@ -165,6 +180,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", type=str, default="iris")
     parser.add_argument("--model", type=str, default="kNN")
+    parser.add_argument("--name-prefix", type=str, default="")
     parser.add_argument("--budget", type=int, default=80)
     parser.add_argument("--n-runs", type=int, default=10)
     parser.add_argument("--sampler-list", type=str, default="TPESampler CmaEsSampler")

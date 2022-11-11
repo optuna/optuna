@@ -53,10 +53,10 @@ jobs:
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
         # Required for samplers_tests/test_samplers.py.
-        # TODO(hvy): Fix samplers_tests/test_samplers.py to not require optional depenendencies and remove these installs.
+        # TODO(hvy): Fix samplers_tests/test_samplers.py to not require optional dependencies and remove these installs.
         pip install scikit-optimize
         pip install cma
-        pip install botorch torch==1.10.0
+        pip install botorch torch==1.11.0
 
     - name: Tests
       run: |

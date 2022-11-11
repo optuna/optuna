@@ -160,7 +160,7 @@ def objective(
     cv: bool = False,
 ) -> float:
 
-    dtrain = lgb.Dataset(np.asarray([[1.0], [2.0], [3.0]]), label=[1.0, 0.0, 1.0])
+    dtrain = lgb.Dataset(np.asarray([[1.0], [2.0], [3.0], [4.0]]), label=[1.0, 0.0, 1.0, 0.0])
     dtest = lgb.Dataset(np.asarray([[1.0]]), label=[1.0])
 
     if force_default_valid_names:
@@ -168,6 +168,7 @@ def objective(
     else:
         valid_names = [valid_name]
 
+    verbose_callback = lgb.log_evaluation()
     pruning_callback = LightGBMPruningCallback(
         trial, metric, valid_name=valid_name, report_interval=interval
     )
@@ -176,9 +177,8 @@ def objective(
             {"objective": "binary", "metric": ["auc", "binary_error"]},
             dtrain,
             num_boost_round,
-            verbose_eval=False,
             nfold=2,
-            callbacks=[pruning_callback],
+            callbacks=[verbose_callback, pruning_callback],
         )
     else:
         lgb.train(
@@ -187,7 +187,6 @@ def objective(
             num_boost_round,
             valid_sets=[dtest],
             valid_names=valid_names,
-            verbose_eval=False,
-            callbacks=[pruning_callback],
+            callbacks=[verbose_callback, pruning_callback],
         )
     return 1.0

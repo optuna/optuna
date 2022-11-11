@@ -1,3 +1,5 @@
+from concurrent.futures import as_completed
+from concurrent.futures import ThreadPoolExecutor
 import copy
 import itertools
 import multiprocessing
@@ -9,6 +11,7 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Union
 from unittest.mock import Mock
 from unittest.mock import patch
 import uuid
@@ -39,9 +42,9 @@ from optuna.trial import TrialState
 CallbackFuncType = Callable[[Study, FrozenTrial], None]
 
 
-def func(trial: Trial, x_max: float = 1.0) -> float:
+def func(trial: Trial) -> float:
 
-    x = trial.suggest_float("x", -x_max, x_max)
+    x = trial.suggest_float("x", -10.0, 10.0)
     y = trial.suggest_float("y", 20, 30, log=True)
     z = trial.suggest_categorical("z", (-1.0, 1.0))
     assert isinstance(z, float)
@@ -54,20 +57,17 @@ class Func:
         self.n_calls = 0
         self.sleep_sec = sleep_sec
         self.lock = threading.Lock()
-        self.x_max = 10.0
 
     def __call__(self, trial: Trial) -> float:
 
         with self.lock:
             self.n_calls += 1
-            x_max = self.x_max
-            self.x_max *= 0.9
 
-        # Sleep for testing parallelism
+        # Sleep for testing parallelism.
         if self.sleep_sec is not None:
             time.sleep(self.sleep_sec)
 
-        value = func(trial, x_max)
+        value = func(trial)
         check_params(trial.params)
         return value
 
@@ -174,6 +174,17 @@ def test_optimize_parallel(n_trials: int, n_jobs: int, storage_mode: str) -> Non
         check_study(study)
 
 
+def test_optimize_with_thread_pool_executor() -> None:
+    def objective(t: Trial) -> float:
+        return t.suggest_float("x", -10, 10)
+
+    study = create_study()
+    with ThreadPoolExecutor(max_workers=5) as pool:
+        for _ in range(10):
+            pool.submit(study.optimize, objective, n_trials=10)
+    assert len(study.trials) == 100
+
+
 @pytest.mark.parametrize(
     "n_trials, n_jobs, storage_mode",
     itertools.product(
@@ -249,6 +260,21 @@ def test_optimize_with_reseeding(n_jobs: int, storage_mode: str) -> None:
         with patch.object(sampler, "reseed_rng", wraps=sampler.reseed_rng) as mock_object:
             study.optimize(f, n_trials=1, n_jobs=2)
             assert mock_object.call_count == 1
+
+
+def test_call_another_study_optimize_in_optimize() -> None:
+    def inner_objective(t: Trial) -> float:
+        return t.suggest_float("x", -10, 10)
+
+    def objective(t: Trial) -> float:
+        inner_study = create_study()
+        inner_study.enqueue_trial({"x": t.suggest_int("initial_point", -10, 10)})
+        inner_study.optimize(inner_objective, n_trials=10)
+        return inner_study.best_value
+
+    study = create_study()
+    study.optimize(objective, n_trials=10)
+    assert len(study.trials) == 10
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -958,7 +984,7 @@ def test_callbacks(n_jobs: int) -> None:
     # Empty callback list.
     study.optimize(objective, callbacks=[], n_trials=10, n_jobs=n_jobs)
 
-    # A callback.
+    # One callback.
     values = []
     callbacks = [with_lock(lambda study, trial: values.append(trial.value))]
     study.optimize(objective, callbacks=callbacks, n_trials=10, n_jobs=n_jobs)
@@ -1207,6 +1233,7 @@ def test_ask_fixed_search_space() -> None:
 
 
 # Deprecated distributions are internally converted to corresponding distributions.
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 def test_ask_distribution_conversion() -> None:
     fixed_distributions = {
         "ud": distributions.UniformDistribution(low=0, high=10),
@@ -1439,19 +1466,19 @@ def test_tell_invalid() -> None:
     with pytest.raises(ValueError):
         study.tell(study.ask(), float("nan"), state=TrialState.COMPLETE)
 
-    # `state` must be None or finished state
+    # `state` must be None or finished state.
     with pytest.raises(ValueError):
         study.tell(study.ask(), state=TrialState.RUNNING)
 
-    # `state` must be None or finished state
+    # `state` must be None or finished state.
     with pytest.raises(ValueError):
         study.tell(study.ask(), state=TrialState.WAITING)
 
-    # `value` must be None for `TrialState.PRUNED`
+    # `value` must be None for `TrialState.PRUNED`.
     with pytest.raises(ValueError):
         study.tell(study.ask(), values=1, state=TrialState.PRUNED)
 
-    # `value` must be None for `TrialState.FAIL`
+    # `value` must be None for `TrialState.FAIL`.
     with pytest.raises(ValueError):
         study.tell(study.ask(), values=1, state=TrialState.FAIL)
 
@@ -1478,29 +1505,8 @@ def test_tell_duplicate_tell() -> None:
     # Should not panic when passthrough is enabled.
     study.tell(trial, 1.0, skip_if_finished=True)
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         study.tell(trial, 1.0, skip_if_finished=False)
-
-
-def test_tell_storage_not_implemented_trial_number() -> None:
-    with StorageSupplier("inmemory") as storage:
-
-        with patch.object(
-            storage,
-            "get_trial_id_from_study_id_trial_number",
-            side_effect=NotImplementedError,
-        ):
-            study = create_study(storage=storage)
-
-            study.tell(study.ask(), 1.0)
-
-            # Storage missing implementation for method required to map trial numbers back to
-            # trial IDs.
-            with pytest.warns(UserWarning):
-                study.tell(study.ask().number, 1.0)
-
-            with pytest.raises(ValueError):
-                study.tell(study.ask().number + 1, 1.0)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -1530,16 +1536,76 @@ def test_study_summary_datetime_start_calculation(storage_mode: str) -> None:
             x = trial.suggest_int("x", -10, 10)
             return x
 
-        # StudySummary datetime_start tests
+        # StudySummary datetime_start tests.
         study = create_study(storage=storage)
         study.enqueue_trial(params={"x": 1})
 
-        # Study summary with only enqueued trials should have null datetime_start
+        # Study summary with only enqueued trials should have null datetime_start.
         summaries = get_all_study_summaries(study._storage, include_best_trial=True)
         assert summaries[0].datetime_start is None
 
-        # Study summary with completed trials should have nonnull datetime_start
+        # Study summary with completed trials should have nonnull datetime_start.
         study.optimize(objective, n_trials=1)
         study.enqueue_trial(params={"x": 1}, skip_if_exists=False)
         summaries = get_all_study_summaries(study._storage, include_best_trial=True)
         assert summaries[0].datetime_start is not None
+
+
+def _process_tell(study: Study, trial: Union[Trial, int], values: float) -> None:
+    study.tell(trial, values)
+
+
+def test_tell_from_another_process() -> None:
+
+    pool = multiprocessing.Pool()
+
+    with StorageSupplier("sqlite") as storage:
+        # Create a study and ask for a new trial.
+        study = create_study(storage=storage)
+        trial0 = study.ask()
+
+        # Test normal behaviour.
+        pool.starmap(_process_tell, [(study, trial0, 1.2)])
+
+        assert len(study.trials) == 1
+        assert study.best_trial.state == TrialState.COMPLETE
+        assert study.best_value == 1.2
+
+        # Test study.tell using trial number.
+        trial = study.ask()
+        pool.starmap(_process_tell, [(study, trial.number, 1.5)])
+
+        assert len(study.trials) == 2
+        assert study.best_trial.state == TrialState.COMPLETE
+        assert study.best_value == 1.2
+
+        # Should fail because the trial0 is already finished.
+        with pytest.raises(RuntimeError):
+            pool.starmap(_process_tell, [(study, trial0, 1.2)])
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_pop_waiting_trial_thread_safe(storage_mode: str) -> None:
+    if "sqlite" == storage_mode or "cached_sqlite" == storage_mode:
+        pytest.skip("study._pop_waiting_trial is not thread-safe on SQLite3")
+
+    if "redis" == storage_mode:
+        # TODO(c-bata): Make RedisStorage.set_trial_state_values() concurrent-safe.
+        pytest.skip("study._pop_waiting_trial is broken at RedisStorage")
+
+    num_enqueued = 10
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        for i in range(num_enqueued):
+            study.enqueue_trial({"i": i})
+
+        trial_id_set = set()
+        with ThreadPoolExecutor(10) as pool:
+            futures = []
+            for i in range(num_enqueued):
+                future = pool.submit(study._pop_waiting_trial_id)
+                futures.append(future)
+
+            for future in as_completed(futures):
+                trial_id_set.add(future.result())
+        assert len(trial_id_set) == num_enqueued

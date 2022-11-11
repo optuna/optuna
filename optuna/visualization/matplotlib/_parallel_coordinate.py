@@ -9,7 +9,6 @@ from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.visualization._parallel_coordinate import _get_parallel_coordinate_info
 from optuna.visualization._parallel_coordinate import _ParallelCoordinateInfo
-from optuna.visualization._utils import _check_plot_args
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 
@@ -70,10 +69,13 @@ def plot_parallel_coordinate(
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
+
+    .. note::
+        The colormap is reversed when the ``target`` argument isn't :obj:`None` or ``direction``
+        of :class:`~optuna.study.Study` is ``minimize``.
     """
 
     _imports.check()
-    _check_plot_args(study, target, target_name)
     info = _get_parallel_coordinate_info(study, params, target, target_name)
     return _get_parallel_coordinate_plot(info)
 
@@ -120,7 +122,7 @@ def _get_parallel_coordinate_plot(info: _ParallelCoordinateInfo) -> "Axes":
     segments = [np.column_stack([x, y]) for x, y in zip(xs, dims_obj_base)]
     lc = LineCollection(segments, cmap=cmap)
     lc.set_array(np.asarray(info.dim_objective.values))
-    axcb = fig.colorbar(lc, pad=0.1)
+    axcb = fig.colorbar(lc, pad=0.1, ax=ax)
     axcb.set_label(target_name)
     var_names = [info.dim_objective.label] + [dim.label for dim in info.dims_params]
     plt.xticks(range(n_params + 1), var_names, rotation=330)

@@ -52,7 +52,10 @@ def test_float_to_int() -> None:
         study.sampler = PartialFixedSampler(
             fixed_params={"y": fixed_y}, base_sampler=study.sampler
         )
-    study.optimize(objective, n_trials=1)
+    # Since `fixed_y` is out-of-the-range value in the corresponding suggest_int,
+    # `UserWarning` will occur.
+    with pytest.warns(UserWarning):
+        study.optimize(objective, n_trials=1)
     assert study.trials[0].params["y"] == int(fixed_y)
 
 
@@ -112,3 +115,22 @@ def test_call_after_trial_of_base_sampler() -> None:
     with patch.object(base_sampler, "after_trial", wraps=base_sampler.after_trial) as mock_object:
         study.optimize(lambda _: 1.0, n_trials=1)
         assert mock_object.call_count == 1
+
+
+def test_fixed_none_value_sampling() -> None:
+    def objective(trial: Trial) -> float:
+        trial.suggest_categorical("x", (None, 0))
+        return 0.0
+
+    tpe = optuna.samplers.TPESampler()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        # In this following case , "x" should sample only `None`
+        sampler = optuna.samplers.PartialFixedSampler(fixed_params={"x": None}, base_sampler=tpe)
+
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(objective, n_trials=10)
+
+    for trial in study.trials:
+        assert trial.params["x"] is None

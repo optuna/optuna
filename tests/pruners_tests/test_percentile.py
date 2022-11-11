@@ -1,6 +1,7 @@
 import math
 from typing import List
 from typing import Tuple
+import warnings
 
 import pytest
 
@@ -90,6 +91,7 @@ def test_25_percentile_pruner_intermediate_values(
     assert trial.should_prune()
 
 
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 def test_25_percentile_pruner_intermediate_values_nan() -> None:
 
     pruner = optuna.pruners.PercentilePruner(25.0, 0, 0)
@@ -159,9 +161,11 @@ def test_get_best_intermediate_result_over_steps(
     trial_nan = optuna.trial.Trial(study, trial_id_nan)
     trial_nan.report(float("nan"), step=0)
     frozen_trial_nan = study._storage.get_trial(trial_id_nan)
-    assert math.isnan(
-        _percentile._get_best_intermediate_result_over_steps(frozen_trial_nan, direction)
-    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        assert math.isnan(
+            _percentile._get_best_intermediate_result_over_steps(frozen_trial_nan, direction)
+        )
 
 
 def test_get_percentile_intermediate_result_over_trials() -> None:
@@ -227,15 +231,17 @@ def test_get_percentile_intermediate_result_over_trials() -> None:
     study = setup_study(9, intermediate_values)
     all_trials = study.get_trials()
     direction = study.direction
-    assert math.isnan(
-        _percentile._get_percentile_intermediate_result_over_trials(
-            all_trials, direction, 2, 75, 1
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        assert math.isnan(
+            _percentile._get_percentile_intermediate_result_over_trials(
+                all_trials, direction, 2, 75, 1
+            )
         )
-    )
 
-    # n_min_trials = 2
-    assert math.isnan(
-        _percentile._get_percentile_intermediate_result_over_trials(
-            all_trials, direction, 2, 75, 2
+        # n_min_trials = 2.
+        assert math.isnan(
+            _percentile._get_percentile_intermediate_result_over_trials(
+                all_trials, direction, 2, 75, 2
+            )
         )
-    )

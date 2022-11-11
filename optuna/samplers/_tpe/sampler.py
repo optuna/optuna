@@ -191,12 +191,12 @@ class TPESampler(BaseSampler):
 
             .. note::
                 Abnormally terminated trials often leave behind a record with a state of
-                `RUNNING` in the storage.
+                ``RUNNING`` in the storage.
                 Such "zombie" trial parameters will be avoided by the constant liar algorithm
                 during subsequent sampling.
                 When using an :class:`~optuna.storages.RDBStorage`, it is possible to enable the
                 ``heartbeat_interval`` to change the records for abnormally terminated trials to
-                `FAIL`.
+                ``FAIL``.
 
             .. note::
                 It is recommended to set this value to :obj:`True` during distributed
@@ -204,6 +204,10 @@ class TPESampler(BaseSampler):
                 configurations. In particular, if each objective function evaluation is costly
                 and the durations of the running states are significant, and/or the number of
                 workers is high.
+
+            .. note::
+                This feature can be used for only single-objective optimization; this argument is
+                ignored for multi-objective optimization.
 
             .. note::
                 Added in v2.8.0 as an experimental feature. The interface may change in newer
@@ -382,13 +386,12 @@ class TPESampler(BaseSampler):
         values, scores, violations = _get_observation_pairs(
             study,
             param_names,
-            self._multivariate,
             self._constant_liar,
             self._constraints_func is not None,
         )
 
         # If the number of samples is insufficient, we run random trial.
-        n = len(scores)
+        n = sum(s < float("inf") for s, v in scores)  # Ignore running trials.
         if n < self._n_startup_trials:
             return {}
 
@@ -438,14 +441,15 @@ class TPESampler(BaseSampler):
         values, scores, violations = _get_observation_pairs(
             study,
             [param_name],
-            self._multivariate,
             self._constant_liar,
             self._constraints_func is not None,
         )
 
-        n = len(scores)
+        n = sum(s < float("inf") for s, v in scores)  # Ignore running trials.
 
-        self._log_independent_sampling(n, trial, param_name)
+        # Avoid independent warning at the first sampling of `param_name` when `group=True`.
+        if any(param is not None for param in values[param_name]):
+            self._log_independent_sampling(n, trial, param_name)
 
         if n < self._n_startup_trials:
             return self._random_sampler.sample_independent(
@@ -585,7 +589,6 @@ def _calculate_nondomination_rank(loss_vals: np.ndarray) -> np.ndarray:
 def _get_observation_pairs(
     study: Study,
     param_names: List[str],
-    multivariate: bool,
     constant_liar: bool = False,  # TODO(hvy): Remove default value and fix unit tests.
     constraints_enabled: bool = False,
 ) -> Tuple[
@@ -615,9 +618,6 @@ def _get_observation_pairs(
     trial is feasible if and only if its violation score is 0.
     """
 
-    if len(param_names) > 1:
-        assert multivariate
-
     signs = []
     for d in study.directions:
         if d == StudyDirection.MINIMIZE:
@@ -635,12 +635,6 @@ def _get_observation_pairs(
     values: Dict[str, List[Optional[float]]] = {param_name: [] for param_name in param_names}
     violations: Optional[List[float]] = [] if constraints_enabled else None
     for trial in study.get_trials(deepcopy=False, states=states):
-        # If ``multivariate`` = True and ``group`` = True, we ignore the trials that are not
-        # included in each subspace.
-        # If ``multivariate`` = False, we skip the check.
-        if multivariate and any([param_name not in trial.params for param_name in param_names]):
-            continue
-
         # We extract score from the trial.
         if trial.state is TrialState.COMPLETE:
             if trial.values is None:
@@ -657,13 +651,13 @@ def _get_observation_pairs(
                 else:
                     score = (-step, [signs[0] * intermediate_value])
             else:
-                score = (float("inf"), [0.0])
+                score = (1, [0.0])
         elif trial.state is TrialState.RUNNING:
             if study._is_multi_objective():
                 continue
 
             assert constant_liar
-            score = (-float("inf"), [signs[0] * float("inf")])
+            score = (float("inf"), [signs[0] * float("inf")])
         else:
             assert False
         scores.append(score)
@@ -707,7 +701,7 @@ def _split_observation_pairs(
     # 3. Feasible trials are sorted by loss_vals.
     if violations is not None:
         violation_1d = np.array(violations, dtype=float)
-        idx = violation_1d.argsort()
+        idx = violation_1d.argsort(kind="stable")
         if n_below >= len(idx) or violation_1d[idx[n_below]] > 0:
             # Below is filled by all feasible trials and trials with smaller violation values.
             indices_below = idx[:n_below]
@@ -719,7 +713,7 @@ def _split_observation_pairs(
             (infeasible_idx,) = (violation_1d > 0).nonzero()
             assert len(feasible_idx) >= n_below
             feasible_below, feasible_above = _split_observation_pairs(
-                list(np.array(loss_vals)[feasible_idx]), n_below, None
+                [loss_vals[i] for i in feasible_idx], n_below, None
             )
             indices_below = feasible_idx[feasible_below]
             indices_above = np.concatenate([feasible_idx[feasible_above], infeasible_idx])
@@ -735,7 +729,7 @@ def _split_observation_pairs(
             [(s, v[0]) for s, v in loss_vals], dtype=[("step", float), ("score", float)]
         )
 
-        index_loss_ascending = np.argsort(loss_values)
+        index_loss_ascending = np.argsort(loss_values, kind="stable")
         # `np.sort` is used to keep chronological order.
         indices_below = np.sort(index_loss_ascending[:n_below])
         indices_above = np.sort(index_loss_ascending[n_below:])
@@ -753,7 +747,7 @@ def _split_observation_pairs(
         # Nondomination rank-based selection
         i = 0
         last_idx = 0
-        while last_idx + sum(nondomination_ranks == i) <= n_below:
+        while last_idx < n_below and last_idx + sum(nondomination_ranks == i) <= n_below:
             length = indices[nondomination_ranks == i].shape[0]
             indices_below[last_idx : last_idx + length] = indices[nondomination_ranks == i]
             last_idx += length

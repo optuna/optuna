@@ -3,6 +3,7 @@ import time
 from typing import Optional
 from unittest.mock import Mock
 from unittest.mock import patch
+import warnings
 
 import pytest
 
@@ -167,7 +168,9 @@ def test_retry_failed_trial_callback_intermediate(
 
         study = optuna.create_study(storage=storage)
 
-        trial = study.ask()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UserWarning)
+            trial = study.ask()
         trial.suggest_float("_", -1, -1)
         trial.report(0.5, 1)
         storage.record_heartbeat(trial._trial_id)
@@ -202,6 +205,16 @@ def test_fail_stale_trials(storage_mode: str, grace_period: Optional[int]) -> No
         assert study.system_attrs["test"] == "A"
         assert trial.system_attrs["test"] == "B"
 
+    def check_change_trial_state_to_fail(study: "optuna.Study") -> None:
+        assert study.trials[0].state is TrialState.RUNNING
+        optuna.storages.fail_stale_trials(study)
+        assert study.trials[0].state is TrialState.FAIL  # type: ignore [comparison-overlap]
+
+    def check_keep_trial_state_in_running(study: "optuna.Study") -> None:
+        assert study.trials[0].state is TrialState.RUNNING
+        optuna.storages.fail_stale_trials(study)
+        assert study.trials[0].state is TrialState.RUNNING
+
     with StorageSupplier(storage_mode) as storage:
         assert isinstance(storage, (RDBStorage, RedisStorage))
         storage.heartbeat_interval = heartbeat_interval
@@ -213,14 +226,16 @@ def test_fail_stale_trials(storage_mode: str, grace_period: Optional[int]) -> No
         with pytest.warns(UserWarning):
             trial = study.ask()
         trial.set_system_attr("test", "B")
-        storage.record_heartbeat(trial._trial_id)
+
         time.sleep(_grace_period + 1)
+        check_keep_trial_state_in_running(study)
 
-        assert study.trials[0].state is TrialState.RUNNING
+        storage.record_heartbeat(trial._trial_id)
 
-        optuna.storages.fail_stale_trials(study)
+        check_keep_trial_state_in_running(study)
 
-        assert study.trials[0].state is TrialState.FAIL  # type: ignore [comparison-overlap]
+        time.sleep(_grace_period + 1)
+        check_change_trial_state_to_fail(study)
 
 
 @pytest.mark.parametrize("storage_mode", ["sqlite", "redis"])

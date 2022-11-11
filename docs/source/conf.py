@@ -17,8 +17,10 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 import pkg_resources
+import warnings
 
 import plotly.io as pio
+from sklearn.exceptions import ConvergenceWarning
 from sphinx_gallery.sorting import FileNameSortKey
 
 __version__ = pkg_resources.get_distribution("optuna").version
@@ -103,9 +105,6 @@ html_logo = "../image/optuna-logo.png"
 html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
 
-# Remove "Edit on GitHub."
-html_show_sourcelink = False
-
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
 #
@@ -179,6 +178,9 @@ autodoc_default_options = {
     "exclude-members": "with_traceback",
 }
 
+# sphinx_copybutton option to not copy prompt.
+copybutton_prompt_text = "$ "
+
 # Sphinx Gallery
 pio.renderers.default = "sphinx_gallery"
 
@@ -205,3 +207,7 @@ plotly_include_source = True
 plotly_formats = ["html"]
 plotly_html_show_formats = False
 plotly_html_show_source_link = False
+
+# Not showing common warning messages as in
+# https://sphinx-gallery.github.io/stable/configuration.html#removing-warnings.
+warnings.filterwarnings("ignore", category=ConvergenceWarning, module="sklearn")

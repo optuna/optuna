@@ -360,10 +360,14 @@ def test_create_new_trial(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_create_new_trial_with_template_trial(storage_mode: str) -> None:
+@pytest.mark.parametrize(
+    "start_time,complete_time",
+    [(datetime.now(), datetime.now()), (datetime(2022, 9, 1), datetime(2022, 9, 2))],
+)
+def test_create_new_trial_with_template_trial(
+    storage_mode: str, start_time: datetime, complete_time: datetime
+) -> None:
 
-    start_time = datetime.now()
-    complete_time = datetime.now()
     template_trial = FrozenTrial(
         state=TrialState.COMPLETE,
         value=10000,
@@ -1099,7 +1103,7 @@ def test_get_trial_id_from_study_id_trial_number(storage_mode: str) -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_pickle_storage(storage_mode: str) -> None:
     if "redis" in storage_mode:
-        pytest.skip("Redis storage is not picklable")
+        pytest.skip("The `fakeredis` does not support multi instances.")
 
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study()

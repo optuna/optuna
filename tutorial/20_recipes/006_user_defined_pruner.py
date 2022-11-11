@@ -108,7 +108,7 @@ def objective(trial):
         iris.data, iris.target, train_size=100, test_size=50, random_state=0
     )
 
-    loss = trial.suggest_categorical("loss", ["hinge", "log", "perceptron"])
+    loss = trial.suggest_categorical("loss", ["hinge", "log_loss", "perceptron"])
     alpha = trial.suggest_float("alpha", 0.00001, 0.001, log=True)
     clf = SGDClassifier(loss=loss, alpha=alpha, random_state=0)
     score = 0

@@ -227,9 +227,9 @@ def test_multi_objective_sample_int_distributions(log: bool, step: int) -> None:
     random.seed(128)
 
     def int_value_fn(idx: int) -> float:
-        return random.randint(1, 100)
+        return random.randint(1, 99)
 
-    int_dist = optuna.distributions.IntDistribution(1, 100, log, step)
+    int_dist = optuna.distributions.IntDistribution(1, 99, log, step)
     past_trials = [
         frozen_trial_factory(
             i, [random.random(), random.random()], dist=int_dist, value_fn=int_value_fn
@@ -240,7 +240,7 @@ def test_multi_objective_sample_int_distributions(log: bool, step: int) -> None:
     trial = frozen_trial_factory(16, [0, 0])
     sampler = TPESampler(seed=0)
     int_suggestion = suggest(sampler, study, trial, int_dist, past_trials)
-    assert 1 <= int_suggestion <= 100
+    assert 1 <= int_suggestion <= 99
     assert isinstance(int_suggestion, int)
 
 
@@ -338,29 +338,25 @@ def test_multi_objective_get_observation_pairs(
         )
     )
 
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], multivariate, constant_liar) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["x"], constant_liar) == (
         {"x": [int_value, int_value]},
         [(-float("inf"), [objective_value, -objective_value]) for _ in range(2)],
         None,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["y"], multivariate, constant_liar) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["y"], constant_liar) == (
         {"y": [0, 0]},
         [(-float("inf"), [objective_value, -objective_value]) for _ in range(2)],
         None,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["x", "y"], True, constant_liar) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["x", "y"], constant_liar) == (
         {"x": [int_value, int_value], "y": [0, 0]},
         [(-float("inf"), [objective_value, -objective_value]) for _ in range(2)],
         None,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["z"], multivariate, constant_liar) == (
-        (
-            {"z": [None, None]},
-            [(-float("inf"), [objective_value, -objective_value]) for _ in range(2)],
-            None,
-        )
-        if not multivariate
-        else ({"z": []}, [], None)
+    assert _tpe.sampler._get_observation_pairs(study, ["z"], constant_liar) == (
+        {"z": [None, None]},
+        [(-float("inf"), [objective_value, -objective_value]) for _ in range(2)],
+        None,
     )
 
 
@@ -376,26 +372,43 @@ def test_multi_objective_get_observation_pairs_constrained(constraint_value: int
     study.optimize(objective, n_trials=5)
 
     violations = [max(0, constraint_value) for _ in range(5)]
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], False, constraints_enabled=True) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["x"], constraints_enabled=True) == (
         {"x": [5.0, 5.0, 5.0, 5.0, 5.0]},
         [(-float("inf"), [5.0, -5.0]) for _ in range(5)],
         violations,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["y"], False, constraints_enabled=True) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["y"], constraints_enabled=True) == (
         {"y": [None, None, None, None, None]},
         [(-float("inf"), [5.0, -5.0]) for _ in range(5)],
         violations,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], True, constraints_enabled=True) == (
-        {"x": [5.0, 5.0, 5.0, 5.0, 5.0]},
-        [(-float("inf"), [5.0, -5.0]) for _ in range(5)],
-        violations,
+
+
+def test_multi_objective_split_observation_pairs() -> None:
+    indices_below, indices_above = _tpe.sampler._split_observation_pairs(
+        [
+            (-float("inf"), [-2.0, -1.0]),
+            (-float("inf"), [3.0, 3.0]),
+            (-float("inf"), [0.0, 1.0]),
+            (-float("inf"), [-1.0, 0.0]),
+        ],
+        2,
+        None,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["y"], True, constraints_enabled=True) == (
-        {"y": []},
-        [],
-        [],
+    assert list(indices_below) == [0, 3]
+    assert list(indices_above) == [1, 2]
+
+
+def test_multi_objective_split_observation_pairs_with_all_indices_below() -> None:
+    indices_below, indices_above = _tpe.sampler._split_observation_pairs(
+        [
+            (-float("inf"), [1.0, 1.0]),
+        ],
+        1,
+        None,
     )
+    assert list(indices_below) == [0]
+    assert list(indices_above) == []
 
 
 def test_calculate_nondomination_rank() -> None:

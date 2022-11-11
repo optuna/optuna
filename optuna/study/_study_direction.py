@@ -1,7 +1,7 @@
 import enum
 
 
-class StudyDirection(enum.Enum):
+class StudyDirection(enum.IntEnum):
     """Direction of a :class:`~optuna.study.Study`.
 
     Attributes:

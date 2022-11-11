@@ -53,6 +53,10 @@ ObjectiveFuncType = Callable[[trial_module.Trial], Union[float, Sequence[float]]
 _logger = logging.get_logger(__name__)
 
 
+class _ThreadLocalStudyAttribute(threading.local):
+    in_optimize_loop: bool = False
+
+
 class Study:
     """A study corresponds to an optimization task, i.e., a set of trials.
 
@@ -78,23 +82,24 @@ class Study:
         study_id = storage.get_study_id_from_name(study_name)
         self._study_id = study_id
         self._storage = storage
+        self._directions = storage.get_study_directions(study_id)
 
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
 
-        self._optimize_lock = threading.Lock()
+        self._thread_local = _ThreadLocalStudyAttribute()
         self._stop_flag = False
 
     def __getstate__(self) -> Dict[Any, Any]:
 
         state = self.__dict__.copy()
-        del state["_optimize_lock"]
+        del state["_thread_local"]
         return state
 
     def __setstate__(self, state: Dict[Any, Any]) -> None:
 
         self.__dict__.update(state)
-        self._optimize_lock = threading.Lock()
+        self._thread_local = _ThreadLocalStudyAttribute()
 
     @property
     def best_params(self) -> Dict[str, Any]:
@@ -198,7 +203,7 @@ class Study:
             A list of :class:`~optuna.study.StudyDirection` objects.
         """
 
-        return self._storage.get_study_directions(self._study_id)
+        return self._directions
 
     @property
     def trials(self) -> List[FrozenTrial]:
@@ -494,9 +499,8 @@ class Study:
             A :class:`~optuna.trial.Trial`.
         """
 
-        if not self._optimize_lock.locked():
-            if is_heartbeat_enabled(self._storage):
-                warnings.warn("Heartbeat of storage is supposed to be used with Study.optimize.")
+        if not self._thread_local.in_optimize_loop and is_heartbeat_enabled(self._storage):
+            warnings.warn("Heartbeat of storage is supposed to be used with Study.optimize.")
 
         fixed_distributions = fixed_distributions or {}
         fixed_distributions = {
@@ -603,7 +607,11 @@ class Study:
         """
 
         return _tell_with_warning(
-            study=self, trial=trial, values=values, state=state, skip_if_finished=skip_if_finished
+            study=self,
+            trial=trial,
+            value_or_values=values,
+            state=state,
+            skip_if_finished=skip_if_finished,
         )
 
     def set_user_attr(self, key: str, value: Any) -> None:
@@ -756,8 +764,7 @@ class Study:
 
         """
 
-        if self._optimize_lock.acquire(False):
-            self._optimize_lock.release()
+        if not self._thread_local.in_optimize_loop:
             raise RuntimeError(
                 "`Study.stop` is supposed to be invoked inside an objective function or a "
                 "callback."
@@ -1163,9 +1170,8 @@ def create_study(
         sampler = samplers.NSGAIISampler()
 
     study_name = storage.get_study_name_from_id(study_id)
+    storage.set_study_directions(study_id, direction_objects)
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
-
-    study._storage.set_study_directions(study_id, direction_objects)
 
     return study
 

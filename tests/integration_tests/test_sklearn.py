@@ -1,10 +1,12 @@
 from unittest.mock import MagicMock
+import warnings
 
 import numpy as np
 import pytest
 import scipy as sp
 from sklearn.datasets import make_blobs
 from sklearn.decomposition import PCA
+from sklearn.exceptions import ConvergenceWarning
 from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import SGDClassifier
@@ -308,6 +310,7 @@ def test_objective_error_score_invalid() -> None:
 
 # TODO(himkt): Remove this method with the deletion of deprecated distributions.
 # https://github.com/optuna/optuna/issues/2941
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 def test_optuna_search_convert_deprecated_distribution() -> None:
 
     param_dist = {
@@ -328,12 +331,11 @@ def test_optuna_search_convert_deprecated_distribution() -> None:
         "ild": distributions.IntDistribution(low=1, high=10, log=True, step=1),
     }
 
-    optuna_search = integration.OptunaSearchCV(
-        KernelDensity(),
-        param_dist,
-    )
-
-    assert optuna_search.param_distributions == expected_param_dist
+    with pytest.raises(ValueError):
+        optuna_search = integration.OptunaSearchCV(
+            KernelDensity(),
+            param_dist,
+        )
 
     # It confirms that ask doesn't convert non-deprecated distributions.
     optuna_search = integration.OptunaSearchCV(
@@ -367,7 +369,9 @@ def test_callbacks() -> None:
         callbacks=callbacks,  # type: ignore
     )
 
-    optuna_search.fit(X, y)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=ConvergenceWarning)
+        optuna_search.fit(X, y)
 
     for callback in callbacks:
         for trial in optuna_search.trials_:

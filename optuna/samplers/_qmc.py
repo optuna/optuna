@@ -1,4 +1,3 @@
-import sys
 from typing import Any
 from typing import Dict
 from typing import Optional
@@ -61,10 +60,6 @@ class QMCSampler(BaseSampler):
         As mentioned above, the search space of the :class:`~optuna.sampler.QMCSampler` is
         determined by the first trial of the study. Once the search space is determined, it cannot
         be changed afterwards.
-
-    .. note:
-        `QMCSampler` is not supported for Python 3.6 as it depends on `scipy.stat.qmc` module which
-        only supports Python 3.7 or the later versions.
 
     Args:
         qmc_type:
@@ -156,15 +151,6 @@ class QMCSampler(BaseSampler):
         warn_asynchronous_seeding: bool = True,
         warn_independent_sampling: bool = True,
     ) -> None:
-
-        version = sys.version_info
-        if version < (3, 7, 0):
-            version_txt = str(version[0]) + "." + str(version[1]) + "." + str(version[2])
-            message = (
-                f"`QMCSampler` is not supported for Python {version_txt}. "
-                "Consider using Python 3.7 or later."
-            )
-            raise ValueError(message)
 
         self._scramble = scramble
         self._seed = seed or np.random.PCG64().random_raw()
@@ -294,7 +280,10 @@ class QMCSampler(BaseSampler):
             raise ValueError("Invalid `qmc_type`")
 
         forward_size = sample_id  # `sample_id` starts from 0.
-        qmc_engine.fast_forward(forward_size)
+        # Skip fast_forward with forward_size==0 because Sobol doesn't support the case,
+        # and fast_forward(0) doesn't affect sampling.
+        if forward_size > 0:
+            qmc_engine.fast_forward(forward_size)
         sample = qmc_engine.random(1)
 
         return sample

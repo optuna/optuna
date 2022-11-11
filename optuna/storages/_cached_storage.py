@@ -42,17 +42,40 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
     wraps :class:`~optuna.storages.RDBStorage` class or
     :class:`~optuna.storages.RedisStorage` class.
 
-    To support **Stronger consistency requirements for special data** described in
-    :class:`~optuna.storages.BaseStorage`, this class has
-    `read_trials_from_remote_storage(study_id)` method. If the method is called, any successive
-    reads on the `state` attribute of a `Trial` are guaranteed to return the same or more recent
-    values than the value at the time of the call to the method.
-    Let `T` be a `Trial`.
-    Let `P` be the process that last updated the `state` attribute of `T`.
+    :class:`~optuna.storages._CachedStorage` meets the following **Consistency** and
+    **Data persistence** requirements.
+
+    **Consistency**
+
+    :class:`~optuna.storages._CachedStorage` will return the latest values of any attributes
+    of a study and a trial by syncing with the backend when necessary. In this class, a method
+    named `read_trials_from_remote_storage(study_id)` is specially defined for this purpose.
+    If the method is called, any successive reads on the `state` attribute of a `Trial`
+    are guaranteed to return the same or more recent values than the value at the time of the
+    call to the method.
+
+    Let `T` be a `Trial`. Let `P` be the process that last updated the `state` attribute of `T`.
     Then, any reads on any attributes of `T` are guaranteed to return the same or
     more recent values than any writes by `P` on the attribute before `P` updated
     the `state` attribute of `T`.
     The same applies for `user_attrs', 'system_attrs' and 'intermediate_values` attributes.
+
+    The current implementation of :class:`~optuna.storages._CachedStorage` assumes that each
+    RUNNING trial is only modified from a single process.
+    When a user modifies a RUNNING trial from multiple processes, the internal state of the storage
+    may become inconsistent. Consequences are undefined.
+
+    **Data persistence**
+
+    :class:`~optuna.storages._CachedStorage` does not guarantee that write operations are logged
+    into a persistent storage, even when write methods succeed.
+    Thus, when process failure occurs, some writes might be lost.
+    As exceptions, when a persistent storage is available, any writes on any attributes
+    of `Study` and writes on `state` of `Trial` are guaranteed to be persistent.
+    Additionally, any preceding writes on any attributes of `Trial` are guaranteed to
+    be written into a persistent storage before writes on `state` of `Trial` succeed.
+    The same applies for `param`, `user_attrs', 'system_attrs' and 'intermediate_values`
+    attributes.
 
     Args:
         backend:

@@ -26,10 +26,16 @@ _suggest_deprecated_msg = "Use :func:`~optuna.trial.FrozenTrial.suggest_float` i
 class FrozenTrial(BaseTrial):
     """Status and results of a :class:`~optuna.trial.Trial`.
 
-    This object has the same methods as :class:`~optuna.trial.Trial`, and it suggests the same
-    parameter values as in :attr:`params`; it does not sample any value from a distribution.
-    In contrast to :class:`~optuna.trial.Trial`,
-    :class:`~optuna.trial.FrozenTrial` does not depend on :class:`~optuna.study.Study`, and it is
+    An object of this class has the same methods as :class:`~optuna.trial.Trial`, but is not
+    associated with, nor has any references to a :class:`~optuna.study.Study`.
+
+    It is therefore not possible to make persistent changes to a storage from this object by
+    itself, for instance by using :func:`~optuna.trial.FrozenTrial.set_user_attr`.
+
+    It will suggest the parameter values stored in :attr:`params` and will not sample values from
+    any distributions.
+
+    It can be passed to objective functions (see :func:`~optuna.study.Study.optimize`) and is
     useful for deploying optimization results.
 
     Example:
@@ -113,12 +119,16 @@ class FrozenTrial(BaseTrial):
             Datetime where the :class:`~optuna.trial.Trial` finished.
         params:
             Dictionary that contains suggested parameters.
+        distributions:
+            Dictionary that contains the distributions of :attr:`params`.
         user_attrs:
             Dictionary that contains the attributes of the :class:`~optuna.trial.Trial` set with
             :func:`optuna.trial.Trial.set_user_attr`.
+        system_attrs:
+            Dictionary that contains the attributes of the :class:`~optuna.trial.Trial` set with
+            :func:`optuna.trial.Trial.set_system_attr`.
         intermediate_values:
             Intermediate objective values set with :func:`optuna.trial.Trial.report`.
-
     """
 
     def __init__(
@@ -156,22 +166,6 @@ class FrozenTrial(BaseTrial):
         self._distributions = distributions
         self._trial_id = trial_id
 
-    # Ordered list of fields required for `__repr__`, `__hash__` and dataframe creation.
-    # TODO(hvy): Remove this list in Python 3.7 as the order of `self.__dict__` is preserved.
-    _ordered_fields = [
-        "number",
-        "_values",
-        "datetime_start",
-        "datetime_complete",
-        "params",
-        "_distributions",
-        "user_attrs",
-        "system_attrs",
-        "intermediate_values",
-        "_trial_id",
-        "state",
-    ]
-
     def __eq__(self, other: Any) -> bool:
 
         if not isinstance(other, FrozenTrial):
@@ -194,7 +188,7 @@ class FrozenTrial(BaseTrial):
 
     def __hash__(self) -> int:
 
-        return hash(tuple(getattr(self, field) for field in self._ordered_fields))
+        return hash(tuple(getattr(self, field) for field in self.__dict__))
 
     def __repr__(self) -> str:
 
@@ -205,7 +199,7 @@ class FrozenTrial(BaseTrial):
                     field=field if not field.startswith("_") else field[1:],
                     value=repr(getattr(self, field)),
                 )
-                for field in self._ordered_fields
+                for field in self.__dict__
             )
             + ", value=None",
         )
@@ -421,7 +415,6 @@ class FrozenTrial(BaseTrial):
 
     @property
     def distributions(self) -> Dict[str, BaseDistribution]:
-        """Dictionary that contains the distributions of :attr:`params`."""
 
         return self._distributions
 

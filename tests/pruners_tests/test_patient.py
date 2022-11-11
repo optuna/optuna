@@ -39,6 +39,7 @@ def test_patient_pruner_with_one_trial() -> None:
     assert not trial.should_prune()
 
 
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 def test_patient_pruner_intermediate_values_nan() -> None:
 
     pruner = optuna.pruners.PatientPruner(None, 0, 0)

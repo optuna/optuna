@@ -159,6 +159,7 @@ def test_plot_contour(
         figure.write_image(BytesIO())
     else:
         plt.savefig(BytesIO())
+        plt.close()
 
 
 def test_target_is_none_and_study_is_multi_obj() -> None:
@@ -256,7 +257,7 @@ def test_get_contour_info_more_than_2_params(params: Optional[List[str]]) -> Non
     n_params = len(params) if params is not None else 4
     info = _get_contour_info(study, params=params)
     assert len(info.sorted_params) == n_params
-    assert np.shape(np.asarray(info.sub_plot_infos)) == (n_params, n_params, 3)
+    assert np.shape(np.asarray(info.sub_plot_infos, dtype=object)) == (n_params, n_params, 3)
 
 
 @pytest.mark.parametrize(
@@ -269,11 +270,13 @@ def test_get_contour_info_more_than_2_params(params: Optional[List[str]]) -> Non
 def test_get_contour_info_customized_target(params: List[str]) -> None:
 
     study = prepare_study_with_trials()
-    info = _get_contour_info(study, params=params, target=lambda t: t.params["param_d"])
+    info = _get_contour_info(
+        study, params=params, target=lambda t: t.params["param_d"], target_name="param_d"
+    )
     n_params = len(params)
     assert len(info.sorted_params) == n_params
     plot_shape = (1, 1, 3) if n_params == 2 else (n_params, n_params, 3)
-    assert np.shape(np.asarray(info.sub_plot_infos)) == plot_shape
+    assert np.shape(np.asarray(info.sub_plot_infos, dtype=object)) == plot_shape
 
 
 @pytest.mark.parametrize(
@@ -376,7 +379,7 @@ def test_get_contour_info_log_scale_and_str_category_more_than_2_params() -> Non
     info = _get_contour_info(study)
     params = ["param_a", "param_b", "param_c"]
     assert info.sorted_params == params
-    assert np.shape(np.asarray(info.sub_plot_infos)) == (3, 3, 3)
+    assert np.shape(np.asarray(info.sub_plot_infos, dtype=object)) == (3, 3, 3)
     ranges = {
         "param_a": (math.pow(10, -6.05), math.pow(10, -4.95)),
         "param_b": (-0.05, 1.05),
@@ -496,7 +499,10 @@ def test_get_contour_info_nonfinite_multiobjective(objective: int, value: float)
 
     study = prepare_study_with_trials(n_objectives=2, value_for_first_trial=value)
     info = _get_contour_info(
-        study, params=["param_b", "param_d"], target=lambda t: t.values[objective]
+        study,
+        params=["param_b", "param_d"],
+        target=lambda t: t.values[objective],
+        target_name="Target Name",
     )
     assert info == _ContourInfo(
         sorted_params=["param_b", "param_d"],
@@ -524,9 +530,8 @@ def test_get_contour_info_nonfinite_multiobjective(objective: int, value: float)
             ]
         ],
         reverse_scale=True,
-        target_name="Objective Value",
+        target_name="Target Name",
     )
-    assert info.sorted_params == ["param_b", "param_d"]
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
@@ -553,7 +558,7 @@ def test_color_map(direction: str) -> None:
         assert not contour["reversescale"]
 
     # When `target` is not `None`, `reversescale` is always `True`.
-    contour = plotly_plot_contour(study, target=lambda t: t.number).data[0]
+    contour = plotly_plot_contour(study, target=lambda t: t.number, target_name="Number").data[0]
     assert COLOR_SCALE == [v[1] for v in contour["colorscale"]]
     assert contour["reversescale"]
 
@@ -570,6 +575,6 @@ def test_color_map(direction: str) -> None:
                 },
             )
         )
-    contour = plotly_plot_contour(study, target=lambda t: t.number).data[0]
+    contour = plotly_plot_contour(study, target=lambda t: t.number, target_name="Number").data[0]
     assert COLOR_SCALE == [v[1] for v in contour["colorscale"]]
     assert contour["reversescale"]

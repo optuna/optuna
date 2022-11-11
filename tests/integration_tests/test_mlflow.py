@@ -27,8 +27,8 @@ def _objective_func(trial: optuna.trial.Trial) -> float:
 
 def _multiobjective_func(trial: optuna.trial.Trial) -> Tuple[float, float]:
 
-    x = trial.suggest_float("x", low=-10, high=10)
-    y = trial.suggest_float("y", low=1, high=10, log=True)
+    x = trial.suggest_float("x", low=-1.0, high=1.0)
+    y = trial.suggest_float("y", low=20, high=30, log=True)
     z = trial.suggest_categorical("z", (-1.0, 1.0))
     assert isinstance(z, float)
     first_objective = (x - 2) ** 2 + (y - 25) ** 2 + z
@@ -425,8 +425,8 @@ def test_track_in_mlflow_decorator(tmpdir: py.path.local) -> None:
 @pytest.mark.parametrize(
     "func,names,values",
     [
-        (_objective_func, ["metric"], [578.0]),
-        (_multiobjective_func, ["metric1", "metric2"], [578.0, -13826.0]),
+        (_objective_func, ["metric"], [27.0]),
+        (_multiobjective_func, ["metric1", "metric2"], [27.0, -127.0]),
     ],
 )
 def test_log_metric(
@@ -440,7 +440,7 @@ def test_log_metric(
     study = optuna.create_study(
         study_name=study_name, directions=["minimize" for _ in range(len(values))]
     )
-    study.enqueue_trial({"x": 1.0, "y": 1.0, "z": 1.0})
+    study.enqueue_trial({"x": 1.0, "y": 20.0, "z": 1.0})
     study.optimize(func, n_trials=1, callbacks=[mlflc])
 
     mlfl_client = MlflowClient(tracking_uri)
@@ -495,7 +495,7 @@ def test_log_params(tmpdir: py.path.local) -> None:
 
     mlflc = MLflowCallback(tracking_uri=tracking_uri, metric_name=metric_name)
     study = optuna.create_study(study_name=study_name)
-    study.enqueue_trial({"x": 1.0, "y": 1.0, "z": 1.0})
+    study.enqueue_trial({"x": 1.0, "y": 20.0, "z": 1.0})
     study.optimize(_objective_func, n_trials=1, callbacks=[mlflc])
 
     mlfl_client = MlflowClient(tracking_uri)
