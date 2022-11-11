@@ -399,10 +399,8 @@ class TPESampler(BaseSampler):
         indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n), violations)
         # `None` items are intentionally converted to `nan` and then filtered out.
         # For `nan` conversion, the dtype must be float.
-        # In the call of `sample_relative`, this logic makes sense because we only have the
-        # intersection search space or group decomposed search space. This means one parameter
-        # misses the one trial, then the other parameter must miss the trial, in this call of
-        # `sample_relative`.
+        # `None` items appear only when `group=True`. We just use the first parameter because the
+        # masks are the same for all parameters in one group.
         config_values = {k: np.asarray(v, dtype=float) for k, v in values.items()}
         param_mask = ~np.isnan(list(config_values.values())[0])
         param_mask_below, param_mask_above = param_mask[indices_below], param_mask[indices_above]
