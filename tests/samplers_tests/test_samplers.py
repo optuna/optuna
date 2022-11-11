@@ -3,7 +3,6 @@ import multiprocessing
 from multiprocessing.managers import DictProxy
 import os
 import pickle
-import sys
 from typing import Any
 from typing import Callable
 from typing import cast
