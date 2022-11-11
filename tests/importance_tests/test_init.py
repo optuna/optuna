@@ -29,13 +29,10 @@ from optuna.trial import Trial
 evaluators: List[Union[Type[BaseImportanceEvaluator], ParameterSet]] = [
     MeanDecreaseImpurityImportanceEvaluator,
     FanovaImportanceEvaluator,
-]
-
-evaluators += [
     pytest.param(
         optuna.integration.shap.ShapleyImportanceEvaluator,
         marks=pytest.mark.integration,
-    )
+    ),
 ]
 
 parametrize_evaluator = pytest.mark.parametrize("evaluator_init_func", evaluators)
