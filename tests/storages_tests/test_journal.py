@@ -8,6 +8,7 @@ from typing import Any
 from typing import IO
 from typing import Optional
 from typing import Type
+from unittest import mock
 
 import _pytest.capture
 import fakeredis
@@ -145,7 +146,8 @@ def test_save_snapshot_per_each_100_trials(storage_mode: str) -> None:
 
         assert journal_log_storage.load_snapshot() is None
 
-        study.optimize(objective, n_trials=2)
+        with mock.patch("optuna.storages._journal.storage.SNAPSHOT_INTERVAL", 1, create=True):
+            study.optimize(objective, n_trials=2)
 
         assert isinstance(journal_log_storage.load_snapshot(), bytes)
 
@@ -159,8 +161,9 @@ def test_save_snapshot_per_each_100_studies(storage_mode: str) -> None:
 
         assert journal_log_storage.load_snapshot() is None
 
-        for _ in range(2):
-            create_study(storage=storage)
+        with mock.patch("optuna.storages._journal.storage.SNAPSHOT_INTERVAL", 1, create=True):
+            for _ in range(2):
+                create_study(storage=storage)
 
         assert isinstance(journal_log_storage.load_snapshot(), bytes)
 
@@ -168,8 +171,9 @@ def test_save_snapshot_per_each_100_studies(storage_mode: str) -> None:
 @pytest.mark.parametrize("storage_mode", JOURNAL_STORAGE_SUPPORTING_SNAPSHOT)
 def test_check_replay_result_restored_from_snapshot(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage1:
-        for _ in range(2):
-            create_study(storage=storage1)
+        with mock.patch("optuna.storages._journal.storage.SNAPSHOT_INTERVAL", 1, create=True):
+            for _ in range(2):
+                create_study(storage=storage1)
 
         assert isinstance(storage1, JournalStorage)
         storage2 = optuna.storages.JournalStorage(storage1._backend)
