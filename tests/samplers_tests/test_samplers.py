@@ -92,6 +92,7 @@ sampler_class_with_seed: List[Callable] = [
     lambda seed: optuna.samplers.TPESampler(seed=seed),
     lambda seed: optuna.samplers.TPESampler(multivariate=True, seed=seed),
     lambda seed: optuna.samplers.CmaEsSampler(seed=seed),
+    lambda seed: optuna.samplers.CmaEsSampler(seed=seed, use_separable_cma=True),
     lambda seed: optuna.integration.SkoptSampler(seed=seed),
     lambda seed: optuna.integration.PyCmaSampler(seed=seed),
     lambda seed: optuna.samplers.NSGAIISampler(seed=seed),
