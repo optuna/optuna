@@ -145,13 +145,9 @@ best-trial = "optuna.cli:_BestTrial"
 best-trials = "optuna.cli:_BestTrials"
 ask = "optuna.cli:_Ask"
 tell = "optuna.cli:_Tell"
-
-[project.entry-points."optuna.command.study"]
-set-user-attr = "optuna.cli:_StudySetUserAttribute"
-optimize = "optuna.cli:_StudyOptimize"
-
-[project.entry-points."optuna.command.storage"]
-upgrade = "optuna.cli:_StorageUpgrade"
+"study optimize" = "optuna.cli:_StudyOptimize"
+"study set-user-attr" = "optuna.cli:_StudySetUserAttribute"
+"storage upgrade" = "optuna.cli:_StorageUpgrade"
 
 [tool.setuptools.packages.find]
 exclude = ["tests", "tests.*", "benchmarks"]
