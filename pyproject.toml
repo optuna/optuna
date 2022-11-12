@@ -44,6 +44,89 @@ dependencies = [
 ]
 dynamic = ["version"]
 
+[project.optional-dependencies]
+benchmark = [
+  "asv>=0.5.0",
+  "botorch",
+  "cma",
+  "scikit-optimize",
+  "virtualenv"
+]
+"checking" = [
+    "black",
+    "blackdoc",
+    "hacking",
+    "isort",
+    "mypy",
+    "types-PyYAML",
+    "types-redis",
+    "types-setuptools",
+    "typing_extensions>=3.10.0.0",
+]
+"document" = [
+    "cma",
+    "fvcore",
+    "lightgbm",
+    "matplotlib!=3.6.0",
+    "mlflow",
+    "pandas",
+    "pillow",
+    "plotly>=4.0.0",  # optuna/visualization.
+    "scikit-learn",
+    "scikit-optimize",
+    "sphinx",
+    "sphinx-copybutton",
+    "sphinx-gallery",
+    "sphinx-plotly-directive",
+    "sphinx_rtd_theme",
+    "torch==1.11.0",
+    "torchaudio==0.11.0",
+    "torchvision==0.12.0",
+]
+"integration" = [
+    "allennlp>=2.2.0",
+    # TODO(c-bata): Remove cached-path after allennllp supports v1.1.3
+    "cached-path<=1.1.2",
+    "botorch>=0.4.0",
+    "catalyst>=21.3",
+    "catboost>=0.26",
+    "chainer>=5.0.0",
+    "cma",
+    "fastai",
+    "lightgbm",
+    "mlflow",
+    "mpi4py",
+    "mxnet",
+    "pandas",
+    "pytorch-ignite",
+    "pytorch-lightning>=1.5.0",
+    "scikit-learn>=0.24.2",
+    "scikit-optimize",
+    "shap",
+    "skorch",
+    "tensorflow",
+    "tensorflow-datasets",
+    "torch==1.11.0",
+    "torchaudio==0.11.0",
+    "torchvision==0.12.0",
+    "wandb",
+    "xgboost",
+]
+"optional" = [
+    "matplotlib!=3.6.0",  # optuna/visualization/matplotlib
+    "pandas",  # optuna/study.py
+    "plotly>=4.0.0",  # optuna/visualization.
+    "redis",  # optuna/storages/redis.py.
+    "scikit-learn>=0.24.2",
+    # optuna/visualization/param_importances.py.
+]
+"test" = [
+    "codecov",
+    "fakeredis[lua]",
+    "kaleido",
+    "pytest",
+]
+
 [project.urls]
 homepage = "https://optuna.org/"
 repository = "https://github.com/optuna/optuna"
