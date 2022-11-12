@@ -11,7 +11,7 @@ on:
       - .github/workflows/dockerimage.yml
       - Dockerfile
       - .dockerignore
-      - setup.py
+      - pyproject.toml
       - .github/workflows/dockerimage.yml
 
 concurrency:
