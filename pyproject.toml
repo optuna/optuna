@@ -1,3 +1,89 @@
+[build-system]
+requires = ["setuptools >= 61.1.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "optuna"
+description = "A hyperparameter optimization framework"
+authors = [
+  {name = "Takuya Akiba"},
+  {email = "akiba@preferred.jp"}
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+requires-python = ">=3.7"
+dependencies = [
+  "alembic>=1.5.0",
+  "cliff",
+  "cmaes>=0.8.2",
+  "colorlog",
+  # TODO(HideakiImamura): remove this after the fix by `cliff` or `stevedore`
+  "importlib-metadata<5.0.0",
+  "numpy",
+  "packaging>=20.0",
+  "scipy>=1.7.0",
+  "sqlalchemy>=1.3.0",
+  "tqdm",
+  "PyYAML",  # Only used in `optuna/cli.py`.
+]
+dynamic = ["version"]
+
+[project.urls]
+homepage = "https://optuna.org/"
+repository = "https://github.com/optuna/optuna"
+documentation = "https://optuna.readthedocs.io"
+bugtracker = "https://github.com/optuna/optuna/issues"
+
+[project.scripts]
+optuna = "optuna.cli:main"
+
+[project.entry-points."optuna.command"]
+create-study = "optuna.cli:_CreateStudy"
+delete-study = "optuna.cli:_DeleteStudy"
+studies = "optuna.cli:_Studies"
+trials = "optuna.cli:_Trials"
+best-trial = "optuna.cli:_BestTrial"
+best-trials = "optuna.cli:_BestTrials"
+ask = "optuna.cli:_Ask"
+tell = "optuna.cli:_Tell"
+
+[project.entry-points."optuna.command.study"]
+set-user-attr = "optuna.cli:_StudySetUserAttribute"
+optimize = "optuna.cli:_StudyOptimize"
+
+[project.entry-points."optuna.command.storage"]
+upgrade = "optuna.cli:_StorageUpgrade"
+
+[tool.setuptools.packages.find]
+exclude = ["tests", "tests.*", "benchmarks"]
+
+[tool.setuptools.dynamic]
+version = {attr = "optuna.version.__version__"}
+
+[tool.setuptools.package-data]
+"optuna" = [
+    "storages/_rdb/alembic.ini",
+    "storages/_rdb/alembic/*.*",
+    "storages/_rdb/alembic/versions/*.*",
+    "py.typed",
+]
+
 [tool.black]
 line-length = 99
 target-version = ['py38']
