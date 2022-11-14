@@ -89,6 +89,9 @@ class CmaEsSampler(BaseSampler):
     - `Masahiro Nomura, Shuhei Watanabe, Youhei Akimoto, Yoshihiko Ozaki, Masaki Onishi.
       Warm Starting CMA-ES for Hyperparameter Optimization, AAAI. 2021.
       <https://arxiv.org/abs/2012.06932>`_
+    - `R. Hamano, S. Saito, M. Nomura, S. Shirakawa. CMA-ES with Margin: Lower-Bounding Marginal
+      Probability for Mixed-Integer Black-Box Optimization, GECCO. 2022.
+      <https://arxiv.org/abs/2205.13482>`_
 
     .. seealso::
         You can also use :class:`optuna.integration.PyCmaSampler` which is a sampler using cma
