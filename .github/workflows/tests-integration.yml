@@ -60,7 +60,7 @@ jobs:
         pip install --progress-bar off .[integration] --extra-index-url https://download.pytorch.org/whl/cpu
 
     - name: Scheduled tests
-      if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'}}
+      if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
         pytest tests -m "integration" \
           --ignore tests/integration_tests/test_pytorch_lightning.py
