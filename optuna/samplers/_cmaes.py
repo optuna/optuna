@@ -184,7 +184,9 @@ class CmaEsSampler(BaseSampler):
                 https://github.com/optuna/optuna/releases/tag/v2.6.0.
 
         with_margin:
-            If this is :obj:`True`, CMA-ES with margin is used.
+            If this is :obj:`True`, CMA-ES with margin is used. This algorithm prevents samples in
+            each discrete search space (`FloatDistribution` with `step` and `IntDistribution`)
+            from being fixed to a single point.
             Currently, this option cannot be used with ``use_separable_cma=True``.
 
             .. note::
