@@ -72,9 +72,9 @@ jobs:
         pip install shap
         pip install botorch torch==1.11.0 --extra-index-url https://download.pytorch.org/whl/cpu
 
-    - name: Install dependencies with lower bound constraints
+    - name: Install dependencies with minimum versions
       run: |
-        # Install dependencies with lower bound constraints.
+        # Install dependencies with minimum versions.
         pip uninstall -y alembic cmaes packaging sqlalchemy plotly scikit-learn
         pip install alembic==1.5.0 cmaes==0.8.2 packaging==20.0 sqlalchemy==1.3.0
         pip install plotly==4.9.0 scikit-learn==0.24.2  # optional extras
