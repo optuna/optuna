@@ -9,6 +9,7 @@ from typing import Optional
 from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import TypeVar
+import warnings
 
 import optuna
 from optuna._deprecated import deprecated_func
@@ -21,6 +22,7 @@ from optuna.distributions import CategoricalChoiceType
 with try_import() as _imports:
     import torch
     import torch.distributed as dist
+
 
 if TYPE_CHECKING:
     from typing_extensions import ParamSpec
@@ -102,6 +104,9 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
             Use `gloo` backend when group is None.
             Create a global `gloo` backend when group is None and WORLD is nccl.
 
+        device:
+            Deprecated parameter. Please use `group` instead.
+
     .. note::
         The methods of :class:`~optuna.integration.TorchDistributedTrial` are expected to be
         called by all workers at once. They invoke synchronous data transmission to share
@@ -113,9 +118,13 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         self,
         trial: Optional[optuna.trial.Trial],
         group: Optional["torch.distributed.ProcessGroup"] = None,
+        device: Optional[Any] = None,
     ) -> None:
-
         _imports.check()
+        if device is not None:
+            warnings.warn(
+                "the device parameter is deprecated, please use group instead.", DeprecationWarning
+            )
 
         if group is not None:
             self._group: "torch.distributed.ProcessGroup" = group
@@ -124,7 +133,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
                 if dist.group.WORLD is None:
                     raise RuntimeError("torch distributed is not initialized.")
                 default_pg: "torch.distributed.ProcessGroup" = dist.group.WORLD
-                if dist.get_backend(default_pg) == "nccl":  # type: ignore
+                if dist.get_backend(default_pg) == "nccl":
                     new_group: "torch.distributed.ProcessGroup" = dist.new_group(
                         backend="gloo"
                     )  # type: ignore
