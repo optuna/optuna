@@ -713,12 +713,16 @@ class OptunaSearchCV(BaseEstimator):
         if not isinstance(param_distributions, dict):
             raise TypeError("param_distributions must be a dictionary.")
 
-        # TODO(himkt): Remove this method with the deletion of deprecated distributions.
-        # https://github.com/optuna/optuna/issues/2941
-        param_distributions = {
-            key: _convert_old_distribution_to_new_distribution(dist)
-            for key, dist in param_distributions.items()
-        }
+        # Rejecting deprecated distributions as they may cause cryptic error
+        # when cloning OptunaSearchCV instance.
+        # https://github.com/optuna/optuna/issues/4084
+        for key, dist in param_distributions.items():
+            if dist != _convert_old_distribution_to_new_distribution(dist):
+                raise ValueError(
+                    f"Deprecated distribution is specified in `{key}` of param_distributions. "
+                    "Rejecting this because it may cause unexpected behavior. "
+                    "Please use new distributions such as FloatDistribution etc."
+                )
 
         self.cv = cv
         self.enable_pruning = enable_pruning

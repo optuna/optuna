@@ -17,6 +17,9 @@ from optuna import integration
 from optuna.study import create_study
 
 
+pytestmark = pytest.mark.integration
+
+
 def test_is_arraylike() -> None:
 
     assert integration.sklearn._is_arraylike([])
@@ -331,12 +334,11 @@ def test_optuna_search_convert_deprecated_distribution() -> None:
         "ild": distributions.IntDistribution(low=1, high=10, log=True, step=1),
     }
 
-    optuna_search = integration.OptunaSearchCV(
-        KernelDensity(),
-        param_dist,
-    )
-
-    assert optuna_search.param_distributions == expected_param_dist
+    with pytest.raises(ValueError):
+        optuna_search = integration.OptunaSearchCV(
+            KernelDensity(),
+            param_dist,
+        )
 
     # It confirms that ask doesn't convert non-deprecated distributions.
     optuna_search = integration.OptunaSearchCV(

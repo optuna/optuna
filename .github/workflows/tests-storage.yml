@@ -17,11 +17,12 @@ jobs:
   # RDB. Since current name "tests-rdbstorage" is required in the Branch protection rules, you
   # need to modify the Branch protection rules as well.
   tests-rdbstorage:
+    if: (github.event_name == 'schedule' && github.repository == 'optuna/optuna') || (github.event_name != 'schedule')
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.7', '3.8', '3.9', '3.10']
 
     services:
       mysql:

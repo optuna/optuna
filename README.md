@@ -2,7 +2,7 @@
 
 # Optuna: A hyperparameter optimization framework
 
-[![Python](https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8%20%7C%203.9%20%7C%203.10-blue)](https://www.python.org)
+[![Python](https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C%203.9%20%7C%203.10-blue)](https://www.python.org)
 [![pypi](https://img.shields.io/pypi/v/optuna.svg)](https://pypi.python.org/pypi/optuna)
 [![conda](https://img.shields.io/conda/vn/conda-forge/optuna.svg)](https://anaconda.org/conda-forge/optuna)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/optuna/optuna)
@@ -137,7 +137,7 @@ $ pip install optuna
 $ conda install -c conda-forge optuna
 ```
 
-Optuna supports Python 3.6 or newer.
+Optuna supports Python 3.7 or newer.
 
 Also, we also provide Optuna docker images on [DockerHub](https://hub.docker.com/r/optuna/optuna).
 

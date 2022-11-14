@@ -14,6 +14,7 @@ concurrency:
 
 jobs:
   tests-integration:
+    if: (github.event_name == 'schedule' && github.repository == 'optuna/optuna') || (github.event_name != 'schedule')
     runs-on: ubuntu-latest
 
     strategy:
@@ -57,7 +58,14 @@ jobs:
         pip install --progress-bar off .[optional]
         pip install --progress-bar off .[integration] --extra-index-url https://download.pytorch.org/whl/cpu
 
-    - name: Tests
+    - name: Scheduled tests
+      if:  ${{ github.event_name == 'schedule' }}
       run: |
-        pytest -s tests/integration_tests \
+        pytest tests -m "integration" \
+          --ignore tests/integration_tests/test_pytorch_lightning.py
+
+    - name: Tests
+      if:  ${{ github.event_name != 'schedule' }}
+      run: |
+        pytest tests -m "integration and not slow" \
           --ignore tests/integration_tests/test_pytorch_lightning.py

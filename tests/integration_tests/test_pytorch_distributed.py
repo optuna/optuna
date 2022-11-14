@@ -4,14 +4,20 @@ import os
 from typing import Optional
 
 import pytest
-import torch
-import torch.distributed as dist
 
 import optuna
+from optuna._imports import try_import
 from optuna.integration import TorchDistributedTrial
 from optuna.testing.pruners import DeterministicPruner
 from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
+
+
+with try_import():
+    import torch
+    import torch.distributed as dist
+
+pytestmark = pytest.mark.integration
 
 
 @pytest.fixture(scope="session", autouse=True)

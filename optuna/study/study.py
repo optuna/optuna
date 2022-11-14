@@ -82,6 +82,7 @@ class Study:
         study_id = storage.get_study_id_from_name(study_name)
         self._study_id = study_id
         self._storage = storage
+        self._directions = storage.get_study_directions(study_id)
 
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
@@ -202,7 +203,7 @@ class Study:
             A list of :class:`~optuna.study.StudyDirection` objects.
         """
 
-        return self._storage.get_study_directions(self._study_id)
+        return self._directions
 
     @property
     def trials(self) -> List[FrozenTrial]:
@@ -1169,9 +1170,8 @@ def create_study(
         sampler = samplers.NSGAIISampler()
 
     study_name = storage.get_study_name_from_id(study_id)
+    storage.set_study_directions(study_id, direction_objects)
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
-
-    study._storage.set_study_directions(study_id, direction_objects)
 
     return study
 
