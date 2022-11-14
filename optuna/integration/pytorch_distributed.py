@@ -30,6 +30,7 @@ if TYPE_CHECKING:
     _T = TypeVar("_T")
     _P = ParamSpec("_P")
 
+
 _suggest_deprecated_msg = (
     "Use :func:`~optuna.integration.TorchDistributedTrial.suggest_float` instead."
 )
