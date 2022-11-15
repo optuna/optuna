@@ -13,7 +13,7 @@ from optuna.integration.dask import DaskStorage
 from optuna.trial import Trial
 
 
-with try_import():
+with try_import() as _imports:
     from distributed import Client
     from distributed import Scheduler
     from distributed import wait
@@ -74,28 +74,6 @@ def test_no_client_informative_error() -> None:
         DaskStorage()
 
 
-@gen_cluster(client=True)
-async def test_daskstorage_registers_extension(
-    c: "Client", s: Scheduler, a: Worker, b: Worker
-) -> None:
-    assert "optuna" not in s.extensions
-    await DaskStorage()
-    assert "optuna" in s.extensions
-    assert type(s.extensions["optuna"]) is _OptunaSchedulerExtension
-
-
-@gen_cluster(client=True)
-async def test_name(c: "Client", s: Scheduler, a: Worker, b: Worker) -> None:
-    await DaskStorage(name="foo")
-    ext = s.extensions["optuna"]
-    assert len(ext.storages) == 1
-    assert type(ext.storages["foo"]) is optuna.storages.InMemoryStorage
-
-    await DaskStorage(name="bar")
-    assert len(ext.storages) == 2
-    assert type(ext.storages["bar"]) is optuna.storages.InMemoryStorage
-
-
 def test_name_unique(client: "Client") -> None:
     s1 = DaskStorage()
     s2 = DaskStorage()
@@ -142,3 +120,26 @@ def test_study_direction_best_value(client: "Client", direction: str) -> None:
         expected = trials_value.min()
 
     np.testing.assert_allclose(expected, study.best_value)
+
+
+if _imports.is_successful():
+    @gen_cluster(client=True)
+    async def test_daskstorage_registers_extension(
+            c: "Client", s: "Scheduler", a: "Worker", b: "Worker"
+    ) -> None:
+        assert "optuna" not in s.extensions
+        await DaskStorage()
+        assert "optuna" in s.extensions
+        assert type(s.extensions["optuna"]) is _OptunaSchedulerExtension
+
+
+    @gen_cluster(client=True)
+    async def test_name(c: "Client", s: "Scheduler", a: "Worker", b: "Worker") -> None:
+        await DaskStorage(name="foo")
+        ext = s.extensions["optuna"]
+        assert len(ext.storages) == 1
+        assert type(ext.storages["foo"]) is optuna.storages.InMemoryStorage
+
+        await DaskStorage(name="bar")
+        assert len(ext.storages) == 2
+        assert type(ext.storages["bar"]) is optuna.storages.InMemoryStorage
