@@ -20,6 +20,13 @@ STORAGE_MODES = [
     "journal_redis",
 ]
 
+try:
+    import distributed
+except ImportError:
+    pass
+else:
+    STORAGE_MODES.append("dask")
+
 STORAGE_MODES_HEARTBEAT = [
     "sqlite",
     "cached_sqlite",
@@ -34,6 +41,7 @@ class StorageSupplier:
         self.storage_specifier = storage_specifier
         self.tempfile: Optional[IO[Any]] = None
         self.extra_args = kwargs
+        self.dask_client: Optional["distributed.Client"] = None
 
     def __enter__(
         self,
@@ -42,6 +50,7 @@ class StorageSupplier:
         optuna.storages._CachedStorage,
         optuna.storages.RDBStorage,
         optuna.storages.JournalStorage,
+        "optuna.integration.DaskStorage",
     ]:
         if self.storage_specifier == "inmemory":
             if len(self.extra_args) > 0:
@@ -69,6 +78,10 @@ class StorageSupplier:
         elif "journal" in self.storage_specifier:
             file_storage = JournalFileStorage(tempfile.NamedTemporaryFile().name)
             return optuna.storages.JournalStorage(file_storage)
+        elif self.storage_specifier == "dask":
+            self.dask_client = distributed.Client()
+
+            return optuna.integration.DaskStorage(client=self.dask_client, **self.extra_args)
         else:
             assert False
 
@@ -78,3 +91,7 @@ class StorageSupplier:
 
         if self.tempfile:
             self.tempfile.close()
+
+        if self.dask_client:
+            self.dask_client.shutdown()
+            self.dask_client.close()
