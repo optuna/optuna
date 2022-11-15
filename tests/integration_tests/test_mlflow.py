@@ -59,26 +59,6 @@ def _objective_func_long_user_attr(trial: optuna.trial.Trial) -> float:
     return (x - 2) ** 2 + (y - 25) ** 2 + z
 
 
-def test_study_name(tmpdir: py.path.local) -> None:
-
-    tracking_uri = f"file:{tmpdir}"
-    study_name = "my_study"
-    n_trials = 3
-
-    mlflc = MLflowCallback(tracking_uri=tracking_uri)
-    study = optuna.create_study(study_name=study_name)
-    study.optimize(_objective_func, n_trials=n_trials, callbacks=[mlflc])
-
-    mlfl_client = MlflowClient(tracking_uri)
-    assert len(mlfl_client.search_experiments()) == 1
-
-    experiment = mlfl_client.search_experiments()[0]
-    runs = mlfl_client.search_runs(experiment.experiment_id)
-
-    assert experiment.name == study_name
-    assert len(runs) == n_trials
-
-
 @pytest.mark.parametrize("name,expected", [(None, "Default"), ("foo", "foo")])
 def test_use_existing_or_default_experiment(
     tmpdir: py.path.local, name: Optional[str], expected: str
@@ -108,6 +88,26 @@ def test_use_existing_or_default_experiment(
 
     assert experiment.name == expected
     assert len(runs) == 10
+
+
+def test_study_name(tmpdir: py.path.local) -> None:
+
+    tracking_uri = f"file:{tmpdir}"
+    study_name = "my_study"
+    n_trials = 3
+
+    mlflc = MLflowCallback(tracking_uri=tracking_uri)
+    study = optuna.create_study(study_name=study_name)
+    study.optimize(_objective_func, n_trials=n_trials, callbacks=[mlflc])
+
+    mlfl_client = MlflowClient(tracking_uri)
+    assert len(mlfl_client.search_experiments()) == 1
+
+    experiment = mlfl_client.search_experiments()[0]
+    runs = mlfl_client.search_runs(experiment.experiment_id)
+
+    assert experiment.name == study_name
+    assert len(runs) == n_trials
 
 
 def test_use_existing_experiment_by_id(tmpdir: py.path.local) -> None:
