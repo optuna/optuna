@@ -65,6 +65,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         ],
         "document": [
             "cma",
+            "distributed",
             "fvcore",
             "lightgbm",
             "matplotlib!=3.6.0",
@@ -92,6 +93,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "catboost>=0.26",
             "chainer>=5.0.0",
             "cma",
+            "distributed",
             "fastai",
             "lightgbm",
             "mlflow",
