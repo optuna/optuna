@@ -3,24 +3,25 @@ import tempfile
 import time
 from typing import Iterator
 
-from distributed import Client
-from distributed import Scheduler
-from distributed import wait
-from distributed import Worker
-from distributed.utils_test import clean
-from distributed.utils_test import gen_cluster
 import numpy as np
 import pytest
 
 import optuna
+from optuna._imports import try_import
 from optuna.integration.dask import _OptunaSchedulerExtension
 from optuna.integration.dask import DaskStorage
 from optuna.trial import Trial
 
 
-# Ensure experimental warnings related to the Dask integration
-# aren't included in the pytest warning summary for tests in this module
-pytestmark = pytest.mark.filterwarnings("ignore:DaskStorage is experimental")
+with try_import():
+    from distributed import Client
+    from distributed import Scheduler
+    from distributed import wait
+    from distributed import Worker
+    from distributed.utils_test import clean
+    from distributed.utils_test import gen_cluster
+
+pytestmark = pytest.mark.integration
 
 
 STORAGE_MODES = ["inmemory", "sqlite"]
