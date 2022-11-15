@@ -123,15 +123,15 @@ def test_study_direction_best_value(client: "Client", direction: str) -> None:
 
 
 if _imports.is_successful():
+
     @gen_cluster(client=True)
     async def test_daskstorage_registers_extension(
-            c: "Client", s: "Scheduler", a: "Worker", b: "Worker"
+        c: "Client", s: "Scheduler", a: "Worker", b: "Worker"
     ) -> None:
         assert "optuna" not in s.extensions
         await DaskStorage()
         assert "optuna" in s.extensions
         assert type(s.extensions["optuna"]) is _OptunaSchedulerExtension
-
 
     @gen_cluster(client=True)
     async def test_name(c: "Client", s: "Scheduler", a: "Worker", b: "Worker") -> None:
