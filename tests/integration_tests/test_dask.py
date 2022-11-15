@@ -58,13 +58,13 @@ def objective_slow(trial: Trial) -> float:
 
 
 @pytest.fixture
-def client() -> Client:
+def client() -> "Client":
     with clean():
         with Client(dashboard_address=":0") as client:
             yield client
 
 
-def test_experimental(client: Client) -> None:
+def test_experimental(client: "Client") -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         DaskStorage()
 
@@ -76,7 +76,7 @@ def test_no_client_informative_error() -> None:
 
 @gen_cluster(client=True)
 async def test_daskstorage_registers_extension(
-    c: Client, s: Scheduler, a: Worker, b: Worker
+    c: "Client", s: Scheduler, a: Worker, b: Worker
 ) -> None:
     assert "optuna" not in s.extensions
     await DaskStorage()
@@ -85,7 +85,7 @@ async def test_daskstorage_registers_extension(
 
 
 @gen_cluster(client=True)
-async def test_name(c: Client, s: Scheduler, a: Worker, b: Worker) -> None:
+async def test_name(c: "Client", s: Scheduler, a: Worker, b: Worker) -> None:
     await DaskStorage(name="foo")
     ext = s.extensions["optuna"]
     assert len(ext.storages) == 1
@@ -96,14 +96,14 @@ async def test_name(c: Client, s: Scheduler, a: Worker, b: Worker) -> None:
     assert type(ext.storages["bar"]) is optuna.storages.InMemoryStorage
 
 
-def test_name_unique(client: Client) -> None:
+def test_name_unique(client: "Client") -> None:
     s1 = DaskStorage()
     s2 = DaskStorage()
     assert s1.name != s2.name
 
 
 @pytest.mark.parametrize("storage_specifier", STORAGE_MODES)
-def test_study_optimize(client: Client, storage_specifier: str) -> None:
+def test_study_optimize(client: "Client", storage_specifier: str) -> None:
     with get_storage_url(storage_specifier) as url:
         storage = DaskStorage(storage=url)
         study = optuna.create_study(storage=storage)
@@ -116,7 +116,7 @@ def test_study_optimize(client: Client, storage_specifier: str) -> None:
 
 
 @pytest.mark.parametrize("storage_specifier", STORAGE_MODES)
-def test_get_base_storage(client: Client, storage_specifier: str) -> None:
+def test_get_base_storage(client: "Client", storage_specifier: str) -> None:
     with get_storage_url(storage_specifier) as url:
         dask_storage = DaskStorage(url)
         storage = dask_storage.get_base_storage()
@@ -125,7 +125,7 @@ def test_get_base_storage(client: Client, storage_specifier: str) -> None:
 
 
 @pytest.mark.parametrize("direction", ["maximize", "minimize"])
-def test_study_direction_best_value(client: Client, direction: str) -> None:
+def test_study_direction_best_value(client: "Client", direction: str) -> None:
     # Regression test for https://github.com/jrbourbeau/dask-optuna/issues/15
     pytest.importorskip("pandas")
     storage = DaskStorage()
