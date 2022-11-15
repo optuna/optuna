@@ -16,7 +16,6 @@ from optuna import distributions
 from optuna.storages import BaseStorage
 from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.storages._rdb.storage import RDBStorage
-from optuna.storages._redis import RedisStorage
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -39,8 +38,7 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
     """A wrapper class of storage backends.
 
     This class is used in :func:`~optuna.get_storage` function and automatically
-    wraps :class:`~optuna.storages.RDBStorage` class or
-    :class:`~optuna.storages.RedisStorage` class.
+    wraps :class:`~optuna.storages.RDBStorage` class.
 
     :class:`~optuna.storages._CachedStorage` meets the following **Consistency** and
     **Data persistence** requirements.
@@ -79,11 +77,10 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
 
     Args:
         backend:
-            :class:`~optuna.storages.RDBStorage` class or :class:`~optuna.storages.RedisStorage`
-            class instance to wrap.
+            :class:`~optuna.storages.RDBStorage` class instance to wrap.
     """
 
-    def __init__(self, backend: Union[RDBStorage, RedisStorage]) -> None:
+    def __init__(self, backend: RDBStorage) -> None:
         self._backend = backend
         self._studies: Dict[int, _StudyInfo] = {}
         self._trial_id_to_study_id_and_number: Dict[int, Tuple[int, int]] = {}

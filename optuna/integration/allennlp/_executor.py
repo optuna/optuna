@@ -151,9 +151,6 @@ class AllenNLPExecutor:
         if isinstance(storage, optuna.storages.RDBStorage):
             url = storage.url
 
-        elif isinstance(storage, optuna.storages.RedisStorage):
-            url = storage._url
-
         elif isinstance(storage, optuna.storages._CachedStorage):
             assert isinstance(storage._backend, optuna.storages.RDBStorage)
             url = storage._backend.url
