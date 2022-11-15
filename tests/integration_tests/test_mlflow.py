@@ -70,10 +70,10 @@ def test_study_name(tmpdir: py.path.local) -> None:
     study.optimize(_objective_func, n_trials=n_trials, callbacks=[mlflc])
 
     mlfl_client = MlflowClient(tracking_uri)
-    assert len(mlfl_client.list_experiments()) == 1
+    assert len(mlfl_client.search_experiments()) == 1
 
-    experiment = mlfl_client.list_experiments()[0]
-    runs = mlfl_client.list_run_infos(experiment.experiment_id)
+    experiment = mlfl_client.search_experiments()[0]
+    runs = mlfl_client.search_runs(experiment.experiment_id)
 
     assert experiment.name == study_name
     assert len(runs) == n_trials
@@ -103,8 +103,8 @@ def test_use_existing_or_default_experiment(
         study.optimize(_objective_func, n_trials=1, callbacks=[mlflc])
 
     mlfl_client = MlflowClient(tracking_uri)
-    experiment = mlfl_client.list_experiments()[0]
-    runs = mlfl_client.list_run_infos(experiment.experiment_id)
+    experiment = mlfl_client.search_experiments()[0]
+    runs = mlfl_client.search_runs(experiment.experiment_id)
 
     assert experiment.name == expected
     assert len(runs) == 10
@@ -126,14 +126,14 @@ def test_use_existing_experiment_by_id(tmpdir: py.path.local) -> None:
         study.optimize(_objective_func, n_trials=1, callbacks=[mlflc])
 
     mlfl_client = MlflowClient(tracking_uri)
-    experiment_list = mlfl_client.list_experiments()
+    experiment_list = mlfl_client.search_experiments()
     assert len(experiment_list) == 1
 
     experiment = experiment_list[0]
     assert experiment.experiment_id == experiment_id
     assert experiment.name == "foo"
 
-    runs = mlfl_client.list_run_infos(experiment_id)
+    runs = mlfl_client.search_runs(experiment_id)
     assert len(runs) == 10
 
 
@@ -147,15 +147,12 @@ def test_metric_name(tmpdir: py.path.local) -> None:
     study.optimize(_objective_func, n_trials=3, callbacks=[mlflc])
 
     mlfl_client = MlflowClient(tracking_uri)
-    experiments = mlfl_client.list_experiments()
+    experiments = mlfl_client.search_experiments()
 
     experiment = experiments[0]
     experiment_id = experiment.experiment_id
 
-    run_infos = mlfl_client.list_run_infos(experiment_id)
-
-    first_run_id = run_infos[0].run_id
-    first_run = mlfl_client.get_run(first_run_id)
+    first_run = mlfl_client.search_runs(experiment_id)[0]
     first_run_dict = first_run.to_dictionary()
 
     assert metric_name in first_run_dict["data"]["metrics"]
@@ -180,15 +177,12 @@ def test_metric_name_multiobjective(
     study.optimize(_multiobjective_func, n_trials=3, callbacks=[mlflc])
 
     mlfl_client = MlflowClient(tracking_uri)
-    experiments = mlfl_client.list_experiments()
+    experiments = mlfl_client.search_experiments()
 
     experiment = experiments[0]
     experiment_id = experiment.experiment_id
 
-    run_infos = mlfl_client.list_run_infos(experiment_id)
-
-    first_run_id = run_infos[0].run_id
-    first_run = mlfl_client.get_run(first_run_id)
+    first_run = mlfl_client.search_runs(experiment_id)[0]
     first_run_dict = first_run.to_dictionary()
 
     assert all([e in first_run_dict["data"]["metrics"] for e in expected])
@@ -205,9 +199,8 @@ def test_run_name(tmpdir: py.path.local, run_name: Optional[str], expected: str)
     study.optimize(_objective_func, n_trials=1, callbacks=[mlflc])
 
     mlfl_client = MlflowClient(tracking_uri)
-    experiment = mlfl_client.list_experiments()[0]
-    run_info = mlfl_client.list_run_infos(experiment.experiment_id)[0]
-    run = mlfl_client.get_run(run_info.run_id)
+    experiment = mlfl_client.search_experiments()[0]
+    run = mlfl_client.search_runs(experiment.experiment_id)[0]
     tags = run.data.tags
     assert tags["mlflow.runName"] == expected
 
@@ -228,18 +221,17 @@ def test_tag_truncation(tmpdir: py.path.local) -> None:
     study.optimize(_objective_func_long_user_attr, n_trials=n_trials, callbacks=[mlflc])
 
     mlfl_client = MlflowClient(tracking_uri)
-    experiments = mlfl_client.list_experiments()
+    experiments = mlfl_client.search_experiments()
     assert len(experiments) == 1
 
     experiment = experiments[0]
     assert experiment.name == study_name
     experiment_id = experiment.experiment_id
 
-    run_infos = mlfl_client.list_run_infos(experiment_id)
-    assert len(run_infos) == n_trials
+    runs = mlfl_client.search_runs(experiment_id)
+    assert len(runs) == n_trials
 
-    first_run_id = run_infos[0].run_id
-    first_run = mlfl_client.get_run(first_run_id)
+    first_run = runs[0]
     first_run_dict = first_run.to_dictionary()
 
     my_user_attr = first_run_dict["data"]["tags"]["my_user_attr"]
@@ -261,7 +253,7 @@ def test_nest_trials(tmpdir: py.path.local) -> None:
         study.optimize(_objective_func, n_trials=n_trials, callbacks=[mlflc])
 
     mlfl_client = MlflowClient(tracking_uri)
-    experiments = mlfl_client.list_experiments()
+    experiments = mlfl_client.search_experiments()
     experiment_id = experiments[0].experiment_id
 
     all_runs = mlfl_client.search_runs([experiment_id])
@@ -322,7 +314,7 @@ def test_tag_always_logged(tmpdir: py.path.local) -> None:
     study.optimize(_objective_func, n_trials=n_trials, callbacks=[mlflc])
 
     mlfl_client = MlflowClient(tracking_uri)
-    experiment = mlfl_client.list_experiments()[0]
+    experiment = mlfl_client.search_experiments()[0]
     runs = mlfl_client.search_runs([experiment.experiment_id])
 
     assert all((r.data.tags["direction"] == "MINIMIZE") for r in runs)
@@ -342,7 +334,7 @@ def test_tag_study_user_attrs(tmpdir: py.path.local, tag_study_user_attrs: bool)
     study.optimize(_objective_func_long_user_attr, n_trials=n_trials, callbacks=[mlflc])
 
     mlfl_client = MlflowClient(tracking_uri)
-    experiments = mlfl_client.list_experiments()
+    experiments = mlfl_client.search_experiments()
     assert len(experiments) == 1
 
     experiment = experiments[0]
@@ -370,7 +362,7 @@ def test_tag_trial_user_attrs(tmpdir: py.path.local, tag_trial_user_attrs: bool)
     study.optimize(_objective_func, n_trials=n_trials, callbacks=[mlflc])
 
     mlfl_client = MlflowClient(tracking_uri)
-    experiment = mlfl_client.list_experiments()[0]
+    experiment = mlfl_client.search_experiments()[0]
     runs = mlfl_client.search_runs([experiment.experiment_id])
 
     if tag_trial_user_attrs:
@@ -390,9 +382,8 @@ def test_log_mlflow_tags(tmpdir: py.path.local) -> None:
     study.optimize(_objective_func, n_trials=1, callbacks=[mlflc])
 
     mlfl_client = MlflowClient(tracking_uri)
-    experiment = mlfl_client.list_experiments()[0]
-    run_info = mlfl_client.list_run_infos(experiment.experiment_id)[0]
-    run = mlfl_client.get_run(run_info.run_id)
+    experiment = mlfl_client.search_experiments()[0]
+    run = mlfl_client.search_runs(experiment.experiment_id)[0]
     tags = run.data.tags
 
     assert all([k in tags.keys() for k in expected_tags.keys()])
@@ -428,18 +419,17 @@ def test_track_in_mlflow_decorator(tmpdir: py.path.local, n_jobs: int) -> None:
     study.optimize(tracked_objective, n_trials=n_trials, callbacks=[mlflc], n_jobs=n_jobs)
 
     mlfl_client = MlflowClient(tracking_uri)
-    experiments = mlfl_client.list_experiments()
+    experiments = mlfl_client.search_experiments()
     assert len(experiments) == 1
 
     experiment = experiments[0]
     assert experiment.name == study_name
     experiment_id = experiment.experiment_id
 
-    run_infos = mlfl_client.list_run_infos(experiment_id)
-    assert len(run_infos) == n_trials
+    runs = mlfl_client.search_runs(experiment_id)
+    assert len(runs) == n_trials
 
-    first_run_id = run_infos[0].run_id
-    first_run = mlfl_client.get_run(first_run_id)
+    first_run = runs[0]
     first_run_dict = first_run.to_dictionary()
 
     assert metric_name in first_run_dict["data"]["metrics"]
@@ -471,21 +461,18 @@ def test_log_metric(
     study.optimize(func, n_trials=1, callbacks=[mlflc])
 
     mlfl_client = MlflowClient(tracking_uri)
-    experiments = mlfl_client.list_experiments()
+    experiments = mlfl_client.search_experiments()
     experiment = experiments[0]
     experiment_id = experiment.experiment_id
 
-    run_infos = mlfl_client.list_run_infos(experiment_id)
-    assert len(run_infos) == 1
+    runs = mlfl_client.search_runs(experiment_id)
+    assert len(runs) == 1
 
-    first_run_id = run_infos[0].run_id
-    first_run = mlfl_client.get_run(first_run_id)
-    first_run_dict = first_run.to_dictionary()
+    run = runs[0]
+    run_dict = run.to_dictionary()
 
-    assert all(name in first_run_dict["data"]["metrics"] for name in names)
-    assert all(
-        [first_run_dict["data"]["metrics"][name] == val for name, val in zip(names, values)]
-    )
+    assert all(name in run_dict["data"]["metrics"] for name in names)
+    assert all([run_dict["data"]["metrics"][name] == val for name, val in zip(names, values)])
 
 
 def test_log_metric_none(tmpdir: py.path.local) -> None:
@@ -499,19 +486,18 @@ def test_log_metric_none(tmpdir: py.path.local) -> None:
     study.optimize(lambda _: np.nan, n_trials=1, callbacks=[mlflc])
 
     mlfl_client = MlflowClient(tracking_uri)
-    experiments = mlfl_client.list_experiments()
+    experiments = mlfl_client.search_experiments()
     experiment = experiments[0]
     experiment_id = experiment.experiment_id
 
-    run_infos = mlfl_client.list_run_infos(experiment_id)
-    assert len(run_infos) == 1
+    runs = mlfl_client.search_runs(experiment_id)
+    assert len(runs) == 1
 
-    first_run_id = run_infos[0].run_id
-    first_run = mlfl_client.get_run(first_run_id)
-    first_run_dict = first_run.to_dictionary()
+    run = runs[0]
+    run_dict = run.to_dictionary()
 
     # When `values` is `None`, do not save values with metric names.
-    assert metric_name not in first_run_dict["data"]["metrics"]
+    assert metric_name not in run_dict["data"]["metrics"]
 
 
 def test_log_params(tmpdir: py.path.local) -> None:
@@ -526,21 +512,20 @@ def test_log_params(tmpdir: py.path.local) -> None:
     study.optimize(_objective_func, n_trials=1, callbacks=[mlflc])
 
     mlfl_client = MlflowClient(tracking_uri)
-    experiments = mlfl_client.list_experiments()
+    experiments = mlfl_client.search_experiments()
     experiment = experiments[0]
     experiment_id = experiment.experiment_id
 
-    run_infos = mlfl_client.list_run_infos(experiment_id)
-    assert len(run_infos) == 1
+    runs = mlfl_client.search_runs(experiment_id)
+    assert len(runs) == 1
 
-    first_run_id = run_infos[0].run_id
-    first_run = mlfl_client.get_run(first_run_id)
-    first_run_dict = first_run.to_dictionary()
+    run = runs[0]
+    run_dict = run.to_dictionary()
 
     for param_name, param_value in study.best_params.items():
-        assert param_name in first_run_dict["data"]["params"]
-        assert first_run_dict["data"]["params"][param_name] == str(param_value)
-        assert first_run_dict["data"]["tags"][f"{param_name}_distribution"] == str(
+        assert param_name in run_dict["data"]["params"]
+        assert run_dict["data"]["params"][param_name] == str(param_value)
+        assert run_dict["data"]["tags"][f"{param_name}_distribution"] == str(
             study.best_trial.distributions[param_name]
         )
 
