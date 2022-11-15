@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import tempfile
 from types import TracebackType
 from typing import Any
@@ -7,12 +9,13 @@ from typing import Type
 from typing import Union
 
 import fakeredis
+import pytest
 
 import optuna
 from optuna.storages import JournalFileStorage
 
 
-STORAGE_MODES = [
+STORAGE_MODES: list[Any] = [
     "inmemory",
     "sqlite",
     "cached_sqlite",
@@ -22,10 +25,20 @@ STORAGE_MODES = [
 
 try:
     import distributed
+
+    _has_distributed = True
 except ImportError:
-    pass
-else:
-    STORAGE_MODES.append("dask")
+    _has_distributed = False
+
+
+STORAGE_MODES.append(
+    pytest.param(
+        "dask",
+        marks=pytest.mark.skipif(
+            not _has_distributed, reason="distributed is required for running DaskStorage tests"
+        ),
+    )
+)
 
 STORAGE_MODES_HEARTBEAT = [
     "sqlite",
