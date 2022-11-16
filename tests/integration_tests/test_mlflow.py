@@ -393,7 +393,7 @@ def test_log_mlflow_tags(tmpdir: py.path.local) -> None:
     assert all([tags[key] == str(value) for key, value in expected_tags.items()])
 
 
-@pytest.mark.parametrize("n_jobs", [1, 2, 4, 6])
+@pytest.mark.parametrize("n_jobs", [1, 2, 4])
 def test_track_in_mlflow_decorator(tmpdir: py.path.local, n_jobs: int) -> None:
 
     tracking_uri = f"file:{tmpdir}"
