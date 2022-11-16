@@ -268,7 +268,7 @@ def test_nest_trials(tmpdir: py.path.local) -> None:
     assert all(set(r.data.metrics.keys()) == {"value"} for r in child_runs)
 
 
-@pytest.mark.parametrize("n_jobs", [2, 4, 6])
+@pytest.mark.parametrize("n_jobs", [2, 4])
 def test_multiple_jobs(tmpdir: py.path.local, n_jobs: int) -> None:
     tracking_uri = f"file:{tmpdir}"
     study_name = "my_study"
