@@ -112,13 +112,6 @@ jobs:
         OMP_NUM_THREADS: 1
         TEST_DB_URL: postgresql+psycopg2://user:test@127.0.0.1/optunatest
 
-    - name: Tests Redis
-      run: |
-        pytest tests/storages_tests/test_with_server.py
-      env:
-        OMP_NUM_THREADS: 1
-        TEST_DB_URL: redis://localhost:6379
-
     - name: Tests Journal Redis
       run: |
         pytest tests/storages_tests/test_with_server.py

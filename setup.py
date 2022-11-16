@@ -49,6 +49,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "asv>=0.5.0",
             "botorch",
             "cma",
+            "fakeredis",
             "scikit-optimize",
             "virtualenv",
         ],
@@ -65,10 +66,12 @@ def get_extras_require() -> Dict[str, List[str]]:
         ],
         "document": [
             "cma",
+            "distributed",
             "fvcore",
             "lightgbm",
             "matplotlib!=3.6.0",
-            "mlflow",
+            # TODO(c-bata): Remove the version constraint of mlflow.
+            "mlflow<2.0.1",
             "pandas",
             "pillow",
             "plotly>=4.0.0",  # optuna/visualization.
@@ -92,9 +95,10 @@ def get_extras_require() -> Dict[str, List[str]]:
             "catboost>=0.26",
             "chainer>=5.0.0",
             "cma",
+            "distributed",
             "fastai",
             "lightgbm",
-            "mlflow",
+            "mlflow<2.0.1",
             "mpi4py",
             "mxnet",
             "pandas",
