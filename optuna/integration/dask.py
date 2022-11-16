@@ -370,7 +370,7 @@ class _OptunaSchedulerExtension:
         study_id: int,
         state: Optional[Union[Tuple[str, ...], str]] = None,
     ) -> int:
-        deserialized_state = None
+        deserialized_state: Optional[Union[Tuple[TrialState, ...], TrialState]] = None
         if state is not None:
             if isinstance(state, str):
                 deserialized_state = TrialState[state]
@@ -696,7 +696,7 @@ class DaskStorage(BaseStorage):
     def get_n_trials(
         self, study_id: int, state: Optional[Union[Tuple[TrialState, ...], TrialState]] = None
     ) -> int:
-        serialized_state = None
+        serialized_state: Optional[Union[Tuple[str, ...], str]] = None
         if state is not None:
             if isinstance(state, TrialState):
                 serialized_state = state.name
