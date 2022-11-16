@@ -122,7 +122,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "redis",  # optuna/storages/redis.py.
             "scikit-learn>=0.24.2",
             # optuna/visualization/param_importances.py.
-            "distributed", # optuna/integration/dask.py
+            "distributed",  # optuna/integration/dask.py
         ],
         "test": [
             "codecov",
