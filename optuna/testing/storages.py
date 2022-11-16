@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import tempfile
 from types import TracebackType
 from typing import Any
@@ -34,9 +35,16 @@ except ImportError:
 STORAGE_MODES.append(
     pytest.param(
         "dask",
-        marks=pytest.mark.skipif(
-            not _has_distributed, reason="distributed is required for running DaskStorage tests"
-        ),
+        marks=[
+            pytest.mark.skipif(
+                not _has_distributed,
+                reason="distributed is required for running DaskStorage tests",
+            ),
+            pytest.mark.skipif(
+                sys.version_info[:2] >= (3, 11),
+                reason="distributed doesn't yet support Python 3.11",
+            ),
+        ],
     )
 )
 
