@@ -19,7 +19,7 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.7', '3.8', '3.9', '3.10']
-        third-party-package-installation-strategy: ['normal', 'with-minimum-version']
+        third-party-package-installation-strategy: ['with-latest', 'with-minimum-version']
 
     services:
       redis:
