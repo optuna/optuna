@@ -49,6 +49,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "asv>=0.5.0",
             "botorch",
             "cma",
+            "fakeredis",
             "scikit-optimize",
             "virtualenv",
         ],
