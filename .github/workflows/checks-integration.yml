@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+  pull_request: {}
   schedule:
     - cron: '0 23 * * SUN-THU'
   workflow_dispatch:
@@ -39,13 +40,6 @@ jobs:
         pip install --progress-bar off -U bayesmark
         pip install --progress-bar off -U kurobako
 
-    - name: black
-      run: black . --check --diff
-    - name: flake8
-      run: flake8 .
-    - name: isort
-      run: isort . --check --diff
     - name: mypy
       run: mypy . --warn-unused-ignores
-    - name: blackdoc
-      run: blackdoc . --check --diff
+
