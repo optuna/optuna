@@ -1,11 +1,17 @@
 import numpy as np
 from packaging import version
 import pytest
-import tensorflow as tf
 
 import optuna
+from optuna._imports import try_import
 from optuna.integration import TFKerasPruningCallback
 from optuna.testing.pruners import DeterministicPruner
+
+
+with try_import():
+    import tensorflow as tf
+
+pytestmark = pytest.mark.integration
 
 
 def test_tfkeras_pruning_callback() -> None:

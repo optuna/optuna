@@ -3,10 +3,16 @@ import shutil
 import tempfile
 
 import pytest
-from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
 import optuna
+from optuna._imports import try_import
 from optuna.integration.tensorboard import TensorBoardCallback
+
+
+with try_import():
+    from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+
+pytestmark = pytest.mark.integration
 
 
 def _objective_func(trial: optuna.trial.Trial) -> float:

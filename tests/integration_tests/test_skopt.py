@@ -7,11 +7,17 @@ from unittest.mock import patch
 import warnings
 
 import pytest
-from skopt.space import space
 
 import optuna
 from optuna import distributions
+from optuna._imports import try_import
 from optuna.trial import FrozenTrial
+
+
+with try_import():
+    from skopt.space import space
+
+pytestmark = pytest.mark.integration
 
 
 def test_consider_pruned_trials_experimental_warning() -> None:

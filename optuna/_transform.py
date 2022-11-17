@@ -1,4 +1,3 @@
-from collections import OrderedDict
 import math
 from typing import Any
 from typing import Dict
@@ -64,10 +63,6 @@ class _SearchSpaceTransform:
         transform_log: bool = True,
         transform_step: bool = True,
     ) -> None:
-        # TODO(hvy): Avoid casting to `OrderedDict` when Python 3.6 is no longer supported since
-        # order will be guaranteed.
-        search_space = OrderedDict(search_space)
-
         bounds, column_to_encoded_columns, encoded_column_to_column = _transform_search_space(
             search_space, transform_log, transform_step
         )

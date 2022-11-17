@@ -11,6 +11,7 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Union
 from unittest.mock import Mock
 from unittest.mock import patch
 import uuid
@@ -237,7 +238,14 @@ def test_optimize_with_catch(storage_mode: str) -> None:
         assert all(trial.state == TrialState.FAIL for trial in study.trials)
 
 
-@pytest.mark.parametrize("catch", [[], [Exception], None, 1])
+@pytest.mark.parametrize("catch", [ValueError, (ValueError,), [ValueError], {ValueError}])
+def test_optimize_with_catch_valid_type(catch: Any) -> None:
+
+    study = create_study()
+    study.optimize(fail_objective, n_trials=20, catch=catch)
+
+
+@pytest.mark.parametrize("catch", [None, 1])
 def test_optimize_with_catch_invalid_type(catch: Any) -> None:
 
     study = create_study()
@@ -1548,6 +1556,39 @@ def test_study_summary_datetime_start_calculation(storage_mode: str) -> None:
         study.enqueue_trial(params={"x": 1}, skip_if_exists=False)
         summaries = get_all_study_summaries(study._storage, include_best_trial=True)
         assert summaries[0].datetime_start is not None
+
+
+def _process_tell(study: Study, trial: Union[Trial, int], values: float) -> None:
+    study.tell(trial, values)
+
+
+def test_tell_from_another_process() -> None:
+
+    pool = multiprocessing.Pool()
+
+    with StorageSupplier("sqlite") as storage:
+        # Create a study and ask for a new trial.
+        study = create_study(storage=storage)
+        trial0 = study.ask()
+
+        # Test normal behaviour.
+        pool.starmap(_process_tell, [(study, trial0, 1.2)])
+
+        assert len(study.trials) == 1
+        assert study.best_trial.state == TrialState.COMPLETE
+        assert study.best_value == 1.2
+
+        # Test study.tell using trial number.
+        trial = study.ask()
+        pool.starmap(_process_tell, [(study, trial.number, 1.5)])
+
+        assert len(study.trials) == 2
+        assert study.best_trial.state == TrialState.COMPLETE
+        assert study.best_value == 1.2
+
+        # Should fail because the trial0 is already finished.
+        with pytest.raises(RuntimeError):
+            pool.starmap(_process_tell, [(study, trial0, 1.2)])
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)

@@ -10,14 +10,11 @@ from typing import Union
 from unittest import mock
 import warnings
 
-from lightgbm import log_evaluation
 import numpy as np
 import pytest
-import sklearn.datasets
-from sklearn.model_selection import KFold
-from sklearn.model_selection import train_test_split
 
 import optuna
+from optuna._imports import try_import
 from optuna.integration._lightgbm_tuner.optimize import _BaseTuner
 from optuna.integration._lightgbm_tuner.optimize import _OptunaObjective
 from optuna.integration._lightgbm_tuner.optimize import _OptunaObjectiveCV
@@ -25,6 +22,15 @@ from optuna.integration._lightgbm_tuner.optimize import LightGBMTuner
 from optuna.integration._lightgbm_tuner.optimize import LightGBMTunerCV
 import optuna.integration.lightgbm as lgb
 from optuna.study import Study
+
+
+with try_import():
+    from lightgbm import log_evaluation
+    import sklearn.datasets
+    from sklearn.model_selection import KFold
+    from sklearn.model_selection import train_test_split
+
+pytestmark = pytest.mark.integration
 
 
 @contextlib.contextmanager
@@ -275,7 +281,7 @@ class TestLightGBMTuner:
     def _get_tuner_object(
         self,
         params: Dict[str, Any] = {},
-        train_set: Optional[lgb.Dataset] = None,
+        train_set: Optional["lgb.Dataset"] = None,
         kwargs_options: Dict[str, Any] = {},
         study: Optional[Study] = None,
     ) -> lgb.LightGBMTuner:
@@ -792,7 +798,7 @@ class TestLightGBMTunerCV:
     def _get_tunercv_object(
         self,
         params: Dict[str, Any] = {},
-        train_set: Optional[lgb.Dataset] = None,
+        train_set: Optional["lgb.Dataset"] = None,
         kwargs_options: Dict[str, Any] = {},
         study: Optional[optuna.study.Study] = None,
     ) -> LightGBMTunerCV:

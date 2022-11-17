@@ -1,11 +1,17 @@
 from typing import Iterable
 from unittest.mock import patch
 
-from ignite.engine import Engine
 import pytest
 
 import optuna
+from optuna._imports import try_import
 from optuna.testing.pruners import DeterministicPruner
+
+
+with try_import():
+    from ignite.engine import Engine
+
+pytestmark = pytest.mark.integration
 
 
 def test_pytorch_ignite_pruning_handler() -> None:

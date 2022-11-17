@@ -120,3 +120,6 @@ docs/source/tutorial/
 
 # asv
 .asv
+
+# Dask
+dask-worker-space/

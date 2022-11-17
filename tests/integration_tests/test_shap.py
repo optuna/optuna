@@ -12,6 +12,9 @@ from optuna.samplers import RandomSampler
 from optuna.trial import create_trial
 
 
+pytestmark = pytest.mark.integration
+
+
 def objective(trial: Trial) -> float:
     x1: float = trial.suggest_float("x1", 0.1, 3)
     x2: float = trial.suggest_float("x2", 0.1, 3, log=True)

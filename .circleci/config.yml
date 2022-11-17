@@ -4,47 +4,9 @@ workflows:
   version: 2
   commit-build:
     jobs:
-      - document
       - visualization-regression-tests
 
 jobs:
-
-  # TODO (crcrpar): Set cache for sphinx gallery to avoid document job being bottleneck.
-  document:
-    docker:
-      - image: readthedocs/build:latest
-    steps:
-      - checkout
-
-      - run: &checkout-merge-master
-          name: checkout-merge-master
-          command: |
-            set -ex
-            if [[ -n "${CIRCLE_PR_NUMBER}" ]]; then
-                FETCH_REFS="${FETCH_REFS} +refs/pull/${CIRCLE_PR_NUMBER}/merge:pr/${CIRCLE_PR_NUMBER}/merge"
-                git fetch -u origin ${FETCH_REFS}
-                git checkout "pr/${CIRCLE_PR_NUMBER}/merge"
-            fi
-
-      - run:
-          name: install
-          command: |
-            python -m venv venv || virtualenv venv --python=python3.8
-            . venv/bin/activate
-            pip install -U pip
-            pip install --progress-bar off .[document]
-
-      - run:
-          name: build
-          command: |
-            . venv/bin/activate
-            cd docs
-            make html
-          environment:
-            OMP_NUM_THREADS: 1
-
-      - store_artifacts:
-          path: ./docs/build/html
 
   visualization-regression-tests:
     docker:

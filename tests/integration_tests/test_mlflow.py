@@ -4,15 +4,21 @@ from typing import Optional
 from typing import Tuple
 from typing import Union
 
-import mlflow
-from mlflow.tracking import MlflowClient
-from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID
 import numpy as np
 import py
 import pytest
 
 import optuna
+from optuna._imports import try_import
 from optuna.integration.mlflow import MLflowCallback
+
+
+with try_import():
+    import mlflow
+    from mlflow.tracking import MlflowClient
+    from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID
+
+pytestmark = pytest.mark.integration
 
 
 def _objective_func(trial: optuna.trial.Trial) -> float:
@@ -268,6 +274,26 @@ def test_nest_trials(tmpdir: py.path.local) -> None:
     assert all(set(r.data.metrics.keys()) == {"value"} for r in child_runs)
 
 
+@pytest.mark.parametrize("n_jobs", [2, 4])
+def test_multiple_jobs(tmpdir: py.path.local, n_jobs: int) -> None:
+    tracking_uri = f"file:{tmpdir}"
+    study_name = "my_study"
+    # The race-condition usually happens after first trial for each job
+    n_trials = n_jobs * 2
+
+    mlflc = MLflowCallback(tracking_uri=tracking_uri)
+    study = optuna.create_study(study_name=study_name)
+    study.optimize(_objective_func, n_trials=n_trials, callbacks=[mlflc], n_jobs=n_jobs)
+
+    mlfl_client = MlflowClient(tracking_uri)
+    assert len(mlfl_client.list_experiments()) == 1
+
+    experiment = mlfl_client.list_experiments()[0]
+    runs = mlfl_client.list_run_infos(experiment.experiment_id)
+
+    assert len(runs) == n_trials
+
+
 def test_mlflow_callback_fails_when_nest_trials_is_false_and_active_run_exists(
     tmpdir: py.path.local,
 ) -> None:
@@ -373,11 +399,12 @@ def test_log_mlflow_tags(tmpdir: py.path.local) -> None:
     assert all([tags[key] == str(value) for key, value in expected_tags.items()])
 
 
-def test_track_in_mlflow_decorator(tmpdir: py.path.local) -> None:
+@pytest.mark.parametrize("n_jobs", [1, 2, 4])
+def test_track_in_mlflow_decorator(tmpdir: py.path.local, n_jobs: int) -> None:
 
     tracking_uri = f"file:{tmpdir}"
     study_name = "my_study"
-    n_trials = 3
+    n_trials = n_jobs * 2
 
     metric_name = "additional_metric"
     metric = 3.14
@@ -398,7 +425,7 @@ def test_track_in_mlflow_decorator(tmpdir: py.path.local) -> None:
     tracked_objective = mlflc.track_in_mlflow()(_objective_func)
 
     study = optuna.create_study(study_name=study_name)
-    study.optimize(tracked_objective, n_trials=n_trials, callbacks=[mlflc])
+    study.optimize(tracked_objective, n_trials=n_trials, callbacks=[mlflc], n_jobs=n_jobs)
 
     mlfl_client = MlflowClient(tracking_uri)
     experiments = mlfl_client.list_experiments()

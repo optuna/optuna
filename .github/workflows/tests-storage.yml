@@ -17,11 +17,12 @@ jobs:
   # RDB. Since current name "tests-rdbstorage" is required in the Branch protection rules, you
   # need to modify the Branch protection rules as well.
   tests-rdbstorage:
+    if: (github.event_name == 'schedule' && github.repository == 'optuna/optuna') || (github.event_name != 'schedule')
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
 
     services:
       mysql:
@@ -111,9 +112,10 @@ jobs:
         OMP_NUM_THREADS: 1
         TEST_DB_URL: postgresql+psycopg2://user:test@127.0.0.1/optunatest
 
-    - name: Tests Redis
+    - name: Tests Journal Redis
       run: |
         pytest tests/storages_tests/test_with_server.py
       env:
         OMP_NUM_THREADS: 1
         TEST_DB_URL: redis://localhost:6379
+        TEST_DB_MODE: journal-redis

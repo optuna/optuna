@@ -65,8 +65,11 @@ def run(args: argparse.Namespace) -> None:
             f"sampler_list: {sampler_list}, sampler_kwargs_list: {sampler_kwargs_list}."
         )
 
-    for sampler, sampler_kwargs in zip(sampler_list, sampler_kwargs_list):
-        name = f"{args.name_prefix}_{sampler}"
+    for i, (sampler, sampler_kwargs) in enumerate(zip(sampler_list, sampler_kwargs_list)):
+        sampler_name = sampler
+        if sampler_list.count(sampler) > 1:
+            sampler_name += f"_{sampler_list[:i].count(sampler)}"
+        name = f"{args.name_prefix}_{sampler_name}"
         python_command = f"{args.path_to_create_study} {sampler} {sampler_kwargs}"
         cmd = (
             f"{kurobako_cmd} solver --name {name} command python3 {python_command}"

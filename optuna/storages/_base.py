@@ -19,7 +19,7 @@ from optuna.trial import TrialState
 DEFAULT_STUDY_NAME_PREFIX = "no-name-"
 
 
-class BaseStorage(object, metaclass=abc.ABCMeta):
+class BaseStorage(abc.ABC):
     """Base class for storages.
 
     This class is not supposed to be directly accessed by library users.

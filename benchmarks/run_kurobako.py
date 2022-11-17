@@ -55,9 +55,15 @@ def run(args: argparse.Namespace) -> None:
             f"pruner_list: {pruner_list}, pruner_keyword_arguments: {pruner_kwargs_list}."
         )
 
-    for sampler, sampler_kwargs in zip(sampler_list, sampler_kwargs_list):
-        for pruner, pruner_kwargs in zip(pruner_list, pruner_kwargs_list):
-            name = f"{args.name_prefix}_{sampler}_{pruner}"
+    for i, (sampler, sampler_kwargs) in enumerate(zip(sampler_list, sampler_kwargs_list)):
+        sampler_name = sampler
+        if sampler_list.count(sampler) > 1:
+            sampler_name += f"_{sampler_list[:i].count(sampler)}"
+        for j, (pruner, pruner_kwargs) in enumerate(zip(pruner_list, pruner_kwargs_list)):
+            pruner_name = pruner
+            if pruner_list.count(pruner) > 1:
+                pruner_name += f"_{pruner_list[:j].count(pruner)}"
+            name = f"{args.name_prefix}_{sampler_name}_{pruner_name}"
             cmd = (
                 f"{kurobako_cmd} solver --name {name} optuna --loglevel debug "
                 f"--sampler {sampler} --sampler-kwargs {sampler_kwargs} "
