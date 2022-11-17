@@ -28,7 +28,7 @@ def get_install_requires() -> List[str]:
     requirements = [
         "alembic>=1.5.0",
         "cliff",
-        "cmaes>=0.8.2",
+        "cmaes>=0.9.0",
         "colorlog",
         # TODO(HideakiImamura): remove this after the fix by `cliff` or `stevedore`
         "importlib-metadata<5.0.0",
