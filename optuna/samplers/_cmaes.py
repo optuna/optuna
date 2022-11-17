@@ -3,14 +3,14 @@ import math
 import pickle
 from typing import Any
 from typing import Callable
+from typing import cast
 from typing import Dict
 from typing import List
+from typing import NamedTuple
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import Union
-from typing import cast
-from typing_extensions import TypedDict
 import warnings
 
 from cmaes import CMA
@@ -42,10 +42,10 @@ _SYSTEM_ATTR_MAX_LENGTH = 2045
 CmaClass = Union[CMA, SepCMA, CMAwM]
 
 
-class CmaEsAttrKeys(TypedDict):
-    generation: Callable[[int], str]
-    n_restarts: str
+class _CmaEsAttrKeys(NamedTuple):
     optimizer: str
+    n_restarts: str
+    generation: Callable[[int], str]
 
 
 class CmaEsSampler(BaseSampler):
@@ -369,7 +369,7 @@ class CmaEsSampler(BaseSampler):
             n_restarts = 0
             optimizer = self._init_optimizer(trans, study.direction, population_size=self._popsize)
 
-        generation_attr_key = self._attr_keys["generation"](n_restarts)
+        generation_attr_key = self._attr_keys.generation(n_restarts)
 
         if optimizer.dim != len(trans.bounds):
             _logger.info(
@@ -403,7 +403,7 @@ class CmaEsSampler(BaseSampler):
 
             if self._restart_strategy == "ipop" and optimizer.should_stop():
                 n_restarts += 1
-                generation_attr_key = self._attr_keys["generation"](n_restarts)
+                generation_attr_key = self._attr_keys.generation(n_restarts)
                 popsize = optimizer.population_size * self._inc_popsize
                 optimizer = self._init_optimizer(
                     trans, study.direction, population_size=popsize, randomize_start_point=True
@@ -428,7 +428,7 @@ class CmaEsSampler(BaseSampler):
             trial._trial_id, generation_attr_key, optimizer.generation
         )
         study._storage.set_trial_system_attr(
-            trial._trial_id, self._attr_keys["n_restarts"], n_restarts
+            trial._trial_id, self._attr_keys.n_restarts, n_restarts
         )
 
         external_values = trans.untransform(params)
@@ -436,7 +436,7 @@ class CmaEsSampler(BaseSampler):
         return external_values
 
     @property
-    def _attr_keys(self) -> CmaEsAttrKeys:
+    def _attr_keys(self) -> _CmaEsAttrKeys:
 
         if self._use_separable_cma:
             attr_prefix = "sepcma:"
@@ -445,21 +445,21 @@ class CmaEsSampler(BaseSampler):
         else:
             attr_prefix = "cma:"
 
-        def generation_attr_key_template(generation: int) -> str:
+        def generation_attr_key_template(restart: int) -> str:
             if self._restart_strategy is None:
                 return attr_prefix + "generation"
             else:
-                return attr_prefix + "restart_{}:generation".format(generation)
+                return attr_prefix + "restart_{}:generation".format(restart)
 
-        return {
-            "optimizer": attr_prefix + "optimizer",
-            "n_restarts": attr_prefix + "n_restarts",
-            "generation": generation_attr_key_template,
-        }
+        return _CmaEsAttrKeys(
+            attr_prefix + "optimizer",
+            attr_prefix + "n_restarts",
+            generation_attr_key_template,
+        )
 
     def _concat_optimizer_attrs(self, optimizer_attrs: Dict[str, str]) -> str:
         return "".join(
-            optimizer_attrs["{}:{}".format(self._attr_keys["optimizer"], i)]
+            optimizer_attrs["{}:{}".format(self._attr_keys.optimizer, i)]
             for i in range(len(optimizer_attrs))
         )
 
@@ -469,7 +469,7 @@ class CmaEsSampler(BaseSampler):
         for i in range(math.ceil(optimizer_len / _SYSTEM_ATTR_MAX_LENGTH)):
             start = i * _SYSTEM_ATTR_MAX_LENGTH
             end = min((i + 1) * _SYSTEM_ATTR_MAX_LENGTH, optimizer_len)
-            attrs["{}:{}".format(self._attr_keys["optimizer"], i)] = optimizer_str[start:end]
+            attrs["{}:{}".format(self._attr_keys.optimizer, i)] = optimizer_str[start:end]
         return attrs
 
     def _restore_optimizer(
@@ -482,18 +482,22 @@ class CmaEsSampler(BaseSampler):
             optimizer_attrs = {
                 key: value
                 for key, value in trial.system_attrs.items()
-                if key.startswith(self._attr_keys["optimizer"])
+                if key.startswith(self._attr_keys.optimizer)
             }
             if len(optimizer_attrs) == 0:
                 continue
 
-            if not self._use_separable_cma and "cma:optimizer" in optimizer_attrs:
+            if (
+                not self._use_separable_cma
+                and not self._with_margin
+                and "cma:optimizer" in optimizer_attrs
+            ):
                 # Check "cma:optimizer" key for backward compatibility.
                 optimizer_str = optimizer_attrs["cma:optimizer"]
             else:
                 optimizer_str = self._concat_optimizer_attrs(optimizer_attrs)
 
-            n_restarts: int = trial.system_attrs.get(self._attr_keys["n_restarts"], 0)
+            n_restarts: int = trial.system_attrs.get(self._attr_keys.n_restarts, 0)
             return pickle.loads(bytes.fromhex(optimizer_str)), n_restarts
         return None, 0
 
