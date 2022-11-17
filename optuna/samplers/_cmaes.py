@@ -520,19 +520,19 @@ class CmaEsSampler(BaseSampler):
             )
 
         if self._with_margin:
-            steps = []
-            for dist in trans._search_space.values():
+            steps = np.empty(len(trans._search_space), dtype=float)
+            for i, dist in enumerate(trans._search_space.values()):
                 assert isinstance(dist, (IntDistribution, FloatDistribution))
                 # Set step 0.0 for continuous search space.
-                steps.append(0.0 if dist.step is None else dist.step)
+                steps[i] = dist.step or 0.0
 
             # If there is no discrete search space, we use `CMA` because CMAwM` throws an error.
-            if any(step > 0.0 for step in steps):
+            if np.any(steps > 0.0):
                 return CMAwM(
                     mean=mean,
                     sigma=sigma0,
                     bounds=trans.bounds,
-                    steps=np.array(steps, dtype=float),
+                    steps=steps,
                     cov=cov,
                     seed=self._cma_rng.randint(1, 2**31 - 2),
                     n_max_resampling=10 * n_dimension,
