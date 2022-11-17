@@ -15,8 +15,6 @@ import pytest
 import optuna
 from optuna import create_trial
 from optuna._transform import _SearchSpaceTransform
-from optuna.samplers._cmaes import _concat_optimizer_attrs
-from optuna.samplers._cmaes import _split_optimizer_str
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -384,7 +382,7 @@ def test_restore_optimizer_from_substrings() -> None:
     optimizer = CMA(np.zeros(10), sigma=1.3)
     optimizer_str = pickle.dumps(optimizer).hex()
 
-    system_attrs: Dict[str, Any] = _split_optimizer_str(optimizer_str)
+    system_attrs: Dict[str, Any] = sampler._split_optimizer_str(optimizer_str)
     assert len(system_attrs) > 1
     system_attrs["cma:n_restarts"] = 1
 
@@ -411,10 +409,11 @@ def test_restore_optimizer_from_substrings() -> None:
     ],
 )
 def test_split_and_concat_optimizer_string(dummy_optimizer_str: str, attr_len: int) -> None:
+    sampler = optuna.samplers.CmaEsSampler()
     with patch("optuna.samplers._cmaes._SYSTEM_ATTR_MAX_LENGTH", 5):
-        attrs = _split_optimizer_str(dummy_optimizer_str)
+        attrs = sampler._split_optimizer_str(dummy_optimizer_str)
         assert len(attrs) == attr_len
-        actual = _concat_optimizer_attrs(attrs)
+        actual = sampler._concat_optimizer_attrs(attrs)
         assert dummy_optimizer_str == actual
 
 
