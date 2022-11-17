@@ -270,7 +270,7 @@ def test_nest_trials(tmpdir: py.path.local) -> None:
 def test_multiple_jobs(tmpdir: py.path.local, n_jobs: int) -> None:
     tracking_uri = f"file:{tmpdir}"
     study_name = "my_study"
-    # The race-condition usually happens after first trial for each job
+    # The race-condition usually happens after first trial for each job.
     n_trials = n_jobs * 2
 
     mlflc = MLflowCallback(tracking_uri=tracking_uri)
@@ -278,11 +278,11 @@ def test_multiple_jobs(tmpdir: py.path.local, n_jobs: int) -> None:
     study.optimize(_objective_func, n_trials=n_trials, callbacks=[mlflc], n_jobs=n_jobs)
 
     mlfl_client = MlflowClient(tracking_uri)
-    assert len(mlfl_client.list_experiments()) == 1
+    experiments = mlfl_client.search_experiments()
+    assert len(experiments) == 1
 
-    experiment = mlfl_client.list_experiments()[0]
-    runs = mlfl_client.list_run_infos(experiment.experiment_id)
-
+    experiment_id = experiments[0].experiment_id
+    runs = mlfl_client.search_runs([experiment_id])
     assert len(runs) == n_trials
 
 
