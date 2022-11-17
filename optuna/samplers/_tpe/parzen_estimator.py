@@ -7,10 +7,20 @@ from typing import Tuple
 
 import numpy as np
 
-from optuna.distributions import BaseDistribution, CategoricalDistribution, FloatDistribution, IntDistribution
-from optuna.samplers._tpe.probability_distributions import _BatchedDistributionUnion, _BatchedDiscreteTruncNormDistributions, _BatchedCategoricalDistributions, _BatchedTruncNormDistributions, _MixtureOfProductDistribution
+from optuna.distributions import BaseDistribution
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
+from optuna.samplers._tpe.probability_distributions import _BatchedCategoricalDistributions
+from optuna.samplers._tpe.probability_distributions import _BatchedDiscreteTruncNormDistributions
+from optuna.samplers._tpe.probability_distributions import _BatchedDistributionUnion
+from optuna.samplers._tpe.probability_distributions import _BatchedTruncNormDistributions
+from optuna.samplers._tpe.probability_distributions import _MixtureOfProductDistribution
+
 
 EPS = 1e-12
+
+
 class _ParzenEstimatorParameters(
     NamedTuple(
         "_ParzenEstimatorParameters",
@@ -26,6 +36,7 @@ class _ParzenEstimatorParameters(
 ):
     pass
 
+
 class _ParzenEstimator:
     def __init__(
         self,
@@ -34,28 +45,48 @@ class _ParzenEstimator:
         parameters: _ParzenEstimatorParameters,
         predetermined_weights: Optional[np.ndarray] = None,
     ) -> None:
+        if parameters.consider_prior:
+            if parameters.prior_weight is None:
+                raise ValueError("Prior weight must be specified when consider_prior==True.")
+            elif parameters.prior_weight <= 0:
+                raise ValueError("Prior weight must be positive.")
+
         self._search_space = search_space
 
         transformed_observations = self._transform(observations)
-        
-        assert predetermined_weights is None or len(transformed_observations) == len(predetermined_weights)
-        weights = predetermined_weights if predetermined_weights is not None \
-                    else self._call_weights_func(parameters.weights, len(transformed_observations))
 
+        assert predetermined_weights is None or len(transformed_observations) == len(
+            predetermined_weights
+        )
+        weights = (
+            predetermined_weights
+            if predetermined_weights is not None
+            else self._call_weights_func(parameters.weights, len(transformed_observations))
+        )
+        print(f"{predetermined_weights=}, {weights=}, {transformed_observations=}")
         if parameters.consider_prior or len(transformed_observations) == 0:
-            weights = np.append(weights, [parameters.prior_weight])
+            if len(transformed_observations) == 0:
+                prior_weight = 1.0
+            else:
+                assert parameters.prior_weight is not None
+                prior_weight = parameters.prior_weight
+            weights = np.append(
+                weights,
+                [1.0 if len(transformed_observations) == 0 else prior_weight],
+            )
 
         weights /= weights.sum()
 
         self._mixture_distribution = _MixtureOfProductDistribution(
-                weights=weights,
-                distributions=[self._calculate_distributions(
-                                            transformed_observations[:, i], 
-                                            search_space[param],
-                                            parameters)
-                                    for i, param in enumerate(search_space)])
+            weights=weights,
+            distributions=[
+                self._calculate_distributions(
+                    transformed_observations[:, i], search_space[param], parameters
+                )
+                for i, param in enumerate(search_space)
+            ],
+        )
 
-    
     def sample(self, rng: np.random.RandomState, size: int) -> Dict[str, np.ndarray]:
         sampled = self._mixture_distribution.sample(rng, size)
         return self._untransform(sampled)
@@ -64,10 +95,9 @@ class _ParzenEstimator:
         transformed_samples = self._transform(samples_dict)
         return self._mixture_distribution.log_pdf(transformed_samples)
 
-
     @staticmethod
     def _call_weights_func(weights_func: Callable[[int], np.ndarray], n: int) -> np.ndarray:
-        w = weights_func(n)[:n]
+        w = np.array(weights_func(n))[:n]
         if np.any(w < 0):
             raise ValueError(
                 f"The `weights` function is not allowed to return negative values {w}. "
@@ -93,23 +123,33 @@ class _ParzenEstimator:
         return isinstance(dist, (FloatDistribution, IntDistribution)) and dist.log
 
     def _transform(self, samples_dict: Dict[str, np.ndarray]) -> np.ndarray:
-        return np.array([np.log(samples_dict[param]) 
-                            if self._is_log(self._search_space[param]) 
-                            else samples_dict[param] 
-                        for param in self._search_space]).T
+        return np.array(
+            [
+                np.log(samples_dict[param])
+                if self._is_log(self._search_space[param])
+                else samples_dict[param]
+                for param in self._search_space
+            ]
+        ).T
 
     def _untransform(self, samples_array: np.ndarray) -> Dict[str, np.ndarray]:
-        res = {param: np.exp(samples_array[:, i]) 
-                        if self._is_log(self._search_space[param]) 
-                        else samples_array[:, i] 
-                for i, param in enumerate(self._search_space)}
-
+        res = {
+            param: np.exp(samples_array[:, i])
+            if self._is_log(self._search_space[param])
+            else samples_array[:, i]
+            for i, param in enumerate(self._search_space)
+        }
         # TODO(contramundum53): Remove this line after fixing log-Int hack.
-        return {param: np.clip(
-                    np.round(res[param] / self._search_space[param].step) * self._search_space[param].step,
-                    self._search_space[param].low, self._search_space[param].high
-                ) if isinstance(self._search_space[param], IntDistribution) else res[param]
-                for param in self._search_space}
+        return {
+            param: np.clip(
+                dist.low + np.round((res[param] - dist.low) / dist.step) * dist.step,
+                dist.low,
+                dist.high,
+            )
+            if isinstance(dist, IntDistribution)
+            else res[param]
+            for (param, dist) in self._search_space.items()
+        }
 
     def _calculate_distributions(
         self,
@@ -121,7 +161,7 @@ class _ParzenEstimator:
             return self._calculate_categorical_distributions(
                 transformed_observations, search_space.choices, parameters
             )
-        else:   
+        else:
             assert isinstance(search_space, (FloatDistribution, IntDistribution))
             if search_space.log:
                 low = np.log(search_space.low)
@@ -151,8 +191,10 @@ class _ParzenEstimator:
         consider_prior = parameters.consider_prior or len(observations) == 0
 
         assert parameters.prior_weight is not None
-        weights = np.full(shape=(len(observations) + consider_prior, len(choices)), 
-                            fill_value=parameters.prior_weight / (len(observations) + consider_prior))
+        weights = np.full(
+            shape=(len(observations) + consider_prior, len(choices)),
+            fill_value=parameters.prior_weight / (len(observations) + consider_prior),
+        )
 
         weights[np.arange(len(observations)), observations.astype(int)] += 1
         weights /= weights.sum(axis=1, keepdims=True)
@@ -166,7 +208,7 @@ class _ParzenEstimator:
         step: Optional[float],
         parameters: _ParzenEstimatorParameters,
     ) -> _BatchedDistributionUnion:
-        step = step or 0
+        step_or_0 = step or 0
 
         mus = observations
         consider_prior = parameters.consider_prior or len(observations) == 0
@@ -174,9 +216,11 @@ class _ParzenEstimator:
         def compute_sigmas() -> np.ndarray:
             if parameters.multivariate:
                 SIGMA0_MAGNITUDE = 0.2
-                sigma = SIGMA0_MAGNITUDE \
-                        * max(len(observations), 1) ** (-1.0 / (len(self._search_space) + 4)) \
-                        * (high - low + step)
+                sigma = (
+                    SIGMA0_MAGNITUDE
+                    * max(len(observations), 1) ** (-1.0 / (len(self._search_space) + 4))
+                    * (high - low + step_or_0)
+                )
                 sigmas = np.full(shape=(len(observations),), fill_value=sigma)
             else:
                 # Why include prior_mu???
@@ -186,9 +230,9 @@ class _ParzenEstimator:
                 sorted_indices = np.argsort(mus_with_prior)
                 sorted_mus = mus_with_prior[sorted_indices]
                 sorted_mus_with_endpoints = np.empty(len(mus_with_prior) + 2, dtype=float)
-                sorted_mus_with_endpoints[0] = low - step / 2
-                sorted_mus_with_endpoints[1:-1] = sorted_mus 
-                sorted_mus_with_endpoints[-1] = high + step / 2
+                sorted_mus_with_endpoints[0] = low - step_or_0 / 2
+                sorted_mus_with_endpoints[1:-1] = sorted_mus
+                sorted_mus_with_endpoints[-1] = high + step_or_0 / 2
 
                 sorted_sigmas = np.maximum(
                     sorted_mus_with_endpoints[1:-1] - sorted_mus_with_endpoints[0:-2],
@@ -197,29 +241,34 @@ class _ParzenEstimator:
 
                 if not parameters.consider_endpoints and sorted_mus_with_endpoints.shape[0] >= 4:
                     sorted_sigmas[0] = sorted_mus_with_endpoints[2] - sorted_mus_with_endpoints[1]
-                    sorted_sigmas[-1] = sorted_mus_with_endpoints[-2] - sorted_mus_with_endpoints[-3]
+                    sorted_sigmas[-1] = (
+                        sorted_mus_with_endpoints[-2] - sorted_mus_with_endpoints[-3]
+                    )
 
-                sigmas = sorted_sigmas[np.argsort(sorted_indices)][:len(observations)]
+                sigmas = sorted_sigmas[np.argsort(sorted_indices)][: len(observations)]
 
             # We adjust the range of the 'sigmas' according to the 'consider_magic_clip' flag.
-            maxsigma = 1.0 * (high - low + step)
+            maxsigma = 1.0 * (high - low + step_or_0)
             if parameters.consider_magic_clip:
                 # Why change minsigma depending on consider_prior???
-                minsigma = 1.0 * (high - low + step) / min(100.0, (1.0 + len(observations) + consider_prior))
+                minsigma = (
+                    1.0
+                    * (high - low + step_or_0)
+                    / min(100.0, (1.0 + len(observations) + consider_prior))
+                )
             else:
                 minsigma = EPS
             return np.asarray(np.clip(sigmas, minsigma, maxsigma))
 
         sigmas = compute_sigmas()
 
-
         if consider_prior:
             prior_mu = 0.5 * (low + high)
-            prior_sigma = 1.0 * (high - low + step)
+            prior_sigma = 1.0 * (high - low + step_or_0)
             mus = np.append(mus, [prior_mu])
             sigmas = np.append(sigmas, [prior_sigma])
 
-        if step == 0:
+        if step is None:
             return _BatchedTruncNormDistributions(mus, sigmas, low, high)
         else:
             return _BatchedDiscreteTruncNormDistributions(mus, sigmas, low, high, step)
