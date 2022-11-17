@@ -244,6 +244,15 @@ def test_optimize_with_catch_valid_type(catch: Any) -> None:
     study.optimize(fail_objective, n_trials=20, catch=catch)
 
 
+@pytest.mark.parametrize("catch", [None, 1])
+def test_optimize_with_catch_invalid_type(catch: Any) -> None:
+
+    study = create_study()
+
+    with pytest.raises(TypeError):
+        study.optimize(fail_objective, n_trials=20, catch=catch)
+
+
 @pytest.mark.parametrize(
     "n_jobs, storage_mode", itertools.product((2, -1), STORAGE_MODES)  # n_jobs  # storage_mode
 )
