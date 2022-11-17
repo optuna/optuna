@@ -15,7 +15,6 @@ from optuna.distributions import IntDistribution
 
 import optuna.samplers._tpe.parzen_estimator as new_parzen_estimator
 import optuna.samplers._tpe.old_parzen_estimator as old_parzen_estimator
-import optuna.samplers._tpe.old_parzen_estimator2 as old_parzen_estimator2
 from optuna.samplers._tpe.sampler import default_weights
 from scipy import stats
 
@@ -161,87 +160,4 @@ def test_sample_unchanged(
     new_samples = new_pe.sample(rng=np.random.RandomState(seed), size=100)
     for param_name in search_space.keys():
         assert np.allclose(old2_samples[param_name], new_samples[param_name])
-
-
-
-# def assert_two_distributions_equal(samples1: np.ndarray, samples2: np.ndarray, p_limit: float) -> None:
-#     k = 2.0 ** np.arange(-10, 10)
-#     fs1 = np.vstack((np.sin(k[:, None] * samples1[None, :]),
-#                 np.cos(k[:, None] * samples1[None, :])))
-
-#     fs2 = np.vstack((np.sin(k[:, None] * samples2[None, :]),
-#                 np.cos(k[:, None] * samples2[None, :])))
-#     m1 = fs1.mean(axis=1)
-#     m2 = fs2.mean(axis=1)
-#     s1 = fs1.std(axis=1, ddof=1) / np.sqrt(len(samples1))
-#     s2 = fs2.std(axis=1, ddof=1) / np.sqrt(len(samples2))
-#     z = (m1 - m2) / np.sqrt(s1**2 + s2**2)
-#     p = 2 * stats.norm.cdf(-np.abs(z))
-#     assert np.all(p > p_limit)
-
-# @parametrize_observations
-# @parametrize_search_space
-# @pytest.mark.parametrize("consider_prior", [True, False])
-# @pytest.mark.parametrize("prior_weight", [1.0, 2.0])
-# @pytest.mark.parametrize("consider_magic_clip", [True, False])
-# @pytest.mark.parametrize("consider_endpoints", [True, False])
-# @pytest.mark.parametrize("weights", [default_weights, lambda x: np.ones(x)])
-# @pytest.mark.parametrize("multivariate", [True, False])
-# @parametrize_predetermined_weights
-# def test_sample_distribution_unchanged(
-#     observations: Dict[str, np.ndarray],
-#     search_space: Dict[str, BaseDistribution],
-#     consider_prior: bool,
-#     prior_weight: Optional[float],
-#     consider_magic_clip: bool,
-#     consider_endpoints: bool,
-#     weights: Callable[[int], np.ndarray],
-#     multivariate: bool,
-#     predetermined_weights: Optional[np.ndarray],
-# ):
-#     seed = 0
-#     N = 1000
-#     p_limit = 0.001
-
-#     old_pe = old_parzen_estimator._ParzenEstimator(
-#         observations=observations,
-#         search_space=search_space,
-#         parameters=old_parzen_estimator._ParzenEstimatorParameters(
-#             consider_prior=consider_prior,
-#             prior_weight=prior_weight,
-#             consider_magic_clip=consider_magic_clip,
-#             consider_endpoints=consider_endpoints,
-#             weights=weights,
-#             multivariate=multivariate,
-#         ),
-#         predetermined_weights=predetermined_weights,
-#     )
-
-#     old_samples = old_pe.sample(rng=np.random.RandomState(seed), size=N)
-    
-#     new_pe = new_parzen_estimator._ParzenEstimator(
-#         observations=observations,
-#         search_space=search_space,
-#         parameters=new_parzen_estimator._ParzenEstimatorParameters(
-#             consider_prior=consider_prior,
-#             prior_weight=prior_weight,
-#             consider_magic_clip=consider_magic_clip,
-#             consider_endpoints=consider_endpoints,
-#             weights=weights,
-#             multivariate=multivariate,
-#         ),
-#         predetermined_weights=predetermined_weights,
-#     )
-
-#     new_samples = new_pe.sample(rng=np.random.RandomState(seed), size=N)
-
-    
-#     for param_name in search_space.keys():
-#         assert_two_distributions_equal(old_samples[param_name], new_samples[param_name], p_limit)
-
-    
-
-
-
-
 

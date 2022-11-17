@@ -1,5 +1,5 @@
 from typing import Dict, List
-from typing import Tuple
+from typing import Tuple, Union
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -7,6 +7,7 @@ import numpy as np
 from optuna._imports import _LazyImport
 import abc
 from typing import TypeVar
+from typing import NamedTuple
 
 
 if TYPE_CHECKING:
@@ -17,102 +18,90 @@ else:
     stats = _LazyImport("scipy.stats")
 
 T = TypeVar("T")
-class _BaseVectorizedDistributions(metaclass=abc.ABCMeta):
-    @abc.abstractmethod
-    def sample(self, rng: np.random.RandomState) -> np.ndarray:
-        raise NotImplementedError
-    
-    @abc.abstractmethod
-    def log_pdf(self, x: np.ndarray) -> np.ndarray:
-        raise NotImplementedError
-    
-    @abc.abstractmethod
-    def take(self: T, indices: np.ndarray) -> T:
-        raise NotImplementedError
 
-class _VectorizedCategoricalDistributions(_BaseVectorizedDistributions):
-    def __init__(self, weights: np.ndarray) -> None:
-        self.weights = weights / np.sum(weights, axis=-1, keepdims=True)
 
-    def sample(self, rng: np.random.RandomState) -> np.ndarray:
-        rnd_quantile = rng.rand(self.weights.shape[0])
-        cum_probs = np.cumsum(self.weights, axis=-1)
-        return np.sum(cum_probs < rnd_quantile[..., None], axis=-1)
 
-    def log_pdf(self, x: np.ndarray) -> np.ndarray:
-        return np.log(np.take_along_axis(self.weights[None, :], x[..., None].astype(np.int64), axis=-1))[..., 0]
+class _BatchedCategoricalDistributions(NamedTuple):
+    weights: np.ndarray
 
-    def take(self, indices: np.ndarray) -> "_VectorizedCategoricalDistributions":
-        return _VectorizedCategoricalDistributions(self.weights[indices])
+class _BatchedTruncNormDistributions(NamedTuple):
+    mu: np.ndarray
+    sigma: np.ndarray
+    low: float # Currently, low and high do not change per trial.
+    high: float
+
+class _BatchedDiscreteTruncNormDistributions(NamedTuple):
+    mu: np.ndarray
+    sigma: np.ndarray
+    low: float # Currently, low, high and step do not change per trial.
+    high: float
+    step: float
+
+_BatchedDistributionUnion = Union[_BatchedCategoricalDistributions, _BatchedTruncNormDistributions, _BatchedDiscreteTruncNormDistributions]
 
 EPS = 1e-12
 def _normal_cdf(x: float, mu: float, sigma: float) -> float:
     return 0.5 * (1 + special.erf((x - mu) / np.maximum(np.sqrt(2) * sigma, EPS)))
-class _VectorizedTruncNormDistributions(_BaseVectorizedDistributions):
-    def __init__(self, mu: np.ndarray, sigma: np.ndarray, low: np.ndarray, high: np.ndarray) -> None:
-        self.mu, self.sigma, self.low, self.high = np.broadcast_arrays(mu, sigma, low, high, subok=True)
 
-    def sample(self, rng: np.random.RandomState) -> np.ndarray:
-        return stats.truncnorm.rvs(
-            a=(self.low - self.mu) / self.sigma,
-            b=(self.high - self.mu) / self.sigma,
-            loc=self.mu,
-            scale=self.sigma,
-            random_state=rng,
-        )
-    
-    def log_pdf(self, x: np.ndarray) -> np.ndarray:
-        p_accept = _normal_cdf(self.high, self.mu, self.sigma) - _normal_cdf(self.low, self.mu, self.sigma)
-        return -0.5 * np.log(2 * np.pi) - np.log(self.sigma) - 0.5 * ((x - self.mu) / self.sigma) ** 2 - np.log(p_accept)
-
-    def take(self, indices: np.ndarray) -> "_VectorizedTruncNormDistributions":
-        return _VectorizedTruncNormDistributions(
-            self.mu[indices], self.sigma[indices], self.low[indices], self.high[indices]
-        )
-
-class _VectorizedDiscreteTruncNormDistributions(_BaseVectorizedDistributions):
-    def __init__(self, mu: np.ndarray, sigma: np.ndarray, low: np.ndarray, high: np.ndarray, step: np.ndarray) -> None:
-        self.mu, self.sigma, self.low, self.high, self.step = np.broadcast_arrays(mu, sigma, low, high, step, subok=True)
-    
-    def sample(self, rng: np.random.RandomState) -> np.ndarray:
-        samples = stats.truncnorm.rvs(
-            a=(self.low - self.step / 2 - self.mu) / self.sigma,
-            b=(self.high + self.step / 2 - self.mu) / self.sigma,
-            loc=self.mu,
-            scale=self.sigma,
-            random_state=rng,
-        )
-        return np.clip(np.round(samples / self.step) * self.step, self.low, self.high)
-
-    def log_pdf(self, x: np.ndarray) -> np.ndarray:
-        return np.log(
-            (_normal_cdf(x + self.step / 2, self.mu, self.sigma) - _normal_cdf(x - self.step / 2, self.mu, self.sigma)) /
-            (_normal_cdf(self.high + self.step / 2, self.mu, self.sigma) - _normal_cdf(self.low - self.step / 2, self.mu, self.sigma) + EPS)
-        )
-
-    def take(self, indices: np.ndarray) -> "_VectorizedDiscreteTruncNormDistributions":
-        return _VectorizedDiscreteTruncNormDistributions(
-            self.mu[indices], self.sigma[indices], self.low[indices], self.high[indices], self.step[indices]
-        )
-
-class _MixtureOfProductDistribution:
-    def __init__(self,
-                 weights: np.ndarray,
-                 distributions: List[_BaseVectorizedDistributions]) -> None:
-        self.distributions = distributions
-        self.weights = weights / np.sum(weights)
+class _MixtureOfProductDistribution(NamedTuple):
+    weights: np.ndarray
+    distributions: List[_BatchedDistributionUnion]
 
     def sample(self, rng: np.random.RandomState, batch_size: int) -> np.ndarray:
-        active_indices = _VectorizedCategoricalDistributions(
-            np.broadcast_to(self.weights, (batch_size, self.weights.size))).sample(rng)
-        
-        active_dists = [d.take(active_indices) for d in self.distributions]
-        return np.array([
-            dist.sample(rng) for dist in active_dists]).T
+        active_indices = rng.choice(len(self.weights), p=self.weights, size=batch_size)
+
+        ret = np.empty((batch_size, len(self.distributions)), dtype=np.float64)
+        for i, d in enumerate(self.distributions):
+            if isinstance(d, _BatchedCategoricalDistributions):
+                active_weights = d.weights[active_indices, :]
+                rnd_quantile = rng.rand(batch_size)
+                cum_probs = np.cumsum(active_weights, axis=-1)
+                ret[:, i] = np.sum(cum_probs < rnd_quantile[:, None], axis=-1)
+            elif isinstance(d, _BatchedTruncNormDistributions):
+                active_mus = d.mu[active_indices]
+                active_sigmas = d.sigma[active_indices]
+                ret[:, i] = stats.truncnorm.rvs(
+                    a=(d.low - active_mus) / active_sigmas,
+                    b=(d.high - active_mus) / active_sigmas,
+                    loc=active_mus,
+                    scale=active_sigmas,
+                    random_state=rng,
+                )
+            elif isinstance(d, _BatchedDiscreteTruncNormDistributions):
+                active_mus = d.mu[active_indices]
+                active_sigmas = d.sigma[active_indices]
+                samples = stats.truncnorm.rvs(
+                    a=(d.low - d.step / 2 - active_mus) / active_sigmas,
+                    b=(d.high + d.step / 2 - active_mus) / active_sigmas,
+                    loc=active_mus,
+                    scale=active_sigmas,
+                    random_state=rng,
+                )
+                ret[:, i] = np.clip(np.round(samples / d.step) * d.step, d.low, d.high)
+            else:
+                assert False
+                        
+        return ret
 
     def log_pdf(self, x: np.ndarray) -> np.ndarray:
-        
+        batch_size, n_vars = x.shape
+        log_pdfs = np.empty((batch_size, len(self.weights), n_vars), dtype=np.float64)
+        for i, d in enumerate(self.distributions):
+            xi = x[:, i]
+            if isinstance(d, _BatchedCategoricalDistributions):
+                log_pdfs[:, :, i] = np.log(
+                    np.take_along_axis(d.weights[None, :, :], xi[:, None, None].astype(np.int64), axis=-1))[:, :, 0]
+            elif isinstance(d, _BatchedTruncNormDistributions):
+                p_accept = _normal_cdf(d.high, d.mu, d.sigma) - _normal_cdf(d.low, d.mu, d.sigma)
+                log_pdfs[:, :, i] = -0.5 * np.log(2 * np.pi) - np.log(d.sigma[None, :]) - 0.5 * ((xi[:, None] - d.mu[None, :]) / d.sigma[None, :]) ** 2 - np.log(p_accept[None, :])
+            elif isinstance(d, _BatchedDiscreteTruncNormDistributions):
+                log_pdfs[:, :, i] = np.log(
+                    (_normal_cdf(xi[:, None] + d.step / 2, d.mu[None, :], d.sigma[None, :]) - _normal_cdf(xi[:, None] - d.step / 2, d.mu[None, :], d.sigma[None, :]) + EPS) /
+                    (_normal_cdf(d.high + d.step / 2, d.mu[None, :], d.sigma[None, :]) - _normal_cdf(d.low - d.step / 2, d.mu[None, :], d.sigma[None, :]) + EPS)
+                )
+            else:
+                assert False
+
         return special.logsumexp(
-                np.sum([dist.log_pdf(x[:, None, k]) for k, dist in enumerate(self.distributions)], axis=0)
-                    + np.log(self.weights[None, :]), 
+                np.sum(log_pdfs, axis=-1) + np.log(self.weights[None, :]), 
                 axis=-1)

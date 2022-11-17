@@ -8,7 +8,7 @@ from typing import Tuple
 import numpy as np
 
 from optuna.distributions import BaseDistribution, CategoricalDistribution, FloatDistribution, IntDistribution
-from optuna.samplers._tpe.probability_distributions import _BaseVectorizedDistributions, _VectorizedCategoricalDistributions, _VectorizedTruncNormDistributions, _VectorizedDiscreteTruncNormDistributions, _MixtureOfProductDistribution
+from optuna.samplers._tpe.probability_distributions import _BatchedDistributionUnion, _BatchedDiscreteTruncNormDistributions, _BatchedCategoricalDistributions, _BatchedTruncNormDistributions, _MixtureOfProductDistribution
 
 EPS = 1e-12
 class _ParzenEstimatorParameters(
@@ -37,13 +37,15 @@ class _ParzenEstimator:
         self._search_space = search_space
 
         transformed_observations = self._transform(observations)
-
+        
         assert predetermined_weights is None or len(transformed_observations) == len(predetermined_weights)
         weights = predetermined_weights if predetermined_weights is not None \
                     else self._call_weights_func(parameters.weights, len(transformed_observations))
 
         if parameters.consider_prior or len(transformed_observations) == 0:
             weights = np.append(weights, [parameters.prior_weight])
+
+        weights /= weights.sum()
 
         self._mixture_distribution = _MixtureOfProductDistribution(
                 weights=weights,
@@ -114,7 +116,7 @@ class _ParzenEstimator:
         transformed_observations: np.ndarray,
         search_space: BaseDistribution,
         parameters: _ParzenEstimatorParameters,
-    ) -> _BaseVectorizedDistributions:
+    ) -> _BatchedDistributionUnion:
         if isinstance(search_space, CategoricalDistribution):
             return self._calculate_categorical_distributions(
                 transformed_observations, search_space.choices, parameters
@@ -144,7 +146,7 @@ class _ParzenEstimator:
         observations: np.ndarray,
         choices: Tuple[Any, ...],
         parameters: _ParzenEstimatorParameters,
-    ) -> _BaseVectorizedDistributions:
+    ) -> _BatchedDistributionUnion:
 
         consider_prior = parameters.consider_prior or len(observations) == 0
 
@@ -154,7 +156,7 @@ class _ParzenEstimator:
 
         weights[np.arange(len(observations)), observations.astype(int)] += 1
         weights /= weights.sum(axis=1, keepdims=True)
-        return _VectorizedCategoricalDistributions(weights)
+        return _BatchedCategoricalDistributions(weights)
 
     def _calculate_numerical_distributions(
         self,
@@ -163,7 +165,7 @@ class _ParzenEstimator:
         high: float,
         step: Optional[float],
         parameters: _ParzenEstimatorParameters,
-    ) -> _BaseVectorizedDistributions:
+    ) -> _BatchedDistributionUnion:
         step = step or 0
 
         mus = observations
@@ -218,6 +220,6 @@ class _ParzenEstimator:
             sigmas = np.append(sigmas, [prior_sigma])
 
         if step == 0:
-            return _VectorizedTruncNormDistributions(mus, sigmas, low,high)
+            return _BatchedTruncNormDistributions(mus, sigmas, low, high)
         else:
-            return _VectorizedDiscreteTruncNormDistributions(mus, sigmas, low, high, step)
+            return _BatchedDiscreteTruncNormDistributions(mus, sigmas, low, high, step)
