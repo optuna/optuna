@@ -61,14 +61,11 @@ class _MixtureOfProductDistribution(NamedTuple):
         for i, d in enumerate(self.distributions):
             if isinstance(d, _BatchedCategoricalDistributions):
                 active_weights = d.weights[active_indices, :]
-
                 rnd_quantile = rng.rand(batch_size)
                 cum_probs = np.cumsum(active_weights, axis=-1)
                 assert np.isclose(cum_probs[:, -1], 1).all()
                 cum_probs[:, -1] = 1  # Avoid numerical errors.
                 ret[:, i] = np.sum(cum_probs < rnd_quantile[:, None], axis=-1)
-                print(f"{active_weights=}")
-                print(f"{cum_probs=}")
             elif isinstance(d, _BatchedTruncNormDistributions):
                 active_mus = d.mu[active_indices]
                 active_sigmas = d.sigma[active_indices]
@@ -94,7 +91,6 @@ class _MixtureOfProductDistribution(NamedTuple):
                 )
             else:
                 assert False
-            print(ret)
 
         return ret
 
