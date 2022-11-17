@@ -384,8 +384,11 @@ class _Studies(_BaseCommand):
             record[("direction", "")] = tuple(d.name for d in s.directions)
             record[("n_trials", "")] = s.n_trials
             record[("datetime_start", "")] = start
+            record[("user_attrs", "")] = s.user_attrs
             records.append(record)
 
+        if any(r[("user_attrs", "")] != {} for r in records):
+            self._study_list_header.append(("user_attrs", ""))
         print(
             _format_output(
                 records, self._study_list_header, parsed_args.format, parsed_args.flatten
