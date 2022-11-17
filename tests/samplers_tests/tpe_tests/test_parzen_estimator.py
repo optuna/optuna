@@ -240,149 +240,67 @@ def test_invalid_prior_weight(prior_weight: float, mus: np.ndarray) -> None:
         _ParzenEstimator({"a": mus}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters)
 
 
-# # TODO(ytsmiling): Improve test coverage for weights.
+# TODO(ytsmiling): Improve test coverage for weights.
 @pytest.mark.parametrize(
     "mus, flags, expected",
     [
         [
             np.asarray([]),
             {"prior": False, "magic_clip": False, "endpoints": True},
-            _MixtureOfProductDistribution(
-                weights=np.asarray([1.0]),
-                distributions=[
-                    _BatchedTruncNormDistributions(
-                        mu=np.array([0.0]),
-                        sigma=np.array([2.0]),
-                        low=-1.0,
-                        high=1.0,
-                    )
-                ],
-            ),
+            {"weights": [1.0], "mus": [0.0], "sigmas": [2.0]},
         ],
         [
             np.asarray([]),
             {"prior": True, "magic_clip": False, "endpoints": True},
-            _MixtureOfProductDistribution(
-                weights=np.asarray([1.0]),
-                distributions=[
-                    _BatchedTruncNormDistributions(
-                        mu=np.array([0.0]),
-                        sigma=np.array([2.0]),
-                        low=-1.0,
-                        high=1.0,
-                    )
-                ],
-            ),
+            {"weights": [1.0], "mus": [0.0], "sigmas": [2.0]},
         ],
         [
             np.asarray([0.4]),
             {"prior": True, "magic_clip": False, "endpoints": True},
-            _MixtureOfProductDistribution(
-                weights=np.asarray([0.5, 0.5]),
-                distributions=[
-                    _BatchedTruncNormDistributions(
-                        mu=np.array([0.4, 0.0]),
-                        sigma=np.array([0.6, 2.0]),
-                        low=-1.0,
-                        high=1.0,
-                    )
-                ],
-            ),
+            {"weights": [0.5, 0.5], "mus": [0.4, 0.0], "sigmas": [0.6, 2.0]},
         ],
         [
             np.asarray([-0.4]),
             {"prior": True, "magic_clip": False, "endpoints": True},
-            _MixtureOfProductDistribution(
-                weights=np.asarray([0.5, 0.5]),
-                distributions=[
-                    _BatchedTruncNormDistributions(
-                        mu=np.array([-0.4, 0.0]),
-                        sigma=np.array([0.6, 2.0]),
-                        low=-1.0,
-                        high=1.0,
-                    )
-                ],
-            ),
+            {"weights": [0.5, 0.5], "mus": [-0.4, 0.0], "sigmas": [0.6, 2.0]},
         ],
         [
             np.asarray([-0.4, 0.4]),
             {"prior": True, "magic_clip": False, "endpoints": True},
-            _MixtureOfProductDistribution(
-                weights=np.asarray([1.0 / 3] * 3),
-                distributions=[
-                    _BatchedTruncNormDistributions(
-                        mu=np.array([-0.4, 0.4, 0.0]),
-                        sigma=np.array([0.6, 0.6, 2.0]),
-                        low=-1.0,
-                        high=1.0,
-                    )
-                ],
-            ),
+            {"weights": [1.0 / 3] * 3, "mus": [-0.4, 0.4, 0.0], "sigmas": [0.6, 0.6, 2.0]},
         ],
         [
             np.asarray([-0.4, 0.4]),
             {"prior": True, "magic_clip": False, "endpoints": False},
-            _MixtureOfProductDistribution(
-                weights=np.asarray([1.0 / 3] * 3),
-                distributions=[
-                    _BatchedTruncNormDistributions(
-                        mu=np.array([-0.4, 0.4, 0.0]),
-                        sigma=np.array([0.4, 0.4, 2.0]),
-                        low=-1.0,
-                        high=1.0,
-                    )
-                ],
-            ),
+            {"weights": [1.0 / 3] * 3, "mus": [-0.4, 0.4, 0.0], "sigmas": [0.4, 0.4, 2.0]},
         ],
         [
             np.asarray([-0.4, 0.4]),
             {"prior": False, "magic_clip": False, "endpoints": True},
-            _MixtureOfProductDistribution(
-                weights=np.asarray([0.5, 0.5]),
-                distributions=[
-                    _BatchedTruncNormDistributions(
-                        mu=np.array([-0.4, 0.4]),
-                        sigma=np.array([0.8, 0.8]),
-                        low=-1.0,
-                        high=1.0,
-                    )
-                ],
-            ),
+            {"weights": [0.5, 0.5], "mus": [-0.4, 0.4], "sigmas": [0.8, 0.8]},
         ],
         [
             np.asarray([-0.4, 0.4, 0.41, 0.42]),
             {"prior": False, "magic_clip": False, "endpoints": True},
-            _MixtureOfProductDistribution(
-                weights=np.asarray([0.25, 0.25, 0.25, 0.25]),
-                distributions=[
-                    _BatchedTruncNormDistributions(
-                        mu=np.array([-0.4, 0.4, 0.41, 0.42]),
-                        sigma=np.array([0.8, 0.8, 0.01, 0.58]),
-                        low=-1.0,
-                        high=1.0,
-                    )
-                ],
-            ),
+            {
+                "weights": [0.25, 0.25, 0.25, 0.25],
+                "mus": [-0.4, 0.4, 0.41, 0.42],
+                "sigmas": [0.8, 0.8, 0.01, 0.58],
+            },
         ],
         [
             np.asarray([-0.4, 0.4, 0.41, 0.42]),
             {"prior": False, "magic_clip": True, "endpoints": True},
-            _MixtureOfProductDistribution(
-                weights=np.asarray([0.25, 0.25, 0.25, 0.25]),
-                distributions=[
-                    _BatchedTruncNormDistributions(
-                        mu=np.array([-0.4, 0.4, 0.41, 0.42]),
-                        sigma=np.array([0.8, 0.8, 0.4, 0.58]),
-                        low=-1.0,
-                        high=1.0,
-                    )
-                ],
-            ),
+            {
+                "weights": [0.25, 0.25, 0.25, 0.25],
+                "mus": [-0.4, 0.4, 0.41, 0.42],
+                "sigmas": [0.8, 0.8, 0.4, 0.58],
+            },
         ],
     ],
 )
 def test_calculate(
-    mus: np.ndarray, flags: Dict[str, bool], expected: _MixtureOfProductDistribution
+    mus: np.ndarray, flags: Dict[str, bool], expected: Dict[str, List[float]]
 ) -> None:
 
     parameters = _ParzenEstimatorParameters(
@@ -396,7 +314,18 @@ def test_calculate(
     mpe = _ParzenEstimator(
         {"a": mus}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
     )
-    assert_distribution_almost_equal(mpe._mixture_distribution, expected)
+    expected_distribution = _MixtureOfProductDistribution(
+        weights=np.asarray(expected["weights"]),
+        distributions=[
+            _BatchedTruncNormDistributions(
+                mu=np.asarray(expected["mus"]),
+                sigma=np.asarray(expected["sigmas"]),
+                low=-1.0,
+                high=1.0,
+            )
+        ],
+    )
+    assert_distribution_almost_equal(mpe._mixture_distribution, expected_distribution)
 
 
 @pytest.mark.parametrize(

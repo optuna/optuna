@@ -63,7 +63,6 @@ class _ParzenEstimator:
             if predetermined_weights is not None
             else self._call_weights_func(parameters.weights, len(transformed_observations))
         )
-        print(f"{predetermined_weights=}, {weights=}, {transformed_observations=}")
         if parameters.consider_prior or len(transformed_observations) == 0:
             if len(transformed_observations) == 0:
                 prior_weight = 1.0
