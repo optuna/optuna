@@ -3,14 +3,14 @@ import math
 import pickle
 from typing import Any
 from typing import Callable
-from typing import cast
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
-from typing import TypedDict
 from typing import Union
+from typing import cast
+from typing_extensions import TypedDict
 import warnings
 
 from cmaes import CMA
