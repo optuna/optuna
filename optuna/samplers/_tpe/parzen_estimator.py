@@ -9,7 +9,12 @@ import numpy as np
 
 from optuna import distributions
 from optuna.distributions import BaseDistribution
-from optuna.samplers._tpe import _truncnorm
+
+
+try:
+    from scipy.stats import truncnorm
+except ImportError:
+    from optuna.samplers._tpe import _truncnorm as truncnorm
 
 
 EPS = 1e-12
@@ -117,9 +122,14 @@ class _ParzenEstimator:
                 # We sample from truncnorm.
                 trunc_low = (low - mus[active]) / sigmas[active]
                 trunc_high = (high - mus[active]) / sigmas[active]
-                percentiles = rng.uniform(low=0, high=1, size=trunc_low.shape)
-                rvs = np.vectorize(_truncnorm.ppf)(percentiles, trunc_low, trunc_high)
-                samples = rvs * sigmas[active] + mus[active]
+                samples = truncnorm.rvs(
+                    trunc_low,
+                    trunc_high,
+                    size=size,
+                    loc=mus[active],
+                    scale=sigmas[active],
+                    random_state=rng,
+                )
             samples_dict[param_name] = samples
         samples_dict = self._transform_from_uniform(samples_dict)
         return samples_dict

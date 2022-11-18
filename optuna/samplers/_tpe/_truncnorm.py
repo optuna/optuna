@@ -34,6 +34,8 @@
 import math
 import sys
 from typing import Callable
+from typing import Optional
+from typing import Union
 
 import numpy as np
 
@@ -149,6 +151,7 @@ def _ndtri_exp(y: float) -> float:
     return _bisect(_log_ndtr, -100, +100, y)
 
 
+@np.vectorize
 def ppf(q: float, a: float, b: float) -> float:
     if a == b:
         return np.nan
@@ -169,6 +172,19 @@ def ppf(q: float, a: float, b: float) -> float:
         return ppf_left(q, a, b)
     else:
         return ppf_right(q, a, b)
+
+
+def rvs(
+    a: np.ndarray,
+    b: np.ndarray,
+    loc: Union[np.ndarray, float] = 0,
+    scale: Union[np.ndarray, float] = 1,
+    size: int = 1,
+    random_state: Optional[np.random.RandomState] = None,
+) -> np.ndarray:
+    random_state = random_state or np.random.RandomState()
+    percentiles = random_state.uniform(low=0, high=1, size=size)
+    return ppf(percentiles, a, b) * scale + loc
 
 
 def logpdf(x: float, a: float, b: float) -> float:
