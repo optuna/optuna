@@ -6,16 +6,27 @@ from unittest.mock import patch
 import warnings
 
 import pytest
-import torch
 
 import optuna
 from optuna import integration
+from optuna._imports import try_import
 from optuna.integration import BoTorchSampler
 from optuna.samplers import RandomSampler
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.storages import RDBStorage
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
+
+
+with try_import() as _imports:
+    import torch
+
+if not _imports.is_successful():
+    from unittest.mock import MagicMock
+
+    torch = MagicMock()  # type: ignore # NOQA
+
+pytestmark = pytest.mark.integration
 
 
 @pytest.mark.parametrize("n_objectives", [1, 2, 4])

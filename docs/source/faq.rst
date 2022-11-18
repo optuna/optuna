@@ -232,9 +232,9 @@ You can also find the failed trials by checking the trial states as follows:
 How are NaNs returned by trials handled?
 ----------------------------------------
 
-Trials that return :obj:`NaN` (``float('nan')``) are treated as failures, but they will not abort studies.
+Trials that return NaN (``float('nan')``) are treated as failures, but they will not abort studies.
 
-Trials which return :obj:`NaN` are shown as follows:
+Trials which return NaN are shown as follows:
 
 .. code-block:: sh
 

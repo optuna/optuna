@@ -3,7 +3,7 @@ import abc
 import numpy as np
 
 
-class BaseHypervolume(object, metaclass=abc.ABCMeta):
+class BaseHypervolume(abc.ABC):
     """Base class for hypervolume calculators.
 
     .. note::

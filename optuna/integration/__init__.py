@@ -13,6 +13,7 @@ _import_structure = {
     "chainer": ["ChainerPruningExtension"],
     "chainermn": ["ChainerMNStudy"],
     "cma": ["CmaEsSampler", "PyCmaSampler"],
+    "dask": ["DaskStorage"],
     "mlflow": ["MLflowCallback"],
     "wandb": ["WeightsAndBiasesCallback"],
     "keras": ["KerasPruningCallback"],
@@ -34,40 +35,38 @@ _import_structure = {
 }
 
 
-__all__ = list(_import_structure.keys()) + sum(_import_structure.values(), [])
-
-
 if TYPE_CHECKING:
-    from optuna.integration.allennlp import AllenNLPExecutor  # NOQA
-    from optuna.integration.allennlp import AllenNLPPruningCallback  # NOQA
-    from optuna.integration.botorch import BoTorchSampler  # NOQA
-    from optuna.integration.catalyst import CatalystPruningCallback  # NOQA
-    from optuna.integration.catboost import CatBoostPruningCallback  # NOQA
-    from optuna.integration.chainer import ChainerPruningExtension  # NOQA
-    from optuna.integration.chainermn import ChainerMNStudy  # NOQA
-    from optuna.integration.cma import CmaEsSampler  # NOQA
-    from optuna.integration.cma import PyCmaSampler  # NOQA
-    from optuna.integration.fastaiv1 import FastAIV1PruningCallback  # NOQA
-    from optuna.integration.fastaiv2 import FastAIPruningCallback  # NOQA
-    from optuna.integration.fastaiv2 import FastAIV2PruningCallback  # NOQA
-    from optuna.integration.keras import KerasPruningCallback  # NOQA
-    from optuna.integration.lightgbm import LightGBMPruningCallback  # NOQA
-    from optuna.integration.lightgbm import LightGBMTuner  # NOQA
-    from optuna.integration.lightgbm import LightGBMTunerCV  # NOQA
-    from optuna.integration.mlflow import MLflowCallback  # NOQA
-    from optuna.integration.mxnet import MXNetPruningCallback  # NOQA
-    from optuna.integration.pytorch_distributed import TorchDistributedTrial  # NOQA
-    from optuna.integration.pytorch_ignite import PyTorchIgnitePruningHandler  # NOQA
-    from optuna.integration.pytorch_lightning import PyTorchLightningPruningCallback  # NOQA
-    from optuna.integration.shap import ShapleyImportanceEvaluator  # NOQA
-    from optuna.integration.sklearn import OptunaSearchCV  # NOQA
-    from optuna.integration.skopt import SkoptSampler  # NOQA
-    from optuna.integration.skorch import SkorchPruningCallback  # NOQA
-    from optuna.integration.tensorboard import TensorBoardCallback  # NOQA
-    from optuna.integration.tensorflow import TensorFlowPruningHook  # NOQA
-    from optuna.integration.tfkeras import TFKerasPruningCallback  # NOQA
-    from optuna.integration.wandb import WeightsAndBiasesCallback  # NOQA
-    from optuna.integration.xgboost import XGBoostPruningCallback  # NOQA
+    from optuna.integration.allennlp import AllenNLPExecutor
+    from optuna.integration.allennlp import AllenNLPPruningCallback
+    from optuna.integration.botorch import BoTorchSampler
+    from optuna.integration.catalyst import CatalystPruningCallback
+    from optuna.integration.catboost import CatBoostPruningCallback
+    from optuna.integration.chainer import ChainerPruningExtension
+    from optuna.integration.chainermn import ChainerMNStudy
+    from optuna.integration.cma import CmaEsSampler
+    from optuna.integration.cma import PyCmaSampler
+    from optuna.integration.dask import DaskStorage
+    from optuna.integration.fastaiv1 import FastAIV1PruningCallback
+    from optuna.integration.fastaiv2 import FastAIPruningCallback
+    from optuna.integration.fastaiv2 import FastAIV2PruningCallback
+    from optuna.integration.keras import KerasPruningCallback
+    from optuna.integration.lightgbm import LightGBMPruningCallback
+    from optuna.integration.lightgbm import LightGBMTuner
+    from optuna.integration.lightgbm import LightGBMTunerCV
+    from optuna.integration.mlflow import MLflowCallback
+    from optuna.integration.mxnet import MXNetPruningCallback
+    from optuna.integration.pytorch_distributed import TorchDistributedTrial
+    from optuna.integration.pytorch_ignite import PyTorchIgnitePruningHandler
+    from optuna.integration.pytorch_lightning import PyTorchLightningPruningCallback
+    from optuna.integration.shap import ShapleyImportanceEvaluator
+    from optuna.integration.sklearn import OptunaSearchCV
+    from optuna.integration.skopt import SkoptSampler
+    from optuna.integration.skorch import SkorchPruningCallback
+    from optuna.integration.tensorboard import TensorBoardCallback
+    from optuna.integration.tensorflow import TensorFlowPruningHook
+    from optuna.integration.tfkeras import TFKerasPruningCallback
+    from optuna.integration.wandb import WeightsAndBiasesCallback
+    from optuna.integration.xgboost import XGBoostPruningCallback
 else:
 
     class _IntegrationModule(ModuleType):
@@ -107,3 +106,37 @@ else:
             return importlib.import_module("." + module_name, self.__name__)
 
     sys.modules[__name__] = _IntegrationModule(__name__)
+
+__all__ = [
+    "AllenNLPExecutor",
+    "AllenNLPPruningCallback",
+    "BoTorchSampler",
+    "CatalystPruningCallback",
+    "CatBoostPruningCallback",
+    "ChainerPruningExtension",
+    "ChainerMNStudy",
+    "CmaEsSampler",
+    "PyCmaSampler",
+    "DaskStorage",
+    "MLflowCallback",
+    "WeightsAndBiasesCallback",
+    "KerasPruningCallback",
+    "LightGBMPruningCallback",
+    "LightGBMTuner",
+    "LightGBMTunerCV",
+    "TorchDistributedTrial",
+    "PyTorchIgnitePruningHandler",
+    "PyTorchLightningPruningCallback",
+    "OptunaSearchCV",
+    "ShapleyImportanceEvaluator",
+    "SkorchPruningCallback",
+    "MXNetPruningCallback",
+    "SkoptSampler",
+    "TensorBoardCallback",
+    "TensorFlowPruningHook",
+    "TFKerasPruningCallback",
+    "XGBoostPruningCallback",
+    "FastAIV1PruningCallback",
+    "FastAIV2PruningCallback",
+    "FastAIPruningCallback",
+]

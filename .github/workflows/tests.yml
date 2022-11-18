@@ -7,6 +7,7 @@ on:
   pull_request: {}
   schedule:
     - cron: '0 23 * * SUN-THU'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
@@ -14,12 +15,13 @@ concurrency:
 
 jobs:
   tests:
+    if: (github.event_name == 'schedule' && github.repository == 'optuna/optuna') || (github.event_name != 'schedule')
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10']
-        third-party-package-installation-strategy: ['with-latest', 'with-minimum-version']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        third-party-package-installation-strategy: ['latest', 'with-minimum-version']
 
     services:
       redis:
@@ -65,12 +67,10 @@ jobs:
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
 
-        # Required for samplers_tests/test_samplers.py.
-        # TODO(hvy): Fix samplers_tests/test_samplers.py to not require optional dependencies and remove these installs.
-        pip install scikit-optimize
-        pip install cma
-        pip install shap
-        pip install botorch torch==1.11.0 --extra-index-url https://download.pytorch.org/whl/cpu
+    - name: Scheduled tests
+      if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+      run: |
+        pytest tests -m "not integration"
 
     - name: Install dependencies with minimum versions
       run: |
@@ -81,5 +81,6 @@ jobs:
       if: ${{ matrix.third-party-package-installation-strategy == 'with-minimum-version' }}
 
     - name: Tests
+      if:  ${{ github.event_name != 'schedule' }}
       run: |
-        pytest tests --ignore tests/integration_tests
+        pytest tests -m "not integration and not slow"

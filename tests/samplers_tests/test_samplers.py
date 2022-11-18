@@ -3,7 +3,6 @@ import multiprocessing
 from multiprocessing.managers import DictProxy
 import os
 import pickle
-import sys
 from typing import Any
 from typing import Callable
 from typing import cast
@@ -11,6 +10,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Tuple
 from typing import Union
 from unittest.mock import patch
 import warnings
@@ -42,13 +42,23 @@ parametrize_sampler = pytest.mark.parametrize(
         lambda: optuna.samplers.TPESampler(n_startup_trials=0),
         lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
-        lambda: optuna.integration.SkoptSampler(
-            skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
+        lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0, use_separable_cma=True),
+        pytest.param(
+            lambda: optuna.integration.SkoptSampler(
+                skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
+            ),
+            marks=pytest.mark.integration,
         ),
-        lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
+        pytest.param(
+            lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
+            marks=pytest.mark.integration,
+        ),
         optuna.samplers.NSGAIISampler,
-        lambda: optuna.samplers.QMCSampler(),
-        lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
+        optuna.samplers.QMCSampler,
+        pytest.param(
+            lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
+            marks=pytest.mark.integration,
+        ),
     ],
 )
 parametrize_relative_sampler = pytest.mark.parametrize(
@@ -56,10 +66,17 @@ parametrize_relative_sampler = pytest.mark.parametrize(
     [
         lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
-        lambda: optuna.integration.SkoptSampler(
-            skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
+        lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0, use_separable_cma=True),
+        pytest.param(
+            lambda: optuna.integration.SkoptSampler(
+                skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
+            ),
+            marks=pytest.mark.integration,
         ),
-        lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
+        pytest.param(
+            lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
+            marks=pytest.mark.integration,
+        ),
     ],
 )
 parametrize_multi_objective_sampler = pytest.mark.parametrize(
@@ -67,21 +84,47 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
     [
         optuna.samplers.NSGAIISampler,
         lambda: optuna.samplers.TPESampler(n_startup_trials=0),
-        lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
+        pytest.param(
+            lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
+            marks=pytest.mark.integration,
+        ),
     ],
 )
-sampler_class_with_seed: List[Callable] = [
-    lambda seed: optuna.samplers.RandomSampler(seed=seed),
-    lambda seed: optuna.samplers.TPESampler(seed=seed),
-    lambda seed: optuna.samplers.TPESampler(multivariate=True, seed=seed),
-    lambda seed: optuna.samplers.CmaEsSampler(seed=seed),
-    lambda seed: optuna.integration.SkoptSampler(seed=seed),
-    lambda seed: optuna.integration.PyCmaSampler(seed=seed),
-    lambda seed: optuna.samplers.NSGAIISampler(seed=seed),
-    lambda seed: optuna.samplers.QMCSampler(seed=seed),
-    lambda seed: optuna.integration.BoTorchSampler(seed=seed),
-]
-parametrize_sampler_with_seed = pytest.mark.parametrize("sampler_class", sampler_class_with_seed)
+sampler_class_with_seed: Dict[str, Tuple[Callable[[int], BaseSampler], bool]] = {
+    "RandomSampler": (lambda seed: optuna.samplers.RandomSampler(seed=seed), False),
+    "TPESampler": (lambda seed: optuna.samplers.TPESampler(seed=seed), False),
+    "multivariate TPESampler": (
+        lambda seed: optuna.samplers.TPESampler(multivariate=True, seed=seed),
+        False,
+    ),
+    "CmaEsSampler": (lambda seed: optuna.samplers.CmaEsSampler(seed=seed), False),
+    "separable CmaEsSampler": (
+        lambda seed: optuna.samplers.CmaEsSampler(seed=seed, use_separable_cma=True),
+        False,
+    ),
+    "SkoptSampler": (lambda seed: optuna.integration.SkoptSampler(seed=seed), True),
+    "PyCmaSampler": (lambda seed: optuna.integration.PyCmaSampler(seed=seed), True),
+    "NSGAIISampler": (lambda seed: optuna.samplers.NSGAIISampler(seed=seed), False),
+    "QMCSampler": (lambda seed: optuna.samplers.QMCSampler(seed=seed), False),
+    "BoTorchSampler": (lambda seed: optuna.integration.BoTorchSampler(seed=seed), True),
+}
+param_sampler_with_seed = []
+param_sampler_name_with_seed = []
+for sampler_name, (sampler_class, integration_flag) in sampler_class_with_seed.items():
+    if integration_flag:
+        param_sampler_with_seed.append(
+            pytest.param(sampler_class, id=sampler_name, marks=pytest.mark.integration)
+        )
+        param_sampler_name_with_seed.append(
+            pytest.param(sampler_name, marks=pytest.mark.integration)
+        )
+    else:
+        param_sampler_with_seed.append(pytest.param(sampler_class, id=sampler_name))
+        param_sampler_name_with_seed.append(pytest.param(sampler_name))
+parametrize_sampler_with_seed = pytest.mark.parametrize("sampler_class", param_sampler_with_seed)
+parametrize_sampler_name_with_seed = pytest.mark.parametrize(
+    "sampler_name", param_sampler_name_with_seed
+)
 
 
 @pytest.mark.parametrize(
@@ -91,14 +134,20 @@ parametrize_sampler_with_seed = pytest.mark.parametrize("sampler_class", sampler
         (lambda: optuna.samplers.TPESampler(n_startup_trials=0), True, True),
         (lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True), True, True),
         (lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0), True, True),
-        (
+        pytest.param(
             lambda: optuna.integration.SkoptSampler(
                 skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
             ),
             False,
             True,
+            marks=pytest.mark.integration,
         ),
-        (lambda: optuna.integration.PyCmaSampler(n_startup_trials=0), False, True),
+        pytest.param(
+            lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
+            False,
+            True,
+            marks=pytest.mark.integration,
+        ),
         (optuna.samplers.NSGAIISampler, True, True),
         (
             lambda: optuna.samplers.PartialFixedSampler(
@@ -109,13 +158,13 @@ parametrize_sampler_with_seed = pytest.mark.parametrize("sampler_class", sampler
         ),
         (lambda: optuna.samplers.GridSampler(search_space={"x": [0]}), True, False),
         (lambda: optuna.samplers.QMCSampler(), False, True),
-    ]
-    # TODO(nzw0301): Remove version constraints if BoTorch supports Python 3.10.
-    + (
-        []
-        if sys.version_info >= (3, 10, 0)
-        else [(lambda: optuna.integration.BoTorchSampler(n_startup_trials=0), False, True)]
-    ),
+        pytest.param(
+            lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
+            False,
+            True,
+            marks=pytest.mark.integration,
+        ),
+    ],
 )
 def test_sampler_reseed_rng(
     sampler_class: Callable[[], BaseSampler],
@@ -190,10 +239,16 @@ def parametrize_suggest_method(name: str) -> MarkDecorator:
     "sampler_class",
     [
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
-        lambda: optuna.integration.SkoptSampler(
-            skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
+        pytest.param(
+            lambda: optuna.integration.SkoptSampler(
+                skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
+            ),
+            marks=pytest.mark.integration,
         ),
-        lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
+        pytest.param(
+            lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
+            marks=pytest.mark.integration,
+        ),
     ],
 )
 def test_raise_error_for_samplers_during_multi_objectives(
@@ -919,6 +974,7 @@ def test_dynamic_range_objective(
 
 # We add tests for constant objective functions to ensure the reproducibility of sorting.
 @parametrize_sampler_with_seed
+@pytest.mark.slow
 @pytest.mark.parametrize("objective_func", [lambda *args: sum(args), lambda *args: 0.0])
 def test_reproducible(sampler_class: Callable[[int], BaseSampler], objective_func: Any) -> None:
     def objective(trial: Trial) -> float:
@@ -946,6 +1002,7 @@ def test_reproducible(sampler_class: Callable[[int], BaseSampler], objective_fun
     )
 
 
+@pytest.mark.slow
 @parametrize_sampler_with_seed
 def test_reseed_rng_change_sampling(sampler_class: Callable[[int], BaseSampler]) -> None:
     def objective(trial: Trial) -> float:
@@ -974,7 +1031,10 @@ def test_reseed_rng_change_sampling(sampler_class: Callable[[int], BaseSampler])
 # This function is used only in test_reproducible_in_other_process, but declared at top-level
 # because local function cannot be pickled, which occurs within multiprocessing.
 def run_optimize(
-    k: int, sampler_class_index: int, sequence_dict: DictProxy, hash_dict: DictProxy
+    k: int,
+    sampler_name: str,
+    sequence_dict: DictProxy,
+    hash_dict: DictProxy,
 ) -> None:
     def objective(trial: Trial) -> float:
         a = trial.suggest_float("a", 1, 9)
@@ -987,7 +1047,7 @@ def run_optimize(
         return a + b + c + d + e + f + g
 
     hash_dict[k] = hash("nondeterministic hash")
-    sampler = sampler_class_with_seed[sampler_class_index](1)
+    sampler = sampler_class_with_seed[sampler_name][0](1)
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=15)
     sequence_dict[k] = list(study.trials[-1].params.values())
@@ -1010,8 +1070,9 @@ def unset_seed_in_test(request: SubRequest) -> None:
     request.addfinalizer(restore_seed)
 
 
-@pytest.mark.parametrize("sampler_class_index", range(len(sampler_class_with_seed)))
-def test_reproducible_in_other_process(sampler_class_index: int, unset_seed_in_test: None) -> None:
+@pytest.mark.slow
+@parametrize_sampler_name_with_seed
+def test_reproducible_in_other_process(sampler_name: str, unset_seed_in_test: None) -> None:
     # This test should be tested without `PYTHONHASHSEED`. However, some tool such as tox
     # set the environmental variable "PYTHONHASHSEED" by default.
     # To do so, this test calls a finalizer: `unset_seed_in_test`.
@@ -1025,7 +1086,7 @@ def test_reproducible_in_other_process(sampler_class_index: int, unset_seed_in_t
     hash_dict: DictProxy = manager.dict()
     for i in range(3):
         p = multiprocessing.Process(
-            target=run_optimize, args=(i, sampler_class_index, sequence_dict, hash_dict)
+            target=run_optimize, args=(i, sampler_name, sequence_dict, hash_dict)
         )
         p.start()
         p.join()

@@ -52,15 +52,10 @@ jobs:
         optuna --version
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
-        # Required for samplers_tests/test_samplers.py.
-        # TODO(hvy): Fix samplers_tests/test_samplers.py to not require optional dependencies and remove these installs.
-        pip install scikit-optimize
-        pip install cma
-        pip install botorch torch==1.11.0
 
     - name: Tests
       run: |
-        pytest tests --ignore tests/integration_tests
+        pytest tests -m "not integration"
 
   tests-integration-mac:
     runs-on: macos-latest
@@ -108,17 +103,7 @@ jobs:
 
     - name: Tests
       run: |
-        # 'pytest tests/integration_tests' causes segmentation fault at the end of
-        # tests/integration_tests/test_lightgbm.py as shown in
-        # https://github.com/optuna/optuna/issues/2695. It can be completed if we
-        # execute tests individually.
-        # TODO(nzw0301): Remove the skip of lightning when resolving
-        # https://github.com/optuna/optuna/issues/3418.
-        for file in `find tests/integration_tests -name 'test_*.py' \
-          ! -name '*test_pytorch_lightning.py' -print`;
-        do
-          pytest $file;
-        done
+        pytest tests -m "integration" --ignore tests/integration_tests/test_pytorch_lightning.py
 
       env:
         OMP_NUM_THREADS: 1

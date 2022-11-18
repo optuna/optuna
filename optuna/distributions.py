@@ -24,7 +24,7 @@ _float_distribution_deprecated_msg = (
 _int_distribution_deprecated_msg = "Use :class:`~optuna.distributions.IntDistribution` instead."
 
 
-class BaseDistribution(object, metaclass=abc.ABCMeta):
+class BaseDistribution(abc.ABC):
     """Base class for distributions.
 
     Note that distribution classes are not supposed to be called by library users.
