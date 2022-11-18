@@ -321,7 +321,7 @@ def _create_trials() -> List[FrozenTrial]:
         ({"with_margin": False, "use_separable_cma": True}, "sepcma:"),
     ],
 )
-def test_sampler_attr_key(options: Dict[str, bool], key: str):
+def test_sampler_attr_key(options: Dict[str, bool], key: str) -> None:
     # Test sampler attr_key propery
     sampler = optuna.samplers.CmaEsSampler(
         with_margin=options["with_margin"], use_separable_cma=options["use_separable_cma"]
