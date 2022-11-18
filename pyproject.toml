@@ -30,11 +30,8 @@ classifiers = [
 requires-python = ">=3.7"
 dependencies = [
   "alembic>=1.5.0",
-  "cliff",
   "cmaes>=0.8.2",
   "colorlog",
-  # TODO(HideakiImamura): remove this after the fix by `cliff` or `stevedore`
-  "importlib-metadata<5.0.0",
   "numpy",
   "packaging>=20.0",
   "scipy>=1.7.0",
@@ -135,19 +132,6 @@ bugtracker = "https://github.com/optuna/optuna/issues"
 
 [project.scripts]
 optuna = "optuna.cli:main"
-
-[project.entry-points."optuna.command"]
-create-study = "optuna.cli:_CreateStudy"
-delete-study = "optuna.cli:_DeleteStudy"
-studies = "optuna.cli:_Studies"
-trials = "optuna.cli:_Trials"
-best-trial = "optuna.cli:_BestTrial"
-best-trials = "optuna.cli:_BestTrials"
-ask = "optuna.cli:_Ask"
-tell = "optuna.cli:_Tell"
-"study optimize" = "optuna.cli:_StudyOptimize"
-"study set-user-attr" = "optuna.cli:_StudySetUserAttribute"
-"storage upgrade" = "optuna.cli:_StorageUpgrade"
 
 [tool.setuptools.packages.find]
 exclude = ["tests", "tests.*", "benchmarks"]
