@@ -25,6 +25,8 @@ def get_long_description() -> str:
 
 def get_install_requires() -> List[str]:
 
+    # When you update a lower bound of a dependency,
+    # please update `test-with-lower` in `.github/workflows/tests.yml` as well.
     requirements = [
         "alembic>=1.5.0",
         "cmaes>=0.9.0",
@@ -70,7 +72,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mlflow<2.0.1",
             "pandas",
             "pillow",
-            "plotly>=4.0.0",  # optuna/visualization.
+            "plotly>=4.9.0",  # optuna/visualization.
             "scikit-learn",
             "scikit-optimize",
             "sphinx",
@@ -115,7 +117,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         "optional": [
             "matplotlib!=3.6.0",  # optuna/visualization/matplotlib
             "pandas",  # optuna/study.py
-            "plotly>=4.0.0",  # optuna/visualization.
+            "plotly>=4.9.0",  # optuna/visualization.
             "redis",  # optuna/storages/redis.py.
             "scikit-learn>=0.24.2",
             # optuna/visualization/param_importances.py.
