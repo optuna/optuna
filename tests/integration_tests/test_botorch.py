@@ -86,13 +86,15 @@ def test_botorch_candidates_func() -> None:
 
 def test_botorch_qnehvi_candidates_func() -> None:
     # This test is needed because qnehvi_candidates_func is never chosed as a default.
-    # The other funcs can be chosed as a default and hence covered by test_botorch_candidates_func_none.
+    # The other funcs can be chosed as a default and hence
+    # covered by test_botorch_candidates_func_none.
 
     n_trials = 3
     n_startup_trials = 1
 
     sampler = BoTorchSampler(
-        candidates_func=qnehvi_candidates_func, n_startup_trials=n_startup_trials
+        candidates_func=integration.botorch.qnehvi_candidates_func,
+        n_startup_trials=n_startup_trials,
     )
 
     study = optuna.create_study(direction="minimize", sampler=sampler)
