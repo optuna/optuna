@@ -950,7 +950,7 @@ def _add_common_arguments(parser: ArgumentParser) -> ArgumentParser:
 
 def _add_commands(
     main_parser: ArgumentParser, parent_parser: ArgumentParser
-) -> Tuple[ArgumentParser, Dict[str, ArgumentParser]]:
+) -> Dict[str, ArgumentParser]:
     subparsers = main_parser.add_subparsers()
     command_name_to_subparser = {}
 
@@ -969,7 +969,7 @@ def _add_commands(
     subparsers.add_parser("help", help="Show help message and exit.").set_defaults(
         handler=_print_help
     )
-    return main_parser, command_name_to_subparser
+    return command_name_to_subparser
 
 
 def _get_parser(description: str = "") -> Tuple[ArgumentParser, Dict[str, ArgumentParser]]:
@@ -982,11 +982,11 @@ def _get_parser(description: str = "") -> Tuple[ArgumentParser, Dict[str, Argume
     main_parser.add_argument(
         "--version", action="version", version="{0} {1}".format("optuna", optuna.__version__)
     )
-    main_parser, command_name_to_subparser = _add_commands(main_parser, parent_parser)
+    command_name_to_subparser = _add_commands(main_parser, parent_parser)
     return main_parser, command_name_to_subparser
 
 
-def _preprocess_argv(argv: List[str]) -> Tuple[List[str], Tuple[str, List[str]]]:
+def _preprocess_argv(argv: List[str]) -> List[str]:
     # Some preprocess is necessary for argv because some subcommand includes space
     # (e.g. optuna study optimize, optuna storage upgrade, ...)
     argv = argv[1:] if len(argv) > 1 else ["help"]
@@ -1054,12 +1054,12 @@ def _set_log_file(args: Namespace) -> None:
 
 
 def main() -> int:
-    parser, command_name_to_subparser = _get_parser()
+    main_parser, command_name_to_subparser = _get_parser()
 
     argv = sys.argv
     preprocessed_argv = _preprocess_argv(argv)
     command_name = preprocessed_argv[0]
-    args = parser.parse_args(preprocessed_argv)
+    args = main_parser.parse_args(preprocessed_argv)
 
     _set_verbosity(args)
     _set_log_file(args)
@@ -1079,5 +1079,5 @@ def main() -> int:
         # without any subcommand.
         argv_str = " ".join(argv[1:])
         logger.error(f"'{argv_str}' is not an optuna command. see 'optuna --help'")
-        parser.print_help()
+        main_parser.print_help()
         return 1
