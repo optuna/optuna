@@ -49,7 +49,7 @@ benchmark = [
   "scikit-optimize",
   "virtualenv"
 ]
-"checking" = [
+checking = [
     "black",
     "blackdoc",
     "hacking",
