@@ -28,10 +28,7 @@ from optuna.trial import TrialState
 
 with try_import() as _imports:
     from botorch.acquisition.monte_carlo import qExpectedImprovement
-    from botorch.acquisition.multi_objective.monte_carlo import qExpectedHypervolumeImprovement
-    from botorch.acquisition.multi_objective.monte_carlo import (  # NOQA
-        qNoisyExpectedHypervolumeImprovement,  # NOQA
-    )  # NOQA
+    from botorch.acquisition.multi_objective import monte_carlo
     from botorch.acquisition.multi_objective.objective import IdentityMCMultiOutputObjective
     from botorch.acquisition.objective import ConstrainedMCObjective
     from botorch.acquisition.objective import GenericMCObjective
@@ -215,7 +212,7 @@ def qehvi_candidates_func(
 
     ref_point_list = ref_point.tolist()
 
-    acqf = qExpectedHypervolumeImprovement(
+    acqf = monte_carlo.qExpectedHypervolumeImprovement(
         model=model,
         ref_point=ref_point_list,
         partitioning=partitioning,
@@ -302,7 +299,7 @@ def qnehvi_candidates_func(
 
     # prune_baseline=True is generally recommended by the documentation of BoTorch.
     # cf. https://botorch.org/api/acquisition.html (accessed on 2022/11/18)
-    acqf = qNoisyExpectedHypervolumeImprovement(
+    acqf = monte_carlo.qNoisyExpectedHypervolumeImprovement(
         model=model,
         ref_point=ref_point_list,
         X_baseline=train_x,
