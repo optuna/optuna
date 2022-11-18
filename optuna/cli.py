@@ -229,8 +229,7 @@ class _BaseCommand:
 
         Args:
             parser:
-                `ArgumentParser` object to add arguments for the command by
-                `add_argument` method.
+                `ArgumentParser` object to add arguments
         """
         pass
 
