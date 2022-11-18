@@ -162,7 +162,7 @@ class MultiObjectiveTrial:
 
         self._trial.set_user_attr(key, value)
 
-    def _set_system_attr(self, key: str, value: Any) -> None:
+    def set_system_attr(self, key: str, value: Any) -> None:
         """Set system attributes to the trial.
 
         Please refer to the documentation of :func:`optuna.trial.Trial._set_system_attr`
