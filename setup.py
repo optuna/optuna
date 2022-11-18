@@ -27,11 +27,8 @@ def get_install_requires() -> List[str]:
 
     requirements = [
         "alembic>=1.5.0",
-        "cliff",
         "cmaes>=0.9.0",
         "colorlog",
-        # TODO(HideakiImamura): remove this after the fix by `cliff` or `stevedore`
-        "importlib-metadata<5.0.0",
         "numpy",
         "packaging>=20.0",
         "scipy>=1.7.0",
@@ -162,19 +159,6 @@ setup(
     extras_require=get_extras_require(),
     entry_points={
         "console_scripts": ["optuna = optuna.cli:main"],
-        "optuna.command": [
-            "create-study = optuna.cli:_CreateStudy",
-            "delete-study = optuna.cli:_DeleteStudy",
-            "study set-user-attr = optuna.cli:_StudySetUserAttribute",
-            "studies = optuna.cli:_Studies",
-            "trials = optuna.cli:_Trials",
-            "best-trial = optuna.cli:_BestTrial",
-            "best-trials = optuna.cli:_BestTrials",
-            "study optimize = optuna.cli:_StudyOptimize",
-            "storage upgrade = optuna.cli:_StorageUpgrade",
-            "ask = optuna.cli:_Ask",
-            "tell = optuna.cli:_Tell",
-        ],
     },
     classifiers=[
         "Development Status :: 5 - Production/Stable",
