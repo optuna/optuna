@@ -300,7 +300,7 @@ def test_study_set_and_get_system_attrs(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
 
-        study.set_system_attr("system_message", "test")
+        study._set_system_attr("system_message", "test")
         assert study.system_attrs["system_message"] == "test"
 
 
@@ -323,7 +323,7 @@ def test_trial_set_and_get_user_attrs(storage_mode: str) -> None:
 def test_trial_set_and_get_system_attrs(storage_mode: str) -> None:
     def f(trial: Trial) -> float:
 
-        trial.set_system_attr("system_message", "test")
+        trial._set_system_attr("system_message", "test")
         assert trial.system_attrs["system_message"] == "test"
         return 0.0
 
@@ -469,7 +469,7 @@ def test_copy_study(from_storage_mode: str, to_storage_mode: str) -> None:
         to_storage_mode
     ) as to_storage:
         from_study = create_study(storage=from_storage, directions=["maximize", "minimize"])
-        from_study.set_system_attr("foo", "bar")
+        from_study._set_system_attr("foo", "bar")
         from_study.set_user_attr("baz", "qux")
         from_study.optimize(
             lambda t: (t.suggest_float("x0", 0, 1), t.suggest_float("x1", 0, 1)), n_trials=3

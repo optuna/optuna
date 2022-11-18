@@ -75,7 +75,7 @@ class BaseTrial(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_system_attr(self, key: str, value: Any) -> None:
+    def _set_system_attr(self, key: str, value: Any) -> None:
 
         raise NotImplementedError
 

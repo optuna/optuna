@@ -235,11 +235,11 @@ class ChainerMNTrial(BaseTrial):
             self.delegate.set_user_attr(key, value)
         self.comm.mpi_comm.barrier()
 
-    def set_system_attr(self, key: str, value: Any) -> None:
+    def _set_system_attr(self, key: str, value: Any) -> None:
 
         if self.comm.rank == 0:
             assert self.delegate is not None
-            self.delegate.set_system_attr(key, value)
+            self.delegate._set_system_attr(key, value)
         self.comm.mpi_comm.barrier()
 
     @property

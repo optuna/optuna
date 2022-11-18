@@ -165,11 +165,11 @@ class MultiObjectiveTrial:
     def set_system_attr(self, key: str, value: Any) -> None:
         """Set system attributes to the trial.
 
-        Please refer to the documentation of :func:`optuna.trial.Trial.set_system_attr`
+        Please refer to the documentation of :func:`optuna.trial.Trial._set_system_attr`
         for further details.
         """
 
-        self._trial.set_system_attr(key, value)
+        self._trial._set_system_attr(key, value)
 
     @property
     def number(self) -> int:

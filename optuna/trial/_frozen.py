@@ -126,7 +126,7 @@ class FrozenTrial(BaseTrial):
             :func:`optuna.trial.Trial.set_user_attr`.
         system_attrs:
             Dictionary that contains the attributes of the :class:`~optuna.trial.Trial` set with
-            :func:`optuna.trial.Trial.set_system_attr`.
+            :func:`optuna.trial.Trial._set_system_attr`.
         intermediate_values:
             Intermediate objective values set with :func:`optuna.trial.Trial.report`.
     """
@@ -279,7 +279,7 @@ class FrozenTrial(BaseTrial):
 
         self._user_attrs[key] = value
 
-    def set_system_attr(self, key: str, value: Any) -> None:
+    def _set_system_attr(self, key: str, value: Any) -> None:
 
         self._system_attrs[key] = value
 

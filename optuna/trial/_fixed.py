@@ -114,7 +114,7 @@ class FixedTrial(BaseTrial):
 
         self._user_attrs[key] = value
 
-    def set_system_attr(self, key: str, value: Any) -> None:
+    def _set_system_attr(self, key: str, value: Any) -> None:
 
         self._system_attrs[key] = value
 

@@ -557,7 +557,7 @@ class Trial(BaseTrial):
 
         self.storage.set_trial_user_attr(self._trial_id, key, value)
 
-    def set_system_attr(self, key: str, value: Any) -> None:
+    def _set_system_attr(self, key: str, value: Any) -> None:
         """Set system attributes to the trial.
 
         Note that Optuna internally uses this method to save system messages such as failure

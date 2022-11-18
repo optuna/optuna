@@ -253,8 +253,8 @@ def test_system_attrs(storage_mode: str) -> None:
         else:
             trial = TorchDistributedTrial(None)
 
-        trial.set_system_attr("dataset", "mnist")
-        trial.set_system_attr("batch_size", 128)
+        trial._set_system_attr("dataset", "mnist")
+        trial._set_system_attr("batch_size", 128)
 
         assert trial.system_attrs["dataset"] == "mnist"
         assert trial.system_attrs["batch_size"] == 128
@@ -270,7 +270,7 @@ def test_system_attrs_with_exception() -> None:
             trial = TorchDistributedTrial(None)
 
         with pytest.raises(TypeError):
-            trial.set_system_attr("not serializable", torch.Tensor([1, 2]))
+            trial._set_system_attr("not serializable", torch.Tensor([1, 2]))
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
