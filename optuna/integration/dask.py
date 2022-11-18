@@ -38,10 +38,9 @@ def _serialize_frozentrial(trial: FrozenTrial) -> dict:
     data["state"] = data["state"].name
     attrs = [a for a in data.keys() if a.startswith("_")]
     for attr in attrs:
-        key = attr[1:]
-        data[key] = data.pop(attr)
-        if key.endswith("_attrs"):
-            data[key] = dumps(data[key])
+        data[attr[1:]] = data.pop(attr)
+    data["system_attrs"] = dumps(data["system_attrs"]) if data["system_attrs"] else {}
+    data["user_attrs"] = dumps(data["user_attrs"]) if data["user_attrs"] else {}
     data["distributions"] = {k: distribution_to_json(v) for k, v in data["distributions"].items()}
     if data["datetime_start"] is not None:
         data["datetime_start"] = data["datetime_start"].isoformat(timespec="microseconds")
@@ -58,9 +57,8 @@ def _deserialize_frozentrial(data: dict) -> FrozenTrial:
         data["datetime_start"] = datetime.fromisoformat(data["datetime_start"])
     if data["datetime_complete"] is not None:
         data["datetime_complete"] = datetime.fromisoformat(data["datetime_complete"])
-    for key, value in data.items():
-        if key.endswith("_attrs"):
-            data[key] = loads(value)
+    data["system_attrs"] = loads(data["system_attrs"]) if data["system_attrs"] else {}
+    data["user_attrs"] = loads(data["user_attrs"]) if data["user_attrs"] else {}
     return FrozenTrial(**data)
 
 
@@ -69,8 +67,8 @@ def _serialize_frozenstudy(study: FrozenStudy) -> dict:
         "directions": [d.name for d in study._directions],
         "study_id": study._study_id,
         "study_name": study.study_name,
-        "user_attrs": dumps(study.user_attrs),
-        "system_attrs": dumps(study.system_attrs),
+        "user_attrs": dumps(study.user_attrs) if study.user_attrs else {},
+        "system_attrs": dumps(study.system_attrs) if study.system_attrs else {},
     }
     return data
 
@@ -78,9 +76,8 @@ def _serialize_frozenstudy(study: FrozenStudy) -> dict:
 def _deserialize_frozestudy(data: dict) -> FrozenStudy:
     data["directions"] = [StudyDirection[d] for d in data["directions"]]
     data["direction"] = None
-    for key, value in data.items():
-        if key.endswith("_attrs"):
-            data[key] = loads(value)
+    data["system_attrs"] = loads(data["system_attrs"]) if data["system_attrs"] else {}
+    data["user_attrs"] = loads(data["user_attrs"]) if data["user_attrs"] else {}
     return FrozenStudy(**data)
 
 

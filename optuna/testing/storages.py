@@ -16,14 +16,6 @@ import optuna
 from optuna.storages import JournalFileStorage
 
 
-STORAGE_MODES: list[Any] = [
-    "inmemory",
-    "sqlite",
-    "cached_sqlite",
-    "journal",
-    "journal_redis",
-]
-
 try:
     import distributed
 
@@ -31,8 +23,12 @@ try:
 except ImportError:
     _has_distributed = False
 
-
-STORAGE_MODES.append(
+STORAGE_MODES: list[Any] = [
+    "inmemory",
+    "sqlite",
+    "cached_sqlite",
+    "journal",
+    "journal_redis",
     pytest.param(
         "dask",
         marks=[
@@ -45,8 +41,9 @@ STORAGE_MODES.append(
                 reason="distributed doesn't yet support Python 3.11",
             ),
         ],
-    )
-)
+    ),
+]
+
 
 STORAGE_MODES_HEARTBEAT = [
     "sqlite",
