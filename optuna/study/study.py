@@ -1153,7 +1153,7 @@ def create_study(
 
     storage = storages.get_storage(storage)
     try:
-        study_id = storage.create_new_study(study_name)
+        study_id = storage.create_new_study(direction_objects, study_name)
     except exceptions.DuplicatedStudyError:
         if load_if_exists:
             assert study_name is not None
@@ -1170,7 +1170,6 @@ def create_study(
         sampler = samplers.NSGAIISampler()
 
     study_name = storage.get_study_name_from_id(study_id)
-    storage.set_study_directions(study_id, direction_objects)
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
     return study

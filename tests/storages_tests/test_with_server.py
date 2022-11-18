@@ -8,6 +8,7 @@ import pytest
 
 import optuna
 from optuna.storages import BaseStorage
+from optuna.study import StudyDirection
 from optuna.trial import TrialState
 
 
@@ -127,7 +128,7 @@ def test_loaded_trials(storage: BaseStorage) -> None:
 )
 def test_store_infinite_values(input_value: float, expected: float, storage: BaseStorage) -> None:
 
-    study_id = storage.create_new_study()
+    study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
     trial_id = storage.create_new_trial(study_id)
     storage.set_trial_intermediate_value(trial_id, 1, input_value)
     storage.set_trial_state_values(trial_id, state=TrialState.COMPLETE, values=(input_value,))
@@ -137,7 +138,7 @@ def test_store_infinite_values(input_value: float, expected: float, storage: Bas
 
 def test_store_nan_intermediate_values(storage: BaseStorage) -> None:
 
-    study_id = storage.create_new_study()
+    study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
     trial_id = storage.create_new_trial(study_id)
 
     value = float("nan")
@@ -164,7 +165,7 @@ def test_multiprocess(storage: BaseStorage) -> None:
 
 
 def test_pickle_storage(storage: BaseStorage) -> None:
-    study_id = storage.create_new_study()
+    study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
     storage.set_study_system_attr(study_id, "key", "pickle")
 
     restored_storage = pickle.loads(pickle.dumps(storage))

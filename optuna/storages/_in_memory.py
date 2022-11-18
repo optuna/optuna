@@ -51,7 +51,9 @@ class InMemoryStorage(BaseStorage):
         self.__dict__.update(state)
         self._lock = threading.RLock()
 
-    def create_new_study(self, study_name: Optional[str] = None) -> int:
+    def create_new_study(
+        self, directions: Sequence[StudyDirection], study_name: Optional[str] = None
+    ) -> int:
 
         with self._lock:
             study_id = self._max_study_id + 1
@@ -63,10 +65,21 @@ class InMemoryStorage(BaseStorage):
             else:
                 study_uuid = str(uuid.uuid4())
                 study_name = DEFAULT_STUDY_NAME_PREFIX + study_uuid
-            self._studies[study_id] = _StudyInfo(study_name)
+            study = _StudyInfo(study_name)
+            self._studies[study_id] = study
             self._study_name_to_id[study_name] = study_id
 
             _logger.info("A new study created in memory with name: {}".format(study_name))
+
+            if study.directions[0] != StudyDirection.NOT_SET and study.directions != list(
+                directions
+            ):
+                raise ValueError(
+                    "Cannot overwrite study direction from {} to {}.".format(
+                        study.directions, directions
+                    )
+                )
+            study.directions = list(directions)
 
             return study_id
 
@@ -80,22 +93,6 @@ class InMemoryStorage(BaseStorage):
             study_name = self._studies[study_id].name
             del self._study_name_to_id[study_name]
             del self._studies[study_id]
-
-    def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
-
-        with self._lock:
-            self._check_study_id(study_id)
-
-            study = self._studies[study_id]
-            if study.directions[0] != StudyDirection.NOT_SET and study.directions != list(
-                directions
-            ):
-                raise ValueError(
-                    "Cannot overwrite study direction from {} to {}.".format(
-                        study.directions, directions
-                    )
-                )
-            study.directions = list(directions)
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
 

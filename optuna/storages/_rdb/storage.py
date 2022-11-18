@@ -255,7 +255,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         if not self.skip_compatibility_check:
             self._version_manager.check_table_schema_compatibility()
 
-    def create_new_study(self, study_name: Optional[str] = None) -> int:
+    def create_new_study(
+        self, directions: Sequence[StudyDirection], study_name: Optional[str] = None
+    ) -> int:
 
         try:
             with _create_scoped_session(self.scoped_session) as session:
@@ -277,28 +279,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         _logger.info("A new study created in RDB with name: {}".format(study_name))
 
-        return self.get_study_id_from_name(study_name)
-
-    def delete_study(self, study_id: int) -> None:
-
-        with _create_scoped_session(self.scoped_session, True) as session:
-            study = models.StudyModel.find_or_raise_by_id(study_id, session)
-            session.delete(study)
-
-    @staticmethod
-    def _create_unique_study_name(session: "sqlalchemy_orm.Session") -> str:
-
-        while True:
-            study_uuid = str(uuid.uuid4())
-            study_name = DEFAULT_STUDY_NAME_PREFIX + study_uuid
-            study = models.StudyModel.find_by_name(study_name, session)
-            if study is None:
-                break
-
-        return study_name
-
-    # TODO(sano): Prevent simultaneously setting different direction in distributed environments.
-    def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
+        study_id = self.get_study_id_from_name(study_name)
 
         with _create_scoped_session(self.scoped_session) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
@@ -328,6 +309,26 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                     session.add(direction_model)
                 else:
                     direction_model.direction = d
+
+        return study_id
+
+    def delete_study(self, study_id: int) -> None:
+
+        with _create_scoped_session(self.scoped_session, True) as session:
+            study = models.StudyModel.find_or_raise_by_id(study_id, session)
+            session.delete(study)
+
+    @staticmethod
+    def _create_unique_study_name(session: "sqlalchemy_orm.Session") -> str:
+
+        while True:
+            study_uuid = str(uuid.uuid4())
+            study_name = DEFAULT_STUDY_NAME_PREFIX + study_uuid
+            study = models.StudyModel.find_by_name(study_name, session)
+            if study is None:
+                break
+
+        return study_name
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
 

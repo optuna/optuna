@@ -96,13 +96,16 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
         self.__dict__.update(state)
         self._lock = threading.Lock()
 
-    def create_new_study(self, study_name: Optional[str] = None) -> int:
+    def create_new_study(
+        self, directions: Sequence[StudyDirection], study_name: Optional[str] = None
+    ) -> int:
 
-        study_id = self._backend.create_new_study(study_name)
+        study_id = self._backend.create_new_study(directions=directions, study_name=study_name)
         with self._lock:
             study = _StudyInfo()
             study.name = study_name
             self._studies[study_id] = study
+
         return study_id
 
     def delete_study(self, study_id: int) -> None:
@@ -118,23 +121,6 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
                 del self._studies[study_id]
 
         self._backend.delete_study(study_id)
-
-    def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
-
-        with self._lock:
-            if study_id in self._studies:
-                current_directions = self._studies[study_id].directions
-                if directions == current_directions:
-                    return
-                elif (
-                    len(current_directions) == 1
-                    and current_directions[0] == StudyDirection.NOT_SET
-                ):
-                    self._studies[study_id].directions = list(directions)
-                    self._backend.set_study_directions(study_id, directions)
-                    return
-
-        self._backend.set_study_directions(study_id, directions)
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
 
