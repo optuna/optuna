@@ -658,6 +658,7 @@ class Study:
 
         self._storage.set_study_user_attr(self._study_id, key, value)
 
+    @deprecated_func("3.1.0", "6.0.0")
     def set_system_attr(self, key: str, value: Any) -> None:
         """Set a system attribute to the study.
 
