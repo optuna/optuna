@@ -75,9 +75,7 @@ def test_botorch_candidates_func() -> None:
     n_trials = 3
     n_startup_trials = 1
 
-    sampler = BoTorchSampler(
-        candidates_func=candidates_func, n_startup_trials=n_startup_trials
-    )
+    sampler = BoTorchSampler(candidates_func=candidates_func, n_startup_trials=n_startup_trials)
 
     study = optuna.create_study(direction="minimize", sampler=sampler)
     study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=n_trials)
@@ -93,7 +91,9 @@ def test_botorch_qnehvi_candidates_func() -> None:
     n_trials = 3
     n_startup_trials = 1
 
-    sampler = BoTorchSampler(candidates_func=qnehvi_candidates_func, n_startup_trials=n_startup_trials)
+    sampler = BoTorchSampler(
+        candidates_func=qnehvi_candidates_func, n_startup_trials=n_startup_trials
+    )
 
     study = optuna.create_study(direction="minimize", sampler=sampler)
     study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=n_trials)
