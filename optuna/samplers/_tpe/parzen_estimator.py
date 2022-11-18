@@ -13,6 +13,7 @@ from optuna.distributions import BaseDistribution
 
 try:
     from scipy.stats import truncnorm
+    # TODO(amylase): check scipy version. reject scipy < 1.9.2 because truncnorm.logpdf is inaccurate.
 except ImportError:
     from optuna.samplers._tpe import _truncnorm as truncnorm
 
@@ -176,7 +177,7 @@ class _ParzenEstimator:
                 assert sigmas is not None
 
                 if q is None:
-                    log_pdf = stats.truncnorm.logpdf(
+                    log_pdf = truncnorm.logpdf(
                         samples[:, None],
                         (low - mus) / sigmas,
                         (high - mus) / sigmas,
@@ -184,21 +185,11 @@ class _ParzenEstimator:
                         scale=sigmas,
                     )
                 else:
-                    # TODO(nzw0301): Simplify the logic by following
-                    # https://github.com/optuna/optuna/pull/3985#issuecomment-1253637444
-                    # when we can assume scipy 1.9.2 is commonly used, which includes
-                    # accurate logcdf https://github.com/scipy/scipy/pull/17064.
-                    cdf_func = _ParzenEstimator._trunc_normal_cdf
-                    p_accept = cdf_func(high, mus, sigmas, low, high) - cdf_func(
-                        low, mus, sigmas, low, high
-                    )
-
                     upper_bound = np.minimum(samples + q / 2.0, high)
                     lower_bound = np.maximum(samples - q / 2.0, low)
-                    cdf = cdf_func(
-                        upper_bound[:, None], mus[None], sigmas[None], low, high
-                    ) - cdf_func(lower_bound[:, None], mus[None], sigmas[None], low, high)
-                    log_pdf = np.log(cdf + EPS) - np.log(p_accept + EPS)
+                    logupper = truncnorm.logcdf(upper_bound[:, None], (low - mus) / sigmas, (high - mus) / sigmas, mus, sigmas)
+                    loglower = truncnorm.logcdf(lower_bound[:, None], (low - mus) / sigmas, (high - mus) / sigmas, mus, sigmas)
+                    log_pdf = logupper + np.log(-np.expm1(loglower - logupper))
             component_log_pdf += log_pdf
         weighted_log_pdf = component_log_pdf + np.log(self._weights)
         max_ = weighted_log_pdf.max(axis=1)
@@ -471,7 +462,7 @@ class _ParzenEstimator:
         trunc_low = (pre_trunc_low - mu) / sigma
         trunc_high = (pre_trunc_high - mu) / sigma
 
-        return stats.truncnorm.cdf(x, trunc_low, trunc_high, loc=mu, scale=sigma)
+        return truncnorm.cdf(x, trunc_low, trunc_high, loc=mu, scale=sigma)
 
     @staticmethod
     def _sample_from_categorical_dist(

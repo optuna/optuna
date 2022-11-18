@@ -37,3 +37,35 @@ def test_logpdf(a: float, b: float) -> None:
         assert truncnorm_ours.logpdf(x, a, b) == pytest.approx(
             truncnorm_scipy.logpdf(x, a, b), nan_ok=True
         ), f"logpdf(x={x}, a={a}, b={b})"
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 8, 0), reason="SciPy 1.9.2 is not supported in Python 3.7"
+)
+@pytest.mark.parametrize(
+    "a,b",
+    [(-np.inf, np.inf), (-10, +10), (-1, +1), (-1e-3, +1e-3), (10, 100), (-100, -10), (0, 0)],
+)
+def test_logcdf(a: float, b: float) -> None:
+    for x in np.concatenate(
+        [np.linspace(0, 1, num=100), np.array([sys.float_info.min, 1 - sys.float_info.epsilon])]
+    ):
+        assert truncnorm_ours.logcdf(x, a, b) == pytest.approx(
+            truncnorm_scipy.logcdf(x, a, b), nan_ok=True
+        ), f"logcdf(x={x}, a={a}, b={b})"
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 8, 0), reason="SciPy 1.9.2 is not supported in Python 3.7"
+)
+@pytest.mark.parametrize(
+    "a,b",
+    [(-np.inf, np.inf), (-10, +10), (-1, +1), (-1e-3, +1e-3), (10, 100), (-100, -10), (0, 0)],
+)
+def test_cdf(a: float, b: float) -> None:
+    for x in np.concatenate(
+        [np.linspace(0, 1, num=100), np.array([sys.float_info.min, 1 - sys.float_info.epsilon])]
+    ):
+        assert truncnorm_ours.cdf(x, a, b) == pytest.approx(
+            truncnorm_scipy.cdf(x, a, b), nan_ok=True
+        ), f"cdf(x={x}, a={a}, b={b})"
