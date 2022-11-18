@@ -62,7 +62,7 @@ class PyTorchLightningPruningCallback(Callback):
         self.is_ddp_backend = isinstance(trainer._accelerator_connector.strategy, ParallelStrategy)
 
         if self.is_ddp_backend:
-            if version.parse(pl.__version__) < version.parse("1.5.0"):
+            if version.parse(pl.__version__) < version.parse("1.5.0"):  # type: ignore
                 raise ValueError("PyTorch Lightning>=1.5.0 is required in DDP.")
             if not (
                 isinstance(self._trial.study._storage, _CachedStorage)

@@ -1,5 +1,6 @@
 from concurrent.futures import ProcessPoolExecutor
 import os
+import pickle
 from typing import Sequence
 
 import numpy as np
@@ -35,10 +36,7 @@ def get_storage() -> BaseStorage:
 
     storage: BaseStorage
     if storage_mode == "":
-        if storage_url.startswith("redis"):
-            storage = optuna.storages.RedisStorage(url=storage_url)
-        else:
-            storage = optuna.storages.RDBStorage(url=storage_url)
+        storage = optuna.storages.RDBStorage(url=storage_url)
     elif storage_mode == "journal-redis":
         journal_redis_storage = optuna.storages.JournalRedisStorage(storage_url)
         storage = optuna.storages.JournalStorage(journal_redis_storage)
@@ -58,9 +56,9 @@ def storage() -> BaseStorage:
     return storage
 
 
-def run_optimize(study_name: str, n_trials: int) -> None:
+def run_optimize(study_name: str, storage: BaseStorage, n_trials: int) -> None:
     # Create a study
-    study = optuna.load_study(study_name=study_name, storage=get_storage())
+    study = optuna.load_study(study_name=study_name, storage=storage)
     # Run optimization
     study.optimize(objective, n_trials=n_trials)
 
@@ -155,7 +153,7 @@ def test_multiprocess(storage: BaseStorage) -> None:
     study_name = _STUDY_NAME
     optuna.create_study(storage=storage, study_name=study_name)
     with ProcessPoolExecutor(n_workers) as pool:
-        pool.map(run_optimize, *zip(*[[study_name, n_trials]] * n_workers))
+        pool.map(run_optimize, *zip(*[[study_name, storage, n_trials]] * n_workers))
 
     study = optuna.load_study(study_name=study_name, storage=storage)
 
@@ -163,3 +161,14 @@ def test_multiprocess(storage: BaseStorage) -> None:
     assert len(trials) == n_workers * n_trials
 
     _check_trials(trials)
+
+
+def test_pickle_storage(storage: BaseStorage) -> None:
+    study_id = storage.create_new_study()
+    storage.set_study_system_attr(study_id, "key", "pickle")
+
+    restored_storage = pickle.loads(pickle.dumps(storage))
+
+    storage_system_attrs = storage.get_study_system_attrs(study_id)
+    restored_storage_system_attrs = restored_storage.get_study_system_attrs(study_id)
+    assert storage_system_attrs == restored_storage_system_attrs == {"key": "pickle"}

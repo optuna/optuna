@@ -11,7 +11,6 @@ import optuna
 from optuna import Study
 from optuna._callbacks import RetryFailedTrialCallback
 from optuna.storages import RDBStorage
-from optuna.storages import RedisStorage
 from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.storages._heartbeat import is_heartbeat_enabled
 from optuna.testing.storages import STORAGE_MODES_HEARTBEAT
@@ -195,9 +194,9 @@ def test_retry_failed_trial_callback_intermediate(
             assert study.trials[0].intermediate_values == study.trials[1].intermediate_values
 
 
-@pytest.mark.parametrize("storage_mode", ["sqlite", "redis"])
 @pytest.mark.parametrize("grace_period", [None, 2])
-def test_fail_stale_trials(storage_mode: str, grace_period: Optional[int]) -> None:
+def test_fail_stale_trials(grace_period: Optional[int]) -> None:
+    storage_mode = "sqlite"
     heartbeat_interval = 1
     _grace_period = (heartbeat_interval * 2) if grace_period is None else grace_period
 
@@ -216,7 +215,7 @@ def test_fail_stale_trials(storage_mode: str, grace_period: Optional[int]) -> No
         assert study.trials[0].state is TrialState.RUNNING
 
     with StorageSupplier(storage_mode) as storage:
-        assert isinstance(storage, (RDBStorage, RedisStorage))
+        assert isinstance(storage, RDBStorage)
         storage.heartbeat_interval = heartbeat_interval
         storage.grace_period = grace_period
         storage.failed_trial_callback = failed_trial_callback
@@ -238,13 +237,13 @@ def test_fail_stale_trials(storage_mode: str, grace_period: Optional[int]) -> No
         check_change_trial_state_to_fail(study)
 
 
-@pytest.mark.parametrize("storage_mode", ["sqlite", "redis"])
-def test_get_stale_trial_ids(storage_mode: str) -> None:
+def test_get_stale_trial_ids() -> None:
+    storage_mode = "sqlite"
     heartbeat_interval = 1
     grace_period = 2
 
     with StorageSupplier(storage_mode) as storage:
-        assert isinstance(storage, (RDBStorage, RedisStorage))
+        assert isinstance(storage, RDBStorage)
         storage.heartbeat_interval = heartbeat_interval
         storage.grace_period = grace_period
         study = optuna.create_study(storage=storage)

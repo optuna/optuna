@@ -3,9 +3,11 @@ import time
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Optional
 
 from optuna._experimental import experimental_class
 from optuna._imports import try_import
+from optuna.storages._journal.base import BaseJournalLogSnapshot
 from optuna.storages._journal.base import BaseJournalLogStorage
 
 
@@ -14,7 +16,7 @@ with try_import() as _imports:
 
 
 @experimental_class("3.1.0")
-class JournalRedisStorage(BaseJournalLogStorage):
+class JournalRedisStorage(BaseJournalLogStorage, BaseJournalLogSnapshot):
     """Redis storage class for Journal log backend.
 
     Args:
@@ -41,6 +43,15 @@ class JournalRedisStorage(BaseJournalLogStorage):
         self._redis = redis.Redis.from_url(url)
         self._use_cluster = use_cluster
         self._prefix = prefix
+
+    def __getstate__(self) -> Dict[Any, Any]:
+        state = self.__dict__.copy()
+        del state["_redis"]
+        return state
+
+    def __setstate__(self, state: Dict[Any, Any]) -> None:
+        self.__dict__.update(state)
+        self._redis = redis.Redis.from_url(self._url)
 
     def read_logs(self, log_number_from: int) -> List[Dict[str, Any]]:
 
@@ -81,6 +92,13 @@ class JournalRedisStorage(BaseJournalLogStorage):
             else:
                 log_number = self._redis.incr(f"{self._prefix}:log_number", 1)
                 self._redis.set(self._key_log_id(log_number), json.dumps(log))
+
+    def save_snapshot(self, snapshot: bytes) -> None:
+        self._redis.set(f"{self._prefix}:snapshot", snapshot)
+
+    def load_snapshot(self) -> Optional[bytes]:
+        snapshot_bytes = self._redis.get(f"{self._prefix}:snapshot")
+        return snapshot_bytes
 
     def _key_log_id(self, log_number: int) -> str:
         return f"{self._prefix}:log:{log_number}"

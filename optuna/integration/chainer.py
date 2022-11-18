@@ -64,12 +64,14 @@ class ChainerPruningExtension(Extension):
             )
 
     @staticmethod
-    def _get_float_value(observation_value: Union[float, "chainer.Variable"]) -> float:
+    def _get_float_value(
+        observation_value: Union[float, "chainer.Variable"]  # type: ignore
+    ) -> float:
 
         _imports.check()
 
         try:
-            if isinstance(observation_value, chainer.Variable):
+            if isinstance(observation_value, chainer.Variable):  # type: ignore
                 return float(observation_value.data)  # type: ignore
             else:
                 return float(observation_value)
@@ -79,11 +81,11 @@ class ChainerPruningExtension(Extension):
                 "{} cannot be cast to float.".format(type(observation_value))
             ) from None
 
-    def _observation_exists(self, trainer: "chainer.training.Trainer") -> bool:
+    def _observation_exists(self, trainer: "chainer.training.Trainer") -> bool:  # type: ignore
 
         return self._pruner_trigger(trainer) and self._observation_key in trainer.observation
 
-    def __call__(self, trainer: "chainer.training.Trainer") -> None:
+    def __call__(self, trainer: "chainer.training.Trainer") -> None:  # type: ignore
 
         if not self._observation_exists(trainer):
             return

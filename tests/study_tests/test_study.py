@@ -238,7 +238,14 @@ def test_optimize_with_catch(storage_mode: str) -> None:
         assert all(trial.state == TrialState.FAIL for trial in study.trials)
 
 
-@pytest.mark.parametrize("catch", [[], [Exception], None, 1])
+@pytest.mark.parametrize("catch", [ValueError, (ValueError,), [ValueError], {ValueError}])
+def test_optimize_with_catch_valid_type(catch: Any) -> None:
+
+    study = create_study()
+    study.optimize(fail_objective, n_trials=20, catch=catch)
+
+
+@pytest.mark.parametrize("catch", [None, 1])
 def test_optimize_with_catch_invalid_type(catch: Any) -> None:
 
     study = create_study()
