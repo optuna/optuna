@@ -104,7 +104,7 @@ def test_system_attrs() -> None:
     )
 
     def objective(trial: optuna.multi_objective.trial.MultiObjectiveTrial) -> List[float]:
-        trial.set_system_attr("foo", "bar")
+        trial._set_system_attr("foo", "bar")
         assert trial.system_attrs == {"foo": "bar"}
         return [0, 0, 0]
 
