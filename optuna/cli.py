@@ -954,7 +954,7 @@ def _add_commands(
     subparsers = main_parser.add_subparsers()
     command_name_to_subparser = {}
 
-    for (command_name, command_type) in _COMMANDS.items():
+    for command_name, command_type in _COMMANDS.items():
         command = command_type()
         subparser = subparsers.add_parser(
             command_name, parents=[parent_parser], help=inspect.getdoc(command_type)
