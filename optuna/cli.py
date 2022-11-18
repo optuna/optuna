@@ -977,21 +977,13 @@ def _preprocess_argv(argv: List[str]) -> List[str]:
     # (e.g. optuna study optimize, optuna storage upgrade, ...).
     argv = argv[1:] if len(argv) > 1 else ["help"]
 
-    command_candidate_to_options: Dict[str, List[str]] = {}
     for i in range(len(argv)):
-        command_candidate = argv[i]
-        options = argv[:i] + argv[i + 1 :]
-        command_candidate_to_options[command_candidate] = options
+        for j in range(i, i + 2):  # Commands consist of one or two words.
+            command_candidate = " ".join(argv[i : j + 1])
+            if command_candidate in _COMMANDS:
+                options = argv[:i] + argv[j + 1 :]
+                return [command_candidate] + options
 
-    # Some commands consist of two words.
-    for i in range(len(argv) - 1):
-        command_candidate = " ".join(argv[i : i + 2])
-        options = argv[:i] + argv[i + 2 :]
-        command_candidate_to_options[command_candidate] = options
-
-    for command_name in _COMMANDS:
-        if command_name in command_candidate_to_options:
-            return [command_name] + command_candidate_to_options[command_name]
     # No subcommand is found.
     return argv
 
