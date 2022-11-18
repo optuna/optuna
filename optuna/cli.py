@@ -1046,6 +1046,8 @@ def main() -> int:
             logger.exception(e)
         else:
             logger.error(e)
+            # This code is required to show help for each subcommand.
+            # NOTE: the first element of `preprocessed_argv` is command name.
             command_name_to_subparser[preprocessed_argv[0]].print_help()
         return 1
     except AttributeError:
