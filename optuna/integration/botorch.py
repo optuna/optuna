@@ -262,8 +262,8 @@ def qnehvi_candidates_func(
     if train_con is not None:
         train_y = torch.cat([train_obj, train_con], dim=-1)
 
-        is_feas = (train_con <= 0).all(dim=-1)
-        train_obj_feas = train_obj[is_feas]
+        # is_feas = (train_con <= 0).all(dim=-1)
+        # train_obj_feas = train_obj[is_feas]
 
         constraints = []
         n_constraints = train_con.size(1)
