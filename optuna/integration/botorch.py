@@ -30,8 +30,8 @@ with try_import() as _imports:
     from botorch.acquisition.monte_carlo import qExpectedImprovement
     from botorch.acquisition.multi_objective.monte_carlo import qExpectedHypervolumeImprovement
     from botorch.acquisition.multi_objective.monte_carlo import (  # NOQA
-        qNoisyExpectedHypervolumeImprovement,
-    )
+        qNoisyExpectedHypervolumeImprovement,  # NOQA
+    )  # NOQA
     from botorch.acquisition.multi_objective.objective import IdentityMCMultiOutputObjective
     from botorch.acquisition.objective import ConstrainedMCObjective
     from botorch.acquisition.objective import GenericMCObjective
