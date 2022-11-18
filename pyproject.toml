@@ -61,7 +61,7 @@ checking = [
     "types-setuptools",
     "typing_extensions>=3.10.0.0",
 ]
-"document" = [
+document = [
     "cma",
     "distributed",
     "fvcore",
@@ -82,7 +82,7 @@ checking = [
     "torchaudio==0.11.0",
     "torchvision==0.12.0",
 ]
-"integration" = [
+integration = [
     "allennlp>=2.2.0",
     # TODO(c-bata): Remove cached-path after allennllp supports v1.1.3
     "cached-path<=1.1.2",
@@ -112,7 +112,7 @@ checking = [
     "wandb",
     "xgboost",
 ]
-"optional" = [
+optional = [
     "matplotlib!=3.6.0",  # optuna/visualization/matplotlib
     "pandas",  # optuna/study.py
     "plotly>=4.0.0",  # optuna/visualization.
@@ -120,7 +120,7 @@ checking = [
     "scikit-learn>=0.24.2",
     # optuna/visualization/param_importances.py.
 ]
-"test" = [
+test = [
     "codecov",
     "fakeredis[lua]",
     "kaleido",
