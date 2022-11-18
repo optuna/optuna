@@ -1,5 +1,4 @@
 import os
-import sys
 from typing import Dict
 from typing import List
 
@@ -28,12 +27,11 @@ def get_install_requires() -> List[str]:
 
     requirements = [
         "alembic>=1.5.0",
-        "cmaes>=0.8.2",
+        "cmaes>=0.9.0",
         "colorlog",
         "numpy",
         "packaging>=20.0",
-        # TODO(kstoneriv3): remove this after deprecation of Python 3.6
-        "scipy!=1.4.0" if sys.version[:3] == "3.6" else "scipy>=1.7.0",
+        "scipy>=1.7.0",
         "sqlalchemy>=1.3.0",
         "tqdm",
         "PyYAML",  # Only used in `optuna/cli.py`.
@@ -48,6 +46,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "asv>=0.5.0",
             "botorch",
             "cma",
+            "fakeredis",
             "scikit-optimize",
             "virtualenv",
         ],
@@ -64,10 +63,12 @@ def get_extras_require() -> Dict[str, List[str]]:
         ],
         "document": [
             "cma",
+            "distributed",
             "fvcore",
             "lightgbm",
             "matplotlib!=3.6.0",
-            "mlflow",
+            # TODO(c-bata): Remove the version constraint of mlflow.
+            "mlflow<2.0.1",
             "pandas",
             "pillow",
             "plotly>=4.0.0",  # optuna/visualization.
@@ -78,36 +79,37 @@ def get_extras_require() -> Dict[str, List[str]]:
             "sphinx-gallery",
             "sphinx-plotly-directive",
             "sphinx_rtd_theme",
-            "torch==1.11.0 ; python_version>'3.6'",
-            "torchaudio==0.11.0 ; python_version>'3.6'",
-            "torchvision==0.12.0 ; python_version>'3.6'",
+            "torch==1.11.0",
+            "torchaudio==0.11.0",
+            "torchvision==0.12.0",
         ],
         "integration": [
-            "allennlp>=2.2.0 ; python_version>'3.6'",
+            "allennlp>=2.2.0",
             # TODO(c-bata): Remove cached-path after allennllp supports v1.1.3
-            "cached-path<=1.1.2 ; python_version>'3.6'",
-            "botorch>=0.4.0 ; python_version>'3.6'",
-            "catalyst>=21.3 ; python_version>'3.6'",
+            "cached-path<=1.1.2",
+            "botorch>=0.4.0",
+            "catalyst>=21.3",
             "catboost>=0.26",
             "chainer>=5.0.0",
             "cma",
-            "fastai ; python_version>'3.6'",
+            "distributed",
+            "fastai",
             "lightgbm",
-            "mlflow",
+            "mlflow<2.0.1",
             "mpi4py",
             "mxnet",
             "pandas",
-            "pytorch-ignite ; python_version>'3.6'",
-            "pytorch-lightning>=1.5.0 ; python_version>'3.6'",
+            "pytorch-ignite",
+            "pytorch-lightning>=1.5.0",
             "scikit-learn>=0.24.2",
             "scikit-optimize",
             "shap",
-            "skorch ; python_version>'3.6'",
-            "tensorflow ; python_version>'3.6'",
+            "skorch",
+            "tensorflow",
             "tensorflow-datasets",
-            "torch==1.11.0 ; python_version>'3.6'",
-            "torchaudio==0.11.0 ; python_version>'3.6'",
-            "torchvision==0.12.0 ; python_version>'3.6'",
+            "torch==1.11.0",
+            "torchaudio==0.11.0",
+            "torchvision==0.12.0",
             "wandb",
             "xgboost",
         ],
@@ -121,8 +123,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         ],
         "test": [
             "codecov",
-            "fakeredis[lua]<=1.7.1; python_version<'3.7'",
-            "fakeredis[lua] ; python_version>='3.7'",
+            "fakeredis[lua]",
             "kaleido",
             "pytest",
         ],
@@ -154,7 +155,7 @@ setup(
             "py.typed",
         ]
     },
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     install_requires=get_install_requires(),
     extras_require=get_extras_require(),
     entry_points={
@@ -166,11 +167,11 @@ setup(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3 :: Only",
         "Topic :: Scientific/Engineering",
         "Topic :: Scientific/Engineering :: Mathematics",

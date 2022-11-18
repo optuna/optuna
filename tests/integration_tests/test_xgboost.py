@@ -2,11 +2,17 @@ from collections import OrderedDict
 
 import numpy as np
 import pytest
-import xgboost as xgb
 
 import optuna
+from optuna._imports import try_import
 from optuna.integration.xgboost import XGBoostPruningCallback
 from optuna.testing.pruners import DeterministicPruner
+
+
+with try_import():
+    import xgboost as xgb
+
+pytestmark = pytest.mark.integration
 
 
 def test_xgboost_pruning_callback_call() -> None:

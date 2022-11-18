@@ -4,18 +4,28 @@ import typing
 from unittest.mock import Mock
 from unittest.mock import patch
 
-import chainer
-import chainer.links as L
-from chainer.training import triggers
 import numpy as np
 import pytest
 
 import optuna
+from optuna._imports import try_import
 from optuna.integration.chainer import ChainerPruningExtension
 from optuna.testing.pruners import DeterministicPruner
 
 
-class FixedValueDataset(chainer.dataset.DatasetMixin):
+with try_import() as _imports:
+    import chainer
+    from chainer.dataset import DatasetMixin
+    import chainer.links as L
+    from chainer.training import triggers
+
+if not _imports.is_successful():
+    DatasetMixin = object  # type: ignore # NOQA
+
+pytestmark = pytest.mark.integration
+
+
+class FixedValueDataset(DatasetMixin):
 
     size = 16
 
@@ -119,5 +129,7 @@ def test_observation_exists() -> None:
 def test_get_float_value() -> None:
 
     assert 1.0 == ChainerPruningExtension._get_float_value(1.0)
-    assert 1.0 == ChainerPruningExtension._get_float_value(chainer.Variable(np.array([1.0])))
+    assert 1.0 == ChainerPruningExtension._get_float_value(
+        chainer.Variable(np.array([1.0]))  # type: ignore
+    )
     assert math.isnan(ChainerPruningExtension._get_float_value(float("nan")))

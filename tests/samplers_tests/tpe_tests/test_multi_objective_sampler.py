@@ -452,7 +452,6 @@ def test_calculate_nondomination_rank() -> None:
 def test_calculate_weights_below_for_multi_objective() -> None:
     # No sample.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        {"x": np.array([1.0, 2.0, 3.0], dtype=float)},
         [(0, [0.2, 0.5]), (0, [0.9, 0.4]), (0, [1, 1])],
         np.array([], np.int64),
         None,
@@ -461,7 +460,6 @@ def test_calculate_weights_below_for_multi_objective() -> None:
 
     # One sample.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        {"x": np.array([1.0, 2.0, 3.0], dtype=float)},
         [(0, [0.2, 0.5]), (0, [0.9, 0.4]), (0, [1, 1])],
         np.array([0]),
         None,
@@ -471,7 +469,6 @@ def test_calculate_weights_below_for_multi_objective() -> None:
 
     # Two samples.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        {"x": np.array([1.0, 2.0, 3.0], dtype=float)},
         [(0, [0.2, 0.5]), (0, [0.9, 0.4]), (0, [1, 1])],
         np.array([0, 1]),
         None,
@@ -482,7 +479,6 @@ def test_calculate_weights_below_for_multi_objective() -> None:
 
     # Two equally contributed samples.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        {"x": np.array([1.0, 2.0, 3.0], dtype=float)},
         [(0, [0.2, 0.8]), (0, [0.8, 0.2]), (0, [1, 1])],
         np.array([0, 1]),
         None,
@@ -493,7 +489,6 @@ def test_calculate_weights_below_for_multi_objective() -> None:
 
     # Duplicated samples.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        {"x": np.array([1.0, 2.0, 3.0], dtype=float)},
         [(0, [0.2, 0.8]), (0, [0.2, 0.8]), (0, [1, 1])],
         np.array([0, 1]),
         None,
@@ -504,7 +499,6 @@ def test_calculate_weights_below_for_multi_objective() -> None:
 
     # Three samples.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        {"x": np.array([1.0, 2.0, 3.0, 4.0], dtype=float)},
         [(0, [0.3, 0.3]), (0, [0.2, 0.8]), (0, [0.8, 0.2]), (0, [1, 1])],
         np.array([0, 1, 2]),
         None,
@@ -517,7 +511,6 @@ def test_calculate_weights_below_for_multi_objective() -> None:
 
     # Zero/negative objective values.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        {"x": np.array([1.0, 2.0, 3.0, 4.0], dtype=float)},
         [(0, [-0.3, -0.3]), (0, [0.0, -0.8]), (0, [-0.8, 0.0]), (0, [1, 1])],
         np.array([0, 1, 2]),
         None,
@@ -530,7 +523,6 @@ def test_calculate_weights_below_for_multi_objective() -> None:
 
     # +/-inf objective values.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        {"x": np.array([1.0, 2.0, 3.0, 4.0], dtype=float)},
         [
             (0, [-float("inf"), -float("inf")]),
             (0, [0.0, -float("inf")]),
@@ -543,20 +535,8 @@ def test_calculate_weights_below_for_multi_objective() -> None:
     assert len(weights_below) == 3
     assert all([np.isnan(w) for w in weights_below])
 
-    # Missing parameter values.
-    weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        {"x": np.array([1.0, None, 3.0, 4.0], dtype=float)},
-        [(0, [-0.3, -0.3]), (0, [0.0, -0.8]), (0, [-0.8, 0.0]), (0, [1, 1])],
-        np.array([0, 1, 2]),
-        None,
-    )
-    assert len(weights_below) == 2
-    assert weights_below[0] > weights_below[1]
-    assert sum(weights_below) > 0
-
     # Three samples with two infeasible trials.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        {"x": np.array([1.0, 2.0, 3.0, 4.0], dtype=float)},
         [(0, [0.3, 0.3]), (0, [0.2, 0.8]), (0, [0.8, 0.2]), (0, [1, 1])],
         np.array([0, 1, 2]),
         [2, 8, 0],

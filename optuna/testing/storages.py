@@ -16,8 +16,6 @@ STORAGE_MODES = [
     "inmemory",
     "sqlite",
     "cached_sqlite",
-    "redis",
-    "cached_redis",
     "journal",
     "journal_redis",
 ]
@@ -25,8 +23,6 @@ STORAGE_MODES = [
 STORAGE_MODES_HEARTBEAT = [
     "sqlite",
     "cached_sqlite",
-    "redis",
-    "cached_redis",
 ]
 
 SQLITE3_TIMEOUT = 300
@@ -45,7 +41,6 @@ class StorageSupplier:
         optuna.storages.InMemoryStorage,
         optuna.storages._CachedStorage,
         optuna.storages.RDBStorage,
-        optuna.storages.RedisStorage,
         optuna.storages.JournalStorage,
     ]:
         if self.storage_specifier == "inmemory":
@@ -67,16 +62,10 @@ class StorageSupplier:
             )
         elif self.storage_specifier == "journal_redis":
             journal_redis_storage = optuna.storages.JournalRedisStorage("redis://localhost")
-            journal_redis_storage._redis = fakeredis.FakeStrictRedis()
-            return optuna.storages.JournalStorage(journal_redis_storage)
-        elif "redis" in self.storage_specifier:
-            redis_storage = optuna.storages.RedisStorage("redis://localhost", **self.extra_args)
-            redis_storage._redis = fakeredis.FakeStrictRedis()
-            return (
-                optuna.storages._CachedStorage(redis_storage)
-                if "cached" in self.storage_specifier
-                else redis_storage
+            journal_redis_storage._redis = self.extra_args.get(
+                "redis", fakeredis.FakeStrictRedis()
             )
+            return optuna.storages.JournalStorage(journal_redis_storage)
         elif "journal" in self.storage_specifier:
             file_storage = JournalFileStorage(tempfile.NamedTemporaryFile().name)
             return optuna.storages.JournalStorage(file_storage)

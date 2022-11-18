@@ -213,9 +213,22 @@ def test_int_internal_representation(value: Any) -> None:
     assert i.to_external_repr(i.to_internal_repr(value)) == expected_value
 
 
-@pytest.mark.parametrize("value", ("foo", (), [], {}, set(), np.ones(2)))
-def test_int_internal_representation_error(value: Any) -> None:
-    i = distributions.IntDistribution(low=1, high=10)
+@pytest.mark.parametrize(
+    "value, kwargs",
+    [
+        ("foo", {}),
+        ((), {}),
+        ([], {}),
+        ({}, {}),
+        (set(), {}),
+        (np.ones(2), {}),
+        (np.nan, {}),
+        (0, dict(log=True)),
+        (-1, dict(log=True)),
+    ],
+)
+def test_int_internal_representation_error(value: Any, kwargs: Dict[str, Any]) -> None:
+    i = distributions.IntDistribution(low=1, high=10, **kwargs)
     with pytest.raises(ValueError):
         i.to_internal_repr(value)
 
@@ -234,9 +247,22 @@ def test_float_internal_representation(value: Any) -> None:
     assert f.to_external_repr(f.to_internal_repr(value)) == expected_value
 
 
-@pytest.mark.parametrize("value", ("foo", (), [], {}, set(), np.ones(2)))
-def test_float_internal_representation_error(value: Any) -> None:
-    f = distributions.FloatDistribution(low=2.0, high=7.0)
+@pytest.mark.parametrize(
+    "value, kwargs",
+    [
+        ("foo", {}),
+        ((), {}),
+        ([], {}),
+        ({}, {}),
+        (set(), {}),
+        (np.ones(2), {}),
+        (np.nan, {}),
+        (0.0, dict(log=True)),
+        (-1.0, dict(log=True)),
+    ],
+)
+def test_float_internal_representation_error(value: Any, kwargs: Dict[str, Any]) -> None:
+    f = distributions.FloatDistribution(low=2.0, high=7.0, **kwargs)
     with pytest.raises(ValueError):
         f.to_internal_repr(value)
 

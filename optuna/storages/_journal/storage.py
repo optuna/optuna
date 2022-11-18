@@ -1,6 +1,7 @@
 import copy
 import datetime
 import enum
+import pickle
 import threading
 from typing import Any
 from typing import Container
@@ -19,6 +20,7 @@ from optuna.distributions import json_to_distribution
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages._journal.base import BaseJournalLogSnapshot
 from optuna.storages._journal.base import BaseJournalLogStorage
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
@@ -29,6 +31,8 @@ from optuna.trial import TrialState
 _logger = optuna.logging.get_logger(__name__)
 
 NOT_FOUND_MSG = "Record does not exist."
+# A heuristic interval number to dump snapshots
+SNAPSHOT_INTERVAL = 100
 
 
 class JournalOperation(enum.IntEnum):
@@ -43,11 +47,6 @@ class JournalOperation(enum.IntEnum):
     SET_TRIAL_INTERMEDIATE_VALUE = 8
     SET_TRIAL_USER_ATTR = 9
     SET_TRIAL_SYSTEM_ATTR = 10
-
-
-def datetime_from_isoformat(datetime_str: str) -> datetime.datetime:
-    # TODO(wattlebirdaz): Use datetime.fromisoformat after dropped Python 3.6 support.
-    return datetime.datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S.%f")
 
 
 @experimental_class("3.1.0")
@@ -93,6 +92,10 @@ class JournalStorage(BaseStorage):
         self._replay_result = JournalStorageReplayResult(self._worker_id_prefix)
 
         with self._thread_lock:
+            if isinstance(self._backend, BaseJournalLogSnapshot):
+                snapshot = self._backend.load_snapshot()
+                if snapshot is not None:
+                    self.restore_replay_result(snapshot)
             self._sync_with_backend()
 
     def __getstate__(self) -> Dict[Any, Any]:
@@ -107,6 +110,22 @@ class JournalStorage(BaseStorage):
         self._worker_id_prefix = str(uuid.uuid4()) + "-"
         self._replay_result = JournalStorageReplayResult(self._worker_id_prefix)
         self._thread_lock = threading.Lock()
+
+    def restore_replay_result(self, snapshot: bytes) -> None:
+        try:
+            r: Optional[JournalStorageReplayResult] = pickle.loads(snapshot)
+        except (pickle.UnpicklingError, KeyError):
+            _logger.warning("Failed to restore `JournalStorageReplayResult`.")
+            return
+        if r is None:
+            return
+        if not isinstance(r, JournalStorageReplayResult):
+            _logger.warning("The restored object is not `JournalStorageReplayResult`.")
+            return
+        r._worker_id_prefix = self._worker_id_prefix
+        r._worker_id_to_owned_trial_id = {}
+        r._last_created_trial_id_by_this_process = -1
+        self._replay_result = r
 
     def _write_log(self, op_code: int, extra_fields: Dict[str, Any]) -> None:
         worker_id = self._replay_result.worker_id
@@ -124,9 +143,20 @@ class JournalStorage(BaseStorage):
             self._sync_with_backend()
 
             for frozen_study in self._replay_result.get_all_studies():
-                if frozen_study.study_name == study_name:
-                    _logger.info("A new study created in Journal with name: {}".format(study_name))
-                    return frozen_study._study_id
+                if frozen_study.study_name != study_name:
+                    continue
+
+                _logger.info("A new study created in Journal with name: {}".format(study_name))
+                study_id = frozen_study._study_id
+
+                # Dump snapshot here.
+                if (
+                    isinstance(self._backend, BaseJournalLogSnapshot)
+                    and study_id != 0
+                    and study_id % SNAPSHOT_INTERVAL == 0
+                ):
+                    self._backend.save_snapshot(pickle.dumps(self._replay_result))
+                return study_id
             assert False, "Should not reach."
 
     def delete_study(self, study_id: int) -> None:
@@ -225,7 +255,16 @@ class JournalStorage(BaseStorage):
         with self._thread_lock:
             self._write_log(JournalOperation.CREATE_TRIAL, log)
             self._sync_with_backend()
-            return self._replay_result._last_created_trial_id_by_this_process
+            trial_id = self._replay_result._last_created_trial_id_by_this_process
+
+        # Dump snapshot here.
+        if (
+            isinstance(self._backend, BaseJournalLogSnapshot)
+            and trial_id != 0
+            and trial_id % SNAPSHOT_INTERVAL == 0
+        ):
+            self._backend.save_snapshot(pickle.dumps(self._replay_result))
+        return trial_id
 
     def set_trial_param(
         self,
@@ -496,11 +535,11 @@ class JournalStorageReplayResult:
         if "params" in log:
             params = {k: distributions[k].to_external_repr(p) for k, p in log["params"].items()}
         if log["datetime_start"] is not None:
-            datetime_start = datetime_from_isoformat(log["datetime_start"])
+            datetime_start = datetime.datetime.fromisoformat(log["datetime_start"])
         else:
             datetime_start = None
         if "datetime_complete" in log:
-            datetime_complete = datetime_from_isoformat(log["datetime_complete"])
+            datetime_complete = datetime.datetime.fromisoformat(log["datetime_complete"])
         else:
             datetime_complete = None
 
@@ -572,11 +611,11 @@ class JournalStorageReplayResult:
 
         trial = copy.copy(self._trials[trial_id])
         if state == TrialState.RUNNING:
-            trial.datetime_start = datetime_from_isoformat(log["datetime_start"])
+            trial.datetime_start = datetime.datetime.fromisoformat(log["datetime_start"])
             if self._is_issued_by_this_worker(log):
                 self._worker_id_to_owned_trial_id[self.worker_id] = trial_id
         if state.is_finished():
-            trial.datetime_complete = datetime_from_isoformat(log["datetime_complete"])
+            trial.datetime_complete = datetime.datetime.fromisoformat(log["datetime_complete"])
         trial.state = state
         if log["values"] is not None:
             trial.values = log["values"]

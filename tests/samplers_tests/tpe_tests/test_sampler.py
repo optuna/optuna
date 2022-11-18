@@ -894,19 +894,6 @@ def test_split_observation_pairs_with_constraints_below_include_infeasible() -> 
     assert list(indices_above) == [3]
 
 
-def test_build_observation_dict() -> None:
-    observation_dict = _tpe.sampler._build_observation_dict(
-        {
-            "x": np.asarray([1.0, 2.0, 3.0, 4.0], dtype=float),
-            "y": np.asarray([10.0, None, 20.0, None], dtype=float),
-        },
-        np.asarray([0, 3]),
-    )
-
-    np.testing.assert_array_equal(observation_dict["x"], np.asarray([1.0, 4.0]))
-    np.testing.assert_array_equal(observation_dict["y"], np.asarray([10.0]))
-
-
 def frozen_trial_factory(
     idx: int,
     dist: optuna.distributions.BaseDistribution = optuna.distributions.FloatDistribution(

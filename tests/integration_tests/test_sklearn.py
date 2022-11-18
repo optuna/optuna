@@ -17,6 +17,9 @@ from optuna import integration
 from optuna.study import create_study
 
 
+pytestmark = pytest.mark.integration
+
+
 def test_is_arraylike() -> None:
 
     assert integration.sklearn._is_arraylike([])

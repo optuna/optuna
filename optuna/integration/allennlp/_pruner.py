@@ -116,7 +116,7 @@ class AllenNLPPruningCallback(TrainerCallback):
     ):
         _imports.check()
 
-        if version.parse(allennlp.__version__) < version.parse("2.0.0"):
+        if version.parse(allennlp.__version__) < version.parse("2.0.0"):  # type: ignore
             raise ImportError(
                 "`AllenNLPPruningCallback` requires AllenNLP>=v2.0.0."
                 "If you want to use a callback with an old version of AllenNLP, "
