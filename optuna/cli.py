@@ -224,7 +224,7 @@ class _BaseCommand:
     def __init__(self) -> None:
         self.logger = optuna.logging.get_logger(__name__)
 
-    def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
+    def add_arguments(self, parser: ArgumentParser) -> None:
         """Add arguments required for each command.
 
         Args:
@@ -235,7 +235,7 @@ class _BaseCommand:
             `ArgumentParser` object which added some arguments.
         """
 
-        return parser
+        pass
 
     def take_action(self, parsed_args: Namespace) -> int:
         """Define action if the command is called.
@@ -255,7 +255,7 @@ class _BaseCommand:
 class _CreateStudy(_BaseCommand):
     """Create a new study."""
 
-    def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "--study-name",
             default=None,
@@ -286,7 +286,6 @@ class _CreateStudy(_BaseCommand):
             ' either "minimize" or "maximize".',
             nargs="+",
         )
-        return parser
 
     def take_action(self, parsed_args: Namespace) -> int:
         storage_url = _check_storage_url(parsed_args.storage)
@@ -305,9 +304,8 @@ class _CreateStudy(_BaseCommand):
 class _DeleteStudy(_BaseCommand):
     """Delete a specified study."""
 
-    def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument("--study-name", default=None, help="The name of the study to delete.")
-        return parser
 
     def take_action(self, parsed_args: Namespace) -> int:
         storage_url = _check_storage_url(parsed_args.storage)
@@ -320,7 +318,7 @@ class _DeleteStudy(_BaseCommand):
 class _StudySetUserAttribute(_BaseCommand):
     """Set a user attribute to a study."""
 
-    def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "--study", default=None, help="This argument is deprecated. Use --study-name instead."
         )
@@ -331,7 +329,6 @@ class _StudySetUserAttribute(_BaseCommand):
         )
         parser.add_argument("--key", "-k", required=True, help="Key of the user attribute.")
         parser.add_argument("--value", required=True, help="Value to be set.")
-        return parser
 
     def take_action(self, parsed_args: Namespace) -> int:
         storage_url = _check_storage_url(parsed_args.storage)
@@ -366,7 +363,7 @@ class _Studies(_BaseCommand):
         ("datetime_start", ""),
     ]
 
-    def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "-f",
             "--format",
@@ -381,7 +378,6 @@ class _Studies(_BaseCommand):
             action="store_true",
             help="Flatten nested columns such as directions.",
         )
-        return parser
 
     def take_action(self, parsed_args: Namespace) -> int:
 
@@ -416,7 +412,7 @@ class _Studies(_BaseCommand):
 class _Trials(_BaseCommand):
     """Show a list of trials."""
 
-    def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "--study-name",
             type=str,
@@ -437,7 +433,6 @@ class _Trials(_BaseCommand):
             action="store_true",
             help="Flatten nested columns such as params and user_attrs.",
         )
-        return parser
 
     def take_action(self, parsed_args: Namespace) -> int:
 
@@ -468,7 +463,7 @@ class _Trials(_BaseCommand):
 class _BestTrial(_BaseCommand):
     """Show the best trial."""
 
-    def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "--study-name",
             type=str,
@@ -489,7 +484,6 @@ class _BestTrial(_BaseCommand):
             action="store_true",
             help="Flatten nested columns such as params and user_attrs.",
         )
-        return parser
 
     def take_action(self, parsed_args: Namespace) -> int:
 
@@ -523,7 +517,7 @@ class _BestTrial(_BaseCommand):
 class _BestTrials(_BaseCommand):
     """Show a list of trials located at the Pareto front."""
 
-    def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "--study-name",
             type=str,
@@ -544,7 +538,6 @@ class _BestTrials(_BaseCommand):
             action="store_true",
             help="Flatten nested columns such as params and user_attrs.",
         )
-        return parser
 
     def take_action(self, parsed_args: Namespace) -> int:
 
@@ -577,7 +570,7 @@ class _BestTrials(_BaseCommand):
 class _StudyOptimize(_BaseCommand):
     """Start optimization of a study. Deprecated since version 2.0.0."""
 
-    def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "--n-trials",
             type=int,
@@ -611,7 +604,6 @@ class _StudyOptimize(_BaseCommand):
             "method",
             help="The method name of the objective function.",
         )
-        return parser
 
     def take_action(self, parsed_args: Namespace) -> int:
 
@@ -694,7 +686,7 @@ class _StorageUpgrade(_BaseCommand):
 class _Ask(_BaseCommand):
     """Create a new trial and suggest parameters."""
 
-    def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument("--study-name", type=str, help="Name of study.")
         parser.add_argument(
             "--direction",
@@ -743,7 +735,6 @@ class _Ask(_BaseCommand):
             action="store_true",
             help="Flatten nested columns such as params.",
         )
-        return parser
 
     def take_action(self, parsed_args: Namespace) -> int:
 
@@ -846,7 +837,7 @@ class _Ask(_BaseCommand):
 class _Tell(_BaseCommand):
     """Finish a trial, which was created by the ask command."""
 
-    def add_arguments(self, parser: ArgumentParser) -> ArgumentParser:
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument("--study-name", type=str, help="Name of study.")
         parser.add_argument("--trial-number", type=int, help="Trial number.")
         parser.add_argument("--values", type=float, nargs="+", help="Objective values.")
@@ -863,7 +854,6 @@ class _Tell(_BaseCommand):
             help="If specified, tell is skipped without any error when the trial is already "
             "finished.",
         )
-        return parser
 
     def take_action(self, parsed_args: Namespace) -> int:
 
@@ -959,7 +949,7 @@ def _add_commands(
         subparser = subparsers.add_parser(
             command_name, parents=[parent_parser], help=inspect.getdoc(command_type)
         )
-        subparser = command.add_arguments(subparser)
+        command.add_arguments(subparser)
         subparser.set_defaults(handler=command.take_action)
         command_name_to_subparser[command_name] = subparser
 
@@ -988,7 +978,7 @@ def _get_parser(description: str = "") -> Tuple[ArgumentParser, Dict[str, Argume
 
 def _preprocess_argv(argv: List[str]) -> List[str]:
     # Some preprocess is necessary for argv because some subcommand includes space
-    # (e.g. optuna study optimize, optuna storage upgrade, ...)
+    # (e.g. optuna study optimize, optuna storage upgrade, ...).
     argv = argv[1:] if len(argv) > 1 else ["help"]
 
     command_candidate_to_options: Dict[str, List[str]] = {}
@@ -997,7 +987,7 @@ def _preprocess_argv(argv: List[str]) -> List[str]:
         options = argv[:i] + argv[i + 1 :]
         command_candidate_to_options[command_candidate] = options
 
-    # Some commands consist of two words
+    # Some commands consist of two words.
     for i in range(len(argv) - 1):
         command_candidate = " ".join(argv[i : i + 2])
         options = argv[:i] + argv[i + 2 :]
@@ -1006,7 +996,7 @@ def _preprocess_argv(argv: List[str]) -> List[str]:
     for command_name in _COMMANDS:
         if command_name in command_candidate_to_options:
             return [command_name] + command_candidate_to_options[command_name]
-    # No subcommand is found
+    # No subcommand is found.
     return argv
 
 
