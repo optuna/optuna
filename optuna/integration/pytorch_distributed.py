@@ -227,6 +227,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
             raise err
 
     @broadcast_properties
+    @deprecated_func("3.1.0", "6.0.0")
     def set_system_attr(self, key: str, value: Any) -> None:
         err = None
 
