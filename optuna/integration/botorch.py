@@ -28,10 +28,8 @@ from optuna.trial import TrialState
 
 with try_import() as _imports:
     from botorch.acquisition.monte_carlo import qExpectedImprovement
-    from botorch.acquisition.multi_objective.monte_carlo import (
-        qExpectedHypervolumeImprovement,
-        qNoisyExpectedHypervolumeImprovement,
-    )
+    from botorch.acquisition.multi_objective.monte_carlo import qExpectedHypervolumeImprovement
+    from botorch.acquisition.multi_objective.monte_carlo import qNoisyExpectedHypervolumeImprovement
     from botorch.acquisition.multi_objective.objective import IdentityMCMultiOutputObjective
     from botorch.acquisition.objective import ConstrainedMCObjective
     from botorch.acquisition.objective import GenericMCObjective
@@ -277,7 +275,7 @@ def qnehvi_candidates_func(
     else:
         train_y = train_obj
 
-        train_obj_feas = train_obj
+        # train_obj_feas = train_obj
 
         additional_qnehvi_kwargs = {}
 
@@ -289,10 +287,10 @@ def qnehvi_candidates_func(
 
     # Approximate box decomposition similar to Ax when the number of objectives is large.
     # https://github.com/facebook/Ax/blob/master/ax/models/torch/botorch_moo_defaults
-    if n_objectives > 2:
-        alpha = 10 ** (-8 + n_objectives)
-    else:
-        alpha = 0.0
+    # if n_objectives > 2:
+    #     alpha = 10 ** (-8 + n_objectives)
+    # else:
+    #     alpha = 0.0
 
     ref_point = train_obj.min(dim=0).values - 1e-8
 
