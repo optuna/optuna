@@ -196,23 +196,21 @@ class _ParzenEstimator:
                         scale=sigmas,
                     )
                 else:
+                    # TODO(nzw0301): Simplify the logic by following
+                    # https://github.com/optuna/optuna/pull/3985#issuecomment-1253637444
+                    # when we can assume scipy 1.9.2 is commonly used, which includes
+                    # accurate logcdf https://github.com/scipy/scipy/pull/17064.
+                    cdf_func = _ParzenEstimator._trunc_normal_cdf
+                    p_accept = cdf_func(high, mus, sigmas, low, high) - cdf_func(
+                        low, mus, sigmas, low, high
+                    )
+
                     upper_bound = np.minimum(samples + q / 2.0, high)
                     lower_bound = np.maximum(samples - q / 2.0, low)
-                    logupper = truncnorm.logcdf(
-                        upper_bound[:, None],
-                        (low - mus) / sigmas,
-                        (high - mus) / sigmas,
-                        mus,
-                        sigmas,
-                    )
-                    loglower = truncnorm.logcdf(
-                        lower_bound[:, None],
-                        (low - mus) / sigmas,
-                        (high - mus) / sigmas,
-                        mus,
-                        sigmas,
-                    )
-                    log_pdf = logupper + np.log(-np.expm1(loglower - logupper))
+                    cdf = cdf_func(
+                        upper_bound[:, None], mus[None], sigmas[None], low, high
+                    ) - cdf_func(lower_bound[:, None], mus[None], sigmas[None], low, high)
+                    log_pdf = np.log(cdf + EPS) - np.log(p_accept + EPS)
             component_log_pdf += log_pdf
         weighted_log_pdf = component_log_pdf + np.log(self._weights)
         max_ = weighted_log_pdf.max(axis=1)
