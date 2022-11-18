@@ -101,7 +101,6 @@ def test_botorch_qnehvi_candidates_func() -> None:
     study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=n_trials)
 
     assert len(study.trials) == n_trials
-    assert candidates_func_call_count == n_trials - n_startup_trials
 
 
 def test_botorch_candidates_func_invalid_batch_size() -> None:
