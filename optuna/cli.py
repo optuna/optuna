@@ -991,34 +991,23 @@ def _preprocess_argv(argv: List[str]) -> List[str]:
     # (e.g. optuna study optimize, optuna storage upgrade, ...)
     argv = argv[1:] if len(argv) > 1 else ["help"]
 
-    # Some command consists of two strings.
-    command_candidate_to_indices: Dict[str, List[int]] = {}
+    command_candidate_to_options: Dict[str, List[str]] = {}
     for i in range(len(argv)):
-        command_candidate_to_indices[argv[i]] = [i]
-        for j in range(i + 1, len(argv)):
-            command_candidate_to_indices[" ".join([argv[i], argv[j]])] = [i, j]
+        command_candidate = argv[i]
+        options = argv[:i] + argv[i + 1 :]
+        command_candidate_to_options[command_candidate] = options
 
-    command_indices = []
-    current_longest_command_length = 0
-    for command_candidate in command_candidate_to_indices:
-        for command_name in _COMMANDS:
-            command_length = len(command_name)
-            # Find the longest possible command.
-            if (
-                command_name == command_candidate
-                and command_length > current_longest_command_length
-            ):
-                command_indices = command_candidate_to_indices[command_candidate]
-                current_longest_command_length = command_length
+    # Some commands consist of two words
+    for i in range(len(argv) - 1):
+        command_candidate = " ".join(argv[i : i + 2])
+        options = argv[:i] + argv[i + 2 :]
+        command_candidate_to_options[command_candidate] = options
 
-    preprocessed_command_name = " ".join(
-        [arg for i, arg in enumerate(argv) if i in command_indices]
-    )
-    options = [arg for i, arg in enumerate(argv) if i not in command_indices]
-
-    preprocessed_argv = [preprocessed_command_name] + options
-    preprocessed_argv = [arg for arg in preprocessed_argv if arg != ""]
-    return preprocessed_argv
+    for command_name in _COMMANDS:
+        if command_name in command_candidate_to_options:
+            return [command_name] + command_candidate_to_options[command_name]
+    # No subcommand is found
+    return argv
 
 
 def _set_verbosity(args: Namespace) -> None:
@@ -1058,7 +1047,6 @@ def main() -> int:
 
     argv = sys.argv
     preprocessed_argv = _preprocess_argv(argv)
-    command_name = preprocessed_argv[0]
     args = main_parser.parse_args(preprocessed_argv)
 
     _set_verbosity(args)
@@ -1072,7 +1060,7 @@ def main() -> int:
             logger.exception(e)
         else:
             logger.error(e)
-            command_name_to_subparser[command_name].print_help()
+            command_name_to_subparser[preprocessed_argv[0]].print_help()
         return 1
     except AttributeError:
         # Exception for the case -v/--verbose/-q/--quiet/--log-file/--debug
