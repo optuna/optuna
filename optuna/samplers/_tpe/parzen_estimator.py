@@ -1,21 +1,32 @@
-import math
+import importlib.util
 from typing import Callable
 from typing import Dict
 from typing import NamedTuple
 from typing import Optional
 from typing import Tuple
+from typing import TYPE_CHECKING
+import warnings
 
 import numpy as np
 
 from optuna import distributions
+from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
 
 
-try:
-    from scipy.stats import truncnorm
-    # TODO(amylase): check scipy version. reject scipy < 1.9.2 because truncnorm.logpdf is inaccurate.
-except ImportError:
+if importlib.util.find_spec("scipy") is not None:
+    if TYPE_CHECKING:
+        from scipy.stats import truncnorm
+    else:
+        stats = _LazyImport("scipy.stats")
+        truncnorm = stats.truncnorm
+else:
     from optuna.samplers._tpe import _truncnorm as truncnorm
+
+    warnings.warn(
+        "SciPy is not found. Falling back to our own implementations of special functions. "
+        "Note that it is significantly slower than SciPy."
+    )
 
 
 EPS = 1e-12
@@ -187,8 +198,20 @@ class _ParzenEstimator:
                 else:
                     upper_bound = np.minimum(samples + q / 2.0, high)
                     lower_bound = np.maximum(samples - q / 2.0, low)
-                    logupper = truncnorm.logcdf(upper_bound[:, None], (low - mus) / sigmas, (high - mus) / sigmas, mus, sigmas)
-                    loglower = truncnorm.logcdf(lower_bound[:, None], (low - mus) / sigmas, (high - mus) / sigmas, mus, sigmas)
+                    logupper = truncnorm.logcdf(
+                        upper_bound[:, None],
+                        (low - mus) / sigmas,
+                        (high - mus) / sigmas,
+                        mus,
+                        sigmas,
+                    )
+                    loglower = truncnorm.logcdf(
+                        lower_bound[:, None],
+                        (low - mus) / sigmas,
+                        (high - mus) / sigmas,
+                        mus,
+                        sigmas,
+                    )
                     log_pdf = logupper + np.log(-np.expm1(loglower - logupper))
             component_log_pdf += log_pdf
         weighted_log_pdf = component_log_pdf + np.log(self._weights)

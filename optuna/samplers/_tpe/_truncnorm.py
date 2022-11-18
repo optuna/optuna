@@ -197,15 +197,15 @@ def logpdf(x: float, a: float, b: float, loc: float = 0, scale: float = 1) -> fl
     return _norm_logpdf(x) - _log_gauss_mass(a, b)
 
 
-def _logsf(x: float, a: float, b: float):
+def _logsf(x: float, a: float, b: float) -> float:
     logsf = _log_gauss_mass(x, b) - _log_gauss_mass(a, b)
-    if logsf > -0.1: # avoid catastrophic cancellation
+    if logsf > -0.1:  # avoid catastrophic cancellation
         logsf = math.log1p(-math.exp(logcdf(x, a, b)))
     return logsf
 
 
 @np.vectorize
-def logcdf(x: float, a: float, b: float, loc: float = 0, scale: float = 1):
+def logcdf(x: float, a: float, b: float, loc: float = 0, scale: float = 1) -> float:
     if a == b:
         return math.nan
     x = (x - loc) / scale
@@ -214,7 +214,7 @@ def logcdf(x: float, a: float, b: float, loc: float = 0, scale: float = 1):
     if x >= b:
         return 0
     logcdf = _log_gauss_mass(a, x) - _log_gauss_mass(a, b)
-    if logcdf > -0.1: # avoid catastrophic cancellation
+    if logcdf > -0.1:  # avoid catastrophic cancellation
         logcdf = math.log1p(-math.exp(_logsf(x, a, b)))
     return logcdf
 
@@ -227,5 +227,5 @@ def cdf(x: float, a: float, b: float, loc: float = 0, scale: float = 1) -> float
     if x <= a:
         return 0
     if x >= b:
-        return 1    
+        return 1
     return math.exp(logcdf(x, a, b))
