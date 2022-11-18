@@ -231,10 +231,7 @@ class _BaseCommand:
             parser:
                 `ArgumentParser` object to add arguments for the command by
                 `add_argument` method.
-        Returns:
-            `ArgumentParser` object which added some arguments.
         """
-
         pass
 
     def take_action(self, parsed_args: Namespace) -> int:
