@@ -160,19 +160,19 @@ def test_pytorch_lightning_pruning_callback_ddp_monitor(
 ) -> None:
     def objective(trial: optuna.trial.Trial) -> float:
 
+        callback = PyTorchLightningPruningCallback(trial, monitor="accuracy")
         trainer = pl.Trainer(
             max_epochs=2,
             accelerator="cpu",
             strategy="ddp_spawn",
-            num_processes=2,
+            devices=2,
             enable_checkpointing=False,
-            callbacks=[PyTorchLightningPruningCallback(trial, monitor="accuracy")],
+            callbacks=[callback],
         )
 
         model = ModelDDP()
         trainer.fit(model)
 
-        callback = PyTorchLightningPruningCallback(trial, monitor="accuracy")
         callback.setup(trainer, model, "")
         callback.post_process(trial)
 
@@ -199,19 +199,19 @@ def test_pytorch_lightning_pruning_callback_ddp_unsupported_storage() -> None:
 
     def objective(trial: optuna.trial.Trial) -> float:
 
+        callback = PyTorchLightningPruningCallback(trial, monitor="accuracy")
         trainer = pl.Trainer(
             max_epochs=1,
             accelerator="cpu",
             strategy="ddp",
-            num_processes=2,
+            devices=2,
             enable_checkpointing=False,
-            callbacks=[PyTorchLightningPruningCallback(trial, monitor="accuracy")],
+            callbacks=[callback],
         )
 
         model = ModelDDP()
         trainer.fit(model)
 
-        callback = PyTorchLightningPruningCallback(trial, monitor="accuracy")
         callback.setup(trainer, model, "")
         callback.post_process(trial)
 
