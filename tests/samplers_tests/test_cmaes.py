@@ -313,6 +313,30 @@ def _create_trials() -> List[FrozenTrial]:
     return trials
 
 
+@pytest.mark.parametrize(
+    "options, key",
+    [
+        ({"with_margin": False, "use_separable_cma": False}, "cma:"),
+        ({"with_margin": True, "use_separable_cma": False}, "cmawm:"),
+        ({"with_margin": False, "use_separable_cma": True}, "sepcma:"),
+    ],
+)
+def test_sampler_attr_key(options: Dict[str, bool], key: str):
+    # Test sampler attr_key propery
+    sampler = optuna.samplers.CmaEsSampler(
+        with_margin=options["with_margin"], use_separable_cma=options["use_separable_cma"]
+    )
+    assert sampler._attr_keys.optimizer.startswith(key)
+    assert sampler._attr_keys.n_restarts.startswith(key)
+    assert sampler._attr_keys.generation(0).startswith(key)
+
+    sampler._restart_strategy = "ipop"
+    for i in range(3):
+        assert sampler._attr_keys.generation(i).startswith(
+            (key + "restart_{}:".format(i) + "generation")
+        )
+
+
 @pytest.mark.parametrize("popsize", [None, 16])
 def test_population_size_is_multiplied_when_enable_ipop(popsize: Optional[int]) -> None:
     inc_popsize = 2

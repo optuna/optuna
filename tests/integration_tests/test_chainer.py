@@ -15,12 +15,12 @@ from optuna.testing.pruners import DeterministicPruner
 
 with try_import() as _imports:
     import chainer
-    from chainer.dataset import DatasetMixin  # type: ignore
+    from chainer.dataset import DatasetMixin
     import chainer.links as L
     from chainer.training import triggers
 
 if not _imports.is_successful():
-    DatasetMixin = object  # NOQA
+    DatasetMixin = object  # type: ignore # NOQA
 
 pytestmark = pytest.mark.integration
 
