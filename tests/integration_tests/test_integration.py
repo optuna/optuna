@@ -10,6 +10,8 @@ def test_import() -> None:
     from optuna.integration import chainermn  # NOQA
     from optuna.integration import ChainerMNStudy  # NOQA
     from optuna.integration import ChainerPruningExtension  # NOQA
+    from optuna.integration import dask  # NOQA
+    from optuna.integration import DaskStorage  # NOQA
     from optuna.integration import keras  # NOQA
     from optuna.integration import KerasPruningCallback  # NOQA
     from optuna.integration import lightgbm  # NOQA
@@ -31,6 +33,7 @@ def test_module_attributes() -> None:
 
     assert hasattr(optuna.integration, "chainer")
     assert hasattr(optuna.integration, "chainermn")
+    assert hasattr(optuna.integration, "dask")
     assert hasattr(optuna.integration, "keras")
     assert hasattr(optuna.integration, "lightgbm")
     assert hasattr(optuna.integration, "mxnet")

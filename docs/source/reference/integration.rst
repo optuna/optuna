@@ -64,6 +64,15 @@ Chainer
    optuna.integration.ChainerPruningExtension
    optuna.integration.ChainerMNStudy
 
+Dask
+----
+
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
+
+   optuna.integration.DaskStorage
+
 fast.ai
 -------
 

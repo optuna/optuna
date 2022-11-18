@@ -7,6 +7,7 @@ on:
   pull_request: {}
   schedule:
     - cron: '0 23 * * SUN-THU'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
@@ -58,7 +59,14 @@ jobs:
         pip install --progress-bar off .[optional]
         pip install --progress-bar off .[integration] --extra-index-url https://download.pytorch.org/whl/cpu
 
-    - name: Tests
+    - name: Scheduled tests
+      if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
         pytest tests -m "integration" \
+          --ignore tests/integration_tests/test_pytorch_lightning.py
+
+    - name: Tests
+      if:  ${{ github.event_name != 'schedule' }}
+      run: |
+        pytest tests -m "integration and not slow" \
           --ignore tests/integration_tests/test_pytorch_lightning.py

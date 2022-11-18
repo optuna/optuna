@@ -189,10 +189,9 @@ def test_pytorch_lightning_pruning_callback_ddp_monitor(
         np.testing.assert_almost_equal(study.trials[0].intermediate_values[1], 0.45)
 
 
-@pytest.mark.parametrize("storage_mode", ["inmemory", "redis"])
-def test_pytorch_lightning_pruning_callback_ddp_unsupported_storage(
-    storage_mode: str,
-) -> None:
+def test_pytorch_lightning_pruning_callback_ddp_unsupported_storage() -> None:
+    storage_mode = "inmemory"
+
     def objective(trial: optuna.trial.Trial) -> float:
 
         trainer = pl.Trainer(
