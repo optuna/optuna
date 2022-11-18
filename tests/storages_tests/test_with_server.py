@@ -24,7 +24,7 @@ def objective(trial: optuna.Trial) -> float:
     trial.report(x, 0)
     trial.report(y, 1)
     trial.set_user_attr("x", x)
-    trial._set_system_attr("y", y)
+    trial.set_system_attr("y", y)
     return f(x, y)
 
 

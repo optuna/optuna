@@ -107,8 +107,8 @@ class PyTorchLightningPruningCallback(Callback):
             # Stop every DDP process if global rank 0 process decides to stop.
             trainer.should_stop = True
             if trainer.is_global_zero:
-                self._trial._set_system_attr(_PRUNED_KEY, True)
-                self._trial._set_system_attr(_EPOCH_KEY, epoch)
+                self._trial.set_system_attr(_PRUNED_KEY, True)
+                self._trial.set_system_attr(_EPOCH_KEY, epoch)
 
     def on_fit_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
         if not self.is_ddp_backend:

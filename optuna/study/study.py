@@ -658,7 +658,7 @@ class Study:
 
         self._storage.set_study_user_attr(self._study_id, key, value)
 
-    def _set_system_attr(self, key: str, value: Any) -> None:
+    def set_system_attr(self, key: str, value: Any) -> None:
         """Set a system attribute to the study.
 
         Note that Optuna internally uses this method to save system messages. Please use
@@ -1411,7 +1411,7 @@ def copy_study(
     )
 
     for key, value in from_study.system_attrs.items():
-        to_study._set_system_attr(key, value)
+        to_study.set_system_attr(key, value)
 
     for key, value in from_study.user_attrs.items():
         to_study.set_user_attr(key, value)

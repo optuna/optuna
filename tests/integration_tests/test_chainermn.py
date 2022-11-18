@@ -429,7 +429,7 @@ class TestChainerMNTrial:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
             mn_trial = _create_new_chainermn_trial(study, comm)
 
-            mn_trial._set_system_attr("system_message", "test")
+            mn_trial.set_system_attr("system_message", "test")
             assert mn_trial.system_attrs["system_message"] == "test"
 
     @staticmethod
