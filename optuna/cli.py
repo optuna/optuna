@@ -1018,7 +1018,7 @@ def _preprocess_argv(argv: List[str]) -> Tuple[List[str], Tuple[str, List[str]]]
 
     preprocessed_argv = [preprocessed_command_name] + options
     preprocessed_argv = [arg for arg in preprocessed_argv if arg != ""]
-    return preprocessed_argv, (preprocessed_command_name, options)
+    return preprocessed_argv
 
 
 def _set_verbosity(args: Namespace) -> None:
@@ -1057,7 +1057,8 @@ def main() -> int:
     parser, command_name_to_subparser = _get_parser()
 
     argv = sys.argv
-    preprocessed_argv, (command_name, _) = _preprocess_argv(argv)
+    preprocessed_argv = _preprocess_argv(argv)
+    command_name = preprocessed_argv[0]
     args = parser.parse_args(preprocessed_argv)
 
     _set_verbosity(args)
