@@ -84,6 +84,22 @@ def test_botorch_candidates_func() -> None:
     assert candidates_func_call_count == n_trials - n_startup_trials
 
 
+def test_botorch_qnehvi_candidates_func() -> None:
+    # This test is needed because qnehvi_candidates_func is never chosed as a default.
+    # The other funcs can be chosed as a default and hence covered by test_botorch_candidates_func_none.
+
+    n_trials = 3
+    n_startup_trials = 1
+
+    sampler = BoTorchSampler(candidates_func=qnehvi_candidates_func, n_startup_trials=n_startup_trials)
+
+    study = optuna.create_study(direction="minimize", sampler=sampler)
+    study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=n_trials)
+
+    assert len(study.trials) == n_trials
+    assert candidates_func_call_count == n_trials - n_startup_trials
+
+
 def test_botorch_candidates_func_invalid_batch_size() -> None:
     def candidates_func(
         train_x: torch.Tensor,
