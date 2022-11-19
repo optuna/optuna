@@ -90,15 +90,17 @@ def test_botorch_qnehvi_candidates_func() -> None:
     # covered by test_botorch_candidates_func_none.
 
     n_trials = 3
-    n_startup_trials = 1
+    n_startup_trials = 2
 
     sampler = BoTorchSampler(
         candidates_func=integration.botorch.qnehvi_candidates_func,
         n_startup_trials=n_startup_trials,
     )
 
-    study = optuna.create_study(direction="minimize", sampler=sampler)
-    study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=n_trials)
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
+    study.optimize(
+        lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)], n_trials=n_trials
+    )
 
     assert len(study.trials) == n_trials
 
