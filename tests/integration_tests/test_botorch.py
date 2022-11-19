@@ -91,6 +91,7 @@ def test_botorch_qnehvi_candidates_func() -> None:
 
     n_trials = 3
     n_startup_trials = 2
+    n_objectives = 2
 
     sampler = BoTorchSampler(
         candidates_func=integration.botorch.qnehvi_candidates_func,
