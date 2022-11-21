@@ -55,7 +55,7 @@ jobs:
     - name: Setup pip
       run: |
         python -m pip install --upgrade pip
-        pip install --progress-bar off -U "setuptools<65.6.0"
+        pip install --progress-bar off -U setuptools
 
     - name: Install
       run: |

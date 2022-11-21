@@ -37,6 +37,7 @@ def get_install_requires() -> List[str]:
         "sqlalchemy>=1.3.0",
         "tqdm",
         "PyYAML",  # Only used in `optuna/cli.py`.
+        "setuptools<65.6.0",
     ]
     return requirements
 
