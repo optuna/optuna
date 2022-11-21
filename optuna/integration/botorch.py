@@ -106,13 +106,10 @@ def qei_candidates_func(
         else:
             best_f = train_obj_feas.max()
 
-        constraints = []
-        n_constraints = train_con.size(1)
-        for i in range(n_constraints):
-            constraints.append(lambda Z, i=i: Z[..., -n_constraints + i])
+        s = train_con.size(1)
         objective = ConstrainedMCObjective(
             objective=lambda Z: Z[..., 0],
-            constraints=constraints,
+            constraints=[(lambda Z, i=i: Z[..., -s + i]) for i in range(s)],
         )
     else:
         train_y = train_obj
@@ -177,14 +174,12 @@ def qehvi_candidates_func(
         is_feas = (train_con <= 0).all(dim=-1)
         train_obj_feas = train_obj[is_feas]
 
-        constraints = []
         n_constraints = train_con.size(1)
-
-        for i in range(n_constraints):
-            constraints.append(lambda Z, i=i: Z[..., -n_constraints + i])
         additional_qehvi_kwargs = {
             "objective": IdentityMCMultiOutputObjective(outcomes=list(range(n_objectives))),
-            "constraints": constraints,
+            "constraints": [
+                (lambda Z, i=i: Z[..., -n_constraints + i]) for i in range(n_constraints)
+            ],
         }
     else:
         train_y = train_obj
@@ -258,24 +253,15 @@ def qnehvi_candidates_func(
 
     if train_con is not None:
         train_y = torch.cat([train_obj, train_con], dim=-1)
-
-        # is_feas = (train_con <= 0).all(dim=-1)
-        # train_obj_feas = train_obj[is_feas]
-
-        constraints = []
         n_constraints = train_con.size(1)
-
-        for i in range(n_constraints):
-            constraints.append(lambda Z, i=i: Z[..., -n_constraints + i])
         additional_qnehvi_kwargs = {
             "objective": IdentityMCMultiOutputObjective(outcomes=list(range(n_objectives))),
-            "constraints": constraints,
+            "constraints": [
+                (lambda Z, i=i: Z[..., -n_constraints + i]) for i in range(n_constraints)
+            ],
         }
     else:
         train_y = train_obj
-
-        # train_obj_feas = train_obj
-
         additional_qnehvi_kwargs = {}
 
     train_x = normalize(train_x, bounds=bounds)
@@ -286,14 +272,8 @@ def qnehvi_candidates_func(
 
     # Approximate box decomposition similar to Ax when the number of objectives is large.
     # https://github.com/facebook/Ax/blob/master/ax/models/torch/botorch_moo_defaults
-    # if n_objectives > 2:
-    #     alpha = 10 ** (-8 + n_objectives)
-    # else:
-    #     alpha = 0.0
 
     ref_point = train_obj.min(dim=0).values - 1e-8
-
-    # partitioning = NondominatedPartitioning(ref_point=ref_point, Y=train_obj_feas, alpha=alpha)
 
     ref_point_list = ref_point.tolist()
 
@@ -303,7 +283,6 @@ def qnehvi_candidates_func(
         model=model,
         ref_point=ref_point_list,
         X_baseline=train_x,
-        # partitioning=partitioning,
         prune_baseline=True,
         sampler=SobolQMCNormalSampler(num_samples=256),
         **additional_qnehvi_kwargs,
@@ -351,16 +330,12 @@ def qparego_candidates_func(
 
     if train_con is not None:
         train_y = torch.cat([train_obj, train_con], dim=-1)
-
-        constraints = []
         n_constraints = train_con.size(1)
-
-        for i in range(n_constraints):
-            constraints.append(lambda Z, i=i: Z[..., -n_constraints + i])
-
         objective = ConstrainedMCObjective(
             objective=lambda Z: scalarization(Z[..., :n_objectives]),
-            constraints=constraints,
+            constraints=[
+                (lambda Z, i=i: Z[..., -n_constraints + i]) for i in range(n_constraints)
+            ],
         )
     else:
         train_y = train_obj
