@@ -14,19 +14,20 @@ from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
 
 
-if importlib.util.find_spec("scipy") is not None:
-    if TYPE_CHECKING:
-        from scipy.stats import truncnorm
-    else:
-        stats = _LazyImport("scipy.stats")
-        truncnorm = stats.truncnorm
-else:
-    from optuna.samplers._tpe import _truncnorm as truncnorm
+# if importlib.util.find_spec("scipy") is not None:
+#     if TYPE_CHECKING:
+#         from scipy.stats import truncnorm
+#     else:
+#         stats = _LazyImport("scipy.stats")
+#         truncnorm = stats.truncnorm
+# else:
+#     from optuna.samplers._tpe import _truncnorm as truncnorm
 
-    warnings.warn(
-        "SciPy is not found. Falling back to our own implementations of special functions. "
-        "Note that it is significantly slower than SciPy."
-    )
+#     warnings.warn(
+#         "SciPy is not found. Falling back to our own implementations of special functions. "
+#         "Note that it is significantly slower than SciPy."
+#     )
+from optuna.samplers._tpe import _truncnorm as truncnorm
 
 
 EPS = 1e-12

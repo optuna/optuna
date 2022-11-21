@@ -31,6 +31,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import functools
 import math
 import sys
 from typing import Callable
@@ -40,6 +41,7 @@ from typing import Union
 import numpy as np
 
 
+vectorize = lambda f: np.vectorize(f, cache=True)    
 _norm_pdf_C = math.sqrt(2 * math.pi)
 _norm_pdf_logC = math.log(_norm_pdf_C)
 
@@ -56,20 +58,21 @@ def _log_diff(log_p: float, log_q: float) -> float:
     return math.log1p(-math.exp(log_q - log_p)) + log_p
 
 
+@functools.lru_cache
 def _ndtr(a: float) -> float:
     x = a / 2**0.5
-    z = abs(x)
 
-    if z < 1 / 2**0.5:
+    if x < -1 / 2**0.5:
+        y = 0.5 * math.erfc(-x)
+    elif x < 1 / 2**0.5:
         y = 0.5 + 0.5 * math.erf(x)
     else:
-        y = 0.5 * math.erfc(z)
-        if x > 0:
-            y = 1.0 - y
+        y = 1.0 - 0.5 * math.erfc(x)
 
     return y
 
 
+@functools.lru_cache
 def _log_ndtr(a: float) -> float:
     if a > 6:
         return -_ndtr(-a)
@@ -100,19 +103,18 @@ def _norm_logpdf(x: float) -> float:
     return -(x**2) / 2.0 - _norm_pdf_logC
 
 
+@functools.lru_cache
 def _log_gauss_mass(a: float, b: float) -> float:
     """Log of Gaussian probability mass within an interval"""
 
     # Calculations in right tail are inaccurate, so we'll exploit the
     # symmetry and work only in the left tail
 
-    def mass_case_left(a: float, b: float) -> float:
+    if b <= 0:
         return _log_diff(_log_ndtr(b), _log_ndtr(a))
-
-    def mass_case_right(a: float, b: float) -> float:
-        return mass_case_left(-b, -a)
-
-    def mass_case_central(a: float, b: float) -> float:
+    elif a > 0:
+        return _log_diff(_log_ndtr(-a), _log_ndtr(-b))
+    else:
         # Previously, this was implemented as:
         # left_mass = mass_case_left(a, 0)
         # right_mass = mass_case_right(0, b)
@@ -124,13 +126,6 @@ def _log_gauss_mass(a: float, b: float) -> float:
         # the result can't accurately be represented in logspace anyway
         # because sc.log1p(x) ~ x for small x.
         return math.log1p(-_ndtr(a) - _ndtr(-b))
-
-    if b <= 0:
-        return mass_case_left(a, b)
-    elif a > 0:
-        return mass_case_right(a, b)
-    else:
-        return mass_case_central(a, b)
 
 
 def _bisect(f: Callable[[float], float], a: float, b: float, c: float) -> float:
@@ -151,7 +146,7 @@ def _ndtri_exp(y: float) -> float:
     return _bisect(_log_ndtr, -100, +100, y)
 
 
-@np.vectorize
+@vectorize
 def ppf(q: float, a: float, b: float) -> float:
     if a == b:
         return np.nan
@@ -160,18 +155,12 @@ def ppf(q: float, a: float, b: float) -> float:
     if q == 1:
         return b
 
-    def ppf_left(q: float, a: float, b: float) -> float:
+    if a < 0:
         log_Phi_x = _log_sum(_log_ndtr(a), math.log(q) + _log_gauss_mass(a, b))
         return _ndtri_exp(log_Phi_x)
-
-    def ppf_right(q: float, a: float, b: float) -> float:
+    else:
         log_Phi_x = _log_sum(_log_ndtr(-b), math.log1p(-q) + _log_gauss_mass(a, b))
         return -_ndtri_exp(log_Phi_x)
-
-    if a < 0:
-        return ppf_left(q, a, b)
-    else:
-        return ppf_right(q, a, b)
 
 
 def rvs(
@@ -187,7 +176,7 @@ def rvs(
     return ppf(percentiles, a, b) * scale + loc
 
 
-@np.vectorize
+@vectorize
 def logpdf(x: float, a: float, b: float, loc: float = 0, scale: float = 1) -> float:
     x = (x - loc) / scale
     if a == b:
@@ -197,14 +186,15 @@ def logpdf(x: float, a: float, b: float, loc: float = 0, scale: float = 1) -> fl
     return _norm_logpdf(x) - _log_gauss_mass(a, b)
 
 
-def _logsf(x: float, a: float, b: float) -> float:
-    logsf = _log_gauss_mass(x, b) - _log_gauss_mass(a, b)
-    if logsf > -0.1:  # avoid catastrophic cancellation
-        logsf = math.log1p(-math.exp(logcdf(x, a, b)))
-    return logsf
+def _logcdf(x: float, a: float, b: float) -> float:
+    logcdf = _log_gauss_mass(a, x) - _log_gauss_mass(a, b)
+    if logcdf > -0.1:  # avoid catastrophic cancellation
+        log_survival = _log_gauss_mass(x, b) - _log_gauss_mass(a, b)
+        logcdf = math.log1p(-math.exp(log_survival))
+    return logcdf
 
 
-@np.vectorize
+@vectorize
 def logcdf(x: float, a: float, b: float, loc: float = 0, scale: float = 1) -> float:
     if a == b:
         return math.nan
@@ -213,13 +203,10 @@ def logcdf(x: float, a: float, b: float, loc: float = 0, scale: float = 1) -> fl
         return -math.inf
     if x >= b:
         return 0
-    logcdf = _log_gauss_mass(a, x) - _log_gauss_mass(a, b)
-    if logcdf > -0.1:  # avoid catastrophic cancellation
-        logcdf = math.log1p(-math.exp(_logsf(x, a, b)))
-    return logcdf
+    return _logcdf(x, a, b)
 
 
-@np.vectorize
+@vectorize
 def cdf(x: float, a: float, b: float, loc: float = 0, scale: float = 1) -> float:
     if a == b:
         return math.nan
@@ -228,4 +215,4 @@ def cdf(x: float, a: float, b: float, loc: float = 0, scale: float = 1) -> float
         return 0
     if x >= b:
         return 1
-    return math.exp(logcdf(x, a, b))
+    return math.exp(_logcdf(x, a, b))
