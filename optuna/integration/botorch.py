@@ -106,10 +106,12 @@ def qei_candidates_func(
         else:
             best_f = train_obj_feas.max()
 
-        s = train_con.size(1)
+        n_constraints = train_con.size(1)
         objective = ConstrainedMCObjective(
             objective=lambda Z: Z[..., 0],
-            constraints=[(lambda Z, i=i: Z[..., -s + i]) for i in range(s)],
+            constraints=[
+                (lambda Z, i=i: Z[..., -n_constraints + i]) for i in range(n_constraints)
+            ],
         )
     else:
         train_y = train_obj
