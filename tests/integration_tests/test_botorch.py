@@ -85,8 +85,8 @@ def test_botorch_candidates_func() -> None:
 
 
 def test_botorch_qnehvi_candidates_func() -> None:
-    # This test is needed because qnehvi_candidates_func is never chosed as a default.
-    # The other funcs can be chosed as a default and hence
+    # This test is needed because qnehvi_candidates_func is never chosen as a default.
+    # The other funcs can be chosen as a default and hence
     # covered by test_botorch_candidates_func_none.
 
     n_trials = 3
