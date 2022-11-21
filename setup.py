@@ -68,8 +68,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "fvcore",
             "lightgbm",
             "matplotlib!=3.6.0",
-            # TODO(c-bata): Remove the version constraint of mlflow.
-            "mlflow<2.0.1",
+            "mlflow",
             "pandas",
             "pillow",
             "plotly>=4.9.0",  # optuna/visualization.
@@ -96,7 +95,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "distributed",
             "fastai",
             "lightgbm",
-            "mlflow<2.0.1",
+            "mlflow",
             "mpi4py",
             "mxnet",
             "pandas",
