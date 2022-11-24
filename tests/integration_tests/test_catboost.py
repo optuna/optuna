@@ -123,9 +123,12 @@ def test_catboost_pruning_callback_errors(metric: str, eval_set_index: int) -> N
 
     # Unknown validation name or metric.
     study = optuna.create_study(pruner=DeterministicPruner(False))
-    # Catboost terminates with a SystemError when python>=3.9 or pytest>=7.2.0, otherwise terminates with RecursionError.
-    # This is mainly because the _Py_CheckRecursionLimit variable used in from limited C API was removed after python 3.9.
-    # That affect when calling function _CallbackAfterIteration in Catboost, which is written in Cython.
+    # Catboost terminates with a SystemError when python>=3.9 or pytest>=7.2.0,
+    # otherwise terminates with RecursionError.
+    # This is mainly because the _Py_CheckRecursionLimit variable used in from
+    # limited C API was removed after python 3.9.
+    # That affect when calling function _CallbackAfterIteration in Catboost,
+    # which is written in Cython.
     python_version_minor = sys.version_info.minor
     pytest_version_major, pytest_version_minor, pytest_version_micro = map(
         int, pytest.__version__.split(".")
