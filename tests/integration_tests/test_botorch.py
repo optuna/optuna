@@ -93,7 +93,7 @@ def test_botorch_specify_candidates_func(
 
     n_trials = 4
     n_startup_trials = 2
-    
+
     if candidates_func_kind == 1:
         candidates_func = integration.botorch.qei_candidates_func
     elif candidates_func_kind == 2:
@@ -113,7 +113,7 @@ def test_botorch_specify_candidates_func(
             constraints_func_call_count += 1
 
             return (xs - 0.5,)
-    
+
         sampler = BoTorchSampler(
             constraints_func=constraints_func,
             candidates_func=candidates_func,
