@@ -18,8 +18,8 @@ from optuna.integration.cma import _Optimizer
 from optuna.study._study_direction import StudyDirection
 from optuna.testing.distributions import UnsupportedDistribution
 from optuna.trial import FrozenTrial
-from optuna.trial import TrialState
 from optuna.trial import Trial
+from optuna.trial import TrialState
 
 with try_import():
     import cma
