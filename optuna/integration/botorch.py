@@ -235,7 +235,7 @@ def qehvi_candidates_func(
     return candidates
 
 
-@experimental_func("2.4.0")
+@experimental_func("3.1.0")
 def qnehvi_candidates_func(
     train_x: "torch.Tensor",
     train_obj: "torch.Tensor",
