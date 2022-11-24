@@ -25,13 +25,12 @@ def get_long_description() -> str:
 
 def get_install_requires() -> List[str]:
 
+    # When you update a lower bound of a dependency,
+    # please update `test-with-lower` in `.github/workflows/tests.yml` as well.
     requirements = [
         "alembic>=1.5.0",
-        "cliff",
-        "cmaes>=0.8.2",
+        "cmaes>=0.9.0",
         "colorlog",
-        # TODO(HideakiImamura): remove this after the fix by `cliff` or `stevedore`
-        "importlib-metadata<5.0.0",
         "numpy",
         "packaging>=20.0",
         "scipy>=1.7.0",
@@ -69,11 +68,10 @@ def get_extras_require() -> Dict[str, List[str]]:
             "fvcore",
             "lightgbm",
             "matplotlib!=3.6.0",
-            # TODO(c-bata): Remove the version constraint of mlflow.
-            "mlflow<2.0.1",
+            "mlflow",
             "pandas",
             "pillow",
-            "plotly>=4.0.0",  # optuna/visualization.
+            "plotly>=4.9.0",  # optuna/visualization.
             "scikit-learn",
             "scikit-optimize",
             "sphinx",
@@ -97,7 +95,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "distributed",
             "fastai",
             "lightgbm",
-            "mlflow<2.0.1",
+            "mlflow",
             "mpi4py",
             "mxnet",
             "pandas",
@@ -118,7 +116,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         "optional": [
             "matplotlib!=3.6.0",  # optuna/visualization/matplotlib
             "pandas",  # optuna/study.py
-            "plotly>=4.0.0",  # optuna/visualization.
+            "plotly>=4.9.0",  # optuna/visualization.
             "redis",  # optuna/storages/redis.py.
             "scikit-learn>=0.24.2",
             # optuna/visualization/param_importances.py.
@@ -162,19 +160,6 @@ setup(
     extras_require=get_extras_require(),
     entry_points={
         "console_scripts": ["optuna = optuna.cli:main"],
-        "optuna.command": [
-            "create-study = optuna.cli:_CreateStudy",
-            "delete-study = optuna.cli:_DeleteStudy",
-            "study set-user-attr = optuna.cli:_StudySetUserAttribute",
-            "studies = optuna.cli:_Studies",
-            "trials = optuna.cli:_Trials",
-            "best-trial = optuna.cli:_BestTrial",
-            "best-trials = optuna.cli:_BestTrials",
-            "study optimize = optuna.cli:_StudyOptimize",
-            "storage upgrade = optuna.cli:_StorageUpgrade",
-            "ask = optuna.cli:_Ask",
-            "tell = optuna.cli:_Tell",
-        ],
     },
     classifiers=[
         "Development Status :: 5 - Production/Stable",
@@ -186,6 +171,7 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3 :: Only",
         "Topic :: Scientific/Engineering",
         "Topic :: Scientific/Engineering :: Mathematics",
