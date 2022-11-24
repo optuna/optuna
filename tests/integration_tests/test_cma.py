@@ -5,8 +5,8 @@ from unittest.mock import call
 from unittest.mock import patch
 import warnings
 
-import pytest
 import _pytest.capture
+import pytest
 
 import optuna
 from optuna._imports import try_import
