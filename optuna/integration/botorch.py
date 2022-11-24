@@ -242,9 +242,11 @@ def qnehvi_candidates_func(
     train_con: Optional["torch.Tensor"],
     bounds: "torch.Tensor",
 ) -> "torch.Tensor":
-    """Quasi MC-based batch Expected Noisy Hypervolume Improvement (qnehvi).
+    """Quasi MC-based batch Expected Noisy Hypervolume Improvement (qNEHVI).
 
-    TODO: [some documentation]
+    According to Botorch/Ax documentation,
+    this function may perform better than qEHVI (`qehvi_candidates_func`).
+    (cf. https://botorch.org/tutorials/constrained_multi_objective_bo )
 
     .. seealso::
         :func:`~optuna.integration.botorch.qei_candidates_func` for argument and return value
