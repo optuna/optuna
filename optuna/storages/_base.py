@@ -59,6 +59,10 @@ class BaseStorage(abc.ABC):
         The returned study ID is unique among all current and deleted studies.
 
         Args:
+            directions:
+                 A sequence of direction whose element is either
+                 :obj:`~optuna.study.StudyDirection.MAXIMIZE` or
+                 :obj:`~optuna.study.StudyDirection.MINIMIZE`.
             study_name:
                 Name of the new study to create.
 
