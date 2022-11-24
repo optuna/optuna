@@ -455,6 +455,7 @@ class JournalStorageReplayResult:
 
     def _apply_create_study(self, log: Dict[str, Any]) -> None:
         study_name = log["study_name"]
+        directions = log["directions"]
 
         if study_name in [s.study_name for s in self._studies.values()]:
             if self._is_issued_by_this_worker(log):
@@ -471,7 +472,7 @@ class JournalStorageReplayResult:
 
         self._studies[study_id] = FrozenStudy(
             study_name=study_name,
-            direction=StudyDirection.NOT_SET,
+            direction=directions,
             user_attrs={},
             system_attrs={},
             study_id=study_id,
