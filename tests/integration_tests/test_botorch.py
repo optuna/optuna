@@ -99,7 +99,7 @@ def test_botorch_specify_candidates_func(candidates_func_kind: str, is_constrain
         n_objectives = 2
     elif candidates_func_kind == "qparego":
         candidates_func = integration.botorch.qparego_candidates_func
-        n_objectives = 2
+        n_objectives = 4
     elif candidates_func_kind == "qnhevi":
         candidates_func = integration.botorch.qnehvi_candidates_func
         n_objectives = 2
