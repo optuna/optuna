@@ -84,24 +84,27 @@ def test_botorch_candidates_func() -> None:
     assert candidates_func_call_count == n_trials - n_startup_trials
 
 
-@pytest.mark.parametrize("n_objectives", [1, 2])
-@pytest.mark.parametrize("candidates_func_kind", [1, 2, 3, 4])
+@pytest.mark.parametrize("candidates_func_kind", ["qei", "qehvi", "qparego", "qnhevi"])
 @pytest.mark.parametrize("is_constrained", [True, False])
-def test_botorch_specify_candidates_func(
-    n_objectives: int, candidates_func_kind: int, is_constrained: bool
-) -> None:
+def test_botorch_specify_candidates_func(candidates_func_kind: str, is_constrained: bool) -> None:
 
     n_trials = 4
     n_startup_trials = 2
 
-    if candidates_func_kind == 1:
+    if candidates_func_kind == "qei":
         candidates_func = integration.botorch.qei_candidates_func
-    elif candidates_func_kind == 2:
+        n_objectives = 1
+    elif candidates_func_kind == "qehvi":
         candidates_func = integration.botorch.qehvi_candidates_func
-    elif candidates_func_kind == 3:
+        n_objectives = 2
+    elif candidates_func_kind == "qparego":
         candidates_func = integration.botorch.qparego_candidates_func
-    elif candidates_func_kind == 4:
+        n_objectives = 2
+    elif candidates_func_kind == "qnhevi":
         candidates_func = integration.botorch.qnehvi_candidates_func
+        n_objectives = 2
+    else:
+        assert False
 
     if is_constrained:
         constraints_func_call_count = 0
