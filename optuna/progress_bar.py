@@ -7,6 +7,7 @@ from tqdm.auto import tqdm
 
 from optuna import logging as optuna_logging
 from optuna._experimental import experimental_func
+from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
@@ -64,15 +65,9 @@ class _ProgressBar:
             self._progress_bar = tqdm(total=self._n_trials)
 
         else:
-            fmt = "{percentage:3.0f}%|{bar}| {elapsed}/{desc}"
-            self._progress_bar = tqdm(total=self._timeout, bar_format=fmt)
-
-            # Using description string instead postfix string
-            # to display formatted timeout, since postfix carries
-            # extra comma space auto-format.
-            # https://github.com/tqdm/tqdm/issues/712
             total = tqdm.format_interval(self._timeout)
-            self._progress_bar.set_description_str(total)
+            fmt = "{desc} {percentage:3.0f}%|{bar}| {elapsed}/" + total
+            self._progress_bar = tqdm(total=self._timeout, bar_format=fmt)
 
         global _tqdm_handler
 
@@ -93,7 +88,7 @@ class _ProgressBar:
         """
 
         if self._is_valid:
-            if not study._is_multi_objective():
+            if not study._is_multi_objective() and study.get_trials(states=[TrialState.COMPLETE]):
                 msg = f"Best trial: {study.best_trial.number}. Best value: {study.best_value}"
                 self._progress_bar.set_description(msg)
 
