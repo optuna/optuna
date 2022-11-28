@@ -455,7 +455,7 @@ class JournalStorageReplayResult:
 
     def _apply_create_study(self, log: Dict[str, Any]) -> None:
         study_name = log["study_name"]
-        directions = [StudyDirection(i) for i in log["directions"]]
+        directions = [StudyDirection(d) for d in log["directions"]]
 
         if study_name in [s.study_name for s in self._studies.values()]:
             if self._is_issued_by_this_worker(log):

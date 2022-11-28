@@ -98,11 +98,12 @@ class _OptunaSchedulerExtension:
         self,
         comm: "distributed.comm.tcp.TCP",
         storage_name: str,
-        directions: Sequence[StudyDirection],
+        directions: List[str],
         study_name: Optional[str] = None,
     ) -> int:
         return self.get_storage(storage_name).create_new_study(
-            directions=directions, study_name=study_name
+            directions=[StudyDirection[direction] for direction in directions],
+            study_name=study_name,
         )
 
     def delete_study(
@@ -442,7 +443,7 @@ class DaskStorage(BaseStorage):
             self.client.scheduler.optuna_create_new_study,
             storage_name=self.name,
             study_name=study_name,
-            directions=directions,
+            directions=[direction.name for direction in directions],
         )
 
     def delete_study(self, study_id: int) -> None:
