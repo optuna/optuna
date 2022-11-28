@@ -7,6 +7,7 @@ import logging
 import os
 from typing import Any
 from typing import Callable
+from typing import cast
 from typing import Container
 from typing import Dict
 from typing import Generator
@@ -264,11 +265,16 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 if study_name is None:
                     study_name = self._create_unique_study_name(session)
 
-                direction = models.StudyDirectionModel(
-                    direction=StudyDirection.NOT_SET, objective=0
-                )
-                study = models.StudyModel(study_name=study_name, directions=[direction])
+                direction_models = [
+                    models.StudyDirectionModel(objective=objective, direction=d)
+                    for objective, d in enumerate(list(directions))
+                ]
+
+                study = models.StudyModel(study_name=study_name, directions=direction_models)
                 session.add(study)
+
+            study_id = self.get_study_id_from_name(study_name)
+
         except sqlalchemy_exc.IntegrityError:
             raise optuna.exceptions.DuplicatedStudyError(
                 "Another study with name '{}' already exists. "
@@ -278,37 +284,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             )
 
         _logger.info("A new study created in RDB with name: {}".format(study_name))
-
-        study_id = self.get_study_id_from_name(study_name)
-
-        with _create_scoped_session(self.scoped_session) as session:
-            study = models.StudyModel.find_or_raise_by_id(study_id, session)
-            directions = list(directions)
-            current_directions = [
-                d.direction for d in models.StudyDirectionModel.where_study_id(study_id, session)
-            ]
-            if (
-                len(current_directions) > 0
-                and current_directions[0] != StudyDirection.NOT_SET
-                and current_directions != directions
-            ):
-                raise ValueError(
-                    "Cannot overwrite study direction from {} to {}.".format(
-                        current_directions, directions
-                    )
-                )
-
-            for objective, d in enumerate(directions):
-                direction_model = models.StudyDirectionModel.find_by_study_and_objective(
-                    study, objective, session
-                )
-                if direction_model is None:
-                    direction_model = models.StudyDirectionModel(
-                        study_id=study_id, objective=objective, direction=d
-                    )
-                    session.add(direction_model)
-                else:
-                    direction_model.direction = d
 
         return study_id
 
