@@ -7,7 +7,6 @@ import logging
 import os
 from typing import Any
 from typing import Callable
-from typing import cast
 from typing import Container
 from typing import Dict
 from typing import Generator
@@ -270,10 +269,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                     for objective, d in enumerate(list(directions))
                 ]
 
-                study = models.StudyModel(study_name=study_name, directions=direction_models)
-                session.add(study)
-
-            study_id = self.get_study_id_from_name(study_name)
+                session.add(models.StudyModel(study_name=study_name, directions=direction_models))
 
         except sqlalchemy_exc.IntegrityError:
             raise optuna.exceptions.DuplicatedStudyError(
@@ -285,7 +281,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         _logger.info("A new study created in RDB with name: {}".format(study_name))
 
-        return study_id
+        return self.get_study_id_from_name(study_name)
 
     def delete_study(self, study_id: int) -> None:
 

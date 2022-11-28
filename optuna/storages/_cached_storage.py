@@ -30,7 +30,7 @@ class _StudyInfo:
         self.owned_or_finished_trial_ids: Set[int] = set()
         # Cache distributions to avoid storage access on distribution consistency check.
         self.param_distribution: Dict[str, distributions.BaseDistribution] = {}
-        self.directions: List[StudyDirection] = [StudyDirection.NOT_SET]
+        self.directions: List[StudyDirection] = []
         self.name: Optional[str] = None
 
 
@@ -154,7 +154,7 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
         with self._lock:
             if study_id in self._studies:
                 directions = self._studies[study_id].directions
-                if len(directions) > 1 or directions[0] != StudyDirection.NOT_SET:
+                if len(directions) > 1:
                     return directions
 
         directions = self._backend.get_study_directions(study_id)

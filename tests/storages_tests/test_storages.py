@@ -184,18 +184,15 @@ def test_set_and_get_study_directions(storage_mode: str) -> None:
                 got_directions = storage.get_study_directions(study_id)
 
                 assert got_directions == list(
-                    directions
+                    target
                 ), "Direction of a study should be a tuple of `StudyDirection` objects."
-
-            directions = storage.get_study_directions(study_id)
-            assert len(directions) == 1
-            assert directions[0] == StudyDirection.NOT_SET
 
             # Test setting value.
             check_get()
 
             # Test non-existent study.
             non_existent_study_id = study_id + 1
+
             with pytest.raises(KeyError):
                 storage.get_study_directions(non_existent_study_id)
 

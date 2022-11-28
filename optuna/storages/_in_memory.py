@@ -71,14 +71,6 @@ class InMemoryStorage(BaseStorage):
 
             _logger.info("A new study created in memory with name: {}".format(study_name))
 
-            if study.directions[0] != StudyDirection.NOT_SET and study.directions != list(
-                directions
-            ):
-                raise ValueError(
-                    "Cannot overwrite study direction from {} to {}.".format(
-                        study.directions, directions
-                    )
-                )
             study.directions = list(directions)
 
             return study_id
@@ -426,5 +418,5 @@ class _StudyInfo:
         self.user_attrs: Dict[str, Any] = {}
         self.system_attrs: Dict[str, Any] = {}
         self.name: str = name
-        self.directions: List[StudyDirection] = [StudyDirection.NOT_SET]
+        self.directions: List[StudyDirection] = []
         self.best_trial_id: Optional[int] = None
