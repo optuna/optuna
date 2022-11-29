@@ -259,7 +259,6 @@ def qnehvi_candidates_func(
         train_y = torch.cat([train_obj, train_con], dim=-1)
 
         is_feas = (train_con <= 0).all(dim=-1)
-        train_obj_feas = train_obj[is_feas]
 
         n_constraints = train_con.size(1)
         additional_qnehvi_kwargs = {
@@ -270,8 +269,6 @@ def qnehvi_candidates_func(
         }
     else:
         train_y = train_obj
-
-        train_obj_feas = train_obj
 
         additional_qnehvi_kwargs = {}
 
@@ -290,8 +287,6 @@ def qnehvi_candidates_func(
 
     ref_point = train_obj.min(dim=0).values - 1e-8
 
-    partitioning = NondominatedPartitioning(ref_point=ref_point, Y=train_obj_feas, alpha=alpha)
-
     ref_point_list = ref_point.tolist()
 
     # prune_baseline=True is generally recommended by the documentation of BoTorch.
@@ -299,7 +294,6 @@ def qnehvi_candidates_func(
     acqf = monte_carlo.qNoisyExpectedHypervolumeImprovement(
         model=model,
         ref_point=ref_point_list,
-        partitioning=partitioning,
         X_baseline=train_x,
         prune_baseline=True,
         sampler=SobolQMCNormalSampler(num_samples=256),
