@@ -258,8 +258,6 @@ def qnehvi_candidates_func(
     if train_con is not None:
         train_y = torch.cat([train_obj, train_con], dim=-1)
 
-        is_feas = (train_con <= 0).all(dim=-1)
-
         n_constraints = train_con.size(1)
         additional_qnehvi_kwargs = {
             "objective": IdentityMCMultiOutputObjective(outcomes=list(range(n_objectives))),
@@ -295,6 +293,7 @@ def qnehvi_candidates_func(
         model=model,
         ref_point=ref_point_list,
         X_baseline=train_x,
+        alpha=alpha,
         prune_baseline=True,
         sampler=SobolQMCNormalSampler(num_samples=256),
         **additional_qnehvi_kwargs,
