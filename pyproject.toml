@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "optuna"
 description = "A hyperparameter optimization framework"
 readme = "README.md"
+license = {file = "LICENSE"}
 authors = [
   {name = "Takuya Akiba"},
   {email = "akiba@preferred.jp"}
