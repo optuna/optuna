@@ -64,13 +64,13 @@ class _ParzenEstimator:
             else self._call_weights_func(parameters.weights, len(transformed_observations))
         )
 
-        if len(transformed_observations) == 0:
-            prior_weight = 1.0
-        elif parameters.consider_prior:
-            assert parameters.prior_weight is not None
-            prior_weight = parameters.prior_weight
-        else:
-            prior_weight = None
+        prior_weight = (
+            1.0
+            if len(transformed_observations) == 0
+            else parameters.prior_weight
+            if parameters.consider_prior
+            else None
+        )
 
         if prior_weight is not None:
             weights = np.append(weights, [prior_weight])
