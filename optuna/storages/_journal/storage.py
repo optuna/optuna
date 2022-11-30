@@ -160,8 +160,6 @@ class JournalStorage(BaseStorage):
                 ):
                     self._backend.save_snapshot(pickle.dumps(self._replay_result))
 
-                self._sync_with_backend()
-
                 return study_id
             assert False, "Should not reach."
 

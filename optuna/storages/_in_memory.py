@@ -66,12 +66,12 @@ class InMemoryStorage(BaseStorage):
                 study_uuid = str(uuid.uuid4())
                 study_name = DEFAULT_STUDY_NAME_PREFIX + study_uuid
             study = _StudyInfo(study_name)
+            study.directions = list(directions)
+
             self._studies[study_id] = study
             self._study_name_to_id[study_name] = study_id
 
             _logger.info("A new study created in memory with name: {}".format(study_name))
-
-            study.directions = list(directions)
 
             return study_id
 
@@ -118,7 +118,9 @@ class InMemoryStorage(BaseStorage):
 
         with self._lock:
             self._check_study_id(study_id)
-            return self._studies[study_id].directions
+            directions = self._studies[study_id].directions
+            assert directions is not None  # Study directions are never `None`.
+            return directions
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
 
@@ -247,9 +249,13 @@ class InMemoryStorage(BaseStorage):
             self._check_study_id(study_id)
 
             best_trial_id = self._studies[study_id].best_trial_id
+
+            directions = self._studies[study_id].directions
+            assert directions is not None  # Study directions are never `None`.
+
             if best_trial_id is None:
                 raise ValueError("No trials are completed yet.")
-            elif len(self._studies[study_id].directions) > 1:
+            elif len(directions) > 1:
                 raise RuntimeError(
                     "Best trial can be obtained only for single-objective optimization."
                 )
@@ -418,5 +424,5 @@ class _StudyInfo:
         self.user_attrs: Dict[str, Any] = {}
         self.system_attrs: Dict[str, Any] = {}
         self.name: str = name
-        self.directions: List[StudyDirection] = []
+        self.directions: Optional[List[StudyDirection]] = None
         self.best_trial_id: Optional[int] = None
