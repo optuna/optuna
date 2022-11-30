@@ -73,7 +73,7 @@ def _serialize_frozenstudy(study: FrozenStudy) -> dict:
     return data
 
 
-def _deserialize_frozestudy(data: dict) -> FrozenStudy:
+def _deserialize_frozenstudy(data: dict) -> FrozenStudy:
     data["directions"] = [StudyDirection[d] for d in data["directions"]]
     data["direction"] = None
     data["system_attrs"] = loads(data["system_attrs"]) if data["system_attrs"] else {}
@@ -561,7 +561,7 @@ class DaskStorage(BaseStorage):
             self.client.scheduler.optuna_get_all_studies,
             storage_name=self.name,
         )
-        return [_deserialize_frozestudy(i) for i in results]
+        return [_deserialize_frozenstudy(i) for i in results]
 
     # Basic trial manipulation
 

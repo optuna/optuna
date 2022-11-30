@@ -32,10 +32,7 @@ STORAGE_MODES: list[Any] = [
     pytest.param(
         "dask",
         marks=[
-            pytest.mark.skipif(
-                not _has_distributed,
-                reason="distributed is required for running DaskStorage tests",
-            ),
+            pytest.mark.integration,
             pytest.mark.skipif(
                 sys.version_info[:2] >= (3, 11),
                 reason="distributed doesn't yet support Python 3.11",
