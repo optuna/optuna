@@ -67,8 +67,8 @@ class _ParzenEstimator:
         if len(transformed_observations) == 0:
             prior_weight = 1.0
         elif parameters.consider_prior:
+            assert parameters.prior_weight is not None
             prior_weight = parameters.prior_weight
-            assert prior_weight is not None
         else:
             prior_weight = None
 
