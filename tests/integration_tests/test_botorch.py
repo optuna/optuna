@@ -84,52 +84,24 @@ def test_botorch_candidates_func() -> None:
     assert candidates_func_call_count == n_trials - n_startup_trials
 
 
-@pytest.mark.parametrize("candidates_func_kind", ["qei", "qehvi", "qparego", "qnhevi", "qnhevi3"])
-@pytest.mark.parametrize("is_constrained", [True, False])
-def test_botorch_specify_candidates_func(candidates_func_kind: str, is_constrained: bool) -> None:
-
+@pytest.mark.parametrize(
+    "candidates_func, n_objectives",
+    [
+        (integration.botorch.qei_candidates_func, 1),
+        (integration.botorch.qehvi_candidates_func, 2),
+        (integration.botorch.qparego_candidates_func, 4),
+        (integration.botorch.qnehvi_candidates_func, 2),
+        (integration.botorch.qnehvi_candidates_func, 3),  # alpha > 0
+    ],
+)
+def test_botorch_specify_candidates_func(candidates_func: Any, n_objectives: int) -> None:
     n_trials = 4
     n_startup_trials = 2
 
-    if candidates_func_kind == "qei":
-        candidates_func = integration.botorch.qei_candidates_func
-        n_objectives = 1
-    elif candidates_func_kind == "qehvi":
-        candidates_func = integration.botorch.qehvi_candidates_func
-        n_objectives = 2
-    elif candidates_func_kind == "qparego":
-        candidates_func = integration.botorch.qparego_candidates_func
-        n_objectives = 4
-    elif candidates_func_kind == "qnhevi":
-        candidates_func = integration.botorch.qnehvi_candidates_func
-        n_objectives = 2
-    elif candidates_func_kind == "qnhevi3":
-        candidates_func = integration.botorch.qnehvi_candidates_func
-        n_objectives = 3  # alpha > 0
-    else:
-        assert False
-
-    if is_constrained:
-        constraints_func_call_count = 0
-
-        def constraints_func(trial: FrozenTrial) -> Sequence[float]:
-            xs = sum(trial.params[f"x{i}"] for i in range(n_objectives))
-
-            nonlocal constraints_func_call_count
-            constraints_func_call_count += 1
-
-            return (xs - 0.5,)
-
-        sampler = BoTorchSampler(
-            constraints_func=constraints_func,
-            candidates_func=candidates_func,
-            n_startup_trials=n_startup_trials,
-        )
-    else:
-        sampler = BoTorchSampler(
-            candidates_func=candidates_func,
-            n_startup_trials=n_startup_trials,
-        )
+    sampler = BoTorchSampler(
+        candidates_func=candidates_func,
+        n_startup_trials=n_startup_trials,
+    )
 
     study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
     study.optimize(
@@ -137,8 +109,47 @@ def test_botorch_specify_candidates_func(candidates_func_kind: str, is_constrain
     )
 
     assert len(study.trials) == n_trials
-    if is_constrained:
-        assert constraints_func_call_count == n_trials
+
+
+@pytest.mark.parametrize(
+    "candidates_func, n_objectives",
+    [
+        (integration.botorch.qei_candidates_func, 1),
+        (integration.botorch.qehvi_candidates_func, 2),
+        (integration.botorch.qparego_candidates_func, 4),
+        (integration.botorch.qnehvi_candidates_func, 2),
+        (integration.botorch.qnehvi_candidates_func, 3),  # alpha > 0
+    ],
+)
+def test_botorch_specify_candidates_func_constrained(
+    candidates_func: Any, n_objectives: int
+) -> None:
+
+    n_trials = 4
+    n_startup_trials = 2
+    constraints_func_call_count = 0
+
+    def constraints_func(trial: FrozenTrial) -> Sequence[float]:
+        xs = sum(trial.params[f"x{i}"] for i in range(n_objectives))
+
+        nonlocal constraints_func_call_count
+        constraints_func_call_count += 1
+
+        return (xs - 0.5,)
+
+    sampler = BoTorchSampler(
+        constraints_func=constraints_func,
+        candidates_func=candidates_func,
+        n_startup_trials=n_startup_trials,
+    )
+
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
+    study.optimize(
+        lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)], n_trials=n_trials
+    )
+
+    assert len(study.trials) == n_trials
+    assert constraints_func_call_count == n_trials
 
 
 def test_botorch_candidates_func_invalid_batch_size() -> None:
