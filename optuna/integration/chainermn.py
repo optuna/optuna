@@ -240,7 +240,7 @@ class ChainerMNTrial(BaseTrial):
 
         if self.comm.rank == 0:
             assert self.delegate is not None
-            self.delegate._storage.set_trial_system_attr(self.delegate._trial_id, key, value)
+            self.delegate.set_system_attr(key, value)
         self.comm.mpi_comm.barrier()
 
     @property

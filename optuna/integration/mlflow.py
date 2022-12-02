@@ -214,7 +214,7 @@ class MLflowCallback:
                     nested = self._mlflow_kwargs.get("nested")
 
                     with mlflow.start_run(run_name=str(trial.number), nested=nested) as run:
-                        trial._storage.set_trial_system_attr(trial._trial_id, RUN_ID_ATTRIBUTE_KEY, run.info.run_id)
+                        trial.set_system_attr(RUN_ID_ATTRIBUTE_KEY, run.info.run_id)
 
                         return func(trial)
 

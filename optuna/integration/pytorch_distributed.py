@@ -234,7 +234,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         if dist.get_rank() == 0:  # type: ignore
             try:
                 assert self._delegate is not None
-                self._delegate._storage.set_trial_system_attr(self.delegate._trial_id, key, value)
+                self._delegate.set_system_attr(key, value)
             except Exception as e:
                 err = e
             err = self._broadcast(err)
