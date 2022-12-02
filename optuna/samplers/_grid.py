@@ -109,7 +109,7 @@ class GridSampler(BaseSampler):
 
         self._search_space = collections.OrderedDict()
         for param_name, param_values in sorted(search_space.items()):
-            self._search_space[param_name] = param_values
+            self._search_space[param_name] = list(param_values)
 
         self._all_grids = list(itertools.product(*self._search_space.values()))
         self._param_names = sorted(search_space.keys())
