@@ -1412,7 +1412,7 @@ def copy_study(
     )
 
     for key, value in from_study.system_attrs.items():
-        to_study.set_system_attr(key, value)
+        to_study._storage.set_study_system_attr(to_study._study_id, key, value)
 
     for key, value in from_study.user_attrs.items():
         to_study.set_user_attr(key, value)
