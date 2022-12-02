@@ -323,8 +323,8 @@ def test_trial_set_and_get_user_attrs(storage_mode: str) -> None:
 def test_trial_set_and_get_system_attrs(storage_mode: str) -> None:
     def f(trial: Trial) -> float:
 
-        trial.set_system_attr("system_message", "test")
-        assert trial.system_attrs["system_message"] == "test"
+        trial.storage.set_trial_system_attr(trial._trial_id, "system_message", "test")
+        assert trial.storage.get_trial_system_attrs(trial._trial_id)["system_message"] == "test"
         return 0.0
 
     with StorageSupplier(storage_mode) as storage:
