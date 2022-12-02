@@ -769,10 +769,6 @@ def _split_observation_pairs(
     return indices_below, indices_above
 
 
-def _compute_hypervolume(solution_set: np.ndarray, reference_point: np.ndarray) -> float:
-    return WFG().compute(solution_set, reference_point)
-
-
 def _calculate_weights_below_for_multi_objective(
     loss_vals: List[Tuple[float, List[float]]],
     indices: np.ndarray,
@@ -798,11 +794,11 @@ def _calculate_weights_below_for_multi_objective(
         worst_point = np.max(lvals, axis=0)
         reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
         reference_point[reference_point == 0] = EPS
-        hv = _compute_hypervolume(lvals, reference_point)
+        hv = WFG().compute(lvals, reference_point)
         indices_mat = ~np.eye(n_below).astype(bool)
         contributions = np.asarray(
             [
-                hv - _compute_hypervolume(lvals[indices_mat[i]], reference_point)
+                hv - WFG().compute(lvals[indices_mat[i]], reference_point)
                 for i in range(n_below)
             ]
         )
