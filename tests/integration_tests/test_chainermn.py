@@ -423,17 +423,6 @@ class TestChainerMNTrial:
 
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-    def test_system_attrs(storage_mode: str, comm: "CommunicatorBase") -> None:
-
-        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
-            study = TestChainerMNStudy._create_shared_study(storage, comm)
-            mn_trial = _create_new_chainermn_trial(study, comm)
-
-            mn_trial.set_system_attr("system_message", "test")
-            assert mn_trial.system_attrs["system_message"] == "test"
-
-    @staticmethod
-    @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     def test_call_with_mpi(storage_mode: str, comm: "CommunicatorBase") -> None:
 
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:

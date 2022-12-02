@@ -203,14 +203,6 @@ def test_set_user_attrs(trial_type: type) -> None:
     assert trial.user_attrs["data"] == "MNIST"
 
 
-# @parametrize_trial_type
-# def test_set_system_attrs(trial_type: type) -> None:
-
-#     trial = _create_trial(trial_type)
-#     trial.set_system_attr("system_message", "test")
-#     assert trial.system_attrs["system_message"] == "test"
-
-
 @parametrize_trial_type
 def test_report(trial_type: type) -> None:
 
