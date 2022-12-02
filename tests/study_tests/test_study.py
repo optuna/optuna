@@ -295,16 +295,6 @@ def test_study_set_and_get_user_attrs(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_study_set_and_get_system_attrs(storage_mode: str) -> None:
-
-    with StorageSupplier(storage_mode) as storage:
-        study = create_study(storage=storage)
-
-        study._storage.set_study_system_attr(study._study_id, "system_message", "test")
-        assert study._storage.get_study_system_attrs(study._study_id)["system_message"] == "test"
-
-
-@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_trial_set_and_get_user_attrs(storage_mode: str) -> None:
     def f(trial: Trial) -> float:
 
