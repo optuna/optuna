@@ -130,7 +130,9 @@ def create_study(
         load_if_exists=load_if_exists,
     )
 
-    study.set_system_attr("multi_objective:study:directions", list(directions))
+    study._storage.set_study_system_attr(
+        study._study_id, "multi_objective:study:directions", list(directions)
+    )
 
     return MultiObjectiveStudy(study)
 
@@ -387,7 +389,7 @@ class MultiObjectiveStudy:
 
         """
 
-        self._study.set_system_attr(key, value)
+        self._study._storage.set_study_system_attr(self._study._study_id, key, value)
 
     def enqueue_trial(self, params: Dict[str, Any]) -> None:
         """Enqueue a trial with given parameter values.
