@@ -300,8 +300,8 @@ def test_study_set_and_get_system_attrs(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
 
-        study.set_system_attr("system_message", "test")
-        assert study.system_attrs["system_message"] == "test"
+        study._storage.set_study_system_attr(study._study_id, "system_message", "test")
+        assert study._storage.get_study_system_attrs(study._study_id)["system_message"] == "test"
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -469,7 +469,7 @@ def test_copy_study(from_storage_mode: str, to_storage_mode: str) -> None:
         to_storage_mode
     ) as to_storage:
         from_study = create_study(storage=from_storage, directions=["maximize", "minimize"])
-        from_study.set_system_attr("foo", "bar")
+        from_study._storage.set_study_system_attr(from_study._study_id, "foo", "bar")
         from_study.set_user_attr("baz", "qux")
         from_study.optimize(
             lambda t: (t.suggest_float("x0", 0, 1), t.suggest_float("x1", 0, 1)), n_trials=3
