@@ -174,8 +174,7 @@ def _tell_with_warning(
 
     frozen_trial = copy.deepcopy(study._storage.get_trial(frozen_trial._trial_id))
 
+    # NOTE: `set_system_attr` will be deprecated
     if warning_message is not None:
-        frozen_trial.storage.set_trial_system_attr(
-            frozen_trial._trial_id, STUDY_TELL_WARNING_KEY, warning_message
-        )
+        frozen_trial.set_system_attr(STUDY_TELL_WARNING_KEY, warning_message)
     return frozen_trial
