@@ -9,6 +9,6 @@ __all__ = [
     "BaseHypervolume",
     "_compute_2d",
     "_compute_2points_volume",
-    "_solve_hssp"
+    "_solve_hssp",
     "WFG",
 ]
