@@ -89,7 +89,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "cached-path<=1.1.2",
             "botorch>=0.4.0",
             "catalyst>=21.3",
-            "catboost>=0.26",
+            # TODO(mertbozkir): Remove the python condition after catboost supports python 3.11
+            # > https://github.com/catboost/catboost/issues/2213
+            "catboost>=0.26; python_version<'3.11'",
             "chainer>=5.0.0",
             "cma",
             "distributed",
