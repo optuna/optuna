@@ -111,7 +111,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             # > https://github.com/tensorflow/tensorflow/issues/58032
             "tensorflow; python_version<'3.11'",
             "tensorflow-datasets",
-            "torch==1.11.0",
+            #TODO(mertbozkir): remove the python condition after torch supports 3.11
+            # > https://github.com/pytorch/pytorch/issues/86566
+            "torch==1.11.0; python_version<'3.11'",
             "torchaudio==0.11.0",
             "torchvision==0.12.0",
             "wandb",
