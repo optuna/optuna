@@ -107,7 +107,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-optimize",
             "shap",
             "skorch",
-            "tensorflow",
+            # TODO(mertbozkir): remove the python condition after tensorflow supports python 3.11
+            # > https://github.com/tensorflow/tensorflow/issues/58032
+            "tensorflow; python_version<'3.11'",
             "tensorflow-datasets",
             "torch==1.11.0",
             "torchaudio==0.11.0",
