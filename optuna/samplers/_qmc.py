@@ -184,7 +184,7 @@ class QMCSampler(BaseSampler):
         if self._initial_search_space is not None:
             return self._initial_search_space
 
-        past_trials = study.get_trials(deepcopy=False, states=_SUGGESTED_STATES, use_cache=True)
+        past_trials = study._get_trials(deepcopy=False, states=_SUGGESTED_STATES, use_cache=True)
         # The initial trial is sampled by the independent sampler.
         if len(past_trials) == 0:
             return {}

@@ -253,7 +253,7 @@ class NSGAIISampler(BaseSampler):
         )
 
     def _collect_parent_population(self, study: Study) -> Tuple[int, List[FrozenTrial]]:
-        trials = study.get_trials(deepcopy=False, use_cache=True)
+        trials = study._get_trials(deepcopy=False, use_cache=True)
 
         generation_to_runnings = defaultdict(list)
         generation_to_population = defaultdict(list)
