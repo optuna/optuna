@@ -189,7 +189,6 @@ def _run_trial(
         optuna.storages.fail_stale_trials(study)
 
     trial = study.ask()
-    study._thread_local.cache_all_trials.activate(lambda: study.get_trials(deepcopy=False))
 
     state: Optional[TrialState] = None
     value_or_values: Optional[Union[float, Sequence[float]]] = None
@@ -221,7 +220,8 @@ def _run_trial(
         frozen_trial = study._storage.get_trial(trial._trial_id)
         raise
     finally:
-        study._thread_local.cache_all_trials.deactivate()
+        # We must invalidate all trials cache here as it is only valid within a trial.
+        study._thread_local.cached_all_trials = None
         if frozen_trial.state == TrialState.COMPLETE:
             study._log_completed_trial(frozen_trial)
         elif frozen_trial.state == TrialState.PRUNED:

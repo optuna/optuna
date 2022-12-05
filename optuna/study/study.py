@@ -53,43 +53,13 @@ ObjectiveFuncType = Callable[[trial_module.Trial], Union[float, Sequence[float]]
 _logger = logging.get_logger(__name__)
 
 
-class AllTrialsCache:
-    _is_active: bool
-    _cache: Optional[List["FrozenTrial"]]
-    _getter: Optional[Callable[[], List["FrozenTrial"]]]
-
-    def __init__(self) -> None:
-        self._is_active = False
-        self._cache = None
-        self._getter = None
-
-    def is_active(self) -> bool:
-        return self._is_active
-
-    def activate(self, getter: Callable[[], List["FrozenTrial"]]) -> None:
-        self._is_active = True
-        self._getter = getter
-
-    def deactivate(self) -> None:
-        self._is_active = False
-        self._cache = None
-        self._getter = None
-
-    def get(self) -> List["FrozenTrial"]:
-        assert self._is_active
-        if self._cache is None:
-            assert self._getter is not None
-            self._cache = self._getter()
-        return self._cache
-
-
 class _ThreadLocalStudyAttribute(threading.local):
     in_optimize_loop: bool
-    cache_all_trials: AllTrialsCache
+    cached_all_trials: Optional[List["FrozenTrial"]]
 
     def __init__(self) -> None:
         self.in_optimize_loop = False
-        self.cache_all_trials = AllTrialsCache()
+        self.cached_all_trials = None
 
 
 class Study:
@@ -303,14 +273,23 @@ class Study:
         states: Optional[Container[TrialState]] = None,
         use_cache: bool = False,
     ) -> List[FrozenTrial]:
-        if use_cache and self._thread_local.cache_all_trials.is_active():
-            trials = self._thread_local.cache_all_trials.get()
+        if use_cache:
+            if self._thread_local.cached_all_trials is None:
+                self._thread_local.cached_all_trials = self._fetch_trials(deepcopy=False)
+            trials = self._thread_local.cached_all_trials
             if states is not None:
                 filtered_trials = [t for t in trials if t.state in states]
             else:
                 filtered_trials = trials
             return copy.deepcopy(filtered_trials) if deepcopy else filtered_trials
 
+        return self._fetch_trials(deepcopy=deepcopy, states=states)
+
+    def _fetch_trials(
+        self,
+        deepcopy: bool = True,
+        states: Optional[Container[TrialState]] = None,
+    ) -> List[FrozenTrial]:
         if isinstance(self._storage, _CachedStorage):
             self._storage.read_trials_from_remote_storage(self._study_id)
 

@@ -297,7 +297,7 @@ class HyperbandPruner(BasePruner):
                 states: Optional[Container[TrialState]] = None,
                 use_cache: bool = False,
             ) -> List["optuna.trial.FrozenTrial"]:
-                trials = super().get_trials(deepcopy=deepcopy, states=states, use_cache=use_cache)
+                trials = super()._get_trials(deepcopy=deepcopy, states=states, use_cache=use_cache)
                 pruner = self.pruner
                 assert isinstance(pruner, HyperbandPruner)
                 return [t for t in trials if pruner._get_bracket_id(self, t) == self._bracket_id]
