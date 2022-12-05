@@ -583,7 +583,7 @@ class CmaEsSampler(BaseSampler):
 
     def _get_trials(self, study: "optuna.Study") -> List[FrozenTrial]:
         complete_trials = []
-        for t in study.get_trials(deepcopy=False, use_cache=True):
+        for t in study._get_trials(deepcopy=False, use_cache=True):
             if t.state == TrialState.COMPLETE:
                 complete_trials.append(t)
             elif (

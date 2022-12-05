@@ -262,7 +262,6 @@ class Study:
         self,
         deepcopy: bool = True,
         states: Optional[Container[TrialState]] = None,
-        use_cache: bool = False,
     ) -> List[FrozenTrial]:
         """Return all trials in the study.
 
@@ -295,13 +294,18 @@ class Study:
                 the study may corrupt and unexpected behavior may happen.
             states:
                 Trial states to filter on. If :obj:`None`, include all states.
-            use_cache:
-                If True, returns trials from an in-memory cache, which is cached
-                before evaluating the objective function.
 
         Returns:
             A list of :class:`~optuna.trial.FrozenTrial` objects.
         """
+        return self._get_trials(deepcopy, states, use_cache=False)
+
+    def _get_trials(
+        self,
+        deepcopy: bool = True,
+        states: Optional[Container[TrialState]] = None,
+        use_cache: bool = False,
+    ) -> List[FrozenTrial]:
         if use_cache and self._thread_local.cache_all_trials.is_active():
             trials = self._thread_local.cache_all_trials.get()
             if states is not None:
