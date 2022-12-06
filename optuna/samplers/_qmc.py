@@ -57,7 +57,7 @@ class QMCSampler(BaseSampler):
         samples the first trial using its `independent_sampler` and then infers the search space
         in the second trial.
 
-        As mentioned above, the search space of the :class:`~optuna.sampler.QMCSampler` is
+        As mentioned above, the search space of the :class:`~optuna.samplers.QMCSampler` is
         determined by the first trial of the study. Once the search space is determined, it cannot
         be changed afterwards.
 

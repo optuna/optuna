@@ -12,6 +12,7 @@ from typing import Union
 import warnings
 
 from cmaes import CMA
+from cmaes import CMAwM
 from cmaes import get_warm_start_mgd
 from cmaes import SepCMA
 import numpy as np
@@ -20,6 +21,8 @@ import optuna
 from optuna import logging
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
+from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.samplers import BaseSampler
 from optuna.study._study_direction import StudyDirection
@@ -34,7 +37,7 @@ _EPS = 1e-10
 _SYSTEM_ATTR_MAX_LENGTH = 2045
 
 
-CmaClass = Union[CMA, SepCMA]
+CmaClass = Union[CMA, SepCMA, CMAwM]
 
 
 class CmaEsSampler(BaseSampler):
@@ -86,6 +89,9 @@ class CmaEsSampler(BaseSampler):
     - `Masahiro Nomura, Shuhei Watanabe, Youhei Akimoto, Yoshihiko Ozaki, Masaki Onishi.
       Warm Starting CMA-ES for Hyperparameter Optimization, AAAI. 2021.
       <https://arxiv.org/abs/2012.06932>`_
+    - `R. Hamano, S. Saito, M. Nomura, S. Shirakawa. CMA-ES with Margin: Lower-Bounding Marginal
+      Probability for Mixed-Integer Black-Box Optimization, GECCO. 2022.
+      <https://arxiv.org/abs/2205.13482>`_
 
     .. seealso::
         You can also use :class:`optuna.integration.PyCmaSampler` which is a sampler using cma
@@ -177,6 +183,18 @@ class CmaEsSampler(BaseSampler):
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.6.0.
 
+        with_margin:
+            If this is :obj:`True`, CMA-ES with margin is used. This algorithm prevents samples in
+            each discrete distribution (:class:`~optuna.distributions.FloatDistribution` with
+            `step` and :class:`~optuna.distributions.IntDistribution`) from being fixed to a single
+            point.
+            Currently, this option cannot be used with ``use_separable_cma=True``.
+
+            .. note::
+                Added in v3.1.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v3.1.0.
+
         source_trials:
             This option is for Warm Starting CMA-ES, a method to transfer prior knowledge on
             similar HPO tasks through the initialization of CMA-ES. This method estimates a
@@ -205,6 +223,7 @@ class CmaEsSampler(BaseSampler):
         popsize: Optional[int] = None,
         inc_popsize: int = 2,
         use_separable_cma: bool = False,
+        with_margin: bool = False,
         source_trials: Optional[List[FrozenTrial]] = None,
     ) -> None:
         self._x0 = x0
@@ -219,6 +238,7 @@ class CmaEsSampler(BaseSampler):
         self._popsize = popsize
         self._inc_popsize = inc_popsize
         self._use_separable_cma = use_separable_cma
+        self._with_margin = with_margin
         self._source_trials = source_trials
 
         if self._restart_strategy:
@@ -249,6 +269,13 @@ class CmaEsSampler(BaseSampler):
                 ExperimentalWarning,
             )
 
+        if self._with_margin:
+            warnings.warn(
+                "`with_margin` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
+
         if source_trials is not None and (x0 is not None or sigma0 is not None):
             raise ValueError(
                 "It is prohibited to pass `source_trials` argument when "
@@ -272,6 +299,12 @@ class CmaEsSampler(BaseSampler):
                 )
             )
 
+        # TODO(knshnb): Support sep-CMA-ES with margin.
+        if self._use_separable_cma and self._with_margin:
+            raise ValueError(
+                "Currently, we do not support `use_separable_cma=True` and `with_margin=True`."
+            )
+
     def reseed_rng(self) -> None:
         # _cma_rng doesn't require reseeding because the relative sampling reseeds in each trial.
         self._independent_sampler.reseed_rng()
@@ -287,13 +320,7 @@ class CmaEsSampler(BaseSampler):
                 # `Trial`.
                 continue
 
-            if not isinstance(
-                distribution,
-                (
-                    optuna.distributions.FloatDistribution,
-                    optuna.distributions.IntDistribution,
-                ),
-            ):
+            if not isinstance(distribution, (FloatDistribution, IntDistribution)):
                 # Categorical distribution is unsupported.
                 continue
             search_space[name] = distribution
@@ -326,7 +353,8 @@ class CmaEsSampler(BaseSampler):
             self._warn_independent_sampling = False
             return {}
 
-        trans = _SearchSpaceTransform(search_space)
+        # When `with_margin=True`, bounds in discrete dimensions are handled inside `CMAwM`.
+        trans = _SearchSpaceTransform(search_space, transform_step=not self._with_margin)
 
         optimizer, n_restarts = self._restore_optimizer(completed_trials)
         if optimizer is None:
@@ -359,7 +387,10 @@ class CmaEsSampler(BaseSampler):
             solutions: List[Tuple[np.ndarray, float]] = []
             for t in solution_trials[: optimizer.population_size]:
                 assert t.value is not None, "completed trials must have a value"
-                x = trans.transform(t.params)
+                if isinstance(optimizer, CMAwM):
+                    x = t.system_attrs["x_for_tell"]
+                else:
+                    x = trans.transform(t.params)
                 y = t.value if study.direction == StudyDirection.MINIMIZE else -t.value
                 solutions.append((x, y))
 
@@ -382,7 +413,11 @@ class CmaEsSampler(BaseSampler):
         # Caution: optimizer should update its seed value.
         seed = self._cma_rng.randint(1, 2**16) + trial.number
         optimizer._rng.seed(seed)
-        params = optimizer.ask()
+        if isinstance(optimizer, CMAwM):
+            params, x_for_tell = optimizer.ask()
+            study._storage.set_trial_system_attr(trial._trial_id, "x_for_tell", x_for_tell)
+        else:
+            params = optimizer.ask()
 
         study._storage.set_trial_system_attr(
             trial._trial_id, generation_attr_key, optimizer.generation
@@ -483,6 +518,26 @@ class CmaEsSampler(BaseSampler):
                 n_max_resampling=10 * n_dimension,
                 population_size=population_size,
             )
+
+        if self._with_margin:
+            steps = np.empty(len(trans._search_space), dtype=float)
+            for i, dist in enumerate(trans._search_space.values()):
+                assert isinstance(dist, (IntDistribution, FloatDistribution))
+                # Set step 0.0 for continuous search space.
+                steps[i] = dist.step or 0.0
+
+            # If there is no discrete search space, we use `CMA` because CMAwM` throws an error.
+            if np.any(steps > 0.0):
+                return CMAwM(
+                    mean=mean,
+                    sigma=sigma0,
+                    bounds=trans.bounds,
+                    steps=steps,
+                    cov=cov,
+                    seed=self._cma_rng.randint(1, 2**31 - 2),
+                    n_max_resampling=10 * n_dimension,
+                    population_size=population_size,
+                )
 
         return CMA(
             mean=mean,
