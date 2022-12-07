@@ -1,7 +1,9 @@
 import numpy as np
 import random
+from typing import Tuple
+import itertools
 import optuna
-from optuna._hypervolume import WFG
+import pytest
 
 def test_compute_2points_volume() -> None:
     p1 = np.ones(10)
@@ -29,9 +31,9 @@ def _compute_hssp_truth_and_approx(test_case: np.ndarray, subset_size: int) -> T
     r = 1.1 * np.max(test_case, axis=0)
     truth = 0.0
     for subset in itertools.permutations(test_case, subset_size):
-        truth = max(truth, WFG().compute(np.asarray(subset), r))
+        truth = max(truth, optuna._hypervolume.WFG().compute(np.asarray(subset), r))
     indices = optuna._hypervolume.utils._solve_hssp(test_case, np.arange(len(test_case)), subset_size, r)
-    approx = WFG().compute(test_case[indices], r)
+    approx = optuna._hypervolume.WFG().compute(test_case[indices], r)
     return truth, approx
 
 
