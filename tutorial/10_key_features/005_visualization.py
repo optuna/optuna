@@ -10,6 +10,12 @@ This tutorial walks you through this module by visualizing the history of lightg
 
 For visualizing multi-objective optimization (i.e., the usage of :func:`optuna.visualization.plot_pareto_front`),
 please refer to the tutorial of :ref:`multi_objective`.
+
+.. note::
+   `Optuna Dashboard <https://github.com/optuna/optuna-dashboard>`_ is a real-time web dashboard for Optuna.
+   You can check the optimization history, hyperparameter importances, etc. in graphs and tables without creating
+   a Python script to call Optuna's visualization functions.
+   Please check out `the GitHub repository <https://github.com/optuna/optuna-dashboard>`_ for details.
 """
 
 ###################################################################################################
