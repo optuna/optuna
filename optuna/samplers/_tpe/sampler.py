@@ -13,6 +13,7 @@ import warnings
 import numpy as np
 
 from optuna._hypervolume import WFG
+from optuna._hypervolume.utils import _solve_hssp
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.logging import get_logger
@@ -29,7 +30,6 @@ from optuna.study import Study
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna._hypervolume.utils import _solve_hssp
 
 
 EPS = 1e-12

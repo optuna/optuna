@@ -1,9 +1,11 @@
-import numpy as np
+import itertools
 import random
 from typing import Tuple
-import itertools
-import optuna
+
+import numpy as np
 import pytest
+
+import optuna
 
 
 def test_compute_2points_volume() -> None:
