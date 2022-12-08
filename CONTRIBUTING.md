@@ -165,8 +165,8 @@ See also the [Optuna Test Policy](https://github.com/optuna/optuna/wiki/Test-Pol
 
 Optuna repository uses GitHub Actions and CircleCI.
 
-Currently, we are migrating to GitHub Actions but still we use CircleCI for testing `document`
-because it makes it much easier to check built documentation.
+Currently, we are migrating to GitHub Actions but still we use CircleCI for testing visualization module
+because it makes it much easier to check built figures.
 
 ### Creating a Pull Request
 

@@ -15,6 +15,7 @@ from optuna import samplers
 from optuna.samplers._grid import GridValueType
 from optuna.storages import RetryFailedTrialCallback
 from optuna.testing.objectives import pruned_objective
+from optuna.testing.storages import StorageSupplier
 from optuna.trial import Trial
 
 
@@ -94,6 +95,27 @@ def test_study_optimize_with_pruning() -> None:
     study = optuna.create_study(sampler=samplers.GridSampler(search_space))
     study.optimize(pruned_objective, n_trials=None)
     assert len(study.trials) == 2
+
+
+def test_study_optimize_with_numpy_related_search_space() -> None:
+    def objective(trial: Trial) -> float:
+
+        a = trial.suggest_float("a", 0, 10)
+        b = trial.suggest_float("b", -0.1, 0.1)
+
+        return a + b
+
+    # Test that all combinations of the grid is sampled.
+    search_space = {
+        "a": np.linspace(0, 10, 11),
+        "b": np.arange(-0.1, 0.1, 0.05),
+    }
+    with StorageSupplier("sqlite") as storage:
+        study = optuna.create_study(
+            sampler=samplers.GridSampler(search_space),  # type: ignore
+            storage=storage,
+        )
+        study.optimize(objective, n_trials=None)
 
 
 def test_study_optimize_with_multiple_search_spaces() -> None:

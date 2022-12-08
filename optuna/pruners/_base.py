@@ -3,7 +3,7 @@ import abc
 import optuna
 
 
-class BasePruner(object, metaclass=abc.ABCMeta):
+class BasePruner(abc.ABC):
     """Base class for pruners."""
 
     @abc.abstractmethod

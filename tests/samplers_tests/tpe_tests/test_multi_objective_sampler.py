@@ -338,29 +338,25 @@ def test_multi_objective_get_observation_pairs(
         )
     )
 
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], multivariate, constant_liar) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["x"], constant_liar) == (
         {"x": [int_value, int_value]},
         [(-float("inf"), [objective_value, -objective_value]) for _ in range(2)],
         None,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["y"], multivariate, constant_liar) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["y"], constant_liar) == (
         {"y": [0, 0]},
         [(-float("inf"), [objective_value, -objective_value]) for _ in range(2)],
         None,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["x", "y"], True, constant_liar) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["x", "y"], constant_liar) == (
         {"x": [int_value, int_value], "y": [0, 0]},
         [(-float("inf"), [objective_value, -objective_value]) for _ in range(2)],
         None,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["z"], multivariate, constant_liar) == (
-        (
-            {"z": [None, None]},
-            [(-float("inf"), [objective_value, -objective_value]) for _ in range(2)],
-            None,
-        )
-        if not multivariate
-        else ({"z": []}, [], None)
+    assert _tpe.sampler._get_observation_pairs(study, ["z"], constant_liar) == (
+        {"z": [None, None]},
+        [(-float("inf"), [objective_value, -objective_value]) for _ in range(2)],
+        None,
     )
 
 
@@ -376,25 +372,15 @@ def test_multi_objective_get_observation_pairs_constrained(constraint_value: int
     study.optimize(objective, n_trials=5)
 
     violations = [max(0, constraint_value) for _ in range(5)]
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], False, constraints_enabled=True) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["x"], constraints_enabled=True) == (
         {"x": [5.0, 5.0, 5.0, 5.0, 5.0]},
         [(-float("inf"), [5.0, -5.0]) for _ in range(5)],
         violations,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["y"], False, constraints_enabled=True) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["y"], constraints_enabled=True) == (
         {"y": [None, None, None, None, None]},
         [(-float("inf"), [5.0, -5.0]) for _ in range(5)],
         violations,
-    )
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], True, constraints_enabled=True) == (
-        {"x": [5.0, 5.0, 5.0, 5.0, 5.0]},
-        [(-float("inf"), [5.0, -5.0]) for _ in range(5)],
-        violations,
-    )
-    assert _tpe.sampler._get_observation_pairs(study, ["y"], True, constraints_enabled=True) == (
-        {"y": []},
-        [],
-        [],
     )
 
 
@@ -466,7 +452,6 @@ def test_calculate_nondomination_rank() -> None:
 def test_calculate_weights_below_for_multi_objective() -> None:
     # No sample.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        {"x": np.array([1.0, 2.0, 3.0], dtype=float)},
         [(0, [0.2, 0.5]), (0, [0.9, 0.4]), (0, [1, 1])],
         np.array([], np.int64),
         None,
@@ -475,7 +460,6 @@ def test_calculate_weights_below_for_multi_objective() -> None:
 
     # One sample.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        {"x": np.array([1.0, 2.0, 3.0], dtype=float)},
         [(0, [0.2, 0.5]), (0, [0.9, 0.4]), (0, [1, 1])],
         np.array([0]),
         None,
@@ -485,7 +469,6 @@ def test_calculate_weights_below_for_multi_objective() -> None:
 
     # Two samples.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        {"x": np.array([1.0, 2.0, 3.0], dtype=float)},
         [(0, [0.2, 0.5]), (0, [0.9, 0.4]), (0, [1, 1])],
         np.array([0, 1]),
         None,
@@ -496,7 +479,6 @@ def test_calculate_weights_below_for_multi_objective() -> None:
 
     # Two equally contributed samples.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        {"x": np.array([1.0, 2.0, 3.0], dtype=float)},
         [(0, [0.2, 0.8]), (0, [0.8, 0.2]), (0, [1, 1])],
         np.array([0, 1]),
         None,
@@ -507,7 +489,6 @@ def test_calculate_weights_below_for_multi_objective() -> None:
 
     # Duplicated samples.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        {"x": np.array([1.0, 2.0, 3.0], dtype=float)},
         [(0, [0.2, 0.8]), (0, [0.2, 0.8]), (0, [1, 1])],
         np.array([0, 1]),
         None,
@@ -518,7 +499,6 @@ def test_calculate_weights_below_for_multi_objective() -> None:
 
     # Three samples.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        {"x": np.array([1.0, 2.0, 3.0, 4.0], dtype=float)},
         [(0, [0.3, 0.3]), (0, [0.2, 0.8]), (0, [0.8, 0.2]), (0, [1, 1])],
         np.array([0, 1, 2]),
         None,
@@ -531,7 +511,6 @@ def test_calculate_weights_below_for_multi_objective() -> None:
 
     # Zero/negative objective values.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        {"x": np.array([1.0, 2.0, 3.0, 4.0], dtype=float)},
         [(0, [-0.3, -0.3]), (0, [0.0, -0.8]), (0, [-0.8, 0.0]), (0, [1, 1])],
         np.array([0, 1, 2]),
         None,
@@ -544,7 +523,6 @@ def test_calculate_weights_below_for_multi_objective() -> None:
 
     # +/-inf objective values.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        {"x": np.array([1.0, 2.0, 3.0, 4.0], dtype=float)},
         [
             (0, [-float("inf"), -float("inf")]),
             (0, [0.0, -float("inf")]),
@@ -557,20 +535,8 @@ def test_calculate_weights_below_for_multi_objective() -> None:
     assert len(weights_below) == 3
     assert all([np.isnan(w) for w in weights_below])
 
-    # Missing parameter values.
-    weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        {"x": np.array([1.0, None, 3.0, 4.0], dtype=float)},
-        [(0, [-0.3, -0.3]), (0, [0.0, -0.8]), (0, [-0.8, 0.0]), (0, [1, 1])],
-        np.array([0, 1, 2]),
-        None,
-    )
-    assert len(weights_below) == 2
-    assert weights_below[0] > weights_below[1]
-    assert sum(weights_below) > 0
-
     # Three samples with two infeasible trials.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        {"x": np.array([1.0, 2.0, 3.0, 4.0], dtype=float)},
         [(0, [0.3, 0.3]), (0, [0.2, 0.8]), (0, [0.8, 0.2]), (0, [1, 1])],
         np.array([0, 1, 2]),
         [2, 8, 0],

@@ -24,7 +24,7 @@ _float_distribution_deprecated_msg = (
 _int_distribution_deprecated_msg = "Use :class:`~optuna.distributions.IntDistribution` instead."
 
 
-class BaseDistribution(object, metaclass=abc.ABCMeta):
+class BaseDistribution(abc.ABC):
     """Base class for distributions.
 
     Note that distribution classes are not supposed to be called by library users.
@@ -128,6 +128,7 @@ class FloatDistribution(BaseDistribution):
             ``high`` must be greater than or equal to ``low``.
         log:
             If ``log`` is :obj:`True`, this distribution is in log-scaled domain.
+            In this case, all parameters enqueued to the distribution must be positive values.
             This parameter must be :obj:`False` when the parameter ``step`` is not :obj:`None`.
         step:
             A discretization step. ``step`` must be larger than 0.
@@ -191,12 +192,20 @@ class FloatDistribution(BaseDistribution):
 
     def to_internal_repr(self, param_value_in_external_repr: float) -> float:
         try:
-            return float(param_value_in_external_repr)
+            internal_repr = float(param_value_in_external_repr)
         except (ValueError, TypeError) as e:
             raise ValueError(
                 f"'{param_value_in_external_repr}' is not a valid type. "
                 "float-castable value is expected."
             ) from e
+
+        if np.isnan(internal_repr):
+            raise ValueError(f"`{param_value_in_external_repr}` is invalid value.")
+        if self.log and internal_repr <= 0.0:
+            raise ValueError(
+                f"`{param_value_in_external_repr}` is invalid value for the case log=True."
+            )
+        return internal_repr
 
 
 @deprecated_class("3.0.0", "6.0.0", text=_float_distribution_deprecated_msg)
@@ -331,6 +340,7 @@ class IntDistribution(BaseDistribution):
             ``high`` must be greater than or equal to ``low``.
         log:
             If ``log`` is :obj:`True`, this distribution is in log-scaled domain.
+            In this case, all parameters enqueued to the distribution must be positive values.
             This parameter must be :obj:`False` when the parameter ``step`` is not 1.
         step:
             A discretization step. ``step`` must be a positive integer. This parameter must be 1
@@ -375,12 +385,20 @@ class IntDistribution(BaseDistribution):
 
     def to_internal_repr(self, param_value_in_external_repr: int) -> float:
         try:
-            return float(param_value_in_external_repr)
+            internal_repr = float(param_value_in_external_repr)
         except (ValueError, TypeError) as e:
             raise ValueError(
                 f"'{param_value_in_external_repr}' is not a valid type. "
                 "float-castable value is expected."
             ) from e
+
+        if np.isnan(internal_repr):
+            raise ValueError(f"`{param_value_in_external_repr}` is invalid value.")
+        if self.log and internal_repr <= 0.0:
+            raise ValueError(
+                f"`{param_value_in_external_repr}` is invalid value for the case log=True."
+            )
+        return internal_repr
 
     def single(self) -> bool:
         if self.log:

@@ -1,14 +1,19 @@
 from functools import partial
 from unittest.mock import patch
 
-import lightgbm as lgb
 import numpy as np
 import pytest
 
 import optuna
+from optuna._imports import try_import
 from optuna.integration.lightgbm import LightGBMPruningCallback
 from optuna.testing.pruners import DeterministicPruner
 
+
+with try_import():
+    import lightgbm as lgb
+
+pytestmark = pytest.mark.integration
 
 # If `True`, `lgb.cv(..)` will be used in the test, otherwise `lgb.train(..)` will be used.
 CV_FLAGS = [False, True]

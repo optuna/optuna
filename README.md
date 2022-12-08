@@ -2,7 +2,7 @@
 
 # Optuna: A hyperparameter optimization framework
 
-[![Python](https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8%20%7C%203.9%20%7C%203.10-blue)](https://www.python.org)
+[![Python](https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C%203.9%20%7C%203.10%20%7C%203.11-blue)](https://www.python.org)
 [![pypi](https://img.shields.io/pypi/v/optuna.svg)](https://pypi.python.org/pypi/optuna)
 [![conda](https://img.shields.io/conda/vn/conda-forge/optuna.svg)](https://anaconda.org/conda-forge/optuna)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/optuna/optuna)
@@ -103,15 +103,14 @@ Examples can be found in [optuna/optuna-examples](https://github.com/optuna/optu
 * [XGBoost](https://github.com/optuna/optuna-examples/tree/main/xgboost/xgboost_integration.py)
 
 
-## Web Dashboard (experimental)
+## Web Dashboard
 
-The new Web dashboard is under the development at [optuna-dashboard](https://github.com/optuna/optuna-dashboard).
-It is still experimental, but much better in many regards.
+[Optuna Dashboard](https://github.com/optuna/optuna-dashboard) is a real-time web dashboard for Optuna.
+You can check the optimization history, hyperparameter importances, etc. in graphs and tables.
+You don't need to create a Python script to call [Optuna's visualization](https://optuna.readthedocs.io/en/stable/reference/visualization/index.html) functions.
 Feature requests and bug reports welcome!
 
-| Manage studies | Visualize with interactive graphs |
-| -------------- | --------------------------------- |
-| ![manage-studies](https://user-images.githubusercontent.com/5564044/97099702-4107be80-16cf-11eb-9d97-f5ceec98ce52.gif) | ![optuna-realtime-graph](https://user-images.githubusercontent.com/5564044/97099797-66e19300-16d0-11eb-826c-6977e3941fb0.gif) |
+![optuna-dashboard](https://user-images.githubusercontent.com/5564044/204975098-95c2cb8c-0fb5-4388-abc4-da32f56cb4e5.gif)
 
 Install `optuna-dashboard` via pip:
 
@@ -137,7 +136,7 @@ $ pip install optuna
 $ conda install -c conda-forge optuna
 ```
 
-Optuna supports Python 3.6 or newer.
+Optuna supports Python 3.7 or newer.
 
 Also, we also provide Optuna docker images on [DockerHub](https://hub.docker.com/r/optuna/optuna).
 

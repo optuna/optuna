@@ -1,12 +1,18 @@
 import types
 
-import catboost as cb
 import numpy as np
 import pytest
 
 import optuna
+from optuna._imports import try_import
 from optuna.integration.catboost import CatBoostPruningCallback
 from optuna.testing.pruners import DeterministicPruner
+
+
+with try_import():
+    import catboost as cb
+
+pytestmark = pytest.mark.integration
 
 
 def test_catboost_pruning_callback_call() -> None:

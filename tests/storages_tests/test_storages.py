@@ -19,7 +19,6 @@ from optuna.storages import _CachedStorage
 from optuna.storages import BaseStorage
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
-from optuna.storages import RedisStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
@@ -42,9 +41,6 @@ def test_get_storage() -> None:
 
     assert isinstance(optuna.storages.get_storage(None), InMemoryStorage)
     assert isinstance(optuna.storages.get_storage("sqlite:///:memory:"), _CachedStorage)
-    assert isinstance(
-        optuna.storages.get_storage("redis://test_user:passwd@localhost:6379/0"), _CachedStorage
-    )
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -950,11 +946,11 @@ def test_get_best_trial(storage_mode: str) -> None:
         assert storage.get_best_trial(study_id).number == i
 
 
-@pytest.mark.parametrize("storage_mode", ["sqlite", "redis"])
-def test_get_trials_excluded_trial_ids(storage_mode: str) -> None:
+def test_get_trials_excluded_trial_ids() -> None:
+    storage_mode = "sqlite"
 
     with StorageSupplier(storage_mode) as storage:
-        assert isinstance(storage, (RDBStorage, RedisStorage))
+        assert isinstance(storage, RDBStorage)
         study_id = storage.create_new_study()
 
         storage.create_new_trial(study_id)
@@ -1103,10 +1099,7 @@ def test_get_trial_id_from_study_id_trial_number(storage_mode: str) -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_pickle_storage(storage_mode: str) -> None:
     if "redis" in storage_mode:
-        pytest.skip("Redis storage is not picklable")
-
-    if "journal" in storage_mode:
-        pytest.skip("Journal storage is not picklable")
+        pytest.skip("The `fakeredis` does not support multi instances.")
 
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study()

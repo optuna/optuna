@@ -5,16 +5,27 @@ from unittest.mock import patch
 import warnings
 
 import pytest
-import torch
 
 import optuna
 from optuna import integration
+from optuna._imports import try_import
 from optuna.integration import BoTorchSampler
 from optuna.samplers import RandomSampler
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.storages import RDBStorage
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
+
+
+with try_import() as _imports:
+    import torch
+
+if not _imports.is_successful():
+    from unittest.mock import MagicMock
+
+    torch = MagicMock()  # type: ignore # NOQA
+
+pytestmark = pytest.mark.integration
 
 
 @pytest.mark.parametrize("n_objectives", [1, 2, 4])
@@ -409,3 +420,22 @@ def test_call_after_trial_of_independent_sampler() -> None:
     ) as mock_object:
         study.optimize(lambda _: 1.0, n_trials=1)
         assert mock_object.call_count == 1
+
+
+@pytest.mark.parametrize("device", [None, torch.device("cpu"), torch.device("cuda:0")])
+def test_device_argument(device: Optional[torch.device]) -> None:
+
+    sampler = BoTorchSampler(device=device)
+    if not torch.cuda.is_available() and sampler._device.type == "cuda":
+        pytest.skip(reason="GPU is unavailable.")
+
+    def objective(trial: Trial) -> float:
+        return trial.suggest_float("x", 0.0, 1.0)
+
+    def constraints_func(trial: FrozenTrial) -> Sequence[float]:
+        x0 = trial.params["x"]
+        return [x0 - 0.5]
+
+    sampler = BoTorchSampler(constraints_func=constraints_func, n_startup_trials=1)
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(objective, n_trials=3)

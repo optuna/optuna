@@ -8,7 +8,7 @@ from optuna.distributions import BaseDistribution
 
 
 @deprecated_class("2.4.0", "4.0.0")
-class BaseMultiObjectiveSampler(object, metaclass=abc.ABCMeta):
+class BaseMultiObjectiveSampler(abc.ABC):
     """Base class for multi-objective samplers.
 
     The abstract methods of this class are the same as ones defined by

@@ -82,6 +82,7 @@ class Study:
         study_id = storage.get_study_id_from_name(study_name)
         self._study_id = study_id
         self._storage = storage
+        self._directions = storage.get_study_directions(study_id)
 
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
@@ -202,7 +203,7 @@ class Study:
             A list of :class:`~optuna.study.StudyDirection` objects.
         """
 
-        return self._storage.get_study_directions(self._study_id)
+        return self._directions
 
     @property
     def trials(self) -> List[FrozenTrial]:
@@ -322,7 +323,7 @@ class Study:
         n_trials: Optional[int] = None,
         timeout: Optional[float] = None,
         n_jobs: int = 1,
-        catch: Tuple[Type[Exception], ...] = (),
+        catch: Union[Iterable[Type[Exception]], Type[Exception]] = (),
         callbacks: Optional[List[Callable[["Study", FrozenTrial], None]]] = None,
         gc_after_trial: bool = False,
         show_progress_bar: bool = False,
@@ -426,7 +427,7 @@ class Study:
             n_trials=n_trials,
             timeout=timeout,
             n_jobs=n_jobs,
-            catch=catch,
+            catch=tuple(catch) if isinstance(catch, Iterable) else (catch,),
             callbacks=callbacks,
             gc_after_trial=gc_after_trial,
             show_progress_bar=show_progress_bar,
@@ -1169,9 +1170,8 @@ def create_study(
         sampler = samplers.NSGAIISampler()
 
     study_name = storage.get_study_name_from_id(study_id)
+    storage.set_study_directions(study_id, direction_objects)
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
-
-    study._storage.set_study_directions(study_id, direction_objects)
 
     return study
 

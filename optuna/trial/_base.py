@@ -11,7 +11,7 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 
 
-class BaseTrial(object, metaclass=abc.ABCMeta):
+class BaseTrial(abc.ABC):
     """Base class for trials.
 
     Note that this class is not supposed to be directly accessed by library users.

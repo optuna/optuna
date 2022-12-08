@@ -1,7 +1,6 @@
 from concurrent.futures import as_completed
 from concurrent.futures import ThreadPoolExecutor
 import copy
-import itertools
 import multiprocessing
 import pickle
 import threading
@@ -158,10 +157,9 @@ def test_optimize_with_direction() -> None:
         create_study(direction="test")
 
 
-@pytest.mark.parametrize(
-    "n_trials, n_jobs, storage_mode",
-    itertools.product((0, 1, 20), (1, 2, -1), STORAGE_MODES),  # n_trials  # n_jobs  # storage_mode
-)
+@pytest.mark.parametrize("n_trials", (0, 1, 20))
+@pytest.mark.parametrize("n_jobs", (1, 2, -1))
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_optimize_parallel(n_trials: int, n_jobs: int, storage_mode: str) -> None:
 
     f = Func()
@@ -184,12 +182,9 @@ def test_optimize_with_thread_pool_executor() -> None:
     assert len(study.trials) == 100
 
 
-@pytest.mark.parametrize(
-    "n_trials, n_jobs, storage_mode",
-    itertools.product(
-        (0, 1, 20, None), (1, 2, -1), STORAGE_MODES  # n_trials  # n_jobs  # storage_mode
-    ),
-)
+@pytest.mark.parametrize("n_trials", (0, 1, 20, None))
+@pytest.mark.parametrize("n_jobs", (1, 2, -1))
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_optimize_parallel_timeout(n_trials: int, n_jobs: int, storage_mode: str) -> None:
 
     sleep_sec = 0.1
@@ -237,7 +232,14 @@ def test_optimize_with_catch(storage_mode: str) -> None:
         assert all(trial.state == TrialState.FAIL for trial in study.trials)
 
 
-@pytest.mark.parametrize("catch", [[], [Exception], None, 1])
+@pytest.mark.parametrize("catch", [ValueError, (ValueError,), [ValueError], {ValueError}])
+def test_optimize_with_catch_valid_type(catch: Any) -> None:
+
+    study = create_study()
+    study.optimize(fail_objective, n_trials=20, catch=catch)
+
+
+@pytest.mark.parametrize("catch", [None, 1])
 def test_optimize_with_catch_invalid_type(catch: Any) -> None:
 
     study = create_study()
@@ -246,9 +248,8 @@ def test_optimize_with_catch_invalid_type(catch: Any) -> None:
         study.optimize(fail_objective, n_trials=20, catch=catch)
 
 
-@pytest.mark.parametrize(
-    "n_jobs, storage_mode", itertools.product((2, -1), STORAGE_MODES)  # n_jobs  # storage_mode
-)
+@pytest.mark.parametrize("n_jobs", (2, -1))
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_optimize_with_reseeding(n_jobs: int, storage_mode: str) -> None:
 
     f = Func()
@@ -1587,10 +1588,6 @@ def test_tell_from_another_process() -> None:
 def test_pop_waiting_trial_thread_safe(storage_mode: str) -> None:
     if "sqlite" == storage_mode or "cached_sqlite" == storage_mode:
         pytest.skip("study._pop_waiting_trial is not thread-safe on SQLite3")
-
-    if "redis" == storage_mode:
-        # TODO(c-bata): Make RedisStorage.set_trial_state_values() concurrent-safe.
-        pytest.skip("study._pop_waiting_trial is broken at RedisStorage")
 
     num_enqueued = 10
     with StorageSupplier(storage_mode) as storage:

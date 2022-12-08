@@ -19,6 +19,8 @@ with try_import() as _imports:
 if not _imports.is_successful():
     pd = object  # NOQA
 
+__all__ = ["pd"]
+
 
 def _create_records_and_aggregate_column(
     study: "optuna.Study", attrs: Tuple[str, ...]

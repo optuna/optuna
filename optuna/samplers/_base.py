@@ -14,7 +14,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
-class BaseSampler(object, metaclass=abc.ABCMeta):
+class BaseSampler(abc.ABC):
     """Base class for samplers.
 
     Optuna combines two types of sampling strategies, which are called *relative sampling* and
