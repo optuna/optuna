@@ -1,4 +1,3 @@
-import itertools
 import random
 from typing import Callable
 from typing import Dict
