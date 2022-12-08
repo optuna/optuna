@@ -12,10 +12,23 @@ For visualizing multi-objective optimization (i.e., the usage of :func:`optuna.v
 please refer to the tutorial of :ref:`multi_objective`.
 
 .. note::
-   `Optuna Dashboard <https://github.com/optuna/optuna-dashboard>`_ is a real-time web dashboard for Optuna.
-   You can check the optimization history, hyperparameter importances, etc. in graphs and tables without creating
-   a Python script to call Optuna's visualization functions.
-   Please check out `the GitHub repository <https://github.com/optuna/optuna-dashboard>`_ for details.
+   By using `Optuna Dashboard <https://github.com/optuna/optuna-dashboard>`_, you can also check the optimization history,
+   hyperparameter importances, hyperparameter relationships, etc. in graphs and tables.
+   Please persistent your study using :ref:`RDB backend <rdb>`_ and execute following commands to run Optuna Dashboard.
+
+   .. code-block:: console
+      $ pip install optuna-dashboard
+      $ optuna-dashboard sqlite:///example-study.db
+
+   Please check out `the GitHub repository <https://github.com/optuna/optuna-dashboard>`_ for how to use Optuna Dashboard.
+
+   .. list-table::
+      :header-rows: 1
+
+      * - Manage Studies
+        - Visualize with Interactive Graphs
+      * - .. image:: https://user-images.githubusercontent.com/5564044/205545958-305f2354-c7cd-4687-be2f-9e46e7401838.gif
+        - .. image:: https://user-images.githubusercontent.com/5564044/205545965-278cd7f4-da7d-4e2e-ac31-6d81b106cada.gif
 """
 
 ###################################################################################################
