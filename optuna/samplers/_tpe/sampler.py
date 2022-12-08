@@ -797,10 +797,7 @@ def _calculate_weights_below_for_multi_objective(
         hv = WFG().compute(lvals, reference_point)
         indices_mat = ~np.eye(n_below).astype(bool)
         contributions = np.asarray(
-            [
-                hv - WFG().compute(lvals[indices_mat[i]], reference_point)
-                for i in range(n_below)
-            ]
+            [hv - WFG().compute(lvals[indices_mat[i]], reference_point) for i in range(n_below)]
         )
         contributions += EPS
         weights_below = np.clip(contributions / np.max(contributions), 0, 1)

@@ -1,6 +1,7 @@
 import numpy as np
 import optuna
 
+
 def _compute_2points_volume(point1: np.ndarray, point2: np.ndarray) -> float:
     """Compute the hypervolume of the hypercube, whose diagonal endpoints are given 2 points.
 
@@ -64,7 +65,8 @@ def _solve_hssp(
     selected_vecs = []  # type: List[np.ndarray]
     selected_indices = []  # type: List[int]
     contributions = [
-        optuna._hypervolume.WFG().compute(np.asarray([v]), reference_point) for v in rank_i_loss_vals
+        optuna._hypervolume.WFG().compute(np.asarray([v]), reference_point)
+        for v in rank_i_loss_vals
     ]
     hv_selected = 0.0
     while len(selected_indices) < subset_size:
