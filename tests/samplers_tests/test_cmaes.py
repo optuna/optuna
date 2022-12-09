@@ -9,12 +9,15 @@ from unittest.mock import patch
 import warnings
 
 from cmaes import CMA
+from cmaes import CMAwM
+from cmaes import SepCMA
 import numpy as np
 import pytest
 
 import optuna
 from optuna import create_trial
 from optuna._transform import _SearchSpaceTransform
+from optuna.samplers._cmaes import CmaClass
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -400,28 +403,83 @@ def test_restore_optimizer_keeps_backward_compatibility() -> None:
     assert n_restarts == 1
 
 
-@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
-def test_restore_optimizer_from_substrings() -> None:
-    sampler = optuna.samplers.CmaEsSampler()
-    optimizer = CMA(np.zeros(10), sigma=1.3)
-    optimizer_str = pickle.dumps(optimizer).hex()
+@pytest.mark.parametrize("sampler_opts", [{}, {"use_separable_cma": True}, {"with_margin": True}])
+def test_restore_optimizer_from_substrings(sampler_opts: Dict[str, Any]) -> None:
+    popsize = 8
+    sampler = optuna.samplers.CmaEsSampler(popsize=popsize, **sampler_opts)
+    optimizer, n_restarts = sampler._restore_optimizer([])
+    assert optimizer is None
+    assert n_restarts == 0
 
-    system_attrs: Dict[str, Any] = sampler._split_optimizer_str(optimizer_str)
-    assert len(system_attrs) > 1
-    system_attrs["cma:n_restarts"] = 1
+    def objective(trial: optuna.Trial) -> float:
+        x1 = trial.suggest_float("x1", -10, 10, step=1)
+        x2 = trial.suggest_float("x2", -10, 10)
+        return x1**2 + x2**2
 
-    completed_trials = [
-        create_trial(state=TrialState.COMPLETE, value=0.1),
-        create_trial(
-            state=TrialState.COMPLETE,
-            value=0.1,
-            system_attrs=system_attrs,
-        ),
-        create_trial(state=TrialState.COMPLETE, value=0.1),
-    ]
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(objective, n_trials=popsize + 2)
+    completed_trials = study.get_trials(states=[TrialState.COMPLETE])
+
     optimizer, n_restarts = sampler._restore_optimizer(completed_trials)
-    assert isinstance(optimizer, CMA)
+
+    assert n_restarts == 0
+    assert optimizer is not None
+    assert optimizer.generation == 1
+    if sampler._with_margin:
+        assert isinstance(optimizer, CMAwM)
+    elif sampler._use_separable_cma:
+        assert isinstance(optimizer, SepCMA)
+    else:
+        assert isinstance(optimizer, CMA)
+
+
+@pytest.mark.parametrize("sampler_opts", [{}, {"use_separable_cma": True}, {"with_margin": True}])
+def test_restore_optimizer_after_restart(sampler_opts: Dict[str, Any]) -> None:
+    def objective(trial: optuna.Trial) -> float:
+        x1 = trial.suggest_float("x1", -10, 10, step=1)
+        x2 = trial.suggest_float("x2", -10, 10)
+        return x1**2 + x2**2
+
+    if sampler_opts.get("with_margin"):
+        cma_class = CMAwM
+    elif sampler_opts.get("use_separable_cma"):
+        cma_class = SepCMA
+    else:
+        cma_class = CMA
+    with patch.object(cma_class, "should_stop") as mock_method:
+        mock_method.return_value = True
+        sampler = optuna.samplers.CmaEsSampler(popsize=5, restart_strategy="ipop", **sampler_opts)
+        study = optuna.create_study(sampler=sampler)
+        study.optimize(objective, n_trials=5 + 2)
+
+    optimizer, n_restarts = sampler._restore_optimizer(
+        study.get_trials(states=[TrialState.COMPLETE])
+    )
     assert n_restarts == 1
+    assert optimizer is not None
+    assert optimizer.generation == 0
+
+
+@pytest.mark.parametrize("sampler_opts", [{"use_separable_cma": True}, {"with_margin": True}])
+def test_restore_optimizer_with_other_option(sampler_opts: Dict[str, Any]) -> None:
+    def objective(trial: optuna.Trial) -> float:
+        x1 = trial.suggest_float("x1", -10, 10, step=1)
+        x2 = trial.suggest_float("x2", -10, 10)
+        return x1**2 + x2**2
+
+    with patch.object(CMA, "should_stop") as mock_method:
+        mock_method.return_value = True
+        sampler = optuna.samplers.CmaEsSampler(popsize=5, restart_strategy="ipop")
+        study = optuna.create_study(sampler=sampler)
+        study.optimize(objective, n_trials=5 + 2)
+
+    # Restore optimizer via SepCMA or CMAwM samplers.
+    sampler = optuna.samplers.CmaEsSampler(**sampler_opts)
+    optimizer, n_restarts = sampler._restore_optimizer(
+        study.get_trials(states=[TrialState.COMPLETE])
+    )
+    assert n_restarts == 0
+    assert optimizer is None
 
 
 @pytest.mark.parametrize(
