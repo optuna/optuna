@@ -163,7 +163,6 @@ class MultiObjectiveTrial:
 
         self._trial.set_user_attr(key, value)
 
-    @deprecated_func("3.1.0", "6.0.0")
     def set_system_attr(self, key: str, value: Any) -> None:
         """Set system attributes to the trial.
 
