@@ -1512,7 +1512,7 @@ def get_all_study_summaries(
                 direction=direction,
                 best_trial=best_trial,
                 user_attrs=s.user_attrs,
-                system_attrs=s._storage.get_study_system_attrs(s._study_id),
+                system_attrs=s.system_attrs,
                 n_trials=n_trials,
                 datetime_start=datetime_start,
                 study_id=s._study_id,
