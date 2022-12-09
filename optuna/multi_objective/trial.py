@@ -8,7 +8,6 @@ from typing import Union
 
 from optuna import multi_objective
 from optuna._deprecated import deprecated_class
-from optuna._deprecated import deprecated_func
 from optuna.distributions import BaseDistribution
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
