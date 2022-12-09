@@ -482,6 +482,72 @@ def test_restore_optimizer_with_other_option(sampler_opts: Dict[str, Any]) -> No
     assert optimizer is None
 
 
+@pytest.mark.parametrize("sampler_opts", [{}, {"use_separable_cma": True}, {"with_margin": True}])
+def test_get_solution_trials(sampler_opts: Dict[str, Any]) -> None:
+    def objective(trial: optuna.Trial) -> float:
+        x1 = trial.suggest_float("x1", -10, 10, step=1)
+        x2 = trial.suggest_float("x2", -10, 10)
+        return x1**2 + x2**2
+
+    popsize = 5
+    sampler = optuna.samplers.CmaEsSampler(popsize=popsize, restart_strategy="ipop", **sampler_opts)
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(objective, n_trials=popsize + 2)
+
+    # The number of solutions for generation 0 equals population size.
+    assert len(sampler._get_solution_trials(study.trials, 0, 0)) == popsize
+
+    # The number of solutions for generation 1 is 1.
+    assert len(sampler._get_solution_trials(study.trials, 1, 0)) == 1
+
+
+@pytest.mark.parametrize("sampler_opts", [{"use_separable_cma": True}, {"with_margin": True}])
+def test_get_solution_trials_with_other_options(sampler_opts: Dict[str, Any]) -> None:
+    def objective(trial: optuna.Trial) -> float:
+        x1 = trial.suggest_float("x1", -10, 10, step=1)
+        x2 = trial.suggest_float("x2", -10, 10)
+        return x1**2 + x2**2
+
+    sampler = optuna.samplers.CmaEsSampler(popsize=5, restart_strategy="ipop")
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(objective, n_trials=5 + 2)
+
+    # The number of solutions is 0 after changed samplers
+    sampler = optuna.samplers.CmaEsSampler(**sampler_opts)
+    assert len(sampler._get_solution_trials(study.trials, 0, 0)) == 0
+
+
+@pytest.mark.parametrize("sampler_opts", [{}, {"use_separable_cma": True}, {"with_margin": True}])
+def test_get_solution_trials_after_restart(sampler_opts: Dict[str, Any]) -> None:
+    def objective(trial: optuna.Trial) -> float:
+        x1 = trial.suggest_float("x1", -10, 10, step=1)
+        x2 = trial.suggest_float("x2", -10, 10)
+        return x1**2 + x2**2
+
+    if sampler_opts.get("with_margin"):
+        cma_class = CMAwM
+    elif sampler_opts.get("use_separable_cma"):
+        cma_class = SepCMA
+    else:
+        cma_class = CMA
+
+    popsize = 5
+    with patch.object(cma_class, "should_stop") as mock_method:
+        mock_method.return_value = True
+        sampler = optuna.samplers.CmaEsSampler(popsize=popsize, restart_strategy="ipop", **sampler_opts)
+        study = optuna.create_study(sampler=sampler)
+        study.optimize(objective, n_trials=popsize + 2)
+
+    # The number of solutions for generation=0 and n_restarts=0 equals population size.
+    assert len(sampler._get_solution_trials(study.trials, 0, 0)) == popsize
+
+    # The number of solutions for generation=1 and n_restarts=0 is 0.
+    assert len(sampler._get_solution_trials(study.trials, 1, 0)) == 0
+
+    # The number of solutions for generation=0 and n_restarts=1 is 1 since it was restarted.
+    assert len(sampler._get_solution_trials(study.trials, 0, 1)) == 1
+
+
 @pytest.mark.parametrize(
     "dummy_optimizer_str,attr_len",
     [
