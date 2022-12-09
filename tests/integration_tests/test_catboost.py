@@ -85,6 +85,8 @@ def test_catboost_pruning_callback_init_param(metric: str, eval_set_index: int) 
     assert study.trials[0].value == 1.0
 
 
+# TODO(Hemmi): Remove the skip decorator after CatBoost's error handling is fixed.
+# See https://github.com/optuna/optuna/pull/4190 for more detail.
 @pytest.mark.skip(reason="Temporally skip due to unknown CatBoost error.")
 @pytest.mark.parametrize(
     "metric, eval_set_index",
@@ -94,11 +96,11 @@ def test_catboost_pruning_callback_init_param(metric: str, eval_set_index: int) 
     ],
 )
 def test_catboost_pruning_callback_errors(metric: str, eval_set_index: int) -> None:
-    # This test aims to cover ValueError block in CatBoostPruningCallback.after_iteration()
+    # This test aims to cover the ValueError block in CatBoostPruningCallback.after_iteration().
     # However, catboost currently terminates with a SystemError when python>=3.9 or pytest>=7.2.0,
-    # otherwise terminates with RecursionError. This is because after_iteration() is called Cython
-    # function in catboost library and that results in unexpected error behavior.
-    # Note that the difference in Error type is mainly because the _Py_CheckRecursionLimit
+    # otherwise terminates with RecursionError. This is because after_iteration() is called at a
+    # Cython function in catboost library and that results in unexpected error behavior.
+    # Note that the difference in error type is mainly because the _Py_CheckRecursionLimit
     # variable used in limited C API was removed after python 3.9.
 
     def objective(trial: optuna.trial.Trial) -> float:
