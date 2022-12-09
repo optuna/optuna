@@ -557,7 +557,6 @@ class Trial(BaseTrial):
 
         self.storage.set_trial_user_attr(self._trial_id, key, value)
 
-    @deprecated_func("3.1.0", "6.0.0")
     def set_system_attr(self, key: str, value: Any) -> None:
         """Set system attributes to the trial.
 

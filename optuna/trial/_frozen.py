@@ -279,7 +279,6 @@ class FrozenTrial(BaseTrial):
 
         self._user_attrs[key] = value
 
-    @deprecated_func("3.1.0", "6.0.0")
     def set_system_attr(self, key: str, value: Any) -> None:
 
         self._system_attrs[key] = value
