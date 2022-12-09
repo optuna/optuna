@@ -365,7 +365,7 @@ class MultiObjectiveStudy:
             A dictionary containing all system attributes.
         """
 
-        return self._study._storage._get_study_system_attrs(self._study._study_id)
+        return self._study._storage.get_study_system_attrs(self._study._study_id)
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
