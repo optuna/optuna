@@ -13,7 +13,7 @@ import warnings
 import numpy as np
 
 from optuna._hypervolume import WFG
-from optuna._hypervolume.utils import _solve_hssp
+from optuna._hypervolume.hssp import _solve_hssp
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.logging import get_logger
