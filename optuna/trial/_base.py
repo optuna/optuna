@@ -99,7 +99,6 @@ class BaseTrial(abc.ABC):
         raise NotImplementedError
 
     @property
-    @deprecated_func("3.1.0", "6.0.0")
     @abc.abstractmethod
     def system_attrs(self) -> Dict[str, Any]:
 
