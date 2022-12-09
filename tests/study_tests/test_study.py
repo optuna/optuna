@@ -1,7 +1,6 @@
 from concurrent.futures import as_completed
 from concurrent.futures import ThreadPoolExecutor
 import copy
-import itertools
 import multiprocessing
 import pickle
 import threading
@@ -159,10 +158,9 @@ def test_optimize_with_direction() -> None:
         create_study(direction="test")
 
 
-@pytest.mark.parametrize(
-    "n_trials, n_jobs, storage_mode",
-    itertools.product((0, 1, 20), (1, 2, -1), STORAGE_MODES),  # n_trials  # n_jobs  # storage_mode
-)
+@pytest.mark.parametrize("n_trials", (0, 1, 20))
+@pytest.mark.parametrize("n_jobs", (1, 2, -1))
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_optimize_parallel(n_trials: int, n_jobs: int, storage_mode: str) -> None:
 
     f = Func()
@@ -185,12 +183,9 @@ def test_optimize_with_thread_pool_executor() -> None:
     assert len(study.trials) == 100
 
 
-@pytest.mark.parametrize(
-    "n_trials, n_jobs, storage_mode",
-    itertools.product(
-        (0, 1, 20, None), (1, 2, -1), STORAGE_MODES  # n_trials  # n_jobs  # storage_mode
-    ),
-)
+@pytest.mark.parametrize("n_trials", (0, 1, 20, None))
+@pytest.mark.parametrize("n_jobs", (1, 2, -1))
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_optimize_parallel_timeout(n_trials: int, n_jobs: int, storage_mode: str) -> None:
 
     sleep_sec = 0.1
@@ -254,9 +249,8 @@ def test_optimize_with_catch_invalid_type(catch: Any) -> None:
         study.optimize(fail_objective, n_trials=20, catch=catch)
 
 
-@pytest.mark.parametrize(
-    "n_jobs, storage_mode", itertools.product((2, -1), STORAGE_MODES)  # n_jobs  # storage_mode
-)
+@pytest.mark.parametrize("n_jobs", (2, -1))
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_optimize_with_reseeding(n_jobs: int, storage_mode: str) -> None:
 
     f = Func()
