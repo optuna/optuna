@@ -457,8 +457,6 @@ class Trial(BaseTrial):
         if step < 0:
             raise ValueError("The `step` argument is {} but cannot be negative.".format(step))
 
-        intermediate_values = self.storage.get_trial(self._trial_id).intermediate_values
-
         if step in self._cached_frozen_trial.intermediate_values:
             # Do nothing if already reported.
             warnings.warn(
