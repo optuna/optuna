@@ -54,12 +54,8 @@ _logger = logging.get_logger(__name__)
 
 
 class _ThreadLocalStudyAttribute(threading.local):
-    in_optimize_loop: bool
-    cached_all_trials: Optional[List["FrozenTrial"]]
-
-    def __init__(self) -> None:
-        self.in_optimize_loop = False
-        self.cached_all_trials = None
+    in_optimize_loop: bool = False
+    cached_all_trials: Optional[List["FrozenTrial"]] = None
 
 
 class Study:
