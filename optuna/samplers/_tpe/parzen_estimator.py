@@ -1,32 +1,13 @@
-import importlib.util
 from typing import Callable
 from typing import Dict
 from typing import NamedTuple
 from typing import Optional
 from typing import Tuple
-from typing import TYPE_CHECKING
-import warnings
 
 import numpy as np
 
 from optuna import distributions
-from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
-
-
-# if importlib.util.find_spec("scipy") is not None:
-#     if TYPE_CHECKING:
-#         from scipy.stats import truncnorm
-#     else:
-#         stats = _LazyImport("scipy.stats")
-#         truncnorm = stats.truncnorm
-# else:
-#     from optuna.samplers._tpe import _truncnorm as truncnorm
-
-#     warnings.warn(
-#         "SciPy is not found. Falling back to our own implementations of special functions. "
-#         "Note that it is significantly slower than SciPy."
-#     )
 from optuna.samplers._tpe import _truncnorm as truncnorm
 
 

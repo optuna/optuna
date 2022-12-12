@@ -40,26 +40,23 @@ from typing import Union
 
 import numpy as np
 
+from optuna.samplers._tpe._erf import erf
 
-vectorize = lambda f: np.vectorize(f, cache=True)    
+
 _norm_pdf_C = math.sqrt(2 * math.pi)
 _norm_pdf_logC = math.log(_norm_pdf_C)
 
 
-def _log_sum(log_p: float, log_q: float) -> float:
-    if log_p > log_q:
-        log_p, log_q = log_q, log_p
-    return math.log1p(math.exp(log_p - log_q)) + log_q
+def _log_sum(log_p: np.ndarray, log_q: np.ndarray) -> np.ndarray:
+    return np.logaddexp(log_p, log_q)
 
 
-def _log_diff(log_p: float, log_q: float) -> float:
-    # returns log(q - p).
-    # assuming that log_q is always greater than log_q
-    return math.log1p(-math.exp(log_q - log_p)) + log_p
+def _log_diff(log_p: np.ndarray, log_q: np.ndarray) -> np.ndarray:
+    return log_p + np.log1p(-np.exp(log_q - log_p))
 
 
-@functools.lru_cache
-def _ndtr(a: float) -> float:
+@functools.lru_cache(1000)
+def _ndtr_single(a: float) -> float:
     x = a / 2**0.5
 
     if x < -1 / 2**0.5:
@@ -72,12 +69,17 @@ def _ndtr(a: float) -> float:
     return y
 
 
-@functools.lru_cache
-def _log_ndtr(a: float) -> float:
+def _ndtr(a: np.ndarray) -> np.ndarray:
+    # todo(amylase): implement erfc in _erf.py and use it for big |a| inputs.
+    return 0.5 + 0.5 * erf(a / 2**0.5)
+
+
+@functools.lru_cache(1000)
+def _log_ndtr_single(a: float) -> float:
     if a > 6:
-        return -_ndtr(-a)
+        return -_ndtr_single(-a)
     if a > -20:
-        return math.log(_ndtr(a))
+        return math.log(_ndtr_single(a))
 
     log_LHS = -0.5 * a**2 - math.log(-a) - 0.5 * math.log(2 * math.pi)
     last_total = 0.0
@@ -99,22 +101,30 @@ def _log_ndtr(a: float) -> float:
     return log_LHS + math.log(right_hand_side)
 
 
-def _norm_logpdf(x: float) -> float:
+def _log_ndtr(a: np.ndarray) -> np.ndarray:
+    return np.frompyfunc(_log_ndtr_single, 1, 1)(a).astype(float)
+
+
+def _norm_logpdf(x: np.ndarray) -> np.ndarray:
     return -(x**2) / 2.0 - _norm_pdf_logC
 
 
-@functools.lru_cache
-def _log_gauss_mass(a: float, b: float) -> float:
+def _log_gauss_mass(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     """Log of Gaussian probability mass within an interval"""
 
     # Calculations in right tail are inaccurate, so we'll exploit the
     # symmetry and work only in the left tail
+    case_left = b <= 0
+    case_right = a > 0
+    case_central = ~(case_left | case_right)
 
-    if b <= 0:
+    def mass_case_left(a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return _log_diff(_log_ndtr(b), _log_ndtr(a))
-    elif a > 0:
-        return _log_diff(_log_ndtr(-a), _log_ndtr(-b))
-    else:
+
+    def mass_case_right(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+        return mass_case_left(-b, -a)
+
+    def mass_case_central(a: np.ndarray, b: np.ndarray) -> np.ndarray:
         # Previously, this was implemented as:
         # left_mass = mass_case_left(a, 0)
         # right_mass = mass_case_right(0, b)
@@ -125,7 +135,17 @@ def _log_gauss_mass(a: float, b: float) -> float:
         # underflows, it was insignificant; if both terms underflow,
         # the result can't accurately be represented in logspace anyway
         # because sc.log1p(x) ~ x for small x.
-        return math.log1p(-_ndtr(a) - _ndtr(-b))
+        return np.log1p(-_ndtr(a) - _ndtr(-b))
+
+    # _lazyselect not working; don't care to debug it
+    out = np.full_like(a, fill_value=np.nan, dtype=np.complex128)
+    if a[case_left].size:
+        out[case_left] = mass_case_left(a[case_left], b[case_left])
+    if a[case_right].size:
+        out[case_right] = mass_case_right(a[case_right], b[case_right])
+    if a[case_central].size:
+        out[case_central] = mass_case_central(a[case_central], b[case_central])
+    return np.real(out)  # discard ~0j
 
 
 def _bisect(f: Callable[[float], float], a: float, b: float, c: float) -> float:
@@ -141,26 +161,45 @@ def _bisect(f: Callable[[float], float], a: float, b: float, c: float) -> float:
     return m
 
 
-def _ndtri_exp(y: float) -> float:
+def _ndtri_exp_single(y: float) -> float:
     # TODO(amylase): Justify this constant
-    return _bisect(_log_ndtr, -100, +100, y)
+    return _bisect(_log_ndtr_single, -100, +100, y)
 
 
-@vectorize
-def ppf(q: float, a: float, b: float) -> float:
-    if a == b:
-        return np.nan
-    if q == 0:
-        return a
-    if q == 1:
-        return b
+def _ndtri_exp(y: np.ndarray) -> np.ndarray:
+    return np.frompyfunc(_ndtri_exp_single, 1, 1)(y).astype(float)
 
-    if a < 0:
-        log_Phi_x = _log_sum(_log_ndtr(a), math.log(q) + _log_gauss_mass(a, b))
+
+def ppf(q: np.ndarray, a: Union[np.ndarray, float], b: Union[np.ndarray, float]) -> np.ndarray:
+    q, a, b = np.atleast_1d(q, a, b)
+    q, a, b = np.broadcast_arrays(q, a, b)
+
+    case_left = a < 0
+    case_right = ~case_left
+
+    def ppf_left(q: np.ndarray, a: np.ndarray, b: np.ndarray) -> np.ndarray:
+        log_Phi_x = _log_sum(_log_ndtr(a), np.log(q) + _log_gauss_mass(a, b))
         return _ndtri_exp(log_Phi_x)
-    else:
-        log_Phi_x = _log_sum(_log_ndtr(-b), math.log1p(-q) + _log_gauss_mass(a, b))
+
+    def ppf_right(q: np.ndarray, a: np.ndarray, b: np.ndarray) -> np.ndarray:
+        log_Phi_x = _log_sum(_log_ndtr(-b), np.log1p(-q) + _log_gauss_mass(a, b))
         return -_ndtri_exp(log_Phi_x)
+
+    out = np.empty_like(q)
+
+    q_left = q[case_left]
+    q_right = q[case_right]
+
+    if q_left.size:
+        out[case_left] = ppf_left(q_left, a[case_left], b[case_left])
+    if q_right.size:
+        out[case_right] = ppf_right(q_right, a[case_right], b[case_right])
+
+    out[q == 0] = a[q == 0]
+    out[q == 1] = b[q == 1]
+    out[a == b] = math.nan
+
+    return out
 
 
 def rvs(
@@ -176,43 +215,58 @@ def rvs(
     return ppf(percentiles, a, b) * scale + loc
 
 
-@vectorize
-def logpdf(x: float, a: float, b: float, loc: float = 0, scale: float = 1) -> float:
+def logpdf(
+    x: np.ndarray,
+    a: Union[np.ndarray, float],
+    b: Union[np.ndarray, float],
+    loc: Union[np.ndarray, float] = 0,
+    scale: Union[np.ndarray, float] = 1,
+) -> np.ndarray:
     x = (x - loc) / scale
-    if a == b:
-        return np.nan
-    if x < a or b < x:
-        return -np.inf
-    return _norm_logpdf(x) - _log_gauss_mass(a, b)
+
+    x, a, b = np.atleast_1d(x, a, b)
+    x, a, b = np.broadcast_arrays(x, a, b)
+
+    out = _norm_logpdf(x) - _log_gauss_mass(a, b)
+
+    out[(x < a) | (b < x)] = -np.inf
+    out[a == b] = math.nan
+
+    return out
 
 
-def _logcdf(x: float, a: float, b: float) -> float:
+def _logcdf(x: np.ndarray, a: np.ndarray, b: np.ndarray) -> np.ndarray:
     logcdf = _log_gauss_mass(a, x) - _log_gauss_mass(a, b)
-    if logcdf > -0.1:  # avoid catastrophic cancellation
-        log_survival = _log_gauss_mass(x, b) - _log_gauss_mass(a, b)
-        logcdf = math.log1p(-math.exp(log_survival))
+    i = logcdf > -0.1  # avoid catastrophic cancellation
+    if np.any(i):
+        logcdf[i] = np.log1p(-np.exp(_logsf(x[i], a[i], b[i])))
     return logcdf
 
 
-@vectorize
-def logcdf(x: float, a: float, b: float, loc: float = 0, scale: float = 1) -> float:
-    if a == b:
-        return math.nan
-    x = (x - loc) / scale
-    if x <= a:
-        return -math.inf
-    if x >= b:
-        return 0
-    return _logcdf(x, a, b)
+def _logsf(x: np.ndarray, a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    logsf = _log_gauss_mass(x, b) - _log_gauss_mass(a, b)
+    i = logsf > -0.1  # avoid catastrophic cancellation
+    if np.any(i):
+        logsf[i] = np.log1p(-np.exp(_logcdf(x[i], a[i], b[i])))
+    return logsf
 
 
-@vectorize
-def cdf(x: float, a: float, b: float, loc: float = 0, scale: float = 1) -> float:
-    if a == b:
-        return math.nan
+def cdf(
+    x: np.ndarray,
+    a: Union[np.ndarray, float],
+    b: Union[np.ndarray, float],
+    loc: Union[np.ndarray, float] = 0,
+    scale: Union[np.ndarray, float] = 1,
+) -> np.ndarray:
     x = (x - loc) / scale
-    if x <= a:
-        return 0
-    if x >= b:
-        return 1
-    return math.exp(_logcdf(x, a, b))
+
+    x, a, b = np.atleast_1d(x, a, b)
+    x, a, b = np.broadcast_arrays(x, a, b)
+
+    out = np.exp(_logcdf(x, a, b))
+
+    out[x <= a] = 0
+    out[x >= b] = 1
+    out[a == b] = math.nan
+
+    return out
