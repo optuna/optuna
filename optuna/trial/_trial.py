@@ -575,7 +575,7 @@ class Trial(BaseTrial):
         """
 
         self.storage.set_trial_system_attr(self._trial_id, key, value)
-                self._cached_frozen_trial.system_attrs[key] = value
+        self._cached_frozen_trial.system_attrs[key] = value
 
     def _suggest(self, name: str, distribution: BaseDistribution) -> Any:
 
