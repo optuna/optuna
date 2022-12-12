@@ -61,7 +61,9 @@ class Trial(BaseTrial):
 
         study = pruners._filter_study(self.study, trial)
 
-        self.relative_search_space = self.study.sampler.infer_relative_search_space(study, self._cached_frozen_trial)
+        self.relative_search_space = self.study.sampler.infer_relative_search_space(
+            study, self._cached_frozen_trial
+        )
         self.relative_params = self.study.sampler.sample_relative(
             study, self._cached_frozen_trial, self.relative_search_space
         )
@@ -649,9 +651,7 @@ class Trial(BaseTrial):
 
     def _check_distribution(self, name: str, distribution: BaseDistribution) -> None:
 
-        old_distribution = self._cached_frozen_trial.distributions.get(
-            name, distribution
-        )
+        old_distribution = self._cached_frozen_trial.distributions.get(name, distribution)
         if old_distribution != distribution:
             warnings.warn(
                 'Inconsistent parameter values for distribution with name "{}"! '
