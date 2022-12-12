@@ -56,7 +56,7 @@ _logger = logging.get_logger(__name__)
 
 class _ThreadLocalStudyAttribute(threading.local):
     in_optimize_loop: bool = False
-    cached_all_trials: Optional[List['FrozenTrial']] = None
+    cached_all_trials: Optional[List["FrozenTrial"]] = None
 
 
 class Study:
@@ -272,14 +272,20 @@ class Study:
         """
         if use_cache:
             if not self._thread_local.in_optimize_loop:
-                warnings.warn("use_cache option is supposed to be called inside the optimize loop.")
+                warnings.warn(
+                    "use_cache option is supposed to be called inside the optimize loop."
+                )
 
             if self._thread_local.cached_all_trials is None:
-                self._thread_local.cached_all_trials = self._storage.get_all_trials(self._study_id, deepcopy=False)
+                self._thread_local.cached_all_trials = self._storage.get_all_trials(
+                    self._study_id, deepcopy=False
+                )
 
-            filtered_trials = [t for t in self._thread_local.cached_all_trials if t.state in states]
+            filtered_trials = [
+                t for t in self._thread_local.cached_all_trials if t.state in states
+            ]
             return copy.deepcopy(filtered_trials) if deepcopy else filtered_trials
-        
+
         if isinstance(self._storage, _CachedStorage):
             self._storage.read_trials_from_remote_storage(self._study_id)
 
