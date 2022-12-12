@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 from optuna import distributions
 from optuna import exceptions
 from optuna import integration
@@ -26,7 +24,6 @@ from optuna.version import __version__
 
 __all__ = [
     "Study",
-    "TYPE_CHECKING",
     "Trial",
     "TrialPruned",
     "__version__",
