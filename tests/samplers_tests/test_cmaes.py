@@ -267,7 +267,7 @@ def test_sample_relative_n_startup_trials() -> None:
 
 def test_get_trials() -> None:
     with patch(
-        "optuna.Study.get_trials",
+        "optuna.Study._get_trials",
         new=Mock(side_effect=lambda deepcopy, use_cache: _create_trials()),
     ):
         sampler = optuna.samplers.CmaEsSampler(consider_pruned_trials=False)
