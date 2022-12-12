@@ -692,7 +692,7 @@ class Trial(BaseTrial):
             A dictionary containing all user attributes.
         """
 
-        return copy.deepcopy(self.storage.get_trial_user_attrs(self._trial_id))
+        return self._cached_frozen_trial.user_attrs
 
     @property
     def system_attrs(self) -> Dict[str, Any]:
@@ -702,7 +702,7 @@ class Trial(BaseTrial):
             A dictionary containing all system attributes.
         """
 
-        return self._cached_frozen_trial.system_attrs
+        return copy.deepcopy(self.storage.get_trial_system_attrs(self._trial_id))
 
     @property
     def datetime_start(self) -> Optional[datetime.datetime]:
