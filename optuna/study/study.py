@@ -1,5 +1,4 @@
 import copy
-from functools import cached_property
 from numbers import Real
 import threading
 from typing import Any
@@ -56,7 +55,6 @@ _logger = logging.get_logger(__name__)
 
 class _ThreadLocalStudyAttribute(threading.local):
     in_optimize_loop: bool = False
-    cached_all_trials: Optional[List["FrozenTrial"]] = None
 
 
 class Study:
@@ -197,7 +195,7 @@ class Study:
 
         return self.directions[0]
 
-    @cached_property
+    @property
     def directions(self) -> List[StudyDirection]:
         """Return the directions of the study.
 
@@ -229,8 +227,6 @@ class Study:
         self,
         deepcopy: bool = True,
         states: Optional[Container[TrialState]] = None,
-        *,
-        use_cache: bool = False,
     ) -> List[FrozenTrial]:
         """Return all trials in the study.
 
@@ -263,28 +259,10 @@ class Study:
                 the study may corrupt and unexpected behavior may happen.
             states:
                 Trial states to filter on. If :obj:`None`, include all states.
-            use_cache:
-                If True, returns trials from an in-memory cache, which is cached
-                before evaluating the objective function.
 
         Returns:
             A list of :class:`~optuna.trial.FrozenTrial` objects.
         """
-        if use_cache:
-            if not self._thread_local.in_optimize_loop:
-                warnings.warn(
-                    "use_cache option is supposed to be called inside the optimize loop."
-                )
-
-            if self._thread_local.cached_all_trials is None:
-                self._thread_local.cached_all_trials = self._storage.get_all_trials(
-                    self._study_id, deepcopy=False
-                )
-
-            filtered_trials = [
-                t for t in self._thread_local.cached_all_trials if t.state in states
-            ]
-            return copy.deepcopy(filtered_trials) if deepcopy else filtered_trials
 
         if isinstance(self._storage, _CachedStorage):
             self._storage.read_trials_from_remote_storage(self._study_id)
