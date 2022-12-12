@@ -263,7 +263,6 @@ class Study:
         Returns:
             A list of :class:`~optuna.trial.FrozenTrial` objects.
         """
-
         if isinstance(self._storage, _CachedStorage):
             self._storage.read_trials_from_remote_storage(self._study_id)
 
