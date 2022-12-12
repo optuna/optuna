@@ -41,7 +41,7 @@ def get_storage(storage: Union[None, str, BaseStorage]) -> BaseStorage:
                 "RedisStorage is removed at Optuna v3.1.0. Please use JournalRedisStorage instead."
             )
         return _CachedStorage(RDBStorage(storage))
-    elif isinstance(storage, (RDBStorage)):
+    elif isinstance(storage, RDBStorage):
         return _CachedStorage(storage)
     else:
         return storage
