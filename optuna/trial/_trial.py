@@ -58,8 +58,6 @@ class Trial(BaseTrial):
         self._cached_frozen_trial = self.storage.get_trial(self._trial_id)
         study = pruners._filter_study(self.study, self._cached_frozen_trial)
 
-        study = pruners._filter_study(self.study, trial)
-
         self.relative_search_space = self.study.sampler.infer_relative_search_space(
             study, self._cached_frozen_trial
         )
