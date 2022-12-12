@@ -17,7 +17,6 @@ import pytest
 import optuna
 from optuna import create_trial
 from optuna._transform import _SearchSpaceTransform
-from optuna.samplers._cmaes import CmaClass
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -418,9 +417,7 @@ def test_restore_optimizer_from_substrings(sampler_opts: Dict[str, Any]) -> None
 
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=popsize + 2)
-    completed_trials = study.get_trials(states=[TrialState.COMPLETE])
-
-    optimizer, n_restarts = sampler._restore_optimizer(completed_trials)
+    optimizer, n_restarts = sampler._restore_optimizer(study.trials)
 
     assert n_restarts == 0
     assert optimizer is not None
@@ -452,9 +449,7 @@ def test_restore_optimizer_after_restart(sampler_opts: Dict[str, Any]) -> None:
         study = optuna.create_study(sampler=sampler)
         study.optimize(objective, n_trials=5 + 2)
 
-    optimizer, n_restarts = sampler._restore_optimizer(
-        study.get_trials(states=[TrialState.COMPLETE])
-    )
+    optimizer, n_restarts = sampler._restore_optimizer(study.trials)
     assert n_restarts == 1
     assert optimizer is not None
     assert optimizer.generation == 0
@@ -475,9 +470,7 @@ def test_restore_optimizer_with_other_option(sampler_opts: Dict[str, Any]) -> No
 
     # Restore optimizer via SepCMA or CMAwM samplers.
     sampler = optuna.samplers.CmaEsSampler(**sampler_opts)
-    optimizer, n_restarts = sampler._restore_optimizer(
-        study.get_trials(states=[TrialState.COMPLETE])
-    )
+    optimizer, n_restarts = sampler._restore_optimizer(study.trials)
     assert n_restarts == 0
     assert optimizer is None
 
@@ -490,7 +483,9 @@ def test_get_solution_trials(sampler_opts: Dict[str, Any]) -> None:
         return x1**2 + x2**2
 
     popsize = 5
-    sampler = optuna.samplers.CmaEsSampler(popsize=popsize, restart_strategy="ipop", **sampler_opts)
+    sampler = optuna.samplers.CmaEsSampler(
+        popsize=popsize, restart_strategy="ipop", **sampler_opts
+    )
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=popsize + 2)
 
@@ -534,7 +529,9 @@ def test_get_solution_trials_after_restart(sampler_opts: Dict[str, Any]) -> None
     popsize = 5
     with patch.object(cma_class, "should_stop") as mock_method:
         mock_method.return_value = True
-        sampler = optuna.samplers.CmaEsSampler(popsize=popsize, restart_strategy="ipop", **sampler_opts)
+        sampler = optuna.samplers.CmaEsSampler(
+            popsize=popsize, restart_strategy="ipop", **sampler_opts
+        )
         study = optuna.create_study(sampler=sampler)
         study.optimize(objective, n_trials=popsize + 2)
 

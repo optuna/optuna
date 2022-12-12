@@ -381,7 +381,9 @@ class CmaEsSampler(BaseSampler):
 
         # TODO(c-bata): Reduce the number of wasted trials during parallel optimization.
         # See https://github.com/optuna/optuna/pull/920#discussion_r385114002 for details.
-        solution_trials = self._get_solution_trials(completed_trials, optimizer.generation, n_restarts)
+        solution_trials = self._get_solution_trials(
+            completed_trials, optimizer.generation, n_restarts
+        )
 
         if len(solution_trials) >= optimizer.population_size:
             solutions: List[Tuple[np.ndarray, float]] = []
@@ -637,13 +639,11 @@ class CmaEsSampler(BaseSampler):
                 complete_trials.append(copied_t)
         return complete_trials
 
-    def _get_solution_trials(self, trials: List[FrozenTrial], generation: int, n_restarts: int) -> List[FrozenTrial]:
+    def _get_solution_trials(
+        self, trials: List[FrozenTrial], generation: int, n_restarts: int
+    ) -> List[FrozenTrial]:
         generation_attr_key = self._attr_keys.generation(n_restarts)
-        return [
-            t
-            for t in trials
-            if generation == t.system_attrs.get(generation_attr_key, -1)
-        ]
+        return [t for t in trials if generation == t.system_attrs.get(generation_attr_key, -1)]
 
     def after_trial(
         self,
