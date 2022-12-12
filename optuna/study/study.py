@@ -1,4 +1,5 @@
 import copy
+from functools import cached_property
 from numbers import Real
 import threading
 from typing import Any
@@ -55,6 +56,7 @@ _logger = logging.get_logger(__name__)
 
 class _ThreadLocalStudyAttribute(threading.local):
     in_optimize_loop: bool = False
+    cached_all_trials: Optional[List['FrozenTrial']] = None
 
 
 class Study:
