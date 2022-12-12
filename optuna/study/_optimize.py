@@ -219,6 +219,7 @@ def _run_trial(
         frozen_trial = study._storage.get_trial(trial._trial_id)
         raise
     finally:
+        study._thread_local.cached_all_trials = None
         if frozen_trial.state == TrialState.COMPLETE:
             study._log_completed_trial(frozen_trial)
         elif frozen_trial.state == TrialState.PRUNED:
