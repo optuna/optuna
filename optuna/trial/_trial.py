@@ -602,8 +602,8 @@ class Trial(BaseTrial):
             param_value_in_internal_repr = distribution.to_internal_repr(param_value)
             storage.set_trial_param(trial_id, name, param_value_in_internal_repr, distribution)
 
-        self._cached_frozen_trial.distributions[name] = distribution
-        self._cached_frozen_trial.params[name] = param_value
+            self._cached_frozen_trial.distributions[name] = distribution
+            self._cached_frozen_trial.params[name] = param_value
         return param_value
 
     def _is_fixed_param(self, name: str, distribution: BaseDistribution) -> bool:
