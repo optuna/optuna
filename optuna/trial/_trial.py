@@ -687,7 +687,7 @@ class Trial(BaseTrial):
             A dictionary containing all user attributes.
         """
 
-        return self._cached_frozen_trial.user_attrs
+        return copy.deepcopy(self._cached_frozen_trial.user_attrs)
 
     @property
     def system_attrs(self) -> Dict[str, Any]:
