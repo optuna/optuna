@@ -580,7 +580,8 @@ class Trial(BaseTrial):
         storage = self.storage
         trial_id = self._trial_id
 
-        trial = self._cached_frozen_trial
+        # trial = self._cached_frozen_trial
+        trial = storage.get_trial(trial_id)
 
         if name in trial.distributions:
             # No need to sample if already suggested.
