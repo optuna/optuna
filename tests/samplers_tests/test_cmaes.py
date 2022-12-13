@@ -15,8 +15,6 @@ import pytest
 import optuna
 from optuna import create_trial
 from optuna._transform import _SearchSpaceTransform
-from optuna.samplers._cmaes import _concat_optimizer_attrs
-from optuna.samplers._cmaes import _split_optimizer_str
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -315,6 +313,30 @@ def _create_trials() -> List[FrozenTrial]:
     return trials
 
 
+@pytest.mark.parametrize(
+    "options, key",
+    [
+        ({"with_margin": False, "use_separable_cma": False}, "cma:"),
+        ({"with_margin": True, "use_separable_cma": False}, "cmawm:"),
+        ({"with_margin": False, "use_separable_cma": True}, "sepcma:"),
+    ],
+)
+def test_sampler_attr_key(options: Dict[str, bool], key: str) -> None:
+    # Test sampler attr_key propery
+    sampler = optuna.samplers.CmaEsSampler(
+        with_margin=options["with_margin"], use_separable_cma=options["use_separable_cma"]
+    )
+    assert sampler._attr_keys.optimizer.startswith(key)
+    assert sampler._attr_keys.n_restarts.startswith(key)
+    assert sampler._attr_keys.generation(0).startswith(key)
+
+    sampler._restart_strategy = "ipop"
+    for i in range(3):
+        assert sampler._attr_keys.generation(i).startswith(
+            (key + "restart_{}:".format(i) + "generation")
+        )
+
+
 @pytest.mark.parametrize("popsize", [None, 16])
 def test_population_size_is_multiplied_when_enable_ipop(popsize: Optional[int]) -> None:
     inc_popsize = 2
@@ -384,7 +406,7 @@ def test_restore_optimizer_from_substrings() -> None:
     optimizer = CMA(np.zeros(10), sigma=1.3)
     optimizer_str = pickle.dumps(optimizer).hex()
 
-    system_attrs: Dict[str, Any] = _split_optimizer_str(optimizer_str)
+    system_attrs: Dict[str, Any] = sampler._split_optimizer_str(optimizer_str)
     assert len(system_attrs) > 1
     system_attrs["cma:n_restarts"] = 1
 
@@ -411,10 +433,11 @@ def test_restore_optimizer_from_substrings() -> None:
     ],
 )
 def test_split_and_concat_optimizer_string(dummy_optimizer_str: str, attr_len: int) -> None:
+    sampler = optuna.samplers.CmaEsSampler()
     with patch("optuna.samplers._cmaes._SYSTEM_ATTR_MAX_LENGTH", 5):
-        attrs = _split_optimizer_str(dummy_optimizer_str)
+        attrs = sampler._split_optimizer_str(dummy_optimizer_str)
         assert len(attrs) == attr_len
-        actual = _concat_optimizer_attrs(attrs)
+        actual = sampler._concat_optimizer_attrs(attrs)
         assert dummy_optimizer_str == actual
 
 
