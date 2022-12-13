@@ -16,6 +16,7 @@ from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
+from optuna.trial import FrozenTrial
 from optuna.trial._base import BaseTrial
 
 
@@ -660,7 +661,7 @@ class Trial(BaseTrial):
                 RuntimeWarning,
             )
 
-    def _get_latest_trial(self):
+    def _get_latest_trial(self) -> FrozenTrial:
         system_attrs = copy.deepcopy(self.storage.get_trial_system_attrs(self._trial_id))
         self._cached_frozen_trial.system_attrs = system_attrs
         return self._cached_frozen_trial
