@@ -585,7 +585,7 @@ class Trial(BaseTrial):
         if name in trial.distributions:
             # No need to sample if already suggested.
             distributions.check_distribution_compatibility(trial.distributions[name], distribution)
-            param_value = distribution.to_external_repr(trial.params[name])
+            param_value = trial.params[name]
         else:
             if self._is_fixed_param(name, distribution):
                 param_value = trial.system_attrs["fixed_params"][name]
