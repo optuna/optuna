@@ -314,21 +314,6 @@ def test_trial_set_and_get_user_attrs(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_trial_set_and_get_system_attrs(storage_mode: str) -> None:
-    def f(trial: Trial) -> float:
-
-        trial.set_system_attr("system_message", "test")
-        assert trial.system_attrs["system_message"] == "test"
-        return 0.0
-
-    with StorageSupplier(storage_mode) as storage:
-        study = create_study(storage=storage)
-        study.optimize(f, n_trials=1)
-        frozen_trial = study.trials[0]
-        assert frozen_trial.system_attrs["system_message"] == "test"
-
-
-@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 @pytest.mark.parametrize("include_best_trial", [True, False])
 def test_get_all_study_summaries(storage_mode: str, include_best_trial: bool) -> None:
 
