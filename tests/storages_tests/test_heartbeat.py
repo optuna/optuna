@@ -90,7 +90,7 @@ def test_failed_trial_callback(storage_mode: str) -> None:
 
         with pytest.warns(UserWarning):
             trial = study.ask()
-        trial.set_system_attr("test", "B")
+        trial.storage.set_trial_system_attr(trial._trial_id, "test", "B")
         storage.record_heartbeat(trial._trial_id)
         time.sleep(grace_period + 1)
 
@@ -224,7 +224,7 @@ def test_fail_stale_trials(grace_period: Optional[int]) -> None:
 
         with pytest.warns(UserWarning):
             trial = study.ask()
-        trial.set_system_attr("test", "B")
+        trial.storage.set_trial_system_attr(trial._trial_id, "test", "B")
 
         time.sleep(_grace_period + 1)
         check_keep_trial_state_in_running(study)
