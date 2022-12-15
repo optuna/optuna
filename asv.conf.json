@@ -73,6 +73,7 @@
     //
     "matrix": {
         "fakeredis": [""],
+        "pytest": [""],
     },
 
     // Combinations of libraries/python versions can be excluded/included
