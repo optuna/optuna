@@ -21,7 +21,7 @@ please refer to the tutorial of :ref:`multi_objective`.
       $ pip install optuna-dashboard
       $ optuna-dashboard sqlite:///example-study.db
 
-   Please check out `the GitHub repository <https://github.com/optuna/optuna-dashboard>`_ for how to use Optuna Dashboard.
+   Please check out `the GitHub repository <https://github.com/optuna/optuna-dashboard>`_ for more details.
 
    .. list-table::
       :header-rows: 1
