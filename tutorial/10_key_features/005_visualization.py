@@ -14,9 +14,10 @@ please refer to the tutorial of :ref:`multi_objective`.
 .. note::
    By using `Optuna Dashboard <https://github.com/optuna/optuna-dashboard>`_, you can also check the optimization history,
    hyperparameter importances, hyperparameter relationships, etc. in graphs and tables.
-   Please persistent your study using :ref:`RDB backend <rdb>`_ and execute following commands to run Optuna Dashboard.
+   Please persistent your study using :ref:`RDB backend <rdb>` and execute following commands to run Optuna Dashboard.
 
    .. code-block:: console
+
       $ pip install optuna-dashboard
       $ optuna-dashboard sqlite:///example-study.db
 
