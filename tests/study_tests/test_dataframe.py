@@ -56,7 +56,7 @@ def test_trials_dataframe(storage_mode: str, attrs: Tuple[str, ...], multi_index
         y = trial.suggest_categorical("y", (2.5,))
         assert isinstance(y, float)
         trial.set_user_attr("train_loss", 3)
-        trial.set_system_attr("foo", "bar")
+        trial.storage.set_trial_system_attr(trial._trial_id, "foo", "bar")
         value = x + y  # 3.5
 
         # Test reported intermediate values, although it in practice is not "intermediate".
