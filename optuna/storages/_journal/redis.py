@@ -64,12 +64,11 @@ class JournalRedisStorage(BaseJournalLogStorage, BaseJournalLogSnapshot):
         for log_number in range(log_number_from, max_log_number + 1):
             sleep_secs = 0.1
             while True:
-                log_bytes = self._redis.get(self._key_log_id(log_number))
-                if log_bytes is not None:
+                log = self._redis.get(self._key_log_id(log_number))
+                if log is not None:
                     break
                 time.sleep(sleep_secs)
                 sleep_secs = min(sleep_secs * 2, 10)
-            log = log_bytes.decode("utf-8")
             try:
                 logs.append(json.loads(log))
             except json.JSONDecodeError as err:
