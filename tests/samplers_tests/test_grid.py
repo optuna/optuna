@@ -135,7 +135,8 @@ def test_study_optimize_with_multiple_search_spaces() -> None:
 
     assert len(study.trials) == 3
     for t in study.trials:
-        assert sampler_0._same_search_space(t.system_attrs["search_space"])
+        t_system_attrs = t.storage.get_trial_system_attrs(t._trial_id)
+        assert sampler_0._same_search_space(t_system_attrs["search_space"])
 
     # Run 2 trials with another space.
     search_space_1 = {"a": [0, 25], "b": [-50]}
@@ -146,9 +147,11 @@ def test_study_optimize_with_multiple_search_spaces() -> None:
     assert not sampler_0._same_search_space(sampler_1._search_space)
     assert len(study.trials) == 5
     for t in study.trials[:3]:
-        assert sampler_0._same_search_space(t.system_attrs["search_space"])
+        t_system_attrs = t.storage.get_trial_system_attrs(t._trial_id)
+        assert sampler_0._same_search_space(t_system_attrs["search_space"])
     for t in study.trials[3:5]:
-        assert sampler_1._same_search_space(t.system_attrs["search_space"])
+        t_system_attrs = t.storage.get_trial_system_attrs(t._trial_id)
+        assert sampler_1._same_search_space(t_system_attrs["search_space"])
 
     # Run 3 trials with the first search space again.
     study.sampler = sampler_0
@@ -156,11 +159,14 @@ def test_study_optimize_with_multiple_search_spaces() -> None:
 
     assert len(study.trials) == 8
     for t in study.trials[:3]:
-        assert sampler_0._same_search_space(t.system_attrs["search_space"])
+        t_system_attrs = t.storage.get_trial_system_attrs(t._trial_id)
+        assert sampler_0._same_search_space(t_system_attrs["search_space"])
     for t in study.trials[3:5]:
-        assert sampler_1._same_search_space(t.system_attrs["search_space"])
+        t_system_attrs = t.storage.get_trial_system_attrs(t._trial_id)
+        assert sampler_1._same_search_space(t_system_attrs["search_space"])
     for t in study.trials[5:]:
-        assert sampler_0._same_search_space(t.system_attrs["search_space"])
+        t_system_attrs = t.storage.get_trial_system_attrs(t._trial_id)
+        assert sampler_0._same_search_space(t_system_attrs["search_space"])
 
 
 def test_cast_value() -> None:
@@ -203,7 +209,14 @@ def test_retried_trial() -> None:
 
     assert len(study.trials) == 3
     assert study.trials[0].params["a"] == study.trials[1].params["a"]
-    assert study.trials[0].system_attrs["grid_id"] == study.trials[1].system_attrs["grid_id"]
+    trial_0_system_attrs = study.trials[0].storage.get_trial_system_attrs(
+        study.trials[0]._trial_id
+    )
+    trial_1_system_attrs = study.trials[1].storage.get_trial_system_attrs(
+        study.trials[1]._trial_id
+    )
+    trials_system_attrs = [study.trials[i].storage.get_trial_system_attrs(study.trials[i]._trial_id) for i in range(2)]
+    assert trial_0_system_attrs["grid_id"] == trial_1_system_attrs["grid_id"]
 
 
 def test_enqueued_trial() -> None:
