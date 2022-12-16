@@ -215,9 +215,6 @@ def test_retried_trial() -> None:
     trial_1_system_attrs = study.trials[1].storage.get_trial_system_attrs(
         study.trials[1]._trial_id
     )
-    trials_system_attrs = [
-        study.trials[i].storage.get_trial_system_attrs(study.trials[i]._trial_id) for i in range(2)
-    ]
     assert trial_0_system_attrs["grid_id"] == trial_1_system_attrs["grid_id"]
 
 
