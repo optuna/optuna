@@ -72,7 +72,7 @@ def test_failed_trial_callback(storage_mode: str) -> None:
 
     def _failed_trial_callback(study: Study, trial: FrozenTrial) -> None:
         assert study.system_attrs["test"] == "A"
-        assert trial.storage.get_trial_system_attrs(trial._trial_id)["test"] == "B"
+        assert trialsystem_attrs["test"] == "B"
 
     failed_trial_callback = Mock(wraps=_failed_trial_callback)
 
@@ -202,7 +202,7 @@ def test_fail_stale_trials(grace_period: Optional[int]) -> None:
 
     def failed_trial_callback(study: "optuna.Study", trial: FrozenTrial) -> None:
         assert study.system_attrs["test"] == "A"
-        assert trial.storage.get_trial_system_attrs(trial._trial_id)["test"] == "B"
+        assert trialsystem_attrs["test"] == "B"
 
     def check_change_trial_state_to_fail(study: "optuna.Study") -> None:
         assert study.trials[0].state is TrialState.RUNNING
@@ -286,7 +286,7 @@ def test_retry_failed_trial_callback_repetitive_failure(storage_mode: str) -> No
         assert len(trials) == n_trials + 1
 
         trials_system_attrs = [
-            trial[i].storage.get_trial_system_attrs(trial[i]._trial_id) for i in range(len(trials))
+            trials[i].system_attrs for i in range(len(trials))
         ]
 
         assert "failed_trial" not in trials_system_attrs[0]
