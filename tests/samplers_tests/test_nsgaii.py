@@ -53,7 +53,12 @@ def test_population_size() -> None:
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
 
     generations = Counter(
-        [t.system_attrs[optuna.samplers.nsgaii._sampler._GENERATION_KEY] for t in study.trials]
+        [
+            t.storage.get_trial_system_attrs(t._trial_id)[
+                optuna.samplers.nsgaii._sampler._GENERATION_KEY
+            ]
+            for t in study.trials
+        ]
     )
     assert generations == {0: 10, 1: 10, 2: 10, 3: 10}
 
@@ -64,7 +69,12 @@ def test_population_size() -> None:
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
 
     generations = Counter(
-        [t.system_attrs[optuna.samplers.nsgaii._sampler._GENERATION_KEY] for t in study.trials]
+        [
+            t.storage.get_trial_system_attrs(t._trial_id)[
+                optuna.samplers.nsgaii._sampler._GENERATION_KEY
+            ]
+            for t in study.trials
+        ]
     )
     assert generations == {i: 2 for i in range(20)}
 
@@ -128,7 +138,7 @@ def test_constraints_func_none() -> None:
 
     assert len(study.trials) == n_trials
     for trial in study.trials:
-        assert _CONSTRAINTS_KEY not in trial.system_attrs
+        assert _CONSTRAINTS_KEY not in trial.storage.get_trial_system_attrs(trial._trial_id)
 
 
 @pytest.mark.parametrize("constraint_value", [-1.0, 0.0, 1.0, -float("inf"), float("inf")])
@@ -155,7 +165,8 @@ def test_constraints_func(constraint_value: float) -> None:
     assert len(study.trials) == n_trials
     assert constraints_func_call_count == n_trials
     for trial in study.trials:
-        for x, y in zip(trial.system_attrs[_CONSTRAINTS_KEY], (constraint_value + trial.number,)):
+        trial_system_attrs = trial.storage.get_trial_system_attrs(trial._trial_id)
+        for x, y in zip(trial_system_attrs[_CONSTRAINTS_KEY], (constraint_value + trial.number,)):
             assert x == y
 
 
@@ -181,7 +192,9 @@ def test_constraints_func_nan() -> None:
     assert len(trials) == 1  # The error stops optimization, but completed trials are recorded.
     assert all(0 <= x <= 1 for x in trials[0].params.values())  # The params are normal.
     assert trials[0].values == list(trials[0].params.values())  # The values are normal.
-    assert trials[0].system_attrs[_CONSTRAINTS_KEY] is None  # None is set for constraints.
+    assert (
+        trials[0].storage.get_trial_system_attrs(trial[0]._trial_id)[_CONSTRAINTS_KEY] is None
+    )  # None is set for constraints.
 
 
 @pytest.mark.parametrize("direction1", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
