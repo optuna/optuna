@@ -45,16 +45,14 @@ class BruteForceSampler(BaseSampler):
 
     Note:
         The defined search space must be finite. Therefore, when using
-        :class:`~optuna.distributions.FloatDistibution`, `step=None` is not allowed.
+        :class:`~optuna.distributions.FloatDistibution`, ``step=None`` is not allowed.
 
     Note:
-        This sampler should not be used in combination with other samplers. For example,
-        in distributed optimization, if :class:`~optuna.samplers.BruteForceSampler` and another
-        sampler run optimizations simultaneously, complete exhaustive search may not be performed.
+        This sampler assumes that it suggests all parameters and that the search space is fixed.
+        For example, the sampler may fail to try the entire search space in the following cases.
 
-    Note:
-        The objective function must be fixed during the search. Otherwise, sampler may fail to
-        try the entire search space.
+        * Using with other samplers or :meth:`~optuna.study.Study.enqueue_trial`
+        * Changing suggestion ranges or adding parameters in the same :class:`~optuna.study.Study`
 
     Args:
         seed:

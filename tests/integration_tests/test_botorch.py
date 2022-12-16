@@ -1,3 +1,4 @@
+from typing import Any
 from typing import cast
 from typing import Optional
 from typing import Sequence
@@ -84,6 +85,74 @@ def test_botorch_candidates_func() -> None:
     assert candidates_func_call_count == n_trials - n_startup_trials
 
 
+@pytest.mark.parametrize(
+    "candidates_func, n_objectives",
+    [
+        (integration.botorch.qei_candidates_func, 1),
+        (integration.botorch.qehvi_candidates_func, 2),
+        (integration.botorch.qparego_candidates_func, 4),
+        (integration.botorch.qnehvi_candidates_func, 2),
+        (integration.botorch.qnehvi_candidates_func, 3),  # alpha > 0
+    ],
+)
+def test_botorch_specify_candidates_func(candidates_func: Any, n_objectives: int) -> None:
+    n_trials = 4
+    n_startup_trials = 2
+
+    sampler = BoTorchSampler(
+        candidates_func=candidates_func,
+        n_startup_trials=n_startup_trials,
+    )
+
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
+    study.optimize(
+        lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)], n_trials=n_trials
+    )
+
+    assert len(study.trials) == n_trials
+
+
+@pytest.mark.parametrize(
+    "candidates_func, n_objectives",
+    [
+        (integration.botorch.qei_candidates_func, 1),
+        (integration.botorch.qehvi_candidates_func, 2),
+        (integration.botorch.qparego_candidates_func, 4),
+        (integration.botorch.qnehvi_candidates_func, 2),
+        (integration.botorch.qnehvi_candidates_func, 3),  # alpha > 0
+    ],
+)
+def test_botorch_specify_candidates_func_constrained(
+    candidates_func: Any, n_objectives: int
+) -> None:
+
+    n_trials = 4
+    n_startup_trials = 2
+    constraints_func_call_count = 0
+
+    def constraints_func(trial: FrozenTrial) -> Sequence[float]:
+        xs = sum(trial.params[f"x{i}"] for i in range(n_objectives))
+
+        nonlocal constraints_func_call_count
+        constraints_func_call_count += 1
+
+        return (xs - 0.5,)
+
+    sampler = BoTorchSampler(
+        constraints_func=constraints_func,
+        candidates_func=candidates_func,
+        n_startup_trials=n_startup_trials,
+    )
+
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
+    study.optimize(
+        lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)], n_trials=n_trials
+    )
+
+    assert len(study.trials) == n_trials
+    assert constraints_func_call_count == n_trials
+
+
 def test_botorch_candidates_func_invalid_batch_size() -> None:
     def candidates_func(
         train_x: torch.Tensor,
@@ -137,32 +206,6 @@ def test_botorch_candidates_func_invalid_candidates_size() -> None:
         study.optimize(
             lambda t: sum(t.suggest_float(f"x{i}", 0, 1) for i in range(n_params)), n_trials=3
         )
-
-
-@pytest.mark.parametrize("n_objectives", [1, 2, 4])
-def test_botorch_constraints_func_none(n_objectives: int) -> None:
-    constraints_func_call_count = 0
-
-    def constraints_func(trial: FrozenTrial) -> Sequence[float]:
-        xs = sum(trial.params[f"x{i}"] for i in range(n_objectives))
-
-        nonlocal constraints_func_call_count
-        constraints_func_call_count += 1
-
-        return (xs - 0.5,)
-
-    n_trials = 4
-    n_startup_trials = 2
-
-    sampler = BoTorchSampler(constraints_func=constraints_func, n_startup_trials=n_startup_trials)
-
-    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
-    study.optimize(
-        lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)], n_trials=n_trials
-    )
-
-    assert len(study.trials) == n_trials
-    assert constraints_func_call_count == n_trials
 
 
 def test_botorch_constraints_func_invalid_inconsistent_n_constraints() -> None:
