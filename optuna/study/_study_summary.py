@@ -119,7 +119,7 @@ class StudySummary:
     @property
     def system_attrs(self) -> Dict[str, Any]:
         warnings.warn(
-            "``system_attrs`` has been deprecated in v3.1.0. "
+            "`system_attrs` has been deprecated in v3.1.0. "
             "The removal of this feature is currently scheduled for v6.0.0, "
             "but this schedule is subject to change. "
             "See https://github.com/optuna/optuna/releases/tag/v3.1.0.",
