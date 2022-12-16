@@ -504,13 +504,14 @@ def test_crowding_distance_sort(values: List[List[float]]) -> None:
 def test_study_system_attr_for_population_cache() -> None:
     sampler = NSGAIISampler(population_size=10)
     study = optuna.create_study(directions=["minimize"], sampler=sampler)
+    study_system_attrs = study._storage.get_study_system_attrs(study._study_id)
 
     def get_cached_entries(
         study: optuna.study.Study,
     ) -> List[Tuple[int, List[int]]]:
         return [
             v
-            for k, v in study.system_attrs.items()
+            for k, v in study_system_attrs.items()
             if k.startswith(optuna.samplers.nsgaii._sampler._POPULATION_CACHE_KEY_PREFIX)
         ]
 
