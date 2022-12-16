@@ -326,7 +326,7 @@ def test_create_trial(state: TrialState) -> None:
     assert trial.params == params
     assert trial.distributions == distributions
     assert trial.user_attrs == user_attrs
-    assert trialsystem_attrs == system_attrs
+    assert trial.system_attrs == system_attrs
     assert trial.intermediate_values == intermediate_values
     assert trial.datetime_start is not None
     assert (trial.datetime_complete is not None) == state.is_finished()
