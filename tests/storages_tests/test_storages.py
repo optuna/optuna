@@ -716,22 +716,6 @@ def test_set_trial_user_attr(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_get_trial_system_attrs(storage_mode: str) -> None:
-
-    with StorageSupplier(storage_mode) as storage:
-        _, study_to_trials = _setup_studies(storage, n_study=2, n_trial=5, seed=10)
-        assert all(
-            storage.get_trial_system_attrs(trial_id) == trial.system_attrs
-            for trials in study_to_trials.values()
-            for trial_id, trial in trials.items()
-        )
-
-        non_existent_trial = max(tid for ts in study_to_trials.values() for tid in ts.keys()) + 1
-        with pytest.raises(KeyError):
-            storage.get_trial_system_attrs(non_existent_trial)
-
-
-@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_trial_system_attr(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
