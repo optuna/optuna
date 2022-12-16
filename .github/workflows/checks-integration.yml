@@ -45,7 +45,7 @@ jobs:
       run: flake8 .
     - name: isort
       run: isort . --check --diff
-    - name: mypy
-      run: mypy . --warn-unused-ignores
     - name: blackdoc
       run: blackdoc . --check --diff
+    - name: mypy
+      run: mypy . --warn-unused-ignores
