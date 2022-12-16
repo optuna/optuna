@@ -169,7 +169,7 @@ class MultiObjectiveTrial:
         for further details.
         """
 
-        self._trial.set_system_attr(key, value)
+        self._trial.storage.set_trial_system_attr(self._trial._trial_id, key, value)
 
     @property
     def number(self) -> int:
