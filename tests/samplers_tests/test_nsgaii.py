@@ -193,7 +193,7 @@ def test_constraints_func_nan() -> None:
     assert all(0 <= x <= 1 for x in trials[0].params.values())  # The params are normal.
     assert trials[0].values == list(trials[0].params.values())  # The values are normal.
     assert (
-        trials[0].storage.get_trial_system_attrs(trial[0]._trial_id)[_CONSTRAINTS_KEY] is None
+        trials[0].storage.get_trial_system_attrs(trials[0]._trial_id)[_CONSTRAINTS_KEY] is None
     )  # None is set for constraints.
 
 
