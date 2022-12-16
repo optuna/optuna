@@ -965,8 +965,7 @@ class Study:
     def _should_skip_enqueue(self, params: Dict[str, Any]) -> bool:
 
         for trial in self.get_trials(deepcopy=False):
-            trial_system_attrs = trial.storage.get_trial_system_attrs(trial._trial_id)
-            trial_params = trial_system_attrs.get("fixed_params", trial.params)
+            trial_params = trial.system_attrs.get("fixed_params", trial.params)
             if trial_params.keys() != params.keys():
                 # Can't have repeated trials if different params are suggested.
                 continue
