@@ -72,7 +72,7 @@ def test_failed_trial_callback(storage_mode: str) -> None:
 
     def _failed_trial_callback(study: Study, trial: FrozenTrial) -> None:
         assert study.system_attrs["test"] == "A"
-        assert trialsystem_attrs["test"] == "B"
+        assert trial.system_attrs["test"] == "B"
 
     failed_trial_callback = Mock(wraps=_failed_trial_callback)
 
@@ -202,7 +202,7 @@ def test_fail_stale_trials(grace_period: Optional[int]) -> None:
 
     def failed_trial_callback(study: "optuna.Study", trial: FrozenTrial) -> None:
         assert study.system_attrs["test"] == "A"
-        assert trialsystem_attrs["test"] == "B"
+        assert trial.system_attrs["test"] == "B"
 
     def check_change_trial_state_to_fail(study: "optuna.Study") -> None:
         assert study.trials[0].state is TrialState.RUNNING
