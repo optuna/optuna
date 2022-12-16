@@ -22,9 +22,7 @@ def test_population_size() -> None:
 
     generations = Counter(
         [
-            t.storage.get_trial_system_attrs(t._trial_id)[
-                multi_objective.samplers._nsga2._GENERATION_KEY
-            ]
+            t.system_attrs[multi_objective.samplers._nsga2._GENERATION_KEY]
             for t in study.trials
         ]
     )
@@ -38,9 +36,7 @@ def test_population_size() -> None:
 
     generations = Counter(
         [
-            t.storage.get_trial_system_attrs(t._trial_id)[
-                multi_objective.samplers._nsga2._GENERATION_KEY
-            ]
+            t.system_attrs[multi_objective.samplers._nsga2._GENERATION_KEY]
             for t in study.trials
         ]
     )
