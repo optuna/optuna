@@ -285,9 +285,7 @@ def test_retry_failed_trial_callback_repetitive_failure(storage_mode: str) -> No
 
         assert len(trials) == n_trials + 1
 
-        trials_system_attrs = [
-            trials[i].system_attrs for i in range(len(trials))
-        ]
+        trials_system_attrs = [trials[i].system_attrs for i in range(len(trials))]
 
         assert "failed_trial" not in trials_system_attrs[0]
         assert "retry_history" not in trials_system_attrs[0]
