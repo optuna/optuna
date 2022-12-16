@@ -6,6 +6,7 @@ from typing import Sequence
 
 from optuna import logging
 from optuna import trial
+from optuna._deprecated import deprecated_func
 from optuna.study._study_direction import StudyDirection
 
 
@@ -68,7 +69,7 @@ class StudySummary:
             raise ValueError("Specify only one of `direction` and `directions`.")
         self.best_trial = best_trial
         self.user_attrs = user_attrs
-        self.system_attrs = system_attrs
+        self._system_attrs = system_attrs
         self.n_trials = n_trials
         self.datetime_start = datetime_start
         self._study_id = study_id
@@ -108,3 +109,8 @@ class StudySummary:
     def directions(self) -> Sequence[StudyDirection]:
 
         return self._directions
+
+    @property
+    @deprecated_func("3.1.0", "6.0.0")
+    def system_attrs(self) -> Dict[str, Any]:
+        return self._system_attrs
