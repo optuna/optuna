@@ -232,7 +232,7 @@ def test_user_attrs() -> None:
 def test_system_attrs() -> None:
 
     trial = _create_trial()
-    
+
     assert trial.storage.get_trial_system_attrs(trial._trial_id) == {}
 
     system_attrs = {"system_message": "test"}
