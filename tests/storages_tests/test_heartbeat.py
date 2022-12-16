@@ -72,7 +72,7 @@ def test_failed_trial_callback(storage_mode: str) -> None:
 
     def _failed_trial_callback(study: Study, trial: FrozenTrial) -> None:
         assert study.system_attrs["test"] == "A"
-        assert trial.system_attrs["test"] == "B"
+        assert trial.storage.get_trial_system_attrs(trial._trial_id)["test"] == "B"
 
     failed_trial_callback = Mock(wraps=_failed_trial_callback)
 
@@ -202,7 +202,7 @@ def test_fail_stale_trials(grace_period: Optional[int]) -> None:
 
     def failed_trial_callback(study: "optuna.Study", trial: FrozenTrial) -> None:
         assert study.system_attrs["test"] == "A"
-        assert trial.system_attrs["test"] == "B"
+        assert trial.storage.get_trial_system_attrs(trial._trial_id)["test"] == "B"
 
     def check_change_trial_state_to_fail(study: "optuna.Study") -> None:
         assert study.trials[0].state is TrialState.RUNNING
@@ -284,23 +284,27 @@ def test_retry_failed_trial_callback_repetitive_failure(storage_mode: str) -> No
         trials = study.trials
 
         assert len(trials) == n_trials + 1
+        
+        trials_system_attrs = [
+            trial[i].storage.get_trial_system_attrs(trial[i]._trial_id) for i in range(len(trials))
+        ]
 
-        assert "failed_trial" not in trials[0].system_attrs
-        assert "retry_history" not in trials[0].system_attrs
+        assert "failed_trial" not in trials_system_attrs[0]
+        assert "retry_history" not in trials_system_attrs[0]
 
         # The trials 1-3 are retried ones originating from the trial 0.
-        assert trials[1].system_attrs["failed_trial"] == 0
-        assert trials[1].system_attrs["retry_history"] == [0]
+        assert trials_system_attrs[1]["failed_trial"] == 0
+        assert trials_system_attrs[1]["retry_history"] == [0]
 
-        assert trials[2].system_attrs["failed_trial"] == 0
-        assert trials[2].system_attrs["retry_history"] == [0, 1]
+        assert trials_system_attrs[2]["failed_trial"] == 0
+        assert trials_system_attrs[2]["retry_history"] == [0, 1]
 
-        assert trials[3].system_attrs["failed_trial"] == 0
-        assert trials[3].system_attrs["retry_history"] == [0, 1, 2]
+        assert trials_system_attrs[3]["failed_trial"] == 0
+        assert trials_system_attrs[3]["retry_history"] == [0, 1, 2]
 
         # Trials 4 and later are the newly started ones and
         # they are retried after exceeding max_retry.
-        assert "failed_trial" not in trials[4].system_attrs
-        assert "retry_history" not in trials[4].system_attrs
-        assert trials[5].system_attrs["failed_trial"] == 4
-        assert trials[5].system_attrs["retry_history"] == [4]
+        assert "failed_trial" not in trials_system_attrs[4]
+        assert "retry_history" not in trials_system_attrs[4]
+        assert trials_system_attrs[5]["failed_trial"] == 4
+        assert trials_system_attrs[5]["retry_history"] == [4]
