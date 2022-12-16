@@ -284,7 +284,7 @@ def test_retry_failed_trial_callback_repetitive_failure(storage_mode: str) -> No
         trials = study.trials
 
         assert len(trials) == n_trials + 1
-        
+
         trials_system_attrs = [
             trial[i].storage.get_trial_system_attrs(trial[i]._trial_id) for i in range(len(trials))
         ]
