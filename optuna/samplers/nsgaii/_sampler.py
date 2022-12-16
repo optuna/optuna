@@ -258,10 +258,11 @@ class NSGAIISampler(BaseSampler):
         generation_to_runnings = defaultdict(list)
         generation_to_population = defaultdict(list)
         for trial in trials:
-            if _GENERATION_KEY not in trial.system_attrs:
+            trial_system_attrs = trial.storage.get_trial_system_attrs(trial._trial_id)
+            if _GENERATION_KEY not in trial_system_attrs:
                 continue
 
-            generation = trial.system_attrs[_GENERATION_KEY]
+            generation = trial_system_attrs[_GENERATION_KEY]
             if trial.state != optuna.trial.TrialState.COMPLETE:
                 if trial.state == optuna.trial.TrialState.RUNNING:
                     generation_to_runnings[generation].append(trial)
