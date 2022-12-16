@@ -203,13 +203,7 @@ def test_retried_trial() -> None:
 
     assert len(study.trials) == 3
     assert study.trials[0].params["a"] == study.trials[1].params["a"]
-    trial_0_system_attrs = study.trials[0].storage.get_trial_system_attrs(
-        study.trials[0]._trial_id
-    )
-    trial_1_system_attrs = study.trials[1].storage.get_trial_system_attrs(
-        study.trials[1]._trial_id
-    )
-    assert trial_0_system_attrs["grid_id"] == trial_1_system_attrs["grid_id"]
+    assert study.trials[0].system_attrs["grid_id"] == study.trials[1].system_attrs["grid_id"]
 
 
 def test_enqueued_trial() -> None:
