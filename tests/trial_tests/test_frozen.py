@@ -236,8 +236,8 @@ def test_system_attrs() -> None:
     assert trial.system_attrs == {}
 
     system_attrs = {"system_message": "test"}
-    trial.system_attr(trial._trial_id, "system_message", "test")
-    assert trial.system_attrs(trial._trial_id) == system_attrs
+    trial.system_attrs(trial._trial_id, "system_message", "test")
+    assert trial.system_attrs == system_attrs
 
 
 def test_called_single_methods_when_multi() -> None:
