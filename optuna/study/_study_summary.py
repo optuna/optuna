@@ -36,6 +36,12 @@ class StudySummary:
         system_attrs:
             Dictionary that contains the attributes of the :class:`~optuna.study.Study` internally
             set by Optuna.
+
+            .. warning::
+                Deprecated in v3.1.0. ``system_attrs`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v6.0.0,
+                but this schedule is subject to change.
+                See https://github.com/optuna/optuna/releases/tag/v3.1.0.
         n_trials:
             The number of trials ran in the :class:`~optuna.study.Study`.
         datetime_start:
@@ -68,7 +74,7 @@ class StudySummary:
             raise ValueError("Specify only one of `direction` and `directions`.")
         self.best_trial = best_trial
         self.user_attrs = user_attrs
-        self._system_attrs = system_attrs
+        self.system_attrs = system_attrs
         self.n_trials = n_trials
         self.datetime_start = datetime_start
         self._study_id = study_id
@@ -108,7 +114,3 @@ class StudySummary:
     def directions(self) -> Sequence[StudyDirection]:
 
         return self._directions
-
-    @property
-    def system_attrs(self) -> Dict[str, Any]:
-        return self._system_attrs
