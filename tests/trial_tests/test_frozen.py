@@ -232,11 +232,12 @@ def test_user_attrs() -> None:
 def test_system_attrs() -> None:
 
     trial = _create_trial()
-    assert trial.system_attrs == {}
+    
+    assert trial.storage.get_trial_system_attrs(trial._trial_id) == {}
 
     system_attrs = {"system_message": "test"}
-    trial.system_attrs = system_attrs
-    assert trial.system_attrs == system_attrs
+    trial.storage.set_trial_system_attr(trial._trial_id, "system_message", "test")
+    assert trial.storage.get_trial_system_attrs(trial._trial_id) == system_attrs
 
 
 def test_called_single_methods_when_multi() -> None:
@@ -325,7 +326,7 @@ def test_create_trial(state: TrialState) -> None:
     assert trial.params == params
     assert trial.distributions == distributions
     assert trial.user_attrs == user_attrs
-    assert trial.system_attrs == system_attrs
+    assert trial.storage.get_trial_system_attrs(trial._trial_id) == system_attrs
     assert trial.intermediate_values == intermediate_values
     assert trial.datetime_start is not None
     assert (trial.datetime_complete is not None) == state.is_finished()
