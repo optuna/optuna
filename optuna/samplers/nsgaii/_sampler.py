@@ -258,7 +258,10 @@ class NSGAIISampler(BaseSampler):
         generation_to_runnings = defaultdict(list)
         generation_to_population = defaultdict(list)
         for trial in trials:
-            trial_system_attrs = trial.storage.get_trial_system_attrs(trial._trial_id)
+            if type(trial) is FrozenTrial:
+                trial_system_attrs = trial.system_attrs
+            else:
+                trial_system_attrs = trial.storage.get_trial_system_attrs(trial._trial_id)
             if _GENERATION_KEY not in trial_system_attrs:
                 continue
 
