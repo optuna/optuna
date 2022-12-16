@@ -155,7 +155,7 @@ def test_constraints_func(constraint_value: float) -> None:
     assert len(study.trials) == n_trials
     assert constraints_func_call_count == n_trials
     for trial in study.trials:
-        for x, y in zip(trial_system_attrs[_CONSTRAINTS_KEY], (constraint_value + trial.number,)):
+        for x, y in zip(trial.system_attrs[_CONSTRAINTS_KEY], (constraint_value + trial.number,)):
             assert x == y
 
 
