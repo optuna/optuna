@@ -234,7 +234,8 @@ class GridSampler(BaseSampler):
         # to filter trials. See https://github.com/optuna/optuna/issues/2327 for details.
         trials = study._storage.get_all_trials(study._study_id, deepcopy=False)
 
-        for t in trials:  # t must be a FrozenTrial because get_all_trials returns a List[FrozenTrial].
+        # t must be a FrozenTrial because get_all_trials returns a List[FrozenTrial].
+        for t in trials:
             if "grid_id" in t.system_attrs and self._same_search_space(
                 t.system_attrs["search_space"]
             ):
