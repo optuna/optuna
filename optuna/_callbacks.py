@@ -148,9 +148,8 @@ class RetryFailedTrialCallback:
             returns :obj:`None`.
         """
 
-        trial_system_attrs = trial.storage.get_trial_system_attrs(trial._trial_id)
-        if "failed_trial" in trial_system_attrs:
-            return trial_system_attrs["failed_trial"]
+        if "failed_trial" in trial.system_attrs:
+            return trial.system_attrs["failed_trial"]
         return None
 
     @staticmethod
@@ -170,7 +169,6 @@ class RetryFailedTrialCallback:
             If the specified trial is not a retry of any trial, returns an empty list.
         """
 
-        trial_system_attrs = trial.storage.get_trial_system_attrs(trial._trial_id)
-        if "retry_history" in trial_system_attrs:
-            return trial_system_attrs["retry_history"]
+        if "retry_history" in trial.system_attrs:
+            return trial.system_attrs["retry_history"]
         return []
