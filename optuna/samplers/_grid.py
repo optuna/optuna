@@ -235,13 +235,14 @@ class GridSampler(BaseSampler):
         trials = study._storage.get_all_trials(study._study_id, deepcopy=False)
 
         for t in trials:
-            if "grid_id" in t.system_attrs and self._same_search_space(
-                t.system_attrs["search_space"]
+            t_system_attrs = t.storage.get_trial_system_attrs(t._trial_id)
+            if "grid_id" in t_system_attrs and self._same_search_space(
+                t_system_attrs["search_space"]
             ):
                 if t.state.is_finished():
-                    visited_grids.append(t.system_attrs["grid_id"])
+                    visited_grids.append(t_system_attrs["grid_id"])
                 elif t.state == TrialState.RUNNING:
-                    running_grids.append(t.system_attrs["grid_id"])
+                    running_grids.append(t_system_attrs["grid_id"])
 
         unvisited_grids = set(range(self._n_min_trials)) - set(visited_grids) - set(running_grids)
 
