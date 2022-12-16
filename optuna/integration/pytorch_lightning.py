@@ -119,8 +119,8 @@ class PyTorchLightningPruningCallback(Callback):
         _trial_id = self._trial._trial_id
         _study = self._trial.study
         _trial = _study._storage._backend.get_trial(_trial_id)  # type: ignore
-        is_pruned = _trial.system_attrs.get(_PRUNED_KEY)
-        epoch = _trial.system_attrs.get(_EPOCH_KEY)
+        is_pruned = _trial.storage.get_trial_system_attrs(_trial._trial_id).get(_PRUNED_KEY)
+        epoch = _trial.storage.get_trial_system_attrs(_trial._trial_id).get(_EPOCH_KEY)
         intermediate_values = _trial.intermediate_values
         for step, value in intermediate_values.items():
             self._trial.report(value, step=step)
