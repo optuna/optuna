@@ -32,7 +32,7 @@ class BruteForceSampler(BaseSampler):
         For example, the sampler may fail to try the entire search space in the following cases.
 
         * Using with other samplers or :meth:`~optuna.study.Study.enqueue_trial`
-        * Changing suggestions range or adding parameters in the same :class:`~optuna.study.Study`
+        * Changing suggestion ranges or adding parameters in the same :class:`~optuna.study.Study`
 
     Args:
         seed:
