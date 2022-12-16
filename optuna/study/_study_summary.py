@@ -3,6 +3,7 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Sequence
+import warnings
 
 from optuna import logging
 from optuna import trial
@@ -74,7 +75,7 @@ class StudySummary:
             raise ValueError("Specify only one of `direction` and `directions`.")
         self.best_trial = best_trial
         self.user_attrs = user_attrs
-        self.system_attrs = system_attrs
+        self._system_attrs = system_attrs
         self.n_trials = n_trials
         self.datetime_start = datetime_start
         self._study_id = study_id
@@ -114,3 +115,16 @@ class StudySummary:
     def directions(self) -> Sequence[StudyDirection]:
 
         return self._directions
+
+    @property
+    def system_attrs(self) -> Dict[str, Any]:
+        warnings.warn(
+            "``system_attrs`` has been deprecated in v3.1.0. "
+            "The removal of this feature is currently scheduled for v6.0.0, "
+            "but this schedule is subject to change. "
+            "See https://github.com/optuna/optuna/releases/tag/v3.1.0.",
+            FutureWarning,
+            stacklevel=2,
+        )
+
+        return self._system_attrs
