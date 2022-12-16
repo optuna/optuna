@@ -194,7 +194,7 @@ def test_botorch_constraints_func_raises() -> None:
     assert len(study.trials) == 2
 
     for trial in study.trials:
-        sys_con = trial.system_attrs[_CONSTRAINTS_KEY]
+        sys_con = trial.storage.get_trial_system_attrs(trial._trial_id)[_CONSTRAINTS_KEY]
 
         expected_sys_con: Optional[Tuple[int]]
 
