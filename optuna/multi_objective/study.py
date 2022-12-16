@@ -227,7 +227,9 @@ class MultiObjectiveStudy:
         self._study = study
 
         self._directions = []
-        for d in study.system_attrs["multi_objective:study:directions"]:
+        for d in study._storage.get_study_system_attrs(study._study_id)[
+            "multi_objective:study:directions"
+        ]:
             if d == "minimize":
                 self._directions.append(StudyDirection.MINIMIZE)
             elif d == "maximize":
@@ -356,6 +358,7 @@ class MultiObjectiveStudy:
         return self._study.user_attrs
 
     @property
+    @deprecated_func("3.1.0", "6.0.0")
     def system_attrs(self) -> Dict[str, Any]:
         """Return system attributes.
 
@@ -363,7 +366,7 @@ class MultiObjectiveStudy:
             A dictionary containing all system attributes.
         """
 
-        return self._study.system_attrs
+        return self._study._storage.get_study_system_attrs(self._study._study_id)
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
