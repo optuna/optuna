@@ -384,17 +384,16 @@ class CmaEsSampler(BaseSampler):
         # TODO(c-bata): Reduce the number of wasted trials during parallel optimization.
         # See https://github.com/optuna/optuna/pull/920#discussion_r385114002 for details.
         solution_trials = [
-            t
+            t  # t must be a FrozenTrial because _get_trials returns List of FrozenTrials.
             for t in completed_trials
-            if optimizer.generation
-            == t.storage.get_trial_system_attrs(t._trial_id).get(generation_attr_key, -1)
+            if optimizer.generation == t.system_attrs.get(generation_attr_key, -1)
         ]
         if len(solution_trials) >= optimizer.population_size:
             solutions: List[Tuple[np.ndarray, float]] = []
             for t in solution_trials[: optimizer.population_size]:
                 assert t.value is not None, "completed trials must have a value"
                 if isinstance(optimizer, CMAwM):
-                    x = t.storage.get_trial_system_attrs(t._trial_id)["x_for_tell"]
+                    x = t.system_attrs["x_for_tell"]
                 else:
                     x = trans.transform(t.params)
                 y = t.value if study.direction == StudyDirection.MINIMIZE else -t.value
