@@ -236,7 +236,7 @@ def test_system_attrs() -> None:
     assert trial.system_attrs == {}
 
     system_attrs = {"system_message": "test"}
-    trial.system_attrs(trial._trial_id, "system_message", "test")
+    trial.system_attrs = system_attrs
     assert trial.system_attrs == system_attrs
 
 
