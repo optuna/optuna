@@ -53,10 +53,7 @@ def test_population_size() -> None:
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
 
     generations = Counter(
-        [
-            t.system_attrs[optuna.samplers.nsgaii._sampler._GENERATION_KEY]
-            for t in study.trials
-        ]
+        [t.system_attrs[optuna.samplers.nsgaii._sampler._GENERATION_KEY] for t in study.trials]
     )
     assert generations == {0: 10, 1: 10, 2: 10, 3: 10}
 
@@ -67,10 +64,7 @@ def test_population_size() -> None:
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
 
     generations = Counter(
-        [
-            t.system_attrs[optuna.samplers.nsgaii._sampler._GENERATION_KEY]
-            for t in study.trials
-        ]
+        [t.system_attrs[optuna.samplers.nsgaii._sampler._GENERATION_KEY] for t in study.trials]
     )
     assert generations == {i: 2 for i in range(20)}
 
