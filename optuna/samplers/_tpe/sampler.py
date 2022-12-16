@@ -672,8 +672,7 @@ def _get_observation_pairs(
 
         if constraints_enabled:
             assert violations is not None
-            trial_system_attrs = trial.storage.get_trial_system_attrs(trial._trial_id)
-            constraint = trial_system_attrs.get(_CONSTRAINTS_KEY)
+            constraint = trial.system_attrs.get(_CONSTRAINTS_KEY)
             if constraint is None:
                 warnings.warn(
                     f"Trial {trial.number} does not have constraint values."
