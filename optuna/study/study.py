@@ -308,6 +308,7 @@ class Study:
         return copy.deepcopy(self._storage.get_study_user_attrs(self._study_id))
 
     @property
+    @deprecated_func("3.1.0", "6.0.0")
     def system_attrs(self) -> Dict[str, Any]:
         """Return system attributes.
 
@@ -1411,7 +1412,7 @@ def copy_study(
         load_if_exists=False,
     )
 
-    for key, value in from_study.system_attrs.items():
+    for key, value in from_study._storage.get_study_system_attrs(from_study._study_id).items():
         to_study._storage.set_study_system_attr(to_study._study_id, key, value)
 
     for key, value in from_study.user_attrs.items():
