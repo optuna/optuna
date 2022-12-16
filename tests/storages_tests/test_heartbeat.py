@@ -86,11 +86,11 @@ def test_failed_trial_callback(storage_mode: str) -> None:
         assert isinstance(storage, BaseHeartbeat)
 
         study = optuna.create_study(storage=storage)
-        study.set_system_attr("test", "A")
+        study._storage.set_study_system_attr(study._study_id, "test", "A")
 
         with pytest.warns(UserWarning):
             trial = study.ask()
-        trial.set_system_attr("test", "B")
+        trial.storage.set_trial_system_attr(trial._trial_id, "test", "B")
         storage.record_heartbeat(trial._trial_id)
         time.sleep(grace_period + 1)
 
@@ -220,11 +220,11 @@ def test_fail_stale_trials(grace_period: Optional[int]) -> None:
         storage.grace_period = grace_period
         storage.failed_trial_callback = failed_trial_callback
         study = optuna.create_study(storage=storage)
-        study.set_system_attr("test", "A")
+        study._storage.set_study_system_attr(study._study_id, "test", "A")
 
         with pytest.warns(UserWarning):
             trial = study.ask()
-        trial.set_system_attr("test", "B")
+        trial.storage.set_trial_system_attr(trial._trial_id, "test", "B")
 
         time.sleep(_grace_period + 1)
         check_keep_trial_state_in_running(study)

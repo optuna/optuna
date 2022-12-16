@@ -272,10 +272,14 @@ class _OptunaObjective(_BaseTuner):
             self.pbar.set_description(self.pbar_fmt.format(self.step_name, self.best_score))
             self.pbar.update(1)
 
-        trial.set_system_attr(_ELAPSED_SECS_KEY, elapsed_secs)
-        trial.set_system_attr(_AVERAGE_ITERATION_TIME_KEY, average_iteration_time)
-        trial.set_system_attr(_STEP_NAME_KEY, self.step_name)
-        trial.set_system_attr(_LGBM_PARAMS_KEY, json.dumps(self.lgbm_params))
+        trial.storage.set_trial_system_attr(trial._trial_id, _ELAPSED_SECS_KEY, elapsed_secs)
+        trial.storage.set_trial_system_attr(
+            trial._trial_id, _AVERAGE_ITERATION_TIME_KEY, average_iteration_time
+        )
+        trial.storage.set_trial_system_attr(trial._trial_id, _STEP_NAME_KEY, self.step_name)
+        trial.storage.set_trial_system_attr(
+            trial._trial_id, _LGBM_PARAMS_KEY, json.dumps(self.lgbm_params)
+        )
 
         self.trial_count += 1
 

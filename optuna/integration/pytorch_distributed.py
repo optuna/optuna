@@ -227,13 +227,14 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
             raise err
 
     @broadcast_properties
+    @deprecated_func("3.1.0", "6.0.0")
     def set_system_attr(self, key: str, value: Any) -> None:
         err = None
 
         if dist.get_rank() == 0:  # type: ignore
             try:
                 assert self._delegate is not None
-                self._delegate.set_system_attr(key, value)
+                self._delegate.storage.set_trial_system_attr(self._delegate._trial_id, key, value)
             except Exception as e:
                 err = e
             err = self._broadcast(err)

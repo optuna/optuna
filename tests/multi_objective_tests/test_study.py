@@ -99,17 +99,6 @@ def test_study_user_attrs() -> None:
     assert study.user_attrs == {"foo": "quux", "baz": "qux"}
 
 
-def test_study_system_attrs() -> None:
-    study = optuna.multi_objective.create_study(["minimize", "maximize"])
-    assert study.system_attrs == {"multi_objective:study:directions": ["minimize", "maximize"]}
-
-    study.set_system_attr("foo", "bar")
-    assert study.system_attrs == {
-        "multi_objective:study:directions": ["minimize", "maximize"],
-        "foo": "bar",
-    }
-
-
 def test_enqueue_trial() -> None:
     study = optuna.multi_objective.create_study(["minimize", "maximize"])
 
