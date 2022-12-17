@@ -16,6 +16,7 @@ from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
+from optuna.trial import FrozenTrial
 from optuna.trial._base import BaseTrial
 
 
