@@ -498,7 +498,7 @@ class Trial(BaseTrial):
                 "Trial.should_prune is not supported for multi-objective optimization."
             )
 
-        trial = copy.deepcopy(self._cached_frozen_trial)
+        trial = copy.deepcopy(self._get_latest_trial())
         return self.study.pruner.prune(self.study, trial)
 
     def set_user_attr(self, key: str, value: Any) -> None:
@@ -581,7 +581,7 @@ class Trial(BaseTrial):
         storage = self.storage
         trial_id = self._trial_id
 
-        trial = self._cached_frozen_trial
+        trial = self._get_latest_trial()
 
         if name in trial.distributions:
             # No need to sample if already suggested.
@@ -660,6 +660,12 @@ class Trial(BaseTrial):
                 "Using these values: {}".format(name, old_distribution._asdict()),
                 RuntimeWarning,
             )
+
+    def _get_latest_trial(self) -> FrozenTrial:
+        # TODO(eukaryo): Remove this method after `system_attrs` property is deprecated.
+        system_attrs = copy.deepcopy(self.storage.get_trial_system_attrs(self._trial_id))
+        self._cached_frozen_trial.system_attrs = system_attrs
+        return self._cached_frozen_trial
 
     @property
     def params(self) -> Dict[str, Any]:
