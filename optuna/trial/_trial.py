@@ -665,6 +665,8 @@ class Trial(BaseTrial):
     def _get_latest_trial(self) -> FrozenTrial:
         # TODO(eukaryo): Remove this method after `system_attrs` property is deprecated.
         system_attrs = copy.deepcopy(self.storage.get_trial_system_attrs(self._trial_id))
+        if self._cached_frozen_trial.system_attrs != system_attrs:
+            assert False
         self._cached_frozen_trial.system_attrs = system_attrs
         return self._cached_frozen_trial
 
