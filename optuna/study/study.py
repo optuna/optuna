@@ -899,7 +899,6 @@ class Study:
         trial._validate()
 
         self._storage.create_new_trial(self._study_id, template_trial=trial)
-        trial._cached_frozen_trial.system_attrs = trial.system_attrs
 
     def add_trials(self, trials: Iterable[FrozenTrial]) -> None:
         """Add trials to study.
