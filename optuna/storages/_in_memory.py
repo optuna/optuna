@@ -65,8 +65,7 @@ class InMemoryStorage(BaseStorage):
             else:
                 study_uuid = str(uuid.uuid4())
                 study_name = DEFAULT_STUDY_NAME_PREFIX + study_uuid
-            study = _StudyInfo(study_name)
-            study.directions = list(directions)
+            study = _StudyInfo(study_name, list(directions))
 
             self._studies[study_id] = study
             self._study_name_to_id[study_name] = study_id
@@ -119,7 +118,6 @@ class InMemoryStorage(BaseStorage):
         with self._lock:
             self._check_study_id(study_id)
             directions = self._studies[study_id].directions
-            assert directions is not None  # Study directions are never `None`.
             return directions
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
@@ -251,7 +249,6 @@ class InMemoryStorage(BaseStorage):
             best_trial_id = self._studies[study_id].best_trial_id
 
             directions = self._studies[study_id].directions
-            assert directions is not None  # Study directions are never `None`.
 
             if best_trial_id is None:
                 raise ValueError("No trials are completed yet.")
@@ -418,11 +415,11 @@ class InMemoryStorage(BaseStorage):
 
 
 class _StudyInfo:
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, directions: List[StudyDirection]) -> None:
         self.trials: List[FrozenTrial] = []
         self.param_distribution: Dict[str, distributions.BaseDistribution] = {}
         self.user_attrs: Dict[str, Any] = {}
         self.system_attrs: Dict[str, Any] = {}
         self.name: str = name
-        self.directions: Optional[List[StudyDirection]] = None
+        self.directions: List[StudyDirection] = directions
         self.best_trial_id: Optional[int] = None
