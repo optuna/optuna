@@ -300,7 +300,8 @@ class NSGAIISampler(BaseSampler):
                 hasher.update(bytes(str(trial.number), "utf-8"))
 
             cache_key = "{}:{}".format(_POPULATION_CACHE_KEY_PREFIX, hasher.hexdigest())
-            cached_generation, cached_population_numbers = study.system_attrs.get(
+            study_system_attrs = study._storage.get_study_system_attrs(study._study_id)
+            cached_generation, cached_population_numbers = study_system_attrs.get(
                 cache_key, (-1, [])
             )
             if cached_generation >= generation:
