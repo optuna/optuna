@@ -124,7 +124,6 @@ class StudySummary:
             "but this schedule is subject to change. "
             "See https://github.com/optuna/optuna/releases/tag/v3.1.0.",
             FutureWarning,
-            stacklevel=2,
         )
 
         return self._system_attrs
