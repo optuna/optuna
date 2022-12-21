@@ -159,8 +159,6 @@ def test_multithread_create_study(storage: BaseStorage) -> None:
                 load_if_exists=True,
             )
 
-    assert len(storage.get_all_studies()) >= 1
-
 
 def test_multiprocess_run_optimize(storage: BaseStorage) -> None:
     n_workers = 8
