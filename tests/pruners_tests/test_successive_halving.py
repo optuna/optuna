@@ -46,22 +46,26 @@ def test_successive_halving_pruner_rung_check() -> None:
     trial = study.ask()
     trial.report(0.75, step=7)
     pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
-    assert "completed_rung_0" in trial.system_attrs
-    assert "completed_rung_1" not in trial.system_attrs
+
+    trial_system_attrs = trial.storage.get_trial_system_attrs(trial._trial_id)
+    assert "completed_rung_0" in trial_system_attrs
+    assert "completed_rung_1" not in trial_system_attrs
 
     # Report a trial that has the third value from bottom.
     trial = study.ask()
     trial.report(0.25, step=7)
     trial.should_prune()
-    assert "completed_rung_1" in trial.system_attrs
-    assert "completed_rung_2" not in trial.system_attrs
+    trial_system_attrs = trial.storage.get_trial_system_attrs(trial._trial_id)
+    assert "completed_rung_1" in trial_system_attrs
+    assert "completed_rung_2" not in trial_system_attrs
 
     # Report a trial that has the lowest value.
     trial = study.ask()
     trial.report(0.05, step=7)
     trial.should_prune()
-    assert "completed_rung_2" in trial.system_attrs
-    assert "completed_rung_3" not in trial.system_attrs
+    trial_system_attrs = trial.storage.get_trial_system_attrs(trial._trial_id)
+    assert "completed_rung_2" in trial_system_attrs
+    assert "completed_rung_3" not in trial_system_attrs
 
 
 def test_successive_halving_pruner_first_trial_is_not_pruned() -> None:
@@ -79,11 +83,12 @@ def test_successive_halving_pruner_first_trial_is_not_pruned() -> None:
         assert not trial.should_prune()
 
     # The trial completed until rung 3.
-    assert "completed_rung_0" in trial.system_attrs
-    assert "completed_rung_1" in trial.system_attrs
-    assert "completed_rung_2" in trial.system_attrs
-    assert "completed_rung_3" in trial.system_attrs
-    assert "completed_rung_4" not in trial.system_attrs
+    trial_system_attrs = trial.storage.get_trial_system_attrs(trial._trial_id)
+    assert "completed_rung_0" in trial_system_attrs
+    assert "completed_rung_1" in trial_system_attrs
+    assert "completed_rung_2" in trial_system_attrs
+    assert "completed_rung_3" in trial_system_attrs
+    assert "completed_rung_4" not in trial_system_attrs
 
 
 def test_successive_halving_pruner_with_nan() -> None:
@@ -151,8 +156,9 @@ def test_successive_halving_pruner_min_resource_parameter() -> None:
 
     trial.report(1, step=1)
     assert not trial.should_prune()
-    assert "completed_rung_0" in trial.system_attrs
-    assert "completed_rung_1" not in trial.system_attrs
+    trial_system_attrs = trial.storage.get_trial_system_attrs(trial._trial_id)
+    assert "completed_rung_0" in trial_system_attrs
+    assert "completed_rung_1" not in trial_system_attrs
 
     # min_resource=2: The rung 0 ends at step 2.
     pruner = optuna.pruners.SuccessiveHalvingPruner(
@@ -163,12 +169,14 @@ def test_successive_halving_pruner_min_resource_parameter() -> None:
 
     trial.report(1, step=1)
     assert not trial.should_prune()
-    assert "completed_rung_0" not in trial.system_attrs
+    trial_system_attrs = trial.storage.get_trial_system_attrs(trial._trial_id)
+    assert "completed_rung_0" not in trial_system_attrs
 
     trial.report(1, step=2)
     assert not trial.should_prune()
-    assert "completed_rung_0" in trial.system_attrs
-    assert "completed_rung_1" not in trial.system_attrs
+    trial_system_attrs = trial.storage.get_trial_system_attrs(trial._trial_id)
+    assert "completed_rung_0" in trial_system_attrs
+    assert "completed_rung_1" not in trial_system_attrs
 
 
 def test_successive_halving_pruner_reduction_factor_parameter() -> None:
@@ -188,8 +196,9 @@ def test_successive_halving_pruner_reduction_factor_parameter() -> None:
 
     trial.report(1, step=1)
     assert not trial.should_prune()
-    assert "completed_rung_0" in trial.system_attrs
-    assert "completed_rung_1" not in trial.system_attrs
+    trial_system_attrs = trial.storage.get_trial_system_attrs(trial._trial_id)
+    assert "completed_rung_0" in trial_system_attrs
+    assert "completed_rung_1" not in trial_system_attrs
 
     # reduction_factor=3: The rung 1 ends at step 3.
     pruner = optuna.pruners.SuccessiveHalvingPruner(
@@ -200,17 +209,20 @@ def test_successive_halving_pruner_reduction_factor_parameter() -> None:
 
     trial.report(1, step=1)
     assert not trial.should_prune()
-    assert "completed_rung_0" in trial.system_attrs
-    assert "completed_rung_1" not in trial.system_attrs
+    trial_system_attrs = trial.storage.get_trial_system_attrs(trial._trial_id)
+    assert "completed_rung_0" in trial_system_attrs
+    assert "completed_rung_1" not in trial_system_attrs
 
     trial.report(1, step=2)
     assert not trial.should_prune()
-    assert "completed_rung_1" not in trial.system_attrs
+    trial_system_attrs = trial.storage.get_trial_system_attrs(trial._trial_id)
+    assert "completed_rung_1" not in trial_system_attrs
 
     trial.report(1, step=3)
     assert not trial.should_prune()
-    assert "completed_rung_1" in trial.system_attrs
-    assert "completed_rung_2" not in trial.system_attrs
+    trial_system_attrs = trial.storage.get_trial_system_attrs(trial._trial_id)
+    assert "completed_rung_1" in trial_system_attrs
+    assert "completed_rung_2" not in trial_system_attrs
 
 
 def test_successive_halving_pruner_min_early_stopping_rate_parameter() -> None:
@@ -230,7 +242,8 @@ def test_successive_halving_pruner_min_early_stopping_rate_parameter() -> None:
 
     trial.report(1, step=1)
     assert not trial.should_prune()
-    assert "completed_rung_0" in trial.system_attrs
+    trial_system_attrs = trial.storage.get_trial_system_attrs(trial._trial_id)
+    assert "completed_rung_0" in trial_system_attrs
 
     # min_early_stopping_rate=1: The rung 0 ends at step 2.
     pruner = optuna.pruners.SuccessiveHalvingPruner(
@@ -241,13 +254,15 @@ def test_successive_halving_pruner_min_early_stopping_rate_parameter() -> None:
 
     trial.report(1, step=1)
     assert not trial.should_prune()
-    assert "completed_rung_0" not in trial.system_attrs
-    assert "completed_rung_1" not in trial.system_attrs
+    trial_system_attrs = trial.storage.get_trial_system_attrs(trial._trial_id)
+    assert "completed_rung_0" not in trial_system_attrs
+    assert "completed_rung_1" not in trial_system_attrs
 
     trial.report(1, step=2)
     assert not trial.should_prune()
-    assert "completed_rung_0" in trial.system_attrs
-    assert "completed_rung_1" not in trial.system_attrs
+    trial_system_attrs = trial.storage.get_trial_system_attrs(trial._trial_id)
+    assert "completed_rung_0" in trial_system_attrs
+    assert "completed_rung_1" not in trial_system_attrs
 
 
 def test_successive_halving_pruner_bootstrap_parameter() -> None:

@@ -699,6 +699,7 @@ class Trial(BaseTrial):
         return copy.deepcopy(self._cached_frozen_trial.user_attrs)
 
     @property
+    @deprecated_func("3.1.0", "6.0.0")
     def system_attrs(self) -> Dict[str, Any]:
         """Return system attributes.
 
@@ -706,6 +707,8 @@ class Trial(BaseTrial):
             A dictionary containing all system attributes.
         """
 
+        # TODO(c-bata): Remove the following assertion before merged the PR.
+        assert False, "Must not reach here on unit tests"
         return copy.deepcopy(self.storage.get_trial_system_attrs(self._trial_id))
 
     @property

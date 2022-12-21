@@ -261,6 +261,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         return self._user_attrs
 
     @property
+    @deprecated_func("3.1.0", "6.0.0")
     def system_attrs(self) -> Dict[str, Any]:
         return self._system_attrs
 
