@@ -164,7 +164,6 @@ def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode: str) ->
             storage.get_study_name_from_id(study_id + 1)
 
 
-# TODO(gen740): write a test create_study directions and get_study_directions
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_and_get_study_directions(storage_mode: str) -> None:
 
