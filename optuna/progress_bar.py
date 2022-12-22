@@ -7,7 +7,6 @@ from tqdm.auto import tqdm
 
 from optuna import logging as optuna_logging
 from optuna._experimental import experimental_func
-from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
@@ -88,9 +87,15 @@ class _ProgressBar:
         """
 
         if self._is_valid:
-            if not study._is_multi_objective() and study.get_trials(states=[TrialState.COMPLETE]):
-                msg = f"Best trial: {study.best_trial.number}. Best value: {study.best_value:.6g}"
-                self._progress_bar.set_description(msg)
+            if not study._is_multi_objective():
+                # Not updating the progress bar when there are no complete trial.
+                try:
+                    msg = f"Best trial: {study.best_trial.number}. \
+                            Best value: {study.best_value:.6g}"
+
+                    self._progress_bar.set_description(msg)
+                except ValueError:
+                    pass
 
             if self._n_trials is not None:
                 self._progress_bar.update(1)
