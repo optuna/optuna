@@ -38,4 +38,4 @@ jobs:
     - name: blackdoc
       run: blackdoc . --check --diff
     - name: mypy
-      run: mypy . --warn-unused-ignores
+      run: mypy .
