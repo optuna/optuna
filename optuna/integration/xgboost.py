@@ -60,7 +60,7 @@ if _imports.is_successful() and use_callback_cls:
                     assert isinstance(scores, list), scores
                     key = dataset + "-" + metric
                     if self._is_cv:
-                        # Remove stddev of the metric across the cross-valdation
+                        # Remove stddev of the metric across the cross-validation
                         # folds.
                         evaluation_results[key] = scores[-1][0]
                     else:
@@ -103,7 +103,7 @@ elif _imports.is_successful():
             evaluation_result_list = env.evaluation_result_list
             if context == "cv":
                 # Remove a third element: the stddev of the metric across the
-                # cross-valdation folds.
+                # cross-validation folds.
                 evaluation_result_list = [
                     (key, metric) for key, metric, _ in evaluation_result_list
                 ]
