@@ -247,7 +247,9 @@ def test_study_set_user_attr_command() -> None:
         storage_url = str(storage.engine.url)
 
         # Create study.
-        study_name = storage.get_study_name_from_id(storage.create_new_study())
+        study_name = storage.get_study_name_from_id(
+            storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+        )
 
         base_command = [
             "optuna",
@@ -965,7 +967,9 @@ def test_study_optimize_command() -> None:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
 
-        study_name = storage.get_study_name_from_id(storage.create_new_study())
+        study_name = storage.get_study_name_from_id(
+            storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+        )
         command = [
             "optuna",
             "study",

@@ -9,7 +9,6 @@ from typing import Optional
 from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import TypeVar
-import warnings
 
 import optuna
 from optuna._deprecated import deprecated_func
@@ -105,9 +104,6 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
             Use `gloo` backend when group is None.
             Create a global `gloo` backend when group is None and WORLD is nccl.
 
-        device:
-            Deprecated parameter. Please use `group` instead.
-
     .. note::
         The methods of :class:`~optuna.integration.TorchDistributedTrial` are expected to be
         called by all workers at once. They invoke synchronous data transmission to share
@@ -119,13 +115,8 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         self,
         trial: Optional[optuna.trial.Trial],
         group: Optional["torch.distributed.ProcessGroup"] = None,
-        device: Optional[Any] = None,
     ) -> None:
         _imports.check()
-        if device is not None:
-            warnings.warn(
-                "the device parameter is deprecated, please use group instead.", DeprecationWarning
-            )
 
         if group is not None:
             self._group: "torch.distributed.ProcessGroup" = group
@@ -151,7 +142,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         else:
             if trial is not None:
                 raise ValueError(
-                    "Non-rank 0 node is supposed to recieve None as the trial argument."
+                    "Non-rank 0 node is supposed to receive None as the trial argument."
                 )
 
             assert trial is None, "error message"

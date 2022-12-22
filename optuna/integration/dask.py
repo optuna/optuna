@@ -91,7 +91,6 @@ class _OptunaSchedulerExtension:
             "delete_study",
             "set_study_user_attr",
             "set_study_system_attr",
-            "set_study_directions",
             "get_study_id_from_name",
             "get_study_name_from_id",
             "get_study_directions",
@@ -123,9 +122,13 @@ class _OptunaSchedulerExtension:
         self,
         comm: "distributed.comm.tcp.TCP",
         storage_name: str,
+        directions: List[str],
         study_name: Optional[str] = None,
     ) -> int:
-        return self.get_storage(storage_name).create_new_study(study_name=study_name)
+        return self.get_storage(storage_name).create_new_study(
+            directions=[StudyDirection[direction] for direction in directions],
+            study_name=study_name,
+        )
 
     def delete_study(
         self,
@@ -159,18 +162,6 @@ class _OptunaSchedulerExtension:
             study_id=study_id,
             key=key,
             value=loads(value),  # type: ignore[no-untyped-call]
-        )
-
-    def set_study_directions(
-        self,
-        comm: "distributed.comm.tcp.TCP",
-        storage_name: str,
-        study_id: int,
-        directions: List[str],
-    ) -> None:
-        return self.get_storage(storage_name).set_study_directions(
-            study_id=study_id,
-            directions=[StudyDirection[direction] for direction in directions],
         )
 
     def get_study_id_from_name(
@@ -474,11 +465,15 @@ class DaskStorage(BaseStorage):
 
         return self.client.run_on_scheduler(_get_base_storage, name=self.name)  # type: ignore[no-untyped-call]
 
-    def create_new_study(self, study_name: Optional[str] = None) -> int:
+
+    def create_new_study(
+        self, directions: Sequence[StudyDirection], study_name: Optional[str] = None
+    ) -> int:
         return self.client.sync(  # type: ignore[no-untyped-call]
             self.client.scheduler.optuna_create_new_study,
             storage_name=self.name,
             study_name=study_name,
+            directions=[direction.name for direction in directions],
         )
 
     def delete_study(self, study_id: int) -> None:
@@ -504,14 +499,6 @@ class DaskStorage(BaseStorage):
             study_id=study_id,
             key=key,
             value=dumps(value),  # type: ignore[no-untyped-call]
-        )
-
-    def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
-        return self.client.sync(  # type: ignore[no-untyped-call]
-            self.client.scheduler.optuna_set_study_directions,
-            storage_name=self.name,
-            study_id=study_id,
-            directions=[direction.name for direction in directions],
         )
 
     # Basic study access

@@ -435,7 +435,7 @@ You can verify the transformation by calculating the elements of the Jacobian.
 How can I optimize a model with some constraints?
 -------------------------------------------------
 
-When you want to optimize a model with constraints, you can use the following classes, :class:`~optuna.samplers.NSGAIISampler` or :class:`~optuna.integration.BoTorchSampler`.
+When you want to optimize a model with constraints, you can use the following classes: :class:`~optuna.samplers.TPESampler`, :class:`~optuna.samplers.NSGAIISampler` or :class:`~optuna.integration.BoTorchSampler`.
 The following example is a benchmark of Binh and Korn function, a multi-objective optimization, with constraints using :class:`~optuna.samplers.NSGAIISampler`. This one has two constraints :math:`c_0 = (x-5)^2 + y^2 - 25 \le 0` and :math:`c_1 = -(x - 8)^2 - (y + 3)^2 + 7.7 \le 0` and finds the optimal solution satisfying these constraints.
 
 
@@ -490,7 +490,7 @@ The following example is a benchmark of Binh and Korn function, a multi-objectiv
         )
         print("    Params: {}".format(trial.params))
 
-If you are interested in the exmaple for :class:`~optuna.integration.BoTorchSampler`, please refer to `this sample code <https://github.com/optuna/optuna-examples/blob/main/multi_objective/botorch_simple.py>`_.
+If you are interested in an example for :class:`~optuna.integration.BoTorchSampler`, please refer to `this sample code <https://github.com/optuna/optuna-examples/blob/main/multi_objective/botorch_simple.py>`_.
 
 
 There are two kinds of constrained optimizations, one with soft constraints and the other with hard constraints.
