@@ -265,7 +265,6 @@ class HyperbandPruner(BasePruner):
             _VALID_ATTRS = (
                 "get_trials",
                 "_get_trials",
-                "_fetch_trials",
                 "directions",
                 "direction",
                 "_directions",
