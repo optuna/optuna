@@ -76,7 +76,7 @@ if _imports.is_successful() and use_callback_cls:
 
 elif _imports.is_successful():
 
-    def _get_callback_context(env: "xgb.core.CallbackEnv") -> str:  # type: ignore
+    def _get_callback_context(env: "xgb.core.CallbackEnv") -> str:
         """Return whether the current callback context is cv or train.
 
         .. note::
@@ -97,7 +97,7 @@ elif _imports.is_successful():
             self._trial = trial
             self._observation_key = observation_key
 
-        def __call__(self, env: "xgb.core.CallbackEnv") -> None:  # type: ignore
+        def __call__(self, env: "xgb.core.CallbackEnv") -> None:
 
             context = _get_callback_context(env)
             evaluation_result_list = env.evaluation_result_list
