@@ -29,7 +29,7 @@ with try_import() as _imports:
     import distributed
     from distributed.protocol.pickle import dumps
     from distributed.protocol.pickle import loads
-    from distributed.utils import thread_state
+    from distributed.utils import thread_state  # type: ignore[attr-defined]
     from distributed.worker import get_client
 
 
