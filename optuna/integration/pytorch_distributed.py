@@ -142,7 +142,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         else:
             if trial is not None:
                 raise ValueError(
-                    "Non-rank 0 node is supposed to recieve None as the trial argument."
+                    "Non-rank 0 node is supposed to receive None as the trial argument."
                 )
 
             assert trial is None, "error message"
