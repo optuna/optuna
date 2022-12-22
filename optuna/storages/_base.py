@@ -50,13 +50,19 @@ class BaseStorage(abc.ABC):
     # Basic study manipulation
 
     @abc.abstractmethod
-    def create_new_study(self, study_name: Optional[str] = None) -> int:
+    def create_new_study(
+        self, directions: Sequence[StudyDirection], study_name: Optional[str] = None
+    ) -> int:
         """Create a new study from a name.
 
         If no name is specified, the storage class generates a name.
         The returned study ID is unique among all current and deleted studies.
 
         Args:
+            directions:
+                 A sequence of direction whose element is either
+                 :obj:`~optuna.study.StudyDirection.MAXIMIZE` or
+                 :obj:`~optuna.study.StudyDirection.MINIMIZE`.
             study_name:
                 Name of the new study to create.
 
@@ -121,27 +127,6 @@ class BaseStorage(abc.ABC):
         Raises:
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
-        """Register optimization problem directions to a study.
-
-        Args:
-            study_id:
-                ID of the study.
-            directions:
-                A sequence of direction whose element is either
-                :obj:`~optuna.study.StudyDirection.MAXIMIZE` or
-                :obj:`~optuna.study.StudyDirection.MINIMIZE`.
-
-        Raises:
-            :exc:`KeyError`:
-                If no study with the matching ``study_id`` exists.
-            :exc:`ValueError`:
-                If the directions are already set and the each coordinate of passed ``directions``
-                is the opposite direction or :obj:`~optuna.study.StudyDirection.NOT_SET`.
         """
         raise NotImplementedError
 
