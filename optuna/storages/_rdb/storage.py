@@ -255,18 +255,22 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         if not self.skip_compatibility_check:
             self._version_manager.check_table_schema_compatibility()
 
-    def create_new_study(self, study_name: Optional[str] = None) -> int:
+    def create_new_study(
+        self, directions: Sequence[StudyDirection], study_name: Optional[str] = None
+    ) -> int:
 
         try:
             with _create_scoped_session(self.scoped_session) as session:
                 if study_name is None:
                     study_name = self._create_unique_study_name(session)
 
-                direction = models.StudyDirectionModel(
-                    direction=StudyDirection.NOT_SET, objective=0
-                )
-                study = models.StudyModel(study_name=study_name, directions=[direction])
-                session.add(study)
+                direction_models = [
+                    models.StudyDirectionModel(objective=objective, direction=d)
+                    for objective, d in enumerate(list(directions))
+                ]
+
+                session.add(models.StudyModel(study_name=study_name, directions=direction_models))
+
         except sqlalchemy_exc.IntegrityError:
             raise optuna.exceptions.DuplicatedStudyError(
                 "Another study with name '{}' already exists. "
@@ -296,38 +300,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 break
 
         return study_name
-
-    # TODO(sano): Prevent simultaneously setting different direction in distributed environments.
-    def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
-
-        with _create_scoped_session(self.scoped_session) as session:
-            study = models.StudyModel.find_or_raise_by_id(study_id, session)
-            directions = list(directions)
-            current_directions = [
-                d.direction for d in models.StudyDirectionModel.where_study_id(study_id, session)
-            ]
-            if (
-                len(current_directions) > 0
-                and current_directions[0] != StudyDirection.NOT_SET
-                and current_directions != directions
-            ):
-                raise ValueError(
-                    "Cannot overwrite study direction from {} to {}.".format(
-                        current_directions, directions
-                    )
-                )
-
-            for objective, d in enumerate(directions):
-                direction_model = models.StudyDirectionModel.find_by_study_and_objective(
-                    study, objective, session
-                )
-                if direction_model is None:
-                    direction_model = models.StudyDirectionModel(
-                        study_id=study_id, objective=objective, direction=d
-                    )
-                    session.add(direction_model)
-                else:
-                    direction_model.direction = d
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
 
