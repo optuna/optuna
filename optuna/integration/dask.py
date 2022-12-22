@@ -39,8 +39,8 @@ def _serialize_frozentrial(trial: FrozenTrial) -> dict:
     attrs = [a for a in data.keys() if a.startswith("_")]
     for attr in attrs:
         data[attr[1:]] = data.pop(attr)
-    data["system_attrs"] = dumps(data["system_attrs"]) if data["system_attrs"] else {}
-    data["user_attrs"] = dumps(data["user_attrs"]) if data["user_attrs"] else {}
+    data["system_attrs"] = dumps(data["system_attrs"]) if data["system_attrs"] else {}  # type: ignore[no-untyped-call]
+    data["user_attrs"] = dumps(data["user_attrs"]) if data["user_attrs"] else {}  # type: ignore[no-untyped-call]
     data["distributions"] = {k: distribution_to_json(v) for k, v in data["distributions"].items()}
     if data["datetime_start"] is not None:
         data["datetime_start"] = data["datetime_start"].isoformat(timespec="microseconds")
@@ -57,8 +57,8 @@ def _deserialize_frozentrial(data: dict) -> FrozenTrial:
         data["datetime_start"] = datetime.fromisoformat(data["datetime_start"])
     if data["datetime_complete"] is not None:
         data["datetime_complete"] = datetime.fromisoformat(data["datetime_complete"])
-    data["system_attrs"] = loads(data["system_attrs"]) if data["system_attrs"] else {}
-    data["user_attrs"] = loads(data["user_attrs"]) if data["user_attrs"] else {}
+    data["system_attrs"] = loads(data["system_attrs"]) if data["system_attrs"] else {}  # type: ignore[no-untyped-call]
+    data["user_attrs"] = loads(data["user_attrs"]) if data["user_attrs"] else {}  # type: ignore[no-untyped-call]
     return FrozenTrial(**data)
 
 
@@ -67,8 +67,8 @@ def _serialize_frozenstudy(study: FrozenStudy) -> dict:
         "directions": [d.name for d in study._directions],
         "study_id": study._study_id,
         "study_name": study.study_name,
-        "user_attrs": dumps(study.user_attrs) if study.user_attrs else {},
-        "system_attrs": dumps(study.system_attrs) if study.system_attrs else {},
+        "user_attrs": dumps(study.user_attrs) if study.user_attrs else {},  # type: ignore[no-untyped-call]
+        "system_attrs": dumps(study.system_attrs) if study.system_attrs else {},  # type: ignore[no-untyped-call]
     }
     return data
 
@@ -76,8 +76,8 @@ def _serialize_frozenstudy(study: FrozenStudy) -> dict:
 def _deserialize_frozenstudy(data: dict) -> FrozenStudy:
     data["directions"] = [StudyDirection[d] for d in data["directions"]]
     data["direction"] = None
-    data["system_attrs"] = loads(data["system_attrs"]) if data["system_attrs"] else {}
-    data["user_attrs"] = loads(data["user_attrs"]) if data["user_attrs"] else {}
+    data["system_attrs"] = loads(data["system_attrs"]) if data["system_attrs"] else {}  # type: ignore[no-untyped-call]
+    data["user_attrs"] = loads(data["user_attrs"]) if data["user_attrs"] else {}  # type: ignore[no-untyped-call]
     return FrozenStudy(**data)
 
 
@@ -144,7 +144,7 @@ class _OptunaSchedulerExtension:
         value: Any,
     ) -> None:
         return self.get_storage(storage_name).set_study_user_attr(
-            study_id=study_id, key=key, value=loads(value)
+            study_id=study_id, key=key, value=loads(value)  # type: ignore[no-untyped-call]
         )
 
     def set_study_system_attr(
@@ -158,7 +158,7 @@ class _OptunaSchedulerExtension:
         return self.get_storage(storage_name).set_study_system_attr(
             study_id=study_id,
             key=key,
-            value=loads(value),
+            value=loads(value),  # type: ignore[no-untyped-call]
         )
 
     def set_study_directions(
@@ -204,7 +204,7 @@ class _OptunaSchedulerExtension:
         storage_name: str,
         study_id: int,
     ) -> Dict[str, Any]:
-        return dumps(self.get_storage(storage_name).get_study_user_attrs(study_id=study_id))
+        return dumps(self.get_storage(storage_name).get_study_user_attrs(study_id=study_id))  # type: ignore[no-untyped-call]
 
     def get_study_system_attrs(
         self,
@@ -212,7 +212,7 @@ class _OptunaSchedulerExtension:
         storage_name: str,
         study_id: int,
     ) -> Dict[str, Any]:
-        return dumps(self.get_storage(storage_name).get_study_system_attrs(study_id=study_id))
+        return dumps(self.get_storage(storage_name).get_study_system_attrs(study_id=study_id))  # type: ignore[no-untyped-call]
 
     def get_all_studies(self, comm: "distributed.comm.tcp.TCP", storage_name: str) -> List[dict]:
         studies = self.get_storage(storage_name).get_all_studies()
@@ -316,7 +316,7 @@ class _OptunaSchedulerExtension:
         return self.get_storage(storage_name).set_trial_user_attr(
             trial_id=trial_id,
             key=key,
-            value=loads(value),
+            value=loads(value),  # type: ignore[no-untyped-call]
         )
 
     def set_trial_system_attr(
@@ -330,7 +330,7 @@ class _OptunaSchedulerExtension:
         return self.get_storage(storage_name).set_trial_system_attr(
             trial_id=trial_id,
             key=key,
-            value=loads(value),
+            value=loads(value),  # type: ignore[no-untyped-call]
         )
 
     def get_trial(
@@ -443,7 +443,7 @@ class DaskStorage(BaseStorage):
 
             self._started = asyncio.ensure_future(_register())
         else:
-            self.client.run_on_scheduler(_register_with_scheduler, storage=storage, name=self.name)
+            self.client.run_on_scheduler(_register_with_scheduler, storage=storage, name=self.name)  # type: ignore[no-untyped-call]
 
     def __await__(self) -> Generator[Any, None, "DaskStorage"]:
         if hasattr(self, "_started"):
@@ -472,42 +472,42 @@ class DaskStorage(BaseStorage):
         def _get_base_storage(dask_scheduler: distributed.Scheduler, name: str) -> BaseStorage:
             return dask_scheduler.extensions["optuna"].storages[name]
 
-        return self.client.run_on_scheduler(_get_base_storage, name=self.name)
+        return self.client.run_on_scheduler(_get_base_storage, name=self.name)  # type: ignore[no-untyped-call]
 
     def create_new_study(self, study_name: Optional[str] = None) -> int:
-        return self.client.sync(
+        return self.client.sync(  # type: ignore[no-untyped-call]
             self.client.scheduler.optuna_create_new_study,
             storage_name=self.name,
             study_name=study_name,
         )
 
     def delete_study(self, study_id: int) -> None:
-        return self.client.sync(
+        return self.client.sync(  # type: ignore[no-untyped-call]
             self.client.scheduler.optuna_delete_study,
             storage_name=self.name,
             study_id=study_id,
         )
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
-        return self.client.sync(
+        return self.client.sync(  # type: ignore[no-untyped-call]
             self.client.scheduler.optuna_set_study_user_attr,
             storage_name=self.name,
             study_id=study_id,
             key=key,
-            value=dumps(value),
+            value=dumps(value),  # type: ignore[no-untyped-call]
         )
 
     def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
-        return self.client.sync(
+        return self.client.sync(  # type: ignore[no-untyped-call]
             self.client.scheduler.optuna_set_study_system_attr,
             storage_name=self.name,
             study_id=study_id,
             key=key,
-            value=dumps(value),
+            value=dumps(value),  # type: ignore[no-untyped-call]
         )
 
     def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
-        return self.client.sync(
+        return self.client.sync(  # type: ignore[no-untyped-call]
             self.client.scheduler.optuna_set_study_directions,
             storage_name=self.name,
             study_id=study_id,
@@ -517,21 +517,21 @@ class DaskStorage(BaseStorage):
     # Basic study access
 
     def get_study_id_from_name(self, study_name: str) -> int:
-        return self.client.sync(
+        return self.client.sync(  # type: ignore[no-untyped-call]
             self.client.scheduler.optuna_get_study_id_from_name,
             study_name=study_name,
             storage_name=self.name,
         )
 
     def get_study_name_from_id(self, study_id: int) -> str:
-        return self.client.sync(
+        return self.client.sync(  # type: ignore[no-untyped-call]
             self.client.scheduler.optuna_get_study_name_from_id,
             storage_name=self.name,
             study_id=study_id,
         )
 
     def get_study_directions(self, study_id: int) -> List[StudyDirection]:
-        directions = self.client.sync(
+        directions = self.client.sync(  # type: ignore[no-untyped-call]
             self.client.scheduler.optuna_get_study_directions,
             storage_name=self.name,
             study_id=study_id,
@@ -539,8 +539,8 @@ class DaskStorage(BaseStorage):
         return [StudyDirection[direction] for direction in directions]
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
-        return loads(
-            self.client.sync(
+        return loads(  # type: ignore[no-untyped-call]
+            self.client.sync(  # type: ignore[no-untyped-call]
                 self.client.scheduler.optuna_get_study_user_attrs,
                 storage_name=self.name,
                 study_id=study_id,
@@ -548,8 +548,8 @@ class DaskStorage(BaseStorage):
         )
 
     def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
-        return loads(
-            self.client.sync(
+        return loads(  # type: ignore[no-untyped-call]
+            self.client.sync(  # type: ignore[no-untyped-call]
                 self.client.scheduler.optuna_get_study_system_attrs,
                 storage_name=self.name,
                 study_id=study_id,
@@ -557,7 +557,7 @@ class DaskStorage(BaseStorage):
         )
 
     def get_all_studies(self) -> List[FrozenStudy]:
-        results = self.client.sync(
+        results = self.client.sync(  # type: ignore[no-untyped-call]
             self.client.scheduler.optuna_get_all_studies,
             storage_name=self.name,
         )
@@ -569,7 +569,7 @@ class DaskStorage(BaseStorage):
         serialized_template_trial = None
         if template_trial is not None:
             serialized_template_trial = _serialize_frozentrial(template_trial)
-        return self.client.sync(
+        return self.client.sync(  # type: ignore[no-untyped-call]
             self.client.scheduler.optuna_create_new_trial,
             storage_name=self.name,
             study_id=study_id,
@@ -583,7 +583,7 @@ class DaskStorage(BaseStorage):
         param_value_internal: float,
         distribution: BaseDistribution,
     ) -> None:
-        return self.client.sync(
+        return self.client.sync(  # type: ignore[no-untyped-call]
             self.client.scheduler.optuna_set_trial_param,
             storage_name=self.name,
             trial_id=trial_id,
@@ -593,7 +593,7 @@ class DaskStorage(BaseStorage):
         )
 
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
-        return self.client.sync(
+        return self.client.sync(  # type: ignore[no-untyped-call]
             self.client.scheduler.optuna_get_trial_id_from_study_id_trial_number,
             storage_name=self.name,
             study_id=study_id,
@@ -601,14 +601,14 @@ class DaskStorage(BaseStorage):
         )
 
     def get_trial_number_from_id(self, trial_id: int) -> int:
-        return self.client.sync(
+        return self.client.sync(  # type: ignore[no-untyped-call]
             self.client.scheduler.optuna_get_trial_number_from_id,
             storage_name=self.name,
             trial_id=trial_id,
         )
 
     def get_trial_param(self, trial_id: int, param_name: str) -> float:
-        return self.client.sync(
+        return self.client.sync(  # type: ignore[no-untyped-call]
             self.client.scheduler.optuna_get_trial_param,
             storage_name=self.name,
             trial_id=trial_id,
@@ -618,7 +618,7 @@ class DaskStorage(BaseStorage):
     def set_trial_state_values(
         self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
     ) -> bool:
-        return self.client.sync(
+        return self.client.sync(  # type: ignore[no-untyped-call]
             self.client.scheduler.optuna_set_trial_state_values,
             storage_name=self.name,
             trial_id=trial_id,
@@ -629,7 +629,7 @@ class DaskStorage(BaseStorage):
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
     ) -> None:
-        return self.client.sync(
+        return self.client.sync(  # type: ignore[no-untyped-call]
             self.client.scheduler.optuna_set_trial_intermediate_value,
             storage_name=self.name,
             trial_id=trial_id,
@@ -638,21 +638,21 @@ class DaskStorage(BaseStorage):
         )
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
-        return self.client.sync(
+        return self.client.sync(  # type: ignore[no-untyped-call]
             self.client.scheduler.optuna_set_trial_user_attr,
             storage_name=self.name,
             trial_id=trial_id,
             key=key,
-            value=dumps(value),
+            value=dumps(value),  # type: ignore[no-untyped-call]
         )
 
     def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
-        return self.client.sync(
+        return self.client.sync(  # type: ignore[no-untyped-call]
             self.client.scheduler.optuna_set_trial_system_attr,
             storage_name=self.name,
             trial_id=trial_id,
             key=key,
-            value=dumps(value),
+            value=dumps(value),  # type: ignore[no-untyped-call]
         )
 
     # Basic trial access
@@ -664,7 +664,7 @@ class DaskStorage(BaseStorage):
         return _deserialize_frozentrial(serialized_trial)
 
     def get_trial(self, trial_id: int) -> FrozenTrial:
-        return self.client.sync(self._get_trial, trial_id=trial_id)
+        return self.client.sync(self._get_trial, trial_id=trial_id)  # type: ignore[no-untyped-call]
 
     async def _get_all_trials(
         self, study_id: int, deepcopy: bool = True, states: Optional[Iterable[TrialState]] = None
@@ -683,7 +683,7 @@ class DaskStorage(BaseStorage):
     def get_all_trials(
         self, study_id: int, deepcopy: bool = True, states: Optional[Container[TrialState]] = None
     ) -> List[FrozenTrial]:
-        return self.client.sync(
+        return self.client.sync(  # type: ignore[no-untyped-call]
             self._get_all_trials,
             study_id=study_id,
             deepcopy=deepcopy,
@@ -699,7 +699,7 @@ class DaskStorage(BaseStorage):
                 serialized_state = state.name
             else:
                 serialized_state = tuple(s.name for s in state)
-        return self.client.sync(
+        return self.client.sync(  # type: ignore[no-untyped-call]
             self.client.scheduler.optuna_get_n_trials,
             storage_name=self.name,
             study_id=study_id,
