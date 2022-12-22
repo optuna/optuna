@@ -847,7 +847,7 @@ def test_optimize_with_progbar(n_jobs: int, capsys: _pytest.capture.CaptureFixtu
 
     # Search for progress bar elements in stderr.
     assert "Best trial: 0" in err
-    assert "Best value: 1.0" in err
+    assert "Best value: 1" in err
     assert "10/10" in err
     assert "100%" in err
 
@@ -860,7 +860,7 @@ def test_optimize_without_progbar(n_jobs: int, capsys: _pytest.capture.CaptureFi
     _, err = capsys.readouterr()
 
     assert "Best trial: 0" not in err
-    assert "Best value: 1.0" not in err
+    assert "Best value: 1" not in err
     assert "10/10" not in err
     assert "100%" not in err
 
@@ -872,7 +872,7 @@ def test_optimize_with_progbar_timeout(capsys: _pytest.capture.CaptureFixture) -
     _, err = capsys.readouterr()
 
     assert "Best trial: 0" in err
-    assert "Best value: 1.0" in err
+    assert "Best value: 1" in err
     assert "00:02/00:02" in err
     assert "100%" in err
 
@@ -934,7 +934,7 @@ def test_optimize_progbar_n_trials_prioritized(
     _, err = capsys.readouterr()
 
     assert "Best trial: 0" in err
-    assert "Best value: 1.0" in err
+    assert "Best value: 1" in err
     assert "10/10" in err
     assert "100%" in err
     assert "it" in err
