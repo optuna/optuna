@@ -35,8 +35,6 @@ _suggest_deprecated_msg = (
     "Use :func:`~optuna.integration.TorchDistributedTrial.suggest_float` instead."
 )
 
-_g_pg: Optional["ProcessGroup"] = None
-
 
 def broadcast_properties(f: "Callable[_P, _T]") -> "Callable[_P, _T]":
     """Method decorator to fetch updated trial properties from rank 0 after ``f`` is run.
@@ -98,12 +96,9 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
             A :class:`~optuna.trial.Trial` object or :obj:`None`. Please set trial object in
             rank-0 node and set :obj:`None` in the other rank node.
         group:
-            A `torch.distributed.ProcessGroup` to communicate with the other nodes.
-            TorchDistributedTrial use CPU tensors to communicate, make sure the group
-            supports CPU tensors communications.
-
-            Use `gloo` backend when group is None.
-            Create a global `gloo` backend when group is None and WORLD is nccl.
+            A :class:`torch.distributed.ProcessGroup` object to communicate
+            :class:`~optuna.trial.Trial` data with the other nodes.
+            Create a new process group with gloo backend when ``group`` is :obj:`None`.
 
     .. note::
         The methods of :class:`~optuna.integration.TorchDistributedTrial` are expected to be
@@ -123,18 +118,9 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         if group is not None:
             self._group: "ProcessGroup" = group
         else:
-            if _g_pg is None:
-                if dist.group.WORLD is None:
-                    raise RuntimeError("torch distributed is not initialized.")
-                default_pg: "ProcessGroup" = dist.group.WORLD
-                if dist.get_backend(default_pg) == "nccl":  # type: ignore[no-untyped-call]
-                    new_group: "ProcessGroup" = dist.new_group(  # type: ignore[no-untyped-call]
-                        backend="gloo"
-                    )
-                    _g_pg = new_group
-                else:
-                    _g_pg = default_pg
-            self._group = _g_pg
+            if dist.group.WORLD is None:
+                raise RuntimeError("torch distributed is not initialized.")
+            self._group = dist.new_group(backend="gloo")  # type: ignore
 
         if dist.get_rank(self._group) == 0:  # type: ignore[no-untyped-call]
             if not isinstance(trial, optuna.trial.Trial):
