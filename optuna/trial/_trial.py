@@ -707,8 +707,6 @@ class Trial(BaseTrial):
             A dictionary containing all system attributes.
         """
 
-        # TODO(c-bata): Remove the following assertion before merged the PR.
-        assert False, "Must not reach here on unit tests"
         return copy.deepcopy(self.storage.get_trial_system_attrs(self._trial_id))
 
     @property
