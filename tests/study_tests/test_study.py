@@ -454,7 +454,9 @@ def test_copy_study(from_storage_mode: str, to_storage_mode: str) -> None:
 
         assert to_study.study_name == from_study.study_name
         assert to_study.directions == from_study.directions
-        assert to_study.system_attrs == from_study.system_attrs
+        to_study_system_attrs = to_study._storage.get_study_system_attrs(to_study._study_id)
+        from_study_system_attrs = from_study._storage.get_study_system_attrs(from_study._study_id)
+        assert to_study_system_attrs == from_study_system_attrs
         assert to_study.user_attrs == from_study.user_attrs
         assert len(to_study.trials) == len(from_study.trials)
 

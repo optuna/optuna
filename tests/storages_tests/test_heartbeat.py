@@ -71,7 +71,7 @@ def test_failed_trial_callback(storage_mode: str) -> None:
     grace_period = 2
 
     def _failed_trial_callback(study: Study, trial: FrozenTrial) -> None:
-        assert study.system_attrs["test"] == "A"
+        assert study._storage.get_study_system_attrs(study._study_id)["test"] == "A"
         assert trial.system_attrs["test"] == "B"
 
     failed_trial_callback = Mock(wraps=_failed_trial_callback)
@@ -201,7 +201,7 @@ def test_fail_stale_trials(grace_period: Optional[int]) -> None:
     _grace_period = (heartbeat_interval * 2) if grace_period is None else grace_period
 
     def failed_trial_callback(study: "optuna.Study", trial: FrozenTrial) -> None:
-        assert study.system_attrs["test"] == "A"
+        assert study._storage.get_study_system_attrs(study._study_id)["test"] == "A"
         assert trial.system_attrs["test"] == "B"
 
     def check_change_trial_state_to_fail(study: "optuna.Study") -> None:

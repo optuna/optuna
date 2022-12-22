@@ -369,8 +369,6 @@ class CmaEsSampler(BaseSampler):
             n_restarts = 0
             optimizer = self._init_optimizer(trans, study.direction, population_size=self._popsize)
 
-        generation_attr_key = self._attr_keys.generation(n_restarts)
-
         if optimizer.dim != len(trans.bounds):
             _logger.info(
                 "`CmaEsSampler` does not support dynamic search space. "
@@ -383,11 +381,10 @@ class CmaEsSampler(BaseSampler):
 
         # TODO(c-bata): Reduce the number of wasted trials during parallel optimization.
         # See https://github.com/optuna/optuna/pull/920#discussion_r385114002 for details.
-        solution_trials = [
-            t
-            for t in completed_trials
-            if optimizer.generation == t.system_attrs.get(generation_attr_key, -1)
-        ]
+        solution_trials = self._get_solution_trials(
+            completed_trials, optimizer.generation, n_restarts
+        )
+
         if len(solution_trials) >= optimizer.population_size:
             solutions: List[Tuple[np.ndarray, float]] = []
             for t in solution_trials[: optimizer.population_size]:
@@ -403,7 +400,6 @@ class CmaEsSampler(BaseSampler):
 
             if self._restart_strategy == "ipop" and optimizer.should_stop():
                 n_restarts += 1
-                generation_attr_key = self._attr_keys.generation(n_restarts)
                 popsize = optimizer.population_size * self._inc_popsize
                 optimizer = self._init_optimizer(
                     trans, study.direction, population_size=popsize, randomize_start_point=True
@@ -424,6 +420,7 @@ class CmaEsSampler(BaseSampler):
         else:
             params = optimizer.ask()
 
+        generation_attr_key = self._attr_keys.generation(n_restarts)
         study._storage.set_trial_system_attr(
             trial._trial_id, generation_attr_key, optimizer.generation
         )
@@ -641,6 +638,12 @@ class CmaEsSampler(BaseSampler):
                 copied_t.value = value
                 complete_trials.append(copied_t)
         return complete_trials
+
+    def _get_solution_trials(
+        self, trials: List[FrozenTrial], generation: int, n_restarts: int
+    ) -> List[FrozenTrial]:
+        generation_attr_key = self._attr_keys.generation(n_restarts)
+        return [t for t in trials if generation == t.system_attrs.get(generation_attr_key, -1)]
 
     def after_trial(
         self,
