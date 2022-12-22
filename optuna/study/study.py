@@ -274,7 +274,11 @@ class Study:
     ) -> List[FrozenTrial]:
         if use_cache:
             if self._thread_local.cached_all_trials is None:
-                self._thread_local.cached_all_trials = self._fetch_trials(deepcopy=False)
+                if isinstance(self._storage, _CachedStorage):
+                    self._storage.read_trials_from_remote_storage(self._study_id)
+                self._thread_local.cached_all_trials = self._storage.get_all_trials(
+                    self._study_id, deepcopy=False
+                )
             trials = self._thread_local.cached_all_trials
             if states is not None:
                 filtered_trials = [t for t in trials if t.state in states]
@@ -282,13 +286,6 @@ class Study:
                 filtered_trials = trials
             return copy.deepcopy(filtered_trials) if deepcopy else filtered_trials
 
-        return self._fetch_trials(deepcopy=deepcopy, states=states)
-
-    def _fetch_trials(
-        self,
-        deepcopy: bool = True,
-        states: Optional[Container[TrialState]] = None,
-    ) -> List[FrozenTrial]:
         if isinstance(self._storage, _CachedStorage):
             self._storage.read_trials_from_remote_storage(self._study_id)
 
