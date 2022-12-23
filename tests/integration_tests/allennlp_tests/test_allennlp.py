@@ -19,11 +19,10 @@ from optuna.testing.pruners import DeterministicPruner
 with try_import():
     import _jsonnet
     import allennlp.data
-    import allennlp.data.dataset_loaders as data_loaders
-    import allennlp.data.dataset_readers as dataset_readers
-    import allennlp.data.tokenizers as tokenizers
+    import allennlp.data.dataset_readers
+    import allennlp.data.tokenizers
     import allennlp.models
-    import allennlp.modules as modules
+    import allennlp.modules
     import allennlp.modules.seq2vec_encoders
     import allennlp.modules.text_field_embedders
     import allennlp.training
@@ -275,10 +274,10 @@ def test_allennlp_pruning_callback() -> None:
     with tempfile.TemporaryDirectory() as tmp_dir:
 
         def objective(trial: optuna.Trial) -> float:
-            reader = dataset_readers.TextClassificationJsonReader(  # type: ignore[attr-defined]
-                tokenizer=tokenizers.WhitespaceTokenizer(),  # type: ignore[attr-defined]
+            reader = allennlp.data.dataset_readers.TextClassificationJsonReader(  # type: ignore[attr-defined]  # NOQA: E501
+                tokenizer=allennlp.data.tokenizers.WhitespaceTokenizer(),  # type: ignore[attr-defined]  # NOQA: E501
             )
-            data_loader = data_loaders.MultiProcessDataLoader(
+            data_loader = allennlp.data.data_loaders.MultiProcessDataLoader(
                 reader=reader,
                 data_path="tests/integration_tests/allennlp_tests/pruning_test.jsonl",
                 batch_size=16,
@@ -289,10 +288,10 @@ def test_allennlp_pruning_callback() -> None:
 
             data_loader.index_with(vocab)
 
-            embedder = allennlp.modules.text_field_embedders.BasicTextFieldEmbedder(  # type: ignore[attr-defined] # NOQA
-                {"tokens": modules.Embedding(50, vocab=vocab)}  # type: ignore[attr-defined]
+            embedder = allennlp.modules.text_field_embedders.BasicTextFieldEmbedder(  # type: ignore[attr-defined] # NOQA: E501
+                {"tokens": allennlp.modules.Embedding(50, vocab=vocab)}  # type: ignore[attr-defined]  # NOQA: E501
             )
-            encoder = modules.seq2vec_encoders.GruSeq2VecEncoder(  # type: ignore[attr-defined]
+            encoder = allennlp.modules.seq2vec_encoders.GruSeq2VecEncoder(  # type: ignore[attr-defined]  # NOQA: E501
                 input_size=50, hidden_size=50
             )
             model = allennlp.models.BasicClassifier(  # type: ignore[attr-defined]
