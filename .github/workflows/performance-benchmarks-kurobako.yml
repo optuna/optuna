@@ -52,7 +52,7 @@ jobs:
         sudo apt -y install gnuplot
 
     - name: Setup cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         # Caches them under a common name so that they can be used by other performance benchmark.
         cache-name: performance-benchmarks
@@ -78,7 +78,7 @@ jobs:
 
     - name: Cache kurobako CLI
       id: cache-kurobako
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ./kurobako
         key: kurobako-0-2-9
@@ -93,7 +93,7 @@ jobs:
 
     - name: Cache hpobench dataset
       id: cache-hpobench-dataset
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ./fcnet_tabular_benchmarks
         key: hpobench-dataset
@@ -106,7 +106,7 @@ jobs:
 
     - name: Cache nasbench dataset
       id: cache-nasbench-dataset
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ./nasbench_full.bin
         key: nasbench-dataset

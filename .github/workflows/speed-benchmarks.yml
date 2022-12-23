@@ -21,7 +21,7 @@ jobs:
         python-version: 3.11
 
     - name: Setup cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         cache-name: speed-benchmarks
       with:
