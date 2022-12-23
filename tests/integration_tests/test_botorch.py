@@ -25,7 +25,7 @@ with try_import() as _imports:
 if not _imports.is_successful():
     from unittest.mock import MagicMock
 
-    torch = MagicMock()  # type: ignore # NOQA
+    torch = MagicMock()  # NOQA
 
 pytestmark = pytest.mark.integration
 
