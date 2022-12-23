@@ -23,15 +23,15 @@ with try_import() as _imports:
     import allennlp.common.util
 
 if _imports.is_successful():
-    from allennlp.training import GradientDescentTrainer
-    from allennlp.training import TrainerCallback
+    from allennlp.training import GradientDescentTrainer  # type: ignore[attr-defined]
+    from allennlp.training import TrainerCallback  # type: ignore[attr-defined]
     import psutil
 
 else:
     # I disable mypy here since `allennlp.training.TrainerCallback` is a subclass of `Registrable`
     # (https://docs.allennlp.org/main/api/training/trainer/#trainercallback) but `TrainerCallback`
     # defined here is not `Registrable`, which causes a mypy checking failure.
-    class TrainerCallback:  # type: ignore
+    class TrainerCallback:  # type: ignore[no-redef]
         """Stub for TrainerCallback."""
 
         @classmethod
@@ -116,7 +116,7 @@ class AllenNLPPruningCallback(TrainerCallback):
     ):
         _imports.check()
 
-        if version.parse(allennlp.__version__) < version.parse("2.0.0"):  # type: ignore
+        if version.parse(allennlp.__version__) < version.parse("2.0.0"):  # type: ignore[attr-defined]  # NOQA: E501
             raise ImportError(
                 "`AllenNLPPruningCallback` requires AllenNLP>=v2.0.0."
                 "If you want to use a callback with an old version of AllenNLP, "
