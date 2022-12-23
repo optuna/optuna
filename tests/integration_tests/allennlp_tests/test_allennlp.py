@@ -277,7 +277,7 @@ def test_allennlp_pruning_callback() -> None:
             reader = allennlp.data.dataset_readers.TextClassificationJsonReader(  # type: ignore[attr-defined]  # NOQA: E501
                 tokenizer=allennlp.data.tokenizers.WhitespaceTokenizer(),  # type: ignore[attr-defined]  # NOQA: E501
             )
-            data_loader = allennlp.data.data_loaders.MultiProcessDataLoader(
+            data_loader = allennlp.data.data_loaders.MultiProcessDataLoader(  # type: ignore[attr-defined]  # NOQA: E501
                 reader=reader,
                 data_path="tests/integration_tests/allennlp_tests/pruning_test.jsonl",
                 batch_size=16,
@@ -288,7 +288,7 @@ def test_allennlp_pruning_callback() -> None:
 
             data_loader.index_with(vocab)
 
-            embedder = allennlp.modules.text_field_embedders.BasicTextFieldEmbedder(  # type: ignore[attr-defined] # NOQA: E501
+            embedder = allennlp.modules.text_field_embedders.BasicTextFieldEmbedder(  # type: ignore[attr-defined]  # NOQA: E501
                 {"tokens": allennlp.modules.Embedding(50, vocab=vocab)}  # type: ignore[attr-defined]  # NOQA: E501
             )
             encoder = allennlp.modules.seq2vec_encoders.GruSeq2VecEncoder(  # type: ignore[attr-defined]  # NOQA: E501
