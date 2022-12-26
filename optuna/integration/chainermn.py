@@ -289,6 +289,7 @@ class ChainerMNTrial(BaseTrial):
         return self._call_with_mpi(func)
 
     @property
+    @deprecated_func("3.1.0", "6.0.0")
     def system_attrs(self) -> Dict[str, Any]:
         def func() -> Dict[str, Any]:
 

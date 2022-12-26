@@ -699,6 +699,7 @@ class Trial(BaseTrial):
         return copy.deepcopy(self._cached_frozen_trial.user_attrs)
 
     @property
+    @deprecated_func("3.1.0", "6.0.0")
     def system_attrs(self) -> Dict[str, Any]:
         """Return system attributes.
 
