@@ -35,7 +35,7 @@ class _BatchedDiscreteTruncNormDistributions(NamedTuple):
     step: float
 
 
-_BatchedDistributionUnion = Union[
+_BatchedDistributions = Union[
     _BatchedCategoricalDistributions,
     _BatchedTruncNormDistributions,
     _BatchedDiscreteTruncNormDistributions,
