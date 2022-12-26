@@ -245,7 +245,7 @@ class _ParzenEstimator:
             # We adjust the range of the 'sigmas' according to the 'consider_magic_clip' flag.
             maxsigma = 1.0 * (high - low + step_or_0)
             if parameters.consider_magic_clip:
-                # Why change minsigma depending on consider_prior???
+                # TODO(contramundum53): Remove dependency of minsigma on consider_prior.
                 minsigma = (
                     1.0
                     * (high - low + step_or_0)
