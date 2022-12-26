@@ -218,7 +218,7 @@ class _ParzenEstimator:
                 )
                 sigmas = np.full(shape=(len(observations),), fill_value=sigma)
             else:
-                # Why include prior_mu???
+                # TODO(contramundum53): Remove dependency on prior_mu
                 prior_mu = 0.5 * (low + high)
                 mus_with_prior = np.append(mus, prior_mu) if consider_prior else mus
 
