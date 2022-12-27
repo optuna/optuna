@@ -146,7 +146,7 @@ study.optimize(objective, n_trials=20)
 # From the benchmark results which are available at `optuna/optuna - wiki "Benchmarks with Kurobako" <https://github.com/optuna/optuna/wiki/Benchmarks-with-Kurobako>`_, at least for not deep learning tasks, we would say that
 #
 # * For :class:`~optuna.samplers.RandomSampler`, :class:`~optuna.pruners.MedianPruner` is the best.
-# * For :class:`~optuna.samplers.TPESampler`, :class:`~optuna.pruners.Hyperband` is the best.
+# * For :class:`~optuna.samplers.TPESampler`, :class:`~optuna.pruners.HyperbandPruner` is the best.
 #
 # However, note that the benchmark is not deep learning.
 # For deep learning tasks,

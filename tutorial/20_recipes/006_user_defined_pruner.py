@@ -20,7 +20,7 @@ pruner should implement the abstract method
 associated :class:`~optuna.study.Study` and :class:`~optuna.trial.Trial` and
 returns a boolean value: :obj:`True` if the trial should be pruned and :obj:`False`
 otherwise. Using the Study and Trial objects, you can access all other trials
-through the :func:`~optuna.study.Study.get_trial` method and, and from a trial,
+through the :func:`~optuna.study.Study.get_trials` method and, and from a trial,
 its reported intermediate values through the
 :func:`~optuna.trial.FrozenTrial.intermediate_values` (a
 dictionary which maps an integer ``step`` to a float value).
