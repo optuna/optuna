@@ -1,5 +1,5 @@
 Optuna Examples
 ================
 
-The example files were moved to [optuna/optuna-examples](https://github.com/optuna/optuna-examples/).
+Example files have been moved to [optuna/optuna-examples](https://github.com/optuna/optuna-examples/).
 
