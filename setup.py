@@ -29,7 +29,7 @@ def get_install_requires() -> List[str]:
     # please update `test-with-lower` in `.github/workflows/tests.yml` as well.
     requirements = [
         "alembic>=1.5.0",
-        "cmaes>=0.9.0",
+        "cmaes>=0.9.1",
         "colorlog",
         "numpy",
         "packaging>=20.0",

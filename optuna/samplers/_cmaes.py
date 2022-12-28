@@ -565,8 +565,8 @@ class CmaEsSampler(BaseSampler):
                 # Set step 0.0 for continuous search space.
                 steps[i] = dist.step or 0.0
 
-            # If there is no discrete search space, we use `CMA` because CMAwM` throws an error.
-            if np.any(steps > 0.0):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=UserWarning)
                 return CMAwM(
                     mean=mean,
                     sigma=sigma0,
