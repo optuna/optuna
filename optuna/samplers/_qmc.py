@@ -28,7 +28,7 @@ class QMCSampler(BaseSampler):
     """A Quasi Monte Carlo Sampler that generates low-discrepancy sequences.
 
     Quasi Monte Carlo (QMC) sequences are designed to have lower discrepancies than
-    standard random seqeunces. They are known to perform better than the standard
+    standard random sequences. They are known to perform better than the standard
     randam sequences in hyperparameter optimization.
 
     For further information about the use of QMC sequences for hyperparameter optimization,
@@ -77,7 +77,7 @@ class QMCSampler(BaseSampler):
             sequences.
 
         seed:
-            A seed for `QMCSampler`. This argument is used only when `scramble` is :obj:`True`.
+            A seed for ``QMCSampler``. This argument is used only when ``scramble`` is :obj:`True`.
             If this is :obj:`None`, the seed is initialized randomly. Default is :obj:`None`.
 
             .. note::

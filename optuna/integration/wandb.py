@@ -213,7 +213,7 @@ class WeightsAndBiasesCallback:
 
 
         Returns:
-            ObjectiveFuncType: Objective function with W&B tracking enabled.
+            Objective function with W&B tracking enabled.
         """
 
         def decorator(func: ObjectiveFuncType) -> ObjectiveFuncType:
