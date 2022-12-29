@@ -50,7 +50,7 @@ class QMCSampler(BaseSampler):
         The search space of the sampler is determined by either previous trials in the study or
         the first trial that this sampler samples.
 
-        If there are previous trials in the study, :class:`~optuna.samplers.QMCSamper` infers its
+        If there are previous trials in the study, :class:`~optuna.samplers.QMCSampler` infers its
         search space using the trial which was created first in the study.
 
         Otherwise (if the study has no previous trials), :class:`~optuna.samplers.QMCSampler`

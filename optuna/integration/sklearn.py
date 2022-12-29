@@ -380,7 +380,7 @@ class OptunaSearchCV(BaseEstimator):
             - a CV splitter,
             - an iterable yielding (train, validation) splits as arrays of indices.
 
-            For integer, if :obj:`estimator` is a classifier and ``y`` is
+            For integer, if ``estimator`` is a classifier and ``y`` is
             either binary or multiclass,
             ``sklearn.model_selection.StratifiedKFold`` is used. otherwise,
             ``sklearn.model_selection.KFold`` is used.
