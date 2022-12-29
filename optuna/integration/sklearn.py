@@ -190,7 +190,7 @@ class _Objective:
 
     def __init__(
         self,
-        estimator: "BaseEstimator",
+        estimator: "sklearn.base.BaseEstimator",
         param_distributions: Mapping[str, distributions.BaseDistribution],
         X: TwoDimArrayLikeType,
         y: Optional[Union[OneDimArrayLikeType, TwoDimArrayLikeType]],
@@ -244,7 +244,7 @@ class _Objective:
         return trial.user_attrs["mean_test_score"]
 
     def _cross_validate_with_pruning(
-        self, trial: Trial, estimator: "BaseEstimator"
+        self, trial: Trial, estimator: "sklearn.base.BaseEstimator"
     ) -> Mapping[str, OneDimArrayLikeType]:
 
         if is_classifier(estimator):
@@ -299,7 +299,7 @@ class _Objective:
 
     def _partial_fit_and_score(
         self,
-        estimator: "BaseEstimator",
+        estimator: "sklearn.base.BaseEstimator",
         train: List[int],
         test: List[int],
         partial_fit_params: Dict[str, Any],
@@ -689,7 +689,7 @@ class OptunaSearchCV(BaseEstimator):
 
     def __init__(
         self,
-        estimator: "BaseEstimator",
+        estimator: "sklearn.base.BaseEstimator",
         param_distributions: Mapping[str, distributions.BaseDistribution],
         cv: Optional[Union["BaseCrossValidator", int]] = 5,
         enable_pruning: bool = False,
