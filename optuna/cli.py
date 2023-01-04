@@ -9,6 +9,7 @@ from importlib.machinery import SourceFileLoader
 import inspect
 import json
 import logging
+import os
 import sys
 import types
 from typing import Any
@@ -901,7 +902,14 @@ _COMMANDS: Dict[str, Type[_BaseCommand]] = {
 
 
 def _add_common_arguments(parser: ArgumentParser) -> ArgumentParser:
-    parser.add_argument("--storage", default=None, help="DB URL. (e.g. sqlite:///example.db)")
+    parser.add_argument(
+        "--storage",
+        default=os.environ.get("OPTUNA_STORAGE"),
+        help=(
+            "DB URL. (e.g. sqlite:///example.db) "
+            "Also can be specified via OPTUNA_STORAGE environment variable."
+        ),
+    )
     verbose_group = parser.add_mutually_exclusive_group()
     verbose_group.add_argument(
         "-v",
