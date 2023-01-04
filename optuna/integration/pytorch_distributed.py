@@ -6,6 +6,7 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import overload
 from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import TypeVar
@@ -194,8 +195,34 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
         return self._call_and_communicate(func, torch.int)
 
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[None]) -> None:
+        ...
+
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[bool]) -> bool:
+        ...
+
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[int]) -> int:
+        ...
+
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[float]) -> float:
+        ...
+
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[str]) -> str:
+        ...
+
+    @overload
+    def suggest_categorical(
+        self, name: str, choices: Sequence[CategoricalChoiceType]
+    ) -> CategoricalChoiceType:
+        ...
+
     @broadcast_properties
-    def suggest_categorical(self, name: str, choices: Sequence["CategoricalChoiceType"]) -> Any:
+    def suggest_categorical(self, name: str, choices: Sequence[CategoricalChoiceType]) -> CategoricalChoiceType:
         def func() -> CategoricalChoiceType:
             assert self._delegate is not None
             return self._delegate.suggest_categorical(name, choices)
