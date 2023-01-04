@@ -232,7 +232,9 @@ class ChainerMNTrial(BaseTrial):
     ) -> CategoricalChoiceType:
         ...
 
-    def suggest_categorical(self, name: str, choices: Sequence[CategoricalChoiceType]) -> CategoricalChoiceType:
+    def suggest_categorical(
+        self, name: str, choices: Sequence[CategoricalChoiceType]
+    ) -> CategoricalChoiceType:
         def func() -> CategoricalChoiceType:
 
             assert self.delegate is not None

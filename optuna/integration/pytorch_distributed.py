@@ -222,7 +222,9 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         ...
 
     @broadcast_properties
-    def suggest_categorical(self, name: str, choices: Sequence[CategoricalChoiceType]) -> CategoricalChoiceType:
+    def suggest_categorical(
+        self, name: str, choices: Sequence[CategoricalChoiceType]
+    ) -> CategoricalChoiceType:
         def func() -> CategoricalChoiceType:
             assert self._delegate is not None
             return self._delegate.suggest_categorical(name, choices)
