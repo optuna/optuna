@@ -1,5 +1,4 @@
 import datetime
-import itertools
 import os
 from typing import Optional
 
@@ -198,9 +197,8 @@ def test_report_nan(storage_mode: str) -> None:
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
-@pytest.mark.parametrize(
-    "storage_mode, is_pruning", itertools.product(STORAGE_MODES, [False, True])
-)
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+@pytest.mark.parametrize("is_pruning", [False, True])
 def test_should_prune(storage_mode: str, is_pruning: bool) -> None:
     with StorageSupplier(storage_mode) as storage:
         if dist.get_rank() == 0:  # type: ignore
