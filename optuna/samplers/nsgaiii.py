@@ -125,7 +125,7 @@ class NSGAIIISampler(BaseSampler):
 
     def __init__(
         self,
-        reference_points: np.array,
+        reference_points: np.ndarray,
         population_size: int = 50,
         mutation_prob: Optional[float] = None,
         crossover: Optional[BaseCrossover] = None,
@@ -431,7 +431,7 @@ class NSGAIIISampler(BaseSampler):
 
 def generate_default_reference_point(
     objective_dimension: int, dividing_parameter: int = 3
-) -> np.array:
+) -> np.ndarray:
     """Generates default reference points which are `uniformly` spread on a hyperplane."""
     reference_points = np.zeros(
         (
@@ -447,7 +447,7 @@ def generate_default_reference_point(
     return reference_points
 
 
-def _normalize(population: List[FrozenTrial], weights: Optional[np.array] = None) -> np.array:
+def _normalize(population: List[FrozenTrial], weights: Optional[np.ndarray] = None) -> np.ndarray:
     """Normalizes objective values of population
 
     An ideal point z* consists of minimums in each axis. Each objective value of population is
@@ -483,7 +483,7 @@ def _normalize(population: List[FrozenTrial], weights: Optional[np.array] = None
 
 
 def _associate(
-    objective_matrix: np.array, reference_points: np.array, elite_population_num: int
+    objective_matrix: np.ndarray, reference_points: np.ndarray, elite_population_num: int
 ) -> Tuple[Dict[int, List[int]], Dict[int, List[Tuple[float, int]]]]:
     """Associates each objective value to the closest reference point"""
     # TODO(Shinichi) Normalize reference_points in constructor to remove reference_point_norms
