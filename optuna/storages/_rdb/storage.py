@@ -1098,9 +1098,11 @@ class _VersionManager:
 
     def _set_alembic_revision(self, revision: str) -> None:
 
-        context = alembic_migration.MigrationContext.configure(self.engine.connect())
-        script = self._create_alembic_script()
-        context.stamp(script, revision)
+        connection = self.engine.connect()
+        context = alembic_migration.MigrationContext.configure(connection)
+        with connection.begin():
+            script = self._create_alembic_script()
+            context.stamp(script, revision)
 
     def check_table_schema_compatibility(self) -> None:
 

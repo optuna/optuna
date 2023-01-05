@@ -24,6 +24,7 @@ from optuna import distributions
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import TrialState
 
+
 try:
     from sqlalchemy.orm import declarative_base
 except ImportError:
