@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import json
+import os
 import re
 import subprocess
 from subprocess import CalledProcessError
@@ -133,6 +134,28 @@ def test_create_study_command_without_storage_url() -> None:
         subprocess.check_output(["optuna", "create-study"])
     usage = err.value.output.decode()
     assert usage.startswith("usage:")
+
+
+@pytest.mark.skip_coverage
+def test_create_study_command_with_storage_env() -> None:
+
+    with StorageSupplier("sqlite") as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
+
+        # Create study.
+        command = ["optuna", "create-study"]
+        env = {**os.environ, "OPTUNA_STORAGE": storage_url}
+        subprocess.check_call(command, env=env)
+
+        # Command output should be in name string format (no-name + UUID).
+        study_name = str(subprocess.check_output(command, env=env).decode().strip())
+        name_re = r"^no-name-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+        assert re.match(name_re, study_name) is not None
+
+        # study_name should be stored in storage.
+        study_id = storage.get_study_id_from_name(study_name)
+        assert study_id == 2
 
 
 @pytest.mark.skip_coverage
