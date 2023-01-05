@@ -100,8 +100,9 @@ jobs:
 
     - name: Tests MySQL
       run: |
-        pytest tests/storages_tests/test_with_server.py
+        pytest tests/storages_tests/test_with_server.py -W error::sqlalchemy.exc.RemovedIn20Warning
       env:
+        SQLALCHEMY_WARN_20: 1
         OMP_NUM_THREADS: 1
         TEST_DB_URL: mysql+pymysql://user:test@127.0.0.1/optunatest
 

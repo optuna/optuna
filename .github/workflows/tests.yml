@@ -69,9 +69,13 @@ jobs:
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
-        pytest tests -m "not integration"
+        pytest tests -m "not integration" -W error::sqlalchemy.exc.RemovedIn20Warning
+      env:
+        SQLALCHEMY_WARN_20: 1
 
     - name: Tests
       if:  ${{ github.event_name != 'schedule' }}
       run: |
-        pytest tests -m "not integration and not slow"
+        pytest tests -m "not integration and not slow" -W error::sqlalchemy.exc.RemovedIn20Warning
+      env:
+        SQLALCHEMY_WARN_20: 1
