@@ -13,7 +13,7 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.samplers._tpe.probability_distributions import _BatchedCategoricalDistributions
 from optuna.samplers._tpe.probability_distributions import _BatchedDiscreteTruncNormDistributions
-from optuna.samplers._tpe.probability_distributions import _BatchedDistributionUnion
+from optuna.samplers._tpe.probability_distributions import _BatchedDistributions
 from optuna.samplers._tpe.probability_distributions import _BatchedTruncNormDistributions
 from optuna.samplers._tpe.probability_distributions import _MixtureOfProductDistribution
 
@@ -151,7 +151,7 @@ class _ParzenEstimator:
         transformed_observations: np.ndarray,
         search_space: BaseDistribution,
         parameters: _ParzenEstimatorParameters,
-    ) -> _BatchedDistributionUnion:
+    ) -> _BatchedDistributions:
         if isinstance(search_space, CategoricalDistribution):
             return self._calculate_categorical_distributions(
                 transformed_observations, search_space.choices, parameters
@@ -181,7 +181,7 @@ class _ParzenEstimator:
         observations: np.ndarray,
         choices: Tuple[Any, ...],
         parameters: _ParzenEstimatorParameters,
-    ) -> _BatchedDistributionUnion:
+    ) -> _BatchedDistributions:
 
         consider_prior = parameters.consider_prior or len(observations) == 0
 
@@ -202,7 +202,7 @@ class _ParzenEstimator:
         high: float,
         step: Optional[float],
         parameters: _ParzenEstimatorParameters,
-    ) -> _BatchedDistributionUnion:
+    ) -> _BatchedDistributions:
         step_or_0 = step or 0
 
         mus = observations

@@ -52,7 +52,7 @@ def _normal_cdf(
 
 class _MixtureOfProductDistribution(NamedTuple):
     weights: np.ndarray
-    distributions: List[_BatchedDistributionUnion]
+    distributions: List[_BatchedDistributions]
 
     def sample(self, rng: np.random.RandomState, batch_size: int) -> np.ndarray:
         active_indices = rng.choice(len(self.weights), p=self.weights, size=batch_size)
