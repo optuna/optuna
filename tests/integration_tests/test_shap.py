@@ -19,8 +19,7 @@ def objective(trial: Trial) -> float:
     x1: float = trial.suggest_float("x1", 0.1, 3)
     x2: float = trial.suggest_float("x2", 0.1, 3, log=True)
     x3: int = trial.suggest_int("x3", 2, 4, log=True)
-    x4 = trial.suggest_categorical("x4", [0.1, 1.0, 10.0])
-    assert isinstance(x4, float)
+    x4: float = trial.suggest_categorical("x4", [0.1, 1.0, 10.0])
     return x1 + x2 * x3 + x4
 
 
@@ -97,8 +96,7 @@ def test_multi_objective_shap_importance_evaluator_with_infinite(
         x1: float = trial.suggest_float("x1", 0.1, 3)
         x2: float = trial.suggest_float("x2", 0.1, 3, log=True)
         x3: int = trial.suggest_int("x3", 2, 4, log=True)
-        x4 = trial.suggest_categorical("x4", [0.1, 1.0, 10.0])
-        assert isinstance(x4, float)
+        x4: float = trial.suggest_categorical("x4", [0.1, 1.0, 10.0])
         return (x1 + x2 * x3 + x4, x1 * x4)
 
     # The test ensures that trials with infinite values are ignored to calculate importance scores.

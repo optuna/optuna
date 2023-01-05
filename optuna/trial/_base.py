@@ -3,6 +3,7 @@ import datetime
 from typing import Any
 from typing import Dict
 from typing import Optional
+from typing import overload
 from typing import Sequence
 
 from optuna._deprecated import deprecated_func
@@ -51,6 +52,38 @@ class BaseTrial(abc.ABC):
     def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
 
         raise NotImplementedError
+
+    @overload
+    @abc.abstractmethod
+    def suggest_categorical(self, name: str, choices: Sequence[None]) -> None:
+        ...
+
+    @overload
+    @abc.abstractmethod
+    def suggest_categorical(self, name: str, choices: Sequence[bool]) -> bool:
+        ...
+
+    @overload
+    @abc.abstractmethod
+    def suggest_categorical(self, name: str, choices: Sequence[int]) -> int:
+        ...
+
+    @overload
+    @abc.abstractmethod
+    def suggest_categorical(self, name: str, choices: Sequence[float]) -> float:
+        ...
+
+    @overload
+    @abc.abstractmethod
+    def suggest_categorical(self, name: str, choices: Sequence[str]) -> str:
+        ...
+
+    @overload
+    @abc.abstractmethod
+    def suggest_categorical(
+        self, name: str, choices: Sequence[CategoricalChoiceType]
+    ) -> CategoricalChoiceType:
+        ...
 
     @abc.abstractmethod
     def suggest_categorical(
