@@ -138,8 +138,8 @@ bugtracker = "https://github.com/optuna/optuna/issues"
 [project.scripts]
 optuna = "optuna.cli:main"
 
-[tool.setuptools.packages.find]
-exclude = ["tests", "tests.*", "benchmarks"]
+[tool.setuptools]
+packages = ["optuna"]
 
 [tool.setuptools.dynamic]
 version = {attr = "optuna.version.__version__"}
