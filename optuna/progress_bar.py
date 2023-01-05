@@ -90,8 +90,10 @@ class _ProgressBar:
             if not study._is_multi_objective():
                 # Not updating the progress bar when there are no complete trial.
                 try:
-                    msg = f"Best trial: {study.best_trial.number}. \
-                            Best value: {study.best_value:.6g}"
+                    msg = (
+                        f"Best trial: {study.best_trial.number}. "
+                        f"Best value: {study.best_value:.6g}"
+                    )
 
                     self._progress_bar.set_description(msg)
                 except ValueError:
