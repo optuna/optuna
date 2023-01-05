@@ -41,7 +41,7 @@ class NSGAIIISampler(BaseSampler):
     """Multi-objective sampler using the NSGA-III algorithm.
 
     NSGA-III stands for "Nondominated Sorting Genetic Algorithm III",
-    which is an modified version of NSGA-II for many objective optimization problem.
+    which is a modified version of NSGA-II for many objective optimization problem.
 
     For further information about NSGA-III, please refer to the following papers:
 
