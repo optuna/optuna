@@ -527,10 +527,8 @@ def _niching(
     reference_points_per_count: Dict[int, List[int]],
     ref2pops: Dict[int, List[Tuple[float, int]]],
 ) -> List[FrozenTrial]:
-    """
-    Selects who out of borderline front to survive according to the sparsity of each closest
-    reference point
-    """
+    """Determine who survives form the borderline front according to the sparsity of each closest
+    reference point"""
 
     count = 0
     additional_elite_population: List[FrozenTrial] = []
