@@ -157,12 +157,12 @@ class JournalFileStorage(BaseJournalLogStorage):
     def __init__(self, file_path: str, lock_obj: Optional[JournalFileBaseLock] = None) -> None:
         self._file_path: str = file_path
         self._lock = lock_obj or JournalFileSymlinkLock(self._file_path)
-        open(self._file_path, "a").close()  # Create a file if it does not exist
+        open(self._file_path, "ab").close()  # Create a file if it does not exist
         self._log_number_offset: Dict[int, int] = {0: 0}
 
     def read_logs(self, log_number_from: int) -> List[Dict[str, Any]]:
         logs = []
-        with open(self._file_path, "r") as f:
+        with open(self._file_path, "rb") as f:
             log_number_start = 0
             if log_number_from in self._log_number_offset:
                 f.seek(self._log_number_offset[log_number_from])
@@ -173,7 +173,7 @@ class JournalFileStorage(BaseJournalLogStorage):
                 if last_decode_error is not None:
                     raise last_decode_error
                 if log_number + 1 not in self._log_number_offset:
-                    byte_len = len(line.encode("utf-8"))
+                    byte_len = len(line)
                     self._log_number_offset[log_number + 1] = (
                         self._log_number_offset[log_number] + byte_len
                     )
@@ -190,7 +190,7 @@ class JournalFileStorage(BaseJournalLogStorage):
     def append_logs(self, logs: List[Dict[str, Any]]) -> None:
         with get_lock_file(self._lock):
             what_to_write = "\n".join([json.dumps(log) for log in logs]) + "\n"
-            with open(self._file_path, "a", encoding="utf-8") as f:
-                f.write(what_to_write)
+            with open(self._file_path, "ab") as f:
+                f.write(what_to_write.encode("utf-8"))
                 f.flush()
                 os.fsync(f.fileno())

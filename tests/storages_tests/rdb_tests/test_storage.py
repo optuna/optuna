@@ -219,7 +219,6 @@ def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
         study.optimize(objective_test_upgrade, n_trials=1)
         assert len(study.trials) == 2
         for trial in study.trials:
-            assert trial.system_attrs["a"] == 0
             assert trial.user_attrs["b"] == 1
             assert trial.intermediate_values[0] == 0.5
             assert -5 <= trial.params["x"] <= 5
@@ -227,7 +226,6 @@ def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
             assert trial.params["z"] in (-5, 0, 5)
             assert trial.value is not None and 0 <= trial.value <= 150
 
-        assert study.system_attrs["c"] == 2
         assert study.user_attrs["d"] == 3
 
 
@@ -268,14 +266,12 @@ def test_upgrade_multi_objective_optimization(optuna_version: str) -> None:
         study.optimize(mo_objective_test_upgrade, n_trials=1)
         assert len(study.trials) == 2
         for trial in study.trials:
-            assert trial.system_attrs["a"] == 0
             assert trial.user_attrs["b"] == 1
             assert -5 <= trial.params["x"] <= 5
             assert 0 <= trial.params["y"] <= 10
             assert trial.params["z"] in (-5, 0, 5)
             assert -5 <= trial.values[0] < 5
             assert 0 <= trial.values[1] <= 150
-        assert study.system_attrs["c"] == 2
         assert study.user_attrs["d"] == 3
 
 

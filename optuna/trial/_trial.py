@@ -3,6 +3,7 @@ import datetime
 from typing import Any
 from typing import Dict
 from typing import Optional
+from typing import overload
 from typing import Sequence
 import warnings
 
@@ -16,6 +17,7 @@ from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
+from optuna.trial import FrozenTrial
 from optuna.trial._base import BaseTrial
 
 
@@ -55,13 +57,14 @@ class Trial(BaseTrial):
 
     def _init_relative_params(self) -> None:
 
-        trial = self.storage.get_trial(self._trial_id)
+        self._cached_frozen_trial = self.storage.get_trial(self._trial_id)
+        study = pruners._filter_study(self.study, self._cached_frozen_trial)
 
-        study = pruners._filter_study(self.study, trial)
-
-        self.relative_search_space = self.study.sampler.infer_relative_search_space(study, trial)
+        self.relative_search_space = self.study.sampler.infer_relative_search_space(
+            study, self._cached_frozen_trial
+        )
         self.relative_params = self.study.sampler.sample_relative(
-            study, trial, self.relative_search_space
+            study, self._cached_frozen_trial, self.relative_search_space
         )
 
     def suggest_float(
@@ -315,6 +318,32 @@ class Trial(BaseTrial):
         self._check_distribution(name, distribution)
         return suggested_value
 
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[None]) -> None:
+        ...
+
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[bool]) -> bool:
+        ...
+
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[int]) -> int:
+        ...
+
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[float]) -> float:
+        ...
+
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[str]) -> str:
+        ...
+
+    @overload
+    def suggest_categorical(
+        self, name: str, choices: Sequence[CategoricalChoiceType]
+    ) -> CategoricalChoiceType:
+        ...
+
     def suggest_categorical(
         self, name: str, choices: Sequence[CategoricalChoiceType]
     ) -> CategoricalChoiceType:
@@ -456,9 +485,7 @@ class Trial(BaseTrial):
         if step < 0:
             raise ValueError("The `step` argument is {} but cannot be negative.".format(step))
 
-        intermediate_values = self.storage.get_trial(self._trial_id).intermediate_values
-
-        if step in intermediate_values:
+        if step in self._cached_frozen_trial.intermediate_values:
             # Do nothing if already reported.
             warnings.warn(
                 "The reported value is ignored because this `step` {} is already reported.".format(
@@ -468,6 +495,7 @@ class Trial(BaseTrial):
             return
 
         self.storage.set_trial_intermediate_value(self._trial_id, step, value)
+        self._cached_frozen_trial.intermediate_values[step] = value
 
     def should_prune(self) -> bool:
         """Suggest whether the trial should be pruned or not.
@@ -498,7 +526,7 @@ class Trial(BaseTrial):
                 "Trial.should_prune is not supported for multi-objective optimization."
             )
 
-        trial = self.study._storage.get_trial(self._trial_id)
+        trial = copy.deepcopy(self._get_latest_trial())
         return self.study.pruner.prune(self.study, trial)
 
     def set_user_attr(self, key: str, value: Any) -> None:
@@ -556,7 +584,9 @@ class Trial(BaseTrial):
         """
 
         self.storage.set_trial_user_attr(self._trial_id, key, value)
+        self._cached_frozen_trial.user_attrs[key] = value
 
+    @deprecated_func("3.1.0", "6.0.0")
     def set_system_attr(self, key: str, value: Any) -> None:
         """Set system attributes to the trial.
 
@@ -572,21 +602,22 @@ class Trial(BaseTrial):
         """
 
         self.storage.set_trial_system_attr(self._trial_id, key, value)
+        self._cached_frozen_trial.system_attrs[key] = value
 
     def _suggest(self, name: str, distribution: BaseDistribution) -> Any:
 
         storage = self.storage
         trial_id = self._trial_id
 
-        trial = storage.get_trial(trial_id)
+        trial = self._get_latest_trial()
 
         if name in trial.distributions:
             # No need to sample if already suggested.
             distributions.check_distribution_compatibility(trial.distributions[name], distribution)
-            param_value = distribution.to_external_repr(storage.get_trial_param(trial_id, name))
+            param_value = trial.params[name]
         else:
             if self._is_fixed_param(name, distribution):
-                param_value = storage.get_trial_system_attrs(trial_id)["fixed_params"][name]
+                param_value = trial.system_attrs["fixed_params"][name]
             elif distribution.single():
                 param_value = distributions._get_single_value(distribution)
             elif self._is_relative_param(name, distribution):
@@ -601,11 +632,13 @@ class Trial(BaseTrial):
             param_value_in_internal_repr = distribution.to_internal_repr(param_value)
             storage.set_trial_param(trial_id, name, param_value_in_internal_repr, distribution)
 
+            self._cached_frozen_trial.distributions[name] = distribution
+            self._cached_frozen_trial.params[name] = param_value
         return param_value
 
     def _is_fixed_param(self, name: str, distribution: BaseDistribution) -> bool:
 
-        system_attrs = self.storage.get_trial_system_attrs(self._trial_id)
+        system_attrs = self._cached_frozen_trial.system_attrs
         if "fixed_params" not in system_attrs:
             return False
 
@@ -643,9 +676,7 @@ class Trial(BaseTrial):
 
     def _check_distribution(self, name: str, distribution: BaseDistribution) -> None:
 
-        old_distribution = self.storage.get_trial(self._trial_id).distributions.get(
-            name, distribution
-        )
+        old_distribution = self._cached_frozen_trial.distributions.get(name, distribution)
         if old_distribution != distribution:
             warnings.warn(
                 'Inconsistent parameter values for distribution with name "{}"! '
@@ -658,6 +689,12 @@ class Trial(BaseTrial):
                 RuntimeWarning,
             )
 
+    def _get_latest_trial(self) -> FrozenTrial:
+        # TODO(eukaryo): Remove this method after `system_attrs` property is deprecated.
+        system_attrs = copy.deepcopy(self.storage.get_trial_system_attrs(self._trial_id))
+        self._cached_frozen_trial.system_attrs = system_attrs
+        return self._cached_frozen_trial
+
     @property
     def params(self) -> Dict[str, Any]:
         """Return parameters to be optimized.
@@ -666,7 +703,7 @@ class Trial(BaseTrial):
             A dictionary containing all parameters.
         """
 
-        return copy.deepcopy(self.storage.get_trial_params(self._trial_id))
+        return copy.deepcopy(self._cached_frozen_trial.params)
 
     @property
     def distributions(self) -> Dict[str, BaseDistribution]:
@@ -676,7 +713,7 @@ class Trial(BaseTrial):
             A dictionary containing all distributions.
         """
 
-        return copy.deepcopy(self.storage.get_trial(self._trial_id).distributions)
+        return copy.deepcopy(self._cached_frozen_trial.distributions)
 
     @property
     def user_attrs(self) -> Dict[str, Any]:
@@ -686,9 +723,10 @@ class Trial(BaseTrial):
             A dictionary containing all user attributes.
         """
 
-        return copy.deepcopy(self.storage.get_trial_user_attrs(self._trial_id))
+        return copy.deepcopy(self._cached_frozen_trial.user_attrs)
 
     @property
+    @deprecated_func("3.1.0", "6.0.0")
     def system_attrs(self) -> Dict[str, Any]:
         """Return system attributes.
 
@@ -705,7 +743,7 @@ class Trial(BaseTrial):
         Returns:
             Datetime where the :class:`~optuna.trial.Trial` started.
         """
-        return self.storage.get_trial(self._trial_id).datetime_start
+        return self._cached_frozen_trial.datetime_start
 
     @property
     def number(self) -> int:
@@ -715,4 +753,4 @@ class Trial(BaseTrial):
             A trial number.
         """
 
-        return self.storage.get_trial_number_from_id(self._trial_id)
+        return self._cached_frozen_trial.number

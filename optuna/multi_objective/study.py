@@ -130,7 +130,9 @@ def create_study(
         load_if_exists=load_if_exists,
     )
 
-    study.set_system_attr("multi_objective:study:directions", list(directions))
+    study._storage.set_study_system_attr(
+        study._study_id, "multi_objective:study:directions", list(directions)
+    )
 
     return MultiObjectiveStudy(study)
 
@@ -225,7 +227,9 @@ class MultiObjectiveStudy:
         self._study = study
 
         self._directions = []
-        for d in study.system_attrs["multi_objective:study:directions"]:
+        for d in study._storage.get_study_system_attrs(study._study_id)[
+            "multi_objective:study:directions"
+        ]:
             if d == "minimize":
                 self._directions.append(StudyDirection.MINIMIZE)
             elif d == "maximize":
@@ -361,7 +365,7 @@ class MultiObjectiveStudy:
             A dictionary containing all system attributes.
         """
 
-        return self._study.system_attrs
+        return self._study._storage.get_study_system_attrs(self._study._study_id)
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
@@ -386,7 +390,7 @@ class MultiObjectiveStudy:
 
         """
 
-        self._study.set_system_attr(key, value)
+        self._study._storage.set_study_system_attr(self._study._study_id, key, value)
 
     def enqueue_trial(self, params: Dict[str, Any]) -> None:
         """Enqueue a trial with given parameter values.

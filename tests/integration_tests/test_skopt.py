@@ -6,12 +6,14 @@ from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
 
+import _pytest.capture
 import pytest
 
 import optuna
 from optuna import distributions
 from optuna._imports import try_import
 from optuna.trial import FrozenTrial
+from optuna.trial import Trial
 
 
 with try_import():
@@ -136,6 +138,27 @@ def test_is_compatible() -> None:
         optimizer._is_compatible(trial)
 
 
+def test_warn_independent_sampling(capsys: _pytest.capture.CaptureFixture) -> None:
+    def objective(trial: Trial) -> float:
+        x = trial.suggest_categorical("x", ["a", "b"])
+        if x == "a":
+            return trial.suggest_float("y", 0, 1)
+        else:
+            return trial.suggest_float("z", 0, 1)
+
+    # We need to reconstruct our default handler to properly capture stderr.
+    optuna.logging._reset_library_root_logger()
+    optuna.logging.enable_default_handler()
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+    sampler = optuna.integration.SkoptSampler(warn_independent_sampling=True, n_startup_trials=0)
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(objective, n_trials=10)
+
+    _, err = capsys.readouterr()
+    assert err
+
+
 def _objective(trial: optuna.trial.Trial) -> float:
 
     p0 = trial.suggest_float("p0", -3.3, 5.2)
@@ -149,7 +172,6 @@ def _objective(trial: optuna.trial.Trial) -> float:
     p8 = trial.suggest_float("p8", 0.1, 1.0, step=0.1)
     p9 = trial.suggest_float("p9", 2.2, 2.2, step=0.5)
     p10 = trial.suggest_categorical("p10", ["9", "3", "0", "8"])
-    assert isinstance(p10, str)
 
     return p0 + p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9 + int(p10)
 

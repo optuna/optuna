@@ -40,13 +40,12 @@ class JournalOperation(enum.IntEnum):
     DELETE_STUDY = 1
     SET_STUDY_USER_ATTR = 2
     SET_STUDY_SYSTEM_ATTR = 3
-    SET_STUDY_DIRECTIONS = 4
-    CREATE_TRIAL = 5
-    SET_TRIAL_PARAM = 6
-    SET_TRIAL_STATE_VALUES = 7
-    SET_TRIAL_INTERMEDIATE_VALUE = 8
-    SET_TRIAL_USER_ATTR = 9
-    SET_TRIAL_SYSTEM_ATTR = 10
+    CREATE_TRIAL = 4
+    SET_TRIAL_PARAM = 5
+    SET_TRIAL_STATE_VALUES = 6
+    SET_TRIAL_INTERMEDIATE_VALUE = 7
+    SET_TRIAL_USER_ATTR = 8
+    SET_TRIAL_SYSTEM_ATTR = 9
 
 
 @experimental_class("3.1.0")
@@ -135,11 +134,15 @@ class JournalStorage(BaseStorage):
         logs = self._backend.read_logs(self._replay_result.log_number_read)
         self._replay_result.apply_logs(logs)
 
-    def create_new_study(self, study_name: Optional[str] = None) -> int:
+    def create_new_study(
+        self, directions: Sequence[StudyDirection], study_name: Optional[str] = None
+    ) -> int:
         study_name = study_name or DEFAULT_STUDY_NAME_PREFIX + str(uuid.uuid4())
 
         with self._thread_lock:
-            self._write_log(JournalOperation.CREATE_STUDY, {"study_name": study_name})
+            self._write_log(
+                JournalOperation.CREATE_STUDY, {"study_name": study_name, "directions": directions}
+            )
             self._sync_with_backend()
 
             for frozen_study in self._replay_result.get_all_studies():
@@ -156,6 +159,7 @@ class JournalStorage(BaseStorage):
                     and study_id % SNAPSHOT_INTERVAL == 0
                 ):
                     self._backend.save_snapshot(pickle.dumps(self._replay_result))
+
                 return study_id
             assert False, "Should not reach."
 
@@ -174,12 +178,6 @@ class JournalStorage(BaseStorage):
         log: Dict[str, Any] = {"study_id": study_id, "system_attr": {key: value}}
         with self._thread_lock:
             self._write_log(JournalOperation.SET_STUDY_SYSTEM_ATTR, log)
-            self._sync_with_backend()
-
-    def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
-        log: Dict[str, Any] = {"study_id": study_id, "directions": directions}
-        with self._thread_lock:
-            self._write_log(JournalOperation.SET_STUDY_DIRECTIONS, log)
             self._sync_with_backend()
 
     def get_study_id_from_name(self, study_name: str) -> int:
@@ -394,8 +392,6 @@ class JournalStorageReplayResult:
                 self._apply_set_study_user_attr(log)
             elif op == JournalOperation.SET_STUDY_SYSTEM_ATTR:
                 self._apply_set_study_system_attr(log)
-            elif op == JournalOperation.SET_STUDY_DIRECTIONS:
-                self._apply_set_study_directions(log)
             elif op == JournalOperation.CREATE_TRIAL:
                 self._apply_create_trial(log)
             elif op == JournalOperation.SET_TRIAL_PARAM:
@@ -457,6 +453,7 @@ class JournalStorageReplayResult:
 
     def _apply_create_study(self, log: Dict[str, Any]) -> None:
         study_name = log["study_name"]
+        directions = [StudyDirection(d) for d in log["directions"]]
 
         if study_name in [s.study_name for s in self._studies.values()]:
             if self._is_issued_by_this_worker(log):
@@ -473,10 +470,11 @@ class JournalStorageReplayResult:
 
         self._studies[study_id] = FrozenStudy(
             study_name=study_name,
-            direction=StudyDirection.NOT_SET,
+            direction=None,
             user_attrs={},
             system_attrs={},
             study_id=study_id,
+            directions=directions,
         )
         self._study_id_to_trial_ids[study_id] = []
 
@@ -500,26 +498,6 @@ class JournalStorageReplayResult:
         if self._study_exists(study_id, log):
             assert len(log["system_attr"]) == 1
             self._studies[study_id].system_attrs.update(log["system_attr"])
-
-    def _apply_set_study_directions(self, log: Dict[str, Any]) -> None:
-        study_id = log["study_id"]
-
-        if not self._study_exists(study_id, log):
-            return
-
-        directions = [StudyDirection(d) for d in log["directions"]]
-
-        current_directions = self._studies[study_id]._directions
-        if current_directions[0] != StudyDirection.NOT_SET and current_directions != directions:
-            if self._is_issued_by_this_worker(log):
-                raise ValueError(
-                    "Cannot overwrite study direction from {} to {}.".format(
-                        current_directions, directions
-                    )
-                )
-            return
-
-        self._studies[study_id]._directions = [StudyDirection(d) for d in directions]
 
     def _apply_create_trial(self, log: Dict[str, Any]) -> None:
         study_id = log["study_id"]

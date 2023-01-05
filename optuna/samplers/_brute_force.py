@@ -23,18 +23,36 @@ class BruteForceSampler(BaseSampler):
 
     This sampler performs exhaustive search on the defined search space.
 
+    Example:
+
+        .. testcode::
+
+            import optuna
+
+
+            def objective(trial):
+                c = trial.suggest_categorical("c", ["float", "int"])
+                if c == "float":
+                    return trial.suggest_float("x", 1, 3, step=0.5)
+                elif c == "int":
+                    a = trial.suggest_int("a", 1, 3)
+                    b = trial.suggest_int("b", a, 3)
+                    return a + b
+
+
+            study = optuna.create_study(sampler=optuna.samplers.BruteForceSampler())
+            study.optimize(objective)
+
     Note:
         The defined search space must be finite. Therefore, when using
-        :class:`~optuna.distributions.FloatDistibution`, `step=None` is not allowed.
+        :class:`~optuna.distributions.FloatDistribution`, ``step=None`` is not allowed.
 
     Note:
-        This sampler should not be used in combination with other samplers. For example,
-        in distributed optimization, if :class:`~optuna.samplers.BruteForceSampler` and another
-        sampler run optimizations simultaneously, complete exhaustive search may not be performed.
+        This sampler assumes that it suggests all parameters and that the search space is fixed.
+        For example, the sampler may fail to try the entire search space in the following cases.
 
-    Note:
-        The objective function must be fixed during the search. Otherwise, sampler may fail to
-        try the entire search space.
+        * Using with other samplers or :meth:`~optuna.study.Study.enqueue_trial`
+        * Changing suggestion ranges or adding parameters in the same :class:`~optuna.study.Study`
 
     Args:
         seed:

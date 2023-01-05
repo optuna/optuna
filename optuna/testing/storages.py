@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import sys
 import tempfile
 from types import TracebackType
 from typing import Any
@@ -7,18 +10,37 @@ from typing import Type
 from typing import Union
 
 import fakeredis
+import pytest
 
 import optuna
 from optuna.storages import JournalFileStorage
 
 
-STORAGE_MODES = [
+try:
+    import distributed
+
+    _has_distributed = True
+except ImportError:
+    _has_distributed = False
+
+STORAGE_MODES: list[Any] = [
     "inmemory",
     "sqlite",
     "cached_sqlite",
     "journal",
     "journal_redis",
+    pytest.param(
+        "dask",
+        marks=[
+            pytest.mark.integration,
+            pytest.mark.skipif(
+                sys.version_info[:2] >= (3, 11),
+                reason="distributed doesn't yet support Python 3.11",
+            ),
+        ],
+    ),
 ]
+
 
 STORAGE_MODES_HEARTBEAT = [
     "sqlite",
@@ -34,6 +56,7 @@ class StorageSupplier:
         self.storage_specifier = storage_specifier
         self.tempfile: Optional[IO[Any]] = None
         self.extra_args = kwargs
+        self.dask_client: Optional["distributed.Client"] = None
 
     def __enter__(
         self,
@@ -42,6 +65,7 @@ class StorageSupplier:
         optuna.storages._CachedStorage,
         optuna.storages.RDBStorage,
         optuna.storages.JournalStorage,
+        "optuna.integration.DaskStorage",
     ]:
         if self.storage_specifier == "inmemory":
             if len(self.extra_args) > 0:
@@ -69,6 +93,10 @@ class StorageSupplier:
         elif "journal" in self.storage_specifier:
             file_storage = JournalFileStorage(tempfile.NamedTemporaryFile().name)
             return optuna.storages.JournalStorage(file_storage)
+        elif self.storage_specifier == "dask":
+            self.dask_client = distributed.Client()
+
+            return optuna.integration.DaskStorage(client=self.dask_client, **self.extra_args)
         else:
             assert False
 
@@ -78,3 +106,7 @@ class StorageSupplier:
 
         if self.tempfile:
             self.tempfile.close()
+
+        if self.dask_client:
+            self.dask_client.shutdown()
+            self.dask_client.close()
