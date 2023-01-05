@@ -670,7 +670,7 @@ def _get_observation_pairs(
                 param_value = None
             values[param_name].append(param_value)
 
-        if constraints_enabled:
+        if constraints_enabled and trial.state != TrialState.RUNNING:
             assert violations is not None
             constraint = trial.system_attrs.get(_CONSTRAINTS_KEY)
             if constraint is None:
