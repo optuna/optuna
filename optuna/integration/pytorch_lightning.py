@@ -1,10 +1,11 @@
 import warnings
 
-from packaging import version
+# from packaging import version
 
 import optuna
-from optuna.storages._cached_storage import _CachedStorage
-from optuna.storages._rdb.storage import RDBStorage
+
+# from optuna.storages._cached_storage import _CachedStorage
+# from optuna.storages._rdb.storage import RDBStorage
 
 
 # Define key names of `Trial.system_attrs`.
@@ -13,7 +14,7 @@ _EPOCH_KEY = "ddp_pl:epoch"
 
 
 with optuna._imports.try_import() as _imports:
-    import pytorch_lightning as pl
+    # import pytorch_lightning as pl
     from pytorch_lightning import LightningModule
     from pytorch_lightning import Trainer
     from pytorch_lightning.callbacks import Callback
