@@ -163,7 +163,8 @@ def test_pytorch_lightning_pruning_callback_ddp_monitor(
         trainer = pl.Trainer(
             max_epochs=2,
             strategy="ddp",
-            num_processes=2,
+            accelerator="cpu",
+            devices=2,
             enable_checkpointing=False,
             callbacks=[PyTorchLightningPruningCallback(trial, monitor="accuracy")],
         )
@@ -197,7 +198,8 @@ def test_pytorch_lightning_pruning_callback_ddp_unsupported_storage() -> None:
         trainer = pl.Trainer(
             max_epochs=1,
             strategy="ddp",
-            num_processes=2,
+            accelerator="cpu",
+            devices=2,
             enable_checkpointing=False,
             callbacks=[PyTorchLightningPruningCallback(trial, monitor="accuracy")],
         )
