@@ -131,7 +131,10 @@ def test_create_study_command_with_study_name() -> None:
 def test_create_study_command_without_storage_url() -> None:
 
     with pytest.raises(subprocess.CalledProcessError) as err:
-        subprocess.check_output(["optuna", "create-study"])
+        subprocess.check_output(
+            ["optuna", "create-study"],
+            env={k: v for k, v in os.environ.items() if k != "OPTUNA_STORAGE"},
+        )
     usage = err.value.output.decode()
     assert usage.startswith("usage:")
 
@@ -259,7 +262,10 @@ def test_delete_study_command() -> None:
 def test_delete_study_command_without_storage_url() -> None:
 
     with pytest.raises(subprocess.CalledProcessError):
-        subprocess.check_output(["optuna", "delete-study", "--study-name", "dummy_study"])
+        subprocess.check_output(
+            ["optuna", "delete-study", "--study-name", "dummy_study"],
+            env={k: v for k, v in os.environ.items() if k != "OPTUNA_STORAGE"},
+        )
 
 
 @pytest.mark.skip_coverage
@@ -1071,7 +1077,10 @@ def test_storage_upgrade_command() -> None:
 
         command = ["optuna", "storage", "upgrade"]
         with pytest.raises(CalledProcessError):
-            subprocess.check_call(command)
+            subprocess.check_call(
+                command,
+                env={k: v for k, v in os.environ.items() if k != "OPTUNA_STORAGE"},
+            )
 
         command.extend(["--storage", storage_url])
         subprocess.check_call(command)
