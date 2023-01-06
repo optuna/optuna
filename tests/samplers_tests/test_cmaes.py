@@ -636,7 +636,6 @@ def test_internal_optimizer_with_margin() -> None:
         return x**2 + y
 
     objectives = [objective_discrete, objective_mixed, objective_continuous]
-    # When all the seach spaces are continuous, `CMA` is used.
     for objective in objectives:
         with patch("optuna.samplers._cmaes.CMAwM") as cmawm_class_mock:
             sampler = optuna.samplers.CmaEsSampler(with_margin=True)
