@@ -97,7 +97,7 @@ License
 
 MIT License (see `LICENSE <https://github.com/optuna/optuna/blob/master/LICENSE>`__).
 
-Optuna uses the codes from SciPy project (see :doc:`Third-party License <license_thirdparty>`).
+Optuna uses the codes from SciPy and fdlibm projects (see :doc:`Third-party License <license_thirdparty>`).
 
 Reference
 ---------
