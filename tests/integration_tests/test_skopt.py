@@ -172,7 +172,6 @@ def _objective(trial: optuna.trial.Trial) -> float:
     p8 = trial.suggest_float("p8", 0.1, 1.0, step=0.1)
     p9 = trial.suggest_float("p9", 2.2, 2.2, step=0.5)
     p10 = trial.suggest_categorical("p10", ["9", "3", "0", "8"])
-    assert isinstance(p10, str)
 
     return p0 + p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9 + int(p10)
 
