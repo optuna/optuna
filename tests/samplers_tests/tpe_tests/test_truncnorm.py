@@ -3,8 +3,10 @@ import sys
 import numpy as np
 import pytest
 from scipy.stats import truncnorm as truncnorm_scipy
-from scipy.stats._continuous_distns import _log_gauss_mass as _log_gauss_mass_scipy
-
+try:
+    from scipy.stats._continuous_distns import _log_gauss_mass as _log_gauss_mass_scipy
+except:
+    _log_gauss_mass_scipy = None
 import optuna.samplers._tpe._truncnorm as truncnorm_ours
 
 
@@ -42,6 +44,9 @@ def test_logpdf(a: float, b: float) -> None:
 
 @pytest.mark.skipif(
     sys.version_info < (3, 8, 0), reason="SciPy 1.9.2 is not supported in Python 3.7"
+)
+@pytest.mark.skipif(
+    _log_gauss_mass_scipy is None, reason="Failed to import SciPy's internal function."
 )
 @pytest.mark.parametrize(
     "a,b",
