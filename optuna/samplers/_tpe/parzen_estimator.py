@@ -448,21 +448,6 @@ class _ParzenEstimator:
         return mus, sigmas
 
     @staticmethod
-    def _trunc_normal_cdf(
-        x: np.ndarray,
-        mu: np.ndarray,
-        sigma: np.ndarray,
-        pre_trunc_low: np.ndarray,
-        pre_trunc_high: np.ndarray,
-    ) -> np.ndarray:
-
-        mu, sigma = map(np.asarray, (mu, sigma))
-        trunc_low = (pre_trunc_low - mu) / sigma
-        trunc_high = (pre_trunc_high - mu) / sigma
-
-        return truncnorm.cdf(x, trunc_low, trunc_high, loc=mu, scale=sigma)
-
-    @staticmethod
     def _sample_from_categorical_dist(
         rng: np.random.RandomState, probabilities: np.ndarray
     ) -> np.ndarray:

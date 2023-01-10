@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import pytest
 from scipy.stats import truncnorm as truncnorm_scipy
+from scipy.stats._continuous_distns import _log_gauss_mass as _log_gauss_mass_scipy
 
 import optuna.samplers._tpe._truncnorm as truncnorm_ours
 
@@ -44,12 +45,13 @@ def test_logpdf(a: float, b: float) -> None:
 )
 @pytest.mark.parametrize(
     "a,b",
-    [(-np.inf, np.inf), (-10, +10), (-1, +1), (-1e-3, +1e-3), (10, 100), (-100, -10), (0, 0)],
+    # we don't test (0, 0) as SciPy returns the incorrect value.
+    [(-np.inf, np.inf), (-10, +10), (-1, +1), (-1e-3, +1e-3), (10, 100), (-100, -10)],
 )
-def test_cdf(a: float, b: float) -> None:
+def test_log_gass_mass(a: float, b: float) -> None:
     for x in np.concatenate(
         [np.linspace(0, 1, num=100), np.array([sys.float_info.min, 1 - sys.float_info.epsilon])]
     ):
-        assert truncnorm_ours.cdf(x, a, b) == pytest.approx(
-            truncnorm_scipy.cdf(x, a, b), nan_ok=True
-        ), f"cdf(x={x}, a={a}, b={b})"
+        assert truncnorm_ours._log_gauss_mass(np.array([a]), np.array([b])) == pytest.approx(
+            _log_gauss_mass_scipy(a, b), nan_ok=True
+        ), f"_log_gauss_mass(x={x}, a={a}, b={b})"
