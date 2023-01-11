@@ -33,7 +33,6 @@ def get_install_requires() -> List[str]:
         "colorlog",
         "numpy",
         "packaging>=20.0",
-        "scipy>=1.7.0",
         "sqlalchemy>=1.3.0",
         "tqdm",
         "PyYAML",  # Only used in `optuna/cli.py`.
@@ -126,6 +125,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "fakeredis[lua]",
             "kaleido",
             "pytest",
+            "scipy>=1.9.2; python_version>='3.8'",
         ],
     }
 
