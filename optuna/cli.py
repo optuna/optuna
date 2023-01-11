@@ -38,17 +38,18 @@ _DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 def _check_storage_url(storage_url: Optional[str]) -> str:
 
-    env_storage = os.environ.get("OPTUNA_STORAGE")
-    if storage_url is None and env_storage is None:
-        raise CLIUsageError("Storage URL is not specified.")
+    if storage_url is not None:
+        return storage_url
 
+    env_storage = os.environ.get("OPTUNA_STORAGE")
     if env_storage is not None:
         warnings.warn(
             "Specifying the storage url via 'OPTUNA_STORAGE' environment variable"
             " is an experimental feature. The interface can change in the future.",
             ExperimentalWarning,
         )
-    return storage_url or env_storage
+        return env_storage
+    raise CLIUsageError("Storage URL is not specified.")
 
 
 def _format_value(value: Any) -> Any:
