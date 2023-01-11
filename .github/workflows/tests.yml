@@ -21,7 +21,6 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
-        sqlalchemy-version: ['1.4.46', '2.0.0rc2']
 
     services:
       redis:
@@ -66,9 +65,6 @@ jobs:
 
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
-        pip install --progress-bar off sqlalchemy==$SQLALCHEMY_VERSION
-      env:
-        SQLALCHEMY_VERSION: ${{ matrix.sqlalchemy-version }}
 
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
