@@ -38,9 +38,18 @@ _DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 def _check_storage_url(storage_url: Optional[str]) -> str:
 
-    if storage_url is None:
-        raise CLIUsageError("Storage URL is not specified.")
-    return storage_url
+    if storage_url is not None:
+        return storage_url
+
+    env_storage = os.environ.get("OPTUNA_STORAGE")
+    if env_storage is not None:
+        warnings.warn(
+            "Specifying the storage url via 'OPTUNA_STORAGE' environment variable"
+            " is an experimental feature. The interface can change in the future.",
+            ExperimentalWarning,
+        )
+        return env_storage
+    raise CLIUsageError("Storage URL is not specified.")
 
 
 def _format_value(value: Any) -> Any:
@@ -904,7 +913,7 @@ _COMMANDS: Dict[str, Type[_BaseCommand]] = {
 def _add_common_arguments(parser: ArgumentParser) -> ArgumentParser:
     parser.add_argument(
         "--storage",
-        default=os.environ.get("OPTUNA_STORAGE"),
+        default=None,
         help=(
             "DB URL. (e.g. sqlite:///example.db) "
             "Also can be specified via OPTUNA_STORAGE environment variable."
