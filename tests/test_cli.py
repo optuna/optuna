@@ -9,6 +9,7 @@ from typing import Any
 from typing import Callable
 from typing import Optional
 from typing import Tuple
+from unittest.mock import patch
 
 import numpy as np
 from pandas import Timedelta
@@ -1063,6 +1064,9 @@ def test_check_storage_url() -> None:
 
     storage_in_args = "sqlite:///args.db"
     assert storage_in_args == optuna.cli._check_storage_url(storage_in_args)
+
+    with patch.dict("optuna.cli.os.environ", {"OPTUNA_STORAGE": "sqlite:///args.db"}):
+        optuna.cli._check_storage_url(None)
 
     with pytest.raises(CLIUsageError):
         optuna.cli._check_storage_url(None)
