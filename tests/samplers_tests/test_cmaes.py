@@ -636,14 +636,9 @@ def test_internal_optimizer_with_margin() -> None:
         return x**2 + y
 
     objectives = [objective_discrete, objective_mixed, objective_continuous]
-    # When all the seach spaces are continuous, `CMA` is used.
-    expected_calls = [(0, 1), (0, 1), (1, 0)]
-    for objective, (cma_call, cmawm_call) in zip(objectives, expected_calls):
-        with patch("optuna.samplers._cmaes.CMA") as cma_class_mock, patch(
-            "optuna.samplers._cmaes.CMAwM"
-        ) as cmawm_class_mock:
+    for objective in objectives:
+        with patch("optuna.samplers._cmaes.CMAwM") as cmawm_class_mock:
             sampler = optuna.samplers.CmaEsSampler(with_margin=True)
             study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=2)
-            assert cma_class_mock.call_count == cma_call
-            assert cmawm_class_mock.call_count == cmawm_call
+            assert cmawm_class_mock.call_count == 1
