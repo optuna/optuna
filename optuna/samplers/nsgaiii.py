@@ -630,3 +630,43 @@ def _constrained_dominates(
     violation0 = sum(v for v in constraints0 if v > 0)
     violation1 = sum(v for v in constraints1 if v > 0)
     return violation0 < violation1
+
+
+class reference_point:
+    def __init__(
+        self,
+        objective_dimension: int,
+        is_default: bool = True,
+        dividing_parameter: int = 3,
+        reference_points: Optional[np.ndarray] = None,
+        weight: Optional[np.ndarray] = None,
+    ) -> None:
+        # TODO add input check
+        self.is_default = is_default
+        if is_default:
+            self.dividing_parameter = dividing_parameter
+            self.reference_points = generate_default_reference_point(
+                objective_dimension, dividing_parameter
+            )
+        else:
+            self.reference_points = reference_points
+        self.objective_dimension = objective_dimension
+        self.weight = weight
+
+    def _normalize(self, population: List[FrozenTrial]) -> np.ndarray:
+        return _normalize(population, self.weight)
+
+    def _associate(
+        self, objective_matrix: np.ndarray, elite_population_num: int
+    ) -> Tuple[Dict[int, List[int]], Dict[int, List[Tuple[float, int]]]]:
+        # if not self.is_default:
+        return _associate(objective_matrix, self.reference_points, elite_population_num)
+
+    def _niching(
+        self,
+        target_population_size: int,
+        population: List[FrozenTrial],
+        reference_points_per_count: Dict[int, List[int]],
+        ref2pops: Dict[int, List[Tuple[float, int]]],
+    ) -> List[FrozenTrial]:
+        return _niching(target_population_size, population, reference_points_per_count, ref2pops)
