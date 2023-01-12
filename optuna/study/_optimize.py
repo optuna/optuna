@@ -163,7 +163,7 @@ def _optimize_sequential(
             frozen_trial = _run_trial(study, func, catch)
         finally:
             # The following line mitigates memory problems that can be occurred in some
-            # environments (e.g., services that use computing containers such as CircleCI).
+            # environments (e.g., services that use computing containers such as GitHub Actions).
             # Please refer to the following PR for further details:
             # https://github.com/optuna/optuna/pull/325.
             if gc_after_trial:
