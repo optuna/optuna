@@ -1,3 +1,4 @@
+import os
 import warnings
 
 from packaging import version
@@ -57,6 +58,8 @@ class PyTorchLightningPruningCallback(Callback):
         self.is_ddp_backend = False
 
     def on_fit_start(self, trainer: Trainer, pl_module: "pl.LightningModule") -> None:
+        os.environ["PL_RECONCILE_PROCESS"] = "0"
+        trainer.strategy._rank_0_will_call_children_scripts = False
         self.is_ddp_backend = trainer._accelerator_connector.is_distributed
         if self.is_ddp_backend:
             if version.parse(pl.__version__) < version.parse("1.5.0"):  # type: ignore
