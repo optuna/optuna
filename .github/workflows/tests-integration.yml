@@ -62,11 +62,9 @@ jobs:
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
-        pytest tests -m "integration" \
-          --ignore tests/integration_tests/test_pytorch_lightning.py
+        pytest tests -m "integration"
 
     - name: Tests
       if:  ${{ github.event_name != 'schedule' }}
       run: |
-        pytest tests -m "integration and not slow" \
-          --ignore tests/integration_tests/test_pytorch_lightning.py
+        pytest tests -m "integration and not slow"
