@@ -1,11 +1,11 @@
 import warnings
 
-# from packaging import version
+from packaging import version
 
 import optuna
 
-# from optuna.storages._cached_storage import _CachedStorage
-# from optuna.storages._rdb.storage import RDBStorage
+from optuna.storages._cached_storage import _CachedStorage
+from optuna.storages._rdb.storage import RDBStorage
 
 
 # Define key names of `Trial.system_attrs`.
@@ -14,7 +14,7 @@ _EPOCH_KEY = "ddp_pl:epoch"
 
 
 with optuna._imports.try_import() as _imports:
-    # import pytorch_lightning as pl
+    import pytorch_lightning as pl
     from pytorch_lightning import LightningModule
     from pytorch_lightning import Trainer
     from pytorch_lightning.callbacks import Callback
@@ -57,22 +57,19 @@ class PyTorchLightningPruningCallback(Callback):
         self.monitor = monitor
         self.is_ddp_backend = False
 
-    # Move to somewhere else or remove
-    # def on_init_start(self, trainer: Trainer) -> None:
-    #    self.is_ddp_backend = (
-    #        trainer._accelerator_connector.distributed_backend is not None  # type: ignore
-    #    )
-    #    if self.is_ddp_backend:
-    #        if version.parse(pl.__version__) < version.parse("1.5.0"):  # type: ignore
-    #            raise ValueError("PyTorch Lightning>=1.5.0 is required in DDP.")
-    #       if not (
-    #            isinstance(self._trial.study._storage, _CachedStorage)
-    #            and isinstance(self._trial.study._storage._backend, RDBStorage)
-    #        ):
-    #            raise ValueError(
-    #               "optuna.integration.PyTorchLightningPruningCallback"
-    #                " supports only optuna.storages.RDBStorage in DDP."
-    #            )
+    def on_fit_start(self, trainer: Trainer, pl_module: "pl.LightningModule") -> None:
+        self.is_ddp_backend = trainer._accelerator_connector.is_distributed
+        if self.is_ddp_backend:
+            if version.parse(pl.__version__) < version.parse("1.5.0"):  # type: ignore
+                raise ValueError("PyTorch Lightning>=1.5.0 is required in DDP.")
+            if not (
+                isinstance(self._trial.study._storage, _CachedStorage)
+                and isinstance(self._trial.study._storage._backend, RDBStorage)
+            ):
+                raise ValueError(
+                    "optuna.integration.PyTorchLightningPruningCallback"
+                    " supports only optuna.storages.RDBStorage in DDP."
+                )
 
     def on_validation_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
 
