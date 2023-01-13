@@ -339,7 +339,7 @@ class Study:
 
         Optimization will be stopped when receiving a termination signal such as SIGINT and
         SIGTERM. Unlike other signals, a trial is automatically and cleanly failed when receiving
-        SIGINT (Ctrl+C). If :obj:`n_jobs` is greater than one or if another signal than SIGINT
+        SIGINT (Ctrl+C). If ``n_jobs`` is greater than one or if another signal than SIGINT
         is used, the interrupted trial state won't be properly updated.
 
         Example:
@@ -377,7 +377,7 @@ class Study:
                 :func:`~optuna.study.Study.stop` is called or, a termination signal such as
                 SIGTERM or Ctrl+C is received.
             n_jobs:
-                The number of parallel jobs. If this argument is set to :obj:`-1`, the number is
+                The number of parallel jobs. If this argument is set to ``-1``, the number is
                 set to CPU count.
 
                 .. note::

@@ -193,7 +193,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         *,
         heartbeat_interval: Optional[int] = None,
         grace_period: Optional[int] = None,
-        failed_trial_callback: Optional[Callable[["optuna.Study", FrozenTrial], None]] = None,
+        failed_trial_callback: Optional[
+            Callable[["optuna.study.Study", FrozenTrial], None]
+        ] = None,
         skip_table_creation: bool = False,
     ) -> None:
 
@@ -1041,7 +1043,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         return self.heartbeat_interval
 
-    def get_failed_trial_callback(self) -> Optional[Callable[["optuna.Study", FrozenTrial], None]]:
+    def get_failed_trial_callback(
+        self,
+    ) -> Optional[Callable[["optuna.study.Study", FrozenTrial], None]]:
 
         return self.failed_trial_callback
 
@@ -1094,9 +1098,11 @@ class _VersionManager:
 
     def _set_alembic_revision(self, revision: str) -> None:
 
-        context = alembic_migration.MigrationContext.configure(self.engine.connect())
-        script = self._create_alembic_script()
-        context.stamp(script, revision)
+        connection = self.engine.connect()
+        context = alembic_migration.MigrationContext.configure(connection)
+        with connection.begin():
+            script = self._create_alembic_script()
+            context.stamp(script, revision)
 
     def check_table_schema_compatibility(self) -> None:
 

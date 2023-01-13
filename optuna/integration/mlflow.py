@@ -202,7 +202,7 @@ class MLflowCallback:
                 study.optimize(objective, n_trials=10, callbacks=[mlflc])
 
         Returns:
-            ObjectiveFuncType: Objective function with tracking to MLflow enabled.
+            Objective function with tracking to MLflow enabled.
         """
 
         def decorator(func: ObjectiveFuncType) -> ObjectiveFuncType:

@@ -14,8 +14,6 @@ from typing import Optional
 from typing import Union
 
 import numpy as np
-import scipy as sp
-from scipy.sparse import spmatrix
 
 from optuna import distributions
 from optuna import logging
@@ -32,6 +30,8 @@ from optuna.trial import Trial
 
 with try_import() as _imports:
     import pandas as pd
+    import scipy as sp
+    from scipy.sparse import spmatrix
     import sklearn
     from sklearn.base import BaseEstimator
     from sklearn.base import clone
@@ -380,7 +380,7 @@ class OptunaSearchCV(BaseEstimator):
             - a CV splitter,
             - an iterable yielding (train, validation) splits as arrays of indices.
 
-            For integer, if :obj:`estimator` is a classifier and :obj:`y` is
+            For integer, if ``estimator`` is a classifier and ``y`` is
             either binary or multiclass,
             ``sklearn.model_selection.StratifiedKFold`` is used. otherwise,
             ``sklearn.model_selection.KFold`` is used.
@@ -400,7 +400,7 @@ class OptunaSearchCV(BaseEstimator):
             estimator supports ``partial_fit``.
 
         n_jobs:
-            Number of :obj:`threading` based parallel jobs. :obj:`-1` means
+            Number of :obj:`threading` based parallel jobs. ``-1`` means
             using the number is set to CPU count.
 
                 .. note::
@@ -411,7 +411,7 @@ class OptunaSearchCV(BaseEstimator):
 
         n_trials:
             Number of trials. If :obj:`None`, there is no limitation on the
-            number of trials. If :obj:`timeout` is also set to :obj:`None`,
+            number of trials. If ``timeout`` is also set to :obj:`None`,
             the study continues to create trials until it receives a
             termination signal such as Ctrl+C or SIGTERM. This trades off
             runtime vs quality of the solution.
@@ -455,7 +455,7 @@ class OptunaSearchCV(BaseEstimator):
         timeout:
             Time limit in seconds for the search of appropriate models. If
             :obj:`None`, the study is executed without time limitation. If
-            :obj:`n_trials` is also set to :obj:`None`, the study continues to
+            ``n_trials`` is also set to :obj:`None`, the study continues to
             create trials until it receives a termination signal such as
             Ctrl+C or SIGTERM. This trades off runtime vs quality of the
             solution.
@@ -825,8 +825,7 @@ class OptunaSearchCV(BaseEstimator):
                 Parameters passed to ``fit`` on the estimator.
 
         Returns:
-            self:
-                Return self.
+            self.
         """
 
         self._check_params()
@@ -930,8 +929,7 @@ class OptunaSearchCV(BaseEstimator):
                 Target variable.
 
         Returns:
-            score:
-                Scaler score.
+            Scaler score.
         """
 
         return self.scorer_(self.best_estimator_, X, y)

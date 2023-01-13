@@ -87,7 +87,6 @@ def test_sampling(storage_mode: str) -> None:
         e = trial.suggest_categorical("e", [0, 1, 2])
         f = trial.suggest_int("f", 1, 10, log=True)
 
-        assert isinstance(e, int)
         return a + b + c + d + e + f
 
     with StorageSupplier(storage_mode) as storage:

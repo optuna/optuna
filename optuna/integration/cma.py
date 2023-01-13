@@ -90,7 +90,8 @@ class PyCmaSampler(BaseSampler):
         cma_opts:
             Options passed to the constructor of cma.CMAEvolutionStrategy_ class.
 
-            Note that ``BoundaryHandler``, ``bounds``, ``CMA_stds`` and ``seed`` arguments in
+            Note that default option is cma_default_options_,
+            but ``BoundaryHandler``, ``bounds``, ``CMA_stds`` and ``seed`` arguments in
             ``cma_opts`` will be ignored because it is added by
             :class:`~optuna.integration.PyCmaSampler` automatically.
 
@@ -120,8 +121,10 @@ class PyCmaSampler(BaseSampler):
             Note that the parameters of the first trial in a study are always sampled
             via an independent sampler, so no warning messages are emitted in this case.
 
-    .. _cma.CMAEvolutionStrategy: http://cma.gforge.inria.fr/apidocs-pycma/\
+    .. _cma.CMAEvolutionStrategy: https://cma-es.github.io/apidocs-pycma/\
     cma.evolution_strategy.CMAEvolutionStrategy.html
+    .. _cma_default_options: https://cma-es.github.io/apidocs-pycma/\
+    cma.evolution_strategy.html#cma_default_options_
     """
 
     def __init__(

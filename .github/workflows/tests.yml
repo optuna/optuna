@@ -41,7 +41,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Setup cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         cache-name: test
       with:
@@ -70,8 +70,12 @@ jobs:
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
         pytest tests -m "not integration"
+      env:
+        SQLALCHEMY_WARN_20: 1
 
     - name: Tests
       if:  ${{ github.event_name != 'schedule' }}
       run: |
         pytest tests -m "not integration and not slow"
+      env:
+        SQLALCHEMY_WARN_20: 1

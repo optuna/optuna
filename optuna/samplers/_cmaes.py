@@ -565,18 +565,16 @@ class CmaEsSampler(BaseSampler):
                 # Set step 0.0 for continuous search space.
                 steps[i] = dist.step or 0.0
 
-            # If there is no discrete search space, we use `CMA` because CMAwM` throws an error.
-            if np.any(steps > 0.0):
-                return CMAwM(
-                    mean=mean,
-                    sigma=sigma0,
-                    bounds=trans.bounds,
-                    steps=steps,
-                    cov=cov,
-                    seed=self._cma_rng.randint(1, 2**31 - 2),
-                    n_max_resampling=10 * n_dimension,
-                    population_size=population_size,
-                )
+            return CMAwM(
+                mean=mean,
+                sigma=sigma0,
+                bounds=trans.bounds,
+                steps=steps,
+                cov=cov,
+                seed=self._cma_rng.randint(1, 2**31 - 2),
+                n_max_resampling=10 * n_dimension,
+                population_size=population_size,
+            )
 
         return CMA(
             mean=mean,

@@ -3,6 +3,7 @@ import datetime
 from typing import Any
 from typing import Dict
 from typing import Optional
+from typing import overload
 from typing import Sequence
 import warnings
 
@@ -316,6 +317,32 @@ class Trial(BaseTrial):
         suggested_value = int(self._suggest(name, distribution))
         self._check_distribution(name, distribution)
         return suggested_value
+
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[None]) -> None:
+        ...
+
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[bool]) -> bool:
+        ...
+
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[int]) -> int:
+        ...
+
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[float]) -> float:
+        ...
+
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[str]) -> str:
+        ...
+
+    @overload
+    def suggest_categorical(
+        self, name: str, choices: Sequence[CategoricalChoiceType]
+    ) -> CategoricalChoiceType:
+        ...
 
     def suggest_categorical(
         self, name: str, choices: Sequence[CategoricalChoiceType]
@@ -699,6 +726,7 @@ class Trial(BaseTrial):
         return copy.deepcopy(self._cached_frozen_trial.user_attrs)
 
     @property
+    @deprecated_func("3.1.0", "6.0.0")
     def system_attrs(self) -> Dict[str, Any]:
         """Return system attributes.
 

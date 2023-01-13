@@ -67,7 +67,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Setup cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         cache-name: test-storage-with-server
       with:
@@ -102,6 +102,7 @@ jobs:
       run: |
         pytest tests/storages_tests/test_with_server.py
       env:
+        SQLALCHEMY_WARN_20: 1
         OMP_NUM_THREADS: 1
         TEST_DB_URL: mysql+pymysql://user:test@127.0.0.1/optunatest
 
