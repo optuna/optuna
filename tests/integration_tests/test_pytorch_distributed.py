@@ -8,7 +8,6 @@ import optuna
 from optuna._imports import try_import
 from optuna.integration import TorchDistributedTrial
 from optuna.testing.pruners import DeterministicPruner
-from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
 
 
@@ -17,6 +16,14 @@ with try_import():
     import torch.distributed as dist
 
 pytestmark = pytest.mark.integration
+
+STORAGE_MODES = [
+    "inmemory",
+    "sqlite",
+    "cached_sqlite",
+    "journal",
+    "journal_redis",
+]
 
 
 @pytest.fixture(scope="session", autouse=True)
