@@ -89,8 +89,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "botorch>=0.4.0,<0.8.0; python_version<'3.11'",
             "catalyst>=21.3; python_version<'3.11'",
             "catboost>=0.26; python_version<'3.11'",
-            "chainer>=5.0.0; python_version<'3.11'",
-            "cma; python_version<'3.11'",
+            "chainer>=5.0.0",
+            "cma",
             "distributed",
             "fastai; python_version<'3.11'",
             "lightgbm; python_version<'3.11'",
@@ -109,8 +109,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torch==1.11.0; python_version<'3.11'",
             "torchaudio==0.11.0; python_version<'3.11'",
             "torchvision==0.12.0; python_version<'3.11'",
-            "wandb; python_version<'3.11'",
-            "xgboost; python_version<'3.11'",
+            "wandb",
+            "xgboost",
         ],
         "optional": [
             "matplotlib!=3.6.0",  # optuna/visualization/matplotlib
