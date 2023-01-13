@@ -1,3 +1,4 @@
+# type: ignore
 import json
 import os
 import tempfile
@@ -274,33 +275,31 @@ def test_allennlp_pruning_callback() -> None:
     with tempfile.TemporaryDirectory() as tmp_dir:
 
         def objective(trial: optuna.Trial) -> float:
-            reader = allennlp.data.dataset_readers.TextClassificationJsonReader(  # type: ignore[attr-defined]  # NOQA: E501
-                tokenizer=allennlp.data.tokenizers.WhitespaceTokenizer(),  # type: ignore[attr-defined]  # NOQA: E501
+            reader = allennlp.data.dataset_readers.TextClassificationJsonReader(
+                tokenizer=allennlp.data.tokenizers.WhitespaceTokenizer(),
             )
-            data_loader = allennlp.data.data_loaders.MultiProcessDataLoader(  # type: ignore[attr-defined]  # NOQA: E501
+            data_loader = allennlp.data.data_loaders.MultiProcessDataLoader(
                 reader=reader,
                 data_path="tests/integration_tests/allennlp_tests/pruning_test.jsonl",
                 batch_size=16,
             )
-            vocab = allennlp.data.Vocabulary.from_instances(  # type: ignore[attr-defined]
-                data_loader.iter_instances()
-            )
+            vocab = allennlp.data.Vocabulary.from_instances(data_loader.iter_instances())
 
             data_loader.index_with(vocab)
 
-            embedder = allennlp.modules.text_field_embedders.BasicTextFieldEmbedder(  # type: ignore[attr-defined]  # NOQA: E501
-                {"tokens": allennlp.modules.Embedding(50, vocab=vocab)}  # type: ignore[attr-defined]  # NOQA: E501
+            embedder = allennlp.modules.text_field_embedders.BasicTextFieldEmbedder(
+                {"tokens": allennlp.modules.Embedding(50, vocab=vocab)}
             )
-            encoder = allennlp.modules.seq2vec_encoders.GruSeq2VecEncoder(  # type: ignore[attr-defined]  # NOQA: E501
+            encoder = allennlp.modules.seq2vec_encoders.GruSeq2VecEncoder(
                 input_size=50, hidden_size=50
             )
-            model = allennlp.models.BasicClassifier(  # type: ignore[attr-defined]
+            model = allennlp.models.BasicClassifier(
                 text_field_embedder=embedder, seq2vec_encoder=encoder, vocab=vocab
             )
             optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
 
             serialization_dir = os.path.join(tmp_dir, "trial_{}".format(trial.number))
-            trainer = allennlp.training.GradientDescentTrainer(  # type: ignore[attr-defined]
+            trainer = allennlp.training.GradientDescentTrainer(
                 model=model,
                 optimizer=optimizer,
                 data_loader=data_loader,
