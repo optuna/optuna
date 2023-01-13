@@ -641,7 +641,7 @@ class reference_point:
         reference_points: Optional[np.ndarray] = None,
         weight: Optional[np.ndarray] = None,
     ) -> None:
-        # TODO add input check
+        # TODO(Shinichi) add input check
         self.is_default = is_default
         if is_default:
             self.dividing_parameter = dividing_parameter
