@@ -39,6 +39,7 @@ If you use `venv`, simply `deactivate` and re-activate your development environm
 
 from argparse import ArgumentParser
 from typing import Tuple
+import warnings
 
 from packaging import version
 
@@ -49,7 +50,9 @@ def objective_test_upgrade(trial: optuna.trial.Trial) -> float:
     x = trial.suggest_float("x", -5, 5)  # optuna==0.9.0 does not have suggest_float.
     y = trial.suggest_int("y", 0, 10)
     z = trial.suggest_categorical("z", [-5, 0, 5])
-    trial.set_system_attr("a", 0)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=FutureWarning)
+        trial.set_system_attr("a", 0)
     trial.set_user_attr("b", 1)
     trial.report(0.5, step=0)
     return x**2 + y**2 + z**2
@@ -59,7 +62,9 @@ def mo_objective_test_upgrade(trial: optuna.trial.Trial) -> Tuple[float, float]:
     x = trial.suggest_float("x", -5, 5)
     y = trial.suggest_int("y", 0, 10)
     z = trial.suggest_categorical("z", [-5, 0, 5])
-    trial.set_system_attr("a", 0)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=FutureWarning)
+        trial.set_system_attr("a", 0)
     trial.set_user_attr("b", 1)
     return x, x**2 + y**2 + z**2
 
