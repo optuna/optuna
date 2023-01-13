@@ -20,7 +20,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
 
     steps:
     - name: Checkout
@@ -62,11 +62,69 @@ jobs:
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
-        pytest tests -m "integration" \
-          --ignore tests/integration_tests/test_pytorch_lightning.py
+        if [ ${{ matrix.python-version }} == 3.11 ]; then
+          pytest tests -m "integration" \
+            --ignore tests/integration_tests/test_catboost.py \
+            --ignore tests/integration_tests/test_pytorch_ignite.py \
+            --ignore tests/integration_tests/test_tensorboard.py \
+            --ignore tests/integration_tests/test_chainer.py \
+            --ignore tests/integration_tests/test_keras.py \
+            --ignore tests/integration_tests/test_pytorch_lightning.py \
+            --ignore tests/integration_tests/test_tensorflow.py \
+            --ignore tests/integration_tests/allennlp_tests \
+            --ignore tests/integration_tests/test_chainermn.py \
+            --ignore tests/integration_tests/test_lightgbm.py \
+            --ignore tests/integration_tests/test_shap.py \
+            --ignore tests/integration_tests/test_tfkeras.py \
+            --ignore tests/integration_tests/lightgbm_tuner_tests \
+            --ignore tests/integration_tests/test_cma.py \
+            --ignore tests/integration_tests/test_mlflow.py \
+            --ignore tests/integration_tests/test_wandb.py \
+            --ignore tests/integration_tests/test_botorch.py \
+            --ignore tests/integration_tests/test_dask.py \
+            --ignore tests/integration_tests/test_mxnet.py \
+            --ignore tests/integration_tests/test_skopt.py \
+            --ignore tests/integration_tests/test_xgboost.py \
+            --ignore tests/integration_tests/test_catalyst.py \
+            --ignore tests/integration_tests/test_fastaiv2.py \
+            --ignore tests/integration_tests/test_pytorch_distributed.py \
+            --ignore tests/integration_tests/test_skorch.py
+        else
+          pytest tests -m "integration" \
+            --ignore tests/integration_tests/test_pytorch_lightning.py
+        fi
 
     - name: Tests
       if:  ${{ github.event_name != 'schedule' }}
       run: |
-        pytest tests -m "integration and not slow" \
-          --ignore tests/integration_tests/test_pytorch_lightning.py
+        if [ ${{ matrix.python-version }} == 3.11 ]; then
+          pytest tests -m "integration and not slow" \
+            --ignore tests/integration_tests/test_catboost.py \
+            --ignore tests/integration_tests/test_pytorch_ignite.py \
+            --ignore tests/integration_tests/test_tensorboard.py \
+            --ignore tests/integration_tests/test_chainer.py \
+            --ignore tests/integration_tests/test_keras.py \
+            --ignore tests/integration_tests/test_pytorch_lightning.py \
+            --ignore tests/integration_tests/test_tensorflow.py \
+            --ignore tests/integration_tests/allennlp_tests \
+            --ignore tests/integration_tests/test_chainermn.py \
+            --ignore tests/integration_tests/test_lightgbm.py \
+            --ignore tests/integration_tests/test_shap.py \
+            --ignore tests/integration_tests/test_tfkeras.py \
+            --ignore tests/integration_tests/lightgbm_tuner_tests \
+            --ignore tests/integration_tests/test_cma.py \
+            --ignore tests/integration_tests/test_mlflow.py \
+            --ignore tests/integration_tests/test_wandb.py \
+            --ignore tests/integration_tests/test_botorch.py \
+            --ignore tests/integration_tests/test_dask.py \
+            --ignore tests/integration_tests/test_mxnet.py \
+            --ignore tests/integration_tests/test_skopt.py \
+            --ignore tests/integration_tests/test_xgboost.py \
+            --ignore tests/integration_tests/test_catalyst.py \
+            --ignore tests/integration_tests/test_fastaiv2.py \
+            --ignore tests/integration_tests/test_pytorch_distributed.py \
+            --ignore tests/integration_tests/test_skorch.py
+        else
+          pytest tests -m "integration and not slow" \
+            --ignore tests/integration_tests/test_pytorch_lightning.py
+        fi
