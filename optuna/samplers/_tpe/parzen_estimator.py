@@ -3,21 +3,12 @@ from typing import Dict
 from typing import NamedTuple
 from typing import Optional
 from typing import Tuple
-from typing import TYPE_CHECKING
 
 import numpy as np
 
 from optuna import distributions
-from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
-
-
-if TYPE_CHECKING:
-    import scipy.special as special
-    import scipy.stats as stats
-else:
-    special = _LazyImport("scipy.special")
-    stats = _LazyImport("scipy.stats")
+from optuna.samplers._tpe import _truncnorm as truncnorm
 
 
 EPS = 1e-12
@@ -125,20 +116,14 @@ class _ParzenEstimator:
                 # We sample from truncnorm.
                 trunc_low = (low - mus[active]) / sigmas[active]
                 trunc_high = (high - mus[active]) / sigmas[active]
-                samples = np.full((), fill_value=high + 1.0, dtype=np.float64)
-                while (samples >= high).any():
-                    samples = np.where(
-                        samples < high,
-                        samples,
-                        stats.truncnorm.rvs(
-                            trunc_low,
-                            trunc_high,
-                            size=size,
-                            loc=mus[active],
-                            scale=sigmas[active],
-                            random_state=rng,
-                        ),
-                    )
+                samples = truncnorm.rvs(
+                    trunc_low,
+                    trunc_high,
+                    size=size,
+                    loc=mus[active],
+                    scale=sigmas[active],
+                    random_state=rng,
+                )
             samples_dict[param_name] = samples
         samples_dict = self._transform_from_uniform(samples_dict)
         return samples_dict
@@ -184,24 +169,29 @@ class _ParzenEstimator:
                 assert mus is not None
                 assert sigmas is not None
 
-                cdf_func = _ParzenEstimator._normal_cdf
-                p_accept = cdf_func(high, mus, sigmas) - cdf_func(low, mus, sigmas)
                 if q is None:
-                    distance = samples[:, None] - mus
-                    mahalanobis = distance / np.maximum(sigmas, EPS)
-                    z = np.sqrt(2 * np.pi) * sigmas
-                    coefficient = 1 / z / p_accept
-                    log_pdf = -0.5 * mahalanobis**2 + np.log(coefficient)
+                    log_pdf = truncnorm.logpdf(
+                        samples[:, None],
+                        (low - mus) / sigmas,
+                        (high - mus) / sigmas,
+                        loc=mus,
+                        scale=sigmas,
+                    )
                 else:
                     upper_bound = np.minimum(samples + q / 2.0, high)
                     lower_bound = np.maximum(samples - q / 2.0, low)
-                    cdf = cdf_func(upper_bound[:, None], mus[None], sigmas[None]) - cdf_func(
-                        lower_bound[:, None], mus[None], sigmas[None]
+                    log_gauss_mass = truncnorm._log_gauss_mass(
+                        (lower_bound[:, None] - mus) / sigmas,
+                        (upper_bound[:, None] - mus) / sigmas,
                     )
-                    log_pdf = np.log(cdf + EPS) - np.log(p_accept + EPS)
+                    log_p_accept = truncnorm._log_gauss_mass(
+                        (low - mus) / sigmas, (high - mus) / sigmas
+                    )
+                    log_pdf = log_gauss_mass - log_p_accept
             component_log_pdf += log_pdf
-        ret = special.logsumexp(component_log_pdf + np.log(self._weights), axis=1)
-        return ret
+        weighted_log_pdf = component_log_pdf + np.log(self._weights)
+        max_ = weighted_log_pdf.max(axis=1)
+        return np.log(np.exp(weighted_log_pdf - max_[:, np.newaxis]).sum(axis=1)) + max_
 
     def _calculate_weights(self, predetermined_weights: Optional[np.ndarray]) -> np.ndarray:
 
@@ -456,15 +446,6 @@ class _ParzenEstimator:
             sigmas[n_observations] = prior_sigma
 
         return mus, sigmas
-
-    @staticmethod
-    def _normal_cdf(x: np.ndarray, mu: np.ndarray, sigma: np.ndarray) -> np.ndarray:
-
-        mu, sigma = map(np.asarray, (mu, sigma))
-        denominator = x - mu
-        numerator = np.maximum(np.sqrt(2) * sigma, EPS)
-        z = denominator / numerator
-        return 0.5 * (1 + special.erf(z))
 
     @staticmethod
     def _sample_from_categorical_dist(

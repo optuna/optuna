@@ -14,8 +14,6 @@ from typing import Optional
 from typing import Union
 
 import numpy as np
-import scipy as sp
-from scipy.sparse import spmatrix
 
 from optuna import distributions
 from optuna import logging
@@ -32,6 +30,8 @@ from optuna.trial import Trial
 
 with try_import() as _imports:
     import pandas as pd
+    import scipy as sp
+    from scipy.sparse import spmatrix
     import sklearn
     from sklearn.base import BaseEstimator
     from sklearn.base import clone

@@ -29,11 +29,10 @@ def get_install_requires() -> List[str]:
     # please update `test-with-lower` in `.github/workflows/tests.yml` as well.
     requirements = [
         "alembic>=1.5.0",
-        "cmaes>=0.9.0",
+        "cmaes>=0.9.1",
         "colorlog",
         "numpy",
         "packaging>=20.0",
-        "scipy>=1.7.0",
         "sqlalchemy>=1.3.0",
         "tqdm",
         "PyYAML",  # Only used in `optuna/cli.py`.
@@ -126,6 +125,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "fakeredis[lua]",
             "kaleido",
             "pytest",
+            "scipy>=1.9.2; python_version>='3.8'",
         ],
     }
 

@@ -14,8 +14,13 @@ from sqlalchemy import Enum
 from sqlalchemy import Float
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session
+
+try:
+    from sqlalchemy.orm import declarative_base
+except ImportError:
+    # TODO(c-bata): Remove this after dropping support for SQLAlchemy v1.3 or prior.
+    from sqlalchemy.ext.declarative import declarative_base
 
 
 # revision identifiers, used by Alembic.
