@@ -33,7 +33,7 @@ jobs:
         python-version: 3.8
 
     - name: Setup cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         cache-name: test
       with:
@@ -72,7 +72,7 @@ jobs:
         python-version: 3.8
 
     - name: Setup cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         cache-name: test-integration
       with:
