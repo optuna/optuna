@@ -136,10 +136,11 @@ def test_check_table_schema_compatibility() -> None:
 
     storage._version_manager.check_table_schema_compatibility()
 
-    # TODO(ohta): Remove the following comment out when the second revision is introduced.
-    # with pytest.raises(RuntimeError):
-    #     storage._set_alembic_revision(storage._version_manager._get_base_version())
-    #     storage._check_table_schema_compatibility()
+    with pytest.raises(RuntimeError):
+        storage._version_manager._set_alembic_revision(
+            storage._version_manager._get_base_version()
+        )
+        storage._version_manager.check_table_schema_compatibility()
 
 
 def create_test_storage(engine_kwargs: Optional[Dict[str, Any]] = None) -> RDBStorage:

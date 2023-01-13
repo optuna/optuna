@@ -97,7 +97,7 @@ def test_infer_initial_search_space() -> None:
 
 def test_sample_independent() -> None:
 
-    objective: Callable[[Trial], Any] = lambda t: t.suggest_categorical("x", [1.0, 2.0])
+    objective: Callable[[Trial], float] = lambda t: t.suggest_categorical("x", [1.0, 2.0])
     independent_sampler = optuna.samplers.RandomSampler()
 
     with patch.object(
@@ -124,7 +124,7 @@ def test_warn_asynchronous_seeding() -> None:
     # Relative sampling of `QMCSampler` does not support categorical distribution.
     # Thus, `independent_sampler.sample_independent` is called twice.
     # '_log_independent_sampling is not called in the first trial so called once in total.
-    objective: Callable[[Trial], Any] = lambda t: t.suggest_categorical("x", [1.0, 2.0])
+    objective: Callable[[Trial], float] = lambda t: t.suggest_categorical("x", [1.0, 2.0])
 
     with patch.object(optuna.samplers.QMCSampler, "_log_asynchronous_seeding") as mock_log_async:
 
@@ -147,7 +147,7 @@ def test_warn_independent_sampling() -> None:
     # Relative sampling of `QMCSampler` does not support categorical distribution.
     # Thus, `independent_sampler.sample_independent` is called twice.
     # '_log_independent_sampling is not called in the first trial so called once in total.
-    objective: Callable[[Trial], Any] = lambda t: t.suggest_categorical("x", [1.0, 2.0])
+    objective: Callable[[Trial], float] = lambda t: t.suggest_categorical("x", [1.0, 2.0])
 
     with patch.object(optuna.samplers.QMCSampler, "_log_independent_sampling") as mock_log_indep:
 

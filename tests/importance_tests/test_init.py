@@ -55,7 +55,6 @@ def test_get_param_importance_target_is_none_and_study_is_multi_obj(
             # Conditional parameters are ignored unless `params` is specified and is not `None`.
             x7 = trial.suggest_float("x7", 0.1, 3)
 
-        assert isinstance(x6, float)
         value = x1**4 + x2 + x3 - x4**2 - x5 + x6
         if trial.number % 2 == 0:
             value += x7
@@ -86,7 +85,6 @@ def test_get_param_importances(
             # Conditional parameters are ignored unless `params` is specified and is not `None`.
             x7 = trial.suggest_float("x7", 0.1, 3)
 
-        assert isinstance(x6, float)
         value = x1**4 + x2 + x3 - x4**2 - x5 + x6
         if trial.number % 2 == 0:
             value += x7

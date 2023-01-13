@@ -1,4 +1,3 @@
-from typing import cast
 from unittest.mock import patch
 import warnings
 
@@ -83,7 +82,6 @@ def test_out_of_the_range_categorical() -> None:
     def objective(trial: Trial) -> float:
         x = trial.suggest_int("x", -1, 1)
         y = trial.suggest_categorical("y", [-1, 0, 1])
-        y = cast(int, y)
         return x**2 + y**2
 
     fixed_y = 2
