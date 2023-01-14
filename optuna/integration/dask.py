@@ -435,7 +435,7 @@ class DaskStorage(BaseStorage):
 
         name:
             Unique identifier for the Dask storage class. Specifying a custom name can sometimes
-            be useful for logging or debugging. If no name if provided provided,
+            be useful for logging or debugging. If :obj:`None` is provided,
             a random name will be automatically generated.
 
         client:
