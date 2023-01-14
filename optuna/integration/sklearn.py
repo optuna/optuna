@@ -1,9 +1,7 @@
-from collections import defaultdict
 from logging import DEBUG
 from logging import INFO
 from logging import WARNING
 from numbers import Integral
-from numbers import Number
 from time import time
 from typing import Any
 from typing import Callable
@@ -129,8 +127,13 @@ def _safe_indexing(
     return sklearn_safe_indexing(X, indices)
 
 
-def _check_refit_for_multimetric(scores: dict, refit: Union[bool, str], is_scorer: bool) -> None:
-    """
+def _check_refit_for_multimetric(
+    scores: Mapping[str, Union[Callable[..., float], Dict[str, OneDimArrayLikeType]]],
+    refit: Union[bool, str],
+    is_scorer: bool,
+) -> None:
+    """Check whether or not `refit` with multimetric case is valid.
+
     NOTE: this function modified from
     https://github.com/scikit-learn/scikit-learn
     /blob/98cf537f5c538fdbc9d27b851cf03ce7611b8a48/sklearn/model_selection/_search.py#L703-L712
@@ -139,8 +142,8 @@ def _check_refit_for_multimetric(scores: dict, refit: Union[bool, str], is_score
 
     Since this file uses "sklearn.model_selection.cross_validate" to obtain score data,
     we need to add prefix to refit specified from OptunaSearchCV's argument.
-
     """
+
     multimetric_refit_msg = (
         "For multi-metric scoring, the parameter refit must be set to a "
         "scorer key or a callable to refit an estimator with the best "
@@ -151,6 +154,7 @@ def _check_refit_for_multimetric(scores: dict, refit: Union[bool, str], is_score
     )
 
     if not is_scorer:
+        assert isinstance(refit, str)
         refit = "test_" + refit
 
     valid_refit_dict = isinstance(refit, str) and refit in scores
@@ -226,19 +230,17 @@ class _Objective:
     def __init__(
         self,
         estimator: "BaseEstimator",
-        param_distributions: Mapping[str, distributions.BaseDistribution],
+        param_distributions: Dict[str, distributions.BaseDistribution],
         X: TwoDimArrayLikeType,
         y: Optional[Union[OneDimArrayLikeType, TwoDimArrayLikeType]],
         cv: "BaseCrossValidator",
         enable_pruning: bool,
-        error_score: Union[Number, float, str],
+        error_score: Union[float, int, str],
         fit_params: Dict[str, Any],
         groups: Optional[OneDimArrayLikeType],
         max_iter: int,
         return_train_score: bool,
-        scoring: Union[
-            Callable[..., Union[Number, Dict[str, Number]]], Dict[str, Callable[..., Number]]
-        ],
+        scoring: Callable[..., Union[float, Dict[str, float]]],
         refit_metric_name: str,
         refit: Union[bool, str],
     ) -> None:
@@ -302,16 +304,14 @@ class _Objective:
         n_splits = self.cv.get_n_splits(self.X, self.y, groups=self.groups)
         estimators = [clone(estimator) for _ in range(n_splits)]
         for step in range(self.max_iter):
-            scores = defaultdict(list)
+            scores: Dict[str, List[float]] = {}
 
             for i, (train, test) in enumerate(self.cv.split(self.X, self.y, groups=self.groups)):
                 out = self._partial_fit_and_score(estimators[i], train, test, partial_fit_params)
 
                 for k, v in out.items():
-                    scores[k].append(v)
+                    scores.get(k, []).append(v)
 
-            for k, v in scores.items():
-                scores[k] = np.array(v)
             # TODO(nzw0301): we might append error_score here;
             # Q. What should we determine the metric name when all fits have error_score?
             self._determine_refit_metric(scores=scores)
@@ -339,13 +339,15 @@ class _Objective:
         train: List[int],
         test: List[int],
         partial_fit_params: Dict[str, Any],
-    ) -> Dict[str, OneDimArrayLikeType]:
+    ) -> Mapping[str, float]:
 
         X_train, y_train = _safe_split(estimator, self.X, self.y, train)
         X_test, y_test = _safe_split(estimator, self.X, self.y, test, train_indices=train)
 
-        scores = {}
+        scores: Dict[str, Union[float, int]] = {}
         start_time = time()
+        train_score: Union[int, float, Dict[str, float]]
+        test_score: Union[int, float, Dict[str, float]]
 
         try:
             estimator.partial_fit(X_train, y_train, **partial_fit_params)
@@ -354,7 +356,7 @@ class _Objective:
             if self.error_score == "raise":
                 raise e
 
-            elif isinstance(self.error_score, Number):
+            elif isinstance(self.error_score, (int, float)):
                 fit_time = time() - start_time
                 test_score = self.error_score
                 score_time = 0.0
@@ -372,28 +374,31 @@ class _Objective:
 
             if self.return_train_score:
                 train_score = self.scoring(estimator, X_train, y_train)
-                if isinstance(train_score, dict):
-                    scores |= train_score
-                else:
-                    scores["train_score"] = train_score
 
         # Required for type checking but is never expected to fail.
-        assert isinstance(fit_time, Number)
-        assert isinstance(score_time, Number)
+        assert isinstance(fit_time, (float, int))
+        assert isinstance(score_time, (float, int))
 
         if isinstance(test_score, dict):
             scores |= test_score
+            if self.return_train_score:
+                assert isinstance(train_score, dict)
+                scores |= train_score
         else:
             scores["test_score"] = test_score
+            if self.return_train_score:
+                assert isinstance(train_score, (int, float))
+                scores["train_score"] = train_score
         scores["fit_time"] = fit_time
         scores["score_time"] = score_time
 
         return scores
 
-    def _store_scores(self, trial: Trial, scores: Dict[str, OneDimArrayLikeType]) -> None:
+    def _store_scores(self, trial: Trial, scores: Mapping[str, OneDimArrayLikeType]) -> None:
         # TODO(nzw0301): the current code stores estimator too since
         # cross_validate's return contains it?
         for name, array in scores.items():
+            array = np.array(array)
             if name.startswith("train_") or name.startswith("test_"):
                 for i, score in enumerate(array):
                     trial.set_user_attr("split{}_{}".format(i, name), score)
@@ -401,7 +406,7 @@ class _Objective:
             trial.set_user_attr("mean_{}".format(name), np.nanmean(array))
             trial.set_user_attr("std_{}".format(name), np.nanstd(array))
 
-    def _determine_refit_metric(self, scores: Dict[str, OneDimArrayLikeType]):
+    def _determine_refit_metric(self, scores: Mapping[str, OneDimArrayLikeType]) -> None:
         # Without evaluation scoring=Callable[..., Dict[str, float]], we cannot know
         # scoring is multiple metric.
         num_scores = 0
@@ -412,6 +417,7 @@ class _Objective:
 
         if callable(self.scoring) and self.multimetric_:
             _check_refit_for_multimetric(scores, self.refit, is_scorer=False)
+            assert isinstance(self.refit, str)
             self.refit_metric_name = self.refit
 
 
@@ -747,10 +753,10 @@ class OptunaSearchCV(BaseEstimator):
     def __init__(
         self,
         estimator: "BaseEstimator",
-        param_distributions: Mapping[str, distributions.BaseDistribution],
+        param_distributions: Dict[str, distributions.BaseDistribution],
         cv: Optional[Union["BaseCrossValidator", int]] = 5,
         enable_pruning: bool = False,
-        error_score: Union[Number, float, str] = np.nan,
+        error_score: Union[float, int, str] = np.nan,
         max_iter: int = 1000,
         n_jobs: int = 1,
         n_trials: int = 10,
@@ -940,6 +946,7 @@ class OptunaSearchCV(BaseEstimator):
         else:
             scorers = _check_multimetric_scoring(self.estimator, self.scoring)
             _check_refit_for_multimetric(scorers, self.refit, is_scorer=True)
+            assert isinstance(self.refit, str)
             refit_metric = self.refit
         self.scorer_ = scorers
 
@@ -1017,6 +1024,7 @@ class OptunaSearchCV(BaseEstimator):
 
         score = self.scorer_(self.best_estimator_, X, y)
         if isinstance(score, dict):
+            assert isinstance(self.refit, str)
             score = score[self.refit]
 
         return score
