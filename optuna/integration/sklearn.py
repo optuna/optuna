@@ -376,8 +376,9 @@ class OptunaSearchCV(BaseEstimator):
         cv:
             Cross-validation strategy. Possible inputs for cv are:
 
+            - :obj:`None`, to use the default 5-fold cross validation,
             - integer to specify the number of folds in a CV splitter,
-            - a CV splitter,
+            - `CV splitter <https://scikit-learn.org/stable/glossary.html#term-CV-splitter>`_,
             - an iterable yielding (train, validation) splits as arrays of indices.
 
             For integer, if ``estimator`` is a classifier and ``y`` is
@@ -692,7 +693,7 @@ class OptunaSearchCV(BaseEstimator):
         estimator: "BaseEstimator",
         param_distributions: Mapping[str, distributions.BaseDistribution],
         *,
-        cv: Optional[Union["BaseCrossValidator", int]] = 5,
+        cv: Optional[Union[int, "BaseCrossValidator", Iterable]] = None,
         enable_pruning: bool = False,
         error_score: Union[Number, float, str] = np.nan,
         max_iter: int = 1000,
