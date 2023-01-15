@@ -1,3 +1,4 @@
+from collections import defaultdict
 from logging import DEBUG
 from logging import INFO
 from logging import WARNING
@@ -304,13 +305,13 @@ class _Objective:
         n_splits = self.cv.get_n_splits(self.X, self.y, groups=self.groups)
         estimators = [clone(estimator) for _ in range(n_splits)]
         for step in range(self.max_iter):
-            scores: Dict[str, List[float]] = {}
+            scores: Dict[str, List[float]] = defaultdict(list)
 
             for i, (train, test) in enumerate(self.cv.split(self.X, self.y, groups=self.groups)):
                 out = self._partial_fit_and_score(estimators[i], train, test, partial_fit_params)
 
                 for k, v in out.items():
-                    scores.get(k, []).append(v)
+                    scores[k].append(v)
 
             # TODO(nzw0301): we might append error_score here;
             # Q. What should we determine the metric name when all fits have error_score?
