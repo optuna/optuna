@@ -103,6 +103,8 @@ def test_optuna_search_properties() -> None:
     assert optuna_search.user_attrs_ == {"dataset": "blobs"}
     assert type(optuna_search.predict_log_proba(X)) == np.ndarray
     assert type(optuna_search.predict_proba(X)) == np.ndarray
+    assert optuna_search.multimetric_ is False
+    assert callable(optuna_search.scorer_)
 
 
 @pytest.mark.filterwarnings("ignore::UserWarning")

@@ -990,6 +990,7 @@ class OptunaSearchCV(BaseEstimator):
         )
 
         _logger.info("Finished hyperparemeter search!")
+        self.multimetric_ = objective.multimetric_
 
         if self.refit:
             self._refit(X, y, **fit_params)
