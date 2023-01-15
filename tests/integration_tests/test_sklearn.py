@@ -16,7 +16,6 @@ from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import SGDClassifier
 from sklearn.metrics import accuracy_score
-from sklearn.metrics import balanced_accuracy_score
 from sklearn.metrics import make_scorer
 from sklearn.neighbors import KernelDensity
 
@@ -392,11 +391,15 @@ def test_callbacks() -> None:
         assert callback.call_count == n_trials
 
 
-def _callable_metrics_single(*args):
+def _callable_metrics_single(
+    estimator: SGDClassifier, X: np.ndarray, y: np.ndarray
+) -> Dict[str, float]:
     return {"accuracy": 1}
 
 
-def _callable_metrics_double(a, b, c):
+def _callable_metrics_double(
+    estimator: SGDClassifier, X: np.ndarray, y: np.ndarray
+) -> Dict[str, float]:
     return {
         "accuracy": 1.0,
         "balanced_score": 2.0,
@@ -406,7 +409,9 @@ def _callable_metrics_double(a, b, c):
 @pytest.mark.parametrize("scoring", ["accuracy", make_scorer(accuracy_score)])
 @pytest.mark.parametrize("refit", [True, False, "This-value-is-ignored"])
 @pytest.mark.parametrize("enable_pruning", [True, False])
-def test_optuna_search_refit(scoring, refit, enable_pruning) -> None:
+def test_optuna_search_refit(
+    scoring: Union[str, Callable[..., float]], refit: Union[bool, str], enable_pruning: bool
+) -> None:
     X, y = make_blobs(n_samples=10)
     est = SGDClassifier(max_iter=5, tol=1e-03)
     param_dist = {"alpha": distributions.FloatDistribution(1e-04, 1e03, log=True)}
@@ -422,12 +427,35 @@ def test_optuna_search_refit(scoring, refit, enable_pruning) -> None:
         refit=refit,
     )
 
-    optuna_search.fit(X, y)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=ConvergenceWarning)
+        optuna_search.fit(X, y)
+    assert not optuna_search.multimetric_
+    frozen_trial = optuna_search.trials_[0]
+    for dataset_name in ["train", "test"]:
+        score_name = "mean_{}_{}".format(dataset_name, "score")
+        assert score_name in frozen_trial.user_attrs.keys()
+        assert isinstance(frozen_trial.user_attrs[score_name], float)
 
 
-@pytest.mark.parametrize("scoring", [_callable_metrics_single, _callable_metrics_double, ["accuracy"], ("accuracy", ), {"accuracy": make_scorer(accuracy_score)}])
+@pytest.mark.parametrize(
+    "scoring",
+    [
+        ["accuracy"],
+        ("accuracy",),
+        {"accuracy": make_scorer(accuracy_score)},
+        _callable_metrics_single,
+        _callable_metrics_double,
+    ],
+)
 @pytest.mark.parametrize("enable_pruning", [True, False])
-def test_optuna_search_refit_callable(scoring, enable_pruning) -> None:
+def test_optuna_search_refit_callable(
+    scoring: Union[
+        List[str], Tuple[str], Dict[str, Callable[..., float]], Callable[..., Dict[str, float]]
+    ],
+    enable_pruning: bool,
+) -> None:
+    refit = "accuracy"
     X, y = make_blobs(n_samples=10)
     est = SGDClassifier(max_iter=5, tol=1e-03)
     param_dist = {"alpha": distributions.FloatDistribution(1e-04, 1e03, log=True)}
@@ -440,10 +468,18 @@ def test_optuna_search_refit_callable(scoring, enable_pruning) -> None:
         random_state=0,
         return_train_score=True,
         scoring=scoring,
-        refit="accuracy",
+        refit=refit,
     )
 
-    optuna_search.fit(X, y)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=ConvergenceWarning)
+        optuna_search.fit(X, y)
+    assert optuna_search.multimetric_
+    frozen_trial = optuna_search.trials_[0]
+    for dataset_name in ["train", "test"]:
+        score_name = "mean_{}_{}".format(dataset_name, refit)
+        assert score_name in frozen_trial.user_attrs.keys()
+        assert isinstance(frozen_trial.user_attrs[score_name], float)
 
 
 @pytest.mark.parametrize(
@@ -458,7 +494,13 @@ def test_optuna_search_refit_callable(scoring, enable_pruning) -> None:
 )
 @pytest.mark.parametrize("refit", [True, False, "invalid_score_name"])
 @pytest.mark.parametrize("enable_pruning", [True, False])
-def test_optuna_search_misspecified_refit(scoring, refit, enable_pruning) -> None:
+def test_optuna_search_misspecified_refit(
+    scoring: Union[
+        List[str], Tuple[str], Dict[str, Callable[..., float]], Callable[..., Dict[str, float]]
+    ],
+    refit: Union[bool, str],
+    enable_pruning: bool,
+) -> None:
     X, y = make_blobs(n_samples=10)
     est = SGDClassifier(max_iter=5, tol=1e-03)
     param_dist = {"alpha": distributions.FloatDistribution(1e-04, 1e03, log=True)}
@@ -474,5 +516,7 @@ def test_optuna_search_misspecified_refit(scoring, refit, enable_pruning) -> Non
         refit=refit,
     )
 
-    with pytest.raises(ValueError):
-        optuna_search.fit(X, y)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=ConvergenceWarning)
+        with pytest.raises(ValueError):
+            optuna_search.fit(X, y)

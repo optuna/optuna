@@ -367,7 +367,10 @@ class _Objective:
         else:
             fit_time = time() - start_time
             if isinstance(self.scoring, dict):
-                test_score = {f"test_{name}": score_func(estimator, X_test, y_test)  for name, score_func in self.scoring.items()}
+                test_score = {
+                    name: score_func(estimator, X_test, y_test)
+                    for name, score_func in self.scoring.items()
+                }
             else:
                 test_score = self.scoring(estimator, X_test, y_test)
 
@@ -375,7 +378,10 @@ class _Objective:
 
             if self.return_train_score:
                 if isinstance(self.scoring, dict):
-                    train_score = {f"train_{name}": score_func(estimator, X_train, y_train)  for name, score_func in self.scoring.items()}
+                    train_score = {
+                        name: score_func(estimator, X_train, y_train)
+                        for name, score_func in self.scoring.items()
+                    }
                 else:
                     train_score = self.scoring(estimator, X_train, y_train)
 
@@ -763,7 +769,7 @@ class OptunaSearchCV(BaseEstimator):
     def __init__(
         self,
         estimator: "BaseEstimator",
-        param_distributions: Dict[str, distributions.BaseDistribution],
+        param_distributions: Mapping[str, distributions.BaseDistribution],
         cv: Optional[Union["BaseCrossValidator", int]] = 5,
         enable_pruning: bool = False,
         error_score: Union[float, int, str] = np.nan,
