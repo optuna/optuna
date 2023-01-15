@@ -407,8 +407,6 @@ class _Objective:
         return scores
 
     def _store_scores(self, trial: Trial, scores: Mapping[str, OneDimArrayLikeType]) -> None:
-        # TODO(nzw0301): the current code stores estimator too since
-        # cross_validate's return contains it?
         for name, array in scores.items():
             array = np.array(array)
             if name.startswith("train_") or name.startswith("test_"):
@@ -506,7 +504,15 @@ class OptunaSearchCV(BaseEstimator):
             If :obj:`True`, refit the estimator with the best found
             hyperparameters. The refitted estimator is made available at the
             ``best_estimator_`` attribute and permits using ``predict``
-            directly.
+            directly. When ``scoring`` is either list, tuple, dict, and callable
+            which returns a dict, ``refit`` should be a key string to specify
+            which objective is used to decide best estimator and
+            Optuna's intermediate values, and objective values.
+
+            .. note::
+                Unlike scikit-learn's SearchCV, ``refit`` should be string when
+                ``scoring`` is either list, tuple, dict, and callable which returns
+                a dict.
 
         return_train_score:
             If :obj:`True`, training scores will be included. Computing
@@ -518,7 +524,12 @@ class OptunaSearchCV(BaseEstimator):
             performance.
 
         scoring:
-            String or callable to evaluate the predictions on the validation data.
+            Evaluation metrics for the test dataset.
+            For single score, string and callable that returns a single value.
+            For multiple socres, List or Tuple of unique strings;
+            callable that returns a dict whose keys are metric names and values
+            are their metric values;
+            dict whose keys are metric names and values are their metric values.
             If :obj:`None`, ``score`` on the estimator is used.
 
         study:
@@ -568,10 +579,15 @@ class OptunaSearchCV(BaseEstimator):
             Indices of samples that are used during hyperparameter search.
 
         scorer_:
-            Scorer function.
+            Scorer functions.
 
         study_:
             Actual study.
+
+        multimetric_:
+            Whether or not the scorers compute several metrics
+            decided by ``scoring``.
+
 
     Examples:
 
@@ -960,7 +976,6 @@ class OptunaSearchCV(BaseEstimator):
         elif self.scoring is None or isinstance(self.scoring, str):
             scorers = check_scoring(self.estimator, self.scoring)
         else:
-            # Case: List[str], Tuple[str], Dict[str, callable].
             scorers = _check_multimetric_scoring(self.estimator, self.scoring)
             _check_refit_for_multimetric(scorers, self.refit, is_scorer=True)
             assert isinstance(self.refit, str)
