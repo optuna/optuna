@@ -146,7 +146,7 @@ setup(
         "Documentation": "https://optuna.readthedocs.io",
         "Bug Tracker": "https://github.com/optuna/optuna/issues",
     },
-    packages=find_packages(exclude=("tests", "tests.*", "benchmarks")),
+    packages=find_packages(exclude=("tests", "tests.*", "benchmarks", "benchmarks.*")),
     package_data={
         "optuna": [
             "storages/_rdb/alembic.ini",
