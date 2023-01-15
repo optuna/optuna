@@ -366,11 +366,18 @@ class _Objective:
 
         else:
             fit_time = time() - start_time
-            test_score = self.scoring(estimator, X_test, y_test)
+            if isinstance(self.scoring, dict):
+                test_score = {f"test_{name}": score_func(estimator, X_test, y_test)  for name, score_func in self.scoring.items()}
+            else:
+                test_score = self.scoring(estimator, X_test, y_test)
+
             score_time = time() - fit_time - start_time
 
             if self.return_train_score:
-                train_score = self.scoring(estimator, X_train, y_train)
+                if isinstance(self.scoring, dict):
+                    train_score = {f"train_{name}": score_func(estimator, X_train, y_train)  for name, score_func in self.scoring.items()}
+                else:
+                    train_score = self.scoring(estimator, X_train, y_train)
 
         # Required for type checking but is never expected to fail.
         assert isinstance(fit_time, (float, int))

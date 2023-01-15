@@ -393,54 +393,14 @@ def test_callbacks() -> None:
 
 
 def _callable_metrics_single(*args):
-    return {"accuracy_score": 1}
+    return {"accuracy": 1}
 
 
 def _callable_metrics_double(a, b, c):
     return {
-        "accuracy_score": 1.0,
+        "accuracy": 1.0,
         "balanced_score": 2.0,
     }
-
-
-@pytest.mark.parametrize("enable_pruning", [True, False])
-@pytest.mark.parametrize("refit", [True, False, "invalid-score"])
-@pytest.mark.parametrize(
-    "scoring",
-    [
-        ["accuracy", "balanced_accuracy"],
-        ("accuracy", "balanced_accuracy"),
-        {
-            "accuracy": make_scorer(accuracy_score),
-            "balanced_accuracy": make_scorer(balanced_accuracy_score),
-        },
-        _callable_metrics_single,
-    ],
-)
-def test_optuna_search_invalid_scoring(
-    enable_pruning: bool,
-    refit: Union[str, bool],
-    scoring: Union[
-        List[str], Tuple[str], Dict[str, Callable[..., float]], Callable[..., Dict[str, float]]
-    ],
-) -> None:
-    X, y = make_blobs(n_samples=10)
-    est = SGDClassifier(max_iter=5, tol=1e-03)
-    param_dist = {"alpha": distributions.FloatDistribution(1e-04, 1e03, log=True)}
-    optuna_search = integration.OptunaSearchCV(
-        est,
-        param_dist,
-        cv=3,
-        enable_pruning=enable_pruning,
-        max_iter=5,
-        random_state=0,
-        return_train_score=True,
-        scoring=scoring,
-        refit=refit,
-    )
-
-    with pytest.raises(ValueError):
-        optuna_search.fit(X, y)
 
 
 @pytest.mark.parametrize("scoring", ["accuracy", make_scorer(accuracy_score)])
@@ -465,7 +425,7 @@ def test_optuna_search_refit(scoring, refit, enable_pruning) -> None:
     optuna_search.fit(X, y)
 
 
-@pytest.mark.parametrize("scoring", [_callable_metrics_single, _callable_metrics_double])
+@pytest.mark.parametrize("scoring", [_callable_metrics_single, _callable_metrics_double, ["accuracy"], ("accuracy", ), {"accuracy": make_scorer(accuracy_score)}])
 @pytest.mark.parametrize("enable_pruning", [True, False])
 def test_optuna_search_refit_callable(scoring, enable_pruning) -> None:
     X, y = make_blobs(n_samples=10)
@@ -480,7 +440,7 @@ def test_optuna_search_refit_callable(scoring, enable_pruning) -> None:
         random_state=0,
         return_train_score=True,
         scoring=scoring,
-        refit="accuracy_score",
+        refit="accuracy",
     )
 
     optuna_search.fit(X, y)
