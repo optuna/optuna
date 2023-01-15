@@ -149,18 +149,14 @@ def _check_refit_for_multimetric(
         "For multi-metric scoring, the parameter refit must be set to a "
         "scorer key or a callable to refit an estimator with the best "
         "parameter setting on the whole data and make the best_* "
-        "attributes available for that metric. If this is not needed, "
-        f"refit should be set to False explicitly. {refit!r} was "
-        "passed."
+        "attributes available for that metric. {refit!r} was passed."
     )
 
-    if not is_scorer:
-        assert isinstance(refit, str)
+    if not is_scorer and isinstance(refit, str):
         refit = "test_" + refit
-
     valid_refit_dict = isinstance(refit, str) and refit in scores
 
-    if refit is not False and not valid_refit_dict and not callable(refit):
+    if not valid_refit_dict and not callable(refit):
         raise ValueError(multimetric_refit_msg)
 
 
@@ -381,10 +377,12 @@ class _Objective:
         assert isinstance(score_time, (float, int))
 
         if isinstance(test_score, dict):
-            scores |= test_score
+            for k, v in test_score.items():
+                scores[f"test_{k}"] = v
             if self.return_train_score:
                 assert isinstance(train_score, dict)
-                scores |= train_score
+                for k, v in train_score.items():
+                    scores[f"train_{k}"] = v
         else:
             scores["test_score"] = test_score
             if self.return_train_score:
@@ -411,10 +409,14 @@ class _Objective:
         # Without evaluation scoring=Callable[..., Dict[str, float]], we cannot know
         # scoring is multiple metric.
         num_scores = 0
+        single_metric = False
         for name in scores.keys():
             if name.startswith("test_"):
                 num_scores += 1
-        self.multimetric_ = num_scores >= 2
+
+            single_metric |= name == "test_score"
+
+        self.multimetric_ = (num_scores >= 2) or not single_metric
 
         if callable(self.scoring) and self.multimetric_:
             _check_refit_for_multimetric(scores, self.refit, is_scorer=False)
@@ -945,10 +947,12 @@ class OptunaSearchCV(BaseEstimator):
         elif self.scoring is None or isinstance(self.scoring, str):
             scorers = check_scoring(self.estimator, self.scoring)
         else:
+            # Case: List[str], Tuple[str], Dict[str, callable].
             scorers = _check_multimetric_scoring(self.estimator, self.scoring)
             _check_refit_for_multimetric(scorers, self.refit, is_scorer=True)
             assert isinstance(self.refit, str)
             refit_metric = self.refit
+
         self.scorer_ = scorers
 
         if self.study is None:

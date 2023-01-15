@@ -1,3 +1,8 @@
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Tuple
+from typing import Union
 from unittest.mock import MagicMock
 import warnings
 
@@ -10,6 +15,9 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import SGDClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import balanced_accuracy_score
+from sklearn.metrics import make_scorer
 from sklearn.neighbors import KernelDensity
 
 from optuna import distributions
@@ -382,3 +390,129 @@ def test_callbacks() -> None:
         for trial in optuna_search.trials_:
             callback.assert_any_call(optuna_search.study_, trial)
         assert callback.call_count == n_trials
+
+
+def _callable_metrics_single(*args):
+    return {"accuracy_score": 1}
+
+
+def _callable_metrics_double(a, b, c):
+    return {
+        "accuracy_score": 1.0,
+        "balanced_score": 2.0,
+    }
+
+
+@pytest.mark.parametrize("enable_pruning", [True, False])
+@pytest.mark.parametrize("refit", [True, False, "invalid-score"])
+@pytest.mark.parametrize(
+    "scoring",
+    [
+        ["accuracy", "balanced_accuracy"],
+        ("accuracy", "balanced_accuracy"),
+        {
+            "accuracy": make_scorer(accuracy_score),
+            "balanced_accuracy": make_scorer(balanced_accuracy_score),
+        },
+        _callable_metrics_single,
+    ],
+)
+def test_optuna_search_invalid_scoring(
+    enable_pruning: bool,
+    refit: Union[str, bool],
+    scoring: Union[
+        List[str], Tuple[str], Dict[str, Callable[..., float]], Callable[..., Dict[str, float]]
+    ],
+) -> None:
+    X, y = make_blobs(n_samples=10)
+    est = SGDClassifier(max_iter=5, tol=1e-03)
+    param_dist = {"alpha": distributions.FloatDistribution(1e-04, 1e03, log=True)}
+    optuna_search = integration.OptunaSearchCV(
+        est,
+        param_dist,
+        cv=3,
+        enable_pruning=enable_pruning,
+        max_iter=5,
+        random_state=0,
+        return_train_score=True,
+        scoring=scoring,
+        refit=refit,
+    )
+
+    with pytest.raises(ValueError):
+        optuna_search.fit(X, y)
+
+
+@pytest.mark.parametrize("scoring", ["accuracy", make_scorer(accuracy_score)])
+@pytest.mark.parametrize("refit", [True, False, "This-value-is-ignored"])
+@pytest.mark.parametrize("enable_pruning", [True, False])
+def test_optuna_search_refit(scoring, refit, enable_pruning) -> None:
+    X, y = make_blobs(n_samples=10)
+    est = SGDClassifier(max_iter=5, tol=1e-03)
+    param_dist = {"alpha": distributions.FloatDistribution(1e-04, 1e03, log=True)}
+    optuna_search = integration.OptunaSearchCV(
+        est,
+        param_dist,
+        cv=3,
+        enable_pruning=enable_pruning,
+        max_iter=5,
+        random_state=0,
+        return_train_score=True,
+        scoring=scoring,
+        refit=refit,
+    )
+
+    optuna_search.fit(X, y)
+
+
+@pytest.mark.parametrize("scoring", [_callable_metrics_single, _callable_metrics_double])
+@pytest.mark.parametrize("enable_pruning", [True, False])
+def test_optuna_search_refit_callable(scoring, enable_pruning) -> None:
+    X, y = make_blobs(n_samples=10)
+    est = SGDClassifier(max_iter=5, tol=1e-03)
+    param_dist = {"alpha": distributions.FloatDistribution(1e-04, 1e03, log=True)}
+    optuna_search = integration.OptunaSearchCV(
+        est,
+        param_dist,
+        cv=3,
+        enable_pruning=enable_pruning,
+        max_iter=5,
+        random_state=0,
+        return_train_score=True,
+        scoring=scoring,
+        refit="accuracy_score",
+    )
+
+    optuna_search.fit(X, y)
+
+
+@pytest.mark.parametrize(
+    "scoring",
+    [
+        ["accuracy"],
+        ("accuracy",),
+        {"accuracy": make_scorer(accuracy_score)},
+        _callable_metrics_single,
+        _callable_metrics_double,
+    ],
+)
+@pytest.mark.parametrize("refit", [True, False, "invalid_score_name"])
+@pytest.mark.parametrize("enable_pruning", [True, False])
+def test_optuna_search_misspecified_refit(scoring, refit, enable_pruning) -> None:
+    X, y = make_blobs(n_samples=10)
+    est = SGDClassifier(max_iter=5, tol=1e-03)
+    param_dist = {"alpha": distributions.FloatDistribution(1e-04, 1e03, log=True)}
+    optuna_search = integration.OptunaSearchCV(
+        est,
+        param_dist,
+        cv=3,
+        enable_pruning=enable_pruning,
+        max_iter=5,
+        random_state=0,
+        return_train_score=True,
+        scoring=scoring,
+        refit=refit,
+    )
+
+    with pytest.raises(ValueError):
+        optuna_search.fit(X, y)
