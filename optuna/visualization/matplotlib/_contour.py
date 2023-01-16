@@ -7,9 +7,9 @@ from typing import Tuple
 from typing import Union
 
 import numpy as np
-import scipy
 
 from optuna._experimental import experimental_func
+from optuna._imports import try_import
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
@@ -19,6 +19,9 @@ from optuna.visualization._contour import _get_contour_info
 from optuna.visualization._contour import _SubContourInfo
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
+
+with try_import() as _optuna_imports:
+    import scipy
 
 if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes

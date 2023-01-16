@@ -308,6 +308,7 @@ class Study:
         return copy.deepcopy(self._storage.get_study_user_attrs(self._study_id))
 
     @property
+    @deprecated_func("3.1.0", "6.0.0")
     def system_attrs(self) -> Dict[str, Any]:
         """Return system attributes.
 
@@ -338,7 +339,7 @@ class Study:
 
         Optimization will be stopped when receiving a termination signal such as SIGINT and
         SIGTERM. Unlike other signals, a trial is automatically and cleanly failed when receiving
-        SIGINT (Ctrl+C). If :obj:`n_jobs` is greater than one or if another signal than SIGINT
+        SIGINT (Ctrl+C). If ``n_jobs`` is greater than one or if another signal than SIGINT
         is used, the interrupted trial state won't be properly updated.
 
         Example:
@@ -376,7 +377,7 @@ class Study:
                 :func:`~optuna.study.Study.stop` is called or, a termination signal such as
                 SIGTERM or Ctrl+C is received.
             n_jobs:
-                The number of parallel jobs. If this argument is set to :obj:`-1`, the number is
+                The number of parallel jobs. If this argument is set to ``-1``, the number is
                 set to CPU count.
 
                 .. note::
@@ -658,6 +659,7 @@ class Study:
 
         self._storage.set_study_user_attr(self._study_id, key, value)
 
+    @deprecated_func("3.1.0", "6.0.0")
     def set_system_attr(self, key: str, value: Any) -> None:
         """Set a system attribute to the study.
 
@@ -1153,7 +1155,7 @@ def create_study(
 
     storage = storages.get_storage(storage)
     try:
-        study_id = storage.create_new_study(study_name)
+        study_id = storage.create_new_study(direction_objects, study_name)
     except exceptions.DuplicatedStudyError:
         if load_if_exists:
             assert study_name is not None
@@ -1170,7 +1172,6 @@ def create_study(
         sampler = samplers.NSGAIISampler()
 
     study_name = storage.get_study_name_from_id(study_id)
-    storage.set_study_directions(study_id, direction_objects)
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
     return study
@@ -1410,8 +1411,8 @@ def copy_study(
         load_if_exists=False,
     )
 
-    for key, value in from_study.system_attrs.items():
-        to_study.set_system_attr(key, value)
+    for key, value in from_study._storage.get_study_system_attrs(from_study._study_id).items():
+        to_study._storage.set_study_system_attr(to_study._study_id, key, value)
 
     for key, value in from_study.user_attrs.items():
         to_study.set_user_attr(key, value)

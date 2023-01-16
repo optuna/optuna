@@ -3,6 +3,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import overload
 from typing import Sequence
 from typing import Union
 
@@ -95,6 +96,32 @@ class MultiObjectiveTrial:
 
         return self._trial.suggest_int(name, low, high, step=step, log=log)
 
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[None]) -> None:
+        ...
+
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[bool]) -> bool:
+        ...
+
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[int]) -> int:
+        ...
+
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[float]) -> float:
+        ...
+
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[str]) -> str:
+        ...
+
+    @overload
+    def suggest_categorical(
+        self, name: str, choices: Sequence[CategoricalChoiceType]
+    ) -> CategoricalChoiceType:
+        ...
+
     def suggest_categorical(
         self, name: str, choices: Sequence[CategoricalChoiceType]
     ) -> CategoricalChoiceType:
@@ -169,7 +196,7 @@ class MultiObjectiveTrial:
         for further details.
         """
 
-        self._trial.set_system_attr(key, value)
+        self._trial.storage.set_trial_system_attr(self._trial._trial_id, key, value)
 
     @property
     def number(self) -> int:

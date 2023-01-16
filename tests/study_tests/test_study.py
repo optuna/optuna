@@ -46,7 +46,6 @@ def func(trial: Trial) -> float:
     x = trial.suggest_float("x", -10.0, 10.0)
     y = trial.suggest_float("y", 20, 30, log=True)
     z = trial.suggest_categorical("z", (-1.0, 1.0))
-    assert isinstance(z, float)
     return (x - 2) ** 2 + (y - 25) ** 2 + z
 
 
@@ -289,16 +288,6 @@ def test_study_set_and_get_user_attrs(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_study_set_and_get_system_attrs(storage_mode: str) -> None:
-
-    with StorageSupplier(storage_mode) as storage:
-        study = create_study(storage=storage)
-
-        study.set_system_attr("system_message", "test")
-        assert study.system_attrs["system_message"] == "test"
-
-
-@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_trial_set_and_get_user_attrs(storage_mode: str) -> None:
     def f(trial: Trial) -> float:
 
@@ -311,21 +300,6 @@ def test_trial_set_and_get_user_attrs(storage_mode: str) -> None:
         study.optimize(f, n_trials=1)
         frozen_trial = study.trials[0]
         assert frozen_trial.user_attrs["train_accuracy"] == 1
-
-
-@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_trial_set_and_get_system_attrs(storage_mode: str) -> None:
-    def f(trial: Trial) -> float:
-
-        trial.set_system_attr("system_message", "test")
-        assert trial.system_attrs["system_message"] == "test"
-        return 0.0
-
-    with StorageSupplier(storage_mode) as storage:
-        study = create_study(storage=storage)
-        study.optimize(f, n_trials=1)
-        frozen_trial = study.trials[0]
-        assert frozen_trial.system_attrs["system_message"] == "test"
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -463,7 +437,7 @@ def test_copy_study(from_storage_mode: str, to_storage_mode: str) -> None:
         to_storage_mode
     ) as to_storage:
         from_study = create_study(storage=from_storage, directions=["maximize", "minimize"])
-        from_study.set_system_attr("foo", "bar")
+        from_study._storage.set_study_system_attr(from_study._study_id, "foo", "bar")
         from_study.set_user_attr("baz", "qux")
         from_study.optimize(
             lambda t: (t.suggest_float("x0", 0, 1), t.suggest_float("x1", 0, 1)), n_trials=3
@@ -479,7 +453,9 @@ def test_copy_study(from_storage_mode: str, to_storage_mode: str) -> None:
 
         assert to_study.study_name == from_study.study_name
         assert to_study.directions == from_study.directions
-        assert to_study.system_attrs == from_study.system_attrs
+        to_study_system_attrs = to_study._storage.get_study_system_attrs(to_study._study_id)
+        from_study_system_attrs = from_study._storage.get_study_system_attrs(from_study._study_id)
+        assert to_study_system_attrs == from_study_system_attrs
         assert to_study.user_attrs == from_study.user_attrs
         assert len(to_study.trials) == len(from_study.trials)
 
@@ -840,6 +816,8 @@ def test_optimize_with_progbar(n_jobs: int, capsys: _pytest.capture.CaptureFixtu
     _, err = capsys.readouterr()
 
     # Search for progress bar elements in stderr.
+    assert "Best trial: 0" in err
+    assert "Best value: 1" in err
     assert "10/10" in err
     assert "100%" in err
 
@@ -851,6 +829,8 @@ def test_optimize_without_progbar(n_jobs: int, capsys: _pytest.capture.CaptureFi
     study.optimize(lambda _: 1.0, n_trials=10, n_jobs=n_jobs)
     _, err = capsys.readouterr()
 
+    assert "Best trial: 0" not in err
+    assert "Best value: 1" not in err
     assert "10/10" not in err
     assert "100%" not in err
 
@@ -861,6 +841,8 @@ def test_optimize_with_progbar_timeout(capsys: _pytest.capture.CaptureFixture) -
     study.optimize(lambda _: 1.0, timeout=2.0, show_progress_bar=True)
     _, err = capsys.readouterr()
 
+    assert "Best trial: 0" in err
+    assert "Best value: 1" in err
     assert "00:02/00:02" in err
     assert "100%" in err
 
@@ -906,6 +888,8 @@ def test_optimize_without_progbar_timeout(
     study.optimize(lambda _: 1.0, timeout=2.0, n_jobs=n_jobs)
     _, err = capsys.readouterr()
 
+    assert "Best trial: 0" not in err
+    assert "Best value: 1.0" not in err
     assert "00:02/00:02" not in err
     assert "100%" not in err
 
@@ -919,6 +903,8 @@ def test_optimize_progbar_n_trials_prioritized(
     study.optimize(lambda _: 1.0, n_trials=10, n_jobs=n_jobs, timeout=10.0, show_progress_bar=True)
     _, err = capsys.readouterr()
 
+    assert "Best trial: 0" in err
+    assert "Best value: 1" in err
     assert "10/10" in err
     assert "100%" in err
     assert "it" in err

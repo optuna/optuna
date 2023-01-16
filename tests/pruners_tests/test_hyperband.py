@@ -46,9 +46,8 @@ def test_bracket_study() -> None:
     with pytest.raises(AttributeError):
         bracket_study.optimize(lambda *args: 1.0)
 
-    for attr in ("set_user_attr", "set_system_attr"):
-        with pytest.raises(AttributeError):
-            getattr(bracket_study, attr)("abc", 100)
+    with pytest.raises(AttributeError):
+        bracket_study.set_user_attr("abc", 100)
 
     for attr in ("user_attrs", "system_attrs"):
         with pytest.raises(AttributeError):
