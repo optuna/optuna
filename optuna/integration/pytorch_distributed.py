@@ -22,7 +22,7 @@ from optuna.distributions import CategoricalChoiceType
 with try_import() as _imports:
     import torch
     import torch.distributed as dist
-    import torch.distributed.ProcessGroup as ProcessGroup
+    from torch.distributed import ProcessGroup
 
 
 if TYPE_CHECKING:
