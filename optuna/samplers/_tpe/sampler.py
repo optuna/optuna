@@ -670,19 +670,22 @@ def _get_observation_pairs(
                 param_value = None
             values[param_name].append(param_value)
 
-        if constraints_enabled and trial.state != TrialState.RUNNING:
+        if constraints_enabled:
             assert violations is not None
-            constraint = trial.system_attrs.get(_CONSTRAINTS_KEY)
-            if constraint is None:
-                warnings.warn(
-                    f"Trial {trial.number} does not have constraint values."
-                    " It will be treated as a lower priority than other trials."
-                )
-                violation = float("inf")
+            if trial.state != TrialState.RUNNING:
+                constraint = trial.system_attrs.get(_CONSTRAINTS_KEY)
+                if constraint is None:
+                    warnings.warn(
+                        f"Trial {trial.number} does not have constraint values."
+                        " It will be treated as a lower priority than other trials."
+                    )
+                    violation = float("inf")
+                else:
+                    # Violation values of infeasible dimensions are summed up.
+                    violation = sum(v for v in constraint if v > 0)
+                violations.append(violation)
             else:
-                # Violation values of infeasible dimensions are summed up.
-                violation = sum(v for v in constraint if v > 0)
-            violations.append(violation)
+                violations.append(float("inf"))
 
     return values, scores, violations
 
