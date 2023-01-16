@@ -73,7 +73,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "plotly>=4.9.0",  # optuna/visualization.
             "scikit-learn",
             "scikit-optimize",
-            "sphinx",
+            # TODO(not522): Remove the constraint after sphinx_rtd_theme supports Sphinx 6
+            "sphinx<6",
             "sphinx-copybutton",
             "sphinx-gallery",
             "sphinx-plotly-directive",
