@@ -961,6 +961,23 @@ def test_split_order(direction: str, constant_liar: bool, constraints: bool) -> 
         constraints,
     )
 
+    if constant_liar:
+        states = [
+            optuna.trial.TrialState.COMPLETE,
+            optuna.trial.TrialState.PRUNED,
+            optuna.trial.TrialState.RUNNING,
+        ]
+    else:
+        states = [optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED]
+
+    assert len(values["x"]) == len(study.get_trials(states=states))
+    assert len(scores) == len(study.get_trials(states=states))
+    if constraints:
+        assert violations is not None
+        assert len(violations) == len(study.get_trials(states=states))
+    else:
+        assert violations is None
+
     for gamma in range(1, len(scores)):
         indices_below, indices_above = _tpe.sampler._split_observation_pairs(
             scores, gamma, violations
