@@ -19,7 +19,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
 
     steps:
     - name: Checkout
@@ -62,7 +62,10 @@ jobs:
       run: |
         export OMPI_MCA_rmaps_base_oversubscribe=yes
         mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
-        mpirun -n 2 -- pytest tests/integration_tests/test_pytorch_distributed.py
+
+        if [ ${{ matrix.python-version }} != 3.11 ]; then
+          mpirun -n 2 -- pytest tests/integration_tests/test_pytorch_distributed.py
+        fi
 
       env:
         OMP_NUM_THREADS: 1
