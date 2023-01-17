@@ -484,16 +484,7 @@ class CmaEsSampler(BaseSampler):
             if len(optimizer_attrs) == 0:
                 continue
 
-            if (
-                not self._use_separable_cma
-                and not self._with_margin
-                and "cma:optimizer" in optimizer_attrs
-            ):
-                # Check "cma:optimizer" key for backward compatibility.
-                optimizer_str = optimizer_attrs["cma:optimizer"]
-            else:
-                optimizer_str = self._concat_optimizer_attrs(optimizer_attrs)
-
+            optimizer_str = self._concat_optimizer_attrs(optimizer_attrs)
             n_restarts: int = trial.system_attrs.get(self._attr_keys.n_restarts, 0)
             return pickle.loads(bytes.fromhex(optimizer_str)), n_restarts
         return None, 0
