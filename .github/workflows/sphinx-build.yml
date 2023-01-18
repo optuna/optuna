@@ -38,7 +38,7 @@ jobs:
     - name: Setup environment
       run: |
         sudo apt-get update
-        sudo apt-get -y install gsfonts
+        sudo apt-get -y install texlive gsfonts
 
     - name: Install Dependencies
       run: |
