@@ -35,6 +35,11 @@ jobs:
           docs/source/tutorial
         key: py3.8-${{ env.cache-name }}-${{ hashFiles('tutorial/**/*') }}
 
+    - name: Setup environment
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install gsfonts
+
     - name: Install Dependencies
       run: |
         python -m pip install -U pip
