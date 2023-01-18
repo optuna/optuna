@@ -38,7 +38,7 @@ jobs:
     - name: Setup environment
       run: |
         sudo apt-get update
-        sudo apt-get -y install texlive-fonts-extra texlive-fonts-recommended texlive-full gsfonts
+        sudo apt-get -y install fonts-symbola texlive-fonts-extra texlive-fonts-recommended texlive-full gsfonts
 
     - name: Install Dependencies
       run: |
