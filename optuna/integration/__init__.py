@@ -10,6 +10,7 @@ _import_structure = {
     "botorch": ["BoTorchSampler"],
     "catalyst": ["CatalystPruningCallback"],
     "catboost": ["CatBoostPruningCallback"],
+    "chainer": ["ChainerPruningExtension"],
     "chainermn": ["ChainerMNStudy"],
     "cma": ["CmaEsSampler", "PyCmaSampler"],
     "dask": ["DaskStorage"],
@@ -40,6 +41,7 @@ if TYPE_CHECKING:
     from optuna.integration.botorch import BoTorchSampler
     from optuna.integration.catalyst import CatalystPruningCallback
     from optuna.integration.catboost import CatBoostPruningCallback
+    from optuna.integration.chainer import ChainerPruningExtension
     from optuna.integration.chainermn import ChainerMNStudy
     from optuna.integration.cma import CmaEsSampler
     from optuna.integration.cma import PyCmaSampler
@@ -111,6 +113,7 @@ __all__ = [
     "BoTorchSampler",
     "CatalystPruningCallback",
     "CatBoostPruningCallback",
+    "ChainerPruningExtension",
     "ChainerMNStudy",
     "CmaEsSampler",
     "PyCmaSampler",
