@@ -56,6 +56,8 @@ class PyTorchLightningPruningCallback(Callback):
         self._trial = trial
         self.monitor = monitor
         self.is_ddp_backend = False
+        self._pruned = False
+        self._message = ""
 
     def on_fit_start(self, trainer: Trainer, pl_module: "pl.LightningModule") -> None:
         os.environ["PL_RECONCILE_PROCESS"] = "0"
@@ -128,5 +130,10 @@ class PyTorchLightningPruningCallback(Callback):
             self._trial.report(value, step=step)
 
         if is_pruned:
-            message = "Trial was pruned at epoch {}.".format(epoch)
-            raise optuna.TrialPruned(message)
+            self._message = "Trial was pruned at epoch {}.".format(epoch)
+            self._pruned = True
+
+    def check_pruned(self) -> None:
+        """Raise :class:`optuna.TrialPruned` manually if pruned."""
+        if self._pruned:
+            raise optuna.TrialPruned(self._message)

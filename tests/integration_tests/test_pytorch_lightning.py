@@ -115,15 +115,18 @@ class ModelDDP(Model):
 
 def test_pytorch_lightning_pruning_callback() -> None:
     def objective(trial: optuna.trial.Trial) -> float:
-
+        callback = PyTorchLightningPruningCallback(trial, monitor="accuracy")
         trainer = pl.Trainer(
             max_epochs=2,
             enable_checkpointing=False,
-            callbacks=[PyTorchLightningPruningCallback(trial, monitor="accuracy")],
+            callbacks=[callback],
         )
 
         model = Model()
         trainer.fit(model)
+
+        # evoke pruning manually.
+        callback.check_pruned()
 
         return 1.0
 
@@ -160,17 +163,21 @@ def test_pytorch_lightning_pruning_callback_ddp_monitor(
 ) -> None:
     def objective(trial: optuna.trial.Trial) -> float:
 
+        callback = PyTorchLightningPruningCallback(trial, monitor="accuracy")
         trainer = pl.Trainer(
             max_epochs=2,
             strategy="ddp",
             accelerator="cpu",
             devices=2,
             enable_checkpointing=False,
-            callbacks=[PyTorchLightningPruningCallback(trial, monitor="accuracy")],
+            callbacks=[callback],
         )
 
         model = ModelDDP()
         trainer.fit(model)
+
+        # evoke pruning manually.
+        callback.check_pruned()
 
         return 1.0
 
@@ -194,18 +201,21 @@ def test_pytorch_lightning_pruning_callback_ddp_unsupported_storage() -> None:
     storage_mode = "inmemory"
 
     def objective(trial: optuna.trial.Trial) -> float:
-
+        callback = PyTorchLightningPruningCallback(trial, monitor="accuracy")
         trainer = pl.Trainer(
             max_epochs=1,
             strategy="ddp",
             accelerator="cpu",
             devices=2,
             enable_checkpointing=False,
-            callbacks=[PyTorchLightningPruningCallback(trial, monitor="accuracy")],
+            callbacks=[callback],
         )
 
         model = ModelDDP()
         trainer.fit(model)
+
+        # evoke pruning manually.
+        callback.check_pruned()
 
         return 1.0
 
