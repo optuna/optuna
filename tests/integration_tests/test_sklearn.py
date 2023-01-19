@@ -289,6 +289,14 @@ def test_objective_error_score_nan() -> None:
     ):
         optuna_search.fit(X)
 
+    for trial in optuna_search.study_.get_trials():
+        assert np.all(np.isnan(list(trial.intermediate_values.values())))
+
+        # "_score" stores every score value for train and test validation holds.
+        for name, value in trial.user_attrs.items():
+            if name.endswith("_score"):
+                assert np.isnan(value)
+
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
 def test_objective_error_score_invalid() -> None:

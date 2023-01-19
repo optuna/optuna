@@ -156,7 +156,7 @@ class BaseSampler(abc.ABC):
     ) -> None:
         """Trial post-processing.
 
-        This method is called after the objective function returns and right before the trials is
+        This method is called after the objective function returns and right before the trial is
         finished and its state is stored.
 
         .. note::
