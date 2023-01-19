@@ -45,7 +45,8 @@ class BruteForceSampler(BaseSampler):
 
     Note:
         The defined search space must be finite. Therefore, when using
-        :class:`~optuna.distributions.FloatDistribution`, ``step=None`` is not allowed.
+        :class:`~optuna.distributions.FloatDistribution` or
+        :func:`~optuna.trial.Trial.suggest_float`, ``step=None`` is not allowed.
 
     Note:
         This sampler assumes that it suggests all parameters and that the search space is fixed.

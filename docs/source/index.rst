@@ -28,7 +28,7 @@ Optuna has modern functionalities as follows:
 
 - :doc:`Easy parallelization <tutorial/10_key_features/004_distributed>`
 
-  - Scale studies to tens or hundreds or workers with little or no changes to the code.
+  - Scale studies to tens or hundreds of workers with little or no changes to the code.
 
 - :doc:`Quick visualization <tutorial/10_key_features/005_visualization>`
 
@@ -96,6 +96,8 @@ License
 -------
 
 MIT License (see `LICENSE <https://github.com/optuna/optuna/blob/master/LICENSE>`__).
+
+Optuna uses the codes from SciPy and fdlibm projects (see :doc:`Third-party License <license_thirdparty>`).
 
 Reference
 ---------

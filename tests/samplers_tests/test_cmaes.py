@@ -1,4 +1,3 @@
-import pickle
 from typing import Any
 from typing import Dict
 from typing import List
@@ -383,25 +382,6 @@ def test_population_size_is_multiplied_when_enable_ipop(popsize: Optional[int]) 
         assert actual_kwargs["population_size"] == inc_popsize * initial_popsize
 
 
-def test_restore_optimizer_keeps_backward_compatibility() -> None:
-    sampler = optuna.samplers.CmaEsSampler()
-    optimizer = CMA(np.zeros(2), sigma=1.3)
-    optimizer_str = pickle.dumps(optimizer).hex()
-
-    completed_trials = [
-        create_trial(state=TrialState.COMPLETE, value=0.1),
-        create_trial(
-            state=TrialState.COMPLETE,
-            value=0.1,
-            system_attrs={"cma:optimizer": optimizer_str, "cma:n_restarts": 1},
-        ),
-        create_trial(state=TrialState.COMPLETE, value=0.1),
-    ]
-    optimizer, n_restarts = sampler._restore_optimizer(completed_trials)
-    assert isinstance(optimizer, CMA)
-    assert n_restarts == 1
-
-
 @pytest.mark.parametrize("sampler_opts", [{}, {"use_separable_cma": True}, {"with_margin": True}])
 def test_restore_optimizer_from_substrings(sampler_opts: Dict[str, Any]) -> None:
     popsize = 8
@@ -636,14 +616,9 @@ def test_internal_optimizer_with_margin() -> None:
         return x**2 + y
 
     objectives = [objective_discrete, objective_mixed, objective_continuous]
-    # When all the seach spaces are continuous, `CMA` is used.
-    expected_calls = [(0, 1), (0, 1), (1, 0)]
-    for objective, (cma_call, cmawm_call) in zip(objectives, expected_calls):
-        with patch("optuna.samplers._cmaes.CMA") as cma_class_mock, patch(
-            "optuna.samplers._cmaes.CMAwM"
-        ) as cmawm_class_mock:
+    for objective in objectives:
+        with patch("optuna.samplers._cmaes.CMAwM") as cmawm_class_mock:
             sampler = optuna.samplers.CmaEsSampler(with_margin=True)
             study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=2)
-            assert cma_class_mock.call_count == cma_call
-            assert cmawm_class_mock.call_count == cmawm_call
+            assert cmawm_class_mock.call_count == 1
