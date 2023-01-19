@@ -705,3 +705,45 @@ def test_persisted_param() -> None:
         study = load_study(storage=storage, study_name=study_name)
 
         assert all("x" in t.params for t in study.trials)
+
+def test_last_value_if_duplicate() -> None:
+    study = create_study(directions=["minimize", "minimize"])
+    study.add_trials([
+        optuna.trial.create_trial(values=[1.0, 2.0], params={"x": 1, "y": "a"}, 
+            distributions={"x": optuna.distributions.IntDistribution(0, 2),
+                           "y": optuna.distributions.CategoricalDistribution(("a", "b"))}),
+                                                                              
+        optuna.trial.create_trial(values=[2.0, 2.0], params={"x": 2, "y": "a", "z": 2}, 
+            distributions={"x": optuna.distributions.IntDistribution(0, 2),
+                           "y": optuna.distributions.CategoricalDistribution(("a", "b")),
+                           "z": optuna.distributions.IntDistribution(0, 2),}),
+                                                                              
+        optuna.trial.create_trial(values=[3.0, 2.0], params={"x": 2, "y": "a"}, 
+            distributions={"x": optuna.distributions.IntDistribution(0, 2),
+                           "y": optuna.distributions.CategoricalDistribution(("a", "b"))}),
+                                                                              
+        optuna.trial.create_trial(values=[4.0, 2.0], params={"x": 2, "y": "a"}, 
+            distributions={"x": optuna.distributions.IntDistribution(0, 2),
+                           "y": optuna.distributions.CategoricalDistribution(("a", "b"))}),
+    ])
+
+    study.enqueue_trial({"x": 0, "y": "a"})
+    trial = study.ask()
+    trial.suggest_int("x", 0, 2)
+    trial.suggest_categorical("y", ("a", "b"))
+    assert trial.last_value_if_duplicate() is None
+
+    study.enqueue_trial({"x": 1, "y": "a", "z": 1})
+    trial = study.ask()
+    trial.suggest_int("x", 0, 2)
+    trial.suggest_categorical("y", ("a", "b"))
+    trial.suggest_int("z", 0, 2)
+    assert trial.last_value_if_duplicate() is None
+
+    study.enqueue_trial({"x": 2, "y": "a"})
+    trial = study.ask()
+    trial.suggest_int("x", 0, 2)
+    trial.suggest_categorical("y", ("a", "b"))
+    assert trial.last_value_if_duplicate() == [4.0, 2.0]
+
+    

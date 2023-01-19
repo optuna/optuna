@@ -5,6 +5,7 @@ from typing import Dict
 from typing import Optional
 from typing import overload
 from typing import Sequence
+from typing import List
 import warnings
 
 import optuna
@@ -19,7 +20,8 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.trial import FrozenTrial
 from optuna.trial._base import BaseTrial
-
+from optuna.trial import TrialState
+from optuna.distributions import _categorical_choice_equal
 
 _logger = logging.get_logger(__name__)
 _suggest_deprecated_msg = "Use :func:`~optuna.trial.Trial.suggest_float` instead."
@@ -754,3 +756,23 @@ class Trial(BaseTrial):
         """
 
         return self._cached_frozen_trial.number
+    
+    def last_value_if_duplicate(self) -> Optional[List[float]]:
+        """Return the last value of the objective function if the same 
+        parameters have been suggested before.
+
+        Returns:
+            If the same parameters have been suggested before, 
+            return the values of the objective function in the last trial.
+            Otherwise, return None.
+        """
+        complete_trials = self.study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+        current_params = set(self.params.keys())
+        for trial in complete_trials[::-1]:
+            past_trial_params = set(trial.params.keys())
+            if current_params == past_trial_params and all(
+                _categorical_choice_equal(trial.params[param], self.params[param]) 
+                    for param in (current_params | past_trial_params)
+            ):
+                return trial.values
+        return None
