@@ -768,12 +768,11 @@ class Trial(BaseTrial):
         """
 
         complete_trials = self.study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
-        current_params = set(self.params.keys())
+        current_params = list(self.params.keys())
         for trial in complete_trials[::-1]:
-            past_trial_params = set(trial.params.keys())
-            if current_params == past_trial_params and all(
+            if current_params == list(trial.params.keys()) and all(
                 _categorical_choice_equal(trial.params[param], self.params[param])
-                for param in (current_params | past_trial_params)
+                for param in current_params
             ):
                 return trial.values
         return None
