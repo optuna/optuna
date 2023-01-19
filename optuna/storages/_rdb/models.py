@@ -19,11 +19,17 @@ from sqlalchemy import orm
 from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy import UniqueConstraint
-from sqlalchemy.ext.declarative import declarative_base
 
 from optuna import distributions
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import TrialState
+
+
+try:
+    from sqlalchemy.orm import declarative_base
+except ImportError:
+    # TODO(c-bata): Remove this after dropping support for SQLAlchemy v1.3 or prior.
+    from sqlalchemy.ext.declarative import declarative_base
 
 
 # Don't modify this version number anymore.

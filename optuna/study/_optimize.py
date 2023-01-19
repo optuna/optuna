@@ -163,7 +163,7 @@ def _optimize_sequential(
             frozen_trial = _run_trial(study, func, catch)
         finally:
             # The following line mitigates memory problems that can be occurred in some
-            # environments (e.g., services that use computing containers such as CircleCI).
+            # environments (e.g., services that use computing containers such as GitHub Actions).
             # Please refer to the following PR for further details:
             # https://github.com/optuna/optuna/pull/325.
             if gc_after_trial:
@@ -174,7 +174,8 @@ def _optimize_sequential(
                 callback(study, frozen_trial)
 
         if progress_bar is not None:
-            progress_bar.update((datetime.datetime.now() - time_start).total_seconds())
+            elapsed_seconds = (datetime.datetime.now() - time_start).total_seconds()
+            progress_bar.update(elapsed_seconds, study)
 
     study._storage.remove_session()
 

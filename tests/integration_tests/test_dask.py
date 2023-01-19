@@ -58,9 +58,9 @@ def objective_slow(trial: Trial) -> float:
 
 
 @pytest.fixture
-def client() -> "Client":
+def client() -> "Client":  # type: ignore[misc]
     with clean():
-        with Client(dashboard_address=":0") as client:
+        with Client(dashboard_address=":0") as client:  # type: ignore[no-untyped-call]
             yield client
 
 
@@ -87,9 +87,12 @@ def test_study_optimize(client: "Client", storage_specifier: str) -> None:
         study = optuna.create_study(storage=storage)
         assert not study.trials
         futures = [
-            client.submit(study.optimize, objective, n_trials=1, pure=False) for _ in range(10)
+            client.submit(  # type: ignore[no-untyped-call]
+                study.optimize, objective, n_trials=1, pure=False
+            )
+            for _ in range(10)
         ]
-        wait(futures)
+        wait(futures)  # type: ignore[no-untyped-call]
         assert len(study.trials) == 10
 
 
@@ -108,8 +111,8 @@ def test_study_direction_best_value(client: "Client", direction: str) -> None:
     pytest.importorskip("pandas")
     storage = DaskStorage()
     study = optuna.create_study(storage=storage, direction=direction)
-    f = client.submit(study.optimize, objective, n_trials=10)
-    wait(f)
+    f = client.submit(study.optimize, objective, n_trials=10)  # type: ignore[no-untyped-call]
+    wait(f)  # type: ignore[no-untyped-call]
 
     # Ensure that study.best_value matches up with the expected value from
     # the trials DataFrame

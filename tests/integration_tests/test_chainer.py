@@ -15,12 +15,12 @@ from optuna.testing.pruners import DeterministicPruner
 
 with try_import() as _imports:
     import chainer
-    from chainer.dataset import DatasetMixin
+    from chainer.dataset import DatasetMixin  # type: ignore[attr-defined]
     import chainer.links as L
     from chainer.training import triggers
 
 if not _imports.is_successful():
-    DatasetMixin = object  # type: ignore # NOQA
+    DatasetMixin = object  # NOQA
 
 pytestmark = pytest.mark.integration
 
@@ -44,18 +44,28 @@ def test_chainer_pruning_extension_trigger() -> None:
     trial = study.ask()
 
     extension = ChainerPruningExtension(trial, "main/loss", (1, "epoch"))
-    assert isinstance(extension._pruner_trigger, triggers.IntervalTrigger)
-    extension = ChainerPruningExtension(
-        trial, "main/loss", triggers.IntervalTrigger(1, "epoch")  # type: ignore
+    assert isinstance(
+        extension._pruner_trigger, triggers.IntervalTrigger  # type: ignore[attr-defined]
     )
-    assert isinstance(extension._pruner_trigger, triggers.IntervalTrigger)
     extension = ChainerPruningExtension(
-        trial, "main/loss", triggers.ManualScheduleTrigger(1, "epoch")  # type: ignore
+        trial, "main/loss", triggers.IntervalTrigger(1, "epoch")  # type: ignore[attr-defined]
     )
-    assert isinstance(extension._pruner_trigger, triggers.ManualScheduleTrigger)
+    assert isinstance(
+        extension._pruner_trigger, triggers.IntervalTrigger  # type: ignore[attr-defined]
+    )
+    extension = ChainerPruningExtension(
+        trial,
+        "main/loss",
+        triggers.ManualScheduleTrigger(1, "epoch"),  # type: ignore[attr-defined]
+    )
+    assert isinstance(
+        extension._pruner_trigger, triggers.ManualScheduleTrigger  # type: ignore[attr-defined]
+    )
 
     with pytest.raises(TypeError):
-        ChainerPruningExtension(trial, "main/loss", triggers.TimeTrigger(1.0))  # type: ignore
+        ChainerPruningExtension(
+            trial, "main/loss", triggers.TimeTrigger(1.0)  # type: ignore[attr-defined]
+        )
 
 
 def test_chainer_pruning_extension() -> None:
@@ -98,7 +108,7 @@ def test_chainer_pruning_extension_observation_nan() -> None:
 
     with patch.object(extension, "_observation_exists", Mock(return_value=True)) as mock:
         with pytest.raises(optuna.TrialPruned):
-            extension(trainer)  # type: ignore
+            extension(trainer)
         assert mock.call_count == 1
 
 
@@ -110,19 +120,25 @@ def test_observation_exists() -> None:
     trainer = MockTrainer(observation={"OK": 0})
 
     # Trigger is deactivated. Return False whether trainer has observation or not.
-    with patch.object(triggers.IntervalTrigger, "__call__", Mock(return_value=False)) as mock:
+    with patch.object(
+        triggers.IntervalTrigger,  # type: ignore[attr-defined]
+        "__call__",
+        Mock(return_value=False),
+    ) as mock:
         extension = ChainerPruningExtension(trial, "NG", (1, "epoch"))
-        assert extension._observation_exists(trainer) is False  # type: ignore
+        assert extension._observation_exists(trainer) is False
         extension = ChainerPruningExtension(trial, "OK", (1, "epoch"))
-        assert extension._observation_exists(trainer) is False  # type: ignore
+        assert extension._observation_exists(trainer) is False
         assert mock.call_count == 2
 
     # Trigger is activated. Return True if trainer has observation.
-    with patch.object(triggers.IntervalTrigger, "__call__", Mock(return_value=True)) as mock:
+    with patch.object(
+        triggers.IntervalTrigger, "__call__", Mock(return_value=True)  # type: ignore[attr-defined]
+    ) as mock:
         extension = ChainerPruningExtension(trial, "NG", (1, "epoch"))
-        assert extension._observation_exists(trainer) is False  # type: ignore
+        assert extension._observation_exists(trainer) is False
         extension = ChainerPruningExtension(trial, "OK", (1, "epoch"))
-        assert extension._observation_exists(trainer) is True  # type: ignore
+        assert extension._observation_exists(trainer) is True
         assert mock.call_count == 2
 
 
@@ -130,6 +146,6 @@ def test_get_float_value() -> None:
 
     assert 1.0 == ChainerPruningExtension._get_float_value(1.0)
     assert 1.0 == ChainerPruningExtension._get_float_value(
-        chainer.Variable(np.array([1.0]))  # type: ignore
+        chainer.Variable(np.array([1.0]))  # type: ignore[attr-defined]
     )
     assert math.isnan(ChainerPruningExtension._get_float_value(float("nan")))

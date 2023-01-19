@@ -61,6 +61,7 @@ class JournalStorage(BaseStorage):
     operations stored from the beginning.
 
     Journal storage has several benefits over the conventional value logging storages.
+
     1. The number of IOs can be reduced because of larger granularity of logs.
     2. Journal storage has simpler backend API than value logging storage.
     3. Journal storage keeps a snapshot in-memory so no need to add more cache.
@@ -77,11 +78,24 @@ class JournalStorage(BaseStorage):
 
 
             storage = optuna.storages.JournalStorage(
-                optuna.storages.JournalFileStorage("./log_file"),
+                optuna.storages.JournalFileStorage("./journal.log"),
             )
 
             study = optuna.create_study(storage=storage)
             study.optimize(objective)
+
+    In a Windows environment, an error message "A required privilege is not held by the
+    client" may appear. In this case, you can solve the problem with creating storage
+    by specifying :class:`~optuna.storages.JournalFileOpenLock` as follows.
+
+    .. code::
+
+        file_path = "./journal.log"
+        lock_obj = optuna.storages.JournalFileOpenLock(file_path)
+
+        storage = optuna.storages.JournalStorage(
+            optuna.storages.JournalFileStorage(file_path, lock_obj=lock_obj),
+        )
     """
 
     def __init__(self, log_storage: BaseJournalLogStorage) -> None:

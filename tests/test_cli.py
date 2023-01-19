@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import json
+import os
 import re
 import subprocess
 from subprocess import CalledProcessError
@@ -8,6 +9,7 @@ from typing import Any
 from typing import Callable
 from typing import Optional
 from typing import Tuple
+from unittest.mock import patch
 
 import numpy as np
 from pandas import Timedelta
@@ -18,6 +20,7 @@ import yaml
 import optuna
 import optuna.cli
 from optuna.exceptions import CLIUsageError
+from optuna.exceptions import ExperimentalWarning
 from optuna.storages import RDBStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.study import StudyDirection
@@ -130,9 +133,34 @@ def test_create_study_command_with_study_name() -> None:
 def test_create_study_command_without_storage_url() -> None:
 
     with pytest.raises(subprocess.CalledProcessError) as err:
-        subprocess.check_output(["optuna", "create-study"])
+        subprocess.check_output(
+            ["optuna", "create-study"],
+            env={k: v for k, v in os.environ.items() if k != "OPTUNA_STORAGE"},
+        )
     usage = err.value.output.decode()
     assert usage.startswith("usage:")
+
+
+@pytest.mark.skip_coverage
+def test_create_study_command_with_storage_env() -> None:
+
+    with StorageSupplier("sqlite") as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
+
+        # Create study.
+        command = ["optuna", "create-study"]
+        env = {**os.environ, "OPTUNA_STORAGE": storage_url}
+        subprocess.check_call(command, env=env)
+
+        # Command output should be in name string format (no-name + UUID).
+        study_name = str(subprocess.check_output(command, env=env).decode().strip())
+        name_re = r"^no-name-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+        assert re.match(name_re, study_name) is not None
+
+        # study_name should be stored in storage.
+        study_id = storage.get_study_id_from_name(study_name)
+        assert study_id == 2
 
 
 @pytest.mark.skip_coverage
@@ -236,7 +264,10 @@ def test_delete_study_command() -> None:
 def test_delete_study_command_without_storage_url() -> None:
 
     with pytest.raises(subprocess.CalledProcessError):
-        subprocess.check_output(["optuna", "delete-study", "--study-name", "dummy_study"])
+        subprocess.check_output(
+            ["optuna", "delete-study", "--study-name", "dummy_study"],
+            env={k: v for k, v in os.environ.items() if k != "OPTUNA_STORAGE"},
+        )
 
 
 @pytest.mark.skip_coverage
@@ -1035,6 +1066,10 @@ def test_check_storage_url() -> None:
     storage_in_args = "sqlite:///args.db"
     assert storage_in_args == optuna.cli._check_storage_url(storage_in_args)
 
+    with pytest.warns(ExperimentalWarning):
+        with patch.dict("optuna.cli.os.environ", {"OPTUNA_STORAGE": "sqlite:///args.db"}):
+            optuna.cli._check_storage_url(None)
+
     with pytest.raises(CLIUsageError):
         optuna.cli._check_storage_url(None)
 
@@ -1048,7 +1083,10 @@ def test_storage_upgrade_command() -> None:
 
         command = ["optuna", "storage", "upgrade"]
         with pytest.raises(CalledProcessError):
-            subprocess.check_call(command)
+            subprocess.check_call(
+                command,
+                env={k: v for k, v in os.environ.items() if k != "OPTUNA_STORAGE"},
+            )
 
         command.extend(["--storage", storage_url])
         subprocess.check_call(command)

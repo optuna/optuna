@@ -26,7 +26,6 @@ def _objective_func(trial: optuna.trial.Trial) -> float:
     x = trial.suggest_float("x", -1.0, 1.0)
     y = trial.suggest_float("y", 20, 30, log=True)
     z = trial.suggest_categorical("z", (-1.0, 1.0))
-    assert isinstance(z, float)
     trial.set_user_attr("my_user_attr", "my_user_attr_value")
     return (x - 2) ** 2 + (y - 25) ** 2 + z
 
@@ -36,7 +35,6 @@ def _multiobjective_func(trial: optuna.trial.Trial) -> Tuple[float, float]:
     x = trial.suggest_float("x", low=-1.0, high=1.0)
     y = trial.suggest_float("y", low=20, high=30, log=True)
     z = trial.suggest_categorical("z", (-1.0, 1.0))
-    assert isinstance(z, float)
     first_objective = (x - 2) ** 2 + (y - 25) ** 2 + z
     second_objective = (x - 2) ** 3 + (y - 25) ** 3 - z
 
@@ -53,7 +51,6 @@ def _objective_func_long_user_attr(trial: optuna.trial.Trial) -> float:
     x = trial.suggest_float("x", -1.0, 1.0)
     y = trial.suggest_float("y", 20, 30, log=True)
     z = trial.suggest_categorical("z", (-1.0, 1.0))
-    assert isinstance(z, float)
     long_str = str(list(range(5000)))
     trial.set_user_attr("my_user_attr", long_str)
     return (x - 2) ** 2 + (y - 25) ** 2 + z
@@ -408,7 +405,6 @@ def test_track_in_mlflow_decorator(tmpdir: py.path.local, n_jobs: int) -> None:
         x = trial.suggest_float("x", -1.0, 1.0)
         y = trial.suggest_float("y", 20, 30, log=True)
         z = trial.suggest_categorical("z", (-1.0, 1.0))
-        assert isinstance(z, float)
         trial.set_user_attr("my_user_attr", "my_user_attr_value")
         mlflow.log_metric(metric_name, metric)
         return (x - 2) ** 2 + (y - 25) ** 2 + z
