@@ -1,4 +1,3 @@
-import pickle
 from typing import Any
 from typing import Dict
 from typing import List
@@ -381,25 +380,6 @@ def test_population_size_is_multiplied_when_enable_ipop(popsize: Optional[int]) 
 
         _, actual_kwargs = cma_class_mock.call_args
         assert actual_kwargs["population_size"] == inc_popsize * initial_popsize
-
-
-def test_restore_optimizer_keeps_backward_compatibility() -> None:
-    sampler = optuna.samplers.CmaEsSampler()
-    optimizer = CMA(np.zeros(2), sigma=1.3)
-    optimizer_str = pickle.dumps(optimizer).hex()
-
-    completed_trials = [
-        create_trial(state=TrialState.COMPLETE, value=0.1),
-        create_trial(
-            state=TrialState.COMPLETE,
-            value=0.1,
-            system_attrs={"cma:optimizer": optimizer_str, "cma:n_restarts": 1},
-        ),
-        create_trial(state=TrialState.COMPLETE, value=0.1),
-    ]
-    optimizer, n_restarts = sampler._restore_optimizer(completed_trials)
-    assert isinstance(optimizer, CMA)
-    assert n_restarts == 1
 
 
 @pytest.mark.parametrize("sampler_opts", [{}, {"use_separable_cma": True}, {"with_margin": True}])

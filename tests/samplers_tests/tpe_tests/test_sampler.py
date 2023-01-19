@@ -18,6 +18,7 @@ from optuna import distributions
 from optuna import TrialPruned
 from optuna.samplers import _tpe
 from optuna.samplers import TPESampler
+from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.trial import Trial
 
 
@@ -892,6 +893,96 @@ def test_split_observation_pairs_with_constraints_below_include_infeasible() -> 
     )
     assert list(indices_below) == [0, 1, 2]
     assert list(indices_above) == [3]
+
+
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+@pytest.mark.parametrize("constant_liar", [True, False])
+@pytest.mark.parametrize("constraints", [True, False])
+def test_split_order(direction: str, constant_liar: bool, constraints: bool) -> None:
+    study = optuna.create_study(direction=direction)
+
+    for value in [-float("inf"), 0, 1, float("inf")]:
+        study.add_trial(
+            optuna.create_trial(
+                state=optuna.trial.TrialState.COMPLETE,
+                value=(value if direction == "minimize" else -value),
+                params={"x": 0},
+                distributions={"x": optuna.distributions.FloatDistribution(-1.0, 1.0)},
+                system_attrs={_CONSTRAINTS_KEY: [-1]},
+            )
+        )
+
+    for step in [2, 1]:
+        for value in [-float("inf"), 0, 1, float("inf"), float("nan")]:
+            study.add_trial(
+                optuna.create_trial(
+                    state=optuna.trial.TrialState.PRUNED,
+                    params={"x": 0},
+                    distributions={"x": optuna.distributions.FloatDistribution(-1.0, 1.0)},
+                    system_attrs={_CONSTRAINTS_KEY: [-1]},
+                    intermediate_values={step: (value if direction == "minimize" else -value)},
+                )
+            )
+
+    study.add_trial(
+        optuna.create_trial(
+            state=optuna.trial.TrialState.PRUNED,
+            params={"x": 0},
+            distributions={"x": optuna.distributions.FloatDistribution(-1.0, 1.0)},
+            system_attrs={_CONSTRAINTS_KEY: [-1]},
+        )
+    )
+
+    if constraints:
+        for value in [1, 2]:
+            study.add_trial(
+                optuna.create_trial(
+                    state=optuna.trial.TrialState.COMPLETE,
+                    value=0,
+                    params={"x": 0},
+                    distributions={"x": optuna.distributions.FloatDistribution(-1.0, 1.0)},
+                    system_attrs={_CONSTRAINTS_KEY: [value]},
+                )
+            )
+
+    study.add_trial(
+        optuna.create_trial(
+            state=optuna.trial.TrialState.RUNNING,
+            params={"x": 0},
+            distributions={"x": optuna.distributions.FloatDistribution(-1.0, 1.0)},
+            system_attrs={_CONSTRAINTS_KEY: [-1]},
+        )
+    )
+
+    values, scores, violations = _tpe.sampler._get_observation_pairs(
+        study,
+        ["x"],
+        constant_liar,
+        constraints,
+    )
+
+    if constant_liar:
+        states = [
+            optuna.trial.TrialState.COMPLETE,
+            optuna.trial.TrialState.PRUNED,
+            optuna.trial.TrialState.RUNNING,
+        ]
+    else:
+        states = [optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED]
+
+    assert len(values["x"]) == len(study.get_trials(states=states))
+    assert len(scores) == len(study.get_trials(states=states))
+    if constraints:
+        assert violations is not None
+        assert len(violations) == len(study.get_trials(states=states))
+    else:
+        assert violations is None
+
+    for gamma in range(1, len(scores)):
+        indices_below, indices_above = _tpe.sampler._split_observation_pairs(
+            scores, gamma, violations
+        )
+        assert np.max(indices_below) < np.min(indices_above)
 
 
 def frozen_trial_factory(
