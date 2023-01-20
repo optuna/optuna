@@ -1,4 +1,5 @@
 from optuna.samplers import nsgaii
+from optuna.samplers import nsgaiii
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._brute_force import BruteForceSampler
 from optuna.samplers._cmaes import CmaEsSampler
@@ -12,7 +13,6 @@ from optuna.samplers._tpe.multi_objective_sampler import MOTPESampler
 from optuna.samplers._tpe.sampler import TPESampler
 from optuna.samplers.nsgaii._sampler import NSGAIISampler
 from optuna.samplers.nsgaiii import NSGAIIISampler
-
 
 __all__ = [
     "BaseSampler",
@@ -29,4 +29,5 @@ __all__ = [
     "TPESampler",
     "intersection_search_space",
     "nsgaii",
+    "nsgaiii",
 ]
