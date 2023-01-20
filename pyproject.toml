@@ -74,6 +74,7 @@ document = [
     "plotly>=4.9.0",  # optuna/visualization.
     "scikit-learn",
     "scikit-optimize",
+    # TODO(not522): Remove the constraint after sphinx_rtd_theme supports Sphinx 6
     "sphinx<6",
     "sphinx-copybutton",
     "sphinx-gallery",
