@@ -188,7 +188,7 @@ jobs:
           --seed 0 \
           --out-dir "out"
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: benchmark-report
         path: |

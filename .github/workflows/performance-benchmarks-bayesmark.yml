@@ -77,13 +77,13 @@ jobs:
           --plot-warmup '${{ github.event.inputs.plot-warmup }}'
     
     - name: Upload plot
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: benchmark-plots
         path: plots
     
     - name: Upload partial report
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: partial-reports
         path: partial
@@ -118,7 +118,7 @@ jobs:
         python benchmarks/bayesmark/report_bayesmark.py
     
     - name: Upload report
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: benchmark-report
         path: report
