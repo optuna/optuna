@@ -56,7 +56,7 @@ class HyperbandPruner(BasePruner):
         ``max_resource`` and ``reduction_factor`` as
         :math:`\\mathrm{The\\ number\\ of\\ brackets} =
         \\mathrm{floor}(\\log_{\\texttt{reduction}\\_\\texttt{factor}}
-        (\\frac{\\texttt{max}\\_\\texttt{resource}}{\\texttt{min}\\_\texttt{resource}})) + 1`.
+        (\\frac{\\texttt{max}\\_\\texttt{resource}}{\\texttt{min}\\_\\texttt{resource}})) + 1`.
         Please set ``reduction_factor`` so that the number of brackets is not too large (about 4 –
         6 in most use cases). Please see Section 3.6 of the `original paper
         <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_ for the detail.
