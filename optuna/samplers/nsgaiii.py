@@ -508,7 +508,9 @@ def _associate(
     # front population
     ref2pops = DefaultDict(list)
     for i, reference_point_id in enumerate(closest_reference_points[elite_population_num:]):
-        ref2pops[reference_point_id].append((distance_reference_points[i], i))
+        ref2pops[reference_point_id].append(
+            (distance_reference_points[i + elite_population_num], i)
+        )
 
     # reference_points_per_count classifies reference points which have at least one closest
     # borderline population member by the number of elite neighbors they have and its indices
