@@ -577,7 +577,7 @@ def _niching(
             count += 1
             continue
 
-        # TODO(Shinichi) Set proper randomizer
+        # TODO(Shinichi) Set proper randomizer and avoid shuffling entire list
         np.random.shuffle(reference_points_per_count[count])
         reference_point_id = reference_points_per_count[count].pop()
         print(count, reference_point_id)
