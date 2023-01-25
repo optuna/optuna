@@ -489,8 +489,8 @@ def _associate(
     # TODO(Shinichi) Normalize reference_points in constructor to remove reference_point_norms
     # TODO(Shinichi) Implement faster allocation for default reference points because it seems
     # unnecessary to calculate all distance from each reference point.
-    reference_point_norms = np.linalg.norm(reference_points, axis=1)
-    coefficient = objective_matrix @ reference_points.T / reference_point_norms
+    reference_point_norm_squared = np.sum(reference_points**2, axis=1)
+    coefficient = objective_matrix @ reference_points.T / reference_point_norm_squared
     distance_from_reference_lines = np.linalg.norm(
         objective_matrix[:, np.newaxis, :] - coefficient[..., np.newaxis] * reference_points,
         axis=2,
