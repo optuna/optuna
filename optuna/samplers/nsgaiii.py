@@ -551,7 +551,7 @@ def _niching(
             np.random.shuffle(ref2pops[reference_point_id])
         else:
             # TODO(Shinichi) avoid sort
-            ref2pops[reference_point_id].sort()
+            ref2pops[reference_point_id].sort(reverse=True)
 
         _, selected_person_id = ref2pops[reference_point_id].pop()
         additional_elite_population.append(population[selected_person_id])
