@@ -349,7 +349,7 @@ class NSGAIIISampler(BaseSampler):
             if len(elite_population) + len(population) < self._population_size:
                 elite_population.extend(population)
             else:
-                objective_matrix = _normalize(elite_population + population)
+                objective_matrix = _normalize(elite_population, population)
 
                 elite_population_num = len(elite_population)
                 reference_points_per_count, ref2pops = _associate(
@@ -447,7 +447,12 @@ def generate_default_reference_point(
     return reference_points
 
 
-def _normalize(population: List[FrozenTrial], weights: Optional[np.ndarray] = None) -> np.ndarray:
+def _normalize(
+    elite_population: List[FrozenTrial],
+    population: List[FrozenTrial],
+    weights: Optional[np.ndarray] = None,
+    method: str = "custom",
+) -> np.ndarray:
     """Normalizes objective values of population
 
     An ideal point z* consists of minimums in each axis. Each objective value of population is
@@ -456,25 +461,47 @@ def _normalize(population: List[FrozenTrial], weights: Optional[np.ndarray] = No
     population. After that, intercepts are calculate as intercepts of hyperplane which has all
     the extreme points on it and used to rescale objective values.
     """
+    # TODO(Shinichi) Propagate argument "weights" and "method" to the constructor
+
+    # Collect objective values
     objective_dimension = len(population[0].values)
-    objective_matrix = np.zeros((len(population), objective_dimension))
-    for i, trial in enumerate(population):
+    objective_matrix = np.zeros((len(elite_population + population), objective_dimension))
+    for i, trial in enumerate(elite_population + population):
         objective_matrix[i] = np.array(trial.values, dtype=float)
 
+    # Subtract ideal point
     objective_matrix -= np.min(objective_matrix, axis=0)
+    objective_matrix[objective_matrix < 10e-3] = 0.0
 
     # TODO(Shinichi) Find out exact definition of "extreme point."
     # weights are m vectors in m dimension where m is the dimension of the objective.
     # weights can be anything as long as the i-th vector is close to each i-th objective axis.
+
+    # Initialize weight
     if weights is None:
         weights = np.eye(objective_dimension)
-    asf_per_axis = objective_matrix @ weights
-    extreme_points = objective_matrix[np.argmax(asf_per_axis, axis=0)]
-    # Note that the original paper says that chose ASF "minima."
-    # Also, extreme_points can be "degenerate," but no proper operation is remarked in the paper.
-    # Therefore, the maximum　in each axis is used in that case.
+        if method == "original":
+            weights[weights == 0] = 1e6
+
+    # Calculate extreme points to normalize objective values
+    if method == "custom":
+        # Note that the original paper says that chose ASF "minima" but no exact definition is
+        # provided in the paper.
+        asf_value = objective_matrix @ weights
+        extreme_points = objective_matrix[np.argmax(asf_value, axis=0)]
+    elif method == "original":
+        # TODO(Shinichi) Reimplement to reduce time complexity
+        # Implementation from pymoo, which is an official implementation of the paper
+        asf_value = np.max(objective_matrix * weights[:, np.newaxis, :], axis=2)
+        extreme_points = objective_matrix[np.argmin(asf_value, axis=1), :]
+    else:
+        raise ValueError("method should be either custom or original")
+
+    # Normalize objective_matrix with extreme points.
+    # Note that extreme_points can be degenerate, but no proper operation is remarked in the
+    # paper. Therefore, the maximum of elite population in each axis is used in the case.
     if np.linalg.matrix_rank(extreme_points) < len(extreme_points):
-        intercepts_inv = 1 / np.max(objective_matrix, axis=0)
+        intercepts_inv = 1 / np.max(objective_matrix[: len(elite_population), :], axis=0)
     else:
         intercepts_inv = np.linalg.solve(extreme_points, np.ones(objective_dimension))
     objective_matrix *= intercepts_inv
@@ -486,11 +513,14 @@ def _associate(
     objective_matrix: np.ndarray, reference_points: np.ndarray, elite_population_num: int
 ) -> Tuple[Dict[int, List[int]], Dict[int, List[Tuple[float, int]]]]:
     """Associates each objective value to the closest reference point"""
-    # TODO(Shinichi) Normalize reference_points in constructor to remove reference_point_norms
-    # TODO(Shinichi) Implement faster allocation for default reference points because it seems
-    # unnecessary to calculate all distance from each reference point.
-    reference_point_norms = np.linalg.norm(reference_points, axis=1)
-    coefficient = objective_matrix @ reference_points.T / reference_point_norms
+    # TODO(Shinichi) Implement faster assignment for the default reference points because it does
+    # not seem necessary to calculate distance from all reference points.
+
+    # TODO(Shinichi) Normalize reference_points in constructor to remove reference_point_norms.
+    # In addition, the minimum distance from each reference point can be replace with maximum inner
+    # product between the given point and each normalized reference points.
+    reference_point_norm_squared = np.sum(reference_points**2, axis=1)
+    coefficient = objective_matrix @ reference_points.T / reference_point_norm_squared
     distance_from_reference_lines = np.linalg.norm(
         objective_matrix[:, np.newaxis, :] - coefficient[..., np.newaxis] * reference_points,
         axis=2,
@@ -508,7 +538,9 @@ def _associate(
     # front population
     ref2pops = DefaultDict(list)
     for i, reference_point_id in enumerate(closest_reference_points[elite_population_num:]):
-        ref2pops[reference_point_id].append((distance_reference_points[i], i))
+        ref2pops[reference_point_id].append(
+            (distance_reference_points[i + elite_population_num], i)
+        )
 
     # reference_points_per_count classifies reference points which have at least one closest
     # borderline population member by the number of elite neighbors they have and its indices
@@ -526,6 +558,7 @@ def _niching(
     population: List[FrozenTrial],
     reference_points_per_count: Dict[int, List[int]],
     ref2pops: Dict[int, List[Tuple[float, int]]],
+    seed: int = 42,
 ) -> List[FrozenTrial]:
     """Determine who survives form the borderline front
 
@@ -534,6 +567,8 @@ def _niching(
     in elite population and adds one of borderline front member who has the same closest reference
     point.
     """
+    # TODO(Shinichi) Propagate argument "seed" to the constructor
+    np.random.seed(seed=seed)
 
     count = 0
     additional_elite_population: List[FrozenTrial] = []
@@ -545,16 +580,18 @@ def _niching(
         # TODO(Shinichi) Set proper randomizer
         np.random.shuffle(reference_points_per_count[count])
         reference_point_id = reference_points_per_count[count].pop()
+        print(count, reference_point_id)
         if count:
             np.random.shuffle(ref2pops[reference_point_id])
         else:
-            # TODO(Shinichi) avoid sort
+            # TODO(Shinichi) Avoid sort to reduce time complexity
             ref2pops[reference_point_id].sort()
-
+        print(ref2pops[reference_point_id])
         _, selected_person_id = ref2pops[reference_point_id].pop()
         additional_elite_population.append(population[selected_person_id])
         if ref2pops[reference_point_id]:
             reference_points_per_count[count + 1].append(reference_point_id)
+        print(reference_points_per_count)
 
     return additional_elite_population
 
@@ -630,43 +667,3 @@ def _constrained_dominates(
     violation0 = sum(v for v in constraints0 if v > 0)
     violation1 = sum(v for v in constraints1 if v > 0)
     return violation0 < violation1
-
-
-class reference_point:
-    def __init__(
-        self,
-        objective_dimension: int,
-        is_default: bool = True,
-        dividing_parameter: int = 3,
-        reference_points: Optional[np.ndarray] = None,
-        weight: Optional[np.ndarray] = None,
-    ) -> None:
-        # TODO(Shinichi) add input check
-        self.is_default = is_default
-        if is_default:
-            self.dividing_parameter = dividing_parameter
-            self.reference_points = generate_default_reference_point(
-                objective_dimension, dividing_parameter
-            )
-        else:
-            self.reference_points = reference_points
-        self.objective_dimension = objective_dimension
-        self.weight = weight
-
-    def _normalize(self, population: List[FrozenTrial]) -> np.ndarray:
-        return _normalize(population, self.weight)
-
-    def _associate(
-        self, objective_matrix: np.ndarray, elite_population_num: int
-    ) -> Tuple[Dict[int, List[int]], Dict[int, List[Tuple[float, int]]]]:
-        # if not self.is_default:
-        return _associate(objective_matrix, self.reference_points, elite_population_num)
-
-    def _niching(
-        self,
-        target_population_size: int,
-        population: List[FrozenTrial],
-        reference_points_per_count: Dict[int, List[int]],
-        ref2pops: Dict[int, List[Tuple[float, int]]],
-    ) -> List[FrozenTrial]:
-        return _niching(target_population_size, population, reference_points_per_count, ref2pops)
