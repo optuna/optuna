@@ -580,7 +580,6 @@ def _niching(
         # TODO(Shinichi) Set proper randomizer
         np.random.shuffle(reference_points_per_count[count])
         reference_point_id = reference_points_per_count[count].pop()
-        print(count, reference_point_id)
         if count:
             np.random.shuffle(ref2pops[reference_point_id])
         else:
@@ -591,7 +590,6 @@ def _niching(
         additional_elite_population.append(population[selected_person_id])
         if ref2pops[reference_point_id]:
             reference_points_per_count[count + 1].append(reference_point_id)
-        print(reference_points_per_count)
 
     return additional_elite_population
 
