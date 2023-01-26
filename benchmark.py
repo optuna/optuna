@@ -1,9 +1,17 @@
-import os
 import csv
+import os
 
 import numpy as np
 from pymoo.indicators.hv import HV
-from pymoo.problems.many import WFG1, WFG2, WFG3, WFG4, WFG5, WFG6, WFG7, WFG8, WFG9
+from pymoo.problems.many import WFG1
+from pymoo.problems.many import WFG2
+from pymoo.problems.many import WFG3
+from pymoo.problems.many import WFG4
+from pymoo.problems.many import WFG5
+from pymoo.problems.many import WFG6
+from pymoo.problems.many import WFG7
+from pymoo.problems.many import WFG8
+from pymoo.problems.many import WFG9
 
 import optuna
 from optuna.trial import Trial
