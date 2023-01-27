@@ -39,8 +39,14 @@ with try_import() as _imports:
 
     try:
         from botorch.sampling.normal import SobolQMCNormalSampler
+        def get_sobol_qmc_normal_sampler(num_samples: int) -> SobolQMCNormalSampler:
+            return SobolQMCNormalSampler(sample_shape=torch.Size(num_samples))
+
     except ImportError:
         from botorch.sampling.samplers import SobolQMCNormalSampler
+        def get_sobol_qmc_normal_sampler(num_samples: int) -> SobolQMCNormalSampler:
+            return SobolQMCNormalSampler(num_samples=num_samples)
+        
     from botorch.utils.multi_objective.box_decompositions import NondominatedPartitioning
     from botorch.utils.multi_objective.scalarization import get_chebyshev_scalarization
     from botorch.utils.sampling import manual_seed
@@ -133,7 +139,7 @@ def qei_candidates_func(
     acqf = qExpectedImprovement(
         model=model,
         best_f=best_f,
-        sampler=SobolQMCNormalSampler(sample_shape=256),
+        sampler=get_sobol_qmc_normal_sampler(256),
         objective=objective,
     )
 
@@ -212,23 +218,19 @@ def qehvi_candidates_func(
     partitioning = NondominatedPartitioning(ref_point=ref_point, Y=train_obj_feas, alpha=alpha)
 
     ref_point_list = ref_point.tolist()
+    
     try:
-        acqf = monte_carlo.qExpectedHypervolumeImprovement(
-            model=model,
-            ref_point=ref_point_list,
-            partitioning=partitioning,
-            sampler=SobolQMCNormalSampler(sample_shape=torch.Size(256)),
-            **additional_qehvi_kwargs,
-        )
+        sampler = SobolQMCNormalSampler(sample_shape=torch.Size(256))
     except TypeError:
-        acqf = monte_carlo.qExpectedHypervolumeImprovement(
-            model=model,
-            ref_point=ref_point_list,
-            partitioning=partitioning,
-            sampler=SobolQMCNormalSampler(num_samples=256),
-            **additional_qehvi_kwargs,
-        )
+        sampler = SobolQMCNormalSampler(num_samples=256)
 
+    acqf = monte_carlo.qExpectedHypervolumeImprovement(
+        model=model,
+        ref_point=ref_point_list,
+        partitioning=partitioning,
+        sampler=get_sobol_qmc_normal_sampler(256),
+        **additional_qehvi_kwargs,
+    )
     standard_bounds = torch.zeros_like(bounds)
     standard_bounds[1] = 1
 
@@ -307,7 +309,7 @@ def qnehvi_candidates_func(
         X_baseline=train_x,
         alpha=alpha,
         prune_baseline=True,
-        sampler=SobolQMCNormalSampler(num_samples=256),
+        sampler=get_sobol_qmc_normal_sampler(256),
         **additional_qnehvi_kwargs,
     )
 
@@ -374,7 +376,7 @@ def qparego_candidates_func(
     acqf = qExpectedImprovement(
         model=model,
         best_f=objective(train_y).max(),
-        sampler=SobolQMCNormalSampler(num_samples=256),
+        sampler=get_sobol_qmc_normal_sampler(256),
         objective=objective,
     )
 
