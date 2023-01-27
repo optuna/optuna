@@ -212,14 +212,22 @@ def qehvi_candidates_func(
     partitioning = NondominatedPartitioning(ref_point=ref_point, Y=train_obj_feas, alpha=alpha)
 
     ref_point_list = ref_point.tolist()
-
-    acqf = monte_carlo.qExpectedHypervolumeImprovement(
-        model=model,
-        ref_point=ref_point_list,
-        partitioning=partitioning,
-        sampler=SobolQMCNormalSampler(num_samples=256),
-        **additional_qehvi_kwargs,
-    )
+    try:
+        acqf = monte_carlo.qExpectedHypervolumeImprovement(
+            model=model,
+            ref_point=ref_point_list,
+            partitioning=partitioning,
+            sampler=SobolQMCNormalSampler(sample_shape=(256,)),
+            **additional_qehvi_kwargs,
+        )
+    except TypeError:
+        acqf = monte_carlo.qExpectedHypervolumeImprovement(
+            model=model,
+            ref_point=ref_point_list,
+            partitioning=partitioning,
+            sampler=SobolQMCNormalSampler(num_samples=256),
+            **additional_qehvi_kwargs,
+        )
 
     standard_bounds = torch.zeros_like(bounds)
     standard_bounds[1] = 1
