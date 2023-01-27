@@ -352,7 +352,7 @@ class NSGAIIISampler(BaseSampler):
                 objective_matrix = _normalize(elite_population, population)
 
                 elite_population_num = len(elite_population)
-                reference_points_per_count, ref2pops = _associate(
+                cnt2refs, ref2pops = _associate(
                     objective_matrix, self.reference_points, elite_population_num
                 )
 
@@ -360,7 +360,7 @@ class NSGAIIISampler(BaseSampler):
                 additional_elite_population = _niching(
                     target_population_size,
                     population,
-                    reference_points_per_count,
+                    cnt2refs,
                     ref2pops,
                 )
                 elite_population.extend(additional_elite_population)
@@ -491,7 +491,7 @@ def _normalize(
         extreme_points = objective_matrix[np.argmax(asf_value, axis=0)]
     elif method == "original":
         # TODO(Shinichi) Reimplement to reduce time complexity
-        # Implementation from pymoo, which is an official implementation of the paper
+        # Implementation from pymoo, which is the official implementation of the paper
         asf_value = np.max(objective_matrix * weights[:, np.newaxis, :], axis=2)
         extreme_points = objective_matrix[np.argmin(asf_value, axis=1), :]
     else:
@@ -528,8 +528,7 @@ def _associate(
     distance_reference_points = np.min(distance_from_reference_lines, axis=1)
     closest_reference_points = np.argmin(distance_from_reference_lines, axis=1)
 
-    # count_reference_points keeps how many neighbors from elite population each reference point
-    # has
+    # count_reference_points keeps how many elite neighbors each reference point has
     count_reference_points: Dict[int, int] = DefaultDict(int)
     for i, reference_point_id in enumerate(closest_reference_points[:elite_population_num]):
         count_reference_points[reference_point_id] += 1
@@ -542,21 +541,21 @@ def _associate(
             (distance_reference_points[i + elite_population_num], i)
         )
 
-    # reference_points_per_count classifies reference points which have at least one closest
-    # borderline population member by the number of elite neighbors they have and its indices
-    # correspond to the count.
-    reference_points_per_count = DefaultDict(list)
+    # cnt2refs classifies reference points which have at least one closest borderline population
+    # member by the number of elite neighbors they have. Each key correspond to the count of elite
+    # neighbors　and values are reference point ids.
+    cnt2refs = DefaultDict(list)
     for reference_point_id in ref2pops:
         count = count_reference_points[reference_point_id]
-        reference_points_per_count[count].append(reference_point_id)
+        cnt2refs[count].append(reference_point_id)
 
-    return reference_points_per_count, ref2pops
+    return cnt2refs, ref2pops
 
 
 def _niching(
     target_population_size: int,
     population: List[FrozenTrial],
-    reference_points_per_count: Dict[int, List[int]],
+    cnt2refs: Dict[int, List[int]],
     ref2pops: Dict[int, List[Tuple[float, int]]],
     seed: int = 42,
 ) -> List[FrozenTrial]:
@@ -573,13 +572,13 @@ def _niching(
     count = 0
     additional_elite_population: List[FrozenTrial] = []
     while len(additional_elite_population) < target_population_size:
-        if not reference_points_per_count[count]:
+        if not cnt2refs[count]:
             count += 1
             continue
 
         # TODO(Shinichi) Set proper randomizer and avoid shuffling entire list
-        np.random.shuffle(reference_points_per_count[count])
-        reference_point_id = reference_points_per_count[count].pop()
+        np.random.shuffle(cnt2refs[count])
+        reference_point_id = cnt2refs[count].pop()
         if count:
             np.random.shuffle(ref2pops[reference_point_id])
         else:
@@ -589,7 +588,7 @@ def _niching(
         _, selected_person_id = ref2pops[reference_point_id].pop()
         additional_elite_population.append(population[selected_person_id])
         if ref2pops[reference_point_id]:
-            reference_points_per_count[count + 1].append(reference_point_id)
+            cnt2refs[count + 1].append(reference_point_id)
 
     return additional_elite_population
 
