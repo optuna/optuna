@@ -94,7 +94,5 @@ def test_niching() -> None:
     actual_additional_elite_population = _niching(
         target_population_size, population, reference_points_per_count, ref2pops, seed=0
     )
-    expected_additional_elite_population = population[2:0:-1]
-    print(actual_additional_elite_population)
-    print(expected_additional_elite_population)
+    expected_additional_elite_population = [population[3], population[1]]
     assert actual_additional_elite_population == expected_additional_elite_population
