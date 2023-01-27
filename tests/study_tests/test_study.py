@@ -1,6 +1,7 @@
 from concurrent.futures import as_completed
 from concurrent.futures import ThreadPoolExecutor
 import copy
+import datetime
 import multiprocessing
 import pickle
 import threading
@@ -11,6 +12,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
+from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
 import uuid
@@ -31,6 +33,7 @@ from optuna import Trial
 from optuna import TrialPruned
 from optuna.exceptions import DuplicatedStudyError
 from optuna.study import StudyDirection
+from optuna.study.study import AllTrialsCache
 from optuna.testing.objectives import fail_objective
 from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
@@ -1592,3 +1595,32 @@ def test_pop_waiting_trial_thread_safe(storage_mode: str) -> None:
             for future in as_completed(futures):
                 trial_id_set.add(future.result())
         assert len(trial_id_set) == num_enqueued
+
+
+def test_all_trials_cache_ttl(monkeypatch: pytest.MonkeyPatch) -> None:
+    current_time = datetime.datetime.now()
+    time_before_ttl = datetime.datetime.now() + datetime.timedelta(seconds=30)
+    time_after_ttl = datetime.datetime.now() + datetime.timedelta(minutes=2)
+
+    datetime_mock = MagicMock(wraps=datetime.datetime)
+    monkeypatch.setattr(datetime, "datetime", datetime_mock)
+
+    cache = AllTrialsCache()
+    getter_mock = Mock()
+    cache.activate(getter=getter_mock)
+
+    getter_mock.reset_mock()
+    datetime_mock.now.return_value = current_time
+    _ = cache.get()
+    getter_mock.assert_called_once()
+
+    getter_mock.reset_mock()
+    datetime_mock.now.return_value = time_before_ttl
+    _ = cache.get()
+    getter_mock.assert_not_called()
+    getter_mock.reset_mock()
+
+    getter_mock.reset_mock()
+    datetime_mock.now.return_value = time_after_ttl
+    _ = cache.get()
+    getter_mock.assert_called_once()

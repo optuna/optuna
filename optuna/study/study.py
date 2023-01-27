@@ -1,5 +1,5 @@
 import copy
-from datetime import datetime, timedelta
+import datetime
 from numbers import Real
 import threading
 from typing import Any
@@ -55,18 +55,18 @@ _logger = logging.get_logger(__name__)
 
 
 class AllTrialsCache:
-    CACHE_TTL = timedelta(minutes=1)
+    CACHE_TTL = datetime.timedelta(minutes=1)
 
     _is_active: bool
     _cache: Optional[List["FrozenTrial"]]
     _getter: Optional[Callable[[], List["FrozenTrial"]]]
-    _last_updated: datetime
+    _last_updated: datetime.datetime
 
     def __init__(self) -> None:
         self._is_active = False
         self._cache = None
         self._getter = None
-        self._last_updated = datetime.now()
+        self._last_updated = datetime.datetime.now()
 
     def is_active(self) -> bool:
         return self._is_active
@@ -82,10 +82,12 @@ class AllTrialsCache:
 
     def get(self) -> List["FrozenTrial"]:
         assert self._is_active
-        if self._cache is None or (datetime.now() - self._last_updated > AllTrialsCache.CACHE_TTL):
+        if self._cache is None or (
+            datetime.datetime.now() - self._last_updated > AllTrialsCache.CACHE_TTL
+        ):
             assert self._getter is not None
             self._cache = self._getter()
-            self._last_updated = datetime.now()
+            self._last_updated = datetime.datetime.now()
         return self._cache
 
 
