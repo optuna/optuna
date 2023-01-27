@@ -39,14 +39,16 @@ with try_import() as _imports:
 
     try:
         from botorch.sampling.normal import SobolQMCNormalSampler
+
         def get_sobol_qmc_normal_sampler(num_samples: int) -> SobolQMCNormalSampler:
             return SobolQMCNormalSampler(sample_shape=torch.Size(num_samples))
 
     except ImportError:
         from botorch.sampling.samplers import SobolQMCNormalSampler
+
         def get_sobol_qmc_normal_sampler(num_samples: int) -> SobolQMCNormalSampler:
             return SobolQMCNormalSampler(num_samples=num_samples)
-        
+
     from botorch.utils.multi_objective.box_decompositions import NondominatedPartitioning
     from botorch.utils.multi_objective.scalarization import get_chebyshev_scalarization
     from botorch.utils.sampling import manual_seed
@@ -218,11 +220,6 @@ def qehvi_candidates_func(
     partitioning = NondominatedPartitioning(ref_point=ref_point, Y=train_obj_feas, alpha=alpha)
 
     ref_point_list = ref_point.tolist()
-    
-    try:
-        sampler = SobolQMCNormalSampler(sample_shape=torch.Size(256))
-    except TypeError:
-        sampler = SobolQMCNormalSampler(num_samples=256)
 
     acqf = monte_carlo.qExpectedHypervolumeImprovement(
         model=model,
