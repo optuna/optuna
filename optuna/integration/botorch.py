@@ -36,7 +36,10 @@ with try_import() as _imports:
     from botorch.models import SingleTaskGP
     from botorch.models.transforms.outcome import Standardize
     from botorch.optim import optimize_acqf
-    from botorch.sampling.samplers import SobolQMCNormalSampler
+    try:
+        from botorch.sampling.normal import SobolQMCNormalSampler
+    except ImportError:
+        from botorch.sampling.samplers import SobolQMCNormalSampler
     from botorch.utils.multi_objective.box_decompositions import NondominatedPartitioning
     from botorch.utils.multi_objective.scalarization import get_chebyshev_scalarization
     from botorch.utils.sampling import manual_seed
@@ -129,7 +132,7 @@ def qei_candidates_func(
     acqf = qExpectedImprovement(
         model=model,
         best_f=best_f,
-        sampler=SobolQMCNormalSampler(num_samples=256),
+        sampler=SobolQMCNormalSampler(sample_shape=256),
         objective=objective,
     )
 
