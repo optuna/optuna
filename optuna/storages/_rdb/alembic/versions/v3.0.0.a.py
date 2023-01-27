@@ -21,7 +21,6 @@ from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.declarative import declarative_base
 
 from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.distributions import BaseDistribution
@@ -35,6 +34,12 @@ from optuna.distributions import json_to_distribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.trial import TrialState
+
+try:
+    from sqlalchemy.orm import declarative_base
+except ImportError:
+    # TODO(c-bata): Remove this after dropping support for SQLAlchemy v1.3 or prior.
+    from sqlalchemy.ext.declarative import declarative_base
 
 
 # revision identifiers, used by Alembic.

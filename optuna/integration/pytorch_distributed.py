@@ -6,6 +6,7 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import overload
 from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import TypeVar
@@ -21,6 +22,7 @@ from optuna.distributions import CategoricalChoiceType
 with try_import() as _imports:
     import torch
     import torch.distributed as dist
+    from torch.distributed import ProcessGroup  # type: ignore[attr-defined]
 
 
 if TYPE_CHECKING:
@@ -34,7 +36,7 @@ _suggest_deprecated_msg = (
     "Use :func:`~optuna.integration.TorchDistributedTrial.suggest_float` instead."
 )
 
-_g_pg: List[Optional["torch.distributed.ProcessGroup"]] = [None]
+_g_pg: List[Optional["ProcessGroup"]] = [None]
 
 
 def broadcast_properties(f: "Callable[_P, _T]") -> "Callable[_P, _T]":
@@ -50,7 +52,7 @@ def broadcast_properties(f: "Callable[_P, _T]") -> "Callable[_P, _T]":
     def wrapped(*args: "_P.args", **kwargs: "_P.kwargs") -> "_T":
         # TODO(nlgranger): Remove type ignore after mypy includes
         # https://github.com/python/mypy/pull/12668
-        self: TorchDistributedTrial = args[0]  # type: ignore
+        self: TorchDistributedTrial = args[0]  # type: ignore[assignment]
 
         def fetch_properties() -> Sequence:
             assert self._delegate is not None
@@ -114,27 +116,27 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     def __init__(
         self,
         trial: Optional[optuna.trial.Trial],
-        group: Optional["torch.distributed.ProcessGroup"] = None,
+        group: Optional["ProcessGroup"] = None,
     ) -> None:
         _imports.check()
 
         if group is not None:
-            self._group: "torch.distributed.ProcessGroup" = group
+            self._group: "ProcessGroup" = group
         else:
             if _g_pg[0] is None:
                 if dist.group.WORLD is None:
                     raise RuntimeError("torch distributed is not initialized.")
-                default_pg: "torch.distributed.ProcessGroup" = dist.group.WORLD
-                if dist.get_backend(default_pg) == "nccl":
-                    new_group: "torch.distributed.ProcessGroup" = dist.new_group(
+                default_pg: "ProcessGroup" = dist.group.WORLD
+                if dist.get_backend(default_pg) == "nccl":  # type: ignore[no-untyped-call]
+                    new_group: "ProcessGroup" = dist.new_group(  # type: ignore[no-untyped-call]
                         backend="gloo"
-                    )  # type: ignore
+                    )
                     _g_pg[0] = new_group
                 else:
                     _g_pg[0] = default_pg
-            self._group = _g_pg[0]  # type: ignore
+            self._group = _g_pg[0]
 
-        if dist.get_rank(self._group) == 0:  # type: ignore
+        if dist.get_rank(self._group) == 0:  # type: ignore[no-untyped-call]
             if not isinstance(trial, optuna.trial.Trial):
                 raise ValueError(
                     "Rank 0 node expects an optuna.trial.Trial instance as the trial argument."
@@ -194,8 +196,36 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
         return self._call_and_communicate(func, torch.int)
 
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[None]) -> None:
+        ...
+
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[bool]) -> bool:
+        ...
+
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[int]) -> int:
+        ...
+
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[float]) -> float:
+        ...
+
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[str]) -> str:
+        ...
+
+    @overload
+    def suggest_categorical(
+        self, name: str, choices: Sequence[CategoricalChoiceType]
+    ) -> CategoricalChoiceType:
+        ...
+
     @broadcast_properties
-    def suggest_categorical(self, name: str, choices: Sequence["CategoricalChoiceType"]) -> Any:
+    def suggest_categorical(
+        self, name: str, choices: Sequence[CategoricalChoiceType]
+    ) -> CategoricalChoiceType:
         def func() -> CategoricalChoiceType:
             assert self._delegate is not None
             return self._delegate.suggest_categorical(name, choices)
@@ -205,7 +235,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     @broadcast_properties
     def report(self, value: float, step: int) -> None:
         err = None
-        if dist.get_rank(self._group) == 0:  # type: ignore
+        if dist.get_rank(self._group) == 0:  # type: ignore[no-untyped-call]
             try:
                 assert self._delegate is not None
                 self._delegate.report(value, step)
@@ -232,7 +262,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     @broadcast_properties
     def set_user_attr(self, key: str, value: Any) -> None:
         err = None
-        if dist.get_rank(self._group) == 0:  # type: ignore
+        if dist.get_rank(self._group) == 0:  # type: ignore[no-untyped-call]
             try:
                 assert self._delegate is not None
                 self._delegate.set_user_attr(key, value)
@@ -250,7 +280,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     def set_system_attr(self, key: str, value: Any) -> None:
         err = None
 
-        if dist.get_rank(self._group) == 0:  # type: ignore
+        if dist.get_rank(self._group) == 0:  # type: ignore[no-untyped-call]
             try:
                 assert self._delegate is not None
                 self._delegate.storage.set_trial_system_attr(self._delegate._trial_id, key, value)
@@ -290,31 +320,31 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
     def _call_and_communicate(self, func: Callable, dtype: "torch.dtype") -> Any:
         buffer = torch.empty(1, dtype=dtype)
-        rank = dist.get_rank(self._group)  # type: ignore
+        rank = dist.get_rank(self._group)  # type: ignore[no-untyped-call]
         if rank == 0:
             result = func()
             buffer[0] = result
-        dist.broadcast(buffer, src=0, group=self._group)  # type: ignore
+        dist.broadcast(buffer, src=0, group=self._group)  # type: ignore[no-untyped-call]
         return buffer.item()
 
     def _call_and_communicate_obj(self, func: Callable) -> Any:
-        rank = dist.get_rank(self._group)  # type: ignore
+        rank = dist.get_rank(self._group)  # type: ignore[no-untyped-call]
         result = func() if rank == 0 else None
         return self._broadcast(result)
 
     def _broadcast(self, value: Optional[Any]) -> Any:
         buffer = None
         size_buffer = torch.empty(1, dtype=torch.int)
-        rank = dist.get_rank(self._group)  # type: ignore
+        rank = dist.get_rank(self._group)  # type: ignore[no-untyped-call]
         if rank == 0:
             buffer = _to_tensor(value)
             size_buffer[0] = buffer.shape[0]
-        dist.broadcast(size_buffer, src=0, group=self._group)  # type: ignore
+        dist.broadcast(size_buffer, src=0, group=self._group)  # type: ignore[no-untyped-call]
         buffer_size = int(size_buffer.item())
         if rank != 0:
             buffer = torch.empty(buffer_size, dtype=torch.uint8)
         assert buffer is not None
-        dist.broadcast(buffer, src=0, group=self._group)  # type: ignore
+        dist.broadcast(buffer, src=0, group=self._group)  # type: ignore[no-untyped-call]
         return _from_tensor(buffer)
 
 

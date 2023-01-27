@@ -11,8 +11,13 @@ from alembic import op
 import sqlalchemy as sa
 
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import orm
+
+try:
+    from sqlalchemy.orm import declarative_base
+except ImportError:
+    # TODO(c-bata): Remove this after dropping support for SQLAlchemy v1.3 or prior.
+    from sqlalchemy.ext.declarative import declarative_base
 
 # revision identifiers, used by Alembic.
 revision = "v1.3.0.a"

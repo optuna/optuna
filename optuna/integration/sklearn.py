@@ -376,8 +376,9 @@ class OptunaSearchCV(BaseEstimator):
         cv:
             Cross-validation strategy. Possible inputs for cv are:
 
+            - :obj:`None`, to use the default 5-fold cross validation,
             - integer to specify the number of folds in a CV splitter,
-            - a CV splitter,
+            - `CV splitter <https://scikit-learn.org/stable/glossary.html#term-CV-splitter>`_,
             - an iterable yielding (train, validation) splits as arrays of indices.
 
             For integer, if ``estimator`` is a classifier and ``y`` is
@@ -400,8 +401,8 @@ class OptunaSearchCV(BaseEstimator):
             estimator supports ``partial_fit``.
 
         n_jobs:
-            Number of :obj:`threading` based parallel jobs. ``-1`` means
-            using the number is set to CPU count.
+            Number of :obj:`threading` based parallel jobs. :obj:`None` means ``1``.
+            ``-1`` means using the number is set to CPU count.
 
                 .. note::
                     ``n_jobs`` allows parallelization using :obj:`threading` and may suffer from
@@ -691,11 +692,12 @@ class OptunaSearchCV(BaseEstimator):
         self,
         estimator: "BaseEstimator",
         param_distributions: Mapping[str, distributions.BaseDistribution],
-        cv: Optional[Union["BaseCrossValidator", int]] = 5,
+        *,
+        cv: Optional[Union[int, "BaseCrossValidator", Iterable]] = None,
         enable_pruning: bool = False,
         error_score: Union[Number, float, str] = np.nan,
         max_iter: int = 1000,
-        n_jobs: int = 1,
+        n_jobs: Optional[int] = None,
         n_trials: int = 10,
         random_state: Optional[Union[int, np.random.RandomState]] = None,
         refit: bool = True,
@@ -730,7 +732,7 @@ class OptunaSearchCV(BaseEstimator):
         self.estimator = estimator
         self.max_iter = max_iter
         self.n_trials = n_trials
-        self.n_jobs = n_jobs
+        self.n_jobs = n_jobs if n_jobs else 1
         self.param_distributions = param_distributions
         self.random_state = random_state
         self.refit = refit

@@ -36,7 +36,7 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Setup Python${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -70,8 +70,12 @@ jobs:
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
         pytest tests -m "not integration"
+      env:
+        SQLALCHEMY_WARN_20: 1
 
     - name: Tests
       if:  ${{ github.event_name != 'schedule' }}
       run: |
         pytest tests -m "not integration and not slow"
+      env:
+        SQLALCHEMY_WARN_20: 1
