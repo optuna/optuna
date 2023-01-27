@@ -36,6 +36,7 @@ with try_import() as _imports:
     from botorch.models import SingleTaskGP
     from botorch.models.transforms.outcome import Standardize
     from botorch.optim import optimize_acqf
+
     try:
         from botorch.sampling.normal import SobolQMCNormalSampler
     except ImportError:
