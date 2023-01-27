@@ -217,7 +217,7 @@ def qehvi_candidates_func(
             model=model,
             ref_point=ref_point_list,
             partitioning=partitioning,
-            sampler=SobolQMCNormalSampler(sample_shape=(256,)),
+            sampler=SobolQMCNormalSampler(sample_shape=torch.Size(256)),
             **additional_qehvi_kwargs,
         )
     except TypeError:
