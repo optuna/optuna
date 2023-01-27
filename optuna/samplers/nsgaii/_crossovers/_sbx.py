@@ -51,7 +51,7 @@ class SBXCrossover(BaseCrossover):
         xs_min = np.min(parents_params, axis=0)
         xs_max = np.max(parents_params, axis=0)
         if self._eta is None:
-            eta = 20.0 if study._is_multi_objective() else 2.0
+            eta = 20.0 if len(study.directions) > 1 else 2.0
         else:
             eta = self._eta
 

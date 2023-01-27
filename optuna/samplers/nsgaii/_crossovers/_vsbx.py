@@ -43,7 +43,7 @@ class VSBXCrossover(BaseCrossover):
         # https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.422.952&rep=rep1&type=pdf
         # Section 3.2 Crossover Schemes (vSBX)
         if self._eta is None:
-            eta = 20.0 if study._is_multi_objective() else 2.0
+            eta = 20.0 if len(study.directions) > 1 else 2.0
         else:
             eta = self._eta
 

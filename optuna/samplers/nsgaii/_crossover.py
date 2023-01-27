@@ -121,7 +121,7 @@ def perform_crossover(
 
 def _select_parents(
     crossover: BaseCrossover,
-    study: Study,
+    study: Study,  # FrozenStudy
     parent_population: Sequence[FrozenTrial],
     rng: np.random.RandomState,
     dominates: Callable[[FrozenTrial, FrozenTrial, Sequence[StudyDirection]], bool],
