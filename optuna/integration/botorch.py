@@ -41,7 +41,7 @@ with try_import() as _imports:
         from botorch.sampling.normal import SobolQMCNormalSampler
 
         def get_sobol_qmc_normal_sampler(num_samples: int) -> SobolQMCNormalSampler:
-            return SobolQMCNormalSampler(sample_shape=torch.Size(num_samples))
+            return SobolQMCNormalSampler(sample_shape=torch.Size((num_samples,)))
 
     except ImportError:
         from botorch.sampling.samplers import SobolQMCNormalSampler
