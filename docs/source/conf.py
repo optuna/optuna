@@ -185,10 +185,12 @@ pio.renderers.default = "sphinx_gallery"
 
 sphinx_gallery_conf = {
     "examples_dirs": [
-        "../../tutorial",
+        "../../tutorial/10_key_features",
+        "../../tutorial/20_recipes",
     ],
     "gallery_dirs": [
-        "tutorial",
+        "tutorial/10_key_features",
+        "tutorial/20_recipes",
     ],
     "within_subsection_order": FileNameSortKey,
     "filename_pattern": r"/*\.py",
