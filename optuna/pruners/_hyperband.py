@@ -279,6 +279,7 @@ class HyperbandPruner(BasePruner):
                 "_is_multi_objective",
                 "stop",
                 "_study",
+                "_thread_local",
             )
 
             def __init__(
