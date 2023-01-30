@@ -1,5 +1,4 @@
 import itertools
-import random
 from typing import Tuple
 
 import numpy as np
@@ -22,39 +21,35 @@ def _compute_hssp_truth_and_approx(test_case: np.ndarray, subset_size: int) -> T
 
 @pytest.mark.parametrize("dim", [2, 3])
 def test_solve_hssp(dim: int) -> None:
-    random.seed(128)
+    rng = np.random.RandomState(128)
 
-    for i in range(8):
-        subset_size = int(random.random() * i) + 1
-        test_case = np.asarray([[random.random() for _ in range(dim)] for _ in range(8)])
+    for i in range(1, 9):
+        subset_size = np.random.randint(1, i + 1)
+        test_case = rng.rand(8, dim)
         truth, approx = _compute_hssp_truth_and_approx(test_case, subset_size)
         assert approx / truth > 0.6321  # 1 - 1/e
 
 
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 def test_solve_hssp_infinite_loss() -> None:
-    random.seed(128)
+    rng = np.random.RandomState(128)
 
-    subset_size = int(random.random() * 4) + 1
-    test_case = np.asarray([[random.random() for _ in range(2)] for _ in range(8)])
-    test_case = np.vstack([test_case, [float("inf") for _ in range(2)]])
+    subset_size = 4
+    test_case = rng.rand(9, 2)
+    test_case[-1].fill(float("inf"))
     truth, approx = _compute_hssp_truth_and_approx(test_case, subset_size)
     assert np.isinf(truth)
     assert np.isinf(approx)
 
-    test_case = np.asarray([[random.random() for _ in range(3)] for _ in range(8)])
-    test_case = np.vstack([test_case, [float("inf") for _ in range(3)]])
+    test_case = rng.rand(9, 3)
+    test_case[-1].fill(float("inf"))
     truth, approx = _compute_hssp_truth_and_approx(test_case, subset_size)
     assert truth == 0
     assert np.isnan(approx)
 
-    test_case = np.asarray([[random.random() for _ in range(2)] for _ in range(8)])
-    test_case = np.vstack([test_case, [-float("inf") for _ in range(2)]])
-    truth, approx = _compute_hssp_truth_and_approx(test_case, subset_size)
-    assert np.isinf(truth)
-    assert np.isinf(approx)
-
-    test_case = np.asarray([[random.random() for _ in range(3)] for _ in range(8)])
-    test_case = np.vstack([test_case, [-float("inf") for _ in range(3)]])
-    truth, approx = _compute_hssp_truth_and_approx(test_case, subset_size)
-    assert np.isinf(truth)
-    assert np.isinf(approx)
+    for dim in range(2, 4):
+        test_case = rng.rand(9, dim)
+        test_case[-1].fill(-float("inf"))
+        truth, approx = _compute_hssp_truth_and_approx(test_case, subset_size)
+        assert np.isinf(truth)
+        assert np.isinf(approx)

@@ -548,7 +548,7 @@ def test_sample_independent_log_uniform_distributions() -> None:
     assert uniform_suggestion != loguniform_suggestion
 
 
-def test_sample_independent_disrete_uniform_distributions() -> None:
+def test_sample_independent_discrete_uniform_distributions() -> None:
     """Test samples from discrete have expected intervals."""
 
     study = optuna.create_study()

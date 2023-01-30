@@ -46,7 +46,7 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Setup Python3.9
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: 3.9
 
@@ -77,13 +77,13 @@ jobs:
           --plot-warmup '${{ github.event.inputs.plot-warmup }}'
     
     - name: Upload plot
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: benchmark-plots
         path: plots
     
     - name: Upload partial report
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: partial-reports
         path: partial
@@ -103,7 +103,7 @@ jobs:
         path: partial
 
     - name: Setup Python3.9
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: 3.9
 
@@ -118,7 +118,7 @@ jobs:
         python benchmarks/bayesmark/report_bayesmark.py
     
     - name: Upload report
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: benchmark-report
         path: report
