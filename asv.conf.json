@@ -27,6 +27,10 @@
     //     "python setup.py build",
     //     "PIP_NO_BUILD_ISOLATION=false python -mpip wheel --no-deps --no-index -w {build_cache_dir} {build_dir}"
     // ],
+    "build_command": [
+        "python -m pip install build wheel",
+        "python -m build --wheel -o {build_cache_dir} {build_dir}"
+    ],
 
     // List of branches to benchmark. If not provided, defaults to "master"
     // (for git) or "default" (for mercurial).
