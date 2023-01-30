@@ -27,7 +27,7 @@ jobs:
     - name: Install twine
       run: |
         python -m pip install -U pip
-        python -m pip install -U twine wheel
+        python -m pip install -U twine wheel build
 
     - name: Change the version file for scheduled TestPyPI upload
       if: github.event_name == 'schedule'
@@ -38,8 +38,7 @@ jobs:
 
     - name: Build a tar ball
       run: |
-        python setup.py sdist
-        python setup.py bdist_wheel
+        python -m build --sdist --wheel
 
     - name: Verify the distributions
       run: twine check dist/*
