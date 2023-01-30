@@ -1,7 +1,7 @@
 """
 .. _first:
 
-1. Lightweight, versatile, and platform agnostic architecture
+Lightweight, versatile, and platform agnostic architecture
 =============================================================
 
 Optuna is entirely written in Python and has few dependencies.
