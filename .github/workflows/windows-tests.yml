@@ -1,15 +1,15 @@
-# Run tests and integration tests on Mac, which are triggered by each master push.
+# Run tests and integration tests on Windows, which are triggered by each master push.
 # Currently, Python3.8 is only used as an environment.
 # This is mainly for the sake of speed.
-name: mac-tests
+name: windows-tests
 
 on:
   push:
     branches:
-      - master
+      - windows-ci
   pull_request:
     paths:
-      - '.github/workflows/mac-tests.yml'
+      - '.github/workflows/windows-tests.yml'
   schedule:
     - cron: '0 23 * * SUN-THU'
 
@@ -18,12 +18,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  tests-mac:
-    runs-on: macos-latest
+  tests-windows:
+    runs-on: windows-latest
 
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.8']
 
     # Not intended for forks.
     if: github.repository == 'gen740/optuna'
