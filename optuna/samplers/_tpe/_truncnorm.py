@@ -37,6 +37,7 @@ import sys
 from typing import Callable
 from typing import Optional
 from typing import Union
+from typing import Tuple
 
 import numpy as np
 
@@ -213,6 +214,7 @@ def rvs(
     size: Optional[int] = None,
     random_state: Optional[np.random.RandomState] = None,
 ) -> np.ndarray:
+    shape: Tuple[int, ...]
     if size is not None:
         shape = (size,)
     else:
