@@ -6,6 +6,7 @@ from logging import FATAL
 from logging import INFO
 from logging import WARN
 from logging import WARNING
+import sys
 import threading
 from typing import Optional
 
@@ -32,9 +33,12 @@ def create_default_formatter() -> colorlog.ColoredFormatter:
     This function is not supposed to be directly accessed by library users.
     """
 
-    return colorlog.ColoredFormatter(
-        "%(log_color)s[%(levelname)1.1s %(asctime)s]%(reset)s %(message)s"
-    )
+    if sys.stdout.isatty():
+        return colorlog.ColoredFormatter(
+            "%(log_color)s[%(levelname)1.1s %(asctime)s]%(reset)s %(message)s"
+        )
+    else:
+        return colorlog.ColoredFormatter("[%(levelname)1.1s %(asctime)s] %(message)s")
 
 
 def _get_library_name() -> str:
