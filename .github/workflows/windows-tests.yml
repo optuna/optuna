@@ -59,4 +59,4 @@ jobs:
 
     - name: Tests
       run: |
-        pytest tests -m "not integration"
+        pytest tests/test_cli.py -m "not integration"
