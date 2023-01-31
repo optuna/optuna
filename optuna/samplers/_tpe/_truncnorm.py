@@ -38,6 +38,7 @@ from typing import Callable
 from typing import Optional
 from typing import Union
 from typing import Tuple
+import typing
 
 import numpy as np
 
@@ -214,9 +215,8 @@ def rvs(
     size: Optional[int] = None,
     random_state: Optional[np.random.RandomState] = None,
 ) -> np.ndarray:
-    shape: Tuple[int, ...]
     if size is not None:
-        shape = (size,)
+        shape = typing.cast(Tuple[int, ...], (size,))
     else:
         shape = np.broadcast(a, b, loc, scale).shape
     random_state = random_state or np.random.RandomState()
