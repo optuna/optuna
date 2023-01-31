@@ -7,7 +7,6 @@ from logging import INFO
 from logging import WARN
 from logging import WARNING
 import os
-import platform
 import sys
 import threading
 from typing import Optional
