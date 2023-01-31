@@ -4,7 +4,9 @@ import pickle
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import List
 from typing import Optional
+from typing import overload
 from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import TypeVar
@@ -20,6 +22,7 @@ from optuna.distributions import CategoricalChoiceType
 with try_import() as _imports:
     import torch
     import torch.distributed as dist
+    from torch.distributed import ProcessGroup  # type: ignore[attr-defined]
 
 
 if TYPE_CHECKING:
@@ -32,6 +35,8 @@ if TYPE_CHECKING:
 _suggest_deprecated_msg = (
     "Use :func:`~optuna.integration.TorchDistributedTrial.suggest_float` instead."
 )
+
+_g_pg: List[Optional["ProcessGroup"]] = [None]
 
 
 def broadcast_properties(f: "Callable[_P, _T]") -> "Callable[_P, _T]":
@@ -47,7 +52,7 @@ def broadcast_properties(f: "Callable[_P, _T]") -> "Callable[_P, _T]":
     def wrapped(*args: "_P.args", **kwargs: "_P.kwargs") -> "_T":
         # TODO(nlgranger): Remove type ignore after mypy includes
         # https://github.com/python/mypy/pull/12668
-        self: TorchDistributedTrial = args[0]  # type: ignore
+        self: TorchDistributedTrial = args[0]  # type: ignore[assignment]
 
         def fetch_properties() -> Sequence:
             assert self._delegate is not None
@@ -93,9 +98,13 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         trial:
             A :class:`~optuna.trial.Trial` object or :obj:`None`. Please set trial object in
             rank-0 node and set :obj:`None` in the other rank node.
-        device:
-            A `torch.device` to communicate with the other nodes. Please set a CUDA device
-            assigned to the current node if you use "nccl" as `torch.distributed` backend.
+        group:
+            A `torch.distributed.ProcessGroup` to communicate with the other nodes.
+            TorchDistributedTrial use CPU tensors to communicate, make sure the group
+            supports CPU tensors communications.
+
+            Use `gloo` backend when group is None.
+            Create a global `gloo` backend when group is None and WORLD is nccl.
 
     .. note::
         The methods of :class:`~optuna.integration.TorchDistributedTrial` are expected to be
@@ -105,12 +114,29 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     """
 
     def __init__(
-        self, trial: Optional[optuna.trial.Trial], device: Optional["torch.device"] = None
+        self,
+        trial: Optional[optuna.trial.Trial],
+        group: Optional["ProcessGroup"] = None,
     ) -> None:
-
         _imports.check()
 
-        if dist.get_rank() == 0:  # type: ignore
+        if group is not None:
+            self._group: "ProcessGroup" = group
+        else:
+            if _g_pg[0] is None:
+                if dist.group.WORLD is None:
+                    raise RuntimeError("torch distributed is not initialized.")
+                default_pg: "ProcessGroup" = dist.group.WORLD
+                if dist.get_backend(default_pg) == "nccl":  # type: ignore[no-untyped-call]
+                    new_group: "ProcessGroup" = dist.new_group(  # type: ignore[no-untyped-call]
+                        backend="gloo"
+                    )
+                    _g_pg[0] = new_group
+                else:
+                    _g_pg[0] = default_pg
+            self._group = _g_pg[0]
+
+        if dist.get_rank(self._group) == 0:  # type: ignore[no-untyped-call]
             if not isinstance(trial, optuna.trial.Trial):
                 raise ValueError(
                     "Rank 0 node expects an optuna.trial.Trial instance as the trial argument."
@@ -118,12 +144,11 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         else:
             if trial is not None:
                 raise ValueError(
-                    "Non-rank 0 node is supposed to recieve None as the trial argument."
+                    "Non-rank 0 node is supposed to receive None as the trial argument."
                 )
 
             assert trial is None, "error message"
         self._delegate = trial
-        self._device = device
 
         self._number = self._broadcast(getattr(self._delegate, "number", None))
         self._params = self._broadcast(getattr(self._delegate, "params", None))
@@ -143,7 +168,6 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         log: bool = False,
     ) -> float:
         def func() -> float:
-
             assert self._delegate is not None
             return self._delegate.suggest_float(name, low, high, step=step, log=log)
 
@@ -167,16 +191,42 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     @broadcast_properties
     def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
         def func() -> float:
-
             assert self._delegate is not None
             return self._delegate.suggest_int(name, low, high, step=step, log=log)
 
         return self._call_and_communicate(func, torch.int)
 
-    @broadcast_properties
-    def suggest_categorical(self, name: str, choices: Sequence["CategoricalChoiceType"]) -> Any:
-        def func() -> CategoricalChoiceType:
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[None]) -> None:
+        ...
 
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[bool]) -> bool:
+        ...
+
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[int]) -> int:
+        ...
+
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[float]) -> float:
+        ...
+
+    @overload
+    def suggest_categorical(self, name: str, choices: Sequence[str]) -> str:
+        ...
+
+    @overload
+    def suggest_categorical(
+        self, name: str, choices: Sequence[CategoricalChoiceType]
+    ) -> CategoricalChoiceType:
+        ...
+
+    @broadcast_properties
+    def suggest_categorical(
+        self, name: str, choices: Sequence[CategoricalChoiceType]
+    ) -> CategoricalChoiceType:
+        def func() -> CategoricalChoiceType:
             assert self._delegate is not None
             return self._delegate.suggest_categorical(name, choices)
 
@@ -185,7 +235,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     @broadcast_properties
     def report(self, value: float, step: int) -> None:
         err = None
-        if dist.get_rank() == 0:  # type: ignore
+        if dist.get_rank(self._group) == 0:  # type: ignore[no-untyped-call]
             try:
                 assert self._delegate is not None
                 self._delegate.report(value, step)
@@ -201,7 +251,6 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     @broadcast_properties
     def should_prune(self) -> bool:
         def func() -> bool:
-
             assert self._delegate is not None
             # Some pruners return numpy.bool_, which is incompatible with bool.
             return bool(self._delegate.should_prune())
@@ -213,7 +262,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     @broadcast_properties
     def set_user_attr(self, key: str, value: Any) -> None:
         err = None
-        if dist.get_rank() == 0:  # type: ignore
+        if dist.get_rank(self._group) == 0:  # type: ignore[no-untyped-call]
             try:
                 assert self._delegate is not None
                 self._delegate.set_user_attr(key, value)
@@ -227,13 +276,14 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
             raise err
 
     @broadcast_properties
+    @deprecated_func("3.1.0", "6.0.0")
     def set_system_attr(self, key: str, value: Any) -> None:
         err = None
 
-        if dist.get_rank() == 0:  # type: ignore
+        if dist.get_rank(self._group) == 0:  # type: ignore[no-untyped-call]
             try:
                 assert self._delegate is not None
-                self._delegate.set_system_attr(key, value)
+                self._delegate.storage.set_trial_system_attr(self._delegate._trial_id, key, value)
             except Exception as e:
                 err = e
             err = self._broadcast(err)
@@ -260,6 +310,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         return self._user_attrs
 
     @property
+    @deprecated_func("3.1.0", "6.0.0")
     def system_attrs(self) -> Dict[str, Any]:
         return self._system_attrs
 
@@ -269,37 +320,31 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
     def _call_and_communicate(self, func: Callable, dtype: "torch.dtype") -> Any:
         buffer = torch.empty(1, dtype=dtype)
-        rank = dist.get_rank()  # type: ignore
+        rank = dist.get_rank(self._group)  # type: ignore[no-untyped-call]
         if rank == 0:
             result = func()
             buffer[0] = result
-        if self._device is not None:
-            buffer = buffer.to(self._device)
-        dist.broadcast(buffer, src=0)  # type: ignore
+        dist.broadcast(buffer, src=0, group=self._group)  # type: ignore[no-untyped-call]
         return buffer.item()
 
     def _call_and_communicate_obj(self, func: Callable) -> Any:
-        rank = dist.get_rank()  # type: ignore
+        rank = dist.get_rank(self._group)  # type: ignore[no-untyped-call]
         result = func() if rank == 0 else None
         return self._broadcast(result)
 
     def _broadcast(self, value: Optional[Any]) -> Any:
         buffer = None
         size_buffer = torch.empty(1, dtype=torch.int)
-        rank = dist.get_rank()  # type: ignore
+        rank = dist.get_rank(self._group)  # type: ignore[no-untyped-call]
         if rank == 0:
             buffer = _to_tensor(value)
             size_buffer[0] = buffer.shape[0]
-        if self._device is not None:
-            size_buffer = size_buffer.to(self._device)
-        dist.broadcast(size_buffer, src=0)  # type: ignore
+        dist.broadcast(size_buffer, src=0, group=self._group)  # type: ignore[no-untyped-call]
         buffer_size = int(size_buffer.item())
         if rank != 0:
             buffer = torch.empty(buffer_size, dtype=torch.uint8)
         assert buffer is not None
-        if self._device is not None:
-            buffer = buffer.to(self._device)
-        dist.broadcast(buffer, src=0)  # type: ignore
+        dist.broadcast(buffer, src=0, group=self._group)  # type: ignore[no-untyped-call]
         return _from_tensor(buffer)
 
 

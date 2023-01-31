@@ -12,10 +12,10 @@ from optuna.trial import TrialState
 class MaxTrialsCallback:
     """Set a maximum number of trials before ending the study.
 
-    While the :obj:`n_trials` argument of :obj:`optuna.optimize` sets the number of trials that
-    will be run, you may want to continue running until you have a certain number of successfullly
-    completed trials or stop the study when you have a certain number of trials that fail.
-    This :obj:`MaxTrialsCallback` class allows you to set a maximum number of trials for a
+    While the ``n_trials`` argument of :meth:`optuna.study.Study.optimize` sets the number of
+    trials that will be run, you may want to continue running until you have a certain number of
+    successfully completed trials or stop the study when you have a certain number of trials that
+    fail. This ``MaxTrialsCallback`` class allows you to set a maximum number of trials for a
     particular :class:`~optuna.trial.TrialState` before stopping the study.
 
     Example:
@@ -43,7 +43,7 @@ class MaxTrialsCallback:
             The max number of trials. Must be set to an integer.
         states:
             Tuple of the :class:`~optuna.trial.TrialState` to be counted
-            towards the max trials limit. Default value is :obj:`(TrialState.COMPLETE,)`.
+            towards the max trials limit. Default value is ``(TrialState.COMPLETE,)``.
             If :obj:`None`, count all states.
     """
 
@@ -64,8 +64,8 @@ class MaxTrialsCallback:
 class RetryFailedTrialCallback:
     """Retry a failed trial up to a maximum number of times.
 
-    When a trial fails, this callback can be used with the :class:`optuna.storage` class to
-    recreate the trial in :obj:`TrialState.WAITING` to queue up the trial to be run again.
+    When a trial fails, this callback can be used with a class in :mod:`optuna.storages` to
+    recreate the trial in ``TrialState.WAITING`` to queue up the trial to be run again.
 
     The failed trial can be identified by the
     :func:`~optuna.storages.RetryFailedTrialCallback.retried_trial_number` function.

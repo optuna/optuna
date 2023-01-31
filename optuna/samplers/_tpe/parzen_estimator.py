@@ -71,7 +71,6 @@ class _ParzenEstimator:
             weights = np.append(weights, [parameters.prior_weight])
 
         weights /= weights.sum()
-
         self._mixture_distribution = _MixtureOfProductDistribution(
             weights=weights,
             distributions=[

@@ -39,10 +39,10 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Setup Python3.8
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: 3.8
 
@@ -52,15 +52,15 @@ jobs:
         sudo apt -y install gnuplot
 
     - name: Setup cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         # Caches them under a common name so that they can be used by other performance benchmark.
         cache-name: performance-benchmarks
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
+        key: ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
         restore-keys: |
-          ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
+          ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
 
     - name: Install Python libralies
       run: |
@@ -76,7 +76,7 @@ jobs:
 
     - name: Cache kurobako CLI
       id: cache-kurobako
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ./kurobako
         key: kurobako-0-2-10
@@ -101,7 +101,7 @@ jobs:
 
     - name: Cache nasbench201-cifar10 dataset
       id: cache-nb201-cifar10-dataset
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: NASLib/naslib/data/nb201_cifar10_full_training.pickle
         key: cache-nb201-cifar10
@@ -125,7 +125,7 @@ jobs:
 
     - name: Cache nasbench201-cifar100 dataset
       id: cache-nb201-cifar100-dataset
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: NASLib/naslib/data/nb201_cifar100_full_training.pickle
         key: cache-nb201-cifar100
@@ -149,7 +149,7 @@ jobs:
 
     - name: Cache nasbench201-imagenet16 dataset
       id: cache-nb201-imagenet16-dataset
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: NASLib/naslib/data/nb201_ImageNet16_full_training.pickle
         key: cache-nb201-imagenet16
@@ -188,7 +188,7 @@ jobs:
           --seed 0 \
           --out-dir "out"
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: benchmark-report
         path: |

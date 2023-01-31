@@ -10,6 +10,26 @@ This tutorial walks you through this module by visualizing the history of lightg
 
 For visualizing multi-objective optimization (i.e., the usage of :func:`optuna.visualization.plot_pareto_front`),
 please refer to the tutorial of :ref:`multi_objective`.
+
+.. note::
+   By using `Optuna Dashboard <https://github.com/optuna/optuna-dashboard>`_, you can also check the optimization history,
+   hyperparameter importances, hyperparameter relationships, etc. in graphs and tables.
+   Please make your study persistent using :ref:`RDB backend <rdb>` and execute following commands to run Optuna Dashboard.
+
+   .. code-block:: console
+
+      $ pip install optuna-dashboard
+      $ optuna-dashboard sqlite:///example-study.db
+
+   Please check out `the GitHub repository <https://github.com/optuna/optuna-dashboard>`_ for more details.
+
+   .. list-table::
+      :header-rows: 1
+
+      * - Manage Studies
+        - Visualize with Interactive Graphs
+      * - .. image:: https://user-images.githubusercontent.com/5564044/205545958-305f2354-c7cd-4687-be2f-9e46e7401838.gif
+        - .. image:: https://user-images.githubusercontent.com/5564044/205545965-278cd7f4-da7d-4e2e-ac31-6d81b106cada.gif
 """
 
 ###################################################################################################
@@ -56,9 +76,7 @@ def objective(trial):
 
     # Add a callback for pruning.
     pruning_callback = optuna.integration.LightGBMPruningCallback(trial, "auc")
-    gbm = lgb.train(
-        param, dtrain, valid_sets=[dvalid], verbose_eval=False, callbacks=[pruning_callback]
-    )
+    gbm = lgb.train(param, dtrain, valid_sets=[dvalid], callbacks=[pruning_callback])
 
     preds = gbm.predict(valid_x)
     pred_labels = np.rint(preds)

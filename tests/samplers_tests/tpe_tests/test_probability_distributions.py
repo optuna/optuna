@@ -87,4 +87,4 @@ def test_mixture_of_product_distribution_extreme_case() -> None:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", RuntimeWarning)  # Ignore log(0) warnings.
         log_pdf = mixture_distribution.log_pdf(x)
-    assert np.all(log_pdf[1:] < 1e-5)
+    assert np.all(log_pdf[1:] < -100)

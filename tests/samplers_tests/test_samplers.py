@@ -5,7 +5,6 @@ import os
 import pickle
 from typing import Any
 from typing import Callable
-from typing import cast
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -227,7 +226,7 @@ def parametrize_suggest_method(name: str) -> MarkDecorator:
         [
             lambda t: t.suggest_float(name, 0, 10),
             lambda t: t.suggest_int(name, 0, 10),
-            lambda t: cast(float, t.suggest_categorical(name, [0, 1, 2])),
+            lambda t: t.suggest_categorical(name, [0, 1, 2]),
             lambda t: t.suggest_float(name, 0, 10, step=0.5),
             lambda t: t.suggest_float(name, 1e-7, 10, log=True),
             lambda t: t.suggest_int(name, 1, 10, log=True),
@@ -984,7 +983,7 @@ def test_reproducible(sampler_class: Callable[[int], BaseSampler], objective_fun
         d = trial.suggest_int("d", 1, 9)
         e = trial.suggest_int("e", 1, 9, log=True)
         f = trial.suggest_int("f", 1, 9, step=2)
-        g = cast(int, trial.suggest_categorical("g", range(1, 10)))
+        g = trial.suggest_categorical("g", range(1, 10))
         return objective_func(a, b, c, d, e, f, g)
 
     study = optuna.create_study(sampler=sampler_class(1))
@@ -1012,7 +1011,7 @@ def test_reseed_rng_change_sampling(sampler_class: Callable[[int], BaseSampler])
         d = trial.suggest_int("d", 1, 9)
         e = trial.suggest_int("e", 1, 9, log=True)
         f = trial.suggest_int("f", 1, 9, step=2)
-        g = cast(int, trial.suggest_categorical("g", range(1, 10)))
+        g = trial.suggest_categorical("g", range(1, 10))
         return a + b + c + d + e + f + g
 
     sampler = sampler_class(1)
@@ -1043,7 +1042,7 @@ def run_optimize(
         d = trial.suggest_int("d", 1, 9)
         e = trial.suggest_int("e", 1, 9, log=True)
         f = trial.suggest_int("f", 1, 9, step=2)
-        g = cast(int, trial.suggest_categorical("g", range(1, 10)))
+        g = trial.suggest_categorical("g", range(1, 10))
         return a + b + c + d + e + f + g
 
     hash_dict[k] = hash("nondeterministic hash")

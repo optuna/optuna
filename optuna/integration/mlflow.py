@@ -202,7 +202,7 @@ class MLflowCallback:
                 study.optimize(objective, n_trials=10, callbacks=[mlflc])
 
         Returns:
-            ObjectiveFuncType: Objective function with tracking to MLflow enabled.
+            Objective function with tracking to MLflow enabled.
         """
 
         def decorator(func: ObjectiveFuncType) -> ObjectiveFuncType:
@@ -214,7 +214,9 @@ class MLflowCallback:
                     nested = self._mlflow_kwargs.get("nested")
 
                     with mlflow.start_run(run_name=str(trial.number), nested=nested) as run:
-                        trial.set_system_attr(RUN_ID_ATTRIBUTE_KEY, run.info.run_id)
+                        trial.storage.set_trial_system_attr(
+                            trial._trial_id, RUN_ID_ATTRIBUTE_KEY, run.info.run_id
+                        )
 
                         return func(trial)
 

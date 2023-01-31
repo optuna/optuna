@@ -27,8 +27,7 @@ class BaseHeartbeat(metaclass=abc.ABCMeta):
     and :class:`~optuna.storages._heartbeat.BaseHeartbeat`.
 
     .. seealso::
-        See :class:`~optuna.storages.RDBStorage` and :class:`~optuna.storages.RedisStorage`, where
-        those backends support heartbeat.
+        See :class:`~optuna.storages.RDBStorage`, where the backend supports heartbeat.
     """
 
     @abc.abstractmethod

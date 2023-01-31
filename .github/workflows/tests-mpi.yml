@@ -19,26 +19,26 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Setup Python${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
     - name: Setup cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         cache-name: test-mpi
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
+        key: ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
         restore-keys: |
-          ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
+          ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
 
     - name: Setup environment
       run: |
@@ -62,6 +62,10 @@ jobs:
       run: |
         export OMPI_MCA_rmaps_base_oversubscribe=yes
         mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
+
+        if [ ${{ matrix.python-version }} != 3.11 ]; then
+          mpirun -n 2 -- pytest tests/integration_tests/test_pytorch_distributed.py
+        fi
 
       env:
         OMP_NUM_THREADS: 1

@@ -20,22 +20,22 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Setup Python3.8
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: 3.8
 
     - name: Setup cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         cache-name: coverage
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
+        key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
         restore-keys: |
-          ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
+          ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
 
     - name: Setup environment
       run: |
@@ -78,10 +78,11 @@ jobs:
       run: |
         export OMPI_MCA_rmaps_base_oversubscribe=yes
         mpirun -n 2 -- coverage run -m pytest tests/integration_tests/test_chainermn.py
+        mpirun -n 2 -- coverage run -m pytest tests/integration_tests/test_pytorch_distributed.py
         coverage combine --append
         coverage xml
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v1
+      uses: codecov/codecov-action@v3
       with:
         file: ./coverage.xml

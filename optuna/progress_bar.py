@@ -1,12 +1,16 @@
 import logging
 from typing import Any
 from typing import Optional
+from typing import TYPE_CHECKING
 
 from tqdm.auto import tqdm
 
 from optuna import logging as optuna_logging
 from optuna._experimental import experimental_func
 
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 _tqdm_handler: Optional["_TqdmLoggingHandler"] = None
 
@@ -37,7 +41,10 @@ class _ProgressBar:
     """
 
     def __init__(
-        self, is_valid: bool, n_trials: Optional[int] = None, timeout: Optional[float] = None
+        self,
+        is_valid: bool,
+        n_trials: Optional[int] = None,
+        timeout: Optional[float] = None,
     ) -> None:
 
         self._is_valid = is_valid and (n_trials or timeout) is not None
@@ -57,15 +64,9 @@ class _ProgressBar:
             self._progress_bar = tqdm(total=self._n_trials)
 
         else:
-            fmt = "{percentage:3.0f}%|{bar}| {elapsed}/{desc}"
-            self._progress_bar = tqdm(total=self._timeout, bar_format=fmt)
-
-            # Using description string instead postfix string
-            # to display formatted timeout, since postfix carries
-            # extra comma space auto-format.
-            # https://github.com/tqdm/tqdm/issues/712
             total = tqdm.format_interval(self._timeout)
-            self._progress_bar.set_description_str(total)
+            fmt = "{desc} {percentage:3.0f}%|{bar}| {elapsed}/" + total
+            self._progress_bar = tqdm(total=self._timeout, bar_format=fmt)
 
         global _tqdm_handler
 
@@ -75,15 +76,29 @@ class _ProgressBar:
         optuna_logging.disable_default_handler()
         optuna_logging._get_library_root_logger().addHandler(_tqdm_handler)
 
-    def update(self, elapsed_seconds: float) -> None:
+    def update(self, elapsed_seconds: float, study: "Study") -> None:
         """Update the progress bars if ``is_valid`` is :obj:`True`.
 
         Args:
             elapsed_seconds:
                 The time past since :func:`~optuna.study.Study.optimize` started.
+            study:
+                The current study object.
         """
 
         if self._is_valid:
+            if not study._is_multi_objective():
+                # Not updating the progress bar when there are no complete trial.
+                try:
+                    msg = (
+                        f"Best trial: {study.best_trial.number}. "
+                        f"Best value: {study.best_value:.6g}"
+                    )
+
+                    self._progress_bar.set_description(msg)
+                except ValueError:
+                    pass
+
             if self._n_trials is not None:
                 self._progress_bar.update(1)
                 if self._timeout is not None:

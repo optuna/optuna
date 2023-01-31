@@ -6,7 +6,6 @@
 [![pypi](https://img.shields.io/pypi/v/optuna.svg)](https://pypi.python.org/pypi/optuna)
 [![conda](https://img.shields.io/conda/vn/conda-forge/optuna.svg)](https://anaconda.org/conda-forge/optuna)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/optuna/optuna)
-[![CircleCI](https://circleci.com/gh/optuna/optuna.svg?style=svg)](https://circleci.com/gh/optuna/optuna)
 [![Read the Docs](https://readthedocs.org/projects/optuna/badge/?version=stable)](https://optuna.readthedocs.io/en/stable/)
 [![Codecov](https://codecov.io/gh/optuna/optuna/branch/master/graph/badge.svg)](https://codecov.io/gh/optuna/optuna/branch/master)
 
@@ -14,6 +13,7 @@
 | [**Docs**](https://optuna.readthedocs.io/en/stable/)
 | [**Install Guide**](https://optuna.readthedocs.io/en/stable/installation.html)
 | [**Tutorial**](https://optuna.readthedocs.io/en/stable/tutorial/index.html)
+| [**Examples**](https://github.com/optuna/optuna-examples)
 
 *Optuna* is an automatic hyperparameter optimization software framework, particularly designed
 for machine learning. It features an imperative, *define-by-run* style user API. Thanks to our
@@ -103,15 +103,14 @@ Examples can be found in [optuna/optuna-examples](https://github.com/optuna/optu
 * [XGBoost](https://github.com/optuna/optuna-examples/tree/main/xgboost/xgboost_integration.py)
 
 
-## Web Dashboard (experimental)
+## Web Dashboard
 
-The new Web dashboard is under the development at [optuna-dashboard](https://github.com/optuna/optuna-dashboard).
-It is still experimental, but much better in many regards.
+[Optuna Dashboard](https://github.com/optuna/optuna-dashboard) is a real-time web dashboard for Optuna.
+You can check the optimization history, hyperparameter importances, etc. in graphs and tables.
+You don't need to create a Python script to call [Optuna's visualization](https://optuna.readthedocs.io/en/stable/reference/visualization/index.html) functions.
 Feature requests and bug reports welcome!
 
-| Manage studies | Visualize with interactive graphs |
-| -------------- | --------------------------------- |
-| ![manage-studies](https://user-images.githubusercontent.com/5564044/97099702-4107be80-16cf-11eb-9d97-f5ceec98ce52.gif) | ![optuna-realtime-graph](https://user-images.githubusercontent.com/5564044/97099797-66e19300-16d0-11eb-826c-6977e3941fb0.gif) |
+![optuna-dashboard](https://user-images.githubusercontent.com/5564044/204975098-95c2cb8c-0fb5-4388-abc4-da32f56cb4e5.gif)
 
 Install `optuna-dashboard` via pip:
 

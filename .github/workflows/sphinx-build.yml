@@ -17,16 +17,16 @@ jobs:
 
     steps:
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
-    - uses: actions/setup-python@v2
+    - uses: actions/setup-python@v4
       with:
         python-version: 3.8
 
     # note (crcrpar): We've not updated tutorial frequently enough so far thus
     # it'd be okay to discard cache by any small changes including typo fix under tutorial directory.
     - name: Sphinx Gallery Cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         cache-name: sphx-glry-documentation
       with:
@@ -46,13 +46,13 @@ jobs:
         make html
         cd ../
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: built-html
         path: |
             docs/build/html
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: tutorial
         path: |
@@ -64,14 +64,14 @@ jobs:
 
     steps:
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
-    - uses: actions/setup-python@v2
+    - uses: actions/setup-python@v4
       with:
         python-version: 3.8
 
     - name: Sphinx Gallery Cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         cache-name: sphx-glry-doctest
       with:

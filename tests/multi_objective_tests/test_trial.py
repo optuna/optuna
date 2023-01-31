@@ -1,5 +1,4 @@
 import datetime
-from typing import cast
 from typing import List
 from typing import Tuple
 
@@ -23,7 +22,7 @@ def test_suggest() -> None:
         p2 = trial.suggest_float("p2", 0.00001, 0.1, log=True)
         p3 = trial.suggest_float("p3", 100, 200, step=5)
         p4 = trial.suggest_int("p4", -20, -15)
-        p5 = cast(int, trial.suggest_categorical("p5", [7, 1, 100]))
+        p5 = trial.suggest_categorical("p5", [7, 1, 100])
         p6 = trial.suggest_float("p6", -10, 10, step=1.0)
         p7 = trial.suggest_int("p7", 1, 7, log=True)
         return (
@@ -92,25 +91,6 @@ def test_user_attrs() -> None:
     study.optimize(objective, n_trials=1)
 
     assert study.trials[0].user_attrs == {"foo": "quux", "baz": "qux"}
-
-
-def test_system_attrs() -> None:
-    # We use `RandomMultiObjectiveSampler` here because the default `NSGAIIMultiObjectiveSampler`
-    # sets its own system attributes when sampling (these attributes would become noise in this
-    # test case).
-    sampler = optuna.multi_objective.samplers.RandomMultiObjectiveSampler()
-    study = optuna.multi_objective.create_study(
-        ["maximize", "minimize", "maximize"], sampler=sampler
-    )
-
-    def objective(trial: optuna.multi_objective.trial.MultiObjectiveTrial) -> List[float]:
-        trial.set_system_attr("foo", "bar")
-        assert trial.system_attrs == {"foo": "bar"}
-        return [0, 0, 0]
-
-    study.optimize(objective, n_trials=1)
-
-    assert study.trials[0].system_attrs == {"foo": "bar"}
 
 
 def test_params_and_distributions() -> None:

@@ -31,10 +31,10 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Setup Python3.9
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: 3.9
 
@@ -44,15 +44,15 @@ jobs:
         sudo apt -y install gnuplot
 
     - name: Setup cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         # Caches them under a common name so that they can be used by other performance benchmark.
         cache-name: performance-benchmarks
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
+        key: ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
         restore-keys: |
-          ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
+          ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
 
     - name: Install Python libralies
       run: |
@@ -70,7 +70,7 @@ jobs:
 
     - name: Cache kurobako CLI
       id: cache-kurobako
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ./kurobako
         key: kurobako-0-2-9
@@ -85,7 +85,7 @@ jobs:
 
     - name: Cache nasbench dataset
       id: cache-nasbench-dataset
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ./nasbench_full.bin
         key: nasbench-dataset
@@ -112,7 +112,7 @@ jobs:
           --data-dir "." \
           --out-dir "out"
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: benchmark-report
         path: |

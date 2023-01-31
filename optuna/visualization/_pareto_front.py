@@ -100,7 +100,7 @@ def plot_pareto_front(
             be a sequence of :obj:`float` s. A value strictly larger than 0 means that a
             constraint is violated. A value equal to or smaller than 0 is considered feasible.
             This specification is the same as in, for example,
-            :class:`~optuna.integration.NSGAIISampler`.
+            :class:`~optuna.samplers.NSGAIISampler`.
 
             If given, trials are classified into three categories: feasible and best, feasible but
             non-best, and infeasible. Categories are shown in different colors. Here, whether a

@@ -1,19 +1,11 @@
 from typing import List
 from typing import NamedTuple
-from typing import TYPE_CHECKING
 from typing import Union
 
 import numpy as np
 
-from optuna._imports import _LazyImport
-
-
-if TYPE_CHECKING:
-    import scipy.special as special
-    import scipy.stats as stats
-else:
-    special = _LazyImport("scipy.special")
-    stats = _LazyImport("scipy.stats")
+from optuna.samplers._tpe import _erf
+from optuna.samplers._tpe import _truncnorm
 
 
 class _BatchedCategoricalDistributions(NamedTuple):
@@ -47,7 +39,7 @@ EPS = 1e-12
 def _normal_cdf(
     x: Union[float, np.ndarray], mu: Union[float, np.ndarray], sigma: Union[float, np.ndarray]
 ) -> np.ndarray:
-    return 0.5 * (1 + special.erf((x - mu) / np.maximum(np.sqrt(2) * sigma, EPS)))
+    return 0.5 * (1 + _erf.erf((x - mu) / np.maximum(np.sqrt(2) * sigma, EPS)))
 
 
 class _MixtureOfProductDistribution(NamedTuple):
@@ -69,7 +61,7 @@ class _MixtureOfProductDistribution(NamedTuple):
             elif isinstance(d, _BatchedTruncNormDistributions):
                 active_mus = d.mu[active_indices]
                 active_sigmas = d.sigma[active_indices]
-                ret[:, i] = stats.truncnorm.rvs(
+                ret[:, i] = _truncnorm.rvs(
                     a=(d.low - active_mus) / active_sigmas,
                     b=(d.high - active_mus) / active_sigmas,
                     loc=active_mus,
@@ -79,7 +71,7 @@ class _MixtureOfProductDistribution(NamedTuple):
             elif isinstance(d, _BatchedDiscreteTruncNormDistributions):
                 active_mus = d.mu[active_indices]
                 active_sigmas = d.sigma[active_indices]
-                samples = stats.truncnorm.rvs(
+                samples = _truncnorm.rvs(
                     a=(d.low - d.step / 2 - active_mus) / active_sigmas,
                     b=(d.high + d.step / 2 - active_mus) / active_sigmas,
                     loc=active_mus,
@@ -106,31 +98,33 @@ class _MixtureOfProductDistribution(NamedTuple):
                     )
                 )[:, :, 0]
             elif isinstance(d, _BatchedTruncNormDistributions):
-                p_accept: np.ndarray = _normal_cdf(d.high, d.mu, d.sigma) - _normal_cdf(
-                    d.low, d.mu, d.sigma
-                )
-                log_pdfs[:, :, i] = (
-                    -0.5 * np.log(2 * np.pi)
-                    - np.log(d.sigma[None, :])
-                    - 0.5 * ((xi[:, None] - d.mu[None, :]) / d.sigma[None, :]) ** 2
-                    - np.log(p_accept[None, :])
+                log_pdfs[:, :, i] = _truncnorm.logpdf(
+                    x=xi[:, None],
+                    a=(d.low - d.mu[None, :]) / d.sigma[None, :],
+                    b=(d.high - d.mu[None, :]) / d.sigma[None, :],
+                    loc=d.mu[None, :],
+                    scale=d.sigma[None, :],
                 )
             elif isinstance(d, _BatchedDiscreteTruncNormDistributions):
-                log_pdfs[:, :, i] = np.log(
-                    (
-                        _normal_cdf(xi[:, None] + d.step / 2, d.mu[None, :], d.sigma[None, :])
-                        - _normal_cdf(xi[:, None] - d.step / 2, d.mu[None, :], d.sigma[None, :])
-                        + EPS
-                    )
-                    / (
-                        _normal_cdf(d.high + d.step / 2, d.mu[None, :], d.sigma[None, :])
-                        - _normal_cdf(d.low - d.step / 2, d.mu[None, :], d.sigma[None, :])
-                        + EPS
-                    )
+                lower_limit = d.low - d.step / 2
+                upper_limit = d.high + d.step / 2
+                x_lower = np.maximum(xi - d.step / 2, lower_limit)
+                x_upper = np.minimum(xi + d.step / 2, upper_limit)
+                log_gauss_mass = _truncnorm._log_gauss_mass(
+                    (x_lower[:, None] - d.mu[None, :]) / d.sigma[None, :],
+                    (x_upper[:, None] - d.mu[None, :]) / d.sigma[None, :],
                 )
+                log_p_accept = _truncnorm._log_gauss_mass(
+                    (d.low - d.step / 2 - d.mu[None, :]) / d.sigma[None, :],
+                    (d.high + d.step / 2 - d.mu[None, :]) / d.sigma[None, :],
+                )
+                log_pdfs[:, :, i] = log_gauss_mass - log_p_accept
+
             else:
                 assert False
-
-        return special.logsumexp(
-            np.sum(log_pdfs, axis=-1) + np.log(self.weights[None, :]), axis=-1
-        )
+        weighted_log_pdf = np.sum(log_pdfs, axis=-1) + np.log(self.weights[None, :])
+        max_ = weighted_log_pdf.max(axis=1)
+        # We need to avoid (-inf) - (-inf) when the probability is zero.
+        max_[np.isneginf(max_)] = 0
+        with np.errstate(divide="ignore"):  # Suppress warning in log(0).
+            return np.log(np.exp(weighted_log_pdf - max_[:, None]).sum(axis=1)) + max_

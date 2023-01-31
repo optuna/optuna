@@ -28,7 +28,7 @@ class QMCSampler(BaseSampler):
     """A Quasi Monte Carlo Sampler that generates low-discrepancy sequences.
 
     Quasi Monte Carlo (QMC) sequences are designed to have lower discrepancies than
-    standard random seqeunces. They are known to perform better than the standard
+    standard random sequences. They are known to perform better than the standard
     randam sequences in hyperparameter optimization.
 
     For further information about the use of QMC sequences for hyperparameter optimization,
@@ -50,7 +50,7 @@ class QMCSampler(BaseSampler):
         The search space of the sampler is determined by either previous trials in the study or
         the first trial that this sampler samples.
 
-        If there are previous trials in the study, :class:`~optuna.samplers.QMCSamper` infers its
+        If there are previous trials in the study, :class:`~optuna.samplers.QMCSampler` infers its
         search space using the trial which was created first in the study.
 
         Otherwise (if the study has no previous trials), :class:`~optuna.samplers.QMCSampler`
@@ -77,7 +77,7 @@ class QMCSampler(BaseSampler):
             sequences.
 
         seed:
-            A seed for `QMCSampler`. This argument is used only when `scramble` is :obj:`True`.
+            A seed for ``QMCSampler``. This argument is used only when ``scramble`` is :obj:`True`.
             If this is :obj:`None`, the seed is initialized randomly. Default is :obj:`None`.
 
             .. note::

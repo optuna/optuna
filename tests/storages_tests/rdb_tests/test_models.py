@@ -48,16 +48,6 @@ class TestStudyDirectionModel:
         return study
 
     @staticmethod
-    def test_find_by_study_and_objective(session: Session) -> None:
-
-        study = TestStudyDirectionModel._create_model(session)
-        direction = StudyDirectionModel.find_by_study_and_objective(study, 0, session)
-        assert direction is not None
-        assert direction.direction == StudyDirection.MINIMIZE
-
-        assert StudyDirectionModel.find_by_study_and_objective(study, 1, session) is None
-
-    @staticmethod
     def test_where_study_id(session: Session) -> None:
 
         study = TestStudyDirectionModel._create_model(session)

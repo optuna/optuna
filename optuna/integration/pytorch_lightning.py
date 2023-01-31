@@ -107,8 +107,8 @@ class PyTorchLightningPruningCallback(Callback):
             # Stop every DDP process if global rank 0 process decides to stop.
             trainer.should_stop = True
             if trainer.is_global_zero:
-                self._trial.set_system_attr(_PRUNED_KEY, True)
-                self._trial.set_system_attr(_EPOCH_KEY, epoch)
+                self._trial.storage.set_trial_system_attr(self._trial._trial_id, _PRUNED_KEY, True)
+                self._trial.storage.set_trial_system_attr(self._trial._trial_id, _EPOCH_KEY, epoch)
 
     def on_fit_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
         if not self.is_ddp_backend:
@@ -119,8 +119,9 @@ class PyTorchLightningPruningCallback(Callback):
         _trial_id = self._trial._trial_id
         _study = self._trial.study
         _trial = _study._storage._backend.get_trial(_trial_id)  # type: ignore
-        is_pruned = _trial.system_attrs.get(_PRUNED_KEY)
-        epoch = _trial.system_attrs.get(_EPOCH_KEY)
+        _trial_system_attrs = _study._storage.get_trial_system_attrs(_trial_id)
+        is_pruned = _trial_system_attrs.get(_PRUNED_KEY)
+        epoch = _trial_system_attrs.get(_EPOCH_KEY)
         intermediate_values = _trial.intermediate_values
         for step, value in intermediate_values.items():
             self._trial.report(value, step=step)

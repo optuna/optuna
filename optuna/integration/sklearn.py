@@ -14,8 +14,6 @@ from typing import Optional
 from typing import Union
 
 import numpy as np
-import scipy as sp
-from scipy.sparse import spmatrix
 
 from optuna import distributions
 from optuna import logging
@@ -32,6 +30,8 @@ from optuna.trial import Trial
 
 with try_import() as _imports:
     import pandas as pd
+    import scipy as sp
+    from scipy.sparse import spmatrix
     import sklearn
     from sklearn.base import BaseEstimator
     from sklearn.base import clone
@@ -376,11 +376,12 @@ class OptunaSearchCV(BaseEstimator):
         cv:
             Cross-validation strategy. Possible inputs for cv are:
 
+            - :obj:`None`, to use the default 5-fold cross validation,
             - integer to specify the number of folds in a CV splitter,
-            - a CV splitter,
+            - `CV splitter <https://scikit-learn.org/stable/glossary.html#term-CV-splitter>`_,
             - an iterable yielding (train, validation) splits as arrays of indices.
 
-            For integer, if :obj:`estimator` is a classifier and :obj:`y` is
+            For integer, if ``estimator`` is a classifier and ``y`` is
             either binary or multiclass,
             ``sklearn.model_selection.StratifiedKFold`` is used. otherwise,
             ``sklearn.model_selection.KFold`` is used.
@@ -400,8 +401,8 @@ class OptunaSearchCV(BaseEstimator):
             estimator supports ``partial_fit``.
 
         n_jobs:
-            Number of :obj:`threading` based parallel jobs. :obj:`-1` means
-            using the number is set to CPU count.
+            Number of :obj:`threading` based parallel jobs. :obj:`None` means ``1``.
+            ``-1`` means using the number is set to CPU count.
 
                 .. note::
                     ``n_jobs`` allows parallelization using :obj:`threading` and may suffer from
@@ -411,7 +412,7 @@ class OptunaSearchCV(BaseEstimator):
 
         n_trials:
             Number of trials. If :obj:`None`, there is no limitation on the
-            number of trials. If :obj:`timeout` is also set to :obj:`None`,
+            number of trials. If ``timeout`` is also set to :obj:`None`,
             the study continues to create trials until it receives a
             termination signal such as Ctrl+C or SIGTERM. This trades off
             runtime vs quality of the solution.
@@ -455,7 +456,7 @@ class OptunaSearchCV(BaseEstimator):
         timeout:
             Time limit in seconds for the search of appropriate models. If
             :obj:`None`, the study is executed without time limitation. If
-            :obj:`n_trials` is also set to :obj:`None`, the study continues to
+            ``n_trials`` is also set to :obj:`None`, the study continues to
             create trials until it receives a termination signal such as
             Ctrl+C or SIGTERM. This trades off runtime vs quality of the
             solution.
@@ -691,11 +692,12 @@ class OptunaSearchCV(BaseEstimator):
         self,
         estimator: "BaseEstimator",
         param_distributions: Mapping[str, distributions.BaseDistribution],
-        cv: Optional[Union["BaseCrossValidator", int]] = 5,
+        *,
+        cv: Optional[Union[int, "BaseCrossValidator", Iterable]] = None,
         enable_pruning: bool = False,
         error_score: Union[Number, float, str] = np.nan,
         max_iter: int = 1000,
-        n_jobs: int = 1,
+        n_jobs: Optional[int] = None,
         n_trials: int = 10,
         random_state: Optional[Union[int, np.random.RandomState]] = None,
         refit: bool = True,
@@ -730,7 +732,7 @@ class OptunaSearchCV(BaseEstimator):
         self.estimator = estimator
         self.max_iter = max_iter
         self.n_trials = n_trials
-        self.n_jobs = n_jobs
+        self.n_jobs = n_jobs if n_jobs else 1
         self.param_distributions = param_distributions
         self.random_state = random_state
         self.refit = refit
@@ -825,8 +827,7 @@ class OptunaSearchCV(BaseEstimator):
                 Parameters passed to ``fit`` on the estimator.
 
         Returns:
-            self:
-                Return self.
+            self.
         """
 
         self._check_params()
@@ -930,8 +931,7 @@ class OptunaSearchCV(BaseEstimator):
                 Target variable.
 
         Returns:
-            score:
-                Scaler score.
+            Scaler score.
         """
 
         return self.scorer_(self.best_estimator_, X, y)

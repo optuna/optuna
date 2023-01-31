@@ -28,7 +28,7 @@ from optuna.trial import TrialState
 
 with try_import() as _imports:
     from botorch.acquisition.monte_carlo import qExpectedImprovement
-    from botorch.acquisition.multi_objective.monte_carlo import qExpectedHypervolumeImprovement
+    from botorch.acquisition.multi_objective import monte_carlo
     from botorch.acquisition.multi_objective.objective import IdentityMCMultiOutputObjective
     from botorch.acquisition.objective import ConstrainedMCObjective
     from botorch.acquisition.objective import GenericMCObjective
@@ -106,13 +106,12 @@ def qei_candidates_func(
         else:
             best_f = train_obj_feas.max()
 
-        constraints = []
         n_constraints = train_con.size(1)
-        for i in range(n_constraints):
-            constraints.append(lambda Z, i=i: Z[..., -n_constraints + i])
         objective = ConstrainedMCObjective(
             objective=lambda Z: Z[..., 0],
-            constraints=constraints,
+            constraints=[
+                (lambda Z, i=i: Z[..., -n_constraints + i]) for i in range(n_constraints)
+            ],
         )
     else:
         train_y = train_obj
@@ -177,14 +176,12 @@ def qehvi_candidates_func(
         is_feas = (train_con <= 0).all(dim=-1)
         train_obj_feas = train_obj[is_feas]
 
-        constraints = []
         n_constraints = train_con.size(1)
-
-        for i in range(n_constraints):
-            constraints.append(lambda Z, i=i: Z[..., -n_constraints + i])
         additional_qehvi_kwargs = {
             "objective": IdentityMCMultiOutputObjective(outcomes=list(range(n_objectives))),
-            "constraints": constraints,
+            "constraints": [
+                (lambda Z, i=i: Z[..., -n_constraints + i]) for i in range(n_constraints)
+            ],
         }
     else:
         train_y = train_obj
@@ -212,12 +209,94 @@ def qehvi_candidates_func(
 
     ref_point_list = ref_point.tolist()
 
-    acqf = qExpectedHypervolumeImprovement(
+    acqf = monte_carlo.qExpectedHypervolumeImprovement(
         model=model,
         ref_point=ref_point_list,
         partitioning=partitioning,
         sampler=SobolQMCNormalSampler(num_samples=256),
         **additional_qehvi_kwargs,
+    )
+
+    standard_bounds = torch.zeros_like(bounds)
+    standard_bounds[1] = 1
+
+    candidates, _ = optimize_acqf(
+        acq_function=acqf,
+        bounds=standard_bounds,
+        q=1,
+        num_restarts=20,
+        raw_samples=1024,
+        options={"batch_limit": 5, "maxiter": 200, "nonnegative": True},
+        sequential=True,
+    )
+
+    candidates = unnormalize(candidates.detach(), bounds=bounds)
+
+    return candidates
+
+
+@experimental_func("3.1.0")
+def qnehvi_candidates_func(
+    train_x: "torch.Tensor",
+    train_obj: "torch.Tensor",
+    train_con: Optional["torch.Tensor"],
+    bounds: "torch.Tensor",
+) -> "torch.Tensor":
+    """Quasi MC-based batch Expected Noisy Hypervolume Improvement (qNEHVI).
+
+    According to Botorch/Ax documentation,
+    this function may perform better than qEHVI (`qehvi_candidates_func`).
+    (cf. https://botorch.org/tutorials/constrained_multi_objective_bo )
+
+    .. seealso::
+        :func:`~optuna.integration.botorch.qei_candidates_func` for argument and return value
+        descriptions.
+    """
+
+    n_objectives = train_obj.size(-1)
+
+    if train_con is not None:
+        train_y = torch.cat([train_obj, train_con], dim=-1)
+
+        n_constraints = train_con.size(1)
+        additional_qnehvi_kwargs = {
+            "objective": IdentityMCMultiOutputObjective(outcomes=list(range(n_objectives))),
+            "constraints": [
+                (lambda Z, i=i: Z[..., -n_constraints + i]) for i in range(n_constraints)
+            ],
+        }
+    else:
+        train_y = train_obj
+
+        additional_qnehvi_kwargs = {}
+
+    train_x = normalize(train_x, bounds=bounds)
+
+    model = SingleTaskGP(train_x, train_y, outcome_transform=Standardize(m=train_y.shape[-1]))
+    mll = ExactMarginalLogLikelihood(model.likelihood, model)
+    fit_gpytorch_model(mll)
+
+    # Approximate box decomposition similar to Ax when the number of objectives is large.
+    # https://github.com/facebook/Ax/blob/master/ax/models/torch/botorch_moo_defaults
+    if n_objectives > 2:
+        alpha = 10 ** (-8 + n_objectives)
+    else:
+        alpha = 0.0
+
+    ref_point = train_obj.min(dim=0).values - 1e-8
+
+    ref_point_list = ref_point.tolist()
+
+    # prune_baseline=True is generally recommended by the documentation of BoTorch.
+    # cf. https://botorch.org/api/acquisition.html (accessed on 2022/11/18)
+    acqf = monte_carlo.qNoisyExpectedHypervolumeImprovement(
+        model=model,
+        ref_point=ref_point_list,
+        X_baseline=train_x,
+        alpha=alpha,
+        prune_baseline=True,
+        sampler=SobolQMCNormalSampler(num_samples=256),
+        **additional_qnehvi_kwargs,
     )
 
     standard_bounds = torch.zeros_like(bounds)
@@ -262,16 +341,12 @@ def qparego_candidates_func(
 
     if train_con is not None:
         train_y = torch.cat([train_obj, train_con], dim=-1)
-
-        constraints = []
         n_constraints = train_con.size(1)
-
-        for i in range(n_constraints):
-            constraints.append(lambda Z, i=i: Z[..., -n_constraints + i])
-
         objective = ConstrainedMCObjective(
             objective=lambda Z: scalarization(Z[..., :n_objectives]),
-            constraints=constraints,
+            constraints=[
+                (lambda Z, i=i: Z[..., -n_constraints + i]) for i in range(n_constraints)
+            ],
         )
     else:
         train_y = train_obj

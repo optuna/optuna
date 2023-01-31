@@ -22,7 +22,7 @@ with try_import() as _imports:
     import torch.nn.functional as F
 
 if not _imports.is_successful():
-    LightningModule = object  # type: ignore # NOQA
+    LightningModule = object  # type: ignore[assignment, misc]  # NOQA
 
 pytestmark = pytest.mark.integration
 
@@ -33,11 +33,10 @@ class Model(LightningModule):
         super().__init__()
         self._model = nn.Sequential(nn.Linear(4, 8))
 
-    def forward(self, data: "torch.Tensor") -> "torch.Tensor":  # type: ignore
-
+    def forward(self, data: "torch.Tensor") -> "torch.Tensor":
         return self._model(data)
 
-    def training_step(  # type: ignore
+    def training_step(
         self, batch: List["torch.Tensor"], batch_nb: int
     ) -> Dict[str, "torch.Tensor"]:
 
@@ -46,7 +45,7 @@ class Model(LightningModule):
         loss = F.nll_loss(output, target)
         return {"loss": loss}
 
-    def validation_step(  # type: ignore
+    def validation_step(
         self, batch: List["torch.Tensor"], batch_nb: int
     ) -> Dict[str, "torch.Tensor"]:
 
@@ -96,7 +95,7 @@ class ModelDDP(Model):
 
         super().__init__()
 
-    def validation_step(  # type: ignore
+    def validation_step(
         self, batch: List["torch.Tensor"], batch_nb: int
     ) -> Dict[str, "torch.Tensor"]:
 
@@ -111,6 +110,7 @@ class ModelDDP(Model):
             accuracy = torch.tensor(0.6)
 
         self.log("accuracy", accuracy, sync_dist=True)
+        return {"validation_accuracy": accuracy}
 
 
 def test_pytorch_lightning_pruning_callback() -> None:
