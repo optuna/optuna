@@ -202,10 +202,7 @@ class NSGAIISampler(BaseSampler):
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
         attr_storage = _create_system_attr_storage(study, trial)
-        study, trials = _create_frozen_study(
-            study,
-            trial_states=(TrialState.COMPLETE, TrialState.RUNNING),
-        )
+        study, trials = _create_frozen_study(study)
 
         parent_generation, parent_population = self._collect_parent_population(
             study, trials, attr_storage

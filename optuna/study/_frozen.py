@@ -100,7 +100,7 @@ class FrozenStudy:
 
 def _create_frozen_study(
     study: "optuna.study.Study",
-    trial_states: Container["optuna.trial.TrialState"] = (optuna.trial.TrialState.COMPLETE,),
+    trial_states: Optional[Container["optuna.trial.TrialState"]] = None,
 ) -> Tuple["optuna.study.FrozenStudy", List["optuna.trial.FrozenTrial"]]:
     frozen_study = FrozenStudy(
         study_name=study.study_name,
