@@ -105,7 +105,8 @@ study.best_trial
 # To get all trials:
 
 study.trials
-
+for trial in study.trials[:2]:  # Show first two trials
+    print(trial)
 
 ###################################################################################################
 # To get the number of trials:

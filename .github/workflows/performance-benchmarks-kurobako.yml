@@ -42,7 +42,7 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Setup Python3.9
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: 3.9
 
@@ -58,9 +58,9 @@ jobs:
         cache-name: performance-benchmarks
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
+        key: ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
         restore-keys: |
-          ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
+          ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
 
     - name: Install Python libralies
       run: |
@@ -135,7 +135,7 @@ jobs:
           --data-dir "." \
           --out-dir "out"
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: benchmark-report
         path: |
