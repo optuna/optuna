@@ -25,9 +25,9 @@ from optuna.samplers._search_space import IntersectionSearchSpace
 from optuna.samplers.nsgaii._crossover import perform_crossover
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.samplers.nsgaii._crossovers._uniform import UniformCrossover
-from optuna.storages import AttributeStorage
-from optuna.storages import create_attr_storage
-from optuna.study import create_frozen_study
+from optuna.storages import SystemAttributeStorage
+from optuna.storages import _create_system_attr_storage
+from optuna.study import _create_frozen_study
 from optuna.study import FrozenStudy
 from optuna.study import Study
 from optuna.study import StudyDirection
@@ -201,17 +201,17 @@ class NSGAIISampler(BaseSampler):
         trial: FrozenTrial,
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
-        attr_storage = create_attr_storage(study, trial)
-        study, trials = create_frozen_study(
+        attr_storage = _create_system_attr_storage(study, trial)
+        study, trials = _create_frozen_study(
             study,
             trial_states=(TrialState.COMPLETE, TrialState.RUNNING),
         )
 
-        parent_generation, parent_population = self._collect_parent_population(study, trials, attr_storage)
-        trial_id = trial._trial_id
+        parent_generation, parent_population = self._collect_parent_population(
+            study, trials, attr_storage
+        )
 
         generation = parent_generation + 1
-        # study._storage.set_trial_system_attr(trial_id, _GENERATION_KEY, generation)
         attr_storage.set_trial_attr(_GENERATION_KEY, generation)
 
         dominates_func = _dominates if self._constraints_func is None else _constrained_dominates
@@ -263,7 +263,12 @@ class NSGAIISampler(BaseSampler):
             study, trial, param_name, param_distribution
         )
 
-    def _collect_parent_population(self, study: FrozenStudy, trials: Sequence[FrozenTrial], attr_storage: AttributeStorage) -> Tuple[int, List[FrozenTrial]]:
+    def _collect_parent_population(
+        self,
+        study: FrozenStudy,
+        trials: Sequence[FrozenTrial],
+        attr_storage: SystemAttributeStorage,
+    ) -> Tuple[int, List[FrozenTrial]]:
         generation_to_runnings = defaultdict(list)
         generation_to_population = defaultdict(list)
         for trial in trials:
@@ -309,7 +314,7 @@ class NSGAIISampler(BaseSampler):
                 hasher.update(bytes(str(trial.number), "utf-8"))
 
             cache_key = "{}:{}".format(_POPULATION_CACHE_KEY_PREFIX, hasher.hexdigest())
-            study_system_attrs = attr_storage.get_study_attrs(study._study_id)
+            study_system_attrs = attr_storage.get_study_attrs()
             cached_generation, cached_population_numbers = study_system_attrs.get(
                 cache_key, (-1, [])
             )

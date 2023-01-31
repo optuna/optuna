@@ -1,8 +1,8 @@
 from typing import Union
 
 from optuna._callbacks import RetryFailedTrialCallback
-from optuna.storages._attr_storage import AttributeStorage
-from optuna.storages._attr_storage import create_attr_storage
+from optuna.storages._attr import SystemAttributeStorage
+from optuna.storages._attr import _create_system_attr_storage
 from optuna.storages._base import BaseStorage
 from optuna.storages._cached_storage import _CachedStorage
 from optuna.storages._heartbeat import fail_stale_trials
@@ -27,7 +27,9 @@ __all__ = [
     "JournalFileStorage",
     "JournalRedisStorage",
     "RetryFailedTrialCallback",
+    "SystemAttributeStorage",
     "_CachedStorage",
+    "_create_system_attr_storage",
     "fail_stale_trials",
 ]
 

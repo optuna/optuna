@@ -98,26 +98,22 @@ class FrozenStudy:
         return self._directions
 
 
-def create_frozen_study(
-        study: "optuna.study.Study",
-        trial_states: Container["optuna.trial.TrialState"] = (optuna.trial.TrialState.COMPLETE,),
-    ) -> Tuple["optuna.study.FrozenStudy", List["optuna.trial.FrozenTrial"]]:
-    storage = study._storage
-
+def _create_frozen_study(
+    study: "optuna.study.Study",
+    trial_states: Container["optuna.trial.TrialState"] = (optuna.trial.TrialState.COMPLETE,),
+) -> Tuple["optuna.study.FrozenStudy", List["optuna.trial.FrozenTrial"]]:
     frozen_study = FrozenStudy(
         study_name=study.study_name,
         direction=None,
         directions=study.directions,
-        user_attrs=storage.get_study_user_attrs(study._study_id),
-        system_attrs=storage.get_study_system_attrs(study._study_id),
+        user_attrs=study._storage.get_study_user_attrs(study._study_id),
+        system_attrs=study._storage.get_study_system_attrs(study._study_id),
         study_id=study._study_id,
     )
 
-    frozen_trials = storage.get_all_trials(
-        study._study_id,
+    frozen_trials = study.get_trials(
         deepcopy=True,
         states=trial_states,
     )
 
     return frozen_study, frozen_trials
-

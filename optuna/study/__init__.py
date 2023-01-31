@@ -1,6 +1,6 @@
 from optuna._callbacks import MaxTrialsCallback
+from optuna.study._frozen import _create_frozen_study
 from optuna.study._frozen import FrozenStudy
-from optuna.study._frozen import create_frozen_study
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.study.study import copy_study
@@ -12,6 +12,7 @@ from optuna.study.study import Study
 
 
 __all__ = [
+    "FrozenStudy",
     "MaxTrialsCallback",
     "StudyDirection",
     "StudySummary",
@@ -21,4 +22,5 @@ __all__ = [
     "get_all_study_summaries",
     "load_study",
     "Study",
+    "_create_frozen_study",
 ]

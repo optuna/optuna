@@ -12,7 +12,7 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
-from optuna.study import Study
+from optuna.study import FrozenStudy
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 
@@ -26,7 +26,7 @@ _NUMERICAL_DISTRIBUTIONS = (
 def _try_crossover(
     parents: List[FrozenTrial],
     crossover: BaseCrossover,
-    study: Study,
+    study: FrozenStudy,
     rng: np.random.RandomState,
     swapping_prob: float,
     categorical_search_space: Dict[str, BaseDistribution],
@@ -80,7 +80,7 @@ def _try_crossover(
 
 def perform_crossover(
     crossover: BaseCrossover,
-    study: Study,
+    study: FrozenStudy,
     parent_population: Sequence[FrozenTrial],
     search_space: Dict[str, BaseDistribution],
     rng: np.random.RandomState,
@@ -121,7 +121,7 @@ def perform_crossover(
 
 def _select_parents(
     crossover: BaseCrossover,
-    study: Study,  # FrozenStudy
+    study: FrozenStudy,
     parent_population: Sequence[FrozenTrial],
     rng: np.random.RandomState,
     dominates: Callable[[FrozenTrial, FrozenTrial, Sequence[StudyDirection]], bool],
@@ -138,7 +138,7 @@ def _select_parents(
 
 
 def _select_parent(
-    study: Study,
+    study: FrozenStudy,
     parent_population: Sequence[FrozenTrial],
     rng: np.random.RandomState,
     dominates: Callable[[FrozenTrial, FrozenTrial, Sequence[StudyDirection]], bool],

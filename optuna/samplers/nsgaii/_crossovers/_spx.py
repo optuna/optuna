@@ -4,7 +4,7 @@ import numpy as np
 
 from optuna._experimental import experimental_class
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
-from optuna.study import Study
+from optuna.study import FrozenStudy
 
 
 @experimental_class("3.0.0")
@@ -36,7 +36,7 @@ class SPXCrossover(BaseCrossover):
         self,
         parents_params: np.ndarray,
         rng: np.random.RandomState,
-        study: Study,
+        study: FrozenStudy,
         search_space_bounds: np.ndarray,
     ) -> np.ndarray:
 

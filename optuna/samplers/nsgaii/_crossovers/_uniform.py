@@ -1,7 +1,7 @@
 import numpy as np
 
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
-from optuna.study import Study
+from optuna.study import FrozenStudy
 
 
 class UniformCrossover(BaseCrossover):
@@ -30,7 +30,7 @@ class UniformCrossover(BaseCrossover):
         self,
         parents_params: np.ndarray,
         rng: np.random.RandomState,
-        study: Study,
+        study: FrozenStudy,
         search_space_bounds: np.ndarray,
     ) -> np.ndarray:
 

@@ -2,7 +2,7 @@ import abc
 
 import numpy as np
 
-from optuna.study import Study
+from optuna.study import FrozenStudy
 
 
 class BaseCrossover(abc.ABC):
@@ -33,7 +33,7 @@ class BaseCrossover(abc.ABC):
         self,
         parents_params: np.ndarray,
         rng: np.random.RandomState,
-        study: Study,
+        study: FrozenStudy,
         search_space_bounds: np.ndarray,
     ) -> np.ndarray:
         """Perform crossover of selected parent individuals.
