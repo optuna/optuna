@@ -34,11 +34,11 @@
 import functools
 import math
 import sys
+import typing
 from typing import Callable
 from typing import Optional
-from typing import Union
 from typing import Tuple
-import typing
+from typing import Union
 
 import numpy as np
 
