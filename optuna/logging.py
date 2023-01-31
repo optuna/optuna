@@ -33,13 +33,10 @@ def create_default_formatter() -> colorlog.ColoredFormatter:
 
     This function is not supposed to be directly accessed by library users.
     """
-
-    if _color_supported():
-        return colorlog.ColoredFormatter(
-            "%(log_color)s[%(levelname)1.1s %(asctime)s]%(reset)s %(message)s"
-        )
-    else:
-        return colorlog.ColoredFormatter("[%(levelname)1.1s %(asctime)s] %(message)s")
+    return colorlog.ColoredFormatter(
+        "%(log_color)s[%(levelname)1.1s %(asctime)s]%(reset)s %(message)s",
+        no_color=False if _color_supported() else True,
+    )
 
 
 def _color_supported() -> bool:
