@@ -84,7 +84,6 @@ class ThresholdPruner(BasePruner):
         n_warmup_steps: int = 0,
         interval_steps: int = 1,
     ) -> None:
-
         if lower is None and upper is None:
             raise TypeError("Either lower or upper must be specified.")
         if lower is not None:
@@ -112,7 +111,6 @@ class ThresholdPruner(BasePruner):
         self._interval_steps = interval_steps
 
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
-
         step = trial.last_step
         if step is None:
             return False

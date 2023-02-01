@@ -175,17 +175,14 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
     @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
-
         return self.suggest_float(name, low, high)
 
     @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
-
         return self.suggest_float(name, low, high, log=True)
 
     @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
-
         return self.suggest_float(name, low, high, step=q)
 
     @broadcast_properties

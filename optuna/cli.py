@@ -37,7 +37,6 @@ _DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 def _check_storage_url(storage_url: Optional[str]) -> str:
-
     if storage_url is not None:
         return storage_url
 
@@ -386,7 +385,6 @@ class _Studies(_BaseCommand):
         )
 
     def take_action(self, parsed_args: Namespace) -> int:
-
         storage_url = _check_storage_url(parsed_args.storage)
         summaries = optuna.get_all_study_summaries(storage_url, include_best_trial=False)
 
@@ -441,7 +439,6 @@ class _Trials(_BaseCommand):
         )
 
     def take_action(self, parsed_args: Namespace) -> int:
-
         warnings.warn(
             "'trials' is an experimental CLI command. The interface can change in the future.",
             ExperimentalWarning,
@@ -492,7 +489,6 @@ class _BestTrial(_BaseCommand):
         )
 
     def take_action(self, parsed_args: Namespace) -> int:
-
         warnings.warn(
             "'best-trial' is an experimental CLI command. The interface can change in the future.",
             ExperimentalWarning,
@@ -546,7 +542,6 @@ class _BestTrials(_BaseCommand):
         )
 
     def take_action(self, parsed_args: Namespace) -> int:
-
         warnings.warn(
             "'best-trials' is an experimental CLI command. The interface can change in the "
             "future.",
@@ -612,7 +607,6 @@ class _StudyOptimize(_BaseCommand):
         )
 
     def take_action(self, parsed_args: Namespace) -> int:
-
         message = (
             "The use of the `study optimize` command is deprecated. Please execute your Python "
             "script directly instead."
@@ -665,7 +659,6 @@ class _StorageUpgrade(_BaseCommand):
     """Upgrade the schema of a storage."""
 
     def take_action(self, parsed_args: Namespace) -> int:
-
         storage_url = _check_storage_url(parsed_args.storage)
         if storage_url.startswith("redis"):
             self.logger.info("This storage does not support upgrade yet.")
@@ -743,7 +736,6 @@ class _Ask(_BaseCommand):
         )
 
     def take_action(self, parsed_args: Namespace) -> int:
-
         warnings.warn(
             "'ask' is an experimental CLI command. The interface can change in the future.",
             ExperimentalWarning,
@@ -862,7 +854,6 @@ class _Tell(_BaseCommand):
         )
 
     def take_action(self, parsed_args: Namespace) -> int:
-
         warnings.warn(
             "'tell' is an experimental CLI command. The interface can change in the future.",
             ExperimentalWarning,

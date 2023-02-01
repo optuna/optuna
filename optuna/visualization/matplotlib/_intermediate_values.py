@@ -79,7 +79,6 @@ def plot_intermediate_values(study: Study) -> "Axes":
 
 
 def _get_intermediate_plot(info: _IntermediatePlotInfo) -> "Axes":
-
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
     _, ax = plt.subplots(tight_layout=True)

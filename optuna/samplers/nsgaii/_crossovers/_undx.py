@@ -32,12 +32,10 @@ class UNDXCrossover(BaseCrossover):
     n_parents = 3
 
     def __init__(self, sigma_xi: float = 0.5, sigma_eta: Optional[float] = None) -> None:
-
         self._sigma_xi = sigma_xi
         self._sigma_eta = sigma_eta
 
     def _distance_from_x_to_psl(self, parents_params: np.ndarray) -> np.floating:
-
         # The line connecting x1 to x2 is called psl (primary search line).
         # Compute the 2-norm of the vector orthogonal to psl from x3.
         e_12 = UNDXCrossover._normalized_x1_to_x2(
@@ -50,7 +48,6 @@ class UNDXCrossover(BaseCrossover):
         return m_12_3
 
     def _orthonormal_basis_vector_to_psl(self, parents_params: np.ndarray, n: int) -> np.ndarray:
-
         # Compute orthogonal basis vectors for the subspace orthogonal to psl.
         e_12 = UNDXCrossover._normalized_x1_to_x2(
             parents_params
@@ -72,7 +69,6 @@ class UNDXCrossover(BaseCrossover):
         study: Study,
         search_space_bounds: np.ndarray,
     ) -> np.ndarray:
-
         # https://ieeexplore.ieee.org/document/782672
         # Section 2 Unimodal Normal Distribution Crossover
         n = len(search_space_bounds)
@@ -106,7 +102,6 @@ class UNDXCrossover(BaseCrossover):
 
     @staticmethod
     def _normalized_x1_to_x2(parents_params: np.ndarray) -> np.ndarray:
-
         # Compute the normalized vector from x1 to x2.
         v_12 = parents_params[1] - parents_params[0]
         m_12 = np.linalg.norm(v_12, ord=2)

@@ -56,7 +56,6 @@ class TensorBoardCallback:
     def _add_distributions(
         self, distributions: Dict[str, optuna.distributions.BaseDistribution]
     ) -> None:
-
         supported_distributions = (
             optuna.distributions.CategoricalDistribution,
             optuna.distributions.FloatDistribution,
