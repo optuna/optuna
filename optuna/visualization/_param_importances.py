@@ -143,7 +143,6 @@ def plot_param_importances(
 
 
 def _get_importances_plot(info: _ImportancesInfo, hover_template: List[str]) -> "go.Figure":
-
     layout = go.Layout(
         title="Hyperparameter Importances",
         xaxis={"title": f"Importance for {info.target_name}"},

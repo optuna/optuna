@@ -51,7 +51,6 @@ def test_get_pareto_front_info_infer_n_targets() -> None:
 
 
 def create_study_2d(objective_names: Optional[List[str]] = None) -> Study:
-
     study = optuna.create_study(
         directions=["minimize", "minimize"], objective_names=objective_names
     )
@@ -65,7 +64,6 @@ def create_study_2d(objective_names: Optional[List[str]] = None) -> Study:
 
 
 def create_study_3d() -> Study:
-
     study = optuna.create_study(directions=["minimize", "minimize", "minimize"])
 
     study.enqueue_trial({"x": 1, "y": 2})
@@ -314,7 +312,6 @@ def test_get_pareto_front_plot(
     include_dominated_trials: bool,
     has_constraints_func: bool,
 ) -> None:
-
     info = info_template
     if not include_dominated_trials:
         info = info._replace(include_dominated_trials=False, non_best_trials_with_values=[])

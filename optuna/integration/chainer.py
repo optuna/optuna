@@ -49,7 +49,6 @@ class ChainerPruningExtension(Extension):
         observation_key: str,
         pruner_trigger: Union[Tuple[(int, str)], "IntervalTrigger", "ManualScheduleTrigger"],
     ) -> None:
-
         _imports.check()
 
         self._trial = trial
@@ -69,7 +68,6 @@ class ChainerPruningExtension(Extension):
     def _get_float_value(
         observation_value: Union[float, "chainer.Variable"]  # type: ignore[name-defined]
     ) -> float:
-
         _imports.check()
 
         try:
@@ -86,11 +84,9 @@ class ChainerPruningExtension(Extension):
     def _observation_exists(
         self, trainer: "chainer.training.Trainer"  # type: ignore[name-defined]
     ) -> bool:
-
         return self._pruner_trigger(trainer) and self._observation_key in trainer.observation
 
     def __call__(self, trainer: "chainer.training.Trainer") -> None:  # type: ignore[name-defined]
-
         if not self._observation_exists(trainer):
             return
 

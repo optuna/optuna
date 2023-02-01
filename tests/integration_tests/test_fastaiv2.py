@@ -29,12 +29,10 @@ def _generate_dummy_dataset() -> "torch.utils.data.DataLoader":
 
 @pytest.fixture(scope="session")
 def tmpdir(tmpdir_factory: Any) -> Any:
-
     return tmpdir_factory.mktemp("fastai_integration_test")
 
 
 def test_fastai_pruning_callback(tmpdir: Any) -> None:
-
     train_loader = _generate_dummy_dataset()
     test_loader = _generate_dummy_dataset()
 

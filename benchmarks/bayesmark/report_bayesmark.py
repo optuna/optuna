@@ -49,7 +49,6 @@ class BestValueMetric(BaseMetric):
     precision = 6
 
     def calculate(self, data: pd.DataFrame) -> List[float]:
-
         return data.groupby("uuid").generalization.min().values
 
 
@@ -58,7 +57,6 @@ class AUCMetric(BaseMetric):
     precision = 3
 
     def calculate(self, data: pd.DataFrame) -> List[float]:
-
         aucs: List[float] = list()
         for _, grp in data.groupby("uuid"):
             auc = np.sum(grp.generalization.cummin())
@@ -71,7 +69,6 @@ class ElapsedMetric(BaseMetric):
     precision = 3
 
     def calculate(self, data: pd.DataFrame) -> List[float]:
-
         # Total time does not include evaluation of bayesmark
         # objective function (no Optuna APIs are called there).
         time_cols = ["suggest", "observe"]
@@ -80,22 +77,18 @@ class ElapsedMetric(BaseMetric):
 
 class PartialReport:
     def __init__(self, data: pd.DataFrame) -> None:
-
         self._data = data
 
     @property
     def optimizers(self) -> List[str]:
-
         return list(self._data.opt.unique())
 
     @classmethod
     def from_json(cls, path: str) -> "PartialReport":
-
         data = pd.read_json(path)
         return cls(data)
 
     def summarize_solver(self, solver: str, metric: BaseMetric) -> Moments:
-
         solver_data = self._data[self._data.opt == solver]
         if solver_data.shape[0] == 0:
             raise ValueError(f"{solver} not found in report.")
@@ -104,7 +97,6 @@ class PartialReport:
         return np.mean(run_metrics).item(), np.var(run_metrics).item()
 
     def sample_performance(self, metric: BaseMetric) -> Samples:
-
         performance: Dict[str, List[float]] = {}
         for solver, data in self._data.groupby("opt"):
             run_metrics = metric.calculate(data)
@@ -119,26 +111,22 @@ class DewanckerRanker:
         self._borda: Optional[np.ndarray] = None
 
     def __iter__(self) -> Generator[Tuple[str, int], None, None]:
-
         yield from zip(self.solvers, self.borda)
 
     @property
     def solvers(self) -> List[str]:
-
         if self._ranking is None:
             raise ValueError("Call rank first.")
         return self._ranking
 
     @property
     def borda(self) -> np.ndarray:
-
         if self._borda is None:
             raise ValueError("Call rank first.")
         return self._borda
 
     @staticmethod
     def pick_alpha(report: PartialReport) -> float:
-
         # https://github.com/optuna/kurobako/blob/788dd4cf618965a4a5158aa4e13607a5803dea9d/src/report.rs#L412-L424  # noqa E501
         num_optimizers = len(report.optimizers)
         candidates = [0.075, 0.05, 0.025, 0.01] * 4 / np.repeat([1, 10, 100, 1000], 4)
@@ -149,19 +137,16 @@ class DewanckerRanker:
         return candidates[-1]
 
     def _set_ranking(self, wins: Dict[str, int]) -> None:
-
         sorted_wins = [k for k, _ in sorted(wins.items(), key=lambda x: x[1])]
         self._ranking = sorted_wins[::-1]
 
     def _set_borda(self, wins: Dict[str, int]) -> None:
-
         sorted_wins = np.array(sorted(wins.values()))
         num_wins, num_ties = np.unique(sorted_wins, return_counts=True)
         points = np.searchsorted(sorted_wins, num_wins)
         self._borda = np.repeat(points, num_ties)[::-1]
 
     def rank(self, report: PartialReport) -> None:
-
         # Implements Section 2.1.1
         # https://proceedings.mlr.press/v64/dewancker_strategy_2016.pdf
         wins: Dict[str, int] = defaultdict(int)
@@ -200,7 +185,6 @@ class Problem:
 
 class BayesmarkReportBuilder:
     def __init__(self) -> None:
-
         self.solvers: Set[str] = set()
         self.datasets: Set[str] = set()
         self.models: Set[str] = set()
@@ -210,7 +194,6 @@ class BayesmarkReportBuilder:
         self.problems: List[Problem] = []
 
     def set_precedence(self, metrics: List[BaseMetric]) -> None:
-
         self.metric_precedence = " -> ".join([m.name for m in metrics])
 
     def add_problem(
@@ -220,7 +203,6 @@ class BayesmarkReportBuilder:
         ranking: DewanckerRanker,
         metrics: List[BaseMetric],
     ) -> "BayesmarkReportBuilder":
-
         solvers: List[Solver] = list()
         positions = np.abs(ranking.borda - (max(ranking.borda) + 1))
         for pos, solver in zip(positions, ranking.solvers):
@@ -238,7 +220,6 @@ class BayesmarkReportBuilder:
         return self
 
     def update_leaderboard(self, ranking: DewanckerRanker) -> "BayesmarkReportBuilder":
-
         for solver, borda in ranking:
             if borda == max(ranking.borda):
                 self.firsts[solver] += 1
@@ -246,17 +227,14 @@ class BayesmarkReportBuilder:
         return self
 
     def add_dataset(self, dataset: str) -> "BayesmarkReportBuilder":
-
         self.datasets.update(dataset)
         return self
 
     def add_model(self, model: str) -> "BayesmarkReportBuilder":
-
         self.models.update(model)
         return self
 
     def assemble_report(self) -> str:
-
         loader = FileSystemLoader(os.path.join("benchmarks", "bayesmark"))
         env = Environment(loader=loader)
         report_template = env.get_template("report_template.md")
@@ -264,7 +242,6 @@ class BayesmarkReportBuilder:
 
 
 def build_report() -> None:
-
     # Order of this list sets metric precedence.
     # https://proceedings.mlr.press/v64/dewancker_strategy_2016.pdf
     metrics = [BestValueMetric(), AUCMetric()]

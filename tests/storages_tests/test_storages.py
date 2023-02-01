@@ -37,16 +37,13 @@ EXAMPLE_ATTRS = {
 
 
 def test_get_storage() -> None:
-
     assert isinstance(optuna.storages.get_storage(None), InMemoryStorage)
     assert isinstance(optuna.storages.get_storage("sqlite:///:memory:"), _CachedStorage)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_create_new_study(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
-
         study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
 
         frozen_studies = storage.get_all_studies()
@@ -65,9 +62,7 @@ def test_create_new_study(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_create_new_study_unique_id(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
-
         study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
         study_id2 = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
         storage.delete_study(study_id2)
@@ -83,9 +78,7 @@ def test_create_new_study_unique_id(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_create_new_study_with_name(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
-
         # Generate unique study_name from the current function name and storage_mode.
         function_name = test_create_new_study_with_name.__name__
         study_name = function_name + "/" + storage_mode
@@ -101,9 +94,7 @@ def test_create_new_study_with_name(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_delete_study(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
-
         study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
         storage.create_new_trial(study_id)
         trials = storage.get_all_trials(study_id)
@@ -126,7 +117,6 @@ def test_delete_study(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_delete_study_after_create_multiple_studies(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
         study_id1 = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
         study_id2 = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
@@ -142,9 +132,7 @@ def test_delete_study_after_create_multiple_studies(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
-
         # Generate unique study_name from the current function name and storage_mode.
         function_name = test_get_study_id_from_name_and_get_study_name_from_id.__name__
         study_name = function_name + "/" + storage_mode
@@ -166,9 +154,7 @@ def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode: str) ->
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_and_get_study_directions(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
-
         for target in [
             (StudyDirection.MINIMIZE,),
             (StudyDirection.MAXIMIZE,),
@@ -198,12 +184,10 @@ def test_set_and_get_study_directions(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_and_get_study_user_attrs(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
 
         def check_set_and_get(key: str, value: Any) -> None:
-
             storage.set_study_user_attr(study_id, key, value)
             assert storage.get_study_user_attrs(study_id)[key] == value
 
@@ -227,12 +211,10 @@ def test_set_and_get_study_user_attrs(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_and_get_study_system_attrs(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
 
         def check_set_and_get(key: str, value: Any) -> None:
-
             storage.set_study_system_attr(study_id, key, value)
             assert storage.get_study_system_attrs(study_id)[key] == value
 
@@ -256,7 +238,6 @@ def test_set_and_get_study_system_attrs(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_study_user_and_system_attrs_confusion(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
         for key, value in EXAMPLE_ATTRS.items():
@@ -303,7 +284,6 @@ def test_create_new_trial(storage_mode: str) -> None:
         assert all(t.value is None for t in trials)
 
     with StorageSupplier(storage_mode) as storage:
-
         study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
         n_trial_in_study = 3
         for i in range(n_trial_in_study):
@@ -339,7 +319,6 @@ def test_create_new_trial(storage_mode: str) -> None:
 def test_create_new_trial_with_template_trial(
     storage_mode: str, start_time: datetime, complete_time: datetime
 ) -> None:
-
     template_trial = FrozenTrial(
         state=TrialState.COMPLETE,
         value=10000,
@@ -370,7 +349,6 @@ def test_create_new_trial_with_template_trial(
         assert all(t.value == template_trial.value for t in trials)
 
     with StorageSupplier(storage_mode) as storage:
-
         study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
 
         n_trial_in_study = 3
@@ -396,7 +374,6 @@ def test_create_new_trial_with_template_trial(
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_trial_number_from_id(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
         # Check if trial_number starts from 0.
         study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
@@ -413,9 +390,7 @@ def test_get_trial_number_from_id(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_trial_state_values_for_state(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
-
         study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
         trial_ids = [storage.create_new_trial(study_id) for _ in ALL_STATES]
 
@@ -457,7 +432,6 @@ def test_set_trial_state_values_for_state(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_trial_param_and_get_trial_params(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
         _, study_to_trials = _setup_studies(storage, n_study=2, n_trial=5, seed=1)
 
@@ -483,9 +457,7 @@ def test_get_trial_param_and_get_trial_params(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_trial_param(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
-
         # Setup test across multiple studies and trials.
         study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
         trial_id_1 = storage.create_new_trial(study_id)
@@ -556,9 +528,7 @@ def test_set_trial_param(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_trial_state_values_for_values(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
-
         # Setup test across multiple studies and trials.
         study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
         trial_id_1 = storage.create_new_trial(study_id)
@@ -600,9 +570,7 @@ def test_set_trial_state_values_for_values(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_trial_intermediate_value(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
-
         # Setup test across multiple studies and trials.
         study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
         trial_id_1 = storage.create_new_trial(study_id)
@@ -647,7 +615,6 @@ def test_set_trial_intermediate_value(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_trial_user_attrs(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
         _, study_to_trials = _setup_studies(storage, n_study=2, n_trial=5, seed=10)
         assert all(
@@ -663,14 +630,12 @@ def test_get_trial_user_attrs(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_trial_user_attr(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
         trial_id_1 = storage.create_new_trial(
             storage.create_new_study(directions=[StudyDirection.MINIMIZE])
         )
 
         def check_set_and_get(trial_id: int, key: str, value: Any) -> None:
-
             storage.set_trial_user_attr(trial_id, key, value)
             assert storage.get_trial(trial_id).user_attrs[key] == value
 
@@ -703,7 +668,6 @@ def test_set_trial_user_attr(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_trial_system_attrs(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
         _, study_to_trials = _setup_studies(storage, n_study=2, n_trial=5, seed=10)
         assert all(
@@ -719,13 +683,11 @@ def test_get_trial_system_attrs(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_trial_system_attr(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
         trial_id_1 = storage.create_new_trial(study_id)
 
         def check_set_and_get(trial_id: int, key: str, value: Any) -> None:
-
             storage.set_trial_system_attr(trial_id, key, value)
             assert storage.get_trial_system_attrs(trial_id)[key] == value
 
@@ -757,7 +719,6 @@ def test_set_trial_system_attr(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_all_studies(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
         expected_frozen_studies, _ = _setup_studies(storage, n_study=10, n_trial=10, seed=46)
         frozen_studies = storage.get_all_studies()
@@ -777,7 +738,6 @@ def test_get_all_studies(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_trial(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
         _, study_to_trials = _setup_studies(storage, n_study=2, n_trial=20, seed=47)
 
@@ -795,7 +755,6 @@ def test_get_trial(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_all_trials(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
         _, study_to_trials = _setup_studies(storage, n_study=2, n_trial=20, seed=48)
 
@@ -812,7 +771,6 @@ def test_get_all_trials(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_all_trials_deepcopy_option(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
         frozen_studies, study_to_trials = _setup_studies(storage, n_study=2, n_trial=5, seed=49)
 
@@ -830,7 +788,6 @@ def test_get_all_trials_deepcopy_option(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_all_trials_state_option(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study(directions=[StudyDirection.MAXIMIZE])
         generator = random.Random(51)
@@ -870,7 +827,6 @@ def test_get_all_trials_state_option(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_n_trials(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
         study_id_to_frozen_studies, _ = _setup_studies(storage, n_study=2, n_trial=7, seed=50)
         for study_id in study_id_to_frozen_studies:
@@ -883,7 +839,6 @@ def test_get_n_trials(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_n_trials_state_option(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study(directions=(StudyDirection.MAXIMIZE,))
         generator = random.Random(51)
@@ -911,7 +866,6 @@ def test_get_n_trials_state_option(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_best_trial(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study(directions=[StudyDirection.MAXIMIZE])
         with pytest.raises(ValueError):
@@ -1033,7 +987,6 @@ def _generate_trial(generator: random.Random) -> FrozenTrial:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_best_trial_for_multi_objective_optimization(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study(
             directions=(StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE)
@@ -1052,7 +1005,6 @@ def test_get_best_trial_for_multi_objective_optimization(storage_mode: str) -> N
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_trial_id_from_study_id_trial_number(storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
         with pytest.raises(KeyError):  # Matching study does not exist.
             storage.get_trial_id_from_study_id_trial_number(study_id=0, trial_number=0)

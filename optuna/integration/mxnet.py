@@ -26,14 +26,12 @@ class MXNetPruningCallback:
     """
 
     def __init__(self, trial: optuna.trial.Trial, eval_metric: str) -> None:
-
         _imports.check()
 
         self._trial = trial
         self._eval_metric = eval_metric
 
     def __call__(self, param: "mx.model.BatchEndParam") -> None:
-
         if param.eval_metric is not None:
             metric_names, metric_values = param.eval_metric.get()
             if type(metric_names) == list and self._eval_metric in metric_names:

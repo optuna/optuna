@@ -87,7 +87,6 @@ else:
                 _class_to_module[value] = key
 
         def __getattr__(self, name: str) -> Any:
-
             if name in self._modules:
                 value = self._get_module(name)
             elif name in self._class_to_module.keys():
@@ -100,7 +99,6 @@ else:
             return value
 
         def _get_module(self, module_name: str) -> ModuleType:
-
             import importlib
 
             return importlib.import_module("." + module_name, self.__name__)

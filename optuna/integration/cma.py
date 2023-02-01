@@ -138,7 +138,6 @@ class PyCmaSampler(BaseSampler):
         independent_sampler: Optional[BaseSampler] = None,
         warn_independent_sampling: bool = True,
     ) -> None:
-
         _imports.check()
 
         self._x0 = x0
@@ -155,14 +154,12 @@ class PyCmaSampler(BaseSampler):
         self._search_space = optuna.samplers.IntersectionSearchSpace()
 
     def reseed_rng(self) -> None:
-
         self._cma_opts["seed"] = random.randint(1, 2**32)
         self._independent_sampler.reseed_rng()
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
-
         search_space = {}
         for name, distribution in self._search_space.calculate(study).items():
             if distribution.single():
@@ -182,7 +179,6 @@ class PyCmaSampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> float:
-
         self._raise_error_if_multi_objective(study)
 
         if self._warn_independent_sampling:
@@ -197,7 +193,6 @@ class PyCmaSampler(BaseSampler):
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, float]:
-
         self._raise_error_if_multi_objective(study)
 
         if len(search_space) == 0:
@@ -234,7 +229,6 @@ class PyCmaSampler(BaseSampler):
 
     @staticmethod
     def _initialize_x0(search_space: Dict[str, BaseDistribution]) -> Dict[str, Any]:
-
         x0: Dict[str, Any] = {}
         for name, distribution in search_space.items():
             if isinstance(distribution, FloatDistribution):
@@ -262,7 +256,6 @@ class PyCmaSampler(BaseSampler):
 
     @staticmethod
     def _initialize_sigma0(search_space: Dict[str, BaseDistribution]) -> float:
-
         sigma0s = []
         for name, distribution in search_space.items():
             if isinstance(distribution, (IntDistribution, FloatDistribution)):
@@ -281,7 +274,6 @@ class PyCmaSampler(BaseSampler):
         return min(sigma0s)
 
     def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
-
         _logger.warning(
             "The parameter '{}' in trial#{} is sampled independently "
             "by using `{}` instead of `PyCmaSampler` "
@@ -301,7 +293,6 @@ class PyCmaSampler(BaseSampler):
         state: TrialState,
         values: Optional[Sequence[float]],
     ) -> None:
-
         self._independent_sampler.after_trial(study, trial, state, values)
 
 
@@ -314,7 +305,6 @@ class _Optimizer:
         cma_stds: Optional[Dict[str, float]],
         cma_opts: Dict[str, Any],
     ) -> None:
-
         self._search_space = search_space
         self._param_names = list(sorted(self._search_space.keys()))
 
@@ -364,7 +354,6 @@ class _Optimizer:
         self._es = cma.CMAEvolutionStrategy(initial_cma_params, sigma0, cma_opts)
 
     def tell(self, trials: List[FrozenTrial], study_direction: StudyDirection) -> int:
-
         complete_trials = self._collect_target_trials(trials, target_states={TrialState.COMPLETE})
 
         popsize = self._es.popsize
@@ -391,7 +380,6 @@ class _Optimizer:
         return last_told_trial_number
 
     def ask(self, trials: List[FrozenTrial], last_told_trial_number: int) -> Dict[str, Any]:
-
         individual_index = len(self._collect_target_trials(trials, last_told_trial_number))
         popsize = self._es.popsize
 
@@ -411,7 +399,6 @@ class _Optimizer:
         return ret_val
 
     def _is_compatible(self, trial: FrozenTrial) -> bool:
-
         # Thanks to `intersection_search_space()` function, in sequential optimization,
         # the parameters of complete trials are always compatible with the search space.
         #
@@ -436,7 +423,6 @@ class _Optimizer:
         last_told: int = -1,
         target_states: Optional[Container[TrialState]] = None,
     ) -> List[FrozenTrial]:
-
         target_trials = [t for t in trials if t.number > last_told]
         target_trials = [t for t in target_trials if self._is_compatible(t)]
         if target_states is not None:
@@ -448,7 +434,6 @@ class _Optimizer:
     def _to_cma_params(
         search_space: Dict[str, BaseDistribution], param_name: str, optuna_param_value: Any
     ) -> float:
-
         dist = search_space[param_name]
 
         if isinstance(dist, IntDistribution):
@@ -467,7 +452,6 @@ class _Optimizer:
     def _to_optuna_params(
         search_space: Dict[str, BaseDistribution], param_name: str, cma_param_value: float
     ) -> Any:
-
         dist = search_space[param_name]
         if isinstance(dist, FloatDistribution):
             if dist.log:
@@ -509,7 +493,6 @@ class CmaEsSampler(PyCmaSampler):
         independent_sampler: Optional[BaseSampler] = None,
         warn_independent_sampling: bool = True,
     ) -> None:
-
         super().__init__(
             x0=x0,
             sigma0=sigma0,

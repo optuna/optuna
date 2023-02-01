@@ -70,7 +70,6 @@ class ShapleyImportanceEvaluator(BaseImportanceEvaluator):
         *,
         target: Optional[Callable[[FrozenTrial], float]] = None,
     ) -> Dict[str, float]:
-
         if target is None and study._is_multi_objective():
             raise ValueError(
                 "If the `study` is being used for multi-objective optimization, "

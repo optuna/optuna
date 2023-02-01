@@ -38,7 +38,6 @@ def create_study(seed: int) -> optuna.Study:
 
 
 if __name__ == "__main__":
-
     factory = OptunaSolverFactory(create_study)
     runner = solver.SolverRunner(factory)
     runner.run()

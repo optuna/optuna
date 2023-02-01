@@ -124,7 +124,6 @@ class MLflowCallback:
         tag_study_user_attrs: bool = False,
         tag_trial_user_attrs: bool = True,
     ) -> None:
-
         _imports.check()
 
         if not isinstance(metric_name, Sequence):
@@ -143,7 +142,6 @@ class MLflowCallback:
         self._lock = threading.Lock()
 
     def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
-
         with self._lock:
             self._initialize_experiment(study)
 
@@ -154,7 +152,6 @@ class MLflowCallback:
                 nested=self._mlflow_kwargs.get("nested") or False,
                 tags=self._mlflow_kwargs.get("tags"),
             ):
-
                 # This sets the metrics for MLflow.
                 self._log_metrics(trial.values)
 

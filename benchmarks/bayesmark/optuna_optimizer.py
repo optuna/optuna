@@ -43,11 +43,9 @@ ApiConfig = Dict[str, Dict[str, str]]
 
 
 class OptunaOptimizer(AbstractOptimizer):
-
     primary_import = "optuna"
 
     def __init__(self, api_config: ApiConfig, **kwargs: Any) -> None:
-
         super().__init__(api_config, **kwargs)
 
         try:
@@ -74,7 +72,6 @@ class OptunaOptimizer(AbstractOptimizer):
         self.current_trials: Dict[int, int] = dict()
 
     def _suggest(self, trial: optuna.trial.Trial) -> Suggestion:
-
         suggestions: Suggestion = dict()
         for name, config in self.api_config.items():
             low, high = config["range"]
@@ -100,7 +97,6 @@ class OptunaOptimizer(AbstractOptimizer):
         return suggestions
 
     def suggest(self, n_suggestions: int) -> List[Suggestion]:
-
         suggestions: List[Suggestion] = list()
         for _ in range(n_suggestions):
             trial = self.study.ask()
@@ -112,7 +108,6 @@ class OptunaOptimizer(AbstractOptimizer):
         return suggestions
 
     def observe(self, X: List[Suggestion], y: List[float]) -> None:
-
         for params, objective_value in zip(X, y):
             sid = hash(frozenset(params.items()))
             trial = self.current_trials.pop(sid)

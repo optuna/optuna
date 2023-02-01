@@ -25,7 +25,6 @@ class BLXAlphaCrossover(BaseCrossover):
     n_parents = 2
 
     def __init__(self, alpha: float = 0.5) -> None:
-
         self._alpha = alpha
 
     def crossover(
@@ -35,7 +34,6 @@ class BLXAlphaCrossover(BaseCrossover):
         study: Study,
         search_space_bounds: np.ndarray,
     ) -> np.ndarray:
-
         # http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.465.6900&rep=rep1&type=pdf
         # Section 2 Crossover Operators for RCGA 2.1 Blend Crossover
 

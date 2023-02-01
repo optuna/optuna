@@ -72,7 +72,6 @@ EXAMPLE_ABBREVIATED_JSONS = {
 
 
 def test_json_to_distribution() -> None:
-
     for key in EXAMPLE_JSONS:
         distribution_actual = distributions.json_to_distribution(EXAMPLE_JSONS[key])
         assert distribution_actual == EXAMPLE_DISTRIBUTIONS[key]
@@ -82,7 +81,6 @@ def test_json_to_distribution() -> None:
 
 
 def test_abbreviated_json_to_distribution() -> None:
-
     for key in EXAMPLE_ABBREVIATED_JSONS:
         distribution_actual = distributions.json_to_distribution(EXAMPLE_ABBREVIATED_JSONS[key])
         assert distribution_actual == EXAMPLE_DISTRIBUTIONS[key]
@@ -108,7 +106,6 @@ def test_abbreviated_json_to_distribution() -> None:
 
 
 def test_distribution_to_json() -> None:
-
     for key in EXAMPLE_JSONS:
         json_actual = json.loads(distributions.distribution_to_json(EXAMPLE_DISTRIBUTIONS[key]))
         json_expect = json.loads(EXAMPLE_JSONS[key])
@@ -120,7 +117,6 @@ def test_distribution_to_json() -> None:
 
 
 def test_check_distribution_compatibility() -> None:
-
     # Test the same distribution.
     for key in EXAMPLE_JSONS:
         distributions.check_distribution_compatibility(
@@ -334,7 +330,6 @@ def test_float_contains(expected: bool, value: float, step: Optional[float]) -> 
 
 
 def test_categorical_contains() -> None:
-
     c = distributions.CategoricalDistribution(choices=("Roppongi", "Azabu"))
     assert not c._contains(-1)
     assert c._contains(0)
@@ -344,7 +339,6 @@ def test_categorical_contains() -> None:
 
 
 def test_empty_range_contains() -> None:
-
     i = distributions.IntDistribution(low=1, high=1)
     assert not i._contains(0)
     assert i._contains(1)
@@ -425,13 +419,11 @@ def test_categorical_single() -> None:
 
 
 def test_invalid_distribution() -> None:
-
     with pytest.warns(UserWarning):
         distributions.CategoricalDistribution(choices=({"foo": "bar"},))  # type: ignore
 
 
 def test_eq_ne_hash() -> None:
-
     # Two instances of a class are regarded as equivalent if the fields have the same values.
     for d in EXAMPLE_DISTRIBUTIONS.values():
         d_copy = copy.deepcopy(d)
@@ -449,7 +441,6 @@ def test_eq_ne_hash() -> None:
 
 
 def test_repr() -> None:
-
     # The following variables are needed to apply `eval` to distribution
     # instances that contain `float('nan')` or `float('inf')` as a field value.
     nan = float("nan")  # NOQA
@@ -488,7 +479,6 @@ def test_float_distribution_asdict(
 
 
 def test_int_init_error() -> None:
-
     # Empty distributions cannot be instantiated.
     with pytest.raises(ValueError):
         distributions.IntDistribution(low=123, high=100)
@@ -512,7 +502,6 @@ def test_int_init_error() -> None:
 
 
 def test_float_init_error() -> None:
-
     # Empty distributions cannot be instantiated.
     with pytest.raises(ValueError):
         distributions.FloatDistribution(low=0.0, high=-100.0)
@@ -541,7 +530,6 @@ def test_categorical_init_error() -> None:
 
 
 def test_categorical_distribution_different_sequence_types() -> None:
-
     c1 = distributions.CategoricalDistribution(choices=("Roppongi", "Azabu"))
     c2 = distributions.CategoricalDistribution(choices=["Roppongi", "Azabu"])
 

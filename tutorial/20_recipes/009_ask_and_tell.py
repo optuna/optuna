@@ -215,7 +215,6 @@ batch_size = 10
 study = optuna.create_study(sampler=optuna.samplers.CmaEsSampler())
 
 for _ in range(3):
-
     # create batch
     trial_numbers = []
     x_batch = []
