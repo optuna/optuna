@@ -734,6 +734,11 @@ class Study:
         Note:
             If ``value`` is in ``attrs`` during multi-objective optimization, it is implicitly
             replaced with ``values``.
+
+        Note:
+            If ``objective_names`` is set when creating the study, the ``value`` or ``values``
+            is implicitly replaced with the dictionary with the objective name as key and the
+            objective value as value.
         """
         return _dataframe._trials_dataframe(self, attrs, multi_index)
 
@@ -1009,19 +1014,33 @@ class Study:
         if not _logger.isEnabledFor(logging.INFO):
             return
 
+        objective_names = self._storage.get_study_system_attrs(self._study_id).get(
+            "objective_names"
+        )
+
         if len(trial.values) > 1:
+            trial_values: Union[List[float], Dict[str, float]]
+            if objective_names is None:
+                trial_values = trial.values
+            else:
+                trial_values = {name: value for name, value in zip(objective_names, trial.values)}
             _logger.info(
                 "Trial {} finished with values: {} and parameters: {}. ".format(
-                    trial.number, trial.values, trial.params
+                    trial.number, trial_values, trial.params
                 )
             )
         elif len(trial.values) == 1:
             best_trial = self.best_trial
+            trial_value: Union[float, Dict[str, float]]
+            if objective_names is None:
+                trial_value = trial.values[0]
+            else:
+                trial_value = {objective_names[0]: trial.values[0]}
             _logger.info(
                 "Trial {} finished with value: {} and parameters: {}. "
                 "Best is trial {} with value: {}.".format(
                     trial.number,
-                    trial.values[0],
+                    trial_value,
                     trial.params,
                     best_trial.number,
                     best_trial.value,
@@ -1050,6 +1069,7 @@ def create_study(
     direction: Optional[Union[str, StudyDirection]] = None,
     load_if_exists: bool = False,
     directions: Optional[Sequence[Union[str, StudyDirection]]] = None,
+    objective_names: Optional[List[str]] = None,
 ) -> Study:
     """Create a new :class:`~optuna.study.Study`.
 
@@ -1114,6 +1134,9 @@ def create_study(
         directions:
             A sequence of directions during multi-objective optimization.
             ``direction`` and ``directions`` must not be specified at the same time.
+        objective_names:
+            A List of names of objective functions. The order must match that of the
+            returned values of objective functions and the ``directions`` argument.
 
     Returns:
         A :class:`~optuna.study.Study` object.
@@ -1149,6 +1172,9 @@ def create_study(
             "corresponding `StudyDirection` member."
         )
 
+    if objective_names is not None and len(directions) != len(objective_names):
+        raise ValueError("The number of objectives must match thhe length of the objective names.")
+
     direction_objects = [
         d if isinstance(d, StudyDirection) else StudyDirection[d.upper()] for d in directions
     ]
@@ -1173,6 +1199,9 @@ def create_study(
 
     study_name = storage.get_study_name_from_id(study_id)
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
+
+    if objective_names is not None:
+        storage.set_study_system_attr(study_id, "objective_names", objective_names)
 
     return study
 
