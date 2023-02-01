@@ -191,7 +191,6 @@ class BaseSampler(abc.ABC):
         pass
 
     def _raise_error_if_multi_objective(self, study: Study) -> None:
-
         if study._is_multi_objective():
             raise ValueError(
                 "If the study is being used for multi-objective optimization, "

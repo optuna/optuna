@@ -80,7 +80,6 @@ class LightGBMPruningCallback:
         valid_name: str = "valid_0",
         report_interval: int = 1,
     ) -> None:
-
         _imports.check()
 
         self._trial = trial
@@ -91,7 +90,6 @@ class LightGBMPruningCallback:
     def _find_evaluation_result(
         self, target_valid_name: str, env: "CallbackEnv"
     ) -> Optional[List]:
-
         for evaluation_result in env.evaluation_result_list:
             valid_name, metric, current_score, is_higher_better = evaluation_result[:4]
             if valid_name != target_valid_name or metric != self._metric:
@@ -102,7 +100,6 @@ class LightGBMPruningCallback:
         return None
 
     def __call__(self, env: "CallbackEnv") -> None:
-
         if (env.iteration + 1) % self._report_interval == 0:
             # If this callback has been passed to `lightgbm.cv` function,
             # the value of `is_cv` becomes `True`. See also:

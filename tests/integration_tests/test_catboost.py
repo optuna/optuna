@@ -43,7 +43,6 @@ EVAL_SET_INDEXES = [None, 0, 1]
 @pytest.mark.parametrize("eval_set_index", EVAL_SET_INDEXES)
 def test_catboost_pruning_callback_init_param(metric: str, eval_set_index: int) -> None:
     def objective(trial: optuna.trial.Trial) -> float:
-
         train_x = np.asarray([[1.0], [2.0]])
         train_y = np.asarray([[1.0], [0.0]])
         valid_x = np.asarray([[1.0], [2.0]])
@@ -104,7 +103,6 @@ def test_catboost_pruning_callback_errors(metric: str, eval_set_index: int) -> N
     # variable used in limited C API was removed after python 3.9.
 
     def objective(trial: optuna.trial.Trial) -> float:
-
         train_x = np.asarray([[1.0], [2.0]])
         train_y = np.asarray([[1.0], [0.0]])
         valid_x = np.asarray([[1.0], [2.0]])

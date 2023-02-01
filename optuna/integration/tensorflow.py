@@ -37,7 +37,6 @@ class TensorFlowPruningHook(SessionRunHook):
         metric: str,
         run_every_steps: int,
     ) -> None:
-
         _imports.check()
 
         self._trial = trial
@@ -48,13 +47,11 @@ class TensorFlowPruningHook(SessionRunHook):
         self._timer = tf.estimator.SecondOrStepTimer(every_secs=None, every_steps=run_every_steps)
 
     def begin(self) -> None:
-
         self._global_step_tensor = tf.compat.v1.train.get_global_step()
 
     def before_run(
         self, run_context: "tf.estimator.SessionRunContext"
     ) -> "tf.estimator.SessionRunArgs":
-
         del run_context
         return tf.estimator.SessionRunArgs(self._global_step_tensor)
 
@@ -63,7 +60,6 @@ class TensorFlowPruningHook(SessionRunHook):
         run_context: "tf.estimator.SessionRunContext",
         run_values: "tf.estimator.SessionRunValues",
     ) -> None:
-
         global_step = run_values.results
         # Get eval metrics every n steps.
         if self._timer.should_trigger_for_step(global_step):

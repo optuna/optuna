@@ -83,7 +83,6 @@ def _get_non_pareto_front_trials(
     study: MultiObjectiveStudy,
     pareto_trials: List["multi_objective.trial.FrozenMultiObjectiveTrial"],
 ) -> List["multi_objective.trial.FrozenMultiObjectiveTrial"]:
-
     non_pareto_trials = []
     for trial in study.get_trials():
         if trial.state == TrialState.COMPLETE and trial not in pareto_trials:

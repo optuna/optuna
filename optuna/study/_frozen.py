@@ -59,21 +59,18 @@ class FrozenStudy:
         self._study_id = study_id
 
     def __eq__(self, other: Any) -> bool:
-
         if not isinstance(other, FrozenStudy):
             return NotImplemented
 
         return other.__dict__ == self.__dict__
 
     def __lt__(self, other: Any) -> bool:
-
         if not isinstance(other, FrozenStudy):
             return NotImplemented
 
         return self._study_id < other._study_id
 
     def __le__(self, other: Any) -> bool:
-
         if not isinstance(other, FrozenStudy):
             return NotImplemented
 
@@ -81,7 +78,6 @@ class FrozenStudy:
 
     @property
     def direction(self) -> StudyDirection:
-
         if len(self._directions) > 1:
             raise RuntimeError(
                 "This attribute is not available during multi-objective optimization."
@@ -91,5 +87,4 @@ class FrozenStudy:
 
     @property
     def directions(self) -> List[StudyDirection]:
-
         return self._directions
