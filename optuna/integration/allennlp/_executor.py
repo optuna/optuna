@@ -209,7 +209,6 @@ class AllenNLPExecutor:
         params = allennlp.common.params.Params(self._build_params())
 
         if "distributed" in params:
-
             if OPTUNA_ALLENNLP_DISTRIBUTED_FLAG in os.environ:
                 warnings.warn(
                     "Other process may already exists."

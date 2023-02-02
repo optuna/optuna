@@ -63,7 +63,6 @@ class PartialFixedSampler(BaseSampler):
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
-
         search_space = self._base_sampler.infer_relative_search_space(study, trial)
 
         # Remove fixed params from relative search space to return fixed values.
@@ -79,7 +78,6 @@ class PartialFixedSampler(BaseSampler):
         trial: FrozenTrial,
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
-
         # Fixed params are never sampled here.
         return self._base_sampler.sample_relative(study, trial, search_space)
 
@@ -90,7 +88,6 @@ class PartialFixedSampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
-
         if param_name not in self._fixed_params:
             # Unfixed params are sampled here.
             return self._base_sampler.sample_independent(
@@ -118,5 +115,4 @@ class PartialFixedSampler(BaseSampler):
         state: TrialState,
         values: Optional[Sequence[float]],
     ) -> None:
-
         self._base_sampler.after_trial(study, trial, state, values)

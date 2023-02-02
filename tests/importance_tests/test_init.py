@@ -219,7 +219,6 @@ def test_get_param_importances_with_target(
 def test_get_param_importances_invalid_empty_study(
     evaluator_init_func: Callable[[], BaseImportanceEvaluator]
 ) -> None:
-
     study = create_study()
 
     with pytest.raises(ValueError):

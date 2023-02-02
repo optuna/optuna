@@ -108,7 +108,6 @@ def plot_contour(
 
 
 def _get_contour_plot(info: _ContourInfo) -> "Axes":
-
     sorted_params = info.sorted_params
     sub_plot_infos = info.sub_plot_infos
     reverse_scale = info.reverse_scale
@@ -192,7 +191,6 @@ def _calculate_griddata(
     List[Union[int, float]],
     List[Union[int, float]],
 ]:
-
     x_values = []
     y_values = []
     z_values = []
@@ -212,7 +210,6 @@ def _calculate_griddata(
         axis: _AxisInfo,
         values: Sequence[Union[str, float]],
     ) -> Tuple[np.ndarray, List[str], List[int], List[Union[int, float]]]:
-
         # Convert categorical values to int.
         cat_param_labels = []  # type: List[str]
         cat_param_pos = []  # type: List[int]
@@ -264,7 +261,6 @@ def _calculate_griddata(
 
 
 def _generate_contour_subplot(info: _SubContourInfo, ax: "Axes", cmap: "Colormap") -> "ContourSet":
-
     if len(info.xaxis.indices) < 2 or len(info.yaxis.indices) < 2:
         ax.label_outer()
         return ax
@@ -325,7 +321,6 @@ def _create_zmap(
     xi: np.ndarray,
     yi: np.ndarray,
 ) -> Dict[Tuple[int, int], float]:
-
     # Creates z-map from trial values and params.
     # z-map is represented by hashmap of coordinate and trial value pairs.
     #
@@ -346,7 +341,6 @@ def _create_zmap(
 
 
 def _interpolate_zmap(zmap: Dict[Tuple[int, int], float], contour_plot_num: int) -> np.ndarray:
-
     # Implements interpolation formulation used in Plotly
     # to interpolate heatmaps and contour plots
     # https://github.com/plotly/plotly.js/blob/95b3bd1bb19d8dc226627442f8f66bce9576def8/src/traces/heatmap/interp2d.js#L15-L20

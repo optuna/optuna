@@ -8,7 +8,6 @@ from optuna.storages import RDBStorage
 
 
 def test_study_summary_eq_ne() -> None:
-
     storage = RDBStorage("sqlite:///:memory:")
 
     create_study(storage=storage)
@@ -28,7 +27,6 @@ def test_study_summary_eq_ne() -> None:
 
 
 def test_study_summary_lt_le() -> None:
-
     storage = RDBStorage("sqlite:///:memory:")
 
     create_study(storage=storage)

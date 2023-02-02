@@ -42,7 +42,6 @@ def _get_optimization_history_info_list(
     target_name: str,
     error_bar: bool,
 ) -> List[_OptimizationHistoryInfo]:
-
     _check_plot_args(study, target, target_name)
     if isinstance(study, Study):
         studies = [study]
@@ -174,7 +173,6 @@ def _get_optimization_history_plot(
     info_list: List[_OptimizationHistoryInfo],
     target_name: str,
 ) -> "go.Figure":
-
     layout = go.Layout(
         title="Optimization History Plot",
         xaxis={"title": "Trial"},

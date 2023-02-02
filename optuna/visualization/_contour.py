@@ -115,7 +115,6 @@ def plot_contour(
 
 
 def _get_contour_plot(info: _ContourInfo) -> "go.Figure":
-
     layout = go.Layout(title="Contour Plot")
 
     sorted_params = info.sorted_params
@@ -198,7 +197,6 @@ def _get_contour_subplot(
     reverse_scale: bool,
     target_name: str = "Objective Value",
 ) -> Tuple["Contour", "Scatter"]:
-
     x_indices = info.xaxis.indices
     y_indices = info.yaxis.indices
     x_values = []
@@ -247,7 +245,6 @@ def _get_contour_info(
     target: Optional[Callable[[FrozenTrial], float]] = None,
     target_name: str = "Objective Value",
 ) -> _ContourInfo:
-
     _check_plot_args(study, target, target_name)
 
     trials = _filter_nonfinite(
@@ -299,7 +296,6 @@ def _get_contour_subplot_info(
     y_param: str,
     target: Optional[Callable[[FrozenTrial], float]],
 ) -> _SubContourInfo:
-
     xaxis = _get_axis_info(trials, x_param)
     yaxis = _get_axis_info(trials, y_param)
 

@@ -341,7 +341,6 @@ class CmaEsSampler(BaseSampler):
         trial: "optuna.trial.FrozenTrial",
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
-
         self._raise_error_if_multi_objective(study)
 
         if len(search_space) == 0:
@@ -434,7 +433,6 @@ class CmaEsSampler(BaseSampler):
 
     @property
     def _attr_keys(self) -> _CmaEsAttrKeys:
-
         if self._use_separable_cma:
             attr_prefix = "sepcma:"
         elif self._with_margin:
@@ -473,7 +471,6 @@ class CmaEsSampler(BaseSampler):
         self,
         completed_trials: "List[optuna.trial.FrozenTrial]",
     ) -> Tuple[Optional[CmaClass], int]:
-
         # Restore a previous CMA object.
         for trial in reversed(completed_trials):
             optimizer_attrs = {
@@ -584,7 +581,6 @@ class CmaEsSampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
-
         self._raise_error_if_multi_objective(study)
 
         if self._warn_independent_sampling:
@@ -641,7 +637,6 @@ class CmaEsSampler(BaseSampler):
         state: TrialState,
         values: Optional[Sequence[float]],
     ) -> None:
-
         self._independent_sampler.after_trial(study, trial, state, values)
 
 

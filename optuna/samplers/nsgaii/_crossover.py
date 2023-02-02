@@ -33,7 +33,6 @@ def _try_crossover(
     numerical_search_space: Dict[str, BaseDistribution],
     numerical_transform: Optional[_SearchSpaceTransform],
 ) -> Dict[str, Any]:
-
     child_params: Dict[str, Any] = {}
 
     if len(categorical_search_space) > 0:
@@ -87,7 +86,6 @@ def perform_crossover(
     swapping_prob: float,
     dominates: Callable[[FrozenTrial, FrozenTrial, Sequence[StudyDirection]], bool],
 ) -> Dict[str, Any]:
-
     numerical_search_space: Dict[str, BaseDistribution] = {}
     categorical_search_space: Dict[str, BaseDistribution] = {}
     for key, value in search_space.items():
@@ -126,7 +124,6 @@ def _select_parents(
     rng: np.random.RandomState,
     dominates: Callable[[FrozenTrial, FrozenTrial, Sequence[StudyDirection]], bool],
 ) -> List[FrozenTrial]:
-
     parents: List[FrozenTrial] = []
     for _ in range(crossover.n_parents):
         parent = _select_parent(
@@ -169,7 +166,6 @@ def _inlined_categorical_uniform_crossover(
     swapping_prob: float,
     search_space: Dict[str, BaseDistribution],
 ) -> np.ndarray:
-
     # We can't use uniform crossover implementation of `BaseCrossover` for
     # parameters from `CategoricalDistribution`, since categorical params are
     # passed to crossover untransformed, which is not what `BaseCrossover`

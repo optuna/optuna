@@ -29,7 +29,6 @@ class SPXCrossover(BaseCrossover):
     n_parents = 3
 
     def __init__(self, epsilon: Optional[float] = None) -> None:
-
         self._epsilon = epsilon
 
     def crossover(
@@ -39,7 +38,6 @@ class SPXCrossover(BaseCrossover):
         study: Study,
         search_space_bounds: np.ndarray,
     ) -> np.ndarray:
-
         # https://www.researchgate.net/publication/2388486_Progress_Toward_Linkage_Learning_in_Real-Coded_GAs_with_Simplex_Crossover
         # Section 2 A Brief Review of SPX
 

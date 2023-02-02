@@ -41,11 +41,9 @@ pytestmark = pytest.mark.integration
 
 class Func:
     def __init__(self) -> None:
-
         self.suggested_values: Dict[int, Dict[str, Any]] = {}
 
     def __call__(self, trial: ChainerMNTrial, comm: "CommunicatorBase") -> float:
-
         x = trial.suggest_float("x", -10, 10)
         y = trial.suggest_float("y", 20, 30, log=True)
         z = trial.suggest_categorical("z", (-1.0, 1.0))
@@ -60,13 +58,11 @@ class Func:
 
 class MultiNodeStorageSupplier(StorageSupplier):
     def __init__(self, storage_specifier: str, comm: "CommunicatorBase") -> None:
-
         super().__init__(storage_specifier)
         self.comm = comm
         self.storage: Optional[RDBStorage] = None
 
     def __enter__(self) -> RDBStorage:
-
         if self.comm.rank == 0:
             storage = super(MultiNodeStorageSupplier, self).__enter__()
             assert isinstance(storage, RDBStorage)
@@ -81,7 +77,6 @@ class MultiNodeStorageSupplier(StorageSupplier):
     def __exit__(
         self, exc_type: Type[BaseException], exc_val: BaseException, exc_tb: TracebackType
     ) -> None:
-
         # Explicitly call storage's __del__ before sqlite tempfile is deleted.
         del self.storage
         gc.collect()
@@ -93,7 +88,6 @@ class MultiNodeStorageSupplier(StorageSupplier):
 
 @pytest.fixture
 def comm() -> "CommunicatorBase":
-
     if not _available:
         pytest.skip("This test requires ChainerMN.")
 
@@ -104,7 +98,6 @@ class TestChainerMNStudy:
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     def test_init(storage_mode: str, comm: "CommunicatorBase") -> None:
-
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
             mn_study = ChainerMNStudy(study, comm)
@@ -114,7 +107,6 @@ class TestChainerMNStudy:
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     def test_init_with_multiple_study_names(storage_mode: str, comm: "CommunicatorBase") -> None:
-
         TestChainerMNStudy._check_multi_node(comm)
 
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
@@ -127,7 +119,6 @@ class TestChainerMNStudy:
 
     @staticmethod
     def test_init_with_incompatible_storage(comm: "CommunicatorBase") -> None:
-
         study = create_study(storage=InMemoryStorage(), study_name="in-memory-study")
 
         with pytest.raises(ValueError):
@@ -136,7 +127,6 @@ class TestChainerMNStudy:
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     def test_optimize(storage_mode: str, comm: "CommunicatorBase") -> None:
-
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
             mn_study = ChainerMNStudy(study, comm)
@@ -159,14 +149,12 @@ class TestChainerMNStudy:
     def test_pruning(
         storage_mode: str, pruner_init_func: Callable[[], BasePruner], comm: "CommunicatorBase"
     ) -> None:
-
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             pruner = pruner_init_func()
             study = TestChainerMNStudy._create_shared_study(storage, comm, pruner=pruner)
             mn_study = ChainerMNStudy(study, comm)
 
             def objective(_trial: ChainerMNTrial, _comm: bool) -> float:
-
                 raise TrialPruned  # Always be pruned.
 
             # Invoke optimize.
@@ -183,13 +171,11 @@ class TestChainerMNStudy:
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     def test_failure(storage_mode: str, comm: "CommunicatorBase") -> None:
-
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
             mn_study = ChainerMNStudy(study, comm)
 
             def objective(_trial: ChainerMNTrial, _comm: bool) -> float:
-
                 raise ValueError  # Always fails.
 
             # Invoke optimize in which `ValueError` is accepted.
@@ -223,7 +209,6 @@ class TestChainerMNStudy:
         comm: "CommunicatorBase",
         pruner: Optional[BasePruner] = None,
     ) -> Study:
-
         name_local = create_study(storage=storage).study_name if comm.rank == 0 else None
         name_bcast = comm.mpi_comm.bcast(name_local)
 
@@ -231,7 +216,6 @@ class TestChainerMNStudy:
 
     @staticmethod
     def _check_multi_node(comm: "CommunicatorBase") -> None:
-
         if comm.size < 2:
             pytest.skip("This test is for multi-node only.")
 
@@ -240,7 +224,6 @@ class TestChainerMNTrial:
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     def test_init(storage_mode: str, comm: "CommunicatorBase") -> None:
-
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
             mn_trial = _create_new_chainermn_trial(study, comm)
@@ -251,7 +234,6 @@ class TestChainerMNTrial:
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     def test_suggest_float(storage_mode: str, comm: "CommunicatorBase") -> None:
-
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
             low1 = 0.5
@@ -286,7 +268,6 @@ class TestChainerMNTrial:
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     def test_suggest_float_with_step(storage_mode: str, comm: "CommunicatorBase") -> None:
-
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
             low = 0.0
@@ -313,7 +294,6 @@ class TestChainerMNTrial:
     def test_suggest_int_step1(
         storage_mode: str, comm: "CommunicatorBase", enable_log: bool
     ) -> None:
-
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
             low = 1
@@ -334,7 +314,6 @@ class TestChainerMNTrial:
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     def test_suggest_int_step2(storage_mode: str, comm: "CommunicatorBase") -> None:
-
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
             low = 1
@@ -355,7 +334,6 @@ class TestChainerMNTrial:
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     def test_suggest_categorical(storage_mode: str, comm: "CommunicatorBase") -> None:
-
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
             choices = ("a", "b", "c")
@@ -377,7 +355,6 @@ class TestChainerMNTrial:
     def test_report_and_should_prune(
         storage_mode: str, comm: "CommunicatorBase", is_pruning: bool
     ) -> None:
-
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(
                 storage, comm, DeterministicPruner(is_pruning)
@@ -389,7 +366,6 @@ class TestChainerMNTrial:
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     def test_params(storage_mode: str, comm: "CommunicatorBase") -> None:
-
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
             mn_trial = _create_new_chainermn_trial(study, comm)
@@ -400,7 +376,6 @@ class TestChainerMNTrial:
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     def test_distributions(storage_mode: str, comm: "CommunicatorBase") -> None:
-
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
             mn_trial = _create_new_chainermn_trial(study, comm)
@@ -413,7 +388,6 @@ class TestChainerMNTrial:
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     def test_user_attrs(storage_mode: str, comm: "CommunicatorBase") -> None:
-
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
             mn_trial = _create_new_chainermn_trial(study, comm)
@@ -424,14 +398,12 @@ class TestChainerMNTrial:
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     def test_call_with_mpi(storage_mode: str, comm: "CommunicatorBase") -> None:
-
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
             mn_trial = _create_new_chainermn_trial(study, comm)
             with pytest.raises(RuntimeError):
 
                 def func() -> None:
-
                     raise RuntimeError
 
                 mn_trial._call_with_mpi(func)
@@ -439,7 +411,6 @@ class TestChainerMNTrial:
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     def test_datetime_start(storage_mode: str, comm: "CommunicatorBase") -> None:
-
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
             mn_trial = _create_new_chainermn_trial(study, comm)
@@ -450,7 +421,6 @@ class TestChainerMNTrial:
 def _create_new_chainermn_trial(
     study: Study, comm: "CommunicatorBase"
 ) -> integration.chainermn.ChainerMNTrial:
-
     if comm.rank == 0:
         trial = study.ask()
         mn_trial = integration.chainermn.ChainerMNTrial(trial, comm)

@@ -22,7 +22,6 @@ from optuna.trial import TrialState
 
 @pytest.fixture
 def session() -> Session:
-
     engine = create_engine("sqlite:///:memory:")
     BaseModel.metadata.create_all(engine)
     return Session(bind=engine)
@@ -31,7 +30,6 @@ def session() -> Session:
 class TestStudyDirectionModel:
     @staticmethod
     def _create_model(session: Session) -> StudyModel:
-
         study = StudyModel(study_id=1, study_name="test-study")
         dummy_study = StudyModel(study_id=2, study_name="dummy-study")
         session.add(
@@ -49,14 +47,12 @@ class TestStudyDirectionModel:
 
     @staticmethod
     def test_where_study_id(session: Session) -> None:
-
         study = TestStudyDirectionModel._create_model(session)
         assert 1 == len(StudyDirectionModel.where_study_id(study.study_id, session))
         assert 0 == len(StudyDirectionModel.where_study_id(-1, session))
 
     @staticmethod
     def test_cascade_delete_on_study(session: Session) -> None:
-
         directions = [
             StudyDirectionModel(study_id=1, direction=StudyDirection.MINIMIZE, objective=0),
             StudyDirectionModel(study_id=1, direction=StudyDirection.MAXIMIZE, objective=1),
@@ -76,7 +72,6 @@ class TestStudyDirectionModel:
 class TestStudySystemAttributeModel:
     @staticmethod
     def test_find_by_study_and_key(session: Session) -> None:
-
         study = StudyModel(study_id=1, study_name="test-study")
         session.add(
             StudySystemAttributeModel(study_id=study.study_id, key="sample-key", value_json="1")
@@ -90,7 +85,6 @@ class TestStudySystemAttributeModel:
 
     @staticmethod
     def test_where_study_id(session: Session) -> None:
-
         sample_study = StudyModel(study_id=1, study_name="test-study")
         empty_study = StudyModel(study_id=2, study_name="test-study")
 
@@ -107,7 +101,6 @@ class TestStudySystemAttributeModel:
 
     @staticmethod
     def test_cascade_delete_on_study(session: Session) -> None:
-
         study_id = 1
         direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE, objective=0)
         study = StudyModel(study_id=study_id, study_name="test-study", directions=[direction])
@@ -142,7 +135,6 @@ class TestTrialModel:
 
     @staticmethod
     def test_count(session: Session) -> None:
-
         study_1 = StudyModel(study_id=1, study_name="test-study-1")
         study_2 = StudyModel(study_id=2, study_name="test-study-2")
 
@@ -157,7 +149,6 @@ class TestTrialModel:
 
     @staticmethod
     def test_count_past_trials(session: Session) -> None:
-
         study_1 = StudyModel(study_id=1, study_name="test-study-1")
         study_2 = StudyModel(study_id=2, study_name="test-study-2")
 
@@ -178,7 +169,6 @@ class TestTrialModel:
 
     @staticmethod
     def test_cascade_delete_on_study(session: Session) -> None:
-
         study_id = 1
         direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE, objective=0)
         study = StudyModel(study_id=study_id, study_name="test-study", directions=[direction])
@@ -198,7 +188,6 @@ class TestTrialModel:
 class TestTrialUserAttributeModel:
     @staticmethod
     def test_find_by_trial_and_key(session: Session) -> None:
-
         study = StudyModel(study_id=1, study_name="test-study")
         trial = TrialModel(study_id=study.study_id)
 
@@ -214,7 +203,6 @@ class TestTrialUserAttributeModel:
 
     @staticmethod
     def test_cascade_delete_on_trial(session: Session) -> None:
-
         trial_id = 1
         direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE, objective=0)
         study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
@@ -240,7 +228,6 @@ class TestTrialUserAttributeModel:
 class TestTrialSystemAttributeModel:
     @staticmethod
     def test_find_by_trial_and_key(session: Session) -> None:
-
         study = StudyModel(study_id=1, study_name="test-study")
         trial = TrialModel(study_id=study.study_id)
 
@@ -256,7 +243,6 @@ class TestTrialSystemAttributeModel:
 
     @staticmethod
     def test_cascade_delete_on_trial(session: Session) -> None:
-
         trial_id = 1
         direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE, objective=0)
         study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
@@ -282,7 +268,6 @@ class TestTrialSystemAttributeModel:
 class TestTrialValueModel:
     @staticmethod
     def _create_model(session: Session) -> TrialModel:
-
         direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE, objective=0)
         study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
@@ -301,7 +286,6 @@ class TestTrialValueModel:
 
     @staticmethod
     def test_find_by_trial_and_objective(session: Session) -> None:
-
         trial = TestTrialValueModel._create_model(session)
         trial_value = TrialValueModel.find_by_trial_and_objective(trial, 0, session)
         assert trial_value is not None
@@ -310,7 +294,6 @@ class TestTrialValueModel:
 
     @staticmethod
     def test_where_trial_id(session: Session) -> None:
-
         trial = TestTrialValueModel._create_model(session)
         trial_values = TrialValueModel.where_trial_id(trial.trial_id, session)
         assert 1 == len(trial_values)
@@ -319,7 +302,6 @@ class TestTrialValueModel:
 
     @staticmethod
     def test_cascade_delete_on_trial(session: Session) -> None:
-
         trial = TestTrialValueModel._create_model(session)
         trial.values.append(
             TrialValueModel(
@@ -339,7 +321,6 @@ class TestTrialValueModel:
 class TestTrialIntermediateValueModel:
     @staticmethod
     def _create_model(session: Session) -> TrialModel:
-
         direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE, objective=0)
         study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
@@ -358,7 +339,6 @@ class TestTrialIntermediateValueModel:
 
     @staticmethod
     def test_find_by_trial_and_step(session: Session) -> None:
-
         trial = TestTrialIntermediateValueModel._create_model(session)
         trial_intermediate_value = TrialIntermediateValueModel.find_by_trial_and_step(
             trial, 0, session
@@ -369,7 +349,6 @@ class TestTrialIntermediateValueModel:
 
     @staticmethod
     def test_where_trial_id(session: Session) -> None:
-
         trial = TestTrialIntermediateValueModel._create_model(session)
         trial_intermediate_values = TrialIntermediateValueModel.where_trial_id(
             trial.trial_id, session
@@ -380,7 +359,6 @@ class TestTrialIntermediateValueModel:
 
     @staticmethod
     def test_cascade_delete_on_trial(session: Session) -> None:
-
         trial = TestTrialIntermediateValueModel._create_model(session)
         trial.intermediate_values.append(
             TrialIntermediateValueModel(
@@ -403,7 +381,6 @@ class TestTrialIntermediateValueModel:
 class TestTrialHeartbeatModel:
     @staticmethod
     def _create_model(session: Session) -> TrialModel:
-
         direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE, objective=0)
         study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
@@ -415,7 +392,6 @@ class TestTrialHeartbeatModel:
 
     @staticmethod
     def test_where_trial_id(session: Session) -> None:
-
         trial = TestTrialHeartbeatModel._create_model(session)
         trial_heartbeat = TrialHeartbeatModel.where_trial_id(trial.trial_id, session)
         assert trial_heartbeat is not None
@@ -423,7 +399,6 @@ class TestTrialHeartbeatModel:
 
     @staticmethod
     def test_cascade_delete_on_trial(session: Session) -> None:
-
         trial = TestTrialHeartbeatModel._create_model(session)
         session.commit()
 
@@ -438,7 +413,6 @@ class TestTrialHeartbeatModel:
 class TestVersionInfoModel:
     @staticmethod
     def test_version_info_id_constraint(session: Session) -> None:
-
         session.add(VersionInfoModel(schema_version=1, library_version="0.0.1"))
         session.commit()
 
