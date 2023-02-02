@@ -33,7 +33,6 @@ from .create_db import objective_test_upgrade_distributions
 
 
 def test_init() -> None:
-
     storage = create_test_storage()
     session = storage.scoped_session()
 
@@ -56,14 +55,12 @@ def test_init() -> None:
 
 
 def test_init_url_template() -> None:
-
     with tempfile.NamedTemporaryFile(suffix="{SCHEMA_VERSION}") as tf:
         storage = RDBStorage("sqlite:///" + tf.name)
         assert storage.engine.url.database.endswith(str(SCHEMA_VERSION))
 
 
 def test_init_url_that_contains_percent_character() -> None:
-
     # Alembic's ini file regards '%' as the special character for variable expansion.
     # We checks `RDBStorage` does not raise an error even if a storage url contains the character.
     with tempfile.NamedTemporaryFile(suffix="%") as tf:
@@ -77,7 +74,6 @@ def test_init_url_that_contains_percent_character() -> None:
 
 
 def test_init_db_module_import_error() -> None:
-
     expected_msg = (
         "Failed to import DB access module for the specified storage URL. "
         "Please install appropriate one."
@@ -89,7 +85,6 @@ def test_init_db_module_import_error() -> None:
 
 
 def test_engine_kwargs() -> None:
-
     create_test_storage(engine_kwargs={"pool_size": 5})
 
 
@@ -106,13 +101,11 @@ def test_engine_kwargs() -> None:
 def test_set_default_engine_kwargs_for_mysql(
     url: str, engine_kwargs: Dict[str, Any], expected: bool
 ) -> None:
-
     RDBStorage._set_default_engine_kwargs_for_mysql(url, engine_kwargs)
     assert engine_kwargs["pool_pre_ping"] is expected
 
 
 def test_set_default_engine_kwargs_for_mysql_with_other_rdb() -> None:
-
     # Do not change engine_kwargs if database is not MySQL.
     engine_kwargs: Dict[str, Any] = {}
     RDBStorage._set_default_engine_kwargs_for_mysql("sqlite:///example.db", engine_kwargs)
@@ -122,7 +115,6 @@ def test_set_default_engine_kwargs_for_mysql_with_other_rdb() -> None:
 
 
 def test_check_table_schema_compatibility() -> None:
-
     storage = create_test_storage()
     session = storage.scoped_session()
 
@@ -144,13 +136,11 @@ def test_check_table_schema_compatibility() -> None:
 
 
 def create_test_storage(engine_kwargs: Optional[Dict[str, Any]] = None) -> RDBStorage:
-
     storage = RDBStorage("sqlite:///:memory:", engine_kwargs=engine_kwargs)
     return storage
 
 
 def test_create_scoped_session() -> None:
-
     storage = create_test_storage()
 
     # This object violates the unique constraint of version_info_id.
@@ -161,7 +151,6 @@ def test_create_scoped_session() -> None:
 
 
 def test_upgrade_identity() -> None:
-
     storage = create_test_storage()
 
     # `upgrade()` has no effect because the storage version is already up-to-date.
@@ -312,7 +301,6 @@ def test_upgrade_distributions(optuna_version: str) -> None:
 
 
 def test_record_heartbeat() -> None:
-
     heartbeat_interval = 1
     n_trials = 2
     sleep_sec = 2

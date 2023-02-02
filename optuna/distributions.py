@@ -85,11 +85,9 @@ class BaseDistribution(abc.ABC):
         raise NotImplementedError
 
     def _asdict(self) -> Dict:
-
         return self.__dict__
 
     def __eq__(self, other: Any) -> bool:
-
         if not isinstance(other, BaseDistribution):
             return NotImplemented
         if not type(self) is type(other):
@@ -97,11 +95,9 @@ class BaseDistribution(abc.ABC):
         return self.__dict__ == other.__dict__
 
     def __hash__(self) -> int:
-
         return hash((self.__class__,) + tuple(sorted(self.__dict__.items())))
 
     def __repr__(self) -> str:
-
         kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
         return "{}({})".format(self.__class__.__name__, kwargs)
 
@@ -139,7 +135,6 @@ class FloatDistribution(BaseDistribution):
     def __init__(
         self, low: float, high: float, log: bool = False, step: Union[None, float] = None
     ) -> None:
-
         if log and step is not None:
             raise ValueError("The parameter `step` is not supported when `log` is true.")
 
@@ -170,7 +165,6 @@ class FloatDistribution(BaseDistribution):
         self.log = log
 
     def single(self) -> bool:
-
         if self.step is None:
             return self.low == self.high
         else:
@@ -182,7 +176,6 @@ class FloatDistribution(BaseDistribution):
             return (high - low) < step
 
     def _contains(self, param_value_in_internal_repr: float) -> bool:
-
         value = param_value_in_internal_repr
         if self.step is None:
             return self.low <= value <= self.high
@@ -349,7 +342,6 @@ class IntDistribution(BaseDistribution):
     """
 
     def __init__(self, low: int, high: int, log: bool = False, step: int = 1) -> None:
-
         if log and step != 1:
             raise ValueError(
                 "Samplers and other components in Optuna only accept step is 1 "
@@ -380,7 +372,6 @@ class IntDistribution(BaseDistribution):
         self.high = _adjust_int_uniform_high(self.low, high, self.step)
 
     def to_external_repr(self, param_value_in_internal_repr: float) -> int:
-
         return int(param_value_in_internal_repr)
 
     def to_internal_repr(self, param_value_in_external_repr: int) -> float:
@@ -409,7 +400,6 @@ class IntDistribution(BaseDistribution):
         return (self.high - self.low) < self.step
 
     def _contains(self, param_value_in_internal_repr: float) -> bool:
-
         value = param_value_in_internal_repr
         return self.low <= value <= self.high and (value - self.low) % self.step == 0
 
@@ -522,7 +512,6 @@ class CategoricalDistribution(BaseDistribution):
     """
 
     def __init__(self, choices: Sequence[CategoricalChoiceType]) -> None:
-
         if len(choices) == 0:
             raise ValueError("The `choices` must contain one or more elements.")
         for choice in choices:
@@ -537,11 +526,9 @@ class CategoricalDistribution(BaseDistribution):
         self.choices = tuple(choices)
 
     def to_external_repr(self, param_value_in_internal_repr: float) -> CategoricalChoiceType:
-
         return self.choices[int(param_value_in_internal_repr)]
 
     def to_internal_repr(self, param_value_in_external_repr: CategoricalChoiceType) -> float:
-
         for index, choice in enumerate(self.choices):
             if _categorical_choice_equal(param_value_in_external_repr, choice):
                 return index
@@ -549,16 +536,13 @@ class CategoricalDistribution(BaseDistribution):
         raise ValueError(f"'{param_value_in_external_repr}' not in {self.choices}.")
 
     def single(self) -> bool:
-
         return len(self.choices) == 1
 
     def _contains(self, param_value_in_internal_repr: float) -> bool:
-
         index = int(param_value_in_internal_repr)
         return 0 <= index < len(self.choices)
 
     def __eq__(self, other: Any) -> bool:
-
         if not isinstance(other, BaseDistribution):
             return NotImplemented
         if not isinstance(other, self.__class__):
@@ -723,7 +707,6 @@ def _adjust_int_uniform_high(low: int, high: int, step: int) -> int:
 
 
 def _get_single_value(distribution: BaseDistribution) -> Union[int, float, CategoricalChoiceType]:
-
     assert distribution.single()
 
     if isinstance(
@@ -745,7 +728,6 @@ def _convert_old_distribution_to_new_distribution(
     distribution: BaseDistribution,
     suppress_warning: bool = False,
 ) -> BaseDistribution:
-
     new_distribution: BaseDistribution
 
     # Float distributions.

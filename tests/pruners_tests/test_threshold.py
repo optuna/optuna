@@ -4,7 +4,6 @@ import optuna
 
 
 def test_threshold_pruner_with_ub() -> None:
-
     pruner = optuna.pruners.ThresholdPruner(upper=2.0, n_warmup_steps=0, interval_steps=1)
     study = optuna.study.create_study(pruner=pruner)
     trial = study.ask()
@@ -17,7 +16,6 @@ def test_threshold_pruner_with_ub() -> None:
 
 
 def test_threshold_pruner_with_lt() -> None:
-
     pruner = optuna.pruners.ThresholdPruner(lower=2.0, n_warmup_steps=0, interval_steps=1)
     study = optuna.study.create_study(pruner=pruner)
     trial = study.ask()
@@ -30,7 +28,6 @@ def test_threshold_pruner_with_lt() -> None:
 
 
 def test_threshold_pruner_with_two_side() -> None:
-
     pruner = optuna.pruners.ThresholdPruner(
         lower=0.0, upper=1.0, n_warmup_steps=0, interval_steps=1
     )
@@ -54,7 +51,6 @@ def test_threshold_pruner_with_two_side() -> None:
 
 
 def test_threshold_pruner_with_invalid_inputs() -> None:
-
     with pytest.raises(TypeError):
         optuna.pruners.ThresholdPruner(lower="val", upper=1.0)  # type: ignore
 
@@ -66,7 +62,6 @@ def test_threshold_pruner_with_invalid_inputs() -> None:
 
 
 def test_threshold_pruner_with_nan() -> None:
-
     pruner = optuna.pruners.ThresholdPruner(
         lower=0.0, upper=1.0, n_warmup_steps=0, interval_steps=1
     )
@@ -78,7 +73,6 @@ def test_threshold_pruner_with_nan() -> None:
 
 
 def test_threshold_pruner_n_warmup_steps() -> None:
-
     pruner = optuna.pruners.ThresholdPruner(lower=0.0, upper=1.0, n_warmup_steps=2)
     study = optuna.study.create_study(pruner=pruner)
     trial = study.ask()
@@ -100,7 +94,6 @@ def test_threshold_pruner_n_warmup_steps() -> None:
 
 
 def test_threshold_pruner_interval_steps() -> None:
-
     pruner = optuna.pruners.ThresholdPruner(lower=0.0, upper=1.0, interval_steps=2)
     study = optuna.study.create_study(pruner=pruner)
     trial = study.ask()

@@ -198,7 +198,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         ] = None,
         skip_table_creation: bool = False,
     ) -> None:
-
         self.engine_kwargs = engine_kwargs or {}
         self.url = self._fill_storage_url_template(url)
         self.skip_compatibility_check = skip_compatibility_check
@@ -231,7 +230,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             self._version_manager.check_table_schema_compatibility()
 
     def __getstate__(self) -> Dict[Any, Any]:
-
         state = self.__dict__.copy()
         del state["scoped_session"]
         del state["engine"]
@@ -239,7 +237,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         return state
 
     def __setstate__(self, state: Dict[Any, Any]) -> None:
-
         self.__dict__.update(state)
         try:
             self.engine = sqlalchemy.engine.create_engine(self.url, **self.engine_kwargs)
@@ -260,7 +257,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
     def create_new_study(
         self, directions: Sequence[StudyDirection], study_name: Optional[str] = None
     ) -> int:
-
         try:
             with _create_scoped_session(self.scoped_session) as session:
                 if study_name is None:
@@ -286,14 +282,12 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         return self.get_study_id_from_name(study_name)
 
     def delete_study(self, study_id: int) -> None:
-
         with _create_scoped_session(self.scoped_session, True) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
             session.delete(study)
 
     @staticmethod
     def _create_unique_study_name(session: "sqlalchemy_orm.Session") -> str:
-
         while True:
             study_uuid = str(uuid.uuid4())
             study_name = DEFAULT_STUDY_NAME_PREFIX + study_uuid
@@ -304,7 +298,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         return study_name
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
-
         with _create_scoped_session(self.scoped_session, True) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
             attribute = models.StudyUserAttributeModel.find_by_study_and_key(study, key, session)
@@ -317,7 +310,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 attribute.value_json = json.dumps(value)
 
     def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
-
         with _create_scoped_session(self.scoped_session, True) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
             attribute = models.StudySystemAttributeModel.find_by_study_and_key(study, key, session)
@@ -330,7 +322,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 attribute.value_json = json.dumps(value)
 
     def get_study_id_from_name(self, study_name: str) -> int:
-
         with _create_scoped_session(self.scoped_session) as session:
             study = models.StudyModel.find_or_raise_by_name(study_name, session)
             study_id = study.study_id
@@ -338,7 +329,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         return study_id
 
     def get_study_name_from_id(self, study_id: int) -> str:
-
         with _create_scoped_session(self.scoped_session) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
             study_name = study.study_name
@@ -346,7 +336,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         return study_name
 
     def get_study_directions(self, study_id: int) -> List[StudyDirection]:
-
         with _create_scoped_session(self.scoped_session) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
             directions = [d.direction for d in study.directions]
@@ -354,7 +343,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         return directions
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
-
         with _create_scoped_session(self.scoped_session) as session:
             # Ensure that that study exists.
             models.StudyModel.find_or_raise_by_id(study_id, session)
@@ -364,7 +352,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         return user_attrs
 
     def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
-
         with _create_scoped_session(self.scoped_session) as session:
             # Ensure that that study exists.
             models.StudyModel.find_or_raise_by_id(study_id, session)
@@ -374,7 +361,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         return system_attrs
 
     def get_trial_user_attrs(self, trial_id: int) -> Dict[str, Any]:
-
         with _create_scoped_session(self.scoped_session) as session:
             # Ensure trial exists.
             models.TrialModel.find_or_raise_by_id(trial_id, session)
@@ -385,7 +371,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         return user_attrs
 
     def get_trial_system_attrs(self, trial_id: int) -> Dict[str, Any]:
-
         with _create_scoped_session(self.scoped_session) as session:
             # Ensure trial exists.
             models.TrialModel.find_or_raise_by_id(trial_id, session)
@@ -397,7 +382,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
     def get_all_studies(self) -> List[FrozenStudy]:
         with _create_scoped_session(self.scoped_session) as session:
-
             studies = session.query(
                 models.StudyModel.study_id,
                 models.StudyModel.study_name,
@@ -434,7 +418,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             return frozen_studies
 
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
-
         return self._create_new_trial(study_id, template_trial)._trial_id
 
     def _create_new_trial(
@@ -574,7 +557,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         param_value_internal: float,
         distribution: distributions.BaseDistribution,
     ) -> None:
-
         with _create_scoped_session(self.scoped_session, True) as session:
             self._set_trial_param_without_commit(
                 session, trial_id, param_name, param_value_internal, distribution
@@ -588,7 +570,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         param_value_internal: float,
         distribution: distributions.BaseDistribution,
     ) -> None:
-
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
@@ -622,7 +603,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         param_value_internal: float,
         distribution: distributions.BaseDistribution,
     ) -> None:
-
         with _create_scoped_session(self.scoped_session) as session:
             # Acquire lock.
             #
@@ -637,7 +617,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             ).check_and_add(session)
 
     def get_trial_param(self, trial_id: int, param_name: str) -> float:
-
         with _create_scoped_session(self.scoped_session) as session:
             trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
             trial_param = models.TrialParamModel.find_or_raise_by_trial_and_param_name(
@@ -650,7 +629,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
     def set_trial_state_values(
         self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
     ) -> bool:
-
         try:
             with _create_scoped_session(self.scoped_session) as session:
                 trial = models.TrialModel.find_or_raise_by_id(trial_id, session, for_update=True)
@@ -677,7 +655,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
     def _set_trial_value_without_commit(
         self, session: "sqlalchemy_orm.Session", trial_id: int, objective: int, value: float
     ) -> None:
-
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
         stored_value, value_type = TrialValueModel.value_to_stored_repr(value)
@@ -695,7 +672,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
     ) -> None:
-
         with _create_scoped_session(self.scoped_session, True) as session:
             self._set_trial_intermediate_value_without_commit(
                 session, trial_id, step, intermediate_value
@@ -708,7 +684,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         step: int,
         intermediate_value: float,
     ) -> None:
-
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
@@ -734,14 +709,12 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             trial_intermediate_value.intermediate_value_type = value_type
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
-
         with _create_scoped_session(self.scoped_session, True) as session:
             self._set_trial_user_attr_without_commit(session, trial_id, key, value)
 
     def _set_trial_user_attr_without_commit(
         self, session: "sqlalchemy_orm.Session", trial_id: int, key: str, value: Any
     ) -> None:
-
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
@@ -755,14 +728,12 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             attribute.value_json = json.dumps(value)
 
     def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
-
         with _create_scoped_session(self.scoped_session, True) as session:
             self._set_trial_system_attr_without_commit(session, trial_id, key, value)
 
     def _set_trial_system_attr_without_commit(
         self, session: "sqlalchemy_orm.Session", trial_id: int, key: str, value: Any
     ) -> None:
-
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
@@ -776,7 +747,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             attribute.value_json = json.dumps(value)
 
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
-
         with _create_scoped_session(self.scoped_session) as session:
             trial_id = (
                 session.query(models.TrialModel.trial_id)
@@ -795,7 +765,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             return trial_id[0]
 
     def get_trial(self, trial_id: int) -> FrozenTrial:
-
         with _create_scoped_session(self.scoped_session) as session:
             trial_model = models.TrialModel.find_or_raise_by_id(trial_id, session)
             frozen_trial = self._build_frozen_trial_from_trial_model(trial_model)
@@ -808,7 +777,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         deepcopy: bool = True,
         states: Optional[Container[TrialState]] = None,
     ) -> List[FrozenTrial]:
-
         trials = self._get_trials(study_id, states, set())
 
         return copy.deepcopy(trials) if deepcopy else trials
@@ -819,7 +787,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         states: Optional[Container[TrialState]],
         excluded_trial_ids: Set[int],
     ) -> List[FrozenTrial]:
-
         with _create_scoped_session(self.scoped_session) as session:
             # Ensure that the study exists.
             models.StudyModel.find_or_raise_by_id(study_id, session)
@@ -881,7 +848,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         return trials
 
     def _build_frozen_trial_from_trial_model(self, trial: "models.TrialModel") -> FrozenTrial:
-
         values: Optional[List[float]]
         if trial.values:
             values = [0 for _ in trial.values]
@@ -923,7 +889,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         )
 
     def get_best_trial(self, study_id: int) -> FrozenTrial:
-
         with _create_scoped_session(self.scoped_session) as session:
             _directions = self.get_study_directions(study_id)
             if len(_directions) > 1:
@@ -942,7 +907,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
     @staticmethod
     def _set_default_engine_kwargs_for_mysql(url: str, engine_kwargs: Dict[str, Any]) -> None:
-
         # Skip if RDB is not MySQL.
         if not url.startswith("mysql"):
             return
@@ -960,7 +924,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
     @staticmethod
     def _fill_storage_url_template(template: str) -> str:
-
         return template.format(SCHEMA_VERSION=models.SCHEMA_VERSION)
 
     def remove_session(self) -> None:
@@ -1040,13 +1003,11 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         return stale_trial_ids
 
     def get_heartbeat_interval(self) -> Optional[int]:
-
         return self.heartbeat_interval
 
     def get_failed_trial_callback(
         self,
     ) -> Optional[Callable[["optuna.study.Study", FrozenTrial], None]]:
-
         return self.failed_trial_callback
 
 
@@ -1057,7 +1018,6 @@ class _VersionManager:
         engine: "sqlalchemy.engine.Engine",
         scoped_session: "sqlalchemy_orm.scoped_session",
     ) -> None:
-
         self.url = url
         self.engine = engine
         self.scoped_session = scoped_session
@@ -1065,7 +1025,6 @@ class _VersionManager:
         self._init_alembic()
 
     def _init_version_info_model(self) -> None:
-
         with _create_scoped_session(self.scoped_session, True) as session:
             version_info = models.VersionInfoModel.find(session)
             if version_info is not None:
@@ -1078,7 +1037,6 @@ class _VersionManager:
             session.add(version_info)
 
     def _init_alembic(self) -> None:
-
         logging.getLogger("alembic").setLevel(logging.WARN)
 
         context = alembic_migration.MigrationContext.configure(self.engine.connect())
@@ -1097,7 +1055,6 @@ class _VersionManager:
         self._set_alembic_revision(revision)
 
     def _set_alembic_revision(self, revision: str) -> None:
-
         connection = self.engine.connect()
         context = alembic_migration.MigrationContext.configure(connection)
         with connection.begin():
@@ -1105,7 +1062,6 @@ class _VersionManager:
             context.stamp(script, revision)
 
     def check_table_schema_compatibility(self) -> None:
-
         with _create_scoped_session(self.scoped_session) as session:
             # NOTE: After invocation of `_init_version_info_model` method,
             #       it is ensured that a `VersionInfoModel` entry exists.
@@ -1137,7 +1093,6 @@ class _VersionManager:
         raise RuntimeError(message)
 
     def get_current_version(self) -> str:
-
         context = alembic_migration.MigrationContext.configure(self.engine.connect())
         version = context.get_current_revision()
         assert version is not None
@@ -1145,26 +1100,22 @@ class _VersionManager:
         return version
 
     def get_head_version(self) -> str:
-
         script = self._create_alembic_script()
         current_head = script.get_current_head()
         assert current_head is not None
         return current_head
 
     def _get_base_version(self) -> str:
-
         script = self._create_alembic_script()
         base = script.get_base()
         assert base is not None, "There should be exactly one base, i.e. v0.9.0.a."
         return base
 
     def get_all_versions(self) -> List[str]:
-
         script = self._create_alembic_script()
         return [r.revision for r in script.walk_revisions()]
 
     def upgrade(self) -> None:
-
         config = self._create_alembic_config()
         alembic_command.upgrade(config, "head")
 
@@ -1175,7 +1126,6 @@ class _VersionManager:
             version_info.library_version = version.__version__
 
     def _is_alembic_supported(self) -> bool:
-
         with _create_scoped_session(self.scoped_session) as session:
             version_info = models.VersionInfoModel.find(session)
 
@@ -1186,13 +1136,11 @@ class _VersionManager:
             return version_info.schema_version == models.SCHEMA_VERSION
 
     def _create_alembic_script(self) -> "alembic_script.ScriptDirectory":
-
         config = self._create_alembic_config()
         script = alembic_script.ScriptDirectory.from_config(config)
         return script
 
     def _create_alembic_config(self) -> "alembic_config.Config":
-
         alembic_dir = os.path.join(os.path.dirname(__file__), "alembic")
 
         config = alembic_config.Config(os.path.join(os.path.dirname(__file__), "alembic.ini"))
@@ -1202,7 +1150,6 @@ class _VersionManager:
 
 
 def escape_alembic_config_value(value: str) -> str:
-
     # We must escape '%' in a value string because the character
     # is regarded as the trigger of variable expansion.
     # Please see the documentation of `configparser.BasicInterpolation` for more details.

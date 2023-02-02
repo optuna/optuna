@@ -37,17 +37,14 @@ _logger = get_logger(__name__)
 
 
 def default_gamma(x: int) -> int:
-
     return min(int(np.ceil(0.1 * x)), 25)
 
 
 def hyperopt_default_gamma(x: int) -> int:
-
     return min(int(np.ceil(0.25 * np.sqrt(x))), 25)
 
 
 def default_weights(x: int) -> np.ndarray:
-
     if x == 0:
         return np.asarray([])
     elif x < 25:
@@ -251,7 +248,6 @@ class TPESampler(BaseSampler):
         constant_liar: bool = False,
         constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
     ) -> None:
-
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
             consider_prior,
             prior_weight,
@@ -312,14 +308,12 @@ class TPESampler(BaseSampler):
             )
 
     def reseed_rng(self) -> None:
-
         self._rng.seed()
         self._random_sampler.reseed_rng()
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
-
         if not self._multivariate:
             return {}
 
@@ -361,7 +355,6 @@ class TPESampler(BaseSampler):
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
-
         if self._group:
             assert self._search_space_group is not None
             params = {}
@@ -379,7 +372,6 @@ class TPESampler(BaseSampler):
     def _sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
-
         if search_space == {}:
             return {}
 
@@ -436,7 +428,6 @@ class TPESampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
-
         values, scores, violations = _get_observation_pairs(
             study,
             [param_name],
@@ -495,7 +486,6 @@ class TPESampler(BaseSampler):
         log_l: np.ndarray,
         log_g: np.ndarray,
     ) -> Dict[str, Union[float, int]]:
-
         sample_size = next(iter(samples.values())).size
         if sample_size:
             score = log_l - log_g

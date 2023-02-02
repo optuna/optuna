@@ -112,7 +112,6 @@ def plot_parallel_coordinate(
 
 
 def _get_parallel_coordinate_plot(info: _ParallelCoordinateInfo) -> "go.Figure":
-
     layout = go.Layout(title="Parallel Coordinate Plot")
 
     if len(info.dims_params) == 0 or len(info.dim_objective.values) == 0:
@@ -148,7 +147,6 @@ def _get_parallel_coordinate_info(
     target: Optional[Callable[[FrozenTrial], float]] = None,
     target_name: str = "Objective Value",
 ) -> _ParallelCoordinateInfo:
-
     _check_plot_args(study, target, target_name)
 
     reverse_scale = _is_reverse_scale(study, target)

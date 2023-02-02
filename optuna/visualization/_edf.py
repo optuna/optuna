@@ -143,7 +143,6 @@ def _get_edf_info(
     target: Optional[Callable[[FrozenTrial], float]] = None,
     target_name: str = "Objective Value",
 ) -> _EDFInfo:
-
     if isinstance(study, Study):
         studies = [study]
     else:
@@ -182,7 +181,7 @@ def _get_edf_info(
     x_values = np.linspace(min_x_value, max_x_value, NUM_SAMPLES_X_AXIS)
 
     edf_line_info_list = []
-    for (study_name, values) in zip(study_names, all_values):
+    for study_name, values in zip(study_names, all_values):
         y_values = np.sum(values[:, np.newaxis] <= x_values, axis=0) / values.size
         edf_line_info_list.append(_EDFLineInfo(study_name=study_name, y_values=y_values))
 

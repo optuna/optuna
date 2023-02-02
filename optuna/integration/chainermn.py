@@ -46,12 +46,10 @@ class _ChainerMNObjectiveFunc:
         func: Callable[["ChainerMNTrial", "CommunicatorBase"], float],
         comm: "CommunicatorBase",
     ) -> None:
-
         self.comm = comm
         self.objective = func
 
     def __call__(self, trial: Trial) -> float:
-
         self.comm.mpi_comm.bcast(True)
         return self.objective(ChainerMNTrial(trial, self.comm), self.comm)
 
@@ -78,7 +76,6 @@ class ChainerMNStudy:
     """
 
     def __init__(self, study: Study, comm: "CommunicatorBase") -> None:
-
         _imports.check()
 
         if isinstance(study._storage, InMemoryStorage):
@@ -138,11 +135,9 @@ class ChainerMNStudy:
                     has_next_trial = self.comm.mpi_comm.bcast(None)
 
     def __getattr__(self, attr_name: str) -> Any:
-
         return getattr(self.delegate, attr_name)
 
     def __setattr__(self, attr_name: str, value: Any) -> None:
-
         setattr(self.delegate, attr_name, value)
 
 
@@ -164,7 +159,6 @@ class ChainerMNTrial(BaseTrial):
     """
 
     def __init__(self, trial: Optional[Trial], comm: "CommunicatorBase") -> None:
-
         self.delegate = trial
         self.comm = comm
 
@@ -185,22 +179,18 @@ class ChainerMNTrial(BaseTrial):
 
     @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
-
         return self.suggest_float(name, low, high)
 
     @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
-
         return self.suggest_float(name, low, high, log=True)
 
     @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
-
         return self.suggest_float(name, low, high, step=q)
 
     def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
         def func() -> int:
-
             assert self.delegate is not None
             return self.delegate.suggest_int(name, low, high, step=step, log=log)
 
@@ -236,14 +226,12 @@ class ChainerMNTrial(BaseTrial):
         self, name: str, choices: Sequence[CategoricalChoiceType]
     ) -> CategoricalChoiceType:
         def func() -> CategoricalChoiceType:
-
             assert self.delegate is not None
             return self.delegate.suggest_categorical(name, choices)
 
         return self._call_with_mpi(func)
 
     def report(self, value: float, step: int) -> None:
-
         if self.comm.rank == 0:
             assert self.delegate is not None
             self.delegate.report(value, step)
@@ -251,14 +239,12 @@ class ChainerMNTrial(BaseTrial):
 
     def should_prune(self) -> bool:
         def func() -> bool:
-
             assert self.delegate is not None
             return self.delegate.should_prune()
 
         return self._call_with_mpi(func)
 
     def set_user_attr(self, key: str, value: Any) -> None:
-
         if self.comm.rank == 0:
             assert self.delegate is not None
             self.delegate.set_user_attr(key, value)
@@ -266,7 +252,6 @@ class ChainerMNTrial(BaseTrial):
 
     @deprecated_func("3.1.0", "6.0.0")
     def set_system_attr(self, key: str, value: Any) -> None:
-
         if self.comm.rank == 0:
             assert self.delegate is not None
             self.delegate.storage.set_trial_system_attr(self.delegate._trial_id, key, value)
@@ -275,7 +260,6 @@ class ChainerMNTrial(BaseTrial):
     @property
     def number(self) -> int:
         def func() -> int:
-
             assert self.delegate is not None
             return self.delegate.number
 
@@ -284,7 +268,6 @@ class ChainerMNTrial(BaseTrial):
     @property
     def _trial_id(self) -> int:
         def func() -> int:
-
             assert self.delegate is not None
             return self.delegate._trial_id
 
@@ -293,7 +276,6 @@ class ChainerMNTrial(BaseTrial):
     @property
     def params(self) -> Dict[str, Any]:
         def func() -> Dict[str, Any]:
-
             assert self.delegate is not None
             return self.delegate.params
 
@@ -302,7 +284,6 @@ class ChainerMNTrial(BaseTrial):
     @property
     def distributions(self) -> Dict[str, BaseDistribution]:
         def func() -> Dict[str, BaseDistribution]:
-
             assert self.delegate is not None
             return self.delegate.distributions
 
@@ -311,7 +292,6 @@ class ChainerMNTrial(BaseTrial):
     @property
     def user_attrs(self) -> Dict[str, Any]:
         def func() -> Dict[str, Any]:
-
             assert self.delegate is not None
             return self.delegate.user_attrs
 
@@ -321,7 +301,6 @@ class ChainerMNTrial(BaseTrial):
     @deprecated_func("3.1.0", "6.0.0")
     def system_attrs(self) -> Dict[str, Any]:
         def func() -> Dict[str, Any]:
-
             assert self.delegate is not None
             return self.delegate.system_attrs
 
@@ -330,14 +309,12 @@ class ChainerMNTrial(BaseTrial):
     @property
     def datetime_start(self) -> Optional[datetime]:
         def func() -> Optional[datetime]:
-
             assert self.delegate is not None
             return self.delegate.datetime_start
 
         return self._call_with_mpi(func)
 
     def _call_with_mpi(self, func: Callable) -> Any:
-
         if self.comm.rank == 0:
             try:
                 result = func()

@@ -67,7 +67,6 @@ class _BaseTuner:
         lgbm_params: Optional[Dict[str, Any]] = None,
         lgbm_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
-
         # Handling alias metrics.
         if lgbm_params is not None:
             _handling_alias_metrics(lgbm_params)
@@ -92,7 +91,6 @@ class _BaseTuner:
         return metric
 
     def _get_booster_best_score(self, booster: "lgb.Booster") -> float:
-
         metric = self._get_metric_for_objective()
         valid_sets: Optional[VALID_SET_TYPE] = self.lgbm_kwargs.get("valid_sets")
 
@@ -118,7 +116,6 @@ class _BaseTuner:
         return val_score
 
     def _metric_with_eval_at(self, metric: str) -> str:
-
         if metric != "ndcg" and metric != "map":
             return metric
 
@@ -143,12 +140,10 @@ class _BaseTuner:
         )
 
     def higher_is_better(self) -> bool:
-
         metric_name = self.lgbm_params.get("metric", "binary_logloss")
         return metric_name in ("auc", "auc_mu", "ndcg", "map", "average_precision")
 
     def compare_validation_metrics(self, val_score: float, best_score: float) -> bool:
-
         if self.higher_is_better():
             return val_score > best_score
         else:
@@ -169,7 +164,6 @@ class _OptunaObjective(_BaseTuner):
         model_dir: Optional[str],
         pbar: Optional[tqdm.tqdm] = None,
     ):
-
         self.target_param_names = target_param_names
         self.pbar = pbar
         self.lgbm_params = lgbm_params
@@ -186,7 +180,6 @@ class _OptunaObjective(_BaseTuner):
         self.pbar_fmt = "{}, val_score: {:.6f}"
 
     def _check_target_names_supported(self) -> None:
-
         supported_param_names = [
             "lambda_l1",
             "lambda_l2",
@@ -238,7 +231,6 @@ class _OptunaObjective(_BaseTuner):
         return copy.copy(valid_sets)
 
     def __call__(self, trial: optuna.trial.Trial) -> float:
-
         self._preprocess(trial)
 
         start_time = time.time()
@@ -296,7 +288,6 @@ class _OptunaObjectiveCV(_OptunaObjective):
         model_dir: Optional[str],
         pbar: Optional[tqdm.tqdm] = None,
     ):
-
         super().__init__(
             target_param_names,
             lgbm_params,
@@ -309,13 +300,11 @@ class _OptunaObjectiveCV(_OptunaObjective):
         )
 
     def _get_cv_scores(self, cv_results: Dict[str, List[float]]) -> List[float]:
-
         metric = self._get_metric_for_objective()
         val_scores = cv_results["{}-mean".format(metric)]
         return val_scores
 
     def __call__(self, trial: optuna.trial.Trial) -> float:
-
         self._preprocess(trial)
 
         start_time = time.time()
@@ -376,7 +365,6 @@ class _LightGBMBaseTuner(_BaseTuner):
         *,
         optuna_seed: Optional[int] = None,
     ) -> None:
-
         _imports.check()
 
         params = copy.deepcopy(params)
@@ -511,7 +499,6 @@ class _LightGBMBaseTuner(_BaseTuner):
         return booster
 
     def _parse_args(self, *args: Any, **kwargs: Any) -> None:
-
         self.auto_options = {
             option_name: kwargs.get(option_name)
             for option_name in ["time_budget", "sample_size", "verbosity", "show_progress_bar"]
@@ -679,17 +666,14 @@ class _LightGBMBaseTuner(_BaseTuner):
         step_name: str,
         pbar: Optional[tqdm.tqdm],
     ) -> _OptunaObjective:
-
         raise NotImplementedError
 
     def _create_stepwise_study(
         self, study: "optuna.study.Study", step_name: str
     ) -> "optuna.study.Study":
-
         # This class is assumed to be passed to a sampler and a pruner corresponding to the step.
         class _StepwiseStudy(optuna.study.Study):
             def __init__(self, study: optuna.study.Study, step_name: str) -> None:
-
                 super().__init__(
                     study_name=study.study_name,
                     storage=study._storage,
@@ -703,7 +687,6 @@ class _LightGBMBaseTuner(_BaseTuner):
                 deepcopy: bool = True,
                 states: Optional[Container[TrialState]] = None,
             ) -> List[optuna.trial.FrozenTrial]:
-
                 trials = super().get_trials(deepcopy=deepcopy, states=states)
                 return [t for t in trials if t.system_attrs.get(_STEP_NAME_KEY) == self._step_name]
 
@@ -831,7 +814,6 @@ class LightGBMTuner(_LightGBMBaseTuner):
         *,
         optuna_seed: Optional[int] = None,
     ) -> None:
-
         super().__init__(
             params,
             train_set,
@@ -998,7 +980,6 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         *,
         optuna_seed: Optional[int] = None,
     ) -> None:
-
         super().__init__(
             params,
             train_set,

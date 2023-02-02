@@ -76,7 +76,6 @@ class Study:
         sampler: Optional["samplers.BaseSampler"] = None,
         pruner: Optional[pruners.BasePruner] = None,
     ) -> None:
-
         self.study_name = study_name
         storage = storages.get_storage(storage)
         study_id = storage.get_study_id_from_name(study_name)
@@ -91,13 +90,11 @@ class Study:
         self._stop_flag = False
 
     def __getstate__(self) -> Dict[Any, Any]:
-
         state = self.__dict__.copy()
         del state["_thread_local"]
         return state
 
     def __setstate__(self, state: Dict[Any, Any]) -> None:
-
         self.__dict__.update(state)
         self._thread_local = _ThreadLocalStudyAttribute()
 
@@ -951,7 +948,6 @@ class Study:
         return len(self.directions) > 1
 
     def _pop_waiting_trial_id(self) -> Optional[int]:
-
         for trial in self._storage.get_all_trials(
             self._study_id, deepcopy=False, states=(TrialState.WAITING,)
         ):
@@ -964,7 +960,6 @@ class Study:
         return None
 
     def _should_skip_enqueue(self, params: Dict[str, Any]) -> bool:
-
         for trial in self.get_trials(deepcopy=False):
             trial_params = trial.system_attrs.get("fixed_params", trial.params)
             if trial_params.keys() != params.keys():
@@ -1480,7 +1475,6 @@ def get_all_study_summaries(
     study_summaries = []
 
     for s in frozen_studies:
-
         all_trials = storage.get_all_trials(s._study_id)
         completed_trials = [t for t in all_trials if t.state == TrialState.COMPLETE]
 

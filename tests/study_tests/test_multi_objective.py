@@ -55,19 +55,19 @@ def test_dominates_2d() -> None:
 
     # Generate the set of all possible indices.
     all_indices = set((i, j) for i in range(len(vals)) for j in range(len(vals)))
-    for (t_i, t_j) in all_indices:
+    for t_i, t_j in all_indices:
         # Generate the set of all indices that dominates the current index.
         dominating_indices = set(
             (d_i, d_j) for d_i in range(t_i + 1) for d_j in range(t_j, len(vals))
         )
         dominating_indices -= {(t_i, t_j)}
 
-        for (d_i, d_j) in dominating_indices:
+        for d_i, d_j in dominating_indices:
             trial1 = create_trial(values=[vals[t_i], vals[t_j]])
             trial2 = create_trial(values=[vals[d_i], vals[d_j]])
             assert _dominates(trial2, trial1, directions)
 
-        for (d_i, d_j) in all_indices - dominating_indices:
+        for d_i, d_j in all_indices - dominating_indices:
             trial1 = create_trial(values=[vals[t_i], vals[t_j]])
             trial2 = create_trial(values=[vals[d_i], vals[d_j]])
             assert not _dominates(trial2, trial1, directions)
@@ -92,7 +92,6 @@ def test_dominates_invalid() -> None:
 @pytest.mark.parametrize("t1_state", [TrialState.FAIL, TrialState.WAITING, TrialState.PRUNED])
 @pytest.mark.parametrize("t2_state", [TrialState.FAIL, TrialState.WAITING, TrialState.PRUNED])
 def test_dominates_incomplete_vs_incomplete(t1_state: TrialState, t2_state: TrialState) -> None:
-
     directions = [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
 
     t1 = create_trial(values=[1, 1], state=t1_state)
@@ -104,7 +103,6 @@ def test_dominates_incomplete_vs_incomplete(t1_state: TrialState, t2_state: Tria
 
 @pytest.mark.parametrize("t1_state", [TrialState.FAIL, TrialState.WAITING, TrialState.PRUNED])
 def test_dominates_complete_vs_incomplete(t1_state: TrialState) -> None:
-
     directions = [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
 
     t1 = create_trial(values=[0, 2], state=t1_state)

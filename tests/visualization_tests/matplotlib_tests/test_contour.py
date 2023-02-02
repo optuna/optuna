@@ -5,7 +5,6 @@ from optuna.visualization.matplotlib._contour import _interpolate_zmap
 
 
 def test_create_zmap() -> None:
-
     x_values = np.arange(10)
     y_values = np.arange(10)
     z_values = list(np.random.rand(10))
@@ -25,7 +24,6 @@ def test_create_zmap() -> None:
 
 
 def test_interpolate_zmap() -> None:
-
     contour_point_num = 2
     zmap = {(0, 0): 1.0, (1, 1): 4.0}
     expected = np.array([[1.0, 2.5], [2.5, 4.0]])

@@ -35,7 +35,6 @@ class NASLibProblemFactory(problem.ProblemFactory):
         self._dataset_api = get_dataset_api("nasbench201", dataset)
 
     def specification(self) -> problem.ProblemSpec:
-
         params = [
             problem.Var(f"x{i}", problem.CategoricalRange(op_names)) for i in range(edge_num)
         ]
@@ -78,7 +77,6 @@ class NASLibEvaluator(problem.Evaluator):
 
 
 if __name__ == "__main__":
-
     if len(sys.argv) < 1 + 2:
         print("Usage: python3 nas_bench_suite/problems.py <search_space> <dataset>")
         print("Example: python3 nas_bench_suite/problems.py nasbench201 cifar10")

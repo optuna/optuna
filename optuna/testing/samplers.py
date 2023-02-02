@@ -41,7 +41,6 @@ class FirstTrialOnlyRandomSampler(optuna.samplers.RandomSampler):
         trial: "optuna.trial.FrozenTrial",
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, float]:
-
         if len(study.trials) > 1:
             raise RuntimeError("`FirstTrialOnlyRandomSampler` only works on the first trial.")
 
@@ -54,7 +53,6 @@ class FirstTrialOnlyRandomSampler(optuna.samplers.RandomSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> float:
-
         if len(study.trials) > 1:
             raise RuntimeError("`FirstTrialOnlyRandomSampler` only works on the first trial.")
 

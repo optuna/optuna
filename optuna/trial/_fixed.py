@@ -58,7 +58,6 @@ class FixedTrial(BaseTrial):
     """
 
     def __init__(self, params: Dict[str, Any], number: int = 0) -> None:
-
         self._params = params
         self._suggested_params: Dict[str, Any] = {}
         self._distributions: Dict[str, BaseDistribution] = {}
@@ -76,22 +75,18 @@ class FixedTrial(BaseTrial):
         step: Optional[float] = None,
         log: bool = False,
     ) -> float:
-
         return self._suggest(name, FloatDistribution(low, high, log=log, step=step))
 
     @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
-
         return self.suggest_float(name, low, high)
 
     @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
-
         return self.suggest_float(name, low, high, log=True)
 
     @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
-
         return self.suggest_float(name, low, high, step=q)
 
     def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
@@ -126,28 +121,22 @@ class FixedTrial(BaseTrial):
     def suggest_categorical(
         self, name: str, choices: Sequence[CategoricalChoiceType]
     ) -> CategoricalChoiceType:
-
         return self._suggest(name, CategoricalDistribution(choices=choices))
 
     def report(self, value: float, step: int) -> None:
-
         pass
 
     def should_prune(self) -> bool:
-
         return False
 
     def set_user_attr(self, key: str, value: Any) -> None:
-
         self._user_attrs[key] = value
 
     @deprecated_func("3.1.0", "6.0.0")
     def set_system_attr(self, key: str, value: Any) -> None:
-
         self._system_attrs[key] = value
 
     def _suggest(self, name: str, distribution: BaseDistribution) -> Any:
-
         if name not in self._params:
             raise ValueError(
                 "The value of the parameter '{}' is not found. Please set it at "
@@ -172,30 +161,24 @@ class FixedTrial(BaseTrial):
 
     @property
     def params(self) -> Dict[str, Any]:
-
         return self._suggested_params
 
     @property
     def distributions(self) -> Dict[str, BaseDistribution]:
-
         return self._distributions
 
     @property
     def user_attrs(self) -> Dict[str, Any]:
-
         return self._user_attrs
 
     @property
     def system_attrs(self) -> Dict[str, Any]:
-
         return self._system_attrs
 
     @property
     def datetime_start(self) -> Optional[datetime.datetime]:
-
         return self._datetime_start
 
     @property
     def number(self) -> int:
-
         return self._number

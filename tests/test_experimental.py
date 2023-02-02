@@ -7,7 +7,6 @@ from optuna.exceptions import ExperimentalWarning
 
 
 def _sample_func() -> int:
-
     return 10
 
 
@@ -84,7 +83,6 @@ def test_experimental_class_decorator() -> None:
 
 
 def test_experimental_class_decorator_name() -> None:
-
     name = "foo"
     decorator_experimental = _experimental.experimental_class("1.1.0", name=name)
     decorated_sample = decorator_experimental(_Sample)
@@ -97,7 +95,6 @@ def test_experimental_class_decorator_name() -> None:
 
 
 def test_experimental_decorator_name() -> None:
-
     name = "bar"
     decorator_experimental = _experimental.experimental_func("1.1.0", name=name)
     decorated_sample_func = decorator_experimental(_sample_func)
