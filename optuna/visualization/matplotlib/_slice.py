@@ -80,7 +80,6 @@ def plot_slice(
 
 
 def _get_slice_plot(info: _SlicePlotInfo) -> "Axes":
-
     if len(info.subplots) == 0:
         _, ax = plt.subplots()
         return ax

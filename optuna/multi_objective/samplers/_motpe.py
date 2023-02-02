@@ -111,7 +111,6 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         weights_above: Callable[[int], np.ndarray] = _default_weights_above,
         seed: Optional[int] = None,
     ) -> None:
-
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", ExperimentalWarning)
             self._motpe_sampler = MOTPESampler(
@@ -151,7 +150,6 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
-
         return self._motpe_sampler.sample_independent(
             _create_study(study), _create_trial(trial), param_name, param_distribution
         )

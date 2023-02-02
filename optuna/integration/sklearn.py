@@ -64,10 +64,8 @@ _logger = logging.get_logger(__name__)
 def _check_fit_params(
     X: TwoDimArrayLikeType, fit_params: Dict, indices: OneDimArrayLikeType
 ) -> Dict:
-
     fit_params_validated = {}
     for key, value in fit_params.items():
-
         # NOTE Original implementation:
         # https://github.com/scikit-learn/scikit-learn/blob/ \
         # 2467e1b84aeb493a22533fa15ff92e0d7c05ed1c/sklearn/utils/validation.py#L1324-L1328
@@ -86,7 +84,6 @@ def _check_fit_params(
 # https://github.com/scikit-learn/scikit-learn/blob/ \
 # 8caa93889f85254fc3ca84caa0a24a1640eebdd1/sklearn/utils/validation.py#L131-L135
 def _is_arraylike(x: Any) -> bool:
-
     return hasattr(x, "__len__") or hasattr(x, "shape") or hasattr(x, "__array__")
 
 
@@ -94,7 +91,6 @@ def _is_arraylike(x: Any) -> bool:
 # https://github.com/scikit-learn/scikit-learn/blob/ \
 # 8caa93889f85254fc3ca84caa0a24a1640eebdd1/sklearn/utils/validation.py#L217-L234
 def _make_indexable(iterable: IterableType) -> IndexableType:
-
     tocsr_func = getattr(iterable, "tocsr", None)
     if tocsr_func is not None and sp.sparse.issparse(iterable):
         return tocsr_func(iterable)
@@ -106,7 +102,6 @@ def _make_indexable(iterable: IterableType) -> IndexableType:
 
 
 def _num_samples(x: ArrayLikeType) -> int:
-
     # NOTE For dask dataframes
     # https://github.com/scikit-learn/scikit-learn/blob/ \
     # 8caa93889f85254fc3ca84caa0a24a1640eebdd1/sklearn/utils/validation.py#L155-L158
@@ -124,7 +119,6 @@ def _num_samples(x: ArrayLikeType) -> int:
 def _safe_indexing(
     X: Union[OneDimArrayLikeType, TwoDimArrayLikeType], indices: OneDimArrayLikeType
 ) -> Union[OneDimArrayLikeType, TwoDimArrayLikeType]:
-
     if X is None:
         return X
 
@@ -203,7 +197,6 @@ class _Objective:
         return_train_score: bool,
         scoring: Callable[..., Number],
     ) -> None:
-
         self.cv = cv
         self.enable_pruning = enable_pruning
         self.error_score = error_score
@@ -218,7 +211,6 @@ class _Objective:
         self.y = y
 
     def __call__(self, trial: Trial) -> float:
-
         estimator = clone(self.estimator)
         params = self._get_params(trial)
 
@@ -246,7 +238,6 @@ class _Objective:
     def _cross_validate_with_pruning(
         self, trial: Trial, estimator: "BaseEstimator"
     ) -> Mapping[str, OneDimArrayLikeType]:
-
         if is_classifier(estimator):
             partial_fit_params = self.fit_params.copy()
             y = self.y.values if isinstance(self.y, pd.Series) else self.y
@@ -291,7 +282,6 @@ class _Objective:
         return scores
 
     def _get_params(self, trial: Trial) -> Dict[str, Any]:
-
         return {
             name: trial._suggest(name, distribution)
             for name, distribution in self.param_distributions.items()
@@ -304,7 +294,6 @@ class _Objective:
         test: List[int],
         partial_fit_params: Dict[str, Any],
     ) -> List[Number]:
-
         X_train, y_train = _safe_split(estimator, self.X, self.y, train)
         X_test, y_test = _safe_split(estimator, self.X, self.y, test, train_indices=train)
 
@@ -348,7 +337,6 @@ class _Objective:
         return ret
 
     def _store_scores(self, trial: Trial, scores: Mapping[str, OneDimArrayLikeType]) -> None:
-
         for name, array in scores.items():
             if name in ["test_score", "train_score"]:
                 for i, score in enumerate(array):
@@ -522,7 +510,6 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def _estimator_type(self) -> str:
-
         return self.estimator._estimator_type
 
     @property
@@ -709,7 +696,6 @@ class OptunaSearchCV(BaseEstimator):
         verbose: int = 0,
         callbacks: Optional[List[Callable[[study_module.Study, FrozenTrial], None]]] = None,
     ) -> None:
-
         _imports.check()
 
         if not isinstance(param_distributions, dict):
@@ -745,7 +731,6 @@ class OptunaSearchCV(BaseEstimator):
         self.callbacks = callbacks
 
     def _check_is_fitted(self) -> None:
-
         attributes = ["n_splits_", "sample_indices_", "scorer_", "study_"]
 
         if self.refit:
@@ -754,7 +739,6 @@ class OptunaSearchCV(BaseEstimator):
         check_is_fitted(self, attributes)
 
     def _check_params(self) -> None:
-
         if not hasattr(self.estimator, "fit"):
             raise ValueError("estimator must be a scikit-learn estimator.")
 
@@ -772,7 +756,6 @@ class OptunaSearchCV(BaseEstimator):
             raise ValueError("direction of study must be 'maximize'.")
 
     def _more_tags(self) -> Dict[str, bool]:
-
         return {"non_deterministic": True, "no_validation": True}
 
     def _refit(
@@ -781,7 +764,6 @@ class OptunaSearchCV(BaseEstimator):
         y: Optional[Union[OneDimArrayLikeType, TwoDimArrayLikeType]] = None,
         **fit_params: Any,
     ) -> "OptunaSearchCV":
-
         n_samples = _num_samples(X)
 
         self.best_estimator_ = clone(self.estimator)

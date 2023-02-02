@@ -45,7 +45,6 @@ class Trial(BaseTrial):
     """
 
     def __init__(self, study: "optuna.study.Study", trial_id: int) -> None:
-
         self.study = study
         self._trial_id = trial_id
 
@@ -56,7 +55,6 @@ class Trial(BaseTrial):
         self._init_relative_params()
 
     def _init_relative_params(self) -> None:
-
         self._cached_frozen_trial = self.storage.get_trial(self._trial_id)
         study = pruners._filter_study(self.study, self._cached_frozen_trial)
 
@@ -605,7 +603,6 @@ class Trial(BaseTrial):
         self._cached_frozen_trial.system_attrs[key] = value
 
     def _suggest(self, name: str, distribution: BaseDistribution) -> Any:
-
         storage = self.storage
         trial_id = self._trial_id
 
@@ -637,7 +634,6 @@ class Trial(BaseTrial):
         return param_value
 
     def _is_fixed_param(self, name: str, distribution: BaseDistribution) -> bool:
-
         system_attrs = self._cached_frozen_trial.system_attrs
         if "fixed_params" not in system_attrs:
             return False
@@ -657,7 +653,6 @@ class Trial(BaseTrial):
         return True
 
     def _is_relative_param(self, name: str, distribution: BaseDistribution) -> bool:
-
         if name not in self.relative_params:
             return False
 
@@ -675,7 +670,6 @@ class Trial(BaseTrial):
         return distribution._contains(param_value_in_internal_repr)
 
     def _check_distribution(self, name: str, distribution: BaseDistribution) -> None:
-
         old_distribution = self._cached_frozen_trial.distributions.get(name, distribution)
         if old_distribution != distribution:
             warnings.warn(

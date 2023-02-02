@@ -58,9 +58,9 @@ jobs:
         cache-name: performance-benchmarks
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
+        key: ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
         restore-keys: |
-          ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
+          ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
 
     - name: Install Python libralies
       run: |

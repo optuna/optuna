@@ -29,7 +29,6 @@ class SBXCrossover(BaseCrossover):
     n_parents = 2
 
     def __init__(self, eta: Optional[float] = None) -> None:
-
         self._eta = eta
 
     def crossover(
@@ -39,7 +38,6 @@ class SBXCrossover(BaseCrossover):
         study: Study,
         search_space_bounds: np.ndarray,
     ) -> np.ndarray:
-
         # https://www.researchgate.net/profile/M-M-Raghuwanshi/publication/267198495_Simulated_Binary_Crossover_with_Lognormal_Distribution/links/5576c78408ae7536375205d7/Simulated-Binary-Crossover-with-Lognormal-Distribution.pdf
         # Section 2 Simulated Binary Crossover (SBX)
 

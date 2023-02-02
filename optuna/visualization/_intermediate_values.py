@@ -101,7 +101,6 @@ def plot_intermediate_values(study: Study) -> "go.Figure":
 
 
 def _get_intermediate_plot(info: _IntermediatePlotInfo) -> "go.Figure":
-
     layout = go.Layout(
         title="Intermediate Values Plot",
         xaxis={"title": "Step"},

@@ -55,7 +55,6 @@ class StudyModel(BaseModel):
     def find_or_raise_by_id(
         cls, study_id: int, session: orm.Session, for_update: bool = False
     ) -> "StudyModel":
-
         query = session.query(cls).filter(cls.study_id == study_id)
 
         if for_update:
@@ -69,14 +68,12 @@ class StudyModel(BaseModel):
 
     @classmethod
     def find_by_name(cls, study_name: str, session: orm.Session) -> Optional["StudyModel"]:
-
         study = session.query(cls).filter(cls.study_name == study_name).one_or_none()
 
         return study
 
     @classmethod
     def find_or_raise_by_name(cls, study_name: str, session: orm.Session) -> "StudyModel":
-
         study = cls.find_by_name(study_name, session)
         if study is None:
             raise KeyError(NOT_FOUND_MSG)
@@ -98,7 +95,6 @@ class StudyDirectionModel(BaseModel):
 
     @classmethod
     def where_study_id(cls, study_id: int, session: orm.Session) -> List["StudyDirectionModel"]:
-
         return session.query(cls).filter(cls.study_id == study_id).all()
 
 
@@ -118,7 +114,6 @@ class StudyUserAttributeModel(BaseModel):
     def find_by_study_and_key(
         cls, study: StudyModel, key: str, session: orm.Session
     ) -> Optional["StudyUserAttributeModel"]:
-
         attribute = (
             session.query(cls)
             .filter(cls.study_id == study.study_id)
@@ -132,7 +127,6 @@ class StudyUserAttributeModel(BaseModel):
     def where_study_id(
         cls, study_id: int, session: orm.Session
     ) -> List["StudyUserAttributeModel"]:
-
         return session.query(cls).filter(cls.study_id == study_id).all()
 
 
@@ -152,7 +146,6 @@ class StudySystemAttributeModel(BaseModel):
     def find_by_study_and_key(
         cls, study: StudyModel, key: str, session: orm.Session
     ) -> Optional["StudySystemAttributeModel"]:
-
         attribute = (
             session.query(cls)
             .filter(cls.study_id == study.study_id)
@@ -166,7 +159,6 @@ class StudySystemAttributeModel(BaseModel):
     def where_study_id(
         cls, study_id: int, session: orm.Session
     ) -> List["StudySystemAttributeModel"]:
-
         return session.query(cls).filter(cls.study_id == study_id).all()
 
 
@@ -190,7 +182,6 @@ class TrialModel(BaseModel):
     def find_max_value_trial(
         cls, study_id: int, objective: int, session: orm.Session
     ) -> "TrialModel":
-
         trial = (
             session.query(cls)
             .filter(cls.study_id == study_id)
@@ -209,7 +200,6 @@ class TrialModel(BaseModel):
     def find_min_value_trial(
         cls, study_id: int, objective: int, session: orm.Session
     ) -> "TrialModel":
-
         trial = (
             session.query(cls)
             .filter(cls.study_id == study_id)
@@ -228,7 +218,6 @@ class TrialModel(BaseModel):
     def find_or_raise_by_id(
         cls, trial_id: int, session: orm.Session, for_update: bool = False
     ) -> "TrialModel":
-
         query = session.query(cls).filter(cls.trial_id == trial_id)
 
         # "FOR UPDATE" clause is used for row-level locking.
@@ -249,7 +238,6 @@ class TrialModel(BaseModel):
         study: Optional[StudyModel] = None,
         state: Optional[TrialState] = None,
     ) -> int:
-
         trial_count = session.query(func.count(cls.trial_id))
         if study is not None:
             trial_count = trial_count.filter(cls.study_id == study.study_id)
@@ -259,7 +247,6 @@ class TrialModel(BaseModel):
         return trial_count.scalar()
 
     def count_past_trials(self, session: orm.Session) -> int:
-
         trial_count = session.query(func.count(TrialModel.trial_id)).filter(
             TrialModel.study_id == self.study_id, TrialModel.trial_id < self.trial_id
         )
@@ -282,7 +269,6 @@ class TrialUserAttributeModel(BaseModel):
     def find_by_trial_and_key(
         cls, trial: TrialModel, key: str, session: orm.Session
     ) -> Optional["TrialUserAttributeModel"]:
-
         attribute = (
             session.query(cls)
             .filter(cls.trial_id == trial.trial_id)
@@ -296,7 +282,6 @@ class TrialUserAttributeModel(BaseModel):
     def where_trial_id(
         cls, trial_id: int, session: orm.Session
     ) -> List["TrialUserAttributeModel"]:
-
         return session.query(cls).filter(cls.trial_id == trial_id).all()
 
 
@@ -316,7 +301,6 @@ class TrialSystemAttributeModel(BaseModel):
     def find_by_trial_and_key(
         cls, trial: TrialModel, key: str, session: orm.Session
     ) -> Optional["TrialSystemAttributeModel"]:
-
         attribute = (
             session.query(cls)
             .filter(cls.trial_id == trial.trial_id)
@@ -330,7 +314,6 @@ class TrialSystemAttributeModel(BaseModel):
     def where_trial_id(
         cls, trial_id: int, session: orm.Session
     ) -> List["TrialSystemAttributeModel"]:
-
         return session.query(cls).filter(cls.trial_id == trial_id).all()
 
 
@@ -348,14 +331,12 @@ class TrialParamModel(BaseModel):
     )
 
     def check_and_add(self, session: orm.Session) -> None:
-
         self._check_compatibility_with_previous_trial_param_distributions(session)
         session.add(self)
 
     def _check_compatibility_with_previous_trial_param_distributions(
         self, session: orm.Session
     ) -> None:
-
         trial = TrialModel.find_or_raise_by_id(self.trial_id, session)
 
         previous_record = (
@@ -375,7 +356,6 @@ class TrialParamModel(BaseModel):
     def find_by_trial_and_param_name(
         cls, trial: TrialModel, param_name: str, session: orm.Session
     ) -> Optional["TrialParamModel"]:
-
         param_distribution = (
             session.query(cls)
             .filter(cls.trial_id == trial.trial_id)
@@ -389,7 +369,6 @@ class TrialParamModel(BaseModel):
     def find_or_raise_by_trial_and_param_name(
         cls, trial: TrialModel, param_name: str, session: orm.Session
     ) -> "TrialParamModel":
-
         param_distribution = cls.find_by_trial_and_param_name(trial, param_name, session)
 
         if param_distribution is None:
@@ -399,7 +378,6 @@ class TrialParamModel(BaseModel):
 
     @classmethod
     def where_trial_id(cls, trial_id: int, session: orm.Session) -> List["TrialParamModel"]:
-
         trial_params = session.query(cls).filter(cls.trial_id == trial_id).all()
 
         return trial_params
@@ -452,7 +430,6 @@ class TrialValueModel(BaseModel):
     def find_by_trial_and_objective(
         cls, trial: TrialModel, objective: int, session: orm.Session
     ) -> Optional["TrialValueModel"]:
-
         trial_value = (
             session.query(cls)
             .filter(cls.trial_id == trial.trial_id)
@@ -464,7 +441,6 @@ class TrialValueModel(BaseModel):
 
     @classmethod
     def where_trial_id(cls, trial_id: int, session: orm.Session) -> List["TrialValueModel"]:
-
         trial_values = (
             session.query(cls).filter(cls.trial_id == trial_id).order_by(asc(cls.objective)).all()
         )
@@ -527,7 +503,6 @@ class TrialIntermediateValueModel(BaseModel):
     def find_by_trial_and_step(
         cls, trial: TrialModel, step: int, session: orm.Session
     ) -> Optional["TrialIntermediateValueModel"]:
-
         trial_intermediate_value = (
             session.query(cls)
             .filter(cls.trial_id == trial.trial_id)
@@ -541,7 +516,6 @@ class TrialIntermediateValueModel(BaseModel):
     def where_trial_id(
         cls, trial_id: int, session: orm.Session
     ) -> List["TrialIntermediateValueModel"]:
-
         trial_intermediate_values = session.query(cls).filter(cls.trial_id == trial_id).all()
 
         return trial_intermediate_values
@@ -575,7 +549,6 @@ class VersionInfoModel(BaseModel):
 
     @classmethod
     def find(cls, session: orm.Session) -> "VersionInfoModel":
-
         version_info = session.query(cls).one_or_none()
 
         return version_info

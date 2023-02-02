@@ -32,7 +32,6 @@ from optuna.trial import Trial
 @pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_check_distribution_suggest_float(storage_mode: str) -> None:
-
     sampler = samplers.RandomSampler()
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
@@ -66,7 +65,6 @@ def test_check_distribution_suggest_float(storage_mode: str) -> None:
 @pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_check_distribution_suggest_uniform(storage_mode: str) -> None:
-
     sampler = samplers.RandomSampler()
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
@@ -91,7 +89,6 @@ def test_check_distribution_suggest_uniform(storage_mode: str) -> None:
 @pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_check_distribution_suggest_loguniform(storage_mode: str) -> None:
-
     sampler = samplers.RandomSampler()
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
@@ -116,7 +113,6 @@ def test_check_distribution_suggest_loguniform(storage_mode: str) -> None:
 @pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_check_distribution_suggest_discrete_uniform(storage_mode: str) -> None:
-
     sampler = samplers.RandomSampler()
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
@@ -141,7 +137,6 @@ def test_check_distribution_suggest_discrete_uniform(storage_mode: str) -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 @pytest.mark.parametrize("enable_log", [False, True])
 def test_check_distribution_suggest_int(storage_mode: str, enable_log: bool) -> None:
-
     sampler = samplers.RandomSampler()
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
@@ -165,7 +160,6 @@ def test_check_distribution_suggest_int(storage_mode: str, enable_log: bool) -> 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_check_distribution_suggest_categorical(storage_mode: str) -> None:
-
     sampler = samplers.RandomSampler()
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
@@ -187,7 +181,6 @@ def test_check_distribution_suggest_categorical(storage_mode: str) -> None:
 @pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_uniform(storage_mode: str) -> None:
-
     sampler = DeterministicSampler({"x": 1.0, "y": 2.0})
 
     with StorageSupplier(storage_mode) as storage:
@@ -203,7 +196,6 @@ def test_suggest_uniform(storage_mode: str) -> None:
 @pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_loguniform(storage_mode: str) -> None:
-
     with pytest.raises(ValueError):
         FloatDistribution(low=1.0, high=0.9, log=True)
 
@@ -225,7 +217,6 @@ def test_suggest_loguniform(storage_mode: str) -> None:
 @pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_discrete_uniform(storage_mode: str) -> None:
-
     sampler = DeterministicSampler({"x": 1.0, "y": 2.0})
 
     with StorageSupplier(storage_mode) as storage:
@@ -247,11 +238,9 @@ def test_suggest_discrete_uniform(storage_mode: str) -> None:
 @pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_low_equals_high(storage_mode: str) -> None:
-
     with patch.object(
         distributions, "_get_single_value", wraps=distributions._get_single_value
     ) as mock_object, StorageSupplier(storage_mode) as storage:
-
         study = create_study(storage=storage, sampler=samplers.TPESampler(n_startup_trials=0))
 
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
@@ -316,7 +305,6 @@ def test_suggest_low_equals_high(storage_mode: str) -> None:
     ],
 )
 def test_suggest_discrete_uniform_range(storage_mode: str, range_config: Dict[str, float]) -> None:
-
     sampler = samplers.RandomSampler()
 
     # Check upper endpoints.
@@ -353,7 +341,6 @@ def test_suggest_discrete_uniform_range(storage_mode: str, range_config: Dict[st
 
 
 def test_suggest_float_invalid_step() -> None:
-
     study = create_study()
     trial = study.ask()
 
@@ -366,7 +353,6 @@ def test_suggest_float_invalid_step() -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_int(storage_mode: str) -> None:
-
     sampler = DeterministicSampler({"x": 1, "y": 2})
 
     with StorageSupplier(storage_mode) as storage:
@@ -389,7 +375,6 @@ def test_suggest_int(storage_mode: str) -> None:
     ],
 )
 def test_suggest_int_range(storage_mode: str, range_config: Dict[str, int]) -> None:
-
     sampler = samplers.RandomSampler()
 
     # Check upper endpoints.
@@ -414,7 +399,6 @@ def test_suggest_int_range(storage_mode: str, range_config: Dict[str, int]) -> N
     with patch.object(sampler, "sample_independent", mock) as mock_object, StorageSupplier(
         storage_mode
     ) as storage:
-
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
@@ -427,7 +411,6 @@ def test_suggest_int_range(storage_mode: str, range_config: Dict[str, int]) -> N
 
 
 def test_suggest_int_invalid_step() -> None:
-
     study = create_study()
     trial = study.ask()
 
@@ -440,7 +423,6 @@ def test_suggest_int_invalid_step() -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_int_log(storage_mode: str) -> None:
-
     sampler = DeterministicSampler({"x": 1, "y": 2})
 
     with StorageSupplier(storage_mode) as storage:
@@ -455,7 +437,6 @@ def test_suggest_int_log(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_int_log_invalid_range(storage_mode: str) -> None:
-
     sampler = samplers.RandomSampler()
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
@@ -476,7 +457,6 @@ def test_suggest_int_log_invalid_range(storage_mode: str) -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_distributions(storage_mode: str) -> None:
     def objective(trial: Trial) -> float:
-
         trial.suggest_float("a", 0, 10)
         trial.suggest_float("b", 0.1, 10, log=True)
         trial.suggest_float("c", 0, 10, step=1)
@@ -501,7 +481,6 @@ def test_distributions(storage_mode: str) -> None:
 
 
 def test_should_prune() -> None:
-
     pruner = DeterministicPruner(True)
     study = create_study(pruner=pruner)
     trial = Trial(study, study._storage.create_new_trial(study._study_id))
@@ -542,7 +521,6 @@ def test_relative_parameters(storage_mode: str) -> None:
         study = create_study(storage=storage, sampler=sampler)
 
         def create_trial() -> Trial:
-
             return Trial(study, study._storage.create_new_trial(study._study_id))
 
         # Suggested by `sample_relative`.
@@ -581,11 +559,9 @@ def test_relative_parameters(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_datetime_start(storage_mode: str) -> None:
-
     trial_datetime_start: List[Optional[datetime.datetime]] = [None]
 
     def objective(trial: Trial) -> float:
-
         trial_datetime_start[0] = trial.datetime_start
         return 1.0
 
@@ -597,7 +573,6 @@ def test_datetime_start(storage_mode: str) -> None:
 
 
 def test_report() -> None:
-
     study = create_study()
     trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
@@ -627,7 +602,6 @@ def test_report() -> None:
 
 
 def test_report_warning() -> None:
-
     study = create_study()
     trial = study.ask()
 
@@ -639,7 +613,6 @@ def test_report_warning() -> None:
 
 
 def test_study_id() -> None:
-
     study = create_study()
     trial = Trial(study, study._storage.create_new_trial(study._study_id))
 

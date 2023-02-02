@@ -62,7 +62,6 @@ class FastAIV1PruningCallback(TrackerCallback):
     """
 
     def __init__(self, learn: "Learner", trial: optuna.trial.Trial, monitor: str) -> None:
-
         super().__init__(learn, monitor)
 
         _imports.check()
@@ -70,7 +69,6 @@ class FastAIV1PruningCallback(TrackerCallback):
         self._trial = trial
 
     def on_epoch_end(self, epoch: int, **kwargs: Any) -> None:
-
         value = self.get_monitor_value()
         if value is None:
             return

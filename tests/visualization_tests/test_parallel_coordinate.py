@@ -34,7 +34,6 @@ parametrize_plot_parallel_coordinate = pytest.mark.parametrize(
 
 
 def _create_study_with_failed_trial() -> Study:
-
     study = create_study()
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
 
@@ -167,14 +166,12 @@ def _create_study_with_log_scale_and_str_and_numeric_category() -> Study:
 
 
 def test_target_is_none_and_study_is_multi_obj() -> None:
-
     study = create_study(directions=["minimize", "minimize"])
     with pytest.raises(ValueError):
         _get_parallel_coordinate_info(study)
 
 
 def test_plot_parallel_coordinate_customized_target_name() -> None:
-
     study = prepare_study_with_trials()
     figure = plotly_plot_parallel_coordinate(study, target_name="Target Name")
     assert figure.data[0]["dimensions"][0]["label"] == "Target Name"
@@ -203,7 +200,6 @@ def test_plot_parallel_coordinate(
     specific_create_study: Callable[[], Study],
     params: Optional[List[str]],
 ) -> None:
-
     study = specific_create_study()
     figure = plot_parallel_coordinate(study, params=params)
     if isinstance(figure, go.Figure):
@@ -213,7 +209,6 @@ def test_plot_parallel_coordinate(
 
 
 def test_get_parallel_coordinate_info() -> None:
-
     # Test with no trial.
     study = create_study()
     info = _get_parallel_coordinate_info(study)
@@ -771,7 +766,6 @@ def test_get_parallel_coordinate_info_only_missing_params() -> None:
 
 @pytest.mark.parametrize("value", [float("inf"), -float("inf"), float("nan")])
 def test_nonfinite_removed(value: float) -> None:
-
     study = prepare_study_with_trials(value_for_first_trial=value)
     info = _get_parallel_coordinate_info(study)
     assert all(np.isfinite(info.dim_objective.values))
@@ -780,7 +774,6 @@ def test_nonfinite_removed(value: float) -> None:
 @pytest.mark.parametrize("objective", (0, 1))
 @pytest.mark.parametrize("value", (float("inf"), -float("inf"), float("nan")))
 def test_nonfinite_multiobjective(objective: int, value: float) -> None:
-
     study = prepare_study_with_trials(n_objectives=2, value_for_first_trial=value)
     info = _get_parallel_coordinate_info(
         study, target=lambda t: t.values[objective], target_name="Target Name"
