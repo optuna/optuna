@@ -32,18 +32,19 @@ with try_import() as _imports:
     from botorch.acquisition.multi_objective.objective import IdentityMCMultiOutputObjective
     from botorch.acquisition.objective import ConstrainedMCObjective
     from botorch.acquisition.objective import GenericMCObjective
-    from botorch.fit import fit_gpytorch_model
     from botorch.models import SingleTaskGP
     from botorch.models.transforms.outcome import Standardize
     from botorch.optim import optimize_acqf
 
     try:
+        from botorch.fit import fit_gpytorch_mll
         from botorch.sampling.normal import SobolQMCNormalSampler
 
         def _get_sobol_qmc_normal_sampler(num_samples: int) -> SobolQMCNormalSampler:
             return SobolQMCNormalSampler(sample_shape=torch.Size((num_samples,)))
 
     except ImportError:
+        from botorch.fit import fit_gpytorch_model as fit_gpytorch_mll
         from botorch.sampling.samplers import SobolQMCNormalSampler
 
         def _get_sobol_qmc_normal_sampler(num_samples: int) -> SobolQMCNormalSampler:
@@ -136,7 +137,7 @@ def qei_candidates_func(
 
     model = SingleTaskGP(train_x, train_y, outcome_transform=Standardize(m=train_y.size(-1)))
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
-    fit_gpytorch_model(mll)
+    fit_gpytorch_mll(mll)
 
     acqf = qExpectedImprovement(
         model=model,
@@ -206,7 +207,7 @@ def qehvi_candidates_func(
 
     model = SingleTaskGP(train_x, train_y, outcome_transform=Standardize(m=train_y.shape[-1]))
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
-    fit_gpytorch_model(mll)
+    fit_gpytorch_mll(mll)
 
     # Approximate box decomposition similar to Ax when the number of objectives is large.
     # https://github.com/facebook/Ax/blob/master/ax/models/torch/botorch_moo_defaults
@@ -285,7 +286,7 @@ def qnehvi_candidates_func(
 
     model = SingleTaskGP(train_x, train_y, outcome_transform=Standardize(m=train_y.shape[-1]))
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
-    fit_gpytorch_model(mll)
+    fit_gpytorch_mll(mll)
 
     # Approximate box decomposition similar to Ax when the number of objectives is large.
     # https://github.com/facebook/Ax/blob/master/ax/models/torch/botorch_moo_defaults
@@ -368,7 +369,7 @@ def qparego_candidates_func(
 
     model = SingleTaskGP(train_x, train_y, outcome_transform=Standardize(m=train_y.size(-1)))
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
-    fit_gpytorch_model(mll)
+    fit_gpytorch_mll(mll)
 
     acqf = qExpectedImprovement(
         model=model,
