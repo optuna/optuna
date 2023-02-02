@@ -48,7 +48,7 @@ with try_import() as _imports:
         from botorch.fit import fit_gpytorch_mll
 
         def _get_sobol_qmc_normal_sampler(num_samples: int) -> SobolQMCNormalSampler:
-            return SobolQMCNormalSampler((num_samples,))
+            return SobolQMCNormalSampler(torch.Size((num_samples,)))
 
     from botorch.utils.multi_objective.box_decompositions import NondominatedPartitioning
     from botorch.utils.multi_objective.scalarization import get_chebyshev_scalarization
