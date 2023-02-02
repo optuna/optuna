@@ -8,9 +8,10 @@ from optuna.storages._rdb.storage import RDBStorage
 
 
 # Define key names of `Trial.system_attrs`.
-_PRUNED_KEY = "ddp_pl:pruned"
 _EPOCH_KEY = "ddp_pl:epoch"
-
+_PRUNED_KEY = "ddp_pl:pruned"
+_MESSAGE_KEY = "ddp_pl:message"
+_INTERMEDIATE_VALUE = "ddp_pl:intermediate_value"
 
 with optuna._imports.try_import() as _imports:
     import pytorch_lightning as pl
@@ -55,12 +56,22 @@ class PyTorchLightningPruningCallback(Callback):
         self._trial = trial
         self.monitor = monitor
         self.is_ddp_backend = False
+        self._trial.storage.set_trial_system_attr(
+            self._trial._trial_id,
+            _INTERMEDIATE_VALUE,
+            dict(),
+        )
+        # It is necessary to store intermediate values directly in the backend storage because they
+        # are not properly propagated to main process due to cached storage.
 
     def on_fit_start(self, trainer: Trainer, pl_module: "pl.LightningModule") -> None:
         self.is_ddp_backend = trainer._accelerator_connector.is_distributed
         if self.is_ddp_backend:
             if version.parse(pl.__version__) < version.parse("1.6.0"):  # type: ignore
                 raise ValueError("PyTorch Lightning>=1.6.0 is required in DDP.")
+            # If it were not for this block, fitting is started even if unsupported storage
+            # is used. Note that the ValueError is transformed into ProcessRaisedException inside
+            # torch.
             if not (
                 isinstance(self._trial.study._storage, _CachedStorage)
                 and isinstance(self._trial.study._storage._backend, RDBStorage)
@@ -71,14 +82,11 @@ class PyTorchLightningPruningCallback(Callback):
                 )
 
     def on_validation_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
-        # When the trainer calls `on_validation_end` for sanity check,
-        # do not call `trial.report` to avoid calling `trial.report` multiple times
-        # at epoch 0. The related page is
+        # Trainer calls `on_validation_end` for sanity check. Therefore, it is necessary to avoid
+        # calling `trial.report` multiple times at epoch 0. For more details, see
         # https://github.com/PyTorchLightning/pytorch-lightning/issues/1391.
         if trainer.sanity_checking:
             return
-
-        epoch = pl_module.current_epoch
 
         current_score = trainer.callback_metrics.get(self.monitor)
         if current_score is None:
@@ -89,40 +97,53 @@ class PyTorchLightningPruningCallback(Callback):
             warnings.warn(message)
             return
 
+        epoch = pl_module.current_epoch
         should_stop = False
         if trainer.is_global_zero:
             self._trial.report(current_score.item(), step=epoch)
             should_stop = self._trial.should_prune()
-        should_stop = trainer.strategy.broadcast(should_stop)
+            # Update intermediate value in storage
+            _trial_id = self._trial._trial_id
+            _study = self._trial.study
+            _trial_system_attrs = _study._storage.get_trial_system_attrs(_trial_id)
+            intermediate_values = _trial_system_attrs.get(_INTERMEDIATE_VALUE)
+            intermediate_values[epoch] = current_score.item()  # type: ignore
+            self._trial.storage.set_trial_system_attr(
+                self._trial._trial_id, _INTERMEDIATE_VALUE, intermediate_values
+            )
+
+        # Terminate every process if any world process decides to stop
+        should_stop = trainer.strategy.reduce_boolean_decision(should_stop, all=False)
+        trainer.should_stop = trainer.should_stop or should_stop
         if not should_stop:
             return
 
+        self.stopped_epoch = epoch
         if not self.is_ddp_backend:
             message = "Trial was pruned at epoch {}.".format(epoch)
             raise optuna.TrialPruned(message)
-        else:
-            # Stop every DDP process if global rank 0 process decides to stop.
-            trainer.should_stop = True
-            if trainer.is_global_zero:
-                self._trial.storage.set_trial_system_attr(self._trial._trial_id, _PRUNED_KEY, True)
-                self._trial.storage.set_trial_system_attr(self._trial._trial_id, _EPOCH_KEY, epoch)
+        elif trainer.is_global_zero:
+            # Update system_attr from global zero process
+            self._trial.storage.set_trial_system_attr(self._trial._trial_id, _PRUNED_KEY, True)
+            self._trial.storage.set_trial_system_attr(self._trial._trial_id, _EPOCH_KEY, epoch)
+            self._trial.storage.set_trial_system_attr(
+                self._trial._trial_id,
+                _MESSAGE_KEY,
+                "Trial was pruned at epoch {}.".format(epoch),
+            )
 
-    def on_fit_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
-        if not self.is_ddp_backend:
-            return
+    def check_pruned(self) -> None:
+        """Raise :class:`optuna.TrialPruned` manually if pruned."""
 
-        # Because on_validation_end is executed in spawned processes,
-        # _trial.report is necessary to update the memory in main process, not to update the RDB.
         _trial_id = self._trial._trial_id
         _study = self._trial.study
-        _trial = _study._storage._backend.get_trial(_trial_id)  # type: ignore
-        _trial_system_attrs = _study._storage.get_trial_system_attrs(_trial_id)
+        _trial_system_attrs = _study._storage._backend.get_trial_system_attrs(  # type: ignore[attr-defined] # NOQA: E501
+            _trial_id
+        )
         is_pruned = _trial_system_attrs.get(_PRUNED_KEY)
-        epoch = _trial_system_attrs.get(_EPOCH_KEY)
-        intermediate_values = _trial.intermediate_values
-        for step, value in intermediate_values.items():
-            self._trial.report(value, step=step)
-
+        intermediate_values = _trial_system_attrs.get(_INTERMEDIATE_VALUE)
+        for epoch, score in intermediate_values.items():
+            self._trial.report(score, step=int(epoch))
         if is_pruned:
-            message = "Trial was pruned at epoch {}.".format(epoch)
+            message = _trial_system_attrs.get(_MESSAGE_KEY)
             raise optuna.TrialPruned(message)
