@@ -1056,11 +1056,8 @@ class _VersionManager:
         self._set_alembic_revision(revision)
 
     def _set_alembic_revision(self, revision: str) -> None:
-        with self.engine.connect() as connection:
-            context = alembic_migration.MigrationContext.configure(connection)
-            with connection.begin():
-                script = self._create_alembic_script()
-                context.stamp(script, revision)
+        config = self._create_alembic_config()
+        alembic_command.stamp(config, revision)
 
     def check_table_schema_compatibility(self) -> None:
         with _create_scoped_session(self.scoped_session) as session:
