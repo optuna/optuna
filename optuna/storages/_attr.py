@@ -34,7 +34,7 @@ class SystemAttributeStorage:
 
 
 def _create_system_attr_storage(
-    study: "optuna.study.Study", trial: "optuna.trial.Trial"
+    study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial"
 ) -> SystemAttributeStorage:
     return SystemAttributeStorage(
         storage=study._storage,

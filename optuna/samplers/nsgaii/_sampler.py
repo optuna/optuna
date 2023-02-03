@@ -25,8 +25,8 @@ from optuna.samplers._search_space import IntersectionSearchSpace
 from optuna.samplers.nsgaii._crossover import perform_crossover
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.samplers.nsgaii._crossovers._uniform import UniformCrossover
-from optuna.storages import SystemAttributeStorage
 from optuna.storages import _create_system_attr_storage
+from optuna.storages import SystemAttributeStorage
 from optuna.study import _create_frozen_study
 from optuna.study import FrozenStudy
 from optuna.study import Study
@@ -202,10 +202,10 @@ class NSGAIISampler(BaseSampler):
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
         attr_storage = _create_system_attr_storage(study, trial)
-        study, trials = _create_frozen_study(study)
+        frozen_study, trials = _create_frozen_study(study)
 
         parent_generation, parent_population = self._collect_parent_population(
-            study, trials, attr_storage
+            frozen_study, trials, attr_storage
         )
 
         generation = parent_generation + 1
@@ -218,7 +218,7 @@ class NSGAIISampler(BaseSampler):
             if self._rng.rand() < self._crossover_prob:
                 child_params = perform_crossover(
                     self._crossover,
-                    study,
+                    frozen_study,
                     parent_population,
                     search_space,
                     self._rng,
@@ -337,7 +337,7 @@ class NSGAIISampler(BaseSampler):
         return parent_generation, parent_population
 
     def _select_elite_population(
-        self, study: Study, population: List[FrozenTrial]
+        self, study: FrozenStudy, population: List[FrozenTrial]
     ) -> List[FrozenTrial]:
         elite_population: List[FrozenTrial] = []
         population_per_rank = self._fast_non_dominated_sort(population, study.directions)

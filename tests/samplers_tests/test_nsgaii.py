@@ -33,6 +33,7 @@ from optuna.samplers.nsgaii import UniformCrossover
 from optuna.samplers.nsgaii import VSBXCrossover
 from optuna.samplers.nsgaii._crossover import _inlined_categorical_uniform_crossover
 from optuna.samplers.nsgaii._sampler import _constrained_dominates
+from optuna.study import _create_frozen_study
 from optuna.study._multi_objective import _dominates
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -641,7 +642,9 @@ def test_crossover_numerical_distribution(crossover: BaseCrossover) -> None:
     if crossover.n_parents == 3:
         parent_params = np.append(parent_params, [[5.0, 6]], axis=0)
 
-    child_params = crossover.crossover(parent_params, rng, study, numerical_transform.bounds)
+    child_params = crossover.crossover(
+        parent_params, rng, _create_frozen_study(study)[0], numerical_transform.bounds
+    )
     assert child_params.ndim == 1
     assert len(child_params) == len(search_space)
     assert not any(np.isnan(child_params))
@@ -691,7 +694,9 @@ def test_crossover_duplicated_param_values(crossover: BaseCrossover) -> None:
     if crossover.n_parents == 3:
         parent_params = np.append(parent_params, [param_values], axis=0)
 
-    child_params = crossover.crossover(parent_params, rng, study, numerical_transform.bounds)
+    child_params = crossover.crossover(
+        parent_params, rng, _create_frozen_study(study)[0], numerical_transform.bounds
+    )
     assert child_params.ndim == 1
     np.testing.assert_almost_equal(child_params, param_values)
 
@@ -749,5 +754,7 @@ def test_crossover_deterministic(
     rng = Mock()
     rng.rand = Mock(side_effect=_rand)
     rng.normal = Mock(side_effect=_normal)
-    child_params = crossover.crossover(parent_params, rng, study, numerical_transform.bounds)
+    child_params = crossover.crossover(
+        parent_params, rng, _create_frozen_study(study)[0], numerical_transform.bounds
+    )
     np.testing.assert_almost_equal(child_params, expected_params)
