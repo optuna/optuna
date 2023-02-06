@@ -13,14 +13,11 @@ from typing import Tuple
 from typing import Union
 import warnings
 
-from cmaes import CMA
-from cmaes import CMAwM
-from cmaes import get_warm_start_mgd
-from cmaes import SepCMA
 import numpy as np
 
 import optuna
 from optuna import logging
+from optuna._imports import try_import
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.distributions import FloatDistribution
@@ -30,6 +27,13 @@ from optuna.samplers import BaseSampler
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+with try_import() as _imports:
+    from cmaes import CMA
+    from cmaes import CMAwM
+    from cmaes import get_warm_start_mgd
+    from cmaes import SepCMA
 
 
 _logger = logging.get_logger(__name__)
@@ -234,6 +238,7 @@ class CmaEsSampler(BaseSampler):
         with_margin: bool = False,
         source_trials: Optional[List[FrozenTrial]] = None,
     ) -> None:
+        _imports.check()
         self._x0 = x0
         self._sigma0 = sigma0
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
