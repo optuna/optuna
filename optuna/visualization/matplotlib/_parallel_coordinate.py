@@ -81,7 +81,6 @@ def plot_parallel_coordinate(
 
 
 def _get_parallel_coordinate_plot(info: _ParallelCoordinateInfo) -> "Axes":
-
     reversescale = info.reverse_scale
     target_name = info.target_name
 

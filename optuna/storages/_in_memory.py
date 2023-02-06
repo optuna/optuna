@@ -54,7 +54,6 @@ class InMemoryStorage(BaseStorage):
     def create_new_study(
         self, directions: Sequence[StudyDirection], study_name: Optional[str] = None
     ) -> int:
-
         with self._lock:
             study_id = self._max_study_id + 1
             self._max_study_id += 1
@@ -74,7 +73,6 @@ class InMemoryStorage(BaseStorage):
             return study_id
 
     def delete_study(self, study_id: int) -> None:
-
         with self._lock:
             self._check_study_id(study_id)
 
@@ -85,21 +83,18 @@ class InMemoryStorage(BaseStorage):
             del self._studies[study_id]
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
-
         with self._lock:
             self._check_study_id(study_id)
 
             self._studies[study_id].user_attrs[key] = value
 
     def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
-
         with self._lock:
             self._check_study_id(study_id)
 
             self._studies[study_id].system_attrs[key] = value
 
     def get_study_id_from_name(self, study_name: str) -> int:
-
         with self._lock:
             if study_name not in self._study_name_to_id:
                 raise KeyError("No such study {}.".format(study_name))
@@ -107,25 +102,21 @@ class InMemoryStorage(BaseStorage):
             return self._study_name_to_id[study_name]
 
     def get_study_name_from_id(self, study_id: int) -> str:
-
         with self._lock:
             self._check_study_id(study_id)
             return self._studies[study_id].name
 
     def get_study_directions(self, study_id: int) -> List[StudyDirection]:
-
         with self._lock:
             self._check_study_id(study_id)
             return self._studies[study_id].directions
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
-
         with self._lock:
             self._check_study_id(study_id)
             return self._studies[study_id].user_attrs
 
     def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
-
         with self._lock:
             self._check_study_id(study_id)
             return self._studies[study_id].system_attrs
@@ -146,7 +137,6 @@ class InMemoryStorage(BaseStorage):
         )
 
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
-
         with self._lock:
             self._check_study_id(study_id)
 
@@ -166,7 +156,6 @@ class InMemoryStorage(BaseStorage):
 
     @staticmethod
     def _create_running_trial() -> FrozenTrial:
-
         return FrozenTrial(
             trial_id=-1,  # dummy value.
             number=-1,  # dummy value.
@@ -188,7 +177,6 @@ class InMemoryStorage(BaseStorage):
         param_value_internal: float,
         distribution: distributions.BaseDistribution,
     ) -> None:
-
         with self._lock:
             trial = self._get_trial(trial_id)
 
@@ -213,7 +201,6 @@ class InMemoryStorage(BaseStorage):
             self._set_trial(trial_id, trial)
 
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
-
         with self._lock:
             study = self._studies.get(study_id)
             if study is None:
@@ -233,14 +220,12 @@ class InMemoryStorage(BaseStorage):
             return trial._trial_id
 
     def get_trial_number_from_id(self, trial_id: int) -> int:
-
         with self._lock:
             self._check_trial_id(trial_id)
 
             return self._trial_id_to_study_id_and_number[trial_id][1]
 
     def get_best_trial(self, study_id: int) -> FrozenTrial:
-
         with self._lock:
             self._check_study_id(study_id)
 
@@ -255,7 +240,6 @@ class InMemoryStorage(BaseStorage):
             return self.get_trial(best_trial_id)
 
     def get_trial_param(self, trial_id: int, param_name: str) -> float:
-
         with self._lock:
             trial = self._get_trial(trial_id)
 
@@ -265,7 +249,6 @@ class InMemoryStorage(BaseStorage):
     def set_trial_state_values(
         self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
     ) -> bool:
-
         with self._lock:
             trial = copy.copy(self._get_trial(trial_id))
             self.check_trial_is_updatable(trial_id, trial.state)
@@ -291,7 +274,6 @@ class InMemoryStorage(BaseStorage):
             return True
 
     def _update_cache(self, trial_id: int, study_id: int) -> None:
-
         trial = self._get_trial(trial_id)
 
         if trial.state != TrialState.COMPLETE:
@@ -327,7 +309,6 @@ class InMemoryStorage(BaseStorage):
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
     ) -> None:
-
         with self._lock:
             trial = self._get_trial(trial_id)
             self.check_trial_is_updatable(trial_id, trial.state)
@@ -338,7 +319,6 @@ class InMemoryStorage(BaseStorage):
             self._set_trial(trial_id, trial)
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
-
         with self._lock:
             self._check_trial_id(trial_id)
             trial = self._get_trial(trial_id)
@@ -350,7 +330,6 @@ class InMemoryStorage(BaseStorage):
             self._set_trial(trial_id, trial)
 
     def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
-
         with self._lock:
             trial = self._get_trial(trial_id)
             self.check_trial_is_updatable(trial_id, trial.state)
@@ -361,12 +340,10 @@ class InMemoryStorage(BaseStorage):
             self._set_trial(trial_id, trial)
 
     def get_trial(self, trial_id: int) -> FrozenTrial:
-
         with self._lock:
             return self._get_trial(trial_id)
 
     def _get_trial(self, trial_id: int) -> FrozenTrial:
-
         self._check_trial_id(trial_id)
         study_id, trial_number = self._trial_id_to_study_id_and_number[trial_id]
         return self._studies[study_id].trials[trial_number]
@@ -381,7 +358,6 @@ class InMemoryStorage(BaseStorage):
         deepcopy: bool = True,
         states: Optional[Container[TrialState]] = None,
     ) -> List[FrozenTrial]:
-
         with self._lock:
             self._check_study_id(study_id)
 
@@ -400,12 +376,10 @@ class InMemoryStorage(BaseStorage):
         return trials
 
     def _check_study_id(self, study_id: int) -> None:
-
         if study_id not in self._studies:
             raise KeyError("No study with study_id {} exists.".format(study_id))
 
     def _check_trial_id(self, trial_id: int) -> None:
-
         if trial_id not in self._trial_id_to_study_id_and_number:
             raise KeyError("No trial with trial_id {} exists.".format(trial_id))
 

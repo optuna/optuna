@@ -16,7 +16,6 @@ pytestmark = pytest.mark.integration
 
 def test_tfkeras_pruning_callback() -> None:
     def objective(trial: optuna.trial.Trial) -> float:
-
         model = tf.keras.Sequential()
         model.add(tf.keras.layers.Dense(1, activation="sigmoid", input_dim=20))
         model.compile(optimizer="rmsprop", loss="binary_crossentropy", metrics=["accuracy"])
@@ -48,7 +47,6 @@ def test_tfkeras_pruning_callback() -> None:
 
 
 def test_tfkeras_pruning_callback_observation_isnan() -> None:
-
     study = optuna.create_study(pruner=DeterministicPruner(True))
     trial = study.ask()
     callback = TFKerasPruningCallback(trial, "loss")
@@ -61,7 +59,6 @@ def test_tfkeras_pruning_callback_observation_isnan() -> None:
 
 
 def test_tfkeras_pruning_callback_monitor_is_invalid() -> None:
-
     study = optuna.create_study(pruner=DeterministicPruner(True))
     trial = study.ask()
     callback = TFKerasPruningCallback(trial, "InvalidMonitor")

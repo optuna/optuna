@@ -151,7 +151,6 @@ class QMCSampler(BaseSampler):
         warn_asynchronous_seeding: bool = True,
         warn_independent_sampling: bool = True,
     ) -> None:
-
         self._scramble = scramble
         self._seed = seed or np.random.PCG64().random_raw()
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
@@ -172,7 +171,6 @@ class QMCSampler(BaseSampler):
             self._log_asynchronous_seeding()
 
     def reseed_rng(self) -> None:
-
         # We must not reseed the `self._seed` like below. Otherwise, workers will have different
         # seed under parallel execution because `self.reseed_rng()` is called when starting each
         # parallel executor.
@@ -183,7 +181,6 @@ class QMCSampler(BaseSampler):
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
-
         if self._initial_search_space is not None:
             return self._initial_search_space
 
@@ -198,7 +195,6 @@ class QMCSampler(BaseSampler):
         return self._initial_search_space
 
     def _infer_initial_search_space(self, trial: FrozenTrial) -> Dict[str, BaseDistribution]:
-
         search_space: Dict[str, BaseDistribution] = {}
         for param_name, distribution in trial.distributions.items():
             if isinstance(distribution, CategoricalDistribution):
@@ -234,7 +230,6 @@ class QMCSampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
-
         if self._initial_search_space is not None:
             if self._warn_independent_sampling:
                 self._log_independent_sampling(trial, param_name)
@@ -246,7 +241,6 @@ class QMCSampler(BaseSampler):
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
-
         if search_space == {}:
             return {}
 
@@ -265,7 +259,6 @@ class QMCSampler(BaseSampler):
         self._independent_sampler.after_trial(study, trial, state, values)
 
     def _sample_qmc(self, study: Study, search_space: Dict[str, BaseDistribution]) -> np.ndarray:
-
         # Lazy import because the `scipy.stats.qmc` is slow to import.
         qmc_module = _LazyImport("scipy.stats.qmc")
 
@@ -289,7 +282,6 @@ class QMCSampler(BaseSampler):
         return sample
 
     def _find_sample_id(self, study: Study) -> int:
-
         qmc_id = ""
         qmc_id += self._qmc_type
         # Sobol/Halton sequences without scrambling do not use seed.

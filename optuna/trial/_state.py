@@ -25,7 +25,6 @@ class TrialState(enum.IntEnum):
     WAITING = 4
 
     def __repr__(self) -> str:
-
         return str(self)
 
     def is_finished(self) -> bool:

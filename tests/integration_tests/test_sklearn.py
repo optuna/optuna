@@ -21,14 +21,12 @@ pytestmark = pytest.mark.integration
 
 
 def test_is_arraylike() -> None:
-
     assert integration.sklearn._is_arraylike([])
     assert integration.sklearn._is_arraylike(np.zeros(5))
     assert not integration.sklearn._is_arraylike(1)
 
 
 def test_num_samples() -> None:
-
     x1 = np.random.random((10, 10))
     x2 = [1, 2, 3]
     assert integration.sklearn._num_samples(x1) == 10
@@ -36,7 +34,6 @@ def test_num_samples() -> None:
 
 
 def test_make_indexable() -> None:
-
     x1 = np.random.random((10, 10))
     x2 = sp.sparse.coo_matrix(x1)
     x3 = [1, 2, 3]
@@ -51,7 +48,6 @@ def test_make_indexable() -> None:
 @pytest.mark.parametrize("fit_params", ["", "coef_init"])
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_optuna_search(enable_pruning: bool, fit_params: str) -> None:
-
     X, y = make_blobs(n_samples=10)
     est = SGDClassifier(max_iter=5, tol=1e-03)
     param_dist = {"alpha": distributions.FloatDistribution(1e-04, 1e03, log=True)}
@@ -82,7 +78,6 @@ def test_optuna_search(enable_pruning: bool, fit_params: str) -> None:
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_optuna_search_properties() -> None:
-
     X, y = make_blobs(n_samples=10)
     est = LogisticRegression(tol=1e-03)
     param_dist = {"C": distributions.FloatDistribution(1e-04, 1e03, log=True)}
@@ -107,7 +102,6 @@ def test_optuna_search_properties() -> None:
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_optuna_search_score_samples() -> None:
-
     X, y = make_blobs(n_samples=10)
     est = KernelDensity()
     optuna_search = integration.OptunaSearchCV(
@@ -119,7 +113,6 @@ def test_optuna_search_score_samples() -> None:
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_optuna_search_transforms() -> None:
-
     X, y = make_blobs(n_samples=10)
     est = PCA()
     optuna_search = integration.OptunaSearchCV(
@@ -131,7 +124,6 @@ def test_optuna_search_transforms() -> None:
 
 
 def test_optuna_search_invalid_estimator() -> None:
-
     X, y = make_blobs(n_samples=10)
     est = "not an estimator"
     optuna_search = integration.OptunaSearchCV(
@@ -143,7 +135,6 @@ def test_optuna_search_invalid_estimator() -> None:
 
 
 def test_optuna_search_pruning_without_partial_fit() -> None:
-
     X, y = make_blobs(n_samples=10)
     est = KernelDensity()
     param_dist = {}  # type: ignore
@@ -162,7 +153,6 @@ def test_optuna_search_pruning_without_partial_fit() -> None:
 
 
 def test_optuna_search_negative_max_iter() -> None:
-
     X, y = make_blobs(n_samples=10)
     est = KernelDensity()
     param_dist = {}  # type: ignore
@@ -181,7 +171,6 @@ def test_optuna_search_negative_max_iter() -> None:
 
 
 def test_optuna_search_tuple_instead_of_distribution() -> None:
-
     X, y = make_blobs(n_samples=10)
     est = KernelDensity()
     param_dist = {"kernel": ("gaussian", "linear")}
@@ -199,7 +188,6 @@ def test_optuna_search_tuple_instead_of_distribution() -> None:
 
 
 def test_optuna_search_study_with_minimize() -> None:
-
     X, y = make_blobs(n_samples=10)
     est = KernelDensity()
     study = create_study(direction="minimize")
@@ -213,7 +201,6 @@ def test_optuna_search_study_with_minimize() -> None:
 
 @pytest.mark.parametrize("verbose", [1, 2])
 def test_optuna_search_verbosity(verbose: int) -> None:
-
     X, y = make_blobs(n_samples=10)
     est = KernelDensity()
     param_dist = {}  # type: ignore
@@ -230,7 +217,6 @@ def test_optuna_search_verbosity(verbose: int) -> None:
 
 
 def test_optuna_search_subsample() -> None:
-
     X, y = make_blobs(n_samples=10)
     est = KernelDensity()
     param_dist = {}  # type: ignore
@@ -248,7 +234,6 @@ def test_optuna_search_subsample() -> None:
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
 def test_objective_y_None() -> None:
-
     X, y = make_blobs(n_samples=10)
     est = SGDClassifier(max_iter=5, tol=1e-03)
     param_dist = {}  # type: ignore
@@ -268,7 +253,6 @@ def test_objective_y_None() -> None:
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
 def test_objective_error_score_nan() -> None:
-
     X, y = make_blobs(n_samples=10)
     est = SGDClassifier(max_iter=5, tol=1e-03)
     param_dist = {}  # type: ignore
@@ -300,7 +284,6 @@ def test_objective_error_score_nan() -> None:
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
 def test_objective_error_score_invalid() -> None:
-
     X, y = make_blobs(n_samples=10)
     est = SGDClassifier(max_iter=5, tol=1e-03)
     param_dist = {}  # type: ignore
@@ -323,7 +306,6 @@ def test_objective_error_score_invalid() -> None:
 # https://github.com/optuna/optuna/issues/2941
 @pytest.mark.filterwarnings("ignore::FutureWarning")
 def test_optuna_search_convert_deprecated_distribution() -> None:
-
     param_dist = {
         "ud": distributions.UniformDistribution(low=0, high=10),
         "dud": distributions.DiscreteUniformDistribution(low=0, high=10, q=2),

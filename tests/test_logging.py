@@ -7,7 +7,6 @@ import optuna.logging
 
 
 def test_get_logger(caplog: _pytest.logging.LogCaptureFixture) -> None:
-
     # Log propagation is necessary for caplog to capture log outputs.
     optuna.logging.enable_propagation()
 
@@ -18,7 +17,6 @@ def test_get_logger(caplog: _pytest.logging.LogCaptureFixture) -> None:
 
 
 def test_default_handler(capsys: _pytest.capture.CaptureFixture) -> None:
-
     # We need to reconstruct our default handler to properly capture stderr.
     optuna.logging._reset_library_root_logger()
     optuna.logging.set_verbosity(optuna.logging.INFO)
@@ -43,7 +41,6 @@ def test_default_handler(capsys: _pytest.capture.CaptureFixture) -> None:
 
 
 def test_verbosity(capsys: _pytest.capture.CaptureFixture) -> None:
-
     # We need to reconstruct our default handler to properly capture stderr.
     optuna.logging._reset_library_root_logger()
     library_root_logger = optuna.logging._get_library_root_logger()
@@ -74,7 +71,6 @@ def test_verbosity(capsys: _pytest.capture.CaptureFixture) -> None:
 
 
 def test_propagation(caplog: _pytest.logging.LogCaptureFixture) -> None:
-
     optuna.logging._reset_library_root_logger()
     logger = optuna.logging.get_logger("optuna.foo")
 

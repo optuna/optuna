@@ -36,7 +36,6 @@ def test_xgboost_pruning_callback_call() -> None:
 
 def test_xgboost_pruning_callback() -> None:
     def objective(trial: optuna.trial.Trial) -> float:
-
         dtrain = xgb.DMatrix(np.asarray([[1.0]]), label=[1.0])
         dtest = xgb.DMatrix(np.asarray([[1.0]]), label=[1.0])
 
@@ -63,7 +62,6 @@ def test_xgboost_pruning_callback() -> None:
 
 def test_xgboost_pruning_callback_cv() -> None:
     def objective(trial: optuna.trial.Trial) -> float:
-
         dtrain = xgb.DMatrix(np.ones((2, 1)), label=[1.0, 1.0])
         params = {
             "objective": "binary:logistic",

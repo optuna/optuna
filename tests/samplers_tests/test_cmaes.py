@@ -246,7 +246,6 @@ def test_sample_relative_n_startup_trials() -> None:
     study = optuna.create_study(sampler=sampler)
 
     def objective(t: optuna.Trial) -> float:
-
         value = t.suggest_int("x", -1, 1) + t.suggest_int("y", -1, 1)
         if t.number == 0:
             raise Exception("first trial is failed")

@@ -19,7 +19,6 @@ pytestmark = pytest.mark.integration
 
 
 def fixed_value_input_fn() -> typing.Tuple[typing.Dict[str, "tf.Tensor"], "tf.Tensor"]:
-
     x_train = np.zeros([16, 20])
     y_train = np.zeros(16)
     dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
@@ -31,7 +30,6 @@ def fixed_value_input_fn() -> typing.Tuple[typing.Dict[str, "tf.Tensor"], "tf.Te
 
 def test_tensorflow_pruning_hook() -> None:
     def objective(trial: optuna.trial.Trial) -> float:
-
         clf = tf.estimator.DNNClassifier(
             hidden_units=[],
             feature_columns=[tf.feature_column.numeric_column(key="x", shape=[20])],

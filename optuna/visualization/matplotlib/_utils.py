@@ -30,7 +30,6 @@ def is_available() -> bool:
 
 
 def _is_log_scale(trials: List[FrozenTrial], param: str) -> bool:
-
     for trial in trials:
         if param in trial.params:
             dist = trial.distributions[param]
@@ -43,7 +42,6 @@ def _is_log_scale(trials: List[FrozenTrial], param: str) -> bool:
 
 
 def _is_categorical(trials: List[FrozenTrial], param: str) -> bool:
-
     return any(
         isinstance(t.distributions[param], CategoricalDistribution)
         for t in trials

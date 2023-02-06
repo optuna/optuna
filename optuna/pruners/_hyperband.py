@@ -143,7 +143,6 @@ class HyperbandPruner(BasePruner):
         reduction_factor: int = 3,
         bootstrap_count: int = 0,
     ) -> None:
-
         self._min_resource = min_resource
         self._max_resource = max_resource
         self._reduction_factor = reduction_factor
@@ -263,7 +262,6 @@ class HyperbandPruner(BasePruner):
         # `direction`, and `storage` are used.
         # But for safety, prohibit the other attributes explicitly.
         class _BracketStudy(optuna.study.Study):
-
             _VALID_ATTRS = (
                 "get_trials",
                 "directions",

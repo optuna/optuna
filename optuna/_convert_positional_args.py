@@ -28,7 +28,6 @@ def convert_positional_args(
     """
 
     def converter_decorator(func: "Callable[_P, _T]") -> "Callable[_P, _T]":
-
         assert set(previous_positional_arg_names).issubset(set(signature(func).parameters)), (
             f"{set(previous_positional_arg_names)} is not a subset of"
             f" {set(signature(func).parameters)}"
@@ -36,7 +35,6 @@ def convert_positional_args(
 
         @wraps(func)
         def converter_wrapper(*args: Any, **kwargs: Any) -> "_T":
-
             if len(args) >= 1:
                 warnings.warn(
                     f"{func.__name__}(): Please give all values as keyword arguments."

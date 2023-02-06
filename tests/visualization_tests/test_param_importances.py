@@ -50,7 +50,6 @@ def test_target_is_none_and_study_is_multi_obj() -> None:
 def test_plot_param_importances_customized_target_name(
     plot_param_importances: Callable[..., Any]
 ) -> None:
-
     params = ["param_a", "param_b"]
     study = prepare_study_with_trials()
     figure = plot_param_importances(study, params=params, target_name="Target Name")
@@ -105,7 +104,6 @@ def test_plot_param_importances(
 def test_get_param_importances_info_empty(
     specific_create_study: Callable[[], Study], params: Optional[List[str]]
 ) -> None:
-
     study = specific_create_study()
     info = _get_importances_info(
         study, None, params=params, target=None, target_name="Objective Value"

@@ -22,7 +22,6 @@ pytestmark = pytest.mark.integration
 
 
 def _objective_func(trial: optuna.trial.Trial) -> float:
-
     x = trial.suggest_float("x", -1.0, 1.0)
     y = trial.suggest_float("y", 20, 30, log=True)
     z = trial.suggest_categorical("z", (-1.0, 1.0))
@@ -31,7 +30,6 @@ def _objective_func(trial: optuna.trial.Trial) -> float:
 
 
 def _multiobjective_func(trial: optuna.trial.Trial) -> Tuple[float, float]:
-
     x = trial.suggest_float("x", low=-1.0, high=1.0)
     y = trial.suggest_float("y", low=20, high=30, log=True)
     z = trial.suggest_categorical("z", (-1.0, 1.0))
@@ -47,7 +45,6 @@ def _multiobjective_func(trial: optuna.trial.Trial) -> Tuple[float, float]:
 # see https://github.com/optuna/optuna/issues/1340
 # see https://github.com/mlflow/mlflow/issues/2931
 def _objective_func_long_user_attr(trial: optuna.trial.Trial) -> float:
-
     x = trial.suggest_float("x", -1.0, 1.0)
     y = trial.suggest_float("y", 20, 30, log=True)
     z = trial.suggest_categorical("z", (-1.0, 1.0))
@@ -60,7 +57,6 @@ def _objective_func_long_user_attr(trial: optuna.trial.Trial) -> float:
 def test_use_existing_or_default_experiment(
     tmpdir: py.path.local, name: Optional[str], expected: str
 ) -> None:
-
     if name is not None:
         tracking_uri = f"file:{tmpdir}"
         mlflow.set_tracking_uri(tracking_uri)
@@ -88,7 +84,6 @@ def test_use_existing_or_default_experiment(
 
 
 def test_study_name(tmpdir: py.path.local) -> None:
-
     tracking_uri = f"file:{tmpdir}"
     study_name = "my_study"
     n_trials = 3
@@ -108,7 +103,6 @@ def test_study_name(tmpdir: py.path.local) -> None:
 
 
 def test_use_existing_experiment_by_id(tmpdir: py.path.local) -> None:
-
     tracking_uri = f"file:{tmpdir}"
     mlflow.set_tracking_uri(tracking_uri)
     experiment_id = mlflow.create_experiment("foo")
@@ -135,7 +129,6 @@ def test_use_existing_experiment_by_id(tmpdir: py.path.local) -> None:
 
 
 def test_metric_name(tmpdir: py.path.local) -> None:
-
     tracking_uri = f"file:{tmpdir}"
     metric_name = "my_metric_name"
 
@@ -166,7 +159,6 @@ def test_metric_name(tmpdir: py.path.local) -> None:
 def test_metric_name_multiobjective(
     tmpdir: py.path.local, names: Union[str, List[str]], expected: List[str]
 ) -> None:
-
     tracking_uri = f"file:{tmpdir}"
 
     mlflc = MLflowCallback(tracking_uri=tracking_uri, metric_name=names)
@@ -187,7 +179,6 @@ def test_metric_name_multiobjective(
 
 @pytest.mark.parametrize("run_name,expected", [(None, "0"), ("foo", "foo")])
 def test_run_name(tmpdir: py.path.local, run_name: Optional[str], expected: str) -> None:
-
     tracking_uri = f"file:{tmpdir}"
 
     mlflow_kwargs = {"run_name": run_name}
@@ -208,7 +199,6 @@ def test_run_name(tmpdir: py.path.local, run_name: Optional[str], expected: str)
 # see https://github.com/optuna/optuna/issues/1340
 # see https://github.com/mlflow/mlflow/issues/2931
 def test_tag_truncation(tmpdir: py.path.local) -> None:
-
     tracking_uri = f"file:{tmpdir}"
     study_name = "my_study"
     n_trials = 3
@@ -236,7 +226,6 @@ def test_tag_truncation(tmpdir: py.path.local) -> None:
 
 
 def test_nest_trials(tmpdir: py.path.local) -> None:
-
     tracking_uri = f"file:{tmpdir}"
     study_name = "my_study"
     mlflow.set_tracking_uri(tracking_uri)
@@ -286,7 +275,6 @@ def test_multiple_jobs(tmpdir: py.path.local, n_jobs: int) -> None:
 def test_mlflow_callback_fails_when_nest_trials_is_false_and_active_run_exists(
     tmpdir: py.path.local,
 ) -> None:
-
     tracking_uri = f"file:{tmpdir}"
     study_name = "my_study"
     mlflow.set_tracking_uri(tracking_uri)
@@ -301,7 +289,6 @@ def test_mlflow_callback_fails_when_nest_trials_is_false_and_active_run_exists(
 
 
 def test_tag_always_logged(tmpdir: py.path.local) -> None:
-
     tracking_uri = f"file:{tmpdir}"
     study_name = "my_study"
     n_trials = 3
@@ -320,7 +307,6 @@ def test_tag_always_logged(tmpdir: py.path.local) -> None:
 
 @pytest.mark.parametrize("tag_study_user_attrs", [True, False])
 def test_tag_study_user_attrs(tmpdir: py.path.local, tag_study_user_attrs: bool) -> None:
-
     tracking_uri = f"file:{tmpdir}"
     study_name = "my_study"
     n_trials = 3
@@ -349,7 +335,6 @@ def test_tag_study_user_attrs(tmpdir: py.path.local, tag_study_user_attrs: bool)
 
 @pytest.mark.parametrize("tag_trial_user_attrs", [True, False])
 def test_tag_trial_user_attrs(tmpdir: py.path.local, tag_trial_user_attrs: bool) -> None:
-
     tracking_uri = f"file:{tmpdir}"
     study_name = "my_study"
     n_trials = 3
@@ -369,7 +354,6 @@ def test_tag_trial_user_attrs(tmpdir: py.path.local, tag_trial_user_attrs: bool)
 
 
 def test_log_mlflow_tags(tmpdir: py.path.local) -> None:
-
     tracking_uri = f"file:{tmpdir}"
     expected_tags = {"foo": 0, "bar": 1}
     mlflow_kwargs = {"tags": expected_tags}
@@ -389,7 +373,6 @@ def test_log_mlflow_tags(tmpdir: py.path.local) -> None:
 
 @pytest.mark.parametrize("n_jobs", [1, 2, 4])
 def test_track_in_mlflow_decorator(tmpdir: py.path.local, n_jobs: int) -> None:
-
     tracking_uri = f"file:{tmpdir}"
     study_name = "my_study"
     n_trials = n_jobs * 2
@@ -445,7 +428,6 @@ def test_track_in_mlflow_decorator(tmpdir: py.path.local, n_jobs: int) -> None:
 def test_log_metric(
     tmpdir: py.path.local, func: Callable, names: List[str], values: List[float]
 ) -> None:
-
     tracking_uri = f"file:{tmpdir}"
     study_name = "my_study"
 
@@ -472,7 +454,6 @@ def test_log_metric(
 
 
 def test_log_metric_none(tmpdir: py.path.local) -> None:
-
     tracking_uri = f"file:{tmpdir}"
     metric_name = "metric"
     study_name = "my_study"
@@ -497,7 +478,6 @@ def test_log_metric_none(tmpdir: py.path.local) -> None:
 
 
 def test_log_params(tmpdir: py.path.local) -> None:
-
     tracking_uri = f"file:{tmpdir}"
     metric_name = "metric"
     study_name = "my_study"
@@ -528,7 +508,6 @@ def test_log_params(tmpdir: py.path.local) -> None:
 
 @pytest.mark.parametrize("metrics", [["foo"], ["foo", "bar", "baz"]])
 def test_multiobjective_raises_on_name_mismatch(tmpdir: py.path.local, metrics: List[str]) -> None:
-
     tracking_uri = f"file:{tmpdir}"
     mlflc = MLflowCallback(tracking_uri=tracking_uri, metric_name=metrics)
     study = optuna.create_study(study_name="my_study", directions=["minimize", "maximize"])
