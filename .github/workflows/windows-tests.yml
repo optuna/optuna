@@ -60,5 +60,5 @@ jobs:
     - name: Tests
       # pytest -m "not integration"
       run: |
-        pytest -vv tests/storages_tests/rdb_tests/test_storage.py -m "not integration"
+        pytest -vv tests\trial_tests\test_trials.py -m "not integration"
 
