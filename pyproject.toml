@@ -86,7 +86,7 @@ document = [
 ]
 integration = [
     "allennlp>=2.2.0; python_version<'3.11'",
-    "botorch>=0.4.0,<0.8.0; python_version<'3.11'",
+    "botorch>=0.4.0; python_version<'3.11'",
     "catalyst>=21.3; python_version<'3.11'",
     "catboost>=0.26; python_version<'3.11'",
     "chainer>=5.0.0",
