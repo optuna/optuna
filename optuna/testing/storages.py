@@ -90,7 +90,7 @@ class StorageSupplier:
             )
             return optuna.storages.JournalStorage(journal_redis_storage)
         elif "journal" in self.storage_specifier:
-            file_storage = JournalFileStorage(tempfile.NamedTemporaryFile().name)
+            file_storage = JournalFileStorage(tempfile.NamedTemporaryFile(delete=False).name)
             return optuna.storages.JournalStorage(file_storage)
         elif self.storage_specifier == "dask":
             self.dask_client = distributed.Client()  # type: ignore[no-untyped-call]

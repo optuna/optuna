@@ -34,7 +34,7 @@ def get_storage_url(specifier: str) -> Iterator:
         if specifier == "inmemory":
             url = None
         elif specifier == "sqlite":
-            tmpfile = tempfile.NamedTemporaryFile()
+            tmpfile = tempfile.NamedTemporaryFile(delete=False)
             url = "sqlite:///{}".format(tmpfile.name)
         else:
             raise ValueError(
