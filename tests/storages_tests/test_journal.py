@@ -45,7 +45,7 @@ class JournalLogStorageSupplier:
 
     def __enter__(self) -> optuna.storages.BaseJournalLogStorage:
         if self.storage_type.startswith("file"):
-            self.tempfile = tempfile.NamedTemporaryFile()
+            self.tempfile = tempfile.NamedTemporaryFile(delete=False)
             lock: JournalFileBaseLock
             if self.storage_type == "file_with_open_lock":
                 lock = optuna.storages.JournalFileOpenLock(self.tempfile.name)
@@ -110,7 +110,7 @@ def pop_waiting_trial(file_path: str, study_name: str) -> Optional[int]:
 
 
 def test_pop_waiting_trial_multiprocess_safe() -> None:
-    with tempfile.NamedTemporaryFile() as file:
+    with tempfile.NamedTemporaryFile(delete=False) as file:
         file_storage = optuna.storages.JournalFileStorage(file.name)
         storage = optuna.storages.JournalStorage(file_storage)
         study = optuna.create_study(storage=storage)

@@ -664,7 +664,7 @@ def test_raise_error_for_should_prune_multi_objectives() -> None:
 def test_persisted_param() -> None:
     study_name = "my_study"
 
-    with tempfile.NamedTemporaryFile() as fp:
+    with tempfile.NamedTemporaryFile(delete=False) as fp:
         storage = f"sqlite:///{fp.name}"
         study = create_study(storage=storage, study_name=study_name)
         assert isinstance(study._storage, storages._CachedStorage), "Pre-condition."

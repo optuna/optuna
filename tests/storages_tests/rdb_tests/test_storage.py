@@ -55,7 +55,7 @@ def test_init() -> None:
 
 
 def test_init_url_template() -> None:
-    with tempfile.NamedTemporaryFile(suffix="{SCHEMA_VERSION}") as tf:
+    with tempfile.NamedTemporaryFile(suffix="{SCHEMA_VERSION}", delete=False) as tf:
         storage = RDBStorage("sqlite:///" + tf.name)
         assert storage.engine.url.database.endswith(str(SCHEMA_VERSION))
 
@@ -63,13 +63,13 @@ def test_init_url_template() -> None:
 def test_init_url_that_contains_percent_character() -> None:
     # Alembic's ini file regards '%' as the special character for variable expansion.
     # We checks `RDBStorage` does not raise an error even if a storage url contains the character.
-    with tempfile.NamedTemporaryFile(suffix="%") as tf:
+    with tempfile.NamedTemporaryFile(suffix="%", delete=False) as tf:
         RDBStorage("sqlite:///" + tf.name)
 
-    with tempfile.NamedTemporaryFile(suffix="%foo") as tf:
+    with tempfile.NamedTemporaryFile(suffix="%foo", delete=False) as tf:
         RDBStorage("sqlite:///" + tf.name)
 
-    with tempfile.NamedTemporaryFile(suffix="%foo%%bar") as tf:
+    with tempfile.NamedTemporaryFile(suffix="%foo%%bar", delete=False) as tf:
         RDBStorage("sqlite:///" + tf.name)
 
 
