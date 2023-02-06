@@ -59,4 +59,4 @@ jobs:
 
     - name: Tests
       run: |
-        pytest ../../tests/storages_tests/test_storages.py -m "not integration"
+        pytest tests/storages_tests/test_storages.py -m "not integration"
