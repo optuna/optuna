@@ -1007,7 +1007,7 @@ def test_study_optimize_command() -> None:
 @pytest.mark.skip_coverage
 def test_study_optimize_command_inconsistent_args() -> None:
     with tempfile.NamedTemporaryFile() as tf:
-        db_url = "sqlite://"
+        db_url = "sqlite:///{}".format(tf.name)
 
         # --study-name argument is missing.
         with pytest.raises(subprocess.CalledProcessError):
@@ -1042,7 +1042,7 @@ def test_check_storage_url() -> None:
     assert storage_in_args == optuna.cli._check_storage_url(storage_in_args)
 
     with pytest.warns(ExperimentalWarning):
-        with patch.dict("optuna.cli.os.environ", {"OPTUNA_STORAGE": "sqlite://"}):
+        with patch.dict("optuna.cli.os.environ", {"OPTUNA_STORAGE": "sqlite:///args.db"}):
             optuna.cli._check_storage_url(None)
 
     with pytest.raises(CLIUsageError):
@@ -1093,7 +1093,7 @@ def test_ask(
     )
 
     with tempfile.NamedTemporaryFile() as tf:
-        db_url = "sqlite://"
+        db_url = "sqlite:///{}".format(tf.name)
 
         args = [
             "optuna",
@@ -1166,7 +1166,7 @@ def test_ask_flatten(
     )
 
     with tempfile.NamedTemporaryFile() as tf:
-        db_url = "sqlite://"
+        db_url = "sqlite:///{}".format(tf.name)
 
         args = [
             "optuna",
@@ -1217,7 +1217,7 @@ def test_ask_empty_search_space(output_format: str) -> None:
     study_name = "test_study"
 
     with tempfile.NamedTemporaryFile() as tf:
-        db_url = "sqlite://"
+        db_url = "sqlite:///{}".format(tf.name)
 
         args = [
             "optuna",
@@ -1250,7 +1250,7 @@ def test_ask_empty_search_space_flatten(output_format: str) -> None:
     study_name = "test_study"
 
     with tempfile.NamedTemporaryFile() as tf:
-        db_url = "sqlite://"
+        db_url = "sqlite:///{}".format(tf.name)
 
         args = [
             "optuna",
@@ -1287,7 +1287,7 @@ def test_ask_sampler_kwargs_without_sampler() -> None:
     )
 
     with tempfile.NamedTemporaryFile() as tf:
-        db_url = "sqlite://"
+        db_url = "sqlite:///{}".format(tf.name)
 
         args = [
             "optuna",
@@ -1331,7 +1331,7 @@ def test_create_study_and_ask(
     )
 
     with tempfile.NamedTemporaryFile() as tf:
-        db_url = "sqlite://"
+        db_url = "sqlite:///{}".format(tf.name)
 
         create_study_args = [
             "optuna",
@@ -1396,7 +1396,7 @@ def test_create_study_and_ask_with_inconsistent_directions(
     )
 
     with tempfile.NamedTemporaryFile() as tf:
-        db_url = "sqlite://"
+        db_url = "sqlite:///{}".format(tf.name)
 
         create_study_args = [
             "optuna",
@@ -1442,7 +1442,7 @@ def test_ask_with_both_direction_and_directions() -> None:
     )
 
     with tempfile.NamedTemporaryFile() as tf:
-        db_url = "sqlite://"
+        db_url = "sqlite:///{}".format(tf.name)
 
         create_study_args = [
             "optuna",
@@ -1479,7 +1479,7 @@ def test_tell() -> None:
     study_name = "test_study"
 
     with tempfile.NamedTemporaryFile() as tf:
-        db_url = "sqlite://"
+        db_url = "sqlite:///{}".format(tf.name)
 
         output: Any = subprocess.check_output(
             [
@@ -1556,7 +1556,7 @@ def test_tell_with_nan() -> None:
     study_name = "test_study"
 
     with tempfile.NamedTemporaryFile() as tf:
-        db_url = "sqlite://"
+        db_url = "sqlite:///{}".format(tf.name)
 
         output: Any = subprocess.check_output(
             [
