@@ -2,6 +2,7 @@ import copy
 from datetime import datetime
 import pickle
 import random
+from time import sleep
 from typing import Any
 from typing import Dict
 from typing import List
@@ -288,7 +289,9 @@ def test_create_new_trial(storage_mode: str) -> None:
         n_trial_in_study = 3
         for i in range(n_trial_in_study):
             time_before_creation = datetime.now()
+            sleep(0.001)
             trial_id = storage.create_new_trial(study_id)
+            sleep(0.001)
             time_after_creation = datetime.now()
 
             trials = storage.get_all_trials(study_id)
