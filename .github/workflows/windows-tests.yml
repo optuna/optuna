@@ -23,7 +23,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.8']
+        python-version: ['3.9']
 
     # Not intended for forks.
     if: github.repository == 'gen740/optuna'
@@ -59,5 +59,5 @@ jobs:
 
     - name: Tests
       run: |
-        pytest -vv tests\trial_tests\test_trials.py -m "not integration"
+        pytest -m "not integration"
 
