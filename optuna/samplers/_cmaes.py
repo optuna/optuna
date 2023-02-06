@@ -351,13 +351,14 @@ class CmaEsSampler(BaseSampler):
             return {}
 
         if len(search_space) == 1:
-            _logger.info(
-                "`CmaEsSampler` only supports two or more dimensional continuous "
-                "search space. `{}` is used instead of `CmaEsSampler`.".format(
-                    self._independent_sampler.__class__.__name__
+            if self._warn_independent_sampling:
+                _logger.warning(
+                    "`CmaEsSampler` only supports two or more dimensional continuous "
+                    "search space. `{}` is used instead of `CmaEsSampler`.".format(
+                        self._independent_sampler.__class__.__name__
+                    )
                 )
-            )
-            self._warn_independent_sampling = False
+                self._warn_independent_sampling = False
             return {}
 
         # When `with_margin=True`, bounds in discrete dimensions are handled inside `CMAwM`.
@@ -369,13 +370,14 @@ class CmaEsSampler(BaseSampler):
             optimizer = self._init_optimizer(trans, study.direction, population_size=self._popsize)
 
         if optimizer.dim != len(trans.bounds):
-            _logger.info(
-                "`CmaEsSampler` does not support dynamic search space. "
-                "`{}` is used instead of `CmaEsSampler`.".format(
-                    self._independent_sampler.__class__.__name__
+            if self._warn_independent_sampling:
+                _logger.warning(
+                    "`CmaEsSampler` does not support dynamic search space. "
+                    "`{}` is used instead of `CmaEsSampler`.".format(
+                        self._independent_sampler.__class__.__name__
+                    )
                 )
-            )
-            self._warn_independent_sampling = False
+                self._warn_independent_sampling = False
             return {}
 
         # TODO(c-bata): Reduce the number of wasted trials during parallel optimization.
