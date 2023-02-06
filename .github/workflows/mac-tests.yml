@@ -6,7 +6,7 @@ name: mac-tests
 on:
   push:
     branches:
-      - master
+      - windows-ci
   pull_request:
     paths:
       - '.github/workflows/mac-tests.yml'
