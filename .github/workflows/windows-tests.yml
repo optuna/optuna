@@ -59,4 +59,4 @@ jobs:
 
     - name: Tests
       run: |
-        pytest tests/storages_tests -vvx -m "not integration"
+        pytest -m "not integration"
