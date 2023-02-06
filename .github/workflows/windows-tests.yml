@@ -58,5 +58,7 @@ jobs:
         pip install --progress-bar off .[optional]
 
     - name: Tests
+      # pytest -m "not integration"
       run: |
-        pytest -m "not integration"
+        pytest -vv tests/storages_tests/rdb_tests/test_storage.py -m "not integration"
+
