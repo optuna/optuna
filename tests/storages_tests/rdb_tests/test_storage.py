@@ -217,6 +217,7 @@ def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
             assert trial.value is not None and 0 <= trial.value <= 150
 
         assert study.user_attrs["d"] == 3
+        storage.remove_session()
 
 
 @pytest.mark.parametrize(
