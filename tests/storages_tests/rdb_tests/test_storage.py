@@ -179,7 +179,6 @@ def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
     src_db_file = os.path.join(
         os.path.dirname(__file__), "test_upgrade_assets", f"{optuna_version}.db"
     )
-    os.chdir("/")
     with tempfile.TemporaryDirectory() as workdir:
         shutil.copyfile(src_db_file, f"{workdir}/sqlite.db")
         storage_url = f"sqlite:///{workdir}/sqlite.db"
@@ -218,8 +217,7 @@ def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
             assert trial.value is not None and 0 <= trial.value <= 150
 
         assert study.user_attrs["d"] == 3
-        del storage
-        time.sleep(1)
+        os.remove(f"{workdir}/sqlite.db") # cleanup before workdir is deleted
 
 
 @pytest.mark.parametrize(
