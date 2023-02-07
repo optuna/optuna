@@ -186,7 +186,6 @@ def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
 
         storage = RDBStorage(
             storage_url,
-            engine_kwargs={"poolclass": NullPool},
             skip_compatibility_check=True,
             skip_table_creation=True,
         )
@@ -223,6 +222,8 @@ def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
             assert trial.value is not None and 0 <= trial.value <= 150
 
         assert study.user_attrs["d"] == 3
+
+        storage.engine.dispose()  # Be sure to disconnect db
 
 
 @pytest.mark.parametrize(
@@ -270,6 +271,8 @@ def test_upgrade_multi_objective_optimization(optuna_version: str) -> None:
             assert 0 <= trial.values[1] <= 150
         assert study.user_attrs["d"] == 3
 
+        storage.engine.dispose()  # Be sure to disconnect db
+
 
 @pytest.mark.parametrize(
     "optuna_version", ["2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c", "3.0.0.d"]
@@ -304,6 +307,8 @@ def test_upgrade_distributions(optuna_version: str) -> None:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=UserWarning)
             new_study.optimize(objective_test_upgrade_distributions, n_trials=1)
+
+        storage.engine.dispose()  # Be sure to disconnect db
 
 
 def test_record_heartbeat() -> None:
