@@ -71,8 +71,8 @@ class StorageSupplier:
                 raise ValueError("InMemoryStorage does not accept any arguments!")
             return optuna.storages.InMemoryStorage()
         elif "sqlite" in self.storage_specifier:
-            self.tempfile = tempfile.NamedTemporaryFile()
-            url = "sqlite:///{}.db".format(self.tempfile.name)
+            self.tempfile = tempfile.NamedTemporaryFile(delete=False)
+            url = "sqlite:///{}".format(self.tempfile.name)
             rdb_storage = optuna.storages.RDBStorage(
                 url,
                 engine_kwargs={"connect_args": {"timeout": SQLITE3_TIMEOUT}},
