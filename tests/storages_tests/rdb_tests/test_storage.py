@@ -11,6 +11,7 @@ import warnings
 
 import pytest
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.pool import NullPool
 
 import optuna
 from optuna import create_study
@@ -183,7 +184,12 @@ def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
         shutil.copyfile(src_db_file, f"{workdir}/sqlite.db")
         storage_url = f"sqlite:///{workdir}/sqlite.db"
 
-        storage = RDBStorage(storage_url, skip_compatibility_check=True, skip_table_creation=True)
+        storage = RDBStorage(
+            storage_url,
+            engine_kwargs={"poolclass": NullPool},
+            skip_compatibility_check=True,
+            skip_table_creation=True,
+        )
         assert storage.get_current_version() == f"v{optuna_version}"
         head_version = storage.get_head_version()
         with warnings.catch_warnings():
@@ -217,7 +223,6 @@ def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
             assert trial.value is not None and 0 <= trial.value <= 150
 
         assert study.user_attrs["d"] == 3
-        os.remove(f"{workdir}/sqlite.db") # cleanup before workdir is deleted
 
 
 @pytest.mark.parametrize(
