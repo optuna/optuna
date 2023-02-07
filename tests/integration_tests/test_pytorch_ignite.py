@@ -16,7 +16,6 @@ pytestmark = pytest.mark.integration
 
 def test_pytorch_ignite_pruning_handler() -> None:
     def update(engine: Engine, batch: Iterable) -> None:
-
         pass
 
     trainer = Engine(update)

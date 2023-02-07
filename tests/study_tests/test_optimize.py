@@ -35,7 +35,6 @@ def logging_setup() -> Generator[None, None, None]:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_run_trial(storage_mode: str, caplog: LogCaptureFixture) -> None:
-
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
 
@@ -60,7 +59,6 @@ def test_run_trial(storage_mode: str, caplog: LogCaptureFixture) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_run_trial_automatically_fail(storage_mode: str, caplog: LogCaptureFixture) -> None:
-
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
 

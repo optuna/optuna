@@ -46,7 +46,6 @@ def _get_slice_subplot_info(
     log_scale: bool,
     numerical: bool,
 ) -> _SliceSubplotInfo:
-
     if target is None:
 
         def _target(t: FrozenTrial) -> float:
@@ -70,7 +69,6 @@ def _get_slice_plot_info(
     target: Optional[Callable[[FrozenTrial], float]],
     target_name: str,
 ) -> _SlicePlotInfo:
-
     _check_plot_args(study, target, target_name)
 
     trials = _filter_nonfinite(
@@ -161,7 +159,6 @@ def plot_slice(
 
 
 def _get_slice_plot(info: _SlicePlotInfo) -> "go.Figure":
-
     layout = go.Layout(title="Slice Plot")
 
     if len(info.subplots) == 0:

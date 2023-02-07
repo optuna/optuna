@@ -30,7 +30,6 @@ parametrize_plot_slice = pytest.mark.parametrize("plot_slice", [plotly_plot_slic
 
 
 def _create_study_with_failed_trial() -> Study:
-
     study = create_study()
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
 
@@ -77,7 +76,6 @@ def _create_study_mixture_category_types() -> Study:
 
 @parametrize_plot_slice
 def test_plot_slice_customized_target_name(plot_slice: Callable[..., Any]) -> None:
-
     params = ["param_a", "param_b"]
     study = prepare_study_with_trials()
     figure = plot_slice(study, params=params, target_name="Target Name")
@@ -106,7 +104,6 @@ def test_plot_slice(
     specific_create_study: Callable[[], Study],
     params: Optional[List[str]],
 ) -> None:
-
     study = specific_create_study()
     figure = plot_slice(study, params=params)
     if isinstance(figure, go.Figure):
@@ -116,7 +113,6 @@ def test_plot_slice(
 
 
 def test_target_is_none_and_study_is_multi_obj() -> None:
-
     study = create_study(directions=["minimize", "minimize"])
     with pytest.raises(ValueError):
         _get_slice_plot_info(study, None, target=None, target_name="Objective Value")
@@ -140,7 +136,6 @@ def test_target_is_none_and_study_is_multi_obj() -> None:
 def test_get_slice_plot_info_empty(
     specific_create_study: Callable[[], Study], params: Optional[List[str]]
 ) -> None:
-
     study = specific_create_study()
     info = _get_slice_plot_info(study, params=params, target=None, target_name="Objective Value")
     assert len(info.subplots) == 0
@@ -164,7 +159,6 @@ def test_get_slice_plot_info_non_exist_param_error() -> None:
     ],
 )
 def test_get_slice_plot_info_params(params: Optional[List[str]]) -> None:
-
     study = prepare_study_with_trials()
     params = ["param_a", "param_b", "param_c", "param_d"] if params is None else params
     expected_subplot_infos = {
@@ -285,7 +279,6 @@ def test_get_slice_plot_info_for_few_observations(params: List[str]) -> None:
 
 
 def test_get_slice_plot_info_log_scale_and_str_category_2_params() -> None:
-
     study = _create_study_with_log_scale_and_str_category_2d()
     info = _get_slice_plot_info(study, None, None, "Objective Value")
     assert info == _SlicePlotInfo(
@@ -312,7 +305,6 @@ def test_get_slice_plot_info_log_scale_and_str_category_2_params() -> None:
 
 
 def test_get_slice_plot_info_mixture_category_types() -> None:
-
     study = _create_study_mixture_category_types()
     info = _get_slice_plot_info(study, None, None, "Objective Value")
     assert info == _SlicePlotInfo(
@@ -340,7 +332,6 @@ def test_get_slice_plot_info_mixture_category_types() -> None:
 
 @pytest.mark.parametrize("value", [float("inf"), -float("inf")])
 def test_get_slice_plot_info_nonfinite_removed(value: float) -> None:
-
     study = prepare_study_with_trials(value_for_first_trial=value)
     info = _get_slice_plot_info(
         study, params=["param_b", "param_d"], target=None, target_name="Objective Value"
@@ -371,7 +362,6 @@ def test_get_slice_plot_info_nonfinite_removed(value: float) -> None:
 @pytest.mark.parametrize("objective", (0, 1))
 @pytest.mark.parametrize("value", (float("inf"), -float("inf")))
 def test_get_slice_plot_info_nonfinite_multiobjective(objective: int, value: float) -> None:
-
     study = prepare_study_with_trials(n_objectives=2, value_for_first_trial=value)
     info = _get_slice_plot_info(
         study,

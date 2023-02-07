@@ -114,7 +114,6 @@ class SkoptSampler(BaseSampler):
         consider_pruned_trials: bool = False,
         seed: Optional[int] = None,
     ) -> None:
-
         _imports.check()
 
         self._skopt_kwargs = skopt_kwargs or {}
@@ -139,14 +138,12 @@ class SkoptSampler(BaseSampler):
         self._rng: Optional[np.random.RandomState] = None
 
     def reseed_rng(self) -> None:
-
         self._skopt_kwargs["random_state"] = random.randint(1, 2**32)
         self._independent_sampler.reseed_rng()
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
     ) -> Dict[str, distributions.BaseDistribution]:
-
         search_space = {}
         for name, distribution in self._search_space.calculate(study).items():
             if distribution.single():
@@ -167,7 +164,6 @@ class SkoptSampler(BaseSampler):
         trial: FrozenTrial,
         search_space: Dict[str, distributions.BaseDistribution],
     ) -> Dict[str, Any]:
-
         self._raise_error_if_multi_objective(study)
 
         if len(search_space) == 0:
@@ -192,7 +188,6 @@ class SkoptSampler(BaseSampler):
         param_name: str,
         param_distribution: distributions.BaseDistribution,
     ) -> Any:
-
         self._raise_error_if_multi_objective(study)
 
         if self._warn_independent_sampling:
@@ -205,7 +200,6 @@ class SkoptSampler(BaseSampler):
         )
 
     def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
-
         logger = optuna.logging.get_logger(__name__)
         logger.warning(
             "The parameter '{}' in trial#{} is sampled independently "
@@ -244,7 +238,6 @@ class SkoptSampler(BaseSampler):
         state: TrialState,
         values: Optional[Sequence[float]],
     ) -> None:
-
         self._independent_sampler.after_trial(study, trial, state, values)
 
 
@@ -252,7 +245,6 @@ class _Optimizer:
     def __init__(
         self, search_space: Dict[str, distributions.BaseDistribution], skopt_kwargs: Dict[str, Any]
     ) -> None:
-
         self._search_space = search_space
 
         dimensions = []
@@ -288,7 +280,6 @@ class _Optimizer:
         self._optimizer = skopt.Optimizer(dimensions, **skopt_kwargs)
 
     def tell(self, study: Study, complete_trials: List[FrozenTrial]) -> None:
-
         xs = []
         ys = []
 
@@ -303,7 +294,6 @@ class _Optimizer:
         self._optimizer.tell(xs, ys)
 
     def ask(self) -> Dict[str, Any]:
-
         params = {}
         param_values = self._optimizer.ask()
         for (name, distribution), value in zip(sorted(self._search_space.items()), param_values):
@@ -324,7 +314,6 @@ class _Optimizer:
         return params
 
     def _is_compatible(self, trial: FrozenTrial) -> bool:
-
         # Thanks to `intersection_search_space()` function, in sequential optimization,
         # the parameters of complete trials are always compatible with the search space.
         #
@@ -346,7 +335,6 @@ class _Optimizer:
     def _complete_trial_to_skopt_observation(
         self, study: Study, trial: FrozenTrial
     ) -> Tuple[List[Any], float]:
-
         param_values = []
         for name, distribution in sorted(self._search_space.items()):
             param_value = trial.params[name]

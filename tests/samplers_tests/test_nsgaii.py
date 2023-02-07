@@ -210,8 +210,8 @@ def test_constrained_dominates_feasible_vs_feasible(
     values_constraints_list = [(vs, cs) for vs in values_list for cs in constraints_list]
 
     # The results of _constrained_dominates match _dominates in all feasible cases.
-    for (values1, constraints1) in values_constraints_list:
-        for (values2, constraints2) in values_constraints_list:
+    for values1, constraints1 in values_constraints_list:
+        for values2, constraints2 in values_constraints_list:
             t1 = _create_frozen_trial(0, values1, constraints1)
             t2 = _create_frozen_trial(1, values2, constraints2)
             assert _constrained_dominates(t1, t2, directions) == _dominates(t1, t2, directions)
@@ -221,7 +221,6 @@ def test_constrained_dominates_feasible_vs_feasible(
 def test_constrained_dominates_feasible_vs_infeasible(
     direction: StudyDirection,
 ) -> None:
-
     # Check all pairs of trials consisting of these constraint values.
     constraints_1d_feasible = [-float("inf"), -1, 0]
     constraints_1d_infeasible = [2, float("inf")]
@@ -344,7 +343,6 @@ def _assert_population_per_rank(
         for i in range(len(population_per_rank)):
             for trial1 in population_per_rank[i]:
                 for trial2 in population_per_rank[i]:
-
                     assert not _constrained_dominates(trial1, trial2, direction)
 
         # Check that each trial is dominated by some trial in the rank above.
@@ -631,7 +629,6 @@ def test_crossover_invalid_population(crossover: BaseCrossover, population_size:
     ],
 )
 def test_crossover_numerical_distribution(crossover: BaseCrossover) -> None:
-
     study = optuna.study.create_study()
     rng = np.random.RandomState()
     search_space = {"x": FloatDistribution(1, 10), "y": IntDistribution(1, 10)}
@@ -649,7 +646,6 @@ def test_crossover_numerical_distribution(crossover: BaseCrossover) -> None:
 
 
 def test_crossover_inlined_categorical_distribution() -> None:
-
     search_space: Dict[str, BaseDistribution] = {
         "x": CategoricalDistribution(choices=["a", "c"]),
         "y": CategoricalDistribution(choices=["b", "d"]),
@@ -679,7 +675,6 @@ def test_crossover_inlined_categorical_distribution() -> None:
     ],
 )
 def test_crossover_duplicated_param_values(crossover: BaseCrossover) -> None:
-
     param_values = [1.0, 2.0]
 
     study = optuna.study.create_study()
@@ -724,7 +719,6 @@ def test_crossover_duplicated_param_values(crossover: BaseCrossover) -> None:
 def test_crossover_deterministic(
     crossover: BaseCrossover, rand_value: float, expected_params: np.ndarray
 ) -> None:
-
     study = optuna.study.create_study()
     search_space: Dict[str, BaseDistribution] = {
         "x": FloatDistribution(1, 10),

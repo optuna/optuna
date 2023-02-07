@@ -10,7 +10,6 @@ pytestmark = pytest.mark.integration
 
 
 def test__handling_alias_parameters() -> None:
-
     params = {"reg_alpha": 0.1}
     _handling_alias_parameters(params)
     assert "reg_alpha" not in params
@@ -18,7 +17,6 @@ def test__handling_alias_parameters() -> None:
 
 
 def test_handling_alias_parameter_with_user_supplied_param() -> None:
-
     params = {
         "num_boost_round": 5,
         "early_stopping_rounds": 2,
@@ -32,7 +30,6 @@ def test_handling_alias_parameter_with_user_supplied_param() -> None:
 
 
 def test_handling_alias_parameter() -> None:
-
     params = {
         "num_boost_round": 5,
         "early_stopping_rounds": 2,

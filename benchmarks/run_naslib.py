@@ -24,7 +24,6 @@ def run(args: argparse.Namespace) -> None:
     ]
 
     for searchspace_dataset in searchspace_datasets:
-
         python_command = f"benchmarks/naslib/problem.py {searchspace_dataset}"
         cmd = (
             f"{kurobako_cmd} problem command python3 {python_command}"

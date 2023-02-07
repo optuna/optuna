@@ -28,7 +28,6 @@ def test_consider_pruned_trials_experimental_warning() -> None:
 
 
 def test_conversion_from_distribution_to_dimension() -> None:
-
     sampler = optuna.integration.SkoptSampler()
     study = optuna.create_study(sampler=sampler)
     with patch("skopt.Optimizer") as mock_object:
@@ -63,7 +62,6 @@ def test_conversion_from_distribution_to_dimension() -> None:
 
 
 def test_skopt_kwargs() -> None:
-
     sampler = optuna.integration.SkoptSampler(skopt_kwargs={"base_estimator": "GBRT"})
     study = optuna.create_study(sampler=sampler)
 
@@ -75,7 +73,6 @@ def test_skopt_kwargs() -> None:
 
 
 def test_skopt_kwargs_dimensions() -> None:
-
     # User specified `dimensions` argument will be ignored in `SkoptSampler`.
     sampler = optuna.integration.SkoptSampler(skopt_kwargs={"dimensions": []})
     study = optuna.create_study(sampler=sampler)
@@ -88,7 +85,6 @@ def test_skopt_kwargs_dimensions() -> None:
 
 
 def test_is_compatible() -> None:
-
     sampler = optuna.integration.SkoptSampler()
     study = optuna.create_study(sampler=sampler)
 
@@ -160,7 +156,6 @@ def test_warn_independent_sampling(capsys: _pytest.capture.CaptureFixture) -> No
 
 
 def _objective(trial: optuna.trial.Trial) -> float:
-
     p0 = trial.suggest_float("p0", -3.3, 5.2)
     p1 = trial.suggest_float("p1", 2.0, 2.0)
     p2 = trial.suggest_float("p2", 0.0001, 0.3, log=True)
@@ -177,7 +172,6 @@ def _objective(trial: optuna.trial.Trial) -> float:
 
 
 def test_sample_relative_n_startup_trials() -> None:
-
     independent_sampler = optuna.samplers.RandomSampler()
     sampler = optuna.integration.SkoptSampler(
         n_startup_trials=2, independent_sampler=independent_sampler
@@ -197,7 +191,6 @@ def test_sample_relative_n_startup_trials() -> None:
 
 
 def test_get_trials() -> None:
-
     with patch("optuna.Study.get_trials", new=Mock(side_effect=lambda deepcopy: _create_trials())):
         sampler = optuna.integration.SkoptSampler(consider_pruned_trials=False)
         study = optuna.create_study(sampler=sampler)
@@ -213,7 +206,6 @@ def test_get_trials() -> None:
 
 
 def _create_trials() -> List[FrozenTrial]:
-
     trials = []
     trials.append(_create_frozen_trial({}, {}))
     trials.append(
@@ -237,7 +229,6 @@ def _create_trials() -> List[FrozenTrial]:
 def _create_frozen_trial(
     params: Dict[str, Any], param_distributions: Dict[str, distributions.BaseDistribution]
 ) -> FrozenTrial:
-
     return FrozenTrial(
         number=0,
         value=1.0,
