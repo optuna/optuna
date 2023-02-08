@@ -83,6 +83,11 @@ jobs:
       with:
         python-version: 3.8
 
+    - name: Setup MPI
+      uses: mpi4py/setup-mpi@v1
+      with:
+        mpi: "msmpi"
+
     - name: Setup cache
       uses: actions/cache@v3
       env:
@@ -110,16 +115,10 @@ jobs:
         pip freeze --all
 
     - name: Tests
-      run: |
-        pytest tests -m "integration" --ignore tests/integration_tests/test_pytorch_lightning.py
-
+      # skip allennlp tests since it's not supported on Windows
+      run: >
+        pytest tests -m "integration"
+          --ignore tests/integration_tests/test_pytorch_lightning.py
+          --ignore tests/integration_tests/allennlp_tests/test_allennlp.py
       env:
         OMP_NUM_THREADS: 1
-    #
-    # - name: Tests MPI
-    #   run: |
-    #     export OMPI_MCA_rmaps_base_oversubscribe=yes
-    #     mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
-    #     mpirun -n 2 -- pytest tests/integration_tests/test_pytorch_distributed.py
-    #   env:
-    #     OMP_NUM_THREADS: 1
