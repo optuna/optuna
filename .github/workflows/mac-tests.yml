@@ -6,7 +6,7 @@ name: mac-tests
 on:
   push:
     branches:
-      - windows-ci
+      - master
   pull_request:
     paths:
       - '.github/workflows/mac-tests.yml'
@@ -21,20 +21,16 @@ jobs:
   tests-mac:
     runs-on: macos-latest
 
-    strategy:
-      matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
-
     # Not intended for forks.
-    if: github.repository == 'gen740/optuna'
+    if: github.repository == 'optuna/optuna'
     steps:
     - name: Checkout
       uses: actions/checkout@v3
 
-    - name: Setup Python${{ matrix.python-version }}
+    - name: Setup Python3.8
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: 3.8
 
     - name: Setup cache
       uses: actions/cache@v3
@@ -42,9 +38,9 @@ jobs:
         cache-name: test
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
+        key: ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
         restore-keys: |
-          ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
+          ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
 
     - name: Install
       run: |
@@ -57,6 +53,72 @@ jobs:
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
 
+    - name: Output installed packages
+      run: |
+        pip freeze --all
+
     - name: Tests
       run: |
         pytest tests -m "not integration"
+
+  tests-integration-mac:
+    runs-on: macos-latest
+
+    # Not intended for forks.
+    if: github.repository == 'optuna/optuna'
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Setup Python3.8
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.8
+
+    - name: Setup cache
+      uses: actions/cache@v3
+      env:
+        cache-name: test-integration
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
+        restore-keys: |
+          ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
+
+    - name: Setup mac environment
+      run: |
+        brew install libomp
+        brew install open-mpi
+        brew install openblas
+
+    - name: Install
+      run: |
+        python -m pip install --upgrade pip
+
+        # Install minimal dependencies and confirm that `import optuna` is successful.
+        pip install --progress-bar off .
+        python -c 'import optuna'
+        optuna --version
+
+        pip install --progress-bar off .[test]
+        pip install --progress-bar off .[optional]
+        pip install --progress-bar off .[integration]
+
+    - name: Output installed packages
+      run: |
+        pip freeze --all
+
+    - name: Tests
+      run: |
+        pytest tests -m "integration" --ignore tests/integration_tests/test_pytorch_lightning.py
+
+      env:
+        OMP_NUM_THREADS: 1
+
+    - name: Tests MPI
+      run: |
+        export OMPI_MCA_rmaps_base_oversubscribe=yes
+        mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
+        mpirun -n 2 -- pytest tests/integration_tests/test_pytorch_distributed.py
+      env:
+        OMP_NUM_THREADS: 1
