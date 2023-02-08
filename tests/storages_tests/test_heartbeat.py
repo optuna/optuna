@@ -22,7 +22,6 @@ from optuna.trial import TrialState
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES_HEARTBEAT)
 def test_fail_stale_trials_with_optimize(storage_mode: str) -> None:
-
     heartbeat_interval = 1
     grace_period = 2
 
@@ -55,7 +54,6 @@ def test_fail_stale_trials_with_optimize(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES_HEARTBEAT)
 def test_invalid_heartbeat_interval_and_grace_period(storage_mode: str) -> None:
-
     with pytest.raises(ValueError):
         with StorageSupplier(storage_mode, heartbeat_interval=-1):
             pass

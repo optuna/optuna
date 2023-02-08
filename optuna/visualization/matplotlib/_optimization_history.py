@@ -88,7 +88,6 @@ def _get_optimization_history_plot(
     info_list: List[_OptimizationHistoryInfo],
     target_name: str,
 ) -> "Axes":
-
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
     _, ax = plt.subplots()

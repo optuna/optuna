@@ -36,7 +36,6 @@ class JournalRedisStorage(BaseJournalLogStorage, BaseJournalLogSnapshot):
     """
 
     def __init__(self, url: str, use_cluster: bool = False, prefix: str = "") -> None:
-
         _imports.check()
 
         self._url = url
@@ -54,7 +53,6 @@ class JournalRedisStorage(BaseJournalLogStorage, BaseJournalLogSnapshot):
         self._redis = redis.Redis.from_url(self._url)
 
     def read_logs(self, log_number_from: int) -> List[Dict[str, Any]]:
-
         max_log_number_bytes = self._redis.get(f"{self._prefix}:log_number")
         if max_log_number_bytes is None:
             return []
@@ -77,7 +75,6 @@ class JournalRedisStorage(BaseJournalLogStorage, BaseJournalLogSnapshot):
         return logs
 
     def append_logs(self, logs: List[Dict[str, Any]]) -> None:
-
         self._redis.setnx(f"{self._prefix}:log_number", -1)
         for log in logs:
             if not self._use_cluster:

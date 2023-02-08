@@ -53,6 +53,10 @@ jobs:
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
 
+    - name: Output installed packages
+      run: |
+        pip freeze --all
+
     - name: Tests
       run: |
         pytest tests -m "not integration"
@@ -100,6 +104,9 @@ jobs:
         pip install --progress-bar off .[optional]
         pip install --progress-bar off .[integration]
 
+    - name: Output installed packages
+      run: |
+        pip freeze --all
 
     - name: Tests
       run: |

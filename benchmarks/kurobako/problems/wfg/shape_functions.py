@@ -5,7 +5,6 @@ import numpy as np
 
 class BaseShapeFunction(object, metaclass=abc.ABCMeta):
     def __init__(self, n_objectives: int) -> None:
-
         self._n_objectives = n_objectives
 
     def __call__(self, m: int, x: np.ndarray) -> float:
@@ -19,13 +18,11 @@ class BaseShapeFunction(object, metaclass=abc.ABCMeta):
 
     @property
     def n_objectives(self) -> int:
-
         return self._n_objectives
 
 
 class LinearShapeFunction(BaseShapeFunction):
     def _call(self, m: int, x: np.ndarray) -> float:
-
         if m == 1:
             return x[:-1].prod()
 
@@ -37,7 +34,6 @@ class LinearShapeFunction(BaseShapeFunction):
 
 class ConvexShapeFunction(BaseShapeFunction):
     def _call(self, m: int, x: np.ndarray) -> float:
-
         if m == 1:
             return (
                 1
@@ -56,7 +52,6 @@ class ConvexShapeFunction(BaseShapeFunction):
 
 class ConcaveShapeFunction(BaseShapeFunction):
     def _call(self, m: int, x: np.ndarray) -> float:
-
         if m == 1:
             return np.sin(x * np.pi / 2.0)[:-1].prod()
 

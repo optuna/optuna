@@ -48,7 +48,6 @@ def _create_trial(
 
 @pytest.mark.parametrize("trial_type", [FixedTrial, FrozenTrial])
 def test_suggest_float(trial_type: type) -> None:
-
     trial = _create_trial(
         trial_type=trial_type, params={"x": 0.2}, distributions={"x": FloatDistribution(0.0, 1.0)}
     )
@@ -65,7 +64,6 @@ def test_suggest_float(trial_type: type) -> None:
 @pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("trial_type", [FixedTrial, FrozenTrial])
 def test_suggest_uniform(trial_type: type) -> None:
-
     trial = _create_trial(
         trial_type=trial_type,
         params={"x": 0.2},
@@ -81,7 +79,6 @@ def test_suggest_uniform(trial_type: type) -> None:
 @pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("trial_type", [FixedTrial, FrozenTrial])
 def test_suggest_loguniform(trial_type: type) -> None:
-
     trial = _create_trial(
         trial_type=trial_type,
         params={"x": 0.99},
@@ -96,7 +93,6 @@ def test_suggest_loguniform(trial_type: type) -> None:
 @pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("trial_type", [FixedTrial, FrozenTrial])
 def test_suggest_discrete_uniform(trial_type: type) -> None:
-
     trial = _create_trial(
         trial_type=trial_type,
         params={"x": 0.9},
@@ -110,7 +106,6 @@ def test_suggest_discrete_uniform(trial_type: type) -> None:
 
 @pytest.mark.parametrize("trial_type", [FixedTrial, FrozenTrial])
 def test_suggest_int_log(trial_type: type) -> None:
-
     trial = _create_trial(
         trial_type=trial_type,
         params={"x": 1},
@@ -128,7 +123,6 @@ def test_suggest_int_log(trial_type: type) -> None:
 
 @pytest.mark.parametrize("trial_type", [FixedTrial, FrozenTrial])
 def test_suggest_categorical(trial_type: type) -> None:
-
     # Integer categories.
     trial = _create_trial(
         trial_type=trial_type,
@@ -197,7 +191,6 @@ def test_not_contained_param(
 
 @parametrize_trial_type
 def test_set_user_attrs(trial_type: type) -> None:
-
     trial = _create_trial(trial_type)
     trial.set_user_attr("data", "MNIST")
     assert trial.user_attrs["data"] == "MNIST"
@@ -205,7 +198,6 @@ def test_set_user_attrs(trial_type: type) -> None:
 
 @parametrize_trial_type
 def test_report(trial_type: type) -> None:
-
     # Ignores reported values.
     trial = _create_trial(trial_type)
     trial.report(1.0, 1)
@@ -214,14 +206,12 @@ def test_report(trial_type: type) -> None:
 
 @parametrize_trial_type
 def test_should_prune(trial_type: type) -> None:
-
     # Never prunes trials.
     assert not _create_trial(trial_type).should_prune()
 
 
 @parametrize_trial_type
 def test_datetime_start(trial_type: type) -> None:
-
     trial = _create_trial(trial_type)
     assert trial.datetime_start is not None
     old_date_time_start = trial.datetime_start

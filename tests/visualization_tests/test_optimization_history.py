@@ -83,7 +83,6 @@ def test_get_optimization_history_info_list(direction: str) -> None:
     target_name = "Target Name"
 
     def objective(trial: Trial) -> float:
-
         if trial.number == 0:
             return 1.0
         elif trial.number == 1:
@@ -163,7 +162,6 @@ def test_get_optimization_history_info_list_with_error_bar(direction: str) -> No
     target_name = "Target Name"
 
     def objective(trial: Trial) -> float:
-
         if trial.number == 0:
             return 1.0
         elif trial.number == 1:

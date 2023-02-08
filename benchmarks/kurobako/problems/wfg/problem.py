@@ -19,7 +19,6 @@ class BaseWFG:
         shapes: List[shape_functions.BaseShapeFunction],
         transformations: List[List[transformation_functions.BaseTransformations]],
     ) -> None:
-
         assert all(S > 0)
         assert all((A == 0) + (A == 1))
         assert all(upper_bounds > 0)
@@ -31,7 +30,6 @@ class BaseWFG:
         self._transformations = transformations
 
     def __call__(self, z: np.ndarray) -> np.ndarray:
-
         S = self._S
         A = self._A
         unit_z = z / self._upper_bounds
@@ -69,7 +67,6 @@ class WFG1:
     """
 
     def __init__(self, n_arguments: int, n_objectives: int, k: int):
-
         assert k % (n_objectives - 1) == 0
         assert k + 1 <= n_arguments
 
@@ -148,7 +145,6 @@ class WFG2:
     """
 
     def __init__(self, n_arguments: int, n_objectives: int, k: int):
-
         assert k % (n_objectives - 1) == 0
         assert k + 1 <= n_arguments // 2
         assert (n_arguments - k) % 2 == 0
@@ -229,7 +225,6 @@ class WFG3:
     """
 
     def __init__(self, n_arguments: int, n_objectives: int, k: int):
-
         assert k % (n_objectives - 1) == 0
         assert k + 1 <= n_arguments // 2
         assert (n_arguments - k) % 2 == 0
@@ -310,7 +305,6 @@ class WFG4:
     """
 
     def __init__(self, n_arguments: int, n_objectives: int, k: int):
-
         assert k % (n_objectives - 1) == 0
         assert k + 1 <= n_arguments
 
@@ -377,7 +371,6 @@ class WFG5:
     """
 
     def __init__(self, n_arguments: int, n_objectives: int, k: int):
-
         assert k % (n_objectives - 1) == 0
         assert k + 1 <= n_arguments
 
@@ -445,7 +438,6 @@ class WFG6:
     """
 
     def __init__(self, n_arguments: int, n_objectives: int, k: int):
-
         assert k % (n_objectives - 1) == 0
         assert k + 1 <= n_arguments
 
@@ -512,7 +504,6 @@ class WFG7:
     """
 
     def __init__(self, n_arguments: int, n_objectives: int, k: int):
-
         assert k % (n_objectives - 1) == 0
         assert k + 1 <= n_arguments
 
@@ -596,7 +587,6 @@ class WFG8:
     """
 
     def __init__(self, n_arguments: int, n_objectives: int, k: int):
-
         assert k % (n_objectives - 1) == 0
         assert k + 1 <= n_arguments
 
@@ -679,7 +669,6 @@ class WFG9:
     """
 
     def __init__(self, n_arguments: int, n_objectives: int, k: int):
-
         assert k % (n_objectives - 1) == 0
         assert k + 1 <= n_arguments
 

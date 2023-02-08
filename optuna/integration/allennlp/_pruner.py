@@ -54,7 +54,6 @@ def _create_pruner(
     pruner_class: str,
     pruner_kwargs: Dict[str, Any],
 ) -> Optional[pruners.BasePruner]:
-
     """Restore a pruner which is defined in `create_study`.
 
     `AllenNLPPruningCallback` is launched as a sub-process of

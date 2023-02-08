@@ -2,7 +2,6 @@ import optuna
 
 
 def test_nop_pruner() -> None:
-
     pruner = optuna.pruners.NopPruner()
     study = optuna.study.create_study(pruner=pruner)
     trial = study.ask()

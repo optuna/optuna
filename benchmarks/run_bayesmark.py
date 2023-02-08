@@ -18,7 +18,6 @@ _DB = "bo_optuna_run"
 
 
 def run_benchmark(args: argparse.Namespace) -> None:
-
     sampler_list = args.sampler_list.split()
     sampler_kwargs_list = args.sampler_kwargs_list.split()
     pruner_list = args.pruner_list.split()
@@ -73,7 +72,6 @@ def run_benchmark(args: argparse.Namespace) -> None:
 
 
 def make_plots(args: argparse.Namespace) -> None:
-
     filename = f"{args.dataset}-{args.model}-partial-report.json"
     df = pd.read_json(os.path.join("partial", filename))
     df["best_value"] = df.groupby(["opt", "uuid"]).generalization.cummin()
@@ -108,7 +106,6 @@ def make_plot(
     plot_warmup: bool,
     color: np.ndarray,
 ) -> None:
-
     start = 0 if plot_warmup else 10
     if len(summary.best_mean) <= start:
         return
@@ -136,7 +133,6 @@ def make_plot(
 
 
 def build_color_dict(names: List[str]) -> Dict[str, np.ndarray]:
-
     norm = colors.Normalize(vmin=0, vmax=1)
     m = cm.ScalarMappable(norm, cm.tab20)
     color_dict = m.to_rgba(np.linspace(0, 1, len(names)))
@@ -146,7 +142,6 @@ def build_color_dict(names: List[str]) -> Dict[str, np.ndarray]:
 
 
 def partial_report(args: argparse.Namespace) -> None:
-
     eval_path = os.path.join("runs", _DB, "eval")
     time_path = os.path.join("runs", _DB, "time")
     studies = os.listdir(eval_path)

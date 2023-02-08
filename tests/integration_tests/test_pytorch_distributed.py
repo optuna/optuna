@@ -28,7 +28,6 @@ STORAGE_MODES = [
 
 @pytest.fixture(scope="session", autouse=True)
 def init_process_group() -> None:
-
     if "OMPI_COMM_WORLD_SIZE" not in os.environ:
         pytest.skip("This test is expected to be launch with mpirun.")
 
