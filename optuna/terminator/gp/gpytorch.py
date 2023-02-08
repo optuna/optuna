@@ -4,18 +4,24 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 
-import gpytorch
 import numpy as np
-import torch
-from torch.optim import Adam
-from torch.quasirandom import SobolEngine
 
+from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.terminator import _distribution_is_log
 from optuna.terminator.gp.base import BaseGaussianProcess
 from optuna.terminator.search_space.intersection import IntersectionSearchSpace
 from optuna.trial._frozen import FrozenTrial
+
+
+with try_import() as _imports:
+    import gpytorch
+    import torch
+    from torch.optim import Adam
+    from torch.quasirandom import SobolEngine
+
+__all__ = ["gpytorch", "torch", "Adam", "SobolEngine"]
 
 
 class GPyTorchModel(gpytorch.models.exact_gp.ExactGP):
@@ -84,6 +90,8 @@ class GPyTorchGaussianProcess(BaseGaussianProcess):
     def __init__(
         self,
     ) -> None:
+        _imports.check()
+
         self._trials: Optional[List[FrozenTrial]] = None
         self._gamma: Optional[float] = None
         self._t: Optional[float] = None
@@ -131,8 +139,8 @@ class GPyTorchGaussianProcess(BaseGaussianProcess):
         x_tensor = torch.tensor(x)
         mean_ternsor, std_tensor = self._mean_std_torch(x_tensor)
 
-        mean = mean_ternsor.detach().numpy().tolist()
-        std = std_tensor.detach().numpy().tolist()
+        mean = mean_ternsor.detach().numpy()
+        std = std_tensor.detach().numpy()
 
         mean = self._y_scaler.untransform(mean)
         std = self._y_scaler.untransform_std(std)
@@ -160,8 +168,8 @@ class GPyTorchGaussianProcess(BaseGaussianProcess):
     def min_lcb(self, n_additional_candidates: int = 2000) -> float:
         assert self._trials is not None
 
-        sobol = SobolEngine(self.gamma(), scramble=True)
-        x = sobol.draw(n_additional_candidates)
+        sobol = SobolEngine(self.gamma(), scramble=True)  # type: ignore[no-untyped-call]
+        x = sobol.draw(n_additional_candidates)  # type: ignore[no-untyped-call]
 
         # Note that x is assumed to be scaled b/w 0-1 to be stacked with the sobol samples.
         x_observed = torch.tensor(self._preprocess_x(self._trials))
@@ -208,8 +216,8 @@ class _XScaler:
         self._max_values = None
 
     def fit(self, x: np.ndarray) -> None:
-        self._min_values = np.min(x, axis=0)
-        self._max_values = np.max(x, axis=0)
+        self._min_values = x.min(axis=0)
+        self._max_values = x.max(axis=0)
 
     def transfrom(self, x: np.ndarray) -> np.ndarray:
         assert self._min_values is not None
@@ -246,25 +254,27 @@ class _YScaler:
         assert self._mean is not None
         assert self._std is not None
 
-        transformed_y = (np.array(y) - self._mean) / self._std
+        y -= self._mean
+        y /= self._std
 
-        return transformed_y
+        return y
 
     def untransform(self, y: np.ndarray) -> np.ndarray:
         assert self._mean is not None
         assert self._std is not None
 
-        untransformed_y = np.array(y) * self._std + self._mean
+        y *= self._std
+        y += self._mean
 
-        return untransformed_y
+        return y
 
     def untransform_std(self, stds: np.ndarray) -> np.ndarray:
         assert self._mean is not None
         assert self._std is not None
 
-        untransformed_stds = np.array(stds) * self._std
+        stds *= self._std
 
-        return untransformed_stds
+        return stds
 
 
 class _OneToHot:
