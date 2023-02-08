@@ -110,6 +110,9 @@ jobs:
         pip install --progress-bar off .[optional]
         pip install --progress-bar off .[integration]
 
+        pip install numpy==1.23.5
+        pip install mxnet -f https://dist.mxnet.io/python/cpu
+
     - name: Output installed packages
       run: |
         pip freeze --all
