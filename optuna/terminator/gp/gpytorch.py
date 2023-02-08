@@ -169,7 +169,7 @@ class GPyTorchGaussianProcess(BaseGaussianProcess):
         assert self._trials is not None
 
         sobol = SobolEngine(self.gamma(), scramble=True)  # type: ignore[no-untyped-call]
-        x = sobol.draw(n_additional_candidates)  # type: ignore[no-untyped-call]
+        x = sobol.draw(n_additional_candidates)
 
         # Note that x is assumed to be scaled b/w 0-1 to be stacked with the sobol samples.
         x_observed = torch.tensor(self._preprocess_x(self._trials))
