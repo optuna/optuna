@@ -3,6 +3,7 @@ from logging import CRITICAL
 from logging import DEBUG
 from logging import ERROR
 from logging import FATAL
+from logging import Formatter
 from logging import INFO
 from logging import WARN
 from logging import WARNING
@@ -10,6 +11,7 @@ import os
 import sys
 import threading
 from typing import Optional
+from typing import Union
 
 import colorlog
 
@@ -28,15 +30,16 @@ _lock: threading.Lock = threading.Lock()
 _default_handler: Optional[logging.Handler] = None
 
 
-def create_default_formatter() -> colorlog.ColoredFormatter:
+def create_default_formatter() -> Union[Formatter, colorlog.ColoredFormatter]:
     """Create a default formatter of log messages.
 
     This function is not supposed to be directly accessed by library users.
     """
-    return colorlog.ColoredFormatter(
-        "%(log_color)s[%(levelname)1.1s %(asctime)s]%(reset)s %(message)s",
-        no_color=False if _color_supported() else True,
-    )
+    if _color_supported():
+        return colorlog.ColoredFormatter(
+            "%(log_color)s[%(levelname)1.1s %(asctime)s]%(reset)s %(message)s",
+        )
+    return Formatter("[%(levelname)1.1s %(asctime)s] %(message)s")
 
 
 def _color_supported() -> bool:
