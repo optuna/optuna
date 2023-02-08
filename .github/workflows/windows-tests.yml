@@ -24,8 +24,9 @@ jobs:
     runs-on: windows-latest
 
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ['3.9']
+        python-version: ['3.7', '3.8', '3.9', '3.10']
 
     steps:
     - name: Checkout
@@ -72,31 +73,36 @@ jobs:
   tests-integration-windows:
     runs-on: windows-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.7', '3.8', '3.9', '3.10']
+
     # Not intended for forks.
     if: github.repository == 'gen740/optuna'
     steps:
     - name: Checkout
       uses: actions/checkout@v3
 
-    - name: Setup Python3.8
+    - name: Setup Python${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
-        python-version: 3.8
+        python-version: ${{ matrix.python-version }}
+
+    - name: Setup cache
+      uses: actions/cache@v3
+      env:
+        cache-name: test
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
 
     - name: Setup MPI
       uses: mpi4py/setup-mpi@v1
       with:
         mpi: "msmpi"
-
-    - name: Setup cache
-      uses: actions/cache@v3
-      env:
-        cache-name: test-integration
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
-        restore-keys: |
-          ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
 
     - name: Install
       run: |
@@ -110,18 +116,16 @@ jobs:
         pip install --progress-bar off .[optional]
         pip install --progress-bar off .[integration]
 
-        pip install numpy==1.23.5
-        pip install mxnet -f https://dist.mxnet.io/python/cpu
-
     - name: Output installed packages
       run: |
         pip freeze --all
 
     - name: Tests
-      # skip allennlp tests since it's not supported on Windows
+      # skip allennlp and (mxnet) tests since it's not supported on Windows
       run: |
         pytest tests -m "integration" `
           --ignore tests/integration_tests/test_pytorch_lightning.py `
-          --ignore tests/integration_tests/allennlp_tests/test_allennlp.py
+          --ignore tests/integration_tests/allennlp_tests/test_allennlp.py `
+          --ignore tests/integration_tests/test_mxnet.py
       env:
         OMP_NUM_THREADS: 1
