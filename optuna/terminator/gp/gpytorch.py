@@ -24,14 +24,14 @@ with try_import() as _imports:
 __all__ = ["gpytorch", "torch", "Adam", "SobolEngine"]
 
 
-class GPyTorchModel(gpytorch.models.exact_gp.ExactGP):
+class _GPyTorchModel(gpytorch.models.exact_gp.ExactGP):
     def __init__(
         self,
         train_x: torch.Tensor,
         train_y: torch.Tensor,
         likelihood: gpytorch.likelihoods.Likelihood,
     ) -> None:
-        super(GPyTorchModel, self).__init__(train_x, train_y, likelihood)
+        super(_GPyTorchModel, self).__init__(train_x, train_y, likelihood)
 
         assert len(train_x.shape) == 2
         assert len(train_y.shape) == 1
@@ -52,7 +52,7 @@ class GPyTorchModel(gpytorch.models.exact_gp.ExactGP):
 
 
 def _train_gpytorch_model(
-    model: GPyTorchModel,
+    model: _GPyTorchModel,
     likelihood: gpytorch.likelihoods.Likelihood,
     train_x: torch.Tensor,
     train_y: torch.Tensor,
@@ -76,7 +76,7 @@ def _train_gpytorch_model(
 
 
 def _predict_gpytorch_model(
-    model: GPyTorchModel,
+    model: _GPyTorchModel,
     likelihood: gpytorch.likelihoods.Likelihood,
     x: torch.Tensor,
 ) -> gpytorch.distributions.MultivariateNormal:
@@ -95,7 +95,7 @@ class GPyTorchGaussianProcess(BaseGaussianProcess):
         self._trials: Optional[List[FrozenTrial]] = None
         self._gamma: Optional[float] = None
         self._t: Optional[float] = None
-        self._model: Optional[GPyTorchModel] = None
+        self._model: Optional[_GPyTorchModel] = None
         self._likelihood = None
         self._x_scaler = _XScaler()
         self._y_scaler = _YScaler()
@@ -121,7 +121,7 @@ class GPyTorchGaussianProcess(BaseGaussianProcess):
         x_tensor = torch.tensor(x)
         y_tensor = torch.tensor(y)
 
-        self._model = GPyTorchModel(x_tensor, y_tensor, self._likelihood)
+        self._model = _GPyTorchModel(x_tensor, y_tensor, self._likelihood)
 
         _train_gpytorch_model(
             model=self._model,
