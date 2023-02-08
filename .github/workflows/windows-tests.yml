@@ -116,9 +116,9 @@ jobs:
 
     - name: Tests
       # skip allennlp tests since it's not supported on Windows
-      run: >
-        pytest tests -m "integration"
-          --ignore tests/integration_tests/test_pytorch_lightning.py
+      run: |
+        pytest tests -m "integration" `
+          --ignore tests/integration_tests/test_pytorch_lightning.py `
           --ignore tests/integration_tests/allennlp_tests/test_allennlp.py
       env:
         OMP_NUM_THREADS: 1
