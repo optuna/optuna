@@ -12,6 +12,7 @@ on:
       - '.github/workflows/windows-tests.yml'
   schedule:
     - cron: '0 23 * * SUN-THU'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
@@ -19,14 +20,13 @@ concurrency:
 
 jobs:
   tests-windows:
+    if: (github.event_name == 'schedule' && github.repository == 'gen740/optuna') || (github.event_name != 'schedule')
     runs-on: windows-latest
 
     strategy:
       matrix:
         python-version: ['3.9']
 
-    # Not intended for forks.
-    if: github.repository == 'gen740/optuna'
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -57,7 +57,14 @@ jobs:
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
 
-    - name: Tests
+    - name: Scheduled tests
+      if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
         pytest -m "not integration"
+      env:
+        SQLALCHEMY_WARN_20: 1
 
+    - name: Tests
+      if:  ${{ github.event_name != 'schedule' }}
+      run: |
+        pytest -m "not integration and not slow"
