@@ -1,4 +1,3 @@
-import math
 from typing import Optional
 
 from optuna.logging import get_logger
@@ -27,14 +26,7 @@ class TerminatorCallback:
         if len(trials) <= self._n_startup_trials:
             return
 
-        should_terminate, regret_bound, variance = self._terminator.should_terminate_with_metrics(
-            study=study,
-        )
-
-        _logger.debug(
-            f"Optuna terminator has reported regret bound {regret_bound} and "
-            f"sqrt variance {math.sqrt(variance)}."
-        )
+        should_terminate = self._terminator.should_terminate(study=study)
 
         if should_terminate:
             _logger.info("The terminator stopped the study because noise exceeds regret bound.")

@@ -25,14 +25,6 @@ class Terminator:
         self,
         study: Study,
     ) -> Union[bool, Tuple[bool, float, float]]:
-        should_terminate, _, _ = self.should_terminate_with_metrics(study)
-
-        return should_terminate
-
-    def should_terminate_with_metrics(
-        self,
-        study: Study,
-    ) -> Tuple[bool, float, float]:
         regret_bound = self._regret_bound_evaluator.evaluate(
             trials=study.trials,
             study_direction=study.direction,
@@ -40,4 +32,4 @@ class Terminator:
         variance = self._statistical_error_evaluator.evaluate(study)
         should_terminate = regret_bound < math.sqrt(variance)
 
-        return should_terminate, regret_bound, variance
+        return should_terminate
