@@ -7,6 +7,7 @@ from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
 
+import _pytest.capture
 from cmaes import CMA
 from cmaes import CMAwM
 from cmaes import SepCMA
@@ -621,3 +622,46 @@ def test_internal_optimizer_with_margin() -> None:
             study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=2)
             assert cmawm_class_mock.call_count == 1
+
+
+@pytest.mark.parametrize("warn_independent_sampling", [True, False])
+def test_warn_independent_sampling(
+    capsys: _pytest.capture.CaptureFixture, warn_independent_sampling: bool
+) -> None:
+    def objective_single(trial: optuna.trial.Trial) -> float:
+        return trial.suggest_float("x", 0, 1)
+
+    def objective_shrink(trial: optuna.trial.Trial) -> float:
+        if trial.number != 5:
+            x = trial.suggest_float("x", 0, 1)
+            y = trial.suggest_float("y", 0, 1)
+            z = trial.suggest_float("z", 0, 1)
+            return x + y + z
+        else:
+            x = trial.suggest_float("x", 0, 1)
+            y = trial.suggest_float("y", 0, 1)
+            return x + y
+
+    def objective_expand(trial: optuna.trial.Trial) -> float:
+        if trial.number != 5:
+            x = trial.suggest_float("x", 0, 1)
+            y = trial.suggest_float("y", 0, 1)
+            return x + y
+        else:
+            x = trial.suggest_float("x", 0, 1)
+            y = trial.suggest_float("y", 0, 1)
+            z = trial.suggest_float("z", 0, 1)
+            return x + y + z
+
+    for objective in [objective_single, objective_shrink, objective_expand]:
+        # We need to reconstruct our default handler to properly capture stderr.
+        optuna.logging._reset_library_root_logger()
+        optuna.logging.enable_default_handler()
+        optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+        sampler = optuna.samplers.CmaEsSampler(warn_independent_sampling=warn_independent_sampling)
+        study = optuna.create_study(sampler=sampler)
+        study.optimize(objective, n_trials=10)
+
+        _, err = capsys.readouterr()
+        assert (err != "") == warn_independent_sampling
