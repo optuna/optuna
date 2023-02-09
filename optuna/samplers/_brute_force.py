@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 import decimal
-import random
 from typing import Any
 from typing import Dict
 from typing import Iterable
@@ -8,7 +7,6 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
-from typing import NamedTuple
 
 import numpy as np
 
@@ -90,6 +88,7 @@ class _TreeNode:
         weights /= weights.sum()
         return rng.choice(list(self.children.keys()), p=weights)
 
+
 @experimental_class("3.1.0")
 class BruteForceSampler(BaseSampler):
     """Sampler using brute force.
@@ -167,7 +166,7 @@ class BruteForceSampler(BaseSampler):
             )
             if leaf is not None:
                 leaves.append(leaf)
-        # We add all leaf nodes at the end because running trials may not have complete search space.
+        # Add all leaf nodes at the end because running trials may not have complete search space.
         for leaf in leaves:
             leaf.set_leaf()
         return tree
@@ -236,6 +235,6 @@ def _enumerate_candidates(param_distribution: BaseDistribution) -> Sequence[Any]
             range(param_distribution.low, param_distribution.high + 1, param_distribution.step)
         )
     elif isinstance(param_distribution, CategoricalDistribution):
-        return list(range(len(param_distribution.choices))) # Internal representations.
+        return list(range(len(param_distribution.choices)))  # Internal representations.
     else:
         raise ValueError(f"Unknown distribution {param_distribution}.")

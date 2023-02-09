@@ -1,11 +1,11 @@
+import numpy as np
 import pytest
 
 import optuna
 from optuna import samplers
 from optuna.samplers._brute_force import _TreeNode
-from optuna.samplers._brute_force import BruteForceSampler
 from optuna.trial import Trial
-import numpy as np
+
 
 def test_tree_node_add_paths() -> None:
     tree = _TreeNode()
@@ -138,7 +138,7 @@ def test_study_optimize_with_infinite_search_space() -> None:
 
 def test_study_optimize_with_nan() -> None:
     def objective(trial: Trial) -> float:
-        a = trial.suggest_categorical("a", [0.0, float("nan")])
+        trial.suggest_categorical("a", [0.0, float("nan")])
         return 1.0
 
     study = optuna.create_study(sampler=samplers.BruteForceSampler())
