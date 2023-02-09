@@ -375,7 +375,13 @@ class CmaEsSampler(BaseSampler):
         )
 
         if optimizer is None:
+            n_restarts = 0
+            poptype = "small"
+            small_n_eval = 0
+            large_n_eval = 0
             optimizer = self._init_optimizer(trans, study.direction, population_size=self._popsize)
+            if self._popsize is None:
+                self._popsize = optimizer.population_size
 
         if optimizer.dim != len(trans.bounds):
             if self._warn_independent_sampling:
