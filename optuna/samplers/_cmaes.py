@@ -408,6 +408,28 @@ class CmaEsSampler(BaseSampler):
                     trans, study.direction, population_size=popsize, randomize_start_point=True
                 )
 
+            # if self._restart_strategy == "bipop" and optimizer.should_stop():
+            #     n_eval = optimizer.population_size * optimizer.generation
+            #     if poptype == "small":
+            #         small_n_eval += n_eval
+            #     else:  # poptype == "large"
+            #         large_n_eval += n_eval
+
+            #     if small_n_eval < large_n_eval:
+            #         poptype = "small"
+            #         popsize_multiplier = self._inc_popsize**n_restarts
+            #         popsize = math.floor(
+            #             self._popsize * popsize_multiplier ** (np.random.uniform() ** 2)
+            #         )
+            #     else:
+            #         poptype = "large"
+            #         n_restarts += 1
+            #         popsize = self._popsize * (self._inc_popsize**n_restarts)
+
+            #     optimizer = self._init_optimizer(
+            #         trans, study.direction, population_size=popsize, randomize_start_point=True
+            #     )
+
             # Store optimizer.
             optimizer_str = pickle.dumps(optimizer).hex()
             optimizer_attrs = self._split_optimizer_str(optimizer_str)
