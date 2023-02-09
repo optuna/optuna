@@ -47,6 +47,9 @@ _SYSTEM_ATTR_MAX_LENGTH = 2045
 class _CmaEsAttrKeys(NamedTuple):
     optimizer: str
     n_restarts: str
+    poptype: str
+    small_n_eval: str
+    large_n_eval: str
     generation: Callable[[int], str]
 
 
@@ -298,9 +301,9 @@ class CmaEsSampler(BaseSampler):
                 "It is prohibited to pass `source_trials` argument when using separable CMA-ES."
             )
 
-        # TODO(c-bata): Support BIPOP-CMA-ES.
         if restart_strategy not in (
             "ipop",
+            "bipop",
             None,
         ):
             raise ValueError(
@@ -366,9 +369,12 @@ class CmaEsSampler(BaseSampler):
         # When `with_margin=True`, bounds in discrete dimensions are handled inside `CMAwM`.
         trans = _SearchSpaceTransform(search_space, transform_step=not self._with_margin)
 
-        optimizer, n_restarts = self._restore_optimizer(completed_trials)
+        # `poptype`, `small_n_eval`, `large_n_eval` are counter variables used for bipop-cma-es
+        optimizer, n_restarts, poptype, small_n_eval, large_n_eval = self._restore_optimizer(
+            completed_trials
+        )
+
         if optimizer is None:
-            n_restarts = 0
             optimizer = self._init_optimizer(trans, study.direction, population_size=self._popsize)
 
         if optimizer.dim != len(trans.bounds):
@@ -408,27 +414,27 @@ class CmaEsSampler(BaseSampler):
                     trans, study.direction, population_size=popsize, randomize_start_point=True
                 )
 
-            # if self._restart_strategy == "bipop" and optimizer.should_stop():
-            #     n_eval = optimizer.population_size * optimizer.generation
-            #     if poptype == "small":
-            #         small_n_eval += n_eval
-            #     else:  # poptype == "large"
-            #         large_n_eval += n_eval
+            if self._restart_strategy == "bipop" and optimizer.should_stop():
+                n_eval = optimizer.population_size * optimizer.generation
+                if poptype == "small":
+                    small_n_eval += n_eval
+                else:  # poptype == "large"
+                    large_n_eval += n_eval
 
-            #     if small_n_eval < large_n_eval:
-            #         poptype = "small"
-            #         popsize_multiplier = self._inc_popsize**n_restarts
-            #         popsize = math.floor(
-            #             self._popsize * popsize_multiplier ** (np.random.uniform() ** 2)
-            #         )
-            #     else:
-            #         poptype = "large"
-            #         n_restarts += 1
-            #         popsize = self._popsize * (self._inc_popsize**n_restarts)
+                if small_n_eval < large_n_eval:
+                    poptype = "small"
+                    popsize_multiplier = self._inc_popsize**n_restarts
+                    popsize = math.floor(
+                        self._popsize * popsize_multiplier ** (np.random.uniform() ** 2)
+                    )
+                else:
+                    poptype = "large"
+                    n_restarts += 1
+                    popsize = self._popsize * (self._inc_popsize**n_restarts)
 
-            #     optimizer = self._init_optimizer(
-            #         trans, study.direction, population_size=popsize, randomize_start_point=True
-            #     )
+                optimizer = self._init_optimizer(
+                    trans, study.direction, population_size=popsize, randomize_start_point=True
+                )
 
             # Store optimizer.
             optimizer_str = pickle.dumps(optimizer).hex()
@@ -451,6 +457,13 @@ class CmaEsSampler(BaseSampler):
         )
         study._storage.set_trial_system_attr(
             trial._trial_id, self._attr_keys.n_restarts, n_restarts
+        )
+        study._storage.set_trial_system_attr(trial._trial_id, self._attr_keys.poptype, poptype)
+        study._storage.set_trial_system_attr(
+            trial._trial_id, self._attr_keys.small_n_eval, small_n_eval
+        )
+        study._storage.set_trial_system_attr(
+            trial._trial_id, self._attr_keys.large_n_eval, large_n_eval
         )
 
         external_values = trans.untransform(params)
@@ -475,6 +488,9 @@ class CmaEsSampler(BaseSampler):
         return _CmaEsAttrKeys(
             attr_prefix + "optimizer",
             attr_prefix + "n_restarts",
+            attr_prefix + "poptype",
+            attr_prefix + "small_n_eval",
+            attr_prefix + "large_n_eval",
             generation_attr_key_template,
         )
 
@@ -496,7 +512,7 @@ class CmaEsSampler(BaseSampler):
     def _restore_optimizer(
         self,
         completed_trials: "List[optuna.trial.FrozenTrial]",
-    ) -> Tuple[Optional["CmaClass"], int]:
+    ) -> Tuple[Optional["CmaClass"], int, str, int, int]:
         # Restore a previous CMA object.
         for trial in reversed(completed_trials):
             optimizer_attrs = {
@@ -508,9 +524,15 @@ class CmaEsSampler(BaseSampler):
                 continue
 
             optimizer_str = self._concat_optimizer_attrs(optimizer_attrs)
+            optimizer = pickle.loads(bytes.fromhex(optimizer_str))
+
             n_restarts: int = trial.system_attrs.get(self._attr_keys.n_restarts, 0)
-            return pickle.loads(bytes.fromhex(optimizer_str)), n_restarts
-        return None, 0
+            poptype: str = trial.system_attrs.get(self._attr_keys.poptype, "small")
+            small_n_eval: int = trial.system_attrs.get(self._attr_keys.small_n_eval, 0)
+            large_n_eval: int = trial.system_attrs.get(self._attr_keys.large_n_eval, 0)
+
+            return optimizer, n_restarts, poptype, small_n_eval, large_n_eval
+        return None, 0, "small", 0, 0
 
     def _init_optimizer(
         self,
