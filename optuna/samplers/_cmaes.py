@@ -95,6 +95,9 @@ class CmaEsSampler(BaseSampler):
       size. In Proceedings of the IEEE Congress on Evolutionary Computation (CEC 2005),
       pages 1769–1776. IEEE Press, 2005.
       <http://www.cmap.polytechnique.fr/~nikolaus.hansen/cec2005ipopcmaes.pdf>`_
+    - `N. Hansen. Benchmarking a BI-Population CMA-ES on the BBOB-2009 Function Testbed.
+      GECCO Workshop, 2009.
+      <https://hal.inria.fr/inria-00382093/document>`_
     - `Raymond Ros, Nikolaus Hansen. A Simple Modification in CMA-ES Achieving Linear Time and
       Space Complexity. 10th International Conference on Parallel Problem Solving From Nature,
       Sep 2008, Dortmund, Germany. inria-00287367.
@@ -156,6 +159,8 @@ class CmaEsSampler(BaseSampler):
             Strategy for restarting CMA-ES optimization when converges to a local minimum.
             If given :obj:`None`, CMA-ES will not restart (default).
             If given 'ipop', CMA-ES will restart with increasing population size.
+            if given 'bipop', CMA-ES will restart with occasionally increasing
+            population size or small population size.
             Please see also ``inc_popsize`` parameter.
 
             .. note::
@@ -164,12 +169,14 @@ class CmaEsSampler(BaseSampler):
                 https://github.com/optuna/optuna/releases/tag/v2.1.0.
 
         popsize:
-            A population size of CMA-ES. When set ``restart_strategy = 'ipop'``, this is used
-            as the initial population size.
+            A population size of CMA-ES. When set ``restart_strategy = 'ipop'``
+            or ``restart_strategy = 'bipop'``,
+            this is used as the initial population size.
 
         inc_popsize:
             Multiplier for increasing population size before each restart.
-            This argument will be used when setting ``restart_strategy = 'ipop'``.
+            This argument will be used when setting ``restart_strategy = 'ipop'``
+            or ``restart_strategy = 'bipop'``.
 
         consider_pruned_trials:
             If this is :obj:`True`, the PRUNED trials are considered for sampling.
@@ -307,9 +314,8 @@ class CmaEsSampler(BaseSampler):
             None,
         ):
             raise ValueError(
-                "restart_strategy={} is unsupported. Please specify: 'ipop' or None.".format(
-                    restart_strategy
-                )
+                "restart_strategy={} is unsupported. "
+                "Please specify: 'ipop', 'bipop', or None.".format(restart_strategy)
             )
 
         # TODO(knshnb): Support sep-CMA-ES with margin.
