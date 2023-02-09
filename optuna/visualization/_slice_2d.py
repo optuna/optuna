@@ -20,7 +20,6 @@ from optuna.visualization._utils import _check_plot_args
 from optuna.visualization._utils import _filter_nonfinite
 from optuna.visualization._utils import _is_log_scale
 from optuna.visualization._utils import _is_numerical
-from optuna.visualization._utils import _is_reverse_scale
 
 
 if _imports.is_successful():
@@ -69,19 +68,18 @@ def plot_slice_2d(
     target: Optional[Callable[[FrozenTrial], float]] = None,
     target_name: str = "Objective Value",
     target_transform: Literal["rank", "none"] = "rank",
-    reverse_scale: Optional[bool] = None,
     size: Optional[Tuple[int, int]] = None,
     colormap: Any = "RdYlBu_r",
     n_ticks: int = 5,
     tick_format: str = ".3g",
 ) -> "go.Figure":
-    """Plot the parameter relationship as contour plot in a study.
+    """Plot the parameter relationship as 2D slice plot in a study.
 
     Note that, if a parameter contains missing values, a trial with missing values is not plotted.
 
     Example:
 
-        The following code snippet shows how to plot the parameter relationship as contour plot.
+        The following code snippet shows how to plot the parameter relationship as 2D slice plot.
 
         .. plotly::
 
@@ -98,7 +96,7 @@ def plot_slice_2d(
             study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=30)
 
-            fig = optuna.visualization.plot_contour(study, params=["x", "y"])
+            fig = optuna.visualization.plot_slice_2d(study, params=["x", "y"])
             fig.show()
 
     Args:
@@ -114,17 +112,27 @@ def plot_slice_2d(
                 Specify this argument if ``study`` is being used for multi-objective optimization.
         target_name:
             Target's name to display on the color bar.
+        target_transform:
+            A string to specify how ``target`` value is mapped to the color scale. Available values
+            are ``rank`` (default) and ``none``. If ``rank`` is specified, the colors for each point is
+            determined by the rank of the corresponding ``target`` value. If ``none`` is specified,
+            the colors are determined by the ``target`` value itself.
+        size:
+            Figure size, specified by a tuple ``(width, height)``. Defaults to :obj:`None`, where
+            the default size of plotly is used.
+        colormap:
+            A colormap for the 2D slice plot. Defaults to ``RdYlBu_r``.
+        n_ticks:
+            Number of ticks on the color bar. Defaults to 5.
+        tick_format:
+            Format string for tick labels on the color bar. Defaults to ``".3g"``.
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
-
-    .. note::
-        The colormap is reversed when the ``target`` argument isn't :obj:`None` or ``direction``
-        of :class:`~optuna.study.Study` is ``minimize``.
     """
 
     _imports.check()
-    info = _get_slice_2d_info(study, params, target, target_name, target_transform, reverse_scale)
+    info = _get_slice_2d_info(study, params, target, target_name, target_transform)
     return _get_slice_2d_plot(info, size, colormap, n_ticks, tick_format)
 
 
@@ -166,7 +174,6 @@ def _get_slice_2d_info(
     target: Optional[Callable[[FrozenTrial], float]],
     target_name: str,
     target_transform: Literal["rank", "none"],
-    reverse_scale: Optional[bool],
 ) -> _Slice2DInfo:
     _check_plot_args(study, target, target_name)
 
@@ -211,11 +218,6 @@ def _get_slice_2d_info(
     else:
         min_v = np.min(transformed_values[finite_mask])
         max_v = np.max(transformed_values[finite_mask])
-
-    if reverse_scale is not None:
-        reverse_scale = _is_reverse_scale(study, target)
-    if reverse_scale:
-        min_v, max_v = max_v, min_v
 
     transformed_values = np.interp(transformed_values, [min_v, max_v], [0, 1], left=0, right=1)
 
