@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - master
-  # TODO(c-bata): Revert this temporary change after checking this PR.
-  pull_request: {}
   schedule:
     - cron: '0 23 * * SUN-THU'
   workflow_dispatch:
