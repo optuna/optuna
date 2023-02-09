@@ -4,7 +4,7 @@ from typing import Optional
 
 import optuna
 from optuna.terminator.gp.base import BaseGaussianProcess
-from optuna.terminator.gp.gpytorch import GPyTorchGaussianProcess
+from optuna.terminator.gp.botorch import BoTorchGaussianProcess
 from optuna.terminator.regret.preprocessing import BasePreprocessing
 from optuna.terminator.regret.preprocessing import PreprocessingPipeline
 from optuna.terminator.regret.preprocessing import SelectTopTrials
@@ -36,7 +36,7 @@ class RegretBoundEvaluator:
         min_n_trials: int = DEFAULT_MIN_N_TRIALS,
         preprocessing: Optional[BasePreprocessing] = None,
     ) -> None:
-        self._gp = gp or GPyTorchGaussianProcess()
+        self._gp = gp or BoTorchGaussianProcess()
         self._top_trials_ratio = top_trials_ratio
         self._min_n_trials = min_n_trials
         self._preprocessing = preprocessing or PreprocessingPipeline(
