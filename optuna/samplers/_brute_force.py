@@ -3,6 +3,7 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Sequence
+from typing import Tuple, Iterable, List
 
 import numpy as np
 
@@ -15,6 +16,47 @@ from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+from dataclasses import dataclass
+import random
+
+@dataclass
+class _TreeNode:
+    param_name: Optional[str] = None
+    children: Optional[Dict[Any, "_TreeNode"]] = None
+    
+    def expand(self, param_name: Optional[str], search_space: Iterable[Any]) -> None:
+        if self.children is None:
+            # Expand the node
+            self.param_name = param_name
+            self.children = {value: _TreeNode() for value in search_space}
+        else:
+            if self.param_name != param_name:
+                raise ValueError("param_name mismatch.")
+            if self.children.keys() != set(search_space):
+                raise ValueError("search_space mismatch.")
+    
+    def set_leaf(self) -> None:
+        if self.children is None:
+            assert self.param_name is None
+            self.children = {}
+    
+    def add_path(self, 
+                 params_and_search_spaces: Iterable[Tuple[str, Iterable[Any], Any]]) -> Optional["_TreeNode"]:
+        current_node = self
+        for param_name, search_space, value in params_and_search_spaces:
+            current_node.expand(param_name, search_space)
+            assert current_node.children is not None
+            if value not in current_node.children:
+                return None
+            current_node = current_node.children[value]
+        return current_node
+
+    def count_unexpanded(self) -> int:
+        return 1 if self.children is None else sum(child.count_unexpanded() for child in self.children.values())
+
+    def sample_child(self) -> Optional[Any]:
+        weights = [child.count_unexpanded() for child in self.children.values()]
+        return None if sum(weights) == 0 else random.choices(list(self.children.keys()), weights=weights)[0]
 
 
 @experimental_class("3.1.0")
@@ -49,11 +91,8 @@ class BruteForceSampler(BaseSampler):
         :func:`~optuna.trial.Trial.suggest_float`, ``step=None`` is not allowed.
 
     Note:
-        This sampler assumes that it suggests all parameters and that the search space is fixed.
-        For example, the sampler may fail to try the entire search space in the following cases.
-
-        * Using with other samplers or :meth:`~optuna.study.Study.enqueue_trial`
-        * Changing suggestion ranges or adding parameters in the same :class:`~optuna.study.Study`
+        The sampler may fail to try the entire search space in when the suggestion ranges or
+        parameters are changed in the same :class:`~optuna.study.Study`
 
     Args:
         seed:
@@ -75,6 +114,26 @@ class BruteForceSampler(BaseSampler):
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
         return {}
+    
+    def _build_tree(self, trials: Iterable[FrozenTrial], params: Dict[str, Any]) -> _TreeNode:
+        tree = _TreeNode()
+        leaves: List[_TreeNode] = []
+        for trial in trials:
+            if not all(p in trial.params and trial.params[p] == v for p, v in params.items()):
+                continue
+            leaf = tree.add_path(
+                (
+                    (param_name, _enumerate_candidates(param_distribution), trial.params[param_name])
+                    for param_name, param_distribution in trial.distributions.items()
+                    if param_name not in params
+                )
+            )
+            if leaf is not None:
+                leaves.append(leaf)
+        # We add all leaf nodes at the end because running trials may not have complete search space.
+        for leaf in leaves:
+            leaf.set_leaf()
+        return tree
 
     def sample_independent(
         self,
@@ -83,18 +142,16 @@ class BruteForceSampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
+        trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE, TrialState.RUNNING,))
+        tree = self._build_tree((t for t in trials if t.number != trial.number), trial.params)
         candidates = _enumerate_candidates(param_distribution)
-        assert len(candidates) > 0
-
-        self._rng.shuffle(candidates)
-
-        for value in candidates[1:]:
-            params = trial.params.copy()
-            params[param_name] = value
-            study.enqueue_trial(params, skip_if_exists=True)
-
-        return candidates[0]
-
+        tree.expand(param_name, candidates)
+        val = tree.sample_child()
+        if val is None:
+            return random.choice(candidates)
+        else:
+            return val
+        
     def after_trial(
         self,
         study: Study,
@@ -102,8 +159,11 @@ class BruteForceSampler(BaseSampler):
         state: TrialState,
         values: Optional[Sequence[float]],
     ) -> None:
-        if len(study.get_trials(deepcopy=False, states=(TrialState.WAITING,))) == 0:
+        trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE, TrialState.RUNNING,))
+        tree = self._build_tree(trials, {})
+        if tree.count_unexpanded() == 0:
             study.stop()
+
 
 
 def _enumerate_candidates(param_distribution: BaseDistribution) -> Sequence[Any]:
