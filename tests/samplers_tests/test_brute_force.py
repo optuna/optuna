@@ -152,7 +152,6 @@ def test_study_optimize_with_nan() -> None:
 
 def test_study_optimize_with_single_search_space_user_added() -> None:
     def objective(trial: Trial) -> float:
-
         a = trial.suggest_int("a", 0, 2)
 
         if a == 0:
