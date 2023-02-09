@@ -4,7 +4,6 @@ import pickle
 from typing import Any
 from typing import Callable
 from typing import Dict
-from typing import List
 from typing import Optional
 from typing import overload
 from typing import Sequence
@@ -119,6 +118,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         group: Optional["ProcessGroup"] = None,
     ) -> None:
         _imports.check()
+        global _g_pg
 
         if group is not None:
             self._group: "ProcessGroup" = group
