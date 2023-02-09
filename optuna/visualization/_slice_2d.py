@@ -114,9 +114,9 @@ def plot_slice_2d(
             Target's name to display on the color bar.
         target_transform:
             A string to specify how ``target`` value is mapped to the color scale. Available values
-            are ``rank`` (default) and ``none``. If ``rank`` is specified, the colors for each point is
-            determined by the rank of the corresponding ``target`` value. If ``none`` is specified,
-            the colors are determined by the ``target`` value itself.
+            are ``rank`` (default) and ``none``. If ``rank`` is specified, the colors for each
+            point is determined by the rank of the corresponding ``target`` value. If ``none`` is
+            specified, the colors are determined by the ``target`` value itself.
         size:
             Figure size, specified by a tuple ``(width, height)``. Defaults to :obj:`None`, where
             the default size of plotly is used.
