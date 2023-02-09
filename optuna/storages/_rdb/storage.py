@@ -1094,8 +1094,9 @@ class _VersionManager:
         raise RuntimeError(message)
 
     def get_current_version(self) -> str:
-        context = alembic_migration.MigrationContext.configure(self.engine.connect())
-        version = context.get_current_revision()
+        with self.engine.connect() as connection:
+            context = alembic_migration.MigrationContext.configure(connection)
+            version = context.get_current_revision()
         assert version is not None
 
         return version
