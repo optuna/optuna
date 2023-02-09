@@ -63,7 +63,6 @@ class StudySummary:
         *,
         directions: Optional[Sequence[StudyDirection]] = None,
     ):
-
         self.study_name = study_name
         if direction is None and directions is None:
             raise ValueError("Specify one of `direction` and `directions`.")
@@ -81,21 +80,18 @@ class StudySummary:
         self._study_id = study_id
 
     def __eq__(self, other: Any) -> bool:
-
         if not isinstance(other, StudySummary):
             return NotImplemented
 
         return other.__dict__ == self.__dict__
 
     def __lt__(self, other: Any) -> bool:
-
         if not isinstance(other, StudySummary):
             return NotImplemented
 
         return self._study_id < other._study_id
 
     def __le__(self, other: Any) -> bool:
-
         if not isinstance(other, StudySummary):
             return NotImplemented
 
@@ -103,7 +99,6 @@ class StudySummary:
 
     @property
     def direction(self) -> StudyDirection:
-
         if len(self._directions) > 1:
             raise RuntimeError(
                 "This attribute is not available during multi-objective optimization."
@@ -113,7 +108,6 @@ class StudySummary:
 
     @property
     def directions(self) -> Sequence[StudyDirection]:
-
         return self._directions
 
     @property

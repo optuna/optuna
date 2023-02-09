@@ -52,7 +52,6 @@ SQLITE3_TIMEOUT = 300
 
 class StorageSupplier:
     def __init__(self, storage_specifier: str, **kwargs: Any) -> None:
-
         self.storage_specifier = storage_specifier
         self.tempfile: Optional[IO[Any]] = None
         self.extra_args = kwargs
@@ -103,7 +102,6 @@ class StorageSupplier:
     def __exit__(
         self, exc_type: Type[BaseException], exc_val: BaseException, exc_tb: TracebackType
     ) -> None:
-
         if self.tempfile:
             self.tempfile.close()
 

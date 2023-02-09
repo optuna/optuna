@@ -106,7 +106,6 @@ class MOTPESampler(TPESampler):
         weights_above: Callable[[int], np.ndarray] = _default_weights_above,
         seed: Optional[int] = None,
     ) -> None:
-
         super().__init__(
             consider_prior=consider_prior,
             prior_weight=prior_weight,

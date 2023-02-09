@@ -27,7 +27,6 @@ _EXPERIMENTAL_NOTE_TEMPLATE = """
 
 
 def _validate_version(version: str) -> None:
-
     if not isinstance(version, str) or len(version.split(".")) != 3:
         raise ValueError(
             "Invalid version specification. Must follow `x.y.z` format but `{}` is given".format(

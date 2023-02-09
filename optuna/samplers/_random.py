@@ -39,23 +39,19 @@ class RandomSampler(BaseSampler):
     """
 
     def __init__(self, seed: Optional[int] = None) -> None:
-
         self._rng = numpy.random.RandomState(seed)
 
     def reseed_rng(self) -> None:
-
         self._rng.seed()
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
-
         return {}
 
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
-
         return {}
 
     def sample_independent(
@@ -65,7 +61,6 @@ class RandomSampler(BaseSampler):
         param_name: str,
         param_distribution: distributions.BaseDistribution,
     ) -> Any:
-
         search_space = {param_name: param_distribution}
         trans = _SearchSpaceTransform(search_space)
         trans_params = self._rng.uniform(trans.bounds[:, 0], trans.bounds[:, 1])

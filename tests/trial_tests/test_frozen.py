@@ -32,7 +32,6 @@ def _create_trial(
 
 
 def test_eq_ne() -> None:
-
     trial = _create_trial()
 
     trial_other = copy.copy(trial)
@@ -43,7 +42,6 @@ def test_eq_ne() -> None:
 
 
 def test_lt() -> None:
-
     trial = _create_trial()
 
     trial_other = copy.copy(trial)
@@ -70,7 +68,6 @@ def test_lt() -> None:
 
 
 def test_repr() -> None:
-
     trial = _create_trial()
 
     assert trial == eval(repr(trial))
@@ -79,7 +76,6 @@ def test_repr() -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_sampling(storage_mode: str) -> None:
     def objective(trial: BaseTrial) -> float:
-
         a = trial.suggest_float("a", 0.0, 10.0)
         b = trial.suggest_float("b", 0.1, 10.0, log=True)
         c = trial.suggest_float("c", 0.0, 10.0, step=1.0)
@@ -102,14 +98,12 @@ def test_sampling(storage_mode: str) -> None:
 
 
 def test_set_value() -> None:
-
     trial = _create_trial()
     trial.value = 0.1
     assert trial.value == 0.1
 
 
 def test_set_values() -> None:
-
     trial = _create_trial()
     trial.values = (0.1, 0.2)
     assert trial.values == [0.1, 0.2]  # type: ignore[comparison-overlap]
@@ -120,7 +114,6 @@ def test_set_values() -> None:
 
 
 def test_validate() -> None:
-
     # Valid.
     valid_trial = _create_trial()
     valid_trial._validate()
@@ -177,7 +170,6 @@ def test_validate() -> None:
 
 
 def test_number() -> None:
-
     trial = _create_trial()
     assert trial.number == 0
 
@@ -186,7 +178,6 @@ def test_number() -> None:
 
 
 def test_params() -> None:
-
     params = {"x": 1}
     trial = _create_trial(
         value=0.2,
@@ -204,7 +195,6 @@ def test_params() -> None:
 
 
 def test_distributions() -> None:
-
     distributions = {"x": FloatDistribution(0, 10)}
     trial = _create_trial(
         value=0.2,
@@ -219,7 +209,6 @@ def test_distributions() -> None:
 
 
 def test_user_attrs() -> None:
-
     trial = _create_trial()
     assert trial.user_attrs == {}
 
@@ -229,7 +218,6 @@ def test_user_attrs() -> None:
 
 
 def test_system_attrs() -> None:
-
     trial = _create_trial()
     assert trial.system_attrs == {}
 
@@ -239,7 +227,6 @@ def test_system_attrs() -> None:
 
 
 def test_called_single_methods_when_multi() -> None:
-
     state = TrialState.COMPLETE
     values = (0.2, 0.3)
     params = {"x": 10}
@@ -270,7 +257,6 @@ def test_called_single_methods_when_multi() -> None:
 
 def test_init() -> None:
     def _create_trial(value: Optional[float], values: Optional[List[float]]) -> FrozenTrial:
-
         return FrozenTrial(
             number=0,
             trial_id=0,
@@ -358,7 +344,6 @@ def test_create_trial_distribution_conversion() -> None:
         FutureWarning,
         match="See https://github.com/optuna/optuna/issues/2941",
     ) as record:
-
         trial = create_trial(params=fixed_params, distributions=fixed_distributions, value=1)
         assert len(record) == 6
 

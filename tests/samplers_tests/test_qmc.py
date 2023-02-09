@@ -96,14 +96,12 @@ def test_infer_initial_search_space() -> None:
 
 
 def test_sample_independent() -> None:
-
     objective: Callable[[Trial], float] = lambda t: t.suggest_categorical("x", [1.0, 2.0])
     independent_sampler = optuna.samplers.RandomSampler()
 
     with patch.object(
         independent_sampler, "sample_independent", wraps=independent_sampler.sample_independent
     ) as mock_sample_indep:
-
         sampler = _init_QMCSampler_without_exp_warning(independent_sampler=independent_sampler)
         study = optuna.create_study(sampler=sampler)
         study.optimize(objective, n_trials=1)
@@ -127,7 +125,6 @@ def test_warn_asynchronous_seeding() -> None:
     objective: Callable[[Trial], float] = lambda t: t.suggest_categorical("x", [1.0, 2.0])
 
     with patch.object(optuna.samplers.QMCSampler, "_log_asynchronous_seeding") as mock_log_async:
-
         sampler = _init_QMCSampler_without_exp_warning(
             scramble=True, warn_asynchronous_seeding=False
         )
@@ -150,7 +147,6 @@ def test_warn_independent_sampling() -> None:
     objective: Callable[[Trial], float] = lambda t: t.suggest_categorical("x", [1.0, 2.0])
 
     with patch.object(optuna.samplers.QMCSampler, "_log_independent_sampling") as mock_log_indep:
-
         sampler = _init_QMCSampler_without_exp_warning(warn_independent_sampling=False)
         study = optuna.create_study(sampler=sampler)
         study.optimize(objective, n_trials=2)
@@ -306,7 +302,6 @@ def test_call_after_trial() -> None:
 
 @pytest.mark.parametrize("qmc_type", ["sobol", "halton"])
 def test_sample_qmc(qmc_type: str) -> None:
-
     sampler = _init_QMCSampler_without_exp_warning(qmc_type=qmc_type)
     study = Mock()
     search_space = _SEARCH_SPACE.copy()
@@ -319,7 +314,6 @@ def test_sample_qmc(qmc_type: str) -> None:
 
 
 def test_find_sample_id() -> None:
-
     sampler = _init_QMCSampler_without_exp_warning(qmc_type="halton", seed=0)
     study = optuna.create_study()
     for i in range(5):

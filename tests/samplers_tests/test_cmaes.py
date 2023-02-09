@@ -7,6 +7,7 @@ from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
 
+import _pytest.capture
 from cmaes import CMA
 from cmaes import CMAwM
 from cmaes import SepCMA
@@ -33,7 +34,7 @@ def test_with_margin_experimental_warning() -> None:
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 @pytest.mark.parametrize(
     "use_separable_cma, cma_class_str",
-    [(False, "optuna.samplers._cmaes.CMA"), (True, "optuna.samplers._cmaes.SepCMA")],
+    [(False, "optuna.samplers._cmaes.cmaes.CMA"), (True, "optuna.samplers._cmaes.cmaes.SepCMA")],
 )
 @pytest.mark.parametrize("popsize", [None, 8])
 def test_init_cmaes_opts(
@@ -82,7 +83,7 @@ def test_init_cmaes_opts_with_margin(popsize: Optional[int]) -> None:
     )
     study = optuna.create_study(sampler=sampler)
 
-    with patch("optuna.samplers._cmaes.CMAwM") as cma_class:
+    with patch("optuna.samplers._cmaes.cmaes.CMAwM") as cma_class:
         cma_obj = MagicMock()
         cma_obj.ask.return_value = np.array((-1, -1))
         cma_obj.generation = 0
@@ -115,7 +116,7 @@ def test_warm_starting_cmaes(with_margin: bool) -> None:
     source_study.optimize(objective, 20)
     source_trials = source_study.get_trials(deepcopy=False)
 
-    with patch("optuna.samplers._cmaes.get_warm_start_mgd") as mock_func_ws:
+    with patch("optuna.samplers._cmaes.cmaes.get_warm_start_mgd") as mock_func_ws:
         mock_func_ws.return_value = (np.zeros(2), 0.0, np.zeros((2, 2)))
         sampler = optuna.samplers.CmaEsSampler(
             seed=1, n_startup_trials=1, with_margin=with_margin, source_trials=source_trials
@@ -138,7 +139,7 @@ def test_warm_starting_cmaes_maximize(with_margin: bool) -> None:
     source_study.optimize(objective, 20)
     source_trials = source_study.get_trials(deepcopy=False)
 
-    with patch("optuna.samplers._cmaes.get_warm_start_mgd") as mock_func_ws:
+    with patch("optuna.samplers._cmaes.cmaes.get_warm_start_mgd") as mock_func_ws:
         mock_func_ws.return_value = (np.zeros(2), 0.0, np.zeros((2, 2)))
         sampler = optuna.samplers.CmaEsSampler(
             seed=1, n_startup_trials=1, with_margin=with_margin, source_trials=source_trials
@@ -246,7 +247,6 @@ def test_sample_relative_n_startup_trials() -> None:
     study = optuna.create_study(sampler=sampler)
 
     def objective(t: optuna.Trial) -> float:
-
         value = t.suggest_int("x", -1, 1) + t.suggest_int("y", -1, 1)
         if t.number == 0:
             raise Exception("first trial is failed")
@@ -357,7 +357,7 @@ def test_population_size_is_multiplied_when_enable_ipop(popsize: Optional[int]) 
         _ = trial.suggest_float("y", -1, 1)
         return 1.0
 
-    with patch("optuna.samplers._cmaes.CMA") as cma_class_mock, patch(
+    with patch("optuna.samplers._cmaes.cmaes.CMA") as cma_class_mock, patch(
         "optuna.samplers._cmaes.pickle"
     ) as pickle_mock:
         pickle_mock.dump.return_value = b"serialized object"
@@ -617,8 +617,51 @@ def test_internal_optimizer_with_margin() -> None:
 
     objectives = [objective_discrete, objective_mixed, objective_continuous]
     for objective in objectives:
-        with patch("optuna.samplers._cmaes.CMAwM") as cmawm_class_mock:
+        with patch("optuna.samplers._cmaes.cmaes.CMAwM") as cmawm_class_mock:
             sampler = optuna.samplers.CmaEsSampler(with_margin=True)
             study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=2)
             assert cmawm_class_mock.call_count == 1
+
+
+@pytest.mark.parametrize("warn_independent_sampling", [True, False])
+def test_warn_independent_sampling(
+    capsys: _pytest.capture.CaptureFixture, warn_independent_sampling: bool
+) -> None:
+    def objective_single(trial: optuna.trial.Trial) -> float:
+        return trial.suggest_float("x", 0, 1)
+
+    def objective_shrink(trial: optuna.trial.Trial) -> float:
+        if trial.number != 5:
+            x = trial.suggest_float("x", 0, 1)
+            y = trial.suggest_float("y", 0, 1)
+            z = trial.suggest_float("z", 0, 1)
+            return x + y + z
+        else:
+            x = trial.suggest_float("x", 0, 1)
+            y = trial.suggest_float("y", 0, 1)
+            return x + y
+
+    def objective_expand(trial: optuna.trial.Trial) -> float:
+        if trial.number != 5:
+            x = trial.suggest_float("x", 0, 1)
+            y = trial.suggest_float("y", 0, 1)
+            return x + y
+        else:
+            x = trial.suggest_float("x", 0, 1)
+            y = trial.suggest_float("y", 0, 1)
+            z = trial.suggest_float("z", 0, 1)
+            return x + y + z
+
+    for objective in [objective_single, objective_shrink, objective_expand]:
+        # We need to reconstruct our default handler to properly capture stderr.
+        optuna.logging._reset_library_root_logger()
+        optuna.logging.enable_default_handler()
+        optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+        sampler = optuna.samplers.CmaEsSampler(warn_independent_sampling=warn_independent_sampling)
+        study = optuna.create_study(sampler=sampler)
+        study.optimize(objective, n_trials=10)
+
+        _, err = capsys.readouterr()
+        assert (err != "") == warn_independent_sampling

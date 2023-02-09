@@ -45,7 +45,6 @@ class _ParzenEstimator:
         parameters: _ParzenEstimatorParameters,
         predetermined_weights: Optional[np.ndarray] = None,
     ) -> None:
-
         self._search_space = search_space
         self._parameters = parameters
         self._n_observations = next(iter(observations.values())).size
@@ -90,12 +89,10 @@ class _ParzenEstimator:
             self._categorical_weights[param_name] = categorical_weights
 
     def sample(self, rng: np.random.RandomState, size: int) -> Dict[str, np.ndarray]:
-
         samples_dict = {}
         active = rng.choice(len(self._weights), size, p=self._weights)
 
         for param_name, dist in self._search_space.items():
-
             if isinstance(dist, distributions.CategoricalDistribution):
                 categorical_weights = self._categorical_weights[param_name]
                 assert categorical_weights is not None
@@ -129,7 +126,6 @@ class _ParzenEstimator:
         return samples_dict
 
     def log_pdf(self, samples_dict: Dict[str, np.ndarray]) -> np.ndarray:
-
         samples_dict = self._transform_to_uniform(samples_dict)
         n_observations = len(self._weights)
         n_samples = next(iter(samples_dict.values())).size
@@ -194,7 +190,6 @@ class _ParzenEstimator:
         return np.log(np.exp(weighted_log_pdf - max_[:, np.newaxis]).sum(axis=1)) + max_
 
     def _calculate_weights(self, predetermined_weights: Optional[np.ndarray]) -> np.ndarray:
-
         # We decide the weights.
         consider_prior = self._parameters.consider_prior
         prior_weight = self._parameters.prior_weight
@@ -239,7 +234,6 @@ class _ParzenEstimator:
     def _calculate_parzen_bounds(
         self, distribution: BaseDistribution
     ) -> Tuple[Optional[float], Optional[float], Optional[float]]:
-
         # We calculate low and high.
         if isinstance(distribution, distributions.FloatDistribution):
             if distribution.log:
@@ -281,7 +275,6 @@ class _ParzenEstimator:
         return low, high, q
 
     def _transform_to_uniform(self, samples_dict: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
-
         transformed = {}
         for param_name, samples in samples_dict.items():
             distribution = self._search_space[param_name]
@@ -300,7 +293,6 @@ class _ParzenEstimator:
     def _transform_from_uniform(
         self, samples_dict: Dict[str, np.ndarray]
     ) -> Dict[str, np.ndarray]:
-
         transformed = {}
         for param_name, samples in samples_dict.items():
             distribution = self._search_space[param_name]
@@ -337,7 +329,6 @@ class _ParzenEstimator:
         return transformed
 
     def _precompute_sigmas0(self, observations: Dict[str, np.ndarray]) -> Optional[float]:
-
         n_observations = next(iter(observations.values())).size
         n_observations = max(n_observations, 1)
         n_params = len(observations)
@@ -354,7 +345,6 @@ class _ParzenEstimator:
     def _calculate_categorical_params(
         self, observations: np.ndarray, param_name: str
     ) -> np.ndarray:
-
         # TODO(kstoneriv3): This the bandwidth selection rule might not be optimal.
         observations = observations.astype(int)
         n_observations = self._n_observations
@@ -383,7 +373,6 @@ class _ParzenEstimator:
     def _calculate_numerical_params(
         self, observations: np.ndarray, param_name: str
     ) -> Tuple[np.ndarray, np.ndarray]:
-
         n_observations = self._n_observations
         consider_prior = self._parameters.consider_prior
         consider_endpoints = self._parameters.consider_endpoints
@@ -451,7 +440,6 @@ class _ParzenEstimator:
     def _sample_from_categorical_dist(
         rng: np.random.RandomState, probabilities: np.ndarray
     ) -> np.ndarray:
-
         n_samples = probabilities.shape[0]
         rnd_quantile = rng.rand(n_samples)
         cum_probs = np.cumsum(probabilities, axis=1)

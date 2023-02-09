@@ -98,7 +98,6 @@ elif _imports.is_successful():
             self._observation_key = observation_key
 
         def __call__(self, env: "xgb.core.CallbackEnv") -> None:  # type: ignore
-
             context = _get_callback_context(env)
             evaluation_result_list = env.evaluation_result_list
             if context == "cv":

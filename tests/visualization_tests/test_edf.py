@@ -52,7 +52,6 @@ def _validate_edf_values(edf_values: np.ndarray) -> None:
 
 @parametrized_plot_edf
 def test_target_is_none_and_study_is_multi_obj(plot_edf: Callable[..., Any]) -> None:
-
     study = create_study(directions=["minimize", "minimize"])
     with pytest.raises(ValueError):
         plot_edf(study)
@@ -162,7 +161,6 @@ def test_get_edf_info(n_studies: int, target: Callable[[optuna.trial.FrozenTrial
 
 @pytest.mark.parametrize("value", [float("inf"), -float("inf"), float("nan")])
 def test_nonfinite_removed(value: float) -> None:
-
     study = prepare_study_with_trials(value_for_first_trial=value)
     edf_info = _get_edf_info(study)
     assert all(np.isfinite(edf_info.x_values))
@@ -171,7 +169,6 @@ def test_nonfinite_removed(value: float) -> None:
 @pytest.mark.parametrize("objective", (0, 1))
 @pytest.mark.parametrize("value", (float("inf"), -float("inf")))
 def test_nonfinite_multiobjective(objective: int, value: float) -> None:
-
     study = prepare_study_with_trials(n_objectives=2, value_for_first_trial=value)
     edf_info = _get_edf_info(
         study, target=lambda t: t.values[objective], target_name="Target Name"
@@ -180,7 +177,6 @@ def test_nonfinite_multiobjective(objective: int, value: float) -> None:
 
 
 def test_inconsistent_number_of_trial_values() -> None:
-
     studies: List[Study] = []
     n_studies = 5
 

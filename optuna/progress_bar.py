@@ -46,7 +46,6 @@ class _ProgressBar:
         n_trials: Optional[int] = None,
         timeout: Optional[float] = None,
     ) -> None:
-
         self._is_valid = is_valid and (n_trials or timeout) is not None
         self._n_trials = n_trials
         self._timeout = timeout
@@ -59,7 +58,6 @@ class _ProgressBar:
     # longer experimental.
     @experimental_func("1.2.0", name="Progress bar")
     def _init_valid(self) -> None:
-
         if self._n_trials is not None:
             self._progress_bar = tqdm(total=self._n_trials)
 

@@ -124,7 +124,6 @@ def test_botorch_specify_candidates_func(candidates_func: Any, n_objectives: int
 def test_botorch_specify_candidates_func_constrained(
     candidates_func: Any, n_objectives: int
 ) -> None:
-
     n_trials = 4
     n_startup_trials = 2
     constraints_func_call_count = 0
@@ -467,7 +466,6 @@ def test_call_after_trial_of_independent_sampler() -> None:
 
 @pytest.mark.parametrize("device", [None, torch.device("cpu"), torch.device("cuda:0")])
 def test_device_argument(device: Optional[torch.device]) -> None:
-
     sampler = BoTorchSampler(device=device)
     if not torch.cuda.is_available() and sampler._device.type == "cuda":
         pytest.skip(reason="GPU is unavailable.")
