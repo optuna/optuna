@@ -129,7 +129,6 @@ def plot_slice_2d(
 
 
 def _rankdata(data):
-
     # Copyright 2002 Gary Strangman.  All rights reserved
     # Copyright 2002-2016 The SciPy Developers
     #
@@ -332,7 +331,6 @@ def _get_axis_info(trials: List[FrozenTrial], param_name: str) -> _AxisInfo:
 def _get_slice_2d_subplot(
     info: _SubplotInfo, target_name: str, print_all_objectives: bool, colormap: Any
 ) -> "Scatter":
-
     colors = plotly.colors.sample_colorscale(colormap, info.transformed_zs)
 
     def get_hover_text(trial: FrozenTrial, target_value: float) -> str:
@@ -365,7 +363,6 @@ def _get_slice_2d_plot(
     n_ticks: int,
     tick_format: str,
 ) -> "go.Figure":
-
     params = info.params
     sub_plot_infos = info.sub_plot_infos
 
@@ -400,7 +397,6 @@ def _get_slice_2d_plot(
             log_range = [math.log10(p) for p in sub_plot_info.yaxis.range]
             figure.update_yaxes(range=log_range, type="log")
     else:
-
         figure = make_subplots(
             rows=len(params),
             cols=len(params),
