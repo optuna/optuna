@@ -1,9 +1,14 @@
+from dataclasses import dataclass
 import decimal
+import random
 from typing import Any
 from typing import Dict
+from typing import Iterable
+from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import Tuple, Iterable, List
+from typing import Tuple
+from typing import NamedTuple
 
 import numpy as np
 
@@ -16,32 +21,47 @@ from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from dataclasses import dataclass
-import random
+
 
 @dataclass
 class _TreeNode:
+    # This is a class to represent the tree of search space.
+
+    # A tree node has three states:
+    # 1. Unexpanded. This is represented by children=None.
+    # 2. Leaf. This is represented by children={} and param_name=None.
+    # 3. Normal node. It has a param_name and non-empty children.
+
     param_name: Optional[str] = None
     children: Optional[Dict[Any, "_TreeNode"]] = None
-    
+
     def expand(self, param_name: Optional[str], search_space: Iterable[Any]) -> None:
+        # If the node is unexpanded, expand it.
+        # Otherwise, check if the node is compatible with the given search space.
         if self.children is None:
             # Expand the node
             self.param_name = param_name
             self.children = {value: _TreeNode() for value in search_space}
         else:
             if self.param_name != param_name:
-                raise ValueError("param_name mismatch.")
+                raise ValueError(f"param_name mismatch: {self.param_name} != {param_name}")
             if self.children.keys() != set(search_space):
-                raise ValueError("search_space mismatch.")
-    
+                raise ValueError(
+                    f"search_space mismatch: {set(self.children.keys())} != {set(search_space)}"
+                )
+
     def set_leaf(self) -> None:
+        # If the node is unexpanded, set it to be a leaf.
+        # Note that we cannot raise error if the node is already expanded, because
+        # running nodes may have incomplete search space.
         if self.children is None:
             assert self.param_name is None
             self.children = {}
-    
-    def add_path(self, 
-                 params_and_search_spaces: Iterable[Tuple[str, Iterable[Any], Any]]) -> Optional["_TreeNode"]:
+
+    def add_path(
+        self, params_and_search_spaces: Iterable[Tuple[str, Iterable[Any], Any]]
+    ) -> Optional["_TreeNode"]:
+        # Add a path (i.e. a list of suggested parameters in one trial) to the tree.
         current_node = self
         for param_name, search_space, value in params_and_search_spaces:
             current_node.expand(param_name, search_space)
@@ -52,12 +72,23 @@ class _TreeNode:
         return current_node
 
     def count_unexpanded(self) -> int:
-        return 1 if self.children is None else sum(child.count_unexpanded() for child in self.children.values())
+        # Count the number of unexpanded nodes in the subtree.
+        return (
+            1
+            if self.children is None
+            else sum(child.count_unexpanded() for child in self.children.values())
+        )
 
-    def sample_child(self) -> Optional[Any]:
-        weights = [child.count_unexpanded() for child in self.children.values()]
-        return None if sum(weights) == 0 else random.choices(list(self.children.keys()), weights=weights)[0]
-
+    def sample_child(self, rng: np.random.RandomState) -> Any:
+        # Sample an unexpanded node in the subtree uniformly, and return the first
+        # parameter value in the path to the node.
+        # Equivalently, we sample the child node with weights proportional to the number
+        # of unexpanded nodes in the subtree.
+        weights = np.array(
+            [child.count_unexpanded() for child in self.children.values()], dtype=np.float64
+        )
+        weights /= weights.sum()
+        return rng.choice(list(self.children.keys()), p=weights)
 
 @experimental_class("3.1.0")
 class BruteForceSampler(BaseSampler):
@@ -114,8 +145,10 @@ class BruteForceSampler(BaseSampler):
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
         return {}
-    
-    def _build_tree(self, trials: Iterable[FrozenTrial], params: Dict[str, Any]) -> _TreeNode:
+
+    @staticmethod
+    def _build_tree(trials: Iterable[FrozenTrial], params: Dict[str, Any]) -> _TreeNode:
+        # Build a _TreeNode under given params from the given trials.
         tree = _TreeNode()
         leaves: List[_TreeNode] = []
         for trial in trials:
@@ -123,7 +156,11 @@ class BruteForceSampler(BaseSampler):
                 continue
             leaf = tree.add_path(
                 (
-                    (param_name, _enumerate_candidates(param_distribution), trial.params[param_name])
+                    (
+                        param_name,
+                        _enumerate_candidates(param_distribution),
+                        param_distribution.to_internal_repr(trial.params[param_name]),
+                    )
                     for param_name, param_distribution in trial.distributions.items()
                     if param_name not in params
                 )
@@ -142,16 +179,21 @@ class BruteForceSampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
-        trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE, TrialState.RUNNING,))
+        trials = study.get_trials(
+            deepcopy=False,
+            states=(
+                TrialState.COMPLETE,
+                TrialState.RUNNING,
+            ),
+        )
         tree = self._build_tree((t for t in trials if t.number != trial.number), trial.params)
         candidates = _enumerate_candidates(param_distribution)
         tree.expand(param_name, candidates)
-        val = tree.sample_child()
-        if val is None:
-            return random.choice(candidates)
+        if tree.count_unexpanded() == 0:
+            return param_distribution.to_external_repr(self._rng.choice(candidates))
         else:
-            return val
-        
+            return param_distribution.to_external_repr(tree.sample_child(self._rng))
+
     def after_trial(
         self,
         study: Study,
@@ -159,11 +201,16 @@ class BruteForceSampler(BaseSampler):
         state: TrialState,
         values: Optional[Sequence[float]],
     ) -> None:
-        trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE, TrialState.RUNNING,))
+        trials = study.get_trials(
+            deepcopy=False,
+            states=(
+                TrialState.COMPLETE,
+                TrialState.RUNNING,
+            ),
+        )
         tree = self._build_tree(trials, {})
         if tree.count_unexpanded() == 0:
             study.stop()
-
 
 
 def _enumerate_candidates(param_distribution: BaseDistribution) -> Sequence[Any]:
@@ -189,6 +236,6 @@ def _enumerate_candidates(param_distribution: BaseDistribution) -> Sequence[Any]
             range(param_distribution.low, param_distribution.high + 1, param_distribution.step)
         )
     elif isinstance(param_distribution, CategoricalDistribution):
-        return list(param_distribution.choices)
+        return list(range(len(param_distribution.choices))) # Internal representations.
     else:
         raise ValueError(f"Unknown distribution {param_distribution}.")
