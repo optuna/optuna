@@ -110,6 +110,7 @@ def test_plot_slice(
         figure.write_image(BytesIO())
     else:
         plt.savefig(BytesIO())
+        plt.close()
 
 
 def test_target_is_none_and_study_is_multi_obj() -> None:

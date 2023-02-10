@@ -317,6 +317,7 @@ def test_get_pareto_front_plot(
         figure.write_image(BytesIO())
     else:
         plt.savefig(BytesIO())
+        plt.close()
 
 
 def test_make_hovertext() -> None:
