@@ -896,6 +896,12 @@ class Study:
 
         trial._validate()
 
+        if trial.values is not None and len(self.directions) != len(trial.values):
+            raise ValueError(
+                f"Although the number of objectives is {len(self.directions)}, "
+                f"the trial has {len(trial.values)} length values."
+            )
+
         self._storage.create_new_trial(self._study_id, template_trial=trial)
 
     def add_trials(self, trials: Iterable[FrozenTrial]) -> None:
