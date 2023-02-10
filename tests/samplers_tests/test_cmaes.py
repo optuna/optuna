@@ -315,23 +315,29 @@ def _create_trials() -> List[FrozenTrial]:
 
 
 @pytest.mark.parametrize(
-    "options, key",
+    "options, key, restart_strategy",
     [
-        ({"with_margin": False, "use_separable_cma": False}, "cma:"),
-        ({"with_margin": True, "use_separable_cma": False}, "cmawm:"),
-        ({"with_margin": False, "use_separable_cma": True}, "sepcma:"),
+        ({"with_margin": False, "use_separable_cma": False}, "cma:", "ipop"),
+        ({"with_margin": False, "use_separable_cma": False}, "cma:", "bipop"),
+        ({"with_margin": True, "use_separable_cma": False}, "cmawm:", "ipop"),
+        ({"with_margin": True, "use_separable_cma": False}, "cmawm:", "bipop"),
+        ({"with_margin": False, "use_separable_cma": True}, "sepcma:", "ipop"),
+        ({"with_margin": False, "use_separable_cma": True}, "sepcma:", "bipop"),
     ],
 )
-def test_sampler_attr_key(options: Dict[str, bool], key: str) -> None:
+def test_sampler_attr_key(options: Dict[str, bool], key: str, restart_strategy: str) -> None:
     # Test sampler attr_key propery
     sampler = optuna.samplers.CmaEsSampler(
         with_margin=options["with_margin"], use_separable_cma=options["use_separable_cma"]
     )
     assert sampler._attr_keys.optimizer.startswith(key)
     assert sampler._attr_keys.n_restarts.startswith(key)
+    assert sampler._attr_keys.poptype.startswith(key)
+    assert sampler._attr_keys.large_n_eval.startswith(key)
+    assert sampler._attr_keys.small_n_eval.startswith(key)
     assert sampler._attr_keys.generation(0).startswith(key)
 
-    sampler._restart_strategy = "ipop"
+    sampler._restart_strategy = restart_strategy
     for i in range(3):
         assert sampler._attr_keys.generation(i).startswith(
             (key + "restart_{}:".format(i) + "generation")
@@ -421,12 +427,12 @@ def test_restore_optimizer_from_substrings(sampler_opts: Dict[str, Any]) -> None
 @pytest.mark.parametrize(
     "sampler_opts, expected_poptype, expected_large_n_eval",
     [
-        [{"restart_strategy": "ipop"}, "small", 0],
-        [{"restart_strategy": "bipop"}, "large", 5],
-        [{"restart_strategy": "ipop", "use_separable_cma": True}, "small", 0],
-        [{"restart_strategy": "bipop", "use_separable_cma": True}, "large", 5],
-        [{"restart_strategy": "ipop", "with_margin": True}, "small", 0],
-        [{"restart_strategy": "bipop", "with_margin": True}, "large", 5],
+        ({"restart_strategy": "ipop"}, "small", 0),
+        ({"restart_strategy": "bipop"}, "large", 5),
+        ({"restart_strategy": "ipop", "use_separable_cma": True}, "small", 0),
+        ({"restart_strategy": "bipop", "use_separable_cma": True}, "large", 5),
+        ({"restart_strategy": "ipop", "with_margin": True}, "small", 0),
+        ({"restart_strategy": "bipop", "with_margin": True}, "large", 5),
     ],
 )
 def test_restore_optimizer_after_restart(
@@ -464,10 +470,10 @@ def test_restore_optimizer_after_restart(
 @pytest.mark.parametrize(
     "sampler_opts, restart_strategy",
     [
-        [{"use_separable_cma": True}, "ipop"],
-        [{"use_separable_cma": True}, "bipop"],
-        [{"with_margin": True}, "ipop"],
-        [{"with_margin": True}, "bipop"],
+        ({"use_separable_cma": True}, "ipop"),
+        ({"use_separable_cma": True}, "bipop"),
+        ({"with_margin": True}, "ipop"),
+        ({"with_margin": True}, "bipop"),
     ],
 )
 def test_restore_optimizer_with_other_option(
