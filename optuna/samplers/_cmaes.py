@@ -375,7 +375,8 @@ class CmaEsSampler(BaseSampler):
         # When `with_margin=True`, bounds in discrete dimensions are handled inside `CMAwM`.
         trans = _SearchSpaceTransform(search_space, transform_step=not self._with_margin)
 
-        # `poptype`, `small_n_eval`, `large_n_eval` are counter variables used for bipop-cma-es
+        # The variables `poptype`, `small_n_eval`, `large_n_eval` are
+        # counter variables used for bipop-cma-es.
         optimizer, n_restarts, poptype, small_n_eval, large_n_eval = self._restore_optimizer(
             completed_trials
         )
