@@ -617,3 +617,63 @@ will retry failed trials when a new trial starts to evaluate.
     )
 
     study = optuna.create_study(storage=storage)
+
+
+How can deal with permutation as a parameter?
+---------------------------------------------
+
+Although it is not straightforward to deal with combinatorial search spaces like permutations with existing API, there exists a convenient technique for handling them. 
+It involves re-parametrization of permutation search space of :math:`n` items as an independent :math:`n`-dimensional integer search space. 
+This technique is based on the concept of `Lehmer code <https://en.wikipedia.org/wiki/Lehmer_code>`_, which is also explained in: `Vizier document <https://oss-vizier.readthedocs.io/en/latest/guides/user/search_spaces.html#combinatorial-reparamterization>`_.
+
+A Lehmer code of a sequence is the sequence of integers in the same size, whose :math:`i`-th entry denotes how many inversions the :math:`i`-th entry of the permutation has after itself.
+In other words, the :math:`i`-th entry of the Lehmer code represents the number of entries that are located after and are smaller than the :math:`i`-th entry of the original sequence.
+For instance, the Lehmer code of the permutation :math:`(3, 1, 4, 2, 0)` is :math:`(3, 1, 2, 1, 0)`.
+
+Not only does the Lehmer code provide a unique encoding of permutations into an integer space, but it also has some desirable properties.
+For example, the sum of a Lehmer code entries is equal to the minimum number of adjacent transpositions necessary to transform the corresponding permutation into the identity permutation. 
+Additionally, the lexicographical order of the encodings of two permutations is the same as that of the original sequence. 
+Therefore, Lehmer code preserves "closeness" among permutations in some sense, which is important for the optimization algorithm.
+Optuna implementation is as follows:  
+
+.. code-block:: python
+
+    import optuna
+    import numpy as np
+
+    points = np.array(
+            [
+                [0., 0.],
+                [1., 0.],
+                [0., 1.],
+                [1., 1.],
+                [2., 2.],
+                [-1., -1.]
+            ]
+    )
+    n = len(points) - 1
+
+    def decode(lehmer_code):
+        all_indices = list(range(n))
+        output = []
+        for k in lehmer_code:
+            value = all_indices[k]
+            output.append(value)
+            all_indices.remove(value)
+        return output
+
+    def objective(trial):
+        lehmer_code = [trial.suggest_int(f"x{i}", 0, n-i-1) for i in range(n)]
+        permutation = decode(lehmer_code)
+        permutation.append(n)
+        total_distance = 0
+        for i in range(n+1):
+            total_distance += np.linalg.norm(points[permutation[i%n]]- points[permutation[(i+1)%n]])
+        return total_distance
+
+    study = optuna.create_study()
+    study.optimize(objective, n_trials=10)
+    permutation = decode(lehmer_code)
+    permutation.append(n)
+    lehmer_code = study.best_params.values()
+    print(decode(lehmer_code))
