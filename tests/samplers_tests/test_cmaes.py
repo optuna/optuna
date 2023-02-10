@@ -557,7 +557,17 @@ def test_get_solution_trials_with_other_options(
     assert len(sampler._get_solution_trials(study.trials, 0, 0)) == 0
 
 
-@pytest.mark.parametrize("sampler_opts", [{}, {"use_separable_cma": True}, {"with_margin": True}])
+@pytest.mark.parametrize(
+    "sampler_opts",
+    [
+        {"restart_strategy": "ipop"},
+        {"restart_strategy": "bipop"},
+        {"restart_strategy": "ipop", "use_separable_cma": True},
+        {"restart_strategy": "bipop", "use_separable_cma": True},
+        {"restart_strategy": "ipop", "with_margin": True},
+        {"restart_strategy": "bipop", "with_margin": True},
+    ],
+)
 def test_get_solution_trials_after_restart(sampler_opts: Dict[str, Any]) -> None:
     def objective(trial: optuna.Trial) -> float:
         x1 = trial.suggest_float("x1", -10, 10, step=1)
@@ -574,9 +584,7 @@ def test_get_solution_trials_after_restart(sampler_opts: Dict[str, Any]) -> None
     popsize = 5
     with patch.object(cma_class, "should_stop") as mock_method:
         mock_method.return_value = True
-        sampler = optuna.samplers.CmaEsSampler(
-            popsize=popsize, restart_strategy="ipop", **sampler_opts
-        )
+        sampler = optuna.samplers.CmaEsSampler(popsize=popsize, **sampler_opts)
         study = optuna.create_study(sampler=sampler)
         study.optimize(objective, n_trials=popsize + 2)
 
