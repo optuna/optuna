@@ -502,7 +502,17 @@ def test_restore_optimizer_with_other_option(
     assert small_n_eval == 0
 
 
-@pytest.mark.parametrize("sampler_opts", [{}, {"use_separable_cma": True}, {"with_margin": True}])
+@pytest.mark.parametrize(
+    "sampler_opts",
+    [
+        {"restart_strategy": "ipop"},
+        {"restart_strategy": "bipop"},
+        {"restart_strategy": "ipop", "use_separable_cma": True},
+        {"restart_strategy": "bipop", "use_separable_cma": True},
+        {"restart_strategy": "ipop", "with_margin": True},
+        {"restart_strategy": "bipop", "with_margin": True},
+    ],
+)
 def test_get_solution_trials(sampler_opts: Dict[str, Any]) -> None:
     def objective(trial: optuna.Trial) -> float:
         x1 = trial.suggest_float("x1", -10, 10, step=1)
@@ -510,9 +520,7 @@ def test_get_solution_trials(sampler_opts: Dict[str, Any]) -> None:
         return x1**2 + x2**2
 
     popsize = 5
-    sampler = optuna.samplers.CmaEsSampler(
-        popsize=popsize, restart_strategy="ipop", **sampler_opts
-    )
+    sampler = optuna.samplers.CmaEsSampler(popsize=popsize, **sampler_opts)
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=popsize + 2)
 
@@ -523,8 +531,18 @@ def test_get_solution_trials(sampler_opts: Dict[str, Any]) -> None:
     assert len(sampler._get_solution_trials(study.trials, 1, 0)) == 1
 
 
-@pytest.mark.parametrize("sampler_opts", [{"use_separable_cma": True}, {"with_margin": True}])
-def test_get_solution_trials_with_other_options(sampler_opts: Dict[str, Any]) -> None:
+@pytest.mark.parametrize(
+    "sampler_opts, restart_strategy",
+    [
+        ({"use_separable_cma": True}, "ipop"),
+        ({"use_separable_cma": True}, "bpop"),
+        ({"with_margin": True}, "ipop"),
+        ({"with_margin": True}, "bipop"),
+    ],
+)
+def test_get_solution_trials_with_other_options(
+    sampler_opts: Dict[str, Any], restart_strategy: str
+) -> None:
     def objective(trial: optuna.Trial) -> float:
         x1 = trial.suggest_float("x1", -10, 10, step=1)
         x2 = trial.suggest_float("x2", -10, 10)
