@@ -32,6 +32,7 @@ with try_import() as _imports:
     import pandas as pd
     import scipy as sp
     from scipy.sparse import spmatrix
+    import sklearn
     from sklearn.base import BaseEstimator
     from sklearn.base import clone
     from sklearn.base import is_classifier
