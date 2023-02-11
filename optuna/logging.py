@@ -35,11 +35,13 @@ def create_default_formatter() -> Union[Formatter, colorlog.ColoredFormatter]:
 
     This function is not supposed to be directly accessed by library users.
     """
+    header = "[%(levelname)1.1s %(asctime)s]"
+    message = "%(message)s"
     if _color_supported():
         return colorlog.ColoredFormatter(
-            "%(log_color)s[%(levelname)1.1s %(asctime)s]%(reset)s %(message)s",
+            f"%(log_color)s{header}%(reset)s {message}",
         )
-    return Formatter("[%(levelname)1.1s %(asctime)s] %(message)s")
+    return Formatter(f"{header} {message}")
 
 
 def _color_supported() -> bool:
