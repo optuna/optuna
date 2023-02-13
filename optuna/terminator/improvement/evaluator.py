@@ -5,20 +5,20 @@ from typing import Optional
 import optuna
 from optuna.terminator.gp.base import BaseGaussianProcess
 from optuna.terminator.gp.botorch import BoTorchGaussianProcess
-from optuna.terminator.regret.preprocessing import BasePreprocessing
-from optuna.terminator.regret.preprocessing import OneToHot
-from optuna.terminator.regret.preprocessing import PreprocessingPipeline
-from optuna.terminator.regret.preprocessing import SelectTopTrials
-from optuna.terminator.regret.preprocessing import ToIntersectionSearchSpace
-from optuna.terminator.regret.preprocessing import ToMinimize
-from optuna.terminator.regret.preprocessing import UnscaleLog
+from optuna.terminator.improvement.preprocessing import BasePreprocessing
+from optuna.terminator.improvement.preprocessing import OneToHot
+from optuna.terminator.improvement.preprocessing import PreprocessingPipeline
+from optuna.terminator.improvement.preprocessing import SelectTopTrials
+from optuna.terminator.improvement.preprocessing import ToIntersectionSearchSpace
+from optuna.terminator.improvement.preprocessing import ToMinimize
+from optuna.terminator.improvement.preprocessing import UnscaleLog
 
 
 DEFAULT_TOP_TRIALS_RATIO = 0.5
 DEFAULT_MIN_N_TRIALS = 20
 
 
-class BaseRegretBoundEvaluator(metaclass=abc.ABCMeta):
+class BaseImprovementEvaluator(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def evaluate(
         self,
@@ -28,7 +28,7 @@ class BaseRegretBoundEvaluator(metaclass=abc.ABCMeta):
         pass
 
 
-class RegretBoundEvaluator:
+class RegretBoundEvaluator(BaseImprovementEvaluator):
     def __init__(
         self,
         gp: Optional[BaseGaussianProcess] = None,
