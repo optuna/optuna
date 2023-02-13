@@ -31,8 +31,8 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
         self._min_lcb_n_additional_candidates = min_lcb_n_additional_candidates
 
         self._trials: Optional[List[FrozenTrial]] = None
-        self._gamma: Optional[float] = None
-        self._t: Optional[float] = None
+        self._n_params: Optional[float] = None
+        self._n_trials: Optional[float] = None
         self._gp: Optional[SingleTaskGP] = None
         self._likelihood = None
         self._x_scaler = _XScaler()
@@ -48,8 +48,8 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
         self._x_scaler.fit(x)
         x = self._x_scaler.transfrom(x)
 
-        self._t = x.shape[0]
-        self._gamma = x.shape[1]
+        self._n_trials = x.shape[0]
+        self._n_params = x.shape[1]
 
         y = torch.tensor([trial.value for trial in trials], dtype=torch.float64)
         self._y_scaler.fit(y)
@@ -59,7 +59,7 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
         covar_module = gpytorch.kernels.ScaleKernel(
             gpytorch.kernels.MaternKernel(
                 nu=2.5,
-                ard_num_dims=self._gamma,
+                ard_num_dims=self._n_params,
             ),
         )
 
@@ -111,7 +111,7 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
     def min_lcb(self) -> float:
         assert self._trials is not None
 
-        sobol = SobolEngine(self._gamma, scramble=True)  # type: ignore[no-untyped-call]
+        sobol = SobolEngine(self._n_params, scramble=True)  # type: ignore[no-untyped-call]
         x = sobol.draw(self._min_lcb_n_additional_candidates)
 
         # Note that x is assumed to be scaled b/w 0-1 to be stacked with the sobol samples.
@@ -126,10 +126,10 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
         return float(torch.min(lower))
 
     def _beta(self, delta: float = 0.1) -> float:
-        assert self._gamma is not None
-        assert self._t is not None
+        assert self._n_params is not None
+        assert self._n_trials is not None
 
-        beta = 2 * np.log(self._gamma * self._t**2 * np.pi**2 / 6 / delta)
+        beta = 2 * np.log(self._n_params * self._n_trials**2 * np.pi**2 / 6 / delta)
 
         # The following div is according to the original paper: "We then further scale it down
         # by a factor of 5 as defined in the experiments in Srinivas et al. (2010)"
