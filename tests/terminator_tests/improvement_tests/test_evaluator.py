@@ -22,7 +22,7 @@ class _StaticMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
     def min_ucb(self) -> float:
         return 1.0
 
-    def min_lcb(self, n_additional_candidates: int = 2000) -> float:
+    def min_lcb(self) -> float:
         return -1.0
 
 

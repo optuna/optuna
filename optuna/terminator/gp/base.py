@@ -17,5 +17,5 @@ class BaseMinUcbLcbEstimator(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def min_lcb(self, n_additional_candidates: int = 2000) -> float:
+    def min_lcb(self) -> float:
         pass

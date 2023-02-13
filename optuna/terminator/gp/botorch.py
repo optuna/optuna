@@ -25,10 +25,10 @@ __all__ = ["botorch", "fit_gpytorch_torch", "SingleTaskGP", "gpytorch", "torch",
 
 
 class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
-    def __init__(
-        self,
-    ) -> None:
+    def __init__(self, min_lcb_n_additional_candidates: int = 2000) -> None:
         _imports.check()
+
+        self._min_lcb_n_additional_candidates = min_lcb_n_additional_candidates
 
         self._trials: Optional[List[FrozenTrial]] = None
         self._gamma: Optional[float] = None
@@ -108,11 +108,11 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
 
         return float(torch.min(upper))
 
-    def min_lcb(self, n_additional_candidates: int = 2000) -> float:
+    def min_lcb(self) -> float:
         assert self._trials is not None
 
         sobol = SobolEngine(self._gamma, scramble=True)  # type: ignore[no-untyped-call]
-        x = sobol.draw(n_additional_candidates)
+        x = sobol.draw(self._min_lcb_n_additional_candidates)
 
         # Note that x is assumed to be scaled b/w 0-1 to be stacked with the sobol samples.
         x_observed = _convert_trials_to_x_tensors(self._trials)
