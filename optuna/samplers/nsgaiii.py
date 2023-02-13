@@ -364,6 +364,7 @@ class NSGAIIISampler(BaseSampler):
                     ref2pops,
                 )
                 elite_population.extend(additional_elite_population)
+                break
         return elite_population
 
     def _fast_non_dominated_sort(
@@ -451,7 +452,7 @@ def _normalize(
     elite_population: List[FrozenTrial],
     population: List[FrozenTrial],
     weights: Optional[np.ndarray] = None,
-    method: str = "custom",
+    method: str = "original",
 ) -> np.ndarray:
     """Normalizes objective values of population
 
@@ -501,7 +502,7 @@ def _normalize(
     # Note that extreme_points can be degenerate, but no proper operation is remarked in the
     # paper. Therefore, the maximum of elite population in each axis is used in the case.
     if np.linalg.matrix_rank(extreme_points) < len(extreme_points):
-        intercepts_inv = 1 / np.max(objective_matrix[: len(elite_population), :], axis=0)
+        intercepts_inv = 1 / np.max(objective_matrix[:, :], axis=0)
     else:
         intercepts_inv = np.linalg.solve(extreme_points, np.ones(objective_dimension))
     objective_matrix *= intercepts_inv

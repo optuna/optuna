@@ -7,7 +7,6 @@ import pytest
 
 from optuna.samplers.nsgaiii import _associate
 from optuna.samplers.nsgaiii import _niching
-from optuna.samplers.nsgaiii import _normalize
 from optuna.samplers.nsgaiii import generate_default_reference_point
 from optuna.trial import create_trial
 
