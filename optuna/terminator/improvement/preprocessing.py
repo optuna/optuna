@@ -182,7 +182,7 @@ class ToIntersectionSearchSpace(BasePreprocessing):
 
 class OneToHot(BasePreprocessing):
     def __init__(
-        self, 
+        self,
         search_space: Optional[Dict[str, BaseDistribution]] = None,
     ) -> None:
         self._search_space = search_space
@@ -227,8 +227,8 @@ class OneToHot(BasePreprocessing):
 
 class AddRandomInputs(BasePreprocessing):
     def __init__(
-        self, 
-        n_additional_trials: int, 
+        self,
+        n_additional_trials: int,
         dummy_value: float = np.nan,
         search_space: Optional[Dict[str, BaseDistribution]] = None,
     ) -> None:

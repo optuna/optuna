@@ -1,7 +1,7 @@
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
-from collections import OrderedDict
 
 import numpy as np
 
@@ -10,7 +10,6 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.terminator import _distribution_is_log
 from optuna.terminator.gp.base import BaseMinUcbLcbEstimator
-from optuna.terminator.search_space.intersection import IntersectionSearchSpace
 from optuna.terminator.improvement.preprocessing import AddRandomInputs
 from optuna.terminator.improvement.preprocessing import OneToHot
 from optuna.terminator.improvement.preprocessing import PreprocessingPipeline
@@ -37,7 +36,7 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
         self._min_lcb_n_additional_candidates = min_lcb_n_additional_candidates
 
         self._trials: Optional[List[FrozenTrial]] = None
-        self._search_space: Optional[OrderedDict[str, BaseDistribution]] = None
+        self._search_space: Optional[Dict[str, BaseDistribution]] = None
         self._n_params: Optional[float] = None
         self._n_trials: Optional[float] = None
         self._gp: Optional[SingleTaskGP] = None
@@ -51,6 +50,7 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
     ) -> None:
         self._trials = trials
 
+        # TODO(g-votte): guarantee that _search_space is an ordered dict
         self._search_space = IntersectionSearchSpace().calculate(trials)
 
         preprocessing = OneToHot(search_space=self._search_space)
@@ -128,13 +128,14 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
     def min_lcb(self) -> float:
         assert self._trials is not None
 
-        preprocessing = PreprocessingPipeline([
-            AddRandomInputs(
-                self._min_lcb_n_additional_candidates, 
-                search_space=self._search_space
-            ),
-            OneToHot(search_space=self._search_space),
-        ])
+        preprocessing = PreprocessingPipeline(
+            [
+                AddRandomInputs(
+                    self._min_lcb_n_additional_candidates, search_space=self._search_space
+                ),
+                OneToHot(search_space=self._search_space),
+            ]
+        )
 
         trials = preprocessing.apply(self._trials, None)
         x = _convert_trials_to_x_tensors(trials)
