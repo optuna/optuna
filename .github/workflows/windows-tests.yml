@@ -40,7 +40,7 @@ jobs:
     - name: Setup cache
       uses: actions/cache@v3
       env:
-        cache-name: test
+        cache-name: windows-test
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
@@ -64,11 +64,14 @@ jobs:
         pytest -m "not integration"
       env:
         SQLALCHEMY_WARN_20: 1
+        MPLBACKEND: "QtAgg" # Use QtAgg as matplotlib backend
 
     - name: Tests
       if:  ${{ github.event_name != 'schedule' }}
       run: |
         pytest -m "not integration and not slow"
+      env:
+        MPLBACKEND: "QtAgg" # Use QtAgg as matplotlib backend
 
   # tests-integration-windows:
   #   runs-on: windows-latest
