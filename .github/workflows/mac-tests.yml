@@ -28,19 +28,19 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Setup Python3.8
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: 3.8
 
     - name: Setup cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         cache-name: test
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
+        key: ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
         restore-keys: |
-          ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
+          ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
 
     - name: Install
       run: |
@@ -52,6 +52,10 @@ jobs:
         optuna --version
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
+
+    - name: Output installed packages
+      run: |
+        pip freeze --all
 
     - name: Tests
       run: |
@@ -67,19 +71,19 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Setup Python3.8
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: 3.8
 
     - name: Setup cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         cache-name: test-integration
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
+        key: ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
         restore-keys: |
-          ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
+          ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
 
     - name: Setup mac environment
       run: |
@@ -100,6 +104,9 @@ jobs:
         pip install --progress-bar off .[optional]
         pip install --progress-bar off .[integration]
 
+    - name: Output installed packages
+      run: |
+        pip freeze --all
 
     - name: Tests
       run: |

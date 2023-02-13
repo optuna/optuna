@@ -76,9 +76,7 @@ def objective(trial):
 
     # Add a callback for pruning.
     pruning_callback = optuna.integration.LightGBMPruningCallback(trial, "auc")
-    gbm = lgb.train(
-        param, dtrain, valid_sets=[dvalid], verbose_eval=False, callbacks=[pruning_callback]
-    )
+    gbm = lgb.train(param, dtrain, valid_sets=[dvalid], callbacks=[pruning_callback])
 
     preds = gbm.predict(valid_x)
     pred_labels = np.rint(preds)

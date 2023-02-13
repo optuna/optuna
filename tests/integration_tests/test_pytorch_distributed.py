@@ -1,5 +1,4 @@
 import datetime
-import itertools
 import os
 from typing import Optional
 
@@ -9,7 +8,6 @@ import optuna
 from optuna._imports import try_import
 from optuna.integration import TorchDistributedTrial
 from optuna.testing.pruners import DeterministicPruner
-from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
 
 
@@ -19,10 +17,17 @@ with try_import():
 
 pytestmark = pytest.mark.integration
 
+STORAGE_MODES = [
+    "inmemory",
+    "sqlite",
+    "cached_sqlite",
+    "journal",
+    "journal_redis",
+]
+
 
 @pytest.fixture(scope="session", autouse=True)
 def init_process_group() -> None:
-
     if "OMPI_COMM_WORLD_SIZE" not in os.environ:
         pytest.skip("This test is expected to be launch with mpirun.")
 
@@ -198,9 +203,8 @@ def test_report_nan(storage_mode: str) -> None:
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
-@pytest.mark.parametrize(
-    "storage_mode, is_pruning", itertools.product(STORAGE_MODES, [False, True])
-)
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+@pytest.mark.parametrize("is_pruning", [False, True])
 def test_should_prune(storage_mode: str, is_pruning: bool) -> None:
     with StorageSupplier(storage_mode) as storage:
         if dist.get_rank() == 0:  # type: ignore

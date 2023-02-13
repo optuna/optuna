@@ -99,7 +99,6 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
     def create_new_study(
         self, directions: Sequence[StudyDirection], study_name: Optional[str] = None
     ) -> int:
-
         study_id = self._backend.create_new_study(directions=directions, study_name=study_name)
         with self._lock:
             study = _StudyInfo()
@@ -110,7 +109,6 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
         return study_id
 
     def delete_study(self, study_id: int) -> None:
-
         with self._lock:
             if study_id in self._studies:
                 for trial_id in self._studies[study_id].trials:
@@ -124,19 +122,15 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
         self._backend.delete_study(study_id)
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
-
         self._backend.set_study_user_attr(study_id, key, value)
 
     def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
-
         self._backend.set_study_system_attr(study_id, key, value)
 
     def get_study_id_from_name(self, study_name: str) -> int:
-
         return self._backend.get_study_id_from_name(study_name)
 
     def get_study_name_from_id(self, study_id: int) -> str:
-
         with self._lock:
             if study_id in self._studies:
                 name = self._studies[study_id].name
@@ -151,7 +145,6 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
         return name
 
     def get_study_directions(self, study_id: int) -> List[StudyDirection]:
-
         with self._lock:
             if study_id in self._studies:
                 directions = self._studies[study_id].directions
@@ -166,19 +159,15 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
         return directions
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
-
         return self._backend.get_study_user_attrs(study_id)
 
     def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
-
         return self._backend.get_study_system_attrs(study_id)
 
     def get_all_studies(self) -> List[FrozenStudy]:
-
         return self._backend.get_all_studies()
 
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
-
         frozen_trial = self._backend._create_new_trial(study_id, template_trial)
         trial_id = frozen_trial._trial_id
         with self._lock:
@@ -204,7 +193,6 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
         param_value_internal: float,
         distribution: distributions.BaseDistribution,
     ) -> None:
-
         with self._lock:
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
@@ -241,7 +229,6 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
         self._backend.set_trial_param(trial_id, param_name, param_value_internal, distribution)
 
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
-
         key = (study_id, trial_number)
         with self._lock:
             if key in self._study_id_and_number_to_trial_id:
@@ -250,13 +237,11 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
         return self._backend.get_trial_id_from_study_id_trial_number(study_id, trial_number)
 
     def get_best_trial(self, study_id: int) -> FrozenTrial:
-
         return self._backend.get_best_trial(study_id)
 
     def set_trial_state_values(
         self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
     ) -> bool:
-
         with self._lock:
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
@@ -292,7 +277,6 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
     ) -> None:
-
         with self._lock:
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
@@ -303,7 +287,6 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
         self._backend.set_trial_intermediate_value(trial_id, step, intermediate_value)
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
-
         with self._lock:
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
@@ -314,7 +297,6 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
         self._backend.set_trial_user_attr(trial_id, key=key, value=value)
 
     def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
-
         with self._lock:
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
@@ -332,7 +314,6 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
         return study.trials[number] if trial_id in study.owned_or_finished_trial_ids else None
 
     def get_trial(self, trial_id: int) -> FrozenTrial:
-
         with self._lock:
             trial = self._get_cached_trial(trial_id)
             if trial is not None:

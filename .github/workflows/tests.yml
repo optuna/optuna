@@ -36,7 +36,7 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Setup Python${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -46,9 +46,9 @@ jobs:
         cache-name: test
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
+        key: ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
         restore-keys: |
-          ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
+          ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
 
 
     - name: Setup pip
@@ -65,6 +65,10 @@ jobs:
 
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
+
+    - name: Output installed packages
+      run: |
+        pip freeze --all
 
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}

@@ -116,7 +116,6 @@ class SuccessiveHalvingPruner(BasePruner):
         min_early_stopping_rate: int = 0,
         bootstrap_count: int = 0,
     ) -> None:
-
         if isinstance(min_resource, str) and min_resource != "auto":
             raise ValueError(
                 "The value of `min_resource` is {}, "
@@ -161,7 +160,6 @@ class SuccessiveHalvingPruner(BasePruner):
         self._bootstrap_count = bootstrap_count
 
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
-
         step = trial.last_step
         if step is None:
             return False
@@ -214,7 +212,6 @@ class SuccessiveHalvingPruner(BasePruner):
 
 
 def _estimate_min_resource(trials: List["optuna.trial.FrozenTrial"]) -> Optional[int]:
-
     n_steps = [
         t.last_step for t in trials if t.state == TrialState.COMPLETE and t.last_step is not None
     ]
@@ -228,7 +225,6 @@ def _estimate_min_resource(trials: List["optuna.trial.FrozenTrial"]) -> Optional
 
 
 def _get_current_rung(trial: "optuna.trial.FrozenTrial") -> int:
-
     # The following loop takes `O(log step)` iterations.
     rung = 0
     while _completed_rung_key(rung) in trial.system_attrs:
@@ -237,14 +233,12 @@ def _get_current_rung(trial: "optuna.trial.FrozenTrial") -> int:
 
 
 def _completed_rung_key(rung: int) -> str:
-
     return "completed_rung_{}".format(rung)
 
 
 def _get_competing_values(
     trials: List["optuna.trial.FrozenTrial"], value: float, rung_key: str
 ) -> List[float]:
-
     competing_values = [t.system_attrs[rung_key] for t in trials if rung_key in t.system_attrs]
     competing_values.append(value)
     return competing_values
@@ -256,7 +250,6 @@ def _is_trial_promotable_to_next_rung(
     reduction_factor: int,
     study_direction: StudyDirection,
 ) -> bool:
-
     promotable_idx = (len(competing_values) // reduction_factor) - 1
 
     if promotable_idx == -1:

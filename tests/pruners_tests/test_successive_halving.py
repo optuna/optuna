@@ -7,7 +7,6 @@ import optuna
 
 @pytest.mark.parametrize("direction_value", [("minimize", 2), ("maximize", 0.5)])
 def test_successive_halving_pruner_intermediate_values(direction_value: Tuple[str, float]) -> None:
-
     direction, intermediate_value = direction_value
     pruner = optuna.pruners.SuccessiveHalvingPruner(
         min_resource=1, reduction_factor=2, min_early_stopping_rate=0
@@ -30,7 +29,6 @@ def test_successive_halving_pruner_intermediate_values(direction_value: Tuple[st
 
 
 def test_successive_halving_pruner_rung_check() -> None:
-
     pruner = optuna.pruners.SuccessiveHalvingPruner(
         min_resource=1, reduction_factor=2, min_early_stopping_rate=0
     )
@@ -69,7 +67,6 @@ def test_successive_halving_pruner_rung_check() -> None:
 
 
 def test_successive_halving_pruner_first_trial_is_not_pruned() -> None:
-
     pruner = optuna.pruners.SuccessiveHalvingPruner(
         min_resource=1, reduction_factor=2, min_early_stopping_rate=0
     )
@@ -92,7 +89,6 @@ def test_successive_halving_pruner_first_trial_is_not_pruned() -> None:
 
 
 def test_successive_halving_pruner_with_nan() -> None:
-
     pruner = optuna.pruners.SuccessiveHalvingPruner(
         min_resource=2, reduction_factor=2, min_early_stopping_rate=0
     )
@@ -112,14 +108,12 @@ def test_successive_halving_pruner_with_nan() -> None:
 @pytest.mark.parametrize("n_reports", range(3))
 @pytest.mark.parametrize("n_trials", [1, 2])
 def test_successive_halving_pruner_with_auto_min_resource(n_reports: int, n_trials: int) -> None:
-
     pruner = optuna.pruners.SuccessiveHalvingPruner(min_resource="auto")
     study = optuna.study.create_study(sampler=optuna.samplers.RandomSampler(), pruner=pruner)
 
     assert pruner._min_resource is None
 
     def objective(trial: optuna.trial.Trial) -> float:
-
         for i in range(n_reports):
             trial.report(1.0 / (i + 1), i)
             if trial.should_prune():
@@ -134,13 +128,11 @@ def test_successive_halving_pruner_with_auto_min_resource(n_reports: int, n_tria
 
 
 def test_successive_halving_pruner_with_invalid_str_to_min_resource() -> None:
-
     with pytest.raises(ValueError):
         optuna.pruners.SuccessiveHalvingPruner(min_resource="fixed")
 
 
 def test_successive_halving_pruner_min_resource_parameter() -> None:
-
     # min_resource=0: Error (must be `min_resource >= 1`).
     with pytest.raises(ValueError):
         optuna.pruners.SuccessiveHalvingPruner(
@@ -180,7 +172,6 @@ def test_successive_halving_pruner_min_resource_parameter() -> None:
 
 
 def test_successive_halving_pruner_reduction_factor_parameter() -> None:
-
     # reduction_factor=1: Error (must be `reduction_factor >= 2`).
     with pytest.raises(ValueError):
         optuna.pruners.SuccessiveHalvingPruner(
@@ -226,7 +217,6 @@ def test_successive_halving_pruner_reduction_factor_parameter() -> None:
 
 
 def test_successive_halving_pruner_min_early_stopping_rate_parameter() -> None:
-
     # min_early_stopping_rate=-1: Error (must be `min_early_stopping_rate >= 0`).
     with pytest.raises(ValueError):
         optuna.pruners.SuccessiveHalvingPruner(
@@ -266,7 +256,6 @@ def test_successive_halving_pruner_min_early_stopping_rate_parameter() -> None:
 
 
 def test_successive_halving_pruner_bootstrap_parameter() -> None:
-
     with pytest.raises(ValueError):
         optuna.pruners.SuccessiveHalvingPruner(bootstrap_count=-1)
 

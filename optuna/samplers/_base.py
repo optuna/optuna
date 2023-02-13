@@ -156,7 +156,7 @@ class BaseSampler(abc.ABC):
     ) -> None:
         """Trial post-processing.
 
-        This method is called after the objective function returns and right before the trials is
+        This method is called after the objective function returns and right before the trial is
         finished and its state is stored.
 
         .. note::
@@ -191,7 +191,6 @@ class BaseSampler(abc.ABC):
         pass
 
     def _raise_error_if_multi_objective(self, study: Study) -> None:
-
         if study._is_multi_objective():
             raise ValueError(
                 "If the study is being used for multi-objective optimization, "

@@ -22,34 +22,30 @@ with try_import() as _imports:
     import torch.nn.functional as F
 
 if not _imports.is_successful():
-    LightningModule = object  # type: ignore # NOQA
+    LightningModule = object  # type: ignore[assignment, misc]  # NOQA
 
 pytestmark = pytest.mark.integration
 
 
 class Model(LightningModule):
     def __init__(self) -> None:
-
         super().__init__()
         self._model = nn.Sequential(nn.Linear(4, 8))
 
-    def forward(self, data: "torch.Tensor") -> "torch.Tensor":  # type: ignore
-
+    def forward(self, data: "torch.Tensor") -> "torch.Tensor":
         return self._model(data)
 
-    def training_step(  # type: ignore
+    def training_step(
         self, batch: List["torch.Tensor"], batch_nb: int
     ) -> Dict[str, "torch.Tensor"]:
-
         data, target = batch
         output = self.forward(data)
         loss = F.nll_loss(output, target)
         return {"loss": loss}
 
-    def validation_step(  # type: ignore
+    def validation_step(
         self, batch: List["torch.Tensor"], batch_nb: int
     ) -> Dict[str, "torch.Tensor"]:
-
         data, target = batch
         output = self.forward(data)
         pred = output.argmax(dim=1, keepdim=True)
@@ -72,19 +68,15 @@ class Model(LightningModule):
         self.log("accuracy", accuracy)
 
     def configure_optimizers(self) -> "torch.optim.Optimizer":
-
         return torch.optim.SGD(self._model.parameters(), lr=1e-2)
 
     def train_dataloader(self) -> "torch.utils.data.DataLoader":
-
         return self._generate_dummy_dataset()
 
     def val_dataloader(self) -> "torch.utils.data.DataLoader":
-
         return self._generate_dummy_dataset()
 
     def _generate_dummy_dataset(self) -> "torch.utils.data.DataLoader":
-
         data = torch.zeros(3, 4, dtype=torch.float32)
         target = torch.zeros(3, dtype=torch.int64)
         dataset = torch.utils.data.TensorDataset(data, target)
@@ -93,13 +85,11 @@ class Model(LightningModule):
 
 class ModelDDP(Model):
     def __init__(self) -> None:
-
         super().__init__()
 
-    def validation_step(  # type: ignore
+    def validation_step(
         self, batch: List["torch.Tensor"], batch_nb: int
     ) -> Dict[str, "torch.Tensor"]:
-
         data, target = batch
         output = self.forward(data)
         pred = output.argmax(dim=1, keepdim=True)
@@ -111,11 +101,11 @@ class ModelDDP(Model):
             accuracy = torch.tensor(0.6)
 
         self.log("accuracy", accuracy, sync_dist=True)
+        return {"validation_accuracy": accuracy}
 
 
 def test_pytorch_lightning_pruning_callback() -> None:
     def objective(trial: optuna.trial.Trial) -> float:
-
         trainer = pl.Trainer(
             max_epochs=2,
             enable_checkpointing=False,
@@ -138,7 +128,6 @@ def test_pytorch_lightning_pruning_callback() -> None:
 
 
 def test_pytorch_lightning_pruning_callback_monitor_is_invalid() -> None:
-
     study = optuna.create_study(pruner=DeterministicPruner(True))
     trial = study.ask()
     callback = PyTorchLightningPruningCallback(trial, "InvalidMonitor")
@@ -154,15 +143,16 @@ def test_pytorch_lightning_pruning_callback_monitor_is_invalid() -> None:
         callback.on_validation_end(trainer, model)
 
 
+@pytest.mark.skip(reason="Currently DDP is not supported")
 @pytest.mark.parametrize("storage_mode", ["sqlite", "cached_sqlite"])
 def test_pytorch_lightning_pruning_callback_ddp_monitor(
     storage_mode: str,
 ) -> None:
     def objective(trial: optuna.trial.Trial) -> float:
-
         trainer = pl.Trainer(
-            max_epochs=2,
-            accelerator="ddp_cpu",
+            strategy="ddp",
+            accelerator="cpu",
+            devices=2,
             num_processes=2,
             enable_checkpointing=False,
             callbacks=[PyTorchLightningPruningCallback(trial, monitor="accuracy")],
@@ -189,15 +179,16 @@ def test_pytorch_lightning_pruning_callback_ddp_monitor(
         np.testing.assert_almost_equal(study.trials[0].intermediate_values[1], 0.45)
 
 
+@pytest.mark.skip(reason="Currently DDP is not supported")
 def test_pytorch_lightning_pruning_callback_ddp_unsupported_storage() -> None:
     storage_mode = "inmemory"
 
     def objective(trial: optuna.trial.Trial) -> float:
-
         trainer = pl.Trainer(
             max_epochs=1,
-            accelerator="ddp_cpu",
-            num_processes=2,
+            strategy="ddp",
+            accelerator="cpu",
+            devices=2,
             enable_checkpointing=False,
             callbacks=[PyTorchLightningPruningCallback(trial, monitor="accuracy")],
         )

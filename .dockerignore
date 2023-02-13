@@ -1,7 +1,7 @@
 # Ignore everything
 **
 
-!setup.py
+!pyproject.toml
 !README.md
 !optuna
 !examples

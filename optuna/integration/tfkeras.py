@@ -32,7 +32,6 @@ class TFKerasPruningCallback(Callback):
     """
 
     def __init__(self, trial: optuna.trial.Trial, monitor: str) -> None:
-
         super().__init__()
 
         _imports.check()
@@ -41,7 +40,6 @@ class TFKerasPruningCallback(Callback):
         self._monitor = monitor
 
     def on_epoch_end(self, epoch: int, logs: Optional[Dict[str, Any]] = None) -> None:
-
         logs = logs or {}
         current_score = logs.get(self._monitor)
 
