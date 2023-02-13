@@ -1,6 +1,7 @@
 import abc
 from typing import Any
 from typing import cast
+from typing import Dict
 from typing import List
 from typing import Tuple
 
@@ -8,9 +9,11 @@ import numpy as np
 
 import optuna
 from optuna.distributions import BaseDistribution
+from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.terminator import _distribution_is_log
+from optuna.terminator.search_space.intersection import IntersectionSearchSpace
 
 
 class BasePreprocessing(metaclass=abc.ABCMeta):
@@ -137,6 +140,70 @@ class ToMinimize(BasePreprocessing):
                 value=value,
                 params=trial.params,
                 distributions=trial.distributions,
+                user_attrs=trial.user_attrs,
+                system_attrs=trial.system_attrs,
+                state=trial.state,
+            )
+
+            mapped_trials.append(trial)
+
+        return mapped_trials
+
+
+class ToIntersectionSearchSpace(BasePreprocessing):
+    def apply(
+        self,
+        trials: List[optuna.trial.FrozenTrial],
+        study_direction: optuna.study.StudyDirection,
+    ) -> List[optuna.trial.FrozenTrial]:
+        search_space = IntersectionSearchSpace().calculate(trials)
+
+        mapped_trials = []
+        for trial in trials:
+            params = {k: v for k, v in trial.params.items() if k in search_space}
+            trial = optuna.create_trial(
+                value=trial.value,
+                params=params,
+                distributions=trial.distributions,
+                user_attrs=trial.user_attrs,
+                system_attrs=trial.system_attrs,
+                state=trial.state,
+            )
+
+            mapped_trials.append(trial)
+
+        return mapped_trials
+
+
+class OneToHot(BasePreprocessing):
+    def apply(
+        self,
+        trials: List[optuna.trial.FrozenTrial],
+        study_direction: optuna.study.StudyDirection,
+    ) -> List[optuna.trial.FrozenTrial]:
+        search_space = IntersectionSearchSpace().calculate(trials)
+
+        mapped_trials = []
+        for trial in trials:
+            params = {}
+            distributions: Dict[str, BaseDistribution] = {}
+            for param, distribution in search_space.items():
+                if isinstance(distribution, CategoricalDistribution):
+                    ir = distribution.to_internal_repr(trial.params[param])
+                    values = [1.0 if i == ir else 0.0 for i in range(len(distribution.choices))]
+                    for i, v in enumerate(values):
+                        key = f"i{i}_{param}"
+                        params[key] = v
+                        distributions[key] = FloatDistribution(0.0, 1.0)
+                else:
+                    key = f"i0_{param}"
+                    params[key] = trial.params[param]
+                    distributions[key] = distribution
+
+            trial = optuna.create_trial(
+                value=trial.value,
+                params=params,
+                distributions=distributions,
                 user_attrs=trial.user_attrs,
                 system_attrs=trial.system_attrs,
                 state=trial.state,

@@ -1,5 +1,3 @@
-from collections import OrderedDict
-from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -7,12 +5,12 @@ from typing import Tuple
 import numpy as np
 
 from optuna._imports import try_import
-from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.terminator import _distribution_is_log
 from optuna.terminator.gp.base import BaseGaussianProcess
 from optuna.terminator.search_space.intersection import IntersectionSearchSpace
 from optuna.trial._frozen import FrozenTrial
+from optuna.trial._state import TrialState
 
 
 with try_import() as _imports:
@@ -46,16 +44,16 @@ class BoTorchGaussianProcess(BaseGaussianProcess):
     ) -> None:
         self._trials = trials
 
-        x = self._preprocess_x(trials, fit_x_scaler=True)
+        x = _convert_trials_to_x_tensors(trials)
+        self._x_scaler.fit(x)
+        x = self._x_scaler.transfrom(x)
+
         self._t = x.shape[0]
         self._gamma = x.shape[1]
 
         y = torch.tensor([trial.value for trial in trials], dtype=torch.float64)
-
-        self._y_scaler = _YScaler()
         self._y_scaler.fit(y)
         y = self._y_scaler.transform(y)
-
         y = torch.unsqueeze(y, 1)
 
         covar_module = gpytorch.kernels.ScaleKernel(
@@ -80,25 +78,13 @@ class BoTorchGaussianProcess(BaseGaussianProcess):
         )
         mll.eval()
 
-    def _preprocess_x(
-        self,
-        trials: List[FrozenTrial],
-        fit_x_scaler: bool = False,
-    ) -> torch.Tensor:
-        search_space = IntersectionSearchSpace().calculate(trials)
-        x = _OneToHot(search_space).to_x(trials)
-
-        if fit_x_scaler:
-            self._x_scaler.fit(x)
-        x = self._x_scaler.transfrom(x)
-
-        return x
-
     def mean_std(
         self,
         trials: List[FrozenTrial],
     ) -> Tuple[List[float], List[float]]:
-        x = self._preprocess_x(trials)
+        x = _convert_trials_to_x_tensors(trials)
+        x = self._x_scaler.transfrom(x)
+
         mean, std = self._mean_std_torch(x)
 
         return mean.detach().numpy().tolist(), std.detach().numpy().tolist()
@@ -136,7 +122,8 @@ class BoTorchGaussianProcess(BaseGaussianProcess):
         x = sobol.draw(n_additional_candidates)
 
         # Note that x is assumed to be scaled b/w 0-1 to be stacked with the sobol samples.
-        x_observed = self._preprocess_x(self._trials)
+        x_observed = _convert_trials_to_x_tensors(self._trials)
+        x_observed = self._x_scaler.transfrom(x_observed)
 
         x = torch.vstack([x, x_observed])
 
@@ -219,28 +206,28 @@ class _YScaler:
         return stds
 
 
-class _OneToHot:
-    def __init__(self, search_space: Dict[str, BaseDistribution]) -> None:
-        assert isinstance(search_space, OrderedDict)
-        # TODO(g-votte): assert that the search space is intersection
-        self._search_space = search_space
+def _convert_trials_to_x_tensors(trials: List[FrozenTrial]) -> torch.Tensor:
+    """Convert a list of FrozenTrial objects to an input tensor of the Gaussian process.
 
-    def to_x(self, trials: List[FrozenTrial]) -> torch.Tensor:
-        x = []
-        for trial in trials:
-            x_row = []
-            for param, distribution in self._search_space.items():
-                # Log distributions are assumed to be unscaled in a previous preprocessing step.
-                assert not _distribution_is_log(distribution)
+    This function assumes the following condition for input trials:
+    - any categorical param is converted to a float or int one;
+    - log is unscaled for any float/int distribution;
+    - the trial's state is COMPLETE;
+    - direction is minimize.
+    """
+    search_space = IntersectionSearchSpace().calculate(trials)
 
-                if isinstance(distribution, CategoricalDistribution):
-                    ir = distribution.to_internal_repr(trial.params[param])
-                    hot = [1.0 if i == ir else 0.0 for i in range(len(distribution.choices))]
-                    x_row += hot
-                else:
-                    param_value = float(trial.params[param])
-                    x_row.append(param_value)
+    x = []
+    for trial in trials:
+        assert trial.state == TrialState.COMPLETE
+        x_row = []
+        for param, distribution in search_space.items():
+            assert not _distribution_is_log(distribution)
+            assert not isinstance(distribution, CategoricalDistribution)
 
-            x.append(x_row)
+            param_value = float(trial.params[param])
+            x_row.append(param_value)
 
-        return torch.tensor(x, dtype=torch.float64)
+        x.append(x_row)
+
+    return torch.tensor(x, dtype=torch.float64)

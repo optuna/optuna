@@ -6,8 +6,10 @@ import optuna
 from optuna.terminator.gp.base import BaseGaussianProcess
 from optuna.terminator.gp.botorch import BoTorchGaussianProcess
 from optuna.terminator.regret.preprocessing import BasePreprocessing
+from optuna.terminator.regret.preprocessing import OneToHot
 from optuna.terminator.regret.preprocessing import PreprocessingPipeline
 from optuna.terminator.regret.preprocessing import SelectTopTrials
+from optuna.terminator.regret.preprocessing import ToIntersectionSearchSpace
 from optuna.terminator.regret.preprocessing import ToMinimize
 from optuna.terminator.regret.preprocessing import UnscaleLog
 
@@ -47,6 +49,8 @@ class RegretBoundEvaluator:
                 ),
                 UnscaleLog(),
                 ToMinimize(),
+                ToIntersectionSearchSpace(),
+                OneToHot(),
             ]
         )
 
