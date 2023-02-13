@@ -7,7 +7,7 @@ import numpy as np
 from optuna._imports import try_import
 from optuna.distributions import CategoricalDistribution
 from optuna.terminator import _distribution_is_log
-from optuna.terminator.gp.base import BaseGaussianProcess
+from optuna.terminator.gp.base import BaseMinUcbLcbEstimator
 from optuna.terminator.search_space.intersection import IntersectionSearchSpace
 from optuna.trial._frozen import FrozenTrial
 from optuna.trial._state import TrialState
@@ -24,7 +24,7 @@ with try_import() as _imports:
 __all__ = ["botorch", "fit_gpytorch_torch", "SingleTaskGP", "gpytorch", "torch", "SobolEngine"]
 
 
-class BoTorchGaussianProcess(BaseGaussianProcess):
+class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
     def __init__(
         self,
     ) -> None:
@@ -78,21 +78,13 @@ class BoTorchGaussianProcess(BaseGaussianProcess):
         )
         mll.eval()
 
-    def mean_std(
+    def _mean_std(
         self,
-        trials: List[FrozenTrial],
-    ) -> Tuple[List[float], List[float]]:
-        x = _convert_trials_to_x_tensors(trials)
-        x = self._x_scaler.transfrom(x)
-
-        mean, std = self._mean_std_torch(x)
-
-        return mean.detach().numpy().tolist(), std.detach().numpy().tolist()
-
-    def _mean_std_torch(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        x: torch.Tensor,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         assert self._gp is not None
+
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
-            # TODO(g-votte): check that if the SingleTaskGP is guaranteed to be eval mode here
             distribution = self._gp(x)
 
         mean = distribution.mean
@@ -107,18 +99,19 @@ class BoTorchGaussianProcess(BaseGaussianProcess):
     def min_ucb(self) -> float:
         assert self._trials is not None
 
-        mean, std = self.mean_std(self._trials)
-        mean_tensor = torch.tensor(mean, dtype=torch.float64)
-        std_tensor = torch.tensor(std, dtype=torch.float64)
+        x = _convert_trials_to_x_tensors(self._trials)
+        x = self._x_scaler.transfrom(x)
 
-        upper = mean_tensor + std_tensor * np.sqrt(self.beta())
+        mean, std = self._mean_std(x)
+
+        upper = mean + std * np.sqrt(self._beta())
 
         return float(torch.min(upper))
 
     def min_lcb(self, n_additional_candidates: int = 2000) -> float:
         assert self._trials is not None
 
-        sobol = SobolEngine(self.gamma(), scramble=True)  # type: ignore[no-untyped-call]
+        sobol = SobolEngine(self._gamma, scramble=True)  # type: ignore[no-untyped-call]
         x = sobol.draw(n_additional_candidates)
 
         # Note that x is assumed to be scaled b/w 0-1 to be stacked with the sobol samples.
@@ -127,18 +120,22 @@ class BoTorchGaussianProcess(BaseGaussianProcess):
 
         x = torch.vstack([x, x_observed])
 
-        mean, std = self._mean_std_torch(x)
+        mean, std = self._mean_std(x)
 
-        lower = mean - std * np.sqrt(self.beta())
+        lower = mean - std * np.sqrt(self._beta())
         return float(torch.min(lower))
 
-    def gamma(self) -> float:
-        assert self._gamma is not None, "The GP model has not been trained."
-        return self._gamma
+    def _beta(self, delta: float = 0.1) -> float:
+        assert self._gamma is not None
+        assert self._t is not None
 
-    def t(self) -> float:
-        assert self._t is not None, "The GP model has not been trained."
-        return self._t
+        beta = 2 * np.log(self._gamma * self._t**2 * np.pi**2 / 6 / delta)
+
+        # The following div is according to the original paper: "We then further scale it down
+        # by a factor of 5 as defined in the experiments in Srinivas et al. (2010)"
+        beta /= 5
+
+        return beta
 
 
 # TODO(g-votte): use the `input_transform` option of `SingleTaskGP` instead of this class

@@ -1,14 +1,12 @@
 from typing import List
-from typing import Tuple
 
 import optuna
-from optuna.terminator.gp.base import BaseGaussianProcess
-from optuna.terminator.regret.evaluator import RegretBoundEvaluator
-from optuna.terminator.regret.preprocessing import NullPreprocessing
-from optuna.terminator.search_space.intersection import IntersectionSearchSpace
+from optuna.terminator.gp.base import BaseMinUcbLcbEstimator
+from optuna.terminator.improvement.evaluator import RegretBoundEvaluator
+from optuna.terminator.improvement.preprocessing import NullPreprocessing
 
 
-class _StaticGaussianProcess(BaseGaussianProcess):
+class _StaticMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
     """A dummy BaseGaussianProcess class always returning 0.0 mean and 1.0 std
 
     This class is introduced to make the GP class and the evaluator class loosely-coupled in unit
@@ -21,27 +19,11 @@ class _StaticGaussianProcess(BaseGaussianProcess):
     ) -> None:
         self._trials = trials
 
-    def mean_std(
-        self,
-        trials: List[optuna.trial.FrozenTrial],
-    ) -> Tuple[List[float], List[float]]:
-        mean = [0.0 for _ in range(len(trials))]
-        std = [1.0 for _ in range(len(trials))]
-        return mean, std
-
     def min_ucb(self) -> float:
         return 1.0
 
     def min_lcb(self, n_additional_candidates: int = 2000) -> float:
         return -1.0
-
-    def gamma(self) -> float:
-        space = IntersectionSearchSpace().calculate(self._trials)
-        return len(space)
-
-    def t(self) -> float:
-        trials = [t for t in self._trials if t.state == optuna.trial.TrialState.COMPLETE]
-        return len(trials)
 
 
 # TODO(g-votte): test the following edge cases
@@ -54,9 +36,9 @@ class _StaticGaussianProcess(BaseGaussianProcess):
 
 
 def test_evaluate() -> None:
-    gp = _StaticGaussianProcess()
+    estimator = _StaticMinUcbLcbEstimator()
     preprocessing = NullPreprocessing()
-    evaluator = RegretBoundEvaluator(gp=gp, preprocessing=preprocessing)
+    evaluator = RegretBoundEvaluator(estimator=estimator, preprocessing=preprocessing)
 
     trials = [
         optuna.create_trial(

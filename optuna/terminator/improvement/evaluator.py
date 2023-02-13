@@ -3,8 +3,8 @@ from typing import List
 from typing import Optional
 
 import optuna
-from optuna.terminator.gp.base import BaseGaussianProcess
-from optuna.terminator.gp.botorch import BoTorchGaussianProcess
+from optuna.terminator.gp.base import BaseMinUcbLcbEstimator
+from optuna.terminator.gp.botorch import BoTorchMinUcbLcbEstimator
 from optuna.terminator.improvement.preprocessing import BasePreprocessing
 from optuna.terminator.improvement.preprocessing import OneToHot
 from optuna.terminator.improvement.preprocessing import PreprocessingPipeline
@@ -31,14 +31,14 @@ class BaseImprovementEvaluator(metaclass=abc.ABCMeta):
 class RegretBoundEvaluator(BaseImprovementEvaluator):
     def __init__(
         self,
-        gp: Optional[BaseGaussianProcess] = None,
+        estimator: Optional[BaseMinUcbLcbEstimator] = None,
         # TODO(g-votte): make top_trials_ratio optional for a non-default preprocessing
         top_trials_ratio: float = DEFAULT_TOP_TRIALS_RATIO,
         # TODO(g-votte): make min_n_trials optional for a non-default preprocessing
         min_n_trials: int = DEFAULT_MIN_N_TRIALS,
         preprocessing: Optional[BasePreprocessing] = None,
     ) -> None:
-        self._gp = gp or BoTorchGaussianProcess()
+        self._estimator = estimator or BoTorchMinUcbLcbEstimator()
         self._top_trials_ratio = top_trials_ratio
         self._min_n_trials = min_n_trials
         self._preprocessing = preprocessing or PreprocessingPipeline(
@@ -60,7 +60,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         study_direction: optuna.study.StudyDirection,
     ) -> float:
         trials = self._preprocessing.apply(trials, study_direction)
-        self._gp.fit(trials)
-        regret_bound = self._gp.min_ucb() - self._gp.min_lcb()
+        self._estimator.fit(trials)
+        regret_bound = self._estimator.min_ucb() - self._estimator.min_lcb()
 
         return regret_bound
