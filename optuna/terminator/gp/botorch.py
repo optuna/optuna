@@ -24,9 +24,8 @@ with try_import() as _imports:
     from botorch.optim.fit import fit_gpytorch_torch
     import gpytorch
     import torch
-    from torch.quasirandom import SobolEngine
 
-__all__ = ["botorch", "fit_gpytorch_torch", "SingleTaskGP", "gpytorch", "torch", "SobolEngine"]
+__all__ = ["botorch", "fit_gpytorch_torch", "SingleTaskGP", "gpytorch", "torch"]
 
 
 class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
