@@ -1,8 +1,10 @@
 import abc
+import random
 from typing import Any
 from typing import cast
 from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Tuple
 
 import numpy as np
@@ -14,6 +16,7 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.terminator import _distribution_is_log
 from optuna.terminator.search_space.intersection import IntersectionSearchSpace
+from optuna.trial._state import TrialState
 
 
 class BasePreprocessing(metaclass=abc.ABCMeta):
@@ -21,7 +24,7 @@ class BasePreprocessing(metaclass=abc.ABCMeta):
     def apply(
         self,
         trials: List[optuna.trial.FrozenTrial],
-        study_direction: optuna.study.StudyDirection,
+        study_direction: Optional[optuna.study.StudyDirection],
     ) -> List[optuna.trial.FrozenTrial]:
         pass
 
@@ -33,7 +36,7 @@ class PreprocessingPipeline(BasePreprocessing):
     def apply(
         self,
         trials: List[optuna.trial.FrozenTrial],
-        study_direction: optuna.study.StudyDirection,
+        study_direction: Optional[optuna.study.StudyDirection],
     ) -> List[optuna.trial.FrozenTrial]:
         for p in self._processes:
             trials = p.apply(trials, study_direction)
@@ -42,7 +45,9 @@ class PreprocessingPipeline(BasePreprocessing):
 
 class NullPreprocessing(BasePreprocessing):
     def apply(
-        self, trials: List[optuna.trial.FrozenTrial], study_direction: optuna.study.StudyDirection
+        self,
+        trials: List[optuna.trial.FrozenTrial],
+        study_direction: Optional[optuna.study.StudyDirection],
     ) -> List[optuna.trial.FrozenTrial]:
         return trials
 
@@ -51,7 +56,7 @@ class UnscaleLog(BasePreprocessing):
     def apply(
         self,
         trials: List[optuna.trial.FrozenTrial],
-        study_direction: optuna.study.StudyDirection,
+        study_direction: Optional[optuna.study.StudyDirection],
     ) -> List[optuna.trial.FrozenTrial]:
         mapped_trials = []
         for trial in trials:
@@ -108,7 +113,7 @@ class SelectTopTrials(BasePreprocessing):
     def apply(
         self,
         trials: List[optuna.trial.FrozenTrial],
-        study_direction: optuna.study.StudyDirection,
+        study_direction: Optional[optuna.study.StudyDirection],
     ) -> List[optuna.trial.FrozenTrial]:
         trials = [trial for trial in trials if trial.state == optuna.trial.TrialState.COMPLETE]
 
@@ -127,7 +132,7 @@ class ToMinimize(BasePreprocessing):
     def apply(
         self,
         trials: List[optuna.trial.FrozenTrial],
-        study_direction: optuna.study.StudyDirection,
+        study_direction: Optional[optuna.study.StudyDirection],
     ) -> List[optuna.trial.FrozenTrial]:
         mapped_trials = []
         for trial in trials:
@@ -154,7 +159,7 @@ class ToIntersectionSearchSpace(BasePreprocessing):
     def apply(
         self,
         trials: List[optuna.trial.FrozenTrial],
-        study_direction: optuna.study.StudyDirection,
+        study_direction: Optional[optuna.study.StudyDirection],
     ) -> List[optuna.trial.FrozenTrial]:
         search_space = IntersectionSearchSpace().calculate(trials)
 
@@ -176,12 +181,18 @@ class ToIntersectionSearchSpace(BasePreprocessing):
 
 
 class OneToHot(BasePreprocessing):
+    def __init__(
+        self, 
+        search_space: Optional[Dict[str, BaseDistribution]] = None,
+    ) -> None:
+        self._search_space = search_space
+
     def apply(
         self,
         trials: List[optuna.trial.FrozenTrial],
-        study_direction: optuna.study.StudyDirection,
+        study_direction: Optional[optuna.study.StudyDirection],
     ) -> List[optuna.trial.FrozenTrial]:
-        search_space = IntersectionSearchSpace().calculate(trials)
+        search_space = self._search_space or IntersectionSearchSpace().calculate(trials)
 
         mapped_trials = []
         for trial in trials:
@@ -212,3 +223,48 @@ class OneToHot(BasePreprocessing):
             mapped_trials.append(trial)
 
         return mapped_trials
+
+
+class AddRandomInputs(BasePreprocessing):
+    def __init__(
+        self, 
+        n_additional_trials: int, 
+        dummy_value: float = np.nan,
+        search_space: Optional[Dict[str, BaseDistribution]] = None,
+    ) -> None:
+        self._n_additional_trials = n_additional_trials
+        self._dummy_value = dummy_value
+        self._search_space = search_space
+
+    def apply(
+        self,
+        trials: List[optuna.trial.FrozenTrial],
+        study_direction: Optional[optuna.study.StudyDirection],
+    ) -> List[optuna.trial.FrozenTrial]:
+        search_space = self._search_space or IntersectionSearchSpace().calculate(trials)
+
+        additional_trials = []
+        for _ in range(self._n_additional_trials):
+            params = {}
+            for param, distribution in search_space.items():
+                assert not _distribution_is_log(distribution)
+
+                if isinstance(distribution, CategoricalDistribution):
+                    params[param] = random.choice(distribution.choices)
+                elif isinstance(distribution, FloatDistribution):
+                    params[param] = random.uniform(distribution.low, distribution.high)
+                elif isinstance(distribution, IntDistribution):
+                    params[param] = random.randint(distribution.low, distribution.high)
+                else:
+                    assert False  # unreachable
+
+            trial = optuna.create_trial(
+                value=self._dummy_value,
+                params=params,
+                distributions=search_space,
+                state=TrialState.COMPLETE,
+            )
+
+            additional_trials.append(trial)
+
+        return trials + additional_trials

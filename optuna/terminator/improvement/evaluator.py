@@ -6,7 +6,6 @@ import optuna
 from optuna.terminator.gp.base import BaseMinUcbLcbEstimator
 from optuna.terminator.gp.botorch import BoTorchMinUcbLcbEstimator
 from optuna.terminator.improvement.preprocessing import BasePreprocessing
-from optuna.terminator.improvement.preprocessing import OneToHot
 from optuna.terminator.improvement.preprocessing import PreprocessingPipeline
 from optuna.terminator.improvement.preprocessing import SelectTopTrials
 from optuna.terminator.improvement.preprocessing import ToIntersectionSearchSpace
@@ -50,7 +49,6 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
                 UnscaleLog(),
                 ToMinimize(),
                 ToIntersectionSearchSpace(),
-                OneToHot(),
             ]
         )
 

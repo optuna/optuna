@@ -1,13 +1,19 @@
 from typing import List
 from typing import Optional
 from typing import Tuple
+from collections import OrderedDict
 
 import numpy as np
 
 from optuna._imports import try_import
+from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.terminator import _distribution_is_log
 from optuna.terminator.gp.base import BaseMinUcbLcbEstimator
+from optuna.terminator.search_space.intersection import IntersectionSearchSpace
+from optuna.terminator.improvement.preprocessing import AddRandomInputs
+from optuna.terminator.improvement.preprocessing import OneToHot
+from optuna.terminator.improvement.preprocessing import PreprocessingPipeline
 from optuna.terminator.search_space.intersection import IntersectionSearchSpace
 from optuna.trial._frozen import FrozenTrial
 from optuna.trial._state import TrialState
@@ -31,6 +37,7 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
         self._min_lcb_n_additional_candidates = min_lcb_n_additional_candidates
 
         self._trials: Optional[List[FrozenTrial]] = None
+        self._search_space: Optional[OrderedDict[str, BaseDistribution]] = None
         self._n_params: Optional[float] = None
         self._n_trials: Optional[float] = None
         self._gp: Optional[SingleTaskGP] = None
@@ -43,6 +50,12 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
         trials: List[FrozenTrial],
     ) -> None:
         self._trials = trials
+
+        self._search_space = IntersectionSearchSpace().calculate(trials)
+
+        preprocessing = OneToHot(search_space=self._search_space)
+
+        trials = preprocessing.apply(self._trials, None)
 
         x = _convert_trials_to_x_tensors(trials)
         self._x_scaler.fit(x)
@@ -99,7 +112,11 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
     def min_ucb(self) -> float:
         assert self._trials is not None
 
-        x = _convert_trials_to_x_tensors(self._trials)
+        preprocessing = OneToHot(search_space=self._search_space)
+
+        trials = preprocessing.apply(self._trials, None)
+
+        x = _convert_trials_to_x_tensors(trials)
         x = self._x_scaler.transfrom(x)
 
         mean, std = self._mean_std(x)
@@ -111,14 +128,17 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
     def min_lcb(self) -> float:
         assert self._trials is not None
 
-        sobol = SobolEngine(self._n_params, scramble=True)  # type: ignore[no-untyped-call]
-        x = sobol.draw(self._min_lcb_n_additional_candidates)
+        preprocessing = PreprocessingPipeline([
+            AddRandomInputs(
+                self._min_lcb_n_additional_candidates, 
+                search_space=self._search_space
+            ),
+            OneToHot(search_space=self._search_space),
+        ])
 
-        # Note that x is assumed to be scaled b/w 0-1 to be stacked with the sobol samples.
-        x_observed = _convert_trials_to_x_tensors(self._trials)
-        x_observed = self._x_scaler.transfrom(x_observed)
-
-        x = torch.vstack([x, x_observed])
+        trials = preprocessing.apply(self._trials, None)
+        x = _convert_trials_to_x_tensors(trials)
+        x = self._x_scaler.transfrom(x)
 
         mean, std = self._mean_std(x)
 
