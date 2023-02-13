@@ -8,6 +8,8 @@ import numpy as np
 from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
+from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 from optuna.terminator import _distribution_is_log
 from optuna.terminator.gp.base import BaseMinUcbLcbEstimator
 from optuna.terminator.improvement.preprocessing import AddRandomInputs
@@ -21,11 +23,23 @@ from optuna.trial._state import TrialState
 with try_import() as _imports:
     import botorch
     from botorch.models import SingleTaskGP
+    from botorch.models.transforms import Normalize
+    from botorch.models.transforms import Standardize
     from botorch.optim.fit import fit_gpytorch_torch
     import gpytorch
     import torch
+    from torch.quasirandom import SobolEngine
 
-__all__ = ["botorch", "fit_gpytorch_torch", "SingleTaskGP", "gpytorch", "torch"]
+__all__ = [
+    "botorch",
+    "SingleTaskGP",
+    "Normalize",
+    "Standardize",
+    "fit_gpytorch_torch",
+    "gpytorch",
+    "torch",
+    "SobolEngine",
+]
 
 
 class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
@@ -40,8 +54,6 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
         self._n_trials: Optional[float] = None
         self._gp: Optional[SingleTaskGP] = None
         self._likelihood = None
-        self._x_scaler = _XScaler()
-        self._y_scaler = _YScaler()
 
     def fit(
         self,
@@ -56,16 +68,12 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
 
         trials = preprocessing.apply(self._trials, None)
 
-        x = _convert_trials_to_x_tensors(trials)
-        self._x_scaler.fit(x)
-        x = self._x_scaler.transfrom(x)
+        x, bounds = _convert_trials_to_tensors(trials)
 
         self._n_trials = x.shape[0]
         self._n_params = x.shape[1]
 
         y = torch.tensor([trial.value for trial in trials], dtype=torch.float64)
-        self._y_scaler.fit(y)
-        y = self._y_scaler.transform(y)
         y = torch.unsqueeze(y, 1)
 
         covar_module = gpytorch.kernels.ScaleKernel(
@@ -76,7 +84,15 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
         )
 
         likelihood = gpytorch.likelihoods.GaussianLikelihood()
-        self._gp = SingleTaskGP(x, y, likelihood=likelihood, covar_module=covar_module)
+
+        self._gp = SingleTaskGP(
+            x,
+            y,
+            likelihood=likelihood,
+            covar_module=covar_module,
+            input_transform=Normalize(d=self._n_params, bounds=bounds),
+            outcome_transform=Standardize(m=1),
+        )
 
         hypers = {}
         hypers["covar_module.base_kernel.lengthscale"] = 1.0
@@ -97,14 +113,10 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
         assert self._gp is not None
 
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
-            distribution = self._gp(x)
-
-        mean = distribution.mean
-        _, upper = distribution.confidence_region()
-        std = torch.abs(upper - mean) / 2
-
-        mean = self._y_scaler.untransform(mean)
-        std = self._y_scaler.untransform_std(std)
+            posterior = self._gp.posterior(x)
+            mean = posterior.mean
+            variance = posterior.variance
+            std = variance.sqrt()
 
         return mean, std
 
@@ -112,11 +124,8 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
         assert self._trials is not None
 
         preprocessing = OneToHot(search_space=self._search_space)
-
         trials = preprocessing.apply(self._trials, None)
-
-        x = _convert_trials_to_x_tensors(trials)
-        x = self._x_scaler.transfrom(x)
+        x, _ = _convert_trials_to_tensors(trials)
 
         mean, std = self._mean_std(x)
 
@@ -135,14 +144,13 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
                 OneToHot(search_space=self._search_space),
             ]
         )
-
         trials = preprocessing.apply(self._trials, None)
-        x = _convert_trials_to_x_tensors(trials)
-        x = self._x_scaler.transfrom(x)
+        x, _ = _convert_trials_to_tensors(trials)
 
         mean, std = self._mean_std(x)
 
         lower = mean - std * np.sqrt(self._beta())
+
         return float(torch.min(lower))
 
     def _beta(self, delta: float = 0.1) -> float:
@@ -158,73 +166,10 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
         return beta
 
 
-# TODO(g-votte): use the `input_transform` option of `SingleTaskGP` instead of this class
-class _XScaler:
-    def __init__(self) -> None:
-        self._min_values = None
-        self._max_values = None
-
-    def fit(self, x: torch.Tensor) -> None:
-        self._min_values = torch.min(x, dim=0).values
-        self._max_values = torch.max(x, dim=0).values
-
-    def transfrom(self, x: torch.Tensor) -> torch.Tensor:
-        assert self._min_values is not None
-        assert len(x.shape) == 2
-
-        x_scaled = torch.zeros(x.shape, dtype=torch.float64)
-        for i, x_row in enumerate(x):
-            denominator = self._max_values - self._min_values
-            denominator = torch.where(
-                denominator == 0.0, 1.0, denominator
-            )  # This is to avoid zero div.
-            x_row = (x_row - self._min_values) / denominator
-            x_scaled[i, :] = x_row
-
-        return x_scaled
-
-
-class _YScaler:
-    def __init__(self) -> None:
-        self._mean: Optional[float] = None
-        self._std: Optional[float] = None
-
-    def fit(self, y: torch.Tensor) -> None:
-        self._mean = float(y.mean())
-        self._std = float((y - self._mean).std())
-        if self._std == 0.0:
-            # Std scaling is unnecessary when the all elements of y is the same.
-            self._std = 1.0
-
-    def transform(self, y: torch.Tensor) -> torch.Tensor:
-        assert self._mean is not None
-        assert self._std is not None
-
-        y -= self._mean
-        y /= self._std
-
-        return y
-
-    def untransform(self, y: torch.Tensor) -> torch.Tensor:
-        assert self._mean is not None
-        assert self._std is not None
-
-        y *= self._std
-        y += self._mean
-
-        return y
-
-    def untransform_std(self, stds: torch.Tensor) -> torch.Tensor:
-        assert self._mean is not None
-        assert self._std is not None
-
-        stds *= self._std
-
-        return stds
-
-
-def _convert_trials_to_x_tensors(trials: List[FrozenTrial]) -> torch.Tensor:
-    """Convert a list of FrozenTrial objects to an input tensor of the Gaussian process.
+def _convert_trials_to_tensors(
+    trials: List[FrozenTrial],
+) -> Tuple[torch.Tensor]:
+    """Convert a list of FrozenTrial objects to tensors inputs and bounds.
 
     This function assumes the following condition for input trials:
     - any categorical param is converted to a float or int one;
@@ -247,4 +192,12 @@ def _convert_trials_to_x_tensors(trials: List[FrozenTrial]) -> torch.Tensor:
 
         x.append(x_row)
 
-    return torch.tensor(x, dtype=torch.float64)
+    min_bounds = []
+    max_bounds = []
+    for param, distribution in search_space.items():
+        assert isinstance(distribution, (FloatDistribution, IntDistribution))
+        min_bounds.append(distribution.low)
+        max_bounds.append(distribution.high)
+    bounds = [min_bounds, max_bounds]
+
+    return torch.tensor(x, dtype=torch.float64), torch.tensor(bounds, dtype=torch.float64)
