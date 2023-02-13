@@ -68,10 +68,6 @@ def plot_slice_2d(
     target: Optional[Callable[[FrozenTrial], float]] = None,
     target_name: str = "Objective Value",
     target_transform: Literal["rank", "none"] = "rank",
-    size: Optional[Tuple[int, int]] = None,
-    colormap: Any = "RdYlBu_r",
-    n_ticks: int = 5,
-    tick_format: str = ".3g",
 ) -> "go.Figure":
     """Plot the parameter relationship as 2D slice plot in a study.
 
@@ -133,7 +129,7 @@ def plot_slice_2d(
 
     _imports.check()
     info = _get_slice_2d_info(study, params, target, target_name, target_transform)
-    return _get_slice_2d_plot(info, size, colormap, n_ticks, tick_format)
+    return _get_slice_2d_plot(info)
 
 
 def _rankdata(data):
@@ -331,8 +327,10 @@ def _get_axis_info(trials: List[FrozenTrial], param_name: str) -> _AxisInfo:
 
 
 def _get_slice_2d_subplot(
-    info: _SubplotInfo, target_name: str, print_all_objectives: bool, colormap: Any
+    info: _SubplotInfo, target_name: str, print_all_objectives: bool
 ) -> "Scatter":
+    
+    colormap="RdYlBu_r"
     colors = plotly.colors.sample_colorscale(colormap, info.transformed_zs)
 
     def get_hover_text(trial: FrozenTrial, target_value: float) -> str:
@@ -360,17 +358,11 @@ def _get_slice_2d_subplot(
 
 def _get_slice_2d_plot(
     info: _Slice2DInfo,
-    size: Optional[Tuple[int, int]],
-    colormap: Any,
-    n_ticks: int,
-    tick_format: str,
 ) -> "go.Figure":
     params = info.params
     sub_plot_infos = info.sub_plot_infos
 
-    layout = go.Layout(title=f"Slice 2D Plot: {info.target_name}")
-    if size is not None:
-        layout.width, layout.height = size
+    layout = go.Layout(title=f"Percentile Plot: {info.target_name}")
 
     if len(params) <= 1:
         return go.Figure(data=[], layout=layout)
@@ -380,7 +372,7 @@ def _get_slice_2d_plot(
         y_param = params[1]
         sub_plot_info = sub_plot_infos[0][0]
         sub_plots = _get_slice_2d_subplot(
-            sub_plot_info, info.target_name, info.has_custom_target, colormap
+            sub_plot_info, info.target_name, info.has_custom_target
         )
 
         figure = go.Figure(data=sub_plots, layout=layout)
@@ -412,7 +404,7 @@ def _get_slice_2d_plot(
         for x_i, x_param in enumerate(params):
             for y_i, y_param in enumerate(params):
                 scatter = _get_slice_2d_subplot(
-                    sub_plot_infos[y_i][x_i], info.target_name, info.has_custom_target, colormap
+                    sub_plot_infos[y_i][x_i], info.target_name, info.has_custom_target
                 )
                 figure.add_trace(scatter, row=y_i + 1, col=x_i + 1)
 
@@ -438,10 +430,17 @@ def _get_slice_2d_plot(
                 if y_i == len(params) - 1:
                     figure.update_xaxes(title_text=x_param, row=y_i + 1, col=x_i + 1)
 
+    n_ticks = 4
     tickvals = np.linspace(0, 1, n_ticks + 1)
     sorter = np.argsort(info.transformed_zs)
     tick_show = np.interp(tickvals, info.transformed_zs[sorter], info.zs[sorter])
-    ticktext = [format(t, tick_format) for t in tick_show]
+    tick_format = ".3g"
+    percentile_text = [f"{int(100 * i / n_ticks)}%" for i in range(n_ticks + 1)]
+    percentile_text[0] = "min."
+    percentile_text[-1] = "max."
+    ticktext = [f"{percentile_text[i]} ({format(t, tick_format)})" for i, t in enumerate(tick_show)]
+
+    colormap="RdYlBu_r"
     colorbar_trace = go.Scatter(
         x=[None],
         y=[None],
