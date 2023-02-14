@@ -440,16 +440,16 @@ class CmaEsSampler(BaseSampler):
                 else:  # poptype == "large"
                     large_n_eval += n_eval
 
+                popsize_multiplier = self._inc_popsize**n_restarts
                 if small_n_eval < large_n_eval:
                     poptype = "small"
-                    popsize_multiplier = self._inc_popsize**n_restarts
                     popsize = math.floor(
                         self._initial_popsize * popsize_multiplier ** (np.random.uniform() ** 2)
                     )
                 else:
                     poptype = "large"
                     n_restarts += 1
-                    popsize = self._initial_popsize * (self._inc_popsize**n_restarts)
+                    popsize = self._initial_popsize * popsize_multiplier
 
                 self._popsize = popsize
                 optimizer = self._init_optimizer(
