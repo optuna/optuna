@@ -64,7 +64,7 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
         # TODO(g-votte): guarantee that _search_space is an ordered dict
         self._search_space = IntersectionSearchSpace().calculate(trials)
 
-        preprocessing = OneToHot(search_space=self._search_space)
+        preprocessing = OneToHot()
 
         trials = preprocessing.apply(self._trials, None)
 
@@ -123,7 +123,7 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
     def min_ucb(self) -> float:
         assert self._trials is not None
 
-        preprocessing = OneToHot(search_space=self._search_space)
+        preprocessing = OneToHot()
         trials = preprocessing.apply(self._trials, None)
         x, _ = _convert_trials_to_tensors(trials)
 
@@ -141,7 +141,7 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
                 AddRandomInputs(
                     self._min_lcb_n_additional_candidates, search_space=self._search_space
                 ),
-                OneToHot(search_space=self._search_space),
+                OneToHot(),
             ]
         )
         trials = preprocessing.apply(self._trials, None)
@@ -174,16 +174,19 @@ def _convert_trials_to_tensors(
     This function assumes the following condition for input trials:
     - any categorical param is converted to a float or int one;
     - log is unscaled for any float/int distribution;
-    - the trial's state is COMPLETE;
-    - direction is minimize.
+    - the state is COMPLETE for any trial;
+    - direction is MINIMIZE for any trial.
     """
     search_space = IntersectionSearchSpace().calculate(trials)
+    sorted_params = sorted(search_space.keys())
 
     x = []
     for trial in trials:
         assert trial.state == TrialState.COMPLETE
         x_row = []
-        for param, distribution in search_space.items():
+        for param in sorted_params:
+            distribution = search_space[param]
+
             assert not _distribution_is_log(distribution)
             assert not isinstance(distribution, CategoricalDistribution)
 

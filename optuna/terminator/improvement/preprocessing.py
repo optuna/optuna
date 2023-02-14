@@ -181,24 +181,16 @@ class ToIntersectionSearchSpace(BasePreprocessing):
 
 
 class OneToHot(BasePreprocessing):
-    def __init__(
-        self,
-        search_space: Optional[Dict[str, BaseDistribution]] = None,
-    ) -> None:
-        self._search_space = search_space
-
     def apply(
         self,
         trials: List[optuna.trial.FrozenTrial],
         study_direction: Optional[optuna.study.StudyDirection],
     ) -> List[optuna.trial.FrozenTrial]:
-        search_space = self._search_space or IntersectionSearchSpace().calculate(trials)
-
         mapped_trials = []
         for trial in trials:
             params = {}
             distributions: Dict[str, BaseDistribution] = {}
-            for param, distribution in search_space.items():
+            for param, distribution in trial.distributions.items():
                 if isinstance(distribution, CategoricalDistribution):
                     ir = distribution.to_internal_repr(trial.params[param])
                     values = [1.0 if i == ir else 0.0 for i in range(len(distribution.choices))]
