@@ -255,6 +255,7 @@ class CmaEsSampler(BaseSampler):
         self._search_space = optuna.samplers.IntersectionSearchSpace()
         self._consider_pruned_trials = consider_pruned_trials
         self._restart_strategy = restart_strategy
+        self._initial_popsize = popsize
         self._popsize = popsize
         self._inc_popsize = inc_popsize
         self._use_separable_cma = use_separable_cma
@@ -386,9 +387,12 @@ class CmaEsSampler(BaseSampler):
             poptype = "small"
             small_n_eval = 0
             large_n_eval = 0
-            optimizer = self._init_optimizer(trans, study.direction, population_size=self._popsize)
-            if self._popsize is None:
-                self._popsize = optimizer.population_size
+            optimizer = self._init_optimizer(
+                trans, study.direction, population_size=self._initial_popsize
+            )
+            if self._initial_popsize is None:
+                self._initial_popsize = self._initial_popsize
+            self._popsize = self._initial_popsize
 
         if optimizer.dim != len(trans.bounds):
             if self._warn_independent_sampling:
@@ -422,7 +426,9 @@ class CmaEsSampler(BaseSampler):
 
             if self._restart_strategy == "ipop" and optimizer.should_stop():
                 n_restarts += 1
-                popsize = optimizer.population_size * self._inc_popsize
+                popsize_multiplier = self._inc_popsize**n_restarts
+                popsize = self._initial_popsize * popsize_multiplier
+                self._popsize = popsize
                 optimizer = self._init_optimizer(
                     trans, study.direction, population_size=popsize, randomize_start_point=True
                 )
@@ -438,13 +444,14 @@ class CmaEsSampler(BaseSampler):
                     poptype = "small"
                     popsize_multiplier = self._inc_popsize**n_restarts
                     popsize = math.floor(
-                        self._popsize * popsize_multiplier ** (np.random.uniform() ** 2)
+                        self._initial_popsize * popsize_multiplier ** (np.random.uniform() ** 2)
                     )
                 else:
                     poptype = "large"
                     n_restarts += 1
-                    popsize = self._popsize * (self._inc_popsize**n_restarts)
+                    popsize = self._initial_popsize * (self._inc_popsize**n_restarts)
 
+                self._popsize = popsize
                 optimizer = self._init_optimizer(
                     trans, study.direction, population_size=popsize, randomize_start_point=True
                 )
