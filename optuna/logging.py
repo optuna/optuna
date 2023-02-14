@@ -39,7 +39,7 @@ def create_default_formatter() -> logging.Formatter:
         return colorlog.ColoredFormatter(
             f"%(log_color)s{header}%(reset)s {message}",
         )
-    return logging.Formatter("[%(levelname)1.1s %(asctime)s] %(message)s")
+    return logging.Formatter(f"{header} {message}")
 
 
 def _color_supported() -> bool:
