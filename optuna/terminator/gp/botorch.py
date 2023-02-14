@@ -53,7 +53,6 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
         self._n_params: Optional[float] = None
         self._n_trials: Optional[float] = None
         self._gp: Optional[SingleTaskGP] = None
-        self._likelihood = None
 
     def fit(
         self,
