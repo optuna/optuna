@@ -11,7 +11,7 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.terminator import _distribution_is_log
-from optuna.terminator.gp.base import BaseMinUcbLcbEstimator
+from optuna.terminator.improvement.gp.base import BaseMinUcbLcbEstimator
 from optuna.terminator.improvement.preprocessing import AddRandomInputs
 from optuna.terminator.improvement.preprocessing import OneToHot
 from optuna.terminator.improvement.preprocessing import PreprocessingPipeline
@@ -165,9 +165,7 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
         return beta
 
 
-def _convert_trials_to_tensors(
-    trials: List[FrozenTrial],
-) -> Tuple[torch.Tensor]:
+def _convert_trials_to_tensors(trials: List[FrozenTrial]) -> Tuple[torch.Tensor, torch.Tensor]:
     """Convert a list of FrozenTrial objects to tensors inputs and bounds.
 
     This function assumes the following condition for input trials:

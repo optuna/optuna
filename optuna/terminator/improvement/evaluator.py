@@ -3,8 +3,8 @@ from typing import List
 from typing import Optional
 
 import optuna
-from optuna.terminator.gp.base import BaseMinUcbLcbEstimator
-from optuna.terminator.gp.botorch import BoTorchMinUcbLcbEstimator
+from optuna.terminator.improvement.gp.base import BaseMinUcbLcbEstimator
+from optuna.terminator.improvement.gp.botorch import BoTorchMinUcbLcbEstimator
 from optuna.terminator.improvement.preprocessing import BasePreprocessing
 from optuna.terminator.improvement.preprocessing import PreprocessingPipeline
 from optuna.terminator.improvement.preprocessing import SelectTopTrials

@@ -1,8 +1,8 @@
 from typing import List
 
 import optuna
-from optuna.terminator.gp.base import BaseMinUcbLcbEstimator
 from optuna.terminator.improvement.evaluator import RegretBoundEvaluator
+from optuna.terminator.improvement.gp.base import BaseMinUcbLcbEstimator
 from optuna.terminator.improvement.preprocessing import NullPreprocessing
 
 
