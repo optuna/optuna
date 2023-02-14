@@ -391,7 +391,7 @@ class CmaEsSampler(BaseSampler):
                 trans, study.direction, population_size=self._initial_popsize
             )
             if self._initial_popsize is None:
-                self._initial_popsize = self._initial_popsize
+                self._initial_popsize = optimizer.population_size
             self._popsize = self._initial_popsize
 
         if optimizer.dim != len(trans.bounds):
