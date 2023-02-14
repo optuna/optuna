@@ -1,5 +1,4 @@
 import abc
-import random
 from typing import Any
 from typing import cast
 from typing import Dict
@@ -10,6 +9,7 @@ from typing import Tuple
 import numpy as np
 
 import optuna
+from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
@@ -227,6 +227,7 @@ class AddRandomInputs(BasePreprocessing):
         self._n_additional_trials = n_additional_trials
         self._dummy_value = dummy_value
         self._search_space = search_space
+        self._rng = np.random.RandomState()
 
     def apply(
         self,
@@ -238,17 +239,11 @@ class AddRandomInputs(BasePreprocessing):
         additional_trials = []
         for _ in range(self._n_additional_trials):
             params = {}
-            for param, distribution in search_space.items():
-                assert not _distribution_is_log(distribution)
-
-                if isinstance(distribution, CategoricalDistribution):
-                    params[param] = random.choice(distribution.choices)
-                elif isinstance(distribution, FloatDistribution):
-                    params[param] = random.uniform(distribution.low, distribution.high)
-                elif isinstance(distribution, IntDistribution):
-                    params[param] = random.randint(distribution.low, distribution.high)
-                else:
-                    assert False  # unreachable
+            for param_name, distribution in search_space.items():
+                trans = _SearchSpaceTransform({param_name: distribution})
+                trans_params = self._rng.uniform(trans.bounds[:, 0], trans.bounds[:, 1])
+                param_value = trans.untransform(trans_params)[param_name]
+                params[param_name] = param_value
 
             trial = optuna.create_trial(
                 value=self._dummy_value,

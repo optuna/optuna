@@ -1,4 +1,3 @@
-from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -6,15 +5,11 @@ from typing import Tuple
 import numpy as np
 
 from optuna._imports import try_import
-from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.terminator import _distribution_is_log
-from optuna.terminator.improvement.gp.base import BaseMinUcbLcbEstimator
-from optuna.terminator.improvement.preprocessing import AddRandomInputs
-from optuna.terminator.improvement.preprocessing import OneToHot
-from optuna.terminator.improvement.preprocessing import PreprocessingPipeline
+from optuna.terminator.improvement.gp.base import BaseGaussianProcess
 from optuna.terminator.search_space.intersection import IntersectionSearchSpace
 from optuna.trial._frozen import FrozenTrial
 from optuna.trial._state import TrialState
@@ -42,14 +37,10 @@ __all__ = [
 ]
 
 
-class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
-    def __init__(self, min_lcb_n_additional_candidates: int = 2000) -> None:
+class _BoTorchGaussianProcess(BaseGaussianProcess):
+    def __init__(self) -> None:
         _imports.check()
 
-        self._min_lcb_n_additional_candidates = min_lcb_n_additional_candidates
-
-        self._trials: Optional[List[FrozenTrial]] = None
-        self._search_space: Optional[Dict[str, BaseDistribution]] = None
         self._n_params: Optional[float] = None
         self._n_trials: Optional[float] = None
         self._gp: Optional[SingleTaskGP] = None
@@ -59,13 +50,6 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
         trials: List[FrozenTrial],
     ) -> None:
         self._trials = trials
-
-        # TODO(g-votte): guarantee that _search_space is an ordered dict
-        self._search_space = IntersectionSearchSpace().calculate(trials)
-
-        preprocessing = OneToHot()
-
-        trials = preprocessing.apply(self._trials, None)
 
         x, bounds = _convert_trials_to_tensors(trials)
 
@@ -105,11 +89,13 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
         )
         mll.eval()
 
-    def _mean_std(
+    def predict_mean_std(
         self,
-        x: torch.Tensor,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        trials: List[FrozenTrial],
+    ) -> Tuple[np.ndarray, np.ndarray]:
         assert self._gp is not None
+
+        x, _ = _convert_trials_to_tensors(trials)
 
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
             posterior = self._gp.posterior(x)
@@ -117,52 +103,7 @@ class BoTorchMinUcbLcbEstimator(BaseMinUcbLcbEstimator):
             variance = posterior.variance
             std = variance.sqrt()
 
-        return mean, std
-
-    def min_ucb(self) -> float:
-        assert self._trials is not None
-
-        preprocessing = OneToHot()
-        trials = preprocessing.apply(self._trials, None)
-        x, _ = _convert_trials_to_tensors(trials)
-
-        mean, std = self._mean_std(x)
-
-        upper = mean + std * np.sqrt(self._beta())
-
-        return float(torch.min(upper))
-
-    def min_lcb(self) -> float:
-        assert self._trials is not None
-
-        preprocessing = PreprocessingPipeline(
-            [
-                AddRandomInputs(
-                    self._min_lcb_n_additional_candidates, search_space=self._search_space
-                ),
-                OneToHot(),
-            ]
-        )
-        trials = preprocessing.apply(self._trials, None)
-        x, _ = _convert_trials_to_tensors(trials)
-
-        mean, std = self._mean_std(x)
-
-        lower = mean - std * np.sqrt(self._beta())
-
-        return float(torch.min(lower))
-
-    def _beta(self, delta: float = 0.1) -> float:
-        assert self._n_params is not None
-        assert self._n_trials is not None
-
-        beta = 2 * np.log(self._n_params * self._n_trials**2 * np.pi**2 / 6 / delta)
-
-        # The following div is according to the original paper: "We then further scale it down
-        # by a factor of 5 as defined in the experiments in Srinivas et al. (2010)"
-        beta /= 5
-
-        return beta
+        return mean.detach().numpy(), std.detach().numpy()
 
 
 def _convert_trials_to_tensors(trials: List[FrozenTrial]) -> Tuple[torch.Tensor, torch.Tensor]:
