@@ -19,7 +19,7 @@ from sqlalchemy import orm
 from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy import UniqueConstraint
-from sqlalchemy.sql.expression import case
+from sqlalchemy import case
 
 from optuna import distributions
 from optuna.study._study_direction import StudyDirection
