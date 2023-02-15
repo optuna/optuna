@@ -19,6 +19,7 @@ from sqlalchemy import orm
 from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy import UniqueConstraint
+from sqlalchemy.sql.expression import case
 
 from optuna import distributions
 from optuna.study._study_direction import StudyDirection
@@ -188,7 +189,15 @@ class TrialModel(BaseModel):
             .filter(cls.state == TrialState.COMPLETE)
             .join(TrialValueModel)
             .filter(TrialValueModel.objective == objective)
-            .order_by(desc(TrialValueModel.value))
+            .order_by(
+                desc(
+                    case(
+                        value=TrialValueModel.value_type,
+                        whens={"INF_NEG": -1, "FINITE": 0, "INF_POS": 1},
+                    )
+                ),
+                desc(TrialValueModel.value),
+            )
             .limit(1)
             .one_or_none()
         )
@@ -206,7 +215,15 @@ class TrialModel(BaseModel):
             .filter(cls.state == TrialState.COMPLETE)
             .join(TrialValueModel)
             .filter(TrialValueModel.objective == objective)
-            .order_by(asc(TrialValueModel.value))
+            .order_by(
+                asc(
+                    case(
+                        value=TrialValueModel.value_type,
+                        whens={"INF_NEG": -1, "FINITE": 0, "INF_POS": 1},
+                    )
+                ),
+                asc(TrialValueModel.value),
+            )
             .limit(1)
             .one_or_none()
         )
