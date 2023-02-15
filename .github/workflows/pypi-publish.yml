@@ -12,7 +12,7 @@ on:
 jobs:
   build-n-publish:
     name: Build and publish Python distributions to PyPI or TestPyPI
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
 
     # Not intended for forks.
     if: github.repository == 'optuna/optuna'

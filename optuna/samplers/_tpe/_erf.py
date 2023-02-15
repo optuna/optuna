@@ -15,6 +15,7 @@
 #  */
 
 import numpy as np
+from numpy.polynomial import Polynomial
 
 
 half = 0.5
@@ -114,15 +115,15 @@ def erf(x: np.ndarray) -> np.ndarray:
 
     def calc_case_small1(x: np.ndarray) -> np.ndarray:
         z = x * x
-        r = pp0 + z * (pp1 + z * (pp2 + z * (pp3 + z * pp4)))
-        s = one + z * (qq1 + z * (qq2 + z * (qq3 + z * (qq4 + z * qq5))))
+        r = Polynomial([pp0, pp1, pp2, pp3, pp4])(z)
+        s = Polynomial([one, qq1, qq2, qq3, qq4, qq5])(z)
         y = r / s
         return x + x * y
 
     def calc_case_small2(x: np.ndarray) -> np.ndarray:
         s = np.abs(x) - one
-        P = pa0 + s * (pa1 + s * (pa2 + s * (pa3 + s * (pa4 + s * (pa5 + s * pa6)))))
-        Q = one + s * (qa1 + s * (qa2 + s * (qa3 + s * (qa4 + s * (qa5 + s * qa6)))))
+        P = Polynomial([pa0, pa1, pa2, pa3, pa4, pa5, pa6])(s)
+        Q = Polynomial([one, qa1, qa2, qa3, qa4, qa5, qa6])(s)
         absout = erx + P / Q
         return absout * np.sign(x)
 
@@ -130,10 +131,8 @@ def erf(x: np.ndarray) -> np.ndarray:
         sign = np.sign(x)
         x = np.abs(x)
         s = one / (x * x)
-        R = ra0 + s * (ra1 + s * (ra2 + s * (ra3 + s * (ra4 + s * (ra5 + s * (ra6 + s * ra7))))))
-        S = one + s * (
-            sa1 + s * (sa2 + s * (sa3 + s * (sa4 + s * (sa5 + s * (sa6 + s * (sa7 + s * sa8))))))
-        )
+        R = Polynomial([ra0, ra1, ra2, ra3, ra4, ra5, ra6, ra7])(s)
+        S = Polynomial([one, sa1, sa2, sa3, sa4, sa5, sa6, sa7, sa8])(s)
         # the following 3 lines are omitted for the following reasons:
         # (1) there are no easy way to implement SET_LOW_WORD equivalent method in NumPy
         # (2) we don't need very high accuracy in our use case.
@@ -147,8 +146,8 @@ def erf(x: np.ndarray) -> np.ndarray:
         sign = np.sign(x)
         x = np.abs(x)
         s = one / (x * x)
-        R = rb0 + s * (rb1 + s * (rb2 + s * (rb3 + s * (rb4 + s * (rb5 + s * rb6)))))
-        S = one + s * (sb1 + s * (sb2 + s * (sb3 + s * (sb4 + s * (sb5 + s * (sb6 + s * sb7))))))
+        R = Polynomial([rb0, rb1, rb2, rb3, rb4, rb5, rb6])(s)
+        S = Polynomial([one, sb1, sb2, sb3, sb4, sb5, sb6, sb7])(s)
         # z = x
         # SET_LOW_WORD(z, 0)
         # r = np.exp(-z * z - 0.5625) * np.exp((z - x) * (z + x) + R / S)
