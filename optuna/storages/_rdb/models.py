@@ -6,6 +6,7 @@ from typing import Optional
 from typing import Tuple
 
 from sqlalchemy import asc
+from sqlalchemy import case
 from sqlalchemy import CheckConstraint
 from sqlalchemy import Column
 from sqlalchemy import DateTime
@@ -19,7 +20,6 @@ from sqlalchemy import orm
 from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy import UniqueConstraint
-from sqlalchemy import case
 
 from optuna import distributions
 from optuna.study._study_direction import StudyDirection
@@ -192,8 +192,8 @@ class TrialModel(BaseModel):
             .order_by(
                 desc(
                     case(
+                        {"INF_NEG": -1, "FINITE": 0, "INF_POS": 1},
                         value=TrialValueModel.value_type,
-                        whens={"INF_NEG": -1, "FINITE": 0, "INF_POS": 1},
                     )
                 ),
                 desc(TrialValueModel.value),
@@ -218,8 +218,8 @@ class TrialModel(BaseModel):
             .order_by(
                 asc(
                     case(
+                        {"INF_NEG": -1, "FINITE": 0, "INF_POS": 1},
                         value=TrialValueModel.value_type,
-                        whens={"INF_NEG": -1, "FINITE": 0, "INF_POS": 1},
                     )
                 ),
                 asc(TrialValueModel.value),
