@@ -36,7 +36,6 @@ PADDING_RATIO = 0.05
 
 class _AxisInfo(NamedTuple):
     name: str
-    # range: Union[Tuple[float, float], List[Any]]
     range: Tuple[float, float]
     is_log: bool
     is_cat: bool
