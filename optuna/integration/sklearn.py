@@ -40,9 +40,13 @@ with try_import() as _imports:
     from sklearn.model_selection import BaseCrossValidator
     from sklearn.model_selection import check_cv
     from sklearn.model_selection import cross_validate
-    from sklearn.utils import _safe_indexing as sklearn_safe_indexing
     from sklearn.utils import check_random_state
     from sklearn.utils.metaestimators import _safe_split
+
+    if sklearn.__version__ >= "0.22":
+        from sklearn.utils import _safe_indexing as sklearn_safe_indexing
+    else:
+        from sklearn.utils import safe_indexing as sklearn_safe_indexing
     from sklearn.utils.validation import check_is_fitted
 
 if not _imports.is_successful():
@@ -180,7 +184,7 @@ class _Objective:
 
     def __init__(
         self,
-        estimator: "sklearn.base.BaseEstimator",
+        estimator: "BaseEstimator",
         param_distributions: Mapping[str, distributions.BaseDistribution],
         X: TwoDimArrayLikeType,
         y: Optional[Union[OneDimArrayLikeType, TwoDimArrayLikeType]],
@@ -232,7 +236,7 @@ class _Objective:
         return trial.user_attrs["mean_test_score"]
 
     def _cross_validate_with_pruning(
-        self, trial: Trial, estimator: "sklearn.base.BaseEstimator"
+        self, trial: Trial, estimator: "BaseEstimator"
     ) -> Mapping[str, OneDimArrayLikeType]:
         if is_classifier(estimator):
             partial_fit_params = self.fit_params.copy()
@@ -285,7 +289,7 @@ class _Objective:
 
     def _partial_fit_and_score(
         self,
-        estimator: "sklearn.base.BaseEstimator",
+        estimator: "BaseEstimator",
         train: List[int],
         test: List[int],
         partial_fit_params: Dict[str, Any],
@@ -673,7 +677,7 @@ class OptunaSearchCV(BaseEstimator):
 
     def __init__(
         self,
-        estimator: "sklearn.base.BaseEstimator",
+        estimator: "BaseEstimator",
         param_distributions: Mapping[str, distributions.BaseDistribution],
         *,
         cv: Optional[Union[int, "BaseCrossValidator", Iterable]] = None,
