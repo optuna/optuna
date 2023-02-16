@@ -129,7 +129,7 @@ def plot_rank(
     return _get_rank_plot(info)
 
 
-def get_order_with_same_order_averaging(data):
+def get_order_with_same_order_averaging(data: np.ndarray) -> np.ndarray:
     order = np.zeros_like(data, dtype=float)
     data_sorted = np.sort(data)
     for i, d in enumerate(data):
