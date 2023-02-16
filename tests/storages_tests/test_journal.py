@@ -67,7 +67,6 @@ class JournalLogStorageSupplier:
     def __exit__(
         self, exc_type: Type[BaseException], exc_val: BaseException, exc_tb: TracebackType
     ) -> None:
-
         if self.tempfile:
             self.tempfile.close()
 

@@ -102,7 +102,6 @@ class GridSampler(BaseSampler):
     def __init__(
         self, search_space: Mapping[str, Sequence[GridValueType]], seed: Optional[int] = None
     ) -> None:
-
         for param_name, param_values in search_space.items():
             for value in param_values:
                 self._check_value(param_name, value)
@@ -117,13 +116,11 @@ class GridSampler(BaseSampler):
         self._rng = np.random.RandomState(seed)
 
     def reseed_rng(self) -> None:
-
         self._rng.seed()
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
-
         return {}
 
     def sample_relative(
@@ -171,7 +168,6 @@ class GridSampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
-
         if "grid_id" not in trial.system_attrs:
             message = "All parameters must be specified when using GridSampler with enqueue_trial."
             raise ValueError(message)
@@ -212,7 +208,6 @@ class GridSampler(BaseSampler):
 
     @staticmethod
     def _check_value(param_name: str, param_value: Any) -> None:
-
         if param_value is None or isinstance(param_value, (str, int, float, bool)):
             return
 
@@ -224,7 +219,6 @@ class GridSampler(BaseSampler):
         warnings.warn(message)
 
     def _get_unvisited_grid_ids(self, study: Study) -> List[int]:
-
         # List up unvisited grids based on already finished ones.
         visited_grids = []
         running_grids = []
@@ -259,7 +253,6 @@ class GridSampler(BaseSampler):
         return (value1 == value2) or (value1_is_nan and value2_is_nan)
 
     def _same_search_space(self, search_space: Mapping[str, Sequence[GridValueType]]) -> bool:
-
         if set(search_space.keys()) != set(self._search_space.keys()):
             return False
 

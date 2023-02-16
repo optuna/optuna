@@ -12,7 +12,6 @@ from optuna.trial import TrialState
 
 
 def test_study_trials_dataframe_with_no_trials() -> None:
-
     study_with_no_trials = create_study()
     trials_df = study_with_no_trials.trials_dataframe()
     assert trials_df.empty
@@ -51,7 +50,6 @@ def test_study_trials_dataframe_with_no_trials() -> None:
 @pytest.mark.parametrize("multi_index", [True, False])
 def test_trials_dataframe(storage_mode: str, attrs: Tuple[str, ...], multi_index: bool) -> None:
     def f(trial: Trial) -> float:
-
         x = trial.suggest_int("x", 1, 1)
         y = trial.suggest_categorical("y", (2.5,))
         trial.set_user_attr("train_loss", 3)
@@ -126,7 +124,6 @@ def test_trials_dataframe(storage_mode: str, attrs: Tuple[str, ...], multi_index
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_trials_dataframe_with_failure(storage_mode: str) -> None:
     def f(trial: Trial) -> float:
-
         x = trial.suggest_int("x", 1, 1)
         y = trial.suggest_categorical("y", (2.5,))
         trial.set_user_attr("train_loss", 3)
@@ -166,7 +163,6 @@ def test_trials_dataframe_with_multi_objective_optimization(
     attrs: Tuple[str, ...], multi_index: bool
 ) -> None:
     def f(trial: Trial) -> Tuple[float, float]:
-
         x = trial.suggest_float("x", 1, 1)
         y = trial.suggest_float("y", 2, 2)
 

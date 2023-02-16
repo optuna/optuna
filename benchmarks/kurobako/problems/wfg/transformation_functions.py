@@ -14,21 +14,18 @@ class BaseIdenticalTransformation(metaclass=abc.ABCMeta):
 class BaseBiasTransformation(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def __call__(self, y: float) -> float:
-
         raise NotImplementedError
 
 
 class BaseShiftTransformation(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def __call__(self, y: float) -> float:
-
         raise NotImplementedError
 
 
 class BaseReductionTransformation(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def __call__(self, y: np.ndarray) -> float:
-
         raise NotImplementedError
 
 
@@ -50,18 +47,15 @@ class IdenticalTransformation(BaseIdenticalTransformation):
 
 class PolynomialBiasTransformation(BaseBiasTransformation):
     def __init__(self, alpha: float) -> None:
-
         assert alpha > 0 and alpha != 1.0
         self._alpha = alpha
 
     def __call__(self, y: float) -> float:
-
         return np.power(y, self._alpha)
 
 
 class FlatRegionBiasTransformation(BaseBiasTransformation):
     def __init__(self, a: float, b: float, c: float) -> None:
-
         assert 0 <= a <= 1
         assert 0 <= b <= 1
         assert 0 <= c <= 1
@@ -74,7 +68,6 @@ class FlatRegionBiasTransformation(BaseBiasTransformation):
         self._c = c
 
     def __call__(self, y: float) -> float:
-
         a = self._a
         b = self._b
         c = self._c
@@ -95,7 +88,6 @@ class ParameterDependentBiasTransformation(BaseReductionTransformation):
         c: float,
         i: int,
     ) -> None:
-
         assert 0 < a < 1
         assert 0 < b < c
 
@@ -107,7 +99,6 @@ class ParameterDependentBiasTransformation(BaseReductionTransformation):
         self._i = i
 
     def __call__(self, y: np.ndarray) -> float:
-
         w = self._w
         a = self._a
         b = self._b
@@ -121,19 +112,16 @@ class ParameterDependentBiasTransformation(BaseReductionTransformation):
 
 class LinearShiftTransformation(BaseShiftTransformation):
     def __init__(self, a: float) -> None:
-
         assert 0 < a < 1
 
         self._a = a
 
     def __call__(self, y: float) -> float:
-
         return np.fabs(y - self._a) / np.fabs(np.floor(self._a - y) + self._a)
 
 
 class DeceptiveShiftTransformation(BaseShiftTransformation):
     def __init__(self, a: float, b: float, c: float) -> None:
-
         assert 0 < a < 1
         assert 0 < b < 1
         assert 0 < c < 1
@@ -145,7 +133,6 @@ class DeceptiveShiftTransformation(BaseShiftTransformation):
         self._c = c
 
     def __call__(self, y: float) -> float:
-
         a = self._a
         b = self._b
         c = self._c
@@ -157,7 +144,6 @@ class DeceptiveShiftTransformation(BaseShiftTransformation):
 
 class MultiModalShiftTransformation(BaseShiftTransformation):
     def __init__(self, a: int, b: float, c: float) -> None:
-
         assert a > 0
         assert b >= 0
         assert (4 * a + 2) * np.pi >= 4 * b
@@ -168,7 +154,6 @@ class MultiModalShiftTransformation(BaseShiftTransformation):
         self._c = c
 
     def __call__(self, y: float) -> float:
-
         a = self._a
         b = self._b
         c = self._c
@@ -180,28 +165,24 @@ class MultiModalShiftTransformation(BaseShiftTransformation):
 
 class WeightedSumReductionTransformation(BaseReductionTransformation):
     def __init__(self, w: np.ndarray, input_converter: Callable[[np.ndarray], np.ndarray]) -> None:
-
         assert all(w > 0)
 
         self._w = w
         self._input_converter = input_converter
 
     def __call__(self, y: np.ndarray) -> float:
-
         y = self._input_converter(y)
         return (y * self._w).sum() / self._w.sum()
 
 
 class NonSeparableReductionTransformation(BaseReductionTransformation):
     def __init__(self, a: int, input_converter: Callable[[np.ndarray], np.ndarray]) -> None:
-
         assert a > 0
 
         self._a = a
         self._input_converter = input_converter
 
     def __call__(self, y: np.ndarray) -> float:
-
         a = float(self._a)
         y = self._input_converter(y)
         n = y.shape[0]

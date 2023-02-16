@@ -181,7 +181,6 @@ class _ParzenEstimator:
         choices: Tuple[Any, ...],
         parameters: _ParzenEstimatorParameters,
     ) -> _BatchedDistributions:
-
         consider_prior = parameters.consider_prior or len(observations) == 0
 
         assert parameters.prior_weight is not None

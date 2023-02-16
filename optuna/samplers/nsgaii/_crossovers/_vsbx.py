@@ -29,7 +29,6 @@ class VSBXCrossover(BaseCrossover):
     n_parents = 2
 
     def __init__(self, eta: Optional[float] = None) -> None:
-
         self._eta = eta
 
     def crossover(
@@ -39,7 +38,6 @@ class VSBXCrossover(BaseCrossover):
         study: Study,
         search_space_bounds: np.ndarray,
     ) -> np.ndarray:
-
         # https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.422.952&rep=rep1&type=pdf
         # Section 3.2 Crossover Schemes (vSBX)
         if self._eta is None:

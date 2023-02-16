@@ -21,7 +21,6 @@ from optuna.trial import Trial
 
 def test_study_optimize_with_single_search_space() -> None:
     def objective(trial: Trial) -> float:
-
         a = trial.suggest_int("a", 0, 100)
         b = trial.suggest_float("b", -0.1, 0.1)
         c = trial.suggest_categorical("c", ("x", "y", None, 1, 2.0))
@@ -47,7 +46,6 @@ def test_study_optimize_with_single_search_space() -> None:
     def sorted_values(
         d: Mapping[str, Sequence[GridValueType]]
     ) -> ValuesView[Sequence[GridValueType]]:
-
         return OrderedDict(sorted(d.items())).values()
 
     all_grids = itertools.product(*sorted_values(search_space))  # type: ignore
@@ -75,7 +73,6 @@ def test_study_optimize_with_single_search_space() -> None:
 
 def test_study_optimize_with_exceeding_number_of_trials() -> None:
     def objective(trial: Trial) -> float:
-
         return trial.suggest_int("a", 0, 100)
 
     # When `n_trials` is `None`, the optimization stops just after all grids are evaluated.
@@ -99,7 +96,6 @@ def test_study_optimize_with_pruning() -> None:
 
 def test_study_optimize_with_numpy_related_search_space() -> None:
     def objective(trial: Trial) -> float:
-
         a = trial.suggest_float("a", 0, 10)
         b = trial.suggest_float("b", -0.1, 0.1)
 
@@ -120,7 +116,6 @@ def test_study_optimize_with_numpy_related_search_space() -> None:
 
 def test_study_optimize_with_multiple_search_spaces() -> None:
     def objective(trial: Trial) -> float:
-
         a = trial.suggest_int("a", 0, 100)
         b = trial.suggest_float("b", -100, 100)
 
@@ -163,7 +158,6 @@ def test_study_optimize_with_multiple_search_spaces() -> None:
 
 
 def test_cast_value() -> None:
-
     samplers.GridSampler._check_value("x", None)
     samplers.GridSampler._check_value("x", True)
     samplers.GridSampler._check_value("x", False)
@@ -178,7 +172,6 @@ def test_cast_value() -> None:
 
 
 def test_has_same_search_space() -> None:
-
     search_space: Dict[str, List[Union[int, str]]] = {"x": [3, 2, 1], "y": ["a", "b", "c"]}
     sampler = samplers.GridSampler(search_space)
     assert sampler._same_search_space(search_space)

@@ -358,7 +358,6 @@ def _targets_default(trial: FrozenTrial) -> Sequence[float]:
 def _get_non_pareto_front_trials(
     trials: List[FrozenTrial], pareto_trials: List[FrozenTrial]
 ) -> List[FrozenTrial]:
-
     non_pareto_trials = []
     for trial in trials:
         if trial not in pareto_trials:

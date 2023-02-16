@@ -120,7 +120,6 @@ def test_loaded_trials(storage: BaseStorage) -> None:
     ],
 )
 def test_store_infinite_values(input_value: float, expected: float, storage: BaseStorage) -> None:
-
     study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
     trial_id = storage.create_new_trial(study_id)
     storage.set_trial_intermediate_value(trial_id, 1, input_value)
@@ -130,7 +129,6 @@ def test_store_infinite_values(input_value: float, expected: float, storage: Bas
 
 
 def test_store_nan_intermediate_values(storage: BaseStorage) -> None:
-
     study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
     trial_id = storage.create_new_trial(study_id)
 

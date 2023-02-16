@@ -49,7 +49,6 @@ MULTIVARIATE_SAMPLES = {
 @pytest.mark.parametrize("consider_prior", [True, False])
 @pytest.mark.parametrize("multivariate", [True, False])
 def test_init_parzen_estimator(consider_prior: bool, multivariate: bool) -> None:
-
     parameters = _ParzenEstimatorParameters(
         consider_prior=consider_prior,
         prior_weight=1.0,
@@ -209,7 +208,6 @@ def test_calculate_shape_check(
     endpoints: bool,
     multivariate: bool,
 ) -> None:
-
     parameters = _ParzenEstimatorParameters(
         prior_weight=prior_weight,
         consider_prior=prior,
@@ -227,7 +225,6 @@ def test_calculate_shape_check(
 @pytest.mark.parametrize("prior_weight", [None, -1.0, 0.0])
 @pytest.mark.parametrize("mus", (np.asarray([]), np.asarray([0.4]), np.asarray([-0.4, 0.4])))
 def test_invalid_prior_weight(prior_weight: float, mus: np.ndarray) -> None:
-
     parameters = _ParzenEstimatorParameters(
         prior_weight=prior_weight,
         consider_prior=True,
@@ -302,7 +299,6 @@ def test_invalid_prior_weight(prior_weight: float, mus: np.ndarray) -> None:
 def test_calculate(
     mus: np.ndarray, flags: Dict[str, bool], expected: Dict[str, List[float]]
 ) -> None:
-
     parameters = _ParzenEstimatorParameters(
         prior_weight=1.0,
         consider_prior=flags["prior"],

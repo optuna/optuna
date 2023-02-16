@@ -253,7 +253,6 @@ def parametrize_suggest_method(name: str) -> MarkDecorator:
 def test_raise_error_for_samplers_during_multi_objectives(
     sampler_class: Callable[[], BaseSampler]
 ) -> None:
-
     study = optuna.study.create_study(directions=["maximize", "maximize"], sampler=sampler_class())
 
     distribution = FloatDistribution(0.0, 1.0)
@@ -269,7 +268,6 @@ def test_raise_error_for_samplers_during_multi_objectives(
 
 @pytest.mark.parametrize("seed", [None, 0, 169208])
 def test_pickle_random_sampler(seed: Optional[int]) -> None:
-
     sampler = optuna.samplers.RandomSampler(seed)
     restored_sampler = pickle.loads(pickle.dumps(sampler))
     assert sampler._rng.bytes(10) == restored_sampler._rng.bytes(10)
@@ -291,7 +289,6 @@ def test_float(
     sampler_class: Callable[[], BaseSampler],
     distribution: FloatDistribution,
 ) -> None:
-
     study = optuna.study.create_study(sampler=sampler_class())
     points = np.array(
         [
@@ -328,7 +325,6 @@ def test_float(
     ],
 )
 def test_int(sampler_class: Callable[[], BaseSampler], distribution: IntDistribution) -> None:
-
     study = optuna.study.create_study(sampler=sampler_class())
     points = np.array(
         [
@@ -349,13 +345,11 @@ def test_int(sampler_class: Callable[[], BaseSampler], distribution: IntDistribu
 def test_categorical(
     sampler_class: Callable[[], BaseSampler], choices: Sequence[CategoricalChoiceType]
 ) -> None:
-
     distribution = CategoricalDistribution(choices)
 
     study = optuna.study.create_study(sampler=sampler_class())
 
     def sample() -> float:
-
         trial = _create_new_trial(study)
         param_value = study.sampler.sample_independent(study, trial, "x", distribution)
         return float(distribution.to_internal_repr(param_value))
@@ -397,7 +391,6 @@ def test_sample_relative_numerical(
     x_distribution: BaseDistribution,
     y_distribution: BaseDistribution,
 ) -> None:
-
     search_space: Dict[str, BaseDistribution] = OrderedDict(x=x_distribution, y=y_distribution)
     study = optuna.study.create_study(sampler=relative_sampler_class())
     trial = study.ask(search_space)
@@ -429,7 +422,6 @@ def test_sample_relative_numerical(
 
 @parametrize_relative_sampler
 def test_sample_relative_categorical(relative_sampler_class: Callable[[], BaseSampler]) -> None:
-
     search_space: Dict[str, BaseDistribution] = OrderedDict(
         x=CategoricalDistribution([1, 10, 100]), y=CategoricalDistribution([-1, -10, -100])
     )
@@ -465,7 +457,6 @@ def test_sample_relative_categorical(relative_sampler_class: Callable[[], BaseSa
 def test_sample_relative_mixed(
     relative_sampler_class: Callable[[], BaseSampler], x_distribution: BaseDistribution
 ) -> None:
-
     search_space: Dict[str, BaseDistribution] = OrderedDict(
         x=x_distribution, y=CategoricalDistribution([-1, -10, -100])
     )
@@ -539,7 +530,6 @@ def test_conditional_sample_independent(sampler_class: Callable[[], BaseSampler]
 
 
 def _create_new_trial(study: Study) -> FrozenTrial:
-
     trial_id = study._storage.create_new_trial(study._study_id)
     return study._storage.get_trial(trial_id)
 
@@ -551,7 +541,6 @@ class FixedSampler(BaseSampler):
         relative_params: Dict[str, Any],
         unknown_param_value: Any,
     ) -> None:
-
         self.relative_search_space = relative_search_space
         self.relative_params = relative_params
         self.unknown_param_value = unknown_param_value
@@ -559,13 +548,11 @@ class FixedSampler(BaseSampler):
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
-
         return self.relative_search_space
 
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
-
         return self.relative_params
 
     def sample_independent(
@@ -575,12 +562,10 @@ class FixedSampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
-
         return self.unknown_param_value
 
 
 def test_sample_relative() -> None:
-
     relative_search_space: Dict[str, BaseDistribution] = {
         "a": FloatDistribution(low=0, high=5),
         "b": CategoricalDistribution(choices=("foo", "bar", "baz")),
@@ -596,7 +581,6 @@ def test_sample_relative() -> None:
     study = optuna.study.create_study(sampler=sampler)
 
     def objective(trial: Trial) -> float:
-
         # Predefined parameters are sampled by `sample_relative()` method.
         assert trial.suggest_float("a", 0, 5) == 3.2
         assert trial.suggest_categorical("b", ["foo", "bar", "baz"]) == "baz"
@@ -615,11 +599,9 @@ def test_sample_relative() -> None:
 
 @parametrize_sampler
 def test_nan_objective_value(sampler_class: Callable[[], BaseSampler]) -> None:
-
     study = optuna.create_study(sampler=sampler_class())
 
     def objective(trial: Trial, base_value: float) -> float:
-
         return trial.suggest_float("x", 0.1, 0.2) + base_value
 
     # Non NaN objective values.
@@ -638,7 +620,6 @@ def test_nan_objective_value(sampler_class: Callable[[], BaseSampler]) -> None:
 
 @parametrize_sampler
 def test_partial_fixed_sampling(sampler_class: Callable[[], BaseSampler]) -> None:
-
     study = optuna.create_study(sampler=sampler_class())
 
     def objective(trial: Trial) -> float:
@@ -859,7 +840,6 @@ def test_after_trial_with_study_tell() -> None:
 
 @parametrize_sampler
 def test_sample_single_distribution(sampler_class: Callable[[], BaseSampler]) -> None:
-
     relative_search_space = {
         "a": CategoricalDistribution([1]),
         "b": IntDistribution(low=1, high=1),

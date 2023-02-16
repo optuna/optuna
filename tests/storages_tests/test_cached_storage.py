@@ -49,7 +49,6 @@ def test_set_trial_state_values() -> None:
 
 
 def test_uncached_set() -> None:
-
     """Test CachedStorage does flush to persistent storages.
 
     The CachedStorage flushes any modification of trials to a persistent storage immediately.
@@ -107,7 +106,6 @@ def test_uncached_set() -> None:
 
 
 def test_read_trials_from_remote_storage() -> None:
-
     base_storage = RDBStorage("sqlite:///:memory:")
     storage = _CachedStorage(base_storage)
     study_id = storage.create_new_study(

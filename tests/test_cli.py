@@ -31,14 +31,12 @@ from optuna.trial import TrialState
 
 # An example of objective functions
 def objective_func(trial: Trial) -> float:
-
     x = trial.suggest_float("x", -10, 10)
     return (x + 5) ** 2
 
 
 # An example of objective functions for branched search spaces
 def objective_func_branched_search_space(trial: Trial) -> float:
-
     c = trial.suggest_categorical("c", ("A", "B"))
     if c == "A":
         x = trial.suggest_float("x", -10, 10)
@@ -50,7 +48,6 @@ def objective_func_branched_search_space(trial: Trial) -> float:
 
 # An example of objective functions for multi-objective optimization
 def objective_func_multi_objective(trial: Trial) -> Tuple[float, float]:
-
     x = trial.suggest_float("x", -10, 10)
     return (x + 5) ** 2, (x - 5) ** 2
 
@@ -93,7 +90,6 @@ def _parse_output(output: str, output_format: str) -> Any:
 
 @pytest.mark.skip_coverage
 def test_create_study_command() -> None:
-
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -114,7 +110,6 @@ def test_create_study_command() -> None:
 
 @pytest.mark.skip_coverage
 def test_create_study_command_with_study_name() -> None:
-
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -131,7 +126,6 @@ def test_create_study_command_with_study_name() -> None:
 
 @pytest.mark.skip_coverage
 def test_create_study_command_without_storage_url() -> None:
-
     with pytest.raises(subprocess.CalledProcessError) as err:
         subprocess.check_output(
             ["optuna", "create-study"],
@@ -143,7 +137,6 @@ def test_create_study_command_without_storage_url() -> None:
 
 @pytest.mark.skip_coverage
 def test_create_study_command_with_storage_env() -> None:
-
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -165,7 +158,6 @@ def test_create_study_command_with_storage_env() -> None:
 
 @pytest.mark.skip_coverage
 def test_create_study_command_with_direction() -> None:
-
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -189,7 +181,6 @@ def test_create_study_command_with_direction() -> None:
 
 @pytest.mark.skip_coverage
 def test_create_study_command_with_multiple_directions() -> None:
-
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -243,7 +234,6 @@ def test_create_study_command_with_multiple_directions() -> None:
 
 @pytest.mark.skip_coverage
 def test_delete_study_command() -> None:
-
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -262,7 +252,6 @@ def test_delete_study_command() -> None:
 
 @pytest.mark.skip_coverage
 def test_delete_study_command_without_storage_url() -> None:
-
     with pytest.raises(subprocess.CalledProcessError):
         subprocess.check_output(
             ["optuna", "delete-study", "--study-name", "dummy_study"],
@@ -272,7 +261,6 @@ def test_delete_study_command_without_storage_url() -> None:
 
 @pytest.mark.skip_coverage
 def test_study_set_user_attr_command() -> None:
-
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -306,7 +294,6 @@ def test_study_set_user_attr_command() -> None:
 @pytest.mark.skip_coverage
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
 def test_studies_command(output_format: Optional[str]) -> None:
-
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -377,7 +364,6 @@ def test_studies_command(output_format: Optional[str]) -> None:
 @pytest.mark.skip_coverage
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
 def test_studies_command_flatten(output_format: Optional[str]) -> None:
-
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -472,7 +458,6 @@ def test_studies_command_flatten(output_format: Optional[str]) -> None:
 @pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
 def test_trials_command(objective: Callable[[Trial], float], output_format: Optional[str]) -> None:
-
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -555,7 +540,6 @@ def test_trials_command(objective: Callable[[Trial], float], output_format: Opti
 def test_trials_command_flatten(
     objective: Callable[[Trial], float], output_format: Optional[str]
 ) -> None:
-
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -634,7 +618,6 @@ def test_trials_command_flatten(
 def test_best_trial_command(
     objective: Callable[[Trial], float], output_format: Optional[str]
 ) -> None:
-
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -718,7 +701,6 @@ def test_best_trial_command(
 def test_best_trial_command_flatten(
     objective: Callable[[Trial], float], output_format: Optional[str]
 ) -> None:
-
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -794,7 +776,6 @@ def test_best_trial_command_flatten(
 @pytest.mark.skip_coverage
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
 def test_best_trials_command(output_format: Optional[str]) -> None:
-
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -879,7 +860,6 @@ def test_best_trials_command(output_format: Optional[str]) -> None:
 @pytest.mark.skip_coverage
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
 def test_best_trials_command_flatten(output_format: Optional[str]) -> None:
-
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -957,7 +937,6 @@ def test_best_trials_command_flatten(output_format: Optional[str]) -> None:
 
 @pytest.mark.skip_coverage
 def test_create_study_command_with_skip_if_exists() -> None:
-
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -993,7 +972,6 @@ def test_create_study_command_with_skip_if_exists() -> None:
 
 @pytest.mark.skip_coverage
 def test_study_optimize_command() -> None:
-
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -1028,7 +1006,6 @@ def test_study_optimize_command() -> None:
 
 @pytest.mark.skip_coverage
 def test_study_optimize_command_inconsistent_args() -> None:
-
     with tempfile.NamedTemporaryFile() as tf:
         db_url = "sqlite:///{}".format(tf.name)
 
@@ -1051,7 +1028,6 @@ def test_study_optimize_command_inconsistent_args() -> None:
 
 @pytest.mark.skip_coverage
 def test_empty_argv() -> None:
-
     command_empty = ["optuna"]
     command_empty_output = str(subprocess.check_output(command_empty))
 
@@ -1062,7 +1038,6 @@ def test_empty_argv() -> None:
 
 
 def test_check_storage_url() -> None:
-
     storage_in_args = "sqlite:///args.db"
     assert storage_in_args == optuna.cli._check_storage_url(storage_in_args)
 
@@ -1076,7 +1051,6 @@ def test_check_storage_url() -> None:
 
 @pytest.mark.skip_coverage
 def test_storage_upgrade_command() -> None:
-
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -1112,7 +1086,6 @@ def test_ask(
     sampler_kwargs: Optional[str],
     output_format: Optional[str],
 ) -> None:
-
     study_name = "test_study"
     search_space = (
         '{"x": {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
@@ -1186,7 +1159,6 @@ def test_ask_flatten(
     sampler_kwargs: Optional[str],
     output_format: Optional[str],
 ) -> None:
-
     study_name = "test_study"
     search_space = (
         '{"x": {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
@@ -1308,7 +1280,6 @@ def test_ask_empty_search_space_flatten(output_format: str) -> None:
 
 @pytest.mark.skip_coverage
 def test_ask_sampler_kwargs_without_sampler() -> None:
-
     study_name = "test_study"
     search_space = (
         '{"x": {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
@@ -1353,7 +1324,6 @@ def test_create_study_and_ask(
     sampler: Optional[str],
     sampler_kwargs: Optional[str],
 ) -> None:
-
     study_name = "test_study"
     search_space = (
         '{"x": {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
@@ -1419,7 +1389,6 @@ def test_create_study_and_ask_with_inconsistent_directions(
     ask_direction: Optional[str],
     ask_directions: Optional[str],
 ) -> None:
-
     study_name = "test_study"
     search_space = (
         '{"x": {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
@@ -1466,7 +1435,6 @@ def test_create_study_and_ask_with_inconsistent_directions(
 
 @pytest.mark.skip_coverage
 def test_ask_with_both_direction_and_directions() -> None:
-
     study_name = "test_study"
     search_space = (
         '{"x": {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
@@ -1634,7 +1602,6 @@ def test_tell_with_nan() -> None:
     ],
 )
 def test_configure_logging_verbosity(verbosity: str, expected: bool) -> None:
-
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)

@@ -23,7 +23,6 @@ class UniformCrossover(BaseCrossover):
     n_parents = 2
 
     def __init__(self, swapping_prob: float = 0.5) -> None:
-
         self._swapping_prob = swapping_prob
 
     def crossover(
@@ -33,7 +32,6 @@ class UniformCrossover(BaseCrossover):
         study: Study,
         search_space_bounds: np.ndarray,
     ) -> np.ndarray:
-
         # https://www.researchgate.net/publication/201976488_Uniform_Crossover_in_Genetic_Algorithms
         # Section 1 Introduction
 

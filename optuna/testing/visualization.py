@@ -9,7 +9,6 @@ def prepare_study_with_trials(
     direction: str = "minimize",
     value_for_first_trial: float = 0.0,
 ) -> Study:
-
     """Return a dummy study object for tests.
 
     This function is added to reduce the code to set up dummy study object in each test case.

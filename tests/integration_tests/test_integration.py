@@ -5,7 +5,6 @@ pytestmark = pytest.mark.integration
 
 
 def test_import() -> None:
-
     from optuna.integration import chainer  # NOQA
     from optuna.integration import chainermn  # NOQA
     from optuna.integration import ChainerMNStudy  # NOQA
@@ -28,7 +27,6 @@ def test_import() -> None:
 
 
 def test_module_attributes() -> None:
-
     import optuna
 
     assert hasattr(optuna.integration, "chainer")
