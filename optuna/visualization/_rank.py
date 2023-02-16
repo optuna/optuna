@@ -66,13 +66,13 @@ def plot_rank(
     target: Optional[Callable[[FrozenTrial], float]] = None,
     target_name: str = "Objective Value",
 ) -> "go.Figure":
-    """Plot the parameter relationship as 2D slice plot in a study.
+    """Plot parameter relations as scatter plots with colors indicating ranks of objective value. 
 
     Note that, if a parameter contains missing values, a trial with missing values is not plotted.
 
     Example:
 
-        The following code snippet shows how to plot the parameter relationship as 2D slice plot.
+        The following code snippet shows how to plot the parameter relationship as a rank plot.
 
         .. plotly::
 
@@ -105,21 +105,7 @@ def plot_rank(
                 Specify this argument if ``study`` is being used for multi-objective optimization.
         target_name:
             Target's name to display on the color bar.
-        target_transform:
-            A string to specify how ``target`` value is mapped to the color scale. Available values
-            are ``rank`` (default) and ``none``. If ``rank`` is specified, the colors for each
-            point is determined by the rank of the corresponding ``target`` value. If ``none`` is
-            specified, the colors are determined by the ``target`` value itself.
-        size:
-            Figure size, specified by a tuple ``(width, height)``. Defaults to :obj:`None`, where
-            the default size of plotly is used.
-        colormap:
-            A colormap for the 2D slice plot. Defaults to ``RdYlBu_r``.
-        n_ticks:
-            Number of ticks on the color bar. Defaults to 5.
-        tick_format:
-            Format string for tick labels on the color bar. Defaults to ``".3g"``.
-
+        
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
     """
