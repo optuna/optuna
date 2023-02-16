@@ -66,7 +66,7 @@ def plot_rank(
     target: Optional[Callable[[FrozenTrial], float]] = None,
     target_name: str = "Objective Value",
 ) -> "go.Figure":
-    """Plot parameter relations as scatter plots with colors indicating ranks of objective value. 
+    """Plot parameter relations as scatter plots with colors indicating ranks of objective value.
 
     Note that, if a parameter contains missing values, a trial with missing values is not plotted.
 
@@ -105,7 +105,7 @@ def plot_rank(
                 Specify this argument if ``study`` is being used for multi-objective optimization.
         target_name:
             Target's name to display on the color bar.
-        
+
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
     """
