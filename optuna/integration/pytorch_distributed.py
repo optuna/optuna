@@ -4,7 +4,6 @@ import pickle
 from typing import Any
 from typing import Callable
 from typing import Dict
-from typing import List
 from typing import Optional
 from typing import overload
 from typing import Sequence
@@ -36,7 +35,7 @@ _suggest_deprecated_msg = (
     "Use :func:`~optuna.integration.TorchDistributedTrial.suggest_float` instead."
 )
 
-_g_pg: List[Optional["ProcessGroup"]] = [None]
+_g_pg: Optional["ProcessGroup"] = None
 
 
 def broadcast_properties(f: "Callable[_P, _T]") -> "Callable[_P, _T]":
@@ -119,11 +118,12 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         group: Optional["ProcessGroup"] = None,
     ) -> None:
         _imports.check()
+        global _g_pg
 
         if group is not None:
             self._group: "ProcessGroup" = group
         else:
-            if _g_pg[0] is None:
+            if _g_pg is None:
                 if dist.group.WORLD is None:
                     raise RuntimeError("torch distributed is not initialized.")
                 default_pg: "ProcessGroup" = dist.group.WORLD
@@ -131,10 +131,10 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
                     new_group: "ProcessGroup" = dist.new_group(  # type: ignore[no-untyped-call]
                         backend="gloo"
                     )
-                    _g_pg[0] = new_group
+                    _g_pg = new_group
                 else:
-                    _g_pg[0] = default_pg
-            self._group = _g_pg[0]
+                    _g_pg = default_pg
+            self._group = _g_pg
 
         if dist.get_rank(self._group) == 0:  # type: ignore[no-untyped-call]
             if not isinstance(trial, optuna.trial.Trial):

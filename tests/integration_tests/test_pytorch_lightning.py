@@ -143,14 +143,16 @@ def test_pytorch_lightning_pruning_callback_monitor_is_invalid() -> None:
         callback.on_validation_end(trainer, model)
 
 
+@pytest.mark.skip(reason="Currently DDP is not supported")
 @pytest.mark.parametrize("storage_mode", ["sqlite", "cached_sqlite"])
 def test_pytorch_lightning_pruning_callback_ddp_monitor(
     storage_mode: str,
 ) -> None:
     def objective(trial: optuna.trial.Trial) -> float:
         trainer = pl.Trainer(
-            max_epochs=2,
-            accelerator="ddp_cpu",
+            strategy="ddp",
+            accelerator="cpu",
+            devices=2,
             num_processes=2,
             enable_checkpointing=False,
             callbacks=[PyTorchLightningPruningCallback(trial, monitor="accuracy")],
@@ -177,14 +179,16 @@ def test_pytorch_lightning_pruning_callback_ddp_monitor(
         np.testing.assert_almost_equal(study.trials[0].intermediate_values[1], 0.45)
 
 
+@pytest.mark.skip(reason="Currently DDP is not supported")
 def test_pytorch_lightning_pruning_callback_ddp_unsupported_storage() -> None:
     storage_mode = "inmemory"
 
     def objective(trial: optuna.trial.Trial) -> float:
         trainer = pl.Trainer(
             max_epochs=1,
-            accelerator="ddp_cpu",
-            num_processes=2,
+            strategy="ddp",
+            accelerator="cpu",
+            devices=2,
             enable_checkpointing=False,
             callbacks=[PyTorchLightningPruningCallback(trial, monitor="accuracy")],
         )
