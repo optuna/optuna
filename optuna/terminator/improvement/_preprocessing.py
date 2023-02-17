@@ -155,31 +155,6 @@ class ToMinimize(BasePreprocessing):
         return mapped_trials
 
 
-class ToIntersectionSearchSpace(BasePreprocessing):
-    def apply(
-        self,
-        trials: List[optuna.trial.FrozenTrial],
-        study_direction: Optional[optuna.study.StudyDirection],
-    ) -> List[optuna.trial.FrozenTrial]:
-        search_space = IntersectionSearchSpace().calculate(trials)
-
-        mapped_trials = []
-        for trial in trials:
-            params = {k: v for k, v in trial.params.items() if k in search_space}
-            trial = optuna.create_trial(
-                value=trial.value,
-                params=params,
-                distributions=trial.distributions,
-                user_attrs=trial.user_attrs,
-                system_attrs=trial.system_attrs,
-                state=trial.state,
-            )
-
-            mapped_trials.append(trial)
-
-        return mapped_trials
-
-
 class OneToHot(BasePreprocessing):
     def apply(
         self,
