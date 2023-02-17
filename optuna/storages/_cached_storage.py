@@ -27,11 +27,16 @@ class _StudyInfo:
         # Trial number to corresponding FrozenTrial.
         self.trials: Dict[int, FrozenTrial] = {}
         # A list of trials which do not require storage access to read latest attributes.
-        self.owned_or_finished_trial_ids: Set[int] = set()
+        self.owned_trial_ids: Set[int] = set()
+        self.finished_trial_ids: Set[int] = set()
         # Cache distributions to avoid storage access on distribution consistency check.
         self.param_distribution: Dict[str, distributions.BaseDistribution] = {}
         self.directions: Optional[List[StudyDirection]] = None
         self.name: Optional[str] = None
+
+    @property
+    def owned_or_finished_trial_ids(self) -> Set[int]:
+        return self.owned_trial_ids | self.finished_trial_ids
 
 
 class _CachedStorage(BaseStorage, BaseHeartbeat):
@@ -183,7 +188,7 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
             # WAITING trials are exception and they can be modified from arbitral worker.
             # Thus, we cannot add them to a list of cached trials.
             if frozen_trial.state != TrialState.WAITING:
-                study.owned_or_finished_trial_ids.add(frozen_trial._trial_id)
+                study.owned_trial_ids.add(frozen_trial._trial_id)
         return trial_id
 
     def set_trial_param(
@@ -271,7 +276,7 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
             with self._lock:
                 study_id, _ = self._trial_id_to_study_id_and_number[trial_id]
                 self._add_trials_to_cache(study_id, [self._backend.get_trial(trial_id)])
-                self._studies[study_id].owned_or_finished_trial_ids.add(trial_id)
+                self._studies[study_id].owned_trial_ids.add(trial_id)
         return ret
 
     def set_trial_intermediate_value(
@@ -328,7 +333,7 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
         states: Optional[Container[TrialState]] = None,
     ) -> List[FrozenTrial]:
         if study_id not in self._studies:
-            self.read_trials_from_remote_storage(study_id)
+            self.read_trials_from_remote_storage(study_id, sync_owned_trials=False)
 
         with self._lock:
             study = self._studies[study_id]
@@ -344,19 +349,21 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
             trials = list(sorted(trials.values(), key=lambda t: t.number))
             return copy.deepcopy(trials) if deepcopy else trials
 
-    def read_trials_from_remote_storage(self, study_id: int) -> None:
+    def read_trials_from_remote_storage(self, study_id: int, sync_owned_trials: bool) -> None:
         with self._lock:
             if study_id not in self._studies:
                 self._studies[study_id] = _StudyInfo()
             study = self._studies[study_id]
-            trials = self._backend._get_trials(
-                study_id, states=None, excluded_trial_ids=study.owned_or_finished_trial_ids
-            )
+            if sync_owned_trials:
+                excluded = study.finished_trial_ids
+            else:
+                excluded = study.owned_or_finished_trial_ids
+            trials = self._backend._get_trials(study_id, states=None, excluded_trial_ids=excluded)
             if trials:
                 self._add_trials_to_cache(study_id, trials)
                 for trial in trials:
                     if trial.state.is_finished():
-                        study.owned_or_finished_trial_ids.add(trial._trial_id)
+                        study.finished_trial_ids.add(trial._trial_id)
 
     def _add_trials_to_cache(self, study_id: int, trials: List[FrozenTrial]) -> None:
         study = self._studies[study_id]

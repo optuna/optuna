@@ -261,7 +261,7 @@ class Study:
             A list of :class:`~optuna.trial.FrozenTrial` objects.
         """
         if isinstance(self._storage, _CachedStorage):
-            self._storage.read_trials_from_remote_storage(self._study_id)
+            self._storage.read_trials_from_remote_storage(self._study_id, sync_owned_trials=True)
 
         return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy, states=states)
 
@@ -508,7 +508,7 @@ class Study:
 
         # Sync storage once every trial.
         if isinstance(self._storage, _CachedStorage):
-            self._storage.read_trials_from_remote_storage(self._study_id)
+            self._storage.read_trials_from_remote_storage(self._study_id, sync_owned_trials=True)
 
         trial_id = self._pop_waiting_trial_id()
         if trial_id is None:
