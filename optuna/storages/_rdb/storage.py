@@ -1039,27 +1039,28 @@ class _VersionManager:
     def _init_alembic(self) -> None:
         logging.getLogger("alembic").setLevel(logging.WARN)
 
-        context = alembic_migration.MigrationContext.configure(self.engine.connect())
-        is_initialized = context.get_current_revision() is not None
+        with self.engine.connect() as connection:
+            context = alembic_migration.MigrationContext.configure(connection)
+            is_initialized = context.get_current_revision() is not None
 
-        if is_initialized:
-            # The `alembic_version` table already exists and is not empty.
-            return
+            if is_initialized:
+                # The `alembic_version` table already exists and is not empty.
+                return
 
-        if self._is_alembic_supported():
-            revision = self.get_head_version()
-        else:
-            # The storage has been created before alembic is introduced.
-            revision = self._get_base_version()
+            if self._is_alembic_supported():
+                revision = self.get_head_version()
+            else:
+                # The storage has been created before alembic is introduced.
+                revision = self._get_base_version()
 
         self._set_alembic_revision(revision)
 
     def _set_alembic_revision(self, revision: str) -> None:
-        connection = self.engine.connect()
-        context = alembic_migration.MigrationContext.configure(connection)
-        with connection.begin():
-            script = self._create_alembic_script()
-            context.stamp(script, revision)
+        with self.engine.connect() as connection:
+            context = alembic_migration.MigrationContext.configure(connection)
+            with connection.begin():
+                script = self._create_alembic_script()
+                context.stamp(script, revision)
 
     def check_table_schema_compatibility(self) -> None:
         with _create_scoped_session(self.scoped_session) as session:
@@ -1093,8 +1094,9 @@ class _VersionManager:
         raise RuntimeError(message)
 
     def get_current_version(self) -> str:
-        context = alembic_migration.MigrationContext.configure(self.engine.connect())
-        version = context.get_current_revision()
+        with self.engine.connect() as connection:
+            context = alembic_migration.MigrationContext.configure(connection)
+            version = context.get_current_revision()
         assert version is not None
 
         return version
