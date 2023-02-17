@@ -243,7 +243,7 @@ class CmaEsSampler(BaseSampler):
         self._search_space = optuna.samplers.IntersectionSearchSpace()
         self._consider_pruned_trials = consider_pruned_trials
         self._restart_strategy = restart_strategy
-        self._popsize = popsize
+        self._initial_popsize = popsize
         self._inc_popsize = inc_popsize
         self._use_separable_cma = use_separable_cma
         self._with_margin = with_margin
@@ -365,11 +365,26 @@ class CmaEsSampler(BaseSampler):
 
         optimizer = self._restore_optimizer(completed_trials)
         if optimizer is None:
-            optimizer = self._init_optimizer(trans, study.direction, population_size=self._popsize)
+            optimizer = self._init_optimizer(
+                trans, study.direction, population_size=self._initial_popsize
+            )
+        # When `popsize=None`, initial popsize is computed inside of `cmaes` package.
+        if self.initial_popsize is None:
+            self._initial_popsize = optimizer.population_size
 
         n_restarts: int = 0
+        n_restarts_with_large: int = 0
+        poptype: str = "small"
+        small_n_eval: int = 0
+        large_n_eval: int = 0
         if len(completed_trials) != 0:
             n_restarts = completed_trials[-1].system_attrs.get(self._attr_keys.n_restarts, 0)
+            n_restarts_with_large = completed_trials[-1].system_attrs.get(
+                self._attr_keys.n_restarts_with_large, 0
+            )
+            poptype = completed_trials[-1].system_attrs.get(self._attr_keys.poptype, "small")
+            small_n_eval = completed_trials[-1].system_attrs.get(self._attr_keys.small_n_eval, 0)
+            large_n_eval = completed_trials[-1].system_attrs.get(self._attr_keys.large_n_eval, 0)
 
         if optimizer.dim != len(trans.bounds):
             _logger.info(
@@ -403,6 +418,30 @@ class CmaEsSampler(BaseSampler):
             if self._restart_strategy == "ipop" and optimizer.should_stop():
                 n_restarts += 1
                 popsize = optimizer.population_size * self._inc_popsize
+                optimizer = self._init_optimizer(
+                    trans, study.direction, population_size=popsize, randomize_start_point=True
+                )
+
+            if self._restart_strategy == "bipop" and optimizer.should_stop():
+                n_restarts += 1
+
+                n_eval = optimizer.population_size * optimizer.generation
+                if poptype == "small":
+                    small_n_eval += n_eval
+                else:  # poptype == "large"
+                    large_n_eval += n_eval
+
+                if small_n_eval < large_n_eval:
+                    poptype = "small"
+                    popsize_multiplier = self._inc_popsize**n_restarts_with_large
+                    popsize = math.floor(
+                        self._initial_popsize * popsize_multiplier ** (np.random.uniform() ** 2)
+                    )
+                else:
+                    poptype = "large"
+                    n_restarts_with_large += 1
+                    popsize = self._initial_popsize * (self._inc_popsize**n_restarts_with_large)
+
                 optimizer = self._init_optimizer(
                     trans, study.direction, population_size=popsize, randomize_start_point=True
                 )
