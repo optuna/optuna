@@ -390,13 +390,14 @@ class CmaEsSampler(BaseSampler):
         small_n_eval: int = 0
         large_n_eval: int = 0
         if len(completed_trials) != 0:
-            n_restarts = completed_trials[-1].system_attrs.get(self._attr_keys.n_restarts, 0)
-            n_restarts_with_large = completed_trials[-1].system_attrs.get(
+            latest_trial = completed_trials[-1]
+            n_restarts = latest_trial.system_attrs.get(self._attr_keys.n_restarts, 0)
+            n_restarts_with_large = latest_trial.system_attrs.get(
                 self._attr_keys.n_restarts_with_large, 0
             )
-            poptype = completed_trials[-1].system_attrs.get(self._attr_keys.poptype, "small")
-            small_n_eval = completed_trials[-1].system_attrs.get(self._attr_keys.small_n_eval, 0)
-            large_n_eval = completed_trials[-1].system_attrs.get(self._attr_keys.large_n_eval, 0)
+            poptype = latest_trial.system_attrs.get(self._attr_keys.poptype, "small")
+            small_n_eval = latest_trial.system_attrs.get(self._attr_keys.small_n_eval, 0)
+            large_n_eval = latest_trial.system_attrs.get(self._attr_keys.large_n_eval, 0)
 
         if optimizer.dim != len(trans.bounds):
             _logger.info(
