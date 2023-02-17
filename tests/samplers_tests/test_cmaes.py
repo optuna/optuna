@@ -327,14 +327,20 @@ def test_sampler_attr_key(options: Dict[str, bool], key: str) -> None:
         with_margin=options["with_margin"], use_separable_cma=options["use_separable_cma"]
     )
     assert sampler._attr_keys.optimizer.startswith(key)
+    assert sampler._attr_keys.popsize.startswith(key)
     assert sampler._attr_keys.n_restarts.startswith(key)
+    assert sampler._attr_keys.n_restarts_with_large.startswith(key)
+    assert sampler._attr_keys.poptype.startswith(key)
+    assert sampler._attr_keys.small_n_eval.startswith(key)
+    assert sampler._attr_keys.large_n_eval.startswith(key)
     assert sampler._attr_keys.generation(0).startswith(key)
 
-    sampler._restart_strategy = "ipop"
-    for i in range(3):
-        assert sampler._attr_keys.generation(i).startswith(
-            (key + "restart_{}:".format(i) + "generation")
-        )
+    for restart_strategy in ["ipop", "bipop"]:
+        sampler._restart_strategy = restart_strategy
+        for i in range(3):
+            assert sampler._attr_keys.generation(i).startswith(
+                (key + "restart_{}:".format(i) + "generation")
+            )
 
 
 @pytest.mark.parametrize("popsize", [None, 16])
@@ -407,7 +413,17 @@ def test_restore_optimizer_from_substrings(sampler_opts: Dict[str, Any]) -> None
         assert isinstance(optimizer, CMA)
 
 
-@pytest.mark.parametrize("sampler_opts", [{}, {"use_separable_cma": True}, {"with_margin": True}])
+@pytest.mark.parametrize(
+    "sampler_opts",
+    [
+        {"restart_strategy": "ipop"},
+        {"restart_strategy": "bipop"},
+        {"restart_strategy": "ipop", "use_separable_cma": True},
+        {"restart_strategy": "bipop", "use_separable_cma": True},
+        {"restart_strategy": "ipop", "with_margin": True},
+        {"restart_strategy": "ipop", "with_margin": True},
+    ],
+)
 def test_restore_optimizer_after_restart(sampler_opts: Dict[str, Any]) -> None:
     def objective(trial: optuna.Trial) -> float:
         x1 = trial.suggest_float("x1", -10, 10, step=1)
@@ -422,7 +438,7 @@ def test_restore_optimizer_after_restart(sampler_opts: Dict[str, Any]) -> None:
         cma_class = CMA
     with patch.object(cma_class, "should_stop") as mock_method:
         mock_method.return_value = True
-        sampler = optuna.samplers.CmaEsSampler(popsize=5, restart_strategy="ipop", **sampler_opts)
+        sampler = optuna.samplers.CmaEsSampler(popsize=5, **sampler_opts)
         study = optuna.create_study(sampler=sampler)
         study.optimize(objective, n_trials=5 + 2)
 
