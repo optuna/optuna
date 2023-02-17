@@ -898,7 +898,9 @@ class Study:
 
         if trial.values is not None and len(self.directions) != len(trial.values):
             raise ValueError(
-                f"The added trial has {len(trial.values)} values, which is different from the number of objectives {len(self.directions)} in the study (determined by Study.directions)."
+                f"The added trial has {len(trial.values)} values, which is different from the "
+                f"number of objectives {len(self.directions)} in the study (determined by "
+                "Study.directions)."
             )
 
         self._storage.create_new_trial(self._study_id, template_trial=trial)
