@@ -22,7 +22,6 @@ with try_import() as _imports:
     from botorch.optim.fit import fit_gpytorch_scipy
     import gpytorch
     import torch
-    from torch.quasirandom import SobolEngine
 
 __all__ = [
     "FixedNoiseGP",
@@ -31,7 +30,6 @@ __all__ = [
     "fit_gpytorch_scipy",
     "gpytorch",
     "torch",
-    "SobolEngine",
 ]
 
 
