@@ -15,7 +15,7 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.terminator import _distribution_is_log
-from optuna.terminator.search_space.intersection import IntersectionSearchSpace
+from optuna.terminator._search_space.intersection import IntersectionSearchSpace
 from optuna.trial._state import TrialState
 
 

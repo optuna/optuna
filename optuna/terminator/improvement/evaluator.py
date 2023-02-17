@@ -5,10 +5,7 @@ from typing import Optional
 
 from optuna.distributions import BaseDistribution
 from optuna.study import StudyDirection
-from optuna.terminator.improvement.gp.base import BaseGaussianProcess
-from optuna.terminator.improvement.gp.base import min_lcb
-from optuna.terminator.improvement.gp.base import min_ucb
-from optuna.terminator.improvement.gp.botorch import _BoTorchGaussianProcess
+from optuna.terminator._search_space.intersection import IntersectionSearchSpace
 from optuna.terminator.improvement._preprocessing import AddRandomInputs
 from optuna.terminator.improvement._preprocessing import BasePreprocessing
 from optuna.terminator.improvement._preprocessing import OneToHot
@@ -16,7 +13,10 @@ from optuna.terminator.improvement._preprocessing import PreprocessingPipeline
 from optuna.terminator.improvement._preprocessing import SelectTopTrials
 from optuna.terminator.improvement._preprocessing import ToMinimize
 from optuna.terminator.improvement._preprocessing import UnscaleLog
-from optuna.terminator.search_space.intersection import IntersectionSearchSpace
+from optuna.terminator.improvement.gp.base import BaseGaussianProcess
+from optuna.terminator.improvement.gp.base import min_lcb
+from optuna.terminator.improvement.gp.base import min_ucb
+from optuna.terminator.improvement.gp.botorch import _BoTorchGaussianProcess
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
