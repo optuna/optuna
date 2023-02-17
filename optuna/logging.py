@@ -6,6 +6,8 @@ from logging import FATAL
 from logging import INFO
 from logging import WARN
 from logging import WARNING
+import os
+import sys
 import threading
 from typing import Optional
 
@@ -26,15 +28,30 @@ _lock: threading.Lock = threading.Lock()
 _default_handler: Optional[logging.Handler] = None
 
 
-def create_default_formatter() -> colorlog.ColoredFormatter:
+def create_default_formatter() -> logging.Formatter:
     """Create a default formatter of log messages.
 
     This function is not supposed to be directly accessed by library users.
     """
+    header = "[%(levelname)1.1s %(asctime)s]"
+    message = "%(message)s"
+    if _color_supported():
+        return colorlog.ColoredFormatter(
+            f"%(log_color)s{header}%(reset)s {message}",
+        )
+    return logging.Formatter(f"{header} {message}")
 
-    return colorlog.ColoredFormatter(
-        "%(log_color)s[%(levelname)1.1s %(asctime)s]%(reset)s %(message)s"
-    )
+
+def _color_supported() -> bool:
+    """Detection of color support."""
+    # NO_COLOR environment variable:
+    if os.environ.get("NO_COLOR", None):
+        return False
+
+    if not hasattr(sys.stderr, "isatty") or not sys.stderr.isatty():
+        return False
+    else:
+        return True
 
 
 def _get_library_name() -> str:
