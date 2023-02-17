@@ -1,7 +1,6 @@
 """Optuna CLI module.
 If you want to add a new command, you also need to update the constant `_COMMANDS`
 """
-import re
 from argparse import ArgumentParser
 from argparse import Namespace
 import datetime
@@ -11,6 +10,7 @@ import inspect
 import json
 import logging
 import os
+import re
 import sys
 import types
 from typing import Any
@@ -28,7 +28,10 @@ import optuna
 from optuna._imports import _LazyImport
 from optuna.exceptions import CLIUsageError
 from optuna.exceptions import ExperimentalWarning
-from optuna.storages import BaseStorage, JournalStorage, JournalRedisStorage, JournalFileStorage
+from optuna.storages import BaseStorage
+from optuna.storages import JournalFileStorage
+from optuna.storages import JournalRedisStorage
+from optuna.storages import JournalStorage
 from optuna.storages import RDBStorage
 from optuna.trial import TrialState
 
