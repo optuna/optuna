@@ -422,7 +422,7 @@ def test_restore_optimizer_from_substrings(sampler_opts: Dict[str, Any]) -> None
         {"restart_strategy": "ipop", "use_separable_cma": True},
         {"restart_strategy": "bipop", "use_separable_cma": True},
         {"restart_strategy": "ipop", "with_margin": True},
-        {"restart_strategy": "ipop", "with_margin": True},
+        {"restart_strategy": "bipop", "with_margin": True},
     ],
 )
 def test_restore_optimizer_after_restart(sampler_opts: Dict[str, Any]) -> None:
