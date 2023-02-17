@@ -166,7 +166,18 @@ texinfo_documents = [
     ),
 ]
 
-intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "distributed": ("https://distributed.dask.org/en/stable", None),
+    "lightgbm": ("https://lightgbm.readthedocs.io/en/latest", None),
+    "matplotlib": ("https://matplotlib.org/stable", None),
+    "numpy": ("https://numpy.org/doc/stable", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy", None),
+    "sklearn": ("https://scikit-learn.org/stable", None),
+    "torch": ("https://pytorch.org/docs/stable", None),
+    "pandas": ("https://pandas.pydata.org/docs", None),
+    "plotly": ("https://plotly.com/python-api-reference", None),
+}
 
 # -- Extension configuration -------------------------------------------------
 autosummary_generate = True

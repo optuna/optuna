@@ -10,6 +10,7 @@ def _compute_2points_volume(point1: np.ndarray, point2: np.ndarray) -> float:
         point2:
             The second endpoint of the hypercube's diagonal.
     """
+
     return float(np.abs(np.prod(point1 - point2)))
 
 

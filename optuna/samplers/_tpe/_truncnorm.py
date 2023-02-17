@@ -34,10 +34,8 @@
 import functools
 import math
 import sys
-import typing
 from typing import Callable
 from typing import Optional
-from typing import Tuple
 from typing import Union
 
 import numpy as np
@@ -54,8 +52,7 @@ def _log_sum(log_p: np.ndarray, log_q: np.ndarray) -> np.ndarray:
 
 
 def _log_diff(log_p: np.ndarray, log_q: np.ndarray) -> np.ndarray:
-    with np.errstate(divide="ignore"):  # We ignore warnings for log(0)
-        return log_p + np.log1p(-np.exp(log_q - log_p))
+    return log_p + np.log1p(-np.exp(log_q - log_p))
 
 
 @functools.lru_cache(1000)
@@ -181,13 +178,11 @@ def ppf(q: np.ndarray, a: Union[np.ndarray, float], b: Union[np.ndarray, float])
     case_right = ~case_left
 
     def ppf_left(q: np.ndarray, a: np.ndarray, b: np.ndarray) -> np.ndarray:
-        with np.errstate(divide="ignore"):  # We ignore warnings for log(0)
-            log_Phi_x = _log_sum(_log_ndtr(a), np.log(q) + _log_gauss_mass(a, b))
+        log_Phi_x = _log_sum(_log_ndtr(a), np.log(q) + _log_gauss_mass(a, b))
         return _ndtri_exp(log_Phi_x)
 
     def ppf_right(q: np.ndarray, a: np.ndarray, b: np.ndarray) -> np.ndarray:
-        with np.errstate(divide="ignore"):  # We ignore warnings for log(0)
-            log_Phi_x = _log_sum(_log_ndtr(-b), np.log1p(-q) + _log_gauss_mass(a, b))
+        log_Phi_x = _log_sum(_log_ndtr(-b), np.log1p(-q) + _log_gauss_mass(a, b))
         return -_ndtri_exp(log_Phi_x)
 
     out = np.empty_like(q)
@@ -212,15 +207,11 @@ def rvs(
     b: np.ndarray,
     loc: Union[np.ndarray, float] = 0,
     scale: Union[np.ndarray, float] = 1,
-    size: Optional[int] = None,
+    size: int = 1,
     random_state: Optional[np.random.RandomState] = None,
 ) -> np.ndarray:
-    if size is not None:
-        shape = typing.cast(Tuple[int, ...], (size,))
-    else:
-        shape = np.broadcast(a, b, loc, scale).shape
     random_state = random_state or np.random.RandomState()
-    percentiles = random_state.uniform(low=0, high=1, size=shape)
+    percentiles = random_state.uniform(low=0, high=1, size=size)
     return ppf(percentiles, a, b) * scale + loc
 
 

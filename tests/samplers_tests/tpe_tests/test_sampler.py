@@ -450,14 +450,13 @@ def test_sample_independent_prior() -> None:
     # Prepare a trial and a sample for later checks.
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0)
-    print("Test 1")
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         suggestion = sampler.sample_independent(study, trial, "param-a", dist)
-    print("Test 2")
+
     sampler = TPESampler(consider_prior=False, n_startup_trials=5, seed=0)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
-    print("Test 3")
+
     sampler = TPESampler(prior_weight=0.1, n_startup_trials=5, seed=0)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
