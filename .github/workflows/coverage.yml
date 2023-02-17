@@ -56,6 +56,10 @@ jobs:
         pip install --progress-bar off .[integration] --extra-index-url https://download.pytorch.org/whl/cpu
 
         echo 'import coverage; coverage.process_startup()' > sitecustomize.py
+        
+    - name: Output installed packages
+      run: |
+        pip freeze --all
 
     - name: Tests
       env:
