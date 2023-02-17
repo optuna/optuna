@@ -430,13 +430,17 @@ class NSGAIIISampler(BaseSampler):
         self._random_sampler.after_trial(study, trial, state, values)
 
 
+def multi_choose(n: int, k: int) -> int:
+    return math.factorial(n + k - 1) // math.factorial(k) // math.factorial(n - 1)
+
+
 def generate_default_reference_point(
     objective_dimension: int, dividing_parameter: int = 3
 ) -> np.ndarray:
     """Generates default reference points which are `uniformly` spread on a hyperplane."""
     reference_points = np.zeros(
         (
-            math.comb(objective_dimension + dividing_parameter - 1, dividing_parameter),
+            multi_choose(objective_dimension, dividing_parameter),
             objective_dimension,
         )
     )
