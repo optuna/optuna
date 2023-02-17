@@ -369,7 +369,7 @@ class CmaEsSampler(BaseSampler):
                 trans, study.direction, population_size=self._initial_popsize
             )
         # When `popsize=None`, initial popsize is computed inside of `cmaes` package.
-        if self.initial_popsize is None:
+        if self._initial_popsize is None:
             self._initial_popsize = optimizer.population_size
 
         n_restarts: int = 0
@@ -467,6 +467,19 @@ class CmaEsSampler(BaseSampler):
         )
         study._storage.set_trial_system_attr(
             trial._trial_id, self._attr_keys.n_restarts, n_restarts
+        )
+        study._storage.set_trial_system_attr(
+            trial._trial_id, self._attr_keys.popsize, optimizer.population_size
+        )
+        study._storage.set_trial_system_attr(
+            trial._trial_id, self._attr_keys.n_restarts_with_large, n_restarts_with_large
+        )
+        study._storage.set_trial_system_attr(trial._trial_id, self._attr_keys.poptype, poptype)
+        study._storage.set_trial_system_attr(
+            trial._trial_id, self._attr_keys.small_n_eval, small_n_eval
+        )
+        study._storage.set_trial_system_attr(
+            trial._trial_id, self._attr_keys.large_n_eval, large_n_eval
         )
 
         external_values = trans.untransform(params)
