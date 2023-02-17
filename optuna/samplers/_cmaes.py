@@ -44,7 +44,12 @@ CmaClass = Union[CMA, SepCMA, CMAwM]
 
 class _CmaEsAttrKeys(NamedTuple):
     optimizer: str
+    popsize: str
     n_restarts: str
+    n_restarts_with_large: str
+    poptype: str
+    small_n_eval: str
+    large_n_eval: str
     generation: Callable[[int], str]
 
 
@@ -466,10 +471,10 @@ class CmaEsSampler(BaseSampler):
             trial._trial_id, generation_attr_key, optimizer.generation
         )
         study._storage.set_trial_system_attr(
-            trial._trial_id, self._attr_keys.n_restarts, n_restarts
+            trial._trial_id, self._attr_keys.popsize, optimizer.population_size
         )
         study._storage.set_trial_system_attr(
-            trial._trial_id, self._attr_keys.popsize, optimizer.population_size
+            trial._trial_id, self._attr_keys.n_restarts, n_restarts
         )
         study._storage.set_trial_system_attr(
             trial._trial_id, self._attr_keys.n_restarts_with_large, n_restarts_with_large
@@ -503,7 +508,12 @@ class CmaEsSampler(BaseSampler):
 
         return _CmaEsAttrKeys(
             attr_prefix + "optimizer",
+            attr_prefix + "popsize",
             attr_prefix + "n_restarts",
+            attr_prefix + "n_restarts_with_large",
+            attr_prefix + "poptype",
+            attr_prefix + "small_n_eval",
+            attr_prefix + "large_n_eval",
             generation_attr_key_template,
         )
 
