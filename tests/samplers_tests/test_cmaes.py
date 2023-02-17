@@ -385,9 +385,8 @@ def test_population_size_is_multiplied_when_enable_ipop(popsize: Optional[int]) 
 def test_restore_optimizer_from_substrings(sampler_opts: Dict[str, Any]) -> None:
     popsize = 8
     sampler = optuna.samplers.CmaEsSampler(popsize=popsize, **sampler_opts)
-    optimizer, n_restarts = sampler._restore_optimizer([])
+    optimizer = sampler._restore_optimizer([])
     assert optimizer is None
-    assert n_restarts == 0
 
     def objective(trial: optuna.Trial) -> float:
         x1 = trial.suggest_float("x1", -10, 10, step=1)
@@ -396,9 +395,8 @@ def test_restore_optimizer_from_substrings(sampler_opts: Dict[str, Any]) -> None
 
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=popsize + 2)
-    optimizer, n_restarts = sampler._restore_optimizer(study.trials)
+    optimizer = sampler._restore_optimizer(study.trials)
 
-    assert n_restarts == 0
     assert optimizer is not None
     assert optimizer.generation == 1
     if sampler._with_margin:
@@ -428,8 +426,7 @@ def test_restore_optimizer_after_restart(sampler_opts: Dict[str, Any]) -> None:
         study = optuna.create_study(sampler=sampler)
         study.optimize(objective, n_trials=5 + 2)
 
-    optimizer, n_restarts = sampler._restore_optimizer(study.trials)
-    assert n_restarts == 1
+    optimizer = sampler._restore_optimizer(study.trials)
     assert optimizer is not None
     assert optimizer.generation == 0
 
@@ -449,8 +446,7 @@ def test_restore_optimizer_with_other_option(sampler_opts: Dict[str, Any]) -> No
 
     # Restore optimizer via SepCMA or CMAwM samplers.
     sampler = optuna.samplers.CmaEsSampler(**sampler_opts)
-    optimizer, n_restarts = sampler._restore_optimizer(study.trials)
-    assert n_restarts == 0
+    optimizer = sampler._restore_optimizer(study.trials)
     assert optimizer is None
 
 

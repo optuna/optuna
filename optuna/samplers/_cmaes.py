@@ -363,10 +363,13 @@ class CmaEsSampler(BaseSampler):
         # When `with_margin=True`, bounds in discrete dimensions are handled inside `CMAwM`.
         trans = _SearchSpaceTransform(search_space, transform_step=not self._with_margin)
 
-        optimizer, n_restarts = self._restore_optimizer(completed_trials)
+        optimizer = self._restore_optimizer(completed_trials)
         if optimizer is None:
-            n_restarts = 0
             optimizer = self._init_optimizer(trans, study.direction, population_size=self._popsize)
+
+        n_restarts: int = 0
+        if len(completed_trials) != 0:
+            n_restarts = completed_trials[-1].system_attrs.get(self._attr_keys.n_restarts, 0)
 
         if optimizer.dim != len(trans.bounds):
             _logger.info(
@@ -470,7 +473,7 @@ class CmaEsSampler(BaseSampler):
     def _restore_optimizer(
         self,
         completed_trials: "List[optuna.trial.FrozenTrial]",
-    ) -> Tuple[Optional[CmaClass], int]:
+    ) -> Optional[CmaClass]:
         # Restore a previous CMA object.
         for trial in reversed(completed_trials):
             optimizer_attrs = {
@@ -482,9 +485,8 @@ class CmaEsSampler(BaseSampler):
                 continue
 
             optimizer_str = self._concat_optimizer_attrs(optimizer_attrs)
-            n_restarts: int = trial.system_attrs.get(self._attr_keys.n_restarts, 0)
-            return pickle.loads(bytes.fromhex(optimizer_str)), n_restarts
-        return None, 0
+            return pickle.loads(bytes.fromhex(optimizer_str))
+        return None
 
     def _init_optimizer(
         self,
