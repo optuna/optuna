@@ -16,21 +16,19 @@ from optuna.trial._state import TrialState
 
 
 with try_import() as _imports:
-    import botorch
-    from botorch.models import SingleTaskGP
+    from botorch.models import FixedNoiseGP
     from botorch.models.transforms import Normalize
     from botorch.models.transforms import Standardize
-    from botorch.optim.fit import fit_gpytorch_torch
+    from botorch.optim.fit import fit_gpytorch_scipy
     import gpytorch
     import torch
     from torch.quasirandom import SobolEngine
 
 __all__ = [
-    "botorch",
-    "SingleTaskGP",
+    "FixedNoiseGP",
     "Normalize",
     "Standardize",
-    "fit_gpytorch_torch",
+    "fit_gpytorch_scipy",
     "gpytorch",
     "torch",
     "SobolEngine",
@@ -43,7 +41,7 @@ class _BoTorchGaussianProcess(BaseGaussianProcess):
 
         self._n_params: Optional[float] = None
         self._n_trials: Optional[float] = None
-        self._gp: Optional[SingleTaskGP] = None
+        self._gp: Optional[FixedNoiseGP] = None
 
     def fit(
         self,
@@ -59,34 +57,18 @@ class _BoTorchGaussianProcess(BaseGaussianProcess):
         y = torch.tensor([trial.value for trial in trials], dtype=torch.float64)
         y = torch.unsqueeze(y, 1)
 
-        covar_module = gpytorch.kernels.ScaleKernel(
-            gpytorch.kernels.MaternKernel(
-                nu=2.5,
-                ard_num_dims=self._n_params,
-            ),
-        )
-
-        likelihood = gpytorch.likelihoods.GaussianLikelihood()
-
-        self._gp = SingleTaskGP(
+        self._gp = FixedNoiseGP(
             x,
             y,
-            likelihood=likelihood,
-            covar_module=covar_module,
+            torch.full_like(y, 1e-8),
             input_transform=Normalize(d=self._n_params, bounds=bounds),
             outcome_transform=Standardize(m=1),
         )
 
-        hypers = {}
-        hypers["covar_module.base_kernel.lengthscale"] = 1.0
-        self._gp.initialize(**hypers)
-
         mll = gpytorch.mlls.ExactMarginalLogLikelihood(self._gp.likelihood, self._gp)
 
         mll.train()
-        fit_gpytorch_torch(
-            mll, optimizer_cls=torch.optim.Adam, options={"lr": 0.1, "maxiter": 500}
-        )
+        fit_gpytorch_scipy(mll)
         mll.eval()
 
     def predict_mean_std(
