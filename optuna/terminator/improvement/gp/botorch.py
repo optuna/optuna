@@ -16,18 +16,18 @@ from optuna.trial._state import TrialState
 
 
 with try_import() as _imports:
+    from botorch.fit import fit_gpytorch_model
     from botorch.models import FixedNoiseGP
     from botorch.models.transforms import Normalize
     from botorch.models.transforms import Standardize
-    from botorch.optim.fit import fit_gpytorch_scipy
     import gpytorch
     import torch
 
 __all__ = [
+    "fit_gpytorch_model",
     "FixedNoiseGP",
     "Normalize",
     "Standardize",
-    "fit_gpytorch_scipy",
     "gpytorch",
     "torch",
 ]
@@ -65,9 +65,7 @@ class _BoTorchGaussianProcess(BaseGaussianProcess):
 
         mll = gpytorch.mlls.ExactMarginalLogLikelihood(self._gp.likelihood, self._gp)
 
-        mll.train()
-        fit_gpytorch_scipy(mll)
-        mll.eval()
+        fit_gpytorch_model(mll)
 
     def predict_mean_std(
         self,
