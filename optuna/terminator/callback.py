@@ -2,7 +2,7 @@ from typing import Optional
 
 from optuna.logging import get_logger
 from optuna.study.study import Study
-from optuna.terminator.regret.evaluator import DEFAULT_MIN_N_TRIALS
+from optuna.terminator.improvement.evaluator import DEFAULT_MIN_N_TRIALS
 from optuna.terminator.terminator import Terminator
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState

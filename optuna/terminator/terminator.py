@@ -4,8 +4,8 @@ from typing import Tuple
 from typing import Union
 
 from optuna.study.study import Study
-from optuna.terminator.regret.evaluator import BaseRegretBoundEvaluator
-from optuna.terminator.regret.evaluator import RegretBoundEvaluator
+from optuna.terminator.improvement.evaluator import BaseImprovementEvaluator
+from optuna.terminator.improvement.evaluator import RegretBoundEvaluator
 from optuna.terminator.serror import BaseStatisticalErrorEvaluator
 from optuna.terminator.serror import CrossValidationStatisticalErrorEvaluator
 
@@ -13,7 +13,7 @@ from optuna.terminator.serror import CrossValidationStatisticalErrorEvaluator
 class Terminator:
     def __init__(
         self,
-        regret_bound_evaluator: Optional[BaseRegretBoundEvaluator] = None,
+        regret_bound_evaluator: Optional[BaseImprovementEvaluator] = None,
         statistical_error_evaluator: Optional[BaseStatisticalErrorEvaluator] = None,
     ) -> None:
         self._regret_bound_evaluator = regret_bound_evaluator or RegretBoundEvaluator()

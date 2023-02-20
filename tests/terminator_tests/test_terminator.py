@@ -2,13 +2,13 @@ from typing import List
 
 from optuna.study._study_direction import StudyDirection
 from optuna.study.study import create_study
-from optuna.terminator.regret.evaluator import BaseRegretBoundEvaluator
+from optuna.terminator.improvement.evaluator import BaseImprovementEvaluator
 from optuna.terminator.serror import StaticStatisticalErrorEvaluator
 from optuna.terminator.terminator import Terminator
 from optuna.trial import FrozenTrial
 
 
-class _StaticRegretBoundEvaluator(BaseRegretBoundEvaluator):
+class _StaticRegretBoundEvaluator(BaseImprovementEvaluator):
     def __init__(self, constant: float) -> None:
         super().__init__()
         self._constant = constant
