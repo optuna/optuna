@@ -41,12 +41,12 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         gp: Optional[BaseGaussianProcess] = None,
         top_trials_ratio: float = DEFAULT_TOP_TRIALS_RATIO,
         min_n_trials: int = DEFAULT_MIN_N_TRIALS,
-        min_lcb_n_samples: int = 2000,
+        min_lcb_n_additional_samples: int = 2000,
     ) -> None:
         self._gp = gp or _BoTorchGaussianProcess()
         self._top_trials_ratio = top_trials_ratio
         self._min_n_trials = min_n_trials
-        self._min_lcb_n_samples = min_lcb_n_samples
+        self._min_lcb_n_additional_samples = min_lcb_n_additional_samples
 
     def get_preprocessing(self, add_random_inputs: bool = False) -> BasePreprocessing:
         processes = [
@@ -59,7 +59,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         ]
 
         if add_random_inputs:
-            processes += [AddRandomInputs(self._min_lcb_n_samples)]
+            processes += [AddRandomInputs(self._min_lcb_n_additional_samples)]
 
         processes += [OneToHot()]
 
