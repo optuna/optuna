@@ -4,7 +4,7 @@ from optuna.trial import create_trial
 
 
 def test_fit_predict() -> None:
-    # A typical fit-predict scenario is being tested here, where there are more than one trials 
+    # A typical fit-predict scenario is being tested here, where there are more than one trials
     # and the Gram matrix is a regular one.
     trials = [
         create_trial(
