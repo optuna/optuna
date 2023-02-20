@@ -16,6 +16,7 @@ import pytest
 import optuna
 from optuna import create_trial
 from optuna._transform import _SearchSpaceTransform
+from optuna.testing.storages import StorageSupplier
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
