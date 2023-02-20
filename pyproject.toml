@@ -100,7 +100,7 @@ integration = [
     "mxnet; python_version<'3.11'",
     "pandas",
     "pytorch-ignite; python_version<'3.11'",
-    "pytorch-lightning>=1.5.0; python_version<'3.11'",
+    "pytorch-lightning>=1.6.0; python_version<'3.11'",
     "scikit-learn>=0.24.2",
     "scikit-optimize; python_version<'3.11'",
     "shap; python_version<'3.11'",

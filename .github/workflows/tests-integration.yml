@@ -86,8 +86,7 @@ jobs:
             --ignore tests/importance_tests/test_init.py \
             --ignore tests/samplers_tests/test_samplers.py
         else
-          pytest tests -m "integration" \
-            --ignore tests/integration_tests/test_pytorch_lightning.py
+          pytest tests -m "integration" 
         fi
 
     - name: Tests
@@ -117,6 +116,5 @@ jobs:
             --ignore tests/importance_tests/test_init.py \
             --ignore tests/samplers_tests/test_samplers.py
         else
-          pytest tests -m "integration and not slow" \
-            --ignore tests/integration_tests/test_pytorch_lightning.py
+          pytest tests -m "integration and not slow"
         fi
