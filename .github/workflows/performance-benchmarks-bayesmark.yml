@@ -62,6 +62,10 @@ jobs:
         pip install --progress-bar off .[benchmark]
         pip install --progress-bar off bayesmark matplotlib pandas
 
+    - name: Output installed packages
+      run: |
+        pip freeze --all
+
     - name: Run performance benchmark
       run: |
         python benchmarks/run_bayesmark.py \

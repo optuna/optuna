@@ -62,7 +62,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
 
-    - name: Install Python libralies
+    - name: Install Python libraries
       run: |
         python -m pip install --upgrade pip
         pip install --progress-bar off -U setuptools
@@ -90,7 +90,11 @@ jobs:
 
         chmod +x kurobako
         ./kurobako -h
-
+    
+    - name: Output installed packages
+      run: |
+        pip freeze --all
+        
     - name: Cache hpobench dataset
       id: cache-hpobench-dataset
       uses: actions/cache@v3

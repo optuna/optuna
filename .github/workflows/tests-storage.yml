@@ -97,7 +97,11 @@ jobs:
     - name: Install DB bindings
       run: |
         pip install --progress-bar off PyMySQL cryptography psycopg2-binary redis
-
+    
+    - name: Output installed packages
+      run: |
+        pip freeze --all
+        
     - name: Tests MySQL
       run: |
         pytest tests/storages_tests/test_with_server.py
