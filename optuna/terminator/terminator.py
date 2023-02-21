@@ -1,7 +1,6 @@
+import abc
 import math
 from typing import Optional
-from typing import Tuple
-from typing import Union
 
 from optuna.study.study import Study
 from optuna.terminator.improvement.evaluator import BaseImprovementEvaluator
@@ -10,7 +9,13 @@ from optuna.terminator.serror import BaseStatisticalErrorEvaluator
 from optuna.terminator.serror import CrossValidationStatisticalErrorEvaluator
 
 
-class Terminator:
+class BaseTerminator(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def should_terminate(self, study: Study) -> bool:
+        pass
+
+
+class Terminator(BaseTerminator):
     def __init__(
         self,
         regret_bound_evaluator: Optional[BaseImprovementEvaluator] = None,
@@ -21,10 +26,7 @@ class Terminator:
             statistical_error_evaluator or CrossValidationStatisticalErrorEvaluator()
         )
 
-    def should_terminate(
-        self,
-        study: Study,
-    ) -> Union[bool, Tuple[bool, float, float]]:
+    def should_terminate(self, study: Study) -> bool:
         regret_bound = self._regret_bound_evaluator.evaluate(
             trials=study.trials,
             study_direction=study.direction,
