@@ -169,7 +169,7 @@ class TrialModel(BaseModel):
     # to be unique. This is to reduce code complexity as table-level locking would be required
     # otherwise. See https://github.com/optuna/optuna/pull/939#discussion_r387447632.
     number = Column(Integer)
-    study_id = Column(Integer, ForeignKey("studies.study_id"))
+    study_id = Column(Integer, ForeignKey("studies.study_id"), index=True)
     state = Column(Enum(TrialState), nullable=False)
     datetime_start = Column(DateTime)
     datetime_complete = Column(DateTime)
