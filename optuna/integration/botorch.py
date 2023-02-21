@@ -32,11 +32,24 @@ with try_import() as _imports:
     from botorch.acquisition.multi_objective.objective import IdentityMCMultiOutputObjective
     from botorch.acquisition.objective import ConstrainedMCObjective
     from botorch.acquisition.objective import GenericMCObjective
-    from botorch.fit import fit_gpytorch_model
     from botorch.models import SingleTaskGP
     from botorch.models.transforms.outcome import Standardize
     from botorch.optim import optimize_acqf
-    from botorch.sampling.samplers import SobolQMCNormalSampler
+    from botorch.sampling import SobolQMCNormalSampler
+    import botorch.version
+
+    if botorch.version.version_tuple < (0, 8, 0):
+        from botorch.fit import fit_gpytorch_model as fit_gpytorch_mll
+
+        def _get_sobol_qmc_normal_sampler(num_samples: int) -> SobolQMCNormalSampler:
+            return SobolQMCNormalSampler(num_samples)
+
+    else:
+        from botorch.fit import fit_gpytorch_mll
+
+        def _get_sobol_qmc_normal_sampler(num_samples: int) -> SobolQMCNormalSampler:
+            return SobolQMCNormalSampler(torch.Size((num_samples,)))
+
     from botorch.utils.multi_objective.box_decompositions import NondominatedPartitioning
     from botorch.utils.multi_objective.scalarization import get_chebyshev_scalarization
     from botorch.utils.sampling import manual_seed
@@ -124,12 +137,12 @@ def qei_candidates_func(
 
     model = SingleTaskGP(train_x, train_y, outcome_transform=Standardize(m=train_y.size(-1)))
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
-    fit_gpytorch_model(mll)
+    fit_gpytorch_mll(mll)
 
     acqf = qExpectedImprovement(
         model=model,
         best_f=best_f,
-        sampler=SobolQMCNormalSampler(num_samples=256),
+        sampler=_get_sobol_qmc_normal_sampler(256),
         objective=objective,
     )
 
@@ -194,7 +207,7 @@ def qehvi_candidates_func(
 
     model = SingleTaskGP(train_x, train_y, outcome_transform=Standardize(m=train_y.shape[-1]))
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
-    fit_gpytorch_model(mll)
+    fit_gpytorch_mll(mll)
 
     # Approximate box decomposition similar to Ax when the number of objectives is large.
     # https://github.com/facebook/Ax/blob/master/ax/models/torch/botorch_moo_defaults
@@ -213,10 +226,9 @@ def qehvi_candidates_func(
         model=model,
         ref_point=ref_point_list,
         partitioning=partitioning,
-        sampler=SobolQMCNormalSampler(num_samples=256),
+        sampler=_get_sobol_qmc_normal_sampler(256),
         **additional_qehvi_kwargs,
     )
-
     standard_bounds = torch.zeros_like(bounds)
     standard_bounds[1] = 1
 
@@ -274,7 +286,7 @@ def qnehvi_candidates_func(
 
     model = SingleTaskGP(train_x, train_y, outcome_transform=Standardize(m=train_y.shape[-1]))
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
-    fit_gpytorch_model(mll)
+    fit_gpytorch_mll(mll)
 
     # Approximate box decomposition similar to Ax when the number of objectives is large.
     # https://github.com/facebook/Ax/blob/master/ax/models/torch/botorch_moo_defaults
@@ -295,7 +307,7 @@ def qnehvi_candidates_func(
         X_baseline=train_x,
         alpha=alpha,
         prune_baseline=True,
-        sampler=SobolQMCNormalSampler(num_samples=256),
+        sampler=_get_sobol_qmc_normal_sampler(256),
         **additional_qnehvi_kwargs,
     )
 
@@ -357,12 +369,12 @@ def qparego_candidates_func(
 
     model = SingleTaskGP(train_x, train_y, outcome_transform=Standardize(m=train_y.size(-1)))
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
-    fit_gpytorch_model(mll)
+    fit_gpytorch_mll(mll)
 
     acqf = qExpectedImprovement(
         model=model,
         best_f=objective(train_y).max(),
-        sampler=SobolQMCNormalSampler(num_samples=256),
+        sampler=_get_sobol_qmc_normal_sampler(256),
         objective=objective,
     )
 
