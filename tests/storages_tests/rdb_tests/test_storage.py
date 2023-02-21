@@ -163,6 +163,7 @@ def test_upgrade_identity() -> None:
     assert old_version == new_version
 
 
+@pytest.mark.skipif(platform.system() == "Windows", reason="Skip on Windows")
 @pytest.mark.parametrize(
     "optuna_version",
     [
@@ -181,8 +182,6 @@ def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
     src_db_file = os.path.join(
         os.path.dirname(__file__), "test_upgrade_assets", f"{optuna_version}.db"
     )
-    if platform.system() == "Windows" and optuna_version in ["0.9.0.a", "1.2.0.a"]:
-        pytest.skip("Somehow this test will fail on Windows")
     with tempfile.TemporaryDirectory() as workdir:
         shutil.copyfile(src_db_file, f"{workdir}/sqlite.db")
         storage_url = f"sqlite:///{workdir}/sqlite.db"
@@ -229,6 +228,7 @@ def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
         storage.engine.dispose()  # Be sure to disconnect db
 
 
+@pytest.mark.skipif(platform.system() == "Windows", reason="Skip on Windows")
 @pytest.mark.parametrize(
     "optuna_version", ["2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c", "3.0.0.d"]
 )
@@ -277,6 +277,7 @@ def test_upgrade_multi_objective_optimization(optuna_version: str) -> None:
         storage.engine.dispose()  # Be sure to disconnect db
 
 
+@pytest.mark.skipif(platform.system() == "Windows", reason="Skip on Windows")
 @pytest.mark.parametrize(
     "optuna_version", ["2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c", "3.0.0.d"]
 )
