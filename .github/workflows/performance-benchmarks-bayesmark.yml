@@ -117,6 +117,10 @@ jobs:
         pip install --progress-bar off -U setuptools wheel
         pip install --progress-bar off numpy scipy pandas Jinja2
 
+    - name: Output installed packages
+      run: |
+        pip freeze --all
+        
     - name: Run benchmark report builder
       run: |
         python benchmarks/bayesmark/report_bayesmark.py
