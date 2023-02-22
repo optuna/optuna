@@ -6,13 +6,10 @@ name: mac-tests
 on:
   push:
     branches:
-      - mac-ci
-  pull_request:
-    paths:
-      - '.github/workflows/mac-tests.yml'
+      - master
+  pull_request: {}
   schedule:
     - cron: '0 23 * * SUN-THU'
-  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
@@ -22,20 +19,16 @@ jobs:
   tests-mac:
     runs-on: macos-latest
 
-    strategy:
-      matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
-
     # Not intended for forks.
-    if: github.repository == 'gen740/optuna'
+    if: github.repository == 'optuna/optuna'
     steps:
     - name: Checkout
       uses: actions/checkout@v3
 
-    - name: Setup Python${{ matrix.python-version }}
+    - name: Setup Python3.8
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: 3.8
 
     - name: Setup cache
       uses: actions/cache@v3
@@ -45,7 +38,7 @@ jobs:
         path: ~/Library/Caches/pip
         key: ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
         restore-keys: |
-          ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
+          ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
 
     - name: Install
       run: |
@@ -57,7 +50,6 @@ jobs:
         optuna --version
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
-        pip install pytest-timer # TODO(gen740): Comment out
 
     - name: Output installed packages
       run: |
@@ -78,7 +70,7 @@ jobs:
     runs-on: macos-latest
 
     # Not intended for forks.
-    if: github.repository == 'gen740/optuna'
+    if: github.repository == 'optuna/optuna'
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -116,7 +108,6 @@ jobs:
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
         pip install --progress-bar off .[integration]
-        pip install pytest-timer # TODO(gen740): Comment out
 
     - name: Output installed packages
       run: |
