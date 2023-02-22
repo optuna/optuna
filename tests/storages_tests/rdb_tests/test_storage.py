@@ -12,7 +12,6 @@ import warnings
 
 import pytest
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.pool import NullPool
 
 import optuna
 from optuna import create_study
