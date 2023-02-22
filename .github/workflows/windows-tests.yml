@@ -23,19 +23,14 @@ jobs:
     if: (github.event_name == 'schedule' && github.repository == 'gen740/optuna') || (github.event_name != 'schedule')
     runs-on: windows-latest
 
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10']
-
     steps:
     - name: Checkout
       uses: actions/checkout@v3
 
-    - name: Setup Python${{ matrix.python-version }}
+    - name: Setup Python3.9
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "3.9"
 
     - name: Setup cache
       uses: actions/cache@v3
@@ -43,9 +38,9 @@ jobs:
         cache-name: windows-test
       with:
         path: ~\\AppData\\Local\\pip\\Cache
-        key: ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
+        key: ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
         restore-keys: |
-          ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
+          ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
 
     - name: Install
       run: |
@@ -77,21 +72,16 @@ jobs:
   tests-integration-windows:
     runs-on: windows-latest
 
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10']
-
     # Not intended for forks.
     if: github.repository == 'gen740/optuna'
     steps:
     - name: Checkout
       uses: actions/checkout@v3
 
-    - name: Setup Python${{ matrix.python-version }}
+    - name: Setup Python3.9
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "3.9"
 
     - name: Setup cache
       uses: actions/cache@v3
@@ -99,9 +89,9 @@ jobs:
         cache-name: test
       with:
         path: ~\\AppData\\Local\\pip\\Cache
-        key: ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
+        key: ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
         restore-keys: |
-          ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
+          ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
 
     - name: Setup MPI
       uses: mpi4py/setup-mpi@v1
