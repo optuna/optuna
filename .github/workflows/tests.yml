@@ -3,7 +3,7 @@ name: Tests
 on:
   push:
     branches:
-      - windows-ci
+      - master
   pull_request: {}
   schedule:
     - cron: '0 23 * * SUN-THU'
@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   tests:
-    if: (github.event_name == 'schedule' && github.repository == 'gen740/optuna') || (github.event_name != 'schedule')
+    if: (github.event_name == 'schedule' && github.repository == 'optuna/optuna') || (github.event_name != 'schedule')
     runs-on: ubuntu-latest
 
     strategy:
