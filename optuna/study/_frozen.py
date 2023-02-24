@@ -6,6 +6,7 @@ from typing import Sequence
 
 from optuna import logging
 from optuna.study._study_direction import StudyDirection
+from optuna._typing import JSONSerializable
 
 
 _logger = logging.get_logger(__name__)
@@ -40,7 +41,7 @@ class FrozenStudy:
         study_name: str,
         direction: Optional[StudyDirection],
         user_attrs: Dict[str, Any],
-        system_attrs: Dict[str, Any],
+        system_attrs: Dict[str, JSONSerializable],
         study_id: int,
         *,
         directions: Optional[Sequence[StudyDirection]] = None,

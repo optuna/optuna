@@ -22,6 +22,7 @@ import tqdm
 
 import optuna
 from optuna._imports import try_import
+from optuna._typing import JSONSerializable
 from optuna.integration._lightgbm_tuner.alias import _handling_alias_metrics
 from optuna.integration._lightgbm_tuner.alias import _handling_alias_parameters
 from optuna.study import Study
@@ -449,7 +450,7 @@ class _LightGBMBaseTuner(_BaseTuner):
             return -np.inf if self.higher_is_better() else np.inf
 
     @property
-    def best_params(self) -> Dict[str, Any]:
+    def best_params(self) -> Dict[str, JSONSerializable]:
         """Return parameters of the best booster."""
         try:
             return json.loads(self.study.best_trial.system_attrs[_LGBM_PARAMS_KEY])

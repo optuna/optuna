@@ -12,6 +12,7 @@ from optuna import distributions
 from optuna import logging
 from optuna import pruners
 from optuna._deprecated import deprecated_func
+from optuna._typing import JSONSerializable
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
@@ -585,7 +586,7 @@ class Trial(BaseTrial):
         self._cached_frozen_trial.user_attrs[key] = value
 
     @deprecated_func("3.1.0", "6.0.0")
-    def set_system_attr(self, key: str, value: Any) -> None:
+    def set_system_attr(self, key: str, value: JSONSerializable) -> None:
         """Set system attributes to the trial.
 
         Note that Optuna internally uses this method to save system messages such as failure
@@ -721,7 +722,7 @@ class Trial(BaseTrial):
 
     @property
     @deprecated_func("3.1.0", "6.0.0")
-    def system_attrs(self) -> Dict[str, Any]:
+    def system_attrs(self) -> Dict[str, JSONSerializable]:
         """Return system attributes.
 
         Returns:

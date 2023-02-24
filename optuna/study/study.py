@@ -39,6 +39,7 @@ from optuna.study._tell import _tell_with_warning
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+from optuna._typing import JSONSerializable
 
 
 _dataframe = _LazyImport("optuna.study._dataframe")
@@ -306,7 +307,7 @@ class Study:
 
     @property
     @deprecated_func("3.1.0", "6.0.0")
-    def system_attrs(self) -> Dict[str, Any]:
+    def system_attrs(self) -> Dict[str, JSONSerializable]:
         """Return system attributes.
 
         Returns:

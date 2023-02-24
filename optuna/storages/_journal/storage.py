@@ -13,6 +13,7 @@ import uuid
 
 import optuna
 from optuna._experimental import experimental_class
+from optuna._typing import JSONSerializable
 from optuna.distributions import BaseDistribution
 from optuna.distributions import check_distribution_compatibility
 from optuna.distributions import distribution_to_json
@@ -217,7 +218,7 @@ class JournalStorage(BaseStorage):
             self._sync_with_backend()
             return self._replay_result.get_study(study_id).user_attrs
 
-    def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
+    def get_study_system_attrs(self, study_id: int) -> Dict[str, JSONSerializable]:
         with self._thread_lock:
             self._sync_with_backend()
             return self._replay_result.get_study(study_id).system_attrs

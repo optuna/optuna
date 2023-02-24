@@ -21,6 +21,7 @@ from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+from optuna._typing import JSONSerializable
 
 
 _logger = optuna.logging.get_logger(__name__)
@@ -116,7 +117,7 @@ class InMemoryStorage(BaseStorage):
             self._check_study_id(study_id)
             return self._studies[study_id].user_attrs
 
-    def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
+    def get_study_system_attrs(self, study_id: int) -> Dict[str, JSONSerializable]:
         with self._lock:
             self._check_study_id(study_id)
             return self._studies[study_id].system_attrs
@@ -329,7 +330,7 @@ class InMemoryStorage(BaseStorage):
             trial.user_attrs[key] = value
             self._set_trial(trial_id, trial)
 
-    def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
+    def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
         with self._lock:
             trial = self._get_trial(trial_id)
             self.check_trial_is_updatable(trial_id, trial.state)
@@ -389,7 +390,7 @@ class _StudyInfo:
         self.trials: List[FrozenTrial] = []
         self.param_distribution: Dict[str, distributions.BaseDistribution] = {}
         self.user_attrs: Dict[str, Any] = {}
-        self.system_attrs: Dict[str, Any] = {}
+        self.system_attrs: Dict[str, JSONSerializable] = {}
         self.name: str = name
         self.directions: List[StudyDirection] = directions
         self.best_trial_id: Optional[int] = None

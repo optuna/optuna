@@ -13,6 +13,7 @@ from typing import Union
 
 import optuna
 from optuna import distributions
+from optuna._typing import JSONSerializable
 from optuna.storages import BaseStorage
 from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.storages._rdb.storage import RDBStorage
@@ -161,7 +162,7 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
         return self._backend.get_study_user_attrs(study_id)
 
-    def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
+    def get_study_system_attrs(self, study_id: int) -> Dict[str, JSONSerializable]:
         return self._backend.get_study_system_attrs(study_id)
 
     def get_all_studies(self) -> List[FrozenStudy]:
@@ -296,7 +297,7 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
                 cached_trial.user_attrs = attrs
         self._backend.set_trial_user_attr(trial_id, key=key, value=value)
 
-    def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
+    def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
         with self._lock:
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:

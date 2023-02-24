@@ -24,6 +24,7 @@ from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState
+from optuna._typing import JSONSerializable
 
 
 ObjectiveFuncType = Callable[["multi_objective.trial.MultiObjectiveTrial"], Sequence[float]]
@@ -358,7 +359,7 @@ class MultiObjectiveStudy:
         return self._study.user_attrs
 
     @property
-    def system_attrs(self) -> Dict[str, Any]:
+    def system_attrs(self) -> Dict[str, JSONSerializable]:
         """Return system attributes.
 
         Returns:

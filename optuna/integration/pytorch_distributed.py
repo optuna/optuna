@@ -16,6 +16,7 @@ from optuna._experimental import experimental_class
 from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
+from optuna._typing import JSONSerializable
 
 
 with try_import() as _imports:
@@ -308,7 +309,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
     @property
     @deprecated_func("3.1.0", "6.0.0")
-    def system_attrs(self) -> Dict[str, Any]:
+    def system_attrs(self) -> Dict[str, JSONSerializable]:
         return self._system_attrs
 
     @property

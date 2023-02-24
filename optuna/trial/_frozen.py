@@ -10,6 +10,7 @@ import warnings
 from optuna import distributions
 from optuna import logging
 from optuna._deprecated import deprecated_func
+from optuna._typing import JSONSerializable
 from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
@@ -142,7 +143,7 @@ class FrozenTrial(BaseTrial):
         params: Dict[str, Any],
         distributions: Dict[str, BaseDistribution],
         user_attrs: Dict[str, Any],
-        system_attrs: Dict[str, Any],
+        system_attrs: Dict[str, JSONSerializable],
         intermediate_values: Dict[int, float],
         trial_id: int,
         *,
@@ -295,7 +296,7 @@ class FrozenTrial(BaseTrial):
         self._user_attrs[key] = value
 
     @deprecated_func("3.1.0", "6.0.0")
-    def set_system_attr(self, key: str, value: Any) -> None:
+    def set_system_attr(self, key: str, value: JSONSerializable) -> None:
         self._system_attrs[key] = value
 
     def _validate(self) -> None:
@@ -433,11 +434,11 @@ class FrozenTrial(BaseTrial):
         self._user_attrs = value
 
     @property
-    def system_attrs(self) -> Dict[str, Any]:
+    def system_attrs(self) -> Dict[str, JSONSerializable]:
         return self._system_attrs
 
     @system_attrs.setter
-    def system_attrs(self, value: Dict[str, Any]) -> None:
+    def system_attrs(self, value: Dict[str, JSONSerializable]) -> None:
         self._system_attrs = value
 
     @property
@@ -475,7 +476,7 @@ def create_trial(
     params: Optional[Dict[str, Any]] = None,
     distributions: Optional[Dict[str, BaseDistribution]] = None,
     user_attrs: Optional[Dict[str, Any]] = None,
-    system_attrs: Optional[Dict[str, Any]] = None,
+    system_attrs: Optional[Dict[str, JSONSerializable]] = None,
     intermediate_values: Optional[Dict[int, float]] = None,
 ) -> FrozenTrial:
     """Create a new :class:`~optuna.trial.FrozenTrial`.

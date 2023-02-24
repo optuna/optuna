@@ -18,6 +18,7 @@ from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+from optuna._typing import JSONSerializable
 
 
 GridValueType = Union[str, float, int, bool, None]

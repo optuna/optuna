@@ -4,12 +4,17 @@ from typing import Tuple
 from typing import Union
 
 
-JSONPrimitiveType = Union[str, int, float, bool, None]
-
 JSONSerializable = Union[
-    Dict[JSONPrimitiveType, "JSONSerializable"],
+    Dict[Union[str, int, float, bool, None], "JSONSerializable"],
     List["JSONSerializable"],
     Tuple["JSONSerializable", ...],
+    str,
+    int,
+    float,
+    bool,
+    None,
 ]
+
+
 
 __all__ = ["JSONSerializable"]

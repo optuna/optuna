@@ -8,6 +8,7 @@ import warnings
 
 from optuna import distributions
 from optuna._deprecated import deprecated_func
+from optuna._typing import JSONSerializable
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
@@ -62,7 +63,7 @@ class FixedTrial(BaseTrial):
         self._suggested_params: Dict[str, Any] = {}
         self._distributions: Dict[str, BaseDistribution] = {}
         self._user_attrs: Dict[str, Any] = {}
-        self._system_attrs: Dict[str, Any] = {}
+        self._system_attrs: Dict[str, JSONSerializable] = {}
         self._datetime_start = datetime.datetime.now()
         self._number = number
 
@@ -133,7 +134,7 @@ class FixedTrial(BaseTrial):
         self._user_attrs[key] = value
 
     @deprecated_func("3.1.0", "6.0.0")
-    def set_system_attr(self, key: str, value: Any) -> None:
+    def set_system_attr(self, key: str, value: JSONSerializable) -> None:
         self._system_attrs[key] = value
 
     def _suggest(self, name: str, distribution: BaseDistribution) -> Any:
@@ -172,7 +173,7 @@ class FixedTrial(BaseTrial):
         return self._user_attrs
 
     @property
-    def system_attrs(self) -> Dict[str, Any]:
+    def system_attrs(self) -> Dict[str, JSONSerializable]:
         return self._system_attrs
 
     @property

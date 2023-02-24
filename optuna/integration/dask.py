@@ -23,6 +23,7 @@ from optuna.study import StudyDirection
 from optuna.study._frozen import FrozenStudy
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+from optuna._typing import JSONSerializable
 
 
 with try_import() as _imports:
@@ -567,7 +568,7 @@ class DaskStorage(BaseStorage):
             )
         )
 
-    def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
+    def get_study_system_attrs(self, study_id: int) -> Dict[str, JSONSerializable]:
         return loads(  # type: ignore[no-untyped-call]
             self.client.sync(  # type: ignore[no-untyped-call]
                 self.client.scheduler.optuna_get_study_system_attrs,  # type: ignore[union-attr]
