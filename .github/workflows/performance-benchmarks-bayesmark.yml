@@ -75,13 +75,13 @@ jobs:
           --pruner-list '${{ github.event.inputs.pruner-list }}' \
           --pruner-kwargs-list '${{ github.event.inputs.pruner-kwargs-list }}' \
           --plot-warmup '${{ github.event.inputs.plot-warmup }}'
-    
+
     - name: Upload plot
       uses: actions/upload-artifact@v3
       with:
         name: benchmark-plots
         path: plots
-    
+
     - name: Upload partial report
       uses: actions/upload-artifact@v3
       with:
@@ -116,13 +116,13 @@ jobs:
     - name: Run benchmark report builder
       run: |
         python benchmarks/bayesmark/report_bayesmark.py
-    
+
     - name: Upload report
       uses: actions/upload-artifact@v3
       with:
         name: benchmark-report
         path: report
-    
+
     - name: Cleanup partial reports
       uses: geekyeggo/delete-artifact@v1
       with:
