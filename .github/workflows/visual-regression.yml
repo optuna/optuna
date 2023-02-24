@@ -43,10 +43,14 @@ jobs:
         name: built-html
         path: |
             ./optuna-visualization-regression-tests/public
-    - uses: actions/setup-node@v1
+    - name: Deploy to Netlify
+      uses: nwtgck/actions-netlify@v2
       with:
-        node-version: 18.x
-      - run: npx netlify-cli deploy --dir=./optuna-visualization-regression-tests/public
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        publish-dir: './optuna-visualization-regression-tests/public'
+        production-branch: master
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        deploy-message: "Deploy from GitHub Actions"
+      env:
+        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      timeout-minutes: 1
