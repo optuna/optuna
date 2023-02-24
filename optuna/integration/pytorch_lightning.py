@@ -56,13 +56,13 @@ class PyTorchLightningPruningCallback(Callback):
         self._trial = trial
         self.monitor = monitor
         self.is_ddp_backend = False
+        # It is necessary to store intermediate values directly in the backend storage because they
+        # are not properly propagated to main process due to cached storage.
         self._trial.storage.set_trial_system_attr(
             self._trial._trial_id,
             _INTERMEDIATE_VALUE,
             dict(),
         )
-        # It is necessary to store intermediate values directly in the backend storage because they
-        # are not properly propagated to main process due to cached storage.
 
     def on_fit_start(self, trainer: Trainer, pl_module: "pl.LightningModule") -> None:
         self.is_ddp_backend = trainer._accelerator_connector.is_distributed
