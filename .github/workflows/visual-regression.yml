@@ -1,0 +1,52 @@
+name: Visual regression with Netlify
+
+on:
+  push:
+    branches:
+      - master
+  pull_request: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  documentation:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - uses: actions/checkout@v2
+
+    - uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+
+    - name: Install Optuna
+      run: |
+        pip install -U pip
+        pip install --progress-bar off .
+    - name: Install Optuna visual regression
+      run: |
+        git clone https://github.com/optuna/optuna-visualization-regression-tests.git
+        pip install -r optuna-visualization-regression-tests/requirements.txt
+    - name: Build
+      run: |
+        pushd optuna-visualization-regression-tests
+        python visual_regression_tests.py --heavy --output-dir ./public
+        popd
+      env:
+        OMP_NUM_THREADS: 1
+    - uses: actions/upload-artifact@v2
+      with:
+        name: built-html
+        path: |
+            ./optuna-visualization-regression-tests/public
+    - uses: actions/setup-node@v1
+      with:
+        node-version: 18.x
+      - run: npx netlify-cli deploy --dir=./optuna-visualization-regression-tests/public
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
