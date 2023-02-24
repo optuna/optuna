@@ -70,7 +70,7 @@ jobs:
     runs-on: macos-latest
 
     # Not intended for forks.
-    if: github.repository == 'optuna/optuna'
+    if: github.repository == 'optuna/optuna' && ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     steps:
     - name: Checkout
       uses: actions/checkout@v3
