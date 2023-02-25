@@ -42,7 +42,7 @@ def test_init() -> None:
 
     assert storage.get_current_version() == storage.get_head_version()
     assert storage.get_all_versions() == [
-        "v3.1.0.a"
+        "v3.1.0.a",
         "v3.0.0.d",
         "v3.0.0.c",
         "v3.0.0.b",
