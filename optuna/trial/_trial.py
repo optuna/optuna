@@ -61,10 +61,10 @@ class Trial(BaseTrial):
         self.relative_search_space = self.study.sampler.infer_relative_search_space(
             study, self._cached_frozen_trial
         )
-        self._relative_params = None
+        self._relative_params: Optional[Dict[str, Any]] = None
 
     @property
-    def relative_params(self):
+    def relative_params(self) -> Dict[str, Any]:
         if self._relative_params is None:
             self._relative_params = self.study.sampler.sample_relative(
                 self.study, self._cached_frozen_trial, self.relative_search_space
