@@ -61,9 +61,15 @@ class Trial(BaseTrial):
         self.relative_search_space = self.study.sampler.infer_relative_search_space(
             study, self._cached_frozen_trial
         )
-        self.relative_params = self.study.sampler.sample_relative(
-            study, self._cached_frozen_trial, self.relative_search_space
-        )
+        self._relative_params = None
+
+    @property
+    def relative_params(self):
+        if self._relative_params is None:
+            self._relative_params = self.study.sampler.sample_relative(
+                self.study, self._cached_frozen_trial, self.relative_search_space
+            )
+        return self._relative_params
 
     def suggest_float(
         self,
