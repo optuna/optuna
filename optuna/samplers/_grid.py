@@ -133,10 +133,6 @@ class GridSampler(BaseSampler):
 
         # When the trial is created by RetryFailedTrialCallback or enqueue_trial, we should not
         # assign a new grid_id.
-        if "grid_id" in trial.system_attrs or "fixed_params" in trial.system_attrs:
-            return {}
-
-        # self._sample_grid_id(study, trial)
         return {}
 
     def _sample_grid_id(self, study: Study, trial: FrozenTrial) -> int:
@@ -203,7 +199,7 @@ class GridSampler(BaseSampler):
         state: TrialState,
         values: Optional[Sequence[float]],
     ) -> None:
-        # grid_id must be consumed even if 
+        # grid_id must be consumed even if the trial is pruned
         if "grid_id" not in trial.system_attrs and "fixed_params" not in trial.system_attrs:
             sampled_grid_id = self._sample_grid_id(study, trial)
         else:
@@ -214,7 +210,9 @@ class GridSampler(BaseSampler):
         if len(target_grids) == 0:
             study.stop()
         elif len(target_grids) == 1:
-            grid_id = study._storage.get_trial_system_attrs(trial._trial_id).get("grid_id", sampled_grid_id)
+            grid_id = study._storage.get_trial_system_attrs(trial._trial_id).get(
+                "grid_id", sampled_grid_id
+            )
             if grid_id == target_grids[0]:
                 study.stop()
 
