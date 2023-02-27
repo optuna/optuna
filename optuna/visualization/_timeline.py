@@ -94,44 +94,7 @@ def _get_timeline_info(study: Study) -> _TimelineInfo:
     return _TimelineInfo(bars)
 
 
-def __get_timeline_plot(info: _TimelineInfo) -> "go.Figure":
-
-    _cm = {
-        "COMPLETE": "blue",
-        "FAIL": "red",
-        "PRUNED": "orange",
-        "RUNNING": "green",
-        "WAITING": "gray",
-    }
-
-    fig = go.Figure()
-    for s in sorted(TrialState, key=lambda x: x.name):
-        bars = [b for b in info.bars if b.state == s]
-        if len(bars) == 0:
-            continue
-        fig.add_trace(
-            go.Bar(
-                name=s.name,
-                x=[(b.end - b.start).total_seconds() * 1000 for b in bars],
-                y=[b.number for b in bars],
-                base=[b.start.isoformat() for b in bars],
-                orientation="h",
-                marker=dict(color=_cm[s.name]),
-            )
-        )
-    fig.update_xaxes(type="date")
-    fig.update_layout(
-        go.Layout(
-            title="Timeline Plot",
-            xaxis={"title": "Datetime"},
-            yaxis={"title": "Trial"},
-        )
-    )
-    return fig
-
-
 def _get_timeline_plot(info: _TimelineInfo) -> "go.Figure":
-
     _cm = {
         "COMPLETE": "blue",
         "FAIL": "red",
