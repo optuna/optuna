@@ -66,8 +66,9 @@ class Trial(BaseTrial):
     @property
     def relative_params(self) -> Dict[str, Any]:
         if self._relative_params is None:
+            study = pruners._filter_study(self.study, self._cached_frozen_trial)
             self._relative_params = self.study.sampler.sample_relative(
-                self.study, self._cached_frozen_trial, self.relative_search_space
+                study, self._cached_frozen_trial, self.relative_search_space
             )
         return self._relative_params
 
