@@ -30,5 +30,5 @@ class TerminatorCallback:
         should_terminate = self._terminator.should_terminate(study=study)
 
         if should_terminate:
-            _logger.info("The terminator stopped the study because noise exceeds regret bound.")
+            _logger.info("The study has been stopped by the terminator.")
             study.stop()
