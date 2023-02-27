@@ -61,6 +61,15 @@ def test_report_cross_validation_scores() -> None:
     assert study.trials[0].system_attrs[_CROSS_VALIDATION_SCORES_KEY] == scores
 
 
+def test_report_cross_validation_scores_with_illegal_scores_length() -> None:
+    scores = [1.0]
+
+    study = create_study(direction="minimize")
+    trial = study.ask()
+    with pytest.raises(ValueError):
+        report_cross_validation_scores(trial, scores)
+
+
 def test_static_evaluator() -> None:
     study = create_study(direction="minimize")
     study.add_trials(
