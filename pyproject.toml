@@ -64,6 +64,7 @@ checking = [
 ]
 document = [
     "cma",
+    "botorch",
     "distributed",
     "fvcore",
     "lightgbm",
@@ -113,6 +114,7 @@ integration = [
     "xgboost",
 ]
 optional = [
+    "botorch",  # optuna/terminator/gp/botorch
     "matplotlib!=3.6.0",  # optuna/visualization/matplotlib
     "pandas",  # optuna/study.py
     "plotly>=4.9.0",  # optuna/visualization.

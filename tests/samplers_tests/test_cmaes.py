@@ -17,6 +17,7 @@ import pytest
 import optuna
 from optuna import create_trial
 from optuna._transform import _SearchSpaceTransform
+from optuna.testing.storages import StorageSupplier
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -665,3 +666,21 @@ def test_warn_independent_sampling(
 
         _, err = capsys.readouterr()
         assert (err != "") == warn_independent_sampling
+
+
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
+@pytest.mark.parametrize("with_margin", [False, True])
+@pytest.mark.parametrize("storage_name", ["sqlite", "journal"])
+def test_rdb_storage(with_margin: bool, storage_name: str) -> None:
+    # Confirm `study._storage.set_trial_system_attr` does not fail in several storages.
+    def objective(trial: optuna.Trial) -> float:
+        x = trial.suggest_float("x", -10, 10)
+        y = trial.suggest_int("y", -10, 10)
+        return x**2 + y
+
+    with StorageSupplier(storage_name) as storage:
+        study = optuna.create_study(
+            sampler=optuna.samplers.CmaEsSampler(with_margin=with_margin),
+            storage=storage,
+        )
+        study.optimize(objective, n_trials=3)
