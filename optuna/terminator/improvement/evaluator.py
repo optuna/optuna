@@ -3,6 +3,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
+from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
 from optuna.study import StudyDirection
 from optuna.terminator._search_space.intersection import IntersectionSearchSpace
@@ -35,6 +36,7 @@ class BaseImprovementEvaluator(metaclass=abc.ABCMeta):
         pass
 
 
+@experimental_class("3.2.0")
 class RegretBoundEvaluator(BaseImprovementEvaluator):
     def __init__(
         self,
