@@ -78,11 +78,13 @@ def plot_timeline(
 def _get_timeline_info(study: Study) -> _TimelineInfo:
     bars = []
     for t in study.get_trials():
+        date_end = t.datetime_complete or datetime.datetime.now()
+        date_start = t.datetime_start or date_end
         bars.append(
             _TimelineBarInfo(
                 number=t.number,
-                start=t.datetime_start,
-                end=t.datetime_complete or datetime.datetime.now(),
+                start=date_start,
+                end=date_end,
                 state=t.state,
                 frozen_trial=t,
             )
