@@ -53,7 +53,7 @@ def _create_study(xs: List[TrialState]) -> Study:
         [TrialState.FAIL, TrialState.PRUNED, TrialState.COMPLETE],
     ],
 )
-def test_get_timeline_plot(xs: List[float]) -> None:
+def test_get_timeline_plot(xs: List[TrialState]) -> None:
     study = _create_study(xs)
     info = _get_timeline_info(study)
 
