@@ -7,9 +7,9 @@ import optuna
 from optuna.study.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+from optuna.visualization._plotly_imports import go
 import optuna.visualization._timeline
 from optuna.visualization._timeline import _get_timeline_info
-from optuna.visualization._plotly_imports import go
 
 
 @pytest.mark.parametrize(
