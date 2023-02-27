@@ -2,6 +2,7 @@ import abc
 
 import numpy as np
 
+from optuna._experimental import experimental_class
 from optuna.study.study import Study
 from optuna.trial._state import TrialState
 
@@ -15,6 +16,7 @@ class BaseStatisticalErrorEvaluator(metaclass=abc.ABCMeta):
         pass
 
 
+@experimental_class("3.2.0")
 class CrossValidationStatisticalErrorEvaluator(BaseStatisticalErrorEvaluator):
     def __init__(self, user_attr_key: str = "cv_scores") -> None:
         self._user_attr_key = user_attr_key
@@ -38,6 +40,7 @@ class CrossValidationStatisticalErrorEvaluator(BaseStatisticalErrorEvaluator):
         return float(var)
 
 
+@experimental_class("3.2.0")
 class StaticStatisticalErrorEvaluator(BaseStatisticalErrorEvaluator):
     def __init__(self, constant: float) -> None:
         self._constant = constant

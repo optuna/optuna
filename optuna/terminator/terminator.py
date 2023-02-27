@@ -2,6 +2,7 @@ import abc
 import math
 from typing import Optional
 
+from optuna._experimental import experimental_class
 from optuna.study.study import Study
 from optuna.terminator.improvement.evaluator import BaseImprovementEvaluator
 from optuna.terminator.improvement.evaluator import RegretBoundEvaluator
@@ -15,6 +16,7 @@ class BaseTerminator(metaclass=abc.ABCMeta):
         pass
 
 
+@experimental_class("3.2.0")
 class Terminator(BaseTerminator):
     def __init__(
         self,

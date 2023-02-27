@@ -1,5 +1,6 @@
 from typing import Optional
 
+from optuna._experimental import experimental_class
 from optuna.logging import get_logger
 from optuna.study.study import Study
 from optuna.terminator.improvement.evaluator import DEFAULT_MIN_N_TRIALS
@@ -12,6 +13,7 @@ from optuna.trial import TrialState
 _logger = get_logger(__name__)
 
 
+@experimental_class("3.2.0")
 class TerminatorCallback:
     def __init__(
         self,
