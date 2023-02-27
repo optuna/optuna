@@ -1,7 +1,6 @@
 import datetime
-
-from typing import NamedTuple
 from typing import List
+from typing import NamedTuple
 
 from optuna._experimental import experimental_func
 from optuna.logging import get_logger
@@ -10,6 +9,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._pareto_front import _make_hovertext
 from optuna.visualization._plotly_imports import _imports
+
 
 if _imports.is_successful():
     from optuna.visualization._plotly_imports import go  # px, go
