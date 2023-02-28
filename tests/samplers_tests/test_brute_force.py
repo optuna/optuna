@@ -17,6 +17,7 @@ def test_tree_node_add_paths() -> None:
         tree.add_path([("a", [0, 1, 2], 1), ("b", [0.0, 1.0], 0.0)]),
     ]
     for leaf in leafs:
+        assert leaf is not None
         leaf.set_leaf()
 
     assert tree == _TreeNode(
@@ -59,7 +60,7 @@ def test_tree_node_add_paths_error() -> None:
         tree.add_path([("b", [0, 1, 2], 0)])
 
 
-def test_tree_node_count_unexpanded():
+def test_tree_node_count_unexpanded() -> None:
     tree = _TreeNode(
         param_name="a",
         children={

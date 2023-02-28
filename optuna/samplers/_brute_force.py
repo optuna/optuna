@@ -78,6 +78,7 @@ class _TreeNode:
         )
 
     def sample_child(self, rng: np.random.RandomState) -> Any:
+        assert self.children is not None
         # Sample an unexpanded node in the subtree uniformly, and return the first
         # parameter value in the path to the node.
         # Equivalently, we sample the child node with weights proportional to the number
