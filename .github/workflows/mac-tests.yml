@@ -37,7 +37,7 @@ jobs:
       env:
         cache-name: test
       with:
-        path: ~/.cache/pip
+        path: ~/Library/Caches/pip
         key: ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
         restore-keys: |
           ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
@@ -80,7 +80,7 @@ jobs:
       env:
         cache-name: test-integration
       with:
-        path: ~/.cache/pip
+        path: ~/Library/Caches/pip
         key: ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
         restore-keys: |
           ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}

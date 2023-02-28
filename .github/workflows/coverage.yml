@@ -57,6 +57,10 @@ jobs:
 
         echo 'import coverage; coverage.process_startup()' > sitecustomize.py
 
+    - name: Output installed packages
+      run: |
+        pip freeze --all
+
     - name: Tests
       env:
         OMP_NUM_THREADS: 1
