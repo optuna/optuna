@@ -146,11 +146,9 @@ def _get_rank_info(
         for input_p_name in params:
             if input_p_name not in all_params:
                 raise ValueError("Parameter {} does not exist in your study.".format(input_p_name))
-    
+
     if len(params) == 0:
-        _logger.warning(
-            "params is an empty list."
-        )
+        _logger.warning("params is an empty list.")
 
     has_custom_target = True
     if target is None:
