@@ -7,7 +7,6 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
-from typing import cast
 
 import numpy as np
 import pytest
@@ -21,19 +20,16 @@ from optuna.testing.objectives import fail_objective
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
 from optuna.visualization import plot_rank as plotly_plot_rank
-from optuna.visualization._rank import _AxisInfo
-from optuna.visualization._rank import _RankPlotInfo
-from optuna.visualization._rank import _get_rank_info, _get_rank_subplot_info
-from optuna.visualization._rank import _RankSubplotInfo
 from optuna.visualization._plotly_imports import go
-from optuna.visualization._utils import COLOR_SCALE
+from optuna.visualization._rank import _AxisInfo
+from optuna.visualization._rank import _get_rank_info
+from optuna.visualization._rank import _RankPlotInfo
+from optuna.visualization._rank import _RankSubplotInfo
 
 
 RANGE_TYPE = Union[Tuple[str, str], Tuple[float, float]]
 
-parametrize_plot_rank = pytest.mark.parametrize(
-    "plot_rank", [plotly_plot_rank]
-)
+parametrize_plot_rank = pytest.mark.parametrize("plot_rank", [plotly_plot_rank])
 
 
 def _create_study_with_failed_trial() -> Study:
@@ -104,9 +100,10 @@ def _create_study_mixture_category_types() -> Study:
     )
     return study
 
+
 def _named_tuple_equal(t1: Any, t2: Any) -> bool:
     if isinstance(t1, np.ndarray):
-        return np.all(t1 == t2)
+        return bool(np.all(t1 == t2))
     elif isinstance(t1, tuple) or isinstance(t1, list):
         for x, y in zip(t1, t2):
             if not _named_tuple_equal(x, y):
@@ -116,9 +113,11 @@ def _named_tuple_equal(t1: Any, t2: Any) -> bool:
     else:
         return t1 == t2
 
+
 def _get_nested_list_shape(nested_list: List[List[Any]]) -> Tuple[int, int]:
     assert all(len(nested_list[0]) == len(row) for row in nested_list)
     return len(nested_list), len(nested_list[0])
+
 
 @parametrize_plot_rank
 @pytest.mark.parametrize(
@@ -207,7 +206,9 @@ def test_get_rank_info_2_params() -> None:
     params = ["param_a", "param_b"]
     study = prepare_study_with_trials()
     info = _get_rank_info(study, params=params, target=None, target_name="Objective Value")
-    assert _named_tuple_equal(info, _RankPlotInfo(
+    assert _named_tuple_equal(
+        info,
+        _RankPlotInfo(
             params=params,
             sub_plot_infos=[
                 [
@@ -228,7 +229,7 @@ def test_get_rank_info_2_params() -> None:
                         ys=[2.0, 1.0],
                         trials=[study.trials[0], study.trials[2]],
                         zs=np.array([0.0, 1.0]),
-                        color_idxs=np.array([0.0, 0.5])
+                        color_idxs=np.array([0.0, 0.5]),
                     )
                 ]
             ],
@@ -236,7 +237,7 @@ def test_get_rank_info_2_params() -> None:
             zs=np.array([0.0, 2.0, 1.0]),
             color_idxs=np.array([0.0, 1.0, 0.5]),
             has_custom_target=False,
-        )
+        ),
     )
 
 
@@ -255,6 +256,7 @@ def test_get_rank_info_more_than_2_params(params: Optional[List[str]]) -> None:
     assert len(info.params) == n_params
     assert _get_nested_list_shape(info.sub_plot_infos) == (n_params, n_params)
 
+
 @pytest.mark.parametrize(
     "params",
     [
@@ -271,6 +273,7 @@ def test_get_rank_info_customized_target(params: List[str]) -> None:
     assert len(info.params) == n_params
     plot_shape = (1, 1) if n_params == 2 else (n_params, n_params)
     assert _get_nested_list_shape(info.sub_plot_infos) == plot_shape
+
 
 @pytest.mark.parametrize(
     "params",
@@ -300,75 +303,82 @@ def test_generate_rank_plot_for_few_observations(params: List[str]) -> None:
     )
 
     info = _get_rank_info(study, params=params, target=None, target_name="Objective Value")
-    axis_infos = {"param_a": _AxisInfo(
-                        name="param_a",
-                        range=(1.0, 1.0),
-                        is_log=False,
-                        is_cat=False,
-                    ),
-                    "param_b": _AxisInfo(
-                        name="param_b",
-                        range=(-0.1, 2.1),
-                        is_log=False,
-                        is_cat=False,
-                    ),
-                    }
-    assert _named_tuple_equal(info, _RankPlotInfo(
-        params=params,
-        sub_plot_infos=[
-            [
-                _RankSubplotInfo(
-                    xaxis=axis_infos[params[0]],
-                    yaxis=axis_infos[params[1]],
-                    xs=[],
-                    ys=[],
-                    trials=[],
-                    zs=np.array([]),
-                    color_idxs=np.array([]),
-                )
-            ]
-        ],
-        target_name="Objective Value",
-        zs=np.array([0.0, 2.0]),
-        color_idxs=np.array([0.0, 1.0]),
-        has_custom_target=False,
-    ))
+    axis_infos = {
+        "param_a": _AxisInfo(
+            name="param_a",
+            range=(1.0, 1.0),
+            is_log=False,
+            is_cat=False,
+        ),
+        "param_b": _AxisInfo(
+            name="param_b",
+            range=(-0.1, 2.1),
+            is_log=False,
+            is_cat=False,
+        ),
+    }
+    assert _named_tuple_equal(
+        info,
+        _RankPlotInfo(
+            params=params,
+            sub_plot_infos=[
+                [
+                    _RankSubplotInfo(
+                        xaxis=axis_infos[params[0]],
+                        yaxis=axis_infos[params[1]],
+                        xs=[],
+                        ys=[],
+                        trials=[],
+                        zs=np.array([]),
+                        color_idxs=np.array([]),
+                    )
+                ]
+            ],
+            target_name="Objective Value",
+            zs=np.array([0.0, 2.0]),
+            color_idxs=np.array([0.0, 1.0]),
+            has_custom_target=False,
+        ),
+    )
 
 
 def test_get_rank_info_log_scale_and_str_category_2_params() -> None:
     # If the search space has two parameters, plot_rank generates a single plot.
     study = _create_study_with_log_scale_and_str_category_2d()
     info = _get_rank_info(study, params=None, target=None, target_name="Objective Value")
-    assert _named_tuple_equal(info, _RankPlotInfo(
-        params=["param_a", "param_b"],
-        sub_plot_infos=[
-            [
-                _RankSubplotInfo(
-                    xaxis=_AxisInfo(
-                        name="param_a",
-                        range=(math.pow(10, -6.05), math.pow(10, -4.95)),
-                        is_log=True,
-                        is_cat=False,
-                    ),
-                    yaxis=_AxisInfo(
-                        name="param_b",
-                        range=(-0.05, 1.05),
-                        is_log=False,
-                        is_cat=True,
-                    ),
-                    xs=[1e-6, 1e-5],
-                    ys=["101", "100"],
-                    trials=[study.trials[0], study.trials[1]],
-                    zs=np.array([0.0, 1.0]),
-                    color_idxs=np.array([0.0, 1.0]),
-                )
-            ]
-        ],
-        target_name="Objective Value",
-        zs=np.array([0.0, 1.0]),
-        color_idxs=np.array([0.0, 1.0]),
-        has_custom_target=False,
-    ))
+    assert _named_tuple_equal(
+        info,
+        _RankPlotInfo(
+            params=["param_a", "param_b"],
+            sub_plot_infos=[
+                [
+                    _RankSubplotInfo(
+                        xaxis=_AxisInfo(
+                            name="param_a",
+                            range=(math.pow(10, -6.05), math.pow(10, -4.95)),
+                            is_log=True,
+                            is_cat=False,
+                        ),
+                        yaxis=_AxisInfo(
+                            name="param_b",
+                            range=(-0.05, 1.05),
+                            is_log=False,
+                            is_cat=True,
+                        ),
+                        xs=[1e-6, 1e-5],
+                        ys=["101", "100"],
+                        trials=[study.trials[0], study.trials[1]],
+                        zs=np.array([0.0, 1.0]),
+                        color_idxs=np.array([0.0, 1.0]),
+                    )
+                ]
+            ],
+            target_name="Objective Value",
+            zs=np.array([0.0, 1.0]),
+            color_idxs=np.array([0.0, 1.0]),
+            has_custom_target=False,
+        ),
+    )
 
 
 def test_get_rank_info_log_scale_and_str_category_more_than_2_params() -> None:
@@ -389,6 +399,7 @@ def test_get_rank_info_log_scale_and_str_category_more_than_2_params() -> None:
     param_values = {"param_a": [1e-6, 1e-5], "param_b": ["101", "100"], "param_c": ["one", "two"]}
     zs = np.array([0.0, 1.0])
     color_idxs = np.array([0.0, 1.0])
+
     def _check_axis(axis: _AxisInfo, name: str) -> None:
         assert axis.name == name
         assert axis.range == ranges[name]
@@ -408,83 +419,91 @@ def test_get_rank_info_log_scale_and_str_category_more_than_2_params() -> None:
             assert info.sub_plot_infos[yi][xi].trials == study.trials
             assert np.all(info.sub_plot_infos[yi][xi].zs == zs)
             assert np.all(info.sub_plot_infos[yi][xi].color_idxs == color_idxs)
-    
+
     info.target_name == "Objective Value"
     assert np.all(info.zs == zs)
     assert np.all(info.color_idxs == color_idxs)
     assert not info.has_custom_target
 
+
 def test_get_rank_info_mixture_category_types() -> None:
     study = _create_study_mixture_category_types()
     info = _get_rank_info(study, params=None, target=None, target_name="Objective Value")
-    assert _named_tuple_equal(info, _RankPlotInfo(
-        params=["param_a", "param_b"],
-        sub_plot_infos=[
-            [
-                _RankSubplotInfo(
-                    xaxis=_AxisInfo(
-                        name="param_a",
-                        range=(-0.05, 1.05),
-                        is_log=False,
-                        is_cat=True,
-                    ),
-                    yaxis=_AxisInfo(
-                        name="param_b",
-                        range=(100.95, 102.05),
-                        is_log=False,
-                        is_cat=False,
-                    ),
-                    xs=[None, "100"],
-                    ys=[101, 102.0],
-                    trials=study.trials,
-                    zs=np.array([0.0, 0.5]),
-                    color_idxs=np.array([0.0, 1.0]),
-                )
-            ]
-        ],
-        target_name="Objective Value",
-        zs=np.array([0.0, 0.5]),
-        color_idxs=np.array([0.0, 1.0]),
-        has_custom_target=False,
-    ))
+    assert _named_tuple_equal(
+        info,
+        _RankPlotInfo(
+            params=["param_a", "param_b"],
+            sub_plot_infos=[
+                [
+                    _RankSubplotInfo(
+                        xaxis=_AxisInfo(
+                            name="param_a",
+                            range=(-0.05, 1.05),
+                            is_log=False,
+                            is_cat=True,
+                        ),
+                        yaxis=_AxisInfo(
+                            name="param_b",
+                            range=(100.95, 102.05),
+                            is_log=False,
+                            is_cat=False,
+                        ),
+                        xs=[None, "100"],
+                        ys=[101, 102.0],
+                        trials=study.trials,
+                        zs=np.array([0.0, 0.5]),
+                        color_idxs=np.array([0.0, 1.0]),
+                    )
+                ]
+            ],
+            target_name="Objective Value",
+            zs=np.array([0.0, 0.5]),
+            color_idxs=np.array([0.0, 1.0]),
+            has_custom_target=False,
+        ),
+    )
 
 
 @pytest.mark.parametrize("value", [float("inf"), float("-inf")])
 def test_get_rank_info_nonfinite(value: float) -> None:
     study = prepare_study_with_trials(value_for_first_trial=value)
-    info = _get_rank_info(study, params=["param_b", "param_d"], target=None, target_name="Objective Value")
+    info = _get_rank_info(
+        study, params=["param_b", "param_d"], target=None, target_name="Objective Value"
+    )
 
     color_idxs = np.array([0.0, 1.0, 0.5]) if value == float("-inf") else np.array([1.0, 0.5, 0.0])
-    assert _named_tuple_equal(info, _RankPlotInfo(
-        params=["param_b", "param_d"],
-        sub_plot_infos=[
-            [
-                _RankSubplotInfo(
-                    xaxis=_AxisInfo(
-                        name="param_b",
-                        range=(-0.1, 2.1),
-                        is_log=False,
-                        is_cat=False,
-                    ),
-                    yaxis=_AxisInfo(
-                        name="param_d",
-                        range=(1.9, 4.1),
-                        is_log=False,
-                        is_cat=False,
-                    ),
-                    xs=[2.0, 0.0, 1.0],
-                    ys=[4.0, 4.0, 2.0],
-                    trials=study.trials,
-                    zs=np.array([value, 2.0, 1.0]),
-                    color_idxs=color_idxs,
-                )
-            ]
-        ],
-        target_name="Objective Value",
-        zs=np.array([value, 2.0, 1.0]),
-        color_idxs=color_idxs,
-        has_custom_target=False,
-    )
+    assert _named_tuple_equal(
+        info,
+        _RankPlotInfo(
+            params=["param_b", "param_d"],
+            sub_plot_infos=[
+                [
+                    _RankSubplotInfo(
+                        xaxis=_AxisInfo(
+                            name="param_b",
+                            range=(-0.1, 2.1),
+                            is_log=False,
+                            is_cat=False,
+                        ),
+                        yaxis=_AxisInfo(
+                            name="param_d",
+                            range=(1.9, 4.1),
+                            is_log=False,
+                            is_cat=False,
+                        ),
+                        xs=[2.0, 0.0, 1.0],
+                        ys=[4.0, 4.0, 2.0],
+                        trials=study.trials,
+                        zs=np.array([value, 2.0, 1.0]),
+                        color_idxs=color_idxs,
+                    )
+                ]
+            ],
+            target_name="Objective Value",
+            zs=np.array([value, 2.0, 1.0]),
+            color_idxs=color_idxs,
+            has_custom_target=False,
+        ),
     )
 
 
@@ -499,34 +518,36 @@ def test_get_rank_info_nonfinite_multiobjective(objective: int, value: float) ->
         target_name="Target Name",
     )
     color_idxs = np.array([0.0, 1.0, 0.5]) if value == float("-inf") else np.array([1.0, 0.5, 0.0])
-    assert _named_tuple_equal(info, _RankPlotInfo(
-        params=["param_b", "param_d"],
-        sub_plot_infos=[
-            [
-                _RankSubplotInfo(
-                    xaxis=_AxisInfo(
-                        name="param_b",
-                        range=(-0.1, 2.1),
-                        is_log=False,
-                        is_cat=False,
-                    ),
-                    yaxis=_AxisInfo(
-                        name="param_d",
-                        range=(1.9, 4.1),
-                        is_log=False,
-                        is_cat=False,
-                    ),
-                    xs=[2.0, 0.0, 1.0],
-                    ys=[4.0, 4.0, 2.0],
-                    trials=study.trials,
-                    zs=np.array([value, 2.0, 1.0]),
-                    color_idxs=color_idxs,
-                )
-            ]
-        ],
-        target_name="Target Name",
-        zs=np.array([value, 2.0, 1.0]),
-        color_idxs=color_idxs,
-        has_custom_target=True,
-    ))
-
+    assert _named_tuple_equal(
+        info,
+        _RankPlotInfo(
+            params=["param_b", "param_d"],
+            sub_plot_infos=[
+                [
+                    _RankSubplotInfo(
+                        xaxis=_AxisInfo(
+                            name="param_b",
+                            range=(-0.1, 2.1),
+                            is_log=False,
+                            is_cat=False,
+                        ),
+                        yaxis=_AxisInfo(
+                            name="param_d",
+                            range=(1.9, 4.1),
+                            is_log=False,
+                            is_cat=False,
+                        ),
+                        xs=[2.0, 0.0, 1.0],
+                        ys=[4.0, 4.0, 2.0],
+                        trials=study.trials,
+                        zs=np.array([value, 2.0, 1.0]),
+                        color_idxs=color_idxs,
+                    )
+                ]
+            ],
+            target_name="Target Name",
+            zs=np.array([value, 2.0, 1.0]),
+            color_idxs=color_idxs,
+            has_custom_target=True,
+        ),
+    )

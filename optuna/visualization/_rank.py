@@ -10,13 +10,13 @@ from typing import Union
 
 import numpy as np
 
+from optuna._experimental import experimental_func
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _check_plot_args
-from optuna.visualization._utils import _filter_nonfinite
 from optuna.visualization._utils import _is_log_scale
 from optuna.visualization._utils import _is_numerical
 
@@ -59,6 +59,7 @@ class _RankPlotInfo(NamedTuple):
     has_custom_target: bool
 
 
+@experimental_func("3.2.0")
 def plot_rank(
     study: Study,
     params: Optional[List[str]] = None,
@@ -142,9 +143,6 @@ def _get_rank_info(
     elif params is None:
         params = sorted(all_params)
     else:
-        if len(params) <= 1:
-            _logger.warning("The length of params must be greater than 1.")
-
         for input_p_name in params:
             if input_p_name not in all_params:
                 raise ValueError("Parameter {} does not exist in your study.".format(input_p_name))
@@ -219,7 +217,8 @@ def _get_rank_subplot_info(
 
 def _get_axis_info(trials: List[FrozenTrial], param_name: str) -> _AxisInfo:
     values: List[Union[str, float, None]]
-    if _is_numerical(trials, param_name):
+    is_numerical = _is_numerical(trials, param_name)
+    if is_numerical:
         values = [t.params.get(param_name) for t in trials]
     else:
         values = [
@@ -238,7 +237,7 @@ def _get_axis_info(trials: List[FrozenTrial], param_name: str) -> _AxisInfo:
         is_log = True
         is_cat = False
 
-    elif _is_numerical(trials, param_name):
+    elif is_numerical:
         min_value = float(min_value)
         max_value = float(max_value)
         padding = (max_value - min_value) * PADDING_RATIO
@@ -303,9 +302,6 @@ def _get_rank_plot(
     sub_plot_infos = info.sub_plot_infos
 
     layout = go.Layout(title=f"Rank Plot: {info.target_name}")
-
-    if len(params) <= 1:
-        return go.Figure(data=[], layout=layout)
 
     if len(params) == 2:
         x_param = params[0]
@@ -379,6 +375,7 @@ def _get_rank_plot(
         y=[None],
         mode="markers",
         marker=dict(
+            line={"width": 0.5, "color": "Grey"},
             colorscale=colormap,
             showscale=True,
             cmin=0,
