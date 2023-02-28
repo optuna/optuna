@@ -67,7 +67,6 @@ class _MixtureOfProductDistribution(NamedTuple):
                     loc=active_mus,
                     scale=active_sigmas,
                     random_state=rng,
-                    
                 )
             elif isinstance(d, _BatchedDiscreteTruncNormDistributions):
                 active_mus = d.mu[active_indices]
