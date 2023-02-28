@@ -3,7 +3,7 @@ name: Sphinx
 on:
   push:
     branches:
-      - optuna_integration_master
+      - master
   pull_request: {}
 
 concurrency:
@@ -40,7 +40,7 @@ jobs:
         python -m pip install -U pip
         pip install --progress-bar off -U .[document]
         # Integration module is needed for document of optuna-integration.
-        pip install git+https://github.com/gen740/optuna-integration.git
+        pip install git+https://github.com/optuna/optuna-integration.git
 
     - name: Build Document
       run: |
@@ -87,7 +87,7 @@ jobs:
         python -m pip install -U pip
         pip install --progress-bar off -U .[document]
         # Integration module is needed for doctest.
-        pip install git+https://github.com/gen740/optuna-integration.git
+        pip install git+https://github.com/optuna/optuna-integration.git
 
     - name: Run Doctest
       run: |
