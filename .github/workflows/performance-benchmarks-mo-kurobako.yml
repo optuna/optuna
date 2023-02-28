@@ -82,7 +82,7 @@ jobs:
 
         chmod +x kurobako
         ./kurobako -h
-        
+
     - name: Output installed packages
       run: |
         pip freeze --all

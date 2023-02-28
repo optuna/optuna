@@ -61,7 +61,7 @@ jobs:
     - name: Output installed packages
       run: |
         pip freeze --all
-        
+
     - name: Tests
       run: |
         export OMPI_MCA_rmaps_base_oversubscribe=yes

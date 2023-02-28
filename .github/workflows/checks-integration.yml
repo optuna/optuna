@@ -42,7 +42,7 @@ jobs:
     - name: Output installed packages
       run: |
         pip freeze --all
-        
+
     - name: black
       run: black . --check --diff
     - name: flake8

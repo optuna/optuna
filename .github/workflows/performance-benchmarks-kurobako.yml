@@ -90,11 +90,11 @@ jobs:
 
         chmod +x kurobako
         ./kurobako -h
-    
+
     - name: Output installed packages
       run: |
         pip freeze --all
-        
+
     - name: Cache hpobench dataset
       id: cache-hpobench-dataset
       uses: actions/cache@v3
