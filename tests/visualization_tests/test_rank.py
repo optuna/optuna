@@ -107,7 +107,6 @@ def _named_tuple_equal(t1: Any, t2: Any) -> bool:
     elif isinstance(t1, tuple) or isinstance(t1, list):
         for x, y in zip(t1, t2):
             if not _named_tuple_equal(x, y):
-                print(t1, t2, x, y)
                 return False
         return True
     else:
