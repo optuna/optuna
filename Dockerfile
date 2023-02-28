@@ -17,7 +17,7 @@ ARG BUILD_TYPE='dev'
 
 RUN if [ "${BUILD_TYPE}" = "dev" ]; then \
         pip install ${PIP_OPTIONS} -e '.[checking, document, integration]' -f https://download.pytorch.org/whl/torch_stable.html; \
-        pip install ${PIP_OPTIONS} -e "optuna-integration[integration] @ git+https://github.com/gen740/optuna-integration.git"; \
+        pip install ${PIP_OPTIONS} "optuna-integration[all] @ git+https://github.com/optuna/optuna-integration.git"; \
     else \
         pip install ${PIP_OPTIONS} -e .; \
     fi \
