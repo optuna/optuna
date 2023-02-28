@@ -146,6 +146,11 @@ def _get_rank_info(
         for input_p_name in params:
             if input_p_name not in all_params:
                 raise ValueError("Parameter {} does not exist in your study.".format(input_p_name))
+    
+    if len(params) == 0:
+        _logger.warning(
+            "params is an empty list."
+        )
 
     has_custom_target = True
     if target is None:
@@ -270,7 +275,6 @@ def _get_rank_subplot(
 ) -> "Scatter":
     colormap = "RdYlBu_r"
     colors = plotly.colors.sample_colorscale(colormap, info.color_idxs)
-    print()
 
     def get_hover_text(trial: FrozenTrial, target_value: float) -> str:
         lines = [f"Trial #{trial.number}"]
@@ -303,6 +307,8 @@ def _get_rank_plot(
 
     layout = go.Layout(title=f"Rank Plot: {info.target_name}")
 
+    if len(params) == 0:
+        return go.Figure(data=[], layout=layout)
     if len(params) == 2:
         x_param = params[0]
         y_param = params[1]
