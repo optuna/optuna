@@ -871,10 +871,10 @@ def test_get_n_trials_state_option(storage_mode: str) -> None:
     [
         [0.0, 1.0, 2.0],
         [0.0, float("inf"), 1.0],
-        [0.0, -float("inf"), 1.0],
-        [float("inf"), 0.0, 1.0, -float("inf")],
+        [0.0, float("-inf"), 1.0],
+        [float("inf"), 0.0, 1.0, float("-inf")],
         [float("inf")],
-        [-float("inf")],
+        [float("-inf")],
     ],
 )
 def test_get_best_trial(storage_mode: str, direction: StudyDirection, values: List[float]) -> None:
