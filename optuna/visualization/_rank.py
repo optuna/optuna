@@ -133,9 +133,7 @@ def _get_rank_info(
 ) -> _RankPlotInfo:
     _check_plot_args(study, target, target_name)
 
-    trials = _filter_nonfinite(
-        study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
-    )
+    trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
 
     all_params = {p_name for t in trials for p_name in t.params.keys()}
     if len(trials) == 0:
