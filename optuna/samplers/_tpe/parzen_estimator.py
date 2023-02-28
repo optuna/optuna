@@ -69,7 +69,8 @@ class _ParzenEstimator:
         elif parameters.consider_prior:
             assert parameters.prior_weight is not None
             weights = np.append(weights, [parameters.prior_weight])
-
+        print(f"{parameters.prior_weight=}")
+        print(f"{weights=}")
         weights /= weights.sum()
         self._mixture_distribution = _MixtureOfProductDistribution(
             weights=weights,
@@ -83,7 +84,10 @@ class _ParzenEstimator:
 
     def sample(self, rng: np.random.RandomState, size: int) -> Dict[str, np.ndarray]:
         sampled = self._mixture_distribution.sample(rng, size)
-        return self._untransform(sampled)
+        print(f"{self._mixture_distribution=}")
+        ret = self._untransform(sampled)
+        print(f"{ret=}")
+        return ret
 
     def log_pdf(self, samples_dict: Dict[str, np.ndarray]) -> np.ndarray:
         transformed_samples = self._transform(samples_dict)
