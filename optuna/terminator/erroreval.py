@@ -14,19 +14,13 @@ _CROSS_VALIDATION_SCORES_KEY = "terminator:cv_scores"
 
 class BaseErrorEvaluator(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def evaluate(
-        self,
-        study: Study,
-    ) -> float:
+    def evaluate(self, study: Study) -> float:
         pass
 
 
 @experimental_class("3.2.0")
 class CrossValidationErrorEvaluator(BaseErrorEvaluator):
-    def evaluate(
-        self,
-        study: Study,
-    ) -> float:
+    def evaluate(self, study: Study) -> float:
         assert len(study.get_trials(states=(TrialState.COMPLETE,))) != 0
 
         best_trial_attrs = study.best_trial.system_attrs
@@ -60,8 +54,5 @@ class StaticErrorEvaluator(BaseErrorEvaluator):
     def __init__(self, constant: float) -> None:
         self._constant = constant
 
-    def evaluate(
-        self,
-        study: Study,
-    ) -> float:
+    def evaluate(self, study: Study) -> float:
         return self._constant
