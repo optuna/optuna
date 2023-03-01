@@ -110,7 +110,7 @@ jobs:
 
     - name: Tests
       run: |
-        pytest tests -m "integration" --ignore tests/integration_tests/test_pytorch_lightning.py
+        pytest tests -m "integration"
 
       env:
         OMP_NUM_THREADS: 1

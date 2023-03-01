@@ -86,7 +86,7 @@ jobs:
             --ignore tests/importance_tests/test_init.py \
             --ignore tests/samplers_tests/test_samplers.py
         else
-          pytest tests -m "integration" 
+          pytest tests -m "integration"
         fi
 
     - name: Tests
