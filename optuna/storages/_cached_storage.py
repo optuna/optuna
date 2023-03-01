@@ -162,7 +162,7 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
         return self._backend.get_study_user_attrs(study_id)
 
-    def get_study_system_attrs(self, study_id: int) -> Dict[str, JSONSerializable]:
+    def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
         return self._backend.get_study_system_attrs(study_id)
 
     def get_all_studies(self) -> List[FrozenStudy]:

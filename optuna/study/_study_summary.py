@@ -1,14 +1,16 @@
 import datetime
 from typing import Any
+from typing import cast
 from typing import Dict
+from typing import Mapping
 from typing import Optional
 from typing import Sequence
 import warnings
 
 from optuna import logging
 from optuna import trial
-from optuna.study._study_direction import StudyDirection
 from optuna._typing import JSONSerializable
+from optuna.study._study_direction import StudyDirection
 
 
 _logger = logging.get_logger(__name__)
@@ -57,7 +59,7 @@ class StudySummary:
         direction: Optional[StudyDirection],
         best_trial: Optional[trial.FrozenTrial],
         user_attrs: Dict[str, Any],
-        system_attrs: Dict[str, JSONSerializable],
+        system_attrs: Mapping[str, JSONSerializable],
         n_trials: int,
         datetime_start: Optional[datetime.datetime],
         study_id: int,
@@ -75,7 +77,7 @@ class StudySummary:
             raise ValueError("Specify only one of `direction` and `directions`.")
         self.best_trial = best_trial
         self.user_attrs = user_attrs
-        self._system_attrs = system_attrs
+        self._system_attrs = cast(Dict[str, Any], system_attrs)
         self.n_trials = n_trials
         self.datetime_start = datetime_start
         self._study_id = study_id
@@ -112,7 +114,7 @@ class StudySummary:
         return self._directions
 
     @property
-    def system_attrs(self) -> Dict[str, JSONSerializable]:
+    def system_attrs(self) -> Dict[str, Any]:
         warnings.warn(
             "`system_attrs` has been deprecated in v3.1.0. "
             "The removal of this feature is currently scheduled for v6.0.0, "

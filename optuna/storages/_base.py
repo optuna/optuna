@@ -9,7 +9,6 @@ from typing import Sequence
 from typing import Tuple
 from typing import Union
 
-from optuna._typing import JSONSerializable
 from optuna.distributions import BaseDistribution
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
@@ -202,7 +201,7 @@ class BaseStorage(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_study_system_attrs(self, study_id: int) -> Dict[str, JSONSerializable]:
+    def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
         """Read the optuna-internal attributes of a study.
 
         Args:
@@ -587,7 +586,7 @@ class BaseStorage(abc.ABC):
         """
         return self.get_trial(trial_id).user_attrs
 
-    def get_trial_system_attrs(self, trial_id: int) -> Dict[str, JSONSerializable]:
+    def get_trial_system_attrs(self, trial_id: int) -> Dict[str, Any]:
         """Read the optuna-internal attributes of a trial.
 
         Args:

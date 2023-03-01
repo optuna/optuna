@@ -1,7 +1,9 @@
 import datetime
 from typing import Any
+from typing import cast
 from typing import Dict
 from typing import List
+from typing import Mapping
 from typing import Optional
 from typing import overload
 from typing import Sequence
@@ -143,7 +145,7 @@ class FrozenTrial(BaseTrial):
         params: Dict[str, Any],
         distributions: Dict[str, BaseDistribution],
         user_attrs: Dict[str, Any],
-        system_attrs: Dict[str, JSONSerializable],
+        system_attrs: Mapping[str, JSONSerializable],
         intermediate_values: Dict[int, float],
         trial_id: int,
         *,
@@ -162,7 +164,7 @@ class FrozenTrial(BaseTrial):
         self.datetime_complete = datetime_complete
         self._params = params
         self._user_attrs = user_attrs
-        self._system_attrs = system_attrs
+        self._system_attrs = cast(Dict[str, Any], system_attrs)
         self.intermediate_values = intermediate_values
         self._distributions = distributions
         self._trial_id = trial_id
@@ -434,12 +436,12 @@ class FrozenTrial(BaseTrial):
         self._user_attrs = value
 
     @property
-    def system_attrs(self) -> Dict[str, JSONSerializable]:
+    def system_attrs(self) -> Dict[str, Any]:
         return self._system_attrs
 
     @system_attrs.setter
-    def system_attrs(self, value: Dict[str, JSONSerializable]) -> None:
-        self._system_attrs = value
+    def system_attrs(self, value: Mapping[str, JSONSerializable]) -> None:
+        self._system_attrs = cast(Dict[str, Any], value)
 
     @property
     def last_step(self) -> Optional[int]:
@@ -476,7 +478,7 @@ def create_trial(
     params: Optional[Dict[str, Any]] = None,
     distributions: Optional[Dict[str, BaseDistribution]] = None,
     user_attrs: Optional[Dict[str, Any]] = None,
-    system_attrs: Optional[Dict[str, JSONSerializable]] = None,
+    system_attrs: Optional[Mapping[str, JSONSerializable]] = None,
     intermediate_values: Optional[Dict[int, float]] = None,
 ) -> FrozenTrial:
     """Create a new :class:`~optuna.trial.FrozenTrial`.
@@ -553,7 +555,7 @@ def create_trial(
         for key, dist in distributions.items()
     }
     user_attrs = user_attrs or {}
-    system_attrs = system_attrs or {}
+    system_attrs = cast(Dict[str, Any], system_attrs or {})
     intermediate_values = intermediate_values or {}
 
     if state == TrialState.WAITING:

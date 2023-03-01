@@ -722,7 +722,7 @@ class Trial(BaseTrial):
 
     @property
     @deprecated_func("3.1.0", "6.0.0")
-    def system_attrs(self) -> Dict[str, JSONSerializable]:
+    def system_attrs(self) -> Dict[str, Any]:
         """Return system attributes.
 
         Returns:

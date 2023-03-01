@@ -1,12 +1,14 @@
 from typing import Any
 from typing import Dict
+from typing import cast
 from typing import List
+from typing import Mapping
 from typing import Optional
 from typing import Sequence
 
 from optuna import logging
-from optuna.study._study_direction import StudyDirection
 from optuna._typing import JSONSerializable
+from optuna.study._study_direction import StudyDirection
 
 
 _logger = logging.get_logger(__name__)
@@ -41,7 +43,7 @@ class FrozenStudy:
         study_name: str,
         direction: Optional[StudyDirection],
         user_attrs: Dict[str, Any],
-        system_attrs: Dict[str, JSONSerializable],
+        system_attrs: Mapping[str, JSONSerializable],
         study_id: int,
         *,
         directions: Optional[Sequence[StudyDirection]] = None,
@@ -56,7 +58,7 @@ class FrozenStudy:
         else:
             raise ValueError("Specify only one of `direction` and `directions`.")
         self.user_attrs = user_attrs
-        self.system_attrs = system_attrs
+        self.system_attrs = cast(Dict[str, Any], system_attrs)
         self._study_id = study_id
 
     def __eq__(self, other: Any) -> bool:

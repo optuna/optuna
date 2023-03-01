@@ -8,6 +8,7 @@ from typing import Container
 from typing import Dict
 from typing import Iterable
 from typing import List
+from typing import Mapping
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -27,6 +28,7 @@ from optuna import trial as trial_module
 from optuna._convert_positional_args import convert_positional_args
 from optuna._deprecated import deprecated_func
 from optuna._imports import _LazyImport
+from optuna._typing import JSONSerializable
 from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.distributions import BaseDistribution
 from optuna.storages._cached_storage import _CachedStorage
@@ -39,7 +41,6 @@ from optuna.study._tell import _tell_with_warning
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna._typing import JSONSerializable
 
 
 _dataframe = _LazyImport("optuna.study._dataframe")
@@ -307,7 +308,7 @@ class Study:
 
     @property
     @deprecated_func("3.1.0", "6.0.0")
-    def system_attrs(self) -> Dict[str, JSONSerializable]:
+    def system_attrs(self) -> Dict[str, Any]:
         """Return system attributes.
 
         Returns:
@@ -774,7 +775,7 @@ class Study:
 
     def enqueue_trial(
         self,
-        params: Dict[str, Any],
+        params: Mapping[str, JSONSerializable],
         user_attrs: Optional[Dict[str, Any]] = None,
         skip_if_exists: bool = False,
     ) -> None:
@@ -967,7 +968,7 @@ class Study:
 
         return None
 
-    def _should_skip_enqueue(self, params: Dict[str, Any]) -> bool:
+    def _should_skip_enqueue(self, params: Mapping[str, JSONSerializable]) -> bool:
         for trial in self.get_trials(deepcopy=False):
             trial_params = trial.system_attrs.get("fixed_params", trial.params)
             if trial_params.keys() != params.keys():

@@ -19,7 +19,6 @@ from optuna.storages import RDBStorage
 from optuna.study import Study
 from optuna.trial import BaseTrial
 from optuna.trial import Trial
-from optuna._typing import JSONSerializable
 
 
 with try_import() as _imports:
@@ -300,7 +299,7 @@ class ChainerMNTrial(BaseTrial):
 
     @property
     @deprecated_func("3.1.0", "6.0.0")
-    def system_attrs(self) -> Dict[str, JSONSerializable]:
+    def system_attrs(self) -> Dict[str, Any]:
         def func() -> Dict[str, Any]:
             assert self.delegate is not None
             return self.delegate.system_attrs

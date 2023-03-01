@@ -9,7 +9,6 @@ from typing import Sequence
 from optuna._deprecated import deprecated_func
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
-from optuna._typing import JSONSerializable
 
 
 class BaseTrial(abc.ABC):
@@ -121,7 +120,7 @@ class BaseTrial(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def system_attrs(self) -> Dict[str, JSONSerializable]:
+    def system_attrs(self) -> Dict[str, Any]:
         raise NotImplementedError
 
     @property

@@ -1,5 +1,7 @@
 from typing import Container
 from typing import List
+from typing import Dict
+from typing import Any
 from typing import Optional
 
 import optuna
@@ -115,7 +117,11 @@ class RetryFailedTrialCallback:
         self._inherit_intermediate_values = inherit_intermediate_values
 
     def __call__(self, study: "optuna.study.Study", trial: FrozenTrial) -> None:
-        system_attrs = {"failed_trial": trial.number, "retry_history": [], **trial.system_attrs}
+        system_attrs: Dict[str, Any] = {
+            "failed_trial": trial.number,
+            "retry_history": [],
+            **trial.system_attrs,
+        }
         system_attrs["retry_history"].append(trial.number)  # type: ignore
         if self._max_retry is not None:
             if self._max_retry < len(system_attrs["retry_history"]):  # type: ignore

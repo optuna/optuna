@@ -956,7 +956,7 @@ def _generate_trial(generator: random.Random) -> FrozenTrial:
     params = {}
     distributions = {}
     user_attrs = {}
-    system_attrs = {}
+    system_attrs: Dict[str, Any] = {}
     intermediate_values = {}
     for key, (value, dist) in example_params.items():
         if generator.choice([True, False]):

@@ -117,7 +117,7 @@ class InMemoryStorage(BaseStorage):
             self._check_study_id(study_id)
             return self._studies[study_id].user_attrs
 
-    def get_study_system_attrs(self, study_id: int) -> Dict[str, JSONSerializable]:
+    def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
         with self._lock:
             self._check_study_id(study_id)
             return self._studies[study_id].system_attrs
@@ -390,7 +390,7 @@ class _StudyInfo:
         self.trials: List[FrozenTrial] = []
         self.param_distribution: Dict[str, distributions.BaseDistribution] = {}
         self.user_attrs: Dict[str, Any] = {}
-        self.system_attrs: Dict[str, JSONSerializable] = {}
+        self.system_attrs: Dict[str, Any] = {}
         self.name: str = name
         self.directions: List[StudyDirection] = directions
         self.best_trial_id: Optional[int] = None

@@ -63,7 +63,7 @@ class FixedTrial(BaseTrial):
         self._suggested_params: Dict[str, Any] = {}
         self._distributions: Dict[str, BaseDistribution] = {}
         self._user_attrs: Dict[str, Any] = {}
-        self._system_attrs: Dict[str, JSONSerializable] = {}
+        self._system_attrs: Dict[str, Any] = {}
         self._datetime_start = datetime.datetime.now()
         self._number = number
 
@@ -173,7 +173,7 @@ class FixedTrial(BaseTrial):
         return self._user_attrs
 
     @property
-    def system_attrs(self) -> Dict[str, JSONSerializable]:
+    def system_attrs(self) -> Dict[str, Any]:
         return self._system_attrs
 
     @property

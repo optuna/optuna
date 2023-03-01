@@ -9,7 +9,6 @@ from typing import Union
 
 from optuna import multi_objective
 from optuna._deprecated import deprecated_class
-from optuna._typing import JSONSerializable
 from optuna.distributions import BaseDistribution
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -240,7 +239,7 @@ class MultiObjectiveTrial:
         return self._trial.user_attrs
 
     @property
-    def system_attrs(self) -> Dict[str, JSONSerializable]:
+    def system_attrs(self) -> Dict[str, Any]:
         """Return system attributes.
 
         Returns:
@@ -343,7 +342,7 @@ class FrozenMultiObjectiveTrial:
         return self._trial.user_attrs
 
     @property
-    def system_attrs(self) -> Dict[str, JSONSerializable]:
+    def system_attrs(self) -> Dict[str, Any]:
         return self._trial.system_attrs
 
     @property

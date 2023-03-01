@@ -21,7 +21,6 @@ import optuna
 from optuna import distributions
 from optuna import version
 from optuna._imports import _LazyImport
-from optuna._typing import JSONSerializable
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages._heartbeat import BaseHeartbeat
@@ -352,7 +351,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         return user_attrs
 
-    def get_study_system_attrs(self, study_id: int) -> Dict[str, JSONSerializable]:
+    def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
         with _create_scoped_session(self.scoped_session) as session:
             # Ensure that that study exists.
             models.StudyModel.find_or_raise_by_id(study_id, session)
@@ -371,7 +370,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         return user_attrs
 
-    def get_trial_system_attrs(self, trial_id: int) -> Dict[str, JSONSerializable]:
+    def get_trial_system_attrs(self, trial_id: int) -> Dict[str, Any]:
         with _create_scoped_session(self.scoped_session) as session:
             # Ensure trial exists.
             models.TrialModel.find_or_raise_by_id(trial_id, session)
