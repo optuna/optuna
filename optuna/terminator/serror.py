@@ -53,7 +53,7 @@ class CrossValidationStatisticalErrorEvaluator(BaseStatisticalErrorEvaluator):
 @experimental_class("3.2.0")
 def report_cross_validation_scores(trial: Trial, scores: List[float]) -> None:
     if len(scores) <= 1:
-        raise ValueError("The length of `scores` are expected to be greater than one.")
+        raise ValueError("The length of `scores` is expected to be greater than one.")
     trial.storage.set_trial_system_attr(trial._trial_id, _CROSS_VALIDATION_SCORES_KEY, scores)
 
 
