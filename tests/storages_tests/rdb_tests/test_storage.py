@@ -349,3 +349,4 @@ def test_record_heartbeat() -> None:
             trial_prep = (datetime_start - prev_datetime_complete).seconds
             heartbeats_interval = (trial_heartbeats[i + 1] - trial_heartbeats[i]).seconds
             assert heartbeats_interval - sleep_sec - trial_prep <= 1
+        storage.engine.dispose()

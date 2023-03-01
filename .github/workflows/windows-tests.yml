@@ -18,9 +18,10 @@ concurrency:
 
 jobs:
   tests-windows:
-    if: (github.event_name == 'schedule' && github.repository == 'optuna/optuna') || (github.event_name != 'schedule')
     runs-on: windows-latest
 
+    # Not intended for forks.
+    if: github.repository == 'optuna/optuna'
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -52,6 +53,10 @@ jobs:
         pip install --progress-bar off .[optional]
         pip install PyQt6
 
+    - name: Output installed packages
+      run: |
+        pip freeze --all
+
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
@@ -71,7 +76,7 @@ jobs:
     runs-on: windows-latest
 
     # Not intended for forks.
-    if: github.repository == 'optuna/optuna'
+    if: github.repository == 'optuna/optuna' && ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     steps:
     - name: Checkout
       uses: actions/checkout@v3
