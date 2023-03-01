@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import math
-from typing import List
 
 import pytest
 
@@ -12,7 +13,7 @@ from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 
 
-def _create_trial(value: float, cv_scores: List[float]) -> FrozenTrial:
+def _create_trial(value: float, cv_scores: list[float]) -> FrozenTrial:
     return create_trial(
         params={},
         distributions={},

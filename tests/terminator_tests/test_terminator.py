@@ -1,4 +1,4 @@
-from typing import List
+from __future__ import annotations
 
 from optuna.study._study_direction import StudyDirection
 from optuna.study.study import create_study
@@ -13,7 +13,7 @@ class _StaticRegretBoundEvaluator(BaseImprovementEvaluator):
         super().__init__()
         self._constant = constant
 
-    def evaluate(self, trials: List[FrozenTrial], study_direction: StudyDirection) -> float:
+    def evaluate(self, trials: list[FrozenTrial], study_direction: StudyDirection) -> float:
         return self._constant
 
 
