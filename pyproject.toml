@@ -163,6 +163,7 @@ exclude = '''
   | \.hg
   | \.mypy_cache
   | \.venv
+  | venv
   | _build
   | buck-out
   | build
