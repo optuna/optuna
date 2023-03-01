@@ -1,3 +1,4 @@
+import math
 from typing import List
 
 import pytest
@@ -33,7 +34,7 @@ def test_cross_validation_evaluator() -> None:
     serror = evaluator.evaluate(study)
 
     expected_scale = 1.5
-    assert serror == 4.0 * expected_scale
+    assert serror == math.sqrt(4.0 * expected_scale)
 
 
 def test_cross_validation_evaluator_without_cv_scores() -> None:

@@ -24,35 +24,34 @@ def test_should_terminate() -> None:
     trial = study.ask()
     study.tell(trial, 0.0)
 
-    # Regret bound is greater than sqrt of variance.
+    # Regret bound is greater than error.
     terminator = Terminator(
-        improvement_evaluator=_StaticRegretBoundEvaluator(11),
-        error_evaluator=StaticErrorEvaluator(100),
+        improvement_evaluator=_StaticRegretBoundEvaluator(3),
+        error_evaluator=StaticErrorEvaluator(2),
         min_n_trials=1,
     )
     assert not terminator.should_terminate(study)
 
-    # Regret bound is less than sqrt of variance.
+    # Regret bound is less than error.
     terminator = Terminator(
-        improvement_evaluator=_StaticRegretBoundEvaluator(9),
-        error_evaluator=StaticErrorEvaluator(100),
+        improvement_evaluator=_StaticRegretBoundEvaluator(1),
+        error_evaluator=StaticErrorEvaluator(2),
         min_n_trials=1,
     )
     assert terminator.should_terminate(study)
 
-    # Regret bound is less than sqrt of variance.
-    # However, the number of trials is less than `min_n_trials`.
+    # Regret bound is less than error. However, the number of trials is less than `min_n_trials`.
     terminator = Terminator(
-        improvement_evaluator=_StaticRegretBoundEvaluator(9),
-        error_evaluator=StaticErrorEvaluator(100),
+        improvement_evaluator=_StaticRegretBoundEvaluator(1),
+        error_evaluator=StaticErrorEvaluator(2),
         min_n_trials=2,
     )
     assert not terminator.should_terminate(study)
 
-    # Regret bound is equal to sqrt of variance.
+    # Regret bound is equal to error.
     terminator = Terminator(
-        improvement_evaluator=_StaticRegretBoundEvaluator(10),
-        error_evaluator=StaticErrorEvaluator(100),
+        improvement_evaluator=_StaticRegretBoundEvaluator(2),
+        error_evaluator=StaticErrorEvaluator(2),
         min_n_trials=1,
     )
     assert not terminator.should_terminate(study)

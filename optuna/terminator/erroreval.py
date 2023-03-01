@@ -43,8 +43,9 @@ class CrossValidationErrorEvaluator(BaseErrorEvaluator):
         scale = 1 / k + 1 / (k - 1)
 
         var = scale * np.var(cv_scores)
+        std = np.sqrt(var)
 
-        return float(var)
+        return float(std)
 
 
 @experimental_class("3.2.0")

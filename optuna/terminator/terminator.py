@@ -1,5 +1,4 @@
 import abc
-import math
 from typing import Optional
 
 from optuna._experimental import experimental_class
@@ -40,7 +39,7 @@ class Terminator(BaseTerminator):
             trials=study.trials,
             study_direction=study.direction,
         )
-        variance = self._error_evaluator.evaluate(study)
-        should_terminate = regret_bound < math.sqrt(variance)
+        error = self._error_evaluator.evaluate(study)
+        should_terminate = regret_bound < error
 
         return should_terminate
