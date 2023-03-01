@@ -27,10 +27,7 @@ class CrossValidationStatisticalErrorEvaluator(BaseStatisticalErrorEvaluator):
         self,
         study: Study,
     ) -> float:
-        if len(study.get_trials(states=(TrialState.COMPLETE,))) == 0:
-            raise ValueError(
-                "Statistical error cannot be calculated because no trial has been completed."
-            )
+        assert len(study.get_trials(states=(TrialState.COMPLETE,))) != 0
 
         best_trial_attrs = study.best_trial.system_attrs
         if _CROSS_VALIDATION_SCORES_KEY in best_trial_attrs:
@@ -66,9 +63,4 @@ class StaticStatisticalErrorEvaluator(BaseStatisticalErrorEvaluator):
         self,
         study: Study,
     ) -> float:
-        if len(study.get_trials(states=(TrialState.COMPLETE,))) == 0:
-            raise ValueError(
-                "Statistical error cannot be calculated because no trial has been completed."
-            )
-
         return self._constant

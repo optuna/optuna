@@ -1,11 +1,9 @@
-from typing import Callable
 from typing import List
 
 import pytest
 
 from optuna.study.study import create_study
 from optuna.terminator.serror import _CROSS_VALIDATION_SCORES_KEY
-from optuna.terminator.serror import BaseStatisticalErrorEvaluator
 from optuna.terminator.serror import CrossValidationStatisticalErrorEvaluator
 from optuna.terminator.serror import report_cross_validation_scores
 from optuna.terminator.serror import StaticStatisticalErrorEvaluator
@@ -82,20 +80,3 @@ def test_static_evaluator() -> None:
     serror = evaluator.evaluate(study)
 
     assert serror == 100.0
-
-
-@pytest.mark.parametrize(
-    "init_evaluator",
-    [
-        lambda: CrossValidationStatisticalErrorEvaluator(),
-        lambda: StaticStatisticalErrorEvaluator(constant=0.0),
-    ],
-)
-def test_evaluate_with_no_trial(
-    init_evaluator: Callable[[], BaseStatisticalErrorEvaluator]
-) -> None:
-    study = create_study()
-
-    evaluator = init_evaluator()
-    with pytest.raises(ValueError):
-        evaluator.evaluate(study)
