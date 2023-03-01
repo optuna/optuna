@@ -121,7 +121,6 @@ jobs:
       # skip allennlp and (mxnet) tests since it's not supported on Windows
       run: |
         pytest tests -m "integration" `
-          --ignore tests/integration_tests/test_pytorch_lightning.py `
           --ignore tests/integration_tests/allennlp_tests/test_allennlp.py `
           --ignore tests/integration_tests/test_mxnet.py
       env:
