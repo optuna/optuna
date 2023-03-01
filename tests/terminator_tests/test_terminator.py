@@ -28,6 +28,7 @@ def test_should_terminate() -> None:
     terminator = Terminator(
         regret_bound_evaluator=_StaticRegretBoundEvaluator(11),
         statistical_error_evaluator=StaticStatisticalErrorEvaluator(100),
+        min_n_trials=1,
     )
     assert not terminator.should_terminate(study)
 
@@ -35,12 +36,23 @@ def test_should_terminate() -> None:
     terminator = Terminator(
         regret_bound_evaluator=_StaticRegretBoundEvaluator(9),
         statistical_error_evaluator=StaticStatisticalErrorEvaluator(100),
+        min_n_trials=1,
     )
     assert terminator.should_terminate(study)
+
+    # Regret bound is less than sqrt of variance.
+    # However, the number of trials is less than `min_n_trials`.
+    terminator = Terminator(
+        regret_bound_evaluator=_StaticRegretBoundEvaluator(9),
+        statistical_error_evaluator=StaticStatisticalErrorEvaluator(100),
+        min_n_trials=2,
+    )
+    assert not terminator.should_terminate(study)
 
     # Regret bound is equal to sqrt of variance.
     terminator = Terminator(
         regret_bound_evaluator=_StaticRegretBoundEvaluator(10),
         statistical_error_evaluator=StaticStatisticalErrorEvaluator(100),
+        min_n_trials=1,
     )
     assert not terminator.should_terminate(study)
