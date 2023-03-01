@@ -2,8 +2,8 @@ from typing import List
 
 from optuna.study._study_direction import StudyDirection
 from optuna.study.study import create_study
+from optuna.terminator.erroreval import StaticErrorEvaluator
 from optuna.terminator.improvement.evaluator import BaseImprovementEvaluator
-from optuna.terminator.serror import StaticStatisticalErrorEvaluator
 from optuna.terminator.terminator import Terminator
 from optuna.trial import FrozenTrial
 
@@ -26,16 +26,16 @@ def test_should_terminate() -> None:
 
     # Regret bound is greater than sqrt of variance.
     terminator = Terminator(
-        regret_bound_evaluator=_StaticRegretBoundEvaluator(11),
-        statistical_error_evaluator=StaticStatisticalErrorEvaluator(100),
+        improvement_evaluator=_StaticRegretBoundEvaluator(11),
+        error_evaluator=StaticErrorEvaluator(100),
         min_n_trials=1,
     )
     assert not terminator.should_terminate(study)
 
     # Regret bound is less than sqrt of variance.
     terminator = Terminator(
-        regret_bound_evaluator=_StaticRegretBoundEvaluator(9),
-        statistical_error_evaluator=StaticStatisticalErrorEvaluator(100),
+        improvement_evaluator=_StaticRegretBoundEvaluator(9),
+        error_evaluator=StaticErrorEvaluator(100),
         min_n_trials=1,
     )
     assert terminator.should_terminate(study)
@@ -43,16 +43,16 @@ def test_should_terminate() -> None:
     # Regret bound is less than sqrt of variance.
     # However, the number of trials is less than `min_n_trials`.
     terminator = Terminator(
-        regret_bound_evaluator=_StaticRegretBoundEvaluator(9),
-        statistical_error_evaluator=StaticStatisticalErrorEvaluator(100),
+        improvement_evaluator=_StaticRegretBoundEvaluator(9),
+        error_evaluator=StaticErrorEvaluator(100),
         min_n_trials=2,
     )
     assert not terminator.should_terminate(study)
 
     # Regret bound is equal to sqrt of variance.
     terminator = Terminator(
-        regret_bound_evaluator=_StaticRegretBoundEvaluator(10),
-        statistical_error_evaluator=StaticStatisticalErrorEvaluator(100),
+        improvement_evaluator=_StaticRegretBoundEvaluator(10),
+        error_evaluator=StaticErrorEvaluator(100),
         min_n_trials=1,
     )
     assert not terminator.should_terminate(study)

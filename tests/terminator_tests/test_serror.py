@@ -3,10 +3,10 @@ from typing import List
 import pytest
 
 from optuna.study.study import create_study
-from optuna.terminator.serror import _CROSS_VALIDATION_SCORES_KEY
-from optuna.terminator.serror import CrossValidationStatisticalErrorEvaluator
-from optuna.terminator.serror import report_cross_validation_scores
-from optuna.terminator.serror import StaticStatisticalErrorEvaluator
+from optuna.terminator.erroreval import _CROSS_VALIDATION_SCORES_KEY
+from optuna.terminator.erroreval import CrossValidationErrorEvaluator
+from optuna.terminator.erroreval import report_cross_validation_scores
+from optuna.terminator.erroreval import StaticErrorEvaluator
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 
@@ -29,7 +29,7 @@ def test_cross_validation_evaluator() -> None:
         ]
     )
 
-    evaluator = CrossValidationStatisticalErrorEvaluator()
+    evaluator = CrossValidationErrorEvaluator()
     serror = evaluator.evaluate(study)
 
     expected_scale = 1.5
@@ -43,7 +43,7 @@ def test_cross_validation_evaluator_without_cv_scores() -> None:
         create_trial(params={}, distributions={}, value=0.0)
     )
 
-    evaluator = CrossValidationStatisticalErrorEvaluator()
+    evaluator = CrossValidationErrorEvaluator()
     with pytest.raises(ValueError):
         evaluator.evaluate(study)
 
@@ -76,7 +76,7 @@ def test_static_evaluator() -> None:
         ]
     )
 
-    evaluator = StaticStatisticalErrorEvaluator(constant=100.0)
+    evaluator = StaticErrorEvaluator(constant=100.0)
     serror = evaluator.evaluate(study)
 
     assert serror == 100.0

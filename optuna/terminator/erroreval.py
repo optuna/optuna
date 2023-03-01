@@ -12,7 +12,7 @@ from optuna.trial._state import TrialState
 _CROSS_VALIDATION_SCORES_KEY = "terminator:cv_scores"
 
 
-class BaseStatisticalErrorEvaluator(metaclass=abc.ABCMeta):
+class BaseErrorEvaluator(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def evaluate(
         self,
@@ -22,7 +22,7 @@ class BaseStatisticalErrorEvaluator(metaclass=abc.ABCMeta):
 
 
 @experimental_class("3.2.0")
-class CrossValidationStatisticalErrorEvaluator(BaseStatisticalErrorEvaluator):
+class CrossValidationErrorEvaluator(BaseErrorEvaluator):
     def evaluate(
         self,
         study: Study,
@@ -55,7 +55,7 @@ def report_cross_validation_scores(trial: Trial, scores: List[float]) -> None:
 
 
 @experimental_class("3.2.0")
-class StaticStatisticalErrorEvaluator(BaseStatisticalErrorEvaluator):
+class StaticErrorEvaluator(BaseErrorEvaluator):
     def __init__(self, constant: float) -> None:
         self._constant = constant
 
