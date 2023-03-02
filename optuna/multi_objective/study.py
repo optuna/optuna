@@ -393,7 +393,9 @@ class MultiObjectiveStudy:
 
         self._study._storage.set_study_system_attr(self._study._study_id, key, value)
 
-    def enqueue_trial(self, params: Dict[str, Any]) -> None:
+    def enqueue_trial(
+        self, params: Dict[str, Any]  # TODO(gen740): Change Any to JSONSerializable
+    ) -> None:
         """Enqueue a trial with given parameter values.
 
         You can fix the next sampling parameters which will be evaluated in your

@@ -145,7 +145,7 @@ class FrozenTrial(BaseTrial):
         params: Dict[str, Any],
         distributions: Dict[str, BaseDistribution],
         user_attrs: Dict[str, Any],
-        system_attrs: Mapping[str, JSONSerializable],
+        system_attrs: Dict[str, Any],  # TODO(gen740): Change Any to JSONSerializable
         intermediate_values: Dict[int, float],
         trial_id: int,
         *,
@@ -164,7 +164,7 @@ class FrozenTrial(BaseTrial):
         self.datetime_complete = datetime_complete
         self._params = params
         self._user_attrs = user_attrs
-        self._system_attrs = cast(Dict[str, Any], system_attrs)
+        self._system_attrs = system_attrs
         self.intermediate_values = intermediate_values
         self._distributions = distributions
         self._trial_id = trial_id
@@ -478,7 +478,7 @@ def create_trial(
     params: Optional[Dict[str, Any]] = None,
     distributions: Optional[Dict[str, BaseDistribution]] = None,
     user_attrs: Optional[Dict[str, Any]] = None,
-    system_attrs: Optional[Mapping[str, JSONSerializable]] = None,
+    system_attrs: Optional[Dict[str, Any]] = None,  # TODO(gen740): Change Any to JSONSerializable
     intermediate_values: Optional[Dict[int, float]] = None,
 ) -> FrozenTrial:
     """Create a new :class:`~optuna.trial.FrozenTrial`.
@@ -555,7 +555,7 @@ def create_trial(
         for key, dist in distributions.items()
     }
     user_attrs = user_attrs or {}
-    system_attrs = cast(Dict[str, Any], system_attrs or {})
+    system_attrs = system_attrs or {}
     intermediate_values = intermediate_values or {}
 
     if state == TrialState.WAITING:

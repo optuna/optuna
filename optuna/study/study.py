@@ -775,7 +775,7 @@ class Study:
 
     def enqueue_trial(
         self,
-        params: Mapping[str, JSONSerializable],
+        params: Dict[str, Any],  # TODO(gen740): Change Any to JSONSerializable
         user_attrs: Optional[Dict[str, Any]] = None,
         skip_if_exists: bool = False,
     ) -> None:
