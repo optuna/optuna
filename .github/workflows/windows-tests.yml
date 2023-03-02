@@ -118,7 +118,7 @@ jobs:
         pip freeze --all
 
     - name: Tests
-      # skip allennlp and (mxnet) tests since it's not supported on Windows
+      # Skip allennlp and (mxnet) tests since it's not supported on Windows.
       run: |
         pytest tests -m "integration" `
           --ignore tests/integration_tests/allennlp_tests/test_allennlp.py `
