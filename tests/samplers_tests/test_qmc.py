@@ -67,7 +67,7 @@ def test_infer_relative_search_space() -> None:
     sampler = _init_QMCSampler_without_exp_warning()
     study = optuna.create_study(sampler=sampler)
     trial = Mock()
-    # In case no past trials
+    # In case no past trials.
     assert sampler.infer_relative_search_space(study, trial) == {}
     # In case there is a past trial
     study.optimize(objective, n_trials=1)
@@ -209,7 +209,7 @@ def test_sample_relative_halton() -> None:
             [0.875, 0.55555556, 0.44, 0.02040816, 0.63636364],
         ]
     )
-    # If empty search_space, return {}
+    # If empty search_space, return {}.
     np.testing.assert_allclose(samples, ref_samples, rtol=1e-6)
 
 
@@ -240,7 +240,7 @@ def test_sample_relative_sobol() -> None:
         ]
     )
 
-    # If empty search_space, return {}
+    # If empty search_space, return {}.
     np.testing.assert_allclose(samples, ref_samples, rtol=1e-6)
 
 
@@ -249,7 +249,7 @@ def test_sample_relative_sobol() -> None:
 def test_sample_relative_seeding(scramble: bool, qmc_type: str) -> None:
     objective: Callable[[Trial], float] = lambda t: t.suggest_float("x", 0, 1)
 
-    # Base case
+    # Base case.
     sampler = _init_QMCSampler_without_exp_warning(
         scramble=scramble, qmc_type=qmc_type, seed=12345
     )
@@ -259,7 +259,7 @@ def test_sample_relative_seeding(scramble: bool, qmc_type: str) -> None:
     past_trials = [t for t in past_trials if t.number > 0]
     values = [t.params["x"] for t in past_trials]
 
-    # Sequential case
+    # Sequential case.
     sampler = _init_QMCSampler_without_exp_warning(
         scramble=scramble, qmc_type=qmc_type, seed=12345
     )
@@ -272,8 +272,8 @@ def test_sample_relative_seeding(scramble: bool, qmc_type: str) -> None:
     values_sequential = [t.params["x"] for t in past_trials_sequential]
     np.testing.assert_allclose(values, values_sequential, rtol=1e-6)
 
-    # Parallel case (n_jobs=3)
-    # Same parameters might be evalueated multiple times.
+    # Parallel case (n_jobs=3):
+    # Same parameters might be evaluated multiple times.
     sampler = _init_QMCSampler_without_exp_warning(
         scramble=scramble, qmc_type=qmc_type, seed=12345
     )
@@ -308,7 +308,7 @@ def test_sample_qmc(qmc_type: str) -> None:
     search_space.pop("x6")
 
     with patch.object(sampler, "_find_sample_id", side_effect=[0, 1, 2, 4, 9]) as _:
-        # Make sure that the shape of sample is correct
+        # Make sure that the shape of sample is correct.
         sample = sampler._sample_qmc(study, search_space)
         assert sample.shape == (1, 5)
 
@@ -323,7 +323,7 @@ def test_find_sample_id() -> None:
     with patch.object(sampler, "_seed", 1) as _:
         assert sampler._find_sample_id(study) == 5
 
-        # Seed is considered only when scrambling is enabled
+        # Seed is considered only when scrambling is enabled.
         with patch.object(sampler, "_scramble", True) as _:
             assert sampler._find_sample_id(study) == 0
 
