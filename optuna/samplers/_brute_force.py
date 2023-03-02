@@ -119,7 +119,7 @@ class BruteForceSampler(BaseSampler):
 
     Note:
         The sampler may fail to try the entire search space in when the suggestion ranges or
-        parameters are changed in the same :class:`~optuna.study.Study`
+        parameters are changed in the same :class:`~optuna.study.Study`.
 
     Args:
         seed:
@@ -181,7 +181,6 @@ class BruteForceSampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
-        print("hoge")
         trials = study.get_trials(
             deepcopy=False,
             states=(
@@ -192,7 +191,6 @@ class BruteForceSampler(BaseSampler):
         tree = self._build_tree((t for t in trials if t.number != trial.number), trial.params)
         candidates = _enumerate_candidates(param_distribution)
         tree.expand(param_name, candidates)
-        print(tree)
         if tree.count_unexpanded() == 0:
             return param_distribution.to_external_repr(self._rng.choice(candidates))
         else:
