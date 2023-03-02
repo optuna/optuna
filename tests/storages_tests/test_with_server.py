@@ -177,3 +177,25 @@ def test_pickle_storage(storage: BaseStorage) -> None:
     storage_system_attrs = storage.get_study_system_attrs(study_id)
     restored_storage_system_attrs = restored_storage.get_study_system_attrs(study_id)
     assert storage_system_attrs == restored_storage_system_attrs == {"key": "pickle"}
+
+
+@pytest.mark.parametrize("direction", [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE])
+@pytest.mark.parametrize(
+    "values",
+    [
+        [0.0, 1.0, 2.0],
+        [0.0, float("inf"), 1.0],
+        [0.0, float("-inf"), 1.0],
+        [float("inf"), 0.0, 1.0, float("-inf")],
+        [float("inf")],
+        [float("-inf")],
+    ],
+)
+def test_get_best_trial(direction: StudyDirection, values: Sequence[float]) -> None:
+    storage = get_storage()
+    study = optuna.create_study(direction=direction, storage=storage)
+    study.add_trials(
+        [optuna.create_trial(params={}, distributions={}, value=value) for value in values]
+    )
+    expected_value = max(values) if direction == StudyDirection.MAXIMIZE else min(values)
+    assert study.best_value == expected_value
