@@ -21,7 +21,6 @@ from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna._typing import JSONSerializable
 
 
 class _StudyInfo:
