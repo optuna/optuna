@@ -659,7 +659,7 @@ class Study:
         self._storage.set_study_user_attr(self._study_id, key, value)
 
     @deprecated_func("3.1.0", "6.0.0")
-    def set_system_attr(self, key: str, value: Any) -> None:
+    def set_system_attr(self, key: str, value: JSONSerializable) -> None:
         """Set a system attribute to the study.
 
         Note that Optuna internally uses this method to save system messages. Please use

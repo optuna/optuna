@@ -12,6 +12,7 @@ import numpy as np
 import pytest
 
 import optuna
+from optuna._typing import JSONSerializable
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.storages import _CachedStorage
@@ -29,7 +30,7 @@ from optuna.trial import TrialState
 
 ALL_STATES = list(TrialState)
 
-EXAMPLE_ATTRS = {
+EXAMPLE_ATTRS: Dict[str, JSONSerializable] = {
     "dataset": "MNIST",
     "none": None,
     "json_serializable": {"baseline_score": 0.001, "tags": ["image", "classification"]},

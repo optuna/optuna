@@ -15,6 +15,7 @@ from optuna import logging
 from optuna import multi_objective
 from optuna._deprecated import deprecated_class
 from optuna._deprecated import deprecated_func
+from optuna._typing import JSONSerializable
 from optuna.pruners import NopPruner
 from optuna.storages import BaseStorage
 from optuna.study import create_study as _create_study
@@ -377,7 +378,7 @@ class MultiObjectiveStudy:
 
         self._study.set_user_attr(key, value)
 
-    def set_system_attr(self, key: str, value: Any) -> None:
+    def set_system_attr(self, key: str, value: JSONSerializable) -> None:
         """Set a system attribute to the study.
 
         Note that Optuna internally uses this method to save system messages. Please use

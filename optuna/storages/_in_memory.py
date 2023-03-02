@@ -14,6 +14,7 @@ import uuid
 
 import optuna
 from optuna import distributions  # NOQA
+from optuna._typing import JSONSerializable
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
@@ -21,7 +22,6 @@ from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna._typing import JSONSerializable
 
 
 _logger = optuna.logging.get_logger(__name__)
@@ -89,7 +89,7 @@ class InMemoryStorage(BaseStorage):
 
             self._studies[study_id].user_attrs[key] = value
 
-    def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
+    def set_study_system_attr(self, study_id: int, key: str, value: JSONSerializable) -> None:
         with self._lock:
             self._check_study_id(study_id)
 

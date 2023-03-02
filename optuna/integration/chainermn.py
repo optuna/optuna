@@ -12,6 +12,7 @@ import warnings
 from optuna import TrialPruned
 from optuna._deprecated import deprecated_func
 from optuna._imports import try_import
+from optuna._typing import JSONSerializable
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.storages import InMemoryStorage
@@ -251,7 +252,7 @@ class ChainerMNTrial(BaseTrial):
         self.comm.mpi_comm.barrier()
 
     @deprecated_func("3.1.0", "6.0.0")
-    def set_system_attr(self, key: str, value: Any) -> None:
+    def set_system_attr(self, key: str, value: JSONSerializable) -> None:
         if self.comm.rank == 0:
             assert self.delegate is not None
             self.delegate.storage.set_trial_system_attr(self.delegate._trial_id, key, value)

@@ -14,6 +14,7 @@ import optuna
 from optuna._deprecated import deprecated_func
 from optuna._experimental import experimental_class
 from optuna._imports import try_import
+from optuna._typing import JSONSerializable
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 
@@ -274,7 +275,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
     @broadcast_properties
     @deprecated_func("3.1.0", "6.0.0")
-    def set_system_attr(self, key: str, value: Any) -> None:
+    def set_system_attr(self, key: str, value: JSONSerializable) -> None:
         err = None
 
         if dist.get_rank(self._group) == 0:  # type: ignore[no-untyped-call]

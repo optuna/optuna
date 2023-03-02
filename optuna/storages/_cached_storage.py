@@ -21,6 +21,7 @@ from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+from optuna._typing import JSONSerializable
 
 
 class _StudyInfo:
@@ -125,7 +126,7 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
         self._backend.set_study_user_attr(study_id, key, value)
 
-    def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
+    def set_study_system_attr(self, study_id: int, key: str, value: JSONSerializable) -> None:
         self._backend.set_study_system_attr(study_id, key, value)
 
     def get_study_id_from_name(self, study_name: str) -> int:
