@@ -17,6 +17,7 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.samplers import BaseSampler
 from optuna.study import Study
+from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -49,12 +50,7 @@ class _TreeNode:
                 )
 
     def set_leaf(self) -> None:
-        # If the node is unexpanded, set it to be a leaf.
-        # Note that we cannot raise error if the node is already expanded, because
-        # running nodes may have incomplete search space.
-        if self.children is None:
-            assert self.param_name is None
-            self.children = {}
+        self.expand(None, [])
 
     def add_path(
         self, params_and_search_spaces: Iterable[Tuple[str, Iterable[Any], Any]]
@@ -150,7 +146,7 @@ class BruteForceSampler(BaseSampler):
     def _build_tree(trials: Iterable[FrozenTrial], params: Dict[str, Any]) -> _TreeNode:
         # Build a _TreeNode under given params from the given trials.
         tree = _TreeNode()
-        leaves: List[_TreeNode] = []
+        incomplete_leaves: List[_TreeNode] = []
         for trial in trials:
             if not all(p in trial.params and trial.params[p] == v for p, v in params.items()):
                 continue
@@ -166,10 +162,16 @@ class BruteForceSampler(BaseSampler):
                 )
             )
             if leaf is not None:
-                leaves.append(leaf)
-        # Add all leaf nodes at the end because running trials may not have complete search space.
-        for leaf in leaves:
-            leaf.set_leaf()
+                # The parameters are on the defined grid.
+                if trial.state.is_finished():
+                    leaf.set_leaf()
+                else:
+                    incomplete_leaves.append(leaf)
+
+        # Add all incomplete leaf nodes at the end because they may not have complete search space.
+        for leaf in incomplete_leaves:
+            if leaf.children is None:
+                leaf.set_leaf()
         return tree
 
     def sample_independent(
@@ -179,6 +181,7 @@ class BruteForceSampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
+        print("hoge")
         trials = study.get_trials(
             deepcopy=False,
             states=(
@@ -189,6 +192,7 @@ class BruteForceSampler(BaseSampler):
         tree = self._build_tree((t for t in trials if t.number != trial.number), trial.params)
         candidates = _enumerate_candidates(param_distribution)
         tree.expand(param_name, candidates)
+        print(tree)
         if tree.count_unexpanded() == 0:
             return param_distribution.to_external_repr(self._rng.choice(candidates))
         else:
@@ -208,7 +212,21 @@ class BruteForceSampler(BaseSampler):
                 TrialState.RUNNING,
             ),
         )
-        tree = self._build_tree(trials, {})
+        tree = self._build_tree(
+            (
+                t
+                if t.number != trial.number
+                else create_trial(
+                    state=state,  # Set current trial as complete.
+                    values=values,
+                    params=trial.params,
+                    distributions=trial.distributions,
+                )
+                for t in trials
+            ),
+            {},
+        )
+
         if tree.count_unexpanded() == 0:
             study.stop()
 

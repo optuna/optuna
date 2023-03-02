@@ -18,7 +18,8 @@ def test_tree_node_add_paths() -> None:
     ]
     for leaf in leafs:
         assert leaf is not None
-        leaf.set_leaf()
+        if leaf.children is None:
+            leaf.set_leaf()
 
     assert tree == _TreeNode(
         param_name="a",
@@ -197,3 +198,44 @@ def test_study_optimize_with_single_search_space_user_added() -> None:
     assert len(all_suggested_values) == len(expected_suggested_values)
     for a in all_suggested_values:
         assert a in expected_suggested_values
+
+
+def test_study_optimize_with_nonconstant_search_space() -> None:
+    def objective_nonconstant_range(trial: Trial) -> float:
+        x = trial.suggest_int("x", -1, trial.number)
+        return x
+
+    study = optuna.create_study(sampler=samplers.BruteForceSampler())
+    with pytest.raises(ValueError):
+        study.optimize(objective_nonconstant_range, n_trials=10)
+
+    def objective_increasing_variable(trial: Trial) -> float:
+        return sum(trial.suggest_int(f"x{i}", 0, 0) for i in range(2))
+
+    study = optuna.create_study(sampler=samplers.BruteForceSampler())
+    study.add_trial(
+        optuna.create_trial(
+            params={"x0": 0},
+            value=0.0,
+            distributions={"x0": optuna.distributions.IntDistribution(0, 0)},
+        )
+    )
+    with pytest.raises(ValueError):
+        study.optimize(objective_increasing_variable, n_trials=10)
+
+    def objective_decreasing_variable(trial: Trial) -> float:
+        return trial.suggest_int("x0", 0, 0)
+
+    study = optuna.create_study(sampler=samplers.BruteForceSampler())
+    study.add_trial(
+        optuna.create_trial(
+            params={"x0": 0, "x1": 0},
+            value=0.0,
+            distributions={
+                "x0": optuna.distributions.IntDistribution(0, 0),
+                "x1": optuna.distributions.IntDistribution(0, 0),
+            },
+        )
+    )
+    with pytest.raises(ValueError):
+        study.optimize(objective_decreasing_variable, n_trials=10)
