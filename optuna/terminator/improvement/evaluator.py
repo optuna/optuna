@@ -14,9 +14,9 @@ from optuna.terminator.improvement._preprocessing import PreprocessingPipeline
 from optuna.terminator.improvement._preprocessing import SelectTopTrials
 from optuna.terminator.improvement._preprocessing import ToMinimize
 from optuna.terminator.improvement._preprocessing import UnscaleLog
+from optuna.terminator.improvement.gp.base import _min_lcb
+from optuna.terminator.improvement.gp.base import _min_ucb
 from optuna.terminator.improvement.gp.base import BaseGaussianProcess
-from optuna.terminator.improvement.gp.base import min_lcb
-from optuna.terminator.improvement.gp.base import min_ucb
 from optuna.terminator.improvement.gp.botorch import _BoTorchGaussianProcess
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -26,6 +26,7 @@ DEFAULT_TOP_TRIALS_RATIO = 0.5
 DEFAULT_MIN_N_TRIALS = 20
 
 
+@experimental_class("3.2.0")
 class BaseImprovementEvaluator(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def evaluate(
@@ -83,8 +84,8 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
 
         self._gp.fit(fit_trials)
 
-        ucb = min_ucb(trials=fit_trials, gp=self._gp, n_params=n_params, n_trials=n_trials)
-        lcb = min_lcb(trials=lcb_trials, gp=self._gp, n_params=n_params, n_trials=n_trials)
+        ucb = _min_ucb(trials=fit_trials, gp=self._gp, n_params=n_params, n_trials=n_trials)
+        lcb = _min_lcb(trials=lcb_trials, gp=self._gp, n_params=n_params, n_trials=n_trials)
 
         regret_bound = ucb - lcb
 
