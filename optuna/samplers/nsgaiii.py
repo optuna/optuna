@@ -25,6 +25,7 @@ from optuna.samplers._search_space import IntersectionSearchSpace
 from optuna.samplers.nsgaii._crossover import perform_crossover
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.samplers.nsgaii._crossovers._uniform import UniformCrossover
+from optuna.samplers.nsgaii._sampler import _constrained_dominates
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.study._multi_objective import _dominates
@@ -33,8 +34,8 @@ from optuna.trial import TrialState
 
 
 # Define key names of `Trial.system_attrs`.
-_GENERATION_KEY = "nsga2:generation"
-_POPULATION_CACHE_KEY_PREFIX = "nsga2:population"
+_GENERATION_KEY = "nsga3:generation"
+_POPULATION_CACHE_KEY_PREFIX = "nsga3:population"
 
 
 class NSGAIIISampler(BaseSampler):
@@ -61,65 +62,9 @@ class NSGAIIISampler(BaseSampler):
             In the default setting the algorithm uses `uniformly` spread points to diversify the
             result.
 
-        population_size:
-            Number of individuals (trials) in a generation.
-            ``population_size`` must be greater than or equal to ``crossover.n_parents``, and is
-            also recommend to be greater than number of points in ``reference_points``.
-            For :class:`~optuna.samplers.nsgaii.UNDXCrossover` and
-            :class:`~optuna.samplers.nsgaii.SPXCrossover`, ``n_parents=3``, and for the other
-            algorithms, ``n_parents=2``.
-
-        mutation_prob:
-            Probability of mutating each parameter when creating a new individual.
-            If :obj:`None` is specified, the value ``1.0 / len(parent_trial.params)`` is used
-            where ``parent_trial`` is the parent trial of the target individual.
-
-        crossover:
-            Crossover to be applied when creating child individuals.
-            The available crossovers are listed here:
-            https://optuna.readthedocs.io/en/stable/reference/samplers/nsgaii.html.
-
-            :class:`~optuna.samplers.nsgaii.UniformCrossover` is always applied to parameters
-            sampled from :class:`~optuna.distributions.CategoricalDistribution`, and by
-            default for parameters sampled from other distributions unless this argument
-            is specified.
-
-            For more information on each of the crossover method, please refer to
-            specific crossover documentation.
-
-        crossover_prob:
-            Probability that a crossover (parameters swapping between parents) will occur
-            when creating a new individual.
-
-        swapping_prob:
-            Probability of swapping each parameter of the parents during crossover.
-
-        seed:
-            Seed for random number generator.
-
-        constraints_func:
-            An optional function that computes the objective constraints. It must take a
-            :class:`~optuna.trial.FrozenTrial` and return the constraints. The return value must
-            be a sequence of :obj:`float` s. A value strictly larger than 0 means that a
-            constraints is violated. A value equal to or smaller than 0 is considered feasible.
-            If ``constraints_func`` returns more than one value for a trial, that trial is
-            considered feasible if and only if all values are equal to 0 or smaller.
-
-            The ``constraints_func`` will be evaluated after each successful trial.
-            The function won't be called when trials fail or they are pruned, but this behavior is
-            subject to change in the future releases.
-
-            The constraints are handled by the constrained domination. A trial x is said to
-            constrained-dominate a trial y, if any of the following conditions is true:
-
-            1. Trial x is feasible and trial y is not.
-            2. Trial x and y are both infeasible, but trial x has a smaller overall violation.
-            3. Trial x and y are feasible and trial x dominates trial y.
-
             .. note::
-                Added in v2.5.0 as an experimental feature. The interface may change in newer
-                versions without prior notice. See
-                https://github.com/optuna/optuna/releases/tag/v2.5.0.
+                Other parameters are the same as :class:`~optuna.samplers.nsgaii.NSGAIISampler`.
+
 
     """
 
@@ -596,76 +541,3 @@ def _niching(
             cnt2refs[count + 1].append(reference_point_id)
 
     return additional_elite_population
-
-
-def _constrained_dominates(
-    trial0: FrozenTrial, trial1: FrozenTrial, directions: Sequence[StudyDirection]
-) -> bool:
-    """Checks constrained-domination.
-
-    A trial x is said to constrained-dominate a trial y, if any of the following conditions is
-    true:
-    1) Trial x is feasible and trial y is not.
-    2) Trial x and y are both infeasible, but solution x has a smaller overall constraint
-    violation.
-    3) Trial x and y are feasible and trial x dominates trial y.
-    """
-
-    constraints0 = trial0.system_attrs.get(_CONSTRAINTS_KEY)
-    constraints1 = trial1.system_attrs.get(_CONSTRAINTS_KEY)
-
-    if constraints0 is None:
-        warnings.warn(
-            f"Trial {trial0.number} does not have constraint values."
-            " It will be dominated by the other trials."
-        )
-
-    if constraints1 is None:
-        warnings.warn(
-            f"Trial {trial1.number} does not have constraint values."
-            " It will be dominated by the other trials."
-        )
-
-    if constraints0 is None and constraints1 is None:
-        # Neither Trial x nor y has constraints values
-        return _dominates(trial0, trial1, directions)
-
-    if constraints0 is not None and constraints1 is None:
-        # Trial x has constraint values, but y doesn't.
-        return True
-
-    if constraints0 is None and constraints1 is not None:
-        # If Trial y has constraint values, but x doesn't.
-        return False
-
-    assert isinstance(constraints0, (list, tuple))
-    assert isinstance(constraints1, (list, tuple))
-
-    if len(constraints0) != len(constraints1):
-        raise ValueError("Trials with different numbers of constraints cannot be compared.")
-
-    if trial0.state != TrialState.COMPLETE:
-        return False
-
-    if trial1.state != TrialState.COMPLETE:
-        return True
-
-    satisfy_constraints0 = all(v <= 0 for v in constraints0)
-    satisfy_constraints1 = all(v <= 0 for v in constraints1)
-
-    if satisfy_constraints0 and satisfy_constraints1:
-        # Both trials satisfy the constraints.
-        return _dominates(trial0, trial1, directions)
-
-    if satisfy_constraints0:
-        # trial0 satisfies the constraints, but trial1 violates them.
-        return True
-
-    if satisfy_constraints1:
-        # trial1 satisfies the constraints, but trial0 violates them.
-        return False
-
-    # Both trials violate the constraints.
-    violation0 = sum(v for v in constraints0 if v > 0)
-    violation1 = sum(v for v in constraints1 if v > 0)
-    return violation0 < violation1
