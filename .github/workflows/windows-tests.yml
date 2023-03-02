@@ -70,7 +70,7 @@ jobs:
       run: |
         pytest -m "not integration and not slow"
       env:
-        MPLBACKEND: "QtAgg" # Use QtAgg as matplotlib backend
+        MPLBACKEND: "QtAgg" # Use QtAgg as matplotlib backend.
 
   tests-integration-windows:
     runs-on: windows-latest
