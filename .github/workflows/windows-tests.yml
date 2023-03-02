@@ -63,7 +63,7 @@ jobs:
         pytest -m "not integration"
       env:
         SQLALCHEMY_WARN_20: 1
-        MPLBACKEND: "QtAgg" # Use QtAgg as matplotlib backend
+        MPLBACKEND: "QtAgg" # Use QtAgg as matplotlib backend.
 
     - name: Tests
       if:  ${{ github.event_name != 'schedule' }}
