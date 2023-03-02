@@ -64,6 +64,7 @@ checking = [
 ]
 document = [
     "cma",
+    "botorch",
     "distributed",
     "fvcore",
     "lightgbm",
@@ -74,8 +75,7 @@ document = [
     "plotly>=4.9.0",  # optuna/visualization.
     "scikit-learn",
     "scikit-optimize",
-    # TODO(not522): Remove the constraint after sphinx_rtd_theme supports Sphinx 6
-    "sphinx<6",
+    "sphinx",
     "sphinx-copybutton",
     "sphinx-gallery",
     "sphinx-plotly-directive",
@@ -113,6 +113,7 @@ integration = [
     "xgboost",
 ]
 optional = [
+    "botorch",  # optuna/terminator/gp/botorch
     "matplotlib!=3.6.0",  # optuna/visualization/matplotlib
     "pandas",  # optuna/study.py
     "plotly>=4.9.0",  # optuna/visualization.
@@ -161,6 +162,7 @@ exclude = '''
   | \.hg
   | \.mypy_cache
   | \.venv
+  | venv
   | _build
   | buck-out
   | build

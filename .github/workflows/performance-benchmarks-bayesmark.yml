@@ -62,6 +62,10 @@ jobs:
         pip install --progress-bar off .[benchmark]
         pip install --progress-bar off bayesmark matplotlib pandas
 
+    - name: Output installed packages
+      run: |
+        pip freeze --all
+
     - name: Run performance benchmark
       run: |
         python benchmarks/run_bayesmark.py \
@@ -75,13 +79,13 @@ jobs:
           --pruner-list '${{ github.event.inputs.pruner-list }}' \
           --pruner-kwargs-list '${{ github.event.inputs.pruner-kwargs-list }}' \
           --plot-warmup '${{ github.event.inputs.plot-warmup }}'
-    
+
     - name: Upload plot
       uses: actions/upload-artifact@v3
       with:
         name: benchmark-plots
         path: plots
-    
+
     - name: Upload partial report
       uses: actions/upload-artifact@v3
       with:
@@ -113,16 +117,20 @@ jobs:
         pip install --progress-bar off -U setuptools wheel
         pip install --progress-bar off numpy scipy pandas Jinja2
 
+    - name: Output installed packages
+      run: |
+        pip freeze --all
+
     - name: Run benchmark report builder
       run: |
         python benchmarks/bayesmark/report_bayesmark.py
-    
+
     - name: Upload report
       uses: actions/upload-artifact@v3
       with:
         name: benchmark-report
         path: report
-    
+
     - name: Cleanup partial reports
       uses: geekyeggo/delete-artifact@v1
       with:

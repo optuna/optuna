@@ -526,6 +526,18 @@ def test_add_trial(storage_mode: str) -> None:
         assert study.best_value == 0.8
 
 
+def test_add_trial_invalid_values_length() -> None:
+    study = create_study()
+    trial = create_trial(values=[0, 0])
+    with pytest.raises(ValueError):
+        study.add_trial(trial)
+
+    study = create_study(directions=["minimize", "minimize"])
+    trial = create_trial(value=0)
+    with pytest.raises(ValueError):
+        study.add_trial(trial)
+
+
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_add_trials(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:

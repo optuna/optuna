@@ -39,6 +39,10 @@ jobs:
         pip install --progress-bar off -U bayesmark
         pip install --progress-bar off -U kurobako
 
+    - name: Output installed packages
+      run: |
+        pip freeze --all
+
     - name: black
       run: black . --check --diff
     - name: flake8
