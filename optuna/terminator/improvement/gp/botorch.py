@@ -86,7 +86,7 @@ class _BoTorchGaussianProcess(BaseGaussianProcess):
         return mean.detach().numpy(), std.detach().numpy()
 
 
-def _convert_trials_to_tensors(trials: List[FrozenTrial]) -> Tuple["torch.Tensor", "torch.Tensor"]:
+def _convert_trials_to_tensors(trials: list[FrozenTrial]) -> tuple[torch.Tensor, torch.Tensor]:
     """Convert a list of FrozenTrial objects to tensors inputs and bounds.
 
     This function assumes the following condition for input trials:
