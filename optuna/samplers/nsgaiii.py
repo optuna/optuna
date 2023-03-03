@@ -64,7 +64,6 @@ class NSGAIIISampler(BaseSampler):
         .. note::
             Other parameters are the same as :class:`~optuna.samplers.nsgaii.NSGAIISampler`.
 
-
     """
 
     def __init__(
