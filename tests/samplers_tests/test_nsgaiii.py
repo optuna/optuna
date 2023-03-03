@@ -423,7 +423,7 @@ def test_crossover_objectives(
     )
     print()
 
-    assert False  # len(study.trials) == n_trials
+    assert len(study.trials) == n_trials
 
 
 @parametrize_crossover_population
