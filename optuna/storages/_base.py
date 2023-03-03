@@ -222,7 +222,7 @@ class BaseStorage(abc.ABC):
         """Read a list of :class:`~optuna.study.FrozenStudy` objects.
 
         Returns:
-            A list of :class:`~optuna.study.FrozenStudy` objects.
+            A list of :class:`~optuna.study.FrozenStudy` objects, sorted by ``study_id``.
 
         """
         raise NotImplementedError
@@ -482,7 +482,7 @@ class BaseStorage(abc.ABC):
                 Trial states to filter on. If :obj:`None`, include all states.
 
         Returns:
-            List of trials in the study.
+            List of trials in the study, sorted by ``trial_id``.
 
         Raises:
             :exc:`KeyError`:
