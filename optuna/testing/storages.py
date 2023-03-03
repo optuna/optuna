@@ -66,42 +66,60 @@ class StorageSupplier:
         optuna.storages.JournalStorage,
         "optuna.integration.DaskStorage",
     ]:
+        self.storage: Union[
+            optuna.storages.InMemoryStorage,
+            optuna.storages._CachedStorage,
+            optuna.storages.RDBStorage,
+            optuna.storages.JournalStorage,
+            "optuna.integration.DaskStorage",
+        ]
         if self.storage_specifier == "inmemory":
             if len(self.extra_args) > 0:
                 raise ValueError("InMemoryStorage does not accept any arguments!")
-            return optuna.storages.InMemoryStorage()
+            self.storage = optuna.storages.InMemoryStorage()
+            return self.storage
         elif "sqlite" in self.storage_specifier:
-            self.tempfile = tempfile.NamedTemporaryFile(delete=False)
+            self.tempfile = tempfile.NamedTemporaryFile()
             url = "sqlite:///{}".format(self.tempfile.name)
             rdb_storage = optuna.storages.RDBStorage(
                 url,
                 engine_kwargs={"connect_args": {"timeout": SQLITE3_TIMEOUT}},
                 **self.extra_args,
             )
-            return (
+            self.storage = (
                 optuna.storages._CachedStorage(rdb_storage)
                 if "cached" in self.storage_specifier
                 else rdb_storage
             )
+            return self.storage
         elif self.storage_specifier == "journal_redis":
             journal_redis_storage = optuna.storages.JournalRedisStorage("redis://localhost")
             journal_redis_storage._redis = self.extra_args.get(
                 "redis", fakeredis.FakeStrictRedis()
             )
-            return optuna.storages.JournalStorage(journal_redis_storage)
+            self.storage = optuna.storages.JournalStorage(journal_redis_storage)
+            return self.storage
         elif "journal" in self.storage_specifier:
-            file_storage = JournalFileStorage(tempfile.NamedTemporaryFile(delete=False).name)
-            return optuna.storages.JournalStorage(file_storage)
+            self.tempfile = tempfile.NamedTemporaryFile(delete=False)
+            file_storage = JournalFileStorage(self.tempfile.name)
+            self.storage = optuna.storages.JournalStorage(file_storage)
+            return self.storage
         elif self.storage_specifier == "dask":
             self.dask_client = distributed.Client()  # type: ignore[no-untyped-call]
 
-            return optuna.integration.DaskStorage(client=self.dask_client, **self.extra_args)
+            self.storage = optuna.integration.DaskStorage(
+                client=self.dask_client, **self.extra_args
+            )
+            return self.storage
         else:
             assert False
 
     def __exit__(
         self, exc_type: Type[BaseException], exc_val: BaseException, exc_tb: TracebackType
     ) -> None:
+        if isinstance(self.storage, optuna.storages.RDBStorage):
+            self.storage.engine.dispose()  # Detach process from tempfile before tempfile deletion.
+
         if self.tempfile:
             self.tempfile.close()
 
