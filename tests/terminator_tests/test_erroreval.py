@@ -26,8 +26,8 @@ def test_cross_validation_evaluator() -> None:
     study = create_study(direction="minimize")
     study.add_trials(
         [
-            _create_trial(value=2.0, cv_scores=[1.0, -1.0]),  # second best trial with 1.0 var
-            _create_trial(value=1.0, cv_scores=[2.0, -2.0]),  # best trial with 4.0 var
+            _create_trial(value=2.0, cv_scores=[1.0, -1.0]),  # Second best trial with 1.0 var.
+            _create_trial(value=1.0, cv_scores=[2.0, -2.0]),  # Best trial with 4.0 var.
         ]
     )
 
