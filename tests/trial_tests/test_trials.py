@@ -216,5 +216,5 @@ def test_datetime_start(trial_type: type) -> None:
     trial = _create_trial(trial_type)
     assert trial.datetime_start is not None
     old_date_time_start = trial.datetime_start
-    time.sleep(0.001) # Sleep 1ms to avoid faulty assertion on Windows OS.
+    time.sleep(0.001)  # Sleep 1ms to avoid faulty assertion on Windows OS.
     assert datetime.datetime.now() != old_date_time_start
