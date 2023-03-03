@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from optuna.study._study_direction import StudyDirection
 from optuna.study.study import create_study
 from optuna.terminator.erroreval import StaticErrorEvaluator
@@ -15,6 +17,15 @@ class _StaticRegretBoundEvaluator(BaseImprovementEvaluator):
 
     def evaluate(self, trials: list[FrozenTrial], study_direction: StudyDirection) -> float:
         return self._constant
+
+
+def test_init() -> None:
+    # Test that a positive `min_n_trials` does not raise any error.
+    Terminator(min_n_trials=1)
+
+    with pytest.raises(ValueError):
+        # Test that a non-positive `min_n_trials` raises ValueError.
+        Terminator(min_n_trials=0)
 
 
 def test_should_terminate() -> None:

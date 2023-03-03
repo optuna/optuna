@@ -25,6 +25,9 @@ class Terminator(BaseTerminator):
         error_evaluator: Optional[BaseErrorEvaluator] = None,
         min_n_trials: int = DEFAULT_MIN_N_TRIALS,
     ) -> None:
+        if min_n_trials <= 0:
+            raise ValueError("`min_n_trials` is expected to be a positive integer.")
+
         self._improvement_evaluator = improvement_evaluator or RegretBoundEvaluator()
         self._error_evaluator = error_evaluator or CrossValidationErrorEvaluator()
         self._min_n_trials = min_n_trials
