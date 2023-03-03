@@ -171,7 +171,9 @@ def test_pytorch_lightning_pruning_callback_ddp_monitor(
         model = ModelDDP()
         trainer.fit(model)
 
-        # evoke pruning manually.
+        # Evoke pruning manually.
+``````suggestion
+        # Evoke pruning manually.
         callback.check_pruned()
 
         return 1.0
