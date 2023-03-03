@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import List
 from typing import Optional
-from typing import Tuple
 
 import numpy as np
 
@@ -45,7 +43,7 @@ class _BoTorchGaussianProcess(BaseGaussianProcess):
 
     def fit(
         self,
-        trials: List[FrozenTrial],
+        trials: list[FrozenTrial],
     ) -> None:
         self._trials = trials
 
@@ -71,8 +69,8 @@ class _BoTorchGaussianProcess(BaseGaussianProcess):
 
     def predict_mean_std(
         self,
-        trials: List[FrozenTrial],
-    ) -> Tuple[np.ndarray, np.ndarray]:
+        trials: list[FrozenTrial],
+    ) -> tuple[np.ndarray, np.ndarray]:
         assert self._gp is not None
 
         x, _ = _convert_trials_to_tensors(trials)
