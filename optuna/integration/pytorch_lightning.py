@@ -59,7 +59,9 @@ class PyTorchLightningPruningCallback(Callback):
     def on_fit_start(self, trainer: Trainer, pl_module: "pl.LightningModule") -> None:
         self.is_ddp_backend = trainer._accelerator_connector.is_distributed
         if self.is_ddp_backend:
-            if version.parse(pl.__version__) < version.parse("1.6.0"):  # type: ignore
+            if version.parse(pl.__version__) < version.parse(  # type: ignore[attr-defined]
+                "1.6.0"
+            ):
                 raise ValueError("PyTorch Lightning>=1.6.0 is required in DDP.")
             # If it were not for this block, fitting is started even if unsupported storage
             # is used. Note that the ValueError is transformed into ProcessRaisedException inside
@@ -74,6 +76,7 @@ class PyTorchLightningPruningCallback(Callback):
                 )
             # It is necessary to store intermediate values directly in the backend storage because
             # they are not properly propagated to main process due to cached storage.
+            # TODO(Shinichi) Remove intermediate_values from system_attr after PR #4431 is merged.
             self._trial.storage.set_trial_system_attr(
                 self._trial._trial_id,
                 _INTERMEDIATE_VALUE,
