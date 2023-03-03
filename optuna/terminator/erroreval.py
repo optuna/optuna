@@ -22,7 +22,7 @@ class BaseErrorEvaluator(metaclass=abc.ABCMeta):
 @experimental_class("3.2.0")
 class CrossValidationErrorEvaluator(BaseErrorEvaluator):
     def evaluate(self, study: Study) -> float:
-        assert len(study.get_trials(states=(TrialState.COMPLETE,))) != 0
+        assert len(study.get_trials(states=(TrialState.COMPLETE,))) > 0
 
         best_trial_attrs = study.best_trial.system_attrs
         if _CROSS_VALIDATION_SCORES_KEY in best_trial_attrs:
