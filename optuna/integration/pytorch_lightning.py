@@ -148,7 +148,8 @@ class PyTorchLightningPruningCallback(Callback):
         is_pruned = _trial_system_attrs.get(_PRUNED_KEY)
         intermediate_values = _trial_system_attrs.get(_INTERMEDIATE_VALUE)
 
-        for epoch, score in intermediate_values.items():  # type: ignore[union-attr]
+        assert intermediate_values is not None
+        for epoch, score in intermediate_values.items():
             self._trial.report(score, step=int(epoch))
         if is_pruned:
             epoch = _trial_system_attrs.get(_EPOCH_KEY)
