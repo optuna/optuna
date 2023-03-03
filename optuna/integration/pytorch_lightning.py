@@ -136,7 +136,7 @@ class PyTorchLightningPruningCallback(Callback):
         """Raise :class:`optuna.TrialPruned` manually if pruned.
 
         Currently, ``intermediate_values`` are not properly propagated between processes due to
-        _CachedStorage. Therefore, necessary information is kept in trial_system_attrs when the
+       storage cache. Therefore, necessary information is kept in trial_system_attrs when the
         trial runs in a distributed situation.
         Please do not call this method when you are not using DDP.
         """
