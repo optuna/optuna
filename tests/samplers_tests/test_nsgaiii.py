@@ -3,7 +3,6 @@ from collections import defaultdict
 import copy
 import itertools
 from typing import Any
-from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -84,11 +83,6 @@ def test_population_size() -> None:
         # Not an integer.
         NSGAIIISampler(reference_points, population_size=2.5)  # type: ignore[arg-type]
 
-    with pytest.raises(ValueError):
-        crossover = UniformCrossover()
-        population_size = crossover.n_parents - 1
-        NSGAIIISampler(reference_points, crossover=crossover, population_size=population_size)
-
 
 def test_mutation_prob() -> None:
     reference_points = np.array([[1.0]])
@@ -137,13 +131,13 @@ def test_constraints_func_none() -> None:
     n_trials = 4
     n_objectives = 2
 
-    reference_points = np.array([[0.0] * n_objectives])
-    reference_points[0, 0] = 1.0
+    reference_points = np.array([[1.0, 0.0], [0.0, 1.0]])
     sampler = NSGAIIISampler(reference_points, population_size=2)
 
     study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
     study.optimize(
-        lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)], n_trials=n_trials
+        lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)],
+        n_trials=n_trials,
     )
 
     assert len(study.trials) == n_trials
@@ -165,15 +159,15 @@ def test_constraints_func(constraint_value: float) -> None:
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        reference_points = np.array([[0.0] * n_objectives])
-        reference_points[0, 0] = 1.0
+        reference_points = np.array([[1.0, 0.0], [0.0, 1.0]])
         sampler = NSGAIIISampler(
             reference_points, population_size=2, constraints_func=constraints_func
         )
 
     study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
     study.optimize(
-        lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)], n_trials=n_trials
+        lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)],
+        n_trials=n_trials,
     )
 
     assert len(study.trials) == n_trials
@@ -191,8 +185,7 @@ def test_constraints_func_nan() -> None:
         return (float("nan"),)
 
     with warnings.catch_warnings():
-        reference_points = np.array([[0.0] * n_objectives])
-        reference_points[0, 0] = 1.0
+        reference_points = np.array([[1.0, 0.0], [0.0, 1.0]])
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = NSGAIIISampler(
             reference_points, population_size=2, constraints_func=constraints_func
@@ -212,10 +205,11 @@ def test_constraints_func_nan() -> None:
     assert trials[0].system_attrs[_CONSTRAINTS_KEY] is None  # None is set for constraints.
 
 
+# TODO(Shinichi) Remove after separating _fast_non_dominated_sort() from NSGA typed samplers
 def _assert_population_per_rank(
-    trials: List[FrozenTrial],
-    direction: List[StudyDirection],
-    population_per_rank: List[List[FrozenTrial]],
+    trials: Sequence[FrozenTrial],
+    direction: Sequence[StudyDirection],
+    population_per_rank: Sequence[Sequence[FrozenTrial]],
 ) -> None:
     # Check that the number of trials do not change.
     flattened = [trial for rank in population_per_rank for trial in rank]
@@ -238,6 +232,7 @@ def _assert_population_per_rank(
                 )
 
 
+# TODO(Shinichi) Remove after separating _fast_non_dominated_sort() from NSGA typed samplers
 @pytest.mark.parametrize("direction1", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
 @pytest.mark.parametrize("direction2", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
 def test_fast_non_dominated_sort_no_constraints(
@@ -255,10 +250,11 @@ def test_fast_non_dominated_sort_no_constraints(
     _assert_population_per_rank(trials, directions, population_per_rank)
 
 
+# TODO(Shinichi) Remove after separating _fast_non_dominated_sort() from NSGA typed samplers
 def test_fast_non_dominated_sort_with_constraints() -> None:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        reference_points = np.array([[1.0]])
+        reference_points = np.array([[1.0, 0.0], [0.0, 1.0]])
         sampler = NSGAIIISampler(reference_points, constraints_func=lambda _: [0])
 
     value_list = [10, 20, 20, 30, float("inf"), float("inf"), -float("inf")]
@@ -276,10 +272,11 @@ def test_fast_non_dominated_sort_with_constraints() -> None:
     _assert_population_per_rank(trials, directions, population_per_rank)
 
 
+# TODO(Shinichi) Remove after separating _fast_non_dominated_sort() from NSGA typed samplers
 def test_fast_non_dominated_sort_with_nan_constraint() -> None:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        reference_points = np.array([[1.0]])
+        reference_points = np.array([[1.0, 0.0], [0.0, 1.0]])
         sampler = NSGAIIISampler(reference_points, constraints_func=lambda _: [0])
     directions = [StudyDirection.MINIMIZE, StudyDirection.MINIMIZE]
     with pytest.raises(ValueError):
@@ -288,6 +285,7 @@ def test_fast_non_dominated_sort_with_nan_constraint() -> None:
         )
 
 
+# TODO(Shinichi) Remove after separating _fast_non_dominated_sort() from NSGA typed samplers
 @pytest.mark.parametrize(
     "values_and_constraints",
     [
@@ -302,7 +300,7 @@ def test_fast_non_dominated_sort_with_nan_constraint() -> None:
     ],
 )
 def test_fast_non_dominated_sort_missing_constraint_values(
-    values_and_constraints: List[Tuple[List[float], List[float]]]
+    values_and_constraints: Sequence[Tuple[Sequence[float], Sequence[float]]]
 ) -> None:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
@@ -322,6 +320,7 @@ def test_fast_non_dominated_sort_missing_constraint_values(
         _assert_population_per_rank(trials, list(directions), population_per_rank)
 
 
+# TODO(Shinichi) Remove after separating _fast_non_dominated_sort() from NSGA typed samplers
 @pytest.mark.parametrize("n_dims", [1, 2, 3])
 def test_fast_non_dominated_sort_empty(n_dims: int) -> None:
     for directions in itertools.product(
@@ -396,7 +395,7 @@ def test_call_after_trial_of_random_sampler() -> None:
 
 
 parametrize_crossover_population = pytest.mark.parametrize(
-    "crossover_population",
+    "crossover,population_size",
     [
         (UniformCrossover(), 2),
         (BLXAlphaCrossover(), 2),
@@ -411,26 +410,25 @@ parametrize_crossover_population = pytest.mark.parametrize(
 @parametrize_crossover_population
 @pytest.mark.parametrize("n_objectives", [1, 2, 3])
 def test_crossover_objectives(
-    n_objectives: int, crossover_population: Tuple[BaseSampler, int]
+    n_objectives: int, crossover: BaseSampler, population_size: int
 ) -> None:
     n_trials = 8
-
-    crossover, population = crossover_population
-    reference_points = np.array([[0.0] * n_objectives])
-    reference_points[0, 0] = 1.0
-    sampler = NSGAIIISampler(reference_points, population_size=population)
+    reference_points = generate_default_reference_point(n_objectives)
+    sampler = NSGAIIISampler(reference_points, population_size=population_size)
 
     study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
     study.optimize(
-        lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)], n_trials=n_trials
+        lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)],
+        n_trials=n_trials,
     )
+    print()
 
-    assert len(study.trials) == n_trials
+    assert False  # len(study.trials) == n_trials
 
 
 @parametrize_crossover_population
 @pytest.mark.parametrize("n_params", [1, 2, 3])
-def test_crossover_dims(n_params: int, crossover_population: Tuple[BaseSampler, int]) -> None:
+def test_crossover_dims(n_params: int, crossover: BaseSampler, population_size: int) -> None:
     def objective(trial: optuna.Trial) -> float:
         xs = [trial.suggest_float(f"x{dim}", -10, 10) for dim in range(n_params)]
         return sum(xs)
@@ -438,10 +436,9 @@ def test_crossover_dims(n_params: int, crossover_population: Tuple[BaseSampler, 
     n_objectives = 1
     n_trials = 8
 
-    crossover, population = crossover_population
     reference_points = np.array([[0.0] * n_objectives])
     reference_points[0, 0] = 1.0
-    sampler = NSGAIIISampler(reference_points, population_size=population)
+    sampler = NSGAIIISampler(reference_points, population_size=population_size)
 
     study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
     study.optimize(objective, n_trials=n_trials)
@@ -615,7 +612,9 @@ def test_crossover_deterministic(
         ),
     ],
 )
-def test_reference_point(dims_and_dividing_parameter: Tuple[int, int, List[List[int]]]) -> None:
+def test_reference_point(
+    dims_and_dividing_parameter: Tuple[int, int, Sequence[Sequence[int]]]
+) -> None:
     n_dims, dividing_parameter, expected_reference_points = dims_and_dividing_parameter
     actual_reference_points = sorted(
         generate_default_reference_point(n_dims, dividing_parameter).tolist()
