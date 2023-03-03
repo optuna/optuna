@@ -33,6 +33,14 @@ __all__ = [
 ]
 
 
+class _StandadizeIgnoringYvar(Standardize):
+    def forward(
+        self, Y: torch.Tensor, Yvar: Optional[torch.Tensor] = None
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        Y, _ = super().forward(Y, None)
+        return Y, Yvar
+
+
 class _BoTorchGaussianProcess(BaseGaussianProcess):
     def __init__(self) -> None:
         _imports.check()
@@ -60,7 +68,7 @@ class _BoTorchGaussianProcess(BaseGaussianProcess):
             y,
             torch.full_like(y, 1e-8),
             input_transform=Normalize(d=self._n_params, bounds=bounds),
-            outcome_transform=Standardize(m=1),
+            outcome_transform=_StandadizeIgnoringYvar(m=1),
         )
 
         mll = gpytorch.mlls.ExactMarginalLogLikelihood(self._gp.likelihood, self._gp)
