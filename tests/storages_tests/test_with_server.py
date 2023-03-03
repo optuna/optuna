@@ -47,17 +47,8 @@ def get_storage() -> BaseStorage:
     return storage
 
 
-@pytest.fixture
-def storage() -> BaseStorage:
+def run_optimize(study_name: str, n_trials: int) -> None:
     storage = get_storage()
-    try:
-        optuna.study.delete_study(study_name=_STUDY_NAME, storage=storage)
-    except KeyError:
-        pass
-    return storage
-
-
-def run_optimize(study_name: str, storage: BaseStorage, n_trials: int) -> None:
     # Create a study
     study = optuna.load_study(study_name=study_name, storage=storage)
     # Run optimization
@@ -94,8 +85,14 @@ def _check_trials(trials: Sequence[optuna.trial.FrozenTrial]) -> None:
     )
 
 
-def test_loaded_trials(storage: BaseStorage) -> None:
+def test_loaded_trials() -> None:
     # Please create the tables by placing this function before the multi-process tests.
+
+    storage = get_storage()
+    try:
+        optuna.delete_study(study_name=_STUDY_NAME, storage=storage)
+    except KeyError:
+        pass
 
     N_TRIALS = 20
     study = optuna.create_study(study_name=_STUDY_NAME, storage=storage)
@@ -119,7 +116,8 @@ def test_loaded_trials(storage: BaseStorage) -> None:
         (-float("inf"), -float("inf")),
     ],
 )
-def test_store_infinite_values(input_value: float, expected: float, storage: BaseStorage) -> None:
+def test_store_infinite_values(input_value: float, expected: float) -> None:
+    storage = get_storage()
     study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
     trial_id = storage.create_new_trial(study_id)
     storage.set_trial_intermediate_value(trial_id, 1, input_value)
@@ -128,7 +126,8 @@ def test_store_infinite_values(input_value: float, expected: float, storage: Bas
     assert storage.get_trial(trial_id).intermediate_values[1] == expected
 
 
-def test_store_nan_intermediate_values(storage: BaseStorage) -> None:
+def test_store_nan_intermediate_values() -> None:
+    storage = get_storage()
     study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
     trial_id = storage.create_new_trial(study_id)
 
@@ -139,7 +138,8 @@ def test_store_nan_intermediate_values(storage: BaseStorage) -> None:
     assert np.isnan(got_value)
 
 
-def test_multithread_create_study(storage: BaseStorage) -> None:
+def test_multithread_create_study() -> None:
+    storage = get_storage()
     with ThreadPoolExecutor(10) as pool:
         for _ in range(10):
             pool.submit(
@@ -150,15 +150,19 @@ def test_multithread_create_study(storage: BaseStorage) -> None:
             )
 
 
-def test_multiprocess_run_optimize(storage: BaseStorage) -> None:
+def test_multiprocess_run_optimize() -> None:
     n_workers = 8
     n_trials = 20
-    study_name = _STUDY_NAME
-    optuna.create_study(storage=storage, study_name=study_name)
+    storage = get_storage()
+    try:
+        optuna.delete_study(study_name=_STUDY_NAME, storage=storage)
+    except KeyError:
+        pass
+    optuna.create_study(storage=storage, study_name=_STUDY_NAME)
     with ProcessPoolExecutor(n_workers) as pool:
-        pool.map(run_optimize, *zip(*[[study_name, storage, n_trials]] * n_workers))
+        pool.map(run_optimize, *zip(*[[_STUDY_NAME, n_trials]] * n_workers))
 
-    study = optuna.load_study(study_name=study_name, storage=storage)
+    study = optuna.load_study(study_name=_STUDY_NAME, storage=storage)
 
     trials = study.trials
     assert len(trials) == n_workers * n_trials
@@ -166,7 +170,8 @@ def test_multiprocess_run_optimize(storage: BaseStorage) -> None:
     _check_trials(trials)
 
 
-def test_pickle_storage(storage: BaseStorage) -> None:
+def test_pickle_storage() -> None:
+    storage = get_storage()
     study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
     storage.set_study_system_attr(study_id, "key", "pickle")
 
@@ -175,3 +180,25 @@ def test_pickle_storage(storage: BaseStorage) -> None:
     storage_system_attrs = storage.get_study_system_attrs(study_id)
     restored_storage_system_attrs = restored_storage.get_study_system_attrs(study_id)
     assert storage_system_attrs == restored_storage_system_attrs == {"key": "pickle"}
+
+
+@pytest.mark.parametrize("direction", [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE])
+@pytest.mark.parametrize(
+    "values",
+    [
+        [0.0, 1.0, 2.0],
+        [0.0, float("inf"), 1.0],
+        [0.0, float("-inf"), 1.0],
+        [float("inf"), 0.0, 1.0, float("-inf")],
+        [float("inf")],
+        [float("-inf")],
+    ],
+)
+def test_get_best_trial(direction: StudyDirection, values: Sequence[float]) -> None:
+    storage = get_storage()
+    study = optuna.create_study(direction=direction, storage=storage)
+    study.add_trials(
+        [optuna.create_trial(params={}, distributions={}, value=value) for value in values]
+    )
+    expected_value = max(values) if direction == StudyDirection.MAXIMIZE else min(values)
+    assert study.best_value == expected_value

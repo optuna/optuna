@@ -37,7 +37,7 @@ jobs:
       env:
         cache-name: test
       with:
-        path: ~/.cache/pip
+        path: ~/Library/Caches/pip
         key: ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
         restore-keys: |
           ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
@@ -80,7 +80,7 @@ jobs:
       env:
         cache-name: test-integration
       with:
-        path: ~/.cache/pip
+        path: ~/Library/Caches/pip
         key: ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
         restore-keys: |
           ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
@@ -110,7 +110,7 @@ jobs:
 
     - name: Tests
       run: |
-        pytest tests -m "integration" --ignore tests/integration_tests/test_pytorch_lightning.py
+        pytest tests -m "integration"
 
       env:
         OMP_NUM_THREADS: 1
