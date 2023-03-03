@@ -35,6 +35,7 @@ class CrossValidationErrorEvaluator(BaseErrorEvaluator):
             )
 
         k = len(cv_scores)
+        assert k > 1, "Should be guaranteed by `report_cross_validation_scores`."
         scale = 1 / k + 1 / (k - 1)
 
         var = scale * np.var(cv_scores)
