@@ -2,6 +2,8 @@ from typing import Any
 from typing import cast
 from typing import Dict
 from typing import List
+from typing import Mapping
+from typing import Sequence
 from typing import Union
 
 import numpy as np
@@ -37,7 +39,7 @@ class Model(LightningModule):
         return self._model(data)
 
     def training_step(
-        self, batch: List["torch.Tensor"], batch_nb: int
+        self, batch: Sequence["torch.Tensor"], batch_nb: int
     ) -> Dict[str, "torch.Tensor"]:
         data, target = batch
         output = self.forward(data)
@@ -45,7 +47,7 @@ class Model(LightningModule):
         return {"loss": loss}
 
     def validation_step(
-        self, batch: List["torch.Tensor"], batch_nb: int
+        self, batch: Sequence["torch.Tensor"], batch_nb: int
     ) -> Dict[str, "torch.Tensor"]:
         data, target = batch
         output = self.forward(data)
@@ -56,8 +58,8 @@ class Model(LightningModule):
     def validation_epoch_end(
         self,
         outputs: Union[
-            List[Union["torch.Tensor", Dict[str, Any]]],
-            List[List[Union["torch.Tensor", Dict[str, Any]]]],
+            Sequence[Union["torch.Tensor", Mapping[str, Any]]],
+            Sequence[Sequence[Union["torch.Tensor", Mapping[str, Any]]]],
         ],
     ) -> None:
         if not len(outputs):
@@ -89,7 +91,7 @@ class ModelDDP(Model):
         super().__init__()
 
     def validation_step(
-        self, batch: List["torch.Tensor"], batch_nb: int
+        self, batch: Sequence["torch.Tensor"], batch_nb: int
     ) -> Dict[str, "torch.Tensor"]:
         data, target = batch
         output = self.forward(data)
@@ -106,8 +108,8 @@ class ModelDDP(Model):
     def validation_epoch_end(
         self,
         output: Union[
-            List[Union["torch.Tensor", Dict[str, Any]]],
-            List[List[Union["torch.Tensor", Dict[str, Any]]]],
+            Sequence[Union["torch.Tensor", Mapping[str, Any]]],
+            Sequence[Sequence[Union["torch.Tensor", Mapping[str, Any]]]],
         ],
     ) -> None:
         return
@@ -171,8 +173,6 @@ def test_pytorch_lightning_pruning_callback_ddp_monitor(
         model = ModelDDP()
         trainer.fit(model)
 
-        # Evoke pruning manually.
-``````suggestion
         # Evoke pruning manually.
         callback.check_pruned()
 
