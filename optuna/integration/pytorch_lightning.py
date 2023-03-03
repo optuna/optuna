@@ -102,11 +102,9 @@ class PyTorchLightningPruningCallback(Callback):
         # Determine if the trial should be terminated in a single process.
         if not self.is_ddp_backend:
             self._trial.report(current_score.item(), step=epoch)
-            should_stop = self._trial.should_prune()
-            if not should_stop:
+            if not self._trial.should_prune():
                 return
-            message = f"Trial was pruned at epoch {epoch}."
-            raise optuna.TrialPruned(message)
+            raise optuna.TrialPruned(f"Trial was pruned at epoch {epoch}.")
 
         # Determine if the trial should be terminated in a DDP.
         if trainer.is_global_zero:
