@@ -45,10 +45,11 @@ class NSGAIIISampler(BaseSampler):
 
     For further information about NSGA-III, please refer to the following papers:
 
-    - `An Evolutionary Many-Objective Optimization Algorithm Using Reference-Point-Based
+    `An Evolutionary Many-Objective Optimization Algorithm Using Reference-Point-Based
     Nondominated Sorting Approach, Part I: Solving Problems With Box Constraints
     <https://ieeexplore.ieee.org/document/6600851>`_
-    - `An Evolutionary Many-Objective Optimization Algorithm Using Reference-Point-Based
+
+    `An Evolutionary Many-Objective Optimization Algorithm Using Reference-Point-Based
     Nondominated Sorting Approach, Part II: Handling Constraints and Extending to an Adaptive
     Approach <https://ieeexplore.ieee.org/document/6595567>`_
 
@@ -61,8 +62,8 @@ class NSGAIIISampler(BaseSampler):
             In the default setting the algorithm uses `uniformly` spread points to diversify the
             result.
 
-        .. note::
-            Other parameters are the same as :class:`~optuna.samplers.nsgaii.NSGAIISampler`.
+            .. note::
+                Other parameters are the same as :class:`~optuna.samplers.nsgaii.NSGAIISampler`.
 
     """
 
