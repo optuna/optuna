@@ -28,7 +28,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get -y install openmpi-bin libopenmpi-dev libopenblas-dev
-  
+
     # TODO(Shinichi): Remove the version constraint on SQLAlchemy
     - name: Install
       run: |
