@@ -61,8 +61,8 @@ class NSGAIIISampler(BaseSampler):
             In the default setting the algorithm uses `uniformly` spread points to diversify the
             result.
 
-            .. note::
-                Other parameters are the same as :class:`~optuna.samplers.nsgaii.NSGAIISampler`.
+        .. note::
+            Other parameters are the same as :class:`~optuna.samplers.nsgaii.NSGAIISampler`.
 
 
     """
