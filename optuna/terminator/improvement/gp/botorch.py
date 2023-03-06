@@ -60,6 +60,7 @@ class _BoTorchGaussianProcess(BaseGaussianProcess):
         self._n_params: Optional[float] = None
         self._n_trials: Optional[float] = None
         self._gp: Optional[FixedNoiseGP] = None
+        self._noise = gpytorch.settings.min_fixed_noise.value(torch.float64)
 
     def fit(
         self,
@@ -78,7 +79,7 @@ class _BoTorchGaussianProcess(BaseGaussianProcess):
         self._gp = FixedNoiseGP(
             x,
             y,
-            torch.full_like(y, 1e-8),
+            torch.full_like(y, self._noise),
             input_transform=Normalize(d=self._n_params, bounds=bounds),
             outcome_transform=_StandadizeIgnoringYvar(m=1),
         )
