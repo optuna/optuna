@@ -9,19 +9,13 @@ from typing import Optional
 from typing import Type
 from typing import Union
 
+import distributed
 import fakeredis
 import pytest
 
 import optuna
 from optuna.storages import JournalFileStorage
 
-
-try:
-    import distributed
-
-    _has_distributed = True
-except ImportError:
-    _has_distributed = False
 
 STORAGE_MODES: list[Any] = [
     "inmemory",
