@@ -66,18 +66,10 @@ class StorageSupplier:
         optuna.storages.JournalStorage,
         "optuna.integration.DaskStorage",
     ]:
-        self.storage: Union[
-            optuna.storages.InMemoryStorage,
-            optuna.storages._CachedStorage,
-            optuna.storages.RDBStorage,
-            optuna.storages.JournalStorage,
-            "optuna.integration.DaskStorage",
-        ]
         if self.storage_specifier == "inmemory":
             if len(self.extra_args) > 0:
                 raise ValueError("InMemoryStorage does not accept any arguments!")
-            self.storage = optuna.storages.InMemoryStorage()
-            return self.storage
+            return optuna.storages.InMemoryStorage()
         elif "sqlite" in self.storage_specifier:
             self.tempfile = tempfile.NamedTemporaryFile(delete=False)
             url = "sqlite:///{}".format(self.tempfile.name)
@@ -86,31 +78,24 @@ class StorageSupplier:
                 engine_kwargs={"connect_args": {"timeout": SQLITE3_TIMEOUT}},
                 **self.extra_args,
             )
-            self.storage = (
+            return (
                 optuna.storages._CachedStorage(rdb_storage)
                 if "cached" in self.storage_specifier
                 else rdb_storage
             )
-            return self.storage
         elif self.storage_specifier == "journal_redis":
             journal_redis_storage = optuna.storages.JournalRedisStorage("redis://localhost")
             journal_redis_storage._redis = self.extra_args.get(
                 "redis", fakeredis.FakeStrictRedis()
             )
-            self.storage = optuna.storages.JournalStorage(journal_redis_storage)
-            return self.storage
+            return optuna.storages.JournalStorage(journal_redis_storage)
         elif "journal" in self.storage_specifier:
-            self.tempfile = tempfile.NamedTemporaryFile(delete=False)
-            file_storage = JournalFileStorage(self.tempfile.name)
-            self.storage = optuna.storages.JournalStorage(file_storage)
-            return self.storage
+            file_storage = JournalFileStorage(tempfile.NamedTemporaryFile(delete=False).name)
+            return optuna.storages.JournalStorage(file_storage)
         elif self.storage_specifier == "dask":
             self.dask_client = distributed.Client()  # type: ignore[no-untyped-call]
 
-            self.storage = optuna.integration.DaskStorage(
-                client=self.dask_client, **self.extra_args
-            )
-            return self.storage
+            return optuna.integration.DaskStorage(client=self.dask_client, **self.extra_args)
         else:
             assert False
 
