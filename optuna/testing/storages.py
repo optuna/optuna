@@ -52,6 +52,7 @@ SQLITE3_TIMEOUT = 300
 
 
 class StorageSupplier:
+    # Pool tempfile object and delete tempfile when this object is deleted.
     temporaryfile_pool: List[IO[Any]] = []
 
     def __init__(self, storage_specifier: str, **kwargs: Any) -> None:
@@ -73,7 +74,7 @@ class StorageSupplier:
                 raise ValueError("InMemoryStorage does not accept any arguments!")
             return optuna.storages.InMemoryStorage()
         elif "sqlite" in self.storage_specifier:
-            sql_tempfile = tempfile.NamedTemporaryFile()
+            sql_tempfile = tempfile.NamedTemporaryFile(delete_on_close=False)
             StorageSupplier.temporaryfile_pool.append(sql_tempfile)
             url = "sqlite:///{}".format(sql_tempfile.name)
             rdb_storage = optuna.storages.RDBStorage(
@@ -93,7 +94,7 @@ class StorageSupplier:
             )
             return optuna.storages.JournalStorage(journal_redis_storage)
         elif "journal" in self.storage_specifier:
-            journal_storage_tempfile = tempfile.NamedTemporaryFile()
+            journal_storage_tempfile = tempfile.NamedTemporaryFile(delete_on_close=False)
             StorageSupplier.temporaryfile_pool.append(journal_storage_tempfile)
             file_storage = JournalFileStorage(journal_storage_tempfile.name)
             return optuna.storages.JournalStorage(file_storage)
