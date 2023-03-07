@@ -32,7 +32,11 @@ class NamedTemporaryFilePool:
 
     def cleanup(self) -> None:
         for i in self.tempfile_pool:
-            os.unlink(i.name)
+            try:
+                os.unlink(i.name)
+            except OSError:
+                # On Windows, somtimes tempfile cannot be deleted.
+                pass
 
     def __enter__(self) -> IO[Any]:
         return self.tempfile()
