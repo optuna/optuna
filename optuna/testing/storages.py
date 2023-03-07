@@ -79,7 +79,7 @@ class StorageSupplier:
             self.storage = optuna.storages.InMemoryStorage()
             return self.storage
         elif "sqlite" in self.storage_specifier:
-            self.tempfile = tempfile.NamedTemporaryFile()
+            self.tempfile = tempfile.NamedTemporaryFile(delete=False)
             url = "sqlite:///{}".format(self.tempfile.name)
             rdb_storage = optuna.storages.RDBStorage(
                 url,
@@ -117,9 +117,6 @@ class StorageSupplier:
     def __exit__(
         self, exc_type: Type[BaseException], exc_val: BaseException, exc_tb: TracebackType
     ) -> None:
-        if isinstance(self.storage, optuna.storages.RDBStorage):
-            self.storage.engine.dispose()  # Detach process from tempfile before tempfile deletion.
-
         if self.tempfile:
             self.tempfile.close()
 
