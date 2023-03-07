@@ -1,12 +1,8 @@
 from __future__ import annotations
 
-import os
 import sys
-import tempfile
 from types import TracebackType
 from typing import Any
-from typing import IO
-from typing import List
 from typing import Optional
 from typing import Type
 from typing import Union
@@ -16,14 +12,13 @@ import pytest
 
 import optuna
 from optuna.storages import JournalFileStorage
+from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 
 
 try:
     import distributed
-
-    _has_distributed = True
 except ImportError:
-    _has_distributed = False
+    pass
 
 STORAGE_MODES: list[Any] = [
     "inmemory",
@@ -52,24 +47,7 @@ STORAGE_MODES_HEARTBEAT = [
 SQLITE3_TIMEOUT = 300
 
 
-class _TempfilePool:
-    def __init__(self):
-        self.temporaryfile_pool: List[IO[Any]] = []
-
-    def get(self):
-        temporary_file = tempfile.NamedTemporaryFile()
-        self.temporaryfile_pool.append(temporary_file)
-        return temporary_file
-
-    def __del__(self):
-        for i in self.temporaryfile_pool:
-            os.unlink(i.name)
-
-
 class StorageSupplier:
-    # Pool tempfile object and delete tempfile when this object is deleted.
-    temporaryfile_pool: _TempfilePool = _TempfilePool()
-
     def __init__(self, storage_specifier: str, **kwargs: Any) -> None:
         self.storage_specifier = storage_specifier
         self.extra_args = kwargs
@@ -89,8 +67,7 @@ class StorageSupplier:
                 raise ValueError("InMemoryStorage does not accept any arguments!")
             return optuna.storages.InMemoryStorage()
         elif "sqlite" in self.storage_specifier:
-            sql_tempfile = StorageSupplier.temporaryfile_pool.get()
-            url = "sqlite:///{}".format(sql_tempfile.name)
+            url = "sqlite:///{}".format(NamedTemporaryFilePool().tempfile().name)
             rdb_storage = optuna.storages.RDBStorage(
                 url,
                 engine_kwargs={"connect_args": {"timeout": SQLITE3_TIMEOUT}},
@@ -108,8 +85,7 @@ class StorageSupplier:
             )
             return optuna.storages.JournalStorage(journal_redis_storage)
         elif "journal" in self.storage_specifier:
-            journal_storage_tempfile = StorageSupplier.temporaryfile_pool.get()
-            file_storage = JournalFileStorage(journal_storage_tempfile.name)
+            file_storage = JournalFileStorage(NamedTemporaryFilePool().tempfile().name)
             return optuna.storages.JournalStorage(file_storage)
         elif self.storage_specifier == "dask":
             self.dask_client = distributed.Client()  # type: ignore[no-untyped-call]
