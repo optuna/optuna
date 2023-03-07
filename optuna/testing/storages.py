@@ -5,6 +5,7 @@ import tempfile
 from types import TracebackType
 from typing import Any
 from typing import IO
+from typing import List
 from typing import Optional
 from typing import Type
 from typing import Union
@@ -51,9 +52,10 @@ SQLITE3_TIMEOUT = 300
 
 
 class StorageSupplier:
+    temporaryfile_pool: List[IO[Any]] = []
+
     def __init__(self, storage_specifier: str, **kwargs: Any) -> None:
         self.storage_specifier = storage_specifier
-        self.tempfile: Optional[IO[Any]] = None
         self.extra_args = kwargs
         self.dask_client: Optional["distributed.Client"] = None
 
@@ -71,8 +73,9 @@ class StorageSupplier:
                 raise ValueError("InMemoryStorage does not accept any arguments!")
             return optuna.storages.InMemoryStorage()
         elif "sqlite" in self.storage_specifier:
-            self.tempfile = tempfile.NamedTemporaryFile(delete=False)
-            url = "sqlite:///{}".format(self.tempfile.name)
+            sql_tempfile = tempfile.NamedTemporaryFile()
+            StorageSupplier.temporaryfile_pool.append(sql_tempfile)
+            url = "sqlite:///{}".format(sql_tempfile.name)
             rdb_storage = optuna.storages.RDBStorage(
                 url,
                 engine_kwargs={"connect_args": {"timeout": SQLITE3_TIMEOUT}},
@@ -90,7 +93,9 @@ class StorageSupplier:
             )
             return optuna.storages.JournalStorage(journal_redis_storage)
         elif "journal" in self.storage_specifier:
-            file_storage = JournalFileStorage(tempfile.NamedTemporaryFile(delete=False).name)
+            journal_storage_tempfile = tempfile.NamedTemporaryFile()
+            StorageSupplier.temporaryfile_pool.append(journal_storage_tempfile)
+            file_storage = JournalFileStorage(journal_storage_tempfile.name)
             return optuna.storages.JournalStorage(file_storage)
         elif self.storage_specifier == "dask":
             self.dask_client = distributed.Client()  # type: ignore[no-untyped-call]
@@ -102,9 +107,6 @@ class StorageSupplier:
     def __exit__(
         self, exc_type: Type[BaseException], exc_val: BaseException, exc_tb: TracebackType
     ) -> None:
-        if self.tempfile:
-            self.tempfile.close()
-
         if self.dask_client:
             self.dask_client.shutdown()  # type: ignore[no-untyped-call]
             self.dask_client.close()  # type: ignore[no-untyped-call]
