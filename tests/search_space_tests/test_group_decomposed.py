@@ -1,18 +1,17 @@
 import pytest
 
+import optuna
 from optuna import create_study
 from optuna import TrialPruned
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
-from optuna.samplers._search_space import _GroupDecomposedSearchSpace
-from optuna.samplers._search_space.group_decomposed import _SearchSpaceGroup
 from optuna.testing.storages import StorageSupplier
 from optuna.trial import Trial
 
 
 def test_search_space_group() -> None:
-    search_space_group = _SearchSpaceGroup()
+    search_space_group = optuna._search_space._SearchSpaceGroup()
 
     # No search space.
     assert search_space_group.search_spaces == []
@@ -113,7 +112,7 @@ def test_search_space_group() -> None:
 
 
 def test_group_decomposed_search_space() -> None:
-    search_space = _GroupDecomposedSearchSpace()
+    search_space = optuna._search_space._GroupDecomposedSearchSpace()
     study = create_study()
 
     # No trial.
@@ -178,7 +177,7 @@ def test_group_decomposed_search_space() -> None:
         {"w": IntDistribution(low=2, high=8, log=True)},
     ]
 
-    search_space = _GroupDecomposedSearchSpace()
+    search_space = optuna._search_space._GroupDecomposedSearchSpace()
     study = create_study()
 
     # Failed or pruned trials are not considered in the calculation of
@@ -201,7 +200,7 @@ def test_group_decomposed_search_space() -> None:
 
 
 def test_group_decomposed_search_space_with_different_studies() -> None:
-    search_space = _GroupDecomposedSearchSpace()
+    search_space = optuna._search_space._GroupDecomposedSearchSpace()
 
     with StorageSupplier("sqlite") as storage:
         study0 = create_study(storage=storage)

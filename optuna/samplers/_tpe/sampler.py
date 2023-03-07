@@ -14,6 +14,8 @@ import numpy as np
 
 from optuna._hypervolume import WFG
 from optuna._hypervolume.hssp import _solve_hssp
+from optuna._search_space.group_decomposed import _GroupDecomposedSearchSpace
+from optuna._search_space.group_decomposed import _SearchSpaceGroup
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.logging import get_logger
@@ -22,8 +24,6 @@ from optuna.samplers._base import _process_constraints_after_trial
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._search_space import IntersectionSearchSpace
-from optuna.samplers._search_space.group_decomposed import _GroupDecomposedSearchSpace
-from optuna.samplers._search_space.group_decomposed import _SearchSpaceGroup
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 from optuna.study import Study
