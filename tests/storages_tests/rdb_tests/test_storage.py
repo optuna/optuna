@@ -65,13 +65,13 @@ def test_init_url_template() -> None:
 def test_init_url_that_contains_percent_character() -> None:
     # Alembic's ini file regards '%' as the special character for variable expansion.
     # We checks `RDBStorage` does not raise an error even if a storage url contains the character.
-    with NamedTemporaryFilePool(suffix="%", delete=False) as tf:
+    with NamedTemporaryFilePool(suffix="%") as tf:
         RDBStorage("sqlite:///" + tf.name)
 
-    with NamedTemporaryFilePool(suffix="%foo", delete=False) as tf:
+    with NamedTemporaryFilePool(suffix="%foo") as tf:
         RDBStorage("sqlite:///" + tf.name)
 
-    with NamedTemporaryFilePool(suffix="%foo%%bar", delete=False) as tf:
+    with NamedTemporaryFilePool(suffix="%foo%%bar") as tf:
         RDBStorage("sqlite:///" + tf.name)
 
 

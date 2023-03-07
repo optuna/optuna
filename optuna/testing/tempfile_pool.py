@@ -16,22 +16,21 @@ from typing import Type
 class NamedTemporaryFilePool:
     tempfile_pool: List[IO[Any]] = []
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, **kwargs: Any) -> "NamedTemporaryFilePool":
         if not hasattr(cls, "_instance"):
             cls._instance = super(NamedTemporaryFilePool, cls).__new__(cls)
             atexit.register(cls._instance.cleanup)
         return cls._instance
 
-    def __init__(self, *args, **kwargs):
-        self.args = args
+    def __init__(self, **kwargs: Any) -> None:
         self.kwargs = kwargs
 
     def tempfile(self) -> IO[Any]:
-        tmpfile = tempfile.NamedTemporaryFile(delete=False, *self.args, **self.kwargs)
+        tmpfile = tempfile.NamedTemporaryFile(delete=False, **self.kwargs)
         self.tempfile_pool.append(tmpfile)
         return tmpfile
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         for i in self.tempfile_pool:
             os.unlink(i.name)
 
