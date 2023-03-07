@@ -3,7 +3,6 @@ from concurrent.futures import ThreadPoolExecutor
 import copy
 import multiprocessing
 import pickle
-import platform
 import threading
 import time
 from typing import Any
@@ -784,8 +783,7 @@ def test_optimize_with_progbar(n_jobs: int, capsys: _pytest.capture.CaptureFixtu
     assert "Best trial: 0" in err
     assert "Best value: 1" in err
     assert "10/10" in err
-    if platform.system() != "Windows":  # On Windows, the pregressbar somtimes stops at 99%.
-        assert "100%" in err
+    assert "100%" in err
 
 
 @pytest.mark.parametrize("n_jobs", [1, 2])
@@ -797,8 +795,7 @@ def test_optimize_without_progbar(n_jobs: int, capsys: _pytest.capture.CaptureFi
     assert "Best trial: 0" not in err
     assert "Best value: 1" not in err
     assert "10/10" not in err
-    if platform.system() != "Windows":  # On Windows, the pregressbar somtimes stops at 99%.
-        assert "100%" not in err
+    assert "100%" not in err
 
 
 def test_optimize_with_progbar_timeout(capsys: _pytest.capture.CaptureFixture) -> None:
@@ -809,8 +806,7 @@ def test_optimize_with_progbar_timeout(capsys: _pytest.capture.CaptureFixture) -
     assert "Best trial: 0" in err
     assert "Best value: 1" in err
     assert "00:02/00:02" in err
-    if platform.system() != "Windows":  # On Windows, the pregressbar somtimes stops at 99%.
-        assert "100%" in err
+    assert "100%" in err
 
 
 def test_optimize_with_progbar_parallel_timeout(capsys: _pytest.capture.CaptureFixture) -> None:
@@ -855,8 +851,7 @@ def test_optimize_without_progbar_timeout(
     assert "Best trial: 0" not in err
     assert "Best value: 1.0" not in err
     assert "00:02/00:02" not in err
-    if platform.system() != "Windows":  # On Windows, the pregressbar somtimes stops at 99%.
-        assert "100%" not in err
+    assert "100%" not in err
 
 
 @pytest.mark.parametrize("n_jobs", [1, 2])
@@ -870,8 +865,7 @@ def test_optimize_progbar_n_trials_prioritized(
     assert "Best trial: 0" in err
     assert "Best value: 1" in err
     assert "10/10" in err
-    if platform.system() != "Windows":  # On Windows, the pregressbar somtimes stops at 99%.
-        assert "100%" in err
+    assert "100%" in err
     assert "it" in err
 
 
