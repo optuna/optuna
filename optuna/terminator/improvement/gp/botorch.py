@@ -1,6 +1,6 @@
-from typing import List
+from __future__ import annotations
+
 from typing import Optional
-from typing import Tuple
 
 import numpy as np
 
@@ -43,7 +43,7 @@ class _BoTorchGaussianProcess(BaseGaussianProcess):
 
     def fit(
         self,
-        trials: List[FrozenTrial],
+        trials: list[FrozenTrial],
     ) -> None:
         self._trials = trials
 
@@ -69,13 +69,13 @@ class _BoTorchGaussianProcess(BaseGaussianProcess):
 
     def predict_mean_std(
         self,
-        trials: List[FrozenTrial],
-    ) -> Tuple[np.ndarray, np.ndarray]:
+        trials: list[FrozenTrial],
+    ) -> tuple[np.ndarray, np.ndarray]:
         assert self._gp is not None
 
         x, _ = _convert_trials_to_tensors(trials)
 
-        with torch.no_grad(), gpytorch.settings.fast_pred_var():
+        with torch.no_grad(), gpytorch.settings.fast_pred_var():  # type: ignore[no-untyped-call]
             posterior = self._gp.posterior(x)
             mean = posterior.mean
             variance = posterior.variance
@@ -84,7 +84,7 @@ class _BoTorchGaussianProcess(BaseGaussianProcess):
         return mean.detach().numpy(), std.detach().numpy()
 
 
-def _convert_trials_to_tensors(trials: List[FrozenTrial]) -> Tuple[torch.Tensor, torch.Tensor]:
+def _convert_trials_to_tensors(trials: list[FrozenTrial]) -> tuple[torch.Tensor, torch.Tensor]:
     """Convert a list of FrozenTrial objects to tensors inputs and bounds.
 
     This function assumes the following condition for input trials:
