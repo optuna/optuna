@@ -6,6 +6,7 @@ from __future__ import annotations
 import atexit
 import os
 import tempfile
+import gc
 from types import TracebackType
 from typing import Any
 from typing import IO
@@ -31,12 +32,9 @@ class NamedTemporaryFilePool:
         return tmpfile
 
     def cleanup(self) -> None:
+        gc.collect()
         for i in self.tempfile_pool:
-            try:
-                os.unlink(i.name)
-            except OSError:
-                # On Windows, somtimes tempfile cannot be deleted.
-                pass
+            os.unlink(i.name)
 
     def __enter__(self) -> IO[Any]:
         return self.tempfile()
