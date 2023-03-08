@@ -5,14 +5,13 @@ from typing import NamedTuple
 from optuna._experimental import experimental_func
 from optuna.logging import get_logger
 from optuna.study import Study
-from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna.visualization._pareto_front import _make_hovertext
 from optuna.visualization._plotly_imports import _imports
+from optuna.visualization._utils import _make_hovertext
 
 
 if _imports.is_successful():
-    from optuna.visualization._plotly_imports import go  # px, go
+    from optuna.visualization._plotly_imports import go
 
 _logger = get_logger(__name__)
 
@@ -22,7 +21,7 @@ class _TimelineBarInfo(NamedTuple):
     start: datetime.datetime
     end: datetime.datetime
     state: TrialState
-    frozen_trial: FrozenTrial
+    hovertext: str
 
 
 class _TimelineInfo(NamedTuple):
@@ -30,9 +29,7 @@ class _TimelineInfo(NamedTuple):
 
 
 @experimental_func("3.2.0")
-def plot_timeline(
-    study: Study,
-) -> "go.Figure":
+def plot_timeline(study: Study) -> "go.Figure":
     """Plot the timeline of a study.
 
     Example:
@@ -64,8 +61,8 @@ def plot_timeline(
 
     Args:
         study:
-            A :class:`~optuna.study.Study` object whose trials are plotted for
-            their objective value.
+            A :class:`~optuna.study.Study` object whose trials are plotted with
+            their lifetime.
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
@@ -86,7 +83,7 @@ def _get_timeline_info(study: Study) -> _TimelineInfo:
                 start=date_start,
                 end=date_end,
                 state=t.state,
-                frozen_trial=t,
+                hovertext=_make_hovertext(t),
             )
         )
 
@@ -116,7 +113,7 @@ def _get_timeline_plot(info: _TimelineInfo) -> "go.Figure":
                 x=[(b.end - b.start).total_seconds() * 1000 for b in bars],
                 y=[b.number for b in bars],
                 base=[b.start.isoformat() for b in bars],
-                text=[_make_hovertext(b.frozen_trial) for b in bars],
+                text=[b.hovertext for b in bars],
                 hovertemplate="%{text}<extra>" + s.name + "</extra>",
                 orientation="h",
                 marker=dict(color=_cm[s.name]),
