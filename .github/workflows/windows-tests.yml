@@ -66,7 +66,7 @@ jobs:
         MPLBACKEND: "QtAgg" # Use QtAgg as matplotlib backend.
 
     - name: Tests
-      if:  ${{ github.event_name != 'schedule' }}
+      if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
       run: |
         pytest -m "not integration and not slow"
       env:
@@ -76,7 +76,7 @@ jobs:
     runs-on: windows-latest
 
     # Not intended for forks.
-    if: github.repository == 'optuna/optuna' && ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    if: (github.event_name == 'schedule' && github.repository == 'optuna/optuna') || (github.event_name != 'schedule')
     steps:
     - name: Checkout
       uses: actions/checkout@v3
