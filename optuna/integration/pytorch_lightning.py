@@ -43,69 +43,16 @@ class PyTorchLightningPruningCallback(Callback):
             how this dictionary is formatted.
 
 
-    Example:
-
-        .. testcode::
-
-            import optuna
-            from optuna.integration import PyTorchLightningPruningCallback
-            import pytorch_lightning as pl
-
-
-            def objective(trial: optuna.trial.Trial) -> float:
-                callback = PyTorchLightningPruningCallback(trial, monitor="accuracy")
-                trainer = pl.Trainer(max_epochs=10, callbacks=[callback])
-
-                model = MyModel()
-                trainer.fit(model)
-
-                return trainer.callback_metrics["val_acc"].item()
-
-
-            pruner = optuna.pruners.MedianPruner()
-            study = optuna.create_study(direction="maximize", pruner=pruner)
-            study.optimize(objective, n_trials=100, timeout=600)
-
-    Note:
-        If you would like to use PyTorchLightningPruningCallback in a distributed training
-        environment, you need to evoke `PyTorchLightningPruningCallback.check_pruned()`
-        manually so that :class:`~optuna.exceptions.TrialPruned` is properly handled.
-
-        .. testcode::
-
-            import optuna
-            from optuna.integration import PyTorchLightningPruningCallback
-            import pytorch_lightning as pl
-
-
-            def objective(trial: optuna.trial.Trial) -> float:
-                callback = PyTorchLightningPruningCallback(trial, monitor="accuracy")
-                trainer = pl.Trainer(
-                    max_epochs=10,
-                    accelerator="auto",
-                    devices=2,
-                    enable_checkpointing=False,
-                    callbacks=[callback],
-                    strategy=DDPSpawnStrategy(find_unused_parameters=False),
-                )
-
-                model = MyModel()
-                trainer.fit(model)
-
-                callback.check_pruned()
-
-                return trainer.callback_metrics["val_acc"].item()
-
-
-            pruner = optuna.pruners.MedianPruner()
-            study = optuna.create_study(direction="maximize", pruner=pruner)
-            study.optimize(objective, n_trials=100, timeout=600)
-
-
     .. note::
         For the distributed data parallel training, the version of PyTorchLightning needs to be
         higher than or equal to v1.6.0. In addition, :class:`~optuna.study.Study` should be
         instantiated with RDB storage.
+
+
+    .. note::
+        If you would like to use PyTorchLightningPruningCallback in a distributed training
+        environment, you need to evoke `PyTorchLightningPruningCallback.check_pruned()`
+        manually so that :class:`~optuna.exceptions.TrialPruned` is properly handled.
     """
 
     def __init__(self, trial: optuna.trial.Trial, monitor: str) -> None:
