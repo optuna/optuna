@@ -61,6 +61,7 @@ class PyTorchLightningPruningCallback(Callback):
 
                 return trainer.callback_metrics["val_acc"].item()
 
+
             pruner = optuna.pruners.MedianPruner()
             study = optuna.create_study(direction="maximize", pruner=pruner)
             study.optimize(objective, n_trials=100, timeout=600)
@@ -75,6 +76,7 @@ class PyTorchLightningPruningCallback(Callback):
             import optuna
             from optuna.integration import PyTorchLightningPruningCallback
             import pytorch_lightning as pl
+
 
             def objective(trial: optuna.trial.Trial) -> float:
                 callback = PyTorchLightningPruningCallback(trial, monitor="accuracy")
@@ -93,6 +95,7 @@ class PyTorchLightningPruningCallback(Callback):
                 callback.check_pruned()
 
                 return trainer.callback_metrics["val_acc"].item()
+
 
             pruner = optuna.pruners.MedianPruner()
             study = optuna.create_study(direction="maximize", pruner=pruner)
