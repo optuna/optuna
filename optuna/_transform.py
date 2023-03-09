@@ -68,9 +68,7 @@ class _SearchSpaceTransform:
         transform_0_1: bool = False,
     ) -> None:
         bounds, column_to_encoded_columns, encoded_column_to_column = _transform_search_space(
-            search_space,
-            transform_log,
-            transform_step,
+            search_space, transform_log, transform_step
         )
         self._raw_bounds = bounds
         self._column_to_encoded_columns = column_to_encoded_columns
