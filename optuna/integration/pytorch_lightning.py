@@ -205,12 +205,12 @@ class PyTorchLightningPruningCallback(Callback):
         ``pytorch_lightning.Trainer.fit()``.
         If a callback doesn't have any backend storage for DDP, this method does nothing.
         """
-        if self.is_ddp_backend is False:
-            return
 
         _trial_id = self._trial._trial_id
         _study = self._trial.study
-        assert isinstance(_study._storage, _CachedStorage)
+        if not isinstance(_study._storage, _CachedStorage):
+            return
+
         _trial_system_attrs = _study._storage._backend.get_trial_system_attrs(_trial_id)
         is_pruned = _trial_system_attrs.get(_PRUNED_KEY)
         intermediate_values = _trial_system_attrs.get(_INTERMEDIATE_VALUE)
