@@ -303,10 +303,7 @@ class NSGAIIISampler(BaseSampler):
 
                 target_population_size = self._population_size - elite_population_num
                 additional_elite_population = _niching(
-                    target_population_size,
-                    population,
-                    cnt2refs,
-                    ref2pops,
+                    target_population_size, population, cnt2refs, ref2pops, self._rng
                 )
                 elite_population.extend(additional_elite_population)
                 break
@@ -507,7 +504,7 @@ def _niching(
     population: List[FrozenTrial],
     cnt2refs: Dict[int, List[int]],
     ref2pops: Dict[int, List[Tuple[float, int]]],
-    seed: int = 42,
+    rng: np.random.RandomState,
 ) -> List[FrozenTrial]:
     """Determine who survives form the borderline front
 
@@ -516,8 +513,6 @@ def _niching(
     in elite population and adds one of borderline front member who has the same closest reference
     point.
     """
-    # TODO(Shinichi) Propagate argument "seed" to the constructor
-    np.random.seed(seed=seed)
 
     count = 0
     additional_elite_population: List[FrozenTrial] = []
@@ -526,11 +521,19 @@ def _niching(
             count += 1
             continue
 
-        # TODO(Shinichi) Set proper randomizer and avoid shuffling entire list
-        np.random.shuffle(cnt2refs[count])
+        individual_idx = np.random.choice(len(cnt2refs[count]))
+        cnt2refs[count][individual_idx], cnt2refs[count][-1] = (
+            cnt2refs[count][-1],
+            cnt2refs[count][individual_idx],
+        )
+
         reference_point_id = cnt2refs[count].pop()
         if count:
-            np.random.shuffle(ref2pops[reference_point_id])
+            reference_point_idx = np.random.choice(len(ref2pops[reference_point_id]))
+            ref2pops[reference_point_id][reference_point_idx], ref2pops[reference_point_id][-1] = (
+                ref2pops[reference_point_id][-1],
+                ref2pops[reference_point_id][reference_point_idx],
+            )
         else:
             # TODO(Shinichi) avoid sort
             ref2pops[reference_point_id].sort(reverse=True)

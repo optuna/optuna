@@ -658,6 +658,7 @@ def test_associate() -> None:
 
 
 def test_niching() -> None:
+    sampler = NSGAIIISampler(np.array([1.0]))
     target_population_size = 2
     population = [
         create_trial(values=[4.0, 5.0, 6.0]),
@@ -675,7 +676,7 @@ def test_niching() -> None:
         },
     )
     actual_additional_elite_population = _niching(
-        target_population_size, population, reference_points_per_count, ref2pops, seed=0
+        target_population_size, population, reference_points_per_count, ref2pops, sampler._rng
     )
     expected_additional_elite_population = [population[3], population[1]]
     assert actual_additional_elite_population == expected_additional_elite_population
