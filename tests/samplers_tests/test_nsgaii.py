@@ -115,9 +115,21 @@ def test_swapping_prob() -> None:
         NSGAIISampler(swapping_prob=1.1)
 
 
-@pytest.mark.parametrize("categorical_values1", [[1, 2, 3], [True, False], ["True", "False"]])
-@pytest.mark.parametrize("categorical_values2", [[10, 12], ["-2", "-1"]])
-def test_crossover_casting(categorical_values1: List[Any], categorical_values2: List[Any]) -> None:
+@pytest.mark.parametrize(
+    "categorical_values",
+    [
+        [[1, 2, 3], [True, False]],
+        [[1, 2, 3], ["-2", "-1"]],
+        [[1, 2, 3], ["True", "False"]],
+        [[1, 2, 3], ["string1", "string2"]],
+        [[True, False], ["-2", "-1"]],
+        [[True, False], ["True", "False"]],
+        [[True, False], ["string1", "string2"]],
+    ],
+)
+def test_crossover_casting(categorical_values: List[List[Any]]) -> None:
+    categorical_values1, categorical_values2 = categorical_values
+
     def objective(trial: optuna.Trial) -> Sequence[float]:
         cat_1 = trial.suggest_categorical("cat_1", categorical_values1)
         cat_2 = trial.suggest_categorical("cat_2", categorical_values2)
