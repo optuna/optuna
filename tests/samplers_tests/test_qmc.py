@@ -179,7 +179,7 @@ def test_sample_relative() -> None:
         assert isinstance(sample["x2"], int)
         assert sample["x5"] in (1, 4, 7, 10)
 
-    # If empty search_space, return {}
+    # If empty search_space, return {}.
     assert sampler.sample_relative(study, trial, {}) == {}
 
 
@@ -328,6 +328,6 @@ def test_find_sample_id() -> None:
         with patch.object(sampler, "_scramble", True) as _:
             assert sampler._find_sample_id(study) == 0
 
-    # Change qmc_type
+    # Change qmc_type.
     with patch.object(sampler, "_qmc_type", "sobol") as _:
         assert sampler._find_sample_id(study) == 0
