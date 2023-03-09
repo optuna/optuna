@@ -526,7 +526,7 @@ def _niching(
             count += 1
             continue
 
-        individual_idx = np.random.choice(len(nearest_points_count_to_reference_point[count]))
+        individual_idx = rng.choice(len(nearest_points_count_to_reference_point[count]))
         (
             nearest_points_count_to_reference_point[count][individual_idx],
             nearest_points_count_to_reference_point[count][-1],
@@ -537,7 +537,7 @@ def _niching(
 
         reference_point_id = nearest_points_count_to_reference_point[count].pop()
         if count:
-            reference_point_idx = np.random.choice(
+            reference_point_idx = rng.choice(
                 len(reference_point_to_population[reference_point_id])
             )
             (

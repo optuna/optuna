@@ -685,12 +685,16 @@ def test_niching() -> None:
             4: [(4.06201920231798, 0)],
         },
     )
-    actual_additional_elite_population = _niching(
-        target_population_size,
-        population,
-        nearest_points_count_to_reference_point,
-        reference_point_to_population,
-        sampler._rng,
-    )
-    expected_additional_elite_population = [population[3], population[1]]
+    actual_additional_elite_population = [
+        trial.values
+        for trial in _niching(
+            target_population_size,
+            population,
+            nearest_points_count_to_reference_point,
+            reference_point_to_population,
+            sampler._rng,
+        )
+    ]
+
+    expected_additional_elite_population = [population[3].values, population[2].values]
     assert actual_additional_elite_population == expected_additional_elite_population
