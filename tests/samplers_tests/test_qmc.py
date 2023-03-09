@@ -69,7 +69,7 @@ def test_infer_relative_search_space() -> None:
     trial = Mock()
     # In case no past trials.
     assert sampler.infer_relative_search_space(study, trial) == {}
-    # In case there is a past trial
+    # In case there is a past trial.
     study.optimize(objective, n_trials=1)
     relative_search_space = sampler.infer_relative_search_space(study, trial)
     assert len(relative_search_space.keys()) == 5
