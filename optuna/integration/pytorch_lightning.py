@@ -202,8 +202,10 @@ class PyTorchLightningPruningCallback(Callback):
         storage cache. Therefore, necessary information is kept in trial_system_attrs when the
         trial runs in a distributed situation. Please call this method right after calling
         ``pytorch_lightning.Trainer.fit()``.
-        Please do not call this method when you are not using DDP.
+        If a callback doesn't have any backend storage for DDP, this method does nothing.
         """
+        if self.is_ddp_backend is False:
+            return
 
         _trial_id = self._trial._trial_id
         _study = self._trial.study
