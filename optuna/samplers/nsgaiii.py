@@ -60,7 +60,8 @@ class NSGAIIISampler(BaseSampler):
             After non-dominated sort, who out of borderline front are going to survived is
             determined according to how sparse the closest reference point of each individual is.
             In the default setting the algorithm uses `uniformly` spread points to diversify the
-            result.
+            result. It is also possible to reflect your `preferences` by giving an arbitrary set of
+            `target` points since the algorithm prioritizes individuals around reference points.
 
             .. note::
                 Other parameters are the same as :class:`~optuna.samplers.nsgaii.NSGAIISampler`.
@@ -409,9 +410,9 @@ def _normalize(
 
     An ideal point z* consists of minimums in each axis. Each objective value of population is
     then subtracted by the ideal point.
-    An extreme point of each axis is (originally) defined as a minimum solution of ASF from the
-    population. After that, intercepts are calculate as intercepts of hyperplane which has all
-    the extreme points on it and used to rescale objective values.
+    An extreme point of each axis is (originally) defined as a minimum solution of achievement
+    scalarizing function from the population. After that, intercepts are calculate as intercepts
+    of hyperplane which has all the extreme points on it and used to rescale objective values.
     """
     # TODO(Shinichi) Propagate argument "weights" and "method" to the constructor
 
