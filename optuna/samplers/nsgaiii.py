@@ -58,7 +58,7 @@ class NSGAIIISampler(BaseSampler):
             A 2 dimension ``numpy.ndarray`` with objective dimension columns. Represents
             a list of reference points which is used to determine who to survive.
             After non-dominated sort, who out of borderline front are going to survived is
-            determined according to how sparse the closest reference point of each person is.
+            determined according to how sparse the closest reference point of each individual is.
             In the default setting the algorithm uses `uniformly` spread points to diversify the
             result.
 
@@ -297,13 +297,18 @@ class NSGAIIISampler(BaseSampler):
                 objective_matrix = _normalize(elite_population, population)
 
                 elite_population_num = len(elite_population)
-                cnt2refs, ref2pops = _associate(
-                    objective_matrix, self.reference_points, elite_population_num
-                )
+                (
+                    nearest_points_count_to_reference_point,
+                    reference_point_to_population,
+                ) = _associate(objective_matrix, self.reference_points, elite_population_num)
 
                 target_population_size = self._population_size - elite_population_num
                 additional_elite_population = _niching(
-                    target_population_size, population, cnt2refs, ref2pops, self._rng
+                    target_population_size,
+                    population,
+                    nearest_points_count_to_reference_point,
+                    reference_point_to_population,
+                    self._rng,
                 )
                 elite_population.extend(additional_elite_population)
                 break
@@ -480,30 +485,30 @@ def _associate(
     for i, reference_point_id in enumerate(closest_reference_points[:elite_population_num]):
         count_reference_points[reference_point_id] += 1
 
-    # ref2pops keeps pairs of a neighbor and the distance of each reference point from borderline
-    # front population
-    ref2pops = DefaultDict(list)
+    # reference_point_to_population keeps pairs of a neighbor and the distance of each reference
+    # point from borderline front population
+    reference_point_to_population = DefaultDict(list)
     for i, reference_point_id in enumerate(closest_reference_points[elite_population_num:]):
-        ref2pops[reference_point_id].append(
+        reference_point_to_population[reference_point_id].append(
             (distance_reference_points[i + elite_population_num], i)
         )
 
-    # cnt2refs classifies reference points which have at least one closest borderline population
-    # member by the number of elite neighbors they have. Each key correspond to the count of elite
-    # neighbors　and values are reference point ids.
-    cnt2refs = DefaultDict(list)
-    for reference_point_id in ref2pops:
+    # nearest_points_count_to_reference_point classifies reference points which have at least one
+    # closest borderline population member by the number of elite neighbors they have. Each key
+    # correspond to the count of elite neighbors and values are reference point ids.
+    nearest_points_count_to_reference_point = DefaultDict(list)
+    for reference_point_id in reference_point_to_population:
         count = count_reference_points[reference_point_id]
-        cnt2refs[count].append(reference_point_id)
+        nearest_points_count_to_reference_point[count].append(reference_point_id)
 
-    return cnt2refs, ref2pops
+    return nearest_points_count_to_reference_point, reference_point_to_population
 
 
 def _niching(
     target_population_size: int,
     population: List[FrozenTrial],
-    cnt2refs: Dict[int, List[int]],
-    ref2pops: Dict[int, List[Tuple[float, int]]],
+    nearest_points_count_to_reference_point: Dict[int, List[int]],
+    reference_point_to_population: Dict[int, List[Tuple[float, int]]],
     rng: np.random.RandomState,
 ) -> List[FrozenTrial]:
     """Determine who survives form the borderline front
@@ -517,30 +522,38 @@ def _niching(
     count = 0
     additional_elite_population: List[FrozenTrial] = []
     while len(additional_elite_population) < target_population_size:
-        if not cnt2refs[count]:
+        if not nearest_points_count_to_reference_point[count]:
             count += 1
             continue
 
-        individual_idx = np.random.choice(len(cnt2refs[count]))
-        cnt2refs[count][individual_idx], cnt2refs[count][-1] = (
-            cnt2refs[count][-1],
-            cnt2refs[count][individual_idx],
+        individual_idx = np.random.choice(len(nearest_points_count_to_reference_point[count]))
+        (
+            nearest_points_count_to_reference_point[count][individual_idx],
+            nearest_points_count_to_reference_point[count][-1],
+        ) = (
+            nearest_points_count_to_reference_point[count][-1],
+            nearest_points_count_to_reference_point[count][individual_idx],
         )
 
-        reference_point_id = cnt2refs[count].pop()
+        reference_point_id = nearest_points_count_to_reference_point[count].pop()
         if count:
-            reference_point_idx = np.random.choice(len(ref2pops[reference_point_id]))
-            ref2pops[reference_point_id][reference_point_idx], ref2pops[reference_point_id][-1] = (
-                ref2pops[reference_point_id][-1],
-                ref2pops[reference_point_id][reference_point_idx],
+            reference_point_idx = np.random.choice(
+                len(reference_point_to_population[reference_point_id])
+            )
+            (
+                reference_point_to_population[reference_point_id][reference_point_idx],
+                reference_point_to_population[reference_point_id][-1],
+            ) = (
+                reference_point_to_population[reference_point_id][-1],
+                reference_point_to_population[reference_point_id][reference_point_idx],
             )
         else:
             # TODO(Shinichi) avoid sort
-            ref2pops[reference_point_id].sort(reverse=True)
+            reference_point_to_population[reference_point_id].sort(reverse=True)
 
-        _, selected_person_id = ref2pops[reference_point_id].pop()
-        additional_elite_population.append(population[selected_person_id])
-        if ref2pops[reference_point_id]:
-            cnt2refs[count + 1].append(reference_point_id)
+        _, selected_individual_id = reference_point_to_population[reference_point_id].pop()
+        additional_elite_population.append(population[selected_individual_id])
+        if reference_point_to_population[reference_point_id]:
+            nearest_points_count_to_reference_point[count + 1].append(reference_point_id)
 
     return additional_elite_population

@@ -639,26 +639,35 @@ def test_associate() -> None:
     dividing_parameter = 2
     reference_points = generate_default_reference_point(n_dims, dividing_parameter)
     elite_population_num = 4
-    reference_points_per_count, ref2pops = _associate(
+    nearest_points_count_to_reference_point, reference_point_to_population = _associate(
         population, reference_points, elite_population_num
     )
     actual_reference_points_per_count = dict(
-        zip(reference_points_per_count, map(lambda x: set(x), reference_points_per_count.values()))
+        zip(
+            nearest_points_count_to_reference_point,
+            map(lambda x: set(x), nearest_points_count_to_reference_point.values()),
+        )
     )
     expected_reference_points_per_count = {1: {2, 4}, 2: {1}}
     assert actual_reference_points_per_count == expected_reference_points_per_count
 
-    actual_ref2pops = dict(zip(ref2pops, map(lambda x: set(x), ref2pops.values())))
-    expected_ref2pops = {
+    actual_reference_point_to_population = dict(
+        zip(
+            reference_point_to_population,
+            map(lambda x: set(x), reference_point_to_population.values()),
+        )
+    )
+    expected_reference_point_to_population = {
         1: {(4.0, 3), (4.06201920231798, 2)},
         2: {(4.06201920231798, 1)},
         4: {(4.06201920231798, 0)},
     }
-    assert actual_ref2pops == expected_ref2pops
+    assert actual_reference_point_to_population == expected_reference_point_to_population
 
 
 def test_niching() -> None:
-    sampler = NSGAIIISampler(np.array([1.0]))
+    reference_points = np.array([1.0])
+    sampler = NSGAIIISampler(reference_points, seed=42)
     target_population_size = 2
     population = [
         create_trial(values=[4.0, 5.0, 6.0]),
@@ -666,8 +675,9 @@ def test_niching() -> None:
         create_trial(values=[5.0, 6.0, 4.0]),
         create_trial(values=[4.0, 4.0, 4.0]),
     ]
-    reference_points_per_count = defaultdict(list, {0: [1], 1: [2, 4]})
-    ref2pops = defaultdict(
+    # each reference point 2 and 4 have an elite individual.
+    nearest_points_count_to_reference_point = defaultdict(list, {0: [1], 1: [2, 4]})
+    reference_point_to_population = defaultdict(
         list,
         {
             1: [(4.0, 3), (4.06201920231798, 2)],
@@ -676,7 +686,11 @@ def test_niching() -> None:
         },
     )
     actual_additional_elite_population = _niching(
-        target_population_size, population, reference_points_per_count, ref2pops, sampler._rng
+        target_population_size,
+        population,
+        nearest_points_count_to_reference_point,
+        reference_point_to_population,
+        sampler._rng,
     )
     expected_additional_elite_population = [population[3], population[1]]
     assert actual_additional_elite_population == expected_additional_elite_population
