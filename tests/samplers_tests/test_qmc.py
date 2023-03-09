@@ -251,9 +251,7 @@ def test_sample_relative_seeding(seed: int, scramble: bool, qmc_type: str) -> No
     objective: Callable[[Trial], float] = lambda t: t.suggest_float("x", 0, 1)
 
     # Base case.
-    sampler = _init_QMCSampler_without_exp_warning(
-        scramble=scramble, qmc_type=qmc_type, seed=seed
-    )
+    sampler = _init_QMCSampler_without_exp_warning(scramble=scramble, qmc_type=qmc_type, seed=seed)
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=10, n_jobs=1)
     past_trials = study._storage.get_all_trials(study._study_id, states=(TrialState.COMPLETE,))
@@ -261,9 +259,7 @@ def test_sample_relative_seeding(seed: int, scramble: bool, qmc_type: str) -> No
     values = [t.params["x"] for t in past_trials]
 
     # Sequential case.
-    sampler = _init_QMCSampler_without_exp_warning(
-        scramble=scramble, qmc_type=qmc_type, seed=seed
-    )
+    sampler = _init_QMCSampler_without_exp_warning(scramble=scramble, qmc_type=qmc_type, seed=seed)
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=10, n_jobs=1)
     past_trials_sequential = study._storage.get_all_trials(
@@ -275,9 +271,7 @@ def test_sample_relative_seeding(seed: int, scramble: bool, qmc_type: str) -> No
 
     # Parallel case (n_jobs=3):
     # Same parameters might be evaluated multiple times.
-    sampler = _init_QMCSampler_without_exp_warning(
-        scramble=scramble, qmc_type=qmc_type, seed=seed
-    )
+    sampler = _init_QMCSampler_without_exp_warning(scramble=scramble, qmc_type=qmc_type, seed=seed)
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=30, n_jobs=3)
     past_trials_parallel = study._storage.get_all_trials(
