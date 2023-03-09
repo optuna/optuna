@@ -33,26 +33,6 @@ __all__ = [
 ]
 
 
-class _StandadizeIgnoringYvar(Standardize):
-    """Customized Standardize module that does not standardize `Yvar`
-
-    This class is meant to be used in the
-    :class:`~optuna.terminator.improvement.gp.botorch._BoTorchGaussianProcess` class to coordinate
-    the scale of the noise with that of standardized `Y`.
-
-    Note that this class overrides and breaks the bahaviour of the `forward` method of the parent
-    class, although its instance can still be typed as the Standardize class. Please avoid using
-    this class outside the context of
-    :class:`~optuna.terminator.improvement.gp.botorch._BoTorchGaussianProcess`.
-    """
-
-    def forward(
-        self, Y: torch.Tensor, Yvar: Optional[torch.Tensor] = None
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        Y, _ = super().forward(Y, None)
-        return Y, Yvar
-
-
 class _BoTorchGaussianProcess(BaseGaussianProcess):
     def __init__(self) -> None:
         _imports.check()
@@ -75,12 +55,13 @@ class _BoTorchGaussianProcess(BaseGaussianProcess):
         y = torch.tensor([trial.value for trial in trials], dtype=torch.float64)
         y = torch.unsqueeze(y, 1)
 
+        noise = 1e-8 * y.std().item()
         self._gp = FixedNoiseGP(
             x,
             y,
-            torch.full_like(y, 1e-8),
+            torch.full_like(y, noise),
             input_transform=Normalize(d=self._n_params, bounds=bounds),
-            outcome_transform=_StandadizeIgnoringYvar(m=1),
+            outcome_transform=Standardize(m=1),
         )
 
         mll = gpytorch.mlls.ExactMarginalLogLikelihood(self._gp.likelihood, self._gp)
