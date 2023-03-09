@@ -244,14 +244,15 @@ def test_sample_relative_sobol() -> None:
     np.testing.assert_allclose(samples, ref_samples, rtol=1e-6)
 
 
+@pytest.mark.parametrize("seed", [0, 12345])
 @pytest.mark.parametrize("scramble", [True, False])
 @pytest.mark.parametrize("qmc_type", ["sobol", "halton"])
-def test_sample_relative_seeding(scramble: bool, qmc_type: str) -> None:
+def test_sample_relative_seeding(seed: int, scramble: bool, qmc_type: str) -> None:
     objective: Callable[[Trial], float] = lambda t: t.suggest_float("x", 0, 1)
 
     # Base case.
     sampler = _init_QMCSampler_without_exp_warning(
-        scramble=scramble, qmc_type=qmc_type, seed=12345
+        scramble=scramble, qmc_type=qmc_type, seed=seed
     )
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=10, n_jobs=1)
@@ -261,7 +262,7 @@ def test_sample_relative_seeding(scramble: bool, qmc_type: str) -> None:
 
     # Sequential case.
     sampler = _init_QMCSampler_without_exp_warning(
-        scramble=scramble, qmc_type=qmc_type, seed=12345
+        scramble=scramble, qmc_type=qmc_type, seed=seed
     )
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=10, n_jobs=1)
@@ -275,7 +276,7 @@ def test_sample_relative_seeding(scramble: bool, qmc_type: str) -> None:
     # Parallel case (n_jobs=3):
     # Same parameters might be evaluated multiple times.
     sampler = _init_QMCSampler_without_exp_warning(
-        scramble=scramble, qmc_type=qmc_type, seed=12345
+        scramble=scramble, qmc_type=qmc_type, seed=seed
     )
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=30, n_jobs=3)
