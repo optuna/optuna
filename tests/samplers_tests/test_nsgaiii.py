@@ -33,7 +33,7 @@ from optuna.samplers.nsgaii import UniformCrossover
 from optuna.samplers.nsgaii import VSBXCrossover
 from optuna.samplers.nsgaii._crossover import _inlined_categorical_uniform_crossover
 from optuna.samplers.nsgaii._sampler import _constrained_dominates
-from optuna.samplers.nsgaiii import _associate
+from optuna.samplers.nsgaiii import _associate_individuals_with_reference_points
 from optuna.samplers.nsgaiii import _niching
 from optuna.samplers.nsgaiii import _POPULATION_CACHE_KEY_PREFIX
 from optuna.samplers.nsgaiii import generate_default_reference_point
@@ -639,7 +639,10 @@ def test_associate() -> None:
     dividing_parameter = 2
     reference_points = generate_default_reference_point(n_dims, dividing_parameter)
     elite_population_num = 4
-    nearest_points_count_to_reference_point, reference_point_to_population = _associate(
+    (
+        nearest_points_count_to_reference_point,
+        reference_point_to_population,
+    ) = _associate_individuals_with_reference_points(
         population, reference_points, elite_population_num
     )
     actual_reference_points_per_count = dict(
