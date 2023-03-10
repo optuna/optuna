@@ -101,7 +101,7 @@ class BaseTrial(abc.ABC):
 
     @abc.abstractmethod
     @deprecated_func("3.1.0", "6.0.0")
-    def set_system_attr(self, key: str, value: JSONSerializable) -> None:
+    def set_system_attr(self, key: str, value: Any) -> None:
         raise NotImplementedError
 
     @property

@@ -275,7 +275,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
     @broadcast_properties
     @deprecated_func("3.1.0", "6.0.0")
-    def set_system_attr(self, key: str, value: JSONSerializable) -> None:
+    def set_system_attr(self, key: str, value: Any) -> None:
         err = None
 
         if dist.get_rank(self._group) == 0:  # type: ignore[no-untyped-call]

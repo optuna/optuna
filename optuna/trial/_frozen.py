@@ -145,7 +145,7 @@ class FrozenTrial(BaseTrial):
         params: Dict[str, Any],
         distributions: Dict[str, BaseDistribution],
         user_attrs: Dict[str, Any],
-        system_attrs: Dict[str, Any],  # TODO(gen740): Change Any to JSONSerializable
+        system_attrs: Dict[str, Any],
         intermediate_values: Dict[int, float],
         trial_id: int,
         *,
@@ -298,7 +298,7 @@ class FrozenTrial(BaseTrial):
         self._user_attrs[key] = value
 
     @deprecated_func("3.1.0", "6.0.0")
-    def set_system_attr(self, key: str, value: JSONSerializable) -> None:
+    def set_system_attr(self, key: str, value: Any) -> None:
         self._system_attrs[key] = value
 
     def _validate(self) -> None:
@@ -478,7 +478,7 @@ def create_trial(
     params: Optional[Dict[str, Any]] = None,
     distributions: Optional[Dict[str, BaseDistribution]] = None,
     user_attrs: Optional[Dict[str, Any]] = None,
-    system_attrs: Optional[Dict[str, Any]] = None,  # TODO(gen740): Change Any to JSONSerializable
+    system_attrs: Optional[Dict[str, Any]] = None,
     intermediate_values: Optional[Dict[int, float]] = None,
 ) -> FrozenTrial:
     """Create a new :class:`~optuna.trial.FrozenTrial`.

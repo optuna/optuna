@@ -586,7 +586,7 @@ class Trial(BaseTrial):
         self._cached_frozen_trial.user_attrs[key] = value
 
     @deprecated_func("3.1.0", "6.0.0")
-    def set_system_attr(self, key: str, value: JSONSerializable) -> None:
+    def set_system_attr(self, key: str, value: Any) -> None:
         """Set system attributes to the trial.
 
         Note that Optuna internally uses this method to save system messages such as failure

@@ -56,7 +56,7 @@ class StudySummary:
         direction: Optional[StudyDirection],
         best_trial: Optional[trial.FrozenTrial],
         user_attrs: Dict[str, Any],
-        system_attrs: Dict[str, Any],  # TODO(gen740): Change Any to JSONSerializable
+        system_attrs: Dict[str, Any], 
         n_trials: int,
         datetime_start: Optional[datetime.datetime],
         study_id: int,

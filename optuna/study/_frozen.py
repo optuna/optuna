@@ -40,7 +40,7 @@ class FrozenStudy:
         study_name: str,
         direction: Optional[StudyDirection],
         user_attrs: Dict[str, Any],
-        system_attrs: Dict[str, Any],  # TODO(gen740): Change Any to JSONSerializable
+        system_attrs: Dict[str, Any],
         study_id: int,
         *,
         directions: Optional[Sequence[StudyDirection]] = None,
