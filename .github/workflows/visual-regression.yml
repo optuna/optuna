@@ -15,6 +15,9 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    # Not intended for forks.
+    if: github.repository == 'optuna/optuna'
+
     steps:
 
     - uses: actions/checkout@v3
