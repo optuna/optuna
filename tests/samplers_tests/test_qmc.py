@@ -244,10 +244,10 @@ def test_sample_relative_sobol() -> None:
     np.testing.assert_allclose(samples, ref_samples, rtol=1e-6)
 
 
-@pytest.mark.parametrize("seed", [0, 12345])
 @pytest.mark.parametrize("scramble", [True, False])
 @pytest.mark.parametrize("qmc_type", ["sobol", "halton"])
-def test_sample_relative_seeding(seed: int, scramble: bool, qmc_type: str) -> None:
+@pytest.mark.parametrize("seed", [0, 12345])
+def test_sample_relative_seeding(scramble: bool, qmc_type: str, seed: int) -> None:
     objective: Callable[[Trial], float] = lambda t: t.suggest_float("x", 0, 1)
 
     # Base case.
