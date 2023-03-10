@@ -8,7 +8,6 @@ import warnings
 
 from optuna import distributions
 from optuna._deprecated import deprecated_func
-from optuna._typing import JSONSerializable
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution

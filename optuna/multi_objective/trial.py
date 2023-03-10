@@ -9,7 +9,6 @@ from typing import Union
 
 from optuna import multi_objective
 from optuna._deprecated import deprecated_class
-from optuna._typing import JSONSerializable
 from optuna.distributions import BaseDistribution
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -190,7 +189,7 @@ class MultiObjectiveTrial:
 
         self._trial.set_user_attr(key, value)
 
-    def set_system_attr(self, key: str, value: JSONSerializable) -> None:
+    def set_system_attr(self, key: str, value: Any) -> None:
         """Set system attributes to the trial.
 
         Please refer to the documentation of :func:`optuna.trial.Trial.set_system_attr`

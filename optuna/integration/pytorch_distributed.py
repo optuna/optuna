@@ -14,7 +14,6 @@ import optuna
 from optuna._deprecated import deprecated_func
 from optuna._experimental import experimental_class
 from optuna._imports import try_import
-from optuna._typing import JSONSerializable
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 
