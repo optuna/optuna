@@ -88,7 +88,7 @@ def qei_candidates_func(
             ``(n_trials, n_objectives)``. ``n_trials`` is identical to that of ``train_x``.
             ``n_objectives`` is the number of objectives. Observations are not normalized.
         train_con:
-            Objective constraints. A ``torch.Tensofr`` of shape ``(n_trials, n_constraints)``.
+            Objective constraints. A ``torch.Tensor`` of shape ``(n_trials, n_constraints)``.
             ``n_trials`` is identical to that of ``train_x``. ``n_constraints`` is the number of
             constraints. A constraint is violated if strictly larger than 0. If no constraints are
             involved in the optimization, this argument will be :obj:`None`.
