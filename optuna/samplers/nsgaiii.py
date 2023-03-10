@@ -45,13 +45,13 @@ class NSGAIIISampler(BaseSampler):
 
     For further information about NSGA-III, please refer to the following papers:
 
-    `An Evolutionary Many-Objective Optimization Algorithm Using Reference-Point-Based
-    Nondominated Sorting Approach, Part I: Solving Problems With Box Constraints
-    <https://ieeexplore.ieee.org/document/6600851>`_
-
-    `An Evolutionary Many-Objective Optimization Algorithm Using Reference-Point-Based
-    Nondominated Sorting Approach, Part II: Handling Constraints and Extending to an Adaptive
-    Approach <https://ieeexplore.ieee.org/document/6595567>`_
+    - `An Evolutionary Many-Objective Optimization Algorithm Using Reference-Point-Based
+      Nondominated Sorting Approach, Part I: Solving Problems With Box Constraints
+      <https://doi.org/10.1109/TEVC.2013.2281535>`_
+    - `An Evolutionary Many-Objective Optimization Algorithm Using Reference-Point-Based
+      Nondominated Sorting Approach, Part II: Handling Constraints and Extending to an Adaptive
+      Approach
+      <https://doi.org/10.1109/TEVC.2013.2281534>`_
 
     Args:
         reference_points:
@@ -295,13 +295,15 @@ class NSGAIIISampler(BaseSampler):
             if len(elite_population) + len(population) < self._population_size:
                 elite_population.extend(population)
             else:
-                objective_matrix = _normalize(elite_population, population)
+                objective_matrix = _normalize_objective_values(elite_population, population)
 
                 elite_population_num = len(elite_population)
                 (
                     nearest_points_count_to_reference_point,
                     reference_point_to_population,
-                ) = _associate(objective_matrix, self.reference_points, elite_population_num)
+                ) = _associate_individuals_with_reference_points(
+                    objective_matrix, self.reference_points, elite_population_num
+                )
 
                 target_population_size = self._population_size - elite_population_num
                 additional_elite_population = _niching(
@@ -400,7 +402,7 @@ def generate_default_reference_point(
     return reference_points
 
 
-def _normalize(
+def _normalize_objective_values(
     elite_population: List[FrozenTrial],
     population: List[FrozenTrial],
 ) -> np.ndarray:
@@ -449,7 +451,7 @@ def _normalize(
     return objective_matrix
 
 
-def _associate(
+def _associate_individuals_with_reference_points(
     objective_matrix: np.ndarray, reference_points: np.ndarray, elite_population_num: int
 ) -> Tuple[Dict[int, List[int]], Dict[int, List[Tuple[float, int]]]]:
     """Associates each objective value to the closest reference point"""
