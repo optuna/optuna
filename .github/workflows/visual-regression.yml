@@ -42,7 +42,7 @@ jobs:
       with:
         name: built-html
         path: |
-            ./optuna-visualization-regression-tests/public
+          ./optuna-visualization-regression-tests/public
     - name: Deploy to Netlify
       uses: nwtgck/actions-netlify@v2
       with:
