@@ -37,7 +37,7 @@ jobs:
       env:
         cache-name: test
       with:
-        path: ~/.cache/pip
+        path: ~/Library/Caches/pip
         key: ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
         restore-keys: |
           ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
@@ -52,6 +52,10 @@ jobs:
         optuna --version
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
+
+    - name: Output installed packages
+      run: |
+        pip freeze --all
 
     - name: Tests
       run: |
@@ -76,7 +80,7 @@ jobs:
       env:
         cache-name: test-integration
       with:
-        path: ~/.cache/pip
+        path: ~/Library/Caches/pip
         key: ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
         restore-keys: |
           ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
@@ -100,10 +104,13 @@ jobs:
         pip install --progress-bar off .[optional]
         pip install --progress-bar off .[integration]
 
+    - name: Output installed packages
+      run: |
+        pip freeze --all
 
     - name: Tests
       run: |
-        pytest tests -m "integration" --ignore tests/integration_tests/test_pytorch_lightning.py
+        pytest tests -m "integration"
 
       env:
         OMP_NUM_THREADS: 1
