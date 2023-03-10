@@ -314,13 +314,13 @@ def _get_pareto_front_info(
         )
 
     if target_names is None:
-        objective_names = study._storage.get_study_system_attrs(study._study_id).get(
-            "objective_names"
+        metric_names = study._storage.get_study_system_attrs(study._study_id).get(
+            "metric_names"
         )
-        if objective_names is None:
+        if metric_names is None:
             target_names = [f"Objective {i}" for i in range(n_targets)]
         else:
-            target_names = objective_names
+            target_names = metric_names
     elif len(target_names) != n_targets:
         raise ValueError(f"The length of `target_names` is supposed to be {n_targets}.")
 
