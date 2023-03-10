@@ -62,7 +62,6 @@ Chainer
    :toctree: generated/
    :nosignatures:
 
-   optuna.integration.ChainerPruningExtension
    optuna.integration.ChainerMNStudy
 
 Dask
