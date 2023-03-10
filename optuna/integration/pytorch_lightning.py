@@ -19,9 +19,9 @@ with optuna._imports.try_import() as _imports:
     from pytorch_lightning.callbacks import Callback
 
 if not _imports.is_successful():
-    Callback = object  # type: ignore  # NOQA
-    LightningModule = object  # type: ignore  # NOQA
-    Trainer = object  # type: ignore  # NOQA
+    Callback = object  # type: ignore[assignment, misc]  # NOQA[F811]
+    LightningModule = object  # type: ignore[assignment, misc]  # NOQA[F811]
+    Trainer = object  # type: ignore[assignment, misc]  # NOQA[F811]
 
 
 class PyTorchLightningPruningCallback(Callback):
@@ -155,6 +155,8 @@ class PyTorchLightningPruningCallback(Callback):
 
         _trial_id = self._trial._trial_id
         _study = self._trial.study
+        # Confirm if storage is not InMemory in case this method is called in a non-distributed
+        # situation by mistake.
         if not isinstance(_study._storage, _CachedStorage):
             return
 
@@ -162,7 +164,10 @@ class PyTorchLightningPruningCallback(Callback):
         is_pruned = _trial_system_attrs.get(_PRUNED_KEY)
         intermediate_values = _trial_system_attrs.get(_INTERMEDIATE_VALUE)
 
-        assert intermediate_values is not None
+        # Confirm if DDP backend is used in case this method is called from a non-DDP situation by
+        # mistake.
+        if intermediate_values is None:
+            return
         for epoch, score in intermediate_values.items():
             self._trial.report(score, step=int(epoch))
         if is_pruned:
