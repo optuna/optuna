@@ -13,8 +13,8 @@ from optuna.study import Study
 @deprecated_class(
     "3.2.0",
     "6.0.0",
-    name="`optuna.samplers.IntersectionSearchSpace`",
-    text="Please use `optuna.search_space.IntersectionSearchSpace` instead.",
+    name="optuna.samplers.IntersectionSearchSpace",
+    text="Please use optuna.search_space.IntersectionSearchSpace instead.",
 )
 class IntersectionSearchSpace:
     """A class to calculate the intersection search space of a :class:`~optuna.study.Study`.
@@ -109,8 +109,8 @@ class IntersectionSearchSpace:
 @deprecated_func(
     "3.2.0",
     "6.0.0",
-    name="`optuna.samplers.intersection_search_space`",
-    text="Please use `optuna.search_space.intersection_search_space` instead.",
+    name="optuna.samplers.intersection_search_space",
+    text="Please use optuna.search_space.intersection_search_space instead.",
 )
 def intersection_search_space(
     study: Study, ordered_dict: bool = False, include_pruned: bool = False
