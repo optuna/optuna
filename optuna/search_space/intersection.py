@@ -18,7 +18,8 @@ class IntersectionSearchSpace:
     (i.e., the parameters with dynamic value ranges are excluded).
 
     Note that an instance of this class is supposed to be used for only one study.
-    If different studies are passed to :func:`~optuna.samplers.IntersectionSearchSpace.calculate`,
+    If different studies are passed to
+    :func:`~optuna.search_space.IntersectionSearchSpace.calculate`,
     a :obj:`ValueError` is raised.
 
     Args:
@@ -110,7 +111,7 @@ def intersection_search_space(
     (i.e., the parameters with dynamic value ranges are excluded).
 
     .. note::
-        :class:`~optuna.samplers.IntersectionSearchSpace` provides the same functionality with
+        :class:`~optuna.search_space.IntersectionSearchSpace` provides the same functionality with
         a much faster way. Please consider using it if you want to reduce execution time
         as much as possible.
 
