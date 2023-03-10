@@ -960,6 +960,7 @@ class Study:
             .. testcode::
 
                 import optuna
+                import pandas
 
 
                 def objective(trial):
