@@ -16,10 +16,10 @@ from optuna._imports import try_import
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
-from optuna.samplers import IntersectionSearchSpace
 from optuna.samplers import RandomSampler
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.samplers._base import _process_constraints_after_trial
+from optuna.search_space import IntersectionSearchSpace
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
@@ -88,7 +88,7 @@ def qei_candidates_func(
             ``(n_trials, n_objectives)``. ``n_trials`` is identical to that of ``train_x``.
             ``n_objectives`` is the number of objectives. Observations are not normalized.
         train_con:
-            Objective constraints. A ``torch.Tensor`` of shape ``(n_trials, n_constraints)``.
+            Objective constraints. A ``torch.Tensofr`` of shape ``(n_trials, n_constraints)``.
             ``n_trials`` is identical to that of ``train_x``. ``n_constraints`` is the number of
             constraints. A constraint is violated if strictly larger than 0. If no constraints are
             involved in the optimization, this argument will be :obj:`None`.
