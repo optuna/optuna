@@ -4,9 +4,9 @@
 from __future__ import annotations
 
 import atexit
+import gc
 import os
 import tempfile
-import gc
 from types import TracebackType
 from typing import Any
 from typing import IO
