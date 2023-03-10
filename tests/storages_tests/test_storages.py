@@ -866,9 +866,21 @@ def test_get_n_trials_state_option(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_get_best_trial(storage_mode: str) -> None:
+@pytest.mark.parametrize("direction", [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE])
+@pytest.mark.parametrize(
+    "values",
+    [
+        [0.0, 1.0, 2.0],
+        [0.0, float("inf"), 1.0],
+        [0.0, float("-inf"), 1.0],
+        [float("inf"), 0.0, 1.0, float("-inf")],
+        [float("inf")],
+        [float("-inf")],
+    ],
+)
+def test_get_best_trial(storage_mode: str, direction: StudyDirection, values: List[float]) -> None:
     with StorageSupplier(storage_mode) as storage:
-        study_id = storage.create_new_study(directions=[StudyDirection.MAXIMIZE])
+        study_id = storage.create_new_study(directions=[direction])
         with pytest.raises(ValueError):
             storage.get_best_trial(study_id)
 
@@ -876,12 +888,14 @@ def test_get_best_trial(storage_mode: str) -> None:
             storage.get_best_trial(study_id + 1)
 
         generator = random.Random(51)
-        for i in range(3):
+
+        for v in values:
             template_trial = _generate_trial(generator)
             template_trial.state = TrialState.COMPLETE
-            template_trial.value = float(i)
+            template_trial.value = v
             storage.create_new_trial(study_id, template_trial=template_trial)
-        assert storage.get_best_trial(study_id).number == i
+        expected_value = max(values) if direction == StudyDirection.MAXIMIZE else min(values)
+        assert storage.get_best_trial(study_id).value == expected_value
 
 
 def test_get_trials_excluded_trial_ids() -> None:
