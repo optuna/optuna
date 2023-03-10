@@ -47,7 +47,6 @@ jobs:
       uses: nwtgck/actions-netlify@v2
       with:
         publish-dir: './optuna-visualization-regression-tests/public'
-        production-branch: master
         github-token: ${{ secrets.GITHUB_TOKEN }}
         deploy-message: "Deploy from GitHub Actions"
       env:
