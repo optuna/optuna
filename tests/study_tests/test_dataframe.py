@@ -161,9 +161,9 @@ def test_trials_dataframe_with_failure(storage_mode: str) -> None:
     ],
 )
 @pytest.mark.parametrize("multi_index", [True, False])
-@pytest.mark.parametrize("objective_names", [None, ["v0", "v1"]])
+@pytest.mark.parametrize("metric_names", [None, ["v0", "v1"]])
 def test_trials_dataframe_with_multi_objective_optimization(
-    attrs: Tuple[str, ...], multi_index: bool, objective_names: Optional[List[str]]
+    attrs: Tuple[str, ...], multi_index: bool, metric_names: Optional[List[str]]
 ) -> None:
     def f(trial: Trial) -> Tuple[float, float]:
         x = trial.suggest_float("x", 1, 1)
@@ -171,26 +171,28 @@ def test_trials_dataframe_with_multi_objective_optimization(
 
         return x + y, x**2 + y**2  # 3, 5
 
-    study = create_study(directions=["minimize", "maximize"], objective_names=objective_names)
+    study = create_study(directions=["minimize", "maximize"])
+    if metric_names is not None:
+        study.set_metric_names(metric_names)
     study.optimize(f, n_trials=3)
     df = study.trials_dataframe(attrs=attrs, multi_index=multi_index)
 
     if multi_index:
         for i in range(3):
-            if objective_names is None:
+            if metric_names is None:
                 assert df.get("values")[0][i] == 3
                 assert df.get("values")[1][i] == 5
             else:
-                assert df.get("values")[objective_names[0]][i] == 3
-                assert df.get("values")[objective_names[1]][i] == 5
+                assert df.get("values")[metric_names[0]][i] == 3
+                assert df.get("values")[metric_names[1]][i] == 5
     else:
         for i in range(3):
-            if objective_names is None:
+            if metric_names is None:
                 assert df.values_0[i] == 3
                 assert df.values_1[i] == 5
             else:
-                assert df.get(f"values_{objective_names[0]}")[i] == 3
-                assert df.get(f"values_{objective_names[1]}")[i] == 5
+                assert df.get(f"values_{metric_names[0]}")[i] == 3
+                assert df.get(f"values_{metric_names[1]}")[i] == 5
 
 
 @pytest.mark.parametrize(
@@ -201,28 +203,30 @@ def test_trials_dataframe_with_multi_objective_optimization(
     ],
 )
 @pytest.mark.parametrize("multi_index", [True, False])
-@pytest.mark.parametrize("objective_names", [None, ["v0", "v1"]])
+@pytest.mark.parametrize("metric_names", [None, ["v0", "v1"]])
 def test_trials_dataframe_with_multi_objective_optimization_with_fail_and_pruned(
-    attrs: Tuple[str, ...], multi_index: bool, objective_names: Optional[List[str]]
+    attrs: Tuple[str, ...], multi_index: bool, metric_names: Optional[List[str]]
 ) -> None:
-    study = create_study(directions=["minimize", "maximize"], objective_names=objective_names)
+    study = create_study(directions=["minimize", "maximize"])
+    if metric_names is not None:
+        study.set_metric_names(metric_names)
     study.add_trial(create_trial(state=TrialState.FAIL))
     study.add_trial(create_trial(state=TrialState.PRUNED))
     df = study.trials_dataframe(attrs=attrs, multi_index=multi_index)
 
     if multi_index:
         for i in range(2):
-            if objective_names is None:
+            if metric_names is None:
                 assert df.get("values")[0][i] is None
                 assert df.get("values")[1][i] is None
             else:
-                assert df.get("values")[objective_names[0]][i] is None
-                assert df.get("values")[objective_names[1]][i] is None
+                assert df.get("values")[metric_names[0]][i] is None
+                assert df.get("values")[metric_names[1]][i] is None
     else:
         for i in range(2):
-            if objective_names is None:
+            if metric_names is None:
                 assert df.values_0[i] is None
                 assert df.values_1[i] is None
             else:
-                assert df.get(f"values_{objective_names[0]}")[i] is None
-                assert df.get(f"values_{objective_names[1]}")[i] is None
+                assert df.get(f"values_{metric_names[0]}")[i] is None
+                assert df.get(f"values_{metric_names[1]}")[i] is None

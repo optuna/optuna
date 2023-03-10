@@ -733,9 +733,8 @@ class Study:
             replaced with ``values``.
 
         Note:
-            If ``objective_names`` is set when creating the study, the ``value`` or ``values``
-            is implicitly replaced with the dictionary with the objective name as key and the
-            objective value as value.
+            If ``metric_names`` is set, the ``value`` or ``values`` is implicitly replaced with
+            the dictionary with the objective name as key and the objective value as value.
         """
         return _dataframe._trials_dataframe(self, attrs, multi_index)
 
@@ -950,6 +949,46 @@ class Study:
         for trial in trials:
             self.add_trial(trial)
 
+    def set_metric_names(self, metric_names: List[str]) -> None:
+        """Set metric names.
+
+        Each dimension of the objective function is named for each element of the
+        `metric_names` argument.
+
+        Example:
+
+            .. testcode::
+
+                import optuna
+
+
+                def objective(trial):
+                    x = trial.suggest_float("x", 0, 10)
+                    return x**2, x + 1
+
+
+                study = optuna.create_study(directions=["minimize", "minimize"])
+                study.set_metric_names(["x**2", "x+1"])
+                study.optimize(objective, n_trials=3)
+
+                df = study.trials_dataframe()
+                assert isinstance(df, pandas.DataFrame)
+                assert list(df.values.keys()) == ["x**2", "x+1"]
+
+        .. seealso::
+            The names set by this method are used in :meth:`~optuna.study.Study.trials_dataframe`
+            and :func:`~optuna.visualization.plot_pareto_front`.
+
+        Args:
+            metric_names: A list of metric names for the objective function.
+        """
+        if len(self.directions) != len(metric_names):
+            raise ValueError(
+                "The number of objectives must match thhe length of the metric names."
+            )
+
+        self._storage.set_study_system_attr(self._study_id, "metric_names", metric_names)
+
     def _is_multi_objective(self) -> bool:
         """Return :obj:`True` if the study has multiple objectives.
 
@@ -1016,16 +1055,14 @@ class Study:
         if not _logger.isEnabledFor(logging.INFO):
             return
 
-        objective_names = self._storage.get_study_system_attrs(self._study_id).get(
-            "objective_names"
-        )
+        metric_names = self._storage.get_study_system_attrs(self._study_id).get("metric_names")
 
         if len(trial.values) > 1:
             trial_values: Union[List[float], Dict[str, float]]
-            if objective_names is None:
+            if metric_names is None:
                 trial_values = trial.values
             else:
-                trial_values = {name: value for name, value in zip(objective_names, trial.values)}
+                trial_values = {name: value for name, value in zip(metric_names, trial.values)}
             _logger.info(
                 "Trial {} finished with values: {} and parameters: {}. ".format(
                     trial.number, trial_values, trial.params
@@ -1034,10 +1071,10 @@ class Study:
         elif len(trial.values) == 1:
             best_trial = self.best_trial
             trial_value: Union[float, Dict[str, float]]
-            if objective_names is None:
+            if metric_names is None:
                 trial_value = trial.values[0]
             else:
-                trial_value = {objective_names[0]: trial.values[0]}
+                trial_value = {metric_names[0]: trial.values[0]}
             _logger.info(
                 "Trial {} finished with value: {} and parameters: {}. "
                 "Best is trial {} with value: {}.".format(
@@ -1071,7 +1108,6 @@ def create_study(
     direction: Optional[Union[str, StudyDirection]] = None,
     load_if_exists: bool = False,
     directions: Optional[Sequence[Union[str, StudyDirection]]] = None,
-    objective_names: Optional[List[str]] = None,
 ) -> Study:
     """Create a new :class:`~optuna.study.Study`.
 
@@ -1136,9 +1172,6 @@ def create_study(
         directions:
             A sequence of directions during multi-objective optimization.
             ``direction`` and ``directions`` must not be specified at the same time.
-        objective_names:
-            A List of names of objective functions. The order must match that of the
-            returned values of objective functions and the ``directions`` argument.
 
     Returns:
         A :class:`~optuna.study.Study` object.
@@ -1174,9 +1207,6 @@ def create_study(
             "corresponding `StudyDirection` member."
         )
 
-    if objective_names is not None and len(directions) != len(objective_names):
-        raise ValueError("The number of objectives must match thhe length of the objective names.")
-
     direction_objects = [
         d if isinstance(d, StudyDirection) else StudyDirection[d.upper()] for d in directions
     ]
@@ -1201,9 +1231,6 @@ def create_study(
 
     study_name = storage.get_study_name_from_id(study_id)
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
-
-    if objective_names is not None:
-        storage.set_study_system_attr(study_id, "objective_names", objective_names)
 
     return study
 

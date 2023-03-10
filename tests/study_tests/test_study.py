@@ -1539,3 +1539,13 @@ def test_pop_waiting_trial_thread_safe(storage_mode: str) -> None:
             for future in as_completed(futures):
                 trial_id_set.add(future.result())
         assert len(trial_id_set) == num_enqueued
+
+
+def test_set_metric_names() -> None:
+    metric_names = ["v0", "v1"]
+    study = create_study()
+    study.set_metric_names(metric_names)
+
+    got_metric_names = study._storage.get_study_system_attrs(study._study_id).get("metric_names")
+    assert got_metric_names is not None
+    assert metric_names == got_metric_names
