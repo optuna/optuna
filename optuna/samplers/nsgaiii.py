@@ -403,8 +403,6 @@ def generate_default_reference_point(
 def _normalize(
     elite_population: List[FrozenTrial],
     population: List[FrozenTrial],
-    weights: Optional[np.ndarray] = None,
-    method: str = "original",
 ) -> np.ndarray:
     """Normalizes objective values of population
 
@@ -414,8 +412,6 @@ def _normalize(
     scalarizing function from the population. After that, intercepts are calculate as intercepts
     of hyperplane which has all the extreme points on it and used to rescale objective values.
     """
-    # TODO(Shinichi) Propagate argument "weights" and "method" to the constructor
-
     # Collect objective values
     objective_dimension = len(population[0].values)
     objective_matrix = np.zeros((len(elite_population + population), objective_dimension))
@@ -424,31 +420,22 @@ def _normalize(
 
     # Subtract ideal point
     objective_matrix -= np.min(objective_matrix, axis=0)
-    objective_matrix[objective_matrix < 10e-3] = 0.0
 
     # TODO(Shinichi) Find out exact definition of "extreme point."
-    # weights are m vectors in m dimension where m is the dimension of the objective.
-    # weights can be anything as long as the i-th vector is close to each i-th objective axis.
+    # Weights are m vectors in m dimension where m is the dimension of the objective. According to
+    # the paper weights can be anything as long as the i-th vector is close to each i-th objective
+    # axis. Also, the original paper says that the algorithm should chose ASF "minima" but no exact
+    # definition is provided. Currently, the pymoo implementation, which is the official
+    # implementation of the paper, is adopted to determine extreme points.
 
     # Initialize weight
-    if weights is None:
-        weights = np.eye(objective_dimension)
-        if method == "original":
-            weights[weights == 0] = 1e6
+    weights = np.eye(objective_dimension)
+    weights[weights == 0] = 1e6
 
     # Calculate extreme points to normalize objective values
-    if method == "custom":
-        # Note that the original paper says that chose ASF "minima" but no exact definition is
-        # provided in the paper.
-        asf_value = objective_matrix @ weights
-        extreme_points = objective_matrix[np.argmax(asf_value, axis=0)]
-    elif method == "original":
-        # TODO(Shinichi) Reimplement to reduce time complexity
-        # Implementation from pymoo, which is the official implementation of the paper
-        asf_value = np.max(objective_matrix * weights[:, np.newaxis, :], axis=2)
-        extreme_points = objective_matrix[np.argmin(asf_value, axis=1), :]
-    else:
-        raise ValueError("method should be either custom or original")
+    # TODO(Shinichi) Reimplement to reduce time complexity
+    asf_value = np.max(objective_matrix * weights[:, np.newaxis, :], axis=2)
+    extreme_points = objective_matrix[np.argmin(asf_value, axis=1), :]
 
     # Normalize objective_matrix with extreme points.
     # Note that extreme_points can be degenerate, but no proper operation is remarked in the
