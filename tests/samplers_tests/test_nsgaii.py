@@ -115,26 +115,15 @@ def test_swapping_prob() -> None:
         NSGAIISampler(swapping_prob=1.1)
 
 
-@pytest.mark.parametrize(
-    "categorical_values",
-    [
-        [[1, 2, 3], [True, False]],
-        [[1, 2, 3], ["-2", "-1"]],
-        [[1, 2, 3], ["True", "False"]],
-        [[1, 2, 3], ["string1", "string2"]],
-        [[True, False], ["-2", "-1"]],
-        [[True, False], ["True", "False"]],
-        [[True, False], ["string1", "string2"]],
-    ],
-)
-def test_crossover_casting(categorical_values: List[List[Any]]) -> None:
-    categorical_values1, categorical_values2 = categorical_values
+@pytest.mark.parametrize("choices", [[-1, 0, 1], [True, False]])
+def test_crossover_casting(choices: List[Any]) -> None:
+    str_choices = list(map(str, choices))
 
     def objective(trial: optuna.Trial) -> Sequence[float]:
-        cat_1 = trial.suggest_categorical("cat_1", categorical_values1)
-        cat_2 = trial.suggest_categorical("cat_2", categorical_values2)
-        assert isinstance(cat_1, type(categorical_values1[0]))
-        assert isinstance(cat_2, type(categorical_values2[0]))
+        cat_1 = trial.suggest_categorical("cat_1", choices)
+        cat_2 = trial.suggest_categorical("cat_2", str_choices)
+        assert isinstance(cat_1, type(choices[0]))
+        assert isinstance(cat_2, type(str_choices[0]))
         return 1.0, 2.0
 
     population_size = 10
