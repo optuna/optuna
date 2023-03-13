@@ -159,10 +159,10 @@ class CmaEsSampler(BaseSampler):
 
         restart_strategy:
             Strategy for restarting CMA-ES optimization when converges to a local minimum.
-            If given :obj:`None`, CMA-ES will not restart (default).
-            If given 'ipop', CMA-ES will restart with increasing population size.
-            if given 'bipop', CMA-ES will restart with occasionally increasing
-            population size or small population size.
+            If :obj:`None` is given, CMA-ES will not restart (default).
+            If 'ipop' is given, CMA-ES will restart with increasing population size.
+            if 'bipop' is given, CMA-ES will restart with the population size
+            increased or decreased.
             Please see also ``inc_popsize`` parameter.
 
             .. note::
@@ -171,14 +171,14 @@ class CmaEsSampler(BaseSampler):
                 https://github.com/optuna/optuna/releases/tag/v2.1.0.
 
         popsize:
-            A population size of CMA-ES. When set ``restart_strategy = 'ipop'``
-            or ``restart_strategy = 'bipop'``,
+            A population size of CMA-ES. When ``restart_strategy = 'ipop'``
+            or ``restart_strategy = 'bipop'`` is specified,
             this is used as the initial population size.
 
         inc_popsize:
             Multiplier for increasing population size before each restart.
-            This argument will be used when setting ``restart_strategy = 'ipop'``
-            or ``restart_strategy = 'bipop'``.
+            This argument will be used when ``restart_strategy = 'ipop'``
+            or ``restart_strategy = 'bipop'`` is specified.
 
         consider_pruned_trials:
             If this is :obj:`True`, the PRUNED trials are considered for sampling.
@@ -310,7 +310,6 @@ class CmaEsSampler(BaseSampler):
                 "It is prohibited to pass `source_trials` argument when using separable CMA-ES."
             )
 
-        # TODO(c-bata): Support BIPOP-CMA-ES.
         if restart_strategy not in (
             "ipop",
             "bipop",
@@ -383,7 +382,7 @@ class CmaEsSampler(BaseSampler):
             optimizer = self._init_optimizer(
                 trans, study.direction, population_size=self._initial_popsize
             )
-        # When `popsize=None`, initial popsize is computed inside of `cmaes` package.
+        # When `popsize=None`, the initial popsize is computed inside the `cmaes` package.
         if self._initial_popsize is None:
             self._initial_popsize = optimizer.population_size
 
@@ -452,7 +451,8 @@ class CmaEsSampler(BaseSampler):
                     poptype = "small"
                     popsize_multiplier = self._inc_popsize**n_restarts_with_large
                     popsize = math.floor(
-                        self._initial_popsize * popsize_multiplier ** (np.random.uniform() ** 2)
+                        self._initial_popsize
+                        * popsize_multiplier ** (self._cma_rng.uniform() ** 2)
                     )
                 else:
                     poptype = "large"
