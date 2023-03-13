@@ -4,7 +4,6 @@ from typing import Union
 
 import numpy as np
 
-from optuna.samplers._tpe import _erf
 from optuna.samplers._tpe import _truncnorm
 
 
