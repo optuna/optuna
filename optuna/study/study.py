@@ -530,6 +530,7 @@ class Study:
         }
 
         # Sync storage once every trial.
+        self._thread_local.cached_all_trials = None
         if isinstance(self._storage, _CachedStorage):
             self._storage.read_trials_from_remote_storage(self._study_id)
 
