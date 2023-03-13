@@ -121,7 +121,6 @@ def _get_order_with_same_order_averaging(data: np.ndarray) -> np.ndarray:
     data_sorted = np.sort(data)
     for i, d in enumerate(data):
         indices = np.where(data_sorted == d)[0]
-        indices += 1
         order[i] = sum(indices) / len(indices)
     return order
 
@@ -159,7 +158,7 @@ def _get_rank_info(
         has_custom_target = False
     target_values = np.array([target(trial) for trial in trials])
     raw_ranks = _get_order_with_same_order_averaging(target_values)
-    color_idxs = (raw_ranks - 1) / (len(trials) - 1) if len(trials) >= 2 else np.array([0.5])
+    color_idxs = raw_ranks / (len(trials) - 1) if len(trials) >= 2 else np.array([0.5])
     sub_plot_infos: List[List[_RankSubplotInfo]]
     if len(params) == 2:
         x_param = params[0]

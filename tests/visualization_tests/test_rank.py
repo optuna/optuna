@@ -22,10 +22,10 @@ from optuna.trial import create_trial
 from optuna.visualization import plot_rank as plotly_plot_rank
 from optuna.visualization._plotly_imports import go
 from optuna.visualization._rank import _AxisInfo
+from optuna.visualization._rank import _get_order_with_same_order_averaging
 from optuna.visualization._rank import _get_rank_info
 from optuna.visualization._rank import _RankPlotInfo
 from optuna.visualization._rank import _RankSubplotInfo
-from optuna.visualization._rank import _get_order_with_same_order_averaging
 
 
 RANGE_TYPE = Union[Tuple[str, str], Tuple[float, float]]
@@ -552,6 +552,7 @@ def test_get_rank_info_nonfinite_multiobjective(objective: int, value: float) ->
         ),
     )
 
-def test_get_order_with_same_order_averaging():
-    x = np.array([6., 2., 3., 1., 4.5, 4.5, 8., 8., 8.])
+
+def test_get_order_with_same_order_averaging() -> None:
+    x = np.array([6.0, 2.0, 3.0, 1.0, 4.5, 4.5, 8.0, 8.0, 0.0, 8.0])
     assert np.all(x == _get_order_with_same_order_averaging(x))
