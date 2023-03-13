@@ -71,7 +71,7 @@ class BaseSampler(abc.ABC):
             A dictionary containing the parameter names and parameter's distributions.
 
         .. seealso::
-            Please refer to :func:`~optuna.samplers.intersection_search_space` as an
+            Please refer to :func:`~optuna.search_space.intersection_search_space` as an
             implementation of :func:`~optuna.samplers.BaseSampler.infer_relative_search_space`.
         """
 

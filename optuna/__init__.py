@@ -5,6 +5,7 @@ from optuna import logging
 from optuna import multi_objective
 from optuna import pruners
 from optuna import samplers
+from optuna import search_space
 from optuna import storages
 from optuna import study
 from optuna import trial
@@ -41,6 +42,7 @@ __all__ = [
     "multi_objective",
     "pruners",
     "samplers",
+    "search_space",
     "storages",
     "study",
     "trial",

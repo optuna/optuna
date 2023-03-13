@@ -12,7 +12,7 @@ import numpy
 
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
-from optuna.samplers import intersection_search_space
+from optuna.search_space import intersection_search_space
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
