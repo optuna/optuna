@@ -109,6 +109,9 @@ def plot_rank(
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
+
+    .. note::
+        This function requires plotly >= 5.0.0.
     """
 
     _imports.check()
@@ -271,6 +274,7 @@ def _get_rank_subplot(
     info: _RankSubplotInfo, target_name: str, print_raw_objectives: bool
 ) -> "Scatter":
     colormap = "RdYlBu_r"
+    # sample_colorscale requires plotly >= 5.0.0.
     colors = plotly.colors.sample_colorscale(colormap, info.color_idxs)
 
     def get_hover_text(trial: FrozenTrial, target_value: float) -> str:
