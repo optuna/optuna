@@ -55,10 +55,11 @@ class _BoTorchGaussianProcess(BaseGaussianProcess):
         y = torch.tensor([trial.value for trial in trials], dtype=torch.float64)
         y = torch.unsqueeze(y, 1)
 
+        noise = gpytorch.settings.min_fixed_noise.value(torch.float64)
         self._gp = FixedNoiseGP(
             x,
             y,
-            torch.full_like(y, 1e-8 * y.std().item()),
+            torch.full_like(y, noise * y.std().item()),
             input_transform=Normalize(d=self._n_params, bounds=bounds),
             outcome_transform=Standardize(m=1),
         )
