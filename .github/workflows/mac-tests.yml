@@ -20,7 +20,7 @@ jobs:
   tests-mac:
     runs-on: macos-latest
 
-    # Not intended for forks.
+    # Scheduled Tests are disabled for forks.
     if: (github.event_name == 'schedule' && github.repository == 'optuna/optuna') || (github.event_name != 'schedule')
     steps:
     - name: Checkout
@@ -70,7 +70,7 @@ jobs:
   tests-integration-mac:
     runs-on: macos-latest
 
-    # Not intended for forks.
+    # Scheduled Tests are disabled for forks.
     if: (github.event_name == 'schedule' && github.repository == 'optuna/optuna') || (github.event_name != 'schedule')
     steps:
     - name: Checkout
