@@ -20,4 +20,8 @@ def upgrade():
 
 
 def downgrade():
+    # Please note that the following operation does not work on MySQL due to a foreign key constraint.
+    #
+    # mysql> DROP INDEX ix_trials_study_id ON trials;
+    # ERROR 1553 (HY000): Cannot drop index 'ix_trials_study_id': needed in a foreign key constraint
     op.drop_index(op.f("trials_study_id_key"), table_name="trials")
