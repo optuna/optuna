@@ -314,9 +314,7 @@ def _get_pareto_front_info(
         )
 
     if target_names is None:
-        metric_names = study._storage.get_study_system_attrs(study._study_id).get(
-            "metric_names"
-        )
+        metric_names = study._storage.get_study_system_attrs(study._study_id).get("metric_names")
         if metric_names is None:
             target_names = [f"Objective {i}" for i in range(n_targets)]
         else:

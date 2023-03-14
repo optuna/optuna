@@ -1543,7 +1543,7 @@ def test_pop_waiting_trial_thread_safe(storage_mode: str) -> None:
 
 def test_set_metric_names() -> None:
     metric_names = ["v0", "v1"]
-    study = create_study()
+    study = create_study(directions=["minimize", "minimize"])
     study.set_metric_names(metric_names)
 
     got_metric_names = study._storage.get_study_system_attrs(study._study_id).get("metric_names")
