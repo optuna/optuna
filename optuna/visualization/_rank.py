@@ -268,7 +268,7 @@ def _get_axis_info(trials: List[FrozenTrial], param_name: str) -> _AxisInfo:
 
 
 def _get_rank_subplot(
-    info: _RankSubplotInfo, target_name: str, print_all_objectives: bool
+    info: _RankSubplotInfo, target_name: str, print_raw_objectives: bool
 ) -> "Scatter":
     colormap = "RdYlBu_r"
     colors = plotly.colors.sample_colorscale(colormap, info.color_idxs)
@@ -277,7 +277,7 @@ def _get_rank_subplot(
         lines = [f"Trial #{trial.number}"]
         lines += [f"{k}: {v}" for k, v in trial.params.items()]
         lines += [f"<b>{target_name}: {target_value}</b>"]
-        if print_all_objectives:
+        if print_raw_objectives:
             lines += [f"Objective #{i}: {v}" for i, v in enumerate(trial.values)]
         return "<br>".join(lines)
 
