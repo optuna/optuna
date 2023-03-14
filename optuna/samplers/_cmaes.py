@@ -99,7 +99,7 @@ class CmaEsSampler(BaseSampler):
       <http://www.cmap.polytechnique.fr/~nikolaus.hansen/cec2005ipopcmaes.pdf>`_
     - `N. Hansen. Benchmarking a BI-Population CMA-ES on the BBOB-2009 Function Testbed.
       GECCO Workshop, 2009.
-      <https://hal.inria.fr/inria-00382093/document>`_
+      <https://dl.acm.org/doi/10.1145/1570256.1570333>`_
     - `Raymond Ros, Nikolaus Hansen. A Simple Modification in CMA-ES Achieving Linear Time and
       Space Complexity. 10th International Conference on Parallel Problem Solving From Nature,
       Sep 2008, Dortmund, Germany. inria-00287367.
