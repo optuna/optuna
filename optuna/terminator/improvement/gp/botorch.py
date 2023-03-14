@@ -55,6 +55,7 @@ class _BoTorchGaussianProcess(BaseGaussianProcess):
         y = torch.tensor([trial.value for trial in trials], dtype=torch.float64)
         y = torch.unsqueeze(y, 1)
 
+        assert self._n_trials is not None
         noise = (
             torch.full_like(y, 1e-8 * y.std().item())
             if self._n_trials > 1
