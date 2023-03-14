@@ -113,14 +113,13 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         group: Optional["ProcessGroup"] = None,
     ) -> None:
         _imports.check()
-        global _g_pg
 
         if group is not None:
             self._group: "ProcessGroup" = group
         else:
             if dist.group.WORLD is None:
                 raise RuntimeError("torch distributed is not initialized.")
-            self._group = dist.new_group(backend="gloo")  # type: ignore
+            self._group = dist.new_group(backend="gloo")  # type: ignore[no-untyped-call]
 
         if dist.get_rank(self._group) == 0:  # type: ignore[no-untyped-call]
             if not isinstance(trial, optuna.trial.Trial):
