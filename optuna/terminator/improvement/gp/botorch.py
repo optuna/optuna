@@ -62,6 +62,7 @@ class _BoTorchGaussianProcess(BaseGaussianProcess):
             if self._n_trials > 1
             else torch.zeros_like(y)
         )
+        noise = noise.clamp_min(noise_scale)
         self._gp = FixedNoiseGP(
             x,
             y,
