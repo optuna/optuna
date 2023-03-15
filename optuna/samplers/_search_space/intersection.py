@@ -94,7 +94,7 @@ class IntersectionSearchSpace:
             self._search_space = {
                 name: distribution
                 for name, distribution in self._search_space.items()
-                if trial.distributions.get(name) == distribution
+                if name in trial.distributions.keys()
             }
 
         self._cursor = next_cursor
