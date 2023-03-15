@@ -29,7 +29,7 @@ class QMCSampler(BaseSampler):
 
     Quasi Monte Carlo (QMC) sequences are designed to have lower discrepancies than
     standard random sequences. They are known to perform better than the standard
-    randam sequences in hyperparameter optimization.
+    random sequences in hyperparameter optimization.
 
     For further information about the use of QMC sequences for hyperparameter optimization,
     please refer to the following paper:
