@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import datetime
-from typing import List
 from typing import NamedTuple
 
 from optuna._experimental import experimental_func
@@ -25,7 +26,7 @@ class _TimelineBarInfo(NamedTuple):
 
 
 class _TimelineInfo(NamedTuple):
-    bars: List[_TimelineBarInfo]
+    bars: list[_TimelineBarInfo]
 
 
 @experimental_func("3.2.0")
@@ -35,6 +36,7 @@ def plot_timeline(study: Study) -> "go.Figure":
     Example:
 
         The following code snippet shows how to plot the timeline of a study.
+        Timeline plot can visualize trials with overlapping execution time (e.g., in distributed environments).
 
         .. plotly::
 
