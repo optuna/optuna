@@ -38,9 +38,9 @@ def test_get_timeline_info() -> None:
     study = _create_study(states)
     info = _get_timeline_info(study)
     assert len(info.bars) == 3
-    for i, bar in enumerate(info.bars):
-        assert bar.number == i
-        assert bar.state == states[i]
+    for bar, trial in zip(info.bars, study.get_trials()):
+        assert bar.number == trial.number
+        assert bar.state == trial.state
         assert type(bar.hovertext) is str
         assert isinstance(bar.start, datetime.datetime)
         assert isinstance(bar.end, datetime.datetime)
