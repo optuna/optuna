@@ -58,7 +58,7 @@ class _BoTorchGaussianProcess(BaseGaussianProcess):
         assert self._n_trials is not None
         noise_scale = gpytorch.settings.min_fixed_noise.value(torch.float64)
         noise = (
-            torch.full_like(y, noise_scale * y.std().item())
+            torch.full_like(y, noise_scale * y.var().item())
             if self._n_trials > 1
             else torch.zeros_like(y)
         )
