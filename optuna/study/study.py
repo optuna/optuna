@@ -972,9 +972,9 @@ class Study:
                 study.set_metric_names(["x**2", "x+1"])
                 study.optimize(objective, n_trials=3)
 
-                df = study.trials_dataframe()
+                df = study.trials_dataframe(multi_index=True)
                 assert isinstance(df, pandas.DataFrame)
-                assert list(df.values.keys()) == ["x**2", "x+1"]
+                assert list(df.get("values").keys()) == ["x**2", "x+1"]
 
         .. seealso::
             The names set by this method are used in :meth:`~optuna.study.Study.trials_dataframe`
