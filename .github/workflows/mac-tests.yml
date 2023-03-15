@@ -7,11 +7,10 @@ on:
   push:
     branches:
       - master
-  pull_request:
-    paths:
-      - '.github/workflows/mac-tests.yml'
+  pull_request: {}
   schedule:
     - cron: '0 23 * * SUN-THU'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
@@ -21,8 +20,8 @@ jobs:
   tests-mac:
     runs-on: macos-latest
 
-    # Not intended for forks.
-    if: github.repository == 'optuna/optuna'
+    # Scheduled Tests are disabled for forks.
+    if: (github.event_name == 'schedule' && github.repository == 'optuna/optuna') || (github.event_name != 'schedule')
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -57,15 +56,22 @@ jobs:
       run: |
         pip freeze --all
 
-    - name: Tests
+    - name: Scheduled tests
+      if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
         pytest tests -m "not integration"
+
+    - name: Tests
+      if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
+      run: |
+        pytest tests -m "not integration and not slow"
+
 
   tests-integration-mac:
     runs-on: macos-latest
 
-    # Not intended for forks.
-    if: github.repository == 'optuna/optuna'
+    # Scheduled Tests are disabled for forks.
+    if: (github.event_name == 'schedule' && github.repository == 'optuna/optuna') || (github.event_name != 'schedule')
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -110,7 +116,7 @@ jobs:
 
     - name: Tests
       run: |
-        pytest tests -m "integration" --ignore tests/integration_tests/test_pytorch_lightning.py
+        pytest tests -m "integration"
 
       env:
         OMP_NUM_THREADS: 1

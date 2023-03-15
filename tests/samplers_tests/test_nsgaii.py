@@ -115,6 +115,23 @@ def test_swapping_prob() -> None:
         NSGAIISampler(swapping_prob=1.1)
 
 
+@pytest.mark.parametrize("choices", [[-1, 0, 1], [True, False]])
+def test_crossover_casting(choices: List[Any]) -> None:
+    str_choices = list(map(str, choices))
+
+    def objective(trial: optuna.Trial) -> Sequence[float]:
+        cat_1 = trial.suggest_categorical("cat_1", choices)
+        cat_2 = trial.suggest_categorical("cat_2", str_choices)
+        assert isinstance(cat_1, type(choices[0]))
+        assert isinstance(cat_2, type(str_choices[0]))
+        return 1.0, 2.0
+
+    population_size = 10
+    sampler = NSGAIISampler(population_size=population_size)
+    study = optuna.create_study(directions=["minimize"] * 2, sampler=sampler)
+    study.optimize(objective, n_trials=population_size * 2)
+
+
 def test_constraints_func_none() -> None:
     n_trials = 4
     n_objectives = 2
