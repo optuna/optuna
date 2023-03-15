@@ -404,7 +404,7 @@ def _make_scatter_object(
             showlegend=False,
         )
     else:
-        raise AssertionError("Must not reach here")
+        assert False, "Must not reach here"
 
 
 def _make_marker(
