@@ -36,7 +36,8 @@ def plot_timeline(study: Study) -> "go.Figure":
     Example:
 
         The following code snippet shows how to plot the timeline of a study.
-        Timeline plot can visualize trials with overlapping execution time (e.g., in distributed environments).
+        Timeline plot can visualize trials with overlapping execution time
+        (e.g., in distributed environments).
 
         .. plotly::
 
