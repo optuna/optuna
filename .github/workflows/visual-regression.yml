@@ -1,4 +1,4 @@
-name: Visual regression with Netlify
+name: Visual regression tests with Netlify
 
 on:
   push:
@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  documentation:
+  tests:
 
     runs-on: ubuntu-latest
 
