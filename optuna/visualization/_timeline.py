@@ -117,7 +117,7 @@ def _get_timeline_plot(info: _TimelineInfo) -> "go.Figure":
                 hovertemplate="%{text}<extra>" + s.name + "</extra>",
                 orientation="h",
                 marker=dict(color=_cm[s.name]),
-                textposition="none",  # avoid drawing hovertext in a bar
+                textposition="none",  # Avoid drawing hovertext in a bar.
             )
         )
     fig.update_xaxes(type="date")
