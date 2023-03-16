@@ -4,9 +4,11 @@ from typing import Tuple
 
 import numpy as np
 
+from optuna._experimental import experimental_class
 from optuna.trial._frozen import FrozenTrial
 
 
+@experimental_class("3.2.0")
 class BaseGaussianProcess(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def fit(
@@ -23,7 +25,7 @@ class BaseGaussianProcess(metaclass=abc.ABCMeta):
         pass
 
 
-def min_ucb(
+def _min_ucb(
     trials: List[FrozenTrial],
     gp: BaseGaussianProcess,
     n_params: int,
@@ -35,7 +37,7 @@ def min_ucb(
     return float(min(upper))
 
 
-def min_lcb(
+def _min_lcb(
     trials: List[FrozenTrial],
     gp: BaseGaussianProcess,
     n_params: int,

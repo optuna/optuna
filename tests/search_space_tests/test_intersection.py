@@ -6,8 +6,8 @@ from optuna import create_study
 from optuna import TrialPruned
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
-from optuna.samplers import intersection_search_space
-from optuna.samplers import IntersectionSearchSpace
+from optuna.search_space import intersection_search_space
+from optuna.search_space import IntersectionSearchSpace
 from optuna.testing.storages import StorageSupplier
 from optuna.trial import Trial
 
