@@ -121,11 +121,6 @@ class GridSampler(BaseSampler):
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
-        return {}
-
-    def sample_relative(
-        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
-    ) -> Dict[str, Any]:
         # Instead of returning param values, GridSampler puts the target grid id as a system attr,
         # and the values are returned from `sample_independent`. This is because the distribution
         # object is hard to get at the beginning of trial, while we need the access to the object
@@ -133,9 +128,9 @@ class GridSampler(BaseSampler):
 
         # When the trial is created by RetryFailedTrialCallback or enqueue_trial, we should not
         # assign a new grid_id.
-        return {}
+        if "grid_id" in trial.system_attrs or "fixed_params" in trial.system_attrs:
+            return {}
 
-    def _sample_grid_id(self, study: Study, trial: FrozenTrial) -> int:
         target_grids = self._get_unvisited_grid_ids(study)
 
         if len(target_grids) == 0:
@@ -158,7 +153,13 @@ class GridSampler(BaseSampler):
 
         study._storage.set_trial_system_attr(trial._trial_id, "search_space", self._search_space)
         study._storage.set_trial_system_attr(trial._trial_id, "grid_id", grid_id)
-        return grid_id
+
+        return {}
+
+    def sample_relative(
+        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+    ) -> Dict[str, Any]:
+        return {}
 
     def sample_independent(
         self,
@@ -167,11 +168,7 @@ class GridSampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
-        if "grid_id" in trial.system_attrs:
-            grid_id = trial.system_attrs["grid_id"]
-        elif "fixed_params" not in trial.system_attrs:
-            grid_id = self._sample_grid_id(study, trial)
-        else:
+        if "grid_id" not in trial.system_attrs:
             message = "All parameters must be specified when using GridSampler with enqueue_trial."
             raise ValueError(message)
 
@@ -182,6 +179,7 @@ class GridSampler(BaseSampler):
         # TODO(c-bata): Reduce the number of duplicated evaluations on multiple workers.
         # Current selection logic may evaluate the same parameters multiple times.
         # See https://gist.github.com/c-bata/f759f64becb24eea2040f4b2e3afce8f for details.
+        grid_id = trial.system_attrs["grid_id"]
         param_value = self._all_grids[grid_id][self._param_names.index(param_name)]
         contains = param_distribution._contains(param_distribution.to_internal_repr(param_value))
         if not contains:
@@ -199,20 +197,12 @@ class GridSampler(BaseSampler):
         state: TrialState,
         values: Optional[Sequence[float]],
     ) -> None:
-        # grid_id must be consumed even if the trial is pruned
-        if "grid_id" not in trial.system_attrs and "fixed_params" not in trial.system_attrs:
-            sampled_grid_id = self._sample_grid_id(study, trial)
-        else:
-            sampled_grid_id = None
-
         target_grids = self._get_unvisited_grid_ids(study)
 
         if len(target_grids) == 0:
             study.stop()
         elif len(target_grids) == 1:
-            grid_id = study._storage.get_trial_system_attrs(trial._trial_id).get(
-                "grid_id", sampled_grid_id
-            )
+            grid_id = study._storage.get_trial_system_attrs(trial._trial_id)["grid_id"]
             if grid_id == target_grids[0]:
                 study.stop()
 
