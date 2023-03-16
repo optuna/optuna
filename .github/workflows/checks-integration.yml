@@ -40,6 +40,7 @@ jobs:
         pip install --progress-bar off -U bayesmark
         pip install --progress-bar off -U kurobako
         pip install "sqlalchemy<2.0.0"
+        pip install "pytorch-lightning<2.0.0"
 
     - name: Output installed packages
       run: |
