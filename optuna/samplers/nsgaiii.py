@@ -70,8 +70,10 @@ class NSGAIIISampler(BaseSampler):
 
     def __init__(
         self,
-        reference_points: np.ndarray,
         population_size: int = 50,
+        n_objectives: Optional[int] = None,
+        dividing_parameter: int = 3,
+        reference_points: Optional[np.ndarray] = None,
         mutation_prob: Optional[float] = None,
         crossover: Optional[BaseCrossover] = None,
         crossover_prob: float = 0.9,
@@ -119,6 +121,12 @@ class NSGAIIISampler(BaseSampler):
                 f"Using {crossover},"
                 f" the population size should be greater than or equal to {crossover.n_parents}."
                 f" The specified `population_size` is {population_size}."
+            )
+
+        if reference_points is None:
+            assert n_objectives is not None
+            reference_points = generate_default_reference_point(
+                n_objectives=n_objectives, dividing_parameter=dividing_parameter
             )
 
         self.reference_points = reference_points
@@ -384,18 +392,16 @@ def multi_choose(n: int, k: int) -> int:
     return math.factorial(n + k - 1) // math.factorial(k) // math.factorial(n - 1)
 
 
-def generate_default_reference_point(
-    objective_dimension: int, dividing_parameter: int = 3
-) -> np.ndarray:
+def generate_default_reference_point(n_objectives: int, dividing_parameter: int = 3) -> np.ndarray:
     """Generates default reference points which are `uniformly` spread on a hyperplane."""
     reference_points = np.zeros(
         (
-            multi_choose(objective_dimension, dividing_parameter),
-            objective_dimension,
+            multi_choose(n_objectives, dividing_parameter),
+            n_objectives,
         )
     )
     for i, comb in enumerate(
-        itertools.combinations_with_replacement(range(objective_dimension), dividing_parameter)
+        itertools.combinations_with_replacement(range(n_objectives), dividing_parameter)
     ):
         for j in comb:
             reference_points[i, j] += 1.0
@@ -415,8 +421,8 @@ def _normalize_objective_values(
     of hyperplane which has all the extreme points on it and used to rescale objective values.
     """
     # Collect objective values
-    objective_dimension = len(population[0].values)
-    objective_matrix = np.zeros((len(elite_population + population), objective_dimension))
+    n_objectives = len(population[0].values)
+    objective_matrix = np.zeros((len(elite_population + population), n_objectives))
     for i, trial in enumerate(elite_population + population):
         objective_matrix[i] = np.array(trial.values, dtype=float)
 
@@ -431,7 +437,7 @@ def _normalize_objective_values(
     # implementation of the paper, is adopted to determine extreme points.
 
     # Initialize weight
-    weights = np.eye(objective_dimension)
+    weights = np.eye(n_objectives)
     weights[weights == 0] = 1e6
 
     # Calculate extreme points to normalize objective values
@@ -445,7 +451,7 @@ def _normalize_objective_values(
     if np.linalg.matrix_rank(extreme_points) < len(extreme_points):
         intercepts_inv = 1 / np.max(objective_matrix[:, :], axis=0)
     else:
-        intercepts_inv = np.linalg.solve(extreme_points, np.ones(objective_dimension))
+        intercepts_inv = np.linalg.solve(extreme_points, np.ones(n_objectives))
     objective_matrix *= intercepts_inv
 
     return objective_matrix

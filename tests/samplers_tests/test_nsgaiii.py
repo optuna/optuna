@@ -50,10 +50,8 @@ def _nan_equal(a: Any, b: Any) -> bool:
 
 
 def test_population_size() -> None:
-    reference_points = np.array([[1.0]])
-
     # Set `population_size` to 10.
-    sampler = NSGAIIISampler(reference_points, population_size=10)
+    sampler = NSGAIIISampler(n_objectives=1, population_size=10)
 
     study = optuna.create_study(directions=["minimize"], sampler=sampler)
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
@@ -64,7 +62,7 @@ def test_population_size() -> None:
     assert generations == {0: 10, 1: 10, 2: 10, 3: 10}
 
     # Set `population_size` to 2.
-    sampler = NSGAIIISampler(reference_points, population_size=2)
+    sampler = NSGAIIISampler(n_objectives=1, population_size=2)
 
     study = optuna.create_study(directions=["minimize"], sampler=sampler)
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
@@ -77,62 +75,55 @@ def test_population_size() -> None:
     # Invalid population size.
     with pytest.raises(ValueError):
         # Less than 2.
-        NSGAIIISampler(reference_points, population_size=1)
+        NSGAIIISampler(n_objectives=1, population_size=1)
 
     with pytest.raises(TypeError):
         # Not an integer.
-        NSGAIIISampler(reference_points, population_size=2.5)  # type: ignore[arg-type]
+        NSGAIIISampler(n_objectives=1, population_size=2.5)  # type: ignore[arg-type]
 
 
 def test_mutation_prob() -> None:
-    reference_points = np.array([[1.0]])
-
-    NSGAIIISampler(reference_points, mutation_prob=None)
-    NSGAIIISampler(reference_points, mutation_prob=0.0)
-    NSGAIIISampler(reference_points, mutation_prob=0.5)
-    NSGAIIISampler(reference_points, mutation_prob=1.0)
+    NSGAIIISampler(n_objectives=1, mutation_prob=None)
+    NSGAIIISampler(n_objectives=1, mutation_prob=0.0)
+    NSGAIIISampler(n_objectives=1, mutation_prob=0.5)
+    NSGAIIISampler(n_objectives=1, mutation_prob=1.0)
 
     with pytest.raises(ValueError):
-        NSGAIIISampler(reference_points, mutation_prob=-0.5)
+        NSGAIIISampler(n_objectives=1, mutation_prob=-0.5)
 
     with pytest.raises(ValueError):
-        NSGAIIISampler(reference_points, mutation_prob=1.1)
+        NSGAIIISampler(n_objectives=1, mutation_prob=1.1)
 
 
 def test_crossover_prob() -> None:
-    reference_points = np.array([[1.0]])
-
-    NSGAIIISampler(reference_points, crossover_prob=0.0)
-    NSGAIIISampler(reference_points, crossover_prob=0.5)
-    NSGAIIISampler(reference_points, crossover_prob=1.0)
+    NSGAIIISampler(n_objectives=1, crossover_prob=0.0)
+    NSGAIIISampler(n_objectives=1, crossover_prob=0.5)
+    NSGAIIISampler(n_objectives=1, crossover_prob=1.0)
 
     with pytest.raises(ValueError):
-        NSGAIIISampler(reference_points, crossover_prob=-0.5)
+        NSGAIIISampler(n_objectives=1, crossover_prob=-0.5)
 
     with pytest.raises(ValueError):
-        NSGAIIISampler(reference_points, crossover_prob=1.1)
+        NSGAIIISampler(n_objectives=1, crossover_prob=1.1)
 
 
 def test_swapping_prob() -> None:
-    reference_points = np.array([[1.0]])
-
-    NSGAIIISampler(reference_points, swapping_prob=0.0)
-    NSGAIIISampler(reference_points, swapping_prob=0.5)
-    NSGAIIISampler(reference_points, swapping_prob=1.0)
+    NSGAIIISampler(n_objectives=1, swapping_prob=0.0)
+    NSGAIIISampler(n_objectives=1, swapping_prob=0.5)
+    NSGAIIISampler(n_objectives=1, swapping_prob=1.0)
 
     with pytest.raises(ValueError):
-        NSGAIIISampler(reference_points, swapping_prob=-0.5)
+        NSGAIIISampler(n_objectives=1, swapping_prob=-0.5)
 
     with pytest.raises(ValueError):
-        NSGAIIISampler(reference_points, swapping_prob=1.1)
+        NSGAIIISampler(n_objectives=1, swapping_prob=1.1)
 
 
 def test_constraints_func_none() -> None:
     n_trials = 4
     n_objectives = 2
 
-    reference_points = np.array([[1.0, 0.0], [0.0, 1.0]])
-    sampler = NSGAIIISampler(reference_points, population_size=2)
+    sampler = NSGAIIISampler(n_objectives=n_objectives, population_size=2)
 
     study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
     study.optimize(
@@ -159,9 +150,8 @@ def test_constraints_func(constraint_value: float) -> None:
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        reference_points = np.array([[1.0, 0.0], [0.0, 1.0]])
         sampler = NSGAIIISampler(
-            reference_points, population_size=2, constraints_func=constraints_func
+            n_objectives=n_objectives, population_size=2, constraints_func=constraints_func
         )
 
     study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
@@ -185,10 +175,9 @@ def test_constraints_func_nan() -> None:
         return (float("nan"),)
 
     with warnings.catch_warnings():
-        reference_points = np.array([[1.0, 0.0], [0.0, 1.0]])
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = NSGAIIISampler(
-            reference_points, population_size=2, constraints_func=constraints_func
+            n_objectives=n_objectives, population_size=2, constraints_func=constraints_func
         )
 
     study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
@@ -238,8 +227,7 @@ def _assert_population_per_rank(
 def test_fast_non_dominated_sort_no_constraints(
     direction1: StudyDirection, direction2: StudyDirection
 ) -> None:
-    reference_points = np.array([[1.0]])
-    sampler = NSGAIIISampler(reference_points)
+    sampler = NSGAIIISampler(n_objectives=2)
 
     directions = [direction1, direction2]
     value_list = [10, 20, 20, 30, float("inf"), float("inf"), -float("inf")]
@@ -254,8 +242,7 @@ def test_fast_non_dominated_sort_no_constraints(
 def test_fast_non_dominated_sort_with_constraints() -> None:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        reference_points = np.array([[1.0, 0.0], [0.0, 1.0]])
-        sampler = NSGAIIISampler(reference_points, constraints_func=lambda _: [0])
+        sampler = NSGAIIISampler(n_objectives=2, constraints_func=lambda _: [0])
 
     value_list = [10, 20, 20, 30, float("inf"), float("inf"), -float("inf")]
     values = [[v1, v2] for v1 in value_list for v2 in value_list]
@@ -276,8 +263,7 @@ def test_fast_non_dominated_sort_with_constraints() -> None:
 def test_fast_non_dominated_sort_with_nan_constraint() -> None:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        reference_points = np.array([[1.0, 0.0], [0.0, 1.0]])
-        sampler = NSGAIIISampler(reference_points, constraints_func=lambda _: [0])
+        sampler = NSGAIIISampler(n_objectives=1, constraints_func=lambda _: [0])
     directions = [StudyDirection.MINIMIZE, StudyDirection.MINIMIZE]
     with pytest.raises(ValueError):
         sampler._fast_non_dominated_sort(
@@ -304,8 +290,7 @@ def test_fast_non_dominated_sort_missing_constraint_values(
 ) -> None:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        reference_points = np.array([[1.0, 0.0], [0.0, 1.0]])
-        sampler = NSGAIIISampler(reference_points, constraints_func=lambda _: [0])
+        sampler = NSGAIIISampler(n_objectives=2, constraints_func=lambda _: [0])
 
     values_dim = len(values_and_constraints[0][0])
     for directions in itertools.product(
@@ -327,15 +312,13 @@ def test_fast_non_dominated_sort_empty(n_dims: int) -> None:
         [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE], repeat=n_dims
     ):
         trials: List[FrozenTrial] = []
-        reference_points = np.array([[1.0, 0.0], [0.0, 1.0]])
-        sampler = NSGAIIISampler(reference_points)
+        sampler = NSGAIIISampler(n_objectives=2)
         population_per_rank = sampler._fast_non_dominated_sort(trials, list(directions))
         assert population_per_rank == []
 
 
 def test_study_system_attr_for_population_cache() -> None:
-    reference_points = np.array([[1.0]])
-    sampler = NSGAIIISampler(reference_points, population_size=10)
+    sampler = NSGAIIISampler(n_objectives=1, population_size=10)
     study = optuna.create_study(directions=["minimize"], sampler=sampler)
 
     def get_cached_entries(
@@ -365,8 +348,7 @@ def test_study_system_attr_for_population_cache() -> None:
 
 def test_constraints_func_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
-        reference_points = np.array([[1.0]])
-        NSGAIIISampler(reference_points, constraints_func=lambda _: [0])
+        NSGAIIISampler(n_objectives=1, constraints_func=lambda _: [0])
 
 
 # TODO(ohta): Consider to move this utility function to `optuna.testing` module.
@@ -384,8 +366,7 @@ def _create_frozen_trial(
 
 
 def test_call_after_trial_of_random_sampler() -> None:
-    reference_points = np.array([[1.0]])
-    sampler = NSGAIIISampler(reference_points)
+    sampler = NSGAIIISampler(n_objectives=1)
     study = optuna.create_study(sampler=sampler)
     with patch.object(
         sampler._random_sampler, "after_trial", wraps=sampler._random_sampler.after_trial
@@ -413,8 +394,7 @@ def test_crossover_objectives(
     n_objectives: int, crossover: BaseSampler, population_size: int
 ) -> None:
     n_trials = 8
-    reference_points = generate_default_reference_point(n_objectives)
-    sampler = NSGAIIISampler(reference_points, population_size=population_size)
+    sampler = NSGAIIISampler(n_objectives=n_objectives, population_size=population_size)
 
     study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
     study.optimize(
@@ -435,10 +415,7 @@ def test_crossover_dims(n_params: int, crossover: BaseSampler, population_size: 
 
     n_objectives = 1
     n_trials = 8
-
-    reference_points = np.array([[0.0] * n_objectives])
-    reference_points[0, 0] = 1.0
-    sampler = NSGAIIISampler(reference_points, population_size=population_size)
+    sampler = NSGAIIISampler(n_objectives=n_objectives, population_size=population_size)
 
     study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
     study.optimize(objective, n_trials=n_trials)
@@ -459,8 +436,7 @@ def test_crossover_dims(n_params: int, crossover: BaseSampler, population_size: 
 )
 def test_crossover_invalid_population(crossover: BaseCrossover, population_size: int) -> None:
     with pytest.raises(ValueError):
-        reference_points = np.array([[1.0]])
-        NSGAIIISampler(reference_points, population_size=population_size, crossover=crossover)
+        NSGAIIISampler(n_objectives=1, population_size=population_size, crossover=crossover)
 
 
 @pytest.mark.parametrize(
@@ -594,7 +570,7 @@ def test_crossover_deterministic(
 
 
 @pytest.mark.parametrize(
-    "dims_and_dividing_parameter",
+    "n_objectives,dividing_parameter,expected_reference_points",
     [
         (2, 2, [[0.0, 2.0], [1.0, 1.0], [2.0, 0.0]]),
         (2, 3, [[0.0, 3.0], [1.0, 2.0], [2.0, 1.0], [3.0, 0.0]]),
@@ -613,11 +589,10 @@ def test_crossover_deterministic(
     ],
 )
 def test_reference_point(
-    dims_and_dividing_parameter: Tuple[int, int, Sequence[Sequence[int]]]
+    n_objectives: int, dividing_parameter: int, expected_reference_points: Sequence[Sequence[int]]
 ) -> None:
-    n_dims, dividing_parameter, expected_reference_points = dims_and_dividing_parameter
     actual_reference_points = sorted(
-        generate_default_reference_point(n_dims, dividing_parameter).tolist()
+        generate_default_reference_point(n_objectives, dividing_parameter).tolist()
     )
     assert actual_reference_points == expected_reference_points
 
@@ -635,9 +610,7 @@ def test_associate() -> None:
             [4.0, 4.0, 4.0],
         ]
     )
-    n_dims = 3
-    dividing_parameter = 2
-    reference_points = generate_default_reference_point(n_dims, dividing_parameter)
+    reference_points = generate_default_reference_point(n_objectives=3, dividing_parameter=2)
     elite_population_num = 4
     (
         nearest_points_count_to_reference_point,
@@ -669,8 +642,7 @@ def test_associate() -> None:
 
 
 def test_niching() -> None:
-    reference_points = np.array([1.0])
-    sampler = NSGAIIISampler(reference_points, seed=42)
+    sampler = NSGAIIISampler(n_objectives=3, seed=42)
     target_population_size = 2
     population = [
         create_trial(values=[4.0, 5.0, 6.0]),
