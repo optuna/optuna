@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 from io import BytesIO
 
+import _pytest.capture
 import pytest
 
 import optuna
@@ -28,6 +29,29 @@ def _create_study(trial_states_list: list[TrialState]) -> Study:
     return study
 
 
+def _create_study_negative_elapsed_time() -> Study:
+    start = datetime.datetime.now()
+    complete = start - datetime.timedelta(seconds=1.0)
+    study = optuna.create_study()
+    study.add_trial(
+        optuna.trial.FrozenTrial(
+            number=-1,
+            trial_id=-1,
+            state=TrialState.COMPLETE,
+            value=0.0,
+            values=None,
+            datetime_start=start,
+            datetime_complete=complete,
+            params={},
+            distributions={},
+            user_attrs={},
+            system_attrs={},
+            intermediate_values={},
+        )
+    )
+    return study
+
+
 def test_get_timeline_info_empty() -> None:
     study = optuna.create_study()
     info = _get_timeline_info(study)
@@ -38,7 +62,7 @@ def test_get_timeline_info() -> None:
     states = [TrialState.COMPLETE, TrialState.RUNNING, TrialState.WAITING]
     study = _create_study(states)
     info = _get_timeline_info(study)
-    assert len(info.bars) == 3
+    assert len(info.bars) == len(study.get_trials())
     for bar, trial in zip(info.bars, study.get_trials()):
         assert bar.number == trial.number
         assert bar.state == trial.state
@@ -48,37 +72,26 @@ def test_get_timeline_info() -> None:
         assert bar.start <= bar.end
 
 
-def test_get_timeline_info_reverse() -> None:
-    start = datetime.datetime.now()
-    complete = start - datetime.timedelta(seconds=1.0)
-    frozentrial = optuna.trial.FrozenTrial(
-        number=-1,
-        trial_id=-1,
-        state=TrialState.COMPLETE,
-        value=0.0,
-        values=None,
-        datetime_start=start,
-        datetime_complete=complete,
-        params={},
-        distributions={},
-        user_attrs={},
-        system_attrs={},
-        intermediate_values={},
-    )
-    study = optuna.create_study()
-    study.add_trial(frozentrial)
+def test_get_timeline_info_negative_elapsed_time(capsys: _pytest.capture.CaptureFixture) -> None:
+    # We need to reconstruct our default handler to properly capture stderr.
+    optuna.logging._reset_library_root_logger()
+    optuna.logging.enable_default_handler()
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+    study = _create_study_negative_elapsed_time()
     info = _get_timeline_info(study)
-    assert len(info.bars) == 1
+
+    _, err = capsys.readouterr()
+    assert err != ""
+
+    assert len(info.bars) == len(study.get_trials())
     for bar, trial in zip(info.bars, study.get_trials()):
         assert bar.number == trial.number
         assert bar.state == trial.state
         assert type(bar.hovertext) is str
         assert isinstance(bar.start, datetime.datetime)
         assert isinstance(bar.end, datetime.datetime)
-        # assert bar.start <= bar.end
-    fig = plot_timeline(study)
-    assert type(fig) is go.Figure
-    fig.write_image(BytesIO())
+        assert bar.end < bar.start
 
 
 @pytest.mark.parametrize(
@@ -91,6 +104,13 @@ def test_get_timeline_info_reverse() -> None:
 )
 def test_get_timeline_plot(trial_states_list: list[TrialState]) -> None:
     study = _create_study(trial_states_list)
+    fig = plot_timeline(study)
+    assert type(fig) is go.Figure
+    fig.write_image(BytesIO())
+
+
+def test_get_timeline_plot_negative_elapsed_time() -> None:
+    study = _create_study_negative_elapsed_time()
     fig = plot_timeline(study)
     assert type(fig) is go.Figure
     fig.write_image(BytesIO())
