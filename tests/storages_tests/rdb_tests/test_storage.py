@@ -332,6 +332,6 @@ def test_record_heartbeat() -> None:
             datetime_start = trials[i + 1].datetime_start
             prev_datetime_complete = trials[i].datetime_complete
             assert datetime_start is not None and prev_datetime_complete is not None
-            trial_prep = (datetime_start - prev_datetime_complete).seconds
-            heartbeats_interval = (trial_heartbeats[i + 1] - trial_heartbeats[i]).seconds
+            trial_prep = (datetime_start - prev_datetime_complete).total_seconds()
+            heartbeats_interval = (trial_heartbeats[i + 1] - trial_heartbeats[i]).total_seconds()
             assert heartbeats_interval - sleep_sec - trial_prep <= 1
