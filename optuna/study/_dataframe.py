@@ -8,6 +8,7 @@ from typing import Tuple
 
 import optuna
 from optuna._imports import try_import
+from optuna.study.study import METRIC_NAMES
 from optuna.trial._state import TrialState
 
 
@@ -40,7 +41,7 @@ def _create_records_and_aggregate_column(
     column_agg: DefaultDict[str, Set] = collections.defaultdict(set)
     non_nested_attr = ""
 
-    metric_names = study._storage.get_study_system_attrs(study._study_id).get("metric_names")
+    metric_names = study._storage.get_study_system_attrs(study._study_id).get(METRIC_NAMES)
 
     records = []
     for trial in study.get_trials(deepcopy=False):

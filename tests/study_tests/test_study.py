@@ -31,6 +31,7 @@ from optuna import Trial
 from optuna import TrialPruned
 from optuna.exceptions import DuplicatedStudyError
 from optuna.study import StudyDirection
+from optuna.study.study import METRIC_NAMES
 from optuna.testing.objectives import fail_objective
 from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
@@ -1546,6 +1547,6 @@ def test_set_metric_names() -> None:
     study = create_study(directions=["minimize", "minimize"])
     study.set_metric_names(metric_names)
 
-    got_metric_names = study._storage.get_study_system_attrs(study._study_id).get("metric_names")
+    got_metric_names = study._storage.get_study_system_attrs(study._study_id).get(METRIC_NAMES)
     assert got_metric_names is not None
     assert metric_names == got_metric_names

@@ -48,6 +48,7 @@ if TYPE_CHECKING:
 
 
 ObjectiveFuncType = Callable[[trial_module.Trial], Union[float, Sequence[float]]]
+METRIC_NAMES = "study:metric_names"
 
 
 _logger = logging.get_logger(__name__)
@@ -733,8 +734,9 @@ class Study:
             replaced with ``values``.
 
         Note:
-            If ``metric_names`` is set, the ``value`` or ``values`` is implicitly replaced with
-            the dictionary with the objective name as key and the objective value as value.
+            If :meth:`~optuna.study.Study.set_metric_names` is called, the ``value`` or ``values``
+            is implicitly replaced with the dictionary with the objective name as key and the
+            objective value as value.
         """
         return _dataframe._trials_dataframe(self, attrs, multi_index)
 
@@ -952,8 +954,9 @@ class Study:
     def set_metric_names(self, metric_names: List[str]) -> None:
         """Set metric names.
 
-        Each dimension of the objective function is named for each element of the
-        `metric_names` argument.
+        This method names each dimension of the returned values of the objective function.
+        It is particularly useful in multi-objective optimization. The metric names are
+        mainly referenced by the visualization functions.
 
         Example:
 
@@ -988,7 +991,7 @@ class Study:
                 "The number of objectives must match thhe length of the metric names."
             )
 
-        self._storage.set_study_system_attr(self._study_id, "metric_names", metric_names)
+        self._storage.set_study_system_attr(self._study_id, METRIC_NAMES, metric_names)
 
     def _is_multi_objective(self) -> bool:
         """Return :obj:`True` if the study has multiple objectives.

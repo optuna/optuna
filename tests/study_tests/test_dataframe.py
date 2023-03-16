@@ -1,6 +1,4 @@
-from typing import List
-from typing import Optional
-from typing import Tuple
+from __future__ import annotations
 
 import pandas as pd
 import pytest
@@ -50,7 +48,7 @@ def test_study_trials_dataframe_with_no_trials() -> None:
     ],
 )
 @pytest.mark.parametrize("multi_index", [True, False])
-def test_trials_dataframe(storage_mode: str, attrs: Tuple[str, ...], multi_index: bool) -> None:
+def test_trials_dataframe(storage_mode: str, attrs: tuple[str, ...], multi_index: bool) -> None:
     def f(trial: Trial) -> float:
         x = trial.suggest_int("x", 1, 1)
         y = trial.suggest_categorical("y", (2.5,))
@@ -163,9 +161,9 @@ def test_trials_dataframe_with_failure(storage_mode: str) -> None:
 @pytest.mark.parametrize("multi_index", [True, False])
 @pytest.mark.parametrize("metric_names", [None, ["v0", "v1"]])
 def test_trials_dataframe_with_multi_objective_optimization(
-    attrs: Tuple[str, ...], multi_index: bool, metric_names: Optional[List[str]]
+    attrs: tuple[str, ...], multi_index: bool, metric_names: list[str] | None
 ) -> None:
-    def f(trial: Trial) -> Tuple[float, float]:
+    def f(trial: Trial) -> tuple[float, float]:
         x = trial.suggest_float("x", 1, 1)
         y = trial.suggest_float("y", 2, 2)
 
@@ -205,7 +203,7 @@ def test_trials_dataframe_with_multi_objective_optimization(
 @pytest.mark.parametrize("multi_index", [True, False])
 @pytest.mark.parametrize("metric_names", [None, ["v0", "v1"]])
 def test_trials_dataframe_with_multi_objective_optimization_with_fail_and_pruned(
-    attrs: Tuple[str, ...], multi_index: bool, metric_names: Optional[List[str]]
+    attrs: tuple[str, ...], multi_index: bool, metric_names: list[str] | None
 ) -> None:
     study = create_study(directions=["minimize", "maximize"])
     if metric_names is not None:
