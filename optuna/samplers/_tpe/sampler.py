@@ -621,7 +621,7 @@ def _get_observation_pairs(
     scores = []
     values: Dict[str, List[Optional[float]]] = {param_name: [] for param_name in param_names}
     violations: Optional[List[float]] = [] if constraints_enabled else None
-    for trial in study._get_trials(deepcopy=False, states=states, use_cache=True):
+    for trial in study._get_trials(deepcopy=False, states=states, use_cache=not constant_liar):
         # We extract score from the trial.
         if trial.state is TrialState.COMPLETE:
             if trial.values is None:
