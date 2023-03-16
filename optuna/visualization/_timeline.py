@@ -41,6 +41,8 @@ def plot_timeline(study: Study) -> "go.Figure":
 
         .. plotly::
 
+            import time
+
             import optuna
 
 
