@@ -1,10 +1,10 @@
 name: Visual regression tests with Netlify
 
 on:
-  push:
-    branches:
-      - master
-  pull_request: {}
+  pull_request:
+    paths:
+      - 'optuna/visualization/**'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
