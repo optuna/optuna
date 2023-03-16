@@ -78,13 +78,19 @@ def plot_timeline(study: Study) -> "go.Figure":
 def _get_timeline_info(study: Study) -> _TimelineInfo:
     bars = []
     for t in study.get_trials():
-        date_end = t.datetime_complete or datetime.datetime.now()
-        date_start = t.datetime_start or date_end
+        date_complete = t.datetime_complete or datetime.datetime.now()
+        date_start = t.datetime_start or date_complete
+        if date_complete < date_start:
+            _logger.warning(
+                "In your study, trial "
+                + str(t.number)
+                + " has datetime_start later than datetime_complete."
+            )
         bars.append(
             _TimelineBarInfo(
                 number=t.number,
                 start=date_start,
-                end=date_end,
+                end=date_complete,
                 state=t.state,
                 hovertext=_make_hovertext(t),
             )
