@@ -63,9 +63,9 @@ def test_init_cmaes_opts(
         assert cma_class.call_count == 1
 
         _, actual_kwargs = cma_class.call_args
-        assert np.array_equal(actual_kwargs["mean"], np.array([0, 0]))
+        assert np.array_equal(actual_kwargs["mean"], np.array([0.5, 0.5]))
         assert actual_kwargs["sigma"] == 0.1
-        assert np.allclose(actual_kwargs["bounds"], np.array([(-1, 1), (-1, 1)]))
+        assert np.allclose(actual_kwargs["bounds"], np.array([(0, 1), (0, 1)]))
         assert actual_kwargs["seed"] == np.random.RandomState(1).randint(1, 2**32)
         assert actual_kwargs["n_max_resampling"] == 10 * 2
         assert actual_kwargs["population_size"] == popsize
@@ -96,9 +96,9 @@ def test_init_cmaes_opts_with_margin(popsize: Optional[int]) -> None:
         assert cma_class.call_count == 1
 
         _, actual_kwargs = cma_class.call_args
-        assert np.array_equal(actual_kwargs["mean"], np.array([0, 0]))
+        assert np.array_equal(actual_kwargs["mean"], np.array([0.5, 0.5]))
         assert actual_kwargs["sigma"] == 0.1
-        assert np.allclose(actual_kwargs["bounds"], np.array([(-1, 1), (-1, 1)]))
+        assert np.allclose(actual_kwargs["bounds"], np.array([(0, 1), (0, 1)]))
         assert np.allclose(actual_kwargs["steps"], np.array([0.0, 1.0]))
         assert actual_kwargs["seed"] == np.random.RandomState(1).randint(1, 2**32)
         assert actual_kwargs["n_max_resampling"] == 10 * 2
