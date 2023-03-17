@@ -76,7 +76,7 @@ class IntersectionSearchSpace:
         if self._include_pruned:
             states_of_interest.append(optuna.trial.TrialState.PRUNED)
 
-        trials = study._get_trials(deepcopy=False, states=states_of_interest, use_cache=True)
+        trials = study._get_trials(deepcopy=False, states=states_of_interest, use_cache=False)
 
         next_cursor = trials[-1].number + 1 if len(trials) > 0 else -1
         for trial in reversed(trials):
