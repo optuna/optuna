@@ -41,6 +41,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
 
+    # TODO(Shinichi): Remove the version constraint on PyTorch Lightning
     - name: Install
       run: |
         python -m pip install --upgrade pip
@@ -51,6 +52,7 @@ jobs:
         optuna --version
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
+        pip install "pytorch-lightning<2.0.0"
 
     - name: Output installed packages
       run: |
@@ -97,6 +99,7 @@ jobs:
         brew install open-mpi
         brew install openblas
 
+    # TODO(Shinichi): Remove the version constraint on PyTorch Lightning
     - name: Install
       run: |
         python -m pip install --upgrade pip
@@ -109,6 +112,7 @@ jobs:
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
         pip install --progress-bar off .[integration]
+        pip install "pytorch-lightning<2.0.0"
 
     - name: Output installed packages
       run: |
