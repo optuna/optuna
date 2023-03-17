@@ -314,7 +314,7 @@ class NSGAIIISampler(BaseSampler):
                 )
 
                 target_population_size = self._population_size - elite_population_num
-                additional_elite_population = _niching(
+                additional_elite_population = _preserve_niche_individuals(
                     target_population_size,
                     population,
                     nearest_points_count_to_reference_point,
@@ -500,7 +500,7 @@ def _associate_individuals_with_reference_points(
     return nearest_points_count_to_reference_point, reference_point_to_population
 
 
-def _niching(
+def _preserve_niche_individuals(
     target_population_size: int,
     population: List[FrozenTrial],
     nearest_points_count_to_reference_point: Dict[int, List[int]],

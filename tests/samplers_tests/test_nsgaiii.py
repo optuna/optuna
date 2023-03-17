@@ -23,8 +23,8 @@ from optuna.samplers.nsgaii import UNDXCrossover
 from optuna.samplers.nsgaii import UniformCrossover
 from optuna.samplers.nsgaii import VSBXCrossover
 from optuna.samplers.nsgaiii import _associate_individuals_with_reference_points
-from optuna.samplers.nsgaiii import _niching
 from optuna.samplers.nsgaiii import _POPULATION_CACHE_KEY_PREFIX
+from optuna.samplers.nsgaiii import _preserve_niche_individuals
 from optuna.samplers.nsgaiii import generate_default_reference_point
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
@@ -397,7 +397,7 @@ def test_niching() -> None:
     )
     actual_additional_elite_population = [
         trial.values
-        for trial in _niching(
+        for trial in _preserve_niche_individuals(
             target_population_size,
             population,
             nearest_points_count_to_reference_point,
