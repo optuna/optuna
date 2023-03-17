@@ -32,8 +32,6 @@ _BatchedDistributions = Union[
     _BatchedDiscreteTruncNormDistributions,
 ]
 
-EPS = 1e-12
-
 
 class _MixtureOfProductDistribution(NamedTuple):
     weights: np.ndarray
