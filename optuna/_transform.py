@@ -68,9 +68,7 @@ class _SearchSpaceTransform:
         transform_0_1: bool = False,
     ) -> None:
         bounds, column_to_encoded_columns, encoded_column_to_column = _transform_search_space(
-            search_space,
-            transform_log,
-            transform_step,
+            search_space, transform_log, transform_step
         )
         self._raw_bounds = bounds
         self._column_to_encoded_columns = column_to_encoded_columns
@@ -126,9 +124,9 @@ class _SearchSpaceTransform:
         if self._transform_0_1:
             single_mask = self._raw_bounds[:, 0] == self._raw_bounds[:, 1]
             trans_params[single_mask] = 0.5
-            trans_params[~single_mask] = (trans_params[~single_mask] - self._raw_bounds[:, 0]) / (
-                self._raw_bounds[:, 1] - self._raw_bounds[:, 0]
-            )
+            trans_params[~single_mask] = (
+                trans_params[~single_mask] - self._raw_bounds[~single_mask, 0]
+            ) / (self._raw_bounds[~single_mask, 1] - self._raw_bounds[~single_mask, 0])
 
         return trans_params
 
