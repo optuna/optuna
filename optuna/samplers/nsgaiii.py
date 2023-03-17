@@ -449,7 +449,7 @@ def _normalize_objective_values(
     # Note that extreme_points can be degenerate, but no proper operation is remarked in the
     # paper. Therefore, the maximum of elite population in each axis is used in the case.
     if np.linalg.matrix_rank(extreme_points) < len(extreme_points):
-        intercepts_inv = 1 / np.max(objective_matrix[:, :], axis=0)
+        intercepts_inv = 1 / np.max(objective_matrix, axis=0)
     else:
         intercepts_inv = np.linalg.solve(extreme_points, np.ones(n_objectives))
     objective_matrix *= intercepts_inv
