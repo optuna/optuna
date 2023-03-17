@@ -20,7 +20,7 @@ _logger = get_logger(__name__)
 class _TimelineBarInfo(NamedTuple):
     number: int
     start: datetime.datetime
-    end: datetime.datetime
+    complete: datetime.datetime
     state: TrialState
     hovertext: str
 
@@ -84,15 +84,16 @@ def _get_timeline_info(study: Study) -> _TimelineInfo:
         date_start = t.datetime_start or date_complete
         if date_complete < date_start:
             _logger.warning(
-                "In your study, trial "
-                + str(t.number)
-                + " has datetime_start later than datetime_complete."
+                (
+                    f"The start and end times for Trial {t.number} seem to be reversed. "
+                    f"The start time is {date_start} and the end time is {date_complete}."
+                )
             )
         bars.append(
             _TimelineBarInfo(
                 number=t.number,
                 start=date_start,
-                end=date_complete,
+                complete=date_complete,
                 state=t.state,
                 hovertext=_make_hovertext(t),
             )
@@ -121,7 +122,7 @@ def _get_timeline_plot(info: _TimelineInfo) -> "go.Figure":
         fig.add_trace(
             go.Bar(
                 name=s.name,
-                x=[(b.end - b.start).total_seconds() * 1000 for b in bars],
+                x=[(b.complete - b.start).total_seconds() * 1000 for b in bars],
                 y=[b.number for b in bars],
                 base=[b.start.isoformat() for b in bars],
                 text=[b.hovertext for b in bars],
