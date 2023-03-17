@@ -329,8 +329,8 @@ def test_sampler_attr_key(options: Dict[str, bool], key: str) -> None:
         with_margin=options["with_margin"], use_separable_cma=options["use_separable_cma"]
     )
     assert sampler._attr_keys.optimizer.startswith(key)
-    assert sampler._attr_keys.popsize.startswith(key)
-    assert sampler._attr_keys.n_restarts.startswith(key)
+    assert sampler._attr_keys.popsize().startswith(key)
+    assert sampler._attr_keys.n_restarts().startswith(key)
     assert sampler._attr_keys.n_restarts_with_large.startswith(key)
     assert sampler._attr_keys.poptype.startswith(key)
     assert sampler._attr_keys.small_n_eval.startswith(key)

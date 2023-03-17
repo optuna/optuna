@@ -47,13 +47,13 @@ _SYSTEM_ATTR_MAX_LENGTH = 2045
 
 class _CmaEsAttrKeys(NamedTuple):
     optimizer: str
-    popsize: str
-    n_restarts: str
+    generation: Callable[[int], str]
+    popsize: Callable[[], str]
+    n_restarts: Callable[[], str]
     n_restarts_with_large: str
     poptype: str
     small_n_eval: str
     large_n_eval: str
-    generation: Callable[[int], str]
 
 
 class CmaEsSampler(BaseSampler):
@@ -394,7 +394,8 @@ class CmaEsSampler(BaseSampler):
         large_n_eval: int = 0
         if len(completed_trials) != 0:
             latest_trial = completed_trials[-1]
-            n_restarts = latest_trial.system_attrs.get(self._attr_keys.n_restarts, 0)
+            n_restarts_attr_key = self._attr_keys.n_restarts()
+            n_restarts = latest_trial.system_attrs.get(n_restarts_attr_key, 0)
             n_restarts_with_large = latest_trial.system_attrs.get(
                 self._attr_keys.n_restarts_with_large, 0
             )
@@ -485,12 +486,12 @@ class CmaEsSampler(BaseSampler):
         study._storage.set_trial_system_attr(
             trial._trial_id, generation_attr_key, optimizer.generation
         )
+        popsize_attr_key = self._attr_keys.popsize()
         study._storage.set_trial_system_attr(
-            trial._trial_id, self._attr_keys.popsize, optimizer.population_size
+            trial._trial_id, popsize_attr_key, optimizer.population_size
         )
-        study._storage.set_trial_system_attr(
-            trial._trial_id, self._attr_keys.n_restarts, n_restarts
-        )
+        n_restarts_attr_key = self._attr_keys.n_restarts()
+        study._storage.set_trial_system_attr(trial._trial_id, n_restarts_attr_key, n_restarts)
         study._storage.set_trial_system_attr(
             trial._trial_id, self._attr_keys.n_restarts_with_large, n_restarts_with_large
         )
@@ -521,15 +522,27 @@ class CmaEsSampler(BaseSampler):
             else:
                 return attr_prefix + "restart_{}:generation".format(restart)
 
+        def popsize_attr_key_template() -> str:
+            if self._restart_strategy is None:
+                return attr_prefix + "popsize"
+            else:
+                return attr_prefix + "{}:popsize".format(self._restart_strategy)
+
+        def n_restarts_attr_key_template() -> str:
+            if self._restart_strategy is None:
+                return attr_prefix + "n_restarts"
+            else:
+                return attr_prefix + "{}:n_restarts".format(self._restart_strategy)
+
         return _CmaEsAttrKeys(
             attr_prefix + "optimizer",
-            attr_prefix + "popsize",
-            attr_prefix + "n_restarts",
+            generation_attr_key_template,
+            popsize_attr_key_template,
+            n_restarts_attr_key_template,
             attr_prefix + "n_restarts_with_large",
             attr_prefix + "poptype",
             attr_prefix + "small_n_eval",
             attr_prefix + "large_n_eval",
-            generation_attr_key_template,
         )
 
     def _concat_optimizer_attrs(self, optimizer_attrs: Dict[str, str]) -> str:
