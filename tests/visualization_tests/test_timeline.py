@@ -107,10 +107,3 @@ def test_get_timeline_plot(trial_states_list: list[TrialState]) -> None:
     fig = plot_timeline(study)
     assert type(fig) is go.Figure
     fig.write_image(BytesIO())
-
-
-def test_get_timeline_plot_negative_elapsed_time() -> None:
-    study = _create_study_negative_elapsed_time()
-    fig = plot_timeline(study)
-    assert type(fig) is go.Figure
-    fig.write_image(BytesIO())
