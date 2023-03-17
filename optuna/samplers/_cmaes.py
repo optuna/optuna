@@ -25,6 +25,7 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.samplers import BaseSampler
+from optuna.search_space import IntersectionSearchSpace
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -132,7 +133,7 @@ class CmaEsSampler(BaseSampler):
             sampling. The parameters not contained in the relative search space are sampled
             by this sampler.
             The search space for :class:`~optuna.samplers.CmaEsSampler` is determined by
-            :func:`~optuna.samplers.intersection_search_space()`.
+            :func:`~optuna.search_space.intersection_search_space()`.
 
             If :obj:`None` is specified, :class:`~optuna.samplers.RandomSampler` is used
             as the default.
@@ -242,7 +243,7 @@ class CmaEsSampler(BaseSampler):
         self._n_startup_trials = n_startup_trials
         self._warn_independent_sampling = warn_independent_sampling
         self._cma_rng = np.random.RandomState(seed)
-        self._search_space = optuna.samplers.IntersectionSearchSpace()
+        self._search_space = IntersectionSearchSpace()
         self._consider_pruned_trials = consider_pruned_trials
         self._restart_strategy = restart_strategy
         self._popsize = popsize
@@ -395,7 +396,7 @@ class CmaEsSampler(BaseSampler):
             for t in solution_trials[: optimizer.population_size]:
                 assert t.value is not None, "completed trials must have a value"
                 if isinstance(optimizer, cmaes.CMAwM):
-                    x = t.system_attrs["x_for_tell"]
+                    x = np.array(t.system_attrs["x_for_tell"])
                 else:
                     x = trans.transform(t.params)
                 y = t.value if study.direction == StudyDirection.MINIMIZE else -t.value
@@ -421,7 +422,9 @@ class CmaEsSampler(BaseSampler):
         optimizer._rng.seed(seed)
         if isinstance(optimizer, cmaes.CMAwM):
             params, x_for_tell = optimizer.ask()
-            study._storage.set_trial_system_attr(trial._trial_id, "x_for_tell", x_for_tell)
+            study._storage.set_trial_system_attr(
+                trial._trial_id, "x_for_tell", x_for_tell.tolist()
+            )
         else:
             params = optimizer.ask()
 
