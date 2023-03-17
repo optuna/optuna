@@ -68,8 +68,8 @@ def test_get_timeline_info() -> None:
         assert bar.state == trial.state
         assert type(bar.hovertext) is str
         assert isinstance(bar.start, datetime.datetime)
-        assert isinstance(bar.end, datetime.datetime)
-        assert bar.start <= bar.end
+        assert isinstance(bar.complete, datetime.datetime)
+        assert bar.start <= bar.complete
 
 
 def test_get_timeline_info_negative_elapsed_time(capsys: _pytest.capture.CaptureFixture) -> None:
@@ -90,8 +90,8 @@ def test_get_timeline_info_negative_elapsed_time(capsys: _pytest.capture.Capture
         assert bar.state == trial.state
         assert type(bar.hovertext) is str
         assert isinstance(bar.start, datetime.datetime)
-        assert isinstance(bar.end, datetime.datetime)
-        assert bar.end < bar.start
+        assert isinstance(bar.complete, datetime.datetime)
+        assert bar.complete < bar.start
 
 
 @pytest.mark.parametrize(
