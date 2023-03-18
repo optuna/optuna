@@ -1,9 +1,8 @@
+from __future__ import annotations
+
 from io import BytesIO
 from typing import Any
 from typing import Callable
-from typing import List
-from typing import Optional
-from typing import Tuple
 
 import pytest
 
@@ -79,7 +78,7 @@ def test_plot_param_importances_customized_target_name(
 def test_plot_param_importances(
     plot_param_importances: Callable[..., Any],
     specific_create_study: Callable[[], Study],
-    params: Optional[List[str]],
+    params: list[str] | None,
 ) -> None:
     study = specific_create_study()
     figure = plot_param_importances(study, params=params)
@@ -102,7 +101,7 @@ def test_plot_param_importances(
     ],
 )
 def test_get_param_importances_info_empty(
-    specific_create_study: Callable[[], Study], params: Optional[List[str]]
+    specific_create_study: Callable[[], Study], params: list[str] | None
 ) -> None:
     study = specific_create_study()
     info = _get_importances_info(
@@ -190,7 +189,7 @@ def test_get_info_importances_nonfinite_removed(
 def test_multi_objective_trial_with_infinite_value_ignored(
     target_idx: int, inf_value: float, evaluator: BaseImportanceEvaluator, n_trial: int
 ) -> None:
-    def _multi_objective_function(trial: Trial) -> Tuple[float, float]:
+    def _multi_objective_function(trial: Trial) -> tuple[float, float]:
         x1 = trial.suggest_float("x1", 0.1, 3)
         x2 = trial.suggest_float("x2", 0.1, 3, log=True)
         x3 = trial.suggest_float("x3", 2, 4, log=True)

@@ -1,10 +1,9 @@
+from __future__ import annotations
+
 from io import BytesIO
 import math
 from typing import Any
 from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
 
 import numpy as np
 import pytest
@@ -42,7 +41,7 @@ def _create_study_with_failed_trial() -> Study:
 
 def _create_study_with_categorical_params() -> Study:
     study_categorical_params = create_study()
-    distributions: Dict[str, BaseDistribution] = {
+    distributions: dict[str, BaseDistribution] = {
         "category_a": CategoricalDistribution(("preferred", "opt")),
         "category_b": CategoricalDistribution(("net", "una")),
     }
@@ -65,7 +64,7 @@ def _create_study_with_categorical_params() -> Study:
 
 def _create_study_with_numeric_categorical_params() -> Study:
     study_categorical_params = create_study()
-    distributions: Dict[str, BaseDistribution] = {
+    distributions: dict[str, BaseDistribution] = {
         "category_a": CategoricalDistribution((1, 2)),
         "category_b": CategoricalDistribution((10, 20, 30)),
     }
@@ -95,7 +94,7 @@ def _create_study_with_numeric_categorical_params() -> Study:
 
 def _create_study_with_log_params() -> Study:
     study_log_params = create_study()
-    distributions: Dict[str, BaseDistribution] = {
+    distributions: dict[str, BaseDistribution] = {
         "param_a": FloatDistribution(1e-7, 1e-2, log=True),
         "param_b": FloatDistribution(1, 1000, log=True),
     }
@@ -125,7 +124,7 @@ def _create_study_with_log_params() -> Study:
 
 def _create_study_with_log_scale_and_str_and_numeric_category() -> Study:
     study_multi_distro_params = create_study()
-    distributions: Dict[str, BaseDistribution] = {
+    distributions: dict[str, BaseDistribution] = {
         "param_a": CategoricalDistribution(("preferred", "opt")),
         "param_b": CategoricalDistribution((1, 2, 10)),
         "param_c": FloatDistribution(1, 1000, log=True),
@@ -198,7 +197,7 @@ def test_plot_parallel_coordinate_customized_target_name() -> None:
 def test_plot_parallel_coordinate(
     plot_parallel_coordinate: Callable[..., Any],
     specific_create_study: Callable[[], Study],
-    params: Optional[List[str]],
+    params: list[str] | None,
 ) -> None:
     study = specific_create_study()
     figure = plot_parallel_coordinate(study, params=params)
@@ -523,7 +522,7 @@ def test_get_parallel_coordinate_info_unique_param() -> None:
     # Test case when one unique value is suggested during the optimization.
 
     study_categorical_params = create_study()
-    distributions: Dict[str, BaseDistribution] = {
+    distributions: dict[str, BaseDistribution] = {
         "category_a": CategoricalDistribution(("preferred", "opt")),
         "param_b": FloatDistribution(1, 1000, log=True),
     }
