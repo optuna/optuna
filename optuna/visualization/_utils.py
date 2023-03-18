@@ -1,12 +1,10 @@
+from __future__ import annotations
+
 import json
 from typing import Any
 from typing import Callable
 from typing import cast
-from typing import List
-from typing import Optional
 from typing import Sequence
-from typing import Set
-from typing import Union
 import warnings
 
 import numpy as np
@@ -49,8 +47,8 @@ if is_available():
 
 
 def _check_plot_args(
-    study: Union[Study, Sequence[Study]],
-    target: Optional[Callable[[FrozenTrial], float]],
+    study: Study | Sequence[Study],
+    target: Callable[[FrozenTrial], float] | None,
     target_name: str,
 ) -> None:
     studies: Sequence[Study]
@@ -71,7 +69,7 @@ def _check_plot_args(
         )
 
 
-def _is_log_scale(trials: List[FrozenTrial], param: str) -> bool:
+def _is_log_scale(trials: list[FrozenTrial], param: str) -> bool:
     for trial in trials:
         if param in trial.params:
             dist = trial.distributions[param]
@@ -83,7 +81,7 @@ def _is_log_scale(trials: List[FrozenTrial], param: str) -> bool:
     return False
 
 
-def _is_categorical(trials: List[FrozenTrial], param: str) -> bool:
+def _is_categorical(trials: list[FrozenTrial], param: str) -> bool:
     return any(
         isinstance(t.distributions[param], CategoricalDistribution)
         for t in trials
@@ -91,7 +89,7 @@ def _is_categorical(trials: List[FrozenTrial], param: str) -> bool:
     )
 
 
-def _is_numerical(trials: List[FrozenTrial], param: str) -> bool:
+def _is_numerical(trials: list[FrozenTrial], param: str) -> bool:
     return all(
         (isinstance(t.params[param], int) or isinstance(t.params[param], float))
         and not isinstance(t.params[param], bool)
@@ -100,7 +98,7 @@ def _is_numerical(trials: List[FrozenTrial], param: str) -> bool:
     )
 
 
-def _get_param_values(trials: List[FrozenTrial], p_name: str) -> List[Any]:
+def _get_param_values(trials: list[FrozenTrial], p_name: str) -> list[Any]:
     values = [t.params[p_name] for t in trials if p_name in t.params]
     if _is_numerical(trials, p_name):
         return values
@@ -108,8 +106,8 @@ def _get_param_values(trials: List[FrozenTrial], p_name: str) -> List[Any]:
 
 
 def _get_skipped_trial_numbers(
-    trials: List[FrozenTrial], used_param_names: Sequence[str]
-) -> Set[int]:
+    trials: list[FrozenTrial], used_param_names: Sequence[str]
+) -> set[int]:
     """Utility function for ``plot_parallel_coordinate``.
 
     If trial's parameters do not contain a parameter in ``used_param_names``,
@@ -135,10 +133,10 @@ def _get_skipped_trial_numbers(
 
 
 def _filter_nonfinite(
-    trials: List[FrozenTrial],
-    target: Optional[Callable[[FrozenTrial], float]] = None,
+    trials: list[FrozenTrial],
+    target: Callable[[FrozenTrial], float] | None = None,
     with_message: bool = True,
-) -> List[FrozenTrial]:
+) -> list[FrozenTrial]:
     # For multi-objective optimization target must be specified to select
     # one of objective values to filter trials by (and plot by later on).
     # This function is not raising when target is missing, since we're
@@ -150,7 +148,7 @@ def _filter_nonfinite(
 
         target = _target
 
-    filtered_trials: List[FrozenTrial] = []
+    filtered_trials: list[FrozenTrial] = []
     for trial in trials:
         value = target(trial)
 
@@ -178,7 +176,7 @@ def _filter_nonfinite(
     return filtered_trials
 
 
-def _is_reverse_scale(study: Study, target: Optional[Callable[[FrozenTrial], float]]) -> bool:
+def _is_reverse_scale(study: Study, target: Callable[[FrozenTrial], float] | None) -> bool:
     return target is not None or study.direction == StudyDirection.MINIMIZE
 
 
