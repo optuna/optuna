@@ -6,6 +6,7 @@ from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import TypeVar
 import warnings
+from __future__ import annotations 
 
 
 if TYPE_CHECKING:
