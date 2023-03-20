@@ -207,10 +207,10 @@ def rvs(
     b: np.ndarray,
     loc: Union[np.ndarray, float] = 0,
     scale: Union[np.ndarray, float] = 1,
-    size: int = 1,
     random_state: Optional[np.random.RandomState] = None,
 ) -> np.ndarray:
     random_state = random_state or np.random.RandomState()
+    size = np.broadcast(a, b, loc, scale).shape
     percentiles = random_state.uniform(low=0, high=1, size=size)
     return ppf(percentiles, a, b) * scale + loc
 
