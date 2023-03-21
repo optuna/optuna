@@ -1,3 +1,4 @@
+from __future__ import annotations
 from functools import wraps
 from inspect import signature
 from typing import Any
@@ -6,7 +7,7 @@ from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import TypeVar
 import warnings
-from __future__ import annotations 
+
 
 
 if TYPE_CHECKING:
