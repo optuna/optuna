@@ -91,23 +91,23 @@ def _get_timeline_plot(info: _TimelineInfo) -> "Axes":
     ax.set_ylabel("Trial")
 
     ax.barh(
-        y=[t.number for t in info.bars],
-        width=[t.complete - t.start for t in info.bars],
-        left=[t.start for t in info.bars],
-        color=[_cm[t.state] for t in info.bars],
+        y=[b.number for b in info.bars],
+        width=[b.complete - b.start for b in info.bars],
+        left=[b.start for b in info.bars],
+        color=[_cm[b.state] for b in info.bars],
     )
 
     # There are 5 types of TrialState in total.
     # However, the legend depicts only types present in the arguments.
     legend_handles = []
-    for k, v in _cm.items():
-        if len([t for t in info.bars if t.state == k]) > 0:
-            legend_handles.append(patches.Patch(color=v, label=k.name))
+    for state, color in _cm.items():
+        if len([b for b in info.bars if b.state == state]) > 0:
+            legend_handles.append(patches.Patch(color=color, label=state.name))
     ax.legend(handles=legend_handles, loc="lower right")
 
     if len(info.bars) > 0:
-        start_time = min([t.start for t in info.bars])
-        complete_time = max([t.complete for t in info.bars])
+        start_time = min([b.start for b in info.bars])
+        complete_time = max([b.complete for b in info.bars])
         margin = (complete_time - start_time) * 0.05
     else:
         start_time = complete_time = datetime.datetime.now()
