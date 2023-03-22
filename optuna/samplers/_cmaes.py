@@ -396,6 +396,10 @@ class CmaEsSampler(BaseSampler):
         large_n_eval: int = 0
         if len(completed_trials) != 0:
             latest_trial = completed_trials[-1]
+            popsize_attr_key = self._attr_keys.popsize()
+            optimizer.population_size = latest_trial.system_attrs.get(
+                popsize_attr_key, self._initial_popsize
+            )
             n_restarts_attr_key = self._attr_keys.n_restarts()
             n_restarts = latest_trial.system_attrs.get(n_restarts_attr_key, 0)
             n_restarts_with_large = latest_trial.system_attrs.get(
