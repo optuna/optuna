@@ -385,7 +385,7 @@ class CmaEsSampler(BaseSampler):
             optimizer = self._init_optimizer(
                 trans, study.direction, population_size=self._initial_popsize
             )
-        # When `self._initial_popsize=None`, the initial popsize is computed inside the `cmaes` package.
+        # When `self._initial_popsize=None`, it is computed inside the `cmaes` package.
         if self._initial_popsize is None:
             self._initial_popsize = optimizer.population_size
 
