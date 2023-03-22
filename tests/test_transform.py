@@ -71,6 +71,7 @@ def test_search_space_transform_encoding() -> None:
 
 @pytest.mark.parametrize("transform_log", [True, False])
 @pytest.mark.parametrize("transform_step", [True, False])
+@pytest.mark.parametrize("transform_0_1", [True, False])
 @pytest.mark.parametrize(
     "param,distribution",
     [
@@ -91,30 +92,39 @@ def test_search_space_transform_encoding() -> None:
 def test_search_space_transform_numerical(
     transform_log: bool,
     transform_step: bool,
+    transform_0_1: bool,
     param: Any,
     distribution: BaseDistribution,
 ) -> None:
-    trans = _SearchSpaceTransform({"x0": distribution}, transform_log, transform_step)
+    trans = _SearchSpaceTransform(
+        {"x0": distribution},
+        transform_log=transform_log,
+        transform_step=transform_step,
+        transform_0_1=transform_0_1,
+    )
 
-    expected_low = distribution.low  # type: ignore
-    expected_high = distribution.high  # type: ignore
-
-    if isinstance(distribution, FloatDistribution):
-        if transform_log and distribution.log:
-            expected_low = math.log(expected_low)
-            expected_high = math.log(expected_high)
-        if transform_step and distribution.step is not None:
-            half_step = 0.5 * distribution.step
-            expected_low -= half_step
-            expected_high += half_step
-    elif isinstance(distribution, IntDistribution):
-        if transform_step:
-            half_step = 0.5 * distribution.step
-            expected_low -= half_step
-            expected_high += half_step
-        if distribution.log and transform_log:
-            expected_low = math.log(expected_low)
-            expected_high = math.log(expected_high)
+    if transform_0_1:
+        expected_low = 0.0
+        expected_high = 1.0
+    else:
+        expected_low = distribution.low  # type: ignore
+        expected_high = distribution.high  # type: ignore
+        if isinstance(distribution, FloatDistribution):
+            if transform_log and distribution.log:
+                expected_low = math.log(expected_low)
+                expected_high = math.log(expected_high)
+            if transform_step and distribution.step is not None:
+                half_step = 0.5 * distribution.step
+                expected_low -= half_step
+                expected_high += half_step
+        elif isinstance(distribution, IntDistribution):
+            if transform_step:
+                half_step = 0.5 * distribution.step
+                expected_low -= half_step
+                expected_high += half_step
+            if distribution.log and transform_log:
+                expected_low = math.log(expected_low)
+                expected_high = math.log(expected_high)
 
     for bound in trans.bounds:
         assert bound[0] == expected_low
@@ -123,6 +133,7 @@ def test_search_space_transform_numerical(
     trans_params = trans.transform({"x0": param})
     assert trans_params.size == 1
     assert expected_low <= trans_params <= expected_high
+    assert numpy.isclose(param, trans.untransform(trans_params)["x0"])
 
 
 @pytest.mark.parametrize(

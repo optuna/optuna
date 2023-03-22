@@ -1,7 +1,6 @@
 from typing import Callable
 from typing import Dict
 from typing import List
-from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -9,7 +8,21 @@ import pytest
 from optuna import distributions
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
+from optuna.samplers._tpe.probability_distributions import _BatchedCategoricalDistributions
+from optuna.samplers._tpe.probability_distributions import _BatchedDiscreteTruncNormDistributions
+from optuna.samplers._tpe.probability_distributions import _BatchedTruncNormDistributions
+from optuna.samplers._tpe.probability_distributions import _MixtureOfProductDistribution
 from optuna.samplers._tpe.sampler import default_weights
+
+
+def assert_distribution_almost_equal(
+    d1: _MixtureOfProductDistribution, d2: _MixtureOfProductDistribution
+) -> None:
+    np.testing.assert_almost_equal(d1.weights, d2.weights)
+    for d1_, d2_ in zip(d1.distributions, d2.distributions):
+        assert type(d1_) == type(d2_)
+        for field1, field2 in zip(d1_, d2_):
+            np.testing.assert_almost_equal(np.array(field1), np.array(field2))
 
 
 SEARCH_SPACE = {
@@ -32,8 +45,6 @@ MULTIVARIATE_SAMPLES = {
     "g": np.array([1]),
 }
 
-_PRECOMPUTE_SIGMAS0 = "optuna.samplers._tpe.parzen_estimator._ParzenEstimator._precompute_sigmas0"
-
 
 @pytest.mark.parametrize("consider_prior", [True, False])
 @pytest.mark.parametrize("multivariate", [True, False])
@@ -47,180 +58,140 @@ def test_init_parzen_estimator(consider_prior: bool, multivariate: bool) -> None
         multivariate=multivariate,
     )
 
-    sigmas0 = 1 if multivariate else None
-    with patch(_PRECOMPUTE_SIGMAS0, return_value=sigmas0):
-        mpe = _ParzenEstimator(MULTIVARIATE_SAMPLES, SEARCH_SPACE, parameters)
+    mpe = _ParzenEstimator(MULTIVARIATE_SAMPLES, SEARCH_SPACE, parameters)
 
     weights = np.array([1] + consider_prior * [1], dtype=float)
     weights /= weights.sum()
-    q = {"a": None, "b": None, "c": 3.0, "d": 1.0, "e": None, "f": None, "g": None}
-    low = {"a": 1.0, "b": np.log(1.0), "c": -0.5, "d": 0.5, "e": np.log(0.5), "f": None, "g": None}
-    high = {
-        "a": 100.0,
-        "b": np.log(100.0),
-        "c": 101.5,
-        "d": 100.5,
-        "e": np.log(100.5),
-        "f": None,
-        "g": None,
-    }
 
-    assert np.all(mpe._weights == weights)
-    assert mpe._q == q
-    assert mpe._low == low
-    assert mpe._high == high
-
-    expected_sigmas_univariate = {
-        "a": [49.5 if consider_prior else 99.0] + consider_prior * [99.0],
-        "b": [np.log(100) / 2 if consider_prior else np.log(100.0)]
-        + consider_prior * [np.log(100)],
-        "c": [49.5 if consider_prior else 100.5] + consider_prior * [102.0],
-        "d": [49.5 if consider_prior else 99.5] + consider_prior * [100.0],
-        "e": [(np.log(100.5) + np.log(0.5)) / 2 if consider_prior else np.log(100.5)]
-        + consider_prior * [np.log(100.5) - np.log(0.5)],
-        "f": None,
-        "g": None,
-    }
-    expected_sigmas_multivariate = {
-        "a": [99.0] + consider_prior * [99.0],
-        "b": [np.log(100.0)] + consider_prior * [np.log(100)],
-        "c": [102.0] + consider_prior * [102.0],
-        "d": [100.0] + consider_prior * [100.0],
-        "e": [np.log(100.5) - np.log(0.5)] + consider_prior * [np.log(100.5) - np.log(0.5)],
-        "f": None,
-        "g": None,
-    }
-    expected_mus = {
-        "a": [1.0] + consider_prior * [50.5],
-        "b": [np.log(1.0)] + consider_prior * [np.log(100) / 2.0],
-        "c": [1.0] + consider_prior * [50.5],
-        "d": [1.0] + consider_prior * [50.5],
-        "e": [np.log(1.0)] + consider_prior * [(np.log(100.5) + np.log(0.5)) / 2.0],
-        "f": None,
-        "g": None,
-    }
-    expected_categorical_weights = {
-        "a": None,
-        "b": None,
-        "c": None,
-        "d": None,
-        "e": None,
-        "f": np.array([[0.2, 0.6, 0.2], [1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0]])
-        if consider_prior
-        else np.array([[0.25, 0.5, 0.25]]),
-        "g": np.array(
-            [[1.0 / 6.0, 0.5, 1.0 / 6.0, 1.0 / 6.0], [1.0 / 4.0, 1.0 / 4.0, 1.0 / 4.0, 1.0 / 4.0]]
-        )
-        if consider_prior
-        else np.array([[0.2, 0.4, 0.2, 0.2]]),
-    }
-
-    for param_name in mpe._sigmas:
-        np.testing.assert_equal(
-            mpe._sigmas[param_name],
-            expected_sigmas_multivariate[param_name]
-            if multivariate
-            else expected_sigmas_univariate[param_name],
-            err_msg='parameter "{}"'.format(param_name),
-        )
-        np.testing.assert_equal(
-            mpe._mus[param_name],
-            expected_mus[param_name],
-            err_msg="parameter: {}".format(param_name),
-        )
-        np.testing.assert_equal(
-            mpe._categorical_weights[param_name],
-            expected_categorical_weights[param_name],
-            err_msg="parameter: {}".format(param_name),
-        )
-
-
-@pytest.mark.parametrize("multivariate", [True, False])
-def test_sample_parzen_estimator(multivariate: bool) -> None:
-    parameters = _ParzenEstimatorParameters(
-        consider_prior=False,
-        prior_weight=0.0,
-        consider_magic_clip=False,
-        consider_endpoints=False,
-        weights=lambda x: np.arange(x) + 1.0,
-        multivariate=multivariate,
+    expected_univariate = _MixtureOfProductDistribution(
+        weights=weights,
+        distributions=[
+            _BatchedTruncNormDistributions(
+                mu=np.array([1.0] + consider_prior * [50.5]),
+                sigma=np.array([49.5 if consider_prior else 99.0] + consider_prior * [99.0]),
+                low=1.0,
+                high=100.0,
+            ),
+            _BatchedTruncNormDistributions(
+                mu=np.array([np.log(1.0)] + consider_prior * [np.log(100) / 2.0]),
+                sigma=np.array(
+                    [np.log(100) / 2 if consider_prior else np.log(100.0)]
+                    + consider_prior * [np.log(100)]
+                ),
+                low=np.log(1.0),
+                high=np.log(100.0),
+            ),
+            _BatchedDiscreteTruncNormDistributions(
+                mu=np.array([1.0] + consider_prior * [50.5]),
+                sigma=np.array([49.5 if consider_prior else 100.5] + consider_prior * [102.0]),
+                low=1.0,
+                high=100.0,
+                step=3.0,
+            ),
+            _BatchedDiscreteTruncNormDistributions(
+                mu=np.array([1.0] + consider_prior * [50.5]),
+                sigma=np.array([49.5 if consider_prior else 99.5] + consider_prior * [100.0]),
+                low=1,
+                high=100,
+                step=1,
+            ),
+            _BatchedTruncNormDistributions(
+                mu=np.array(
+                    [np.log(1.0)] + consider_prior * [(np.log(100.5) + np.log(0.5)) / 2.0]
+                ),
+                sigma=np.array(
+                    [(np.log(100.5) + np.log(0.5)) / 2 if consider_prior else np.log(100.5)]
+                    + consider_prior * [np.log(100.5) - np.log(0.5)]
+                ),
+                low=np.log(0.5),
+                high=np.log(100.5),
+            ),
+            _BatchedCategoricalDistributions(
+                np.array([[0.2, 0.6, 0.2], [1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0]])
+                if consider_prior
+                else np.array([[0.25, 0.5, 0.25]])
+            ),
+            _BatchedCategoricalDistributions(
+                np.array(
+                    [
+                        [1.0 / 6.0, 0.5, 1.0 / 6.0, 1.0 / 6.0],
+                        [1.0 / 4.0, 1.0 / 4.0, 1.0 / 4.0, 1.0 / 4.0],
+                    ]
+                )
+                if consider_prior
+                else np.array([[0.2, 0.4, 0.2, 0.2]])
+            ),
+        ],
     )
-    sigmas0 = 1e-8 if multivariate else None
-    with patch(_PRECOMPUTE_SIGMAS0, return_value=sigmas0):
-        mpe = _ParzenEstimator(MULTIVARIATE_SAMPLES, SEARCH_SPACE, parameters)
-
-    # Test the shape of the samples.
-    output_samples = mpe.sample(np.random.RandomState(0), 3)
-    for param_name in output_samples:
-        assert output_samples[param_name].shape == (3,)
-
-    # Test the values of the output for multivariate case.
-    # As we set ``consider_prior`` = False and pre-computed sigma to be 1e-8,
-    # the samples almost equals to the input ``MULTIVARIATE_SAMPLES``.
-    output_samples = mpe.sample(np.random.RandomState(0), 1)
-    if multivariate:
-        for param_name, samples in output_samples.items():
-            np.testing.assert_almost_equal(
-                samples,
-                MULTIVARIATE_SAMPLES[param_name],
-                decimal=2,
-                err_msg="parameter {}".format(param_name),
-            )
-
-    # Test the output when the seeds are fixed.
-    assert output_samples == mpe.sample(np.random.RandomState(0), 1)
-
-
-@pytest.mark.parametrize("multivariate", [True, False])
-def test_suggest_with_step_parzen_estimator(multivariate: bool) -> None:
-    parameters = _ParzenEstimatorParameters(
-        consider_prior=False,
-        prior_weight=0.0,
-        consider_magic_clip=False,
-        consider_endpoints=False,
-        weights=lambda x: np.arange(x) + 1.0,
-        multivariate=multivariate,
+    SIGMA0 = 0.2
+    expected_multivarite = _MixtureOfProductDistribution(
+        weights=weights,
+        distributions=[
+            _BatchedTruncNormDistributions(
+                mu=np.array([1.0] + consider_prior * [50.5]),
+                sigma=np.array([SIGMA0 * 99.0] + consider_prior * [99.0]),
+                low=1.0,
+                high=100.0,
+            ),
+            _BatchedTruncNormDistributions(
+                mu=np.array([np.log(1.0)] + consider_prior * [np.log(100) / 2.0]),
+                sigma=np.array([SIGMA0 * np.log(100)] + consider_prior * [np.log(100)]),
+                low=np.log(1.0),
+                high=np.log(100.0),
+            ),
+            _BatchedDiscreteTruncNormDistributions(
+                mu=np.array([1.0] + consider_prior * [50.5]),
+                sigma=np.array([SIGMA0 * 102.0] + consider_prior * [102.0]),
+                low=1.0,
+                high=100.0,
+                step=3.0,
+            ),
+            _BatchedDiscreteTruncNormDistributions(
+                mu=np.array([1.0] + consider_prior * [50.5]),
+                sigma=np.array([SIGMA0 * 100.0] + consider_prior * [100.0]),
+                low=1,
+                high=100,
+                step=1,
+            ),
+            _BatchedTruncNormDistributions(
+                mu=np.array(
+                    [np.log(1.0)] + consider_prior * [(np.log(100.5) + np.log(0.5)) / 2.0]
+                ),
+                sigma=np.array(
+                    [SIGMA0 * (np.log(100.5) - np.log(0.5))]
+                    + consider_prior * [np.log(100.5) - np.log(0.5)]
+                ),
+                low=np.log(0.5),
+                high=np.log(100.5),
+            ),
+            _BatchedCategoricalDistributions(
+                np.array([[0.2, 0.6, 0.2], [1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0]])
+                if consider_prior
+                else np.array([[0.25, 0.5, 0.25]])
+            ),
+            _BatchedCategoricalDistributions(
+                np.array(
+                    [
+                        [1.0 / 6.0, 0.5, 1.0 / 6.0, 1.0 / 6.0],
+                        [1.0 / 4.0, 1.0 / 4.0, 1.0 / 4.0, 1.0 / 4.0],
+                    ]
+                    if consider_prior
+                    else np.array([[0.2, 0.4, 0.2, 0.2]])
+                )
+            ),
+        ],
     )
 
-    # Define search space for distribution with step argument and true ranges
-    search_space = {
-        "c": distributions.FloatDistribution(low=1.0, high=7.0, step=3.0),
-        "d": distributions.IntDistribution(low=1, high=5, step=2),
-    }
-    multivariate_samples = {"c": np.array([4]), "d": np.array([3])}
-    valid_ranges = {"c": set(np.arange(1.0, 10.0, 3.0)), "d": set(np.arange(1, 7, 2))}
+    expected = expected_multivarite if multivariate else expected_univariate
 
-    sigmas0 = 1 if multivariate else None
-    with patch(_PRECOMPUTE_SIGMAS0, return_value=sigmas0):
-        mpe = _ParzenEstimator(multivariate_samples, search_space, parameters)
+    # Test that the distribution is correct.
+    assert_distribution_almost_equal(mpe._mixture_distribution, expected)
 
-    # Draw 10 samples, and check if all valid values are sampled.
-    output_samples = mpe.sample(np.random.RandomState(0), 10)
-    for param_name in output_samples:
-        assert set(output_samples[param_name]) == valid_ranges[param_name]
-
-
-@pytest.mark.parametrize("multivariate", [True, False])
-def test_log_pdf_parzen_estimator(multivariate: bool) -> None:
-    parameters = _ParzenEstimatorParameters(
-        consider_prior=False,
-        prior_weight=1.0,
-        consider_magic_clip=True,
-        consider_endpoints=True,
-        weights=lambda x: np.arange(x) + 1.0,
-        multivariate=multivariate,
-    )
-    # Parzen estimator almost becomes mixture of Dirac measures.
-    sigmas0 = 1e-8 if multivariate else None
-    with patch(_PRECOMPUTE_SIGMAS0, return_value=sigmas0):
-        mpe = _ParzenEstimator(MULTIVARIATE_SAMPLES, SEARCH_SPACE, parameters)
-
-    log_pdf = mpe.log_pdf(MULTIVARIATE_SAMPLES)
-    output_samples = mpe.sample(np.random.RandomState(0), 100)
-    output_log_pdf = mpe.log_pdf(output_samples)
-    # The likelihood of the previous observations is a positive value, and that of the points
-    # sampled by the Parzen estimator is almost zero.
-    assert np.all(log_pdf >= output_log_pdf)
+    # Test that the sampled values are valid.
+    samples = mpe.sample(np.random.RandomState(0), 10)
+    for param, values in samples.items():
+        for value in values:
+            assert SEARCH_SPACE[param]._contains(value)
 
 
 @pytest.mark.parametrize("mus", (np.asarray([]), np.asarray([0.4]), np.asarray([-0.4, 0.4])))
@@ -248,15 +219,7 @@ def test_calculate_shape_check(
     mpe = _ParzenEstimator(
         {"a": mus}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
     )
-    s_weights, s_mus, s_sigmas = mpe._weights, mpe._mus["a"], mpe._sigmas["a"]
-
-    # Result contains an additional value for a prior distribution if prior is True or
-    # len(mus) == 0 (in this case, prior is always used).
-    assert s_mus is not None
-    assert s_sigmas is not None
-    assert len(s_weights) == len(mus) + int(prior) if len(mus) > 0 else len(mus) + 1
-    assert len(s_mus) == len(mus) + int(prior) if len(mus) > 0 else len(mus) + 1
-    assert len(s_sigmas) == len(mus) + int(prior) if len(mus) > 0 else len(mus) + 1
+    assert len(mpe._mixture_distribution.weights) == max(len(mus) + int(prior), 1)
 
 
 @pytest.mark.parametrize("prior_weight", [None, -1.0, 0.0])
@@ -270,15 +233,8 @@ def test_invalid_prior_weight(prior_weight: float, mus: np.ndarray) -> None:
         weights=default_weights,
         multivariate=False,
     )
-    mpe = _ParzenEstimator(
-        {"a": mus}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
-    )
-    weights = mpe._weights
-    assert len(weights) == len(mus) + 1
-
-    # TODO(HideakiImamura): After modifying the body to raise an error, modify the test as well.
-    if prior_weight is None:
-        assert all([np.isnan(w) for w in weights])
+    with pytest.raises(ValueError):
+        _ParzenEstimator({"a": mus}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters)
 
 
 # TODO(ytsmiling): Improve test coverage for weights.
@@ -354,15 +310,18 @@ def test_calculate(
     mpe = _ParzenEstimator(
         {"a": mus}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
     )
-    s_weights, s_mus, s_sigmas = mpe._weights, mpe._mus["a"], mpe._sigmas["a"]
-
-    # Result contains an additional value for a prior distribution if consider_prior is True.
-    assert isinstance(s_weights, np.ndarray)
-    assert isinstance(s_mus, np.ndarray)
-    assert isinstance(s_sigmas, np.ndarray)
-    np.testing.assert_almost_equal(s_weights, expected["weights"])
-    np.testing.assert_almost_equal(s_mus, expected["mus"])
-    np.testing.assert_almost_equal(s_sigmas, expected["sigmas"])
+    expected_distribution = _MixtureOfProductDistribution(
+        weights=np.asarray(expected["weights"]),
+        distributions=[
+            _BatchedTruncNormDistributions(
+                mu=np.asarray(expected["mus"]),
+                sigma=np.asarray(expected["sigmas"]),
+                low=-1.0,
+                high=1.0,
+            )
+        ],
+    )
+    assert_distribution_almost_equal(mpe._mixture_distribution, expected_distribution)
 
 
 @pytest.mark.parametrize(
