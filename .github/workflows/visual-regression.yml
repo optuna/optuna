@@ -2,7 +2,7 @@ name: Visual regression tests with Netlify
 
 on:
   pull_request_target:
-    types: labeled
+    types: [labeled]
   workflow_dispatch:
 
 concurrency:
