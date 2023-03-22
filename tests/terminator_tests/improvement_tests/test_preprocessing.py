@@ -79,14 +79,22 @@ def test_unscale_log(direction: StudyDirection) -> None:
         if isinstance(d, (IntDistribution, FloatDistribution)):
             assert not d.log
 
-    # Assert that the parameters are identical for the non-log distributions.
-    assert trials_before[0].params["float"] == trials_after[0].params["float"]
-    assert trials_before[0].params["int"] == trials_after[0].params["int"]
-    assert trials_before[0].params["categorical"] == trials_after[0].params["categorical"]
+    # Assert that the parameters and distributions are identical for the non-log distributions.
+    for name in ["float", "int", "categorical"]:
+        assert trials_before[0].params[name] == trials_after[0].params[name]
+        assert trials_before[0].distributions[name] == trials_after[0].distributions[name]
 
-    # Assert that the parameters are unscaled for the log distributions.
-    assert trials_before[0].params["float_log"] == np.exp(trials_after[0].params["float_log"])
-    assert trials_before[0].params["int_log"] == np.exp(trials_after[0].params["int_log"])
+    # Assert that the parameters and distributions are unscaled for the log distributions.
+    for name in ["float_log", "int_log"]:
+        assert np.log(trials_before[0].params[name]) == trials_after[0].params[name]
+
+        dist_before = trials_before[0].distributions[name]
+        dist_after = trials_after[0].distributions[name]
+
+        assert isinstance(dist_before, (IntDistribution, FloatDistribution))
+        assert isinstance(dist_after, (IntDistribution, FloatDistribution))
+        assert np.log(dist_before.low) == dist_after.low
+        assert np.log(dist_before.high) == dist_after.high
 
 
 @pytest.mark.parametrize("direction", (StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE))
