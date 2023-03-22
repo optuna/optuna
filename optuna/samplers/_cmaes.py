@@ -389,6 +389,7 @@ class CmaEsSampler(BaseSampler):
         if self._initial_popsize is None:
             self._initial_popsize = optimizer.population_size
 
+        popsize: int = self._initial_popsize
         n_restarts: int = 0
         n_restarts_with_large: int = 0
         poptype: str = "small"
@@ -397,9 +398,7 @@ class CmaEsSampler(BaseSampler):
         if len(completed_trials) != 0:
             latest_trial = completed_trials[-1]
             popsize_attr_key = self._attr_keys.popsize()
-            optimizer.population_size = latest_trial.system_attrs.get(
-                popsize_attr_key, self._initial_popsize
-            )
+            popsize = latest_trial.system_attrs.get(popsize_attr_key, self._initial_popsize)
             n_restarts_attr_key = self._attr_keys.n_restarts()
             n_restarts = latest_trial.system_attrs.get(n_restarts_attr_key, 0)
             n_restarts_with_large = latest_trial.system_attrs.get(
@@ -426,9 +425,9 @@ class CmaEsSampler(BaseSampler):
             completed_trials, optimizer.generation, n_restarts
         )
 
-        if len(solution_trials) >= optimizer.population_size:
+        if len(solution_trials) >= popsize:
             solutions: List[Tuple[np.ndarray, float]] = []
-            for t in solution_trials[: optimizer.population_size]:
+            for t in solution_trials[:popsize]:
                 assert t.value is not None, "completed trials must have a value"
                 if isinstance(optimizer, cmaes.CMAwM):
                     x = np.array(t.system_attrs["x_for_tell"])
@@ -439,17 +438,17 @@ class CmaEsSampler(BaseSampler):
 
             optimizer.tell(solutions)
 
-            if self._restart_strategy == "ipop" and True:  # optimizer.should_stop():
+            if self._restart_strategy == "ipop" and optimizer.should_stop():
                 n_restarts += 1
-                popsize = optimizer.population_size * self._inc_popsize
+                popsize = popsize * self._inc_popsize
                 optimizer = self._init_optimizer(
                     trans, study.direction, population_size=popsize, randomize_start_point=True
                 )
 
-            if self._restart_strategy == "bipop" and True:  # optimizer.should_stop():
+            if self._restart_strategy == "bipop" and optimizer.should_stop():
                 n_restarts += 1
 
-                n_eval = optimizer.population_size * optimizer.generation
+                n_eval = popsize * optimizer.generation
                 if poptype == "small":
                     small_n_eval += n_eval
                 else:  # poptype == "large"
