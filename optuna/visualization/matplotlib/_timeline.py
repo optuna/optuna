@@ -1,0 +1,119 @@
+import datetime
+from typing import Any
+
+from optuna._experimental import experimental_func
+from optuna.study import Study
+from optuna.trial import TrialState
+from optuna.visualization._timeline import _get_timeline_info
+from optuna.visualization._timeline import _TimelineInfo
+from optuna.visualization.matplotlib._matplotlib_imports import _imports
+
+
+if _imports.is_successful():
+    from optuna.visualization.matplotlib._matplotlib_imports import Axes
+    from optuna.visualization.matplotlib._matplotlib_imports import dates
+    from optuna.visualization.matplotlib._matplotlib_imports import patches
+    from optuna.visualization.matplotlib._matplotlib_imports import plt
+    from optuna.visualization.matplotlib._matplotlib_imports import ticker
+
+
+class _DateFormatter_Millisecond(ticker.Formatter):
+    def __init__(self) -> None:
+        pass
+
+    def __call__(self, x: float, pos: Any = 0) -> str:
+        return dates.num2date(x).strftime("%H:%M:%S.%f")[:-3]
+
+
+@experimental_func("3.2.0")
+def plot_timeline(study: Study) -> "Axes":
+    """Plot the timeline of a study.
+
+    .. seealso::
+        Please refer to :func:`optuna.visualization.plot_timeline` for an example.
+
+    Example:
+
+        The following code snippet shows how to plot the timeline of a study.
+
+        .. matplotlib::
+
+            import time
+
+            import optuna
+
+
+            def objective(trial):
+                x = trial.suggest_float("x", 0, 1)
+                time.sleep(x * 0.1)
+                if x > 0.8:
+                    raise ValueError()
+                if x > 0.4:
+                    raise optuna.TrialPruned()
+                return x ** 2
+
+
+            study = optuna.create_study(direction="minimize")
+            study.optimize(
+                objective, n_trials=50, n_jobs=2, catch=(ValueError,)
+            )
+
+            fig = optuna.visualization.matplotlib.plot_timeline(study)
+            fig.show()
+
+    Args:
+        study:
+            A :class:`~optuna.study.Study` object whose trials are plotted with
+            their lifetime.
+
+    Returns:
+        A :class:`matplotlib.axes.Axes` object.
+    """
+    _imports.check()
+    info = _get_timeline_info(study)
+    return _get_timeline_plot(info)
+
+
+def _get_timeline_plot(info: _TimelineInfo) -> "Axes":
+    _cm = {
+        TrialState.COMPLETE: "tab:blue",
+        TrialState.FAIL: "tab:red",
+        TrialState.PRUNED: "tab:orange",
+        TrialState.RUNNING: "tab:green",
+        TrialState.WAITING: "tab:gray",
+    }
+
+    # Set up the graph style.
+    plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
+    _, ax = plt.subplots()
+    ax.set_title("Timeline Plot")
+    ax.set_xlabel("Datetime")
+    ax.set_ylabel("Trial")
+
+    ax.barh(
+        y=[t.number for t in info.bars],
+        width=[t.complete - t.start for t in info.bars],
+        left=[t.start for t in info.bars],
+        color=[_cm[t.state] for t in info.bars],
+    )
+
+    # There are 5 types of TrialState in total.
+    # However, the legend depicts only types present in the arguments.
+    legend_handles = []
+    for k, v in _cm.items():
+        if len([t for t in info.bars if t.state == k]) > 0:
+            legend_handles.append(patches.Patch(color=v, label=k.name))
+    ax.legend(handles=legend_handles, loc="lower right")
+
+    if len(info.bars) > 0:
+        start_time = min([t.start for t in info.bars])
+        complete_time = max([t.complete for t in info.bars])
+        margin = (complete_time - start_time) * 0.05
+    else:
+        start_time = complete_time = datetime.datetime.now()
+        margin = datetime.timedelta(seconds=0.05)
+    ax.set_xlim(right=complete_time + margin, left=start_time - margin)
+    ax.yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+    ax.xaxis.set_major_formatter(_DateFormatter_Millisecond())
+    plt.gcf().autofmt_xdate()
+    return ax
