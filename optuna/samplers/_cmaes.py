@@ -383,7 +383,7 @@ class CmaEsSampler(BaseSampler):
             optimizer = self._init_optimizer(
                 trans, study.direction, population_size=self._initial_popsize
             )
-        # When `popsize=None`, the initial popsize is computed inside the `cmaes` package.
+        # When `self._initial_popsize=None`, the initial popsize is computed inside the `cmaes` package.
         if self._initial_popsize is None:
             self._initial_popsize = optimizer.population_size
 
@@ -433,14 +433,14 @@ class CmaEsSampler(BaseSampler):
 
             optimizer.tell(solutions)
 
-            if self._restart_strategy == "ipop" and optimizer.should_stop():
+            if self._restart_strategy == "ipop" and True:  # optimizer.should_stop():
                 n_restarts += 1
                 popsize = optimizer.population_size * self._inc_popsize
                 optimizer = self._init_optimizer(
                     trans, study.direction, population_size=popsize, randomize_start_point=True
                 )
 
-            if self._restart_strategy == "bipop" and optimizer.should_stop():
+            if self._restart_strategy == "bipop" and True:  # optimizer.should_stop():
                 n_restarts += 1
 
                 n_eval = optimizer.population_size * optimizer.generation
