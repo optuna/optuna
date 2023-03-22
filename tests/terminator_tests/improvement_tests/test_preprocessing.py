@@ -161,8 +161,8 @@ def test_one_to_hot(direction: StudyDirection) -> None:
         for d in t.distributions.values():
             assert d == FloatDistribution(0, 1)
 
-    trials_after[0].params == {"i0_categorical": 1.0, "i1_categorical": 0.0}
-    trials_after[1].params == {"i0_categorical": 0.0, "i1_categorical": 1.0}
+    assert trials_after[0].params == {"i0_categorical": 1.0, "i1_categorical": 0.0}
+    assert trials_after[1].params == {"i0_categorical": 0.0, "i1_categorical": 1.0}
 
     # Scenario: int and float parameters are identical even after the preprocessing.
     trials_before = [
