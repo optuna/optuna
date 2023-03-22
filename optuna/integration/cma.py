@@ -183,7 +183,9 @@ class PyCmaSampler(BaseSampler):
         self._raise_error_if_multi_objective(study)
 
         if self._warn_independent_sampling:
-            complete_trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+            complete_trials = study._get_trials(
+                deepcopy=False, states=(TrialState.COMPLETE,), use_cache=True
+            )
             if len(complete_trials) >= self._n_startup_trials:
                 self._log_independent_sampling(trial, param_name)
 
@@ -209,7 +211,9 @@ class PyCmaSampler(BaseSampler):
             self._warn_independent_sampling = False
             return {}
 
-        complete_trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+        complete_trials = study._get_trials(
+            deepcopy=False, states=(TrialState.COMPLETE,), use_cache=True
+        )
         if len(complete_trials) < self._n_startup_trials:
             return {}
 
