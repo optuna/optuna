@@ -76,7 +76,7 @@ def test_unscale_log(direction: StudyDirection) -> None:
 
     # Assert that the trial has no log distribution.
     for d in trials_after[0].distributions:
-        if isinstance(d, IntDistribution) or isinstance(d, FloatDistribution):
+        if isinstance(d, (IntDistribution, FloatDistribution)):
             assert not d.log
 
     # Assert that the parameters are identical for the non-log distributions.
