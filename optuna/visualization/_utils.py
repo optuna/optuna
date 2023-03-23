@@ -1,3 +1,4 @@
+import json
 from typing import Any
 from typing import Callable
 from typing import cast
@@ -179,3 +180,27 @@ def _filter_nonfinite(
 
 def _is_reverse_scale(study: Study, target: Optional[Callable[[FrozenTrial], float]]) -> bool:
     return target is not None or study.direction == StudyDirection.MINIMIZE
+
+
+def _make_json_compatible(value: Any) -> Any:
+    try:
+        json.dumps(value)
+        return value
+    except TypeError:
+        # The value can't be converted to JSON directly, so return a string representation.
+        return str(value)
+
+
+def _make_hovertext(trial: FrozenTrial) -> str:
+    user_attrs = {key: _make_json_compatible(value) for key, value in trial.user_attrs.items()}
+    user_attrs_dict = {"user_attrs": user_attrs} if user_attrs else {}
+    text = json.dumps(
+        {
+            "number": trial.number,
+            "values": trial.values,
+            "params": trial.params,
+            **user_attrs_dict,
+        },
+        indent=2,
+    )
+    return text.replace("\n", "<br>")
