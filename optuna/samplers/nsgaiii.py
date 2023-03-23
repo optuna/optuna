@@ -442,7 +442,7 @@ def _normalize_objective_values(
 
     # Calculate extreme points to normalize objective values
     # TODO(Shinichi) Reimplement to reduce time complexity
-    asf_value = np.max(objective_matrix * weights[:, np.newaxis, :], axis=2)
+    asf_value = np.max(np.einsum("ik, jk->jik", objective_matrix, weights), axis=2)
     extreme_points = objective_matrix[np.argmin(asf_value, axis=1), :]
 
     # Normalize objective_matrix with extreme points.
