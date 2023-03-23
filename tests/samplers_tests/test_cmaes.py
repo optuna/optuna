@@ -1,3 +1,4 @@
+import math
 from typing import Any
 from typing import Dict
 from typing import List
@@ -68,7 +69,8 @@ def test_init_cmaes_opts(
         assert np.allclose(actual_kwargs["bounds"], np.array([(0, 1), (0, 1)]))
         assert actual_kwargs["seed"] == np.random.RandomState(1).randint(1, 2**32)
         assert actual_kwargs["n_max_resampling"] == 10 * 2
-        assert actual_kwargs["population_size"] == popsize
+        expected_popsize = 4 + math.floor(3 * math.log(2)) if popsize is None else popsize
+        assert actual_kwargs["population_size"] == expected_popsize
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
@@ -102,7 +104,8 @@ def test_init_cmaes_opts_with_margin(popsize: Optional[int]) -> None:
         assert np.allclose(actual_kwargs["steps"], np.array([0.0, 1.0]))
         assert actual_kwargs["seed"] == np.random.RandomState(1).randint(1, 2**32)
         assert actual_kwargs["n_max_resampling"] == 10 * 2
-        assert actual_kwargs["population_size"] == popsize
+        expected_popsize = 4 + math.floor(3 * math.log(2)) if popsize is None else popsize
+        assert actual_kwargs["population_size"] == expected_popsize
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
@@ -341,7 +344,7 @@ def test_sampler_attr_key(options: Dict[str, bool], key: str) -> None:
         sampler._restart_strategy = restart_strategy
         for i in range(3):
             assert sampler._attr_keys.generation(i).startswith(
-                (key + "restart_{}:".format(i) + "generation")
+                (key + "{}:restart_{}:".format(restart_strategy, i) + "generation")
             )
 
 

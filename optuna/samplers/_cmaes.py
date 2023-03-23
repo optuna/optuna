@@ -380,14 +380,17 @@ class CmaEsSampler(BaseSampler):
             search_space, transform_step=not self._with_margin, transform_0_1=True
         )
 
+        if self._initial_popsize is None:
+            self._initial_popsize = 4 + math.floor(3 * math.log(len(trans.bounds)))
+
+        store_optimizer = False
         optimizer = self._restore_optimizer(completed_trials)
+        optimizer_inited = False
         if optimizer is None:
             optimizer = self._init_optimizer(
                 trans, study.direction, population_size=self._initial_popsize
             )
-        # When `self._initial_popsize=None`, it is computed inside the `cmaes` package.
-        if self._initial_popsize is None:
-            self._initial_popsize = optimizer.population_size
+            optimizer_inited = True
 
         popsize: int = self._initial_popsize
         n_restarts: int = 0
@@ -397,8 +400,18 @@ class CmaEsSampler(BaseSampler):
         large_n_eval: int = 0
         if len(completed_trials) != 0:
             latest_trial = completed_trials[-1]
+
             popsize_attr_key = self._attr_keys.popsize()
-            popsize = latest_trial.system_attrs.get(popsize_attr_key, self._initial_popsize)
+            if popsize_attr_key in latest_trial.system_attrs:
+                popsize = latest_trial.system_attrs[popsize_attr_key]
+            else:
+                popsize = self._initial_popsize
+                if not optimizer_inited:
+                    optimizer = self._init_optimizer(
+                        trans, study.direction, population_size=popsize, randomize_start_point=True
+                    )
+                    store_optimizer = True
+
             n_restarts_attr_key = self._attr_keys.n_restarts()
             n_restarts = latest_trial.system_attrs.get(n_restarts_attr_key, 0)
             n_restarts_with_large = latest_trial.system_attrs.get(
@@ -469,7 +482,9 @@ class CmaEsSampler(BaseSampler):
                 optimizer = self._init_optimizer(
                     trans, study.direction, population_size=popsize, randomize_start_point=True
                 )
+            store_optimizer = True
 
+        if store_optimizer:
             # Store optimizer.
             optimizer_str = pickle.dumps(optimizer).hex()
             optimizer_attrs = self._split_optimizer_str(optimizer_str)
@@ -492,9 +507,7 @@ class CmaEsSampler(BaseSampler):
             trial._trial_id, generation_attr_key, optimizer.generation
         )
         popsize_attr_key = self._attr_keys.popsize()
-        study._storage.set_trial_system_attr(
-            trial._trial_id, popsize_attr_key, optimizer.population_size
-        )
+        study._storage.set_trial_system_attr(trial._trial_id, popsize_attr_key, popsize)
         n_restarts_attr_key = self._attr_keys.n_restarts()
         study._storage.set_trial_system_attr(trial._trial_id, n_restarts_attr_key, n_restarts)
         study._storage.set_trial_system_attr(
@@ -525,7 +538,9 @@ class CmaEsSampler(BaseSampler):
             if self._restart_strategy is None:
                 return attr_prefix + "generation"
             else:
-                return attr_prefix + "restart_{}:generation".format(restart)
+                return attr_prefix + "{}:restart_{}:generation".format(
+                    self._restart_strategy, restart
+                )
 
         def popsize_attr_key_template() -> str:
             if self._restart_strategy is None:
