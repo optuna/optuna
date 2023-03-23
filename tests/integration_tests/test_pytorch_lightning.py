@@ -22,6 +22,7 @@ with try_import() as _imports:
     from pytorch_lightning.strategies.ddp_spawn import DDPSpawnStrategy
     import torch
     from torch import nn
+    from torch.multiprocessing.spawn import ProcessRaisedException
     import torch.nn.functional as F
 
 if not _imports.is_successful():
@@ -218,5 +219,5 @@ def test_pytorch_lightning_pruning_callback_ddp_unsupported_storage() -> None:
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage, pruner=DeterministicPruner(True))
-        with pytest.raises(torch.multiprocessing.ProcessRaisedException):
+        with pytest.raises(ProcessRaisedException):
             study.optimize(objective, n_trials=1)

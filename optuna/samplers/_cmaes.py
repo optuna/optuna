@@ -365,7 +365,9 @@ class CmaEsSampler(BaseSampler):
             return {}
 
         # When `with_margin=True`, bounds in discrete dimensions are handled inside `CMAwM`.
-        trans = _SearchSpaceTransform(search_space, transform_step=not self._with_margin)
+        trans = _SearchSpaceTransform(
+            search_space, transform_step=not self._with_margin, transform_0_1=True
+        )
 
         optimizer, n_restarts = self._restore_optimizer(completed_trials)
         if optimizer is None:
@@ -614,7 +616,7 @@ class CmaEsSampler(BaseSampler):
 
     def _get_trials(self, study: "optuna.Study") -> List[FrozenTrial]:
         complete_trials = []
-        for t in study.get_trials(deepcopy=False):
+        for t in study._get_trials(deepcopy=False, use_cache=True):
             if t.state == TrialState.COMPLETE:
                 complete_trials.append(t)
             elif (

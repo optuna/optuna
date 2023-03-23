@@ -52,18 +52,22 @@ class Trial(BaseTrial):
         self._study_id = self.study._study_id
         self.storage = self.study._storage
 
-        self._init_relative_params()
-
-    def _init_relative_params(self) -> None:
         self._cached_frozen_trial = self.storage.get_trial(self._trial_id)
         study = pruners._filter_study(self.study, self._cached_frozen_trial)
 
         self.relative_search_space = self.study.sampler.infer_relative_search_space(
             study, self._cached_frozen_trial
         )
-        self.relative_params = self.study.sampler.sample_relative(
-            study, self._cached_frozen_trial, self.relative_search_space
-        )
+        self._relative_params: Optional[Dict[str, Any]] = None
+
+    @property
+    def relative_params(self) -> Dict[str, Any]:
+        if self._relative_params is None:
+            study = pruners._filter_study(self.study, self._cached_frozen_trial)
+            self._relative_params = self.study.sampler.sample_relative(
+                study, self._cached_frozen_trial, self.relative_search_space
+            )
+        return self._relative_params
 
     def suggest_float(
         self,

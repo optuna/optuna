@@ -191,7 +191,10 @@ def test_sample_relative_n_startup_trials() -> None:
 
 
 def test_get_trials() -> None:
-    with patch("optuna.Study.get_trials", new=Mock(side_effect=lambda deepcopy: _create_trials())):
+    with patch(
+        "optuna.Study._get_trials",
+        new=Mock(side_effect=lambda deepcopy, use_cache: _create_trials()),
+    ):
         sampler = optuna.integration.SkoptSampler(consider_pruned_trials=False)
         study = optuna.create_study(sampler=sampler)
         trials = sampler._get_trials(study)
