@@ -382,10 +382,14 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
     def get_all_studies(self) -> List[FrozenStudy]:
         with _create_scoped_session(self.scoped_session) as session:
-            studies = session.query(
-                models.StudyModel.study_id,
-                models.StudyModel.study_name,
-            ).all()
+            studies = (
+                session.query(
+                    models.StudyModel.study_id,
+                    models.StudyModel.study_name,
+                )
+                .order_by(models.StudyModel.study_id)
+                .all()
+            )
 
             _directions = defaultdict(list)
             for direction_model in session.query(models.StudyDirectionModel).all():
