@@ -14,11 +14,12 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    if: |
-      ( github.repository == 'optuna/optuna' ) && # Not intended for forks.
+    # Not intended for forks.
+    if: github.repository == 'optuna/optuna'
+    if:  |
       (
          contains(github.event.pull_request.labels.*.name, 'safe-to-run-visual-regression-tests') ||
-         ( github.event_name == 'workflow_dispatch' )
+         (github.event_name == 'workflow_dispatch')
       )
 
     steps:
