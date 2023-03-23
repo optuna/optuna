@@ -1,6 +1,7 @@
 from collections import OrderedDict
 import copy
 from typing import Dict
+from typing import List
 from typing import Optional
 
 import optuna
@@ -100,9 +101,11 @@ class IntersectionSearchSpace:
 
 
 def intersection_search_space(
-    study: Study, ordered_dict: bool = False, include_pruned: bool = False
+    trials: List[optuna.trial.FrozenTrial],
+    ordered_dict: bool = False,
+    include_pruned: bool = False,
 ) -> Dict[str, BaseDistribution]:
-    """Return the intersection search space of the :class:`~optuna.study.Study`.
+    """Return the intersection search space of the given trials.
 
     Intersection search space contains the intersection of parameter distributions that have been
     suggested in the completed trials of the study so far.
@@ -116,8 +119,8 @@ def intersection_search_space(
         as much as possible.
 
     Args:
-        study:
-            A study with completed trials.
+        trials:
+            A list of trials.
         ordered_dict:
             A boolean flag determining the return type.
             If :obj:`False`, the returned object will be a :obj:`dict`.
@@ -130,6 +133,35 @@ def intersection_search_space(
         A dictionary containing the parameter names and parameter's distributions.
     """
 
-    return IntersectionSearchSpace(include_pruned=include_pruned).calculate(
-        study, ordered_dict=ordered_dict
-    )
+    states_of_interest = [
+        optuna.trial.TrialState.COMPLETE,
+        optuna.trial.TrialState.WAITING,
+        optuna.trial.TrialState.RUNNING,
+    ]
+
+    if include_pruned:
+        states_of_interest.append(optuna.trial.TrialState.PRUNED)
+
+    trials = [trial for trial in trials if trial.state in states_of_interest]
+
+    search_space = None
+    for trial in reversed(trials):
+        if not trial.state.is_finished():
+            continue
+
+        if search_space is None:
+            search_space = copy.copy(trial.distributions)
+            continue
+
+        search_space = {
+            name: distribution
+            for name, distribution in search_space.items()
+            if trial.distributions.get(name) == distribution
+        }
+
+    search_space = search_space or {}
+
+    if ordered_dict:
+        search_space = OrderedDict(sorted(search_space.items(), key=lambda x: x[0]))
+
+    return search_space
