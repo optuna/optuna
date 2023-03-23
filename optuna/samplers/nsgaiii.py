@@ -303,7 +303,7 @@ class NSGAIIISampler(BaseSampler):
             if len(elite_population) + len(population) < self._population_size:
                 elite_population.extend(population)
             else:
-                objective_matrix = _normalize_objective_values(elite_population, population)
+                objective_matrix = _normalize_objective_values(elite_population + population)
 
                 elite_population_num = len(elite_population)
                 (
@@ -409,7 +409,6 @@ def generate_default_reference_point(n_objectives: int, dividing_parameter: int 
 
 
 def _normalize_objective_values(
-    elite_population: List[FrozenTrial],
     population: List[FrozenTrial],
 ) -> np.ndarray:
     """Normalizes objective values of population
@@ -422,8 +421,8 @@ def _normalize_objective_values(
     """
     # Collect objective values
     n_objectives = len(population[0].values)
-    objective_matrix = np.zeros((len(elite_population + population), n_objectives))
-    for i, trial in enumerate(elite_population + population):
+    objective_matrix = np.zeros((len(population), n_objectives))
+    for i, trial in enumerate(population):
         objective_matrix[i] = np.array(trial.values, dtype=float)
 
     # Subtract ideal point
