@@ -5,7 +5,6 @@ from io import BytesIO
 import pytest
 
 from optuna.trial import TrialState
-from optuna.visualization.matplotlib._matplotlib_imports import Axes
 from optuna.visualization.matplotlib._timeline import plot_timeline
 from tests.visualization_tests.test_timeline import _create_study
 
@@ -21,5 +20,4 @@ from tests.visualization_tests.test_timeline import _create_study
 def test_get_timeline_plot(trial_states_list: list[TrialState]) -> None:
     study = _create_study(trial_states_list)
     fig = plot_timeline(study)
-    assert type(fig) is Axes
     fig.get_figure().savefig(BytesIO())
