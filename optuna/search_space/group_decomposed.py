@@ -56,7 +56,7 @@ class _GroupDecomposedSearchSpace:
         else:
             states_of_interest = (TrialState.COMPLETE,)
 
-        for trial in study.get_trials(deepcopy=False, states=states_of_interest):
+        for trial in study._get_trials(deepcopy=False, states=states_of_interest, use_cache=False):
             self._search_space.add_distributions(trial.distributions)
 
         return copy.deepcopy(self._search_space)
