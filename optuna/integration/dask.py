@@ -15,6 +15,7 @@ import uuid
 import optuna
 from optuna._experimental import experimental_class
 from optuna._imports import try_import
+from optuna._typing import JSONSerializable
 from optuna.distributions import BaseDistribution
 from optuna.distributions import distribution_to_json
 from optuna.distributions import json_to_distribution
@@ -346,7 +347,7 @@ class _OptunaSchedulerExtension:
         storage_name: str,
         trial_id: int,
         key: str,
-        value: Any,
+        value: JSONSerializable,
     ) -> None:
         return self.get_storage(storage_name).set_trial_system_attr(
             trial_id=trial_id,
@@ -666,7 +667,7 @@ class DaskStorage(BaseStorage):
             value=dumps(value),  # type: ignore[no-untyped-call]
         )
 
-    def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
+    def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
         return self.client.sync(  # type: ignore[no-untyped-call]
             self.client.scheduler.optuna_set_trial_system_attr,  # type: ignore[union-attr]
             storage_name=self.name,
