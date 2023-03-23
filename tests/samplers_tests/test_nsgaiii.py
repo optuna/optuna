@@ -23,6 +23,7 @@ from optuna.samplers.nsgaii import UNDXCrossover
 from optuna.samplers.nsgaii import UniformCrossover
 from optuna.samplers.nsgaii import VSBXCrossover
 from optuna.samplers.nsgaiii import _associate_individuals_with_reference_points
+from optuna.samplers.nsgaiii import _normalize_objective_values
 from optuna.samplers.nsgaiii import _POPULATION_CACHE_KEY_PREFIX
 from optuna.samplers.nsgaiii import _preserve_niche_individuals
 from optuna.samplers.nsgaiii import generate_default_reference_point
@@ -330,6 +331,52 @@ def test_reference_point(
         generate_default_reference_point(n_objectives, dividing_parameter).tolist()
     )
     assert actual_reference_points == expected_reference_points
+
+
+@pytest.mark.parametrize(
+    "population_value, expected_normalized_value",
+    [
+        (
+            [
+                [1.0, 2.0, 3.0],
+                [3.0, 1.0, 2.0],
+                [2.0, 3.0, 1.0],
+                [2.0, 2.0, 2.0],
+                [4.0, 5.0, 6.0],
+                [6.0, 4.0, 5.0],
+                [5.0, 6.0, 4.0],
+                [4.0, 4.0, 4.0],
+            ],
+            [
+                [0.0, 1.0 / 3.0, 2.0 / 3.0],
+                [2.0 / 3.0, 0.0, 1.0 / 3.0],
+                [1.0 / 3.0, 2.0 / 3.0, 0.0],
+                [1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0],
+                [1.0, 4.0 / 3.0, 5.0 / 3.0],
+                [5.0 / 3.0, 1.0, 4.0 / 3.0],
+                [4.0 / 3.0, 5.0 / 3.0, 1.0],
+                [1.0, 1.0, 1.0],
+            ],
+        ),
+        (
+            [
+                [1.0, 2.0, 3.0],
+                [3.0, 1.0, 2.0],
+            ],
+            [
+                [0.0, 1.0, 1.0],
+                [1.0, 0.0, 0.0],
+            ],
+        ),
+    ],
+)
+def test_normalize(
+    population_value: Sequence[Sequence[int]], expected_normalized_value: Sequence[Sequence[int]]
+) -> None:
+    population = [create_trial(values=values) for values in population_value]
+    assert np.allclose(
+        _normalize_objective_values(population), np.array(expected_normalized_value)
+    )
 
 
 def test_associate() -> None:
