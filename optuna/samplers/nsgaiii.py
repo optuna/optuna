@@ -436,7 +436,7 @@ def _normalize_objective_values(
 
     # Calculate extreme points to normalize objective values.
     # TODO(Shinichi) Reimplement to reduce time complexity.
-    asf_value = np.max(np.einsum("ik, jk->jik", objective_matrix, weights), axis=2)
+    asf_value = np.max(np.einsum("nm,dm->dnm", objective_matrix, weights), axis=2)
     extreme_points = objective_matrix[np.argmin(asf_value, axis=1), :]
 
     # Normalize objective_matrix with extreme points.
@@ -461,10 +461,16 @@ def _associate_individuals_with_reference_points(
     # TODO(Shinichi) Normalize reference_points in constructor to remove reference_point_norms.
     # In addition, the minimum distance from each reference point can be replaced with maximum
     # inner product between the given individual and each normalized reference points.
-    reference_point_norm_squared = np.sum(reference_points**2, axis=1)
-    coefficient = objective_matrix @ reference_points.T / reference_point_norm_squared
+    reference_point_norm_squared = np.linalg.norm(reference_points, axis=1) ** 2
+    perpendicular_vectors_to_reference_lines = np.einsum(
+        "ni,pi,p,pm->npm",
+        objective_matrix,
+        reference_points,
+        1 / reference_point_norm_squared,
+        reference_points,
+    )
     distance_from_reference_lines = np.linalg.norm(
-        objective_matrix[:, np.newaxis, :] - coefficient[..., np.newaxis] * reference_points,
+        objective_matrix[:, np.newaxis, :] - perpendicular_vectors_to_reference_lines,
         axis=2,
     )
     distance_reference_points = np.min(distance_from_reference_lines, axis=1)
