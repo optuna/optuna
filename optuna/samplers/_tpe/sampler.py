@@ -21,11 +21,11 @@ from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.samplers._base import _process_constraints_after_trial
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
-from optuna.samplers._search_space import IntersectionSearchSpace
-from optuna.samplers._search_space.group_decomposed import _GroupDecomposedSearchSpace
-from optuna.samplers._search_space.group_decomposed import _SearchSpaceGroup
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
+from optuna.search_space import IntersectionSearchSpace
+from optuna.search_space.group_decomposed import _GroupDecomposedSearchSpace
+from optuna.search_space.group_decomposed import _SearchSpaceGroup
 from optuna.study import Study
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -621,7 +621,7 @@ def _get_observation_pairs(
     scores = []
     values: Dict[str, List[Optional[float]]] = {param_name: [] for param_name in param_names}
     violations: Optional[List[float]] = [] if constraints_enabled else None
-    for trial in study.get_trials(deepcopy=False, states=states):
+    for trial in study._get_trials(deepcopy=False, states=states, use_cache=not constant_liar):
         # We extract score from the trial.
         if trial.state is TrialState.COMPLETE:
             if trial.values is None:

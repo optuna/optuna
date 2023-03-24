@@ -4,18 +4,10 @@ from typing import Dict
 from typing import Optional
 
 import optuna
-from optuna._deprecated import deprecated_class
-from optuna._deprecated import deprecated_func
 from optuna.distributions import BaseDistribution
 from optuna.study import Study
 
 
-@deprecated_class(
-    "3.2.0",
-    "6.0.0",
-    name="optuna.samplers.IntersectionSearchSpace",
-    text="Please use optuna.search_space.IntersectionSearchSpace instead.",
-)
 class IntersectionSearchSpace:
     """A class to calculate the intersection search space of a :class:`~optuna.study.Study`.
 
@@ -26,7 +18,8 @@ class IntersectionSearchSpace:
     (i.e., the parameters with dynamic value ranges are excluded).
 
     Note that an instance of this class is supposed to be used for only one study.
-    If different studies are passed to :func:`~optuna.samplers.IntersectionSearchSpace.calculate`,
+    If different studies are passed to
+    :func:`~optuna.search_space.IntersectionSearchSpace.calculate`,
     a :obj:`ValueError` is raised.
 
     Args:
@@ -76,7 +69,7 @@ class IntersectionSearchSpace:
         if self._include_pruned:
             states_of_interest.append(optuna.trial.TrialState.PRUNED)
 
-        trials = study._get_trials(deepcopy=False, states=states_of_interest, use_cache=False)
+        trials = study.get_trials(deepcopy=False, states=states_of_interest)
 
         next_cursor = trials[-1].number + 1 if len(trials) > 0 else -1
         for trial in reversed(trials):
@@ -106,12 +99,6 @@ class IntersectionSearchSpace:
         return copy.deepcopy(search_space)
 
 
-@deprecated_func(
-    "3.2.0",
-    "6.0.0",
-    name="optuna.samplers.intersection_search_space",
-    text="Please use optuna.search_space.intersection_search_space instead.",
-)
 def intersection_search_space(
     study: Study, ordered_dict: bool = False, include_pruned: bool = False
 ) -> Dict[str, BaseDistribution]:
@@ -124,7 +111,7 @@ def intersection_search_space(
     (i.e., the parameters with dynamic value ranges are excluded).
 
     .. note::
-        :class:`~optuna.samplers.IntersectionSearchSpace` provides the same functionality with
+        :class:`~optuna.search_space.IntersectionSearchSpace` provides the same functionality with
         a much faster way. Please consider using it if you want to reduce execution time
         as much as possible.
 

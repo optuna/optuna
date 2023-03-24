@@ -1,5 +1,4 @@
 import collections
-import json
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -19,6 +18,7 @@ from optuna.study.study import METRIC_NAMES
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
+from optuna.visualization._utils import _make_hovertext
 
 
 if _imports.is_successful():
@@ -370,15 +370,6 @@ def _get_non_pareto_front_trials(
     return non_pareto_trials
 
 
-def _make_json_compatible(value: Any) -> Any:
-    try:
-        json.dumps(value)
-        return value
-    except TypeError:
-        # The value can't be converted to JSON directly, so return a string representation.
-        return str(value)
-
-
 def _make_scatter_object(
     n_targets: int,
     axis_order: Sequence[int],
@@ -419,21 +410,6 @@ def _make_scatter_object(
         )
     else:
         assert False, "Must not reach here"
-
-
-def _make_hovertext(trial: FrozenTrial) -> str:
-    user_attrs = {key: _make_json_compatible(value) for key, value in trial.user_attrs.items()}
-    user_attrs_dict = {"user_attrs": user_attrs} if user_attrs else {}
-    text = json.dumps(
-        {
-            "number": trial.number,
-            "values": trial.values,
-            "params": trial.params,
-            **user_attrs_dict,
-        },
-        indent=2,
-    )
-    return text.replace("\n", "<br>")
 
 
 def _make_marker(

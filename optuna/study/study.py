@@ -8,6 +8,7 @@ from typing import Container
 from typing import Dict
 from typing import Iterable
 from typing import List
+from typing import Mapping
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -27,6 +28,7 @@ from optuna import trial as trial_module
 from optuna._convert_positional_args import convert_positional_args
 from optuna._deprecated import deprecated_func
 from optuna._imports import _LazyImport
+from optuna._typing import JSONSerializable
 from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.distributions import BaseDistribution
 from optuna.storages._cached_storage import _CachedStorage
@@ -56,6 +58,7 @@ _logger = logging.get_logger(__name__)
 
 class _ThreadLocalStudyAttribute(threading.local):
     in_optimize_loop: bool = False
+    cached_all_trials: Optional[List["FrozenTrial"]] = None
 
 
 class Study:
@@ -261,6 +264,28 @@ class Study:
         Returns:
             A list of :class:`~optuna.trial.FrozenTrial` objects.
         """
+        return self._get_trials(deepcopy, states, use_cache=False)
+
+    def _get_trials(
+        self,
+        deepcopy: bool = True,
+        states: Optional[Container[TrialState]] = None,
+        use_cache: bool = False,
+    ) -> List[FrozenTrial]:
+        if use_cache:
+            if self._thread_local.cached_all_trials is None:
+                if isinstance(self._storage, _CachedStorage):
+                    self._storage.read_trials_from_remote_storage(self._study_id)
+                self._thread_local.cached_all_trials = self._storage.get_all_trials(
+                    self._study_id, deepcopy=False
+                )
+            trials = self._thread_local.cached_all_trials
+            if states is not None:
+                filtered_trials = [t for t in trials if t.state in states]
+            else:
+                filtered_trials = trials
+            return copy.deepcopy(filtered_trials) if deepcopy else filtered_trials
+
         if isinstance(self._storage, _CachedStorage):
             self._storage.read_trials_from_remote_storage(self._study_id)
 
@@ -508,6 +533,7 @@ class Study:
         }
 
         # Sync storage once every trial.
+        self._thread_local.cached_all_trials = None
         if isinstance(self._storage, _CachedStorage):
             self._storage.read_trials_from_remote_storage(self._study_id)
 
@@ -1014,7 +1040,7 @@ class Study:
 
         return None
 
-    def _should_skip_enqueue(self, params: Dict[str, Any]) -> bool:
+    def _should_skip_enqueue(self, params: Mapping[str, JSONSerializable]) -> bool:
         for trial in self.get_trials(deepcopy=False):
             trial_params = trial.system_attrs.get("fixed_params", trial.params)
             if trial_params.keys() != params.keys():
