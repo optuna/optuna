@@ -225,8 +225,8 @@ def test_add_random_inputs(direction: StudyDirection) -> None:
     )
     trials_after = p.apply(trials_before, direction)
 
-    assert trials_before[0] == trials_after[0]
     assert len(trials_after) == len(trials_before) + n_additional_trials
+    assert trials_before[0] == trials_after[0]
     for t in trials_after[1:]:
         assert t.value == dummy_value
         assert t.distributions == distributions
