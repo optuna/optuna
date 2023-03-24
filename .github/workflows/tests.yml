@@ -66,6 +66,10 @@ jobs:
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
 
+    - name: Output installed packages
+      run: |
+        pip freeze --all
+
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
@@ -74,7 +78,7 @@ jobs:
         SQLALCHEMY_WARN_20: 1
 
     - name: Tests
-      if:  ${{ github.event_name != 'schedule' }}
+      if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
       run: |
         pytest tests -m "not integration and not slow"
       env:

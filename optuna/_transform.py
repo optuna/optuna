@@ -38,6 +38,9 @@ class _SearchSpaceTransform:
             space by one step. This allows fair sampling for values close to the bounds.
             Should always be :obj:`True` if any parameters are going to be sampled from the
             transformed space.
+        transform_0_1:
+            If :obj:`True`, apply a linear transformation to the bounds and parameters so that
+            they are in the unit cube.
 
     Attributes:
         bounds:
@@ -62,20 +65,24 @@ class _SearchSpaceTransform:
         search_space: Dict[str, BaseDistribution],
         transform_log: bool = True,
         transform_step: bool = True,
+        transform_0_1: bool = False,
     ) -> None:
         bounds, column_to_encoded_columns, encoded_column_to_column = _transform_search_space(
             search_space, transform_log, transform_step
         )
-
-        self._bounds = bounds
+        self._raw_bounds = bounds
         self._column_to_encoded_columns = column_to_encoded_columns
         self._encoded_column_to_column = encoded_column_to_column
         self._search_space = search_space
         self._transform_log = transform_log
+        self._transform_0_1 = transform_0_1
 
     @property
     def bounds(self) -> numpy.ndarray:
-        return self._bounds
+        if self._transform_0_1:
+            return numpy.array([[0.0, 1.0]] * self._raw_bounds.shape[0])
+        else:
+            return self._raw_bounds
 
     @property
     def column_to_encoded_columns(self) -> List[numpy.ndarray]:
@@ -97,7 +104,7 @@ class _SearchSpaceTransform:
             configuration.
 
         """
-        trans_params = numpy.zeros(self._bounds.shape[0], dtype=numpy.float64)
+        trans_params = numpy.zeros(self._raw_bounds.shape[0], dtype=numpy.float64)
 
         bound_idx = 0
         for name, distribution in self._search_space.items():
@@ -114,6 +121,13 @@ class _SearchSpaceTransform:
                 )
                 bound_idx += 1
 
+        if self._transform_0_1:
+            single_mask = self._raw_bounds[:, 0] == self._raw_bounds[:, 1]
+            trans_params[single_mask] = 0.5
+            trans_params[~single_mask] = (
+                trans_params[~single_mask] - self._raw_bounds[~single_mask, 0]
+            ) / (self._raw_bounds[~single_mask, 1] - self._raw_bounds[~single_mask, 0])
+
         return trans_params
 
     def untransform(self, trans_params: numpy.ndarray) -> Dict[str, Any]:
@@ -129,7 +143,12 @@ class _SearchSpaceTransform:
             Values are untransformed parameter values.
 
         """
-        assert trans_params.shape == (self._bounds.shape[0],)
+        assert trans_params.shape == (self._raw_bounds.shape[0],)
+
+        if self._transform_0_1:
+            trans_params = self._raw_bounds[:, 0] + trans_params * (
+                self._raw_bounds[:, 1] - self._raw_bounds[:, 0]
+            )
 
         params = {}
 

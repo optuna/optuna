@@ -69,7 +69,6 @@ class _ParzenEstimator:
         elif parameters.consider_prior:
             assert parameters.prior_weight is not None
             weights = np.append(weights, [parameters.prior_weight])
-
         weights /= weights.sum()
         self._mixture_distribution = _MixtureOfProductDistribution(
             weights=weights,

@@ -13,6 +13,7 @@ API Reference
     logging
     pruners
     samplers/index
+    search_space
     storages
     study
     trial

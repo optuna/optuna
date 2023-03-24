@@ -21,6 +21,7 @@ import optuna
 from optuna import distributions
 from optuna import version
 from optuna._imports import _LazyImport
+from optuna._typing import JSONSerializable
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages._heartbeat import BaseHeartbeat
@@ -309,7 +310,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             else:
                 attribute.value_json = json.dumps(value)
 
-    def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
+    def set_study_system_attr(self, study_id: int, key: str, value: JSONSerializable) -> None:
         with _create_scoped_session(self.scoped_session, True) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
             attribute = models.StudySystemAttributeModel.find_by_study_and_key(study, key, session)
@@ -382,10 +383,14 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
     def get_all_studies(self) -> List[FrozenStudy]:
         with _create_scoped_session(self.scoped_session) as session:
-            studies = session.query(
-                models.StudyModel.study_id,
-                models.StudyModel.study_name,
-            ).all()
+            studies = (
+                session.query(
+                    models.StudyModel.study_id,
+                    models.StudyModel.study_name,
+                )
+                .order_by(models.StudyModel.study_id)
+                .all()
+            )
 
             _directions = defaultdict(list)
             for direction_model in session.query(models.StudyDirectionModel).all():
@@ -727,12 +732,12 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         else:
             attribute.value_json = json.dumps(value)
 
-    def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
+    def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
         with _create_scoped_session(self.scoped_session, True) as session:
             self._set_trial_system_attr_without_commit(session, trial_id, key, value)
 
     def _set_trial_system_attr_without_commit(
-        self, session: "sqlalchemy_orm.Session", trial_id: int, key: str, value: Any
+        self, session: "sqlalchemy_orm.Session", trial_id: int, key: str, value: JSONSerializable
     ) -> None:
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
@@ -1039,27 +1044,28 @@ class _VersionManager:
     def _init_alembic(self) -> None:
         logging.getLogger("alembic").setLevel(logging.WARN)
 
-        context = alembic_migration.MigrationContext.configure(self.engine.connect())
-        is_initialized = context.get_current_revision() is not None
+        with self.engine.connect() as connection:
+            context = alembic_migration.MigrationContext.configure(connection)
+            is_initialized = context.get_current_revision() is not None
 
-        if is_initialized:
-            # The `alembic_version` table already exists and is not empty.
-            return
+            if is_initialized:
+                # The `alembic_version` table already exists and is not empty.
+                return
 
-        if self._is_alembic_supported():
-            revision = self.get_head_version()
-        else:
-            # The storage has been created before alembic is introduced.
-            revision = self._get_base_version()
+            if self._is_alembic_supported():
+                revision = self.get_head_version()
+            else:
+                # The storage has been created before alembic is introduced.
+                revision = self._get_base_version()
 
         self._set_alembic_revision(revision)
 
     def _set_alembic_revision(self, revision: str) -> None:
-        connection = self.engine.connect()
-        context = alembic_migration.MigrationContext.configure(connection)
-        with connection.begin():
-            script = self._create_alembic_script()
-            context.stamp(script, revision)
+        with self.engine.connect() as connection:
+            context = alembic_migration.MigrationContext.configure(connection)
+            with connection.begin():
+                script = self._create_alembic_script()
+                context.stamp(script, revision)
 
     def check_table_schema_compatibility(self) -> None:
         with _create_scoped_session(self.scoped_session) as session:
@@ -1093,8 +1099,9 @@ class _VersionManager:
         raise RuntimeError(message)
 
     def get_current_version(self) -> str:
-        context = alembic_migration.MigrationContext.configure(self.engine.connect())
-        version = context.get_current_revision()
+        with self.engine.connect() as connection:
+            context = alembic_migration.MigrationContext.configure(connection)
+            version = context.get_current_revision()
         assert version is not None
 
         return version

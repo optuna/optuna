@@ -10,36 +10,39 @@ from typing import NamedTuple
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from typing import TYPE_CHECKING
 from typing import Union
 import warnings
 
-from cmaes import CMA
-from cmaes import CMAwM
-from cmaes import get_warm_start_mgd
-from cmaes import SepCMA
 import numpy as np
 
 import optuna
 from optuna import logging
+from optuna._imports import _LazyImport
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.samplers import BaseSampler
+from optuna.search_space import IntersectionSearchSpace
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
+
+if TYPE_CHECKING:
+    import cmaes
+
+    CmaClass = Union[cmaes.CMA, cmaes.SepCMA, cmaes.CMAwM]
+else:
+    cmaes = _LazyImport("cmaes")
 
 _logger = logging.get_logger(__name__)
 
 _EPS = 1e-10
 # The value of system_attrs must be less than 2046 characters on RDBStorage.
 _SYSTEM_ATTR_MAX_LENGTH = 2045
-
-
-CmaClass = Union[CMA, SepCMA, CMAwM]
 
 
 class _CmaEsAttrKeys(NamedTuple):
@@ -130,7 +133,7 @@ class CmaEsSampler(BaseSampler):
             sampling. The parameters not contained in the relative search space are sampled
             by this sampler.
             The search space for :class:`~optuna.samplers.CmaEsSampler` is determined by
-            :func:`~optuna.samplers.intersection_search_space()`.
+            :func:`~optuna.search_space.intersection_search_space()`.
 
             If :obj:`None` is specified, :class:`~optuna.samplers.RandomSampler` is used
             as the default.
@@ -240,7 +243,7 @@ class CmaEsSampler(BaseSampler):
         self._n_startup_trials = n_startup_trials
         self._warn_independent_sampling = warn_independent_sampling
         self._cma_rng = np.random.RandomState(seed)
-        self._search_space = optuna.samplers.IntersectionSearchSpace()
+        self._search_space = IntersectionSearchSpace()
         self._consider_pruned_trials = consider_pruned_trials
         self._restart_strategy = restart_strategy
         self._popsize = popsize
@@ -351,17 +354,20 @@ class CmaEsSampler(BaseSampler):
             return {}
 
         if len(search_space) == 1:
-            _logger.info(
-                "`CmaEsSampler` only supports two or more dimensional continuous "
-                "search space. `{}` is used instead of `CmaEsSampler`.".format(
-                    self._independent_sampler.__class__.__name__
+            if self._warn_independent_sampling:
+                _logger.warning(
+                    "`CmaEsSampler` only supports two or more dimensional continuous "
+                    "search space. `{}` is used instead of `CmaEsSampler`.".format(
+                        self._independent_sampler.__class__.__name__
+                    )
                 )
-            )
-            self._warn_independent_sampling = False
+                self._warn_independent_sampling = False
             return {}
 
         # When `with_margin=True`, bounds in discrete dimensions are handled inside `CMAwM`.
-        trans = _SearchSpaceTransform(search_space, transform_step=not self._with_margin)
+        trans = _SearchSpaceTransform(
+            search_space, transform_step=not self._with_margin, transform_0_1=True
+        )
 
         optimizer, n_restarts = self._restore_optimizer(completed_trials)
         if optimizer is None:
@@ -369,13 +375,14 @@ class CmaEsSampler(BaseSampler):
             optimizer = self._init_optimizer(trans, study.direction, population_size=self._popsize)
 
         if optimizer.dim != len(trans.bounds):
-            _logger.info(
-                "`CmaEsSampler` does not support dynamic search space. "
-                "`{}` is used instead of `CmaEsSampler`.".format(
-                    self._independent_sampler.__class__.__name__
+            if self._warn_independent_sampling:
+                _logger.warning(
+                    "`CmaEsSampler` does not support dynamic search space. "
+                    "`{}` is used instead of `CmaEsSampler`.".format(
+                        self._independent_sampler.__class__.__name__
+                    )
                 )
-            )
-            self._warn_independent_sampling = False
+                self._warn_independent_sampling = False
             return {}
 
         # TODO(c-bata): Reduce the number of wasted trials during parallel optimization.
@@ -388,8 +395,8 @@ class CmaEsSampler(BaseSampler):
             solutions: List[Tuple[np.ndarray, float]] = []
             for t in solution_trials[: optimizer.population_size]:
                 assert t.value is not None, "completed trials must have a value"
-                if isinstance(optimizer, CMAwM):
-                    x = t.system_attrs["x_for_tell"]
+                if isinstance(optimizer, cmaes.CMAwM):
+                    x = np.array(t.system_attrs["x_for_tell"])
                 else:
                     x = trans.transform(t.params)
                 y = t.value if study.direction == StudyDirection.MINIMIZE else -t.value
@@ -413,9 +420,11 @@ class CmaEsSampler(BaseSampler):
         # Caution: optimizer should update its seed value.
         seed = self._cma_rng.randint(1, 2**16) + trial.number
         optimizer._rng.seed(seed)
-        if isinstance(optimizer, CMAwM):
+        if isinstance(optimizer, cmaes.CMAwM):
             params, x_for_tell = optimizer.ask()
-            study._storage.set_trial_system_attr(trial._trial_id, "x_for_tell", x_for_tell)
+            study._storage.set_trial_system_attr(
+                trial._trial_id, "x_for_tell", x_for_tell.tolist()
+            )
         else:
             params = optimizer.ask()
 
@@ -470,7 +479,7 @@ class CmaEsSampler(BaseSampler):
     def _restore_optimizer(
         self,
         completed_trials: "List[optuna.trial.FrozenTrial]",
-    ) -> Tuple[Optional[CmaClass], int]:
+    ) -> Tuple[Optional["CmaClass"], int]:
         # Restore a previous CMA object.
         for trial in reversed(completed_trials):
             optimizer_attrs = {
@@ -492,7 +501,7 @@ class CmaEsSampler(BaseSampler):
         direction: StudyDirection,
         population_size: Optional[int] = None,
         randomize_start_point: bool = False,
-    ) -> CmaClass:
+    ) -> "CmaClass":
         lower_bounds = trans.bounds[:, 0]
         upper_bounds = trans.bounds[:, 1]
         n_dimension = len(trans.bounds)
@@ -531,13 +540,13 @@ class CmaEsSampler(BaseSampler):
                 raise ValueError("No compatible source_trials")
 
             # TODO(c-bata): Add options to change prior parameters (alpha and gamma).
-            mean, sigma0, cov = get_warm_start_mgd(source_solutions)
+            mean, sigma0, cov = cmaes.get_warm_start_mgd(source_solutions)
 
         # Avoid ZeroDivisionError in cmaes.
         sigma0 = max(sigma0, _EPS)
 
         if self._use_separable_cma:
-            return SepCMA(
+            return cmaes.SepCMA(
                 mean=mean,
                 sigma=sigma0,
                 bounds=trans.bounds,
@@ -553,7 +562,7 @@ class CmaEsSampler(BaseSampler):
                 # Set step 0.0 for continuous search space.
                 steps[i] = dist.step or 0.0
 
-            return CMAwM(
+            return cmaes.CMAwM(
                 mean=mean,
                 sigma=sigma0,
                 bounds=trans.bounds,
@@ -564,7 +573,7 @@ class CmaEsSampler(BaseSampler):
                 population_size=population_size,
             )
 
-        return CMA(
+        return cmaes.CMA(
             mean=mean,
             sigma=sigma0,
             cov=cov,
@@ -607,7 +616,7 @@ class CmaEsSampler(BaseSampler):
 
     def _get_trials(self, study: "optuna.Study") -> List[FrozenTrial]:
         complete_trials = []
-        for t in study.get_trials(deepcopy=False):
+        for t in study._get_trials(deepcopy=False, use_cache=True):
             if t.state == TrialState.COMPLETE:
                 complete_trials.append(t)
             elif (

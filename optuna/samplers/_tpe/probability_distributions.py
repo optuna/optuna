@@ -4,7 +4,6 @@ from typing import Union
 
 import numpy as np
 
-from optuna.samplers._tpe import _erf
 from optuna.samplers._tpe import _truncnorm
 
 
@@ -32,14 +31,6 @@ _BatchedDistributions = Union[
     _BatchedTruncNormDistributions,
     _BatchedDiscreteTruncNormDistributions,
 ]
-
-EPS = 1e-12
-
-
-def _normal_cdf(
-    x: Union[float, np.ndarray], mu: Union[float, np.ndarray], sigma: Union[float, np.ndarray]
-) -> np.ndarray:
-    return 0.5 * (1 + _erf.erf((x - mu) / np.maximum(np.sqrt(2) * sigma, EPS)))
 
 
 class _MixtureOfProductDistribution(NamedTuple):
