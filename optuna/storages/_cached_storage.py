@@ -28,7 +28,6 @@ class _StudyInfo:
         # Trial number to corresponding FrozenTrial.
         self.trials: Dict[int, FrozenTrial] = {}
         # A list of trials which do not require storage access to read latest attributes.
-        self.owned_trial_ids: Set[int] = set()
         self.finished_trial_ids: Set[int] = set()
         # Cache distributions to avoid storage access on distribution consistency check.
         self.param_distribution: Dict[str, distributions.BaseDistribution] = {}
