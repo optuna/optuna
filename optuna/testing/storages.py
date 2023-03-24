@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 from types import TracebackType
 from typing import Any
+from typing import IO
 from typing import Optional
 from typing import Type
 from typing import Union
@@ -52,6 +53,7 @@ class StorageSupplier:
         self.storage_specifier = storage_specifier
         self.extra_args = kwargs
         self.dask_client: Optional["distributed.Client"] = None
+        self.tempfile: IO[Any] | None = None
 
     def __enter__(
         self,
@@ -67,7 +69,8 @@ class StorageSupplier:
                 raise ValueError("InMemoryStorage does not accept any arguments!")
             return optuna.storages.InMemoryStorage()
         elif "sqlite" in self.storage_specifier:
-            url = "sqlite:///{}".format(NamedTemporaryFilePool().tempfile().name)
+            self.tempfile = NamedTemporaryFilePool().tempfile()
+            url = "sqlite:///{}".format(self.tempfile.name)
             rdb_storage = optuna.storages.RDBStorage(
                 url,
                 engine_kwargs={"connect_args": {"timeout": SQLITE3_TIMEOUT}},
@@ -85,7 +88,8 @@ class StorageSupplier:
             )
             return optuna.storages.JournalStorage(journal_redis_storage)
         elif "journal" in self.storage_specifier:
-            file_storage = JournalFileStorage(NamedTemporaryFilePool().tempfile().name)
+            self.tempfile = NamedTemporaryFilePool().tempfile()
+            file_storage = JournalFileStorage(self.tempfile.name)
             return optuna.storages.JournalStorage(file_storage)
         elif self.storage_specifier == "dask":
             self.dask_client = distributed.Client()  # type: ignore[no-untyped-call]
@@ -97,6 +101,9 @@ class StorageSupplier:
     def __exit__(
         self, exc_type: Type[BaseException], exc_val: BaseException, exc_tb: TracebackType
     ) -> None:
+        if self.tempfile:
+            self.tempfile.close()
+
         if self.dask_client:
             self.dask_client.shutdown()  # type: ignore[no-untyped-call]
             self.dask_client.close()  # type: ignore[no-untyped-call]

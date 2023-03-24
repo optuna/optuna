@@ -67,7 +67,8 @@ class JournalLogStorageSupplier:
     def __exit__(
         self, exc_type: Type[BaseException], exc_val: BaseException, exc_tb: TracebackType
     ) -> None:
-        pass
+        if self.tempfile:
+            self.tempfile.close()
 
 
 @pytest.mark.parametrize("log_storage_type", LOG_STORAGE)
