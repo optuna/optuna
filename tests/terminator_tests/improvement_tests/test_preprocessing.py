@@ -165,6 +165,7 @@ def test_one_to_hot(direction: StudyDirection) -> None:
             "i1_categorical": FloatDistribution(0, 1),
         }
 
+    assert len(trials_after) == 2
     assert trials_after[0].params == {"i0_categorical": 1.0, "i1_categorical": 0.0}
     assert trials_after[1].params == {"i0_categorical": 0.0, "i1_categorical": 1.0}
 
