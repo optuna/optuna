@@ -461,6 +461,10 @@ def _associate_individuals_with_reference_points(
     # TODO(Shinichi) Normalize reference_points in constructor to remove reference_point_norms.
     # In addition, the minimum distance from each reference point can be replaced with maximum
     # inner product between the given individual and each normalized reference points.
+
+    # distance_from_reference_lines is a ndarray of shape (n, p), where n is the size of the
+    # population and p is the number of reference points. Its (i,j) entry keeps distance between
+    # the i-th individual values and the j-th reference line.
     reference_point_norm_squared = np.linalg.norm(reference_points, axis=1) ** 2
     perpendicular_vectors_to_reference_lines = np.einsum(
         "ni,pi,p,pm->npm",
@@ -476,13 +480,13 @@ def _associate_individuals_with_reference_points(
     distance_reference_points = np.min(distance_from_reference_lines, axis=1)
     closest_reference_points = np.argmin(distance_from_reference_lines, axis=1)
 
-    # count_reference_points keeps how many elite neighbors each reference point has
+    # count_reference_points keeps how many elite neighbors each reference point has.
     count_reference_points: Dict[int, int] = DefaultDict(int)
     for i, reference_point_id in enumerate(closest_reference_points[:elite_population_num]):
         count_reference_points[reference_point_id] += 1
 
     # reference_point_to_population keeps pairs of a neighbor and the distance of each reference
-    # point from borderline front population
+    # point from borderline front population.
     reference_point_to_population = DefaultDict(list)
     for i, reference_point_id in enumerate(closest_reference_points[elite_population_num:]):
         reference_point_to_population[reference_point_id].append(
@@ -544,7 +548,7 @@ def _preserve_niche_individuals(
                 reference_point_to_population[reference_point_id][reference_point_idx],
             )
         else:
-            # TODO(Shinichi) avoid sort
+            # TODO(Shinichi) avoid sort.
             reference_point_to_population[reference_point_id].sort(reverse=True)
 
         _, selected_individual_id = reference_point_to_population[reference_point_id].pop()
