@@ -419,34 +419,29 @@ def _normalize_objective_values(
     scalarizing function from the population. After that, intercepts are calculate as intercepts
     of hyperplane which has all the extreme points on it and used to rescale objective values.
     """
-    # Collect objective values
+    # Collect all objective values.
     n_objectives = len(population[0].values)
     objective_matrix = np.zeros((len(population), n_objectives))
     for i, trial in enumerate(population):
         objective_matrix[i] = np.array(trial.values, dtype=float)
 
-    # Subtract ideal point
+    # Subtract ideal point from objective values.
     objective_matrix -= np.min(objective_matrix, axis=0)
 
-    # TODO(Shinichi) Find out exact definition of "extreme point."
-    # Weights are m vectors in m dimension where m is the dimension of the objective. According to
-    # the paper weights can be anything as long as the i-th vector is close to each i-th objective
-    # axis. Also, the original paper says that the algorithm should chose ASF "minima" but no exact
-    # definition is provided. Currently, the pymoo implementation, which is the official
-    # implementation of the paper, is adopted to determine extreme points.
-
-    # Initialize weight
+    # We adopt weights and achievement scalarizing function(ASF) used in pre-print of the NSGA-III
+    # paper (See https://www.egr.msu.edu/~kdeb/papers/k2012009.pdf).
+    # Initialize weights.
     weights = np.eye(n_objectives)
     weights[weights == 0] = 1e6
 
-    # Calculate extreme points to normalize objective values
-    # TODO(Shinichi) Reimplement to reduce time complexity
+    # Calculate extreme points to normalize objective values.
+    # TODO(Shinichi) Reimplement to reduce time complexity.
     asf_value = np.max(np.einsum("ik, jk->jik", objective_matrix, weights), axis=2)
     extreme_points = objective_matrix[np.argmin(asf_value, axis=1), :]
 
     # Normalize objective_matrix with extreme points.
     # Note that extreme_points can be degenerate, but no proper operation is remarked in the
-    # paper. Therefore, the maximum of elite population in each axis is used in the case.
+    # paper. Therefore, the maximum value of population in each axis is used in such cases.
     if np.linalg.matrix_rank(extreme_points) < len(extreme_points):
         intercepts_inv = 1 / np.max(objective_matrix, axis=0)
     else:
@@ -464,8 +459,8 @@ def _associate_individuals_with_reference_points(
     # not seem necessary to calculate distance from all reference points.
 
     # TODO(Shinichi) Normalize reference_points in constructor to remove reference_point_norms.
-    # In addition, the minimum distance from each reference point can be replace with maximum inner
-    # product between the given point and each normalized reference points.
+    # In addition, the minimum distance from each reference point can be replaced with maximum
+    # inner product between the given individual and each normalized reference points.
     reference_point_norm_squared = np.sum(reference_points**2, axis=1)
     coefficient = objective_matrix @ reference_points.T / reference_point_norm_squared
     distance_from_reference_lines = np.linalg.norm(
