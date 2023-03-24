@@ -27,6 +27,7 @@ from optuna import storages
 from optuna import trial as trial_module
 from optuna._convert_positional_args import convert_positional_args
 from optuna._deprecated import deprecated_func
+from optuna._experimental import experimental_func
 from optuna._imports import _LazyImport
 from optuna._typing import JSONSerializable
 from optuna.distributions import _convert_old_distribution_to_new_distribution
@@ -50,7 +51,7 @@ if TYPE_CHECKING:
 
 
 ObjectiveFuncType = Callable[[trial_module.Trial], Union[float, Sequence[float]]]
-METRIC_NAMES = "study:metric_names"
+_SYSTEM_ATTR_METRIC_NAMES = "study:metric_names"
 
 
 _logger = logging.get_logger(__name__)
@@ -977,6 +978,7 @@ class Study:
         for trial in trials:
             self.add_trial(trial)
 
+    @experimental_func("3.2.0")
     def set_metric_names(self, metric_names: List[str]) -> None:
         """Set metric names.
 
@@ -1017,7 +1019,9 @@ class Study:
                 "The number of objectives must match thhe length of the metric names."
             )
 
-        self._storage.set_study_system_attr(self._study_id, METRIC_NAMES, metric_names)
+        self._storage.set_study_system_attr(
+            self._study_id, _SYSTEM_ATTR_METRIC_NAMES, metric_names
+        )
 
     def _is_multi_objective(self) -> bool:
         """Return :obj:`True` if the study has multiple objectives.

@@ -14,7 +14,7 @@ import optuna
 from optuna.exceptions import ExperimentalWarning
 from optuna.study import Study
 from optuna.study._multi_objective import _get_pareto_front_trials_by_trials
-from optuna.study.study import METRIC_NAMES
+from optuna.study.study import _SYSTEM_ATTR_METRIC_NAMES
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
@@ -315,7 +315,9 @@ def _get_pareto_front_info(
         )
 
     if target_names is None:
-        metric_names = study._storage.get_study_system_attrs(study._study_id).get(METRIC_NAMES)
+        metric_names = study._storage.get_study_system_attrs(study._study_id).get(
+            _SYSTEM_ATTR_METRIC_NAMES
+        )
         if metric_names is None:
             target_names = [f"Objective {i}" for i in range(n_targets)]
         else:
