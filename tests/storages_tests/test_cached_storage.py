@@ -68,15 +68,6 @@ def test_uncached_set() -> None:
         assert set_mock.call_count == 1
 
     trial_id = storage.create_new_trial(study_id)
-    with patch.object(
-        base_storage, "_check_and_set_param_distribution", return_value=True
-    ) as set_mock:
-        storage.set_trial_param(
-            trial_id, "paramA", 1.2, optuna.distributions.FloatDistribution(-0.2, 2.3)
-        )
-        assert set_mock.call_count == 1
-
-    trial_id = storage.create_new_trial(study_id)
     with patch.object(base_storage, "set_trial_param", return_value=True) as set_mock:
         storage.set_trial_param(
             trial_id, "paramA", 1.2, optuna.distributions.FloatDistribution(-0.2, 2.3)

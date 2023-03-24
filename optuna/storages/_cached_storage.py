@@ -184,39 +184,6 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
         param_value_internal: float,
         distribution: distributions.BaseDistribution,
     ) -> None:
-        with self._lock:
-            cached_trial = self._get_cached_trial(trial_id)
-            if cached_trial is not None:
-                self._check_trial_is_updatable(cached_trial)
-
-                study_id, _ = self._trial_id_to_study_id_and_number[trial_id]
-                cached_dist = self._studies[study_id].param_distribution.get(param_name, None)
-                if cached_dist:
-                    distributions.check_distribution_compatibility(cached_dist, distribution)
-                else:
-                    # On cache miss, check compatibility against previous trials in the database
-                    # and INSERT immediately to prevent other processes from creating incompatible
-                    # ones. By INSERT, it is assumed that no previous entry has been persisted
-                    # already.
-                    self._backend._check_and_set_param_distribution(
-                        study_id, trial_id, param_name, param_value_internal, distribution
-                    )
-                    self._studies[study_id].param_distribution[param_name] = distribution
-
-                params = copy.copy(cached_trial.params)
-                params[param_name] = distribution.to_external_repr(param_value_internal)
-                cached_trial.params = params
-
-                dists = copy.copy(cached_trial.distributions)
-                dists[param_name] = distribution
-                cached_trial.distributions = dists
-
-                if cached_dist:  # Already persisted in case of cache miss so no need to update.
-                    self._backend.set_trial_param(
-                        trial_id, param_name, param_value_internal, distribution
-                    )
-                return
-
         self._backend.set_trial_param(trial_id, param_name, param_value_internal, distribution)
 
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
@@ -252,17 +219,7 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
                     cached_trial.datetime_complete = backend_trial.datetime_complete
                 return ret
 
-        ret = self._backend.set_trial_state_values(trial_id, state=state, values=values)
-        if (
-            ret
-            and state == TrialState.RUNNING
-            and trial_id in self._trial_id_to_study_id_and_number
-        ):
-            # Cache when the local thread pop WAITING trial and start evaluation.
-            with self._lock:
-                study_id, _ = self._trial_id_to_study_id_and_number[trial_id]
-                self._add_trials_to_cache(study_id, [self._backend.get_trial(trial_id)])
-        return ret
+        return self._backend.set_trial_state_values(trial_id, state=state, values=values)
 
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
