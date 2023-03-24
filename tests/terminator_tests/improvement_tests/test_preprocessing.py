@@ -165,9 +165,10 @@ def test_one_to_hot(direction: StudyDirection) -> None:
 
     for t in trials_after:
         # Distributions are expected to be mapped to `FloatDistribution(0, 1)` for each choice.
-        assert len(t.distributions) == 2
-        for d in t.distributions.values():
-            assert d == FloatDistribution(0, 1)
+        assert t.distributions == {
+            "i0_categorical": FloatDistribution(0, 1),
+            "i1_categorical": FloatDistribution(0, 1),
+        }
 
     assert trials_after[0].params == {"i0_categorical": 1.0, "i1_categorical": 0.0}
     assert trials_after[1].params == {"i0_categorical": 0.0, "i1_categorical": 1.0}
