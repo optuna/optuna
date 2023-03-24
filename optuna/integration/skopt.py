@@ -16,6 +16,7 @@ from optuna import samplers
 from optuna._imports import try_import
 from optuna.exceptions import ExperimentalWarning
 from optuna.samplers import BaseSampler
+from optuna.search_space import IntersectionSearchSpace
 from optuna.study import Study
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -55,7 +56,7 @@ class SkoptSampler(BaseSampler):
             sampling. The parameters not contained in the relative search space are sampled
             by this sampler.
             The search space for :class:`~optuna.integration.SkoptSampler` is determined by
-            :func:`~optuna.samplers.intersection_search_space()`.
+            :func:`~optuna.search_space.intersection_search_space()`.
 
             If :obj:`None` is specified, :class:`~optuna.samplers.RandomSampler` is used
             as the default.
@@ -123,7 +124,7 @@ class SkoptSampler(BaseSampler):
         self._independent_sampler = independent_sampler or samplers.RandomSampler(seed=seed)
         self._warn_independent_sampling = warn_independent_sampling
         self._n_startup_trials = n_startup_trials
-        self._search_space = samplers.IntersectionSearchSpace()
+        self._search_space = IntersectionSearchSpace()
         self._consider_pruned_trials = consider_pruned_trials
 
         if self._consider_pruned_trials:

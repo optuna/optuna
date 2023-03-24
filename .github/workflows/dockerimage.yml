@@ -64,6 +64,10 @@ jobs:
       env:
         DOCKER_BUILDKIT: 1
 
+    - name: Output installed packages
+      run: |
+        docker run "${HUB_TAG}" sh -c "pip freeze --all"
+
     - name: Verify the built image
       run: |
         docker run "${HUB_TAG}" optuna --version
