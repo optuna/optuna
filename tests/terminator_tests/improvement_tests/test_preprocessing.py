@@ -190,17 +190,17 @@ def test_one_to_hot(direction: StudyDirection) -> None:
     p = _preprocessing.OneToHot()
     trials_after = p.apply(trials_before, direction)
 
-    for name_before, param_before in trials_before[0].params.items():
-        distribution_before = trials_before[0].distributions[name_before]
-
-        # Note that the param/distribution names are modified with "i0_" prefix to be consistent
-        # with categorical parameters.
-        name_after = f"i0_{name_before}"
-        param_after = trials_after[0].params[name_after]
-        distribution_after = trials_after[0].distributions[name_after]
-
-        assert distribution_before == distribution_after
-        assert param_before == param_after
+    assert len(trials_after) == 1
+    # Note that the param/distribution names are modified with "i0_" prefix to be consistent
+    # with categorical parameters.
+    assert trials_after[0].params == {
+        "i0_float": 1,
+        "i0_int": 3,
+    }
+    assert trials_after[0].distributions == {
+        "i0_float": FloatDistribution(1, 10),
+        "i0_int": IntDistribution(1, 10),
+    }
 
 
 @pytest.mark.parametrize("direction", (StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE))
