@@ -98,35 +98,30 @@ def test_unscale_log(direction: StudyDirection) -> None:
 
 
 @pytest.mark.parametrize("direction", (StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE))
-def test_select_top_trials(direction: StudyDirection) -> None:
+@pytest.mark.parametrize(
+    "top_trials_ratio,min_n_trials,n_trials_expected",
+    [
+        (0.4, 3, 3),  # `n_trials` * `top_trials_ratio` is less than `min_n_trials`.
+        (0.8, 3, 4),  # `n_trials` * `top_trials_ratio` is greater than `min_n_trials`.
+    ],
+)
+def test_select_top_trials(
+    direction: StudyDirection,
+    top_trials_ratio: float,
+    min_n_trials: int,
+    n_trials_expected: int,
+) -> None:
     values = [1, 0, 0, 2, 1]
     trials_before = [create_trial(value=v) for v in values]
 
     values_in_order = sorted(values, reverse=(direction == StudyDirection.MAXIMIZE))
 
-    # Scenario: `n_trials` * `top_trials_ratio` is less than `min_n_trials`.
-    top_trials_ratio = 0.4
-    min_n_trials = 3
     p = _preprocessing.SelectTopTrials(
         top_trials_ratio=top_trials_ratio,
         min_n_trials=min_n_trials,
     )
     trials_after = p.apply(trials_before, direction)
 
-    n_trials_expected = min_n_trials
-    assert len(trials_after) == n_trials_expected
-    assert _get_trial_values(trials_after) == values_in_order[:n_trials_expected]
-
-    # Scenario: `n_trials` * `top_trials_ratio` is greater than `min_n_trials`.
-    top_trials_ratio = 0.8
-    min_n_trials = 3
-    p = _preprocessing.SelectTopTrials(
-        top_trials_ratio=top_trials_ratio,
-        min_n_trials=min_n_trials,
-    )
-    trials_after = p.apply(trials_before, direction)
-
-    n_trials_expected = int(len(values) * top_trials_ratio)
     assert len(trials_after) == n_trials_expected
     assert _get_trial_values(trials_after) == values_in_order[:n_trials_expected]
 
