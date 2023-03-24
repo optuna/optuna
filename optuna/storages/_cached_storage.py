@@ -34,10 +34,6 @@ class _StudyInfo:
         self.directions: Optional[List[StudyDirection]] = None
         self.name: Optional[str] = None
 
-    @property
-    def owned_or_finished_trial_ids(self) -> Set[int]:
-        return self.owned_trial_ids | self.finished_trial_ids
-
 
 class _CachedStorage(BaseStorage, BaseHeartbeat):
     """A wrapper class of storage backends.
@@ -62,11 +58,6 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
     more recent values than any writes by `P` on the attribute before `P` updated
     the `state` attribute of `T`.
     The same applies for `user_attrs', 'system_attrs' and 'intermediate_values` attributes.
-
-    The current implementation of :class:`~optuna.storages._CachedStorage` assumes that each
-    RUNNING trial is only modified from a single process.
-    When a user modifies a RUNNING trial from multiple processes, the internal state of the storage
-    may become inconsistent. Consequences are undefined.
 
     **Data persistence**
 
@@ -180,15 +171,10 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
                 self._studies[study_id] = _StudyInfo()
             study = self._studies[study_id]
             self._add_trials_to_cache(study_id, [frozen_trial])
-            # Running trials can be modified from only one worker.
-            # If the state is RUNNING, since this worker is an owner of the trial, we do not need
-            # to access to the storage to get the latest attributes of the trial.
             # Since finished trials will not be modified by any worker, we do not
-            # need storage access for them, too.
-            # WAITING trials are exception and they can be modified from arbitral worker.
-            # Thus, we cannot add them to a list of cached trials.
-            if frozen_trial.state != TrialState.WAITING:
-                study.owned_trial_ids.add(frozen_trial._trial_id)
+            # need storage access for them.
+            if frozen_trial.state.is_finished():
+                study.finished_trial_ids.add(frozen_trial._trial_id)
         return trial_id
 
     def set_trial_param(
@@ -276,7 +262,6 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
             with self._lock:
                 study_id, _ = self._trial_id_to_study_id_and_number[trial_id]
                 self._add_trials_to_cache(study_id, [self._backend.get_trial(trial_id)])
-                self._studies[study_id].owned_trial_ids.add(trial_id)
         return ret
 
     def set_trial_intermediate_value(
@@ -316,7 +301,7 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
             return None
         study_id, number = self._trial_id_to_study_id_and_number[trial_id]
         study = self._studies[study_id]
-        return study.trials[number] if trial_id in study.owned_or_finished_trial_ids else None
+        return study.trials[number] if trial_id in study.finished_trial_ids else None
 
     def get_trial(self, trial_id: int) -> FrozenTrial:
         with self._lock:
@@ -333,7 +318,7 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
         states: Optional[Container[TrialState]] = None,
     ) -> List[FrozenTrial]:
         if study_id not in self._studies:
-            self.read_trials_from_remote_storage(study_id, sync_owned_trials=False)
+            self.read_trials_from_remote_storage(study_id)
 
         with self._lock:
             study = self._studies[study_id]
@@ -349,16 +334,14 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
             trials = list(sorted(trials.values(), key=lambda t: t.number))
             return copy.deepcopy(trials) if deepcopy else trials
 
-    def read_trials_from_remote_storage(self, study_id: int, sync_owned_trials: bool) -> None:
+    def read_trials_from_remote_storage(self, study_id: int) -> None:
         with self._lock:
             if study_id not in self._studies:
                 self._studies[study_id] = _StudyInfo()
             study = self._studies[study_id]
-            if sync_owned_trials:
-                excluded = study.finished_trial_ids
-            else:
-                excluded = study.owned_or_finished_trial_ids
-            trials = self._backend._get_trials(study_id, states=None, excluded_trial_ids=excluded)
+            trials = self._backend._get_trials(
+                study_id, states=None, excluded_trial_ids=study.finished_trial_ids
+            )
             if trials:
                 self._add_trials_to_cache(study_id, trials)
                 for trial in trials:
