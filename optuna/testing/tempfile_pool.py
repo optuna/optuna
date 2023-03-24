@@ -27,9 +27,9 @@ class NamedTemporaryFilePool:
         self.kwargs = kwargs
 
     def tempfile(self) -> IO[Any]:
-        tmpfile = tempfile.NamedTemporaryFile(delete=False, **self.kwargs)
-        self.tempfile_pool.append(tmpfile)
-        return tmpfile
+        self._tempfile = tempfile.NamedTemporaryFile(delete=False, **self.kwargs)
+        self.tempfile_pool.append(self._tempfile)
+        return self._tempfile
 
     def cleanup(self) -> None:
         gc.collect()
@@ -45,4 +45,4 @@ class NamedTemporaryFilePool:
         exc_val: BaseException,
         exc_tb: TracebackType,
     ) -> None:
-        pass
+        self._tempfile.close()
