@@ -5,7 +5,6 @@ from typing import Any
 from typing import Callable
 from typing import NamedTuple
 from typing import Sequence
-from typing import Union
 import warnings
 
 import optuna
@@ -371,7 +370,7 @@ def _make_scatter_object(
     hovertemplate: str,
     infeasible: bool = False,
     dominated_trials: bool = False,
-) -> Union["go.Scatter", "go.Scatter3d"]:
+) -> "go.Scatter" | "go.Scatter3d":
     trials_with_values = trials_with_values or []
 
     marker = _make_marker(

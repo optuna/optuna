@@ -5,7 +5,6 @@ import math
 from typing import Any
 from typing import Callable
 from typing import cast
-from typing import DefaultDict
 from typing import NamedTuple
 
 import numpy as np
@@ -230,7 +229,7 @@ def _get_parallel_coordinate_info(
                 ticktext=["{:.3g}".format(math.pow(10, x)) for x in tickvals],
             )
         elif _is_categorical(trials, p_name):
-            vocab: DefaultDict[int | str, int] = defaultdict(lambda: len(vocab))
+            vocab: defaultdict[int | str, int] = defaultdict(lambda: len(vocab))
 
             ticktext: list[str]
             if _is_numerical(trials, p_name):
