@@ -2,9 +2,16 @@ import abc
 from typing import Dict
 from typing import List
 
+import numpy as np
+
 from optuna._experimental import experimental_class
+from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 from optuna.study import StudyDirection
+from optuna.terminator import _distribution_is_log
 from optuna.terminator._search_space.intersection import IntersectionSearchSpace
 from optuna.terminator.improvement._preprocessing import BasePreprocessing
 from optuna.terminator.improvement._preprocessing import OneToHot
@@ -14,21 +21,17 @@ from optuna.terminator.improvement._preprocessing import ToMinimize
 from optuna.terminator.improvement._preprocessing import UnscaleLog
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna.distributions import CategoricalDistribution
-from optuna.distributions import FloatDistribution
-from optuna.distributions import IntDistribution
-from optuna.terminator import _distribution_is_log
-import numpy as np
-from optuna._imports import try_import
+
+
 with try_import() as _imports:
+    from botorch.acquisition.analytic import UpperConfidenceBound
     from botorch.fit import fit_gpytorch_model
-    from botorch.optim import optimize_acqf
     from botorch.models import SingleTaskGP
     from botorch.models.transforms import Normalize
     from botorch.models.transforms import Standardize
+    from botorch.optim import optimize_acqf
     import gpytorch
     import torch
-    from botorch.acquisition.analytic import UpperConfidenceBound
 
 DEFAULT_TOP_TRIALS_RATIO = 0.5
 DEFAULT_MIN_N_TRIALS = 20
@@ -104,13 +107,9 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             min_ucb = torch.min(-ucb_func(x[:, None, :])).item()
 
             x_opt, lcb = optimize_acqf(
-                neg_lcb_func, 
-                bounds=bounds, 
-                q=1,
-                num_restarts=10, 
-                raw_samples=512, 
-                sequential=True)
-            
+                neg_lcb_func, bounds=bounds, q=1, num_restarts=10, raw_samples=512, sequential=True
+            )
+
             min_lcb = -lcb.item()
 
         return min_ucb - min_lcb
@@ -169,7 +168,6 @@ def _convert_trials_to_tensors(trials: list[FrozenTrial]) -> tuple[torch.Tensor,
     return torch.tensor(x, dtype=torch.float64), torch.tensor(bounds, dtype=torch.float64)
 
 
-
 def _get_beta(n_params: int, n_trials: int, delta: float = 0.1) -> float:
     beta = 2 * np.log(n_params * n_trials**2 * np.pi**2 / 6 / delta)
 
@@ -178,4 +176,3 @@ def _get_beta(n_params: int, n_trials: int, delta: float = 0.1) -> float:
     beta /= 5
 
     return beta
-
