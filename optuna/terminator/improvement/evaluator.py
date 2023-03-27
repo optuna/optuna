@@ -1,26 +1,34 @@
 import abc
 from typing import Dict
 from typing import List
-from typing import Optional
 
 from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
 from optuna.study import StudyDirection
 from optuna.terminator._search_space.intersection import IntersectionSearchSpace
-from optuna.terminator.improvement._preprocessing import AddRandomInputs
 from optuna.terminator.improvement._preprocessing import BasePreprocessing
 from optuna.terminator.improvement._preprocessing import OneToHot
 from optuna.terminator.improvement._preprocessing import PreprocessingPipeline
 from optuna.terminator.improvement._preprocessing import SelectTopTrials
 from optuna.terminator.improvement._preprocessing import ToMinimize
 from optuna.terminator.improvement._preprocessing import UnscaleLog
-from optuna.terminator.improvement.gp.base import _min_lcb
-from optuna.terminator.improvement.gp.base import _min_ucb
-from optuna.terminator.improvement.gp.base import BaseGaussianProcess
-from optuna.terminator.improvement.gp.botorch import _BoTorchGaussianProcess
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
+from optuna.terminator import _distribution_is_log
+import numpy as np
+from optuna._imports import try_import
+with try_import() as _imports:
+    from botorch.fit import fit_gpytorch_model
+    from botorch.optim import optimize_acqf
+    from botorch.models import SingleTaskGP
+    from botorch.models.transforms import Normalize
+    from botorch.models.transforms import Standardize
+    import gpytorch
+    import torch
+    from botorch.acquisition.analytic import UpperConfidenceBound
 
 DEFAULT_TOP_TRIALS_RATIO = 0.5
 DEFAULT_MIN_N_TRIALS = 20
@@ -41,12 +49,10 @@ class BaseImprovementEvaluator(metaclass=abc.ABCMeta):
 class RegretBoundEvaluator(BaseImprovementEvaluator):
     def __init__(
         self,
-        gp: Optional[BaseGaussianProcess] = None,
         top_trials_ratio: float = DEFAULT_TOP_TRIALS_RATIO,
         min_n_trials: int = DEFAULT_MIN_N_TRIALS,
         min_lcb_n_additional_samples: int = 2000,
     ) -> None:
-        self._gp = gp or _BoTorchGaussianProcess()
         self._top_trials_ratio = top_trials_ratio
         self._min_n_trials = min_n_trials
         self._min_lcb_n_additional_samples = min_lcb_n_additional_samples
@@ -59,12 +65,8 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             ),
             UnscaleLog(),
             ToMinimize(),
+            OneToHot(),
         ]
-
-        if add_random_inputs:
-            processes += [AddRandomInputs(self._min_lcb_n_additional_samples)]
-
-        processes += [OneToHot()]
 
         return PreprocessingPipeline(processes)
 
@@ -77,19 +79,41 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         self._validate_input(trials, search_space)
 
         fit_trials = self.get_preprocessing().apply(trials, study_direction)
-        lcb_trials = self.get_preprocessing(add_random_inputs=True).apply(trials, study_direction)
 
-        n_params = len(search_space)
-        n_trials = len(fit_trials)
+        x, bounds = _convert_trials_to_tensors(trials)
 
-        self._gp.fit(fit_trials)
+        y = torch.tensor([trial.value for trial in trials], dtype=torch.float64)
+        y = torch.unsqueeze(y, 1)
 
-        ucb = _min_ucb(trials=fit_trials, gp=self._gp, n_params=n_params, n_trials=n_trials)
-        lcb = _min_lcb(trials=lcb_trials, gp=self._gp, n_params=n_params, n_trials=n_trials)
+        gp = SingleTaskGP(
+            x,
+            y,
+            input_transform=Normalize(d=x.shape[1], bounds=bounds),
+            outcome_transform=Standardize(m=1),
+        )
 
-        regret_bound = ucb - lcb
+        mll = gpytorch.mlls.ExactMarginalLogLikelihood(gp.likelihood, gp)
 
-        return regret_bound
+        fit_gpytorch_model(mll)
+
+        beta = _get_beta(n_params=len(search_space), n_trials=len(fit_trials))
+        neg_lcb_func = UpperConfidenceBound(gp, beta=beta, maximize=False)
+        ucb_func = UpperConfidenceBound(gp, beta=beta, maximize=True)
+
+        with gpytorch.settings.fast_pred_var():  # type: ignore[no-untyped-call]
+            min_ucb = torch.min(-ucb_func(x[:, None, :])).item()
+
+            x_opt, lcb = optimize_acqf(
+                neg_lcb_func, 
+                bounds=bounds, 
+                q=1,
+                num_restarts=10, 
+                raw_samples=512, 
+                sequential=True)
+            
+            min_lcb = -lcb.item()
+
+        return min_ucb - min_lcb
 
     @classmethod
     def _validate_input(
@@ -105,3 +129,53 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
                 "The intersection search space is empty. This condition is not supported by "
                 f"{cls.__name__}."
             )
+
+
+def _convert_trials_to_tensors(trials: list[FrozenTrial]) -> tuple[torch.Tensor, torch.Tensor]:
+    """Convert a list of FrozenTrial objects to tensors inputs and bounds.
+
+    This function assumes the following condition for input trials:
+    - any categorical param is converted to a float or int one;
+    - log is unscaled for any float/int distribution;
+    - the state is COMPLETE for any trial;
+    - direction is MINIMIZE for any trial.
+    """
+    search_space = IntersectionSearchSpace().calculate(trials)
+    sorted_params = sorted(search_space.keys())
+
+    x = []
+    for trial in trials:
+        assert trial.state == TrialState.COMPLETE
+        x_row = []
+        for param in sorted_params:
+            distribution = search_space[param]
+
+            assert not _distribution_is_log(distribution)
+            assert not isinstance(distribution, CategoricalDistribution)
+
+            param_value = float(trial.params[param])
+            x_row.append(param_value)
+
+        x.append(x_row)
+
+    min_bounds = []
+    max_bounds = []
+    for param, distribution in search_space.items():
+        assert isinstance(distribution, (FloatDistribution, IntDistribution))
+        min_bounds.append(distribution.low)
+        max_bounds.append(distribution.high)
+    bounds = [min_bounds, max_bounds]
+
+    return torch.tensor(x, dtype=torch.float64), torch.tensor(bounds, dtype=torch.float64)
+
+
+
+def _get_beta(n_params: int, n_trials: int, delta: float = 0.1) -> float:
+    beta = 2 * np.log(n_params * n_trials**2 * np.pi**2 / 6 / delta)
+
+    # The following div is according to the original paper: "We then further scale it down
+    # by a factor of 5 as defined in the experiments in Srinivas et al. (2010)"
+    beta /= 5
+
+    return beta
+

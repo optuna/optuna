@@ -9,14 +9,11 @@ from typing import Tuple
 import numpy as np
 
 import optuna
-from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.terminator import _distribution_is_log
-from optuna.terminator._search_space.intersection import IntersectionSearchSpace
-from optuna.trial._state import TrialState
 
 
 class BasePreprocessing(metaclass=abc.ABCMeta):
@@ -190,41 +187,3 @@ class OneToHot(BasePreprocessing):
             mapped_trials.append(trial)
 
         return mapped_trials
-
-
-class AddRandomInputs(BasePreprocessing):
-    def __init__(
-        self,
-        n_additional_trials: int,
-        dummy_value: float = np.nan,
-    ) -> None:
-        self._n_additional_trials = n_additional_trials
-        self._dummy_value = dummy_value
-        self._rng = np.random.RandomState()
-
-    def apply(
-        self,
-        trials: List[optuna.trial.FrozenTrial],
-        study_direction: Optional[optuna.study.StudyDirection],
-    ) -> List[optuna.trial.FrozenTrial]:
-        search_space = IntersectionSearchSpace().calculate(trials)
-
-        additional_trials = []
-        for _ in range(self._n_additional_trials):
-            params = {}
-            for param_name, distribution in search_space.items():
-                trans = _SearchSpaceTransform({param_name: distribution})
-                trans_params = self._rng.uniform(trans.bounds[:, 0], trans.bounds[:, 1])
-                param_value = trans.untransform(trans_params)[param_name]
-                params[param_name] = param_value
-
-            trial = optuna.create_trial(
-                value=self._dummy_value,
-                params=params,
-                distributions=search_space,
-                state=TrialState.COMPLETE,
-            )
-
-            additional_trials.append(trial)
-
-        return trials + additional_trials
