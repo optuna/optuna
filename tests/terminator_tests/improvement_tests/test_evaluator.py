@@ -7,13 +7,87 @@ from optuna.study import StudyDirection
 from optuna.terminator.improvement._preprocessing import NullPreprocessing
 from optuna.terminator.improvement.evaluator import RegretBoundEvaluator
 from optuna.trial import create_trial
-
+import pytest
+from optuna.trial import FrozenTrial
 
 # TODO(g-votte): test the following edge cases
 # TODO(g-votte): - the user specifies non-default top_trials_ratio or min_n_trials
 
-
-def test_evaluate() -> None:
+@pytest.mark.parametrize("trials", [
+    [
+        create_trial(
+            value=1.0,
+            distributions={
+                "bacon": FloatDistribution(-1.0, 1.0),
+                "egg": FloatDistribution(-1.0, 1.0),
+            },
+            params={
+                "bacon": 1.0,
+                "egg": 0.0,
+            },
+        ),
+        create_trial(
+            value=-1.0,
+            distributions={
+                "bacon": FloatDistribution(-1.0, 1.0),
+                "egg": FloatDistribution(-1.0, 1.0),
+            },
+            params={
+                "bacon": 0.0,
+                "egg": 1.0,
+            },
+        ),
+    ],
+    [
+        create_trial(
+            value=1.0,
+            distributions={
+                "bacon": FloatDistribution(-1.0, 1.0),
+                "egg": FloatDistribution(-1.0, 1.0),
+            },
+            params={
+                "bacon": 1.0,
+                "egg": 0.0,
+            },
+        ),
+    ],
+    [
+        create_trial(
+            value=1.0,
+            distributions={
+                "spam": FloatDistribution(-1.0, 1.0),
+            },
+            params={
+                "spam": 1.0,
+            },
+        ),
+    ],
+    [
+        create_trial(
+            value=1.0,
+            distributions={
+                "bacon": FloatDistribution(-1.0, 1.0),
+                "egg": FloatDistribution(-1.0, 1.0),
+            },
+            params={
+                "bacon": 1.0,
+                "egg": 0.0,
+            },
+        ),
+        create_trial(
+            value=1.0,
+            distributions={
+                "bacon": FloatDistribution(-1.0, 1.0),
+                "egg": FloatDistribution(-1.0, 1.0),
+            },
+            params={
+                "bacon": 1.0,
+                "egg": 0.0,
+            },
+        ),
+    ],
+])
+def test_evaluate(trials: list[FrozenTrial]) -> None:
     trials = [
         create_trial(
             value=0,
