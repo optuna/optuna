@@ -42,6 +42,7 @@ def test_init() -> None:
 
     assert storage.get_current_version() == storage.get_head_version()
     assert storage.get_all_versions() == [
+        "v3.2.0.a",
         "v3.0.0.d",
         "v3.0.0.c",
         "v3.0.0.b",
@@ -173,6 +174,7 @@ def test_upgrade_identity() -> None:
         "3.0.0.b",
         "3.0.0.c",
         "3.0.0.d",
+        "3.2.0.a",
     ],
 )
 def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
@@ -220,7 +222,7 @@ def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "optuna_version", ["2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c", "3.0.0.d"]
+    "optuna_version", ["2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c", "3.0.0.d", "3.2.0.a"]
 )
 def test_upgrade_multi_objective_optimization(optuna_version: str) -> None:
     src_db_file = os.path.join(
@@ -266,7 +268,7 @@ def test_upgrade_multi_objective_optimization(optuna_version: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "optuna_version", ["2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c", "3.0.0.d"]
+    "optuna_version", ["2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c", "3.0.0.d", "3.2.0.a"]
 )
 def test_upgrade_distributions(optuna_version: str) -> None:
     src_db_file = os.path.join(
