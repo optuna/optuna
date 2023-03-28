@@ -197,37 +197,3 @@ def test_one_to_hot(direction: StudyDirection) -> None:
         "i0_float": FloatDistribution(1, 10),
         "i0_int": IntDistribution(1, 10),
     }
-
-
-@pytest.mark.parametrize("direction", (StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE))
-def test_add_random_inputs(direction: StudyDirection) -> None:
-    n_additional_trials = 3
-    dummy_value = -1
-    distributions = {
-        "bacon": CategoricalDistribution((0, 1, 2)),
-        "egg": FloatDistribution(1, 10),
-        "spam": IntDistribution(1, 10),
-    }
-
-    trials_before = [
-        create_trial(
-            params={"bacon": 0, "egg": 1, "spam": 10},
-            distributions=distributions,
-            value=1.0,
-        ),
-    ]
-    p = _preprocessing.AddRandomInputs(
-        n_additional_trials=n_additional_trials,
-        dummy_value=dummy_value,
-    )
-    trials_after = p.apply(trials_before, direction)
-
-    assert len(trials_after) == len(trials_before) + n_additional_trials
-    assert trials_before[0] == trials_after[0]
-    for t in trials_after[1:]:
-        assert t.value == dummy_value
-        assert t.distributions == distributions
-        assert set(t.params.keys()) == set(distributions.keys())
-
-        for name, distribution in distributions.items():
-            assert distribution._contains(t.params[name])
