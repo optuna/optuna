@@ -40,7 +40,7 @@ class StudySummary:
 
             .. warning::
                 Deprecated in v3.1.0. ``system_attrs`` argument will be removed in the future.
-                The removal of this feature is currently scheduled for v6.0.0,
+                The removal of this feature is currently scheduled for v5.0.0,
                 but this schedule is subject to change.
                 See https://github.com/optuna/optuna/releases/tag/v3.1.0.
         n_trials:
