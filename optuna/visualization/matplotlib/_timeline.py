@@ -1,4 +1,3 @@
-import datetime
 from typing import Any
 
 from optuna._experimental import experimental_func
@@ -85,10 +84,13 @@ def _get_timeline_plot(info: _TimelineInfo) -> "Axes":
 
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
-    _, ax = plt.subplots()
+    fig, ax = plt.subplots()
     ax.set_title("Timeline Plot")
     ax.set_xlabel("Datetime")
     ax.set_ylabel("Trial")
+
+    if len(info.bars) == 0:
+        return ax
 
     ax.barh(
         y=[b.number for b in info.bars],
@@ -103,15 +105,14 @@ def _get_timeline_plot(info: _TimelineInfo) -> "Axes":
     for state, color in _cm.items():
         if len([b for b in info.bars if b.state == state]) > 0:
             legend_handles.append(patches.Patch(color=color, label=state.name))
-    ax.legend(handles=legend_handles, loc="lower right")
+    ax.legend(handles=legend_handles, loc="upper left", bbox_to_anchor=(1.05, 1.0))
+    fig.tight_layout()
 
-    if len(info.bars) > 0:
-        start_time = min([b.start for b in info.bars])
-        complete_time = max([b.complete for b in info.bars])
-        margin = (complete_time - start_time) * 0.05
-    else:
-        start_time = complete_time = datetime.datetime.now()
-        margin = datetime.timedelta(seconds=0.05)
+    assert len(info.bars) > 0
+    start_time = min([b.start for b in info.bars])
+    complete_time = max([b.complete for b in info.bars])
+    margin = (complete_time - start_time) * 0.05
+
     ax.set_xlim(right=complete_time + margin, left=start_time - margin)
     ax.yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
     ax.xaxis.set_major_formatter(_DateFormatter_Millisecond())
