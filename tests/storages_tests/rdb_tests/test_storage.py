@@ -2,7 +2,6 @@ import os
 import shutil
 import sys
 import tempfile
-import time
 from typing import Any
 from typing import Dict
 from typing import Optional
@@ -20,12 +19,8 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.storages import RDBStorage
 from optuna.storages._rdb.models import SCHEMA_VERSION
-from optuna.storages._rdb.models import TrialHeartbeatModel
 from optuna.storages._rdb.models import VersionInfoModel
 from optuna.storages._rdb.storage import _create_scoped_session
-from optuna.testing.storages import StorageSupplier
-from optuna.testing.threading import _TestableThread
-from optuna.trial import Trial
 
 from .create_db import mo_objective_test_upgrade
 from .create_db import objective_test_upgrade
