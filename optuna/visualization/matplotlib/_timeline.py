@@ -57,8 +57,7 @@ def plot_timeline(study: Study) -> "Axes":
                 objective, n_trials=50, n_jobs=2, catch=(ValueError,)
             )
 
-            fig = optuna.visualization.matplotlib.plot_timeline(study)
-            fig.show()
+            optuna.visualization.matplotlib.plot_timeline(study)
 
     Args:
         study:
