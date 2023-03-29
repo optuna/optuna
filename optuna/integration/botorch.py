@@ -69,6 +69,7 @@ def qei_candidates_func(
     train_obj: "torch.Tensor",
     train_con: Optional["torch.Tensor"],
     bounds: "torch.Tensor",
+    pending_x: Optional["torch.Tensor"] = None,
 ) -> "torch.Tensor":
     """Quasi MC-based batch Expected Improvement (qEI).
 
@@ -134,6 +135,8 @@ def qei_candidates_func(
         objective = None  # Using the default identity objective.
 
     train_x = normalize(train_x, bounds=bounds)
+    if pending_x is not None:
+        pending_x = normalize(pending_x, bounds=bounds)
 
     model = SingleTaskGP(train_x, train_y, outcome_transform=Standardize(m=train_y.size(-1)))
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
@@ -144,6 +147,7 @@ def qei_candidates_func(
         best_f=best_f,
         sampler=_get_sobol_qmc_normal_sampler(256),
         objective=objective,
+        X_pending=pending_x,
     )
 
     standard_bounds = torch.zeros_like(bounds)
@@ -152,7 +156,7 @@ def qei_candidates_func(
     candidates, _ = optimize_acqf(
         acq_function=acqf,
         bounds=standard_bounds,
-        q=1,
+        q=1 if pending_x is None else 1 + pending_x.shape[0],
         num_restarts=10,
         raw_samples=512,
         options={"batch_limit": 5, "maxiter": 200},
@@ -492,6 +496,7 @@ class BoTorchSampler(BaseSampler):
         ] = None,
         constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
         n_startup_trials: int = 10,
+        consider_pending_trials: bool = False,
         independent_sampler: Optional[BaseSampler] = None,
         seed: Optional[int] = None,
         device: Optional["torch.device"] = None,
@@ -500,6 +505,7 @@ class BoTorchSampler(BaseSampler):
 
         self._candidates_func = candidates_func
         self._constraints_func = constraints_func
+        self._consider_pending_trials = consider_pending_trials
         self._independent_sampler = independent_sampler or RandomSampler(seed=seed)
         self._n_startup_trials = n_startup_trials
         self._seed = seed
@@ -542,7 +548,12 @@ class BoTorchSampler(BaseSampler):
         if len(search_space) == 0:
             return {}
 
-        trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+        if self._consider_pending_trials:
+            completed_trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+            pending_trials = study.get_trials(deepcopy=False, states=(TrialState.WAITING,))
+            trials = completed_trials + pending_trials 
+        else:
+            trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
 
         n_trials = len(trials)
         if n_trials < self._n_startup_trials:
@@ -609,11 +620,21 @@ class BoTorchSampler(BaseSampler):
         if self._candidates_func is None:
             self._candidates_func = _get_default_candidates_func(n_objectives=n_objectives)
 
+        if self._consider_pending_trials:
+            completed_values = values[:len(completed_trials)]
+            completed_params = params[:len(completed_trials)]
+            pending_params = params[len(completed_trials):]
+        else:
+            completed_values = values
+            completed_params = params
+            pending_params = None
         with manual_seed(self._seed):
             # `manual_seed` makes the default candidates functions reproducible.
             # `SobolQMCNormalSampler`'s constructor has a `seed` argument, but its behavior is
             # deterministic when the BoTorch's seed is fixed.
-            candidates = self._candidates_func(params, values, con, bounds)
+            candidates = self._candidates_func(
+                completed_params, completed_values, con, bounds, pending_params
+            )
             if self._seed is not None:
                 self._seed += 1
 
