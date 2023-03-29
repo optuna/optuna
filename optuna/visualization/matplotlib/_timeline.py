@@ -35,7 +35,7 @@ def plot_timeline(study: Study) -> "Axes":
 
         The following code snippet shows how to plot the timeline of a study.
 
-        .. matplotlib::
+        .. plot::
 
             import time
 
