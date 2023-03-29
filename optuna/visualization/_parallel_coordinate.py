@@ -1,15 +1,11 @@
+from __future__ import annotations
+
 from collections import defaultdict
 import math
 from typing import Any
 from typing import Callable
 from typing import cast
-from typing import DefaultDict
-from typing import Dict
-from typing import List
 from typing import NamedTuple
-from typing import Optional
-from typing import Tuple
-from typing import Union
 
 import numpy as np
 
@@ -36,26 +32,26 @@ _logger = get_logger(__name__)
 
 class _DimensionInfo(NamedTuple):
     label: str
-    values: Tuple[float, ...]
-    range: Tuple[float, float]
+    values: tuple[float, ...]
+    range: tuple[float, float]
     is_log: bool
     is_cat: bool
-    tickvals: List[Union[int, float]]
-    ticktext: List[str]
+    tickvals: list[int | float]
+    ticktext: list[str]
 
 
 class _ParallelCoordinateInfo(NamedTuple):
     dim_objective: _DimensionInfo
-    dims_params: List[_DimensionInfo]
+    dims_params: list[_DimensionInfo]
     reverse_scale: bool
     target_name: str
 
 
 def plot_parallel_coordinate(
     study: Study,
-    params: Optional[List[str]] = None,
+    params: list[str] | None = None,
     *,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
 ) -> "go.Figure":
     """Plot the high-dimensional parameter relationships in a study.
@@ -143,8 +139,8 @@ def _get_parallel_coordinate_plot(info: _ParallelCoordinateInfo) -> "go.Figure":
 
 def _get_parallel_coordinate_info(
     study: Study,
-    params: Optional[List[str]] = None,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
+    params: list[str] | None = None,
+    target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
 ) -> _ParallelCoordinateInfo:
     _check_plot_args(study, target, target_name)
@@ -203,7 +199,7 @@ def _get_parallel_coordinate_info(
             target_name=target_name,
         )
 
-    numeric_cat_params_indices: List[int] = []
+    numeric_cat_params_indices: list[int] = []
     dims = []
     for dim_index, p_name in enumerate(sorted_params, start=1):
         values = []
@@ -218,9 +214,7 @@ def _get_parallel_coordinate_info(
             values = [math.log10(v) for v in values]
             min_value = min(values)
             max_value = max(values)
-            tickvals: List[Union[int, float]] = list(
-                range(math.ceil(min_value), math.ceil(max_value))
-            )
+            tickvals: list[int | float] = list(range(math.ceil(min_value), math.ceil(max_value)))
             if min_value not in tickvals:
                 tickvals = [min_value] + tickvals
             if max_value not in tickvals:
@@ -235,9 +229,9 @@ def _get_parallel_coordinate_info(
                 ticktext=["{:.3g}".format(math.pow(10, x)) for x in tickvals],
             )
         elif _is_categorical(trials, p_name):
-            vocab: DefaultDict[Union[int, str], int] = defaultdict(lambda: len(vocab))
+            vocab: defaultdict[int | str, int] = defaultdict(lambda: len(vocab))
 
-            ticktext: List[str]
+            ticktext: list[str]
             if _is_numerical(trials, p_name):
                 _ = [vocab[v] for v in sorted(values)]
                 values = [vocab[v] for v in values]
@@ -299,7 +293,7 @@ def _get_parallel_coordinate_info(
     )
 
 
-def _get_dims_from_info(info: _ParallelCoordinateInfo) -> List[Dict[str, Any]]:
+def _get_dims_from_info(info: _ParallelCoordinateInfo) -> list[dict[str, Any]]:
     dims = [
         {
             "label": info.dim_objective.label,
