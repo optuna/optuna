@@ -54,6 +54,7 @@ benchmark = [
 checking = [
     "black",
     "blackdoc",
+    "flake8",
     "isort",
     "mypy",
     "types-PyYAML",
