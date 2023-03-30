@@ -273,7 +273,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
             raise err
 
     @broadcast_properties
-    @deprecated_func("3.1.0", "6.0.0")
+    @deprecated_func("3.1.0", "5.0.0")
     def set_system_attr(self, key: str, value: Any) -> None:
         err = None
 
@@ -307,7 +307,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         return self._user_attrs
 
     @property
-    @deprecated_func("3.1.0", "6.0.0")
+    @deprecated_func("3.1.0", "5.0.0")
     def system_attrs(self) -> Dict[str, Any]:
         return self._system_attrs
 

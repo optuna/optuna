@@ -1,6 +1,6 @@
+from __future__ import annotations
+
 from typing import Callable
-from typing import List
-from typing import Optional
 from typing import Sequence
 
 from optuna._experimental import experimental_func
@@ -20,11 +20,11 @@ if _imports.is_successful():
 def plot_pareto_front(
     study: Study,
     *,
-    target_names: Optional[List[str]] = None,
+    target_names: list[str] | None = None,
     include_dominated_trials: bool = True,
-    axis_order: Optional[List[int]] = None,
-    constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
-    targets: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
+    axis_order: list[int] | None = None,
+    constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
+    targets: Callable[[FrozenTrial], Sequence[float]] | None = None,
 ) -> "Axes":
     """Plot the Pareto front of a study.
 

@@ -1,11 +1,8 @@
+from __future__ import annotations
+
 import math
 from typing import Callable
-from typing import Dict
-from typing import List
 from typing import NamedTuple
-from typing import Optional
-from typing import Tuple
-from typing import Union
 
 from optuna.logging import get_logger
 from optuna.study import Study
@@ -34,31 +31,31 @@ PADDING_RATIO = 0.05
 
 class _AxisInfo(NamedTuple):
     name: str
-    range: Tuple[float, float]
+    range: tuple[float, float]
     is_log: bool
     is_cat: bool
-    indices: List[Union[str, int, float]]
-    values: List[Union[str, float, None]]
+    indices: list[str | int | float]
+    values: list[str | float | None]
 
 
 class _SubContourInfo(NamedTuple):
     xaxis: _AxisInfo
     yaxis: _AxisInfo
-    z_values: Dict[Tuple[int, int], float]
+    z_values: dict[tuple[int, int], float]
 
 
 class _ContourInfo(NamedTuple):
-    sorted_params: List[str]
-    sub_plot_infos: List[List[_SubContourInfo]]
+    sorted_params: list[str]
+    sub_plot_infos: list[list[_SubContourInfo]]
     reverse_scale: bool
     target_name: str
 
 
 def plot_contour(
     study: Study,
-    params: Optional[List[str]] = None,
+    params: list[str] | None = None,
     *,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
 ) -> "go.Figure":
     """Plot the parameter relationship as contour plot in a study.
@@ -196,7 +193,7 @@ def _get_contour_subplot(
     info: _SubContourInfo,
     reverse_scale: bool,
     target_name: str = "Objective Value",
-) -> Tuple["Contour", "Scatter"]:
+) -> tuple["Contour", "Scatter"]:
     x_indices = info.xaxis.indices
     y_indices = info.yaxis.indices
     x_values = []
@@ -241,8 +238,8 @@ def _get_contour_subplot(
 
 def _get_contour_info(
     study: Study,
-    params: Optional[List[str]] = None,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
+    params: list[str] | None = None,
+    target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
 ) -> _ContourInfo:
     _check_plot_args(study, target, target_name)
@@ -266,7 +263,7 @@ def _get_contour_info(
                 raise ValueError("Parameter {} does not exist in your study.".format(input_p_name))
         sorted_params = sorted(set(params))
 
-    sub_plot_infos: List[List[_SubContourInfo]]
+    sub_plot_infos: list[list[_SubContourInfo]]
     if len(sorted_params) == 2:
         x_param = sorted_params[0]
         y_param = sorted_params[1]
@@ -291,10 +288,10 @@ def _get_contour_info(
 
 
 def _get_contour_subplot_info(
-    trials: List[FrozenTrial],
+    trials: list[FrozenTrial],
     x_param: str,
     y_param: str,
-    target: Optional[Callable[[FrozenTrial], float]],
+    target: Callable[[FrozenTrial], float] | None,
 ) -> _SubContourInfo:
     xaxis = _get_axis_info(trials, x_param)
     yaxis = _get_axis_info(trials, y_param)
@@ -331,8 +328,8 @@ def _get_contour_subplot_info(
     return _SubContourInfo(xaxis=xaxis, yaxis=yaxis, z_values=z_values)
 
 
-def _get_axis_info(trials: List[FrozenTrial], param_name: str) -> _AxisInfo:
-    values: List[Union[str, float, None]]
+def _get_axis_info(trials: list[FrozenTrial], param_name: str) -> _AxisInfo:
+    values: list[str | float | None]
     if _is_numerical(trials, param_name):
         values = [t.params.get(param_name) for t in trials]
     else:

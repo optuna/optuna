@@ -1,8 +1,7 @@
+from __future__ import annotations
+
 from typing import Callable
-from typing import List
-from typing import Optional
 from typing import Sequence
-from typing import Union
 
 import numpy as np
 
@@ -21,9 +20,9 @@ if _imports.is_successful():
 
 @experimental_func("2.2.0")
 def plot_optimization_history(
-    study: Union[Study, Sequence[Study]],
+    study: Study | Sequence[Study],
     *,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
     error_bar: bool = False,
 ) -> "Axes":
@@ -85,7 +84,7 @@ def plot_optimization_history(
 
 
 def _get_optimization_history_plot(
-    info_list: List[_OptimizationHistoryInfo],
+    info_list: list[_OptimizationHistoryInfo],
     target_name: str,
 ) -> "Axes":
     # Set up the graph style.
