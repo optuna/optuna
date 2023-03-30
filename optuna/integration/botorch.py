@@ -156,7 +156,7 @@ def qei_candidates_func(
     candidates, _ = optimize_acqf(
         acq_function=acqf,
         bounds=standard_bounds,
-        q=1 if pending_x is None else 1 + pending_x.shape[0],
+        q=1,
         num_restarts=10,
         raw_samples=512,
         options={"batch_limit": 5, "maxiter": 200},
@@ -550,7 +550,7 @@ class BoTorchSampler(BaseSampler):
 
         if self._consider_pending_trials:
             completed_trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
-            pending_trials = study.get_trials(deepcopy=False, states=(TrialState.WAITING,))
+            pending_trials = study.get_trials(deepcopy=False, states=(TrialState.RUNNING,))
             trials = completed_trials + pending_trials 
         else:
             trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
@@ -569,14 +569,21 @@ class BoTorchSampler(BaseSampler):
         bounds: Union[numpy.ndarray, torch.Tensor] = trans.bounds
         params = numpy.empty((n_trials, trans.bounds.shape[0]), dtype=numpy.float64)
         for trial_idx, trial in enumerate(trials):
-            params[trial_idx] = trans.transform(trial.params)
-            assert len(study.directions) == len(trial.values)
-
-            for obj_idx, (direction, value) in enumerate(zip(study.directions, trial.values)):
-                assert value is not None
-                if direction == StudyDirection.MINIMIZE:  # BoTorch always assumes maximization.
-                    value *= -1
-                values[trial_idx, obj_idx] = value
+            if trial.state == TrialState.COMPLETE:
+                params[trial_idx] = trans.transform(trial.params)
+                assert len(study.directions) == len(trial.values)
+                for obj_idx, (direction, value) in enumerate(zip(study.directions, trial.values)):
+                    assert value is not None
+                    if direction == StudyDirection.MINIMIZE:  # BoTorch always assumes maximization.
+                        value *= -1
+                    values[trial_idx, obj_idx] = value
+            elif trial.state == TrialState.RUNNING:
+                try:
+                    params[trial_idx] = trans.transform(trial.params)
+                except:
+                    params[trial_idx] = numpy.nan
+            else:
+                assert False
 
             if self._constraints_func is not None:
                 constraints = study._storage.get_trial_system_attrs(trial._trial_id).get(
@@ -624,10 +631,12 @@ class BoTorchSampler(BaseSampler):
             completed_values = values[:len(completed_trials)]
             completed_params = params[:len(completed_trials)]
             pending_params = params[len(completed_trials):]
+            pending_params = pending_params[~torch.isnan(pending_params).any(dim=1)]
         else:
             completed_values = values
             completed_params = params
             pending_params = None
+
         with manual_seed(self._seed):
             # `manual_seed` makes the default candidates functions reproducible.
             # `SobolQMCNormalSampler`'s constructor has a `seed` argument, but its behavior is
