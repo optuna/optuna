@@ -114,6 +114,7 @@ jobs:
         pip install --progress-bar off .[optional]
         pip install --progress-bar off .[integration]
         pip install "pytorch-lightning<2.0.0"
+        pip install "distributed<2023.3.2"
 
     - name: Output installed packages
       run: |
