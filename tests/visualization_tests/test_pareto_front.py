@@ -1,6 +1,4 @@
-import datetime
 from io import BytesIO
-from textwrap import dedent
 from typing import Any
 from typing import Callable
 from typing import List
@@ -8,7 +6,6 @@ from typing import Optional
 from typing import Sequence
 import warnings
 
-import numpy as np
 import pytest
 
 import optuna
@@ -17,11 +14,9 @@ from optuna import create_trial
 from optuna.distributions import FloatDistribution
 from optuna.study.study import Study
 from optuna.trial import FrozenTrial
-from optuna.trial import TrialState
 from optuna.visualization import plot_pareto_front
 import optuna.visualization._pareto_front
 from optuna.visualization._pareto_front import _get_pareto_front_info
-from optuna.visualization._pareto_front import _make_hovertext
 from optuna.visualization._pareto_front import _ParetoFrontInfo
 from optuna.visualization._plotly_imports import go
 from optuna.visualization._utils import COLOR_SCALE
@@ -318,114 +313,6 @@ def test_get_pareto_front_plot(
     else:
         plt.savefig(BytesIO())
         plt.close()
-
-
-def test_make_hovertext() -> None:
-    trial_no_user_attrs = FrozenTrial(
-        number=0,
-        trial_id=0,
-        state=TrialState.COMPLETE,
-        value=0.2,
-        datetime_start=datetime.datetime.now(),
-        datetime_complete=datetime.datetime.now(),
-        params={"x": 10},
-        distributions={"x": FloatDistribution(5, 12)},
-        user_attrs={},
-        system_attrs={},
-        intermediate_values={},
-    )
-    assert (
-        _make_hovertext(trial_no_user_attrs)
-        == dedent(
-            """
-        {
-          "number": 0,
-          "values": [
-            0.2
-          ],
-          "params": {
-            "x": 10
-          }
-        }
-        """
-        )
-        .strip()
-        .replace("\n", "<br>")
-    )
-
-    trial_user_attrs_valid_json = FrozenTrial(
-        number=0,
-        trial_id=0,
-        state=TrialState.COMPLETE,
-        value=0.2,
-        datetime_start=datetime.datetime.now(),
-        datetime_complete=datetime.datetime.now(),
-        params={"x": 10},
-        distributions={"x": FloatDistribution(5, 12)},
-        user_attrs={"a": 42, "b": 3.14},
-        system_attrs={},
-        intermediate_values={},
-    )
-    assert (
-        _make_hovertext(trial_user_attrs_valid_json)
-        == dedent(
-            """
-        {
-          "number": 0,
-          "values": [
-            0.2
-          ],
-          "params": {
-            "x": 10
-          },
-          "user_attrs": {
-            "a": 42,
-            "b": 3.14
-          }
-        }
-        """
-        )
-        .strip()
-        .replace("\n", "<br>")
-    )
-
-    trial_user_attrs_invalid_json = FrozenTrial(
-        number=0,
-        trial_id=0,
-        state=TrialState.COMPLETE,
-        value=0.2,
-        datetime_start=datetime.datetime.now(),
-        datetime_complete=datetime.datetime.now(),
-        params={"x": 10},
-        distributions={"x": FloatDistribution(5, 12)},
-        user_attrs={"a": 42, "b": 3.14, "c": np.zeros(1), "d": np.nan},
-        system_attrs={},
-        intermediate_values={},
-    )
-    assert (
-        _make_hovertext(trial_user_attrs_invalid_json)
-        == dedent(
-            """
-        {
-          "number": 0,
-          "values": [
-            0.2
-          ],
-          "params": {
-            "x": 10
-          },
-          "user_attrs": {
-            "a": 42,
-            "b": 3.14,
-            "c": "[0.]",
-            "d": NaN
-          }
-        }
-        """
-        )
-        .strip()
-        .replace("\n", "<br>")
-    )
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])

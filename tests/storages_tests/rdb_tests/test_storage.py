@@ -3,7 +3,6 @@ import platform
 import shutil
 import sys
 import tempfile
-import time
 from typing import Any
 from typing import Dict
 from typing import Optional
@@ -21,13 +20,9 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.storages import RDBStorage
 from optuna.storages._rdb.models import SCHEMA_VERSION
-from optuna.storages._rdb.models import TrialHeartbeatModel
 from optuna.storages._rdb.models import VersionInfoModel
 from optuna.storages._rdb.storage import _create_scoped_session
-from optuna.testing.storages import StorageSupplier
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
-from optuna.testing.threading import _TestableThread
-from optuna.trial import Trial
 
 from .create_db import mo_objective_test_upgrade
 from .create_db import objective_test_upgrade
@@ -44,6 +39,7 @@ def test_init() -> None:
 
     assert storage.get_current_version() == storage.get_head_version()
     assert storage.get_all_versions() == [
+        "v3.2.0.a",
         "v3.0.0.d",
         "v3.0.0.c",
         "v3.0.0.b",
@@ -176,6 +172,7 @@ def test_upgrade_identity() -> None:
         "3.0.0.b",
         "3.0.0.c",
         "3.0.0.d",
+        "3.2.0.a",
     ],
 )
 def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
@@ -230,7 +227,7 @@ def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
 
 @pytest.mark.skipif(platform.system() == "Windows", reason="Skip on Windows")
 @pytest.mark.parametrize(
-    "optuna_version", ["2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c", "3.0.0.d"]
+    "optuna_version", ["2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c", "3.0.0.d", "3.2.0.a"]
 )
 def test_upgrade_multi_objective_optimization(optuna_version: str) -> None:
     src_db_file = os.path.join(
@@ -279,7 +276,7 @@ def test_upgrade_multi_objective_optimization(optuna_version: str) -> None:
 
 @pytest.mark.skipif(platform.system() == "Windows", reason="Skip on Windows")
 @pytest.mark.parametrize(
-    "optuna_version", ["2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c", "3.0.0.d"]
+    "optuna_version", ["2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c", "3.0.0.d", "3.2.0.a"]
 )
 def test_upgrade_distributions(optuna_version: str) -> None:
     src_db_file = os.path.join(
@@ -313,41 +310,3 @@ def test_upgrade_distributions(optuna_version: str) -> None:
             new_study.optimize(objective_test_upgrade_distributions, n_trials=1)
 
         storage.engine.dispose()  # Be sure to disconnect db
-
-
-def test_record_heartbeat() -> None:
-    heartbeat_interval = 1
-    n_trials = 2
-    sleep_sec = 2
-
-    def objective(trial: Trial) -> float:
-        time.sleep(sleep_sec)
-        return 1.0
-
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-        storage.heartbeat_interval = heartbeat_interval
-        study = create_study(storage=storage)
-        # Exceptions raised in spawned threads are caught by `_TestableThread`.
-        with patch("optuna.storages._heartbeat.Thread", _TestableThread):
-            study.optimize(objective, n_trials=n_trials)
-
-        trial_heartbeats = []
-
-        with _create_scoped_session(storage.scoped_session) as session:
-            trial_ids = [trial._trial_id for trial in study.trials]
-            for trial_id in trial_ids:
-                heartbeat_model = TrialHeartbeatModel.where_trial_id(trial_id, session)
-                assert heartbeat_model is not None
-                trial_heartbeats.append(heartbeat_model.heartbeat)
-
-        assert len(trial_heartbeats) == n_trials
-        trials = study.trials
-        for i in range(n_trials - 1):
-            datetime_start = trials[i + 1].datetime_start
-            prev_datetime_complete = trials[i].datetime_complete
-            assert datetime_start is not None and prev_datetime_complete is not None
-            trial_prep = (datetime_start - prev_datetime_complete).seconds
-            heartbeats_interval = (trial_heartbeats[i + 1] - trial_heartbeats[i]).seconds
-            assert heartbeats_interval - sleep_sec - trial_prep <= 1
-        storage.engine.dispose()

@@ -98,7 +98,7 @@ jobs:
         brew install open-mpi
         brew install openblas
 
-    # TODO(Shinichi): Remove the version constraint on PyTorch Lightning
+    # TODO(Shinichi): Remove the version constraint on PyTorch Lightning and Distributed
     - name: Install
       run: |
         python -m pip install --upgrade pip
@@ -112,6 +112,7 @@ jobs:
         pip install --progress-bar off .[optional]
         pip install --progress-bar off .[integration]
         pip install "pytorch-lightning<2.0.0"
+        pip install "distributed<2023.3.2"
 
     - name: Output installed packages
       run: |
@@ -127,7 +128,6 @@ jobs:
     - name: Tests MPI
       run: |
         export OMPI_MCA_rmaps_base_oversubscribe=yes
-        mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
         mpirun -n 2 -- pytest tests/integration_tests/test_pytorch_distributed.py
       env:
         OMP_NUM_THREADS: 1

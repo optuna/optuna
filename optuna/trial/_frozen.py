@@ -1,7 +1,9 @@
 import datetime
 from typing import Any
+from typing import cast
 from typing import Dict
 from typing import List
+from typing import Mapping
 from typing import Optional
 from typing import overload
 from typing import Sequence
@@ -10,6 +12,7 @@ import warnings
 from optuna import distributions
 from optuna import logging
 from optuna._deprecated import deprecated_func
+from optuna._typing import JSONSerializable
 from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
@@ -294,7 +297,7 @@ class FrozenTrial(BaseTrial):
     def set_user_attr(self, key: str, value: Any) -> None:
         self._user_attrs[key] = value
 
-    @deprecated_func("3.1.0", "6.0.0")
+    @deprecated_func("3.1.0", "5.0.0")
     def set_system_attr(self, key: str, value: Any) -> None:
         self._system_attrs[key] = value
 
@@ -437,8 +440,8 @@ class FrozenTrial(BaseTrial):
         return self._system_attrs
 
     @system_attrs.setter
-    def system_attrs(self, value: Dict[str, Any]) -> None:
-        self._system_attrs = value
+    def system_attrs(self, value: Mapping[str, JSONSerializable]) -> None:
+        self._system_attrs = cast(Dict[str, Any], value)
 
     @property
     def last_step(self) -> Optional[int]:
