@@ -3,10 +3,50 @@ import copy
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Tuple
 
 import optuna
 from optuna.distributions import BaseDistribution
 from optuna.study import Study
+
+
+def _calculate(
+    trials: List[optuna.trial.FrozenTrial],
+    include_pruned: bool = False,
+    search_space: Optional[Dict[str, BaseDistribution]] = None,
+    cursor: int = -1,
+) -> Tuple[Optional[Dict[str, BaseDistribution]], int]:
+    states_of_interest = [
+        optuna.trial.TrialState.COMPLETE,
+        optuna.trial.TrialState.WAITING,
+        optuna.trial.TrialState.RUNNING,
+    ]
+
+    if include_pruned:
+        states_of_interest.append(optuna.trial.TrialState.PRUNED)
+
+    trials_of_interest = [trial for trial in trials if trial.state in states_of_interest]
+
+    next_cursor = trials[-1].number + 1 if len(trials) > 0 else -1
+    for trial in reversed(trials_of_interest):
+        if cursor > trial.number:
+            break
+
+        if not trial.state.is_finished():
+            next_cursor = trial.number
+            continue
+
+        if search_space is None:
+            search_space = copy.copy(trial.distributions)
+            continue
+
+        search_space = {
+            name: distribution
+            for name, distribution in search_space.items()
+            if trial.distributions.get(name) == distribution
+        }
+
+    return search_space, next_cursor
 
 
 class IntersectionSearchSpace:
@@ -50,7 +90,6 @@ class IntersectionSearchSpace:
 
         Returns:
             A dictionary containing the parameter names and parameter's distributions.
-
         """
 
         if self._study_id is None:
@@ -61,37 +100,12 @@ class IntersectionSearchSpace:
             if self._study_id != study._study_id:
                 raise ValueError("`IntersectionSearchSpace` cannot handle multiple studies.")
 
-        states_of_interest = [
-            optuna.trial.TrialState.COMPLETE,
-            optuna.trial.TrialState.WAITING,
-            optuna.trial.TrialState.RUNNING,
-        ]
-
-        if self._include_pruned:
-            states_of_interest.append(optuna.trial.TrialState.PRUNED)
-
-        trials = study.get_trials(deepcopy=False, states=states_of_interest)
-
-        next_cursor = trials[-1].number + 1 if len(trials) > 0 else -1
-        for trial in reversed(trials):
-            if self._cursor > trial.number:
-                break
-
-            if not trial.state.is_finished():
-                next_cursor = trial.number
-                continue
-
-            if self._search_space is None:
-                self._search_space = copy.copy(trial.distributions)
-                continue
-
-            self._search_space = {
-                name: distribution
-                for name, distribution in self._search_space.items()
-                if trial.distributions.get(name) == distribution
-            }
-
-        self._cursor = next_cursor
+        self._search_space, self._cursor = _calculate(
+            study.get_trials(deepcopy=False),
+            self._include_pruned,
+            self._search_space,
+            self._cursor,
+        )
         search_space = self._search_space or {}
 
         if ordered_dict:
@@ -133,32 +147,7 @@ def intersection_search_space(
         A dictionary containing the parameter names and parameter's distributions.
     """
 
-    states_of_interest = [
-        optuna.trial.TrialState.COMPLETE,
-        optuna.trial.TrialState.WAITING,
-        optuna.trial.TrialState.RUNNING,
-    ]
-
-    if include_pruned:
-        states_of_interest.append(optuna.trial.TrialState.PRUNED)
-
-    trials = [trial for trial in trials if trial.state in states_of_interest]
-
-    search_space = None
-    for trial in reversed(trials):
-        if not trial.state.is_finished():
-            continue
-
-        if search_space is None:
-            search_space = copy.copy(trial.distributions)
-            continue
-
-        search_space = {
-            name: distribution
-            for name, distribution in search_space.items()
-            if trial.distributions.get(name) == distribution
-        }
-
+    search_space, _ = _calculate(trials, include_pruned)
     search_space = search_space or {}
 
     if ordered_dict:
