@@ -362,10 +362,9 @@ class InMemoryStorage(BaseStorage):
         with self._lock:
             self._check_study_id(study_id)
 
-            trials = self._studies[
+            trials: Union[List[FrozenTrial], Iterator[FrozenTrial]] = self._studies[
                 study_id
-            ].trials  # type: Union[List[FrozenTrial], Iterator[FrozenTrial]]
-
+            ].trials
             if states is not None:
                 trials = filter(lambda t: t.state in states, trials)
 

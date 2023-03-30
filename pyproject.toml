@@ -54,7 +54,6 @@ benchmark = [
 checking = [
     "black",
     "blackdoc",
-    "hacking",
     "isort",
     "mypy",
     "types-PyYAML",
