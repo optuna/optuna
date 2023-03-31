@@ -27,7 +27,7 @@ def _calculate(
 
     trials_of_interest = [trial for trial in trials if trial.state in states_of_interest]
 
-    next_cursor = trials[-1].number + 1 if len(trials) > 0 else -1
+    next_cursor = trials_of_interest[-1].number + 1 if len(trials_of_interest) > 0 else -1
     for trial in reversed(trials_of_interest):
         if cursor > trial.number:
             break
