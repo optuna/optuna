@@ -553,9 +553,11 @@ def _preserve_niche_individuals(
     # closest borderline population member by the number of elite neighbors they have.  Each key
     # corresponds to the number of elite neighbors and the value to the reference point indices.
     nearest_points_count_to_reference_points = defaultdict(list)
-    for reference_point_id in reference_point_to_borderline_population:
-        elite_population_count = reference_point_to_elite_population_count[reference_point_id]
-        nearest_points_count_to_reference_points[elite_population_count].append(reference_point_id)
+    for reference_point_idx in reference_point_to_borderline_population:
+        elite_population_count = reference_point_to_elite_population_count[reference_point_idx]
+        nearest_points_count_to_reference_points[elite_population_count].append(
+            reference_point_idx
+        )
 
     count = -1
     additional_elite_population: list[FrozenTrial] = []
@@ -566,18 +568,18 @@ def _preserve_niche_individuals(
             rng.shuffle(nearest_points_count_to_reference_points[count])
             continue
 
-        reference_point_id = nearest_points_count_to_reference_points[count].pop()
-        if count > 0 and not is_shuffled[reference_point_id]:
-            rng.shuffle(reference_point_to_borderline_population[reference_point_id])
-            is_shuffled[reference_point_id] = True
+        reference_point_idx = nearest_points_count_to_reference_points[count].pop()
+        if count > 0 and not is_shuffled[reference_point_idx]:
+            rng.shuffle(reference_point_to_borderline_population[reference_point_idx])
+            is_shuffled[reference_point_idx] = True
         elif count == 0:
-            reference_point_to_borderline_population[reference_point_id].sort(reverse=True)
+            reference_point_to_borderline_population[reference_point_idx].sort(reverse=True)
 
         _, selected_individual_id = reference_point_to_borderline_population[
-            reference_point_id
+            reference_point_idx
         ].pop()
         additional_elite_population.append(population[selected_individual_id])
-        if reference_point_to_borderline_population[reference_point_id]:
-            nearest_points_count_to_reference_points[count + 1].append(reference_point_id)
+        if reference_point_to_borderline_population[reference_point_idx]:
+            nearest_points_count_to_reference_points[count + 1].append(reference_point_idx)
 
     return additional_elite_population
