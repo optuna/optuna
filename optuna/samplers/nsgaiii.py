@@ -493,8 +493,8 @@ def _associate_individuals_with_reference_points(
         objective_matrix[:, np.newaxis, :] - perpendicular_vectors_to_reference_lines,
         axis=2,
     )
-    distance_reference_points: np.ndarray = np.min(distance_from_reference_lines, axis=1)
     closest_reference_points: np.ndarray = np.argmin(distance_from_reference_lines, axis=1)
+    distance_reference_points: np.ndarray = np.min(distance_from_reference_lines, axis=1)
 
     return closest_reference_points, distance_reference_points
 

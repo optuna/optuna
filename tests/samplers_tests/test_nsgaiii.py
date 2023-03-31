@@ -444,7 +444,8 @@ def test_associate(
 
 
 @pytest.mark.parametrize(
-    "population_value,closest_reference_points, distance_reference_points, expected_population_idx",
+    "population_value,closest_reference_points, distance_reference_points, "
+    "expected_population_idx",
     [
         (
             [
