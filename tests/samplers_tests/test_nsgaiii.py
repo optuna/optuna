@@ -445,8 +445,14 @@ def test_associate(
 
 @pytest.mark.parametrize(
     "population_value,closest_reference_points, distance_reference_points, "
-    "expected_population_idx",
+    "expected_population_indices",
     [
+        (
+            [[1.0], [2.0], [0.0], [3.0], [3.5], [5.5], [1.2], [3.3], [4.8]],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            [3, 0, 2, 4, 1],
+        ),
         (
             [
                 [4.0, 5.0, 6.0],
@@ -472,14 +478,14 @@ def test_associate(
                 1.0,
             ],
             [6, 5, 4, 0, 1],
-        )
+        ),
     ],
 )
 def test_niching(
     population_value: Sequence[Sequence[int]],
     closest_reference_points: Sequence[int],
     distance_reference_points: Sequence[float],
-    expected_population_idx: Sequence[int],
+    expected_population_indices: Sequence[int],
 ) -> None:
     sampler = NSGAIIISampler(n_objectives=3, seed=42)
     target_population_size = 5
@@ -496,8 +502,23 @@ def test_niching(
             sampler._rng,
         )
     ]
-    print(actual_additional_elite_population)
     expected_additional_elite_population = [
-        population[idx].values for idx in expected_population_idx
+        population[idx].values for idx in expected_population_indices
     ]
-    assert actual_additional_elite_population == expected_additional_elite_population
+    assert np.all(actual_additional_elite_population == expected_additional_elite_population)
+
+
+def test_niching_unexpected_target_population_size() -> None:
+    sampler = NSGAIIISampler(n_objectives=3, seed=42)
+    target_population_size = 2
+    elite_population_num = 1
+    population = [create_trial(values=[1.0])]
+    with pytest.raises(IndexError):
+        _preserve_niche_individuals(
+            target_population_size,
+            elite_population_num,
+            population,
+            np.array([0]),
+            np.array([0.0]),
+            sampler._rng,
+        )

@@ -533,6 +533,10 @@ def _preserve_niche_individuals(
     Returns:
         A list of trials which are selected as the next generation.
     """
+    if len(population) < target_population_size:
+        raise IndexError(
+            "The population size must be greater than or equal to the target population size."
+        )
 
     # reference_points_to_elite_population_count keeps how many elite neighbors each reference
     # point has.
