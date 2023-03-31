@@ -1,14 +1,12 @@
+from __future__ import annotations
+
 from collections import defaultdict
 import hashlib
 import itertools
 import math
 from typing import Any
 from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
 from typing import Sequence
-from typing import Tuple
 import warnings
 
 import numpy as np
@@ -70,15 +68,15 @@ class NSGAIIISampler(BaseSampler):
     def __init__(
         self,
         population_size: int = 50,
-        n_objectives: Optional[int] = None,
+        n_objectives: int | None = None,
         dividing_parameter: int = 3,
-        reference_points: Optional[np.ndarray] = None,
-        mutation_prob: Optional[float] = None,
-        crossover: Optional[BaseCrossover] = None,
+        reference_points: np.ndarray | None = None,
+        mutation_prob: float | None = None,
+        crossover: BaseCrossover | None = None,
         crossover_prob: float = 0.9,
         swapping_prob: float = 0.5,
-        seed: Optional[int] = None,
-        constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
+        seed: int | None = None,
+        constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
     ) -> None:
         # TODO(ohta): Reconsider the default value of each parameter.
 
@@ -145,8 +143,8 @@ class NSGAIIISampler(BaseSampler):
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
-    ) -> Dict[str, BaseDistribution]:
-        search_space: Dict[str, BaseDistribution] = {}
+    ) -> dict[str, BaseDistribution]:
+        search_space: dict[str, BaseDistribution] = {}
         for name, distribution in self._search_space.calculate(study).items():
             if distribution.single():
                 # The `untransform` method of `optuna._transform._SearchSpaceTransform`
@@ -161,8 +159,8 @@ class NSGAIIISampler(BaseSampler):
         self,
         study: Study,
         trial: FrozenTrial,
-        search_space: Dict[str, BaseDistribution],
-    ) -> Dict[str, Any]:
+        search_space: dict[str, BaseDistribution],
+    ) -> dict[str, Any]:
         parent_generation, parent_population = self._collect_parent_population(study)
         trial_id = trial._trial_id
 
@@ -218,7 +216,7 @@ class NSGAIIISampler(BaseSampler):
             study, trial, param_name, param_distribution
         )
 
-    def _collect_parent_population(self, study: Study) -> Tuple[int, List[FrozenTrial]]:
+    def _collect_parent_population(self, study: Study) -> tuple[int, list[FrozenTrial]]:
         trials = study.get_trials(deepcopy=False)
 
         generation_to_runnings = defaultdict(list)
@@ -237,7 +235,7 @@ class NSGAIIISampler(BaseSampler):
             generation_to_population[generation].append(trial)
 
         hasher = hashlib.sha256()
-        parent_population: List[FrozenTrial] = []
+        parent_population: list[FrozenTrial] = []
         parent_generation = -1
         while True:
             generation = parent_generation + 1
@@ -294,9 +292,9 @@ class NSGAIIISampler(BaseSampler):
         return parent_generation, parent_population
 
     def _select_elite_population(
-        self, study: Study, population: List[FrozenTrial]
-    ) -> List[FrozenTrial]:
-        elite_population: List[FrozenTrial] = []
+        self, study: Study, population: list[FrozenTrial]
+    ) -> list[FrozenTrial]:
+        elite_population: list[FrozenTrial] = []
         population_per_rank = self._fast_non_dominated_sort(population, study.directions)
         for population in population_per_rank:
             if len(elite_population) + len(population) < self._population_size:
@@ -327,9 +325,9 @@ class NSGAIIISampler(BaseSampler):
 
     def _fast_non_dominated_sort(
         self,
-        population: List[FrozenTrial],
-        directions: List[optuna.study.StudyDirection],
-    ) -> List[List[FrozenTrial]]:
+        population: list[FrozenTrial],
+        directions: list[optuna.study.StudyDirection],
+    ) -> list[list[FrozenTrial]]:
         if self._constraints_func is not None:
             for _trial in population:
                 _constraints = _trial.system_attrs.get(_CONSTRAINTS_KEY)
@@ -380,7 +378,7 @@ class NSGAIIISampler(BaseSampler):
         study: Study,
         trial: FrozenTrial,
         state: TrialState,
-        values: Optional[Sequence[float]],
+        values: Sequence[float] | None,
     ) -> None:
         assert state in [TrialState.COMPLETE, TrialState.FAIL, TrialState.PRUNED]
         if self._constraints_func is not None:
@@ -409,7 +407,7 @@ def generate_default_reference_point(n_objectives: int, dividing_parameter: int 
 
 
 def _normalize_objective_values(
-    population: List[FrozenTrial],
+    population: list[FrozenTrial],
 ) -> np.ndarray:
     """Normalizes objective values of population
 
@@ -453,7 +451,7 @@ def _normalize_objective_values(
 
 def _associate_individuals_with_reference_points(
     objective_matrix: np.ndarray, reference_points: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Associates each objective value to the closest reference point
 
     Associate each normalized objective value to the closest reference point. The distance is
@@ -504,11 +502,11 @@ def _associate_individuals_with_reference_points(
 def _preserve_niche_individuals(
     target_population_size: int,
     elite_population_num: int,
-    population: List[FrozenTrial],
+    population: list[FrozenTrial],
     closest_reference_points: np.ndarray,
     distance_reference_points: np.ndarray,
     rng: np.random.RandomState,
-) -> List[FrozenTrial]:
+) -> list[FrozenTrial]:
     """Determine who survives form the borderline front
 
     Who survive form the borderline front is determined according to the sparsity of each closest
@@ -538,7 +536,7 @@ def _preserve_niche_individuals(
 
     # reference_points_to_elite_population_count keeps how many elite neighbors each reference
     # point has.
-    reference_point_to_elite_population_count: Dict[int, int] = defaultdict(int)
+    reference_point_to_elite_population_count: dict[int, int] = defaultdict(int)
     for i, reference_point_idx in enumerate(closest_reference_points[:elite_population_num]):
         reference_point_to_elite_population_count[reference_point_idx] += 1
 
@@ -560,7 +558,7 @@ def _preserve_niche_individuals(
         nearest_points_count_to_reference_points[elite_population_count].append(reference_point_id)
 
     count = -1
-    additional_elite_population: List[FrozenTrial] = []
+    additional_elite_population: list[FrozenTrial] = []
     is_shuffled: defaultdict[int, bool] = defaultdict(bool)
     while len(additional_elite_population) < target_population_size:
         if not nearest_points_count_to_reference_points[count]:

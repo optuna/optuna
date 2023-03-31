@@ -1,9 +1,8 @@
+from __future__ import annotations
+
 from collections import Counter
 from typing import Any
-from typing import List
-from typing import Optional
 from typing import Sequence
-from typing import Tuple
 from unittest.mock import patch
 import warnings
 
@@ -188,7 +187,7 @@ def test_study_system_attr_for_population_cache() -> None:
 
     def get_cached_entries(
         study: optuna.study.Study,
-    ) -> List[Tuple[int, List[int]]]:
+    ) -> list[tuple[int, list[int]]]:
         study_system_attrs = study._storage.get_study_system_attrs(study._study_id)
         return [
             v for k, v in study_system_attrs.items() if k.startswith(_POPULATION_CACHE_KEY_PREFIX)
@@ -218,7 +217,7 @@ def test_constraints_func_experimental_warning() -> None:
 
 # TODO(ohta): Consider to move this utility function to `optuna.testing` module.
 def _create_frozen_trial(
-    number: int, values: Sequence[float], constraints: Optional[Sequence[float]] = None
+    number: int, values: Sequence[float], constraints: Sequence[float] | None = None
 ) -> optuna.trial.FrozenTrial:
     trial = optuna.trial.create_trial(
         state=optuna.trial.TrialState.COMPLETE,
@@ -394,6 +393,7 @@ def test_normalize(
 @pytest.mark.parametrize(
     "population_value, expected_indices, expected_distances",
     [
+        ([[1.0], [2.0], [0.0], [3.0]], [0, 0, 0, 0], [0.0, 1.0, 1.0, 2.0]),
         (
             [
                 [1.0, 2.0, 3.0],
@@ -422,7 +422,7 @@ def test_normalize(
                 1.0,
                 1.0,
             ],
-        )
+        ),
     ],
 )
 def test_associate(
