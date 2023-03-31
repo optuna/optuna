@@ -393,7 +393,7 @@ def test_normalize(
 @pytest.mark.parametrize(
     "population_value, expected_indices, expected_distances",
     [
-        ([[1.0], [2.0], [0.0], [3.0]], [0, 0, 0, 0], [0.0, 1.0, 1.0, 2.0]),
+        ([[1.0], [2.0], [0.0], [3.0]], [0, 0, 0, 0], [0.0, 0.0, 0.0, 0.0]),
         (
             [
                 [1.0, 2.0, 3.0],
@@ -431,13 +431,14 @@ def test_associate(
     expected_distances: Sequence[float],
 ) -> None:
     population = np.array(population_value)
-    reference_points = generate_default_reference_point(n_objectives=3, dividing_parameter=2)
+    n_objectives = population.shape[1]
+    reference_points = generate_default_reference_point(
+        n_objectives=n_objectives, dividing_parameter=2
+    )
     (
         closest_reference_points,
         distance_reference_points,
     ) = _associate_individuals_with_reference_points(population, reference_points)
-    print(closest_reference_points)
-    print(distance_reference_points)
     assert np.all(closest_reference_points == expected_indices)
     assert np.allclose(distance_reference_points, expected_distances)
 
