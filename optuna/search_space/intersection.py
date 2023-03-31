@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections import OrderedDict
 import copy
 from typing import Dict
-from typing import List
 from typing import Tuple
 
 import optuna
@@ -12,7 +11,7 @@ from optuna.study import Study
 
 
 def _calculate(
-    trials: List[optuna.trial.FrozenTrial],
+    trials: list[optuna.trial.FrozenTrial],
     include_pruned: bool = False,
     search_space: Dict[str, BaseDistribution] | None = None,
     cursor: int = -1,
@@ -116,7 +115,7 @@ class IntersectionSearchSpace:
 
 
 def intersection_search_space(
-    trials: List[optuna.trial.FrozenTrial],
+    trials: list[optuna.trial.FrozenTrial],
     ordered_dict: bool = False,
     include_pruned: bool = False,
 ) -> Dict[str, BaseDistribution]:
