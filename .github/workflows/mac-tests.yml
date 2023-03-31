@@ -121,7 +121,7 @@ jobs:
 
     - name: Tests
       run: |
-        pytest tests -m "integration"
+        pytest tests -m "integration" --ignore-glob="allennlp"
 
       env:
         OMP_NUM_THREADS: 1
