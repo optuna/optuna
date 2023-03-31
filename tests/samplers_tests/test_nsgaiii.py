@@ -265,8 +265,6 @@ def test_crossover_objectives(
         lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)],
         n_trials=n_trials,
     )
-    print()
-
     assert len(study.trials) == n_trials
 
 
