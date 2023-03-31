@@ -424,7 +424,9 @@ def _normalize_objective_values(
         objective_matrix[i] = np.array(trial.values, dtype=float)
 
     # Subtract ideal point from objective values.
-    objective_matrix -= np.min(objective_matrix, axis=0)
+    objective_matrix -= np.nanmin(
+        objective_matrix, where=np.isfinite(objective_matrix), initial=np.nan, axis=0
+    )
 
     # We adopt weights and achievement scalarizing function(ASF) used in pre-print of the NSGA-III
     # paper (See https://www.egr.msu.edu/~kdeb/papers/k2012009.pdf).
@@ -434,17 +436,28 @@ def _normalize_objective_values(
 
     # Calculate extreme points to normalize objective values.
     # TODO(Shinichi) Reimplement to reduce time complexity.
-    asf_value = np.max(np.einsum("nm,dm->dnm", objective_matrix, weights), axis=2)
-    extreme_points = objective_matrix[np.argmin(asf_value, axis=1), :]
+    asf_value = np.nanmax(
+        np.einsum("nm,dm->dnm", objective_matrix, weights),
+        where=np.isfinite(objective_matrix),
+        initial=np.nan,
+        axis=2,
+    )
+    extreme_points = objective_matrix[
+        np.nanargmin(np.where(asf_value != -float("inf"), asf_value, np.nan), axis=1), :
+    ]
 
     # Normalize objective_matrix with extreme points.
     # Note that extreme_points can be degenerate, but no proper operation is remarked in the
     # paper. Therefore, the maximum value of population in each axis is used in such cases.
-    if np.linalg.matrix_rank(extreme_points) < len(extreme_points):
-        intercepts_inv = 1 / np.max(objective_matrix, axis=0)
-    else:
+    if np.all(np.isfinite(extreme_points)) and np.linalg.matrix_rank(extreme_points) == len(
+        extreme_points
+    ):
         intercepts_inv = np.linalg.solve(extreme_points, np.ones(n_objectives))
-    objective_matrix *= intercepts_inv
+    else:
+        intercepts_inv = 1 / np.nanmax(
+            objective_matrix, where=np.isfinite(objective_matrix), initial=np.nan, axis=0
+        )
+    objective_matrix *= np.where(np.isfinite(intercepts_inv), intercepts_inv, 1)
 
     return objective_matrix
 

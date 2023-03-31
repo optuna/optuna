@@ -335,6 +335,88 @@ def test_reference_point(
     [
         (
             [
+                [1.0, 2.0],
+                [float("inf"), 0.5],
+            ],
+            [
+                [0.0, 1.0],
+                [float("inf"), 0.0],
+            ],
+        ),
+        (
+            [
+                [1.0, float("inf")],
+                [float("inf"), 0.5],
+            ],
+            [
+                [0.0, float("inf")],
+                [float("inf"), 0.0],
+            ],
+        ),
+        (
+            [
+                [1.0, float("inf")],
+                [3.0, 1.0],
+                [2.0, 3.0],
+                [float("inf"), 0.5],
+            ],
+            [
+                [0.0, float("inf")],
+                [1.0, 0.2],
+                [0.5, 1.0],
+                [float("inf"), 0.0],
+            ],
+        ),
+        (
+            [
+                [2.0, 3.0],
+                [-float("inf"), 3.5],
+            ],
+            [
+                [0.0, 0.0],
+                [-float("inf"), 1.0],
+            ],
+        ),
+        (
+            [
+                [2.0, -float("inf")],
+                [-float("inf"), 3.5],
+            ],
+            [
+                [0.0, -float("inf")],
+                [-float("inf"), 0.0],
+            ],
+        ),
+        (
+            [
+                [4.0, -float("inf")],
+                [3.0, 1.0],
+                [2.0, 3.0],
+                [-float("inf"), 3.5],
+            ],
+            [
+                [2.0, -float("inf")],
+                [1.0, 0.0],
+                [0.0, 1.0],
+                [-float("inf"), 1.25],
+            ],
+        ),
+    ],
+)
+def test_normalize_with_inf(
+    population_value: Sequence[Sequence[int]], expected_normalized_value: Sequence[Sequence[int]]
+) -> None:
+    population = [create_trial(values=values) for values in population_value]
+    assert np.allclose(
+        _normalize_objective_values(population), np.array(expected_normalized_value)
+    )
+
+
+@pytest.mark.parametrize(
+    "population_value, expected_normalized_value",
+    [
+        (
+            [
                 [2.71],
                 [1.41],
                 [3.14],
