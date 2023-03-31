@@ -538,12 +538,6 @@ def _preserve_niche_individuals(
             "The population size must be greater than or equal to the target population size."
         )
 
-    # reference_points_to_elite_population_count keeps how many elite neighbors each reference
-    # point has.
-    reference_point_to_elite_population_count: dict[int, int] = defaultdict(int)
-    for i, reference_point_idx in enumerate(closest_reference_points[:elite_population_num]):
-        reference_point_to_elite_population_count[reference_point_idx] += 1
-
     # reference_point_to_borderline_population keeps pairs of a neighbor and the distance of
     # each reference point from borderline front population.
     reference_point_to_borderline_population = defaultdict(list)
@@ -553,6 +547,11 @@ def _preserve_niche_individuals(
             (distance_reference_points[population_idx], i)
         )
 
+    # reference_points_to_elite_population_count keeps how many elite neighbors each reference
+    # point has.
+    reference_point_to_elite_population_count: dict[int, int] = defaultdict(int)
+    for i, reference_point_idx in enumerate(closest_reference_points[:elite_population_num]):
+        reference_point_to_elite_population_count[reference_point_idx] += 1
     # nearest_points_count_to_reference_points classifies reference points which have at least one
     # closest borderline population member by the number of elite neighbors they have.  Each key
     # corresponds to the number of elite neighbors and the value to the reference point indices.
