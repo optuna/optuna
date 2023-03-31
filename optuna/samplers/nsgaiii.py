@@ -4,7 +4,6 @@ import itertools
 import math
 from typing import Any
 from typing import Callable
-from typing import DefaultDict
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -305,20 +304,21 @@ class NSGAIIISampler(BaseSampler):
             else:
                 objective_matrix = _normalize_objective_values(elite_population + population)
 
-                elite_population_num = len(elite_population)
                 (
-                    nearest_points_count_to_reference_point,
-                    reference_point_to_population,
+                    closest_reference_points,
+                    distance_reference_points,
                 ) = _associate_individuals_with_reference_points(
-                    objective_matrix, self.reference_points, elite_population_num
+                    objective_matrix, self.reference_points
                 )
 
+                elite_population_num = len(elite_population)
                 target_population_size = self._population_size - elite_population_num
                 additional_elite_population = _preserve_niche_individuals(
                     target_population_size,
+                    elite_population_num,
                     population,
-                    nearest_points_count_to_reference_point,
-                    reference_point_to_population,
+                    closest_reference_points,
+                    distance_reference_points,
                     self._rng,
                 )
                 elite_population.extend(additional_elite_population)
@@ -338,7 +338,7 @@ class NSGAIIISampler(BaseSampler):
                 if np.any(np.isnan(np.array(_constraints))):
                     raise ValueError("NaN is not acceptable as constraint value.")
 
-        dominated_count: DefaultDict[int, int] = defaultdict(int)
+        dominated_count: defaultdict[int, int] = defaultdict(int)
         dominates_list = defaultdict(list)
 
         dominates = _dominates if self._constraints_func is None else _constrained_dominates
@@ -452,9 +452,27 @@ def _normalize_objective_values(
 
 
 def _associate_individuals_with_reference_points(
-    objective_matrix: np.ndarray, reference_points: np.ndarray, elite_population_num: int
-) -> Tuple[Dict[int, List[int]], Dict[int, List[Tuple[float, int]]]]:
-    """Associates each objective value to the closest reference point"""
+    objective_matrix: np.ndarray, reference_points: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Associates each objective value to the closest reference point
+
+    Associate each normalized objective value to the closest reference point. The distance is
+    calculated by Euclidean norm.
+
+    Args:
+        objective_matrix:
+            A 2 dimension ``numpy.ndarray`` with columns of objective dimension and rows of
+            generation size. Each row is the normalized objective value of the corresponding
+            individual.
+
+    Returns:
+        closest_reference_points:
+            A ``numpy.ndarray`` with rows of generation size. Each row is the index of
+            the closest reference point to the corresponding individual.
+        distance_reference_points:
+            A ``numpy.ndarray`` with rows of generation size. Each row is the distance from
+            the corresponding individual to the closest reference point.
+    """
     # TODO(Shinichi) Implement faster assignment for the default reference points because it does
     # not seem necessary to calculate distance from all reference points.
 
@@ -477,38 +495,18 @@ def _associate_individuals_with_reference_points(
         objective_matrix[:, np.newaxis, :] - perpendicular_vectors_to_reference_lines,
         axis=2,
     )
-    distance_reference_points = np.min(distance_from_reference_lines, axis=1)
-    closest_reference_points = np.argmin(distance_from_reference_lines, axis=1)
+    distance_reference_points: np.ndarray = np.min(distance_from_reference_lines, axis=1)
+    closest_reference_points: np.ndarray = np.argmin(distance_from_reference_lines, axis=1)
 
-    # count_reference_points keeps how many elite neighbors each reference point has.
-    count_reference_points: Dict[int, int] = DefaultDict(int)
-    for i, reference_point_id in enumerate(closest_reference_points[:elite_population_num]):
-        count_reference_points[reference_point_id] += 1
-
-    # reference_point_to_population keeps pairs of a neighbor and the distance of each reference
-    # point from borderline front population.
-    reference_point_to_population = DefaultDict(list)
-    for i, reference_point_id in enumerate(closest_reference_points[elite_population_num:]):
-        reference_point_to_population[reference_point_id].append(
-            (distance_reference_points[i + elite_population_num], i)
-        )
-
-    # nearest_points_count_to_reference_point classifies reference points which have at least one
-    # closest borderline population member by the number of elite neighbors they have. Each key
-    # correspond to the count of elite neighbors and values are reference point ids.
-    nearest_points_count_to_reference_point = DefaultDict(list)
-    for reference_point_id in reference_point_to_population:
-        count = count_reference_points[reference_point_id]
-        nearest_points_count_to_reference_point[count].append(reference_point_id)
-
-    return nearest_points_count_to_reference_point, reference_point_to_population
+    return closest_reference_points, distance_reference_points
 
 
 def _preserve_niche_individuals(
     target_population_size: int,
+    elite_population_num: int,
     population: List[FrozenTrial],
-    nearest_points_count_to_reference_point: Dict[int, List[int]],
-    reference_point_to_population: Dict[int, List[Tuple[float, int]]],
+    closest_reference_points: np.ndarray,
+    distance_reference_points: np.ndarray,
     rng: np.random.RandomState,
 ) -> List[FrozenTrial]:
     """Determine who survives form the borderline front
@@ -517,43 +515,71 @@ def _preserve_niche_individuals(
     reference point. The algorithm picks a reference point from those who have the least neighbors
     in elite population and adds one of borderline front member who has the same closest reference
     point.
+
+    Args:
+        target_population_size:
+            The number of individuals to select.
+        elite_population_num:
+            The number of individuals which are already selected as the elite population.
+        population:
+            List of all the trials in the current surviving generation.
+        distance_reference_points:
+            A ``numpy.ndarray`` with rows of generation size. Each row is the distance from the
+            corresponding individual to the closest reference point.
+        closest_reference_points:
+            A ``numpy.ndarray`` with rows of generation size. Each row is the index of the closest
+            reference point to the corresponding individual.
+        rng:
+            Random number generator.
+
+    Returns:
+        A list of trials which are selected as the next generation.
     """
 
-    count = 0
-    additional_elite_population: List[FrozenTrial] = []
-    while len(additional_elite_population) < target_population_size:
-        if not nearest_points_count_to_reference_point[count]:
-            count += 1
-            continue
+    # reference_points_to_elite_population_count keeps how many elite neighbors each reference
+    # point has.
+    reference_point_to_elite_population_count: Dict[int, int] = defaultdict(int)
+    for i, reference_point_idx in enumerate(closest_reference_points[:elite_population_num]):
+        reference_point_to_elite_population_count[reference_point_idx] += 1
 
-        individual_idx = rng.choice(len(nearest_points_count_to_reference_point[count]))
-        (
-            nearest_points_count_to_reference_point[count][individual_idx],
-            nearest_points_count_to_reference_point[count][-1],
-        ) = (
-            nearest_points_count_to_reference_point[count][-1],
-            nearest_points_count_to_reference_point[count][individual_idx],
+    # reference_point_to_borderline_population keeps pairs of a neighbor and the distance of
+    # each reference point from borderline front population.
+    reference_point_to_borderline_population = defaultdict(list)
+    for i, reference_point_idx in enumerate(closest_reference_points[elite_population_num:]):
+        population_idx = i + elite_population_num
+        reference_point_to_borderline_population[reference_point_idx].append(
+            (distance_reference_points[population_idx], i)
         )
 
-        reference_point_id = nearest_points_count_to_reference_point[count].pop()
-        if count:
-            reference_point_idx = rng.choice(
-                len(reference_point_to_population[reference_point_id])
-            )
-            (
-                reference_point_to_population[reference_point_id][reference_point_idx],
-                reference_point_to_population[reference_point_id][-1],
-            ) = (
-                reference_point_to_population[reference_point_id][-1],
-                reference_point_to_population[reference_point_id][reference_point_idx],
-            )
-        else:
-            # TODO(Shinichi) avoid sort.
-            reference_point_to_population[reference_point_id].sort(reverse=True)
+    # nearest_points_count_to_reference_points classifies reference points which have at least one
+    # closest borderline population member by the number of elite neighbors they have.  Each key
+    # corresponds to the number of elite neighbors and the value to the reference point indices.
+    nearest_points_count_to_reference_points = defaultdict(list)
+    for reference_point_id in reference_point_to_borderline_population:
+        elite_population_count = reference_point_to_elite_population_count[reference_point_id]
+        nearest_points_count_to_reference_points[elite_population_count].append(reference_point_id)
 
-        _, selected_individual_id = reference_point_to_population[reference_point_id].pop()
+    count = -1
+    additional_elite_population: List[FrozenTrial] = []
+    is_shuffled: defaultdict[int, bool] = defaultdict(bool)
+    while len(additional_elite_population) < target_population_size:
+        if not nearest_points_count_to_reference_points[count]:
+            count += 1
+            rng.shuffle(nearest_points_count_to_reference_points[count])
+            continue
+
+        reference_point_id = nearest_points_count_to_reference_points[count].pop()
+        if count > 0 and not is_shuffled[reference_point_id]:
+            rng.shuffle(reference_point_to_borderline_population[reference_point_id])
+            is_shuffled[reference_point_id] = True
+        elif count == 0:
+            reference_point_to_borderline_population[reference_point_id].sort(reverse=True)
+
+        _, selected_individual_id = reference_point_to_borderline_population[
+            reference_point_id
+        ].pop()
         additional_elite_population.append(population[selected_individual_id])
-        if reference_point_to_population[reference_point_id]:
-            nearest_points_count_to_reference_point[count + 1].append(reference_point_id)
+        if reference_point_to_borderline_population[reference_point_id]:
+            nearest_points_count_to_reference_points[count + 1].append(reference_point_id)
 
     return additional_elite_population

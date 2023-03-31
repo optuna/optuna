@@ -1,5 +1,4 @@
 from collections import Counter
-from collections import defaultdict
 from typing import Any
 from typing import List
 from typing import Optional
@@ -308,6 +307,7 @@ def test_crossover_invalid_population(crossover: BaseCrossover, population_size:
 @pytest.mark.parametrize(
     "n_objectives,dividing_parameter,expected_reference_points",
     [
+        (1, 3, [[3.0]]),
         (2, 2, [[0.0, 2.0], [1.0, 1.0], [2.0, 0.0]]),
         (2, 3, [[0.0, 3.0], [1.0, 2.0], [2.0, 1.0], [3.0, 0.0]]),
         (
@@ -336,6 +336,18 @@ def test_reference_point(
 @pytest.mark.parametrize(
     "population_value, expected_normalized_value",
     [
+        (
+            [
+                [2.71],
+                [1.41],
+                [3.14],
+            ],
+            [
+                [(2.71 - 1.41) / (3.14 - 1.41)],
+                [0],
+                [1.0],
+            ],
+        ),
         (
             [
                 [1.0, 2.0, 3.0],
@@ -379,79 +391,111 @@ def test_normalize(
     )
 
 
-def test_associate() -> None:
-    population = np.array(
-        [
-            [1.0, 2.0, 3.0],
-            [3.0, 1.0, 2.0],
-            [2.0, 3.0, 1.0],
-            [2.0, 2.0, 2.0],
-            [4.0, 5.0, 6.0],
-            [6.0, 4.0, 5.0],
-            [5.0, 6.0, 4.0],
-            [4.0, 4.0, 4.0],
-        ]
-    )
+@pytest.mark.parametrize(
+    "population_value, expected_indices, expected_distances",
+    [
+        (
+            [
+                [1.0, 2.0, 3.0],
+                [3.0, 1.0, 2.0],
+                [2.0, 3.0, 1.0],
+                [2.0, 2.0, 2.0],
+                [4.0, 5.0, 6.0],
+                [6.0, 4.0, 5.0],
+                [5.0, 6.0, 4.0],
+                [4.0, 4.0, 4.0],
+                [0.0, 1.0, 10.0],
+                [10.0, 0.0, 1.0],
+                [1.0, 10.0, 0.0],
+            ],
+            [4, 2, 1, 1, 4, 2, 1, 1, 5, 0, 3],
+            [
+                1.22474487,
+                1.22474487,
+                1.22474487,
+                2.0,
+                4.0620192,
+                4.0620192,
+                4.0620192,
+                4.0,
+                1.0,
+                1.0,
+                1.0,
+            ],
+        )
+    ],
+)
+def test_associate(
+    population_value: Sequence[Sequence[float]],
+    expected_indices: Sequence[int],
+    expected_distances: Sequence[float],
+) -> None:
+    population = np.array(population_value)
     reference_points = generate_default_reference_point(n_objectives=3, dividing_parameter=2)
-    elite_population_num = 4
     (
-        nearest_points_count_to_reference_point,
-        reference_point_to_population,
-    ) = _associate_individuals_with_reference_points(
-        population, reference_points, elite_population_num
-    )
-    actual_reference_points_per_count = dict(
-        zip(
-            nearest_points_count_to_reference_point,
-            map(lambda x: set(x), nearest_points_count_to_reference_point.values()),
+        closest_reference_points,
+        distance_reference_points,
+    ) = _associate_individuals_with_reference_points(population, reference_points)
+    print(closest_reference_points)
+    print(distance_reference_points)
+    assert np.all(closest_reference_points == expected_indices)
+    assert np.allclose(distance_reference_points, expected_distances)
+
+
+@pytest.mark.parametrize(
+    "population_value,closest_reference_points, distance_reference_points, expected_population_idx",
+    [
+        (
+            [
+                [4.0, 5.0, 6.0],
+                [6.0, 4.0, 5.0],
+                [5.0, 6.0, 4.0],
+                [4.0, 4.0, 4.0],
+                [0.0, 1.0, 10.0],
+                [10.0, 0.0, 1.0],
+                [1.0, 10.0, 0.0],
+            ],
+            [4, 2, 1, 1, 4, 2, 1, 1, 5, 0, 3],
+            [
+                1.22474487,
+                1.22474487,
+                1.22474487,
+                2.0,
+                4.0620192,
+                4.0620192,
+                4.0620192,
+                4.0,
+                1.0,
+                1.0,
+                1.0,
+            ],
+            [6, 5, 4, 0, 1],
         )
-    )
-    expected_reference_points_per_count = {1: {2, 4}, 2: {1}}
-    assert actual_reference_points_per_count == expected_reference_points_per_count
-
-    actual_reference_point_to_population = dict(
-        zip(
-            reference_point_to_population,
-            map(lambda x: set(x), reference_point_to_population.values()),
-        )
-    )
-    expected_reference_point_to_population = {
-        1: {(4.0, 3), (4.06201920231798, 2)},
-        2: {(4.06201920231798, 1)},
-        4: {(4.06201920231798, 0)},
-    }
-    assert actual_reference_point_to_population == expected_reference_point_to_population
-
-
-def test_niching() -> None:
+    ],
+)
+def test_niching(
+    population_value: Sequence[Sequence[int]],
+    closest_reference_points: Sequence[int],
+    distance_reference_points: Sequence[float],
+    expected_population_idx: Sequence[int],
+) -> None:
     sampler = NSGAIIISampler(n_objectives=3, seed=42)
-    target_population_size = 2
-    population = [
-        create_trial(values=[4.0, 5.0, 6.0]),
-        create_trial(values=[6.0, 4.0, 5.0]),
-        create_trial(values=[5.0, 6.0, 4.0]),
-        create_trial(values=[4.0, 4.0, 4.0]),
-    ]
-    # each reference point 2 and 4 have an elite individual.
-    nearest_points_count_to_reference_point = defaultdict(list, {0: [1], 1: [2, 4]})
-    reference_point_to_population = defaultdict(
-        list,
-        {
-            1: [(4.0, 3), (4.06201920231798, 2)],
-            2: [(4.06201920231798, 1)],
-            4: [(4.06201920231798, 0)],
-        },
-    )
+    target_population_size = 5
+    elite_population_num = 4
+    population = [create_trial(values=value) for value in population_value]
     actual_additional_elite_population = [
         trial.values
         for trial in _preserve_niche_individuals(
             target_population_size,
+            elite_population_num,
             population,
-            nearest_points_count_to_reference_point,
-            reference_point_to_population,
+            np.array(closest_reference_points),
+            np.array(distance_reference_points),
             sampler._rng,
         )
     ]
-
-    expected_additional_elite_population = [population[3].values, population[2].values]
+    print(actual_additional_elite_population)
+    expected_additional_elite_population = [
+        population[idx].values for idx in expected_population_idx
+    ]
     assert actual_additional_elite_population == expected_additional_elite_population
