@@ -14,7 +14,7 @@ def _calculate(
     trials: list[optuna.trial.FrozenTrial],
     include_pruned: bool = False,
     search_space: Dict[str, BaseDistribution] | None = None,
-    cursor: int = -1,
+    cached_trial_number: int = -1,
 ) -> Tuple[Dict[str, BaseDistribution] | None, int]:
     states_of_interest = [
         optuna.trial.TrialState.COMPLETE,
@@ -27,13 +27,15 @@ def _calculate(
 
     trials_of_interest = [trial for trial in trials if trial.state in states_of_interest]
 
-    next_cursor = trials_of_interest[-1].number + 1 if len(trials_of_interest) > 0 else -1
+    next_cached_trial_number = (
+        trials_of_interest[-1].number + 1 if len(trials_of_interest) > 0 else -1
+    )
     for trial in reversed(trials_of_interest):
-        if cursor > trial.number:
+        if cached_trial_number > trial.number:
             break
 
         if not trial.state.is_finished():
-            next_cursor = trial.number
+            next_cached_trial_number = trial.number
             continue
 
         if search_space is None:
@@ -46,7 +48,7 @@ def _calculate(
             if trial.distributions.get(name) == distribution
         }
 
-    return search_space, next_cursor
+    return search_space, next_cached_trial_number
 
 
 class IntersectionSearchSpace:
@@ -69,7 +71,7 @@ class IntersectionSearchSpace:
     """
 
     def __init__(self, include_pruned: bool = False) -> None:
-        self._cursor: int = -1
+        self._cached_trial_number: int = -1
         self._search_space: Dict[str, BaseDistribution] | None = None
         self._study_id: int | None = None
 
@@ -100,11 +102,11 @@ class IntersectionSearchSpace:
             if self._study_id != study._study_id:
                 raise ValueError("`IntersectionSearchSpace` cannot handle multiple studies.")
 
-        self._search_space, self._cursor = _calculate(
+        self._search_space, self._cached_trial_number = _calculate(
             study.get_trials(deepcopy=False),
             self._include_pruned,
             self._search_space,
-            self._cursor,
+            self._cached_trial_number,
         )
         search_space = self._search_space or {}
 
