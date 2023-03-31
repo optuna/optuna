@@ -301,7 +301,11 @@ class NSGAIIISampler(BaseSampler):
                 elite_population.extend(population)
             else:
                 objective_matrix = _normalize_objective_values(elite_population + population)
-
+                mask = np.any(objective_matrix == -np.inf, axis=1)
+                elite_population.extend(
+                    [individual for individual, flag in zip(population, mask) if flag]
+                )
+                objective_matrix = objective_matrix[~mask, :]
                 (
                     closest_reference_points,
                     distance_reference_points,
