@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 from collections import OrderedDict
 import copy
 from typing import Dict
 from typing import List
-from typing import Optional
 from typing import Tuple
 
 import optuna
@@ -13,9 +14,9 @@ from optuna.study import Study
 def _calculate(
     trials: List[optuna.trial.FrozenTrial],
     include_pruned: bool = False,
-    search_space: Optional[Dict[str, BaseDistribution]] = None,
+    search_space: Dict[str, BaseDistribution] | None = None,
     cursor: int = -1,
-) -> Tuple[Optional[Dict[str, BaseDistribution]], int]:
+) -> Tuple[Dict[str, BaseDistribution] | None, int]:
     states_of_interest = [
         optuna.trial.TrialState.COMPLETE,
         optuna.trial.TrialState.WAITING,
@@ -70,8 +71,8 @@ class IntersectionSearchSpace:
 
     def __init__(self, include_pruned: bool = False) -> None:
         self._cursor: int = -1
-        self._search_space: Optional[Dict[str, BaseDistribution]] = None
-        self._study_id: Optional[int] = None
+        self._search_space: Dict[str, BaseDistribution] | None = None
+        self._study_id: int | None = None
 
         self._include_pruned = include_pruned
 
