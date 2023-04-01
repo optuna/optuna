@@ -30,8 +30,6 @@ from optuna.visualization.matplotlib._matplotlib_imports import Axes
 from optuna.visualization.matplotlib._matplotlib_imports import plt
 
 
-RANGE_TYPE = Union[Tuple[str, str], Tuple[float, float]]
-
 parametrize_plot_contour = pytest.mark.parametrize(
     "plot_contour", [plotly_plot_contour, plt_plot_contour]
 )
