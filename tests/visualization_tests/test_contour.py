@@ -4,8 +4,6 @@ from io import BytesIO
 import math
 from typing import Any
 from typing import Callable
-from typing import Tuple
-from typing import Union
 
 import numpy as np
 import pytest
