@@ -1157,3 +1157,34 @@ def test_constant_liar_observation_pairs(direction: str) -> None:
 def test_constant_liar_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         _ = TPESampler(constant_liar=True)
+
+
+@pytest.mark.parametrize("multivariate", [True, False])
+def test_constant_liar_with_running_trial(multivariate: bool) -> None:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = TPESampler(multivariate=multivariate, constant_liar=True, n_startup_trials=0)
+
+    study = optuna.create_study(sampler=sampler)
+
+    # Add a complete trial.
+    trial0 = study.ask()
+    trial0.suggest_int("x", 0, 10)
+    trial0.suggest_float("y", 0, 10)
+    trial0.suggest_categorical("z", [0, 1, 2])
+    study.tell(trial0, 0)
+
+    # Add running trials.
+    trial1 = study.ask()
+    trial1.suggest_int("x", 0, 10)
+    trial2 = study.ask()
+    trial2.suggest_float("y", 0, 10)
+    trial3 = study.ask()
+    trial3.suggest_categorical("z", [0, 1, 2])
+
+    # Test suggestion with running trials.
+    trial = study.ask()
+    trial.suggest_int("x", 0, 10)
+    trial.suggest_float("y", 0, 10)
+    trial.suggest_categorical("z", [0, 1, 2])
+    study.tell(trial, 0)

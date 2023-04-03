@@ -400,10 +400,9 @@ class TPESampler(BaseSampler):
         indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n), violations)
         # `None` items are intentionally converted to `nan` and then filtered out.
         # For `nan` conversion, the dtype must be float.
-        # `None` items appear only when `group=True`. We just use the first parameter because the
-        # masks are the same for all parameters in one group.
+        # `None` items appear when `group=True` or `constant_liar=True`.
         config_values = {k: np.asarray(v, dtype=float) for k, v in values.items()}
-        param_mask = ~np.isnan(list(config_values.values())[0])
+        param_mask = np.all(~np.isnan(list(config_values.values())), axis=0)
         param_mask_below, param_mask_above = param_mask[indices_below], param_mask[indices_above]
         below = {k: v[indices_below[param_mask_below]] for k, v in config_values.items()}
         above = {k: v[indices_above[param_mask_above]] for k, v in config_values.items()}
