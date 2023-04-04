@@ -17,7 +17,7 @@ from optuna.trial._state import TrialState
 
 with try_import() as _imports:
     from botorch.fit import fit_gpytorch_model
-    from botorch.models import FixedNoiseGP
+    from botorch.models import SingleTaskGP
     from botorch.models.transforms import Normalize
     from botorch.models.transforms import Standardize
     import gpytorch
@@ -25,7 +25,7 @@ with try_import() as _imports:
 
 __all__ = [
     "fit_gpytorch_model",
-    "FixedNoiseGP",
+    "SingleTaskGP",
     "Normalize",
     "Standardize",
     "gpytorch",
@@ -37,7 +37,7 @@ class _BoTorchGaussianProcess(BaseGaussianProcess):
     def __init__(self) -> None:
         _imports.check()
 
-        self._gp: Optional[FixedNoiseGP] = None
+        self._gp: Optional[SingleTaskGP] = None
 
     def fit(
         self,
@@ -47,23 +47,14 @@ class _BoTorchGaussianProcess(BaseGaussianProcess):
 
         x, bounds = _convert_trials_to_tensors(trials)
 
-        n_trials = x.shape[0]
         n_params = x.shape[1]
 
         y = torch.tensor([trial.value for trial in trials], dtype=torch.float64)
         y = torch.unsqueeze(y, 1)
 
-        noise_scale = gpytorch.settings.min_fixed_noise.value(torch.float64)
-        noise = (
-            torch.full_like(y, noise_scale * y.var().item())
-            if n_trials > 1
-            else torch.zeros_like(y)
-        )
-        noise = noise.clamp_min(noise_scale)
-        self._gp = FixedNoiseGP(
+        self._gp = SingleTaskGP(
             x,
             y,
-            noise,
             input_transform=Normalize(d=n_params, bounds=bounds),
             outcome_transform=Standardize(m=1),
         )
