@@ -1,7 +1,0 @@
-{"id": "train_01", "text": "Chainer is a Python-based deep learning framework aiming at flexibility.", "label": 1}
-{"id": "train_02", "text": "It provides automatic differentiation APIs based on the define-by-run approach (a.k.a. dynamic computational graphs) as well as object-oriented high-level APIs to build and train neural networks.", "label": 1}
-{"id": "train_03", "text": "It also supports CUDA/cuDNN using CuPy for high performance training and inference.", "label": 1}
-{"id": "train_04", "text": "For more details about Chainer, see the documents and resources listed above and join the community in Forum, Slack, and Twitter.", "label": 1}
-{"id": "train_05", "text": "Optuna is an automatic hyperparameter optimization software framework, particularly designed for machine learning.", "label": 0}
-{"id": "train_06", "text": "It features an imperative, define-by-run style user API.", "label": 0}
-{"id": "train_07", "text": "Thanks to our define-by-run API, the code written with Optuna enjoys high modularity, and the user of Optuna can dynamically construct the search spaces for the hyperparameters.", "label": 0}
