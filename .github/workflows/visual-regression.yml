@@ -1,9 +1,8 @@
 name: Visual regression tests with Netlify
 
 on:
-  pull_request:
-    paths:
-      - 'optuna/visualization/**'
+  pull_request_target:
+    types: [labeled]
   workflow_dispatch:
 
 concurrency:
@@ -15,8 +14,12 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    # Not intended for forks.
-    if: github.repository == 'optuna/optuna'
+    if: |
+      ( github.repository == 'optuna/optuna' ) &&
+      (
+         contains(github.event.pull_request.labels.*.name, 'safe-to-run-visual-regression-tests') ||
+         ( github.event_name == 'workflow_dispatch' )
+      )
 
     steps:
 

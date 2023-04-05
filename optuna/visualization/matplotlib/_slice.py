@@ -1,9 +1,8 @@
+from __future__ import annotations
+
 import math
 from typing import Any
 from typing import Callable
-from typing import List
-from typing import Optional
-from typing import Tuple
 
 from optuna._experimental import experimental_func
 from optuna.study import Study
@@ -25,9 +24,9 @@ if _imports.is_successful():
 @experimental_func("2.2.0")
 def plot_slice(
     study: Study,
-    params: Optional[List[str]] = None,
+    params: list[str] | None = None,
     *,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
 ) -> "Axes":
     """Plot the parameter relationship as slice plot in a study with Matplotlib.
@@ -147,8 +146,8 @@ def _generate_slice_subplot(
 
 
 def _calc_lim_with_padding(
-    values: List[Any], padding_ratio: float, scale: Optional[str]
-) -> Tuple[float, float]:
+    values: list[Any], padding_ratio: float, scale: str | None
+) -> tuple[float, float]:
     value_max = max(values)
     value_min = min(values)
     if scale == "log":

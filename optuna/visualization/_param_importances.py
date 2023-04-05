@@ -1,8 +1,8 @@
+from __future__ import annotations
+
 from collections import OrderedDict
 from typing import Callable
-from typing import List
 from typing import NamedTuple
-from typing import Optional
 
 import optuna
 from optuna.distributions import BaseDistribution
@@ -26,17 +26,17 @@ logger = get_logger(__name__)
 
 
 class _ImportancesInfo(NamedTuple):
-    importance_values: List[float]
-    param_names: List[str]
-    importance_labels: List[str]
+    importance_values: list[float]
+    param_names: list[str]
+    importance_labels: list[str]
     target_name: str
 
 
 def _get_importances_info(
     study: Study,
-    evaluator: Optional[BaseImportanceEvaluator],
-    params: Optional[List[str]],
-    target: Optional[Callable[[FrozenTrial], float]],
+    evaluator: BaseImportanceEvaluator | None,
+    params: list[str] | None,
+    target: Callable[[FrozenTrial], float] | None,
     target_name: str,
 ) -> _ImportancesInfo:
     _check_plot_args(study, target, target_name)
@@ -73,10 +73,10 @@ def _get_importances_info(
 
 def plot_param_importances(
     study: Study,
-    evaluator: Optional[BaseImportanceEvaluator] = None,
-    params: Optional[List[str]] = None,
+    evaluator: BaseImportanceEvaluator | None = None,
+    params: list[str] | None = None,
     *,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
 ) -> "go.Figure":
     """Plot hyperparameter importances.
@@ -142,7 +142,7 @@ def plot_param_importances(
     return _get_importances_plot(importances_info, hover_template)
 
 
-def _get_importances_plot(info: _ImportancesInfo, hover_template: List[str]) -> "go.Figure":
+def _get_importances_plot(info: _ImportancesInfo, hover_template: list[str]) -> "go.Figure":
     layout = go.Layout(
         title="Hyperparameter Importances",
         xaxis={"title": f"Importance for {info.target_name}"},
@@ -188,7 +188,7 @@ def _make_hovertext(param_name: str, importance: float, study: Study) -> str:
     )
 
 
-def _get_hover_template(importances_info: _ImportancesInfo, study: Study) -> List[str]:
+def _get_hover_template(importances_info: _ImportancesInfo, study: Study) -> list[str]:
     return [
         _make_hovertext(param_name, importance, study)
         for param_name, importance in zip(

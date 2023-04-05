@@ -1,6 +1,6 @@
-from typing import List
+from __future__ import annotations
+
 from typing import NamedTuple
-from typing import Tuple
 
 from optuna.logging import get_logger
 from optuna.study import Study
@@ -16,11 +16,11 @@ _logger = get_logger(__name__)
 
 class _TrialInfo(NamedTuple):
     trial_number: int
-    sorted_intermediate_values: List[Tuple[int, float]]
+    sorted_intermediate_values: list[tuple[int, float]]
 
 
 class _IntermediatePlotInfo(NamedTuple):
-    trial_infos: List[_TrialInfo]
+    trial_infos: list[_TrialInfo]
 
 
 def _get_intermediate_plot_info(study: Study) -> _IntermediatePlotInfo:
