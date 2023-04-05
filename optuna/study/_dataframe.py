@@ -56,18 +56,21 @@ def _create_records_and_aggregate_column(
                 for nested_attr, nested_value in value.items():
                     record[(df_column, nested_attr)] = nested_value
                     column_agg[attr].add((df_column, nested_attr))
-            elif isinstance(value, list):
+            elif attr == "values":
                 # Expand trial.values.
-                iterator = enumerate(value) if metric_names is None else zip(metric_names, value)
+                # trial.values should be None when the trial's state is FAIL or PRUNED.
+                trial_values = [None] * len(study.directions) if value is None else value
+                iterator = (
+                    enumerate(trial_values)
+                    if metric_names is None
+                    else zip(metric_names, trial_values)
+                )
                 for nested_attr, nested_value in iterator:
                     record[(df_column, nested_attr)] = nested_value
                     column_agg[attr].add((df_column, nested_attr))
-            elif attr == "values":
-                # trial.values should be None when the trial's state is FAIL or PRUNED.
-                assert value is None
-                iterator = range(len(study.directions)) if metric_names is None else metric_names
-                for nested_attr in iterator:
-                    record[(df_column, nested_attr)] = None
+            elif isinstance(value, list):
+                for nested_attr, nested_value in enumerate(value):
+                    record[(df_column, nested_attr)] = nested_value
                     column_agg[attr].add((df_column, nested_attr))
             elif attr == "value":
                 nested_attr = non_nested_attr if metric_names is None else metric_names[0]
