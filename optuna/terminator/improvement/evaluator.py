@@ -105,7 +105,9 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             )
 
 
-def _convert_trials_to_tensors(trials: list[FrozenTrial]) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+def _convert_trials_to_tensors(
+    trials: list[FrozenTrial],
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """Convert a list of FrozenTrial objects to tensors inputs and bounds.
 
     This function assumes the following condition for input trials:
@@ -167,26 +169,35 @@ def _fit_gp(x: torch.Tensor, bounds: torch.Tensor, y: torch.Tensor) -> SingleTas
     fit_gpytorch_model(mll)
     return gp
 
-def _calculate_min_lcb(gp: SingleTaskGP, beta: float, x: torch.Tensor, bounds: torch.Tensor) -> float:
+
+def _calculate_min_lcb(
+    gp: SingleTaskGP, beta: float, x: torch.Tensor, bounds: torch.Tensor
+) -> float:
     neg_lcb_func = UpperConfidenceBound(gp, beta=beta, maximize=False)
 
     with gpytorch.settings.fast_pred_var():  # type: ignore[no-untyped-call]
         x_opt, lcb = optimize_acqf(
-            neg_lcb_func, bounds=bounds, q=1, num_restarts=10, raw_samples=2048, sequential=True, options={"sample_around_best": True}
+            neg_lcb_func,
+            bounds=bounds,
+            q=1,
+            num_restarts=10,
+            raw_samples=2048,
+            sequential=True,
+            options={"sample_around_best": True},
         )
         min_lcb = -lcb.item()
-        min_lcb_x = torch.min(-neg_lcb_func(x[:, None, :])).item() 
+        min_lcb_x = torch.min(-neg_lcb_func(x[:, None, :])).item()
         min_lcb = min(min_lcb, min_lcb_x)
-    
+
     return min_lcb
 
-def _calculate_min_ucb(gp: SingleTaskGP, beta: float, x: torch.Tensor, bounds: torch.Tensor) -> float:
+
+def _calculate_min_ucb(
+    gp: SingleTaskGP, beta: float, x: torch.Tensor, bounds: torch.Tensor
+) -> float:
     ucb_func = UpperConfidenceBound(gp, beta=beta, maximize=True)
 
     with gpytorch.settings.fast_pred_var():  # type: ignore[no-untyped-call]
         min_ucb = torch.min(ucb_func(x[:, None, :])).item()
-    
+
     return min_ucb
-
-
-    

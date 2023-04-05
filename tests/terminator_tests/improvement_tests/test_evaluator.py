@@ -3,20 +3,50 @@ from __future__ import annotations
 from unittest import mock
 
 import pytest
+import torch
 
+from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 from optuna.study import StudyDirection
 from optuna.terminator.improvement._preprocessing import NullPreprocessing
-from optuna.terminator.improvement.evaluator import RegretBoundEvaluator
 from optuna.terminator.improvement.evaluator import _fit_gp
+from optuna.terminator.improvement.evaluator import RegretBoundEvaluator
 from optuna.trial import create_trial
-import torch
+from optuna.trial import FrozenTrial
+
 
 # TODO(g-votte): test the following edge cases
 # TODO(g-votte): - the user specifies non-default top_trials_ratio or min_n_trials
 
 
-def test_evaluate() -> None:
+@pytest.mark.parametrize(
+    "trials",
+    [
+        [
+            create_trial(
+                value=0,
+                distributions={"a": FloatDistribution(-1.0, 1.0)},
+                params={"a": 0.0},
+            )
+        ],
+        [
+            create_trial(
+                value=0,
+                distributions={"a": IntDistribution(-1, 1)},
+                params={"a": 0},
+            )
+        ],
+        [
+            create_trial(
+                value=0,
+                distributions={"x": CategoricalDistribution(["a", "b", "c"])},
+                params={"x": "b"},
+            )
+        ],
+    ],
+)
+def test_evaluate(trials: list[FrozenTrial]) -> None:
     trials = [
         create_trial(
             value=0,
@@ -35,7 +65,9 @@ def test_evaluate() -> None:
         evaluator = RegretBoundEvaluator()
         evaluator.evaluate(trials, study_direction=StudyDirection.MAXIMIZE)
 
-@pytest.mark.parametrize("x", 
+
+@pytest.mark.parametrize(
+    "x",
     [
         [[0.0]],
         [[0.0], [0.0]],
@@ -49,8 +81,6 @@ def test_fit_gp(x: list[list[float]]) -> None:
     bounds = torch.tensor([[0.0] * dim, [1.0] * dim])
     y = torch.tensor([0.0] * len(x))
     _fit_gp(x_tensor, bounds, y)
-    
-
 
 
 def test_evaluate_with_no_trial() -> None:
