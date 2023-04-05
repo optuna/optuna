@@ -306,7 +306,7 @@ def _get_rank_plot(
     params = info.params
     sub_plot_infos = info.sub_plot_infos
 
-    layout = go.Layout(title=f"Rank Plot: {info.target_name}")
+    layout = go.Layout(title=f"Rank ({info.target_name})")
 
     if len(params) == 0:
         return go.Figure(data=[], layout=layout)
