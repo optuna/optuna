@@ -25,6 +25,7 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.samplers import BaseSampler
+from optuna.search_space import IntersectionSearchSpace
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -132,7 +133,7 @@ class CmaEsSampler(BaseSampler):
             sampling. The parameters not contained in the relative search space are sampled
             by this sampler.
             The search space for :class:`~optuna.samplers.CmaEsSampler` is determined by
-            :func:`~optuna.samplers.intersection_search_space()`.
+            :func:`~optuna.search_space.intersection_search_space()`.
 
             If :obj:`None` is specified, :class:`~optuna.samplers.RandomSampler` is used
             as the default.
@@ -242,7 +243,7 @@ class CmaEsSampler(BaseSampler):
         self._n_startup_trials = n_startup_trials
         self._warn_independent_sampling = warn_independent_sampling
         self._cma_rng = np.random.RandomState(seed)
-        self._search_space = optuna.samplers.IntersectionSearchSpace()
+        self._search_space = IntersectionSearchSpace()
         self._consider_pruned_trials = consider_pruned_trials
         self._restart_strategy = restart_strategy
         self._popsize = popsize
@@ -364,7 +365,9 @@ class CmaEsSampler(BaseSampler):
             return {}
 
         # When `with_margin=True`, bounds in discrete dimensions are handled inside `CMAwM`.
-        trans = _SearchSpaceTransform(search_space, transform_step=not self._with_margin)
+        trans = _SearchSpaceTransform(
+            search_space, transform_step=not self._with_margin, transform_0_1=True
+        )
 
         optimizer, n_restarts = self._restore_optimizer(completed_trials)
         if optimizer is None:
@@ -613,7 +616,7 @@ class CmaEsSampler(BaseSampler):
 
     def _get_trials(self, study: "optuna.Study") -> List[FrozenTrial]:
         complete_trials = []
-        for t in study.get_trials(deepcopy=False):
+        for t in study._get_trials(deepcopy=False, use_cache=True):
             if t.state == TrialState.COMPLETE:
                 complete_trials.append(t)
             elif (

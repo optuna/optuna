@@ -115,15 +115,15 @@ def erf(x: np.ndarray) -> np.ndarray:
 
     def calc_case_small1(x: np.ndarray) -> np.ndarray:
         z = x * x
-        r = Polynomial([pp0, pp1, pp2, pp3, pp4])(z)
-        s = Polynomial([one, qq1, qq2, qq3, qq4, qq5])(z)
+        r = Polynomial([pp0, pp1, pp2, pp3, pp4])(z)  # type: ignore[no-untyped-call]
+        s = Polynomial([one, qq1, qq2, qq3, qq4, qq5])(z)  # type: ignore[no-untyped-call]
         y = r / s
         return x + x * y
 
     def calc_case_small2(x: np.ndarray) -> np.ndarray:
         s = np.abs(x) - one
-        P = Polynomial([pa0, pa1, pa2, pa3, pa4, pa5, pa6])(s)
-        Q = Polynomial([one, qa1, qa2, qa3, qa4, qa5, qa6])(s)
+        P = Polynomial([pa0, pa1, pa2, pa3, pa4, pa5, pa6])(s)  # type: ignore[no-untyped-call]
+        Q = Polynomial([one, qa1, qa2, qa3, qa4, qa5, qa6])(s)  # type: ignore[no-untyped-call]
         absout = erx + P / Q
         return absout * np.sign(x)
 
@@ -131,8 +131,12 @@ def erf(x: np.ndarray) -> np.ndarray:
         sign = np.sign(x)
         x = np.abs(x)
         s = one / (x * x)
-        R = Polynomial([ra0, ra1, ra2, ra3, ra4, ra5, ra6, ra7])(s)
-        S = Polynomial([one, sa1, sa2, sa3, sa4, sa5, sa6, sa7, sa8])(s)
+        R = Polynomial([ra0, ra1, ra2, ra3, ra4, ra5, ra6, ra7])(  # type: ignore[no-untyped-call]
+            s
+        )
+        S = Polynomial(  # type: ignore[no-untyped-call]
+            [one, sa1, sa2, sa3, sa4, sa5, sa6, sa7, sa8]
+        )(s)
         # the following 3 lines are omitted for the following reasons:
         # (1) there are no easy way to implement SET_LOW_WORD equivalent method in NumPy
         # (2) we don't need very high accuracy in our use case.
@@ -146,8 +150,10 @@ def erf(x: np.ndarray) -> np.ndarray:
         sign = np.sign(x)
         x = np.abs(x)
         s = one / (x * x)
-        R = Polynomial([rb0, rb1, rb2, rb3, rb4, rb5, rb6])(s)
-        S = Polynomial([one, sb1, sb2, sb3, sb4, sb5, sb6, sb7])(s)
+        R = Polynomial([rb0, rb1, rb2, rb3, rb4, rb5, rb6])(s)  # type: ignore[no-untyped-call]
+        S = Polynomial([one, sb1, sb2, sb3, sb4, sb5, sb6, sb7])(  # type: ignore[no-untyped-call]
+            s
+        )
         # z = x
         # SET_LOW_WORD(z, 0)
         # r = np.exp(-z * z - 0.5625) * np.exp((z - x) * (z + x) + R / S)

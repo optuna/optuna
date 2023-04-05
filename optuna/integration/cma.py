@@ -19,6 +19,7 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.samplers import BaseSampler
+from optuna.search_space import IntersectionSearchSpace
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
@@ -104,7 +105,7 @@ class PyCmaSampler(BaseSampler):
             sampling. The parameters not contained in the relative search space are sampled
             by this sampler.
             The search space for :class:`~optuna.integration.PyCmaSampler` is determined by
-            :func:`~optuna.samplers.intersection_search_space()`.
+            :func:`~optuna.search_space.intersection_search_space()`.
 
             If :obj:`None` is specified, :class:`~optuna.samplers.RandomSampler` is used
             as the default.
@@ -151,7 +152,7 @@ class PyCmaSampler(BaseSampler):
         self._n_startup_trials = n_startup_trials
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._warn_independent_sampling = warn_independent_sampling
-        self._search_space = optuna.samplers.IntersectionSearchSpace()
+        self._search_space = IntersectionSearchSpace()
 
     def reseed_rng(self) -> None:
         self._cma_opts["seed"] = random.randint(1, 2**32)
@@ -182,7 +183,9 @@ class PyCmaSampler(BaseSampler):
         self._raise_error_if_multi_objective(study)
 
         if self._warn_independent_sampling:
-            complete_trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+            complete_trials = study._get_trials(
+                deepcopy=False, states=(TrialState.COMPLETE,), use_cache=True
+            )
             if len(complete_trials) >= self._n_startup_trials:
                 self._log_independent_sampling(trial, param_name)
 
@@ -208,7 +211,9 @@ class PyCmaSampler(BaseSampler):
             self._warn_independent_sampling = False
             return {}
 
-        complete_trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+        complete_trials = study._get_trials(
+            deepcopy=False, states=(TrialState.COMPLETE,), use_cache=True
+        )
         if len(complete_trials) < self._n_startup_trials:
             return {}
 

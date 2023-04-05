@@ -67,9 +67,9 @@ def test_infer_relative_search_space() -> None:
     sampler = _init_QMCSampler_without_exp_warning()
     study = optuna.create_study(sampler=sampler)
     trial = Mock()
-    # In case no past trials
+    # In case no past trials.
     assert sampler.infer_relative_search_space(study, trial) == {}
-    # In case there is a past trial
+    # In case there is a past trial.
     study.optimize(objective, n_trials=1)
     relative_search_space = sampler.infer_relative_search_space(study, trial)
     assert len(relative_search_space.keys()) == 5
@@ -179,7 +179,7 @@ def test_sample_relative() -> None:
         assert isinstance(sample["x2"], int)
         assert sample["x5"] in (1, 4, 7, 10)
 
-    # If empty search_space, return {}
+    # If empty search_space, return {}.
     assert sampler.sample_relative(study, trial, {}) == {}
 
 
@@ -209,7 +209,7 @@ def test_sample_relative_halton() -> None:
             [0.875, 0.55555556, 0.44, 0.02040816, 0.63636364],
         ]
     )
-    # If empty search_space, return {}
+    # If empty search_space, return {}.
     np.testing.assert_allclose(samples, ref_samples, rtol=1e-6)
 
 
@@ -240,29 +240,26 @@ def test_sample_relative_sobol() -> None:
         ]
     )
 
-    # If empty search_space, return {}
+    # If empty search_space, return {}.
     np.testing.assert_allclose(samples, ref_samples, rtol=1e-6)
 
 
 @pytest.mark.parametrize("scramble", [True, False])
 @pytest.mark.parametrize("qmc_type", ["sobol", "halton"])
-def test_sample_relative_seeding(scramble: bool, qmc_type: str) -> None:
+@pytest.mark.parametrize("seed", [0, 12345])
+def test_sample_relative_seeding(scramble: bool, qmc_type: str, seed: int) -> None:
     objective: Callable[[Trial], float] = lambda t: t.suggest_float("x", 0, 1)
 
-    # Base case
-    sampler = _init_QMCSampler_without_exp_warning(
-        scramble=scramble, qmc_type=qmc_type, seed=12345
-    )
+    # Base case.
+    sampler = _init_QMCSampler_without_exp_warning(scramble=scramble, qmc_type=qmc_type, seed=seed)
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=10, n_jobs=1)
     past_trials = study._storage.get_all_trials(study._study_id, states=(TrialState.COMPLETE,))
     past_trials = [t for t in past_trials if t.number > 0]
     values = [t.params["x"] for t in past_trials]
 
-    # Sequential case
-    sampler = _init_QMCSampler_without_exp_warning(
-        scramble=scramble, qmc_type=qmc_type, seed=12345
-    )
+    # Sequential case.
+    sampler = _init_QMCSampler_without_exp_warning(scramble=scramble, qmc_type=qmc_type, seed=seed)
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=10, n_jobs=1)
     past_trials_sequential = study._storage.get_all_trials(
@@ -272,11 +269,9 @@ def test_sample_relative_seeding(scramble: bool, qmc_type: str) -> None:
     values_sequential = [t.params["x"] for t in past_trials_sequential]
     np.testing.assert_allclose(values, values_sequential, rtol=1e-6)
 
-    # Parallel case (n_jobs=3)
-    # Same parameters might be evalueated multiple times.
-    sampler = _init_QMCSampler_without_exp_warning(
-        scramble=scramble, qmc_type=qmc_type, seed=12345
-    )
+    # Parallel case (n_jobs=3):
+    # Same parameters might be evaluated multiple times.
+    sampler = _init_QMCSampler_without_exp_warning(scramble=scramble, qmc_type=qmc_type, seed=seed)
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=30, n_jobs=3)
     past_trials_parallel = study._storage.get_all_trials(
@@ -308,7 +303,7 @@ def test_sample_qmc(qmc_type: str) -> None:
     search_space.pop("x6")
 
     with patch.object(sampler, "_find_sample_id", side_effect=[0, 1, 2, 4, 9]) as _:
-        # Make sure that the shape of sample is correct
+        # Make sure that the shape of sample is correct.
         sample = sampler._sample_qmc(study, search_space)
         assert sample.shape == (1, 5)
 
@@ -323,10 +318,10 @@ def test_find_sample_id() -> None:
     with patch.object(sampler, "_seed", 1) as _:
         assert sampler._find_sample_id(study) == 5
 
-        # Seed is considered only when scrambling is enabled
+        # Seed is considered only when scrambling is enabled.
         with patch.object(sampler, "_scramble", True) as _:
             assert sampler._find_sample_id(study) == 0
 
-    # Change qmc_type
+    # Change qmc_type.
     with patch.object(sampler, "_qmc_type", "sobol") as _:
         assert sampler._find_sample_id(study) == 0

@@ -55,16 +55,6 @@ CatBoost
 
    optuna.integration.CatBoostPruningCallback
 
-Chainer
--------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.ChainerPruningExtension
-   optuna.integration.ChainerMNStudy
-
 Dask
 ----
 
