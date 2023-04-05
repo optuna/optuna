@@ -90,7 +90,7 @@ jobs:
     - name: Setup cache
       uses: actions/cache@v3
       env:
-        cache-name: test
+        cache-name: windows-test-integration
       with:
         path: ~\\AppData\\Local\\pip\\Cache
         key: ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
