@@ -83,36 +83,11 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
 
         fit_trials = self.get_preprocessing().apply(trials, study_direction)
 
-        x, bounds = _convert_trials_to_tensors(trials)
+        x, bounds, y = _convert_trials_to_tensors(fit_trials)
 
-        y = torch.tensor([trial.value for trial in trials], dtype=torch.float64)
-        y = torch.unsqueeze(y, 1)
-
-        gp = SingleTaskGP(
-            x,
-            y,
-            input_transform=Normalize(d=x.shape[1], bounds=bounds),
-            outcome_transform=Standardize(m=1),
-        )
-
-        mll = gpytorch.mlls.ExactMarginalLogLikelihood(gp.likelihood, gp)
-
-        fit_gpytorch_model(mll)
-
+        gp = _fit_gp(x, bounds, y)
         beta = _get_beta(n_params=len(search_space), n_trials=len(fit_trials))
-        neg_lcb_func = UpperConfidenceBound(gp, beta=beta, maximize=False)
-        ucb_func = UpperConfidenceBound(gp, beta=beta, maximize=True)
-
-        with gpytorch.settings.fast_pred_var():  # type: ignore[no-untyped-call]
-            min_ucb = torch.min(-ucb_func(x[:, None, :])).item()
-
-            x_opt, lcb = optimize_acqf(
-                neg_lcb_func, bounds=bounds, q=1, num_restarts=10, raw_samples=512, sequential=True
-            )
-
-            min_lcb = -lcb.item()
-
-        return min_ucb - min_lcb
+        return _calculate_min_ucb(gp, beta, x, bounds) - _calculate_min_lcb(gp, beta, x, bounds)
 
     @classmethod
     def _validate_input(
@@ -130,7 +105,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             )
 
 
-def _convert_trials_to_tensors(trials: list[FrozenTrial]) -> tuple[torch.Tensor, torch.Tensor]:
+def _convert_trials_to_tensors(trials: list[FrozenTrial]) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """Convert a list of FrozenTrial objects to tensors inputs and bounds.
 
     This function assumes the following condition for input trials:
@@ -165,7 +140,9 @@ def _convert_trials_to_tensors(trials: list[FrozenTrial]) -> tuple[torch.Tensor,
         max_bounds.append(distribution.high)
     bounds = [min_bounds, max_bounds]
 
-    return torch.tensor(x, dtype=torch.float64), torch.tensor(bounds, dtype=torch.float64)
+    y = torch.tensor([trial.value for trial in trials], dtype=torch.float64)
+
+    return torch.tensor(x, dtype=torch.float64), torch.tensor(bounds, dtype=torch.float64), y
 
 
 def _get_beta(n_params: int, n_trials: int, delta: float = 0.1) -> float:
@@ -176,3 +153,40 @@ def _get_beta(n_params: int, n_trials: int, delta: float = 0.1) -> float:
     beta /= 5
 
     return beta
+
+
+def _fit_gp(x: torch.Tensor, bounds: torch.Tensor, y: torch.Tensor) -> SingleTaskGP:
+    y = torch.unsqueeze(y, 1)
+    gp = SingleTaskGP(
+        x,
+        y,
+        input_transform=Normalize(d=x.shape[1], bounds=bounds),
+        outcome_transform=Standardize(m=1),
+    )
+    mll = gpytorch.mlls.ExactMarginalLogLikelihood(gp.likelihood, gp)
+    fit_gpytorch_model(mll)
+    return gp
+
+def _calculate_min_lcb(gp: SingleTaskGP, beta: float, x: torch.Tensor, bounds: torch.Tensor) -> float:
+    neg_lcb_func = UpperConfidenceBound(gp, beta=beta, maximize=False)
+
+    with gpytorch.settings.fast_pred_var():  # type: ignore[no-untyped-call]
+        x_opt, lcb = optimize_acqf(
+            neg_lcb_func, bounds=bounds, q=1, num_restarts=10, raw_samples=2048, sequential=True, options={"sample_around_best": True}
+        )
+        min_lcb = -lcb.item()
+        min_lcb_x = torch.min(-neg_lcb_func(x[:, None, :])).item() 
+        min_lcb = min(min_lcb, min_lcb_x)
+    
+    return min_lcb
+
+def _calculate_min_ucb(gp: SingleTaskGP, beta: float, x: torch.Tensor, bounds: torch.Tensor) -> float:
+    ucb_func = UpperConfidenceBound(gp, beta=beta, maximize=True)
+
+    with gpytorch.settings.fast_pred_var():  # type: ignore[no-untyped-call]
+        min_ucb = torch.min(ucb_func(x[:, None, :])).item()
+    
+    return min_ucb
+
+
+    

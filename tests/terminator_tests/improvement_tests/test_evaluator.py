@@ -8,92 +8,15 @@ from optuna.distributions import FloatDistribution
 from optuna.study import StudyDirection
 from optuna.terminator.improvement._preprocessing import NullPreprocessing
 from optuna.terminator.improvement.evaluator import RegretBoundEvaluator
+from optuna.terminator.improvement.evaluator import _fit_gp
 from optuna.trial import create_trial
-from optuna.trial import FrozenTrial
-
+import torch
 
 # TODO(g-votte): test the following edge cases
 # TODO(g-votte): - the user specifies non-default top_trials_ratio or min_n_trials
 
 
-@pytest.mark.parametrize(
-    "trials",
-    [
-        [
-            create_trial(
-                value=1.0,
-                distributions={
-                    "bacon": FloatDistribution(-1.0, 1.0),
-                    "egg": FloatDistribution(-1.0, 1.0),
-                },
-                params={
-                    "bacon": 1.0,
-                    "egg": 0.0,
-                },
-            ),
-            create_trial(
-                value=-1.0,
-                distributions={
-                    "bacon": FloatDistribution(-1.0, 1.0),
-                    "egg": FloatDistribution(-1.0, 1.0),
-                },
-                params={
-                    "bacon": 0.0,
-                    "egg": 1.0,
-                },
-            ),
-        ],
-        [
-            create_trial(
-                value=1.0,
-                distributions={
-                    "bacon": FloatDistribution(-1.0, 1.0),
-                    "egg": FloatDistribution(-1.0, 1.0),
-                },
-                params={
-                    "bacon": 1.0,
-                    "egg": 0.0,
-                },
-            ),
-        ],
-        [
-            create_trial(
-                value=1.0,
-                distributions={
-                    "spam": FloatDistribution(-1.0, 1.0),
-                },
-                params={
-                    "spam": 1.0,
-                },
-            ),
-        ],
-        [
-            create_trial(
-                value=1.0,
-                distributions={
-                    "bacon": FloatDistribution(-1.0, 1.0),
-                    "egg": FloatDistribution(-1.0, 1.0),
-                },
-                params={
-                    "bacon": 1.0,
-                    "egg": 0.0,
-                },
-            ),
-            create_trial(
-                value=1.0,
-                distributions={
-                    "bacon": FloatDistribution(-1.0, 1.0),
-                    "egg": FloatDistribution(-1.0, 1.0),
-                },
-                params={
-                    "bacon": 1.0,
-                    "egg": 0.0,
-                },
-            ),
-        ],
-    ],
-)
-def test_evaluate(trials: list[FrozenTrial]) -> None:
+def test_evaluate() -> None:
     trials = [
         create_trial(
             value=0,
@@ -111,6 +34,23 @@ def test_evaluate(trials: list[FrozenTrial]) -> None:
     ):
         evaluator = RegretBoundEvaluator()
         evaluator.evaluate(trials, study_direction=StudyDirection.MAXIMIZE)
+
+@pytest.mark.parametrize("x", 
+    [
+        [[0.0]],
+        [[0.0], [0.0]],
+        [[0.0], [1.0]],
+        [[0.0, 0.0], [1.0, 1.0]],
+    ],
+)
+def test_fit_gp(x: list[list[float]]) -> None:
+    x_tensor = torch.tensor(x)
+    dim = x_tensor.shape[1]
+    bounds = torch.tensor([[0.0] * dim, [1.0] * dim])
+    y = torch.tensor([0.0] * len(x))
+    _fit_gp(x_tensor, bounds, y)
+    
+
 
 
 def test_evaluate_with_no_trial() -> None:
