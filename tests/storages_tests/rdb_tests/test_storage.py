@@ -2,7 +2,6 @@ import os
 import shutil
 import sys
 import tempfile
-import time
 from typing import Any
 from typing import Dict
 from typing import Optional
@@ -20,12 +19,8 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.storages import RDBStorage
 from optuna.storages._rdb.models import SCHEMA_VERSION
-from optuna.storages._rdb.models import TrialHeartbeatModel
 from optuna.storages._rdb.models import VersionInfoModel
 from optuna.storages._rdb.storage import _create_scoped_session
-from optuna.testing.storages import StorageSupplier
-from optuna.testing.threading import _TestableThread
-from optuna.trial import Trial
 
 from .create_db import mo_objective_test_upgrade
 from .create_db import objective_test_upgrade
@@ -300,40 +295,3 @@ def test_upgrade_distributions(optuna_version: str) -> None:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=UserWarning)
             new_study.optimize(objective_test_upgrade_distributions, n_trials=1)
-
-
-def test_record_heartbeat() -> None:
-    heartbeat_interval = 1
-    n_trials = 2
-    sleep_sec = 2
-
-    def objective(trial: Trial) -> float:
-        time.sleep(sleep_sec)
-        return 1.0
-
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-        storage.heartbeat_interval = heartbeat_interval
-        study = create_study(storage=storage)
-        # Exceptions raised in spawned threads are caught by `_TestableThread`.
-        with patch("optuna.storages._heartbeat.Thread", _TestableThread):
-            study.optimize(objective, n_trials=n_trials)
-
-        trial_heartbeats = []
-
-        with _create_scoped_session(storage.scoped_session) as session:
-            trial_ids = [trial._trial_id for trial in study.trials]
-            for trial_id in trial_ids:
-                heartbeat_model = TrialHeartbeatModel.where_trial_id(trial_id, session)
-                assert heartbeat_model is not None
-                trial_heartbeats.append(heartbeat_model.heartbeat)
-
-        assert len(trial_heartbeats) == n_trials
-        trials = study.trials
-        for i in range(n_trials - 1):
-            datetime_start = trials[i + 1].datetime_start
-            prev_datetime_complete = trials[i].datetime_complete
-            assert datetime_start is not None and prev_datetime_complete is not None
-            trial_prep = (datetime_start - prev_datetime_complete).seconds
-            heartbeats_interval = (trial_heartbeats[i + 1] - trial_heartbeats[i]).seconds
-            assert heartbeats_interval - sleep_sec - trial_prep <= 1

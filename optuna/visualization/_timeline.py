@@ -79,7 +79,7 @@ def plot_timeline(study: Study) -> "go.Figure":
 
 def _get_timeline_info(study: Study) -> _TimelineInfo:
     bars = []
-    for t in study.get_trials():
+    for t in study.get_trials(deepcopy=False):
         date_complete = t.datetime_complete or datetime.datetime.now()
         date_start = t.datetime_start or date_complete
         if date_complete < date_start:
