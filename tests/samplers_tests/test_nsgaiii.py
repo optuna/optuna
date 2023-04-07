@@ -401,6 +401,20 @@ def test_reference_point(
                 [-float("inf"), 1.25],
             ],
         ),
+        (
+            [
+                [1.0, float("inf")],
+                [3.0, 1.0],
+                [2.0, 3.0],
+                [-float("inf"), 3.5],
+            ],
+            [
+                [0.0, float("inf")],
+                [1.0, 0.0],
+                [0.5, 0.8],
+                [-float("inf"), 1],
+            ],
+        ),
     ],
 )
 def test_normalize_with_inf(
@@ -413,7 +427,7 @@ def test_normalize_with_inf(
 
 
 @pytest.mark.parametrize(
-    "population_value, expected_normalized_value",
+    "objective_values, expected_normalized_value",
     [
         (
             [
@@ -462,16 +476,16 @@ def test_normalize_with_inf(
     ],
 )
 def test_normalize(
-    population_value: Sequence[Sequence[int]], expected_normalized_value: Sequence[Sequence[int]]
+    objective_values: Sequence[Sequence[int]], expected_normalized_value: Sequence[Sequence[int]]
 ) -> None:
-    population = [create_trial(values=values) for values in population_value]
+    population = [create_trial(values=values) for values in objective_values]
     assert np.allclose(
         _normalize_objective_values(population), np.array(expected_normalized_value)
     )
 
 
 @pytest.mark.parametrize(
-    "population_value, expected_indices, expected_distances",
+    "objective_values, expected_indices, expected_distances",
     [
         ([[1.0], [2.0], [0.0], [3.0]], [0, 0, 0, 0], [0.0, 0.0, 0.0, 0.0]),
         (
@@ -506,11 +520,11 @@ def test_normalize(
     ],
 )
 def test_associate(
-    population_value: Sequence[Sequence[float]],
+    objective_values: Sequence[Sequence[float]],
     expected_indices: Sequence[int],
     expected_distances: Sequence[float],
 ) -> None:
-    population = np.array(population_value)
+    population = np.array(objective_values)
     n_objectives = population.shape[1]
     reference_points = generate_default_reference_point(
         n_objectives=n_objectives, dividing_parameter=2
@@ -562,7 +576,7 @@ def test_associate(
     ],
 )
 def test_niching(
-    population_value: Sequence[Sequence[int]],
+    population_value: Sequence[Sequence[float]],
     closest_reference_points: Sequence[int],
     distance_reference_points: Sequence[float],
     expected_population_indices: Sequence[int],

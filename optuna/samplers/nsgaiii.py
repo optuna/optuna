@@ -300,12 +300,28 @@ class NSGAIIISampler(BaseSampler):
             if len(elite_population) + len(population) < self._population_size:
                 elite_population.extend(population)
             else:
+                # Pick up all trials whose objective value contains -inf.
+                for i, trial in enumerate(population):
+                    if all(value != -float("inf") for value in trial.values):
+                        continue
+                    elite_population.append(trial)
+                    population[i], population[-1] = population[-1], population[i]
+                    population.pop()
+                    if len(elite_population) + len(population) == self._population_size:
+                        return elite_population
+
                 objective_matrix = _normalize_objective_values(elite_population + population)
-                mask = np.any(objective_matrix == -np.inf, axis=1)
-                elite_population.extend(
-                    [individual for individual, flag in zip(population, mask) if flag]
-                )
-                objective_matrix = objective_matrix[~mask, :]
+
+                # TODO(Shinichi) reconsider alternative value for infs.
+                # Replace -inf with zero.
+                objective_matrix[objective_matrix < 0] = 0
+                # Replace inf with nadir value * 2.
+                mask_inf = np.isinf(objective_matrix)
+                objective_matrix[mask_inf] = np.nan
+                nadir_point = np.nanmax(objective_matrix, axis=0)
+                rows, cols = np.where(mask_inf)
+                objective_matrix[rows, cols] = nadir_point[cols] * 2
+
                 (
                     closest_reference_points,
                     distance_reference_points,
@@ -428,10 +444,9 @@ def _normalize_objective_values(
         objective_matrix[i] = np.array(trial.values, dtype=float)
 
     # Subtract ideal point from objective values.
-    objective_matrix -= np.nanmin(
-        objective_matrix, where=np.isfinite(objective_matrix), initial=np.nan, axis=0
-    )
-
+    objective_matrix[np.isneginf(objective_matrix)] = np.nan
+    objective_matrix -= np.nanmin(objective_matrix, axis=0)
+    objective_matrix[np.isnan(objective_matrix)] = -float("inf")
     # We adopt weights and achievement scalarizing function(ASF) used in pre-print of the NSGA-III
     # paper (See https://www.egr.msu.edu/~kdeb/papers/k2012009.pdf).
     # Initialize weights.
@@ -440,12 +455,12 @@ def _normalize_objective_values(
 
     # Calculate extreme points to normalize objective values.
     # TODO(Shinichi) Reimplement to reduce time complexity.
+    objective_matrix[np.isposinf(objective_matrix)] = np.nan
     asf_value = np.nanmax(
         np.einsum("nm,dm->dnm", objective_matrix, weights),
-        where=np.isfinite(objective_matrix),
-        initial=np.nan,
         axis=2,
     )
+    objective_matrix[np.isnan(objective_matrix)] = float("inf")
     extreme_points = objective_matrix[
         np.nanargmin(np.where(asf_value != -float("inf"), asf_value, np.nan), axis=1), :
     ]
@@ -458,9 +473,10 @@ def _normalize_objective_values(
     ):
         intercepts_inv = np.linalg.solve(extreme_points, np.ones(n_objectives))
     else:
-        intercepts_inv = 1 / np.nanmax(
-            objective_matrix, where=np.isfinite(objective_matrix), initial=np.nan, axis=0
-        )
+        objective_matrix[np.isposinf(objective_matrix)] = np.nan
+        intercepts_inv = 1 / np.nanmax(objective_matrix, axis=0)
+        objective_matrix[np.isnan(objective_matrix)] = float("inf")
+
     objective_matrix *= np.where(np.isfinite(intercepts_inv), intercepts_inv, 1)
 
     return objective_matrix
