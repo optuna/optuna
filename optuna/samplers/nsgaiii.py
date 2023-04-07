@@ -405,6 +405,7 @@ class NSGAIIISampler(BaseSampler):
         self._random_sampler.after_trial(study, trial, state, values)
 
 
+# TODO(Shinichi) Replace with math.comb after support for python3.7 is deprecated.
 def _multi_choose(n: int, k: int) -> int:
     return math.factorial(n + k - 1) // math.factorial(k) // math.factorial(n - 1)
 
