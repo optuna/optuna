@@ -21,10 +21,10 @@ from optuna.samplers.nsgaii import UNDXCrossover
 from optuna.samplers.nsgaii import UniformCrossover
 from optuna.samplers.nsgaii import VSBXCrossover
 from optuna.samplers.nsgaiii import _associate_individuals_with_reference_points
+from optuna.samplers.nsgaiii import _generate_default_reference_point
 from optuna.samplers.nsgaiii import _normalize_objective_values
 from optuna.samplers.nsgaiii import _POPULATION_CACHE_KEY_PREFIX
 from optuna.samplers.nsgaiii import _preserve_niche_individuals
-from optuna.samplers.nsgaiii import generate_default_reference_point
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 
@@ -325,7 +325,7 @@ def test_reference_point(
     n_objectives: int, dividing_parameter: int, expected_reference_points: Sequence[Sequence[int]]
 ) -> None:
     actual_reference_points = sorted(
-        generate_default_reference_point(n_objectives, dividing_parameter).tolist()
+        _generate_default_reference_point(n_objectives, dividing_parameter).tolist()
     )
     assert actual_reference_points == expected_reference_points
 
@@ -526,7 +526,7 @@ def test_associate(
 ) -> None:
     population = np.array(objective_values)
     n_objectives = population.shape[1]
-    reference_points = generate_default_reference_point(
+    reference_points = _generate_default_reference_point(
         n_objectives=n_objectives, dividing_parameter=2
     )
     (

@@ -122,7 +122,7 @@ class NSGAIIISampler(BaseSampler):
 
         if reference_points is None:
             assert n_objectives is not None
-            reference_points = generate_default_reference_point(
+            reference_points = _generate_default_reference_point(
                 n_objectives=n_objectives, dividing_parameter=dividing_parameter
             )
 
@@ -409,7 +409,7 @@ def multi_choose(n: int, k: int) -> int:
     return math.factorial(n + k - 1) // math.factorial(k) // math.factorial(n - 1)
 
 
-def generate_default_reference_point(n_objectives: int, dividing_parameter: int = 3) -> np.ndarray:
+def _generate_default_reference_point(n_objectives: int, dividing_parameter: int = 3) -> np.ndarray:
     """Generates default reference points which are `uniformly` spread on a hyperplane."""
     reference_points = np.zeros(
         (
