@@ -175,22 +175,19 @@ def test_trials_dataframe_with_multi_objective_optimization(
     study.optimize(f, n_trials=3)
     df = study.trials_dataframe(attrs=attrs, multi_index=multi_index)
 
-    if multi_index:
-        for i in range(3):
-            if metric_names is None:
-                assert df.get("values")[0][i] == 3
-                assert df.get("values")[1][i] == 5
-            else:
-                assert df.get("values")[metric_names[0]][i] == 3
-                assert df.get("values")[metric_names[1]][i] == 5
-    else:
-        for i in range(3):
-            if metric_names is None:
-                assert df.values_0[i] == 3
-                assert df.values_1[i] == 5
-            else:
-                assert df.get(f"values_{metric_names[0]}")[i] == 3
-                assert df.get(f"values_{metric_names[1]}")[i] == 5
+    def _get_value(i: int, j: int) -> float | None:
+        if multi_index and metric_names is not None:
+            return df.get("values")[metric_names[i]][j]
+        elif multi_index and metric_names is None:
+            return df.get("values")[i][j]
+        elif not multi_index and metric_names is not None:
+            return df.get(f"values_{metric_names[i]}")[j]
+        else:
+            return df.get(f"values_{i}")[j]
+
+    for i, v in zip(range(2), [3, 5]):
+        for j in range(3):
+            assert _get_value(i, j) == v
 
 
 @pytest.mark.parametrize(
@@ -212,19 +209,16 @@ def test_trials_dataframe_with_multi_objective_optimization_with_fail_and_pruned
     study.add_trial(create_trial(state=TrialState.PRUNED))
     df = study.trials_dataframe(attrs=attrs, multi_index=multi_index)
 
-    if multi_index:
-        for i in range(2):
-            if metric_names is None:
-                assert df.get("values")[0][i] is None
-                assert df.get("values")[1][i] is None
-            else:
-                assert df.get("values")[metric_names[0]][i] is None
-                assert df.get("values")[metric_names[1]][i] is None
-    else:
-        for i in range(2):
-            if metric_names is None:
-                assert df.values_0[i] is None
-                assert df.values_1[i] is None
-            else:
-                assert df.get(f"values_{metric_names[0]}")[i] is None
-                assert df.get(f"values_{metric_names[1]}")[i] is None
+    def _get_value(i: int, j: int) -> float | None:
+        if multi_index and metric_names is not None:
+            return df.get("values")[metric_names[i]][j]
+        elif multi_index and metric_names is None:
+            return df.get("values")[i][j]
+        elif not multi_index and metric_names is not None:
+            return df.get(f"values_{metric_names[i]}")[j]
+        else:
+            return df.get(f"values_{i}")[j]
+
+    for i in range(2):
+        for j in range(2):
+            assert _get_value(i, j) is None
