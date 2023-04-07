@@ -312,15 +312,6 @@ class NSGAIIISampler(BaseSampler):
 
                 objective_matrix = _normalize_objective_values(elite_population + population)
 
-                # TODO(Shinichi) reconsider alternative value for infs.
-                # Replace -inf with zero and inf with nadir value * 2.
-                objective_matrix[objective_matrix < 0] = 0
-                mask_inf = np.isinf(objective_matrix)
-                objective_matrix[mask_inf] = np.nan
-                nadir_point = np.nanmax(objective_matrix, axis=0)
-                rows, cols = np.where(mask_inf)
-                objective_matrix[rows, cols] = nadir_point[cols] * 2
-
                 (
                     closest_reference_points,
                     distance_reference_points,
@@ -481,6 +472,14 @@ def _normalize_objective_values(
 
     objective_matrix *= np.where(np.isfinite(intercepts_inv), intercepts_inv, 1)
 
+    # TODO(Shinichi) reconsider alternative value for infs.
+    # Replace -inf with zero and inf with nadir value * 2.
+    objective_matrix[objective_matrix < 0] = 0
+    mask_inf = np.isinf(objective_matrix)
+    objective_matrix[mask_inf] = np.nan
+    nadir_point = np.nanmax(objective_matrix, axis=0)
+    rows, cols = np.where(mask_inf)
+    objective_matrix[rows, cols] = nadir_point[cols] * 2
     return objective_matrix
 
 

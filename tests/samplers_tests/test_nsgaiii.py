@@ -340,7 +340,7 @@ def test_reference_point(
             ],
             [
                 [0.0, 1.0],
-                [float("inf"), 0.0],
+                [0.0, 0.0],
             ],
         ),
         (
@@ -349,8 +349,8 @@ def test_reference_point(
                 [float("inf"), 0.5],
             ],
             [
-                [0.0, float("inf")],
-                [float("inf"), 0.0],
+                [0.0, 0.0],
+                [0.0, 0.0],
             ],
         ),
         (
@@ -361,10 +361,10 @@ def test_reference_point(
                 [float("inf"), 0.5],
             ],
             [
-                [0.0, float("inf")],
+                [0.0, 2.0],
                 [1.0, 0.2],
                 [0.5, 1.0],
-                [float("inf"), 0.0],
+                [2.0, 0.0],
             ],
         ),
         (
@@ -374,7 +374,7 @@ def test_reference_point(
             ],
             [
                 [0.0, 0.0],
-                [-float("inf"), 1.0],
+                [0.0, 1.0],
             ],
         ),
         (
@@ -383,8 +383,8 @@ def test_reference_point(
                 [-float("inf"), 3.5],
             ],
             [
-                [0.0, -float("inf")],
-                [-float("inf"), 0.0],
+                [0.0, 0.0],
+                [0.0, 0.0],
             ],
         ),
         (
@@ -395,10 +395,10 @@ def test_reference_point(
                 [-float("inf"), 3.5],
             ],
             [
-                [2.0, -float("inf")],
+                [2.0, 0.0],
                 [1.0, 0.0],
                 [0.0, 1.0],
-                [-float("inf"), 1.25],
+                [0.0, 1.25],
             ],
         ),
         (
@@ -409,10 +409,10 @@ def test_reference_point(
                 [-float("inf"), 3.5],
             ],
             [
-                [0.0, float("inf")],
+                [0.0, 2.0],
                 [1.0, 0.0],
                 [0.5, 0.8],
-                [-float("inf"), 1],
+                [0.0, 1.0],
             ],
         ),
     ],
