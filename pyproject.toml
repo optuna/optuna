@@ -105,7 +105,7 @@ integration = [
     "tensorflow; python_version<'3.11'",
     "tensorflow-datasets; python_version<'3.11'",
     "torch==2.0.0; python_version<'3.11'",
-    "torchaudio==2.0.0; python_version<'3.11'",
+    "torchaudio==2.0.0; python_version>'3.7,<3.11'",
     "torchvision==0.15.0; python_version<'3.11'",
     "wandb",
     "xgboost",
