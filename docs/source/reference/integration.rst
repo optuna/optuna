@@ -64,15 +64,6 @@ fast.ai
    optuna.integration.FastAIV2PruningCallback
    optuna.integration.FastAIPruningCallback
 
-Keras
------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.KerasPruningCallback
-
 LightGBM
 --------
 
