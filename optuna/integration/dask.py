@@ -471,7 +471,7 @@ class DaskStorage(BaseStorage):
                 )
 
     @property
-    def client(self):
+    def client(self) -> "distributed.Client":
         if not self._client:
             self._client = get_client()
         return self._client
