@@ -139,7 +139,7 @@ class SkoptSampler(BaseSampler):
         self._rng: Optional[np.random.RandomState] = None
 
     def reseed_rng(self) -> None:
-        self._skopt_kwargs["random_state"] = random.randint(1, 2**32)
+        self._skopt_kwargs["random_state"] = random.randint(1, np.iinfo(np.int32).max)
         self._independent_sampler.reseed_rng()
 
     def infer_relative_search_space(

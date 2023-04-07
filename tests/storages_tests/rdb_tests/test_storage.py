@@ -1,4 +1,5 @@
 import os
+import platform
 import shutil
 import sys
 import tempfile
@@ -21,6 +22,7 @@ from optuna.storages import RDBStorage
 from optuna.storages._rdb.models import SCHEMA_VERSION
 from optuna.storages._rdb.models import VersionInfoModel
 from optuna.storages._rdb.storage import _create_scoped_session
+from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 
 from .create_db import mo_objective_test_upgrade
 from .create_db import objective_test_upgrade
@@ -51,7 +53,7 @@ def test_init() -> None:
 
 
 def test_init_url_template() -> None:
-    with tempfile.NamedTemporaryFile(suffix="{SCHEMA_VERSION}") as tf:
+    with NamedTemporaryFilePool(suffix="{SCHEMA_VERSION}") as tf:
         storage = RDBStorage("sqlite:///" + tf.name)
         assert storage.engine.url.database.endswith(str(SCHEMA_VERSION))
 
@@ -59,13 +61,13 @@ def test_init_url_template() -> None:
 def test_init_url_that_contains_percent_character() -> None:
     # Alembic's ini file regards '%' as the special character for variable expansion.
     # We checks `RDBStorage` does not raise an error even if a storage url contains the character.
-    with tempfile.NamedTemporaryFile(suffix="%") as tf:
+    with NamedTemporaryFilePool(suffix="%") as tf:
         RDBStorage("sqlite:///" + tf.name)
 
-    with tempfile.NamedTemporaryFile(suffix="%foo") as tf:
+    with NamedTemporaryFilePool(suffix="%foo") as tf:
         RDBStorage("sqlite:///" + tf.name)
 
-    with tempfile.NamedTemporaryFile(suffix="%foo%%bar") as tf:
+    with NamedTemporaryFilePool(suffix="%foo%%bar") as tf:
         RDBStorage("sqlite:///" + tf.name)
 
 
@@ -157,6 +159,7 @@ def test_upgrade_identity() -> None:
     assert old_version == new_version
 
 
+@pytest.mark.skipif(platform.system() == "Windows", reason="Skip on Windows")
 @pytest.mark.parametrize(
     "optuna_version",
     [
@@ -180,7 +183,11 @@ def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
         shutil.copyfile(src_db_file, f"{workdir}/sqlite.db")
         storage_url = f"sqlite:///{workdir}/sqlite.db"
 
-        storage = RDBStorage(storage_url, skip_compatibility_check=True, skip_table_creation=True)
+        storage = RDBStorage(
+            storage_url,
+            skip_compatibility_check=True,
+            skip_table_creation=True,
+        )
         assert storage.get_current_version() == f"v{optuna_version}"
         head_version = storage.get_head_version()
         with warnings.catch_warnings():
@@ -215,7 +222,10 @@ def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
 
         assert study.user_attrs["d"] == 3
 
+        storage.engine.dispose()  # Be sure to disconnect db
 
+
+@pytest.mark.skipif(platform.system() == "Windows", reason="Skip on Windows")
 @pytest.mark.parametrize(
     "optuna_version", ["2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c", "3.0.0.d", "3.2.0.a"]
 )
@@ -261,7 +271,10 @@ def test_upgrade_multi_objective_optimization(optuna_version: str) -> None:
             assert 0 <= trial.values[1] <= 150
         assert study.user_attrs["d"] == 3
 
+        storage.engine.dispose()  # Be sure to disconnect db
 
+
+@pytest.mark.skipif(platform.system() == "Windows", reason="Skip on Windows")
 @pytest.mark.parametrize(
     "optuna_version", ["2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c", "3.0.0.d", "3.2.0.a"]
 )
@@ -295,3 +308,5 @@ def test_upgrade_distributions(optuna_version: str) -> None:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=UserWarning)
             new_study.optimize(objective_test_upgrade_distributions, n_trials=1)
+
+        storage.engine.dispose()  # Be sure to disconnect db
