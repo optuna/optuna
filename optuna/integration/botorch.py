@@ -15,6 +15,7 @@ from optuna._experimental import experimental_func
 from optuna._imports import try_import
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
+from optuna.exceptions import ExperimentalWarning
 from optuna.samplers import BaseSampler
 from optuna.samplers import RandomSampler
 from optuna.samplers._base import _CONSTRAINTS_KEY
@@ -487,6 +488,10 @@ class BoTorchSampler(BaseSampler):
         n_startup_trials:
             Number of initial trials, that is the number of trials to resort to independent
             sampling.
+        consider_running_trials:
+            If True, the acquisition function takes into consideration the running parameters
+			whose evaluation has not completed. Enabling this option is considered to improve the
+			performance of parallel optimization.
         independent_sampler:
             An independent sampler to use for the initial trials and for parameters that are
             conditional.
@@ -531,6 +536,13 @@ class BoTorchSampler(BaseSampler):
         self._study_id: Optional[int] = None
         self._search_space = IntersectionSearchSpace()
         self._device = device or torch.device("cpu")
+
+        if consider_running_trials:
+            warnings.warn(
+                "``consider_running_trials`` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
 
     def infer_relative_search_space(
         self,
