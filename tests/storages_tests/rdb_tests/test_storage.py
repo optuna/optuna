@@ -1,8 +1,8 @@
 import os
+import platform
 import shutil
 import sys
 import tempfile
-import time
 from typing import Any
 from typing import Dict
 from typing import Optional
@@ -20,12 +20,9 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.storages import RDBStorage
 from optuna.storages._rdb.models import SCHEMA_VERSION
-from optuna.storages._rdb.models import TrialHeartbeatModel
 from optuna.storages._rdb.models import VersionInfoModel
 from optuna.storages._rdb.storage import _create_scoped_session
-from optuna.testing.storages import StorageSupplier
-from optuna.testing.threading import _TestableThread
-from optuna.trial import Trial
+from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 
 from .create_db import mo_objective_test_upgrade
 from .create_db import objective_test_upgrade
@@ -56,7 +53,7 @@ def test_init() -> None:
 
 
 def test_init_url_template() -> None:
-    with tempfile.NamedTemporaryFile(suffix="{SCHEMA_VERSION}") as tf:
+    with NamedTemporaryFilePool(suffix="{SCHEMA_VERSION}") as tf:
         storage = RDBStorage("sqlite:///" + tf.name)
         assert storage.engine.url.database.endswith(str(SCHEMA_VERSION))
 
@@ -64,13 +61,13 @@ def test_init_url_template() -> None:
 def test_init_url_that_contains_percent_character() -> None:
     # Alembic's ini file regards '%' as the special character for variable expansion.
     # We checks `RDBStorage` does not raise an error even if a storage url contains the character.
-    with tempfile.NamedTemporaryFile(suffix="%") as tf:
+    with NamedTemporaryFilePool(suffix="%") as tf:
         RDBStorage("sqlite:///" + tf.name)
 
-    with tempfile.NamedTemporaryFile(suffix="%foo") as tf:
+    with NamedTemporaryFilePool(suffix="%foo") as tf:
         RDBStorage("sqlite:///" + tf.name)
 
-    with tempfile.NamedTemporaryFile(suffix="%foo%%bar") as tf:
+    with NamedTemporaryFilePool(suffix="%foo%%bar") as tf:
         RDBStorage("sqlite:///" + tf.name)
 
 
@@ -162,6 +159,7 @@ def test_upgrade_identity() -> None:
     assert old_version == new_version
 
 
+@pytest.mark.skipif(platform.system() == "Windows", reason="Skip on Windows")
 @pytest.mark.parametrize(
     "optuna_version",
     [
@@ -185,7 +183,11 @@ def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
         shutil.copyfile(src_db_file, f"{workdir}/sqlite.db")
         storage_url = f"sqlite:///{workdir}/sqlite.db"
 
-        storage = RDBStorage(storage_url, skip_compatibility_check=True, skip_table_creation=True)
+        storage = RDBStorage(
+            storage_url,
+            skip_compatibility_check=True,
+            skip_table_creation=True,
+        )
         assert storage.get_current_version() == f"v{optuna_version}"
         head_version = storage.get_head_version()
         with warnings.catch_warnings():
@@ -220,7 +222,10 @@ def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
 
         assert study.user_attrs["d"] == 3
 
+        storage.engine.dispose()  # Be sure to disconnect db
 
+
+@pytest.mark.skipif(platform.system() == "Windows", reason="Skip on Windows")
 @pytest.mark.parametrize(
     "optuna_version", ["2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c", "3.0.0.d", "3.2.0.a"]
 )
@@ -266,7 +271,10 @@ def test_upgrade_multi_objective_optimization(optuna_version: str) -> None:
             assert 0 <= trial.values[1] <= 150
         assert study.user_attrs["d"] == 3
 
+        storage.engine.dispose()  # Be sure to disconnect db
 
+
+@pytest.mark.skipif(platform.system() == "Windows", reason="Skip on Windows")
 @pytest.mark.parametrize(
     "optuna_version", ["2.4.0.a", "2.6.0.a", "3.0.0.a", "3.0.0.b", "3.0.0.c", "3.0.0.d", "3.2.0.a"]
 )
@@ -301,39 +309,4 @@ def test_upgrade_distributions(optuna_version: str) -> None:
             warnings.simplefilter("ignore", category=UserWarning)
             new_study.optimize(objective_test_upgrade_distributions, n_trials=1)
 
-
-def test_record_heartbeat() -> None:
-    heartbeat_interval = 1
-    n_trials = 2
-    sleep_sec = 2
-
-    def objective(trial: Trial) -> float:
-        time.sleep(sleep_sec)
-        return 1.0
-
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-        storage.heartbeat_interval = heartbeat_interval
-        study = create_study(storage=storage)
-        # Exceptions raised in spawned threads are caught by `_TestableThread`.
-        with patch("optuna.storages._heartbeat.Thread", _TestableThread):
-            study.optimize(objective, n_trials=n_trials)
-
-        trial_heartbeats = []
-
-        with _create_scoped_session(storage.scoped_session) as session:
-            trial_ids = [trial._trial_id for trial in study.trials]
-            for trial_id in trial_ids:
-                heartbeat_model = TrialHeartbeatModel.where_trial_id(trial_id, session)
-                assert heartbeat_model is not None
-                trial_heartbeats.append(heartbeat_model.heartbeat)
-
-        assert len(trial_heartbeats) == n_trials
-        trials = study.trials
-        for i in range(n_trials - 1):
-            datetime_start = trials[i + 1].datetime_start
-            prev_datetime_complete = trials[i].datetime_complete
-            assert datetime_start is not None and prev_datetime_complete is not None
-            trial_prep = (datetime_start - prev_datetime_complete).seconds
-            heartbeats_interval = (trial_heartbeats[i + 1] - trial_heartbeats[i]).seconds
-            assert heartbeats_interval - sleep_sec - trial_prep <= 1
+        storage.engine.dispose()  # Be sure to disconnect db

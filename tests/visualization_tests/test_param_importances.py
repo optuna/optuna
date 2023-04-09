@@ -87,6 +87,7 @@ def test_plot_param_importances(
         figure.write_image(BytesIO())
     else:
         plt.savefig(BytesIO())
+        plt.close()
 
 
 @pytest.mark.parametrize(
