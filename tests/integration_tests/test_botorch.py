@@ -16,6 +16,7 @@ from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.storages import RDBStorage
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
+from optuna.trial import TrialState
 
 
 with try_import() as _imports:
@@ -487,3 +488,57 @@ def test_device_argument(device: Optional[torch.device]) -> None:
     sampler = BoTorchSampler(constraints_func=constraints_func, n_startup_trials=1)
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=3)
+
+@pytest.mark.parametrize(
+    "candidates_func, n_objectives",
+    [
+        (integration.botorch.qei_candidates_func, 1),
+        (integration.botorch.qehvi_candidates_func, 2),
+        (integration.botorch.qparego_candidates_func, 4),
+        (integration.botorch.qnehvi_candidates_func, 2),
+        (integration.botorch.qnehvi_candidates_func, 3),  # alpha > 0
+    ],
+)
+def test_botorch_consider_running_trials(
+    candidates_func: Any, n_objectives: int
+) -> None:
+    sampler = BoTorchSampler(
+        candidates_func=candidates_func,
+        n_startup_trials=1,
+        consider_running_trials=True,
+    )
+
+    def objective(trial: Trial) -> Sequence[float]:
+        ret = []
+        for i in range(n_objectives):
+            val = sum(trial.suggest_float(f"x{i}_{j}", 0, 1) for j in range(2))
+            ret.append(val)
+        return ret
+
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
+    study.optimize(objective, n_trials=2)
+    assert len(study.trials) == 2
+
+    # fully suggested running trial
+    running_trial_full = study.ask()
+    _ = objective(running_trial_full)
+    study.optimize(objective, n_trials=1)
+    assert len(study.trials) == 4
+    assert sum(t.state == TrialState.RUNNING for t in study.trials) == 1
+    assert sum(t.state == TrialState.COMPLETE for t in study.trials) == 3
+
+    # partially suggested running trial
+    running_trial_partial = study.ask()
+    for i in range(n_objectives):
+        running_trial_partial.suggest_float(f"x{i}_0", 0, 1)
+    study.optimize(objective, n_trials=1)
+    assert len(study.trials) == 6
+    assert sum(t.state == TrialState.RUNNING for t in study.trials) == 2
+    assert sum(t.state == TrialState.COMPLETE for t in study.trials) == 4
+
+    # waiting trials
+    waiting_trials = study.ask()
+    study.optimize(objective, n_trials=1)
+    assert len(study.trials) == 8
+    assert sum(t.state == TrialState.RUNNING for t in study.trials) == 3
+    assert sum(t.state == TrialState.COMPLETE for t in study.trials) == 5
