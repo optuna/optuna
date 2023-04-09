@@ -62,6 +62,7 @@ def test_botorch_candidates_func() -> None:
         train_obj: torch.Tensor,
         train_con: Optional[torch.Tensor],
         bounds: torch.Tensor,
+        running_x: Optional[torch.Tensor],
     ) -> torch.Tensor:
         assert train_con is None
 
@@ -157,6 +158,7 @@ def test_botorch_candidates_func_invalid_batch_size() -> None:
         train_obj: torch.Tensor,
         train_con: Optional[torch.Tensor],
         bounds: torch.Tensor,
+        running_x: Optional[torch.Tensor],
     ) -> torch.Tensor:
         return torch.rand(2, 1)  # Must have the batch size one, not two.
 
@@ -174,6 +176,7 @@ def test_botorch_candidates_func_invalid_dimensionality() -> None:
         train_obj: torch.Tensor,
         train_con: Optional[torch.Tensor],
         bounds: torch.Tensor,
+        running_x: Optional[torch.Tensor],
     ) -> torch.Tensor:
         return torch.rand(1, 1, 1)  # Must have one or two dimensions, not three.
 
@@ -193,6 +196,7 @@ def test_botorch_candidates_func_invalid_candidates_size() -> None:
         train_obj: torch.Tensor,
         train_con: Optional[torch.Tensor],
         bounds: torch.Tensor,
+        running_x: Optional[torch.Tensor],
     ) -> torch.Tensor:
         return torch.rand(n_params - 1)  # Must return candidates for all parameters.
 
@@ -262,6 +266,7 @@ def test_botorch_constraints_func_nan_warning() -> None:
         train_obj: torch.Tensor,
         train_con: Optional[torch.Tensor],
         bounds: torch.Tensor,
+        running_x: Optional[torch.Tensor],
     ) -> torch.Tensor:
         trial_number = train_x.size(0)
 
@@ -312,6 +317,7 @@ def test_botorch_constraints_func_none_warning() -> None:
         train_obj: torch.Tensor,
         train_con: Optional[torch.Tensor],
         bounds: torch.Tensor,
+        running_x: Optional[torch.Tensor],
     ) -> torch.Tensor:
         # `train_con` should be `None` if `constraints_func` always fails.
         assert train_con is None
@@ -354,6 +360,7 @@ def test_botorch_constraints_func_late() -> None:
         train_obj: torch.Tensor,
         train_con: Optional[torch.Tensor],
         bounds: torch.Tensor,
+        running_x: Optional[torch.Tensor],
     ) -> torch.Tensor:
         trial_number = train_x.size(0)
 

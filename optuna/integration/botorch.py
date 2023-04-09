@@ -69,7 +69,7 @@ def qei_candidates_func(
     train_obj: "torch.Tensor",
     train_con: Optional["torch.Tensor"],
     bounds: "torch.Tensor",
-    pending_x: Optional["torch.Tensor"] = None,
+    pending_x: Optional["torch.Tensor"],
 ) -> "torch.Tensor":
     """Quasi MC-based batch Expected Improvement (qEI).
 
@@ -97,7 +97,11 @@ def qei_candidates_func(
             Search space bounds. A ``torch.Tensor`` of shape ``(2, n_params)``. ``n_params`` is
             identical to that of ``train_x``. The first and the second rows correspond to the
             lower and upper bounds for each parameter respectively.
-
+        pending_x:
+            Pending parameter configurations. A ``torch.Tensor`` of shape
+            ``(n_pending, n_params)``. ``n_pending`` is the number of the trials which are already
+            suggested all their parameters but have not completed their evaluation, and
+            ``n_params`` is identical to that of ``train_x``.
     Returns:
         Next set of candidates. Usually the return value of BoTorch's ``optimize_acqf``.
 
@@ -174,6 +178,7 @@ def qehvi_candidates_func(
     train_obj: "torch.Tensor",
     train_con: Optional["torch.Tensor"],
     bounds: "torch.Tensor",
+    pending_x: Optional["torch.Tensor"],
 ) -> "torch.Tensor":
     """Quasi MC-based batch Expected Hypervolume Improvement (qEHVI).
 
@@ -208,6 +213,8 @@ def qehvi_candidates_func(
         additional_qehvi_kwargs = {}
 
     train_x = normalize(train_x, bounds=bounds)
+    if pending_x is not None:
+        pending_x = normalize(pending_x, bounds=bounds)
 
     model = SingleTaskGP(train_x, train_y, outcome_transform=Standardize(m=train_y.shape[-1]))
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
@@ -231,6 +238,7 @@ def qehvi_candidates_func(
         ref_point=ref_point_list,
         partitioning=partitioning,
         sampler=_get_sobol_qmc_normal_sampler(256),
+        X_pending=pending_x,
         **additional_qehvi_kwargs,
     )
     standard_bounds = torch.zeros_like(bounds)
@@ -257,6 +265,7 @@ def qnehvi_candidates_func(
     train_obj: "torch.Tensor",
     train_con: Optional["torch.Tensor"],
     bounds: "torch.Tensor",
+    pending_x: Optional["torch.Tensor"],
 ) -> "torch.Tensor":
     """Quasi MC-based batch Expected Noisy Hypervolume Improvement (qNEHVI).
 
@@ -287,6 +296,8 @@ def qnehvi_candidates_func(
         additional_qnehvi_kwargs = {}
 
     train_x = normalize(train_x, bounds=bounds)
+    if pending_x is not None:
+        pending_x = normalize(pending_x, bounds=bounds)
 
     model = SingleTaskGP(train_x, train_y, outcome_transform=Standardize(m=train_y.shape[-1]))
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
@@ -312,6 +323,7 @@ def qnehvi_candidates_func(
         alpha=alpha,
         prune_baseline=True,
         sampler=_get_sobol_qmc_normal_sampler(256),
+        X_pending=pending_x,
         **additional_qnehvi_kwargs,
     )
 
@@ -339,6 +351,7 @@ def qparego_candidates_func(
     train_obj: "torch.Tensor",
     train_con: Optional["torch.Tensor"],
     bounds: "torch.Tensor",
+    pending_x: Optional["torch.Tensor"],
 ) -> "torch.Tensor":
     """Quasi MC-based extended ParEGO (qParEGO) for constrained multi-objective optimization.
 
@@ -370,6 +383,8 @@ def qparego_candidates_func(
         objective = GenericMCObjective(scalarization)
 
     train_x = normalize(train_x, bounds=bounds)
+    if pending_x is not None:
+        pending_x = normalize(pending_x, bounds=bounds)
 
     model = SingleTaskGP(train_x, train_y, outcome_transform=Standardize(m=train_y.size(-1)))
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
@@ -380,6 +395,7 @@ def qparego_candidates_func(
         best_f=objective(train_y).max(),
         sampler=_get_sobol_qmc_normal_sampler(256),
         objective=objective,
+        X_pending=pending_x,
     )
 
     standard_bounds = torch.zeros_like(bounds)
@@ -408,6 +424,7 @@ def _get_default_candidates_func(
         "torch.Tensor",
         Optional["torch.Tensor"],
         "torch.Tensor",
+        Optional["torch.Tensor"],
     ],
     "torch.Tensor",
 ]:
@@ -490,13 +507,14 @@ class BoTorchSampler(BaseSampler):
                     "torch.Tensor",
                     Optional["torch.Tensor"],
                     "torch.Tensor",
+                    Optional["torch.Tensor"],
                 ],
                 "torch.Tensor",
             ]
         ] = None,
         constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
         n_startup_trials: int = 10,
-        consider_pending_trials: bool = False,
+        consider_running_trials: bool = False,
         independent_sampler: Optional[BaseSampler] = None,
         seed: Optional[int] = None,
         device: Optional["torch.device"] = None,
@@ -505,7 +523,7 @@ class BoTorchSampler(BaseSampler):
 
         self._candidates_func = candidates_func
         self._constraints_func = constraints_func
-        self._consider_pending_trials = consider_pending_trials
+        self._consider_running_trials = consider_running_trials
         self._independent_sampler = independent_sampler or RandomSampler(seed=seed)
         self._n_startup_trials = n_startup_trials
         self._seed = seed
@@ -548,12 +566,9 @@ class BoTorchSampler(BaseSampler):
         if len(search_space) == 0:
             return {}
 
-        if self._consider_pending_trials:
-            completed_trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
-            pending_trials = study.get_trials(deepcopy=False, states=(TrialState.RUNNING,))
-            trials = completed_trials + pending_trials 
-        else:
-            trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+        completed_trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+        running_trials = study.get_trials(deepcopy=False, states=(TrialState.RUNNING,))
+        trials = completed_trials + running_trials
 
         n_trials = len(trials)
         if n_trials < self._n_startup_trials:
@@ -574,16 +589,18 @@ class BoTorchSampler(BaseSampler):
                 assert len(study.directions) == len(trial.values)
                 for obj_idx, (direction, value) in enumerate(zip(study.directions, trial.values)):
                     assert value is not None
-                    if direction == StudyDirection.MINIMIZE:  # BoTorch always assumes maximization.
+                    if (
+                        direction == StudyDirection.MINIMIZE
+                    ):  # BoTorch always assumes maximization.
                         value *= -1
                     values[trial_idx, obj_idx] = value
             elif trial.state == TrialState.RUNNING:
-                try:
+                if all(p in trial.params for p in search_space):
                     params[trial_idx] = trans.transform(trial.params)
-                except:
+                else:
                     params[trial_idx] = numpy.nan
             else:
-                assert False
+                assert False, "trail.state must be TrialState.COMPLETE or TrialState.RUNNING."
 
             if self._constraints_func is not None:
                 constraints = study._storage.get_trial_system_attrs(trial._trial_id).get(
@@ -627,22 +644,20 @@ class BoTorchSampler(BaseSampler):
         if self._candidates_func is None:
             self._candidates_func = _get_default_candidates_func(n_objectives=n_objectives)
 
-        if self._consider_pending_trials:
-            completed_values = values[:len(completed_trials)]
-            completed_params = params[:len(completed_trials)]
-            pending_params = params[len(completed_trials):]
-            pending_params = pending_params[~torch.isnan(pending_params).any(dim=1)]
+        completed_values = values[: len(completed_trials)]
+        completed_params = params[: len(completed_trials)]
+        if self._consider_running_trials:
+            running_params = params[len(completed_trials) :]
+            running_params = running_params[~torch.isnan(running_params).any(dim=1)]
         else:
-            completed_values = values
-            completed_params = params
-            pending_params = None
+            running_params = None
 
         with manual_seed(self._seed):
             # `manual_seed` makes the default candidates functions reproducible.
             # `SobolQMCNormalSampler`'s constructor has a `seed` argument, but its behavior is
             # deterministic when the BoTorch's seed is fixed.
             candidates = self._candidates_func(
-                completed_params, completed_values, con, bounds, pending_params
+                completed_params, completed_values, con, bounds, running_params
             )
             if self._seed is not None:
                 self._seed += 1
