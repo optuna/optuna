@@ -490,8 +490,8 @@ class BoTorchSampler(BaseSampler):
             sampling.
         consider_running_trials:
             If True, the acquisition function takes into consideration the running parameters
-			whose evaluation has not completed. Enabling this option is considered to improve the
-			performance of parallel optimization.
+            whose evaluation has not completed. Enabling this option is considered to improve the
+            performance of parallel optimization.
         independent_sampler:
             An independent sampler to use for the initial trials and for parameters that are
             conditional.
