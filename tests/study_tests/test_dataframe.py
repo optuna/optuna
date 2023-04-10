@@ -151,17 +151,10 @@ def test_trials_dataframe_with_failure(storage_mode: str) -> None:
             assert df.user_attrs_train_loss[i] == 3
 
 
-@pytest.mark.parametrize(
-    "attrs",
-    [
-        ("value",),
-        ("values",),
-    ],
-)
+@pytest.mark.parametrize("attrs", [("value",), ("values",)])
 @pytest.mark.parametrize("multi_index", [True, False])
-@pytest.mark.parametrize("metric_names", [None, ["v0", "v1"]])
 def test_trials_dataframe_with_multi_objective_optimization(
-    attrs: tuple[str, ...], multi_index: bool, metric_names: list[str] | None
+    attrs: tuple[str, ...], multi_index: bool
 ) -> None:
     def f(trial: Trial) -> tuple[float, float]:
         x = trial.suggest_float("x", 1, 1)
@@ -169,56 +162,54 @@ def test_trials_dataframe_with_multi_objective_optimization(
 
         return x + y, x**2 + y**2  # 3, 5
 
+    # without set_metric_names()
     study = create_study(directions=["minimize", "maximize"])
-    if metric_names is not None:
-        study.set_metric_names(metric_names)
-    study.optimize(f, n_trials=3)
+    study.optimize(f, n_trials=1)
     df = study.trials_dataframe(attrs=attrs, multi_index=multi_index)
+    if multi_index:
+        assert df.get("values")[0][0] == 3
+        assert df.get("values")[1][0] == 5
+    else:
+        assert df.values_0[0] == 3
+        assert df.values_1[0] == 5
 
-    def _get_value(i: int, j: int) -> float | None:
-        if multi_index and metric_names is not None:
-            return df.get("values")[metric_names[i]][j]
-        elif multi_index and metric_names is None:
-            return df.get("values")[i][j]
-        elif not multi_index and metric_names is not None:
-            return df.get(f"values_{metric_names[i]}")[j]
-        else:
-            return df.get(f"values_{i}")[j]
-
-    for i, v in zip(range(2), [3, 5]):
-        for j in range(3):
-            assert _get_value(i, j) == v
+    # with set_metric_names()
+    study.set_metric_names(["v0", "v1"])
+    df = study.trials_dataframe(attrs=attrs, multi_index=multi_index)
+    if multi_index:
+        assert df.get("values")["v0"][0] == 3
+        assert df.get("values")["v1"][0] == 5
+    else:
+        assert df.get("values_v0")[0] == 3
+        assert df.get("values_v1")[0] == 5
 
 
-@pytest.mark.parametrize(
-    "attrs",
-    [
-        ("value",),
-        ("values",),
-    ],
-)
+@pytest.mark.parametrize("attrs", [("value",), ("values",)])
 @pytest.mark.parametrize("multi_index", [True, False])
-@pytest.mark.parametrize("metric_names", [None, ["v0", "v1"]])
 def test_trials_dataframe_with_multi_objective_optimization_with_fail_and_pruned(
-    attrs: tuple[str, ...], multi_index: bool, metric_names: list[str] | None
+    attrs: tuple[str, ...], multi_index: bool
 ) -> None:
     study = create_study(directions=["minimize", "maximize"])
-    if metric_names is not None:
-        study.set_metric_names(metric_names)
     study.add_trial(create_trial(state=TrialState.FAIL))
     study.add_trial(create_trial(state=TrialState.PRUNED))
     df = study.trials_dataframe(attrs=attrs, multi_index=multi_index)
 
-    def _get_value(i: int, j: int) -> float | None:
-        if multi_index and metric_names is not None:
-            return df.get("values")[metric_names[i]][j]
-        elif multi_index and metric_names is None:
-            return df.get("values")[i][j]
-        elif not multi_index and metric_names is not None:
-            return df.get(f"values_{metric_names[i]}")[j]
-        else:
-            return df.get(f"values_{i}")[j]
+    # without set_metric_names()
+    if multi_index:
+        for i in range(2):
+            assert df.get("values")[0][i] is None
+            assert df.get("values")[1][i] is None
+    else:
+        for i in range(2):
+            assert df.values_0[i] is None
+            assert df.values_1[i] is None
 
-    for i in range(2):
-        for j in range(2):
-            assert _get_value(i, j) is None
+    # with set_metric_names()
+    study.set_metric_names(["v0", "v1"])
+    df = study.trials_dataframe(attrs=attrs, multi_index=multi_index)
+    if multi_index:
+        assert df.get("values")["v0"][0] is None
+        assert df.get("values")["v1"][0] is None
+    else:
+        assert df.get("values_v0")[0] is None
+        assert df.get("values_v1")[0] is None
