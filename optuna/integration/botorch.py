@@ -70,7 +70,7 @@ def qei_candidates_func(
     train_obj: "torch.Tensor",
     train_con: Optional["torch.Tensor"],
     bounds: "torch.Tensor",
-    pending_x: Optional["torch.Tensor"],
+    pending_x: Optional["torch.Tensor"] = None,
 ) -> "torch.Tensor":
     """Quasi MC-based batch Expected Improvement (qEI).
 
@@ -179,7 +179,7 @@ def qehvi_candidates_func(
     train_obj: "torch.Tensor",
     train_con: Optional["torch.Tensor"],
     bounds: "torch.Tensor",
-    pending_x: Optional["torch.Tensor"],
+    pending_x: Optional["torch.Tensor"] = None,
 ) -> "torch.Tensor":
     """Quasi MC-based batch Expected Hypervolume Improvement (qEHVI).
 
@@ -266,7 +266,7 @@ def qnehvi_candidates_func(
     train_obj: "torch.Tensor",
     train_con: Optional["torch.Tensor"],
     bounds: "torch.Tensor",
-    pending_x: Optional["torch.Tensor"],
+    pending_x: Optional["torch.Tensor"] = None,
 ) -> "torch.Tensor":
     """Quasi MC-based batch Expected Noisy Hypervolume Improvement (qNEHVI).
 
@@ -352,7 +352,7 @@ def qparego_candidates_func(
     train_obj: "torch.Tensor",
     train_con: Optional["torch.Tensor"],
     bounds: "torch.Tensor",
-    pending_x: Optional["torch.Tensor"],
+    pending_x: Optional["torch.Tensor"] = None,
 ) -> "torch.Tensor":
     """Quasi MC-based extended ParEGO (qParEGO) for constrained multi-objective optimization.
 
@@ -670,9 +670,20 @@ class BoTorchSampler(BaseSampler):
             # `manual_seed` makes the default candidates functions reproducible.
             # `SobolQMCNormalSampler`'s constructor has a `seed` argument, but its behavior is
             # deterministic when the BoTorch's seed is fixed.
-            candidates = self._candidates_func(
-                completed_params, completed_values, con, bounds, running_params
-            )
+            try:
+                candidates = self._candidates_func(
+                    completed_params, completed_values, con, bounds, running_params
+                )
+            except TypeError:
+                if self._consider_running_trials:
+                    warnings.warn(
+                        f"The provided candidates_func {self._candidates_func.__name__} must take "
+                        "an argument pending_x to support option consider_running_trials=True. "
+                        "consider_running_trials option will be ignored."
+                    )
+                candidates = self._candidates_func(
+                    completed_params, completed_values, con, bounds
+                )  # type: ignore
             if self._seed is not None:
                 self._seed += 1
 
