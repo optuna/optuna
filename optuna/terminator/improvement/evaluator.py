@@ -54,13 +54,11 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         self,
         top_trials_ratio: float = DEFAULT_TOP_TRIALS_RATIO,
         min_n_trials: int = DEFAULT_MIN_N_TRIALS,
-        min_lcb_n_additional_samples: int = 2000,
     ) -> None:
         self._top_trials_ratio = top_trials_ratio
         self._min_n_trials = min_n_trials
-        self._min_lcb_n_additional_samples = min_lcb_n_additional_samples
 
-    def get_preprocessing(self, add_random_inputs: bool = False) -> BasePreprocessing:
+    def get_preprocessing(self) -> BasePreprocessing:
         processes = [
             SelectTopTrials(
                 top_trials_ratio=self._top_trials_ratio,
@@ -86,8 +84,12 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         x, bounds, y = _convert_trials_to_tensors(fit_trials)
 
         gp = _fit_gp(x, bounds, y)
-        beta = _get_beta(n_params=len(search_space), n_trials=len(fit_trials))
-        return _calculate_min_ucb(gp, beta, x, bounds) - _calculate_min_lcb(gp, beta, x, bounds)
+
+        # If the GP is well-calibrated, the true regret does not exceed the regret bound with
+        # probability 0.975.
+        beta = 2.0
+
+        return _calculate_min_ucb(gp, beta, x) - _calculate_min_lcb(gp, beta, x, bounds)
 
     @classmethod
     def _validate_input(
@@ -147,16 +149,6 @@ def _convert_trials_to_tensors(
     return torch.tensor(x, dtype=torch.float64), torch.tensor(bounds, dtype=torch.float64), y
 
 
-def _get_beta(n_params: int, n_trials: int, delta: float = 0.1) -> float:
-    beta = 2 * np.log(n_params * n_trials**2 * np.pi**2 / 6 / delta)
-
-    # The following div is according to the original paper: "We then further scale it down
-    # by a factor of 5 as defined in the experiments in Srinivas et al. (2010)"
-    beta /= 5
-
-    return beta
-
-
 def _fit_gp(x: torch.Tensor, bounds: torch.Tensor, y: torch.Tensor) -> SingleTaskGP:
     y = torch.unsqueeze(y, 1)
     gp = SingleTaskGP(
@@ -176,7 +168,7 @@ def _calculate_min_lcb(
     neg_lcb_func = UpperConfidenceBound(gp, beta=beta, maximize=False)
 
     with gpytorch.settings.fast_pred_var():  # type: ignore[no-untyped-call]
-        x_opt, lcb = optimize_acqf(
+        _, lcb = optimize_acqf(
             neg_lcb_func,
             bounds=bounds,
             q=1,
@@ -192,9 +184,7 @@ def _calculate_min_lcb(
     return min_lcb
 
 
-def _calculate_min_ucb(
-    gp: SingleTaskGP, beta: float, x: torch.Tensor, bounds: torch.Tensor
-) -> float:
+def _calculate_min_ucb(gp: SingleTaskGP, beta: float, x: torch.Tensor) -> float:
     ucb_func = UpperConfidenceBound(gp, beta=beta, maximize=True)
 
     with gpytorch.settings.fast_pred_var():  # type: ignore[no-untyped-call]

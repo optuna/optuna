@@ -40,6 +40,20 @@ from optuna.trial import FrozenTrial
         [
             create_trial(
                 value=0,
+                distributions={"a": FloatDistribution(0.1, 1.0, log=True)},
+                params={"a": 0.5},
+            )
+        ],
+        [
+            create_trial(
+                value=0,
+                distributions={"a": IntDistribution(1, 10, log=True)},
+                params={"a": 5},
+            )
+        ],
+        [
+            create_trial(
+                value=0,
                 distributions={"x": CategoricalDistribution(["a", "b", "c"])},
                 params={"x": "b"},
             )
@@ -47,14 +61,6 @@ from optuna.trial import FrozenTrial
     ],
 )
 def test_evaluate(trials: list[FrozenTrial]) -> None:
-    trials = [
-        create_trial(
-            value=0,
-            distributions={"a": FloatDistribution(-1.0, 1.0)},
-            params={"a": 0.0},
-        )
-    ]
-
     # The purpose of the following mock scope is to maintain loose coupling between the tests for
     # preprocessing and those for the `RegretBoundEvaluator` class. The preprocessing logic is
     # thoroughly tested in another file:
@@ -69,10 +75,12 @@ def test_evaluate(trials: list[FrozenTrial]) -> None:
 @pytest.mark.parametrize(
     "x",
     [
-        [[0.0]],
+        [[0.0]],  # 1D case, single point.
+        # 1D case, duplicate points.
+        # This is the case where the gram matrix is not invertible.
         [[0.0], [0.0]],
-        [[0.0], [1.0]],
-        [[0.0, 0.0], [1.0, 1.0]],
+        [[0.0], [1.0]],  # 1D case, distinct points.
+        [[0.0, 0.0], [1.0, 1.0]],  # 2D case, distinct points.
     ],
 )
 def test_fit_gp(x: list[list[float]]) -> None:
