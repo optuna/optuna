@@ -620,7 +620,8 @@ class BoTorchSampler(BaseSampler):
                             )
                         elif n_constraints != con.shape[1]:
                             raise RuntimeError(
-                                f"Expected {con.shape[1]} constraints but received {n_constraints}."
+                                f"Expected {con.shape[1]} constraints "
+                                f"but received {n_constraints}."
                             )
                         con[trial_idx] = constraints
             elif trial.state == TrialState.RUNNING:
