@@ -489,6 +489,7 @@ def test_device_argument(device: Optional[torch.device]) -> None:
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=3)
 
+
 @pytest.mark.parametrize(
     "candidates_func, n_objectives",
     [
@@ -499,9 +500,7 @@ def test_device_argument(device: Optional[torch.device]) -> None:
         (integration.botorch.qnehvi_candidates_func, 3),  # alpha > 0
     ],
 )
-def test_botorch_consider_running_trials(
-    candidates_func: Any, n_objectives: int
-) -> None:
+def test_botorch_consider_running_trials(candidates_func: Any, n_objectives: int) -> None:
     sampler = BoTorchSampler(
         candidates_func=candidates_func,
         n_startup_trials=1,

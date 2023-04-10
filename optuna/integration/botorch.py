@@ -583,7 +583,8 @@ class BoTorchSampler(BaseSampler):
         trials = completed_trials + running_trials
 
         n_trials = len(trials)
-        if n_trials < self._n_startup_trials:
+        n_completed_trials = len(completed_trials)
+        if n_completed_trials < self._n_startup_trials:
             return {}
 
         trans = _SearchSpaceTransform(search_space)
@@ -606,6 +607,22 @@ class BoTorchSampler(BaseSampler):
                     ):  # BoTorch always assumes maximization.
                         value *= -1
                     values[trial_idx, obj_idx] = value
+                if self._constraints_func is not None:
+                    constraints = study._storage.get_trial_system_attrs(trial._trial_id).get(
+                        _CONSTRAINTS_KEY
+                    )
+                    if constraints is not None:
+                        n_constraints = len(constraints)
+
+                        if con is None:
+                            con = numpy.full(
+                                (n_completed_trials, n_constraints), numpy.nan, dtype=numpy.float64
+                            )
+                        elif n_constraints != con.shape[1]:
+                            raise RuntimeError(
+                                f"Expected {con.shape[1]} constraints but received {n_constraints}."
+                            )
+                        con[trial_idx] = constraints
             elif trial.state == TrialState.RUNNING:
                 if all(p in trial.params for p in search_space):
                     params[trial_idx] = trans.transform(trial.params)
@@ -613,22 +630,6 @@ class BoTorchSampler(BaseSampler):
                     params[trial_idx] = numpy.nan
             else:
                 assert False, "trail.state must be TrialState.COMPLETE or TrialState.RUNNING."
-
-            if self._constraints_func is not None:
-                constraints = study._storage.get_trial_system_attrs(trial._trial_id).get(
-                    _CONSTRAINTS_KEY
-                )
-                if constraints is not None:
-                    n_constraints = len(constraints)
-
-                    if con is None:
-                        con = numpy.full((n_trials, n_constraints), numpy.nan, dtype=numpy.float64)
-                    elif n_constraints != con.shape[1]:
-                        raise RuntimeError(
-                            f"Expected {con.shape[1]} constraints but received {n_constraints}."
-                        )
-
-                    con[trial_idx] = constraints
 
         if self._constraints_func is not None:
             if con is None:
@@ -656,10 +657,10 @@ class BoTorchSampler(BaseSampler):
         if self._candidates_func is None:
             self._candidates_func = _get_default_candidates_func(n_objectives=n_objectives)
 
-        completed_values = values[: len(completed_trials)]
-        completed_params = params[: len(completed_trials)]
+        completed_values = values[:n_completed_trials]
+        completed_params = params[:n_completed_trials]
         if self._consider_running_trials:
-            running_params = params[len(completed_trials) :]
+            running_params = params[n_completed_trials:]
             running_params = running_params[~torch.isnan(running_params).any(dim=1)]
         else:
             running_params = None
