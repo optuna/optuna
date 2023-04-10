@@ -678,8 +678,9 @@ class BoTorchSampler(BaseSampler):
                 if self._consider_running_trials:
                     warnings.warn(
                         f"The provided candidates_func {self._candidates_func.__name__} must take "
-                        "an argument pending_x to support option consider_running_trials=True. "
-                        "consider_running_trials option will be ignored."
+                        "a positional argument pending_x to support option "
+                        "consider_running_trials=True. consider_running_trials option will be "
+                        "ignored."
                     )
                 candidates = self._candidates_func(
                     completed_params, completed_values, con, bounds
