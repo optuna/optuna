@@ -535,8 +535,8 @@ def test_botorch_consider_running_trials(candidates_func: Any, n_objectives: int
     assert sum(t.state == TrialState.RUNNING for t in study.trials) == 2
     assert sum(t.state == TrialState.COMPLETE for t in study.trials) == 4
 
-    # waiting trials
-    waiting_trials = study.ask()
+    # not suggested running trial
+    _ = study.ask()
     study.optimize(objective, n_trials=1)
     assert len(study.trials) == 8
     assert sum(t.state == TrialState.RUNNING for t in study.trials) == 3
