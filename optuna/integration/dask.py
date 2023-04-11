@@ -443,6 +443,11 @@ class DaskStorage(BaseStorage):
             Dask ``Client`` to connect to. If not provided, will attempt to find an
             existing ``Client``.
 
+        register:
+            Whether or not to register this storage instance with the cluster scheduler.
+            Most common usage of this storage class will not need to specify this argument.
+            Defaults to ``True``.
+
     """
 
     def __init__(
