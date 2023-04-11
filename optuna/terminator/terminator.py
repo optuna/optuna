@@ -22,7 +22,7 @@ class Terminator(BaseTerminator):
     """Automatic stopping mechanism for Optuna studies
 
     This class implements an automatic stopping mechanism for Optuna studies, aiming to prevent
-    unnecessary computation. The study is terminated when the statistical error, e.g. 
+    unnecessary computation. The study is terminated when the statistical error, e.g.
     cross-validation error, exceeds the room left for optimization.
 
     For further information about the algorithm, please refer to the following paper:
