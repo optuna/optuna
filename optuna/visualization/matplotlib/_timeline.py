@@ -21,7 +21,7 @@ class _DateFormatter_Millisecond(ticker.Formatter):
         pass
 
     def __call__(self, x: float, pos: Any = 0) -> str:
-        return dates.num2date(x).strftime("%H:%M:%S.%f")[:-3]
+        return dates.num2date(x).strftime("%H:%M:%S")
 
 
 @experimental_func("3.2.0")
