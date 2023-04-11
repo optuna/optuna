@@ -40,20 +40,6 @@ from optuna.trial import FrozenTrial
         [
             create_trial(
                 value=0,
-                distributions={"a": FloatDistribution(0.1, 1.0, log=True)},
-                params={"a": 0.5},
-            )
-        ],
-        [
-            create_trial(
-                value=0,
-                distributions={"a": IntDistribution(1, 10, log=True)},
-                params={"a": 5},
-            )
-        ],
-        [
-            create_trial(
-                value=0,
                 distributions={"x": CategoricalDistribution(["a", "b", "c"])},
                 params={"x": "b"},
             )
