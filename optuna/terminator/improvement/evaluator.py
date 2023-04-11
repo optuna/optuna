@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import abc
 
-import numpy as np
-
 from optuna._experimental import experimental_class
 from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
