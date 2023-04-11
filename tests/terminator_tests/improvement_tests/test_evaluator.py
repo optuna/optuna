@@ -20,11 +20,10 @@ from optuna.trial import FrozenTrial
 # TODO(g-votte): - the user specifies non-default top_trials_ratio or min_n_trials
 
 
-
 @pytest.mark.parametrize(
     # We only need to test FloatDistribution and IntDistribution because the preprocessing logic
     # reduces all distributions to these two types.
-    "trials", 
+    "trials",
     [
         [
             create_trial(
