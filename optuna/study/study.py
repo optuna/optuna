@@ -1089,7 +1089,9 @@ class Study:
         if not _logger.isEnabledFor(logging.INFO):
             return
 
-        metric_names = self._storage.get_study_system_attrs(self._study_id).get(_SYSTEM_ATTR_METRIC_NAMES)
+        metric_names = self._storage.get_study_system_attrs(self._study_id).get(
+            _SYSTEM_ATTR_METRIC_NAMES
+        )
 
         if len(trial.values) > 1:
             trial_values: Union[List[float], Dict[str, float]]
