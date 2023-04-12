@@ -20,8 +20,6 @@ from optuna.trial import FrozenTrial
 
 
 @pytest.mark.parametrize(
-    # We only need to test FloatDistribution and IntDistribution because the preprocessing logic
-    # reduces all distributions to these two types.
     "trials",
     [
         [
