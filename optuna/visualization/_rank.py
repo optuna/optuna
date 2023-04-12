@@ -385,7 +385,6 @@ def _get_rank_plot(
         y=[None],
         mode="markers",
         marker=dict(
-            line={"width": 0.5, "color": "Grey"},
             colorscale=colormap,
             showscale=True,
             cmin=0,
