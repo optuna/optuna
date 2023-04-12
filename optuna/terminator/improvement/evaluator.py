@@ -83,9 +83,9 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
 
         gp = _fit_gp(x, bounds, y)
 
-        # If the GP is well-calibrated, the true regret does not exceed the regret bound with
-        # probability 0.975.
-        beta = 2.0
+        n_params = len(search_space)
+        n_trials = len(fit_trials)
+        beta = _get_beta(n_params=n_params, n_trials=n_trials)
 
         return _calculate_min_ucb(gp, beta, x) - _calculate_min_lcb(gp, beta, x, bounds)
 
@@ -189,3 +189,12 @@ def _calculate_min_ucb(gp: SingleTaskGP, beta: float, x: torch.Tensor) -> float:
         min_ucb = torch.min(ucb_func(x[:, None, :])).item()
 
     return min_ucb
+
+def _get_beta(n_params: int, n_trials: int, delta: float = 0.1) -> float:
+    beta = 2 * np.log(n_params * n_trials**2 * np.pi**2 / 6 / delta)
+
+    # The following div is according to the original paper: "We then further scale it down
+    # by a factor of 5 as defined in the experiments in Srinivas et al. (2010)"
+    beta /= 5
+
+    return beta
