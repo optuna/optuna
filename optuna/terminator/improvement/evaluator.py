@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import abc
 
+import numpy as np
+
 from optuna._experimental import experimental_class
 from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
@@ -189,6 +191,7 @@ def _calculate_min_ucb(gp: SingleTaskGP, beta: float, x: torch.Tensor) -> float:
         min_ucb = torch.min(ucb_func(x[:, None, :])).item()
 
     return min_ucb
+
 
 def _get_beta(n_params: int, n_trials: int, delta: float = 0.1) -> float:
     beta = 2 * np.log(n_params * n_trials**2 * np.pi**2 / 6 / delta)

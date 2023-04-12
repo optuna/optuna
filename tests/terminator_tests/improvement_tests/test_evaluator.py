@@ -5,7 +5,6 @@ from unittest import mock
 import pytest
 import torch
 
-from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.study import StudyDirection
