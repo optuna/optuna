@@ -288,7 +288,10 @@ def _get_rank_subplot(
     scatter = go.Scatter(
         x=info.xs,
         y=info.ys,
-        marker={"color": colors},
+        marker={
+            "color": colors,
+            "line": {"width": 0.5, "color": "Grey"},
+        },
         mode="markers",
         showlegend=False,
         hovertemplate="%{hovertext}<extra></extra>",
