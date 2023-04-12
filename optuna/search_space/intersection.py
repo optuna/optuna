@@ -1,11 +1,54 @@
+from __future__ import annotations
+
 from collections import OrderedDict
 import copy
 from typing import Dict
-from typing import Optional
+from typing import Tuple
 
 import optuna
 from optuna.distributions import BaseDistribution
 from optuna.study import Study
+
+
+def _calculate(
+    trials: list[optuna.trial.FrozenTrial],
+    include_pruned: bool = False,
+    search_space: Dict[str, BaseDistribution] | None = None,
+    cached_trial_number: int = -1,
+) -> Tuple[Dict[str, BaseDistribution] | None, int]:
+    states_of_interest = [
+        optuna.trial.TrialState.COMPLETE,
+        optuna.trial.TrialState.WAITING,
+        optuna.trial.TrialState.RUNNING,
+    ]
+
+    if include_pruned:
+        states_of_interest.append(optuna.trial.TrialState.PRUNED)
+
+    trials_of_interest = [trial for trial in trials if trial.state in states_of_interest]
+
+    next_cached_trial_number = (
+        trials_of_interest[-1].number + 1 if len(trials_of_interest) > 0 else -1
+    )
+    for trial in reversed(trials_of_interest):
+        if cached_trial_number > trial.number:
+            break
+
+        if not trial.state.is_finished():
+            next_cached_trial_number = trial.number
+            continue
+
+        if search_space is None:
+            search_space = copy.copy(trial.distributions)
+            continue
+
+        search_space = {
+            name: distribution
+            for name, distribution in search_space.items()
+            if trial.distributions.get(name) == distribution
+        }
+
+    return search_space, next_cached_trial_number
 
 
 class IntersectionSearchSpace:
@@ -28,9 +71,9 @@ class IntersectionSearchSpace:
     """
 
     def __init__(self, include_pruned: bool = False) -> None:
-        self._cursor: int = -1
-        self._search_space: Optional[Dict[str, BaseDistribution]] = None
-        self._study_id: Optional[int] = None
+        self._cached_trial_number: int = -1
+        self._search_space: Dict[str, BaseDistribution] | None = None
+        self._study_id: int | None = None
 
         self._include_pruned = include_pruned
 
@@ -49,7 +92,6 @@ class IntersectionSearchSpace:
 
         Returns:
             A dictionary containing the parameter names and parameter's distributions.
-
         """
 
         if self._study_id is None:
@@ -60,37 +102,12 @@ class IntersectionSearchSpace:
             if self._study_id != study._study_id:
                 raise ValueError("`IntersectionSearchSpace` cannot handle multiple studies.")
 
-        states_of_interest = [
-            optuna.trial.TrialState.COMPLETE,
-            optuna.trial.TrialState.WAITING,
-            optuna.trial.TrialState.RUNNING,
-        ]
-
-        if self._include_pruned:
-            states_of_interest.append(optuna.trial.TrialState.PRUNED)
-
-        trials = study.get_trials(deepcopy=False, states=states_of_interest)
-
-        next_cursor = trials[-1].number + 1 if len(trials) > 0 else -1
-        for trial in reversed(trials):
-            if self._cursor > trial.number:
-                break
-
-            if not trial.state.is_finished():
-                next_cursor = trial.number
-                continue
-
-            if self._search_space is None:
-                self._search_space = copy.copy(trial.distributions)
-                continue
-
-            self._search_space = {
-                name: distribution
-                for name, distribution in self._search_space.items()
-                if trial.distributions.get(name) == distribution
-            }
-
-        self._cursor = next_cursor
+        self._search_space, self._cached_trial_number = _calculate(
+            study.get_trials(deepcopy=False),
+            self._include_pruned,
+            self._search_space,
+            self._cached_trial_number,
+        )
         search_space = self._search_space or {}
 
         if ordered_dict:
@@ -100,9 +117,11 @@ class IntersectionSearchSpace:
 
 
 def intersection_search_space(
-    study: Study, ordered_dict: bool = False, include_pruned: bool = False
+    trials: list[optuna.trial.FrozenTrial],
+    ordered_dict: bool = False,
+    include_pruned: bool = False,
 ) -> Dict[str, BaseDistribution]:
-    """Return the intersection search space of the :class:`~optuna.study.Study`.
+    """Return the intersection search space of the given trials.
 
     Intersection search space contains the intersection of parameter distributions that have been
     suggested in the completed trials of the study so far.
@@ -116,8 +135,8 @@ def intersection_search_space(
         as much as possible.
 
     Args:
-        study:
-            A study with completed trials.
+        trials:
+            A list of trials.
         ordered_dict:
             A boolean flag determining the return type.
             If :obj:`False`, the returned object will be a :obj:`dict`.
@@ -130,6 +149,10 @@ def intersection_search_space(
         A dictionary containing the parameter names and parameter's distributions.
     """
 
-    return IntersectionSearchSpace(include_pruned=include_pruned).calculate(
-        study, ordered_dict=ordered_dict
-    )
+    search_space, _ = _calculate(trials, include_pruned)
+    search_space = search_space or {}
+
+    if ordered_dict:
+        search_space = OrderedDict(sorted(search_space.items(), key=lambda x: x[0]))
+
+    return search_space

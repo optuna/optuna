@@ -89,7 +89,7 @@ def test_is_compatible() -> None:
     study = optuna.create_study(sampler=sampler)
 
     study.optimize(lambda t: t.suggest_float("p0", 0, 10), n_trials=1)
-    search_space = optuna.search_space.intersection_search_space(study)
+    search_space = optuna.search_space.intersection_search_space(study.get_trials(deepcopy=False))
     assert search_space == {"p0": distributions.FloatDistribution(low=0, high=10)}
 
     optimizer = optuna.integration.skopt._Optimizer(search_space, {})

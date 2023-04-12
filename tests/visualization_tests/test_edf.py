@@ -38,6 +38,7 @@ def save_static_image(figure: Union[go.Figure, Axes, np.ndarray]) -> None:
         figure.write_image(BytesIO())
     else:
         plt.savefig(BytesIO())
+        plt.close()
 
 
 @parametrized_plot_edf
