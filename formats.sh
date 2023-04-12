@@ -15,7 +15,7 @@ if [ $? -eq 1 ] ; then
 fi
 command -v flake8 &> /dev/null
 if [ $? -eq 1 ] ; then
-  missing_dependencies+=(hacking)
+  missing_dependencies+=(flake8)
 fi
 command -v isort &> /dev/null
 if [ $? -eq 1 ] ; then
