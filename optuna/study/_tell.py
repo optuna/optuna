@@ -99,6 +99,9 @@ def _tell_with_warning(
             Study.optimize.
     """
 
+    # We must invalidate all trials cache here as it is only valid within a trial.
+    study._thread_local.cached_all_trials = None
+
     # Validate the trial argument.
     frozen_trial = _get_frozen_trial(study, trial)
     if frozen_trial.state.is_finished() and skip_if_finished:

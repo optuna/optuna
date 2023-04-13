@@ -31,9 +31,7 @@ if TYPE_CHECKING:
     _P = ParamSpec("_P")
 
 
-_suggest_deprecated_msg = (
-    "Use :func:`~optuna.integration.TorchDistributedTrial.suggest_float` instead."
-)
+_suggest_deprecated_msg = "Use suggest_float{args} instead."
 
 _g_pg: Optional["ProcessGroup"] = None
 
@@ -173,15 +171,15 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
         return self._call_and_communicate(func, torch.float)
 
-    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
+    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg.format(args=""))
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
         return self.suggest_float(name, low, high)
 
-    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
+    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg.format(args="(..., log=True)"))
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
         return self.suggest_float(name, low, high, log=True)
 
-    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
+    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg.format(args="(..., step=...)"))
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
         return self.suggest_float(name, low, high, step=q)
 
@@ -273,7 +271,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
             raise err
 
     @broadcast_properties
-    @deprecated_func("3.1.0", "6.0.0")
+    @deprecated_func("3.1.0", "5.0.0")
     def set_system_attr(self, key: str, value: Any) -> None:
         err = None
 
@@ -307,7 +305,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         return self._user_attrs
 
     @property
-    @deprecated_func("3.1.0", "6.0.0")
+    @deprecated_func("3.1.0", "5.0.0")
     def system_attrs(self) -> Dict[str, Any]:
         return self._system_attrs
 

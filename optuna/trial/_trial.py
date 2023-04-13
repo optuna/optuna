@@ -22,7 +22,7 @@ from optuna.trial._base import BaseTrial
 
 
 _logger = logging.get_logger(__name__)
-_suggest_deprecated_msg = "Use :func:`~optuna.trial.Trial.suggest_float` instead."
+_suggest_deprecated_msg = "Use suggest_float{args} instead."
 
 
 class Trial(BaseTrial):
@@ -52,18 +52,22 @@ class Trial(BaseTrial):
         self._study_id = self.study._study_id
         self.storage = self.study._storage
 
-        self._init_relative_params()
-
-    def _init_relative_params(self) -> None:
         self._cached_frozen_trial = self.storage.get_trial(self._trial_id)
         study = pruners._filter_study(self.study, self._cached_frozen_trial)
 
         self.relative_search_space = self.study.sampler.infer_relative_search_space(
             study, self._cached_frozen_trial
         )
-        self.relative_params = self.study.sampler.sample_relative(
-            study, self._cached_frozen_trial, self.relative_search_space
-        )
+        self._relative_params: Optional[Dict[str, Any]] = None
+
+    @property
+    def relative_params(self) -> Dict[str, Any]:
+        if self._relative_params is None:
+            study = pruners._filter_study(self.study, self._cached_frozen_trial)
+            self._relative_params = self.study.sampler.sample_relative(
+                study, self._cached_frozen_trial, self.relative_search_space
+            )
+        return self._relative_params
 
     def suggest_float(
         self,
@@ -156,7 +160,7 @@ class Trial(BaseTrial):
         self._check_distribution(name, distribution)
         return suggested_value
 
-    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
+    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg.format(args=""))
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
         """Suggest a value for the continuous parameter.
 
@@ -178,7 +182,7 @@ class Trial(BaseTrial):
 
         return self.suggest_float(name, low, high)
 
-    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
+    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg.format(args="(..., log=True)"))
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
         """Suggest a value for the continuous parameter.
 
@@ -200,7 +204,7 @@ class Trial(BaseTrial):
 
         return self.suggest_float(name, low, high, log=True)
 
-    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
+    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg.format(args="(..., step=...)"))
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
         """Suggest a value for the discrete parameter.
 
@@ -584,7 +588,7 @@ class Trial(BaseTrial):
         self.storage.set_trial_user_attr(self._trial_id, key, value)
         self._cached_frozen_trial.user_attrs[key] = value
 
-    @deprecated_func("3.1.0", "6.0.0")
+    @deprecated_func("3.1.0", "5.0.0")
     def set_system_attr(self, key: str, value: Any) -> None:
         """Set system attributes to the trial.
 
@@ -720,7 +724,7 @@ class Trial(BaseTrial):
         return copy.deepcopy(self._cached_frozen_trial.user_attrs)
 
     @property
-    @deprecated_func("3.1.0", "6.0.0")
+    @deprecated_func("3.1.0", "5.0.0")
     def system_attrs(self) -> Dict[str, Any]:
         """Return system attributes.
 

@@ -1074,3 +1074,24 @@ def test_reproducible_in_other_process(sampler_name: str, unset_seed_in_test: No
     assert not (hash_dict[0] == hash_dict[1] == hash_dict[2])
     # But the sequences are expected to be the same.
     assert sequence_dict[0] == sequence_dict[1] == sequence_dict[2]
+
+
+@pytest.mark.parametrize("n_jobs", [1, 2])
+@parametrize_relative_sampler
+def test_cache_is_invalidated(
+    n_jobs: int, relative_sampler_class: Callable[[], BaseSampler]
+) -> None:
+    sampler = relative_sampler_class()
+    study = optuna.study.create_study(sampler=sampler)
+
+    def objective(trial: Trial) -> float:
+        assert trial._relative_params is None
+        assert study._thread_local.cached_all_trials is None
+
+        trial.suggest_float("x", -10, 10)
+        trial.suggest_float("y", -10, 10)
+        assert trial._relative_params is not None
+        assert study._thread_local.cached_all_trials is not None
+        return -1
+
+    study.optimize(objective, n_trials=10, n_jobs=n_jobs)
