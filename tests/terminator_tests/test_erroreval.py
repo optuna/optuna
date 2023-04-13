@@ -32,7 +32,7 @@ def test_cross_validation_evaluator() -> None:
     )
 
     evaluator = CrossValidationErrorEvaluator()
-    serror = evaluator.evaluate(study)
+    serror = evaluator.evaluate(study.trials, study.direction)
 
     expected_scale = 1.5
     assert serror == math.sqrt(4.0 * expected_scale)
@@ -47,7 +47,7 @@ def test_cross_validation_evaluator_without_cv_scores() -> None:
 
     evaluator = CrossValidationErrorEvaluator()
     with pytest.raises(ValueError):
-        evaluator.evaluate(study)
+        evaluator.evaluate(study.trials, study.direction)
 
 
 def test_report_cross_validation_scores() -> None:
@@ -79,6 +79,6 @@ def test_static_evaluator() -> None:
     )
 
     evaluator = StaticErrorEvaluator(constant=100.0)
-    serror = evaluator.evaluate(study)
+    serror = evaluator.evaluate(study.trials, study.direction)
 
     assert serror == 100.0
