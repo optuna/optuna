@@ -120,7 +120,7 @@ optional = [
     # optuna/visualization/param_importances.py.
 ]
 test = [
-    "codecov",
+    "coverage",
     "fakeredis[lua]",
     "kaleido",
     "pytest",
