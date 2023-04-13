@@ -11,6 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+
   coverage:
     runs-on: ubuntu-latest
 
@@ -55,7 +56,6 @@ jobs:
         pip install --progress-bar off .[optional]
         pip install --progress-bar off .[integration] --extra-index-url https://download.pytorch.org/whl/cpu
         pip install "pytorch-lightning<2.0.0"
-        pip install coverage
 
         echo 'import coverage; coverage.process_startup()' > sitecustomize.py
 
