@@ -14,6 +14,7 @@ import uuid
 
 import optuna
 from optuna import distributions  # NOQA
+from optuna._typing import JSONSerializable
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
@@ -88,7 +89,7 @@ class InMemoryStorage(BaseStorage):
 
             self._studies[study_id].user_attrs[key] = value
 
-    def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
+    def set_study_system_attr(self, study_id: int, key: str, value: JSONSerializable) -> None:
         with self._lock:
             self._check_study_id(study_id)
 
@@ -329,7 +330,7 @@ class InMemoryStorage(BaseStorage):
             trial.user_attrs[key] = value
             self._set_trial(trial_id, trial)
 
-    def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
+    def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
         with self._lock:
             trial = self._get_trial(trial_id)
             self.check_trial_is_updatable(trial_id, trial.state)
@@ -361,10 +362,9 @@ class InMemoryStorage(BaseStorage):
         with self._lock:
             self._check_study_id(study_id)
 
-            trials = self._studies[
+            trials: Union[List[FrozenTrial], Iterator[FrozenTrial]] = self._studies[
                 study_id
-            ].trials  # type: Union[List[FrozenTrial], Iterator[FrozenTrial]]
-
+            ].trials
             if states is not None:
                 trials = filter(lambda t: t.state in states, trials)
 

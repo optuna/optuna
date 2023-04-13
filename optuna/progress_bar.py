@@ -61,10 +61,12 @@ class _ProgressBar:
         if self._n_trials is not None:
             self._progress_bar = tqdm(total=self._n_trials)
 
-        else:
+        elif self._timeout is not None:
             total = tqdm.format_interval(self._timeout)
             fmt = "{desc} {percentage:3.0f}%|{bar}| {elapsed}/" + total
             self._progress_bar = tqdm(total=self._timeout, bar_format=fmt)
+        else:
+            assert False
 
         global _tqdm_handler
 

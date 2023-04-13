@@ -13,6 +13,7 @@ import uuid
 
 import optuna
 from optuna._experimental import experimental_class
+from optuna._typing import JSONSerializable
 from optuna.distributions import BaseDistribution
 from optuna.distributions import check_distribution_compatibility
 from optuna.distributions import distribution_to_json
@@ -188,7 +189,7 @@ class JournalStorage(BaseStorage):
             self._write_log(JournalOperation.SET_STUDY_USER_ATTR, log)
             self._sync_with_backend()
 
-    def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
+    def set_study_system_attr(self, study_id: int, key: str, value: JSONSerializable) -> None:
         log: Dict[str, Any] = {"study_id": study_id, "system_attr": {key: value}}
         with self._thread_lock:
             self._write_log(JournalOperation.SET_STUDY_SYSTEM_ATTR, log)
@@ -353,7 +354,7 @@ class JournalStorage(BaseStorage):
             self._write_log(JournalOperation.SET_TRIAL_USER_ATTR, log)
             self._sync_with_backend()
 
-    def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
+    def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
         log: Dict[str, Any] = {
             "trial_id": trial_id,
             "system_attr": {key: value},

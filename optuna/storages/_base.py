@@ -9,6 +9,7 @@ from typing import Sequence
 from typing import Tuple
 from typing import Union
 
+from optuna._typing import JSONSerializable
 from optuna.distributions import BaseDistribution
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
@@ -111,7 +112,7 @@ class BaseStorage(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
+    def set_study_system_attr(self, study_id: int, key: str, value: JSONSerializable) -> None:
         """Register an optuna-internal attribute to a study.
 
         This method overwrites any existing attribute.
@@ -222,7 +223,7 @@ class BaseStorage(abc.ABC):
         """Read a list of :class:`~optuna.study.FrozenStudy` objects.
 
         Returns:
-            A list of :class:`~optuna.study.FrozenStudy` objects.
+            A list of :class:`~optuna.study.FrozenStudy` objects, sorted by ``study_id``.
 
         """
         raise NotImplementedError
@@ -423,7 +424,7 @@ class BaseStorage(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
+    def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
         """Set an optuna-internal attribute to a trial.
 
         This method overwrites any existing attribute.
@@ -482,7 +483,7 @@ class BaseStorage(abc.ABC):
                 Trial states to filter on. If :obj:`None`, include all states.
 
         Returns:
-            List of trials in the study.
+            List of trials in the study, sorted by ``trial_id``.
 
         Raises:
             :exc:`KeyError`:

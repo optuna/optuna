@@ -1,9 +1,9 @@
+from __future__ import annotations
+
 from typing import Any
 from typing import Callable
 from typing import cast
-from typing import List
 from typing import NamedTuple
-from typing import Optional
 
 from optuna.logging import get_logger
 from optuna.study import Study
@@ -27,22 +27,22 @@ _logger = get_logger(__name__)
 
 class _SliceSubplotInfo(NamedTuple):
     param_name: str
-    x: List[Any]
-    y: List[float]
-    trial_numbers: List[int]
+    x: list[Any]
+    y: list[float]
+    trial_numbers: list[int]
     is_log: bool
     is_numerical: bool
 
 
 class _SlicePlotInfo(NamedTuple):
     target_name: str
-    subplots: List[_SliceSubplotInfo]
+    subplots: list[_SliceSubplotInfo]
 
 
 def _get_slice_subplot_info(
-    trials: List[FrozenTrial],
+    trials: list[FrozenTrial],
     param: str,
-    target: Optional[Callable[[FrozenTrial], float]],
+    target: Callable[[FrozenTrial], float] | None,
     log_scale: bool,
     numerical: bool,
 ) -> _SliceSubplotInfo:
@@ -65,8 +65,8 @@ def _get_slice_subplot_info(
 
 def _get_slice_plot_info(
     study: Study,
-    params: Optional[List[str]],
-    target: Optional[Callable[[FrozenTrial], float]],
+    params: list[str] | None,
+    target: Callable[[FrozenTrial], float] | None,
     target_name: str,
 ) -> _SlicePlotInfo:
     _check_plot_args(study, target, target_name)
@@ -105,9 +105,9 @@ def _get_slice_plot_info(
 
 def plot_slice(
     study: Study,
-    params: Optional[List[str]] = None,
+    params: list[str] | None = None,
     *,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
 ) -> "go.Figure":
     """Plot the parameter relationship as slice plot in a study.

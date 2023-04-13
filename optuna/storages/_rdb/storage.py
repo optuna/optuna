@@ -21,6 +21,7 @@ import optuna
 from optuna import distributions
 from optuna import version
 from optuna._imports import _LazyImport
+from optuna._typing import JSONSerializable
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages._heartbeat import BaseHeartbeat
@@ -309,7 +310,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             else:
                 attribute.value_json = json.dumps(value)
 
-    def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
+    def set_study_system_attr(self, study_id: int, key: str, value: JSONSerializable) -> None:
         with _create_scoped_session(self.scoped_session, True) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
             attribute = models.StudySystemAttributeModel.find_by_study_and_key(study, key, session)
@@ -382,10 +383,14 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
     def get_all_studies(self) -> List[FrozenStudy]:
         with _create_scoped_session(self.scoped_session) as session:
-            studies = session.query(
-                models.StudyModel.study_id,
-                models.StudyModel.study_name,
-            ).all()
+            studies = (
+                session.query(
+                    models.StudyModel.study_id,
+                    models.StudyModel.study_name,
+                )
+                .order_by(models.StudyModel.study_id)
+                .all()
+            )
 
             _directions = defaultdict(list)
             for direction_model in session.query(models.StudyDirectionModel).all():
@@ -727,12 +732,12 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         else:
             attribute.value_json = json.dumps(value)
 
-    def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
+    def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
         with _create_scoped_session(self.scoped_session, True) as session:
             self._set_trial_system_attr_without_commit(session, trial_id, key, value)
 
     def _set_trial_system_attr_without_commit(
-        self, session: "sqlalchemy_orm.Session", trial_id: int, key: str, value: Any
+        self, session: "sqlalchemy_orm.Session", trial_id: int, key: str, value: JSONSerializable
     ) -> None:
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)

@@ -8,6 +8,7 @@ from typing import Tuple
 
 import optuna
 from optuna._imports import try_import
+from optuna.study.study import _SYSTEM_ATTR_METRIC_NAMES
 from optuna.trial._state import TrialState
 
 
@@ -40,6 +41,10 @@ def _create_records_and_aggregate_column(
     column_agg: DefaultDict[str, Set] = collections.defaultdict(set)
     non_nested_attr = ""
 
+    metric_names = study._storage.get_study_system_attrs(study._study_id).get(
+        _SYSTEM_ATTR_METRIC_NAMES
+    )
+
     records = []
     for trial in study.get_trials(deepcopy=False):
         record = {}
@@ -51,17 +56,26 @@ def _create_records_and_aggregate_column(
                 for nested_attr, nested_value in value.items():
                     record[(df_column, nested_attr)] = nested_value
                     column_agg[attr].add((df_column, nested_attr))
-            elif isinstance(value, list):
+            elif attr == "values":
                 # Expand trial.values.
+                # trial.values should be None when the trial's state is FAIL or PRUNED.
+                trial_values = [None] * len(study.directions) if value is None else value
+                iterator = (
+                    enumerate(trial_values)
+                    if metric_names is None
+                    else zip(metric_names, trial_values)
+                )
+                for nested_attr, nested_value in iterator:
+                    record[(df_column, nested_attr)] = nested_value
+                    column_agg[attr].add((df_column, nested_attr))
+            elif isinstance(value, list):
                 for nested_attr, nested_value in enumerate(value):
                     record[(df_column, nested_attr)] = nested_value
                     column_agg[attr].add((df_column, nested_attr))
-            elif attr == "values":
-                # trial.values should be None when the trial's state is FAIL or PRUNED.
-                assert value is None
-                for nested_attr in range(len(study.directions)):
-                    record[(df_column, nested_attr)] = None
-                    column_agg[attr].add((df_column, nested_attr))
+            elif attr == "value":
+                nested_attr = non_nested_attr if metric_names is None else metric_names[0]
+                record[(df_column, nested_attr)] = value
+                column_agg[attr].add((df_column, nested_attr))
             else:
                 record[(df_column, non_nested_attr)] = value
                 column_agg[attr].add((df_column, non_nested_attr))

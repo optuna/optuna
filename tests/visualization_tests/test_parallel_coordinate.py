@@ -206,6 +206,7 @@ def test_plot_parallel_coordinate(
         figure.write_image(BytesIO())
     else:
         plt.savefig(BytesIO())
+        plt.close()
 
 
 def test_get_parallel_coordinate_info() -> None:

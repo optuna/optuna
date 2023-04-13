@@ -15,6 +15,7 @@ import uuid
 import optuna
 from optuna._experimental import experimental_class
 from optuna._imports import try_import
+from optuna._typing import JSONSerializable
 from optuna.distributions import BaseDistribution
 from optuna.distributions import distribution_to_json
 from optuna.distributions import json_to_distribution
@@ -346,7 +347,7 @@ class _OptunaSchedulerExtension:
         storage_name: str,
         trial_id: int,
         key: str,
-        value: Any,
+        value: JSONSerializable,
     ) -> None:
         return self.get_storage(storage_name).set_trial_system_attr(
             trial_id=trial_id,
@@ -442,6 +443,11 @@ class DaskStorage(BaseStorage):
             Dask ``Client`` to connect to. If not provided, will attempt to find an
             existing ``Client``.
 
+        register:
+            Whether or not to register this storage instance with the cluster scheduler.
+            Most common usage of this storage class will not need to specify this argument.
+            Defaults to ``True``.
+
     """
 
     def __init__(
@@ -449,24 +455,31 @@ class DaskStorage(BaseStorage):
         storage: Union[None, str, BaseStorage] = None,
         name: Optional[str] = None,
         client: Optional["distributed.Client"] = None,
+        register: bool = True,
     ):
         _imports.check()
         self.name = name or f"dask-storage-{uuid.uuid4().hex}"
-        self.client = client or get_client()
+        self._client = client
+        if register:
+            if self.client.asynchronous or getattr(thread_state, "on_event_loop_thread", False):
 
-        if self.client.asynchronous or getattr(thread_state, "on_event_loop_thread", False):
+                async def _register() -> DaskStorage:
+                    await self.client.run_on_scheduler(  # type: ignore[no-untyped-call]
+                        _register_with_scheduler, storage=storage, name=self.name
+                    )
+                    return self
 
-            async def _register() -> DaskStorage:
-                await self.client.run_on_scheduler(  # type: ignore[no-untyped-call]
+                self._started = asyncio.ensure_future(_register())
+            else:
+                self.client.run_on_scheduler(  # type: ignore[no-untyped-call]
                     _register_with_scheduler, storage=storage, name=self.name
                 )
-                return self
 
-            self._started = asyncio.ensure_future(_register())
-        else:
-            self.client.run_on_scheduler(  # type: ignore[no-untyped-call]
-                _register_with_scheduler, storage=storage, name=self.name
-            )
+    @property
+    def client(self) -> "distributed.Client":
+        if not self._client:
+            self._client = get_client()
+        return self._client
 
     def __await__(self) -> Generator[Any, None, "DaskStorage"]:
         if hasattr(self, "_started"):
@@ -483,7 +496,7 @@ class DaskStorage(BaseStorage):
         # on the scheduler. This is okay since this DaskStorage instance has already been
         # registered with the scheduler, and ``storage`` is only ever needed during the
         # scheduler registration process. We use ``storage=None`` below by convention.
-        return (DaskStorage, (None, self.name))
+        return (DaskStorage, (None, self.name, None, False))
 
     def get_base_storage(self) -> BaseStorage:
         """Retrieve underlying Optuna storage instance from the scheduler.
@@ -666,7 +679,7 @@ class DaskStorage(BaseStorage):
             value=dumps(value),  # type: ignore[no-untyped-call]
         )
 
-    def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
+    def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
         return self.client.sync(  # type: ignore[no-untyped-call]
             self.client.scheduler.optuna_set_trial_system_attr,  # type: ignore[union-attr]
             storage_name=self.name,

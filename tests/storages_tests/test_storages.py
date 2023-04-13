@@ -2,6 +2,7 @@ import copy
 from datetime import datetime
 import pickle
 import random
+from time import sleep
 from typing import Any
 from typing import Dict
 from typing import List
@@ -12,6 +13,7 @@ import numpy as np
 import pytest
 
 import optuna
+from optuna._typing import JSONSerializable
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.storages import _CachedStorage
@@ -29,7 +31,7 @@ from optuna.trial import TrialState
 
 ALL_STATES = list(TrialState)
 
-EXAMPLE_ATTRS = {
+EXAMPLE_ATTRS: Dict[str, JSONSerializable] = {
     "dataset": "MNIST",
     "none": None,
     "json_serializable": {"baseline_score": 0.001, "tags": ["image", "classification"]},
@@ -288,7 +290,9 @@ def test_create_new_trial(storage_mode: str) -> None:
         n_trial_in_study = 3
         for i in range(n_trial_in_study):
             time_before_creation = datetime.now()
+            sleep(0.001)  # Sleep 1ms to avoid faulty assertion on Windows OS.
             trial_id = storage.create_new_trial(study_id)
+            sleep(0.001)
             time_after_creation = datetime.now()
 
             trials = storage.get_all_trials(study_id)
@@ -970,7 +974,7 @@ def _generate_trial(generator: random.Random) -> FrozenTrial:
     params = {}
     distributions = {}
     user_attrs = {}
-    system_attrs = {}
+    system_attrs: Dict[str, Any] = {}
     intermediate_values = {}
     for key, (value, dist) in example_params.items():
         if generator.choice([True, False]):

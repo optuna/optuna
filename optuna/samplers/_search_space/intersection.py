@@ -12,7 +12,7 @@ from optuna.study import Study
 
 @deprecated_class(
     "3.2.0",
-    "6.0.0",
+    "4.0.0",
     name="optuna.samplers.IntersectionSearchSpace",
     text="Please use optuna.search_space.IntersectionSearchSpace instead.",
 )
@@ -76,7 +76,7 @@ class IntersectionSearchSpace:
         if self._include_pruned:
             states_of_interest.append(optuna.trial.TrialState.PRUNED)
 
-        trials = study.get_trials(deepcopy=False, states=states_of_interest)
+        trials = study._get_trials(deepcopy=False, states=states_of_interest, use_cache=False)
 
         next_cursor = trials[-1].number + 1 if len(trials) > 0 else -1
         for trial in reversed(trials):
@@ -108,7 +108,7 @@ class IntersectionSearchSpace:
 
 @deprecated_func(
     "3.2.0",
-    "6.0.0",
+    "4.0.0",
     name="optuna.samplers.intersection_search_space",
     text="Please use optuna.search_space.intersection_search_space instead.",
 )
