@@ -197,11 +197,9 @@ class AddRandomInputs(BasePreprocessing):
         self,
         n_additional_trials: int,
         dummy_value: float = np.nan,
-        search_space: Optional[Dict[str, BaseDistribution]] = None,
     ) -> None:
         self._n_additional_trials = n_additional_trials
         self._dummy_value = dummy_value
-        self._search_space = search_space
         self._rng = np.random.RandomState()
 
     def apply(
@@ -209,7 +207,7 @@ class AddRandomInputs(BasePreprocessing):
         trials: List[optuna.trial.FrozenTrial],
         study_direction: Optional[optuna.study.StudyDirection],
     ) -> List[optuna.trial.FrozenTrial]:
-        search_space = self._search_space or IntersectionSearchSpace().calculate(trials)
+        search_space = IntersectionSearchSpace().calculate(trials)
 
         additional_trials = []
         for _ in range(self._n_additional_trials):

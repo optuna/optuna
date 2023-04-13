@@ -124,3 +124,6 @@ docs/source/tutorial/
 
 # Dask
 dask-worker-space/
+
+# PyTorch Lightning
+lightning_logs/

@@ -1,6 +1,6 @@
+from __future__ import annotations
+
 from typing import Callable
-from typing import List
-from typing import Optional
 
 import numpy as np
 
@@ -21,9 +21,9 @@ if _imports.is_successful():
 @experimental_func("2.2.0")
 def plot_parallel_coordinate(
     study: Study,
-    params: Optional[List[str]] = None,
+    params: list[str] | None = None,
     *,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
 ) -> "Axes":
     """Plot the high-dimensional parameter relationships in a study with Matplotlib.

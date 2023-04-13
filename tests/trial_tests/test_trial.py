@@ -1,6 +1,5 @@
 import datetime
 import math
-import tempfile
 from typing import Any
 from typing import Dict
 from typing import List
@@ -26,6 +25,7 @@ from optuna.testing.pruners import DeterministicPruner
 from optuna.testing.samplers import DeterministicSampler
 from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
+from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 from optuna.trial import Trial
 
 
@@ -664,7 +664,7 @@ def test_raise_error_for_should_prune_multi_objectives() -> None:
 def test_persisted_param() -> None:
     study_name = "my_study"
 
-    with tempfile.NamedTemporaryFile() as fp:
+    with NamedTemporaryFilePool() as fp:
         storage = f"sqlite:///{fp.name}"
         study = create_study(storage=storage, study_name=study_name)
         assert isinstance(study._storage, storages._CachedStorage), "Pre-condition."

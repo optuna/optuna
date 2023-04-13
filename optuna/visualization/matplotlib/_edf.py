@@ -1,7 +1,7 @@
+from __future__ import annotations
+
 from typing import Callable
-from typing import Optional
 from typing import Sequence
-from typing import Union
 
 from optuna._experimental import experimental_func
 from optuna.logging import get_logger
@@ -20,9 +20,9 @@ _logger = get_logger(__name__)
 
 @experimental_func("2.2.0")
 def plot_edf(
-    study: Union[Study, Sequence[Study]],
+    study: Study | Sequence[Study],
     *,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
 ) -> "Axes":
     """Plot the objective value EDF (empirical distribution function) of a study with Matplotlib.

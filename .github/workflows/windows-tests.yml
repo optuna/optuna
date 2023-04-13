@@ -1,7 +1,7 @@
-# Run tests and integration tests on Mac, which are triggered by each master push.
-# Currently, Python3.8 is only used as an environment.
+# Run tests and integration tests on Windows, which are triggered by each master push.
+# Currently, Python3.9 is only used as an environment.
 # This is mainly for the sake of speed.
-name: mac-tests
+name: windows-tests
 
 on:
   push:
@@ -17,31 +17,30 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  tests-mac:
-    runs-on: macos-latest
+  tests-windows:
+    runs-on: windows-latest
 
-    # Scheduled Tests are disabled for forks.
+    # Not intended for forks.
     if: (github.event_name == 'schedule' && github.repository == 'optuna/optuna') || (github.event_name != 'schedule')
     steps:
     - name: Checkout
       uses: actions/checkout@v3
 
-    - name: Setup Python3.8
+    - name: Setup Python3.9
       uses: actions/setup-python@v4
       with:
-        python-version: 3.8
+        python-version: "3.9"
 
     - name: Setup cache
       uses: actions/cache@v3
       env:
-        cache-name: test
+        cache-name: windows-test
       with:
-        path: ~/Library/Caches/pip
-        key: ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
+        path: ~\\AppData\\Local\\pip\\Cache
+        key: ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
         restore-keys: |
-          ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
+          ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
 
-    # TODO(Shinichi): Remove the version constraint on PyTorch Lightning
     - name: Install
       run: |
         python -m pip install --upgrade pip
@@ -53,6 +52,7 @@ jobs:
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
         pip install "pytorch-lightning<2.0.0"
+        pip install PyQt6 # Install PyQT for using QtAgg as matplotlib backend.
 
     - name: Output installed packages
       run: |
@@ -61,72 +61,71 @@ jobs:
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
-        pytest tests -m "not integration"
+        pytest -m "not integration"
+      env:
+        SQLALCHEMY_WARN_20: 1
+        MPLBACKEND: "QtAgg" # Use QtAgg as matplotlib backend.
+
     - name: Tests
       if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
       run: |
-        pytest tests -m "not integration and not slow"
+        pytest -m "not integration and not slow"
+      env:
+        MPLBACKEND: "QtAgg" # Use QtAgg as matplotlib backend.
 
+  tests-integration-windows:
+    runs-on: windows-latest
 
-  tests-integration-mac:
-    runs-on: macos-latest
-
-    # Scheduled Tests are disabled for forks.
+    # Not intended for forks.
     if: (github.event_name == 'schedule' && github.repository == 'optuna/optuna') || (github.event_name != 'schedule')
     steps:
     - name: Checkout
       uses: actions/checkout@v3
 
-    - name: Setup Python3.8
+    - name: Setup Python3.9
       uses: actions/setup-python@v4
       with:
-        python-version: 3.8
+        python-version: "3.9"
 
     - name: Setup cache
       uses: actions/cache@v3
       env:
-        cache-name: test-integration
+        cache-name: windows-test-integration
       with:
-        path: ~/Library/Caches/pip
-        key: ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
+        path: ~\\AppData\\Local\\pip\\Cache
+        key: ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
         restore-keys: |
-          ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
+          ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
 
-    - name: Setup mac environment
-      run: |
-        brew install libomp
-        brew install open-mpi
-        brew install openblas
+    - name: Setup MPI
+      uses: mpi4py/setup-mpi@v1
+      with:
+        mpi: "msmpi"
 
-    # TODO(Shinichi): Remove the version constraint on PyTorch Lightning
     - name: Install
       run: |
         python -m pip install --upgrade pip
-
+        pip install --progress-bar off -U setuptools
         # Install minimal dependencies and confirm that `import optuna` is successful.
         pip install --progress-bar off .
         python -c 'import optuna'
         optuna --version
-
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
         pip install --progress-bar off .[integration]
         pip install "pytorch-lightning<2.0.0"
+        pip install "distributed<2023.3.2"
 
     - name: Output installed packages
       run: |
         pip freeze --all
 
     - name: Tests
+      # Skip allennlp tests since it's not supported on Windows.
+      # TODO(gen740): Don't skip mxnet, because mxnet is supported on Windows.
       run: |
-        pytest tests -m "integration"
-
-      env:
-        OMP_NUM_THREADS: 1
-
-    - name: Tests MPI
-      run: |
-        export OMPI_MCA_rmaps_base_oversubscribe=yes
-        mpirun -n 2 -- pytest tests/integration_tests/test_pytorch_distributed.py
+        pytest tests -m "integration" `
+          --ignore tests/integration_tests/allennlp_tests/test_allennlp.py `
+          --ignore tests/integration_tests/test_mxnet.py
       env:
         OMP_NUM_THREADS: 1
