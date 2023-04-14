@@ -21,17 +21,19 @@ class _RegretBoundsInfo(NamedTuple):
 
 
 @experimental_func("3.2.0")
-def plot_regret_bouds(
+def plot_regret_bounds(
     study: Study,
+    plot_error: bool = False,
     improvement_evaluator: BaseImprovementEvaluator | None = None,
     error_evaluator: BaseErrorEvaluator | None = None,
 ) -> "go.Figure":
-    info = _get_regret_bounds_info(study, improvement_evaluator, error_evaluator)
+    info = _get_regret_bounds_info(study, plot_error, improvement_evaluator, error_evaluator)
     return _get_regret_bounds_plot(info)
 
 
 def _get_regret_bounds_info(
     study: Study,
+    get_error: bool = False,
     improvement_evaluator: BaseImprovementEvaluator | None = None,
     error_evaluator: BaseErrorEvaluator | None = None,
 ) -> _RegretBoundsInfo:
@@ -54,13 +56,38 @@ def _get_regret_bounds_info(
         )
         regret_bounds.append(regret_bound)
 
-        error = error_evaluator.evaluate(trials=trials, study_direction=study.direction)
-        errors.append(error)
+        if get_error:
+            error = error_evaluator.evaluate(trials=trials, study_direction=study.direction)
+            errors.append(error)
 
-    return _RegretBoundsInfo(
-        trial_numbers=trial_numbers, regret_bounds=regret_bounds, errors=errors
-    )
+    if len(errors) == 0:
+        return _RegretBoundsInfo(
+            trial_numbers=trial_numbers, regret_bounds=regret_bounds, errors=None
+        )
+    else:
+        return _RegretBoundsInfo(
+            trial_numbers=trial_numbers, regret_bounds=regret_bounds, errors=errors
+        )
 
 
 def _get_regret_bounds_plot(info: _RegretBoundsInfo) -> "go.Figure":
-    pass
+    layout = go.Layout(
+        title="Regret Bounds Plot",
+        xaxis={"title": "Trial"},
+        yaxis={"title": "Regret Bound"},
+    )
+
+    traces = []
+    traces.append(
+        go.Scatter(x=info.trial_numbers, y=info.regret_bounds, mode="markers", showlegend=False)
+    )
+    traces.append(
+        go.Scatter(x=info.trial_numbers, y=info.regret_bounds, mode="lines", name="Regret Bound")
+    )
+    if info.errors is not None:
+        traces.append(
+            go.Scatter(x=info.trial_numbers, y=info.errors, mode="markers", showlegend=False)
+        )
+        traces.append(go.Scatter(x=info.trial_numbers, y=info.errors, mode="lines", name="Error"))
+
+    return go.Figure(data=traces, layout=layout)
