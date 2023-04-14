@@ -2,6 +2,7 @@ import copy
 from datetime import datetime
 import pickle
 import random
+from time import sleep
 from typing import Any
 from typing import Dict
 from typing import List
@@ -12,6 +13,7 @@ import numpy as np
 import pytest
 
 import optuna
+from optuna._typing import JSONSerializable
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.storages import _CachedStorage
@@ -29,7 +31,7 @@ from optuna.trial import TrialState
 
 ALL_STATES = list(TrialState)
 
-EXAMPLE_ATTRS = {
+EXAMPLE_ATTRS: Dict[str, JSONSerializable] = {
     "dataset": "MNIST",
     "none": None,
     "json_serializable": {"baseline_score": 0.001, "tags": ["image", "classification"]},
@@ -288,7 +290,9 @@ def test_create_new_trial(storage_mode: str) -> None:
         n_trial_in_study = 3
         for i in range(n_trial_in_study):
             time_before_creation = datetime.now()
+            sleep(0.001)  # Sleep 1ms to avoid faulty assertion on Windows OS.
             trial_id = storage.create_new_trial(study_id)
+            sleep(0.001)
             time_after_creation = datetime.now()
 
             trials = storage.get_all_trials(study_id)
@@ -865,9 +869,21 @@ def test_get_n_trials_state_option(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_get_best_trial(storage_mode: str) -> None:
+@pytest.mark.parametrize("direction", [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE])
+@pytest.mark.parametrize(
+    "values",
+    [
+        [0.0, 1.0, 2.0],
+        [0.0, float("inf"), 1.0],
+        [0.0, float("-inf"), 1.0],
+        [float("inf"), 0.0, 1.0, float("-inf")],
+        [float("inf")],
+        [float("-inf")],
+    ],
+)
+def test_get_best_trial(storage_mode: str, direction: StudyDirection, values: List[float]) -> None:
     with StorageSupplier(storage_mode) as storage:
-        study_id = storage.create_new_study(directions=[StudyDirection.MAXIMIZE])
+        study_id = storage.create_new_study(directions=[direction])
         with pytest.raises(ValueError):
             storage.get_best_trial(study_id)
 
@@ -875,12 +891,14 @@ def test_get_best_trial(storage_mode: str) -> None:
             storage.get_best_trial(study_id + 1)
 
         generator = random.Random(51)
-        for i in range(3):
+
+        for v in values:
             template_trial = _generate_trial(generator)
             template_trial.state = TrialState.COMPLETE
-            template_trial.value = float(i)
+            template_trial.value = v
             storage.create_new_trial(study_id, template_trial=template_trial)
-        assert storage.get_best_trial(study_id).number == i
+        expected_value = max(values) if direction == StudyDirection.MAXIMIZE else min(values)
+        assert storage.get_best_trial(study_id).value == expected_value
 
 
 def test_get_trials_excluded_trial_ids() -> None:
@@ -956,7 +974,7 @@ def _generate_trial(generator: random.Random) -> FrozenTrial:
     params = {}
     distributions = {}
     user_attrs = {}
-    system_attrs = {}
+    system_attrs: Dict[str, Any] = {}
     intermediate_values = {}
     for key, (value, dist) in example_params.items():
         if generator.choice([True, False]):

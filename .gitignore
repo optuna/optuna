@@ -89,6 +89,7 @@ celerybeat-schedule
 .env
 
 # virtualenv
+.venv/
 venv/
 ENV/
 
@@ -123,3 +124,6 @@ docs/source/tutorial/
 
 # Dask
 dask-worker-space/
+
+# PyTorch Lightning
+lightning_logs/

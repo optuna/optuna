@@ -89,7 +89,7 @@ def test_is_compatible() -> None:
     study = optuna.create_study(sampler=sampler)
 
     study.optimize(lambda t: t.suggest_float("p0", 0, 10), n_trials=1)
-    search_space = optuna.samplers.intersection_search_space(study)
+    search_space = optuna.search_space.intersection_search_space(study.get_trials(deepcopy=False))
     assert search_space == {"p0": distributions.FloatDistribution(low=0, high=10)}
 
     optimizer = optuna.integration.skopt._Optimizer(search_space, {})
@@ -191,7 +191,10 @@ def test_sample_relative_n_startup_trials() -> None:
 
 
 def test_get_trials() -> None:
-    with patch("optuna.Study.get_trials", new=Mock(side_effect=lambda deepcopy: _create_trials())):
+    with patch(
+        "optuna.Study._get_trials",
+        new=Mock(side_effect=lambda deepcopy, use_cache: _create_trials()),
+    ):
         sampler = optuna.integration.SkoptSampler(consider_pruned_trials=False)
         study = optuna.create_study(sampler=sampler)
         trials = sampler._get_trials(study)

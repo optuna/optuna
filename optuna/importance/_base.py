@@ -12,7 +12,7 @@ import numpy
 
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
-from optuna.samplers import intersection_search_space
+from optuna.search_space import intersection_search_space
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -72,7 +72,7 @@ def _get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, B
     _check_evaluate_args(completed_trials, params)
 
     if params is None:
-        return intersection_search_space(study, ordered_dict=True)
+        return intersection_search_space(study.get_trials(deepcopy=False), ordered_dict=True)
 
     # New temporary required to pass mypy. Seems like a bug.
     params_not_none = params

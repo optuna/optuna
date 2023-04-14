@@ -95,7 +95,7 @@ class SimulatedAnnealingSampler(optuna.samplers.BaseSampler):
 
     # The rest are unrelated to SA algorithm: boilerplate
     def infer_relative_search_space(self, study, trial):
-        return optuna.samplers.intersection_search_space(study)
+        return optuna.search_space.intersection_search_space(study.get_trials(deepcopy=False))
 
     def sample_independent(self, study, trial, param_name, param_distribution):
         independent_sampler = optuna.samplers.RandomSampler()
@@ -135,6 +135,6 @@ print("Parameters that achieve the best value: ", best_trial.params)
 # .. note::
 #     Strictly speaking, in the first trial,
 #     ``SimulatedAnnealingSampler.sample_independent`` method is used to sample parameter values.
-#     Because :func:`~optuna.samplers.intersection_search_space` used in
+#     Because :func:`~optuna.search_space.intersection_search_space` used in
 #     ``SimulatedAnnealingSampler.infer_relative_search_space`` cannot infer the search space
 #     if there are no complete trials.

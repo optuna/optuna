@@ -174,6 +174,7 @@ def test_sample_relative_n_startup_trial() -> None:
     with patch.object(study._storage, "get_all_trials", return_value=past_trials[:4]):
         assert sampler.sample_relative(study, trial, {"param-a": dist}) == {}
     # sample_relative returns some value for only 7 observations.
+    study._thread_local.cached_all_trials = None
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         assert "param-a" in sampler.sample_relative(study, trial, {"param-a": dist}).keys()
 
@@ -476,6 +477,7 @@ def test_sample_independent_n_startup_trial() -> None:
             sampler.sample_independent(study, trial, "param-a", dist)
     assert sample_method.call_count == 1
     sampler = TPESampler(n_startup_trials=5, seed=0)
+    study._thread_local.cached_all_trials = None
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         with patch.object(
             optuna.samplers.RandomSampler, "sample_independent", return_value=1.0
@@ -507,7 +509,7 @@ def test_sample_independent_misc_arguments() -> None:
     sampler = TPESampler(
         weights=lambda i: np.asarray([10 - j for j in range(i)]), n_startup_trials=5, seed=0
     )
-    with patch("optuna.Study.get_trials", return_value=past_trials):
+    with patch("optuna.Study._get_trials", return_value=past_trials):
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
 
@@ -1154,3 +1156,34 @@ def test_constant_liar_observation_pairs(direction: str) -> None:
 def test_constant_liar_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         _ = TPESampler(constant_liar=True)
+
+
+@pytest.mark.parametrize("multivariate", [True, False])
+def test_constant_liar_with_running_trial(multivariate: bool) -> None:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = TPESampler(multivariate=multivariate, constant_liar=True, n_startup_trials=0)
+
+    study = optuna.create_study(sampler=sampler)
+
+    # Add a complete trial.
+    trial0 = study.ask()
+    trial0.suggest_int("x", 0, 10)
+    trial0.suggest_float("y", 0, 10)
+    trial0.suggest_categorical("z", [0, 1, 2])
+    study.tell(trial0, 0)
+
+    # Add running trials.
+    trial1 = study.ask()
+    trial1.suggest_int("x", 0, 10)
+    trial2 = study.ask()
+    trial2.suggest_float("y", 0, 10)
+    trial3 = study.ask()
+    trial3.suggest_categorical("z", [0, 1, 2])
+
+    # Test suggestion with running trials.
+    trial = study.ask()
+    trial.suggest_int("x", 0, 10)
+    trial.suggest_float("y", 0, 10)
+    trial.suggest_categorical("z", [0, 1, 2])
+    study.tell(trial, 0)

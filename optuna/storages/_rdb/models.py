@@ -6,6 +6,7 @@ from typing import Optional
 from typing import Tuple
 
 from sqlalchemy import asc
+from sqlalchemy import case
 from sqlalchemy import CheckConstraint
 from sqlalchemy import Column
 from sqlalchemy import DateTime
@@ -169,7 +170,7 @@ class TrialModel(BaseModel):
     # to be unique. This is to reduce code complexity as table-level locking would be required
     # otherwise. See https://github.com/optuna/optuna/pull/939#discussion_r387447632.
     number = Column(Integer)
-    study_id = Column(Integer, ForeignKey("studies.study_id"))
+    study_id = Column(Integer, ForeignKey("studies.study_id"), index=True)
     state = Column(Enum(TrialState), nullable=False)
     datetime_start = Column(DateTime)
     datetime_complete = Column(DateTime)
@@ -188,7 +189,15 @@ class TrialModel(BaseModel):
             .filter(cls.state == TrialState.COMPLETE)
             .join(TrialValueModel)
             .filter(TrialValueModel.objective == objective)
-            .order_by(desc(TrialValueModel.value))
+            .order_by(
+                desc(
+                    case(
+                        {"INF_NEG": -1, "FINITE": 0, "INF_POS": 1},
+                        value=TrialValueModel.value_type,
+                    )
+                ),
+                desc(TrialValueModel.value),
+            )
             .limit(1)
             .one_or_none()
         )
@@ -206,7 +215,15 @@ class TrialModel(BaseModel):
             .filter(cls.state == TrialState.COMPLETE)
             .join(TrialValueModel)
             .filter(TrialValueModel.objective == objective)
-            .order_by(asc(TrialValueModel.value))
+            .order_by(
+                asc(
+                    case(
+                        {"INF_NEG": -1, "FINITE": 0, "INF_POS": 1},
+                        value=TrialValueModel.value_type,
+                    )
+                ),
+                asc(TrialValueModel.value),
+            )
             .limit(1)
             .one_or_none()
         )

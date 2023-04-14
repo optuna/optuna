@@ -54,12 +54,13 @@ benchmark = [
 checking = [
     "black",
     "blackdoc",
-    "hacking",
+    "flake8",
     "isort",
     "mypy",
     "types-PyYAML",
     "types-redis",
     "types-setuptools",
+    "types-tqdm",
     "typing_extensions>=3.10.0.0",
 ]
 document = [
@@ -75,8 +76,7 @@ document = [
     "plotly>=4.9.0",  # optuna/visualization.
     "scikit-learn",
     "scikit-optimize",
-    # TODO(not522): Remove the constraint after sphinx_rtd_theme supports Sphinx 6
-    "sphinx<6",
+    "sphinx",
     "sphinx-copybutton",
     "sphinx-gallery",
     "sphinx-plotly-directive",
@@ -86,17 +86,14 @@ document = [
     "torchvision==0.12.0",
 ]
 integration = [
-    "allennlp>=2.2.0; python_version<'3.11'",
     "botorch>=0.4.0; python_version<'3.11'",
     "catalyst>=21.3; python_version<'3.11'",
     "catboost>=0.26; python_version<'3.11'",
-    "chainer>=5.0.0",
     "cma",
     "distributed",
     "fastai; python_version<'3.11'",
     "lightgbm; python_version<'3.11'",
     "mlflow; python_version<'3.11'",
-    "mpi4py",
     "mxnet; python_version<'3.11'",
     "pandas",
     "pytorch-ignite; python_version<'3.11'",
@@ -123,7 +120,7 @@ optional = [
     # optuna/visualization/param_importances.py.
 ]
 test = [
-    "codecov",
+    "coverage",
     "fakeredis[lua]",
     "kaleido",
     "pytest",
@@ -163,6 +160,7 @@ exclude = '''
   | \.hg
   | \.mypy_cache
   | \.venv
+  | venv
   | _build
   | buck-out
   | build

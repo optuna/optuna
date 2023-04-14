@@ -1,6 +1,6 @@
+from __future__ import annotations
+
 from typing import Callable
-from typing import List
-from typing import Optional
 
 import numpy as np
 
@@ -28,10 +28,10 @@ AXES_PADDING_RATIO = 1.05
 @experimental_func("2.2.0")
 def plot_param_importances(
     study: Study,
-    evaluator: Optional[BaseImportanceEvaluator] = None,
-    params: Optional[List[str]] = None,
+    evaluator: BaseImportanceEvaluator | None = None,
+    params: list[str] | None = None,
     *,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
 ) -> "Axes":
     """Plot hyperparameter importances with Matplotlib.

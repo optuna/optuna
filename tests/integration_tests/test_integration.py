@@ -5,14 +5,8 @@ pytestmark = pytest.mark.integration
 
 
 def test_import() -> None:
-    from optuna.integration import chainer  # NOQA
-    from optuna.integration import chainermn  # NOQA
-    from optuna.integration import ChainerMNStudy  # NOQA
-    from optuna.integration import ChainerPruningExtension  # NOQA
     from optuna.integration import dask  # NOQA
     from optuna.integration import DaskStorage  # NOQA
-    from optuna.integration import keras  # NOQA
-    from optuna.integration import KerasPruningCallback  # NOQA
     from optuna.integration import lightgbm  # NOQA
     from optuna.integration import LightGBMPruningCallback  # NOQA
     from optuna.integration import mxnet  # NOQA
@@ -29,17 +23,11 @@ def test_import() -> None:
 def test_module_attributes() -> None:
     import optuna
 
-    assert hasattr(optuna.integration, "chainer")
-    assert hasattr(optuna.integration, "chainermn")
     assert hasattr(optuna.integration, "dask")
-    assert hasattr(optuna.integration, "keras")
     assert hasattr(optuna.integration, "lightgbm")
     assert hasattr(optuna.integration, "mxnet")
     assert hasattr(optuna.integration, "tensorflow")
     assert hasattr(optuna.integration, "xgboost")
-    assert hasattr(optuna.integration, "ChainerMNStudy")
-    assert hasattr(optuna.integration, "ChainerPruningExtension")
-    assert hasattr(optuna.integration, "KerasPruningCallback")
     assert hasattr(optuna.integration, "LightGBMPruningCallback")
     assert hasattr(optuna.integration, "MXNetPruningCallback")
     assert hasattr(optuna.integration, "TensorFlowPruningHook")

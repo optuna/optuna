@@ -21,11 +21,11 @@ from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.samplers._base import _process_constraints_after_trial
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
-from optuna.samplers._search_space import IntersectionSearchSpace
-from optuna.samplers._search_space.group_decomposed import _GroupDecomposedSearchSpace
-from optuna.samplers._search_space.group_decomposed import _SearchSpaceGroup
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
+from optuna.search_space import IntersectionSearchSpace
+from optuna.search_space.group_decomposed import _GroupDecomposedSearchSpace
+from optuna.search_space.group_decomposed import _SearchSpaceGroup
 from optuna.study import Study
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -392,10 +392,9 @@ class TPESampler(BaseSampler):
         indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n), violations)
         # `None` items are intentionally converted to `nan` and then filtered out.
         # For `nan` conversion, the dtype must be float.
-        # `None` items appear only when `group=True`. We just use the first parameter because the
-        # masks are the same for all parameters in one group.
+        # `None` items appear when `group=True` or `constant_liar=True`.
         config_values = {k: np.asarray(v, dtype=float) for k, v in values.items()}
-        param_mask = ~np.isnan(list(config_values.values())[0])
+        param_mask = np.all(~np.isnan(list(config_values.values())), axis=0)
         param_mask_below, param_mask_above = param_mask[indices_below], param_mask[indices_above]
         below = {k: v[indices_below[param_mask_below]] for k, v in config_values.items()}
         above = {k: v[indices_above[param_mask_above]] for k, v in config_values.items()}
@@ -622,7 +621,7 @@ def _get_observation_pairs(
     scores = []
     values: Dict[str, List[Optional[float]]] = {param_name: [] for param_name in param_names}
     violations: Optional[List[float]] = [] if constraints_enabled else None
-    for trial in study.get_trials(deepcopy=False, states=states):
+    for trial in study._get_trials(deepcopy=False, states=states, use_cache=not constant_liar):
         # We extract score from the trial.
         if trial.state is TrialState.COMPLETE:
             if trial.values is None:

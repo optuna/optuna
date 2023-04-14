@@ -16,10 +16,10 @@ from optuna._imports import try_import
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
-from optuna.samplers import IntersectionSearchSpace
 from optuna.samplers import RandomSampler
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.samplers._base import _process_constraints_after_trial
+from optuna.search_space import IntersectionSearchSpace
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
@@ -652,7 +652,7 @@ class BoTorchSampler(BaseSampler):
     def reseed_rng(self) -> None:
         self._independent_sampler.reseed_rng()
         if self._seed is not None:
-            self._seed = numpy.random.RandomState().randint(2**60)
+            self._seed = numpy.random.RandomState().randint(numpy.iinfo(numpy.int32).max)
 
     def after_trial(
         self,
