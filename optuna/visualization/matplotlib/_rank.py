@@ -2,13 +2,12 @@ from typing import Callable
 from typing import List
 from typing import Optional
 
-import numpy as np
-
 from optuna._experimental import experimental_func
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.visualization._rank import _get_rank_info
+from optuna.visualization._rank import _get_tick_info
 from optuna.visualization._rank import _RankPlotInfo
 from optuna.visualization._rank import _RankSubplotInfo
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
@@ -99,7 +98,8 @@ def _get_rank_plot(
 
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
 
-    title = f"Rank Plot: {info.target_name}"
+    title = f"Rank ({info.target_name})"
+
     n_params = len(params)
     if n_params == 0:
         _, ax = plt.subplots()
@@ -124,15 +124,10 @@ def _get_rank_plot(
                     set_y_label=y_i == 0,
                 )
 
-    # TODO(kaitos): Eliminate deplication of code in plot_rank.
-    sorted_zs = np.sort(info.zs)
-    tick_coloridxs = [0, 0.25, 0.5, 0.75, 1]
-    tick_values = np.quantile(sorted_zs, tick_coloridxs)
-    rank_text = ["min.", "25%", "50%", "75%", "max."]
-    ticktext = [f"{rank_text[i]} ({tick_values[i]:3g})" for i in range(len(tick_values))]
+    tick_info = _get_tick_info(info.zs)
 
-    cbar = fig.colorbar(pc, ax=axs, ticks=tick_coloridxs, cmap=plt.get_cmap("RdYlBu_r"))
-    cbar.ax.set_yticklabels(ticktext)
+    cbar = fig.colorbar(pc, ax=axs, ticks=tick_info.coloridxs, cmap=plt.get_cmap("RdYlBu_r"))
+    cbar.ax.set_yticklabels(tick_info.text)
     cbar.outline.set_edgecolor("gray")
     return axs
 

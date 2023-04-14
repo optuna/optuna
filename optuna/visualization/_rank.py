@@ -300,6 +300,20 @@ def _get_rank_subplot(
     return scatter
 
 
+class _TickInfo(NamedTuple):
+    coloridxs: List[float]
+    text: List[str]
+
+
+def _get_tick_info(target_values: np.ndarray) -> _TickInfo:
+    sorted_target_values = np.sort(target_values)
+    coloridxs = [0, 0.25, 0.5, 0.75, 1]
+    values = np.quantile(sorted_target_values, coloridxs)
+    rank_text = ["min.", "25%", "50%", "75%", "max."]
+    text = [f"{rank_text[i]} ({values[i]:3g})" for i in range(len(values))]
+    return _TickInfo(coloridxs=coloridxs, text=text)
+
+
 def _get_rank_plot(
     info: _RankPlotInfo,
 ) -> "go.Figure":
@@ -370,11 +384,8 @@ def _get_rank_plot(
                     figure.update_yaxes(title_text=y_param, row=y_i + 1, col=x_i + 1)
                 if y_i == len(params) - 1:
                     figure.update_xaxes(title_text=x_param, row=y_i + 1, col=x_i + 1)
-    sorted_zs = np.sort(info.zs)
-    tick_coloridxs = [0, 0.25, 0.5, 0.75, 1]
-    tick_values = np.quantile(sorted_zs, tick_coloridxs)
-    rank_text = ["min.", "25%", "50%", "75%", "max."]
-    ticktext = [f"{rank_text[i]} ({tick_values[i]:3g})" for i in range(len(tick_values))]
+
+    tick_info = _get_tick_info(info.zs)
 
     colormap = "RdYlBu_r"
     colorbar_trace = go.Scatter(
@@ -387,7 +398,7 @@ def _get_rank_plot(
             showscale=True,
             cmin=0,
             cmax=1,
-            colorbar=dict(thickness=10, tickvals=tick_coloridxs, ticktext=ticktext),
+            colorbar=dict(thickness=10, tickvals=tick_info.coloridxs, ticktext=tick_info.text),
         ),
         hoverinfo="none",
         showlegend=False,
