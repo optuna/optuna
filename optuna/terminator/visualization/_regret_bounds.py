@@ -11,6 +11,7 @@ from optuna.study.study import Study
 from optuna.terminator.erroreval import BaseErrorEvaluator
 from optuna.terminator.erroreval import CrossValidationErrorEvaluator
 from optuna.terminator.improvement.evaluator import BaseImprovementEvaluator
+from optuna.terminator.improvement.evaluator import DEFAULT_MIN_N_TRIALS
 from optuna.terminator.improvement.evaluator import RegretBoundEvaluator
 
 
@@ -26,9 +27,10 @@ def plot_regret_bounds(
     plot_error: bool = False,
     improvement_evaluator: BaseImprovementEvaluator | None = None,
     error_evaluator: BaseErrorEvaluator | None = None,
+    min_n_trials: int = DEFAULT_MIN_N_TRIALS,
 ) -> "go.Figure":
     info = _get_regret_bounds_info(study, plot_error, improvement_evaluator, error_evaluator)
-    return _get_regret_bounds_plot(info)
+    return _get_regret_bounds_plot(info, min_n_trials)
 
 
 def _get_regret_bounds_info(
@@ -70,12 +72,10 @@ def _get_regret_bounds_info(
         )
 
 
-def _get_regret_bounds_plot(info: _RegretBoundsInfo) -> "go.Figure":
-    layout = go.Layout(
-        title="Regret Bounds Plot",
-        xaxis={"title": "Trial"},
-        yaxis={"title": "Regret Bound"},
-    )
+def _get_regret_bounds_plot(info: _RegretBoundsInfo, min_n_trials: int) -> "go.Figure":
+    max_y_value = max(info.regret_bounds)
+    if info.errors is not None:
+        max_y_value = max(max_y_value, max(info.errors))
 
     traces = []
     traces.append(
@@ -90,4 +90,34 @@ def _get_regret_bounds_plot(info: _RegretBoundsInfo) -> "go.Figure":
         )
         traces.append(go.Scatter(x=info.trial_numbers, y=info.errors, mode="lines", name="Error"))
 
-    return go.Figure(data=traces, layout=layout)
+    fig = go.Figure(data=traces)
+
+    x1_filled = min(info.trial_numbers[-1], min_n_trials)
+    min_trials_area = go.layout.Shape(
+        type="rect",
+        x0=0,
+        x1=x1_filled,
+        y0=0,
+        y1=max_y_value,
+        fillcolor="gray",
+        opacity=0.2,
+        layer="below",
+        line=dict(width=0),
+    )
+
+    fig.update_layout(
+        title="Regret Bounds Plot",
+        xaxis=dict(title="Trial"),
+        yaxis=dict(title="Regret Bound"),
+        shapes=(min_trials_area,),
+    )
+    fig.add_annotation(
+        go.layout.Annotation(
+            x=x1_filled,
+            y=max_y_value * 1.1,
+            text="min_n_trials",
+            showarrow=False,
+            font=dict(size=14),
+        )
+    )
+    return fig
