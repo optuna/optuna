@@ -421,7 +421,7 @@ def test_normalize_with_inf(
     population_value: Sequence[Sequence[int]], expected_normalized_value: Sequence[Sequence[int]]
 ) -> None:
     population = [create_trial(values=values) for values in population_value]
-    assert np.testing.assert_almost_equal(
+    np.testing.assert_almost_equal(
         _normalize_objective_values(population), np.array(expected_normalized_value)
     )
 
@@ -479,7 +479,7 @@ def test_normalize(
     objective_values: Sequence[Sequence[int]], expected_normalized_value: Sequence[Sequence[int]]
 ) -> None:
     population = [create_trial(values=values) for values in objective_values]
-    assert np.testing.assert_almost_equal(
+    np.testing.assert_almost_equal(
         _normalize_objective_values(population), np.array(expected_normalized_value)
     )
 
@@ -534,7 +534,7 @@ def test_associate(
         distance_reference_points,
     ) = _associate_individuals_with_reference_points(population, reference_points)
     assert np.all(closest_reference_points == expected_indices)
-    assert np.testing.assert_almost_equal(distance_reference_points, expected_distances)
+    np.testing.assert_almost_equal(distance_reference_points, expected_distances)
 
 
 @pytest.mark.parametrize(
