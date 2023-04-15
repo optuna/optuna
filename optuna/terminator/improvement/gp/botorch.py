@@ -8,8 +8,8 @@ from optuna._imports import try_import
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
+from optuna.search_space import intersection_search_space
 from optuna.terminator import _distribution_is_log
-from optuna.terminator._search_space.intersection import IntersectionSearchSpace
 from optuna.terminator.improvement.gp.base import BaseGaussianProcess
 from optuna.trial._frozen import FrozenTrial
 from optuna.trial._state import TrialState
@@ -89,7 +89,7 @@ def _convert_trials_to_tensors(trials: list[FrozenTrial]) -> tuple[torch.Tensor,
     - the state is COMPLETE for any trial;
     - direction is MINIMIZE for any trial.
     """
-    search_space = IntersectionSearchSpace().calculate(trials)
+    search_space = intersection_search_space(trials, ordered_dict=True)
     sorted_params = sorted(search_space.keys())
 
     x = []
