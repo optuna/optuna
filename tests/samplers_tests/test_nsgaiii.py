@@ -38,7 +38,7 @@ def _nan_equal(a: Any, b: Any) -> bool:
 
 def test_population_size() -> None:
     # Set `population_size` to 10.
-    sampler = NSGAIIISampler(n_objectives=1, population_size=10)
+    sampler = NSGAIIISampler(population_size=10)
 
     study = optuna.create_study(directions=["minimize"], sampler=sampler)
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
@@ -49,7 +49,7 @@ def test_population_size() -> None:
     assert generations == {0: 10, 1: 10, 2: 10, 3: 10}
 
     # Set `population_size` to 2.
-    sampler = NSGAIIISampler(n_objectives=1, population_size=2)
+    sampler = NSGAIIISampler(population_size=2)
 
     study = optuna.create_study(directions=["minimize"], sampler=sampler)
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
@@ -62,55 +62,55 @@ def test_population_size() -> None:
     # Invalid population size.
     with pytest.raises(ValueError):
         # Less than 2.
-        NSGAIIISampler(n_objectives=1, population_size=1)
+        NSGAIIISampler(population_size=1)
 
     with pytest.raises(TypeError):
         # Not an integer.
-        NSGAIIISampler(n_objectives=1, population_size=2.5)  # type: ignore[arg-type]
+        NSGAIIISampler(population_size=2.5)  # type: ignore[arg-type]
 
 
 def test_mutation_prob() -> None:
-    NSGAIIISampler(n_objectives=1, mutation_prob=None)
-    NSGAIIISampler(n_objectives=1, mutation_prob=0.0)
-    NSGAIIISampler(n_objectives=1, mutation_prob=0.5)
-    NSGAIIISampler(n_objectives=1, mutation_prob=1.0)
+    NSGAIIISampler(mutation_prob=None)
+    NSGAIIISampler(mutation_prob=0.0)
+    NSGAIIISampler(mutation_prob=0.5)
+    NSGAIIISampler(mutation_prob=1.0)
 
     with pytest.raises(ValueError):
-        NSGAIIISampler(n_objectives=1, mutation_prob=-0.5)
+        NSGAIIISampler(mutation_prob=-0.5)
 
     with pytest.raises(ValueError):
-        NSGAIIISampler(n_objectives=1, mutation_prob=1.1)
+        NSGAIIISampler(mutation_prob=1.1)
 
 
 def test_crossover_prob() -> None:
-    NSGAIIISampler(n_objectives=1, crossover_prob=0.0)
-    NSGAIIISampler(n_objectives=1, crossover_prob=0.5)
-    NSGAIIISampler(n_objectives=1, crossover_prob=1.0)
+    NSGAIIISampler(crossover_prob=0.0)
+    NSGAIIISampler(crossover_prob=0.5)
+    NSGAIIISampler(crossover_prob=1.0)
 
     with pytest.raises(ValueError):
-        NSGAIIISampler(n_objectives=1, crossover_prob=-0.5)
+        NSGAIIISampler(crossover_prob=-0.5)
 
     with pytest.raises(ValueError):
-        NSGAIIISampler(n_objectives=1, crossover_prob=1.1)
+        NSGAIIISampler(crossover_prob=1.1)
 
 
 def test_swapping_prob() -> None:
-    NSGAIIISampler(n_objectives=1, swapping_prob=0.0)
-    NSGAIIISampler(n_objectives=1, swapping_prob=0.5)
-    NSGAIIISampler(n_objectives=1, swapping_prob=1.0)
+    NSGAIIISampler(swapping_prob=0.0)
+    NSGAIIISampler(swapping_prob=0.5)
+    NSGAIIISampler(swapping_prob=1.0)
 
     with pytest.raises(ValueError):
-        NSGAIIISampler(n_objectives=1, swapping_prob=-0.5)
+        NSGAIIISampler(swapping_prob=-0.5)
 
     with pytest.raises(ValueError):
-        NSGAIIISampler(n_objectives=1, swapping_prob=1.1)
+        NSGAIIISampler(swapping_prob=1.1)
 
 
 def test_constraints_func_none() -> None:
     n_trials = 4
     n_objectives = 2
 
-    sampler = NSGAIIISampler(n_objectives=n_objectives, population_size=2)
+    sampler = NSGAIIISampler(population_size=2)
 
     study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
     study.optimize(
@@ -137,9 +137,7 @@ def test_constraints_func(constraint_value: float) -> None:
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = NSGAIIISampler(
-            n_objectives=n_objectives, population_size=2, constraints_func=constraints_func
-        )
+        sampler = NSGAIIISampler(population_size=2, constraints_func=constraints_func)
 
     study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
     study.optimize(
@@ -163,9 +161,7 @@ def test_constraints_func_nan() -> None:
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = NSGAIIISampler(
-            n_objectives=n_objectives, population_size=2, constraints_func=constraints_func
-        )
+        sampler = NSGAIIISampler(population_size=2, constraints_func=constraints_func)
 
     study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
     with pytest.raises(ValueError):
@@ -182,7 +178,7 @@ def test_constraints_func_nan() -> None:
 
 
 def test_study_system_attr_for_population_cache() -> None:
-    sampler = NSGAIIISampler(n_objectives=1, population_size=10)
+    sampler = NSGAIIISampler(population_size=10)
     study = optuna.create_study(directions=["minimize"], sampler=sampler)
 
     def get_cached_entries(
@@ -212,7 +208,7 @@ def test_study_system_attr_for_population_cache() -> None:
 
 def test_constraints_func_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
-        NSGAIIISampler(n_objectives=1, constraints_func=lambda _: [0])
+        NSGAIIISampler(constraints_func=lambda _: [0])
 
 
 # TODO(ohta): Consider to move this utility function to `optuna.testing` module.
@@ -230,7 +226,7 @@ def _create_frozen_trial(
 
 
 def test_call_after_trial_of_random_sampler() -> None:
-    sampler = NSGAIIISampler(n_objectives=1)
+    sampler = NSGAIIISampler()
     study = optuna.create_study(sampler=sampler)
     with patch.object(
         sampler._random_sampler, "after_trial", wraps=sampler._random_sampler.after_trial
@@ -258,7 +254,7 @@ def test_crossover_objectives(
     n_objectives: int, crossover: BaseSampler, population_size: int
 ) -> None:
     n_trials = 8
-    sampler = NSGAIIISampler(n_objectives=n_objectives, population_size=population_size)
+    sampler = NSGAIIISampler(population_size=population_size)
 
     study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
     study.optimize(
@@ -275,11 +271,10 @@ def test_crossover_dims(n_params: int, crossover: BaseSampler, population_size: 
         xs = [trial.suggest_float(f"x{dim}", -10, 10) for dim in range(n_params)]
         return sum(xs)
 
-    n_objectives = 1
     n_trials = 8
-    sampler = NSGAIIISampler(n_objectives=n_objectives, population_size=population_size)
+    sampler = NSGAIIISampler(population_size=population_size)
 
-    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
+    study = optuna.create_study(directions=["minimize"], sampler=sampler)
     study.optimize(objective, n_trials=n_trials)
 
     assert len(study.trials) == n_trials
@@ -298,7 +293,7 @@ def test_crossover_dims(n_params: int, crossover: BaseSampler, population_size: 
 )
 def test_crossover_invalid_population(crossover: BaseCrossover, population_size: int) -> None:
     with pytest.raises(ValueError):
-        NSGAIIISampler(n_objectives=1, population_size=population_size, crossover=crossover)
+        NSGAIIISampler(population_size=population_size, crossover=crossover)
 
 
 @pytest.mark.parametrize(
@@ -479,6 +474,8 @@ def test_normalize(
     objective_values: Sequence[Sequence[int]], expected_normalized_value: Sequence[Sequence[int]]
 ) -> None:
     population = [create_trial(values=values) for values in objective_values]
+    print(np.shape(_normalize_objective_values(population)))
+    print(np.shape(np.array(expected_normalized_value)))
     np.testing.assert_almost_equal(
         _normalize_objective_values(population), np.array(expected_normalized_value)
     )
@@ -581,7 +578,7 @@ def test_niching(
     distance_reference_points: Sequence[float],
     expected_population_indices: Sequence[int],
 ) -> None:
-    sampler = NSGAIIISampler(n_objectives=3, seed=42)
+    sampler = NSGAIIISampler(seed=42)
     target_population_size = 5
     elite_population_num = 4
     population = [create_trial(values=value) for value in population_value]
@@ -603,7 +600,7 @@ def test_niching(
 
 
 def test_niching_unexpected_target_population_size() -> None:
-    sampler = NSGAIIISampler(n_objectives=3, seed=42)
+    sampler = NSGAIIISampler(seed=42)
     target_population_size = 2
     elite_population_num = 1
     population = [create_trial(values=[1.0])]

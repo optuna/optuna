@@ -60,6 +60,12 @@ class NSGAIIISampler(BaseSampler):
             result. It is also possible to reflect your `preferences` by giving an arbitrary set of
             `target` points since the algorithm prioritizes individuals around reference points.
 
+        dividing_parameter:
+            An parameter to determine the density of default reference points. This parameter
+            determines how many divisions are made between reference points on each axis. The
+            smaller this value is, the less reference points you have. The default value is 3.
+            Note that this parameter is not used when reference_points is not None.
+
             .. note::
                 Other parameters are the same as :class:`~optuna.samplers.nsgaii.NSGAIISampler`.
 
@@ -68,9 +74,8 @@ class NSGAIIISampler(BaseSampler):
     def __init__(
         self,
         population_size: int = 50,
-        n_objectives: int | None = None,
-        dividing_parameter: int = 3,
         reference_points: np.ndarray | None = None,
+        dividing_parameter: int = 3,
         mutation_prob: float | None = None,
         crossover: BaseCrossover | None = None,
         crossover_prob: float = 0.9,
@@ -120,13 +125,8 @@ class NSGAIIISampler(BaseSampler):
                 f" The specified `population_size` is {population_size}."
             )
 
-        if reference_points is None:
-            assert n_objectives is not None
-            reference_points = _generate_default_reference_point(
-                n_objectives=n_objectives, dividing_parameter=dividing_parameter
-            )
-
         self.reference_points = reference_points
+        self._dividing_parameter = dividing_parameter
         self._population_size = population_size
         self._mutation_prob = mutation_prob
         self._crossover = crossover
@@ -300,6 +300,17 @@ class NSGAIIISampler(BaseSampler):
             if len(elite_population) + len(population) < self._population_size:
                 elite_population.extend(population)
             else:
+                n_objectives = len(study.directions)
+                if self.reference_points is None:
+                    self.reference_points = _generate_default_reference_point(
+                        n_objectives, self._dividing_parameter
+                    )
+                elif np.shape(self.reference_points)[1] != n_objectives:
+                    raise ValueError(
+                        "The dimension of reference points vectors must be the same as the number "
+                        "of objectives of the study."
+                    )
+
                 # Pick up all trials whose objective value contains -inf.
                 for i, trial in enumerate(population):
                     if all(value != -float("inf") for value in trial.values):
