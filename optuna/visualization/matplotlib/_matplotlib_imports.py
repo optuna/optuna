@@ -7,10 +7,7 @@ with try_import() as _imports:
     # TODO(ytknzw): Add specific imports.
     import matplotlib
     from matplotlib import __version__ as matplotlib_version
-    from matplotlib import dates
-    from matplotlib import patches
     from matplotlib import pyplot as plt
-    from matplotlib import ticker
     from matplotlib.axes._axes import Axes
     from matplotlib.collections import LineCollection
     from matplotlib.collections import PathCollection
@@ -30,9 +27,6 @@ with try_import() as _imports:
 
 __all__ = [
     "_imports",
-    "dates",
-    "ticker",
-    "patches",
     "matplotlib",
     "matplotlib_version",
     "plt",
