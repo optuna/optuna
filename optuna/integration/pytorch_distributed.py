@@ -125,7 +125,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
                 if dist.group.WORLD is None:
                     raise RuntimeError("torch distributed is not initialized.")
                 default_pg: "ProcessGroup" = dist.group.WORLD
-                if dist.get_backend(default_pg) == "nccl":  # type: ignore[no-untyped-call]
+                if dist.get_backend(default_pg) == "nccl":
                     new_group: "ProcessGroup" = dist.new_group(  # type: ignore[no-untyped-call]
                         backend="gloo"
                     )
@@ -134,7 +134,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
                     _g_pg = default_pg
             self._group = _g_pg
 
-        if dist.get_rank(self._group) == 0:  # type: ignore[no-untyped-call]
+        if dist.get_rank(self._group) == 0:
             if not isinstance(trial, optuna.trial.Trial):
                 raise ValueError(
                     "Rank 0 node expects an optuna.trial.Trial instance as the trial argument."
@@ -230,7 +230,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     @broadcast_properties
     def report(self, value: float, step: int) -> None:
         err = None
-        if dist.get_rank(self._group) == 0:  # type: ignore[no-untyped-call]
+        if dist.get_rank(self._group) == 0:
             try:
                 assert self._delegate is not None
                 self._delegate.report(value, step)
@@ -257,7 +257,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     @broadcast_properties
     def set_user_attr(self, key: str, value: Any) -> None:
         err = None
-        if dist.get_rank(self._group) == 0:  # type: ignore[no-untyped-call]
+        if dist.get_rank(self._group) == 0:
             try:
                 assert self._delegate is not None
                 self._delegate.set_user_attr(key, value)
@@ -275,7 +275,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     def set_system_attr(self, key: str, value: Any) -> None:
         err = None
 
-        if dist.get_rank(self._group) == 0:  # type: ignore[no-untyped-call]
+        if dist.get_rank(self._group) == 0:
             try:
                 assert self._delegate is not None
                 self._delegate.storage.set_trial_system_attr(self._delegate._trial_id, key, value)
@@ -315,31 +315,31 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
     def _call_and_communicate(self, func: Callable, dtype: "torch.dtype") -> Any:
         buffer = torch.empty(1, dtype=dtype)
-        rank = dist.get_rank(self._group)  # type: ignore[no-untyped-call]
+        rank = dist.get_rank(self._group)
         if rank == 0:
             result = func()
             buffer[0] = result
-        dist.broadcast(buffer, src=0, group=self._group)  # type: ignore[no-untyped-call]
+        dist.broadcast(buffer, src=0, group=self._group)
         return buffer.item()
 
     def _call_and_communicate_obj(self, func: Callable) -> Any:
-        rank = dist.get_rank(self._group)  # type: ignore[no-untyped-call]
+        rank = dist.get_rank(self._group)
         result = func() if rank == 0 else None
         return self._broadcast(result)
 
     def _broadcast(self, value: Optional[Any]) -> Any:
         buffer = None
         size_buffer = torch.empty(1, dtype=torch.int)
-        rank = dist.get_rank(self._group)  # type: ignore[no-untyped-call]
+        rank = dist.get_rank(self._group)
         if rank == 0:
             buffer = _to_tensor(value)
             size_buffer[0] = buffer.shape[0]
-        dist.broadcast(size_buffer, src=0, group=self._group)  # type: ignore[no-untyped-call]
+        dist.broadcast(size_buffer, src=0, group=self._group)
         buffer_size = int(size_buffer.item())
         if rank != 0:
             buffer = torch.empty(buffer_size, dtype=torch.uint8)
         assert buffer is not None
-        dist.broadcast(buffer, src=0, group=self._group)  # type: ignore[no-untyped-call]
+        dist.broadcast(buffer, src=0, group=self._group)
         return _from_tensor(buffer)
 
 
