@@ -1,5 +1,3 @@
-from typing import Any
-
 from optuna._experimental import experimental_func
 from optuna.study import Study
 from optuna.trial import TrialState
@@ -10,18 +8,8 @@ from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
-    from optuna.visualization.matplotlib._matplotlib_imports import dates
-    from optuna.visualization.matplotlib._matplotlib_imports import patches
+    from optuna.visualization.matplotlib._matplotlib_imports import matplotlib
     from optuna.visualization.matplotlib._matplotlib_imports import plt
-    from optuna.visualization.matplotlib._matplotlib_imports import ticker
-
-
-class _DateFormatter_Millisecond(ticker.Formatter):
-    def __init__(self) -> None:
-        pass
-
-    def __call__(self, x: float, pos: Any = 0) -> str:
-        return dates.num2date(x).strftime("%H:%M:%S")
 
 
 @experimental_func("3.2.0")
@@ -103,7 +91,7 @@ def _get_timeline_plot(info: _TimelineInfo) -> "Axes":
     legend_handles = []
     for state, color in _cm.items():
         if len([b for b in info.bars if b.state == state]) > 0:
-            legend_handles.append(patches.Patch(color=color, label=state.name))
+            legend_handles.append(matplotlib.patches.Patch(color=color, label=state.name))
     ax.legend(handles=legend_handles, loc="upper left", bbox_to_anchor=(1.05, 1.0))
     fig.tight_layout()
 
@@ -113,7 +101,7 @@ def _get_timeline_plot(info: _TimelineInfo) -> "Axes":
     margin = (complete_time - start_time) * 0.05
 
     ax.set_xlim(right=complete_time + margin, left=start_time - margin)
-    ax.yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
-    ax.xaxis.set_major_formatter(_DateFormatter_Millisecond())
+    ax.yaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
+    ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter("%H:%M:%S"))
     plt.gcf().autofmt_xdate()
     return ax
