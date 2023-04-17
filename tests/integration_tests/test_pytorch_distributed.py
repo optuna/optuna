@@ -195,7 +195,7 @@ def test_report_nan(storage_mode: str) -> None:
             trial = TorchDistributedTrial(None)
 
         with pytest.raises(TypeError):
-            trial.report("abc", 0)  # type: ignore
+            trial.report("abc", 0)  # type: ignore[arg-type]
 
         if dist.get_rank() == 0:
             assert study is not None
@@ -344,10 +344,10 @@ def test_updates_properties(storage_mode: str) -> None:
         if dist.get_rank() == 0:
             [getattr(trial, p) for p in property_names]
 
-        dist.barrier()  # type: ignore
+        dist.barrier()  # type: ignore[no-untyped-call]
 
         # Same with rank 1.
         if dist.get_rank() == 1:
             [getattr(trial, p) for p in property_names]
 
-        dist.barrier()  # type: ignore
+        dist.barrier()  # type: ignore[no-untyped-call]
