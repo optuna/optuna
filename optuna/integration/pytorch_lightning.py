@@ -85,11 +85,7 @@ class PyTorchLightningPruningCallback(Callback):
             # they are not properly propagated to main process due to cached storage.
             # TODO(Shinichi) Remove intermediate_values from system_attr after PR #4431 is merged.
             if trainer.is_global_zero:
-                self._trial.storage.set_trial_system_attr(
-                    self._trial._trial_id,
-                    _INTERMEDIATE_VALUE,
-                    dict(),
-                )
+                self._trial.set_system_attr(_INTERMEDIATE_VALUE, dict())
 
     def on_validation_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
         # Trainer calls `on_validation_end` for sanity check. Therefore, it is necessary to avoid
@@ -128,9 +124,7 @@ class PyTorchLightningPruningCallback(Callback):
             _trial_system_attrs = _study._storage.get_trial_system_attrs(_trial_id)
             intermediate_values = _trial_system_attrs.get(_INTERMEDIATE_VALUE)
             intermediate_values[epoch] = current_score.item()  # type: ignore[index]
-            self._trial.storage.set_trial_system_attr(
-                self._trial._trial_id, _INTERMEDIATE_VALUE, intermediate_values
-            )
+            self._trial.set_system_attr(_INTERMEDIATE_VALUE, intermediate_values)
 
         # Terminate every process if any world process decides to stop.
         should_stop = trainer.strategy.broadcast(should_stop)
@@ -140,8 +134,8 @@ class PyTorchLightningPruningCallback(Callback):
 
         if trainer.is_global_zero:
             # Update system_attr from global zero process.
-            self._trial.storage.set_trial_system_attr(self._trial._trial_id, _PRUNED_KEY, True)
-            self._trial.storage.set_trial_system_attr(self._trial._trial_id, _EPOCH_KEY, epoch)
+            self._trial.set_system_attr(_PRUNED_KEY, True)
+            self._trial.set_system_attr(_EPOCH_KEY, epoch)
 
     def check_pruned(self) -> None:
         """Raise :class:`optuna.TrialPruned` manually if pruned.
