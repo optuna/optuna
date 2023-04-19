@@ -119,9 +119,7 @@ class PyTorchLightningPruningCallback(Callback):
             should_stop = self._trial.should_prune()
 
             # Update intermediate value in the storage.
-            _trial_id = self._trial._trial_id
-            _study = self._trial.study
-            _trial_system_attrs = _study._storage.get_trial_system_attrs(_trial_id)
+            _trial_system_attrs = self._trial.system_attrs
             intermediate_values = _trial_system_attrs.get(_INTERMEDIATE_VALUE)
             intermediate_values[epoch] = current_score.item()  # type: ignore[index]
             self._trial.set_system_attr(_INTERMEDIATE_VALUE, intermediate_values)
