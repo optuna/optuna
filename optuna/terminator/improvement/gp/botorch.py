@@ -71,7 +71,7 @@ class _BoTorchGaussianProcess(BaseGaussianProcess):
 
         x, _ = _convert_trials_to_tensors(trials)
 
-        with torch.no_grad(), gpytorch.settings.fast_pred_var():  # type: ignore[no-untyped-call]
+        with torch.no_grad(), gpytorch.settings.fast_pred_var():
             posterior = self._gp.posterior(x)
             mean = posterior.mean
             variance = posterior.variance
