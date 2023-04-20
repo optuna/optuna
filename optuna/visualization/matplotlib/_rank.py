@@ -1,6 +1,5 @@
+from __future__ import annotations
 from typing import Callable
-from typing import List
-from typing import Optional
 
 from optuna._experimental import experimental_func
 from optuna.logging import get_logger
