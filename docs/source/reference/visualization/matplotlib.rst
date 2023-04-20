@@ -18,4 +18,5 @@ optuna.visualization.matplotlib
     optuna.visualization.matplotlib.plot_param_importances
     optuna.visualization.matplotlib.plot_pareto_front
     optuna.visualization.matplotlib.plot_slice
+    optuna.visualization.matplotlib.plot_timeline
     optuna.visualization.matplotlib.is_available

@@ -13,7 +13,6 @@ with try_import() as _imports:
     from matplotlib.collections import PathCollection
     from matplotlib.colors import Colormap
     from matplotlib.contour import ContourSet
-    from matplotlib.patches import Rectangle
 
     # TODO(ytknzw): Set precise version.
     if version.parse(matplotlib_version) < version.parse("3.0.0"):
@@ -35,5 +34,4 @@ __all__ = [
     "PathCollection",
     "Colormap",
     "ContourSet",
-    "Rectangle",
 ]

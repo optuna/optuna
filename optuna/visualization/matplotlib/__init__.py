@@ -6,6 +6,7 @@ from optuna.visualization.matplotlib._parallel_coordinate import plot_parallel_c
 from optuna.visualization.matplotlib._param_importances import plot_param_importances
 from optuna.visualization.matplotlib._pareto_front import plot_pareto_front
 from optuna.visualization.matplotlib._slice import plot_slice
+from optuna.visualization.matplotlib._timeline import plot_timeline
 from optuna.visualization.matplotlib._utils import is_available
 
 
@@ -19,4 +20,5 @@ __all__ = [
     "plot_param_importances",
     "plot_pareto_front",
     "plot_slice",
+    "plot_timeline",
 ]
