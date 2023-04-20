@@ -334,7 +334,7 @@ def test_sampler_attr_key(options: Dict[str, bool], key: str) -> None:
     sampler = optuna.samplers.CmaEsSampler(
         with_margin=options["with_margin"], use_separable_cma=options["use_separable_cma"]
     )
-    assert sampler._attr_keys.optimizer.startswith(key)
+    assert sampler._attr_keys.optimizer(0).startswith(key)
     assert sampler._attr_keys.popsize().startswith(key)
     assert sampler._attr_keys.n_restarts().startswith(key)
     assert sampler._attr_keys.n_restarts_with_large.startswith(key)
@@ -450,7 +450,7 @@ def test_restore_optimizer_after_restart(sampler_opts: Dict[str, Any]) -> None:
         study = optuna.create_study(sampler=sampler)
         study.optimize(objective, n_trials=5 + 2)
 
-    optimizer = sampler._restore_optimizer(study.trials)
+    optimizer = sampler._restore_optimizer(study.trials, 1)
     assert optimizer is not None
     assert optimizer.generation == 0
 

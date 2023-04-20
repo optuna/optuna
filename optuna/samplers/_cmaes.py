@@ -46,7 +46,7 @@ _SYSTEM_ATTR_MAX_LENGTH = 2045
 
 
 class _CmaEsAttrKeys(NamedTuple):
-    optimizer: str
+    optimizer: Callable[[int], str]
     generation: Callable[[int], str]
     popsize: Callable[[], str]
     n_restarts: Callable[[], str]
@@ -383,15 +383,6 @@ class CmaEsSampler(BaseSampler):
         if self._initial_popsize is None:
             self._initial_popsize = 4 + math.floor(3 * math.log(len(trans.bounds)))
 
-        store_optimizer = False
-        optimizer = self._restore_optimizer(completed_trials)
-        optimizer_inited = False
-        if optimizer is None:
-            optimizer = self._init_optimizer(
-                trans, study.direction, population_size=self._initial_popsize
-            )
-            optimizer_inited = True
-
         popsize: int = self._initial_popsize
         n_restarts: int = 0
         n_restarts_with_large: int = 0
@@ -406,11 +397,6 @@ class CmaEsSampler(BaseSampler):
                 popsize = latest_trial.system_attrs[popsize_attr_key]
             else:
                 popsize = self._initial_popsize
-                if not optimizer_inited:
-                    optimizer = self._init_optimizer(
-                        trans, study.direction, population_size=popsize, randomize_start_point=True
-                    )
-                    store_optimizer = True
 
             n_restarts_attr_key = self._attr_keys.n_restarts()
             n_restarts = latest_trial.system_attrs.get(n_restarts_attr_key, 0)
@@ -420,6 +406,12 @@ class CmaEsSampler(BaseSampler):
             poptype = latest_trial.system_attrs.get(self._attr_keys.poptype, "small")
             small_n_eval = latest_trial.system_attrs.get(self._attr_keys.small_n_eval, 0)
             large_n_eval = latest_trial.system_attrs.get(self._attr_keys.large_n_eval, 0)
+
+        optimizer = self._restore_optimizer(completed_trials, n_restarts)
+        if optimizer is None:
+            optimizer = self._init_optimizer(
+                trans, study.direction, population_size=self._initial_popsize
+            )
 
         if optimizer.dim != len(trans.bounds):
             if self._warn_independent_sampling:
@@ -482,12 +474,10 @@ class CmaEsSampler(BaseSampler):
                 optimizer = self._init_optimizer(
                     trans, study.direction, population_size=popsize, randomize_start_point=True
                 )
-            store_optimizer = True
 
-        if store_optimizer:
             # Store optimizer.
             optimizer_str = pickle.dumps(optimizer).hex()
-            optimizer_attrs = self._split_optimizer_str(optimizer_str)
+            optimizer_attrs = self._split_optimizer_str(optimizer_str, n_restarts)
             for key in optimizer_attrs:
                 study._storage.set_trial_system_attr(trial._trial_id, key, optimizer_attrs[key])
 
@@ -534,6 +524,14 @@ class CmaEsSampler(BaseSampler):
         else:
             attr_prefix = "cma:"
 
+        def optimizer_key_template(restart: int) -> str:
+            if self._restart_strategy is None:
+                return attr_prefix + "optimizer"
+            else:
+                return attr_prefix + "{}:restart_{}:optimizer".format(
+                    self._restart_strategy, restart
+                )
+
         def generation_attr_key_template(restart: int) -> str:
             if self._restart_strategy is None:
                 return attr_prefix + "generation"
@@ -555,7 +553,7 @@ class CmaEsSampler(BaseSampler):
                 return attr_prefix + "{}:n_restarts".format(self._restart_strategy)
 
         return _CmaEsAttrKeys(
-            attr_prefix + "optimizer",
+            optimizer_key_template,
             generation_attr_key_template,
             popsize_attr_key_template,
             n_restarts_attr_key_template,
@@ -565,36 +563,39 @@ class CmaEsSampler(BaseSampler):
             attr_prefix + "large_n_eval",
         )
 
-    def _concat_optimizer_attrs(self, optimizer_attrs: Dict[str, str]) -> str:
+    def _concat_optimizer_attrs(self, optimizer_attrs: Dict[str, str], n_restarts: int = 0) -> str:
         return "".join(
-            optimizer_attrs["{}:{}".format(self._attr_keys.optimizer, i)]
+            optimizer_attrs["{}:{}".format(self._attr_keys.optimizer(n_restarts), i)]
             for i in range(len(optimizer_attrs))
         )
 
-    def _split_optimizer_str(self, optimizer_str: str) -> Dict[str, str]:
+    def _split_optimizer_str(self, optimizer_str: str, n_restarts: int = 0) -> Dict[str, str]:
         optimizer_len = len(optimizer_str)
         attrs = {}
         for i in range(math.ceil(optimizer_len / _SYSTEM_ATTR_MAX_LENGTH)):
             start = i * _SYSTEM_ATTR_MAX_LENGTH
             end = min((i + 1) * _SYSTEM_ATTR_MAX_LENGTH, optimizer_len)
-            attrs["{}:{}".format(self._attr_keys.optimizer, i)] = optimizer_str[start:end]
+            attrs["{}:{}".format(self._attr_keys.optimizer(n_restarts), i)] = optimizer_str[
+                start:end
+            ]
         return attrs
 
     def _restore_optimizer(
         self,
         completed_trials: "List[optuna.trial.FrozenTrial]",
+        n_restarts: int = 0,
     ) -> Optional["CmaClass"]:
         # Restore a previous CMA object.
         for trial in reversed(completed_trials):
             optimizer_attrs = {
                 key: value
                 for key, value in trial.system_attrs.items()
-                if key.startswith(self._attr_keys.optimizer)
+                if key.startswith(self._attr_keys.optimizer(n_restarts))
             }
             if len(optimizer_attrs) == 0:
                 continue
 
-            optimizer_str = self._concat_optimizer_attrs(optimizer_attrs)
+            optimizer_str = self._concat_optimizer_attrs(optimizer_attrs, n_restarts)
             return pickle.loads(bytes.fromhex(optimizer_str))
         return None
 
