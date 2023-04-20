@@ -21,6 +21,8 @@ from optuna.samplers.nsgaii import UNDXCrossover
 from optuna.samplers.nsgaii import UniformCrossover
 from optuna.samplers.nsgaii import VSBXCrossover
 from optuna.samplers.nsgaiii import _associate_individuals_with_reference_points
+from optuna.samplers.nsgaiii import _COEF
+from optuna.samplers.nsgaiii import _filter_inf
 from optuna.samplers.nsgaiii import _generate_default_reference_point
 from optuna.samplers.nsgaiii import _normalize_objective_values
 from optuna.samplers.nsgaiii import _POPULATION_CACHE_KEY_PREFIX
@@ -326,7 +328,7 @@ def test_reference_point(
 
 
 @pytest.mark.parametrize(
-    "population_value, expected_normalized_value",
+    "objective_values, expected_normalized_value",
     [
         (
             [
@@ -334,8 +336,8 @@ def test_reference_point(
                 [float("inf"), 0.5],
             ],
             [
-                [0.0, 1.0],
-                [0.0, 0.0],
+                [1.0, 2.0],
+                [1.0, 0.5],
             ],
         ),
         (
@@ -344,8 +346,8 @@ def test_reference_point(
                 [float("inf"), 0.5],
             ],
             [
-                [0.0, 0.0],
-                [0.0, 0.0],
+                [1.0, 0.5],
+                [1.0, 0.5],
             ],
         ),
         (
@@ -356,10 +358,10 @@ def test_reference_point(
                 [float("inf"), 0.5],
             ],
             [
-                [0.0, 2.0],
-                [1.0, 0.2],
-                [0.5, 1.0],
-                [2.0, 0.0],
+                [1.0, 3.0 + _COEF * 2.5],
+                [3.0, 1.0],
+                [2.0, 3.0],
+                [3.0 + _COEF * 2.0, 0.5],
             ],
         ),
         (
@@ -368,8 +370,8 @@ def test_reference_point(
                 [-float("inf"), 3.5],
             ],
             [
-                [0.0, 0.0],
-                [0.0, 1.0],
+                [2.0, 3.0],
+                [2.0, 3.5],
             ],
         ),
         (
@@ -378,8 +380,8 @@ def test_reference_point(
                 [-float("inf"), 3.5],
             ],
             [
-                [0.0, 0.0],
-                [0.0, 0.0],
+                [2.0, 3.5],
+                [2.0, 3.5],
             ],
         ),
         (
@@ -390,35 +392,33 @@ def test_reference_point(
                 [-float("inf"), 3.5],
             ],
             [
-                [2.0, 0.0],
-                [1.0, 0.0],
-                [0.0, 1.0],
-                [0.0, 1.25],
+                [4.0, 1.0 - _COEF * 2.5],
+                [3.0, 1.0],
+                [2.0, 3.0],
+                [2.0 - _COEF * 2.0, 3.5],
             ],
         ),
         (
             [
                 [1.0, float("inf")],
-                [3.0, 1.0],
-                [2.0, 3.0],
+                [3.0, -float("inf")],
+                [float("inf"), 2.0],
                 [-float("inf"), 3.5],
             ],
             [
-                [0.0, 2.0],
-                [1.0, 0.0],
-                [0.5, 0.8],
-                [0.0, 1.0],
+                [1.0, 3.5 + _COEF * 1.5],
+                [3.0, 2.0 - _COEF * 1.5],
+                [3.0 + _COEF * 2.0, 2.0],
+                [1.0 - _COEF * 2.0, 3.5],
             ],
         ),
     ],
 )
-def test_normalize_with_inf(
-    population_value: Sequence[Sequence[int]], expected_normalized_value: Sequence[Sequence[int]]
+def test_filter_inf(
+    objective_values: Sequence[Sequence[int]], expected_normalized_value: Sequence[Sequence[int]]
 ) -> None:
-    population = [create_trial(values=values) for values in population_value]
-    np.testing.assert_almost_equal(
-        _normalize_objective_values(population), np.array(expected_normalized_value)
-    )
+    population = [create_trial(values=values) for values in objective_values]
+    np.testing.assert_almost_equal(_filter_inf(population), np.array(expected_normalized_value))
 
 
 @pytest.mark.parametrize(
@@ -473,11 +473,9 @@ def test_normalize_with_inf(
 def test_normalize(
     objective_values: Sequence[Sequence[int]], expected_normalized_value: Sequence[Sequence[int]]
 ) -> None:
-    population = [create_trial(values=values) for values in objective_values]
-    print(np.shape(_normalize_objective_values(population)))
-    print(np.shape(np.array(expected_normalized_value)))
     np.testing.assert_almost_equal(
-        _normalize_objective_values(population), np.array(expected_normalized_value)
+        _normalize_objective_values(np.array(objective_values)),
+        np.array(expected_normalized_value),
     )
 
 
