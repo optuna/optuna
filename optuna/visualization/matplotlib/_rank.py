@@ -46,7 +46,7 @@ def plot_rank(
 
         The following code snippet shows how to plot the parameter relationship as a rank plot.
 
-        .. plot:
+        .. plot::
 
             import optuna
 
