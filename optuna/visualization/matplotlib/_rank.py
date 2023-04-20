@@ -105,7 +105,7 @@ def _get_rank_plot(
         _, ax = plt.subplots()
         ax.set_title(title)
         return ax
-    if n_params == 2:
+    if n_params == 1 or n_params == 2:
         fig, axs = plt.subplots()
         axs.set_title(title)
         pc = _add_rank_subplot(axs, sub_plot_infos[0][0])
