@@ -1,10 +1,9 @@
+from __future__ import annotations
+
 from typing import Callable
 from typing import cast
-from typing import List
 from typing import NamedTuple
-from typing import Optional
 from typing import Sequence
-from typing import Union
 
 import numpy as np
 
@@ -32,14 +31,14 @@ class _EDFLineInfo(NamedTuple):
 
 
 class _EDFInfo(NamedTuple):
-    lines: List[_EDFLineInfo]
+    lines: list[_EDFLineInfo]
     x_values: np.ndarray
 
 
 def plot_edf(
-    study: Union[Study, Sequence[Study]],
+    study: Study | Sequence[Study],
     *,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
 ) -> "go.Figure":
     """Plot the objective value EDF (empirical distribution function) of a study.
@@ -139,8 +138,8 @@ def plot_edf(
 
 
 def _get_edf_info(
-    study: Union[Study, Sequence[Study]],
-    target: Optional[Callable[[FrozenTrial], float]] = None,
+    study: Study | Sequence[Study],
+    target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
 ) -> _EDFInfo:
     if isinstance(study, Study):
@@ -162,7 +161,7 @@ def _get_edf_info(
         target = _target
 
     study_names = []
-    all_values: List[np.ndarray] = []
+    all_values: list[np.ndarray] = []
     for study in studies:
         trials = _filter_nonfinite(
             study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
