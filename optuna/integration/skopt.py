@@ -31,8 +31,9 @@ with try_import() as _imports:
 class SkoptSampler(BaseSampler):
     """Sampler using Scikit-Optimize as the backend.
 
-    The use of :class:`~optuna.integration.SkoptSampler` is highly not recommended, as the development of Scikit-Optimize
-    has been inactive and we have identified compatibility issues with newer NumPy versions.
+    The use of :class:`~optuna.integration.SkoptSampler` is highly not recommended, as the
+    development of Scikit-Optimize has been inactive and we have identified compatibility
+    issues with newer NumPy versions.
 
     Args:
         independent_sampler:
