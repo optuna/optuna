@@ -57,6 +57,10 @@ jobs:
     - name: Output installed packages
       run: |
         pip freeze --all
+    - name: Output dependency tree
+      run: |
+        pip install pipdeptree
+        pipdeptree
 
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
@@ -119,6 +123,10 @@ jobs:
     - name: Output installed packages
       run: |
         pip freeze --all
+    - name: Output dependency tree
+      run: |
+        pip install pipdeptree
+        pipdeptree
 
     - name: Tests
       # Skip allennlp tests since it's not supported on Windows.
