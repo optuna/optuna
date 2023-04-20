@@ -78,7 +78,7 @@ def plot_rank(
             Target's name to display on the color bar.
 
     Returns:
-        A :class:`plotly.graph_objs.Figure` object.
+        A :class:`matplotlib.axes.Axes` object.
     """
 
     _imports.check()
