@@ -116,7 +116,7 @@ def _get_rank_plot(
         for x_i in range(n_params):
             for y_i in range(n_params):
                 ax = axs[x_i, y_i]
-                # Set x or y label if only the subplot is in the edge of overall figure.
+                # Set the x or y label only if the subplot is in the edge of the overall figure.
                 pc = _add_rank_subplot(
                     ax,
                     sub_plot_infos[x_i][y_i],
