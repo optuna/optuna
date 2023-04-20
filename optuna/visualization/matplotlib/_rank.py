@@ -24,9 +24,9 @@ _logger = get_logger(__name__)
 @experimental_func("3.2.0")
 def plot_rank(
     study: Study,
-    params: Optional[List[str]] = None,
+    params: list[str] | None = None,
     *,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
 ) -> "Axes":
     """Plot parameter relations as scatter plots with colors indicating ranks of objective value.
