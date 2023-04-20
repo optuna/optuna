@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from typing import Callable
 
 from optuna._experimental import experimental_func
@@ -150,4 +151,6 @@ def _add_rank_subplot(
     if info.yaxis.is_log:
         ax.set_yscale("log")
 
-    return ax.scatter(x=info.xs, y=info.ys, c=info.color_idxs, cmap=plt.get_cmap("RdYlBu_r"))
+    return ax.scatter(
+        x=info.xs, y=info.ys, c=info.color_idxs, cmap=plt.get_cmap("RdYlBu_r"), edgecolors="grey"
+    )
