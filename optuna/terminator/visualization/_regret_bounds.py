@@ -73,51 +73,58 @@ def _get_regret_bounds_info(
 
 
 def _get_regret_bounds_plot(info: _RegretBoundsInfo, min_n_trials: int) -> "go.Figure":
-    max_y_value = max(info.regret_bounds)
-    if info.errors is not None:
-        max_y_value = max(max_y_value, max(info.errors))
+    n_trials = len(info.trial_numbers)
 
-    traces = []
-    traces.append(
-        go.Scatter(x=info.trial_numbers, y=info.regret_bounds, mode="markers", showlegend=False)
-    )
-    traces.append(
-        go.Scatter(x=info.trial_numbers, y=info.regret_bounds, mode="lines", name="Regret Bound")
-    )
-    if info.errors is not None:
-        traces.append(
-            go.Scatter(x=info.trial_numbers, y=info.errors, mode="markers", showlegend=False)
+    fig = go.Figure()
+    plotly_blue_with_opacity = "rgba(99, 110, 250, 0.5)"
+    fig.add_trace(
+        go.Scatter(
+            x=info.trial_numbers[: min_n_trials + 1],
+            y=info.regret_bounds[: min_n_trials + 1],
+            mode="markers+lines",
+            name="Regret Bound",
+            showlegend=n_trials <= min_n_trials,
+            legendgroup="regret_bounds",
+            marker=dict(color=plotly_blue_with_opacity),
+            line=dict(color=plotly_blue_with_opacity),
         )
-        traces.append(go.Scatter(x=info.trial_numbers, y=info.errors, mode="lines", name="Error"))
-
-    fig = go.Figure(data=traces)
-
-    x1_filled = min(info.trial_numbers[-1], min_n_trials)
-    min_trials_area = go.layout.Shape(
-        type="rect",
-        x0=0,
-        x1=x1_filled,
-        y0=0,
-        y1=max_y_value,
-        fillcolor="gray",
-        opacity=0.2,
-        layer="below",
-        line=dict(width=0),
     )
+    if n_trials > min_n_trials:
+        plotly_blue = "rgb(99, 110, 250)"
+        fig.add_trace(
+            go.Scatter(
+                x=info.trial_numbers[min_n_trials:],
+                y=info.regret_bounds[min_n_trials:],
+                mode="markers+lines",
+                name="Regret Bound",
+                showlegend=True,
+                legendgroup="regret_bounds",
+                marker=dict(color=plotly_blue),
+                line=dict(color=plotly_blue),
+            )
+        )
+    if info.errors is not None:
+        plotly_red = "rgb(239, 85, 59)"
+        fig.add_trace(
+            go.Scatter(
+                x=info.trial_numbers,
+                y=info.errors,
+                mode="markers+lines",
+                name="Error",
+                marker=dict(color=plotly_red),
+                line=dict(color=plotly_red),
+            )
+        )
+
+    if n_trials > min_n_trials:
+        y_range_upper = max(info.regret_bounds[min_n_trials:]) * 1.05
+    else:
+        y_range_upper = max(info.regret_bounds) * 1.05
 
     fig.update_layout(
         title="Regret Bounds Plot",
         xaxis=dict(title="Trial"),
-        yaxis=dict(title="Regret Bound"),
-        shapes=(min_trials_area,),
+        yaxis=dict(title="Regret Bound", range=(0, y_range_upper)),
     )
-    fig.add_annotation(
-        go.layout.Annotation(
-            x=x1_filled,
-            y=max_y_value * 1.1,
-            text="min_n_trials",
-            showarrow=False,
-            font=dict(size=14),
-        )
-    )
+
     return fig
