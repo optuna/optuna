@@ -15,6 +15,9 @@ from optuna.terminator.improvement.evaluator import DEFAULT_MIN_N_TRIALS
 from optuna.terminator.improvement.evaluator import RegretBoundEvaluator
 
 
+PADDING_RATIO = 0.05
+
+
 class _RegretBoundsInfo(NamedTuple):
     trial_numbers: list[int]
     regret_bounds: list[float]
@@ -116,15 +119,23 @@ def _get_regret_bounds_plot(info: _RegretBoundsInfo, min_n_trials: int) -> "go.F
             )
         )
 
+    min_value = min(info.regret_bounds)
+    if info.errors is not None:
+        min_value = min(min_value, min(info.errors))
+
     if n_trials > min_n_trials:
-        y_range_upper = max(info.regret_bounds[min_n_trials:]) * 1.05
+        max_value = max(info.regret_bounds[min_n_trials:])
     else:
-        y_range_upper = max(info.regret_bounds) * 1.05
+        max_value = max(info.regret_bounds)
+    if info.errors is not None:
+        max_value = max(max_value, max(info.errors))
+
+    padding = (max_value - min_value) * PADDING_RATIO
 
     fig.update_layout(
         title="Regret Bounds Plot",
         xaxis=dict(title="Trial"),
-        yaxis=dict(title="Regret Bound", range=(0, y_range_upper)),
+        yaxis=dict(title="Regret Bound", range=(min_value - padding, max_value + padding)),
     )
 
     return fig
