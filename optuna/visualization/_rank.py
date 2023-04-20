@@ -1,12 +1,10 @@
+from __future__ import annotations
+
 import math
 import typing
 from typing import Any
 from typing import Callable
-from typing import List
 from typing import NamedTuple
-from typing import Optional
-from typing import Tuple
-from typing import Union
 
 import numpy as np
 
@@ -35,7 +33,7 @@ PADDING_RATIO = 0.05
 
 class _AxisInfo(NamedTuple):
     name: str
-    range: Tuple[float, float]
+    range: tuple[float, float]
     is_log: bool
     is_cat: bool
 
@@ -43,16 +41,16 @@ class _AxisInfo(NamedTuple):
 class _RankSubplotInfo(NamedTuple):
     xaxis: _AxisInfo
     yaxis: _AxisInfo
-    xs: List[Any]
-    ys: List[Any]
-    trials: List[FrozenTrial]
+    xs: list[Any]
+    ys: list[Any]
+    trials: list[FrozenTrial]
     zs: np.ndarray
     color_idxs: np.ndarray
 
 
 class _RankPlotInfo(NamedTuple):
-    params: List[str]
-    sub_plot_infos: List[List[_RankSubplotInfo]]
+    params: list[str]
+    sub_plot_infos: list[list[_RankSubplotInfo]]
     target_name: str
     zs: np.ndarray
     color_idxs: np.ndarray
@@ -62,9 +60,9 @@ class _RankPlotInfo(NamedTuple):
 @experimental_func("3.2.0")
 def plot_rank(
     study: Study,
-    params: Optional[List[str]] = None,
+    params: list[str] | None = None,
     *,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
 ) -> "go.Figure":
     """Plot parameter relations as scatter plots with colors indicating ranks of objective value.
@@ -130,8 +128,8 @@ def _get_order_with_same_order_averaging(data: np.ndarray) -> np.ndarray:
 
 def _get_rank_info(
     study: Study,
-    params: Optional[List[str]],
-    target: Optional[Callable[[FrozenTrial], float]],
+    params: list[str] | None,
+    target: Callable[[FrozenTrial], float] | None,
     target_name: str,
 ) -> _RankPlotInfo:
     _check_plot_args(study, target, target_name)
@@ -162,7 +160,7 @@ def _get_rank_info(
     target_values = np.array([target(trial) for trial in trials])
     raw_ranks = _get_order_with_same_order_averaging(target_values)
     color_idxs = raw_ranks / (len(trials) - 1) if len(trials) >= 2 else np.array([0.5])
-    sub_plot_infos: List[List[_RankSubplotInfo]]
+    sub_plot_infos: list[list[_RankSubplotInfo]]
     if len(params) == 2:
         x_param = params[0]
         y_param = params[1]
@@ -188,7 +186,7 @@ def _get_rank_info(
 
 
 def _get_rank_subplot_info(
-    trials: List[FrozenTrial],
+    trials: list[FrozenTrial],
     target_values: np.ndarray,
     color_idxs: np.ndarray,
     x_param: str,
@@ -220,8 +218,8 @@ def _get_rank_subplot_info(
     )
 
 
-def _get_axis_info(trials: List[FrozenTrial], param_name: str) -> _AxisInfo:
-    values: List[Union[str, float, None]]
+def _get_axis_info(trials: list[FrozenTrial], param_name: str) -> _AxisInfo:
+    values: list[str | float | None]
     is_numerical = _is_numerical(trials, param_name)
     if is_numerical:
         values = [t.params.get(param_name) for t in trials]
