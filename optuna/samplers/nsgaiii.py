@@ -68,8 +68,9 @@ class NSGAIIISampler(BaseSampler):
             smaller this value is, the less reference points you have. The default value is 3.
             Note that this parameter is not used when reference_points is not None.
 
-        .. note::
-            Other parameters are the same as :class:`~optuna.samplers.nsgaii.NSGAIISampler`.
+    .. note::
+        Other parameters than reference_points and dividing_parameter are the same as
+        :class:`~optuna.samplers.nsgaii.NSGAIISampler`.
 
     """
 
