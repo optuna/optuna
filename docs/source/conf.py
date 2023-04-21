@@ -55,6 +55,8 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
+    # TODO(Shinichi) remove jQuery extension after readthedocs/sphinx_rtd_theme#1452 is resolved.
+    "sphinxcontrib.jquery",
     "sphinx_copybutton",
     "sphinx_gallery.gen_gallery",
     "matplotlib.sphinxext.plot_directive",
