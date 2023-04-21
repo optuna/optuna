@@ -2,17 +2,24 @@ from __future__ import annotations
 
 from typing import NamedTuple
 
-import plotly.graph_objects as go
 import tqdm
 
 import optuna
 from optuna._experimental import experimental_func
+from optuna.logging import get_logger
 from optuna.study.study import Study
 from optuna.terminator.erroreval import BaseErrorEvaluator
 from optuna.terminator.erroreval import CrossValidationErrorEvaluator
 from optuna.terminator.improvement.evaluator import BaseImprovementEvaluator
 from optuna.terminator.improvement.evaluator import DEFAULT_MIN_N_TRIALS
 from optuna.terminator.improvement.evaluator import RegretBoundEvaluator
+from optuna.visualization._plotly_imports import _imports
+
+
+if _imports.is_successful():
+    from optuna.visualization._plotly_imports import go
+
+_logger = get_logger(__name__)
 
 
 PADDING_RATIO = 0.05
@@ -32,6 +39,10 @@ def plot_regret_bounds(
     error_evaluator: BaseErrorEvaluator | None = None,
     min_n_trials: int = DEFAULT_MIN_N_TRIALS,
 ) -> "go.Figure":
+    """TODO: write docstring"""
+
+    _imports.check()
+
     info = _get_regret_bounds_info(study, plot_error, improvement_evaluator, error_evaluator)
     return _get_regret_bounds_plot(info, min_n_trials)
 
@@ -78,7 +89,15 @@ def _get_regret_bounds_info(
 def _get_regret_bounds_plot(info: _RegretBoundsInfo, min_n_trials: int) -> "go.Figure":
     n_trials = len(info.trial_numbers)
 
-    fig = go.Figure()
+    fig = go.Figure(
+        layout=go.Layout(
+            title="Regret Bounds Plot", xaxis=dict(title="Trial"), yaxis=dict(title="Regret Bound")
+        )
+    )
+    if n_trials == 0:
+        _logger.warning("There are no complete trials.")
+        return fig
+
     plotly_blue_with_opacity = "rgba(99, 110, 250, 0.5)"
     fig.add_trace(
         go.Scatter(
@@ -132,10 +151,5 @@ def _get_regret_bounds_plot(info: _RegretBoundsInfo, min_n_trials: int) -> "go.F
 
     padding = (max_value - min_value) * PADDING_RATIO
 
-    fig.update_layout(
-        title="Regret Bounds Plot",
-        xaxis=dict(title="Trial"),
-        yaxis=dict(title="Regret Bound", range=(min_value - padding, max_value + padding)),
-    )
-
+    fig.update_yaxes(range=(min_value - padding, max_value + padding))
     return fig
