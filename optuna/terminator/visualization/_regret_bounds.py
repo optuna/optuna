@@ -39,8 +39,6 @@ def plot_regret_bounds(
     error_evaluator: BaseErrorEvaluator | None = None,
     min_n_trials: int = DEFAULT_MIN_N_TRIALS,
 ) -> "go.Figure":
-    """TODO: write docstring"""
-
     _imports.check()
 
     info = _get_regret_bounds_info(study, plot_error, improvement_evaluator, error_evaluator)
@@ -98,6 +96,7 @@ def _get_regret_bounds_plot(info: _RegretBoundsInfo, min_n_trials: int) -> "go.F
         _logger.warning("There are no complete trials.")
         return fig
 
+    # Plot line for values below min_n_trials by light color.
     plotly_blue_with_opacity = "rgba(99, 110, 250, 0.5)"
     fig.add_trace(
         go.Scatter(
@@ -105,7 +104,7 @@ def _get_regret_bounds_plot(info: _RegretBoundsInfo, min_n_trials: int) -> "go.F
             y=info.regret_bounds[: min_n_trials + 1],
             mode="markers+lines",
             name="Regret Bound",
-            showlegend=n_trials <= min_n_trials,
+            showlegend=n_trials <= min_n_trials,  # Avoid showing legend twice.
             legendgroup="regret_bounds",
             marker=dict(color=plotly_blue_with_opacity),
             line=dict(color=plotly_blue_with_opacity),
@@ -142,10 +141,13 @@ def _get_regret_bounds_plot(info: _RegretBoundsInfo, min_n_trials: int) -> "go.F
     if info.errors is not None:
         min_value = min(min_value, min(info.errors))
 
+    # Determine the display range based on trials after min_n_trials.
     if n_trials > min_n_trials:
         max_value = max(info.regret_bounds[min_n_trials:])
+    # If there are no trials after min_trials, determine the display range based on all trials.
     else:
         max_value = max(info.regret_bounds)
+
     if info.errors is not None:
         max_value = max(max_value, max(info.errors))
 
