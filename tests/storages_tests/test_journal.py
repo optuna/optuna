@@ -10,7 +10,7 @@ from typing import Type
 from unittest import mock
 
 import _pytest.capture
-import fakeredis
+from fakeredis import FakeStrictRedis
 import pytest
 
 import optuna
@@ -59,7 +59,7 @@ class JournalLogStorageSupplier:
             journal_redis_storage = optuna.storages.JournalRedisStorage(
                 "redis://localhost", use_cluster
             )
-            journal_redis_storage._redis = fakeredis.FakeStrictRedis()
+            journal_redis_storage._redis = FakeStrictRedis()  # type: ignore[no-untyped-call]
             return journal_redis_storage
         else:
             raise RuntimeError("Unknown log storage type: {}".format(self.storage_type))
