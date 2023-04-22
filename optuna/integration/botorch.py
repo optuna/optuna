@@ -15,7 +15,6 @@ from optuna._experimental import experimental_func
 from optuna._imports import try_import
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
-from optuna.exceptions import ExperimentalWarning
 from optuna.samplers import BaseSampler
 from optuna.samplers import RandomSampler
 from optuna.samplers._base import _CONSTRAINTS_KEY
@@ -70,7 +69,7 @@ def qei_candidates_func(
     train_obj: "torch.Tensor",
     train_con: Optional["torch.Tensor"],
     bounds: "torch.Tensor",
-    pending_x: Optional["torch.Tensor"] = None,
+    pending_x: Optional["torch.Tensor"],
 ) -> "torch.Tensor":
     """Quasi MC-based batch Expected Improvement (qEI).
 
@@ -179,7 +178,7 @@ def qehvi_candidates_func(
     train_obj: "torch.Tensor",
     train_con: Optional["torch.Tensor"],
     bounds: "torch.Tensor",
-    pending_x: Optional["torch.Tensor"] = None,
+    pending_x: Optional["torch.Tensor"],
 ) -> "torch.Tensor":
     """Quasi MC-based batch Expected Hypervolume Improvement (qEHVI).
 
@@ -266,7 +265,7 @@ def qnehvi_candidates_func(
     train_obj: "torch.Tensor",
     train_con: Optional["torch.Tensor"],
     bounds: "torch.Tensor",
-    pending_x: Optional["torch.Tensor"] = None,
+    pending_x: Optional["torch.Tensor"],
 ) -> "torch.Tensor":
     """Quasi MC-based batch Expected Noisy Hypervolume Improvement (qNEHVI).
 
@@ -352,7 +351,7 @@ def qparego_candidates_func(
     train_obj: "torch.Tensor",
     train_con: Optional["torch.Tensor"],
     bounds: "torch.Tensor",
-    pending_x: Optional["torch.Tensor"] = None,
+    pending_x: Optional["torch.Tensor"],
 ) -> "torch.Tensor":
     """Quasi MC-based extended ParEGO (qParEGO) for constrained multi-objective optimization.
 
@@ -492,6 +491,9 @@ class BoTorchSampler(BaseSampler):
             If True, the acquisition function takes into consideration the running parameters
             whose evaluation has not completed. Enabling this option is considered to improve the
             performance of parallel optimization.
+
+            .. note::
+                Added in v3.2.0 as an experimental argument.
         independent_sampler:
             An independent sampler to use for the initial trials and for parameters that are
             conditional.
@@ -537,13 +539,6 @@ class BoTorchSampler(BaseSampler):
         self._search_space = IntersectionSearchSpace()
         self._device = device or torch.device("cpu")
 
-        if consider_running_trials:
-            warnings.warn(
-                "``consider_running_trials`` option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
-
     def infer_relative_search_space(
         self,
         study: Study,
@@ -579,12 +574,14 @@ class BoTorchSampler(BaseSampler):
             return {}
 
         completed_trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
-        running_trials = study.get_trials(deepcopy=False, states=(TrialState.RUNNING,))
+        running_trials = [
+            t for t in study.get_trials(deepcopy=False, states=(TrialState.RUNNING,)) if t != trial
+        ]
         trials = completed_trials + running_trials
 
         n_trials = len(trials)
         n_completed_trials = len(completed_trials)
-        if n_completed_trials < self._n_startup_trials:
+        if n_trials < self._n_startup_trials:
             return {}
 
         trans = _SearchSpaceTransform(search_space)
@@ -670,21 +667,9 @@ class BoTorchSampler(BaseSampler):
             # `manual_seed` makes the default candidates functions reproducible.
             # `SobolQMCNormalSampler`'s constructor has a `seed` argument, but its behavior is
             # deterministic when the BoTorch's seed is fixed.
-            try:
-                candidates = self._candidates_func(
-                    completed_params, completed_values, con, bounds, running_params
-                )
-            except TypeError:
-                if self._consider_running_trials:
-                    warnings.warn(
-                        f"The provided candidates_func {self._candidates_func.__name__} must take "
-                        "a positional argument pending_x to support option "
-                        "consider_running_trials=True of the BoTorchSampler. "
-                        "consider_running_trials option will be ignored."
-                    )
-                candidates = self._candidates_func(
-                    completed_params, completed_values, con, bounds
-                )  # type: ignore
+            candidates = self._candidates_func(
+                completed_params, completed_values, con, bounds, running_params
+            )
             if self._seed is not None:
                 self._seed += 1
 
