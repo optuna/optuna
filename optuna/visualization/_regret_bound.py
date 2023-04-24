@@ -90,7 +90,7 @@ def _get_regret_bound_plot(info: _RegretBoundInfo, min_n_trials: int) -> "go.Fig
 
     fig = go.Figure(
         layout=go.Layout(
-            title="Regret Bounds Plot", xaxis=dict(title="Trial"), yaxis=dict(title="Regret Bound")
+            title="Regret Bound Plot", xaxis=dict(title="Trial"), yaxis=dict(title="Regret Bound")
         )
     )
     if n_trials == 0:
@@ -106,7 +106,7 @@ def _get_regret_bound_plot(info: _RegretBoundInfo, min_n_trials: int) -> "go.Fig
             mode="markers+lines",
             name="Regret Bound",
             showlegend=n_trials <= min_n_trials,  # Avoid showing legend twice.
-            legendgroup="regret_bounds",
+            legendgroup="regret_bound",
             marker=dict(color=plotly_blue_with_opacity),
             line=dict(color=plotly_blue_with_opacity),
         )
@@ -120,7 +120,7 @@ def _get_regret_bound_plot(info: _RegretBoundInfo, min_n_trials: int) -> "go.Fig
                 mode="markers+lines",
                 name="Regret Bound",
                 showlegend=True,
-                legendgroup="regret_bounds",
+                legendgroup="regret_bound",
                 marker=dict(color=plotly_blue),
                 line=dict(color=plotly_blue),
             )
