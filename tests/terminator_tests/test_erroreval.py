@@ -22,12 +22,16 @@ def _create_trial(value: float, cv_scores: list[float]) -> FrozenTrial:
     )
 
 
-def test_cross_validation_evaluator() -> None:
-    study = create_study(direction="minimize")
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+def test_cross_validation_evaluator(direction: str) -> None:
+    study = create_study(direction=direction)
+    sign = 1 if direction == "minimize" else -1
     study.add_trials(
         [
-            _create_trial(value=2.0, cv_scores=[1.0, -1.0]),  # Second best trial with 1.0 var.
-            _create_trial(value=1.0, cv_scores=[2.0, -2.0]),  # Best trial with 4.0 var.
+            _create_trial(
+                value=sign * 2.0, cv_scores=[1.0, -1.0]
+            ),  # Second best trial with 1.0 var.
+            _create_trial(value=sign * 1.0, cv_scores=[2.0, -2.0]),  # Best trial with 4.0 var.
         ]
     )
 
@@ -38,8 +42,9 @@ def test_cross_validation_evaluator() -> None:
     assert serror == math.sqrt(4.0 * expected_scale)
 
 
-def test_cross_validation_evaluator_without_cv_scores() -> None:
-    study = create_study(direction="minimize")
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+def test_cross_validation_evaluator_without_cv_scores(direction: str) -> None:
+    study = create_study(direction=direction)
     study.add_trial(
         # Note that the CV score is not reported with the system attr.
         create_trial(params={}, distributions={}, value=0.0)
@@ -50,10 +55,11 @@ def test_cross_validation_evaluator_without_cv_scores() -> None:
         evaluator.evaluate(study.trials, study.direction)
 
 
-def test_report_cross_validation_scores() -> None:
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+def test_report_cross_validation_scores(direction: str) -> None:
     scores = [1.0, 2.0]
 
-    study = create_study(direction="minimize")
+    study = create_study(direction=direction)
     trial = study.ask()
     report_cross_validation_scores(trial, scores)
     study.tell(trial, 0.0)
@@ -61,17 +67,19 @@ def test_report_cross_validation_scores() -> None:
     assert study.trials[0].system_attrs[_CROSS_VALIDATION_SCORES_KEY] == scores
 
 
-def test_report_cross_validation_scores_with_illegal_scores_length() -> None:
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+def test_report_cross_validation_scores_with_illegal_scores_length(direction: str) -> None:
     scores = [1.0]
 
-    study = create_study(direction="minimize")
+    study = create_study(direction=direction)
     trial = study.ask()
     with pytest.raises(ValueError):
         report_cross_validation_scores(trial, scores)
 
 
-def test_static_evaluator() -> None:
-    study = create_study(direction="minimize")
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+def test_static_evaluator(direction: str) -> None:
+    study = create_study(direction=direction)
     study.add_trials(
         [
             _create_trial(value=2.0, cv_scores=[1.0, -1.0]),
