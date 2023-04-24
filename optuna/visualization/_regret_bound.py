@@ -25,14 +25,14 @@ _logger = get_logger(__name__)
 PADDING_RATIO = 0.05
 
 
-class _RegretBoundsInfo(NamedTuple):
+class _RegretBoundInfo(NamedTuple):
     trial_numbers: list[int]
     regret_bounds: list[float]
     errors: list[float] | None
 
 
 @experimental_func("3.2.0")
-def plot_regret_bounds(
+def plot_regret_bound(
     study: Study,
     plot_error: bool = False,
     improvement_evaluator: BaseImprovementEvaluator | None = None,
@@ -41,16 +41,16 @@ def plot_regret_bounds(
 ) -> "go.Figure":
     _imports.check()
 
-    info = _get_regret_bounds_info(study, plot_error, improvement_evaluator, error_evaluator)
-    return _get_regret_bounds_plot(info, min_n_trials)
+    info = _get_regret_bound_info(study, plot_error, improvement_evaluator, error_evaluator)
+    return _get_regret_bound_plot(info, min_n_trials)
 
 
-def _get_regret_bounds_info(
+def _get_regret_bound_info(
     study: Study,
     get_error: bool = False,
     improvement_evaluator: BaseImprovementEvaluator | None = None,
     error_evaluator: BaseErrorEvaluator | None = None,
-) -> _RegretBoundsInfo:
+) -> _RegretBoundInfo:
     if improvement_evaluator is None:
         improvement_evaluator = RegretBoundEvaluator()
     if error_evaluator is None:
@@ -75,16 +75,16 @@ def _get_regret_bounds_info(
             errors.append(error)
 
     if len(errors) == 0:
-        return _RegretBoundsInfo(
+        return _RegretBoundInfo(
             trial_numbers=trial_numbers, regret_bounds=regret_bounds, errors=None
         )
     else:
-        return _RegretBoundsInfo(
+        return _RegretBoundInfo(
             trial_numbers=trial_numbers, regret_bounds=regret_bounds, errors=errors
         )
 
 
-def _get_regret_bounds_plot(info: _RegretBoundsInfo, min_n_trials: int) -> "go.Figure":
+def _get_regret_bound_plot(info: _RegretBoundInfo, min_n_trials: int) -> "go.Figure":
     n_trials = len(info.trial_numbers)
 
     fig = go.Figure(
