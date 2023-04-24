@@ -18,7 +18,7 @@ from optuna.samplers import TPESampler
 
 class MockSystemAttr:
     def __init__(self) -> None:
-        self.value = {}  # type: Dict[str, dict]
+        self.value: Dict[str, dict] = {}
 
     def set_trial_system_attr(self, _: int, key: str, value: dict) -> None:
         self.value[key] = value

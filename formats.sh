@@ -15,7 +15,7 @@ if [ $? -eq 1 ] ; then
 fi
 command -v flake8 &> /dev/null
 if [ $? -eq 1 ] ; then
-  missing_dependencies+=(hacking)
+  missing_dependencies+=(flake8)
 fi
 command -v isort &> /dev/null
 if [ $? -eq 1 ] ; then
@@ -50,7 +50,7 @@ res_black=$(black $target --check --diff 2>&1)
 if [ $? -eq 1 ] ; then
   if [ $update -eq 1 ] ; then
     echo "black failed. The code will be formatted by black."
-    black .
+    black $target
   else
     echo "$res_black"
     echo "black failed."
@@ -87,7 +87,7 @@ res_isort=$(isort $target --check 2>&1)
 if [ $? -eq 1 ] ; then
   if [ $update -eq 1 ] ; then
     echo "isort failed. The code will be formatted by isort."
-    isort .
+    isort $target
   else
     echo "$res_isort"
     echo "isort failed."

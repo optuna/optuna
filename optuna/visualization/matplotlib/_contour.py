@@ -1,10 +1,7 @@
+from __future__ import annotations
+
 from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
 from typing import Sequence
-from typing import Tuple
-from typing import Union
 
 import numpy as np
 
@@ -38,9 +35,9 @@ CONTOUR_POINT_NUM = 100
 @experimental_func("2.2.0")
 def plot_contour(
     study: Study,
-    params: Optional[List[str]] = None,
+    params: list[str] | None = None,
     *,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
 ) -> "Axes":
     """Plot the parameter relationship as contour plot in a study with Matplotlib.
@@ -157,39 +154,39 @@ def _set_cmap(reverse_scale: bool) -> "Colormap":
 
 class _LabelEncoder:
     def __init__(self) -> None:
-        self.labels: List[str] = []
+        self.labels: list[str] = []
 
-    def fit(self, labels: List[str]) -> "_LabelEncoder":
+    def fit(self, labels: list[str]) -> "_LabelEncoder":
         self.labels = sorted(set(labels))
         return self
 
-    def transform(self, labels: List[str]) -> List[int]:
+    def transform(self, labels: list[str]) -> list[int]:
         return [self.labels.index(label) for label in labels]
 
-    def fit_transform(self, labels: List[str]) -> List[int]:
+    def fit_transform(self, labels: list[str]) -> list[int]:
         return self.fit(labels).transform(labels)
 
-    def get_labels(self) -> List[str]:
+    def get_labels(self) -> list[str]:
         return self.labels
 
-    def get_indices(self) -> List[int]:
+    def get_indices(self) -> list[int]:
         return list(range(len(self.labels)))
 
 
 def _calculate_griddata(
     xaxis: _AxisInfo,
     yaxis: _AxisInfo,
-    z_values_dict: Dict[Tuple[int, int], float],
-) -> Tuple[
+    z_values_dict: dict[tuple[int, int], float],
+) -> tuple[
     np.ndarray,
     np.ndarray,
     np.ndarray,
-    List[int],
-    List[str],
-    List[int],
-    List[str],
-    List[Union[int, float]],
-    List[Union[int, float]],
+    list[int],
+    list[str],
+    list[int],
+    list[str],
+    list[int | float],
+    list[int | float],
 ]:
     x_values = []
     y_values = []
@@ -208,12 +205,12 @@ def _calculate_griddata(
 
     def _calculate_axis_data(
         axis: _AxisInfo,
-        values: Sequence[Union[str, float]],
-    ) -> Tuple[np.ndarray, List[str], List[int], List[Union[int, float]]]:
+        values: Sequence[str | float],
+    ) -> tuple[np.ndarray, list[str], list[int], list[int | float]]:
         # Convert categorical values to int.
-        cat_param_labels = []  # type: List[str]
-        cat_param_pos = []  # type: List[int]
-        returned_values: Sequence[Union[int, float]]
+        cat_param_labels: list[str] = []
+        cat_param_pos: list[int] = []
+        returned_values: Sequence[int | float]
         if axis.is_cat:
             enc = _LabelEncoder()
             returned_values = enc.fit_transform(list(map(str, values)))
@@ -315,12 +312,12 @@ def _generate_contour_subplot(info: _SubContourInfo, ax: "Axes", cmap: "Colormap
 
 
 def _create_zmap(
-    x_values: List[Union[int, float]],
-    y_values: List[Union[int, float]],
-    z_values: List[float],
+    x_values: list[int | float],
+    y_values: list[int | float],
+    z_values: list[float],
     xi: np.ndarray,
     yi: np.ndarray,
-) -> Dict[Tuple[int, int], float]:
+) -> dict[tuple[int, int], float]:
     # Creates z-map from trial values and params.
     # z-map is represented by hashmap of coordinate and trial value pairs.
     #
@@ -340,7 +337,7 @@ def _create_zmap(
     return zmap
 
 
-def _interpolate_zmap(zmap: Dict[Tuple[int, int], float], contour_plot_num: int) -> np.ndarray:
+def _interpolate_zmap(zmap: dict[tuple[int, int], float], contour_plot_num: int) -> np.ndarray:
     # Implements interpolation formulation used in Plotly
     # to interpolate heatmaps and contour plots
     # https://github.com/plotly/plotly.js/blob/95b3bd1bb19d8dc226627442f8f66bce9576def8/src/traces/heatmap/interp2d.js#L15-L20

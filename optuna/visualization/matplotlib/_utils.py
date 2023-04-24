@@ -1,4 +1,4 @@
-from typing import List
+from __future__ import annotations
 
 from optuna._experimental import experimental_func
 from optuna.distributions import CategoricalDistribution
@@ -29,7 +29,7 @@ def is_available() -> bool:
     return _matplotlib_imports._imports.is_successful()
 
 
-def _is_log_scale(trials: List[FrozenTrial], param: str) -> bool:
+def _is_log_scale(trials: list[FrozenTrial], param: str) -> bool:
     for trial in trials:
         if param in trial.params:
             dist = trial.distributions[param]
@@ -41,7 +41,7 @@ def _is_log_scale(trials: List[FrozenTrial], param: str) -> bool:
     return False
 
 
-def _is_categorical(trials: List[FrozenTrial], param: str) -> bool:
+def _is_categorical(trials: list[FrozenTrial], param: str) -> bool:
     return any(
         isinstance(t.distributions[param], CategoricalDistribution)
         for t in trials
@@ -49,7 +49,7 @@ def _is_categorical(trials: List[FrozenTrial], param: str) -> bool:
     )
 
 
-def _is_numerical(trials: List[FrozenTrial], param: str) -> bool:
+def _is_numerical(trials: list[FrozenTrial], param: str) -> bool:
     return all(
         (isinstance(t.params[param], int) or isinstance(t.params[param], float))
         and not isinstance(t.params[param], bool)

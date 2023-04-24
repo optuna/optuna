@@ -1,11 +1,9 @@
+from __future__ import annotations
+
 from typing import Callable
 from typing import cast
-from typing import List
 from typing import NamedTuple
-from typing import Optional
 from typing import Sequence
-from typing import Tuple
-from typing import Union
 
 import numpy as np
 
@@ -25,30 +23,30 @@ _logger = get_logger(__name__)
 
 
 class _ValuesInfo(NamedTuple):
-    values: List[float]
-    stds: Optional[List[float]]
+    values: list[float]
+    stds: list[float] | None
     label_name: str
 
 
 class _OptimizationHistoryInfo(NamedTuple):
-    trial_numbers: List[int]
+    trial_numbers: list[int]
     values_info: _ValuesInfo
-    best_values_info: Optional[_ValuesInfo]
+    best_values_info: _ValuesInfo | None
 
 
 def _get_optimization_history_info_list(
-    study: Union[Study, Sequence[Study]],
-    target: Optional[Callable[[FrozenTrial], float]],
+    study: Study | Sequence[Study],
+    target: Callable[[FrozenTrial], float] | None,
     target_name: str,
     error_bar: bool,
-) -> List[_OptimizationHistoryInfo]:
+) -> list[_OptimizationHistoryInfo]:
     _check_plot_args(study, target, target_name)
     if isinstance(study, Study):
         studies = [study]
     else:
         studies = list(study)
 
-    info_list: List[_OptimizationHistoryInfo] = []
+    info_list: list[_OptimizationHistoryInfo] = []
     for study in studies:
         trials = study.get_trials(states=(TrialState.COMPLETE,))
         label_name = target_name if len(studies) == 1 else f"{target_name} of {study.study_name}"
@@ -56,7 +54,7 @@ def _get_optimization_history_info_list(
             values = [target(t) for t in trials]
             # We don't calculate best for user-defined target function since we cannot tell
             # which direction is better.
-            best_values_info: Optional[_ValuesInfo] = None
+            best_values_info: _ValuesInfo | None = None
         else:
             values = [cast(float, t.value) for t in trials]
             if study.direction == StudyDirection.MINIMIZE:
@@ -91,9 +89,9 @@ def _get_optimization_history_info_list(
     all_trial_numbers = [number for info in info_list for number in info.trial_numbers]
     max_num_trial = max(all_trial_numbers) + 1
 
-    def _aggregate(label_name: str, use_best_value: bool) -> Tuple[List[int], _ValuesInfo]:
+    def _aggregate(label_name: str, use_best_value: bool) -> tuple[list[int], _ValuesInfo]:
         # Calculate mean and std of values for each trial number.
-        values: List[List[float]] = [[] for _ in range(max_num_trial)]
+        values: list[list[float]] = [[] for _ in range(max_num_trial)]
         assert info_list is not None
         for trial_numbers, values_info, best_values_info in info_list:
             if use_best_value:
@@ -107,16 +105,16 @@ def _get_optimization_history_info_list(
         return trial_numbers_union, _ValuesInfo(value_means, value_stds, label_name)
 
     eb_trial_numbers, eb_values_info = _aggregate(target_name, False)
-    eb_best_values_info: Optional[_ValuesInfo] = None
+    eb_best_values_info: _ValuesInfo | None = None
     if target is None:
         _, eb_best_values_info = _aggregate("Best Value", True)
     return [_OptimizationHistoryInfo(eb_trial_numbers, eb_values_info, eb_best_values_info)]
 
 
 def plot_optimization_history(
-    study: Union[Study, Sequence[Study]],
+    study: Study | Sequence[Study],
     *,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
     error_bar: bool = False,
 ) -> "go.Figure":
@@ -170,7 +168,7 @@ def plot_optimization_history(
 
 
 def _get_optimization_history_plot(
-    info_list: List[_OptimizationHistoryInfo],
+    info_list: list[_OptimizationHistoryInfo],
     target_name: str,
 ) -> "go.Figure":
     layout = go.Layout(
