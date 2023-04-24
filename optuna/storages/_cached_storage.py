@@ -200,57 +200,17 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
     def set_trial_state_values(
         self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
     ) -> bool:
-        with self._lock:
-            cached_trial = self._get_cached_trial(trial_id)
-            if cached_trial is not None:
-                # When a waiting trial is updated to running, its `datetime_start` must be
-                # updated. However, a waiting trials is never cached so we do not have to account
-                # for this case.
-                assert cached_trial.state != TrialState.WAITING
-
-                self._check_trial_is_updatable(cached_trial)
-                ret = self._backend.set_trial_state_values(trial_id, state=state, values=values)
-
-                if values is not None:
-                    cached_trial.values = values
-                cached_trial.state = state
-                if cached_trial.state.is_finished():
-                    backend_trial = self._backend.get_trial(trial_id)
-                    cached_trial.datetime_complete = backend_trial.datetime_complete
-                return ret
-
         return self._backend.set_trial_state_values(trial_id, state=state, values=values)
 
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
     ) -> None:
-        with self._lock:
-            cached_trial = self._get_cached_trial(trial_id)
-            if cached_trial is not None:
-                self._check_trial_is_updatable(cached_trial)
-                intermediate_values = copy.copy(cached_trial.intermediate_values)
-                intermediate_values[step] = intermediate_value
-                cached_trial.intermediate_values = intermediate_values
         self._backend.set_trial_intermediate_value(trial_id, step, intermediate_value)
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
-        with self._lock:
-            cached_trial = self._get_cached_trial(trial_id)
-            if cached_trial is not None:
-                self._check_trial_is_updatable(cached_trial)
-                attrs = copy.copy(cached_trial.user_attrs)
-                attrs[key] = value
-                cached_trial.user_attrs = attrs
         self._backend.set_trial_user_attr(trial_id, key=key, value=value)
 
     def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
-        with self._lock:
-            cached_trial = self._get_cached_trial(trial_id)
-            if cached_trial is not None:
-                self._check_trial_is_updatable(cached_trial)
-                attrs = copy.copy(cached_trial.system_attrs)
-                attrs[key] = value
-                cached_trial.system_attrs = attrs
         self._backend.set_trial_system_attr(trial_id, key=key, value=value)
 
     def _get_cached_trial(self, trial_id: int) -> Optional[FrozenTrial]:
@@ -314,13 +274,6 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
             )
             self._study_id_and_number_to_trial_id[(study_id, trial.number)] = trial._trial_id
             study.trials[trial.number] = trial
-
-    @staticmethod
-    def _check_trial_is_updatable(trial: FrozenTrial) -> None:
-        if trial.state.is_finished():
-            raise RuntimeError(
-                "Trial#{} has already finished and can not be updated.".format(trial.number)
-            )
 
     def record_heartbeat(self, trial_id: int) -> None:
         self._backend.record_heartbeat(trial_id)
