@@ -23,6 +23,7 @@ _logger = get_logger(__name__)
 
 
 PADDING_RATIO = 0.05
+OPACITY = 0.25
 
 
 class _RegretBoundInfo(NamedTuple):
@@ -97,7 +98,7 @@ def _get_regret_bound_plot(info: _RegretBoundInfo, min_n_trials: int) -> "go.Fig
         return fig
 
     # Plot line for values below min_n_trials by light color.
-    plotly_blue_with_opacity = "rgba(99, 110, 250, 0.5)"
+    plotly_blue_with_opacity = f"rgba(99, 110, 250, {OPACITY})"
     fig.add_trace(
         go.Scatter(
             x=info.trial_numbers[: min_n_trials + 1],
