@@ -12,7 +12,7 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.study import StudyDirection
 from optuna.terminator import _distribution_is_log
-from optuna.terminator._search_space.intersection import IntersectionSearchSpace
+from optuna.search_space import intersection_search_space
 from optuna.terminator.improvement._preprocessing import BasePreprocessing
 from optuna.terminator.improvement._preprocessing import OneToHot
 from optuna.terminator.improvement._preprocessing import PreprocessingPipeline
@@ -76,7 +76,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         trials: list[FrozenTrial],
         study_direction: StudyDirection,
     ) -> float:
-        search_space = IntersectionSearchSpace().calculate(trials)
+        search_space = intersection_search_space(trials, ordered_dict=True)
         self._validate_input(trials, search_space)
 
         one_to_hot = OneToHot()
