@@ -153,6 +153,8 @@ class ToMinimize(BasePreprocessing):
 
 
 class OneToHot(BasePreprocessing):
+    def __init__(self):
+        self.encoded_params: dict[str, list[str]] = {}
     def apply(
         self,
         trials: List[optuna.trial.FrozenTrial],
@@ -166,10 +168,13 @@ class OneToHot(BasePreprocessing):
                 if isinstance(distribution, CategoricalDistribution):
                     ir = distribution.to_internal_repr(trial.params[param])
                     values = [1.0 if i == ir else 0.0 for i in range(len(distribution.choices))]
+                    encoded_params: list[str] = []
                     for i, v in enumerate(values):
                         key = f"i{i}_{param}"
                         params[key] = v
                         distributions[key] = FloatDistribution(0.0, 1.0)
+                        encoded_params.append(key)
+                    self.encoded_params[param] = encoded_params
                 else:
                     key = f"i0_{param}"
                     params[key] = trial.params[param]
