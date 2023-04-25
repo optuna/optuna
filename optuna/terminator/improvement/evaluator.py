@@ -206,78 +206,9 @@ def _calculate_min_lcb(
             sequential=True,
             # Applying linear constraints is slow, so we only apply it when necessary.
             equality_constraints=linear_constraints if linear_constraints else None,
-            # options={"sample_around_best": True},
         )
         min_lcb = -lcb.item()
-        print(list(gp.named_parameters()))
-        print([opt_x[0, indices].detach().numpy() for indices in categorical_indices])
-        print([opt_x[0, indices].sum().item() for indices in categorical_indices])
-        print([(opt_x[0, indices] @ torch.log(opt_x[0, indices] + 1e-100)).item() for indices in categorical_indices])
-        print(min_lcb)
-
         min_lcb_x = torch.min(-neg_lcb_func(x[:, None, :])).item()
-
-        import itertools
-        def onehot(indices: torch.Tensor) -> torch.Tensor:
-            ret = torch.zeros(opt_x.shape[1], dtype=torch.double)
-            ret[indices] = 1
-            return ret
-        all_xs = torch.vstack([onehot(torch.tensor(indices)) for indices in itertools.product(*categorical_indices)])
-
-        lcbs = -neg_lcb_func(all_xs[:, None, :])
-        ans = torch.argmin(lcbs)
-        min_lcb_all_xs = lcbs[ans].item()
-        real_opt_xs = all_xs[ans]
-        print(min_lcb_all_xs)
-        print([all_xs[ans, indices].detach().numpy() for indices in categorical_indices])
-
-        # show_x = real_opt_xs.clone()
-        # show_x[categorical_indices[1]] = opt_x[0, categorical_indices[1]]
-
-        assert real_opt_xs[categorical_indices[1][4]] == 1.0
-
-        base = real_opt_xs.clone()
-        base[categorical_indices[1]] = 0.0
-        ternary_vertex = [base + onehot(torch.tensor([categorical_indices[1][i]])) for i in (2, 3, 4)]
-
-
-        ts = torch.linspace(0.0, 1.0, 101)
-        t1, t2 = torch.meshgrid(ts, ts)
-        mask = (t1 + t2 <= 1.0)
-        t1 = t1[mask]
-        t2 = t2[mask]
-        t0 = torch.maximum(torch.tensor(0.0), 1.0 - t1 - t2)
-        print(t0, t1, t2)
-
-        xs = ternary_vertex[0][None, :] * t0[:, None] + ternary_vertex[1][None, :] * t1[:, None] + ternary_vertex[2][None, :] * t2[:, None]
-
-        print(xs.shape)
-        vs = -neg_lcb_func(xs[:, None, :])
-
-        import plotly.figure_factory as ff
-        fig = ff.create_ternary_contour(np.array([t0.detach().numpy(), t1.detach().numpy(), t2.detach().numpy()]), vs.detach().numpy(),
-                                pole_labels=["2", "3", "4"],
-                                interp_mode='cartesian',
-                                ncontours=20,
-                                colorscale='Viridis',
-                                showscale=True,)
-                
-        # Set contour lines width to 0
-        for trace in fig.data:
-            if trace.type == 'scatterternary':
-                trace.line.width = 0
-        fig.show()
-        # max_t = 1.0 / (1.0 - show_x[categorical_indices[1][4]])
-        # print(show_x)
-        # ts = torch.linspace(0.0, float(max_t), 100)
-        # xs = real_opt_xs * (1 - ts[:, None]) + show_x * ts[:, None]
-        # vs = -neg_lcb_func(xs[:, None, :])
-
-        # import plotly.figure_factory as ff
-
-        # plt.plot(ts.detach().numpy(), vs.detach().numpy())
-        # plt.show()
-        
         min_lcb = min(min_lcb, min_lcb_x)
 
     return min_lcb
