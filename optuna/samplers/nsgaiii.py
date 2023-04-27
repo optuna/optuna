@@ -408,7 +408,7 @@ class NSGAIIISampler(BaseSampler):
 
     @reference_points.setter
     def reference_points(self, value: np.ndarray | None) -> None:
-        self._reference_points = value if value else None
+        self._reference_points = value
 
 
 # TODO(Shinichi) Replace with math.comb after support for python3.7 is deprecated.
