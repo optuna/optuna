@@ -66,7 +66,7 @@ class NSGAIIISampler(BaseSampler):
             An parameter to determine the density of default reference points. This parameter
             determines how many divisions are made between reference points on each axis. The
             smaller this value is, the less reference points you have. The default value is 3.
-            Note that this parameter is not used when reference_points is not None.
+            Note that this parameter is not used when ``reference_points`` is not :obj:`None`.
 
     .. note::
         Other parameters than ``reference_points`` and ``dividing_parameter`` are the same as
