@@ -404,14 +404,6 @@ class NSGAIIISampler(BaseSampler):
             _process_constraints_after_trial(self._constraints_func, study, trial, state)
         self._random_sampler.after_trial(study, trial, state, values)
 
-    @property
-    def reference_points(self) -> np.ndarray | None:
-        return self._reference_points
-
-    @reference_points.setter
-    def reference_points(self, value: np.ndarray | None) -> None:
-        self._reference_points = value
-
 
 # TODO(Shinichi) Replace with math.comb after support for python3.7 is deprecated.
 def _multi_choose(n: int, k: int) -> int:
