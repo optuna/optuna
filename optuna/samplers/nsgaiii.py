@@ -12,6 +12,7 @@ import warnings
 import numpy as np
 
 import optuna
+from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.samplers._base import _CONSTRAINTS_KEY
@@ -36,6 +37,7 @@ _POPULATION_CACHE_KEY_PREFIX = "nsga3:population"
 _COEF = 3
 
 
+@experimental_class("3.2.0")
 class NSGAIIISampler(BaseSampler):
     """Multi-objective sampler using the NSGA-III algorithm.
 
