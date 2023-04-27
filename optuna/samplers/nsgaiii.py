@@ -130,8 +130,6 @@ class NSGAIIISampler(BaseSampler):
                 f" The specified `population_size` is {population_size}."
             )
 
-        self._reference_points = reference_points
-        self._dividing_parameter = dividing_parameter
         self._population_size = population_size
         self._mutation_prob = mutation_prob
         self._crossover = crossover
@@ -140,6 +138,8 @@ class NSGAIIISampler(BaseSampler):
         self._random_sampler = RandomSampler(seed=seed)
         self._rng = np.random.RandomState(seed)
         self._constraints_func = constraints_func
+        self._reference_points = reference_points
+        self._dividing_parameter = dividing_parameter
         self._search_space = IntersectionSearchSpace()
 
     def reseed_rng(self) -> None:
