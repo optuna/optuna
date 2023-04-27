@@ -77,14 +77,14 @@ class NSGAIIISampler(BaseSampler):
     def __init__(
         self,
         population_size: int = 50,
-        reference_points: np.ndarray | None = None,
-        dividing_parameter: int = 3,
         mutation_prob: float | None = None,
         crossover: BaseCrossover | None = None,
         crossover_prob: float = 0.9,
         swapping_prob: float = 0.5,
         seed: int | None = None,
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
+        reference_points: np.ndarray | None = None,
+        dividing_parameter: int = 3,
     ) -> None:
         # TODO(ohta): Reconsider the default value of each parameter.
 
