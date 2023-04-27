@@ -32,7 +32,7 @@ from optuna.trial import TrialState
 # Define key names of `Trial.system_attrs`.
 _GENERATION_KEY = "nsga3:generation"
 _POPULATION_CACHE_KEY_PREFIX = "nsga3:population"
-# Define a coefficient for scaling intervals, used in _filter_inf() to replace +-inf
+# Define a coefficient for scaling intervals, used in _filter_inf() to replace +-inf.
 _COEF = 3
 
 
