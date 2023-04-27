@@ -227,7 +227,7 @@ class _Objective:
                     return_train_score=self.return_train_score,
                     scoring=self.scoring,
                 )
-            except:
+            except ValueError:
                 n_splits = self.cv.get_n_splits(self.X, self.y, self.groups)
                 fit_time = np.array([np.nan] * n_splits)
                 score_time = np.array([np.nan] * n_splits)
