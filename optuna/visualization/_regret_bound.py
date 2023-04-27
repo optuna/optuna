@@ -85,6 +85,62 @@ def _get_regret_bound_info(
         )
 
 
+def _get_regret_bound_scatter(
+    trial_numbers: list[int],
+    regret_bounds: list[float],
+    opacity: float = 1.0,
+    showlegend: bool = True,
+) -> "go.Scatter":
+    plotly_blue_with_opacity = f"rgba(99, 110, 250, {opacity})"
+    return go.Scatter(
+        x=trial_numbers,
+        y=regret_bounds,
+        mode="markers+lines",
+        marker=dict(color=plotly_blue_with_opacity),
+        line=dict(color=plotly_blue_with_opacity),
+        name="Regret Bound",
+        showlegend=showlegend,
+        legendgroup="regret_bound",
+    )
+
+
+def _get_error_scatter(
+    trial_numbers: list[int],
+    errors: list[float] | None,
+) -> "go.Scatter":
+    if errors is None:
+        return go.Scatter()
+
+    plotly_red = "rgb(239, 85, 59)"
+    return go.Scatter(
+        x=trial_numbers,
+        y=errors,
+        mode="markers+lines",
+        name="Error",
+        marker=dict(color=plotly_red),
+        line=dict(color=plotly_red),
+    )
+
+
+def _get_reasonable_y_range(info: _RegretBoundInfo, min_n_trials: int) -> tuple[float, float]:
+    min_value = min(info.regret_bounds)
+    if info.errors is not None:
+        min_value = min(min_value, min(info.errors))
+
+    # Determine the display range based on trials after min_n_trials.
+    if len(info.trial_numbers) > min_n_trials:
+        max_value = max(info.regret_bounds[min_n_trials:])
+    # If there are no trials after min_trials, determine the display range based on all trials.
+    else:
+        max_value = max(info.regret_bounds)
+
+    if info.errors is not None:
+        max_value = max(max_value, max(info.errors))
+
+    padding = (max_value - min_value) * PADDING_RATIO
+    return (min_value - padding, max_value + padding)
+
+
 def _get_regret_bound_plot(info: _RegretBoundInfo, min_n_trials: int) -> "go.Figure":
     n_trials = len(info.trial_numbers)
 
@@ -97,62 +153,24 @@ def _get_regret_bound_plot(info: _RegretBoundInfo, min_n_trials: int) -> "go.Fig
         _logger.warning("There are no complete trials.")
         return fig
 
-    # Plot line for values below min_n_trials by light color.
-    plotly_blue_with_opacity = f"rgba(99, 110, 250, {OPACITY})"
     fig.add_trace(
-        go.Scatter(
-            x=info.trial_numbers[: min_n_trials + 1],
-            y=info.regret_bounds[: min_n_trials + 1],
-            mode="markers+lines",
-            name="Regret Bound",
-            showlegend=n_trials <= min_n_trials,  # Avoid showing legend twice.
-            legendgroup="regret_bound",
-            marker=dict(color=plotly_blue_with_opacity),
-            line=dict(color=plotly_blue_with_opacity),
+        _get_regret_bound_scatter(
+            info.trial_numbers[: min_n_trials + 1],
+            info.regret_bounds[: min_n_trials + 1],
+            OPACITY,  # Plot line for values below min_n_trials by light color.
+            n_trials <= min_n_trials,  # Avoid showing legend twice.
         )
     )
+
     if n_trials > min_n_trials:
-        plotly_blue = "rgb(99, 110, 250)"
         fig.add_trace(
-            go.Scatter(
-                x=info.trial_numbers[min_n_trials:],
-                y=info.regret_bounds[min_n_trials:],
-                mode="markers+lines",
-                name="Regret Bound",
-                showlegend=True,
-                legendgroup="regret_bound",
-                marker=dict(color=plotly_blue),
-                line=dict(color=plotly_blue),
-            )
-        )
-    if info.errors is not None:
-        plotly_red = "rgb(239, 85, 59)"
-        fig.add_trace(
-            go.Scatter(
-                x=info.trial_numbers,
-                y=info.errors,
-                mode="markers+lines",
-                name="Error",
-                marker=dict(color=plotly_red),
-                line=dict(color=plotly_red),
+            _get_regret_bound_scatter(
+                info.trial_numbers[min_n_trials:],
+                info.regret_bounds[min_n_trials:],
             )
         )
 
-    min_value = min(info.regret_bounds)
-    if info.errors is not None:
-        min_value = min(min_value, min(info.errors))
+    fig.add_trace(_get_error_scatter(info.trial_numbers, info.errors))
 
-    # Determine the display range based on trials after min_n_trials.
-    if n_trials > min_n_trials:
-        max_value = max(info.regret_bounds[min_n_trials:])
-    # If there are no trials after min_trials, determine the display range based on all trials.
-    else:
-        max_value = max(info.regret_bounds)
-
-    if info.errors is not None:
-        max_value = max(max_value, max(info.errors))
-
-    padding = (max_value - min_value) * PADDING_RATIO
-
-    fig.update_yaxes(range=(min_value - padding, max_value + padding))
+    fig.update_yaxes(range=_get_reasonable_y_range(info, min_n_trials))
     return fig
