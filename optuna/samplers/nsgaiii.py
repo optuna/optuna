@@ -128,7 +128,7 @@ class NSGAIIISampler(BaseSampler):
                 f" The specified `population_size` is {population_size}."
             )
 
-        self.reference_points = reference_points
+        self._reference_points = reference_points
         self._dividing_parameter = dividing_parameter
         self._population_size = population_size
         self._mutation_prob = mutation_prob
@@ -305,11 +305,11 @@ class NSGAIIISampler(BaseSampler):
             else:
                 n_objectives = len(study.directions)
                 # Construct reference points in the first run.
-                if self.reference_points is None:
-                    self.reference_points = _generate_default_reference_point(
+                if self._reference_points is None:
+                    self._reference_points = _generate_default_reference_point(
                         n_objectives, self._dividing_parameter
                     )
-                elif np.shape(self.reference_points)[1] != n_objectives:
+                elif np.shape(self._reference_points)[1] != n_objectives:
                     raise ValueError(
                         "The dimension of reference points vectors must be the same as the number "
                         "of objectives of the study."
@@ -323,7 +323,7 @@ class NSGAIIISampler(BaseSampler):
                     closest_reference_points,
                     distance_reference_points,
                 ) = _associate_individuals_with_reference_points(
-                    objective_matrix, self.reference_points
+                    objective_matrix, self._reference_points
                 )
 
                 elite_population_num = len(elite_population)
@@ -401,6 +401,14 @@ class NSGAIIISampler(BaseSampler):
         if self._constraints_func is not None:
             _process_constraints_after_trial(self._constraints_func, study, trial, state)
         self._random_sampler.after_trial(study, trial, state, values)
+
+    @property
+    def reference_points(self) -> np.ndarray | None:
+        return self._reference_points
+
+    @reference_points.setter
+    def reference_points(self, value: Sequence[Sequence[float]] | None) -> None:
+        self._reference_points = np.array(value) if value else None
 
 
 # TODO(Shinichi) Replace with math.comb after support for python3.7 is deprecated.

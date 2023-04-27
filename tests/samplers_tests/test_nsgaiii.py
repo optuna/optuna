@@ -298,6 +298,14 @@ def test_crossover_invalid_population(crossover: BaseCrossover, population_size:
         NSGAIIISampler(population_size=population_size, crossover=crossover)
 
 
+def test_reference_point() -> None:
+    sampler = NSGAIIISampler()
+    assert sampler.reference_points is None
+    reference_points = [[1.0, 2.0]]
+    sampler.reference_points = reference_points
+    np.testing.assert_almost_equal(sampler.reference_points, reference_points)
+
+
 @pytest.mark.parametrize(
     "n_objectives,dividing_parameter,expected_reference_points",
     [
@@ -318,7 +326,7 @@ def test_crossover_invalid_population(crossover: BaseCrossover, population_size:
         ),
     ],
 )
-def test_reference_point(
+def test_generate_reference_point(
     n_objectives: int, dividing_parameter: int, expected_reference_points: Sequence[Sequence[int]]
 ) -> None:
     actual_reference_points = sorted(
