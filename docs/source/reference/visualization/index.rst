@@ -26,6 +26,7 @@ The :mod:`~optuna.visualization` module provides utility functions for plotting 
    optuna.visualization.plot_parallel_coordinate
    optuna.visualization.plot_param_importances
    optuna.visualization.plot_pareto_front
+   optuna.visualization.plot_rank
    optuna.visualization.plot_slice
    optuna.visualization.plot_timeline
    optuna.visualization.is_available

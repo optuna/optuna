@@ -2,7 +2,6 @@ from concurrent.futures import as_completed
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
 import pickle
-import tempfile
 from types import TracebackType
 from typing import Any
 from typing import IO
@@ -11,7 +10,7 @@ from typing import Type
 from unittest import mock
 
 import _pytest.capture
-import fakeredis
+from fakeredis import FakeStrictRedis
 import pytest
 
 import optuna
@@ -21,6 +20,7 @@ from optuna.storages._journal.base import BaseJournalLogSnapshot
 from optuna.storages._journal.file import JournalFileBaseLock
 from optuna.storages._journal.storage import JournalStorageReplayResult
 from optuna.testing.storages import StorageSupplier
+from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 
 
 LOG_STORAGE = {
@@ -45,7 +45,7 @@ class JournalLogStorageSupplier:
 
     def __enter__(self) -> optuna.storages.BaseJournalLogStorage:
         if self.storage_type.startswith("file"):
-            self.tempfile = tempfile.NamedTemporaryFile()
+            self.tempfile = NamedTemporaryFilePool().tempfile()
             lock: JournalFileBaseLock
             if self.storage_type == "file_with_open_lock":
                 lock = optuna.storages.JournalFileOpenLock(self.tempfile.name)
@@ -59,7 +59,7 @@ class JournalLogStorageSupplier:
             journal_redis_storage = optuna.storages.JournalRedisStorage(
                 "redis://localhost", use_cluster
             )
-            journal_redis_storage._redis = fakeredis.FakeStrictRedis()
+            journal_redis_storage._redis = FakeStrictRedis()  # type: ignore[no-untyped-call]
             return journal_redis_storage
         else:
             raise RuntimeError("Unknown log storage type: {}".format(self.storage_type))
@@ -110,7 +110,7 @@ def pop_waiting_trial(file_path: str, study_name: str) -> Optional[int]:
 
 
 def test_pop_waiting_trial_multiprocess_safe() -> None:
-    with tempfile.NamedTemporaryFile() as file:
+    with NamedTemporaryFilePool() as file:
         file_storage = optuna.storages.JournalFileStorage(file.name)
         storage = optuna.storages.JournalStorage(file_storage)
         study = optuna.create_study(storage=storage)

@@ -21,8 +21,8 @@ def _solve_hssp(
     - `Greedy Hypervolume Subset Selection in Low Dimensions
        <https://ieeexplore.ieee.org/document/7570501>`_
     """
-    selected_vecs = []  # type: List[np.ndarray]
-    selected_indices = []  # type: List[int]
+    selected_vecs: List[np.ndarray] = []
+    selected_indices: List[int] = []
     contributions = [
         optuna._hypervolume.WFG().compute(np.asarray([v]), reference_point)
         for v in rank_i_loss_vals

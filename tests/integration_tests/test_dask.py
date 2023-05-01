@@ -1,5 +1,4 @@
 from contextlib import contextmanager
-import tempfile
 import time
 from typing import Iterator
 
@@ -10,6 +9,7 @@ import optuna
 from optuna._imports import try_import
 from optuna.integration.dask import _OptunaSchedulerExtension
 from optuna.integration.dask import DaskStorage
+from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 from optuna.trial import Trial
 
 
@@ -34,7 +34,7 @@ def get_storage_url(specifier: str) -> Iterator:
         if specifier == "inmemory":
             url = None
         elif specifier == "sqlite":
-            tmpfile = tempfile.NamedTemporaryFile()
+            tmpfile = NamedTemporaryFilePool().tempfile()
             url = "sqlite:///{}".format(tmpfile.name)
         else:
             raise ValueError(

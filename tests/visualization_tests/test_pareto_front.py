@@ -74,16 +74,20 @@ def create_study_3d() -> Study:
 @pytest.mark.parametrize("axis_order", [None, [0, 1], [1, 0]])
 @pytest.mark.parametrize("targets", [None, lambda t: (t.values[0], t.values[1])])
 @pytest.mark.parametrize("target_names", [None, ["Foo", "Bar"]])
+@pytest.mark.parametrize("metric_names", [None, ["v0", "v1"]])
 def test_get_pareto_front_info_unconstrained(
     include_dominated_trials: bool,
     axis_order: Optional[List[int]],
     targets: Optional[Callable[[FrozenTrial], Sequence[float]]],
     target_names: Optional[List[str]],
+    metric_names: Optional[List[str]],
 ) -> None:
     if axis_order is not None and targets is not None:
         pytest.skip("skip using both axis_order and targets")
 
     study = create_study_2d()
+    if metric_names is not None:
+        study.set_metric_names(metric_names)
     trials = study.get_trials(deepcopy=False)
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=FutureWarning)
@@ -97,7 +101,7 @@ def test_get_pareto_front_info_unconstrained(
 
     assert info == _ParetoFrontInfo(
         n_targets=2,
-        target_names=target_names or ["Objective 0", "Objective 1"],
+        target_names=target_names or metric_names or ["Objective 0", "Objective 1"],
         best_trials_with_values=[(trials[2], [0, 2]), (trials[3], [1, 0])],
         non_best_trials_with_values=[(trials[0], [1, 2]), (trials[1], [1, 1])]
         if include_dominated_trials
@@ -113,16 +117,20 @@ def test_get_pareto_front_info_unconstrained(
 @pytest.mark.parametrize("axis_order", [None, [0, 1], [1, 0]])
 @pytest.mark.parametrize("targets", [None, lambda t: (t.values[0], t.values[1])])
 @pytest.mark.parametrize("target_names", [None, ["Foo", "Bar"]])
+@pytest.mark.parametrize("metric_names", [None, ["v0", "v1"]])
 def test_get_pareto_front_info_constrained(
     include_dominated_trials: bool,
     axis_order: Optional[List[int]],
     targets: Optional[Callable[[FrozenTrial], Sequence[float]]],
     target_names: Optional[List[str]],
+    metric_names: Optional[List[str]],
 ) -> None:
     if axis_order is not None and targets is not None:
         pytest.skip("skip using both axis_order and targets")
 
     study = create_study_2d()
+    if metric_names is not None:
+        study.set_metric_names(metric_names)
     trials = study.get_trials(deepcopy=False)
 
     # (x, y) = (1, 0) is infeasible; others are feasible.
@@ -142,7 +150,7 @@ def test_get_pareto_front_info_constrained(
 
     assert info == _ParetoFrontInfo(
         n_targets=2,
-        target_names=target_names or ["Objective 0", "Objective 1"],
+        target_names=target_names or metric_names or ["Objective 0", "Objective 1"],
         best_trials_with_values=[(trials[1], [1, 1]), (trials[2], [0, 2])],
         non_best_trials_with_values=[(trials[0], [1, 2])] if include_dominated_trials else [],
         infeasible_trials_with_values=[(trials[3], [1, 0])],
@@ -312,6 +320,7 @@ def test_get_pareto_front_plot(
         figure.write_image(BytesIO())
     else:
         plt.savefig(BytesIO())
+        plt.close()
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])

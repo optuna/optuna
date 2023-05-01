@@ -72,7 +72,7 @@ def _get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, B
     _check_evaluate_args(completed_trials, params)
 
     if params is None:
-        return intersection_search_space(study, ordered_dict=True)
+        return intersection_search_space(study.get_trials(deepcopy=False), ordered_dict=True)
 
     # New temporary required to pass mypy. Seems like a bug.
     params_not_none = params

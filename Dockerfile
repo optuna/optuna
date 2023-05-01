@@ -16,7 +16,7 @@ COPY . .
 ARG BUILD_TYPE='dev'
 
 RUN if [ "${BUILD_TYPE}" = "dev" ]; then \
-        pip install ${PIP_OPTIONS} -e '.[checking, document, integration]' -f https://download.pytorch.org/whl/torch_stable.html; \
+        pip install ${PIP_OPTIONS} -e '.[benchmark, checking, document, integration, optional, test]' -f https://download.pytorch.org/whl/torch_stable.html; \
     else \
         pip install ${PIP_OPTIONS} -e .; \
     fi \
