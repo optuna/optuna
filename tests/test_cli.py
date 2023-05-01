@@ -4,7 +4,6 @@ import os
 import re
 import subprocess
 from subprocess import CalledProcessError
-import tempfile
 from typing import Any
 from typing import Callable
 from typing import Optional
@@ -25,6 +24,7 @@ from optuna.storages import RDBStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.study import StudyDirection
 from optuna.testing.storages import StorageSupplier
+from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 from optuna.trial import Trial
 from optuna.trial import TrialState
 
@@ -67,7 +67,7 @@ def _parse_output(output: str, output_format: str) -> Any:
     """
 
     if output_format == "table":
-        rows = output.split("\n")
+        rows = output.split(os.linesep)
         assert all(len(rows[0]) == len(row) for row in rows)
         # Check ruled lines.
         assert rows[0] == rows[2] == rows[-1]
@@ -1006,7 +1006,7 @@ def test_study_optimize_command() -> None:
 
 @pytest.mark.skip_coverage
 def test_study_optimize_command_inconsistent_args() -> None:
-    with tempfile.NamedTemporaryFile() as tf:
+    with NamedTemporaryFilePool() as tf:
         db_url = "sqlite:///{}".format(tf.name)
 
         # --study-name argument is missing.
@@ -1092,7 +1092,7 @@ def test_ask(
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
-    with tempfile.NamedTemporaryFile() as tf:
+    with NamedTemporaryFilePool() as tf:
         db_url = "sqlite:///{}".format(tf.name)
 
         args = [
@@ -1165,7 +1165,7 @@ def test_ask_flatten(
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
-    with tempfile.NamedTemporaryFile() as tf:
+    with NamedTemporaryFilePool() as tf:
         db_url = "sqlite:///{}".format(tf.name)
 
         args = [
@@ -1216,7 +1216,7 @@ def test_ask_flatten(
 def test_ask_empty_search_space(output_format: str) -> None:
     study_name = "test_study"
 
-    with tempfile.NamedTemporaryFile() as tf:
+    with NamedTemporaryFilePool() as tf:
         db_url = "sqlite:///{}".format(tf.name)
 
         args = [
@@ -1249,7 +1249,7 @@ def test_ask_empty_search_space(output_format: str) -> None:
 def test_ask_empty_search_space_flatten(output_format: str) -> None:
     study_name = "test_study"
 
-    with tempfile.NamedTemporaryFile() as tf:
+    with NamedTemporaryFilePool() as tf:
         db_url = "sqlite:///{}".format(tf.name)
 
         args = [
@@ -1286,7 +1286,7 @@ def test_ask_sampler_kwargs_without_sampler() -> None:
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
-    with tempfile.NamedTemporaryFile() as tf:
+    with NamedTemporaryFilePool() as tf:
         db_url = "sqlite:///{}".format(tf.name)
 
         args = [
@@ -1330,7 +1330,7 @@ def test_create_study_and_ask(
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
-    with tempfile.NamedTemporaryFile() as tf:
+    with NamedTemporaryFilePool() as tf:
         db_url = "sqlite:///{}".format(tf.name)
 
         create_study_args = [
@@ -1395,7 +1395,7 @@ def test_create_study_and_ask_with_inconsistent_directions(
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
-    with tempfile.NamedTemporaryFile() as tf:
+    with NamedTemporaryFilePool() as tf:
         db_url = "sqlite:///{}".format(tf.name)
 
         create_study_args = [
@@ -1441,7 +1441,7 @@ def test_ask_with_both_direction_and_directions() -> None:
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
-    with tempfile.NamedTemporaryFile() as tf:
+    with NamedTemporaryFilePool() as tf:
         db_url = "sqlite:///{}".format(tf.name)
 
         create_study_args = [
@@ -1478,7 +1478,7 @@ def test_ask_with_both_direction_and_directions() -> None:
 def test_tell() -> None:
     study_name = "test_study"
 
-    with tempfile.NamedTemporaryFile() as tf:
+    with NamedTemporaryFilePool() as tf:
         db_url = "sqlite:///{}".format(tf.name)
 
         output: Any = subprocess.check_output(
@@ -1555,7 +1555,7 @@ def test_tell() -> None:
 def test_tell_with_nan() -> None:
     study_name = "test_study"
 
-    with tempfile.NamedTemporaryFile() as tf:
+    with NamedTemporaryFilePool() as tf:
         db_url = "sqlite:///{}".format(tf.name)
 
         output: Any = subprocess.check_output(

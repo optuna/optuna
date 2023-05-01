@@ -24,3 +24,4 @@ def test_get_optimization_history_plot(
     legends = [legend.get_text() for legend in figure.legend().get_texts()]
     assert sorted(legends) == sorted(expected_legends)
     plt.savefig(BytesIO())
+    plt.close()

@@ -54,12 +54,13 @@ benchmark = [
 checking = [
     "black",
     "blackdoc",
-    "hacking",
+    "flake8",
     "isort",
     "mypy",
     "types-PyYAML",
     "types-redis",
     "types-setuptools",
+    "types-tqdm",
     "typing_extensions>=3.10.0.0",
 ]
 document = [
@@ -80,12 +81,11 @@ document = [
     "sphinx-gallery",
     "sphinx-plotly-directive",
     "sphinx_rtd_theme",
-    "torch==1.11.0",
-    "torchaudio==0.11.0",
-    "torchvision==0.12.0",
+    "torch",
+    "torchaudio",
+    "torchvision",
 ]
 integration = [
-    "allennlp>=2.2.0; python_version<'3.11'",
     "botorch>=0.4.0; python_version<'3.11'",
     "catalyst>=21.3; python_version<'3.11'",
     "catboost>=0.26; python_version<'3.11'",
@@ -104,9 +104,9 @@ integration = [
     "skorch; python_version<'3.11'",
     "tensorflow; python_version<'3.11'",
     "tensorflow-datasets; python_version<'3.11'",
-    "torch==1.11.0; python_version<'3.11'",
-    "torchaudio==0.11.0; python_version<'3.11'",
-    "torchvision==0.12.0; python_version<'3.11'",
+    "torch; python_version<'3.11'",
+    "torchaudio; python_version<'3.11'",
+    "torchvision; python_version<'3.11'",
     "wandb",
     "xgboost",
 ]
@@ -120,7 +120,7 @@ optional = [
     # optuna/visualization/param_importances.py.
 ]
 test = [
-    "codecov",
+    "coverage",
     "fakeredis[lua]",
     "kaleido",
     "pytest",

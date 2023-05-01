@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import abc
+from typing import cast
 
 import numpy as np
 
 from optuna._experimental import experimental_class
-from optuna.study.study import Study
+from optuna.study import StudyDirection
+from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial._state import TrialState
 
@@ -15,16 +17,30 @@ _CROSS_VALIDATION_SCORES_KEY = "terminator:cv_scores"
 
 class BaseErrorEvaluator(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def evaluate(self, study: Study) -> float:
+    def evaluate(
+        self,
+        trials: list[FrozenTrial],
+        study_direction: StudyDirection,
+    ) -> float:
         pass
 
 
 @experimental_class("3.2.0")
 class CrossValidationErrorEvaluator(BaseErrorEvaluator):
-    def evaluate(self, study: Study) -> float:
-        assert len(study.get_trials(states=(TrialState.COMPLETE,))) > 0
+    def evaluate(
+        self,
+        trials: list[FrozenTrial],
+        study_direction: StudyDirection,
+    ) -> float:
+        trials = [trial for trial in trials if trial.state == TrialState.COMPLETE]
+        assert len(trials) > 0
 
-        best_trial_attrs = study.best_trial.system_attrs
+        if study_direction == StudyDirection.MAXIMIZE:
+            best_trial = max(trials, key=lambda t: cast(float, t.value))
+        else:
+            best_trial = min(trials, key=lambda t: cast(float, t.value))
+
+        best_trial_attrs = best_trial.system_attrs
         if _CROSS_VALIDATION_SCORES_KEY in best_trial_attrs:
             cv_scores = best_trial_attrs[_CROSS_VALIDATION_SCORES_KEY]
         else:
@@ -56,5 +72,9 @@ class StaticErrorEvaluator(BaseErrorEvaluator):
     def __init__(self, constant: float) -> None:
         self._constant = constant
 
-    def evaluate(self, study: Study) -> float:
+    def evaluate(
+        self,
+        trials: list[FrozenTrial],
+        study_direction: StudyDirection,
+    ) -> float:
         return self._constant

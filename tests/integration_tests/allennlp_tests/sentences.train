@@ -1,3 +1,0 @@
-Optuna/NNP is/VBZ an/DT automatic/JJ hyperparameter/NN optimization/NN software/NN framework/NN ,/, particularly/RB designed/VBN for/IN machine/NN learning/NN ./.
-It/PRP features/VBZ an/DT imperative/JJ ,/, define/VB -/HYPH by/IN -/HYPH run/NN style/NN user/NN API/NN ./.
-Thanks/NNS to/IN our/PRP$ define/NN -/HYPH by/IN -/HYPH run/NN API/NNP ,/, the/DT code/NN written/VBN with/IN Optuna/NNP enjoys/VBZ high/JJ modularity/NN ,/, and/CC the/DT user/NN of/IN Optuna/NNP can/MD dynamically/RB construct/VB the/DT search/NN spaces/NNS for/IN the/DT hyperparameters/NNS ./.
