@@ -521,7 +521,7 @@ class BoTorchSampler(BaseSampler):
         ] = None,
         constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
         n_startup_trials: int = 10,
-        consider_running_trials: bool = False,
+        consider_running_trials: bool = True,
         independent_sampler: Optional[BaseSampler] = None,
         seed: Optional[int] = None,
         device: Optional["torch.device"] = None,
