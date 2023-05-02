@@ -9,7 +9,8 @@ from optuna.study import Study
 
 @experimental_class("3.0.0")
 class VSBXCrossover(BaseCrossover):
-    """Modified Simulated Binary Crossover operation used by :class:`~optuna.samplers.NSGAIISampler`.
+    """Modified Simulated Binary Crossover operation used by
+    :class:`~optuna.samplers.NSGAIISampler`.
 
     vSBX generates child individuals without excluding any region of the parameter space,
     while maintaining the excellent properties of SBX.

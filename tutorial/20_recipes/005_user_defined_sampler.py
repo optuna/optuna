@@ -95,7 +95,7 @@ class SimulatedAnnealingSampler(optuna.samplers.BaseSampler):
 
     # The rest are unrelated to SA algorithm: boilerplate
     def infer_relative_search_space(self, study, trial):
-        return optuna.search_space.intersection_search_space(study)
+        return optuna.search_space.intersection_search_space(study.get_trials(deepcopy=False))
 
     def sample_independent(self, study, trial, param_name, param_distribution):
         independent_sampler = optuna.samplers.RandomSampler()

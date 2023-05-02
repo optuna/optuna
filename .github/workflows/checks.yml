@@ -34,6 +34,10 @@ jobs:
     - name: Output installed packages
       run: |
         pip freeze --all
+    - name: Output dependency tree
+      run: |
+        pip install pipdeptree
+        pipdeptree
 
     - name: black
       run: black . --check --diff

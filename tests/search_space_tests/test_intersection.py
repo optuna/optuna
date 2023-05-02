@@ -18,14 +18,18 @@ def test_intersection_search_space() -> None:
 
     # No trial.
     assert search_space.calculate(study) == {}
-    assert search_space.calculate(study) == intersection_search_space(study)
+    assert search_space.calculate(study) == intersection_search_space(
+        study.get_trials(deepcopy=False)
+    )
 
     # Waiting trial.
     study.enqueue_trial(
         {"y": 0, "x": 5}, {"y": FloatDistribution(-3, 3), "x": IntDistribution(0, 10)}
     )
     assert search_space.calculate(study) == {}
-    assert search_space.calculate(study) == intersection_search_space(study)
+    assert search_space.calculate(study) == intersection_search_space(
+        study.get_trials(deepcopy=False)
+    )
 
     # First trial.
     study.optimize(lambda t: t.suggest_float("y", -3, 3) + t.suggest_int("x", 0, 10), n_trials=1)
@@ -33,7 +37,9 @@ def test_intersection_search_space() -> None:
         "x": IntDistribution(low=0, high=10),
         "y": FloatDistribution(low=-3, high=3),
     }
-    assert search_space.calculate(study) == intersection_search_space(study)
+    assert search_space.calculate(study) == intersection_search_space(
+        study.get_trials(deepcopy=False)
+    )
 
     # Returning sorted `OrderedDict` instead of `dict`.
     assert search_space.calculate(study, ordered_dict=True) == OrderedDict(
@@ -43,13 +49,15 @@ def test_intersection_search_space() -> None:
         ]
     )
     assert search_space.calculate(study, ordered_dict=True) == intersection_search_space(
-        study, ordered_dict=True
+        study.get_trials(deepcopy=False), ordered_dict=True
     )
 
     # Second trial (only 'y' parameter is suggested in this trial).
     study.optimize(lambda t: t.suggest_float("y", -3, 3), n_trials=1)
     assert search_space.calculate(study) == {"y": FloatDistribution(low=-3, high=3)}
-    assert search_space.calculate(study) == intersection_search_space(study)
+    assert search_space.calculate(study) == intersection_search_space(
+        study.get_trials(deepcopy=False)
+    )
 
     # Failed or pruned trials are not considered in the calculation of
     # an intersection search space.
@@ -60,18 +68,24 @@ def test_intersection_search_space() -> None:
     study.optimize(lambda t: objective(t, RuntimeError()), n_trials=1, catch=(RuntimeError,))
     study.optimize(lambda t: objective(t, TrialPruned()), n_trials=1)
     assert search_space.calculate(study) == {"y": FloatDistribution(low=-3, high=3)}
-    assert search_space.calculate(study) == intersection_search_space(study)
+    assert search_space.calculate(study) == intersection_search_space(
+        study.get_trials(deepcopy=False)
+    )
 
     # If two parameters have the same name but different distributions,
     # those are regarded as different parameters.
     study.optimize(lambda t: t.suggest_float("y", -1, 1), n_trials=1)
     assert search_space.calculate(study) == {}
-    assert search_space.calculate(study) == intersection_search_space(study)
+    assert search_space.calculate(study) == intersection_search_space(
+        study.get_trials(deepcopy=False)
+    )
 
     # The search space remains empty once it is empty.
     study.optimize(lambda t: t.suggest_float("y", -3, 3) + t.suggest_int("x", 0, 10), n_trials=1)
     assert search_space.calculate(study) == {}
-    assert search_space.calculate(study) == intersection_search_space(study)
+    assert search_space.calculate(study) == intersection_search_space(
+        study.get_trials(deepcopy=False)
+    )
 
 
 def test_intersection_search_space_class_with_different_studies() -> None:

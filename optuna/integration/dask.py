@@ -443,6 +443,11 @@ class DaskStorage(BaseStorage):
             Dask ``Client`` to connect to. If not provided, will attempt to find an
             existing ``Client``.
 
+        register:
+            Whether or not to register this storage instance with the cluster scheduler.
+            Most common usage of this storage class will not need to specify this argument.
+            Defaults to ``True``.
+
     """
 
     def __init__(
@@ -450,24 +455,31 @@ class DaskStorage(BaseStorage):
         storage: Union[None, str, BaseStorage] = None,
         name: Optional[str] = None,
         client: Optional["distributed.Client"] = None,
+        register: bool = True,
     ):
         _imports.check()
         self.name = name or f"dask-storage-{uuid.uuid4().hex}"
-        self.client = client or get_client()
+        self._client = client
+        if register:
+            if self.client.asynchronous or getattr(thread_state, "on_event_loop_thread", False):
 
-        if self.client.asynchronous or getattr(thread_state, "on_event_loop_thread", False):
+                async def _register() -> DaskStorage:
+                    await self.client.run_on_scheduler(  # type: ignore[no-untyped-call]
+                        _register_with_scheduler, storage=storage, name=self.name
+                    )
+                    return self
 
-            async def _register() -> DaskStorage:
-                await self.client.run_on_scheduler(  # type: ignore[no-untyped-call]
+                self._started = asyncio.ensure_future(_register())
+            else:
+                self.client.run_on_scheduler(  # type: ignore[no-untyped-call]
                     _register_with_scheduler, storage=storage, name=self.name
                 )
-                return self
 
-            self._started = asyncio.ensure_future(_register())
-        else:
-            self.client.run_on_scheduler(  # type: ignore[no-untyped-call]
-                _register_with_scheduler, storage=storage, name=self.name
-            )
+    @property
+    def client(self) -> "distributed.Client":
+        if not self._client:
+            self._client = get_client()
+        return self._client
 
     def __await__(self) -> Generator[Any, None, "DaskStorage"]:
         if hasattr(self, "_started"):
@@ -484,7 +496,7 @@ class DaskStorage(BaseStorage):
         # on the scheduler. This is okay since this DaskStorage instance has already been
         # registered with the scheduler, and ``storage`` is only ever needed during the
         # scheduler registration process. We use ``storage=None`` below by convention.
-        return (DaskStorage, (None, self.name))
+        return (DaskStorage, (None, self.name, None, False))
 
     def get_base_storage(self) -> BaseStorage:
         """Retrieve underlying Optuna storage instance from the scheduler.

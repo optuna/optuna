@@ -65,6 +65,11 @@ jobs:
     - name: Output installed packages
       run: |
         pip freeze --all
+    - name: Output dependency tree
+      run: |
+        pip install pipdeptree
+        pipdeptree
+
 
     - name: Run performance benchmark
       run: |
@@ -120,6 +125,11 @@ jobs:
     - name: Output installed packages
       run: |
         pip freeze --all
+    - name: Output dependency tree
+      run: |
+        pip install pipdeptree
+        pipdeptree
+
 
     - name: Run benchmark report builder
       run: |

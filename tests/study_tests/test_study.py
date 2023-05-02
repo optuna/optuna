@@ -31,7 +31,9 @@ from optuna import Study
 from optuna import Trial
 from optuna import TrialPruned
 from optuna.exceptions import DuplicatedStudyError
+from optuna.exceptions import ExperimentalWarning
 from optuna.study import StudyDirection
+from optuna.study.study import _SYSTEM_ATTR_METRIC_NAMES
 from optuna.testing.objectives import fail_objective
 from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
@@ -1550,3 +1552,28 @@ def test_pop_waiting_trial_thread_safe(storage_mode: str) -> None:
             for future in as_completed(futures):
                 trial_id_set.add(future.result())
         assert len(trial_id_set) == num_enqueued
+
+
+def test_set_metric_names() -> None:
+    metric_names = ["v0", "v1"]
+    study = create_study(directions=["minimize", "minimize"])
+    study.set_metric_names(metric_names)
+
+    got_metric_names = study._storage.get_study_system_attrs(study._study_id).get(
+        _SYSTEM_ATTR_METRIC_NAMES
+    )
+    assert got_metric_names is not None
+    assert metric_names == got_metric_names
+
+
+def test_set_metric_names_experimental_warning() -> None:
+    study = create_study()
+    with pytest.warns(ExperimentalWarning):
+        study.set_metric_names(["v0"])
+
+
+def test_set_invalid_metric_names() -> None:
+    metric_names = ["v0", "v1", "v2"]
+    study = create_study(directions=["minimize", "minimize"])
+    with pytest.raises(ValueError):
+        study.set_metric_names(metric_names)
