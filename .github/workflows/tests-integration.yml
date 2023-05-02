@@ -78,7 +78,6 @@ jobs:
           pytest tests -m "integration" \
             --ignore tests/integration_tests/test_botorch.py \
             --ignore tests/integration_tests/test_catalyst.py \
-            --ignore tests/integration_tests/test_catboost.py \
             --ignore tests/integration_tests/test_fastaiv2.py \
             --ignore tests/integration_tests/test_lightgbm.py \
             --ignore tests/integration_tests/test_mlflow.py \
@@ -106,7 +105,6 @@ jobs:
           pytest tests -m "integration and not slow" \
             --ignore tests/integration_tests/test_botorch.py \
             --ignore tests/integration_tests/test_catalyst.py \
-            --ignore tests/integration_tests/test_catboost.py \
             --ignore tests/integration_tests/test_fastaiv2.py \
             --ignore tests/integration_tests/test_lightgbm.py \
             --ignore tests/integration_tests/test_mlflow.py \
