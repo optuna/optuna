@@ -81,7 +81,6 @@ jobs:
             --ignore tests/integration_tests/test_catboost.py \
             --ignore tests/integration_tests/test_fastaiv2.py \
             --ignore tests/integration_tests/test_lightgbm.py \
-            --ignore tests/integration_tests/test_mlflow.py \
             --ignore tests/integration_tests/test_mxnet.py \
             --ignore tests/integration_tests/test_pytorch_distributed.py \
             --ignore tests/integration_tests/test_pytorch_ignite.py \
@@ -109,7 +108,6 @@ jobs:
             --ignore tests/integration_tests/test_catboost.py \
             --ignore tests/integration_tests/test_fastaiv2.py \
             --ignore tests/integration_tests/test_lightgbm.py \
-            --ignore tests/integration_tests/test_mlflow.py \
             --ignore tests/integration_tests/test_mxnet.py \
             --ignore tests/integration_tests/test_pytorch_distributed.py \
             --ignore tests/integration_tests/test_pytorch_ignite.py \
