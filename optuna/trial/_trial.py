@@ -491,8 +491,8 @@ class Trial(BaseTrial):
         num_objectives = len(self.study.directions)
         if num_objectives != num_intermediate_values:
             raise NotImplementedError(
-                f"Trial.report requests the same number of values as the objective functions "
-                "{num_objectives} objectives vs {num_intermediate_values} intermediate_values."
+                "Trial.report requests the same number of values as the objective functions "
+                f"{num_objectives} objectives vs {num_intermediate_values} intermediate_values."
             )
 
         if step < 0:
