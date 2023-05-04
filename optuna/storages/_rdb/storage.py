@@ -15,6 +15,7 @@ from typing import Optional
 from typing import Sequence
 from typing import Set
 from typing import TYPE_CHECKING
+from typing import Union
 import uuid
 
 import optuna
@@ -676,8 +677,11 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             trial_value.value_type = value_type
 
     def set_trial_intermediate_value(
-        self, trial_id: int, step: int, intermediate_value: Sequence[float]
+        self, trial_id: int, step: int, intermediate_value: Union[float, Sequence[float]]
     ) -> None:
+        if isinstance(intermediate_value, float):
+            intermediate_value = [intermediate_value]
+
         with _create_scoped_session(self.scoped_session, True) as session:
             for intermediate_value_index, value in enumerate(intermediate_value):
                 self._set_trial_intermediate_value_without_commit(
@@ -877,7 +881,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             ] = v.stored_repr_to_intermediate_value(
                 v.intermediate_value, v.intermediate_value_type
             )
-        intermediate_values = {}
+        intermediate_values: Dict[int, Union[float, Sequence[float]]] = {}
         if unsorted_intermediates:
             num_intermediate_values_at_same_step = len(unsorted_intermediates[v.step])
             if num_intermediate_values_at_same_step != 1:

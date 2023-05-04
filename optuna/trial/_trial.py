@@ -471,7 +471,7 @@ class Trial(BaseTrial):
         try:
             # For convenience, we allow users to report a value that can be cast to `float`.
             if isinstance(value, Sequence):
-                values = tuple(float(v) for v in value)
+                values: Union[float, Sequence[float]] = tuple(float(v) for v in value)
             else:
                 values = float(value)
 

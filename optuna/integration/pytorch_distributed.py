@@ -9,6 +9,7 @@ from typing import overload
 from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import TypeVar
+from typing import Union
 
 import optuna
 from optuna._deprecated import deprecated_func
@@ -228,7 +229,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         return self._call_and_communicate_obj(func)
 
     @broadcast_properties
-    def report(self, value: float, step: int) -> None:
+    def report(self, value: Union[float, Sequence[float]], step: int) -> None:
         err = None
         if dist.get_rank(self._group) == 0:
             try:
