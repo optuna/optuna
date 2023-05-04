@@ -24,11 +24,14 @@ class _IntermediatePlotInfo(NamedTuple):
 
 
 def _get_intermediate_plot_info(study: Study) -> _IntermediatePlotInfo:
+    if study._is_multi_objective():
+        raise NotImplementedError("Multiple intermediate values at the same step are unsupported.")
+
     trials = study.get_trials(
         deepcopy=False, states=(TrialState.PRUNED, TrialState.COMPLETE, TrialState.RUNNING)
     )
     trial_infos = [
-        _TrialInfo(trial.number, sorted(trial.intermediate_values.items()))
+        _TrialInfo(trial.number, sorted(trial.intermediate_values.items()))  # type: ignore
         for trial in trials
         if len(trial.intermediate_values) > 0
     ]

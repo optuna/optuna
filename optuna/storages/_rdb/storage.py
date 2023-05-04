@@ -879,7 +879,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         else:
             values = None
 
-        unsorted_intermediates: dict[int, dict[int, float]] = defaultdict(dict)
+        unsorted_intermediates: Dict[int, Dict[int, float]] = defaultdict(dict)
         for v in trial.intermediate_values:
             unsorted_intermediates[v.step][
                 v.intermediate_value_index
