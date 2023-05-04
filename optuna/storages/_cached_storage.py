@@ -276,7 +276,7 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
         return ret
 
     def set_trial_intermediate_value(
-        self, trial_id: int, step: int, intermediate_value: Sequence[float]
+        self, trial_id: int, step: int, intermediate_value: Union[float, Sequence[float]]
     ) -> None:
         with self._lock:
             cached_trial = self._get_cached_trial(trial_id)

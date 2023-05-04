@@ -878,10 +878,19 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 v.intermediate_value, v.intermediate_value_type
             )
         intermediate_values = {}
-        for step, v in unsorted_intermediates.items():
-            intermediate_values[step] = [
-                intermediate_value for _, intermediate_value in sorted(v.items())
-            ]
+        if unsorted_intermediates:
+            num_intermediate_values_at_same_step = len(unsorted_intermediates[v.step])
+            if num_intermediate_values_at_same_step != 1:
+                for step, intermediate_indices_and_values in unsorted_intermediates.items():
+                    intermediate_values[step] = tuple(
+                        intermediate_value
+                        for _, intermediate_value in sorted(
+                            intermediate_indices_and_values.items()
+                        )
+                    )
+            else:
+                for step, intermediate_indices_and_values in unsorted_intermediates.items():
+                    intermediate_values[step] = intermediate_indices_and_values[0]
 
         return FrozenTrial(
             number=trial.number,

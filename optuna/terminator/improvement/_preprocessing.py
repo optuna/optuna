@@ -64,10 +64,7 @@ class UnscaleLog(BasePreprocessing):
 
             params, distributions = {}, {}
             for param_name in trial.params.keys():
-                (
-                    param_value,
-                    param_distribution,
-                ) = self._convert_param_value_distribution(
+                (param_value, param_distribution,) = self._convert_param_value_distribution(
                     trial.params[param_name], trial.distributions[param_name]
                 )
                 params[param_name] = param_value

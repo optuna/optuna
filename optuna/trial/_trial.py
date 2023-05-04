@@ -5,6 +5,7 @@ from typing import Dict
 from typing import Optional
 from typing import overload
 from typing import Sequence
+from typing import Union
 import warnings
 
 import optuna
@@ -402,7 +403,7 @@ class Trial(BaseTrial):
 
         return self._suggest(name, CategoricalDistribution(choices=choices))
 
-    def report(self, value: float | Sequence[float], step: int) -> None:
+    def report(self, value: Union[float, Sequence[float]], step: int) -> None:
         """Report an objective function value for a given step.
 
         The reported values are used by the pruners to determine whether this trial should be
@@ -458,7 +459,7 @@ class Trial(BaseTrial):
 
         Args:
             value:
-                A value returned from the objective function.
+                An intermediate value(s) returned during evaluating the objective function.
             step:
                 Step of the trial (e.g., Epoch of neural network training). Note that pruners
                 assume that ``step`` starts at zero. For example,
@@ -467,27 +468,32 @@ class Trial(BaseTrial):
                 ``step`` must be a positive integer.
         """
 
-        if isinstance(value, Sequence):
-            values = value
-        else:
-            values = [value]
-
-        # TODO(nzw0301): # This same length constraint is unnecessary and the inconsistency can be
-        # detected in pruners. But it would make pruner more complicated; need discussions on this.
-        if len(self.study.directions) != len(values):
-            raise NotImplementedError(
-                "Trial.report requests the same number of values as the objective functions."
-            )
-
         try:
             # For convenience, we allow users to report a value that can be cast to `float`.
-            values = [float(value) for value in values]
+            if isinstance(value, Sequence):
+                values = tuple(float(v) for v in value)
+            else:
+                values = float(value)
+
         except (TypeError, ValueError):
             message = (
                 "The `value` argument is of type '{}' but supposed to be either a float"
                 " or Iterable of float.".format(type(value).__name__)
             )
             raise TypeError(message) from None
+
+        # TODO(nzw0301): # This same length constraint is unnecessary and the inconsistency can be
+        # detected in pruners. But it would make pruner more complicated; need discussions on this.
+        if isinstance(values, float):
+            num_intermediate_values = 1
+        else:
+            num_intermediate_values = len(values)
+        num_objectives = len(self.study.directions)
+        if num_objectives != num_intermediate_values:
+            raise NotImplementedError(
+                f"Trial.report requests the same number of values as the objective functions "
+                "{num_objectives} objectives vs {num_intermediate_values} intermediate_values."
+            )
 
         if step < 0:
             raise ValueError("The `step` argument is {} but cannot be negative.".format(step))
