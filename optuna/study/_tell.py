@@ -164,7 +164,7 @@ def _tell_with_warning(
 
     # Cast values to list of floats.
     if values is not None:
-        # values have beed checked to be castable to floats in _check_values_are_feasible.
+        # values have been checked to be castable to floats in _check_values_are_feasible.
         values = [float(value) for value in values]
 
     # Post-processing and storing the trial.

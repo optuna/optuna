@@ -402,7 +402,7 @@ class Trial(BaseTrial):
 
         return self._suggest(name, CategoricalDistribution(choices=choices))
 
-    def report(self, value: float, step: int) -> None:
+    def report(self, value: float | Sequence[float], step: int) -> None:
         """Report an objective function value for a given step.
 
         The reported values are used by the pruners to determine whether this trial should be
@@ -421,9 +421,6 @@ class Trial(BaseTrial):
             the reported ``value`` only the first time is stored and the reported values
             from the second time are ignored.
 
-        .. note::
-            :func:`~optuna.trial.Trial.report` does not support multi-objective
-            optimization.
 
         Example:
 
@@ -470,17 +467,23 @@ class Trial(BaseTrial):
                 ``step`` must be a positive integer.
         """
 
-        if len(self.study.directions) > 1:
+        if isinstance(value, Sequence):
+            values = value
+        else:
+            values = [value]
+
+        if len(self.study.directions) != len(values):
             raise NotImplementedError(
-                "Trial.report is not supported for multi-objective optimization."
+                "Trial.report requests the same number of values as the objective functions."
             )
 
         try:
             # For convenience, we allow users to report a value that can be cast to `float`.
-            value = float(value)
+            values = tuple([value for value in values])
         except (TypeError, ValueError):
-            message = "The `value` argument is of type '{}' but supposed to be a float.".format(
-                type(value).__name__
+            message = (
+                "The `value` argument is of type '{}' but supposed to be either a float"
+                " or Iterable of float.".format(type(value).__name__)
             )
             raise TypeError(message) from None
 
@@ -497,7 +500,7 @@ class Trial(BaseTrial):
             return
 
         self.storage.set_trial_intermediate_value(self._trial_id, step, value)
-        self._cached_frozen_trial.intermediate_values[step] = value
+        self._cached_frozen_trial.intermediate_values[step] = values
 
     def should_prune(self) -> bool:
         """Suggest whether the trial should be pruned or not.
@@ -514,19 +517,10 @@ class Trial(BaseTrial):
         .. seealso::
             Please refer to the example code in :func:`optuna.trial.Trial.report`.
 
-        .. note::
-            :func:`~optuna.trial.Trial.should_prune` does not support multi-objective
-            optimization.
-
         Returns:
             A boolean value. If :obj:`True`, the trial should be pruned according to the
             configured pruning algorithm. Otherwise, the trial should continue.
         """
-
-        if len(self.study.directions) > 1:
-            raise NotImplementedError(
-                "Trial.should_prune is not supported for multi-objective optimization."
-            )
 
         trial = copy.deepcopy(self._get_latest_trial())
         return self.study.pruner.prune(self.study, trial)
