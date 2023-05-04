@@ -7,7 +7,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Sequece
+from typing import Sequence
 from typing import Tuple
 from typing import Union
 
@@ -977,7 +977,7 @@ def _generate_trial(generator: random.Random) -> FrozenTrial:
     distributions = {}
     user_attrs = {}
     system_attrs: Dict[str, Any] = {}
-    intermediate_values: Dict[int, Union[float, Sequece[float]]] = {}
+    intermediate_values: Dict[int, Union[float, Sequence[float]]] = {}
     for key, (value, dist) in example_params.items():
         if generator.choice([True, False]):
             params[key] = value
