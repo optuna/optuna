@@ -468,19 +468,22 @@ class Trial(BaseTrial):
                 ``step`` must be a positive integer.
         """
 
+        values: Union[float, Sequence[float]]
         try:
             # For convenience, we allow users to report a value that can be cast to `float`.
-            if isinstance(value, Sequence):
-                values: Union[float, Sequence[float]] = tuple(float(v) for v in value)
-            else:
-                values = float(value)
-
+            values = float(value)  # type: ignore
         except (TypeError, ValueError):
-            message = (
-                "The `value` argument is of type '{}' but supposed to be either a float"
-                " or Iterable of float.".format(type(value).__name__)
-            )
-            raise TypeError(message) from None
+            try:
+                assert not isinstance(value, float)
+                values = tuple(float(v) for v in value)
+                if len(values) == 1:
+                    values = values[0]
+            except (TypeError, ValueError):
+                message = (
+                    "The `value` argument is of type '{}' but supposed to be either a float"
+                    " or Iterable of float.".format(type(value).__name__)
+                )
+                raise TypeError(message) from None
 
         # TODO(nzw0301): # This same length constraint is unnecessary and the inconsistency can be
         # detected in pruners. But it would make pruner more complicated; need discussions on this.

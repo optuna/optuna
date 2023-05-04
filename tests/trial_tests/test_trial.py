@@ -583,16 +583,14 @@ def test_report() -> None:
     trial.report("inf", 4)  # type: ignore
     trial.report(1, 5)
     trial.report(np.array([1], dtype=np.float32)[0], 6)
+    trial.report([1], 7)
 
     # Report values that cannot be cast to `float` or steps that are negative (Error).
     with pytest.raises(TypeError):
-        trial.report(None, 7)  # type: ignore
+        trial.report(None, 8)  # type: ignore
 
     with pytest.raises(TypeError):
-        trial.report("foo", 7)  # type: ignore
-
-    with pytest.raises(TypeError):
-        trial.report([1, 2, 3], 7)  # type: ignore
+        trial.report("foo", 8)  # type: ignore
 
     with pytest.raises(TypeError):
         trial.report("foo", -1)  # type: ignore
@@ -650,13 +648,13 @@ def test_raise_error_for_report_with_multi_objectives() -> None:
     study.optimize(objective, n_trials=1)
 
 
-def test_raise_error_for_should_prune_multi_objectives() -> None:
-    study = create_study(directions=["maximize", "maximize"])
+def test_raise_error_for_report_multi_intermediate_with_single_objective() -> None:
+    study = create_study()
 
-    def objective(trial: Trial) -> Tuple[float, float]:
+    def objective(trial: Trial) -> float:
         with pytest.raises(NotImplementedError):
-            trial.should_prune()
-        return 1.0, 1.0
+            trial.report([1.0, 0.0], 0)
+        return 1.0
 
     study.optimize(objective, n_trials=1)
 
