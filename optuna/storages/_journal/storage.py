@@ -332,7 +332,7 @@ class JournalStorage(BaseStorage):
                 return True
 
     def set_trial_intermediate_value(
-        self, trial_id: int, step: int, intermediate_value: float
+        self, trial_id: int, step: int, intermediate_value: Sequence[float]
     ) -> None:
         log: Dict[str, Any] = {
             "trial_id": trial_id,

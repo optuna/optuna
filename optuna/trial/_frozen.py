@@ -146,7 +146,7 @@ class FrozenTrial(BaseTrial):
         distributions: Dict[str, BaseDistribution],
         user_attrs: Dict[str, Any],
         system_attrs: Dict[str, Any],
-        intermediate_values: Dict[int, float],
+        intermediate_values: Dict[int, float | Sequence[float]],
         trial_id: int,
         *,
         values: Optional[Sequence[float]] = None,
@@ -165,7 +165,14 @@ class FrozenTrial(BaseTrial):
         self._params = params
         self._user_attrs = user_attrs
         self._system_attrs = system_attrs
-        self.intermediate_values = intermediate_values
+
+        if intermediate_values and len(self.intermediate_values.values()[0]) == 1:
+            self.intermediate_values = {
+                step: single_intermediate[0]
+                for step, single_intermediate in intermediate_values.items()
+            }
+        else:
+            self.intermediate_values = intermediate_values
         self._distributions = distributions
         self._trial_id = trial_id
 
@@ -479,7 +486,7 @@ def create_trial(
     distributions: Optional[Dict[str, BaseDistribution]] = None,
     user_attrs: Optional[Dict[str, Any]] = None,
     system_attrs: Optional[Dict[str, Any]] = None,
-    intermediate_values: Optional[Dict[int, float]] = None,
+    intermediate_values: Optional[Dict[int, float | Sequence[float]]] = None,
 ) -> FrozenTrial:
     """Create a new :class:`~optuna.trial.FrozenTrial`.
 

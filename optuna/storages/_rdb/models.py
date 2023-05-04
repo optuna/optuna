@@ -473,12 +473,13 @@ class TrialIntermediateValueModel(BaseModel):
         NAN = 4
 
     __tablename__ = "trial_intermediate_values"
-    __table_args__: Any = (UniqueConstraint("trial_id", "step"),)
+    __table_args__: Any = (UniqueConstraint("trial_id", "step", "intermediate_value_index"),)
     trial_intermediate_value_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
     step = Column(Integer, nullable=False)
     intermediate_value = Column(Float(precision=FLOAT_PRECISION), nullable=True)
     intermediate_value_type = Column(Enum(TrialIntermediateValueType), nullable=False)
+    intermediate_value_index = Column(Integer, nullable=False)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("intermediate_values", cascade="all, delete-orphan")
@@ -517,13 +518,14 @@ class TrialIntermediateValueModel(BaseModel):
             return value
 
     @classmethod
-    def find_by_trial_and_step(
-        cls, trial: TrialModel, step: int, session: orm.Session
+    def find_by_trial_and_step_and_intermediate_index(
+        cls, trial: TrialModel, step: int, intermediate_value_index: int, session: orm.Session
     ) -> Optional["TrialIntermediateValueModel"]:
         trial_intermediate_value = (
             session.query(cls)
             .filter(cls.trial_id == trial.trial_id)
             .filter(cls.step == step)
+            .filter(cls.intermediate_value_index == intermediate_value_index)
             .one_or_none()
         )
 

@@ -472,6 +472,8 @@ class Trial(BaseTrial):
         else:
             values = [value]
 
+        # TODO(nzw0301): # This same length constraint is unnecessary and the inconsistency can be
+        # detected in pruners. But it would make pruner more complicated; need discussions on this.
         if len(self.study.directions) != len(values):
             raise NotImplementedError(
                 "Trial.report requests the same number of values as the objective functions."
@@ -479,7 +481,7 @@ class Trial(BaseTrial):
 
         try:
             # For convenience, we allow users to report a value that can be cast to `float`.
-            values = tuple([value for value in values])
+            values = [float(value) for value in values]
         except (TypeError, ValueError):
             message = (
                 "The `value` argument is of type '{}' but supposed to be either a float"
@@ -499,7 +501,7 @@ class Trial(BaseTrial):
             )
             return
 
-        self.storage.set_trial_intermediate_value(self._trial_id, step, value)
+        self.storage.set_trial_intermediate_value(self._trial_id, step, values)
         self._cached_frozen_trial.intermediate_values[step] = values
 
     def should_prune(self) -> bool:
