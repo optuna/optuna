@@ -5,6 +5,7 @@ from typing import Dict
 from typing import Optional
 from typing import overload
 from typing import Sequence
+from typing import Union
 
 from optuna._deprecated import deprecated_func
 from optuna.distributions import BaseDistribution
@@ -87,7 +88,7 @@ class BaseTrial(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def report(self, value: float | Sequence[float], step: int) -> None:
+    def report(self, value: Union[float, Sequence[float]], step: int) -> None:
         raise NotImplementedError
 
     @abc.abstractmethod

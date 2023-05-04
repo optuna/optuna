@@ -319,7 +319,7 @@ class _OptunaSchedulerExtension:
         storage_name: str,
         trial_id: int,
         step: int,
-        intermediate_value: Sequence[float],
+        intermediate_value: Union[float, Sequence[float]],
     ) -> None:
         return self.get_storage(storage_name).set_trial_intermediate_value(
             trial_id=trial_id,
@@ -660,7 +660,7 @@ class DaskStorage(BaseStorage):
         )
 
     def set_trial_intermediate_value(
-        self, trial_id: int, step: int, intermediate_value: Sequence[float]
+        self, trial_id: int, step: int, intermediate_value: Union[float, Sequence[float]]
     ) -> None:
         return self.client.sync(  # type: ignore[no-untyped-call]
             self.client.scheduler.optuna_set_trial_intermediate_value,  # type: ignore[union-attr]

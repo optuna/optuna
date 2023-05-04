@@ -4,6 +4,7 @@ from typing import Dict
 from typing import Optional
 from typing import overload
 from typing import Sequence
+from typing import Union
 import warnings
 
 from optuna import distributions
@@ -123,7 +124,7 @@ class FixedTrial(BaseTrial):
     ) -> CategoricalChoiceType:
         return self._suggest(name, CategoricalDistribution(choices=choices))
 
-    def report(self, value: float | Sequence[float], step: int) -> None:
+    def report(self, value: Union[float, Sequence[float]], step: int) -> None:
         pass
 
     def should_prune(self) -> bool:

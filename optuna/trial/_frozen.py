@@ -260,7 +260,7 @@ class FrozenTrial(BaseTrial):
     ) -> CategoricalChoiceType:
         return self._suggest(name, CategoricalDistribution(choices=choices))
 
-    def report(self, value: float | Sequence[float], step: int) -> None:
+    def report(self, value: Union[float, Sequence[float]], step: int) -> None:
         """Interface of report function.
 
         Since :class:`~optuna.trial.FrozenTrial` is not pruned,
