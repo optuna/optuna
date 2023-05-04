@@ -166,6 +166,11 @@ class SuccessiveHalvingPruner(BasePruner):
 
         rung = _get_current_rung(trial)
         value = trial.intermediate_values[step]
+        if not isinstance(value, float):
+            raise ValueError(
+                "This pruner doesn't support multiple intermediate values at the same step."
+            )
+
         trials: Optional[List["optuna.trial.FrozenTrial"]] = None
 
         while True:

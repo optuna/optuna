@@ -4,7 +4,9 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
+from typing import Union
 
 import pytest
 
@@ -233,7 +235,11 @@ def test_called_single_methods_when_multi() -> None:
     distributions: Dict[str, BaseDistribution] = {"x": FloatDistribution(5, 12)}
     user_attrs = {"foo": "bar"}
     system_attrs = {"baz": "qux"}
-    intermediate_values = {0: 0.0, 1: 0.1, 2: 0.1}
+    intermediate_values: Optional[Dict[int, Union[float, Sequence[float]]]] = {
+        0: 0.0,
+        1: 0.1,
+        2: 0.1,
+    }
 
     trial = optuna.trial.create_trial(
         state=state,
@@ -292,7 +298,11 @@ def test_create_trial(state: TrialState) -> None:
     distributions: Dict[str, BaseDistribution] = {"x": FloatDistribution(5, 12)}
     user_attrs = {"foo": "bar"}
     system_attrs = {"baz": "qux"}
-    intermediate_values = {0: 0.0, 1: 0.1, 2: 0.1}
+    intermediate_values: Optional[Dict[int, Union[float, Sequence[float]]]] = {
+        0: 0.0,
+        1: 0.1,
+        2: 0.1,
+    }
 
     trial = create_trial(
         state=state,

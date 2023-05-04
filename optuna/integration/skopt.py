@@ -213,7 +213,10 @@ class SkoptSampler(BaseSampler):
                     continue
                 # We rewrite the value of the trial `t` for sampling, so we need a deepcopy.
                 copied_t = copy.deepcopy(t)
-                copied_t.value = value
+                if isinstance(value, float):
+                    copied_t.value = value
+                else:
+                    copied_t.values = value
                 complete_trials.append(copied_t)
         return complete_trials
 

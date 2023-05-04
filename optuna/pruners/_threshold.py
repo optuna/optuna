@@ -125,6 +125,11 @@ class ThresholdPruner(BasePruner):
             return False
 
         latest_value = trial.intermediate_values[step]
+        if not isinstance(latest_value, float):
+            raise ValueError(
+                "This pruner doesn't support multiple intermediate values at the same step."
+            )
+
         if math.isnan(latest_value):
             return True
 

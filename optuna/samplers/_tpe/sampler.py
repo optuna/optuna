@@ -629,10 +629,12 @@ def _get_observation_pairs(
             score = (-float("inf"), [sign * v for sign, v in zip(signs, trial.values)])
         elif trial.state is TrialState.PRUNED:
             if study._is_multi_objective():
+                # TODO(nzw0301): Can we use intermediate_values values?
                 continue
 
             if len(trial.intermediate_values) > 0:
                 step, intermediate_value = max(trial.intermediate_values.items())
+                assert isinstance(intermediate_value, float)
                 if math.isnan(intermediate_value):
                     score = (-step, [float("inf")])
                 else:

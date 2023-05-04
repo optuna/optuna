@@ -629,7 +629,10 @@ class CmaEsSampler(BaseSampler):
                     continue
                 # We rewrite the value of the trial `t` for sampling, so we need a deepcopy.
                 copied_t = copy.deepcopy(t)
-                copied_t.value = value
+                if isinstance(value, float):
+                    copied_t.value = value
+                else:
+                    assert "should not reach"
                 complete_trials.append(copied_t)
         return complete_trials
 

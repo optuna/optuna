@@ -545,10 +545,15 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 self._set_trial_system_attr_without_commit(session, trial.trial_id, key, value)
 
             for step, intermediate_value in template_trial.intermediate_values.items():
-                for intermediate_value_index, value in enumerate(intermediate_value):
+                if isinstance(intermediate_value, float):
                     self._set_trial_intermediate_value_without_commit(
-                        session, trial.trial_id, step, value, intermediate_value_index
+                        session, trial.trial_id, step, value, 0
                     )
+                else:
+                    for intermediate_value_index, value in enumerate(intermediate_value):
+                        self._set_trial_intermediate_value_without_commit(
+                            session, trial.trial_id, step, value, intermediate_value_index
+                        )
 
             trial.state = template_trial.state
 
