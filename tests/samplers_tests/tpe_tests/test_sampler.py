@@ -912,7 +912,7 @@ def test_split_order(direction: str, constant_liar: bool, constraints: bool) -> 
         )
 
     for step in [2, 1]:
-        for value in [-float("inf"), 0, 1, float("inf"), float("nan")]:
+        for value in [-float("inf"), 0.0, 1.0, float("inf"), float("nan")]:
             study.add_trial(
                 optuna.create_trial(
                     state=optuna.trial.TrialState.PRUNED,
