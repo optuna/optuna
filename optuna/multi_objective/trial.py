@@ -299,7 +299,9 @@ class FrozenMultiObjectiveTrial:
         self.n_objectives = n_objectives
         self._trial = trial
 
-        self.values = tuple(trial.intermediate_values.get(i) for i in range(n_objectives))
+        self.values: Sequence[Optional[float]] = tuple(
+            trial.intermediate_values.get(i) for i in range(n_objectives)  # type: ignore
+        )
 
         intermediate_values: Dict[int, List[Optional[float]]] = {}
         for key, value in trial.intermediate_values.items():
@@ -310,6 +312,7 @@ class FrozenMultiObjectiveTrial:
             if step not in intermediate_values:
                 intermediate_values[step] = [None for _ in range(n_objectives)]
 
+            assert isinstance(value, float)
             intermediate_values[step][key % n_objectives] = value
         self.intermediate_values = {k: tuple(v) for k, v in intermediate_values.items()}
 
