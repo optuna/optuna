@@ -332,20 +332,34 @@ class TestTrialIntermediateValueModel:
                 step=0,
                 intermediate_value=10,
                 intermediate_value_type=TrialIntermediateValueModel.TrialIntermediateValueType.FINITE,  # noqa: E501
+                intermediate_value_index=0,
             )
         )
         session.commit()
         return trial
 
     @staticmethod
-    def test_find_by_trial_and_step(session: Session) -> None:
+    def test_find_by_trial_and_step_and_intermediate_index(session: Session) -> None:
         trial = TestTrialIntermediateValueModel._create_model(session)
-        trial_intermediate_value = TrialIntermediateValueModel.find_by_trial_and_step(
-            trial, 0, session
+        trial_intermediate_value = (
+            TrialIntermediateValueModel.find_by_trial_and_step_and_intermediate_index(
+                trial, 0, 0, session
+            )
         )
         assert trial_intermediate_value is not None
         assert 10 == trial_intermediate_value.intermediate_value
-        assert TrialIntermediateValueModel.find_by_trial_and_step(trial, 1, session) is None
+        assert (
+            TrialIntermediateValueModel.find_by_trial_and_step_and_intermediate_index(
+                trial, 1, 0, session
+            )
+            is None
+        )
+        assert (
+            TrialIntermediateValueModel.find_by_trial_and_step_and_intermediate_index(
+                trial, 0, 1, session
+            )
+            is None
+        )
 
     @staticmethod
     def test_where_trial_id(session: Session) -> None:
@@ -366,6 +380,7 @@ class TestTrialIntermediateValueModel:
                 step=1,
                 intermediate_value=20,
                 intermediate_value_type=TrialIntermediateValueModel.TrialIntermediateValueType.FINITE,  # noqa: E501
+                intermediate_value_index=0,
             )
         )
         session.commit()
