@@ -2,6 +2,7 @@ import functools
 import math
 from typing import KeysView
 from typing import List
+import warnings
 
 import numpy as np
 
@@ -184,6 +185,12 @@ class PercentilePruner(BasePruner):
 
         n_warmup_steps = self._n_warmup_steps
         if step < n_warmup_steps:
+            return False
+
+        if study._is_multi_objective():
+            warnings.warn(
+                "This pruner doesn't support multiple intermediate values. Skip pruning."
+            )
             return False
 
         if not _is_first_in_interval_step(

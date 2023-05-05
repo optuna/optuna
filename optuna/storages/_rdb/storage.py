@@ -547,7 +547,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             for step, intermediate_value in template_trial.intermediate_values.items():
                 if isinstance(intermediate_value, float):
                     self._set_trial_intermediate_value_without_commit(
-                        session, trial.trial_id, step, value, 0
+                        session, trial.trial_id, step, intermediate_value, 0
                     )
                 else:
                     for intermediate_value_index, value in enumerate(intermediate_value):

@@ -1,4 +1,5 @@
 from typing import Optional
+import warnings
 
 import numpy as np
 
@@ -82,6 +83,11 @@ class PatientPruner(BasePruner):
         step = trial.last_step
         if step is None:
             return False
+
+        if study._is_multi_objective():
+            warnings.warn(
+                "This pruner doesn't support multiple intermediate values. Skip pruning."
+            )
 
         intermediate_values = trial.intermediate_values
         steps = np.asarray(list(intermediate_values.keys()))

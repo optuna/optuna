@@ -2,6 +2,7 @@ import math
 from typing import List
 from typing import Optional
 from typing import Union
+import warnings
 
 import optuna
 from optuna.pruners._base import BasePruner
@@ -164,12 +165,15 @@ class SuccessiveHalvingPruner(BasePruner):
         if step is None:
             return False
 
+        if study._is_multi_objective():
+            warnings.warn(
+                "This pruner doesn't support multiple intermediate values. Skip pruning."
+            )
+            return False
+
         rung = _get_current_rung(trial)
         value = trial.intermediate_values[step]
-        if not isinstance(value, float):
-            raise ValueError(
-                "This pruner doesn't support multiple intermediate values at the same step."
-            )
+        assert isinstance(value, float)
 
         trials: Optional[List["optuna.trial.FrozenTrial"]] = None
 
