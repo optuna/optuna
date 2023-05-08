@@ -11,7 +11,7 @@ from optuna.samplers._search_space import IntersectionSearchSpace
 from optuna.samplers._tpe.multi_objective_sampler import MOTPESampler
 from optuna.samplers._tpe.sampler import TPESampler
 from optuna.samplers.nsgaii._sampler import NSGAIISampler
-from optuna.samplers.nsgaiii import NSGAIIISampler
+from optuna.samplers._nsgaiii import NSGAIIISampler
 
 
 __all__ = [

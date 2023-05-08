@@ -13,6 +13,13 @@ import optuna
 from optuna.samplers import BaseSampler
 from optuna.samplers import NSGAIIISampler
 from optuna.samplers._base import _CONSTRAINTS_KEY
+from optuna.samplers._nsgaiii import _associate_individuals_with_reference_points
+from optuna.samplers._nsgaiii import _COEF
+from optuna.samplers._nsgaiii import _filter_inf
+from optuna.samplers._nsgaiii import _generate_default_reference_point
+from optuna.samplers._nsgaiii import _normalize_objective_values
+from optuna.samplers._nsgaiii import _POPULATION_CACHE_KEY_PREFIX
+from optuna.samplers._nsgaiii import _preserve_niche_individuals
 from optuna.samplers.nsgaii import BaseCrossover
 from optuna.samplers.nsgaii import BLXAlphaCrossover
 from optuna.samplers.nsgaii import SBXCrossover
@@ -20,13 +27,6 @@ from optuna.samplers.nsgaii import SPXCrossover
 from optuna.samplers.nsgaii import UNDXCrossover
 from optuna.samplers.nsgaii import UniformCrossover
 from optuna.samplers.nsgaii import VSBXCrossover
-from optuna.samplers.nsgaiii import _associate_individuals_with_reference_points
-from optuna.samplers.nsgaiii import _COEF
-from optuna.samplers.nsgaiii import _filter_inf
-from optuna.samplers.nsgaiii import _generate_default_reference_point
-from optuna.samplers.nsgaiii import _normalize_objective_values
-from optuna.samplers.nsgaiii import _POPULATION_CACHE_KEY_PREFIX
-from optuna.samplers.nsgaiii import _preserve_niche_individuals
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 
@@ -46,7 +46,7 @@ def test_population_size() -> None:
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
 
     generations = Counter(
-        [t.system_attrs[optuna.samplers.nsgaiii._GENERATION_KEY] for t in study.trials]
+        [t.system_attrs[optuna.samplers._nsgaiii._GENERATION_KEY] for t in study.trials]
     )
     assert generations == {0: 10, 1: 10, 2: 10, 3: 10}
 
@@ -57,7 +57,7 @@ def test_population_size() -> None:
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
 
     generations = Counter(
-        [t.system_attrs[optuna.samplers.nsgaiii._GENERATION_KEY] for t in study.trials]
+        [t.system_attrs[optuna.samplers._nsgaiii._GENERATION_KEY] for t in study.trials]
     )
     assert generations == {i: 2 for i in range(20)}
 
