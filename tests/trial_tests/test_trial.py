@@ -27,6 +27,7 @@ from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 from optuna.trial import Trial
+from optuna.trial._trial import _LazyTrialSystemAttrs
 
 
 @pytest.mark.filterwarnings("ignore::FutureWarning")
@@ -691,22 +692,22 @@ def test_lazy_trial_system_attrs(storage_mode: str) -> None:
         # _LazyTrialSystemAttrs gets attrs the first time it is needed.
         # Then, we create the instance for each method, and test the first and second use.
 
-        system_attrs = optuna.trial._trial._LazyTrialSystemAttrs(trial._trial_id, storage)
+        system_attrs = _LazyTrialSystemAttrs(trial._trial_id, storage)
         assert system_attrs == {"int": 0, "str": "A"}  # type: ignore[comparison-overlap]
         assert system_attrs == {"int": 0, "str": "A"}  # type: ignore[comparison-overlap]
 
-        system_attrs = optuna.trial._trial._LazyTrialSystemAttrs(trial._trial_id, storage)
+        system_attrs = _LazyTrialSystemAttrs(trial._trial_id, storage)
         assert len(system_attrs) == 2
         assert len(system_attrs) == 2
 
-        system_attrs = optuna.trial._trial._LazyTrialSystemAttrs(trial._trial_id, storage)
+        system_attrs = _LazyTrialSystemAttrs(trial._trial_id, storage)
         assert set(system_attrs.keys()) == {"int", "str"}
         assert set(system_attrs.keys()) == {"int", "str"}
 
-        system_attrs = optuna.trial._trial._LazyTrialSystemAttrs(trial._trial_id, storage)
+        system_attrs = _LazyTrialSystemAttrs(trial._trial_id, storage)
         assert set(system_attrs.values()) == {0, "A"}
         assert set(system_attrs.values()) == {0, "A"}
 
-        system_attrs = optuna.trial._trial._LazyTrialSystemAttrs(trial._trial_id, storage)
+        system_attrs = _LazyTrialSystemAttrs(trial._trial_id, storage)
         assert set(system_attrs.items()) == {("int", 0), ("str", "A")}
         assert set(system_attrs.items()) == {("int", 0), ("str", "A")}
