@@ -32,6 +32,10 @@ jobs:
     - name: Output installed packages
       run: |
         pip freeze --all
+    - name: Output dependency tree
+      run: |
+        pip install pipdeptree
+        pipdeptree
 
     - name: Change the version file for scheduled TestPyPI upload
       if: github.event_name == 'schedule'

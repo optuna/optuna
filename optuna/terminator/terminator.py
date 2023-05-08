@@ -109,7 +109,9 @@ class Terminator(BaseTerminator):
             trials=study.trials,
             study_direction=study.direction,
         )
-        error = self._error_evaluator.evaluate(study)
+        error = self._error_evaluator.evaluate(
+            trials=study.trials, study_direction=study.direction
+        )
         should_terminate = regret_bound < error
 
         return should_terminate
