@@ -88,7 +88,8 @@ document = [
 integration = [
     "botorch>=0.4.0; python_version<'3.11'",
     "catalyst>=21.3; python_version<'3.11'",
-    "catboost>=0.26; python_version<'3.11'",
+    "catboost>=0.26; sys_platform!='darwin'",
+    "catboost>=0.26,<1.2; sys_platform=='darwin'",
     "cma",
     "distributed",
     "fastai; python_version<'3.11'",
