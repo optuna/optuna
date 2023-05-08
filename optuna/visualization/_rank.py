@@ -67,9 +67,9 @@ def plot_rank(
     target: Optional[Callable[[FrozenTrial], float]] = None,
     target_name: str = "Objective Value",
 ) -> "go.Figure":
-    """Plot parameter relations as scatter plots with colors indicating ranks of objective value.
+    """Plot parameter relations as scatter plots with colors indicating ranks of target value.
 
-    Note that, if a parameter contains missing values, a trial with missing values is not plotted.
+    Note that, trials missing the specified parameters will not be plotted.
 
     Example:
 
