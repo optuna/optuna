@@ -62,7 +62,7 @@ class Trial(BaseTrial):
             study, self._cached_frozen_trial
         )
         self._relative_params: Optional[Dict[str, Any]] = None
-        self._fixed_params = self._cached_frozen_trial.system_attrs.get("fixed_params", [])
+        self._fixed_params = self._cached_frozen_trial.system_attrs.get("fixed_params", {})
 
     @property
     def relative_params(self) -> Dict[str, Any]:
