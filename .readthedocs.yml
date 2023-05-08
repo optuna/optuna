@@ -4,6 +4,12 @@
 # Required
 version: 2
 
+# Set the version of Python and other tools you might need
+build:
+  os: ubuntu-22.04
+  tools:
+    python: "3.11"
+
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
   configuration: docs/source/conf.py
@@ -15,7 +21,6 @@ formats: all
 python:
   # `sphinx` requires either Python >= 3.8 or `typed-ast` to reflect type comments 
   # in the documentation. See: https://github.com/sphinx-doc/sphinx/pull/6984
-  version: 3.8
   install:
     - method: pip
       path: .
