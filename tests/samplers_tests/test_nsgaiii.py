@@ -31,13 +31,6 @@ from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 
 
-def _nan_equal(a: Any, b: Any) -> bool:
-    if isinstance(a, float) and isinstance(b, float) and np.isnan(a) and np.isnan(b):
-        return True
-
-    return a == b
-
-
 def test_population_size() -> None:
     # Set `population_size` to 10.
     sampler = NSGAIIISampler(population_size=10)
