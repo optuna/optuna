@@ -105,11 +105,11 @@ else:
                 return importlib.import_module("." + module_name, self.__name__)
             except ModuleNotFoundError:
                 raise ModuleNotFoundError(
-                    "Optuna's integration modules with 3rd party libraries are beginning to "
-                    "migrate from Optuna itself to a package called `optuna-integration`. "
+                    "Optuna's integration modules for third-party libraries have started "
+                    "migrating from Optuna itself to a package called `optuna-integration`. "
                     "The module you are trying to use has already been migrated to "
-                    "`optuna-integration`, so please install it. "
-                    "Run `pip install optuna-integration`."
+                    "`optuna-integration`. Please install the package by running "
+                    "`pip install optuna-integration`."
                 )
 
     sys.modules[__name__] = _IntegrationModule(__name__)
