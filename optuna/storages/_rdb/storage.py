@@ -459,7 +459,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                     if n_retries > 2:
                         raise
 
-            n_retries += 1
+                n_retries += 1
 
             if template_trial:
                 frozen = copy.deepcopy(template_trial)
