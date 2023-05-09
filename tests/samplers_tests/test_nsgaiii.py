@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections import Counter
-from typing import Any
 from typing import Sequence
 from unittest.mock import patch
 import warnings
