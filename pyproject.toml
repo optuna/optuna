@@ -94,7 +94,7 @@ integration = [
     "distributed",
     "fastai; python_version<'3.11'",
     "lightgbm; python_version<'3.11'",
-    "mlflow; python_version<'3.11'",
+    "mlflow",
     "mxnet; python_version<'3.11'",
     "pandas",
     "pytorch-ignite; python_version<'3.11'",

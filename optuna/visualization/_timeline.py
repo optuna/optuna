@@ -140,4 +140,5 @@ def _get_timeline_plot(info: _TimelineInfo) -> "go.Figure":
             yaxis={"title": "Trial"},
         )
     )
+    fig.update_layout(showlegend=True)  # Draw a legend even if all TrialStates are the same.
     return fig
