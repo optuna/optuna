@@ -206,20 +206,6 @@ def test_constraints_func_experimental_warning() -> None:
         NSGAIIISampler(constraints_func=lambda _: [0])
 
 
-# TODO(ohta): Consider to move this utility function to `optuna.testing` module.
-def _create_frozen_trial(
-    number: int, values: Sequence[float], constraints: Sequence[float] | None = None
-) -> optuna.trial.FrozenTrial:
-    trial = optuna.trial.create_trial(
-        state=optuna.trial.TrialState.COMPLETE,
-        values=list(values),
-        system_attrs={} if constraints is None else {_CONSTRAINTS_KEY: list(constraints)},
-    )
-    trial.number = number
-    trial._trial_id = number
-    return trial
-
-
 def test_call_after_trial_of_random_sampler() -> None:
     sampler = NSGAIIISampler()
     study = optuna.create_study(sampler=sampler)
