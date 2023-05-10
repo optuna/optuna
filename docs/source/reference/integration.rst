@@ -26,15 +26,6 @@ BoTorch
    optuna.integration.botorch.qnehvi_candidates_func
    optuna.integration.botorch.qparego_candidates_func
 
-Catalyst
---------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.CatalystPruningCallback
-
 CatBoost
 --------
 
