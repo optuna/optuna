@@ -77,7 +77,6 @@ jobs:
         if [ ${{ matrix.python-version }} == 3.11 ]; then
           pytest tests -m "integration" \
             --ignore tests/integration_tests/test_botorch.py \
-            --ignore tests/integration_tests/test_catalyst.py \
             --ignore tests/integration_tests/test_fastaiv2.py \
             --ignore tests/integration_tests/test_lightgbm.py \
             --ignore tests/integration_tests/test_mxnet.py \
@@ -103,7 +102,6 @@ jobs:
         if [ ${{ matrix.python-version }} == 3.11 ]; then
           pytest tests -m "integration and not slow" \
             --ignore tests/integration_tests/test_botorch.py \
-            --ignore tests/integration_tests/test_catalyst.py \
             --ignore tests/integration_tests/test_fastaiv2.py \
             --ignore tests/integration_tests/test_lightgbm.py \
             --ignore tests/integration_tests/test_mxnet.py \
