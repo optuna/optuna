@@ -302,8 +302,8 @@ def _get_rank_subplot(
 
 
 class _TickInfo(NamedTuple):
-    coloridxs: List[float]
-    text: List[str]
+    coloridxs: list[float]
+    text: list[str]
 
 
 def _get_tick_info(target_values: np.ndarray) -> _TickInfo:
