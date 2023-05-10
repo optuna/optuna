@@ -26,14 +26,14 @@ PADDING_RATIO_Y = 0.05
 OPACITY = 0.25
 
 
-class _RegretBoundInfo(NamedTuple):
+class _ImprovementInfo(NamedTuple):
     trial_numbers: list[int]
-    regret_bounds: list[float]
+    improvements: list[float]
     errors: list[float] | None
 
 
 @experimental_func("3.2.0")
-def plot_regret_bound(
+def plot_terminator_improvement(
     study: Study,
     plot_error: bool = False,
     improvement_evaluator: BaseImprovementEvaluator | None = None,
@@ -42,23 +42,23 @@ def plot_regret_bound(
 ) -> "go.Figure":
     _imports.check()
 
-    info = _get_regret_bound_info(study, plot_error, improvement_evaluator, error_evaluator)
-    return _get_regret_bound_plot(info, min_n_trials)
+    info = _get_improvement_info(study, plot_error, improvement_evaluator, error_evaluator)
+    return _get_improvement_plot(info, min_n_trials)
 
 
-def _get_regret_bound_info(
+def _get_improvement_info(
     study: Study,
     get_error: bool = False,
     improvement_evaluator: BaseImprovementEvaluator | None = None,
     error_evaluator: BaseErrorEvaluator | None = None,
-) -> _RegretBoundInfo:
+) -> _ImprovementInfo:
     if improvement_evaluator is None:
         improvement_evaluator = RegretBoundEvaluator()
     if error_evaluator is None:
         error_evaluator = CrossValidationErrorEvaluator()
 
     trial_numbers = []
-    regret_bounds = []
+    improvements = []
     errors = []
 
     for i, trial in enumerate(tqdm.tqdm(study.trials)):
@@ -66,41 +66,41 @@ def _get_regret_bound_info(
         trials = study.trials[: i + 1]
         trials = [t for t in trials if t.state == optuna.trial.TrialState.COMPLETE]
 
-        regret_bound = improvement_evaluator.evaluate(
+        improvement = improvement_evaluator.evaluate(
             trials=trials, study_direction=study.direction
         )
-        regret_bounds.append(regret_bound)
+        improvements.append(improvement)
 
         if get_error:
             error = error_evaluator.evaluate(trials=trials, study_direction=study.direction)
             errors.append(error)
 
     if len(errors) == 0:
-        return _RegretBoundInfo(
-            trial_numbers=trial_numbers, regret_bounds=regret_bounds, errors=None
+        return _ImprovementInfo(
+            trial_numbers=trial_numbers, improvements=improvements, errors=None
         )
     else:
-        return _RegretBoundInfo(
-            trial_numbers=trial_numbers, regret_bounds=regret_bounds, errors=errors
+        return _ImprovementInfo(
+            trial_numbers=trial_numbers, improvements=improvements, errors=errors
         )
 
 
-def _get_regret_bound_scatter(
+def _get_improvement_scatter(
     trial_numbers: list[int],
-    regret_bounds: list[float],
+    improvements: list[float],
     opacity: float = 1.0,
     showlegend: bool = True,
 ) -> "go.Scatter":
     plotly_blue_with_opacity = f"rgba(99, 110, 250, {opacity})"
     return go.Scatter(
         x=trial_numbers,
-        y=regret_bounds,
+        y=improvements,
         mode="markers+lines",
         marker=dict(color=plotly_blue_with_opacity),
         line=dict(color=plotly_blue_with_opacity),
-        name="Regret Bound",
+        name="Terminator Improvement",
         showlegend=showlegend,
-        legendgroup="regret_bound",
+        legendgroup="improvement",
     )
 
 
@@ -122,17 +122,17 @@ def _get_error_scatter(
     )
 
 
-def _get_y_range(info: _RegretBoundInfo, min_n_trials: int) -> tuple[float, float]:
-    min_value = min(info.regret_bounds)
+def _get_y_range(info: _ImprovementInfo, min_n_trials: int) -> tuple[float, float]:
+    min_value = min(info.improvements)
     if info.errors is not None:
         min_value = min(min_value, min(info.errors))
 
     # Determine the display range based on trials after min_n_trials.
     if len(info.trial_numbers) > min_n_trials:
-        max_value = max(info.regret_bounds[min_n_trials:])
+        max_value = max(info.improvements[min_n_trials:])
     # If there are no trials after min_trials, determine the display range based on all trials.
     else:
-        max_value = max(info.regret_bounds)
+        max_value = max(info.improvements)
 
     if info.errors is not None:
         max_value = max(max_value, max(info.errors))
@@ -141,12 +141,14 @@ def _get_y_range(info: _RegretBoundInfo, min_n_trials: int) -> tuple[float, floa
     return (min_value - padding, max_value + padding)
 
 
-def _get_regret_bound_plot(info: _RegretBoundInfo, min_n_trials: int) -> "go.Figure":
+def _get_improvement_plot(info: _ImprovementInfo, min_n_trials: int) -> "go.Figure":
     n_trials = len(info.trial_numbers)
 
     fig = go.Figure(
         layout=go.Layout(
-            title="Regret Bound Plot", xaxis=dict(title="Trial"), yaxis=dict(title="Regret Bound")
+            title="Terminator Improvement Plot",
+            xaxis=dict(title="Trial"),
+            yaxis=dict(title="Terminator Improvement"),
         )
     )
     if n_trials == 0:
@@ -154,9 +156,9 @@ def _get_regret_bound_plot(info: _RegretBoundInfo, min_n_trials: int) -> "go.Fig
         return fig
 
     fig.add_trace(
-        _get_regret_bound_scatter(
+        _get_improvement_scatter(
             info.trial_numbers[: min_n_trials + 1],
-            info.regret_bounds[: min_n_trials + 1],
+            info.improvements[: min_n_trials + 1],
             OPACITY,  # Plot line for values below min_n_trials by light color.
             n_trials <= min_n_trials,  # Avoid showing legend twice.
         )
@@ -164,9 +166,9 @@ def _get_regret_bound_plot(info: _RegretBoundInfo, min_n_trials: int) -> "go.Fig
 
     if n_trials > min_n_trials:
         fig.add_trace(
-            _get_regret_bound_scatter(
+            _get_improvement_scatter(
                 info.trial_numbers[min_n_trials:],
-                info.regret_bounds[min_n_trials:],
+                info.improvements[min_n_trials:],
             )
         )
 
