@@ -6,7 +6,7 @@ optuna.integration
 The :mod:`~optuna.integration` module contains classes used to integrate Optuna with external machine learning frameworks.
 
 .. note::
-   Optuna's integration modules with 3rd party libraries are beginning to migrate from Optuna itself to a package called 
+   Optuna's integration modules for third-party libraries have started migrating from Optuna itself to a package called 
    `optuna-integration`. Please check the `repository <https://github.com/optuna/optuna-integration>`_ and 
    the `documentation <https://optuna-integration.readthedocs.io/en/latest/index.html>`_.
 
