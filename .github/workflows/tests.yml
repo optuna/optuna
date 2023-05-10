@@ -56,6 +56,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install --progress-bar off -U setuptools
 
+    # TODO(c-bata): Remove the version constraint on fakeredis
     - name: Install
       run: |
         # Install minimal dependencies and confirm that `import optuna` is successful.
@@ -65,10 +66,15 @@ jobs:
 
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
+        pip install "fakeredis<2.11.1"
 
     - name: Output installed packages
       run: |
         pip freeze --all
+    - name: Output dependency tree
+      run: |
+        pip install pipdeptree
+        pipdeptree
 
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}

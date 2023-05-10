@@ -67,6 +67,9 @@ jobs:
     - name: Output installed packages
       run: |
         docker run "${HUB_TAG}" sh -c "pip freeze --all"
+    - name: Output dependency tree
+      run: |
+        docker run "${HUB_TAG}" sh -c "pip install pipdeptree && pipdeptree"
 
     - name: Verify the built image
       run: |
