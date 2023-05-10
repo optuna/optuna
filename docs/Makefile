@@ -28,5 +28,6 @@ clean:
 	rm -rf $(BUILDDIR)/*
 	rm -rf source/reference/generated/
 	rm -rf source/reference/visualization/generated/
-	rm -rf source/tutorial/
+	rm -rf source/tutorial/10_key_features
+	rm -rf source/tutorial/20_recipes
 	rm -f ../tutorial/**/*.db
