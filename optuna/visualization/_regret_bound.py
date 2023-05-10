@@ -22,7 +22,7 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
-PADDING_RATIO = 0.05
+PADDING_RATIO_Y = 0.05
 OPACITY = 0.25
 
 
@@ -137,7 +137,7 @@ def _get_reasonable_y_range(info: _RegretBoundInfo, min_n_trials: int) -> tuple[
     if info.errors is not None:
         max_value = max(max_value, max(info.errors))
 
-    padding = (max_value - min_value) * PADDING_RATIO
+    padding = (max_value - min_value) * PADDING_RATIO_Y
     return (min_value - padding, max_value + padding)
 
 
