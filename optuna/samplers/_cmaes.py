@@ -565,7 +565,7 @@ class CmaEsSampler(BaseSampler):
                 elif dist.low == dist.high:
                     steps[i] = 1.0
                 else:
-                    steps[i] = dist.step / (dist.low - dist.high)
+                    steps[i] = dist.step / (dist.high - dist.low)
 
             return cmaes.CMAwM(
                 mean=mean,
