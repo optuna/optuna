@@ -122,7 +122,7 @@ def _get_error_scatter(
     )
 
 
-def _get_reasonable_y_range(info: _RegretBoundInfo, min_n_trials: int) -> tuple[float, float]:
+def _get_y_range(info: _RegretBoundInfo, min_n_trials: int) -> tuple[float, float]:
     min_value = min(info.regret_bounds)
     if info.errors is not None:
         min_value = min(min_value, min(info.errors))
@@ -172,5 +172,5 @@ def _get_regret_bound_plot(info: _RegretBoundInfo, min_n_trials: int) -> "go.Fig
 
     fig.add_trace(_get_error_scatter(info.trial_numbers, info.errors))
 
-    fig.update_yaxes(range=_get_reasonable_y_range(info, min_n_trials))
+    fig.update_yaxes(range=_get_y_range(info, min_n_trials))
     return fig
