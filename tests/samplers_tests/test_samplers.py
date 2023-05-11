@@ -53,6 +53,7 @@ parametrize_sampler = pytest.mark.parametrize(
             marks=pytest.mark.integration,
         ),
         optuna.samplers.NSGAIISampler,
+        optuna.samplers.NSGAIIISampler,
         optuna.samplers.QMCSampler,
         pytest.param(
             lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
@@ -82,6 +83,7 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
     "multi_objective_sampler_class",
     [
         optuna.samplers.NSGAIISampler,
+        optuna.samplers.NSGAIIISampler,
         lambda: optuna.samplers.TPESampler(n_startup_trials=0),
         pytest.param(
             lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
@@ -104,6 +106,7 @@ sampler_class_with_seed: Dict[str, Tuple[Callable[[int], BaseSampler], bool]] = 
     "SkoptSampler": (lambda seed: optuna.integration.SkoptSampler(seed=seed), True),
     "PyCmaSampler": (lambda seed: optuna.integration.PyCmaSampler(seed=seed), True),
     "NSGAIISampler": (lambda seed: optuna.samplers.NSGAIISampler(seed=seed), False),
+    "NSGAIIISampler": (lambda seed: optuna.samplers.NSGAIIISampler(seed=seed), False),
     "QMCSampler": (lambda seed: optuna.samplers.QMCSampler(seed=seed), False),
     "BoTorchSampler": (lambda seed: optuna.integration.BoTorchSampler(seed=seed), True),
 }
@@ -148,6 +151,7 @@ parametrize_sampler_name_with_seed = pytest.mark.parametrize(
             marks=pytest.mark.integration,
         ),
         (optuna.samplers.NSGAIISampler, True, True),
+        (optuna.samplers.NSGAIIISampler, True, True),
         (
             lambda: optuna.samplers.PartialFixedSampler(
                 fixed_params={"x": 0}, base_sampler=optuna.samplers.RandomSampler()
