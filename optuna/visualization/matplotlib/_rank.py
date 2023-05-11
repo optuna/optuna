@@ -32,7 +32,7 @@ def plot_rank(
 ) -> "Axes":
     """Plot parameter relations as scatter plots with colors indicating ranks of target value.
 
-    Note that, trials missing the specified parameters will not be plotted.
+    Note that trials missing the specified parameters will not be plotted.
 
     .. seealso::
         Please refer to :func:`optuna.visualization.plot_rank` for an example.
