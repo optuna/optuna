@@ -615,7 +615,7 @@ def _preserve_niche_individuals(
     additional_elite_population: list[FrozenTrial] = []
     is_shuffled: defaultdict[int, bool] = defaultdict(bool)
     while len(additional_elite_population) < target_population_size:
-        if not nearest_points_count_to_reference_points[count]:
+        if len(nearest_points_count_to_reference_points[count]) == 0:
             count += 1
             rng.shuffle(nearest_points_count_to_reference_points[count])
             continue
