@@ -163,7 +163,7 @@ def _get_improvement_plot(info: _ImprovementInfo, min_n_trials: int) -> "go.Figu
             info.trial_numbers[: min_n_trials + 1],
             info.improvements[: min_n_trials + 1],
             # Plot line with a lighter color until the number of trials reaches min_n_trials.
-            OPACITY,  
+            OPACITY,
             n_trials <= min_n_trials,  # Avoid showing legend twice.
         )
     )
