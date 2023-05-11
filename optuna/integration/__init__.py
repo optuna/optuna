@@ -28,6 +28,7 @@ _import_structure = {
     "skopt": ["SkoptSampler"],
     "tensorboard": ["TensorBoardCallback"],
     "tensorflow": ["TensorFlowPruningHook"],
+    "tfkeras": ["TFKerasPruningCallback"],
     "xgboost": ["XGBoostPruningCallback"],
     "fastaiv1": ["FastAIV1PruningCallback"],
     "fastaiv2": ["FastAIV2PruningCallback", "FastAIPruningCallback"],
@@ -63,6 +64,7 @@ if TYPE_CHECKING:
     from optuna.integration.skorch import SkorchPruningCallback
     from optuna.integration.tensorboard import TensorBoardCallback
     from optuna.integration.tensorflow import TensorFlowPruningHook
+    from optuna.integration.tfkeras import TFKerasPruningCallback
     from optuna.integration.wandb import WeightsAndBiasesCallback
     from optuna.integration.xgboost import XGBoostPruningCallback
 else:
