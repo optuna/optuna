@@ -1,8 +1,8 @@
 """
 .. _pruning:
 
-3. Efficient Optimization Algorithms
-====================================
+Efficient Optimization Algorithms
+=================================
 
 Optuna enables efficient hyperparameter optimization by
 adopting state-of-the-art algorithms for sampling hyperparameters and

@@ -1,8 +1,8 @@
 """
 .. _configurations:
 
-2. Pythonic Search Space
-========================
+Pythonic Search Space
+=====================
 
 For hyperparameter sampling, Optuna provides the following features:
 
