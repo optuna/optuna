@@ -406,6 +406,8 @@ class NSGAIIISampler(BaseSampler):
 
 
 # TODO(Shinichi) Replace with math.comb after support for python3.7 is deprecated.
+# This function calculates n multi-choose k, which is the total number of combinations with
+# repetition of size k from n items. This is equally re-written as math.comb(n+k-1, k)
 def _multi_choose(n: int, k: int) -> int:
     return math.factorial(n + k - 1) // math.factorial(k) // math.factorial(n - 1)
 
