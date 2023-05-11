@@ -458,7 +458,7 @@ def _filter_inf(population: list[FrozenTrial]) -> np.ndarray:
 
 
 def _normalize_objective_values(objective_matrix: np.ndarray) -> np.ndarray:
-    """Normalizes objective values of population
+    """Normalizes objective values of population.
 
     An ideal point z* consists of minimums in each axis. Each objective value of population is
     then subtracted by the ideal point.
@@ -501,7 +501,7 @@ def _normalize_objective_values(objective_matrix: np.ndarray) -> np.ndarray:
 def _associate_individuals_with_reference_points(
     objective_matrix: np.ndarray, reference_points: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Associates each objective value to the closest reference point
+    """Associates each objective value to the closest reference point.
 
     Associate each normalized objective value to the closest reference point. The distance is
     calculated by Euclidean norm.
@@ -556,7 +556,7 @@ def _preserve_niche_individuals(
     distance_reference_points: np.ndarray,
     rng: np.random.RandomState,
 ) -> list[FrozenTrial]:
-    """Determine who survives form the borderline front
+    """Determine who survives form the borderline front.
 
     Who survive form the borderline front is determined according to the sparsity of each closest
     reference point. The algorithm picks a reference point from those who have the least neighbors
