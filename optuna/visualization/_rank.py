@@ -69,7 +69,7 @@ def plot_rank(
 ) -> "go.Figure":
     """Plot parameter relations as scatter plots with colors indicating ranks of target value.
 
-    Note that, trials missing the specified parameters will not be plotted.
+    Note that trials missing the specified parameters will not be plotted.
 
     Example:
 
