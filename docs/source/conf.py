@@ -55,6 +55,8 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
+    # TODO(Shinichi) remove jQuery extension after readthedocs/sphinx_rtd_theme#1452 is resolved.
+    "sphinxcontrib.jquery",
     "sphinx_copybutton",
     "sphinx_gallery.gen_gallery",
     "matplotlib.sphinxext.plot_directive",
@@ -196,10 +198,12 @@ pio.renderers.default = "sphinx_gallery"
 
 sphinx_gallery_conf = {
     "examples_dirs": [
-        "../../tutorial",
+        "../../tutorial/10_key_features",
+        "../../tutorial/20_recipes",
     ],
     "gallery_dirs": [
-        "tutorial",
+        "tutorial/10_key_features",
+        "tutorial/20_recipes",
     ],
     "within_subsection_order": FileNameSortKey,
     "filename_pattern": r"/*\.py",

@@ -82,3 +82,4 @@ def test_plot_intermediate_values(
         figure.write_image(BytesIO())
     else:
         plt.savefig(BytesIO())
+        plt.close()

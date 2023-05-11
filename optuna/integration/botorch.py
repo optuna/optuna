@@ -8,6 +8,7 @@ from typing import Union
 import warnings
 
 import numpy
+from packaging import version
 
 from optuna import logging
 from optuna._experimental import experimental_class
@@ -38,7 +39,7 @@ with try_import() as _imports:
     from botorch.sampling import SobolQMCNormalSampler
     import botorch.version
 
-    if botorch.version.version_tuple < (0, 8, 0):
+    if version.parse(botorch.version.version) < version.parse("0.8.0"):
         from botorch.fit import fit_gpytorch_model as fit_gpytorch_mll
 
         def _get_sobol_qmc_normal_sampler(num_samples: int) -> SobolQMCNormalSampler:
@@ -652,7 +653,7 @@ class BoTorchSampler(BaseSampler):
     def reseed_rng(self) -> None:
         self._independent_sampler.reseed_rng()
         if self._seed is not None:
-            self._seed = numpy.random.RandomState().randint(2**60)
+            self._seed = numpy.random.RandomState().randint(numpy.iinfo(numpy.int32).max)
 
     def after_trial(
         self,

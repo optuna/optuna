@@ -31,24 +31,9 @@ with try_import() as _imports:
 class SkoptSampler(BaseSampler):
     """Sampler using Scikit-Optimize as the backend.
 
-    Example:
-
-        Optimize a simple quadratic function by using :class:`~optuna.integration.SkoptSampler`.
-
-        .. testcode::
-
-            import optuna
-
-
-            def objective(trial):
-                x = trial.suggest_float("x", -10, 10)
-                y = trial.suggest_int("y", 0, 10)
-                return x**2 + y
-
-
-            sampler = optuna.integration.SkoptSampler()
-            study = optuna.create_study(sampler=sampler)
-            study.optimize(objective, n_trials=10)
+    The use of :class:`~optuna.integration.SkoptSampler` is highly not recommended, as the
+    development of Scikit-Optimize has been inactive and we have identified compatibility
+    issues with newer NumPy versions.
 
     Args:
         independent_sampler:
@@ -139,7 +124,7 @@ class SkoptSampler(BaseSampler):
         self._rng: Optional[np.random.RandomState] = None
 
     def reseed_rng(self) -> None:
-        self._skopt_kwargs["random_state"] = random.randint(1, 2**32)
+        self._skopt_kwargs["random_state"] = random.randint(1, np.iinfo(np.int32).max)
         self._independent_sampler.reseed_rng()
 
     def infer_relative_search_space(

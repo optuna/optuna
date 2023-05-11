@@ -66,16 +66,22 @@ jobs:
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
 
+    # TODO(c-bata): Remove the version constraint on fakeredis
     - name: Install dependencies with minimum versions
       run: |
         # Install dependencies with minimum versions.
         pip uninstall -y alembic cmaes packaging sqlalchemy plotly scikit-learn
         pip install alembic==1.5.0 cmaes==0.9.1 packaging==20.0 sqlalchemy==1.3.0 numpy==1.20.3 tqdm==4.27.0 colorlog==0.3 PyYAML==5.1
-        pip install plotly==4.9.0 scikit-learn==0.24.2  # optional extras
+        pip install plotly==5.0.0 scikit-learn==0.24.2  # optional extras
+        pip install "fakeredis<2.11.1"
 
     - name: Output installed packages
       run: |
         pip freeze --all
+    - name: Output dependency tree
+      run: |
+        pip install pipdeptree
+        pipdeptree
 
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}

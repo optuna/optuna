@@ -5,8 +5,8 @@ from typing import Optional
 
 from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
+from optuna.search_space import intersection_search_space
 from optuna.study import StudyDirection
-from optuna.terminator._search_space.intersection import IntersectionSearchSpace
 from optuna.terminator.improvement._preprocessing import AddRandomInputs
 from optuna.terminator.improvement._preprocessing import BasePreprocessing
 from optuna.terminator.improvement._preprocessing import OneToHot
@@ -73,7 +73,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         trials: List[FrozenTrial],
         study_direction: StudyDirection,
     ) -> float:
-        search_space = IntersectionSearchSpace().calculate(trials)
+        search_space = intersection_search_space(trials, ordered_dict=True)
         self._validate_input(trials, search_space)
 
         fit_trials = self.get_preprocessing().apply(trials, study_direction)

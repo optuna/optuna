@@ -42,7 +42,8 @@ jobs:
         sudo apt-get update
         sudo apt-get -y install openmpi-bin libopenmpi-dev libopenblas-dev
 
-    # TODO(Shinichi): Remove the version constraint on PyTorch Lightning and Distributed
+    # TODO(Shinichi): Remove the version constraint on PyTorch Lightning
+    # TODO(c-bata): Remove the version constraint on fakeredis
     - name: Install
       run: |
         python -m pip install --upgrade pip
@@ -56,13 +57,18 @@ jobs:
         pip install --progress-bar off .[optional]
         pip install --progress-bar off .[integration] --extra-index-url https://download.pytorch.org/whl/cpu
         pip install "pytorch-lightning<2.0.0"
-        pip install "distributed<2023.3.2"
+        pip install "fakeredis<2.11.1"
 
         echo 'import coverage; coverage.process_startup()' > sitecustomize.py
 
     - name: Output installed packages
       run: |
         pip freeze --all
+    - name: Output dependency tree
+      run: |
+        pip install pipdeptree
+        pipdeptree
+
 
     - name: Tests
       env:
