@@ -44,7 +44,9 @@ def test_botorch_candidates_func_none(n_objectives: int) -> None:
     assert len(study.trials) == n_trials
 
     # TODO(hvy): Do not check for the correct candidates function using private APIs.
-    if n_objectives == 1:
+    if n_objectives == 1 and integration.botorch._imports_logei.is_successful():
+        assert sampler._candidates_func is integration.botorch.logei_candidates_func
+    elif n_objectives == 1 and not integration.botorch._imports_logei.is_successful():
         assert sampler._candidates_func is integration.botorch.qei_candidates_func
     elif n_objectives == 2:
         assert sampler._candidates_func is integration.botorch.qehvi_candidates_func
@@ -87,6 +89,7 @@ def test_botorch_candidates_func() -> None:
 @pytest.mark.parametrize(
     "candidates_func, n_objectives",
     [
+        (integration.botorch.logei_candidates_func, 1),
         (integration.botorch.qei_candidates_func, 1),
         (integration.botorch.qehvi_candidates_func, 2),
         (integration.botorch.qparego_candidates_func, 4),

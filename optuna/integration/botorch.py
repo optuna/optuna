@@ -63,6 +63,87 @@ with try_import() as _imports:
 
 _logger = logging.get_logger(__name__)
 
+with try_import() as _imports_logei:
+    from botorch.acquisition.analytic import LogExpectedImprovement
+
+
+@experimental_func("3.2.0")
+def logei_candidates_func(
+    train_x: "torch.Tensor",
+    train_obj: "torch.Tensor",
+    train_con: Optional["torch.Tensor"],
+    bounds: "torch.Tensor",
+) -> "torch.Tensor":
+    """Log Expected Improvement (LogEI).
+
+    The default value of ``candidates_func`` in :class:`~optuna.integration.BoTorchSampler`
+    with single-objective optimization for non-constrained problems, if botorch >=0.8.1 is
+    available.
+
+    Args:
+        train_x:
+            Previous parameter configurations. A ``torch.Tensor`` of shape
+            ``(n_trials, n_params)``. ``n_trials`` is the number of already observed trials
+            and ``n_params`` is the number of parameters. ``n_params`` may be larger than the
+            actual number of parameters if categorical parameters are included in the search
+            space, since these parameters are one-hot encoded.
+            Values are not normalized.
+        train_obj:
+            Previously observed objectives. A ``torch.Tensor`` of shape
+            ``(n_trials, n_objectives)``. ``n_trials`` is identical to that of ``train_x``.
+            ``n_objectives`` is the number of objectives. Observations are not normalized.
+        train_con:
+            Objective constraints. This option is not supported in logei_candidates_func and
+            must be :obj:`None`.
+        bounds:
+            Search space bounds. A ``torch.Tensor`` of shape ``(2, n_params)``. ``n_params`` is
+            identical to that of ``train_x``. The first and the second rows correspond to the
+            lower and upper bounds for each parameter respectively.
+
+    Returns:
+        Next set of candidates. Usually the return value of BoTorch's ``optimize_acqf``.
+
+    """
+
+    _imports_logei.check()  # We need botorch >=0.8.1 for LogExpectedImprovement.
+
+    if train_obj.size(-1) != 1:
+        raise ValueError("Objective may only contain single values with qEI.")
+    if train_con is not None:
+        raise ValueError("Constraint is not supported with logei_candidates_func. Please use ")
+    else:
+        train_y = train_obj
+        best_f = train_obj.max()
+
+    train_x = normalize(train_x, bounds=bounds)
+
+    model = SingleTaskGP(train_x, train_y, outcome_transform=Standardize(m=train_y.size(-1)))
+    mll = ExactMarginalLogLikelihood(model.likelihood, model)
+    fit_gpytorch_mll(mll)
+
+    acqf = LogExpectedImprovement(
+        model=model,
+        best_f=best_f,
+        sampler=_get_sobol_qmc_normal_sampler(256),
+    )
+
+    standard_bounds = torch.zeros_like(bounds)
+    standard_bounds[1] = 1
+
+    candidates, _ = optimize_acqf(
+        acq_function=acqf,
+        bounds=standard_bounds,
+        q=1,
+        num_restarts=10,
+        raw_samples=512,
+        options={"batch_limit": 5, "maxiter": 200},
+        sequential=True,
+    )
+
+    candidates = unnormalize(candidates.detach(), bounds=bounds)
+
+    return candidates
+
 
 @experimental_func("2.4.0")
 def qei_candidates_func(
@@ -399,6 +480,7 @@ def qparego_candidates_func(
 
 def _get_default_candidates_func(
     n_objectives: int,
+    has_constraint: bool,
 ) -> Callable[
     [
         "torch.Tensor",
@@ -413,7 +495,10 @@ def _get_default_candidates_func(
     elif n_objectives > 1:
         return qehvi_candidates_func
     else:
-        return qei_candidates_func
+        if has_constraint or not _imports_logei.is_successful():
+            return qei_candidates_func
+        else:
+            return logei_candidates_func
 
 
 @experimental_class("2.4.0")
@@ -608,7 +693,10 @@ class BoTorchSampler(BaseSampler):
         bounds.transpose_(0, 1)
 
         if self._candidates_func is None:
-            self._candidates_func = _get_default_candidates_func(n_objectives=n_objectives)
+            self._candidates_func = _get_default_candidates_func(
+                n_objectives=n_objectives,
+                has_constraint=con is not None,
+            )
 
         with manual_seed(self._seed):
             # `manual_seed` makes the default candidates functions reproducible.
