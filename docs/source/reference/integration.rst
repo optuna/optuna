@@ -159,7 +159,6 @@ TensorFlow
    :nosignatures:
 
    optuna.integration.TensorBoardCallback
-   optuna.integration.TensorFlowPruningHook
    optuna.integration.TFKerasPruningCallback
 
 XGBoost
