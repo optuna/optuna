@@ -438,7 +438,7 @@ def _filter_inf(population: list[FrozenTrial]) -> np.ndarray:
     mask_posinf = np.isposinf(objective_matrix)
     mask_neginf = np.isneginf(objective_matrix)
 
-    # Replace +-inf with nan temporary to get max and min
+    # Replace +-inf with nan temporary to get max and min.
     objective_matrix[mask_posinf + mask_neginf] = np.nan
     nadir_point = np.nanmax(objective_matrix, axis=0)
     ideal_point = np.nanmin(objective_matrix, axis=0)
