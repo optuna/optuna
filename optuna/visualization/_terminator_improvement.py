@@ -58,21 +58,24 @@ def _get_improvement_info(
         error_evaluator = CrossValidationErrorEvaluator()
 
     trial_numbers = []
+    completed_trials = []
     improvements = []
     errors = []
 
     for i, trial in enumerate(tqdm.tqdm(study.trials)):
         trial_numbers.append(trial.number)
-        trials = study.trials[: i + 1]
-        trials = [t for t in trials if t.state == optuna.trial.TrialState.COMPLETE]
+        if trial.state == optuna.trial.TrialState.COMPLETE:
+            completed_trials.append(trial)
 
         improvement = improvement_evaluator.evaluate(
-            trials=trials, study_direction=study.direction
+            trials=completed_trials, study_direction=study.direction
         )
         improvements.append(improvement)
 
         if get_error:
-            error = error_evaluator.evaluate(trials=trials, study_direction=study.direction)
+            error = error_evaluator.evaluate(
+                trials=completed_trials, study_direction=study.direction
+            )
             errors.append(error)
 
     if len(errors) == 0:
