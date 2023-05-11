@@ -781,3 +781,10 @@ def _convert_old_distribution_to_new_distribution(
         warnings.warn(message, FutureWarning)
 
     return new_distribution
+
+
+def _is_distribution_log(distribution: BaseDistribution) -> bool:
+    if isinstance(distribution, (FloatDistribution, IntDistribution)):
+        return distribution.log
+
+    return False
