@@ -11,7 +11,6 @@ def test_import() -> None:
     from optuna.integration import LightGBMPruningCallback  # NOQA
     from optuna.integration import mxnet  # NOQA
     from optuna.integration import MXNetPruningCallback  # NOQA
-    from optuna.integration import tensorflow  # NOQA
     from optuna.integration import TensorFlowPruningHook  # NOQA
     from optuna.integration import xgboost  # NOQA
     from optuna.integration import XGBoostPruningCallback  # NOQA
@@ -30,7 +29,6 @@ def test_module_attributes() -> None:
     assert hasattr(optuna.integration, "xgboost")
     assert hasattr(optuna.integration, "LightGBMPruningCallback")
     assert hasattr(optuna.integration, "MXNetPruningCallback")
-    assert hasattr(optuna.integration, "TensorFlowPruningHook")
     assert hasattr(optuna.integration, "XGBoostPruningCallback")
 
     with pytest.raises(AttributeError):
