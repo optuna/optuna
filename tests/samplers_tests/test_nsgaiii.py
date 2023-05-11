@@ -580,7 +580,7 @@ def test_niching_unexpected_target_population_size() -> None:
     target_population_size = 2
     elite_population_num = 1
     population = [create_trial(values=[1.0])]
-    with pytest.raises(IndexError):
+    with pytest.raises(ValueError):
         _preserve_niche_individuals(
             target_population_size,
             elite_population_num,
