@@ -583,7 +583,7 @@ def _preserve_niche_individuals(
         A list of trials which are selected as the next generation.
     """
     if len(population) < target_population_size:
-        raise IndexError(
+        raise ValueError(
             "The population size must be greater than or equal to the target population size."
         )
 
