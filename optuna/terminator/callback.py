@@ -15,10 +15,8 @@ _logger = get_logger(__name__)
 class TerminatorCallback:
     """A callback that terminates the optimization using Terminator.
 
-    This class implements a callback that terminates the optimization using the terminator
-    mechanism with the :func:`~optuna.study.Study.optimize` method. The callback terminates the
-    study when the statistical error, such as cross-validation error, exceeds the room left for
-    optimization.
+    This class implements a callback which wraps :class:`~optuna.terminator.terminator.Terminator`
+    so that it can be used with the :func:`~optuna.study.Study.optimize` method.
 
     Args:
         terminator:
