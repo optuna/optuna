@@ -87,7 +87,6 @@ jobs:
             --ignore tests/integration_tests/test_skopt.py \
             --ignore tests/integration_tests/test_tensorboard.py \
             --ignore tests/integration_tests/test_tensorflow.py \
-            --ignore tests/integration_tests/test_tfkeras.py \
             --ignore tests/integration_tests/lightgbm_tuner_tests \
             --ignore tests/importance_tests/test_init.py \
             --ignore tests/samplers_tests/test_samplers.py
@@ -111,7 +110,6 @@ jobs:
             --ignore tests/integration_tests/test_skopt.py \
             --ignore tests/integration_tests/test_tensorboard.py \
             --ignore tests/integration_tests/test_tensorflow.py \
-            --ignore tests/integration_tests/test_tfkeras.py \
             --ignore tests/integration_tests/lightgbm_tuner_tests \
             --ignore tests/importance_tests/test_init.py \
             --ignore tests/samplers_tests/test_samplers.py
