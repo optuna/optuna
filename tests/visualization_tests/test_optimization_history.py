@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 from io import BytesIO
-from typing import List
 
 import numpy as np
 import pytest
@@ -272,7 +273,7 @@ optimization_history_info_lists = [
 @pytest.mark.parametrize("target_name", ["Objective Value", "Target Name"])
 @pytest.mark.parametrize("info_list", optimization_history_info_lists)
 def test_get_optimization_history_plot(
-    target_name: str, info_list: List[_OptimizationHistoryInfo]
+    target_name: str, info_list: list[_OptimizationHistoryInfo]
 ) -> None:
     figure = _get_optimization_history_plot(info_list, target_name=target_name)
     assert figure.layout.yaxis.title.text == target_name

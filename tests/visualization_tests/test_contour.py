@@ -1,12 +1,9 @@
+from __future__ import annotations
+
 from io import BytesIO
 import math
 from typing import Any
 from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
-from typing import Union
 
 import numpy as np
 import pytest
@@ -30,8 +27,6 @@ from optuna.visualization.matplotlib import plot_contour as plt_plot_contour
 from optuna.visualization.matplotlib._matplotlib_imports import Axes
 from optuna.visualization.matplotlib._matplotlib_imports import plt
 
-
-RANGE_TYPE = Union[Tuple[str, str], Tuple[float, float]]
 
 parametrize_plot_contour = pytest.mark.parametrize(
     "plot_contour", [plotly_plot_contour, plt_plot_contour]
@@ -90,7 +85,7 @@ def _create_study_with_log_scale_and_str_category_3d() -> Study:
 
 def _create_study_mixture_category_types() -> Study:
     study = create_study()
-    distributions: Dict[str, BaseDistribution] = {
+    distributions: dict[str, BaseDistribution] = {
         "param_a": CategoricalDistribution([None, "100"]),
         "param_b": CategoricalDistribution([101, 102.0]),
     }
@@ -148,7 +143,7 @@ def test_plot_contour_customized_target_name(plot_contour: Callable[..., Any]) -
 def test_plot_contour(
     plot_contour: Callable[..., Any],
     specific_create_study: Callable[[], Study],
-    params: Optional[List[str]],
+    params: list[str] | None,
 ) -> None:
     study = specific_create_study()
     figure = plot_contour(study, params=params)
@@ -181,7 +176,7 @@ def test_target_is_none_and_study_is_multi_obj() -> None:
     ],
 )
 def test_get_contour_info_empty(
-    specific_create_study: Callable[[], Study], params: Optional[List[str]]
+    specific_create_study: Callable[[], Study], params: list[str] | None
 ) -> None:
     study = specific_create_study()
     info = _get_contour_info(study, params=params)
@@ -197,7 +192,7 @@ def test_get_contour_info_non_exist_param_error() -> None:
 
 
 @pytest.mark.parametrize("params", [[], ["param_a"]])
-def test_get_contour_info_too_short_params(params: List[str]) -> None:
+def test_get_contour_info_too_short_params(params: list[str]) -> None:
     study = prepare_study_with_trials()
     info = _get_contour_info(study, params=params)
     assert len(info.sorted_params) == len(params)
@@ -246,7 +241,7 @@ def test_get_contour_info_2_params() -> None:
         None,
     ],
 )
-def test_get_contour_info_more_than_2_params(params: Optional[List[str]]) -> None:
+def test_get_contour_info_more_than_2_params(params: list[str] | None) -> None:
     study = prepare_study_with_trials()
     n_params = len(params) if params is not None else 4
     info = _get_contour_info(study, params=params)
@@ -261,7 +256,7 @@ def test_get_contour_info_more_than_2_params(params: Optional[List[str]]) -> Non
         ["param_a", "param_b", "param_c"],
     ],
 )
-def test_get_contour_info_customized_target(params: List[str]) -> None:
+def test_get_contour_info_customized_target(params: list[str]) -> None:
     study = prepare_study_with_trials()
     info = _get_contour_info(
         study, params=params, target=lambda t: t.params["param_d"], target_name="param_d"
@@ -279,7 +274,7 @@ def test_get_contour_info_customized_target(params: List[str]) -> None:
         ["param_b", "param_a"],  # `y_axis` has one observation.
     ],
 )
-def test_generate_contour_plot_for_few_observations(params: List[str]) -> None:
+def test_generate_contour_plot_for_few_observations(params: list[str]) -> None:
     study = create_study(direction="minimize")
     study.add_trial(
         create_trial(
@@ -378,7 +373,7 @@ def test_get_contour_info_log_scale_and_str_category_more_than_2_params() -> Non
     }
     is_log = {"param_a": True, "param_b": False, "param_c": False}
     is_cat = {"param_a": False, "param_b": True, "param_c": True}
-    indices: Dict[str, List[Union[str, float]]] = {
+    indices: dict[str, list[str | float]] = {
         "param_a": [math.pow(10, -6.05), 1e-6, 1e-5, math.pow(10, -4.95)],
         "param_b": ["100", "101"],
         "param_c": ["one", "two"],

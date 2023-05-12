@@ -142,15 +142,6 @@ SHAP
 
    optuna.integration.ShapleyImportanceEvaluator
 
-skorch
-------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-    optuna.integration.SkorchPruningCallback
-
 TensorFlow
 ----------
 
@@ -159,7 +150,6 @@ TensorFlow
    :nosignatures:
 
    optuna.integration.TensorBoardCallback
-   optuna.integration.TFKerasPruningCallback
 
 XGBoost
 -------
