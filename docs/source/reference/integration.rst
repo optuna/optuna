@@ -151,7 +151,6 @@ TensorFlow
 
    optuna.integration.TensorBoardCallback
    optuna.integration.TensorFlowPruningHook
-   optuna.integration.TFKerasPruningCallback
 
 XGBoost
 -------
