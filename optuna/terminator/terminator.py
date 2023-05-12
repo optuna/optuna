@@ -19,7 +19,7 @@ class BaseTerminator(metaclass=abc.ABCMeta):
 
 @experimental_class("3.2.0")
 class Terminator(BaseTerminator):
-    """Automatic stopping mechanism for Optuna studies
+    """Automatic stopping mechanism for Optuna studies.
 
     This class implements an automatic stopping mechanism for Optuna studies, aiming to prevent
     unnecessary computation. The study is terminated when the statistical error, e.g.
@@ -82,8 +82,9 @@ class Terminator(BaseTerminator):
                 break
 
     .. seealso::
-        Please refer to :class:`~optuna.terminator.callbacks.TerminationCallback` for to use the
-        terminator mechanism with the :func:`~optuna.study.Study.optimize` method.
+        Please refer to :class:`~optuna.terminator.callbacks.TerminationCallback` for how to use
+        the terminator mechanism with the :func:`~optuna.study.Study.optimize` method.
+
     """
 
     def __init__(
