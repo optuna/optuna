@@ -560,7 +560,7 @@ class CmaEsSampler(BaseSampler):
             for i, dist in enumerate(trans._search_space.values()):
                 assert isinstance(dist, (IntDistribution, FloatDistribution))
                 # Set step 0.0 for continuous search space.
-                if dist.step is None:
+                if dist.step is None or dist.log:
                     steps[i] = 0.0
                 elif dist.low == dist.high:
                     steps[i] = 1.0
