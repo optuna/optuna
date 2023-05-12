@@ -84,6 +84,19 @@ class CrossValidationErrorEvaluator(BaseErrorEvaluator):
 
 @experimental_class("3.2.0")
 def report_cross_validation_scores(trial: Trial, scores: list[float]) -> None:
+    """A function to report cross-validation scores of a trial.
+
+    This function should be called after cross-validation step within the trial to report its
+    scores. The reported scores are used to evaluate the statistical error for termination
+    judgement.
+
+    Args:
+        trial:
+            A :class:`~optuna.trial.Trial` object to report the cross-validation scores.
+        scores:
+            The cross-validation scores of the trial.
+
+    """
     if len(scores) <= 1:
         raise ValueError("The length of `scores` is expected to be greater than one.")
     trial.storage.set_trial_system_attr(trial._trial_id, _CROSS_VALIDATION_SCORES_KEY, scores)
