@@ -73,6 +73,7 @@ def logei_candidates_func(
     train_obj: "torch.Tensor",
     train_con: Optional["torch.Tensor"],
     bounds: "torch.Tensor",
+    pending_x: Optional["torch.Tensor"],
 ) -> "torch.Tensor":
     """Log Expected Improvement (LogEI).
 
@@ -98,6 +99,11 @@ def logei_candidates_func(
             Search space bounds. A ``torch.Tensor`` of shape ``(2, n_params)``. ``n_params`` is
             identical to that of ``train_x``. The first and the second rows correspond to the
             lower and upper bounds for each parameter respectively.
+        pending_x:
+            Pending parameter configurations. A ``torch.Tensor`` of shape
+            ``(n_pending, n_params)``. ``n_pending`` is the number of the trials which are already
+            suggested all their parameters but have not completed their evaluation, and
+            ``n_params`` is identical to that of ``train_x``.
 
     Returns:
         Next set of candidates. Usually the return value of BoTorch's ``optimize_acqf``.
@@ -508,6 +514,7 @@ def qparego_candidates_func(
 def _get_default_candidates_func(
     n_objectives: int,
     has_constraint: bool,
+    consider_running_trials: bool,
 ) -> Callable[
     [
         "torch.Tensor",
@@ -522,7 +529,7 @@ def _get_default_candidates_func(
         return qparego_candidates_func
     elif n_objectives > 1:
         return qehvi_candidates_func
-    elif has_constraint:
+    elif has_constraint or consider_running_trials:
         return qei_candidates_func
     else:
         return logei_candidates_func
@@ -748,6 +755,7 @@ class BoTorchSampler(BaseSampler):
             self._candidates_func = _get_default_candidates_func(
                 n_objectives=n_objectives,
                 has_constraint=con is not None,
+                consider_running_trials=self._consider_running_trials,
             )
 
         completed_values = values[:n_completed_trials]
