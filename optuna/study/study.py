@@ -438,7 +438,7 @@ class Study:
             show_progress_bar:
                 Flag to show progress bars or not. To disable progress bar, set this :obj:`False`.
                 Currently, progress bar is experimental feature and disabled
-                when ``n_trials`` is :obj:`None`, ``timeout`` not is :obj:`None`, and
+                when ``n_trials`` is :obj:`None`, ``timeout`` is not :obj:`None`, and
                 ``n_jobs`` :math:`\\ne 1`.
 
         Raises:
@@ -1574,6 +1574,8 @@ def get_all_study_summaries(
     study_summaries = []
 
     for s in frozen_studies:
+        if isinstance(storage, _CachedStorage):
+            storage.read_trials_from_remote_storage(s._study_id)
         all_trials = storage.get_all_trials(s._study_id)
         completed_trials = [t for t in all_trials if t.state == TrialState.COMPLETE]
 

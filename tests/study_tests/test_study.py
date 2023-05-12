@@ -1527,7 +1527,7 @@ def test_tell_from_another_process() -> None:
         assert study.best_value == 1.2
 
         # Should fail because the trial0 is already finished.
-        with pytest.raises(RuntimeError):
+        with pytest.raises(ValueError):
             pool.starmap(_process_tell, [(study, trial0, 1.2)])
 
 
