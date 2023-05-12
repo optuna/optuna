@@ -91,6 +91,16 @@ def report_cross_validation_scores(trial: Trial, scores: list[float]) -> None:
 
 @experimental_class("3.2.0")
 class StaticErrorEvaluator(BaseErrorEvaluator):
+    """An error evaluator that always returns a constant value.
+
+    This evaluator supports the cases where a fixed regret bound threshold to achieve is specified.
+
+    Args:
+        constant:
+            A user-specified constant value to always return as an error estimate.
+
+    """
+
     def __init__(self, constant: float) -> None:
         self._constant = constant
 
