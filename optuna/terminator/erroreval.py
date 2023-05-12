@@ -27,11 +27,33 @@ class BaseErrorEvaluator(metaclass=abc.ABCMeta):
 
 @experimental_class("3.2.0")
 class CrossValidationErrorEvaluator(BaseErrorEvaluator):
+    """An error evaluator for objective functions based on cross-validation.
+
+    This evaluator evaluates objective functions' statistical error, which comes from the
+    randomness of dataset. This evaluator assumes that the objective function is evaluated by
+    cross-validation and uses the scaled variance of the cross-validation scores as the
+    statistical error.
+
+    """
+
     def evaluate(
         self,
         trials: list[FrozenTrial],
         study_direction: StudyDirection,
     ) -> float:
+        """Evaluate the statistical error of the objective function based on cross-validation.
+
+        Args:
+            trials:
+                A list of trials to evaluate the error of the best trial.
+
+            study_direction:
+                The direction of the study.
+
+        Returns:
+            A float representing the statistical error of the objective function.
+
+        """
         trials = [trial for trial in trials if trial.state == TrialState.COMPLETE]
         assert len(trials) > 0
 
