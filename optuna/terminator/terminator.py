@@ -84,6 +84,7 @@ class Terminator(BaseTerminator):
     .. seealso::
         Please refer to :class:`~optuna.terminator.callbacks.TerminationCallback` for how to use
         the terminator mechanism with the :func:`~optuna.study.Study.optimize` method.
+
     """
 
     def __init__(
