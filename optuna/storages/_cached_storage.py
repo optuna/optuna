@@ -28,7 +28,7 @@ class _StudyInfo:
         # Trial number to corresponding FrozenTrial.
         self.trials: Dict[int, FrozenTrial] = {}
         # A list of trials which do not require storage access to read latest attributes.
-        self.owned_or_finished_trial_ids: Set[int] = set()
+        self.finished_trial_ids: Set[int] = set()
         # Cache distributions to avoid storage access on distribution consistency check.
         self.param_distribution: Dict[str, distributions.BaseDistribution] = {}
         self.directions: Optional[List[StudyDirection]] = None
@@ -58,11 +58,6 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
     more recent values than any writes by `P` on the attribute before `P` updated
     the `state` attribute of `T`.
     The same applies for `user_attrs', 'system_attrs' and 'intermediate_values` attributes.
-
-    The current implementation of :class:`~optuna.storages._CachedStorage` assumes that each
-    RUNNING trial is only modified from a single process.
-    When a user modifies a RUNNING trial from multiple processes, the internal state of the storage
-    may become inconsistent. Consequences are undefined.
 
     **Data persistence**
 
@@ -176,15 +171,10 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
                 self._studies[study_id] = _StudyInfo()
             study = self._studies[study_id]
             self._add_trials_to_cache(study_id, [frozen_trial])
-            # Running trials can be modified from only one worker.
-            # If the state is RUNNING, since this worker is an owner of the trial, we do not need
-            # to access to the storage to get the latest attributes of the trial.
             # Since finished trials will not be modified by any worker, we do not
-            # need storage access for them, too.
-            # WAITING trials are exception and they can be modified from arbitral worker.
-            # Thus, we cannot add them to a list of cached trials.
-            if frozen_trial.state != TrialState.WAITING:
-                study.owned_or_finished_trial_ids.add(frozen_trial._trial_id)
+            # need storage access for them.
+            if frozen_trial.state.is_finished():
+                study.finished_trial_ids.add(frozen_trial._trial_id)
         return trial_id
 
     def set_trial_param(
@@ -194,39 +184,6 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
         param_value_internal: float,
         distribution: distributions.BaseDistribution,
     ) -> None:
-        with self._lock:
-            cached_trial = self._get_cached_trial(trial_id)
-            if cached_trial is not None:
-                self._check_trial_is_updatable(cached_trial)
-
-                study_id, _ = self._trial_id_to_study_id_and_number[trial_id]
-                cached_dist = self._studies[study_id].param_distribution.get(param_name, None)
-                if cached_dist:
-                    distributions.check_distribution_compatibility(cached_dist, distribution)
-                else:
-                    # On cache miss, check compatibility against previous trials in the database
-                    # and INSERT immediately to prevent other processes from creating incompatible
-                    # ones. By INSERT, it is assumed that no previous entry has been persisted
-                    # already.
-                    self._backend._check_and_set_param_distribution(
-                        study_id, trial_id, param_name, param_value_internal, distribution
-                    )
-                    self._studies[study_id].param_distribution[param_name] = distribution
-
-                params = copy.copy(cached_trial.params)
-                params[param_name] = distribution.to_external_repr(param_value_internal)
-                cached_trial.params = params
-
-                dists = copy.copy(cached_trial.distributions)
-                dists[param_name] = distribution
-                cached_trial.distributions = dists
-
-                if cached_dist:  # Already persisted in case of cache miss so no need to update.
-                    self._backend.set_trial_param(
-                        trial_id, param_name, param_value_internal, distribution
-                    )
-                return
-
         self._backend.set_trial_param(trial_id, param_name, param_value_internal, distribution)
 
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
@@ -243,68 +200,17 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
     def set_trial_state_values(
         self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
     ) -> bool:
-        with self._lock:
-            cached_trial = self._get_cached_trial(trial_id)
-            if cached_trial is not None:
-                # When a waiting trial is updated to running, its `datetime_start` must be
-                # updated. However, a waiting trials is never cached so we do not have to account
-                # for this case.
-                assert cached_trial.state != TrialState.WAITING
-
-                self._check_trial_is_updatable(cached_trial)
-                ret = self._backend.set_trial_state_values(trial_id, state=state, values=values)
-
-                if values is not None:
-                    cached_trial.values = values
-                cached_trial.state = state
-                if cached_trial.state.is_finished():
-                    backend_trial = self._backend.get_trial(trial_id)
-                    cached_trial.datetime_complete = backend_trial.datetime_complete
-                return ret
-
-        ret = self._backend.set_trial_state_values(trial_id, state=state, values=values)
-        if (
-            ret
-            and state == TrialState.RUNNING
-            and trial_id in self._trial_id_to_study_id_and_number
-        ):
-            # Cache when the local thread pop WAITING trial and start evaluation.
-            with self._lock:
-                study_id, _ = self._trial_id_to_study_id_and_number[trial_id]
-                self._add_trials_to_cache(study_id, [self._backend.get_trial(trial_id)])
-                self._studies[study_id].owned_or_finished_trial_ids.add(trial_id)
-        return ret
+        return self._backend.set_trial_state_values(trial_id, state=state, values=values)
 
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
     ) -> None:
-        with self._lock:
-            cached_trial = self._get_cached_trial(trial_id)
-            if cached_trial is not None:
-                self._check_trial_is_updatable(cached_trial)
-                intermediate_values = copy.copy(cached_trial.intermediate_values)
-                intermediate_values[step] = intermediate_value
-                cached_trial.intermediate_values = intermediate_values
         self._backend.set_trial_intermediate_value(trial_id, step, intermediate_value)
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
-        with self._lock:
-            cached_trial = self._get_cached_trial(trial_id)
-            if cached_trial is not None:
-                self._check_trial_is_updatable(cached_trial)
-                attrs = copy.copy(cached_trial.user_attrs)
-                attrs[key] = value
-                cached_trial.user_attrs = attrs
         self._backend.set_trial_user_attr(trial_id, key=key, value=value)
 
     def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
-        with self._lock:
-            cached_trial = self._get_cached_trial(trial_id)
-            if cached_trial is not None:
-                self._check_trial_is_updatable(cached_trial)
-                attrs = copy.copy(cached_trial.system_attrs)
-                attrs[key] = value
-                cached_trial.system_attrs = attrs
         self._backend.set_trial_system_attr(trial_id, key=key, value=value)
 
     def _get_cached_trial(self, trial_id: int) -> Optional[FrozenTrial]:
@@ -312,7 +218,7 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
             return None
         study_id, number = self._trial_id_to_study_id_and_number[trial_id]
         study = self._studies[study_id]
-        return study.trials[number] if trial_id in study.owned_or_finished_trial_ids else None
+        return study.trials[number] if trial_id in study.finished_trial_ids else None
 
     def get_trial(self, trial_id: int) -> FrozenTrial:
         with self._lock:
@@ -351,13 +257,13 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
                 self._studies[study_id] = _StudyInfo()
             study = self._studies[study_id]
             trials = self._backend._get_trials(
-                study_id, states=None, excluded_trial_ids=study.owned_or_finished_trial_ids
+                study_id, states=None, excluded_trial_ids=study.finished_trial_ids
             )
             if trials:
                 self._add_trials_to_cache(study_id, trials)
                 for trial in trials:
                     if trial.state.is_finished():
-                        study.owned_or_finished_trial_ids.add(trial._trial_id)
+                        study.finished_trial_ids.add(trial._trial_id)
 
     def _add_trials_to_cache(self, study_id: int, trials: List[FrozenTrial]) -> None:
         study = self._studies[study_id]
@@ -368,13 +274,6 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
             )
             self._study_id_and_number_to_trial_id[(study_id, trial.number)] = trial._trial_id
             study.trials[trial.number] = trial
-
-    @staticmethod
-    def _check_trial_is_updatable(trial: FrozenTrial) -> None:
-        if trial.state.is_finished():
-            raise RuntimeError(
-                "Trial#{} has already finished and can not be updated.".format(trial.number)
-            )
 
     def record_heartbeat(self, trial_id: int) -> None:
         self._backend.record_heartbeat(trial_id)

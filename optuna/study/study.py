@@ -1574,6 +1574,8 @@ def get_all_study_summaries(
     study_summaries = []
 
     for s in frozen_studies:
+        if isinstance(storage, _CachedStorage):
+            storage.read_trials_from_remote_storage(s._study_id)
         all_trials = storage.get_all_trials(s._study_id)
         completed_trials = [t for t in all_trials if t.state == TrialState.COMPLETE]
 
