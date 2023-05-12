@@ -331,7 +331,9 @@ class NSGAIISampler(BaseSampler):
         self, study: Study, population: List[FrozenTrial]
     ) -> List[FrozenTrial]:
         elite_population: List[FrozenTrial] = []
-        population_per_rank = _fast_non_dominated_sort(population, study.directions)
+        population_per_rank = _fast_non_dominated_sort(
+            population, study.directions, self._constraints_func
+        )
         for population in population_per_rank:
             if len(elite_population) + len(population) < self._population_size:
                 elite_population.extend(population)
