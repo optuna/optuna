@@ -62,7 +62,7 @@ def _get_improvement_info(
     improvements = []
     errors = []
 
-    for i, trial in enumerate(tqdm.tqdm(study.trials)):
+    for trial in tqdm.tqdm(study.trials):
         trial_numbers.append(trial.number)
         if trial.state == optuna.trial.TrialState.COMPLETE:
             completed_trials.append(trial)
