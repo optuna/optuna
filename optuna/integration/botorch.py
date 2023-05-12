@@ -77,8 +77,7 @@ def logei_candidates_func(
     """Log Expected Improvement (LogEI).
 
     The default value of ``candidates_func`` in :class:`~optuna.integration.BoTorchSampler`
-    with single-objective optimization for non-constrained problems, if botorch >=0.8.1 is
-    available.
+    with single-objective optimization for non-constrained problems.
 
     Args:
         train_x:
@@ -105,7 +104,12 @@ def logei_candidates_func(
 
     """
 
-    _imports_logei.check()  # We need botorch >=0.8.1 for LogExpectedImprovement.
+    # We need botorch >=0.8.1 for LogExpectedImprovement.
+    if not _imports_logei.is_successful():
+        raise ImportError(
+            "logei_candidates_func requires botorch >=0.8.1. "
+            "Please upgrade botorch or use qei_candidates_func instead."
+        )
 
     if train_obj.size(-1) != 1:
         raise ValueError("Objective may only contain single values with logEI.")
@@ -158,8 +162,7 @@ def qei_candidates_func(
     """Quasi MC-based batch Expected Improvement (qEI).
 
     The default value of ``candidates_func`` in :class:`~optuna.integration.BoTorchSampler`
-    with single-objective optimization, when the problem has constraints or botorch version
-    is <0.8.1.
+    with single-objective optimization for constrained problems.
 
     Args:
         train_x:
@@ -498,11 +501,10 @@ def _get_default_candidates_func(
         return qparego_candidates_func
     elif n_objectives > 1:
         return qehvi_candidates_func
+    elif has_constraint:
+        return qei_candidates_func
     else:
-        if has_constraint or not _imports_logei.is_successful():
-            return qei_candidates_func
-        else:
-            return logei_candidates_func
+        return logei_candidates_func
 
 
 @experimental_class("2.4.0")

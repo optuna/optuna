@@ -1,3 +1,4 @@
+import sys
 from typing import Any
 from typing import Optional
 from typing import Sequence
@@ -44,10 +45,8 @@ def test_botorch_candidates_func_none(n_objectives: int) -> None:
     assert len(study.trials) == n_trials
 
     # TODO(hvy): Do not check for the correct candidates function using private APIs.
-    if n_objectives == 1 and integration.botorch._imports_logei.is_successful():
+    if n_objectives == 1:
         assert sampler._candidates_func is integration.botorch.logei_candidates_func
-    elif n_objectives == 1 and not integration.botorch._imports_logei.is_successful():
-        assert sampler._candidates_func is integration.botorch.qei_candidates_func
     elif n_objectives == 2:
         assert sampler._candidates_func is integration.botorch.qehvi_candidates_func
     elif n_objectives == 4:
@@ -98,6 +97,13 @@ def test_botorch_candidates_func() -> None:
     ],
 )
 def test_botorch_specify_candidates_func(candidates_func: Any, n_objectives: int) -> None:
+    if candidates_func == integration.botorch.logei_candidates_func and sys.version_info < (
+        3,
+        8,
+        0,
+    ):
+        pytest.skip("LogExpectedImprovement is not available in Python <3.8.")
+
     n_trials = 4
     n_startup_trials = 2
 
