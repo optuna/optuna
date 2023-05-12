@@ -103,7 +103,6 @@ integration = [
     "shap; python_version<'3.11'",
     "skorch; python_version<'3.11'",
     "tensorflow; python_version<'3.11'",
-    "tensorflow-datasets; python_version<'3.11'",
     "torch; python_version<'3.11'",
     "torchaudio; python_version<'3.11'",
     "torchvision; python_version<'3.11'",
