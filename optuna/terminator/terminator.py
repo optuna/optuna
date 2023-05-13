@@ -106,6 +106,7 @@ class Terminator(BaseTerminator):
         self._min_n_trials = min_n_trials
 
     def should_terminate(self, study: Study) -> bool:
+        """Judge whether the study should be terminated based on the reported values."""
         trials = study.get_trials(states=[TrialState.COMPLETE])
 
         if len(trials) < self._min_n_trials:
