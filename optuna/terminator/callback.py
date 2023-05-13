@@ -52,6 +52,7 @@ class TerminatorCallback:
                 report_cross_validation_scores(trial, scores)
                 return scores.mean()
 
+
             study = optuna.create_study(direction="maximize")
             terminator = TerminatorCallback()
             study.optimize(objective, n_trials=50, callbacks=[terminator])
