@@ -48,6 +48,8 @@ class Terminator(BaseTerminator):
 
         .. testcode::
 
+            import sys
+
             from sklearn.datasets import load_wine
             from sklearn.ensemble import RandomForestClassifier
             from sklearn.model_selection import cross_val_score
@@ -77,11 +79,11 @@ class Terminator(BaseTerminator):
                 report_cross_validation_scores(trial, scores)
 
                 value = scores.mean()
-                print(f"Trial #{trial.number} finished with value {value}.")
+                print(f"Trial #{trial.number} finished with value {value}.", file=sys.stderr)
                 study.tell(trial, value)
 
                 if trial.number > min_n_trials and terminator.should_terminate(study):
-                    print("Terminated by Optuna Terminator!")
+                    print("Terminated by Optuna Terminator!", file=sys.stderr)
                     break
 
     .. seealso::
