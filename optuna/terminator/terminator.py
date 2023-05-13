@@ -55,7 +55,7 @@ class Terminator(BaseTerminator):
 
             import optuna
             from optuna.terminator.terminator import Terminator
-            from optuna.terminator.serror import report_cross_validation_scores
+            from optuna.terminator.erroreval import report_cross_validation_scores
 
 
             study = optuna.create_study(direction="maximize")
