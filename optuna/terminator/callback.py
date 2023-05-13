@@ -26,32 +26,35 @@ class TerminatorCallback:
             improvement_evaluator and error_evaluator.
 
     Example:
-        from sklearn.datasets import load_wine
-        from sklearn.ensemble import RandomForestClassifier
-        from sklearn.model_selection import cross_val_score
-        from sklearn.model_selection import KFold
 
-        import optuna
-        from optuna.terminator.terminator import TerminatorCallback
-        from optuna.terminator.serror import report_cross_validation_scores
+        .. testcode::
+
+            from sklearn.datasets import load_wine
+            from sklearn.ensemble import RandomForestClassifier
+            from sklearn.model_selection import cross_val_score
+            from sklearn.model_selection import KFold
+
+            import optuna
+            from optuna.terminator.terminator import TerminatorCallback
+            from optuna.terminator.serror import report_cross_validation_scores
 
 
-        def objective(trial):
-            X, y = load_wine(return_X_y=True)
+            def objective(trial):
+                X, y = load_wine(return_X_y=True)
 
-            clf = RandomForestClassifier(
-                max_depth=trial.suggest_int("max_depth", 2, 32),
-                min_samples_split=trial.suggest_float("min_samples_split", 0, 1),
-                criterion=trial.suggest_categorical("criterion", ("gini", "entropy")),
-            )
+                clf = RandomForestClassifier(
+                    max_depth=trial.suggest_int("max_depth", 2, 32),
+                    min_samples_split=trial.suggest_float("min_samples_split", 0, 1),
+                    criterion=trial.suggest_categorical("criterion", ("gini", "entropy")),
+                )
 
-            scores = cross_val_score(clf, X, y, cv=KFold(n_splits=5, shuffle=True))
-            report_cross_validation_scores(trial, scores)
-            return scores.mean()
+                scores = cross_val_score(clf, X, y, cv=KFold(n_splits=5, shuffle=True))
+                report_cross_validation_scores(trial, scores)
+                return scores.mean()
 
-        study = optuna.create_study(direction="maximize")
-        terminator = TerminatorCallback()
-        study.optimize(objective, n_trials=50, callbacks=[terminator])
+            study = optuna.create_study(direction="maximize")
+            terminator = TerminatorCallback()
+            study.optimize(objective, n_trials=50, callbacks=[terminator])
 
     .. seealso::
         Please refer to :class:`~optuna.terminator.terminator.Terminator` for the details of
