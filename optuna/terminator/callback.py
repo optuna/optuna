@@ -35,7 +35,7 @@ class TerminatorCallback:
             from sklearn.model_selection import KFold
 
             import optuna
-            from optuna.terminator.terminator import TerminatorCallback
+            from optuna.terminator.callback import TerminatorCallback
             from optuna.terminator.serror import report_cross_validation_scores
 
 
