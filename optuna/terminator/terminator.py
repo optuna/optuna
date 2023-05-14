@@ -45,41 +45,46 @@ class Terminator(BaseTerminator):
         ValueError: If ``min_n_trials`` is not a positive integer.
 
     Example:
-        from sklearn.datasets import load_wine
-        from sklearn.ensemble import RandomForestClassifier
-        from sklearn.model_selection import cross_val_score
-        from sklearn.model_selection import KFold
 
-        import optuna
-        from optuna.terminator.terminator import Terminator
-        from optuna.terminator.serror import report_cross_validation_scores
+        .. testcode::
+
+            import sys
+
+            from sklearn.datasets import load_wine
+            from sklearn.ensemble import RandomForestClassifier
+            from sklearn.model_selection import cross_val_score
+            from sklearn.model_selection import KFold
+
+            import optuna
+            from optuna.terminator.terminator import Terminator
+            from optuna.terminator.erroreval import report_cross_validation_scores
 
 
-        study = optuna.create_study(direction="maximize")
-        terminator = Terminator()
-        min_n_trials = 20
+            study = optuna.create_study(direction="maximize")
+            terminator = Terminator()
+            min_n_trials = 20
 
-        while True:
-            trial = study.ask()
+            while True:
+                trial = study.ask()
 
-            X, y = load_wine(return_X_y=True)
+                X, y = load_wine(return_X_y=True)
 
-            clf = RandomForestClassifier(
-                max_depth=trial.suggest_int("max_depth", 2, 32),
-                min_samples_split=trial.suggest_float("min_samples_split", 0, 1),
-                criterion=trial.suggest_categorical("criterion", ("gini", "entropy")),
-            )
+                clf = RandomForestClassifier(
+                    max_depth=trial.suggest_int("max_depth", 2, 32),
+                    min_samples_split=trial.suggest_float("min_samples_split", 0, 1),
+                    criterion=trial.suggest_categorical("criterion", ("gini", "entropy")),
+                )
 
-            scores = cross_val_score(clf, X, y, cv=KFold(n_splits=5, shuffle=True))
-            report_cross_validation_scores(trial, scores)
+                scores = cross_val_score(clf, X, y, cv=KFold(n_splits=5, shuffle=True))
+                report_cross_validation_scores(trial, scores)
 
-            value = scores.mean()
-            print(f"Trial #{trial.number} finished with value {value}.")
-            study.tell(trial, value)
+                value = scores.mean()
+                print(f"Trial #{trial.number} finished with value {value}.", file=sys.stderr)
+                study.tell(trial, value)
 
-            if trial.number > min_n_trials and terminator.should_terminate(study):
-                print("Terminated by Optuna Terminator!")
-                break
+                if trial.number > min_n_trials and terminator.should_terminate(study):
+                    print("Terminated by Optuna Terminator!", file=sys.stderr)
+                    break
 
     .. seealso::
         Please refer to :class:`~optuna.terminator.callbacks.TerminationCallback` for how to use
