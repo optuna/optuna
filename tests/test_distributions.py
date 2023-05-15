@@ -592,3 +592,20 @@ def test_convert_old_distribution_to_new_distribution_noop() -> None:
 
     ild = distributions.IntDistribution(low=1, high=10, log=True)
     assert distributions._convert_old_distribution_to_new_distribution(ild) == ild
+
+
+def test_is_distribution_log() -> None:
+    lfd = distributions.FloatDistribution(low=1, high=10, log=True)
+    assert distributions._is_distribution_log(lfd)
+
+    lid = distributions.IntDistribution(low=1, high=10, log=True)
+    assert distributions._is_distribution_log(lid)
+
+    fd = distributions.FloatDistribution(low=0, high=10, log=False)
+    assert not distributions._is_distribution_log(fd)
+
+    id = distributions.IntDistribution(low=0, high=10, log=False)
+    assert not distributions._is_distribution_log(id)
+
+    cd = distributions.CategoricalDistribution(choices=["a", "b", "c"])
+    assert not distributions._is_distribution_log(cd)
