@@ -33,6 +33,7 @@ from optuna.samplers.nsgaii import UniformCrossover
 from optuna.samplers.nsgaii import VSBXCrossover
 from optuna.samplers.nsgaii._crossover import _inlined_categorical_uniform_crossover
 from optuna.samplers.nsgaii._sampler import _constrained_dominates
+from optuna.samplers.nsgaii._sampler import _fast_non_dominated_sort
 from optuna.study._multi_objective import _dominates
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -376,22 +377,16 @@ def _assert_population_per_rank(
 def test_fast_non_dominated_sort_no_constraints(
     direction1: StudyDirection, direction2: StudyDirection
 ) -> None:
-    sampler = NSGAIISampler()
-
     directions = [direction1, direction2]
     value_list = [10, 20, 20, 30, float("inf"), float("inf"), -float("inf")]
     values = [[v1, v2] for v1 in value_list for v2 in value_list]
 
     trials = [_create_frozen_trial(i, v) for i, v in enumerate(values)]
-    population_per_rank = sampler._fast_non_dominated_sort(copy.copy(trials), directions)
+    population_per_rank = _fast_non_dominated_sort(copy.copy(trials), directions)
     _assert_population_per_rank(trials, directions, population_per_rank)
 
 
 def test_fast_non_dominated_sort_with_constraints() -> None:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = NSGAIISampler(constraints_func=lambda _: [0])
-
     value_list = [10, 20, 20, 30, float("inf"), float("inf"), -float("inf")]
     values = [[v1, v2] for v1 in value_list for v2 in value_list]
 
@@ -403,18 +398,19 @@ def test_fast_non_dominated_sort_with_constraints() -> None:
         for i, (v, c) in enumerate(itertools.product(values, constraints))
     ]
     directions = [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
-    population_per_rank = sampler._fast_non_dominated_sort(copy.copy(trials), directions)
+    population_per_rank = _fast_non_dominated_sort(
+        copy.copy(trials), directions, constraints_func=lambda _: [0]
+    )
     _assert_population_per_rank(trials, directions, population_per_rank)
 
 
 def test_fast_non_dominated_sort_with_nan_constraint() -> None:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = NSGAIISampler(constraints_func=lambda _: [0])
     directions = [StudyDirection.MINIMIZE, StudyDirection.MINIMIZE]
     with pytest.raises(ValueError):
-        sampler._fast_non_dominated_sort(
-            [_create_frozen_trial(0, [1], [0, float("nan")])], directions
+        _fast_non_dominated_sort(
+            [_create_frozen_trial(0, [1], [0, float("nan")])],
+            directions,
+            constraints_func=lambda _: [0],
         )
 
 
@@ -436,7 +432,6 @@ def test_fast_non_dominated_sort_missing_constraint_values(
 ) -> None:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = NSGAIISampler(constraints_func=lambda _: [0])
 
     values_dim = len(values_and_constraints[0][0])
     for directions in itertools.product(
@@ -445,8 +440,8 @@ def test_fast_non_dominated_sort_missing_constraint_values(
         trials = [_create_frozen_trial(i, v, c) for i, (v, c) in enumerate(values_and_constraints)]
 
         with pytest.warns(UserWarning):
-            population_per_rank = sampler._fast_non_dominated_sort(
-                copy.copy(trials), list(directions)
+            population_per_rank = _fast_non_dominated_sort(
+                copy.copy(trials), list(directions), constraints_func=lambda _: [0]
             )
         _assert_population_per_rank(trials, list(directions), population_per_rank)
 
@@ -457,8 +452,7 @@ def test_fast_non_dominated_sort_empty(n_dims: int) -> None:
         [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE], repeat=n_dims
     ):
         trials: List[FrozenTrial] = []
-        sampler = NSGAIISampler()
-        population_per_rank = sampler._fast_non_dominated_sort(trials, list(directions))
+        population_per_rank = _fast_non_dominated_sort(trials, list(directions))
         assert population_per_rank == []
 
 
