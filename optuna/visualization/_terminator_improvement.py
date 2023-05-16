@@ -40,6 +40,51 @@ def plot_terminator_improvement(
     error_evaluator: BaseErrorEvaluator | None = None,
     min_n_trials: int = DEFAULT_MIN_N_TRIALS,
 ) -> "go.Figure":
+    """Plot the room for future objective improvement.
+
+    This function visualizes the future objective improvement, evaluated with
+    `improvement_evaluator`.
+    It helps to understand whether we should continue the optimization or not.
+    You can also plot the error evaluated with
+    `error_evaluator` if the `plot_error` argument is set to True.
+
+    Example:
+
+        The following code snippet shows how to plot terminator improvement.
+
+        .. plotly::
+
+            import optuna
+
+            def objective(trial):
+                x = trial.suggest_float("x", -100, 100)
+                y = trial.suggest_categorical("y", [-1, 0, 1])
+                return x ** 2 + y
+
+            sampler = optuna.samplers.TPESampler(seed=10)
+            study = optuna.create_study(sampler=sampler)
+            study.optimize(objective, n_trials=10)
+
+            fig = optuna.visualization.plot_terminator_improvement(study)
+            fig.show()
+
+    Args:
+        study:
+            A :class:`~optuna.study.Study` object whose trials are plotted for their improvement.
+        plot_error:
+            A flag to show the error. If it is set to True, errors are plotted as error bars.
+        improvement_evaluator:
+            An object that evaluates the improvement of the objective function.
+            If it is :obj:`None`, :class:`optuna.terminator.RegretBoundEvaluator` is used.
+        error_evaluator:
+            An object that evaluates the error of the objective function.
+            If it is :obj:`None`, :class:`optuna.terminator.CrossValidationErrorEvaluator` is used.
+        min_n_trials:
+            The minimum number of trials required for a plot.
+
+    Returns:
+        A :class:`plotly.graph_objs.Figure` object.
+    """
     _imports.check()
 
     info = _get_improvement_info(study, plot_error, improvement_evaluator, error_evaluator)
