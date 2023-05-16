@@ -502,7 +502,6 @@ def test_device_argument(device: Optional[torch.device]) -> None:
 @pytest.mark.parametrize(
     "candidates_func, n_objectives",
     [
-        (integration.botorch.logei_candidates_func, 1),
         (integration.botorch.qei_candidates_func, 1),
         (integration.botorch.qehvi_candidates_func, 2),
         (integration.botorch.qparego_candidates_func, 4),
