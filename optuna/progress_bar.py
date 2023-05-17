@@ -57,6 +57,8 @@ class _ProgressBar:
                 total = tqdm.format_interval(self._timeout)
                 fmt = "{desc} {percentage:3.0f}%|{bar}| {elapsed}/" + total
                 self._progress_bar = tqdm(total=self._timeout, bar_format=fmt)
+            else:
+                assert False
 
             global _tqdm_handler
 
