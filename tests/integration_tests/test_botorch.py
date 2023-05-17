@@ -33,6 +33,9 @@ pytestmark = pytest.mark.integration
 
 @pytest.mark.parametrize("n_objectives", [1, 2, 4])
 def test_botorch_candidates_func_none(n_objectives: int) -> None:
+    if n_objectives == 1 and sys.version_info < (3, 8):
+        pytest.skip("Python >=3.8 is required for logei_candidates_func.")
+
     n_trials = 3
     n_startup_trials = 2
 
@@ -47,7 +50,7 @@ def test_botorch_candidates_func_none(n_objectives: int) -> None:
 
     # TODO(hvy): Do not check for the correct candidates function using private APIs.
     if n_objectives == 1:
-        assert sampler._candidates_func is integration.botorch.qei_candidates_func
+        assert sampler._candidates_func is integration.botorch.logei_candidates_func
     elif n_objectives == 2:
         assert sampler._candidates_func is integration.botorch.qehvi_candidates_func
     elif n_objectives == 4:
