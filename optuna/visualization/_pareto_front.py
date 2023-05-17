@@ -121,6 +121,39 @@ def plot_pareto_front(
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
+        
+        
+    Example:
+
+        The following code snippet shows how to plot a 2-dimensional Pareto front of a 3-dimensional study.
+        This example is scalable e.g. for plotting a 2- or 3-dimensional Pareto front of a 4-dimensional study and so on.
+        The example also contains the option to crop the displayed scale.
+
+        .. plotly::
+
+            import optuna
+
+            def objective(trial):
+                value_a = trial.suggest_int("a", 0,100)
+                value_b = trial.suggest_int("b", 0, 100)
+
+                v0 = value_a ** 2
+                v1 = value_b **2
+                v2 = value_a + value_b
+
+                return v0, v1, v2
+
+            study = optuna.create_study(directions=["minimize", "minimize", "minimize"],
+                            sampler=optuna.samplers.NSGAIISampler())
+
+            study.optimize(objective, n_trials=100)
+
+            fig = optuna.visualization.plot_pareto_front(study, targets=lambda t: (t.values[0], t.values[1]), target_names=["volume", "loss"])
+
+            # Use this line of code instead the above one to add some limitations, e.g. only plot values if the 3rd (non-displayed) dimension is below 100:
+            # fig = optuna.visualization.plot_pareto_front(study, targets=lambda t: (t.values[0] if t.values[2] < 100 else None, t.values[1]), target_names=["volume", "loss"])
+            
+            fig.show()
     """
 
     _imports.check()
