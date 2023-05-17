@@ -16,8 +16,6 @@ from optuna.trial import TrialState
 class PartialFixedSampler(BaseSampler):
     """Sampler with partially fixed parameters.
 
-        .. versionadded:: 2.4.0
-
     Example:
 
         After several steps of optimization, you can fix the value of ``y`` and re-optimize it.
