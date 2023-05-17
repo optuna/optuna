@@ -50,20 +50,21 @@ class _ProgressBar:
         self._timeout = timeout
         self._last_elapsed_seconds = 0.0
 
-        if self._n_trials is not None:
-            self._progress_bar = tqdm(total=self._n_trials)
-        elif self._timeout is not None:
-            total = tqdm.format_interval(self._timeout)
-            fmt = "{desc} {percentage:3.0f}%|{bar}| {elapsed}/" + total
-            self._progress_bar = tqdm(total=self._timeout, bar_format=fmt)
+        if self._is_valid:
+            if self._n_trials is not None:
+                self._progress_bar = tqdm(total=self._n_trials)
+            elif self._timeout is not None:
+                total = tqdm.format_interval(self._timeout)
+                fmt = "{desc} {percentage:3.0f}%|{bar}| {elapsed}/" + total
+                self._progress_bar = tqdm(total=self._timeout, bar_format=fmt)
 
-        global _tqdm_handler
+            global _tqdm_handler
 
-        _tqdm_handler = _TqdmLoggingHandler()
-        _tqdm_handler.setLevel(logging.INFO)
-        _tqdm_handler.setFormatter(optuna_logging.create_default_formatter())
-        optuna_logging.disable_default_handler()
-        optuna_logging._get_library_root_logger().addHandler(_tqdm_handler)
+            _tqdm_handler = _TqdmLoggingHandler()
+            _tqdm_handler.setLevel(logging.INFO)
+            _tqdm_handler.setFormatter(optuna_logging.create_default_formatter())
+            optuna_logging.disable_default_handler()
+            optuna_logging._get_library_root_logger().addHandler(_tqdm_handler)
 
     def update(self, elapsed_seconds: float, study: "Study") -> None:
         """Update the progress bars if ``is_valid`` is :obj:`True`.
