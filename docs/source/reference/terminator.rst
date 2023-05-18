@@ -11,3 +11,6 @@ The :mod:`~optuna.terminator` module implements a mechanism for automatically te
 
    optuna.terminator.Terminator
    optuna.terminator.TerminatorCallback
+   optuna.terminator.CrossValidationErrorEvaluator
+   optuna.terminator.StaticErrorEvaluator
+   optuna.terminator.report_cross_validation_scores
