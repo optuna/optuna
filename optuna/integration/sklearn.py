@@ -898,8 +898,9 @@ class OptunaSearchCV(BaseEstimator):
         )
 
         _logger.info(f"best_params:{self.study_.best_params}")
-        
+
         _logger.info("Finished hyperparemeter search!")
+
 
         if self.refit:
             self._refit(X, y, **fit_params)
