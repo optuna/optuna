@@ -8,11 +8,11 @@ import optuna
 from optuna._experimental import experimental_func
 from optuna.logging import get_logger
 from optuna.study.study import Study
-from optuna.terminator.erroreval import BaseErrorEvaluator
-from optuna.terminator.erroreval import CrossValidationErrorEvaluator
-from optuna.terminator.improvement.evaluator import BaseImprovementEvaluator
+from optuna.terminator import BaseErrorEvaluator
+from optuna.terminator import BaseImprovementEvaluator
+from optuna.terminator import CrossValidationErrorEvaluator
+from optuna.terminator import RegretBoundEvaluator
 from optuna.terminator.improvement.evaluator import DEFAULT_MIN_N_TRIALS
-from optuna.terminator.improvement.evaluator import RegretBoundEvaluator
 from optuna.visualization._plotly_imports import _imports
 
 

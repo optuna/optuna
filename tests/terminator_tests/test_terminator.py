@@ -4,9 +4,9 @@ import pytest
 
 from optuna.study._study_direction import StudyDirection
 from optuna.study.study import create_study
-from optuna.terminator.erroreval import StaticErrorEvaluator
-from optuna.terminator.improvement.evaluator import BaseImprovementEvaluator
-from optuna.terminator.terminator import Terminator
+from optuna.terminator import BaseImprovementEvaluator
+from optuna.terminator import StaticErrorEvaluator
+from optuna.terminator import Terminator
 from optuna.trial import FrozenTrial
 
 
