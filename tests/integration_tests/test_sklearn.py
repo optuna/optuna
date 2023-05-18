@@ -4,17 +4,20 @@ import warnings
 import numpy as np
 import pytest
 import scipy as sp
-from sklearn.datasets import make_blobs
+from sklearn.datasets import make_blobs, make_regression
 from sklearn.decomposition import PCA
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import SGDClassifier
 from sklearn.neighbors import KernelDensity
+from sklearn.cross_decomposition import PLSRegression
 
 from optuna import distributions
 from optuna import integration
 from optuna.study import create_study
+from optuna.distributions import IntDistribution, FloatDistribution
+
 
 
 pytestmark = pytest.mark.integration
@@ -301,6 +304,35 @@ def test_objective_error_score_invalid() -> None:
     with pytest.raises(ValueError, match="error_score must be 'raise' or numeric."):
         optuna_search.fit(X)
 
+@pytest.mark.parametrize(
+    "param_dist, expect",
+    [
+        ({"n_components": IntDistribution(5, 10)}, False),
+        ({"n_components": IntDistribution(5, 20)}, False),
+        ({"n_components": IntDistribution(15, 20)}, True),
+        ({"n_components": FloatDistribution(5, 10)}, True),
+    ],
+)
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
+@pytest.mark.filterwarnings("ignore::UserWarning")
+def test_objective_error_score_nan_regression(param_dist: dict, expect: bool) -> None:
+    X, y = make_regression(n_samples=100, n_features=10)
+    est = PLSRegression()
+    optuna_search = integration.OptunaSearchCV(
+        est,
+        param_dist,
+        cv=3,
+        error_score=np.nan,
+        random_state=0,
+    )
+
+    if expect:
+        with pytest.raises(ValueError):
+            optuna_search.fit(X, y)
+
+    else:
+        optuna_search.fit(X, y)
+        
 
 # TODO(himkt): Remove this method with the deletion of deprecated distributions.
 # https://github.com/optuna/optuna/issues/2941
