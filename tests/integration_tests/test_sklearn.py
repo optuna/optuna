@@ -19,7 +19,6 @@ from optuna.study import create_study
 from optuna.distributions import IntDistribution, FloatDistribution
 
 
-
 pytestmark = pytest.mark.integration
 
 
@@ -270,9 +269,7 @@ def test_objective_error_score_nan() -> None:
         return_train_score=True,
     )
 
-    with pytest.raises(
-        ValueError
-    ):
+    with pytest.raises(ValueError):
         optuna_search.fit(X)
 
     for trial in optuna_search.study_.get_trials():
@@ -303,6 +300,7 @@ def test_objective_error_score_invalid() -> None:
     with pytest.raises(ValueError, match="error_score must be 'raise' or numeric."):
         optuna_search.fit(X)
 
+
 @pytest.mark.parametrize(
     "param_dist, expect",
     [
@@ -331,7 +329,7 @@ def test_objective_error_score_nan_regression(param_dist: dict, expect: bool) ->
 
     else:
         optuna_search.fit(X, y)
-        
+
 
 # TODO(himkt): Remove this method with the deletion of deprecated distributions.
 # https://github.com/optuna/optuna/issues/2941
