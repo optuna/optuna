@@ -15,14 +15,14 @@ _logger = get_logger(__name__)
 class TerminatorCallback:
     """A callback that terminates the optimization using Terminator.
 
-    This class implements a callback which wraps :class:`~optuna.terminator.terminator.Terminator`
+    This class implements a callback which wraps :class:`~optuna.terminator.Terminator`
     so that it can be used with the :func:`~optuna.study.Study.optimize` method.
 
     Args:
         terminator:
             A terminator object which determines whether to terminate the optimization by
             assessing the room for optimization and statistical error. Defaults to a
-            :class:`~optuna.terminator.terminator.Terminator` object with default
+            :class:`~optuna.terminator.Terminator` object with default
             improvement_evaluator and error_evaluator.
 
     Example:
@@ -35,8 +35,8 @@ class TerminatorCallback:
             from sklearn.model_selection import KFold
 
             import optuna
-            from optuna.terminator.callback import TerminatorCallback
-            from optuna.terminator.erroreval import report_cross_validation_scores
+            from optuna.terminator import TerminatorCallback
+            from optuna.terminator import report_cross_validation_scores
 
 
             def objective(trial):
@@ -58,7 +58,7 @@ class TerminatorCallback:
             study.optimize(objective, n_trials=50, callbacks=[terminator])
 
     .. seealso::
-        Please refer to :class:`~optuna.terminator.terminator.Terminator` for the details of
+        Please refer to :class:`~optuna.terminator.Terminator` for the details of
         the terminator mechanism.
     """
 

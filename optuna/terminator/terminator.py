@@ -36,7 +36,7 @@ class Terminator(BaseTerminator):
             :class:`~optuna.terminator.improvement.evaluator.RegretBoundEvaluator` object.
         error_evaluator:
             An evaluator for calculating the statistical error, e.g. cross-validation error.
-            Defaults to a :class:`~optuna.terminator.erroreval.CrossValidationErrorEvaluator`
+            Defaults to a :class:`~optuna.terminator.CrossValidationErrorEvaluator`
             object.
         min_n_trials:
             The minimum number of trials before termination is considered. Defaults to ``20``.
@@ -57,8 +57,8 @@ class Terminator(BaseTerminator):
             from sklearn.model_selection import KFold
 
             import optuna
-            from optuna.terminator.terminator import Terminator
-            from optuna.terminator.erroreval import report_cross_validation_scores
+            from optuna.terminator import Terminator
+            from optuna.terminator import report_cross_validation_scores
 
 
             study = optuna.create_study(direction="maximize")
@@ -88,7 +88,7 @@ class Terminator(BaseTerminator):
                     break
 
     .. seealso::
-        Please refer to :class:`~optuna.terminator.callbacks.TerminationCallback` for how to use
+        Please refer to :class:`~optuna.terminator.TerminationCallback` for how to use
         the terminator mechanism with the :func:`~optuna.study.Study.optimize` method.
 
     """

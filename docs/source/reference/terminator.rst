@@ -9,5 +9,5 @@ The :mod:`~optuna.terminator` module implements a mechanism for automatically te
    :toctree: generated/
    :nosignatures:
 
-   optuna.terminator.terminator.Terminator
-   optuna.terminator.callback.TerminatorCallback
+   optuna.terminator.Terminator
+   optuna.terminator.TerminatorCallback
