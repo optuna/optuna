@@ -888,7 +888,7 @@ class OptunaSearchCV(BaseEstimator):
             "Searching the best hyperparameters using {} "
             "samples...".format(_num_samples(self.sample_indices_))
         )
-
+        
         self.study_.optimize(
             objective,
             n_jobs=self.n_jobs,
@@ -897,6 +897,8 @@ class OptunaSearchCV(BaseEstimator):
             callbacks=self.callbacks,
         )
 
+        _logger.info(f"best_params:{self.study_.best_params}")
+        
         _logger.info("Finished hyperparemeter search!")
 
         if self.refit:
