@@ -75,7 +75,7 @@ def plot_terminator_improvement(
             A flag to show the error. If it is set to True, errors are plotted as error bars.
         improvement_evaluator:
             An object that evaluates the improvement of the objective function.
-            If it is :obj:`None`, :class:`optuna.terminator.RegretBoundEvaluator` is used.
+            Default to :class:`optuna.terminator.RegretBoundEvaluator`.
         error_evaluator:
             An object that evaluates the error of the objective function.
             If it is :obj:`None`, :class:`optuna.terminator.CrossValidationErrorEvaluator` is used.
