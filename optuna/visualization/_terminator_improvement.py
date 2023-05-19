@@ -40,17 +40,19 @@ def plot_terminator_improvement(
     error_evaluator: BaseErrorEvaluator | None = None,
     min_n_trials: int = DEFAULT_MIN_N_TRIALS,
 ) -> "go.Figure":
-    """Plot the room for future objective improvement.
+    """Plot the potentials for future objective improvement.
 
-    This function visualizes the future objective improvement, evaluated with
-    `improvement_evaluator`.
+    This function visualizes the objective improvement potentials, evaluated
+    with `improvement_evaluator`.
     It helps to determine whether we should continue the optimization or not.
     You can also plot the error evaluated with
     `error_evaluator` if the `plot_error` argument is set to True.
+    Note that this function may take some time to compute
+    the improvement potentials.
 
     Example:
 
-        The following code snippet shows how to plot terminator improvement.
+        The following code snippet shows how to plot improvement potentials.
 
         .. plotly::
 
