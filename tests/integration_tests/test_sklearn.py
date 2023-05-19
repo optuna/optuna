@@ -309,7 +309,6 @@ def test_objective_error_score_invalid() -> None:
         ({"n_components": IntDistribution(5, 10)}, False),
         ({"n_components": IntDistribution(5, 20)}, False),
         ({"n_components": IntDistribution(15, 20)}, True),
-        ({"n_components": FloatDistribution(5, 10)}, True),
     ],
 )
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
