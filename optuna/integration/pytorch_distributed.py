@@ -135,7 +135,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
             self._group = _g_pg
 
         if dist.get_rank(self._group) == 0:
-            if not isinstance(trial, optuna.trial.Trial):
+            if not isinstance(trial, optuna.trial.BaseTrial):
                 raise ValueError(
                     "Rank 0 node expects an optuna.trial.Trial instance as the trial argument."
                 )
