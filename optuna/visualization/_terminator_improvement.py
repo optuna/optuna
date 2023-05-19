@@ -44,7 +44,7 @@ def plot_terminator_improvement(
 
     This function visualizes the future objective improvement, evaluated with
     `improvement_evaluator`.
-    It helps to understand whether we should continue the optimization or not.
+    It helps to determine whether we should continue the optimization or not.
     You can also plot the error evaluated with
     `error_evaluator` if the `plot_error` argument is set to True.
 
