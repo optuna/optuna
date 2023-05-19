@@ -16,7 +16,6 @@ from sklearn.neighbors import KernelDensity
 
 from optuna import distributions
 from optuna import integration
-from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.study import create_study
 
