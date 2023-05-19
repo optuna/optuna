@@ -243,14 +243,13 @@ def _get_pareto_front_info(
         if len(best_trials) == 0:
             _logger.warning("Your study does not have any completed and feasible trials.")
     else:
-        best_trials = study.best_trials
+        all_trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+        best_trials = _get_pareto_front_trials_by_trials(all_trials, study.directions)
         if len(best_trials) == 0:
             _logger.warning("Your study does not have any completed trials.")
 
         if include_dominated_trials:
-            non_best_trials = _get_non_pareto_front_trials(
-                study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), best_trials
-            )
+            non_best_trials = _get_non_pareto_front_trials(all_trials, best_trials)
         else:
             non_best_trials = []
         infeasible_trials = []
