@@ -74,7 +74,7 @@ def plot_terminator_improvement(
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their improvement.
         plot_error:
-            A flag to show the error. If it is set to True, errors are plotted as line graph for
+            A flag to show the error. If it is set to :obj:`True`, errors are plotted as line graph for
             trial.
         improvement_evaluator:
             An object that evaluates the improvement of the objective function.
