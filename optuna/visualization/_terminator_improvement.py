@@ -64,6 +64,8 @@ def plot_terminator_improvement(
             import optuna
             from optuna.terminator import report_cross_validation_scores
             from optuna.visualization import plot_terminator_improvement
+
+
             def objective(trial):
                 X, y = load_wine(return_X_y=True)
                 clf = LGBMClassifier(
@@ -78,8 +80,11 @@ def plot_terminator_improvement(
                 scores = cross_val_score(clf, X, y, cv=KFold(n_splits=5, shuffle=True))
                 report_cross_validation_scores(trial, scores)
                 return scores.mean()
+
+
             study = optuna.create_study()
             study.optimize(objective, n_trials=30)
+
             fig = plot_terminator_improvement(study, plot_error=True)
             fig.show()
 
