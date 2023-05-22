@@ -117,3 +117,24 @@ def test_read_trials_from_remote_storage() -> None:
     base_storage.set_trial_state_values(trial_id, TrialState.COMPLETE, values=[0.0])
     storage.read_trials_from_remote_storage(study_id)
     assert storage.get_trial(trial_id).state == TrialState.COMPLETE
+
+
+def test_delete_study() -> None:
+    base_storage = RDBStorage("sqlite:///:memory:")
+    storage = _CachedStorage(base_storage)
+
+    study_id1 = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+    trial_id1 = storage.create_new_trial(study_id1)
+    storage.set_trial_state_values(trial_id1, state=TrialState.COMPLETE)
+
+    study_id2 = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+    trial_id2 = storage.create_new_trial(study_id2)
+    storage.set_trial_state_values(trial_id2, state=TrialState.COMPLETE)
+
+    # Update _StudyInfo.finished_trial_ids
+    storage.read_trials_from_remote_storage(study_id1)
+    storage.read_trials_from_remote_storage(study_id2)
+
+    storage.delete_study(study_id1)
+    assert storage._get_cached_trial(trial_id1) is None
+    assert storage._get_cached_trial(trial_id2) is not None
