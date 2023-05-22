@@ -29,10 +29,10 @@ class BaseErrorEvaluator(metaclass=abc.ABCMeta):
 class CrossValidationErrorEvaluator(BaseErrorEvaluator):
     """An error evaluator for objective functions based on cross-validation.
 
-    This evaluator evaluates objective functions' statistical error, which comes from the
-    randomness of dataset. This evaluator assumes that the objective function is evaluated by
-    cross-validation and uses the scaled variance of the cross-validation scores as the
-    statistical error.
+    This evaluator evaluates the objective function's statistical error, which comes from the
+    randomness of dataset. This evaluator assumes that the objective function is the average of
+    the cross-validation and uses the scaled variance of the cross-validation scores in the best
+    trial at the moment as the statistical error.
 
     """
 
@@ -45,7 +45,8 @@ class CrossValidationErrorEvaluator(BaseErrorEvaluator):
 
         Args:
             trials:
-                A list of trials to evaluate the error of the best trial.
+                A list of trials to consider. The best trial in `trials` is used to compute the
+                statistical error.
 
             study_direction:
                 The direction of the study.
@@ -86,8 +87,8 @@ class CrossValidationErrorEvaluator(BaseErrorEvaluator):
 def report_cross_validation_scores(trial: Trial, scores: list[float]) -> None:
     """A function to report cross-validation scores of a trial.
 
-    This function should be called within the objective function to report
-    the cross-validation scores. The reported scores are used to evaluate the statistical error for termination
+    This function should be called within the objective function to report the cross-validation
+    scores. The reported scores are used to evaluate the statistical error for termination
     judgement.
 
     Args:
@@ -106,7 +107,8 @@ def report_cross_validation_scores(trial: Trial, scores: list[float]) -> None:
 class StaticErrorEvaluator(BaseErrorEvaluator):
     """An error evaluator that always returns a constant value.
 
-    This evaluator supports the cases where a fixed regret bound threshold to achieve is specified.
+    This evaluator can be used to terminate the optimization when the evaluated improvement
+    potential is below the fixed threshold.
 
     Args:
         constant:
