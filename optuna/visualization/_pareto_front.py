@@ -154,12 +154,6 @@ def plot_pareto_front(
                                                          t.values[1]), \
                                                          target_names=["volume", "loss"])
 
-            # Use this line of code instead the above one to add some limitations,
-            # e.g. only plot values if the 3rd (non-displayed) dimension is below 100:
-            # fig = optuna.visualization.plot_pareto_front(study, targets=lambda t: (t.values[0] \
-            #                                              if t.values[2] < 100 else None,
-            #                                              t.values[1]), \
-            #                                              target_names=["volume", "loss"])
 
             fig.show()
     """
