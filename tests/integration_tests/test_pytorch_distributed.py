@@ -363,7 +363,7 @@ def test_pass_frozen_trial_to_torch_distributed(storage_mode: str) -> None:
         return x * x
 
     with StorageSupplier(storage_mode) as storage:
-        study = optuna.create_study(direction="minimize")
+        study = optuna.create_study(direction="minimize", storage=storage)
         study.optimize(objective, n_trials=1)
         best_trial = study.best_trial
 
