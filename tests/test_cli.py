@@ -1122,7 +1122,6 @@ def test_storage_upgrade_command() -> None:
 def test_storage_upgrade_command_with_invalid_url() -> None:
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
-        storage_url = str(storage.engine.url)
 
         command = ["optuna", "storage", "upgrade", "--storage", "invalid-storage-url"]
         with pytest.raises(CalledProcessError):
