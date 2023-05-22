@@ -81,7 +81,7 @@ def plot_terminator_improvement(
             Default to :class:`~optuna.terminator.RegretBoundEvaluator`.
         error_evaluator:
             An object that evaluates the error inherent in the objective function.
-            Default to :class:`optuna.terminator.CrossValidationErrorEvaluator`.
+            Default to :class:`~optuna.terminator.CrossValidationErrorEvaluator`.
         min_n_trials:
             The minimum number of trials required for a plot.
 
