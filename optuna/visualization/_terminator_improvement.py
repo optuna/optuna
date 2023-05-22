@@ -78,7 +78,7 @@ def plot_terminator_improvement(
             trial.
         improvement_evaluator:
             An object that evaluates the improvement of the objective function.
-            Default to :class:`optuna.terminator.RegretBoundEvaluator`.
+            Default to :class:`~optuna.terminator.RegretBoundEvaluator`.
         error_evaluator:
             An object that evaluates the error inherent in the objective function.
             Default to :class:`optuna.terminator.CrossValidationErrorEvaluator`.
