@@ -140,7 +140,7 @@ def plot_pareto_front(
                 value_b = trial.suggest_int("b", 0, 100)
 
                 v0 = value_a ** 2
-                v1 = value_b **2
+                v1 = value_b ** 2
                 v2 = value_a + value_b
 
                 return v0, v1, v2
