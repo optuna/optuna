@@ -357,7 +357,7 @@ def test_updates_properties(storage_mode: str) -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_pass_frozen_trial_to_torch_distributed(storage_mode: str) -> None:
     # Regression test of #4697
-    def objective(trial):
+    def objective(trial: optuna.trial.BaseTrial) -> float:
         trial = optuna.integration.TorchDistributedTrial(trial if dist.get_rank() == 0 else None)
         x = trial.suggest_float("x", low=-100, high=100)
         return x * x

@@ -112,7 +112,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
     def __init__(
         self,
-        trial: Optional[optuna.trial.Trial],
+        trial: Optional[optuna.trial.BaseTrial],
         group: Optional["ProcessGroup"] = None,
     ) -> None:
         _imports.check()
@@ -278,7 +278,9 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         if dist.get_rank(self._group) == 0:
             try:
                 assert self._delegate is not None
-                self._delegate.storage.set_trial_system_attr(self._delegate._trial_id, key, value)
+                self._delegate.storage.set_trial_system_attr(  # type: ignore[attr-defined]
+                    self._delegate._trial_id, key, value  # type: ignore[attr-defined]
+                )
             except Exception as e:
                 err = e
             err = self._broadcast(err)
