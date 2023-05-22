@@ -86,12 +86,11 @@ def plot_pareto_front(
             import optuna
 
             def objective(trial):
-                value_a = trial.suggest_int("a", 0, 100)
-                value_b = trial.suggest_int("b", 0, 100)
-
-                v0 = value_a ** 2
-                v1 = value_b ** 2
-                v2 = value_a + value_b
+                x = trial.suggest_float("x", 0, 5)
+                y = trial.suggest_float("y", 0, 3)
+                v0 = 5 * x ** 2 + 3 * y ** 2
+                v1 = (x - 10) ** 2 + (y - 10) ** 2
+                v2 = x + y
 
                 return v0, v1, v2
 
