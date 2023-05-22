@@ -86,8 +86,8 @@ class CrossValidationErrorEvaluator(BaseErrorEvaluator):
 def report_cross_validation_scores(trial: Trial, scores: list[float]) -> None:
     """A function to report cross-validation scores of a trial.
 
-    This function should be called after cross-validation step within the trial to report its
-    scores. The reported scores are used to evaluate the statistical error for termination
+    This function should be called within the objective function to report
+    the cross-validation scores. The reported scores are used to evaluate the statistical error for termination
     judgement.
 
     Args:
