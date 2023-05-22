@@ -46,7 +46,7 @@ def plot_terminator_improvement(
     with `improvement_evaluator`.
     It helps to determine whether we should continue the optimization or not.
     You can also plot the error evaluated with
-    `error_evaluator` if the `plot_error` argument is set to True.
+    `error_evaluator` if the `plot_error` argument is set to :obj:`True`.
     Note that this function may take some time to compute
     the improvement potentials.
 
