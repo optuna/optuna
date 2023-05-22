@@ -21,8 +21,8 @@ from typing import Type
 from typing import Union
 import warnings
 
-import yaml
 import sqlalchemy.exc
+import yaml
 
 import optuna
 from optuna._imports import _LazyImport
@@ -685,7 +685,9 @@ class _StorageUpgrade(_BaseCommand):
     def take_action(self, parsed_args: Namespace) -> int:
         storage_url = _check_storage_url(parsed_args.storage)
         try:
-            storage = RDBStorage(storage_url, skip_compatibility_check=True, skip_table_creation=True)
+            storage = RDBStorage(
+                storage_url, skip_compatibility_check=True, skip_table_creation=True
+            )
         except sqlalchemy.exc.ArgumentError:
             self.logger.info("Invalid RDBStorage URL.")
             return 1
