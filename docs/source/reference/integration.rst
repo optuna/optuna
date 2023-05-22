@@ -5,6 +5,11 @@ optuna.integration
 
 The :mod:`~optuna.integration` module contains classes used to integrate Optuna with external machine learning frameworks.
 
+.. note::
+   Optuna's integration modules for third-party libraries have started migrating from Optuna itself to a package called 
+   `optuna-integration`. Please check the `repository <https://github.com/optuna/optuna-integration>`_ and 
+   the `documentation <https://optuna-integration.readthedocs.io/en/latest/index.html>`_.
+
 For most of the ML frameworks supported by Optuna, the corresponding Optuna integration class serves only to implement a callback object and functions, compliant with the framework's specific callback API, to be called with each intermediate step in the model training. The functionality implemented in these callbacks across the different ML frameworks includes:
 
 (1) Reporting intermediate model scores back to the Optuna trial using :func:`optuna.trial.Trial.report`,
@@ -150,7 +155,6 @@ TensorFlow
    :nosignatures:
 
    optuna.integration.TensorBoardCallback
-   optuna.integration.TensorFlowPruningHook
 
 XGBoost
 -------
