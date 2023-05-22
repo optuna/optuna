@@ -107,12 +107,12 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
     def delete_study(self, study_id: int) -> None:
         with self._lock:
             if study_id in self._studies:
-                for trial_id in self._studies[study_id].trials:
+                for trial_number in self._studies[study_id].trials:
+                    trial_id = self._study_id_and_number_to_trial_id.get((study_id, trial_number))
                     if trial_id in self._trial_id_to_study_id_and_number:
-                        del self._study_id_and_number_to_trial_id[
-                            self._trial_id_to_study_id_and_number[trial_id]
-                        ]
                         del self._trial_id_to_study_id_and_number[trial_id]
+                    if (study_id, trial_number) in self._study_id_and_number_to_trial_id:
+                        del self._study_id_and_number_to_trial_id[(study_id, trial_number)]
                 del self._studies[study_id]
 
         self._backend.delete_study(study_id)
