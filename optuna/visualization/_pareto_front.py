@@ -150,9 +150,11 @@ def plot_pareto_front(
 
             study.optimize(objective, n_trials=100)
 
-            fig = optuna.visualization.plot_pareto_front(study, targets=lambda t: (t.values[0], \
-                                                         t.values[1]), \
-                                                         target_names=["volume", "loss"])
+            fig = optuna.visualization.plot_pareto_front(
+                study, 
+                targets=lambda t: (t.values[0], t.values[1]), 
+                target_names=["Objective 0", "Objective 1"],
+            )
 
 
             fig.show()
