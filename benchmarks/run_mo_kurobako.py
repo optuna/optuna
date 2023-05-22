@@ -1,8 +1,8 @@
+from __future__ import annotations
+
 import argparse
 import os
 import subprocess
-from typing import Dict
-from typing import Union
 
 
 def run(args: argparse.Namespace) -> None:
@@ -99,7 +99,7 @@ def run(args: argparse.Namespace) -> None:
     subprocess.run(cmd, shell=True)
 
     # Plot pareto-front.
-    plot_args: Dict[str, Dict[str, Union[int, float]]]
+    plot_args: dict[str, dict[str, int | float]]
     plot_args = {
         "NASBench": {"xmin": 0, "xmax": 25000000, "ymin": 0, "ymax": 0.2},
         "ZDT1": {"xmin": 0, "xmax": 1, "ymin": 1, "ymax": 7},

@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import abc
 from typing import Callable
-from typing import Union
 
 import numpy as np
 
@@ -29,12 +30,12 @@ class BaseReductionTransformation(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
-BaseTransformations = Union[
-    BaseIdenticalTransformation,
-    BaseBiasTransformation,
-    BaseShiftTransformation,
-    BaseReductionTransformation,
-]
+BaseTransformations = (
+    BaseIdenticalTransformation
+    | BaseBiasTransformation
+    | BaseShiftTransformation
+    | BaseReductionTransformation
+)
 
 
 class IdenticalTransformation(BaseIdenticalTransformation):

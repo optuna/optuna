@@ -1,9 +1,9 @@
+from __future__ import annotations
+
 import argparse
 import json
 import os
 import subprocess
-from typing import Dict
-from typing import List
 
 from matplotlib import cm
 from matplotlib import colors
@@ -132,7 +132,7 @@ def make_plot(
     ax.grid(alpha=0.2)
 
 
-def build_color_dict(names: List[str]) -> Dict[str, np.ndarray]:
+def build_color_dict(names: list[str]) -> dict[str, np.ndarray]:
     norm = colors.Normalize(vmin=0, vmax=1)
     m = cm.ScalarMappable(norm, cm.tab20)
     color_dict = m.to_rgba(np.linspace(0, 1, len(names)))
@@ -145,11 +145,11 @@ def partial_report(args: argparse.Namespace) -> None:
     eval_path = os.path.join("runs", _DB, "eval")
     time_path = os.path.join("runs", _DB, "time")
     studies = os.listdir(eval_path)
-    summaries: List[pd.DataFrame] = []
+    summaries: list[pd.DataFrame] = []
 
     for study in studies:
-        table_buffer: List[pd.DataFrame] = []
-        column_buffer: List[str] = []
+        table_buffer: list[pd.DataFrame] = []
+        column_buffer: list[str] = []
         for path in [eval_path, time_path]:
             with open(os.path.join(path, study), "r") as file:
                 data = json.load(file)
