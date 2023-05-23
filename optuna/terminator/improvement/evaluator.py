@@ -28,6 +28,8 @@ DEFAULT_MIN_N_TRIALS = 20
 
 @experimental_class("3.2.0")
 class BaseImprovementEvaluator(metaclass=abc.ABCMeta):
+    """Base class for improvement evaluators."""
+
     @abc.abstractmethod
     def evaluate(
         self,

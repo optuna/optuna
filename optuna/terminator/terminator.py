@@ -12,6 +12,8 @@ from optuna.trial import TrialState
 
 
 class BaseTerminator(metaclass=abc.ABCMeta):
+    """Base class for terminators."""
+
     @abc.abstractmethod
     def should_terminate(self, study: Study) -> bool:
         pass

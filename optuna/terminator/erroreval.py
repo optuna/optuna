@@ -16,6 +16,8 @@ _CROSS_VALIDATION_SCORES_KEY = "terminator:cv_scores"
 
 
 class BaseErrorEvaluator(metaclass=abc.ABCMeta):
+    """Base class for error evaluators."""
+
     @abc.abstractmethod
     def evaluate(
         self,
