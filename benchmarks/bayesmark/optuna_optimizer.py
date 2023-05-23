@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from typing import Any
+from typing import Dict
+from typing import Union
 
 import numpy as np
 
@@ -37,8 +39,8 @@ _PRUNERS = {
 }
 
 
-Suggestion = dict[str, int | float]
-ApiConfig = dict[str, dict[str, str]]
+Suggestion = Dict[str, Union[int, float]]
+ApiConfig = Dict[str, Dict[str, str]]
 
 
 class OptunaOptimizer(AbstractOptimizer):

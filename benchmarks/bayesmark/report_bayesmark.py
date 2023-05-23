@@ -5,7 +5,10 @@ from collections import defaultdict
 from dataclasses import dataclass
 import itertools
 import os
+from typing import Dict
 from typing import Generator
+from typing import List
+from typing import Tuple
 
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
@@ -15,8 +18,8 @@ from scipy.special import binom
 from scipy.stats import mannwhitneyu
 
 
-Moments = tuple[float, float]
-Samples = dict[str, list[float]]
+Moments = Tuple[float, float]
+Samples = Dict[str, List[float]]
 
 
 class BaseMetric(object, metaclass=abc.ABCMeta):
