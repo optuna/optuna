@@ -364,11 +364,15 @@ def _assert_population_per_rank(
                     assert not _constrained_dominates(trial1, trial2, direction)
 
         # Check that each trial is dominated by some trial in the rank above.
+        # Note that there can be trials that are not dominated by any trial of one higher rank
+        # that are dominated by some trial(s) of two or more higher ranks.
+        dominating_population = []
         for i in range(len(population_per_rank) - 1):
+            dominating_population += population_per_rank[i]
             for trial2 in population_per_rank[i + 1]:
                 assert any(
                     _constrained_dominates(trial1, trial2, direction)
-                    for trial1 in population_per_rank[i]
+                    for trial1 in dominating_population
                 )
 
 
