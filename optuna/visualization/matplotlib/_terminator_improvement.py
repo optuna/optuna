@@ -48,6 +48,7 @@ def plot_terminator_improvement(
         The following code snippet shows how to plot improvement potentials.
 
         .. plot::
+
             import optuna
 
             def objective(trial):
