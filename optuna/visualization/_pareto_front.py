@@ -79,7 +79,6 @@ def plot_pareto_front(
         of a 3-dimensional study.
         This example is scalable, e.g., for plotting a 2- or 3-dimensional Pareto front
         of a 4-dimensional study and so on.
-        The example also contains the option to crop the displayed scale.
 
         .. plotly::
 
