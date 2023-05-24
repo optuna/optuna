@@ -53,7 +53,7 @@ def _get_improvement_info(
     error_evaluator: BaseErrorEvaluator | None = None,
 ) -> _ImprovementInfo:
     if study._is_multi_objective():
-        raise ValueError("This function does not support multi-objective optimization `study`.")
+        raise ValueError("This function does not support multi-objective optimization study.")
 
     if improvement_evaluator is None:
         improvement_evaluator = RegretBoundEvaluator()
