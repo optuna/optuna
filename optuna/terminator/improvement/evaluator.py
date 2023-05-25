@@ -44,14 +44,14 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
     """An error evaluator for upper bound on the regret with high-probability confidence.
 
     This evaluator evaluates the regret of current best solution, which defined as the difference
-    between the objective value of the best solution and of the global optimum. To be specific, 
-    this evaluator calculates the upper bound on the regret based on the fact that empirical 
+    between the objective value of the best solution and of the global optimum. To be specific,
+    this evaluator calculates the upper bound on the regret based on the fact that empirical
     estimator of the objective function is bounded by lower and upper confidence bounds with
     high probability under the Gaussian process model assumption.
 
     Args:
         gp:
-            A Gaussian process model on which evaluation base. If not specified, the default 
+            A Gaussian process model on which evaluation base. If not specified, the default
             Gaussian process model is used.
         top_trials_ratio:
             A ratio of top trials to be considered when estimating the regret. Default to 0.5.
