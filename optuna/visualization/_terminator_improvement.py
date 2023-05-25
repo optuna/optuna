@@ -122,6 +122,9 @@ def _get_improvement_info(
     improvement_evaluator: BaseImprovementEvaluator | None = None,
     error_evaluator: BaseErrorEvaluator | None = None,
 ) -> _ImprovementInfo:
+    if study._is_multi_objective():
+        raise ValueError("This function does not support multi-objective optimization study.")
+
     if improvement_evaluator is None:
         improvement_evaluator = RegretBoundEvaluator()
     if error_evaluator is None:
@@ -133,9 +136,13 @@ def _get_improvement_info(
     errors = []
 
     for trial in tqdm.tqdm(study.trials):
-        trial_numbers.append(trial.number)
         if trial.state == optuna.trial.TrialState.COMPLETE:
             completed_trials.append(trial)
+
+        if len(completed_trials) == 0:
+            continue
+
+        trial_numbers.append(trial.number)
 
         improvement = improvement_evaluator.evaluate(
             trials=completed_trials, study_direction=study.direction
