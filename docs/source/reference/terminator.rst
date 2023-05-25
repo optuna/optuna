@@ -9,8 +9,12 @@ The :mod:`~optuna.terminator` module implements a mechanism for automatically te
    :toctree: generated/
    :nosignatures:
 
+   optuna.terminator.BaseTerminator
    optuna.terminator.Terminator
-   optuna.terminator.TerminatorCallback
+   optuna.terminator.BaseImprovementEvaluator
+   optuna.terminator.RegretBoundEvaluator
+   optuna.terminator.BaseErrorEvaluator
    optuna.terminator.CrossValidationErrorEvaluator
    optuna.terminator.StaticErrorEvaluator
+   optuna.terminator.TerminatorCallback
    optuna.terminator.report_cross_validation_scores
