@@ -76,8 +76,7 @@ def plot_terminator_improvement(
             study = optuna.create_study()
             study.optimize(objective, n_trials=30)
 
-            fig = plot_terminator_improvement(study, plot_error=True)
-            fig.show()
+            plot_terminator_improvement(study, plot_error=True)
 
     Args:
         study:
