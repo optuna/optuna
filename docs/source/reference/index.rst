@@ -16,5 +16,6 @@ API Reference
     search_space
     storages
     study
+    terminator
     trial
     visualization/index
