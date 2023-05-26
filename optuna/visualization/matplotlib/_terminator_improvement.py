@@ -92,8 +92,8 @@ def plot_terminator_improvement(
             An object that evaluates the error inherent in the objective function.
             Default to :class:`~optuna.terminator.CrossValidationErrorEvaluator`.
         min_n_trials:
-            The minimum number of trials before termination is
-            considered. Terminator improvements for trials below this value are
+            The minimum number of trials before termination is considered.
+            Terminator improvements for trials below this value are
             shown in a lighter color. Defaults to ``20``.
 
     Returns:
