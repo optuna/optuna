@@ -45,29 +45,47 @@ def plot_terminator_improvement(
         Please refer to :func:`optuna.visualization.plot_terminator_improvement`.
 
     Example:
-        The following code snippet shows how to plot improvement potentials.
+        The following code snippet shows how to plot improvement potentials,
+        together with cross-validation errors.
 
         .. plot::
 
+            from lightgbm import LGBMClassifier
+            from sklearn.datasets import load_wine
+            from sklearn.model_selection import cross_val_score
+            from sklearn.model_selection import KFold
             import optuna
+            from optuna.terminator import report_cross_validation_scores
+            from optuna.visualization.matplotlib import plot_terminator_improvement
 
             def objective(trial):
-                x = trial.suggest_float("x", -100, 100)
-                y = trial.suggest_categorical("y", [-1, 0, 1])
-                return x ** 2 + y
+                X, y = load_wine(return_X_y=True)
+                clf = LGBMClassifier(
+                    reg_alpha=trial.suggest_float("reg_alpha", 1e-8, 10.0, log=True),
+                    reg_lambda=trial.suggest_float("reg_lambda", 1e-8, 10.0, log=True),
+                    num_leaves=trial.suggest_int("num_leaves", 2, 256),
+                    colsample_bytree=trial.suggest_float("colsample_bytree", 0.4, 1.0),
+                    subsample=trial.suggest_float("subsample", 0.4, 1.0),
+                    subsample_freq=trial.suggest_int("subsample_freq", 1, 7),
+                    min_child_samples=trial.suggest_int("min_child_samples", 5, 100),
+                )
+                scores = cross_val_score(clf, X, y, cv=KFold(n_splits=5, shuffle=True))
+                report_cross_validation_scores(trial, scores)
+                return scores.mean()
 
-            sampler = optuna.samplers.TPESampler(seed=10)
-            study = optuna.create_study(sampler=sampler)
-            study.optimize(objective, n_trials=10)
+            study = optuna.create_study()
+            study.optimize(objective, n_trials=30)
 
-            optuna.visualization.matplotlib.plot_terminator_improvement(study)
+            fig = plot_terminator_improvement(study, plot_error=True)
+            fig.show()
 
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their improvement.
         plot_error:
-            A flag to show the error. If it is set to :obj:`True`, errors are plotted as line
-            graph for trial.
+            A flag to show the error. If it is set to :obj:`True`, errors
+            evaluated by `error_evaluator` are also plotted as line graph.
+            Defaults to :obj:`False`.
         improvement_evaluator:
             An object that evaluates the improvement of the objective function.
             Default to :class:`~optuna.terminator.RegretBoundEvaluator`.
@@ -75,7 +93,9 @@ def plot_terminator_improvement(
             An object that evaluates the error inherent in the objective function.
             Default to :class:`~optuna.terminator.CrossValidationErrorEvaluator`.
         min_n_trials:
-            The minimum number of trials required for a plot.
+            min_n_trials: The minimum number of trials before termination is
+            considered. Terminator improvements for trials below this value are
+            shown in a lighter color. Defaults to ``20``.
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
