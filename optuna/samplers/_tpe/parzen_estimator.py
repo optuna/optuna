@@ -9,6 +9,7 @@ import numpy as np
 
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
+from optuna.distributions import CustomDistanceDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.samplers._tpe.probability_distributions import _BatchedCategoricalDistributions
@@ -154,6 +155,10 @@ class _ParzenEstimator:
             return self._calculate_categorical_distributions(
                 transformed_observations, search_space.choices, parameters
             )
+        elif isinstance(search_space, CustomDistanceDistribution):
+            return self.calculate_custom_distance_distributions(
+                search_space, transformed_observations, parameters
+            )
         else:
             assert isinstance(search_space, (FloatDistribution, IntDistribution))
             if search_space.log:
@@ -264,3 +269,27 @@ class _ParzenEstimator:
             return _BatchedTruncNormDistributions(mus, sigmas, low, high)
         else:
             return _BatchedDiscreteTruncNormDistributions(mus, sigmas, low, high, step)
+
+    def calculate_custom_distance_distributions(
+        self,
+        distribution: CustomDistanceDistribution,
+        observations: np.ndarray,
+        parameters: _ParzenEstimatorParameters,
+    ) -> _BatchedCategoricalDistributions:
+        consider_prior = parameters.consider_prior or len(observations) == 0
+
+        assert parameters.prior_weight is not None
+        weights = np.full(
+            shape=(len(observations) + consider_prior, len(distribution._elements)),
+            fill_value=parameters.prior_weight / (len(observations) + consider_prior),
+        )
+
+        SIGMA = 1.0
+        for i, observation in enumerate(observations.astype(int)):
+            dists = [
+                distribution._dist_func(distribution._elements[observation], distribution._elements[j])
+                for j in range(len(distribution._elements))
+            ]
+            weights[i] += np.exp(-(np.array(dists) ** 2) / SIGMA)
+        weights /= weights.sum(axis=1, keepdims=True)
+        return _BatchedCategoricalDistributions(weights)

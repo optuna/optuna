@@ -4,9 +4,12 @@ import decimal
 import json
 from numbers import Real
 from typing import Any
+from typing import Callable
 from typing import cast
 from typing import Dict
+from typing import Generic
 from typing import Sequence
+from typing import TypeVar
 from typing import Union
 import warnings
 
@@ -564,6 +567,34 @@ class CategoricalDistribution(BaseDistribution):
     __hash__ = BaseDistribution.__hash__
 
 
+Element = TypeVar("Element")
+
+
+class CustomDistanceDistribution(BaseDistribution, Generic[Element]):
+    def __init__(
+        self, elements: Sequence[Element], dist_func: Callable[[Element, Element], float]
+    ):
+        self._elements = np.array(elements)
+        self._dist_func = dist_func
+
+    def to_external_repr(self, param_value_in_internal_repr: float) -> Element:
+        return self._elements[int(param_value_in_internal_repr)]
+
+    def to_internal_repr(self, param_value_in_external_repr: Element) -> float:
+        equal_mask = self._elements == param_value_in_external_repr
+        while len(equal_mask.shape) > 1:
+            equal_mask = equal_mask.all(-1)
+        assert equal_mask.sum() == 1
+        return equal_mask.nonzero()[0][0]
+
+    def _contains(self, param_value_in_internal_repr: float) -> bool:
+        index = int(param_value_in_internal_repr)
+        return 0 <= index < len(self._elements)
+
+    def single(self) -> bool:
+        return len(self._elements) == 1
+
+
 DISTRIBUTION_CLASSES = (
     IntDistribution,
     IntLogUniformDistribution,
@@ -573,6 +604,7 @@ DISTRIBUTION_CLASSES = (
     LogUniformDistribution,
     DiscreteUniformDistribution,
     CategoricalDistribution,
+    CustomDistanceDistribution,
 )
 
 
