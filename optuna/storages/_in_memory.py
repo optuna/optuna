@@ -367,7 +367,8 @@ class InMemoryStorage(BaseStorage):
             if deepcopy:
                 trials = copy.deepcopy(trials)
             else:
-                trials = list(trials)
+                # This copy is required for the replacing trick in `set_trial_xxx`.
+                trials = copy.copy(trials)
 
         return trials
 
