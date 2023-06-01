@@ -7,6 +7,7 @@ from optuna.visualization.matplotlib._param_importances import plot_param_import
 from optuna.visualization.matplotlib._pareto_front import plot_pareto_front
 from optuna.visualization.matplotlib._rank import plot_rank
 from optuna.visualization.matplotlib._slice import plot_slice
+from optuna.visualization.matplotlib._terminator_improvement import plot_terminator_improvement
 from optuna.visualization.matplotlib._timeline import plot_timeline
 from optuna.visualization.matplotlib._utils import is_available
 
@@ -22,5 +23,6 @@ __all__ = [
     "plot_pareto_front",
     "plot_rank",
     "plot_slice",
+    "plot_terminator_improvement",
     "plot_timeline",
 ]

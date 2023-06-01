@@ -73,6 +73,38 @@ def plot_pareto_front(
             fig = optuna.visualization.plot_pareto_front(study)
             fig.show()
 
+    Example:
+
+        The following code snippet shows how to plot a 2-dimensional Pareto front
+        of a 3-dimensional study.
+        This example is scalable, e.g., for plotting a 2- or 3-dimensional Pareto front
+        of a 4-dimensional study and so on.
+
+        .. plotly::
+
+            import optuna
+
+            def objective(trial):
+                x = trial.suggest_float("x", 0, 5)
+                y = trial.suggest_float("y", 0, 3)
+                v0 = 5 * x ** 2 + 3 * y ** 2
+                v1 = (x - 10) ** 2 + (y - 10) ** 2
+                v2 = x + y
+
+                return v0, v1, v2
+
+            study = optuna.create_study(directions=["minimize", "minimize", "minimize"])
+
+            study.optimize(objective, n_trials=100)
+
+            fig = optuna.visualization.plot_pareto_front(
+                study,
+                targets=lambda t: (t.values[0], t.values[1]),
+                target_names=["Objective 0", "Objective 1"],
+            )
+
+            fig.show()
+
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their objective
@@ -243,14 +275,13 @@ def _get_pareto_front_info(
         if len(best_trials) == 0:
             _logger.warning("Your study does not have any completed and feasible trials.")
     else:
-        best_trials = study.best_trials
+        all_trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+        best_trials = _get_pareto_front_trials_by_trials(all_trials, study.directions)
         if len(best_trials) == 0:
             _logger.warning("Your study does not have any completed trials.")
 
         if include_dominated_trials:
-            non_best_trials = _get_non_pareto_front_trials(
-                study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), best_trials
-            )
+            non_best_trials = _get_non_pareto_front_trials(all_trials, best_trials)
         else:
             non_best_trials = []
         infeasible_trials = []

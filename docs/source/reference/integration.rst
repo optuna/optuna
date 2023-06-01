@@ -155,7 +155,6 @@ TensorFlow
    :nosignatures:
 
    optuna.integration.TensorBoardCallback
-   optuna.integration.TensorFlowPruningHook
 
 XGBoost
 -------
