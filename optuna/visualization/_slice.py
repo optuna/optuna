@@ -167,7 +167,9 @@ def _get_slice_plot(info: _SlicePlotInfo) -> "go.Figure":
         figure = go.Figure(data=[_generate_slice_subplot(info.subplots[0])], layout=layout)
         figure.update_xaxes(title_text=info.subplots[0].param_name)
         figure.update_yaxes(title_text=info.target_name)
-        if info.subplots[0].is_log:
+        if not info.subplots[0].is_numerical:
+            figure.update_xaxes(type="category")
+        elif info.subplots[0].is_log:
             figure.update_xaxes(type="log")
     else:
         figure = make_subplots(rows=1, cols=len(info.subplots), shared_yaxes=True)
@@ -182,7 +184,9 @@ def _get_slice_plot(info: _SlicePlotInfo) -> "go.Figure":
             figure.update_xaxes(title_text=subplot_info.param_name, row=1, col=column_index)
             if column_index == 1:
                 figure.update_yaxes(title_text=info.target_name, row=1, col=column_index)
-            if subplot_info.is_log:
+            if not subplot_info.is_numerical:
+                figure.update_xaxes(type="category", row=1, col=column_index)
+            elif subplot_info.is_log:
                 figure.update_xaxes(type="log", row=1, col=column_index)
         if len(info.subplots) > 3:
             # Ensure that each subplot has a minimum width without relying on autusizing.
