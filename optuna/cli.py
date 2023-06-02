@@ -689,7 +689,7 @@ class _StorageUpgrade(_BaseCommand):
                 storage_url, skip_compatibility_check=True, skip_table_creation=True
             )
         except sqlalchemy.exc.ArgumentError:
-            self.logger.info("Invalid RDBStorage URL.")
+            self.logger.error("Invalid RDBStorage URL.")
             return 1
         current_version = storage.get_current_version()
         head_version = storage.get_head_version()
@@ -940,8 +940,12 @@ def _add_common_arguments(parser: ArgumentParser) -> ArgumentParser:
     parser.add_argument(
         "--storage-class",
         help="Storage class hint (e.g. JournalFileStorage)",
-        type=str,
         default=None,
+        choices=[
+            RDBStorage.__name__,
+            JournalFileStorage.__name__,
+            JournalRedisStorage.__name__,
+        ],
     )
     verbose_group = parser.add_mutually_exclusive_group()
     verbose_group.add_argument(
