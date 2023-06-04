@@ -445,8 +445,9 @@ class Study:
             RuntimeError:
                 If nested invocation of this method occurs.
         """
-
-
+        if ((n_trials == 0) and (timeout is None)) & (show_progress_bar==True):
+            warnings.warn("n_trials and timeout is set to None.Progress bar won't be displayed")
+            
         _optimize(
             study=self,
             func=func,
@@ -527,7 +528,6 @@ class Study:
 
         if not self._thread_local.in_optimize_loop and is_heartbeat_enabled(self._storage):
             warnings.warn("Heartbeat of storage is supposed to be used with Study.optimize.")
-
 
         fixed_distributions = fixed_distributions or {}
         fixed_distributions = {
