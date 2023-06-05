@@ -114,7 +114,7 @@ def logei_candidates_func(
     if not _imports_logei.is_successful():
         raise ImportError(
             "logei_candidates_func requires botorch >=0.8.1. "
-            "Please upgrade botorch or use qei_candidates_func instead."
+            "Please upgrade botorch or use qei_candidates_func as candidates_func instead."
         )
 
     if train_obj.size(-1) != 1:
