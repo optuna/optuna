@@ -133,10 +133,15 @@ def test_study_optimize_with_pruned_trials() -> None:
 
         if a == 0:
             trial.suggest_float("b", -1.0, 1.0, step=0.5)
+            raise optuna.TrialPruned
         elif a == 1:
-            trial.suggest_categorical("c", ["x", "y", None])
-
-        raise optuna.TrialPruned
+            c = trial.suggest_categorical("c", ["x", "y", None])
+            if c == "x":
+                return a + 1
+            else:
+                return a - 1
+        else:
+            return a * 2
 
     study = optuna.create_study(sampler=samplers.BruteForceSampler())
     study.optimize(objective)
