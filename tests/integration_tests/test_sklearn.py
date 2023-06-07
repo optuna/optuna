@@ -310,8 +310,8 @@ def test_objective_error_score_invalid() -> None:
 @pytest.mark.parametrize(
     "param_dist, expect",
     [
-        ({"max_depth": IntDistribution(5, 10)}, False),
-        ({"max_depth": FloatDistribution(5, 10)}, True),
+        ({"max_depth": IntDistribution(1, 10)}, False),
+        ({"max_depth": FloatDistribution(1, 10)}, True),
     ],
 )
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
