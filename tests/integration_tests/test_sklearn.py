@@ -5,7 +5,6 @@ import numpy as np
 import pytest
 import scipy as sp
 from optuna import distributions, integration
-from optuna.distributions import FloatDistribution, IntDistribution
 from optuna.study import create_study
 from sklearn.datasets import make_blobs, make_regression
 from sklearn.decomposition import PCA
@@ -310,8 +309,8 @@ def test_objective_error_score_invalid() -> None:
 @pytest.mark.parametrize(
     "param_dist, expect",
     [
-        ({"max_depth": IntDistribution(1, 10)}, False),
-        ({"max_depth": FloatDistribution(1, 10)}, True),
+        ({"max_depth": distributions.IntDistribution(1, 10)}, False),
+        ({"max_depth": distributions.FloatDistribution(1, 10)}, True),
     ],
 )
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
