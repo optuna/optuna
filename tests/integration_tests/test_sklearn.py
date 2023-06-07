@@ -8,7 +8,7 @@ from sklearn.decomposition import PCA
 from sklearn.datasets import make_blobs
 from sklearn.datasets import make_regression
 from sklearn.exceptions import ConvergenceWarning
-from sklearn.exceptions import  NotFittedError
+from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import SGDClassifier
 from sklearn.neighbors import KernelDensity
@@ -17,9 +17,6 @@ from sklearn.tree import DecisionTreeRegressor
 from optuna import distributions
 from optuna import integration
 from optuna.study import create_study
-
-
-pytestmark = pytest.mark.integration
 
 
 pytestmark = pytest.mark.integration
