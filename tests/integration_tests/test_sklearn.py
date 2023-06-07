@@ -4,7 +4,7 @@ import warnings
 import numpy as np
 import pytest
 import scipy as sp
-from sklearn.cross_decomposition import PLSRegression
+from sklearn.tree import DecisionTreeRegressor
 from sklearn.datasets import make_blobs
 from sklearn.datasets import make_regression
 from sklearn.decomposition import PCA
@@ -305,15 +305,15 @@ def test_objective_error_score_invalid() -> None:
 @pytest.mark.parametrize(
     "param_dist, expect",
     [
-        ({"n_components": IntDistribution(5, 10)}, False),
-        ({"n_components": IntDistribution(0, 0)}, True),
+        ({"max_depth": IntDistribution(5, 10)}, False),
+        ({"max_depth": FloatDistribution(5, 10)}, True),
     ],
 )
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_objective_error_score_nan_regression(param_dist: dict, expect: bool) -> None:
     X, y = make_regression(n_samples=100, n_features=10)
-    est = PLSRegression()
+    est = DecisionTreeRegressor()
     optuna_search = integration.OptunaSearchCV(
         est,
         param_dist,
