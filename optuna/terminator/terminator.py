@@ -90,7 +90,7 @@ class Terminator(BaseTerminator):
                     break
 
     .. seealso::
-        Please refer to :class:`~optuna.terminator.TerminationCallback` for how to use
+        Please refer to :class:`~optuna.terminator.TerminatorCallback` for how to use
         the terminator mechanism with the :func:`~optuna.study.Study.optimize` method.
 
     """
