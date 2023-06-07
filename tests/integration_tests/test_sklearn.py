@@ -4,9 +4,9 @@ import warnings
 import numpy as np
 import pytest
 import scipy as sp
-from sklearn.decomposition import PCA
 from sklearn.datasets import make_blobs
 from sklearn.datasets import make_regression
+from sklearn.decomposition import PCA
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import LogisticRegression
