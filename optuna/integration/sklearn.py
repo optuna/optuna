@@ -897,8 +897,6 @@ class OptunaSearchCV(BaseEstimator):
             callbacks=self.callbacks,
         )
 
-        self.study_.best_params
-
         _logger.info("Finished hyperparemeter search!")
 
         if self.refit:
