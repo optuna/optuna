@@ -317,7 +317,7 @@ def test_objective_error_score_invalid() -> None:
     "param_dist, expect",
     [
         ({"max_depth": distributions.IntDistribution(0, 1)}, False),
-        ({"max_depth": distributions.IntDistribution(0, 0)}, True),
+        ({"max_depth": distributions.FloatDistribution(0, 1)}, True),
     ],
 )
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
