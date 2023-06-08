@@ -16,6 +16,7 @@ from sklearn.tree import DecisionTreeRegressor
 
 from optuna import distributions
 from optuna import integration
+from optuna.samplers import BruteForceSampler
 from optuna.study import create_study
 
 
