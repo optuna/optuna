@@ -325,7 +325,6 @@ def test_objective_error_score_invalid() -> None:
 def test_objective_error_score_nan_regression(param_dist: dict, expect: bool) -> None:
     X, y = make_regression(n_samples=100, n_features=10)
     est = DecisionTreeRegressor()
-    study = create_study()
     optuna_search = integration.OptunaSearchCV(
         est,
         param_dist,
