@@ -290,6 +290,8 @@ class _ParzenEstimator:
                 distribution._dist_func(distribution._elements[observation], distribution._elements[j])
                 for j in range(len(distribution._elements))
             ]
-            weights[i] += np.exp(-(np.array(dists) ** 2) / SIGMA)
+            prob = np.exp(-(np.array(dists) ** 2) / SIGMA)
+            prob /= prob.sum()
+            weights[i] += prob
         weights /= weights.sum(axis=1, keepdims=True)
         return _BatchedCategoricalDistributions(weights)
