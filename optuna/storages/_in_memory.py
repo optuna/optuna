@@ -4,12 +4,10 @@ import threading
 from typing import Any
 from typing import Container
 from typing import Dict
-from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
-from typing import Union
 import uuid
 
 import optuna
@@ -362,16 +360,15 @@ class InMemoryStorage(BaseStorage):
         with self._lock:
             self._check_study_id(study_id)
 
-            trials: Union[List[FrozenTrial], Iterator[FrozenTrial]] = self._studies[
-                study_id
-            ].trials
+            trials = self._studies[study_id].trials
             if states is not None:
-                trials = filter(lambda t: t.state in states, trials)
+                trials = [t for t in trials if t.state in states]
 
             if deepcopy:
-                trials = copy.deepcopy(list(trials))
+                trials = copy.deepcopy(trials)
             else:
-                trials = list(trials)
+                # This copy is required for the replacing trick in `set_trial_xxx`.
+                trials = copy.copy(trials)
 
         return trials
 

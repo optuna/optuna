@@ -830,6 +830,35 @@ def test_get_all_trials_state_option(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_get_all_trials_not_modified(storage_mode: str) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        _, study_to_trials = _setup_studies(storage, n_study=2, n_trial=20, seed=48)
+
+        for study_id in study_to_trials.keys():
+            trials = storage.get_all_trials(study_id, deepcopy=False)
+            deepcopied_trials = copy.deepcopy(trials)
+
+            for trial in trials:
+                if not trial.state.is_finished():
+                    storage.set_trial_param(trial._trial_id, "paramX", 0, FloatDistribution(0, 1))
+                    storage.set_trial_user_attr(trial._trial_id, "usr_attrX", 0)
+                    storage.set_trial_system_attr(trial._trial_id, "sys_attrX", 0)
+
+                if trial.state == TrialState.RUNNING:
+                    if trial.number % 3 == 0:
+                        storage.set_trial_state_values(trial._trial_id, TrialState.COMPLETE, [0])
+                    elif trial.number % 3 == 1:
+                        storage.set_trial_intermediate_value(trial._trial_id, 0, 0)
+                        storage.set_trial_state_values(trial._trial_id, TrialState.PRUNED, [0])
+                    else:
+                        storage.set_trial_state_values(trial._trial_id, TrialState.FAIL)
+                elif trial.state == TrialState.WAITING:
+                    storage.set_trial_state_values(trial._trial_id, TrialState.RUNNING)
+
+            assert trials == deepcopied_trials
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_n_trials(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         study_id_to_frozen_studies, _ = _setup_studies(storage, n_study=2, n_trial=7, seed=50)
