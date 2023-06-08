@@ -335,7 +335,6 @@ def test_objective_error_score_nan_regression(param_dist: dict, expect: bool) ->
     if expect:
         with pytest.raises(ValueError):
             optuna_search.fit(X, y)
-
     else:
         optuna_search.fit(X, y)
 
