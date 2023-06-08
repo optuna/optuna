@@ -634,26 +634,20 @@ Not only does the Lehmer code provide a unique encoding of permutations into an 
 For example, the sum of a Lehmer code entries is equal to the minimum number of adjacent transpositions necessary to transform the corresponding permutation into the identity permutation. 
 Additionally, the lexicographical order of the encodings of two permutations is the same as that of the original sequence. 
 Therefore, Lehmer code preserves "closeness" among permutations in some sense, which is important for the optimization algorithm.
-Optuna implementation is as follows:  
+An Optuna implementation example to solve Euclid TSP is as follows:  
 
 .. code-block:: python
 
-    import optuna
     import numpy as np
 
-    points = np.array(
-            [
-                [0., 0.],
-                [1., 0.],
-                [0., 1.],
-                [1., 1.],
-                [2., 2.],
-                [-1., -1.]
-            ]
-    )
-    n = len(points) - 1
+    import optuna
 
-    def decode(lehmer_code):
+
+    def decode(lehmer_code: list[int]) -> list[int]:
+        """Decode Lehmer code to permutation.
+
+        This function decodes Lehmer code represented as a list of integers to a permutation.
+        """
         all_indices = list(range(n))
         output = []
         for k in lehmer_code:
@@ -662,14 +656,29 @@ Optuna implementation is as follows:
             all_indices.remove(value)
         return output
 
-    def objective(trial):
-        lehmer_code = [trial.suggest_int(f"x{i}", 0, n-i-1) for i in range(n)]
+
+    # Euclidean coordinates of cities for TSP.
+    city_coordinates = np.array(
+        [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 2.0], [-1.0, -1.0]]
+    )
+    n = len(city_coordinates)
+
+
+    def objective(trial: optuna.Trial) -> float:
+        # Suggest a permutation in the Lehmer code representation.
+        lehmer_code = [trial.suggest_int(f"x{i}", 0, n - i - 1) for i in range(n - 1)]
         permutation = decode(lehmer_code)
-        permutation.append(n)
-        total_distance = 0
-        for i in range(n+1):
-            total_distance += np.linalg.norm(points[permutation[i%n]]- points[permutation[(i+1)%n]])
+        # Fix starting and ending points.
+        permutation.append(n - 1)
+
+        # Calculate the total distance of the suggested path.
+        total_distance = 0.0
+        for i in range(n + 1):
+            total_distance += np.linalg.norm(
+                city_coordinates[permutation[i % n]] - city_coordinates[permutation[(i + 1) % n]]
+            )
         return total_distance
+
 
     study = optuna.create_study()
     study.optimize(objective, n_trials=10)
