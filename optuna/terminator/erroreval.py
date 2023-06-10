@@ -47,7 +47,7 @@ class CrossValidationErrorEvaluator(BaseErrorEvaluator):
 
         Args:
             trials:
-                A list of trials to consider. The best trial in `trials` is used to compute the
+                A list of trials to consider. The best trial in ``trials`` is used to compute the
                 statistical error.
 
             study_direction:
