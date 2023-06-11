@@ -14,7 +14,6 @@ from typing import Optional
 from typing import Union
 from unittest.mock import Mock
 from unittest.mock import patch
-from unittest import TestCase
 import uuid
 
 import _pytest.capture
