@@ -978,6 +978,18 @@ def test_callbacks(n_jobs: int) -> None:
     assert states == []
 
 
+def test_optimize_infinite_budget_progbar() -> None:
+    def terminate_study(study: Study, trial: FrozenTrial) -> None:
+        study.stop()
+
+    study = create_study()
+
+    with pytest.warns(UserWarning):
+        study.optimize(
+            func, n_trials=None, timeout=None, show_progress_bar=True, callbacks=[terminate_study]
+        )
+
+
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_trials(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
@@ -1577,24 +1589,3 @@ def test_set_invalid_metric_names() -> None:
     study = create_study(directions=["minimize", "minimize"])
     with pytest.raises(ValueError):
         study.set_metric_names(metric_names)
-
-def objective(trial):
-    x = trial.suggest_uniform('x', -10, 10)
-    y = trial.suggest_uniform('y', -5, 5)
-    z = trial.suggest_uniform('z', 0, 1)
-
-    # Perform some computations or calculations using x, y, z
-    result = x**2 + y**2 + z**2
-
-    return result
-def test_warning_condition():
-    study = create_study()
-    n_trials = 0
-    timeout = None
-
-    # Trigger the condition
-    with pytest.warns(UserWarning):
-        Study.optimize(study,objective, n_trials=n_trials, timeout=timeout,show_progress_bar=True)
-
-    # Add any necessary assertions to validate the result
-    assert True  # Placeholder assertion

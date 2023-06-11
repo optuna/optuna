@@ -445,9 +445,6 @@ class Study:
             RuntimeError:
                 If nested invocation of this method occurs.
         """
-        if show_progress_bar and n_trials is None and timeout is None:
-            warnings.warn("n_trials and timeout is set to None.Progress bar won't be displayed")
-       
         _optimize(
             study=self,
             func=func,
