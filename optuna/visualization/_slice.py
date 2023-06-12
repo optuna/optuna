@@ -5,6 +5,7 @@ from typing import Callable
 from typing import cast
 from typing import NamedTuple
 
+from optuna.distributions import CategoricalDistribution
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
@@ -13,7 +14,6 @@ from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _check_plot_args
 from optuna.visualization._utils import _filter_nonfinite
 from optuna.visualization._utils import _is_log_scale
-from optuna.visualization._utils import _is_numerical
 
 
 if _imports.is_successful():
@@ -80,6 +80,13 @@ def _get_slice_plot_info(
         return _SlicePlotInfo(target_name, [])
 
     all_params = {p_name for t in trials for p_name in t.params.keys()}
+
+    distributions = {}
+    for trial in trials:
+        for param_name, distribution in trial.distributions.items():
+            if param_name not in distributions:
+                distributions[param_name] = distribution
+
     if params is None:
         sorted_params = sorted(all_params)
     else:
@@ -96,7 +103,7 @@ def _get_slice_plot_info(
                 param=param,
                 target=target,
                 log_scale=_is_log_scale(trials, param),
-                numerical=_is_numerical(trials, param),
+                numerical=not isinstance(distributions[param], CategoricalDistribution),
             )
             for param in sorted_params
         ],
