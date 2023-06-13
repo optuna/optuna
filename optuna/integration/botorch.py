@@ -67,7 +67,7 @@ with try_import() as _imports_logei:
     from botorch.acquisition.analytic import LogExpectedImprovement
 
 
-@experimental_func("3.2.0")
+@experimental_func("3.3.0")
 def logei_candidates_func(
     train_x: "torch.Tensor",
     train_obj: "torch.Tensor",
