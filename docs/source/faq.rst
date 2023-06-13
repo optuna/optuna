@@ -624,7 +624,7 @@ How can deal with permutation as a parameter?
 
 Although it is not straightforward to deal with combinatorial search spaces like permutations with existing API, there exists a convenient technique for handling them. 
 It involves re-parametrization of permutation search space of :math:`n` items as an independent :math:`n`-dimensional integer search space. 
-This technique is based on the concept of `Lehmer code <https://en.wikipedia.org/wiki/Lehmer_code>`_, which is also explained in `Vizier document <https://oss-vizier.readthedocs.io/en/latest/guides/user/search_spaces.html#combinatorial-reparamterization>`_.
+This technique is based on the concept of `Lehmer code <https://en.wikipedia.org/wiki/Lehmer_code>`_.
 
 A Lehmer code of a sequence is the sequence of integers in the same size, whose :math:`i`-th entry denotes how many inversions the :math:`i`-th entry of the permutation has after itself.
 In other words, the :math:`i`-th entry of the Lehmer code represents the number of entries that are located after and are smaller than the :math:`i`-th entry of the original sequence.
