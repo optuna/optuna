@@ -631,7 +631,7 @@ In other words, the :math:`i`-th entry of the Lehmer code represents the number 
 For instance, the Lehmer code of the permutation :math:`(3, 1, 4, 2, 0)` is :math:`(3, 1, 2, 1, 0)`.
 
 Not only does the Lehmer code provide a unique encoding of permutations into an integer space, but it also has some desirable properties.
-For example, the sum of a Lehmer code entries is equal to the minimum number of adjacent transpositions necessary to transform the corresponding permutation into the identity permutation. 
+For example, the sum of Lehmer code entries is equal to the minimum number of adjacent transpositions necessary to transform the corresponding permutation into the identity permutation. 
 Additionally, the lexicographical order of the encodings of two permutations is the same as that of the original sequence. 
 Therefore, Lehmer code preserves "closeness" among permutations in some sense, which is important for the optimization algorithm.
 An Optuna implementation example to solve Euclid TSP is as follows:  
