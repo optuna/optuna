@@ -337,21 +337,6 @@ class TPESampler(BaseSampler):
 
         return search_space
 
-    def _log_independent_sampling(
-        self, n_complete_trials: int, trial: FrozenTrial, param_name: str
-    ) -> None:
-        if self._warn_independent_sampling and self._multivariate:
-            # The first trial samples independently.
-            if n_complete_trials >= max(self._n_startup_trials, 1):
-                _logger.warning(
-                    f"The parameter '{param_name}' in trial#{trial.number} is sampled "
-                    "independently instead of being sampled by multivariate TPE sampler. "
-                    "(optimization performance may be degraded). "
-                    "You can suppress this warning by setting `warn_independent_sampling` "
-                    "to `False` in the constructor of `TPESampler`, "
-                    "if this independent sampling is intended behavior."
-                )
-
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
@@ -375,6 +360,47 @@ class TPESampler(BaseSampler):
         if search_space == {}:
             return {}
 
+        states = (TrialState.COMPLETE, TrialState.PRUNED)
+        trials = study._get_trials(deepcopy=False, states=states, use_cache=True)
+        # If the number of samples is insufficient, we run random trial.
+        if len(trials) < self._n_startup_trials:
+            return {}
+
+        return self._sample(study, trial, search_space)
+
+    def sample_independent(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        param_name: str,
+        param_distribution: BaseDistribution,
+    ) -> Any:
+        states = (TrialState.COMPLETE, TrialState.PRUNED)
+        trials = study._get_trials(deepcopy=False, states=states, use_cache=True)
+
+        # If the number of samples is insufficient, we run random trial.
+        if len(trials) < self._n_startup_trials:
+            return self._random_sampler.sample_independent(
+                study, trial, param_name, param_distribution
+            )
+
+        if self._warn_independent_sampling and self._multivariate:
+            # Avoid independent warning at the first sampling of `param_name`.
+            if any(param_name in trial.params for trial in trials):
+                _logger.warning(
+                    f"The parameter '{param_name}' in trial#{trial.number} is sampled "
+                    "independently instead of being sampled by multivariate TPE sampler. "
+                    "(optimization performance may be degraded). "
+                    "You can suppress this warning by setting `warn_independent_sampling` "
+                    "to `False` in the constructor of `TPESampler`, "
+                    "if this independent sampling is intended behavior."
+                )
+
+        return self._sample(study, trial, {param_name: param_distribution})[param_name]
+
+    def _sample(
+        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+    ) -> Dict[str, Any]:
         param_names = list(search_space.keys())
         values, scores, violations = _get_observation_pairs(
             study,
@@ -383,10 +409,7 @@ class TPESampler(BaseSampler):
             self._constraints_func is not None,
         )
 
-        # If the number of samples is insufficient, we run random trial.
         n = sum(s < float("inf") for s, v in scores)  # Ignore running trials.
-        if n < self._n_startup_trials:
-            return {}
 
         # We divide data into below and above.
         indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n), violations)
@@ -419,64 +442,6 @@ class TPESampler(BaseSampler):
             ret[param_name] = dist.to_external_repr(ret[param_name])
 
         return ret
-
-    def sample_independent(
-        self,
-        study: Study,
-        trial: FrozenTrial,
-        param_name: str,
-        param_distribution: BaseDistribution,
-    ) -> Any:
-        values, scores, violations = _get_observation_pairs(
-            study,
-            [param_name],
-            self._constant_liar,
-            self._constraints_func is not None,
-        )
-
-        n = sum(s < float("inf") for s, v in scores)  # Ignore running trials.
-
-        # Avoid independent warning at the first sampling of `param_name` when `group=True`.
-        if any(param is not None for param in values[param_name]):
-            self._log_independent_sampling(n, trial, param_name)
-
-        if n < self._n_startup_trials:
-            return self._random_sampler.sample_independent(
-                study, trial, param_name, param_distribution
-            )
-
-        indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n), violations)
-        # `None` items are intentionally converted to `nan` and then filtered out.
-        # For `nan` conversion, the dtype must be float.
-        config_value = np.asarray(values[param_name], dtype=float)
-        param_mask = ~np.isnan(config_value)
-        param_mask_below, param_mask_above = param_mask[indices_below], param_mask[indices_above]
-        below = {param_name: config_value[indices_below[param_mask_below]]}
-        above = {param_name: config_value[indices_above[param_mask_above]]}
-
-        if study._is_multi_objective():
-            weights_below = _calculate_weights_below_for_multi_objective(
-                scores, indices_below, violations
-            )[param_mask_below]
-            mpe_below = _ParzenEstimator(
-                below,
-                {param_name: param_distribution},
-                self._parzen_estimator_parameters,
-                weights_below,
-            )
-        else:
-            mpe_below = _ParzenEstimator(
-                below, {param_name: param_distribution}, self._parzen_estimator_parameters
-            )
-        mpe_above = _ParzenEstimator(
-            above, {param_name: param_distribution}, self._parzen_estimator_parameters
-        )
-        samples_below = mpe_below.sample(self._rng, self._n_ei_candidates)
-        log_likelihoods_below = mpe_below.log_pdf(samples_below)
-        log_likelihoods_above = mpe_above.log_pdf(samples_below)
-        ret = TPESampler._compare(samples_below, log_likelihoods_below, log_likelihoods_above)
-
-        return param_distribution.to_external_repr(ret[param_name])
 
     @classmethod
     def _compare(
