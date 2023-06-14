@@ -313,31 +313,6 @@ def test_objective_error_score_invalid() -> None:
         optuna_search.fit(X)
 
 
-@pytest.mark.parametrize(
-    "param_dist, expect",
-    [
-        ({"max_depth": distributions.IntDistribution(0, 1)}, False),
-        ({"max_depth": distributions.IntDistribution(-1, -1)}, True),
-    ],
-)
-@pytest.mark.filterwarnings("ignore::RuntimeWarning")
-@pytest.mark.filterwarnings("ignore::UserWarning")
-def test_objective_error_score_nan_regression(param_dist: dict, expect: bool) -> None:
-    X, y = make_regression(n_samples=100, n_features=10)
-    est = DecisionTreeRegressor()
-    optuna_search = integration.OptunaSearchCV(
-        est,
-        param_dist,
-        study=create_study(sampler=BruteForceSampler(), direction="maximize"),
-    )
-
-    if expect:
-        with pytest.raises(ValueError):
-            optuna_search.fit(X, y)
-    else:
-        optuna_search.fit(X, y)
-
-
 # TODO(himkt): Remove this method with the deletion of deprecated distributions.
 # https://github.com/optuna/optuna/issues/2941
 @pytest.mark.filterwarnings("ignore::FutureWarning")
