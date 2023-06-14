@@ -5,18 +5,15 @@ import numpy as np
 import pytest
 import scipy as sp
 from sklearn.datasets import make_blobs
-from sklearn.datasets import make_regression
 from sklearn.decomposition import PCA
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import SGDClassifier
 from sklearn.neighbors import KernelDensity
-from sklearn.tree import DecisionTreeRegressor
 
 from optuna import distributions
 from optuna import integration
-from optuna.samplers import BruteForceSampler
 from optuna.study import create_study
 
 
@@ -86,12 +83,7 @@ def test_optuna_search_properties() -> None:
     param_dist = {"C": distributions.FloatDistribution(1e-04, 1e03, log=True)}
 
     optuna_search = integration.OptunaSearchCV(
-        est,
-        param_dist,
-        cv=3,
-        error_score="raise",
-        random_state=0,
-        return_train_score=True,
+        est, param_dist, cv=3, error_score="raise", random_state=0, return_train_score=True
     )
     optuna_search.fit(X, y)
     optuna_search.set_user_attr("dataset", "blobs")
@@ -200,13 +192,7 @@ def test_optuna_search_study_with_minimize() -> None:
     est = KernelDensity()
     study = create_study(direction="minimize")
     optuna_search = integration.OptunaSearchCV(
-        est,
-        {},
-        cv=3,
-        error_score="raise",
-        random_state=0,
-        return_train_score=True,
-        study=study,
+        est, {}, cv=3, error_score="raise", random_state=0, return_train_score=True, study=study
     )
 
     with pytest.raises(ValueError, match="direction of study must be 'maximize'."):
@@ -281,7 +267,10 @@ def test_objective_error_score_nan() -> None:
         return_train_score=True,
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="This SGDClassifier estimator requires y to be passed, but the target y is None.",
+    ):
         optuna_search.fit(X)
 
     for trial in optuna_search.study_.get_trials():
