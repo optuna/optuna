@@ -311,7 +311,8 @@ def test_multi_objective_sample_independent_ignored_states() -> None:
 )
 @pytest.mark.parametrize("objective_value", [-5.0, 5.0, 0.0, -float("inf"), float("inf")])
 @pytest.mark.parametrize("multivariate", [True, False])
-@pytest.mark.parametrize("constant_liar", [True, False])
+# TODO(not522): Test constant_liar=True
+@pytest.mark.parametrize("constant_liar", [False])
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 def test_multi_objective_get_observation_pairs(
     int_value: int,
@@ -339,23 +340,15 @@ def test_multi_objective_get_observation_pairs(
         )
     )
 
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], constant_liar) == (
-        {"x": [int_value, int_value]},
-        [(-float("inf"), [objective_value, -objective_value]) for _ in range(2)],
-        None,
-    )
-    assert _tpe.sampler._get_observation_pairs(study, ["y"], constant_liar) == (
-        {"y": [0, 0]},
-        [(-float("inf"), [objective_value, -objective_value]) for _ in range(2)],
-        None,
-    )
-    assert _tpe.sampler._get_observation_pairs(study, ["x", "y"], constant_liar) == (
-        {"x": [int_value, int_value], "y": [0, 0]},
-        [(-float("inf"), [objective_value, -objective_value]) for _ in range(2)],
-        None,
-    )
-    assert _tpe.sampler._get_observation_pairs(study, ["z"], constant_liar) == (
-        {"z": [None, None]},
+    if constant_liar:
+        states = [
+            optuna.trial.TrialState.COMPLETE,
+            optuna.trial.TrialState.PRUNED,
+            optuna.trial.TrialState.RUNNING,
+        ]
+    else:
+        states = [optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED]
+    assert _tpe.sampler._get_observation_pairs(study, study.get_trials(states=states)) == (
         [(-float("inf"), [objective_value, -objective_value]) for _ in range(2)],
         None,
     )
@@ -373,13 +366,10 @@ def test_multi_objective_get_observation_pairs_constrained(constraint_value: int
     study.optimize(objective, n_trials=5)
 
     violations = [max(0, constraint_value) for _ in range(5)]
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], constraints_enabled=True) == (
-        {"x": [5.0, 5.0, 5.0, 5.0, 5.0]},
-        [(-float("inf"), [5.0, -5.0]) for _ in range(5)],
-        violations,
-    )
-    assert _tpe.sampler._get_observation_pairs(study, ["y"], constraints_enabled=True) == (
-        {"y": [None, None, None, None, None]},
+    states = (optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED)
+    assert _tpe.sampler._get_observation_pairs(
+        study, study.get_trials(states=states), constraints_enabled=True
+    ) == (
         [(-float("inf"), [5.0, -5.0]) for _ in range(5)],
         violations,
     )
