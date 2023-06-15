@@ -666,10 +666,8 @@ An Optuna implementation example to solve Euclid TSP is as follows:
 
     def objective(trial: optuna.Trial) -> float:
         # Suggest a permutation in the Lehmer code representation.
-        lehmer_code = [trial.suggest_int(f"x{i}", 0, n - i - 1) for i in range(n - 1)]
+        lehmer_code = [trial.suggest_int(f"x{i}", 0, n - i - 1) for i in range(n)]
         permutation = decode(lehmer_code)
-        # Fix starting and ending points for efficiency.
-        permutation.append(n - 1)
 
         # Calculate the total distance of the suggested path.
         total_distance = 0.0
