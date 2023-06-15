@@ -372,6 +372,11 @@ class _LightGBMBaseTuner(_BaseTuner):
         # Handling alias metrics.
         _handling_alias_metrics(params)
 
+        if early_stopping_rounds is not None:
+            if callbacks is None:
+                callbacks = []
+            callbacks.append(lgb.early_stopping(stopping_rounds=early_stopping_rounds))
+
         args = [params, train_set]
         kwargs: Dict[str, Any] = dict(
             num_boost_round=num_boost_round,
@@ -379,7 +384,6 @@ class _LightGBMBaseTuner(_BaseTuner):
             feval=feval,
             feature_name=feature_name,
             categorical_feature=categorical_feature,
-            early_stopping_rounds=early_stopping_rounds,
             verbose_eval=verbose_eval,
             callbacks=callbacks,
             time_budget=time_budget,
