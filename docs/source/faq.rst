@@ -671,9 +671,9 @@ An Optuna implementation example to solve Euclid TSP is as follows:
 
         # Calculate the total distance of the suggested path.
         total_distance = 0.0
-        for i in range(n + 1):
+        for i in range(n):
             total_distance += np.linalg.norm(
-                city_coordinates[permutation[i % n]] - city_coordinates[permutation[(i + 1) % n]]
+                city_coordinates[permutation[i]] - city_coordinates[np.roll(permutation, 1)[i]]
             )
         return total_distance
 
