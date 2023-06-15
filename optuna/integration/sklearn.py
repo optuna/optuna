@@ -512,7 +512,7 @@ class OptunaSearchCV(BaseEstimator):
     def best_index_(self) -> int:
         """Trial number which corresponds to the best candidate parameter setting.
 
-        Retuned value is equivant to ``optuna_search.best_trial_.number``.
+        Returned value is equivalent to ``optuna_search.best_trial_.number``.
         """
 
         return self.best_trial_.number
@@ -885,7 +885,7 @@ class OptunaSearchCV(BaseEstimator):
             callbacks=self.callbacks,
         )
 
-        _logger.info("Finished hyperparemeter search!")
+        _logger.info("Finished hyperparameter search!")
 
         if self.refit:
             self._refit(X, y, **fit_params)
