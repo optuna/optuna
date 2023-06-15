@@ -231,7 +231,9 @@ class _Objective:
                 n_splits = self.cv.get_n_splits(self.X, self.y, self.groups)
                 fit_time = np.array([np.nan] * n_splits)
                 score_time = np.array([np.nan] * n_splits)
-                test_score = np.array([self.error_score] * n_splits)
+                test_score = np.array(
+                    [self.error_score if self.error_score is not None else np.nan] * n_splits
+                )
 
                 scores = {
                     "fit_time": fit_time,
