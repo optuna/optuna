@@ -31,7 +31,7 @@ class _HypervolumeHistoryInfo(NamedTuple):
     values: list[float]
 
 
-@experimental_func("3.2.1")
+@experimental_func("3.3.0")
 def plot_hypervolume_history(
     study: Study,
     reference_point: Sequence[float],
