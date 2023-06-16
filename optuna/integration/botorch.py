@@ -28,7 +28,8 @@ from optuna.trial import TrialState
 
 
 with try_import() as _imports:
-    from botorch.acquisition.monte_carlo import qExpectedImprovement, qNoisyExpectedImprovement
+    from botorch.acquisition.monte_carlo import qExpectedImprovement
+    from botorch.acquisition.monte_carlo import qNoisyExpectedImprovement
     from botorch.acquisition.multi_objective import monte_carlo
     from botorch.acquisition.multi_objective.objective import IdentityMCMultiOutputObjective
     from botorch.acquisition.objective import ConstrainedMCObjective
@@ -194,18 +195,6 @@ def qnei_candidates_func(
         raise ValueError("Objective may only contain single values with qNEI.")
     if train_con is not None:
         train_y = torch.cat([train_obj, train_con], dim=-1)
-
-        is_feas = (train_con <= 0).all(dim=-1)
-        train_obj_feas = train_obj[is_feas]
-
-        if train_obj_feas.numel() == 0:
-            # TODO(hvy): Do not use 0 as the best observation.
-            _logger.warning(
-                "No objective values are feasible. Using 0 as the best objective in qNEI."
-            )
-            best_f = torch.zeros(())
-        else:
-            best_f = train_obj_feas.max()
 
         n_constraints = train_con.size(1)
         objective = ConstrainedMCObjective(
