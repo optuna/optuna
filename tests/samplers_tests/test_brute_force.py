@@ -289,4 +289,3 @@ def test_study_optimize_with_failed_trials() -> None:
     all_suggested_values = [t.params for t in study.trials]
     for a in expected_suggested_values:
         assert a in all_suggested_values
-    
