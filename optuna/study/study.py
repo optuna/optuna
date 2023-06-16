@@ -175,6 +175,15 @@ class Study:
         return _get_pareto_front_trials(self)
 
     @property
+    def cv_results_(self) -> Dict[str, Any]:
+        """Return the dictionary has list of all trials"""
+        cv_results_dict_in_list = [trial_.user_attrs for trial_ in self.trials]
+        cv_results_list_in_dict = {
+            key: [dict_[key] for dict_ in cv_results_dict_in_list] for key in cv_results_dict_in_list[0]
+        }
+        return cv_results_list_in_dict
+
+    @property
     def direction(self) -> StudyDirection:
         """Return the direction of the study.
 
