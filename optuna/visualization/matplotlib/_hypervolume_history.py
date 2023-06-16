@@ -1,20 +1,17 @@
 from __future__ import annotations
 
-from typing import Callable
 from typing import NamedTuple
 from typing import Sequence
-import warnings
 
 import numpy as np
 
 from optuna._experimental import experimental_func
 from optuna._hypervolume import WFG
-from optuna.exceptions import ExperimentalWarning
 from optuna.logging import get_logger
+from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study import Study
 from optuna.study._multi_objective import _get_pareto_front_trials_by_trials
 from optuna.study._study_direction import StudyDirection
-from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
@@ -35,8 +32,6 @@ class _HypervolumeHistoryInfo(NamedTuple):
 def plot_hypervolume_history(
     study: Study,
     reference_point: Sequence[float],
-    *,
-    constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
 ) -> "Axes":
     """Plot hypervolume history of all trials in a study with Matplotlib.
 
@@ -69,6 +64,7 @@ def plot_hypervolume_history(
         .. note::
             You need to adjust the size of the plot by yourself using ``plt.tight_layout()`` or
             ``plt.savefig(IMAGE_NAME, bbox_inches='tight')``.
+
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their hypervolumes.
@@ -76,16 +72,6 @@ def plot_hypervolume_history(
 
         reference_point:
             A reference point to use for hypervolume computation.
-
-        constraints_func:
-            An optional function that computes the objective constraints. It must take a
-            :class:`~optuna.trial.FrozenTrial` and return the constraints. The return value must
-            be a sequence of :obj:`float` s. A value strictly larger than 0 means that a
-            constraint is violated. A value equal to or smaller than 0 is considered feasible.
-            This specification is the same as in, for example,
-            :class:`~optuna.samplers.NSGAIISampler`.
-
-            If given, infeasible trials are not used to compute hypervolume.
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
@@ -98,9 +84,7 @@ def plot_hypervolume_history(
         "please use plot_optimization_history instead."
     )
 
-    info = _get_hypervolume_history_info(
-        study, np.asarray(reference_point, dtype=np.float64), constraints_func
-    )
+    info = _get_hypervolume_history_info(study, np.asarray(reference_point, dtype=np.float64))
     return _get_hypervolume_history_plot(info)
 
 
@@ -128,36 +112,32 @@ def _get_hypervolume_history_plot(
 def _get_hypervolume_history_info(
     study: Study,
     reference_point: np.ndarray,
-    constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
 ) -> _HypervolumeHistoryInfo:
     completed_trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+
     if len(completed_trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
 
-    if constraints_func is not None:
-        warnings.warn(
-            "``constraints_func`` argument is an experimental feature."
-            " The interface can change in the future.",
-            ExperimentalWarning,
-        )
-        feasible_trials = []
-        best_trials_history = []
-        trial_numbers = []
-        for trial in completed_trials:
-            if all(map(lambda x: x <= 0.0, constraints_func(trial))):
+    # Only feasible trials are considered in hypervolume computation.
+    trial_numbers = []
+    best_trials_history = []
+    feasible_trials = []
+    for trial in completed_trials:
+        has_constraints = _CONSTRAINTS_KEY in trial.system_attrs
+        if has_constraints:
+            constraints_values = trial.system_attrs[_CONSTRAINTS_KEY]
+            if all(map(lambda x: x <= 0.0, constraints_values)):
                 feasible_trials.append(trial)
-            trial_numbers.append(trial.number)
-            best_trials_history.append(
-                _get_pareto_front_trials_by_trials(feasible_trials, study.directions)
-            )
-    else:
-        best_trials_history = []
-        trial_numbers = []
-        for i, trial in enumerate(completed_trials, start=1):
-            trial_numbers.append(trial.number)
-            best_trials_history.append(
-                _get_pareto_front_trials_by_trials(completed_trials[:i], study.directions)
-            )
+        else:
+            feasible_trials.append(trial)
+
+        trial_numbers.append(trial.number)
+        best_trials_history.append(
+            _get_pareto_front_trials_by_trials(feasible_trials, study.directions)
+        )
+
+    if len(feasible_trials) == 0:
+        _logger.warning("Your study does not have any feasible trials.")
 
     # Our hypervolume computation module assumes that all objectives are minimized.
     # Here we transform the objective values and the reference point.
