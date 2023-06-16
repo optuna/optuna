@@ -179,7 +179,8 @@ class Study:
         """Return the dictionary has list of all trials"""
         cv_results_dict_in_list = [trial_.user_attrs for trial_ in self.trials]
         cv_results_list_in_dict = {
-            key: [dict_[key] for dict_ in cv_results_dict_in_list] for key in cv_results_dict_in_list[0]
+            key: [dict_[key] for dict_ in cv_results_dict_in_list]
+            for key in cv_results_dict_in_list[0]
         }
         return cv_results_list_in_dict
 
