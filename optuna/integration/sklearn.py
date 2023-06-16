@@ -215,17 +215,31 @@ class _Objective:
         if self.enable_pruning:
             scores = self._cross_validate_with_pruning(trial, estimator)
         else:
-            scores = cross_validate(
-                estimator,
-                self.X,
-                self.y,
-                cv=self.cv,
-                error_score=self.error_score,
-                fit_params=self.fit_params,
-                groups=self.groups,
-                return_train_score=self.return_train_score,
-                scoring=self.scoring,
-            )
+            try:
+                scores = cross_validate(
+                    estimator,
+                    self.X,
+                    self.y,
+                    cv=self.cv,
+                    error_score=self.error_score,
+                    fit_params=self.fit_params,
+                    groups=self.groups,
+                    return_train_score=self.return_train_score,
+                    scoring=self.scoring,
+                )
+            except ValueError:
+                n_splits = self.cv.get_n_splits(self.X, self.y, self.groups)
+                fit_time = np.array([np.nan] * n_splits)
+                score_time = np.array([np.nan] * n_splits)
+                test_score = np.array(
+                    [self.error_score if self.error_score is not None else np.nan] * n_splits
+                )
+
+                scores = {
+                    "fit_time": fit_time,
+                    "score_time": score_time,
+                    "test_score": test_score,
+                }
 
         self._store_scores(trial, scores)
 
