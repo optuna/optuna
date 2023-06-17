@@ -279,7 +279,7 @@ def test_study_optimize_with_nonconstant_search_space() -> None:
 
 def test_study_optimize_with_failed_trials() -> None:
     def objective(trial: Trial) -> float:
-        x = trial.suggest_int("x", 0, 99)
+        x = trial.suggest_int("x", 0, 99)  # NOQA[F811]
         return np.nan
 
     study = optuna.create_study(sampler=samplers.BruteForceSampler())
