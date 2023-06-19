@@ -565,7 +565,7 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def cv_results_(self) -> Dict[str, Any]:
-        """cv_results_."""
+        """Results of all trials."""
 
         return self.study_.cv_results_
 
