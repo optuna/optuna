@@ -16,9 +16,10 @@ import warnings
 import numpy as np
 
 from optuna._deprecated import deprecated_class
+from optuna._typing import JSONSerializable
 
 
-CategoricalChoiceType = Union[None, bool, int, float, str]
+CategoricalChoiceType = JSONSerializable  # TODO(knshnb): Fix this workaround
 
 
 _float_distribution_deprecated_msg = (
