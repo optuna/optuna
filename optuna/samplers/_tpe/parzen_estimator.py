@@ -151,13 +151,13 @@ class _ParzenEstimator:
         search_space: BaseDistribution,
         parameters: _ParzenEstimatorParameters,
     ) -> _BatchedDistributions:
-        if isinstance(search_space, CategoricalDistribution):
-            return self._calculate_categorical_distributions(
-                transformed_observations, search_space.choices, parameters
-            )
-        elif isinstance(search_space, CustomDistanceDistribution):
+        if isinstance(search_space, CustomDistanceDistribution):
             return self.calculate_custom_distance_distributions(
                 search_space, transformed_observations, parameters
+            )
+        elif isinstance(search_space, CategoricalDistribution):
+            return self._calculate_categorical_distributions(
+                transformed_observations, search_space.choices, parameters
             )
         else:
             assert isinstance(search_space, (FloatDistribution, IntDistribution))
@@ -280,15 +280,15 @@ class _ParzenEstimator:
 
         assert parameters.prior_weight is not None
         weights = np.full(
-            shape=(len(observations) + consider_prior, len(distribution._elements)),
+            shape=(len(observations) + consider_prior, len(distribution.choices)),
             fill_value=parameters.prior_weight / (len(observations) + consider_prior),
         )
 
         SIGMA = 1.0
         for i, observation in enumerate(observations.astype(int)):
             dists = [
-                distribution._dist_func(distribution._elements[observation], distribution._elements[j])
-                for j in range(len(distribution._elements))
+                distribution.dist_func(distribution.choices[observation], distribution.choices[j])
+                for j in range(len(distribution.choices))
             ]
             prob = np.exp(-(np.array(dists) ** 2) / SIGMA)
             prob /= prob.sum()

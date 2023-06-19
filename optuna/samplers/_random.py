@@ -62,10 +62,6 @@ class RandomSampler(BaseSampler):
         param_name: str,
         param_distribution: distributions.BaseDistribution,
     ) -> Any:
-        if isinstance(param_distribution, CustomDistanceDistribution):
-            return param_distribution._elements[
-                self._rng.randint(len(param_distribution._elements))
-            ]
         search_space = {param_name: param_distribution}
         trans = _SearchSpaceTransform(search_space)
         trans_params = self._rng.uniform(trans.bounds[:, 0], trans.bounds[:, 1])

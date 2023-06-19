@@ -567,32 +567,14 @@ class CategoricalDistribution(BaseDistribution):
     __hash__ = BaseDistribution.__hash__
 
 
-Element = TypeVar("Element")
-
-
-class CustomDistanceDistribution(BaseDistribution, Generic[Element]):
+class CustomDistanceDistribution(CategoricalDistribution):
     def __init__(
-        self, elements: Sequence[Element], dist_func: Callable[[Element, Element], float]
+        self,
+        choices: Sequence[CategoricalChoiceType],
+        dist_func: Callable[[CategoricalChoiceType, CategoricalChoiceType], float],
     ):
-        self._elements = np.array(elements)
-        self._dist_func = dist_func
-
-    def to_external_repr(self, param_value_in_internal_repr: float) -> Element:
-        return self._elements[int(param_value_in_internal_repr)]
-
-    def to_internal_repr(self, param_value_in_external_repr: Element) -> float:
-        equal_mask = self._elements == param_value_in_external_repr
-        while len(equal_mask.shape) > 1:
-            equal_mask = equal_mask.all(-1)
-        assert equal_mask.sum() == 1
-        return equal_mask.nonzero()[0][0]
-
-    def _contains(self, param_value_in_internal_repr: float) -> bool:
-        index = int(param_value_in_internal_repr)
-        return 0 <= index < len(self._elements)
-
-    def single(self) -> bool:
-        return len(self._elements) == 1
+        super().__init__(choices)
+        self.dist_func = dist_func
 
 
 DISTRIBUTION_CLASSES = (
@@ -603,8 +585,8 @@ DISTRIBUTION_CLASSES = (
     UniformDistribution,
     LogUniformDistribution,
     DiscreteUniformDistribution,
-    CategoricalDistribution,
     CustomDistanceDistribution,
+    CategoricalDistribution,
 )
 
 
@@ -663,7 +645,10 @@ def distribution_to_json(dist: BaseDistribution) -> str:
 
     """
 
-    return json.dumps({"name": dist.__class__.__name__, "attributes": dist._asdict()})
+    attributes = dist._asdict()
+    if isinstance(dist, CustomDistanceDistribution):
+        attributes["dist_func"] = None
+    return json.dumps({"name": dist.__class__.__name__, "attributes": attributes})
 
 
 def check_distribution_compatibility(
