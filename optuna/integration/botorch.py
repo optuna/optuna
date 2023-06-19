@@ -137,7 +137,6 @@ def logei_candidates_func(
     acqf = LogExpectedImprovement(
         model=model,
         best_f=best_f,
-        sampler=_get_sobol_qmc_normal_sampler(256),
     )
 
     standard_bounds = torch.zeros_like(bounds)
