@@ -179,7 +179,7 @@ class Study:
         """Return the dictionary has list of all trials.
 
         Returns:
-            A list of results of all trials:`list`
+            A list of results of all trials.
         """
         cv_results_dict_in_list = [trial_.user_attrs for trial_ in self.trials]
         cv_results_list_in_dict = {
