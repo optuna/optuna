@@ -567,7 +567,7 @@ class BoTorchSampler(BaseSampler):
             If omitted, it is determined automatically based on the number of objectives and 
             whether a constraint is specified. If the
             number of objectives is one and no constraint is specified, log-Expected Improvement
-            is used. If constraints are specified, quasi MC-based batch Expected Improvement 
+            is used. If constraints are specified, quasi MC-based batch Expected Improvement
             (qEI) is used.
             If the number of objectives is either two or three, Quasi MC-based
             batch Expected Hypervolume Improvement (qEHVI) is used. Otherwise, for larger number
