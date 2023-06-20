@@ -564,7 +564,7 @@ class BoTorchSampler(BaseSampler):
             :obj:`None`. For any constraints that failed to compute, the tensor will contain
             NaN.
 
-            If omitted, it is determined automatically based on the number of objectives and 
+            If omitted, it is determined automatically based on the number of objectives and
             whether a constraint is specified. If the
             number of objectives is one and no constraint is specified, log-Expected Improvement
             is used. If constraints are specified, quasi MC-based batch Expected Improvement
