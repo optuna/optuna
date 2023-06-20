@@ -1150,7 +1150,7 @@ def test_cv_results() -> None:
 
     n_trials = 5
     study.optimize(objective, n_trials=n_trials)
-    for k, v in study.cv_results:
+    for k, v in study.cv_results.items():
         assert len(v) == n_trials
 
 
