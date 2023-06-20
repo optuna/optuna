@@ -7,7 +7,6 @@ import numpy
 from optuna import distributions
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
-from optuna.distributions import CustomDistanceDistribution
 from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial
