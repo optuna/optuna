@@ -175,7 +175,7 @@ class Study:
         return _get_pareto_front_trials(self)
 
     @property
-    def cv_results_(self) -> Dict[str, Any]:
+    def cv_results(self) -> Dict[str, Any]:
         """Return the dictionary has list of all trials.
 
         Returns:
