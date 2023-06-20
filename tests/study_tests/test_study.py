@@ -1143,8 +1143,13 @@ def test_optimize_with_multi_objectives(n_objectives: int) -> None:
 
 def test_cv_results() -> None:
     study = create_study()
+
+    def objective(trial: Trial) -> float:
+        x = trial.suggest_int("x", -10, 10)
+        return x
+
     n_trials = 5
-    study.optimize(n_trials=n_trials)
+    study.optimize(objective, n_trials=n_trials)
     for k, v in study.cv_results_:
         assert len(v) == n_trials
 
