@@ -1141,6 +1141,14 @@ def test_optimize_with_multi_objectives(n_objectives: int) -> None:
         assert len(trial.values) == n_objectives
 
 
+def test_cv_results() -> None:
+    study = create_study()
+    n_trials = 5
+    study.optimize(n_trials=n_trials)
+    for k, v in study.cv_results_:
+        assert len(v) == n_trials
+
+
 def test_best_trials() -> None:
     study = create_study(directions=["minimize", "maximize"])
     study.optimize(lambda t: [2, 2], n_trials=1)
