@@ -311,8 +311,7 @@ def test_multi_objective_sample_independent_ignored_states() -> None:
 )
 @pytest.mark.parametrize("objective_value", [-5.0, 5.0, 0.0, -float("inf"), float("inf")])
 @pytest.mark.parametrize("multivariate", [True, False])
-# TODO(not522): Test constant_liar=True
-@pytest.mark.parametrize("constant_liar", [False])
+@pytest.mark.parametrize("constant_liar", [True, False])
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 def test_multi_objective_get_observation_pairs(
     int_value: int,
@@ -340,14 +339,7 @@ def test_multi_objective_get_observation_pairs(
         )
     )
 
-    if constant_liar:
-        states = [
-            optuna.trial.TrialState.COMPLETE,
-            optuna.trial.TrialState.PRUNED,
-            optuna.trial.TrialState.RUNNING,
-        ]
-    else:
-        states = [optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED]
+    states = [optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED]
     assert _tpe.sampler._get_observation_pairs(study, study.get_trials(states=states)) == (
         [(-float("inf"), [objective_value, -objective_value]) for _ in range(2)],
         None,
