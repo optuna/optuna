@@ -26,7 +26,7 @@ def test_get_optimization_history_info(directions: str) -> None:
     def objective(trial: Trial) -> Sequence[float]:
         def impl(trial: Trial) -> Sequence[float]:
             if trial.number == 0:
-                return 1.5, 1.5  # dominates by the reference_point
+                return 1.5, 1.5  # dominated by the reference_point
             elif trial.number == 1:
                 return 0.75, 0.75
             elif trial.number == 2:

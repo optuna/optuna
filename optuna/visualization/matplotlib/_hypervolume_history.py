@@ -88,7 +88,7 @@ def plot_hypervolume_history(
 
     if len(reference_point) != len(study.directions):
         raise ValueError(
-            "The dimension of the reference_point must be the same as the number of objectives."
+            "The dimension of the reference point must be the same as the number of objectives."
         )
 
     info = _get_hypervolume_history_info(study, np.asarray(reference_point, dtype=np.float64))
