@@ -72,6 +72,7 @@ def plot_hypervolume_history(
 
         reference_point:
             A reference point to use for hypervolume computation.
+            The dimension of the reference point must be the same as the number of objectives.
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
@@ -79,10 +80,11 @@ def plot_hypervolume_history(
 
     _imports.check()
 
-    assert study._is_multi_objective(), (
-        "Study must be multi-objective. For single-objective optimization, "
-        "please use plot_optimization_history instead."
-    )
+    if not study._is_multi_objective():
+        raise ValueError(
+            "Study must be multi-objective. For single-objective optimization, "
+            "please use plot_optimization_history instead."
+        )
 
     info = _get_hypervolume_history_info(study, np.asarray(reference_point, dtype=np.float64))
     return _get_hypervolume_history_plot(info)
