@@ -3,11 +3,14 @@ from __future__ import annotations
 from collections import UserDict
 import copy
 import datetime
+import io
+import os
 from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import overload
 from typing import Sequence
+import uuid
 import warnings
 
 import optuna
@@ -15,6 +18,7 @@ from optuna import distributions
 from optuna import logging
 from optuna import pruners
 from optuna._deprecated import deprecated_func
+from optuna.artifact._protocol import ArtifactStore
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
@@ -47,9 +51,12 @@ class Trial(BaseTrial):
 
     """
 
-    def __init__(self, study: "optuna.study.Study", trial_id: int) -> None:
+    def __init__(
+        self, study: "optuna.study.Study", trial_id: int, artifact: Optional[ArtifactStore] = None
+    ) -> None:
         self.study = study
         self._trial_id = trial_id
+        self.artifact = artifact
 
         # TODO(Yanase): Remove _study_id attribute, and use study._study_id instead.
         self._study_id = self.study._study_id
@@ -752,6 +759,20 @@ class Trial(BaseTrial):
         """
 
         return self._cached_frozen_trial.number
+
+    def upload_artifact(self, file_path: str):
+        artifact_id = str(uuid.uuid4())
+        filename = os.path.basename(file_path)
+
+        self._cached_frozen_trial.system_attrs["artifacts"] = {
+            "artifact_id": artifact_id,
+            "filename": filename,
+        }
+
+        print(self.artifact)
+        if self.artifact is not None:
+            with open(file_path, "rb") as f:
+                self.artifact.write(artifact_id, f)
 
 
 class _LazyTrialSystemAttrs(UserDict):

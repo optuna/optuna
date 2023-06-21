@@ -30,6 +30,7 @@ from optuna._deprecated import deprecated_func
 from optuna._experimental import experimental_func
 from optuna._imports import _LazyImport
 from optuna._typing import JSONSerializable
+from optuna.artifact._protocol import ArtifactStore
 from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.distributions import BaseDistribution
 from optuna.storages._heartbeat import is_heartbeat_enabled
@@ -79,6 +80,7 @@ class Study:
         storage: Union[str, storages.BaseStorage],
         sampler: Optional["samplers.BaseSampler"] = None,
         pruner: Optional[pruners.BasePruner] = None,
+        artifact: Optional[ArtifactStore] = None,
     ) -> None:
         self.study_name = study_name
         storage = storages.get_storage(storage)
@@ -89,6 +91,7 @@ class Study:
 
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
+        self.artifact = artifact
 
         self._thread_local = _ThreadLocalStudyAttribute()
         self._stop_flag = False
@@ -532,7 +535,7 @@ class Study:
         trial_id = self._pop_waiting_trial_id()
         if trial_id is None:
             trial_id = self._storage.create_new_trial(self._study_id)
-        trial = trial_module.Trial(self, trial_id)
+        trial = trial_module.Trial(self, trial_id, self.artifact)
 
         for name, param in fixed_distributions.items():
             trial._suggest(name, param)
@@ -1131,6 +1134,7 @@ def create_study(
     storage: Optional[Union[str, storages.BaseStorage]] = None,
     sampler: Optional["samplers.BaseSampler"] = None,
     pruner: Optional[pruners.BasePruner] = None,
+    artifact: Optional[ArtifactStore] = None,
     study_name: Optional[str] = None,
     direction: Optional[Union[str, StudyDirection]] = None,
     load_if_exists: bool = False,
@@ -1257,7 +1261,9 @@ def create_study(
         sampler = samplers.NSGAIISampler()
 
     study_name = storage.get_study_name_from_id(study_id)
-    study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
+    study = Study(
+        study_name=study_name, storage=storage, sampler=sampler, pruner=pruner, artifact=artifact
+    )
 
     return study
 

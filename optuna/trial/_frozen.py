@@ -469,6 +469,10 @@ class FrozenTrial(BaseTrial):
         else:
             return None
 
+    @property
+    def artifacts(self) -> Dict:
+        return self.system_attrs['artifacts']
+
 
 def create_trial(
     *,
