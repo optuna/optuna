@@ -330,10 +330,11 @@ class NSGAIISampler(BaseSampler):
     def _select_elite_population(
         self, study: Study, population: List[FrozenTrial]
     ) -> List[FrozenTrial]:
+        dominates = _dominates if self._constraints_func is None else _constrained_dominates
+        _validate_constraints(population, dominates)
+        population_per_rank = _fast_non_dominated_sort(population, study.directions, dominates)
+
         elite_population: List[FrozenTrial] = []
-        population_per_rank = _fast_non_dominated_sort(
-            population, study.directions, self._constraints_func
-        )
         for population in population_per_rank:
             if len(elite_population) + len(population) < self._population_size:
                 elite_population.extend(population)
@@ -488,23 +489,27 @@ def _constrained_dominates(
     return violation0 < violation1
 
 
+def _validate_constraints(
+    population: List[FrozenTrial],
+    constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
+) -> None:
+    if constraints_func is None:
+        return
+    for _trial in population:
+        _constraints = _trial.system_attrs.get(_CONSTRAINTS_KEY)
+        if _constraints is None:
+            continue
+        if np.any(np.isnan(np.array(_constraints))):
+            raise ValueError("NaN is not acceptable as constraint value.")
+
+
 def _fast_non_dominated_sort(
     population: List[FrozenTrial],
     directions: List[optuna.study.StudyDirection],
-    constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
+    dominates: Callable[[FrozenTrial, FrozenTrial, List[optuna.study.StudyDirection]], bool],
 ) -> List[List[FrozenTrial]]:
-    if constraints_func is not None:
-        for _trial in population:
-            _constraints = _trial.system_attrs.get(_CONSTRAINTS_KEY)
-            if _constraints is None:
-                continue
-            if np.any(np.isnan(np.array(_constraints))):
-                raise ValueError("NaN is not acceptable as constraint value.")
-
     dominated_count: DefaultDict[int, int] = defaultdict(int)
     dominates_list = defaultdict(list)
-
-    dominates = _dominates if constraints_func is None else _constrained_dominates
 
     for p, q in itertools.combinations(population, 2):
         if dominates(p, q, directions):
