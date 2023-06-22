@@ -287,5 +287,6 @@ def test_study_optimize_with_failed_trials() -> None:
 
     expected_suggested_values = [{"x": i} for i in range(100)]
     all_suggested_values = [t.params for t in study.trials]
+    assert len(all_suggested_values) == len(expected_suggested_values)
     for a in expected_suggested_values:
         assert a in all_suggested_values
