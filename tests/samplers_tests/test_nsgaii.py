@@ -406,7 +406,6 @@ def test_fast_non_dominated_sort_with_constraints() -> None:
 
 
 def test_validate_constraints() -> None:
-    directions = [StudyDirection.MINIMIZE, StudyDirection.MINIMIZE]
     with pytest.raises(ValueError):
         _validate_constraints(
             [_create_frozen_trial(0, [1], [0, float("nan")])],
