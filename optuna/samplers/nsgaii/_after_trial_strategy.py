@@ -15,7 +15,7 @@ class NSGAIIAfterTrialStrategy:
     ) -> None:
         self._constraints_func = constraints_func
 
-    def after_trial(
+    def __call__(
         self,
         study: Study,
         trial: FrozenTrial,

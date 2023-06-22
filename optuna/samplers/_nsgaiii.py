@@ -359,7 +359,7 @@ class NSGAIIISampler(BaseSampler):
         values: Sequence[float] | None,
     ) -> None:
         assert state in [TrialState.COMPLETE, TrialState.FAIL, TrialState.PRUNED]
-        self._after_trial_strategy.after_trial(study, trial, state, values)
+        self._after_trial_strategy(study, trial, state, values)
         self._random_sampler.after_trial(study, trial, state, values)
 
 
