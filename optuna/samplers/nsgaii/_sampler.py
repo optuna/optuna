@@ -330,8 +330,9 @@ class NSGAIISampler(BaseSampler):
     def _select_elite_population(
         self, study: Study, population: List[FrozenTrial]
     ) -> List[FrozenTrial]:
+        _validate_constraints(population, self._constraints_func)
+
         dominates = _dominates if self._constraints_func is None else _constrained_dominates
-        _validate_constraints(population, dominates)
         population_per_rank = _fast_non_dominated_sort(population, study.directions, dominates)
 
         elite_population: List[FrozenTrial] = []
