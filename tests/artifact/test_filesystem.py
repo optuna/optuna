@@ -6,7 +6,7 @@ from optuna.artifact import FileSystemArtifactStore
 from optuna.artifact.exceptions import ArtifactNotFound
 
 
-def test_upload_download(tmp_path) -> None:
+def test_upload_download(tmp_path: str) -> None:
     artifact_id = "dummy-uuid"
     dummy_content = b"Hello World"
     backend = FileSystemArtifactStore(tmp_path)
@@ -16,7 +16,7 @@ def test_upload_download(tmp_path) -> None:
     assert actual == dummy_content
 
 
-def test_file_not_found(tmp_path) -> None:
+def test_file_not_found(tmp_path: str) -> None:
     backend = FileSystemArtifactStore(tmp_path)
     with pytest.raises(ArtifactNotFound):
         backend.open("not-found-id")
