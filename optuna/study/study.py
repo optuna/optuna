@@ -1017,6 +1017,15 @@ class Study:
             self._study_id, _SYSTEM_ATTR_METRIC_NAMES, metric_names
         )
 
+    def download_artifact(self, artifact_id: str, file_path: str) -> None:
+        """Download artifact."""
+        if self.artifact is None:
+            warnings.warn("ArtifactStore was not specified.")
+        else:
+            with self.artifact.open(artifact_id) as artifact_file:
+                with open(file_path, "wb") as f:
+                    f.write(artifact_file.read())
+
     def _is_multi_objective(self) -> bool:
         """Return :obj:`True` if the study has multiple objectives.
 
@@ -1262,7 +1271,11 @@ def create_study(
 
     study_name = storage.get_study_name_from_id(study_id)
     study = Study(
-        study_name=study_name, storage=storage, sampler=sampler, pruner=pruner, artifact=artifact
+        study_name=study_name,
+        storage=storage,
+        sampler=sampler,
+        pruner=pruner,
+        artifact=artifact,
     )
 
     return study

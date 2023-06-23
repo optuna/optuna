@@ -17,17 +17,18 @@ class FileSystemArtifactStore:
     Example:
        .. code-block:: python
 
-          import optuna
-          from optuna_dashboard.artifact import upload_artifact
-          from optuna_dashboard.artifact.file_system import FileSystemBackend
+           import optuna
+           from optuna_dashboard.artifact import upload_artifact
+           from optuna_dashboard.artifact.file_system import FileSystemBackend
 
-          artifact_backend = FileSystemBackend("./artifacts")
+           artifact_backend = FileSystemBackend("./artifacts")
 
-          def objective(trial: optuna.Trial) -> float:
-              ... = trial.suggest_float("x", -10, 10)
-              file_path = generate_example_png(...)
-              upload_artifact(artifact_backend, trial, file_path)
-              return ...
+
+           def objective(trial: optuna.Trial) -> float:
+               ... = trial.suggest_float("x", -10, 10)
+               file_path = generate_example_png(...)
+               upload_artifact(artifact_backend, trial, file_path)
+               return ...
     """
 
     def __init__(self, base_path: str) -> None:
