@@ -1,9 +1,7 @@
-from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import NamedTuple
 from typing import Optional
-from typing import Tuple
 
 import numpy as np
 
@@ -151,13 +149,9 @@ class _ParzenEstimator:
         search_space: BaseDistribution,
         parameters: _ParzenEstimatorParameters,
     ) -> _BatchedDistributions:
-        if isinstance(search_space, CustomDistanceDistribution):
-            return self.calculate_custom_distance_distributions(
-                search_space, transformed_observations, parameters
-            )
-        elif isinstance(search_space, CategoricalDistribution):
+        if isinstance(search_space, CategoricalDistribution):
             return self._calculate_categorical_distributions(
-                transformed_observations, search_space.choices, parameters
+                transformed_observations, search_space, parameters
             )
         else:
             assert isinstance(search_space, (FloatDistribution, IntDistribution))
@@ -182,18 +176,31 @@ class _ParzenEstimator:
     def _calculate_categorical_distributions(
         self,
         observations: np.ndarray,
-        choices: Tuple[Any, ...],
+        search_space: CategoricalDistribution,
         parameters: _ParzenEstimatorParameters,
     ) -> _BatchedDistributions:
         consider_prior = parameters.consider_prior or len(observations) == 0
 
         assert parameters.prior_weight is not None
         weights = np.full(
-            shape=(len(observations) + consider_prior, len(choices)),
+            shape=(len(observations) + consider_prior, len(search_space.choices)),
             fill_value=parameters.prior_weight / (len(observations) + consider_prior),
         )
 
-        weights[np.arange(len(observations)), observations.astype(int)] += 1
+        if isinstance(search_space, CustomDistanceDistribution):
+            SIGMA = 1.0
+            for i, observation in enumerate(observations.astype(int)):
+                dists = [
+                    search_space.dist_func(
+                        search_space.choices[observation], search_space.choices[j]
+                    )
+                    for j in range(len(search_space.choices))
+                ]
+                prob = np.exp(-(np.array(dists) ** 2) / SIGMA)
+                prob /= prob.sum()
+                weights[i] += prob
+        else:
+            weights[np.arange(len(observations)), observations.astype(int)] += 1
         weights /= weights.sum(axis=1, keepdims=True)
         return _BatchedCategoricalDistributions(weights)
 
@@ -269,29 +276,3 @@ class _ParzenEstimator:
             return _BatchedTruncNormDistributions(mus, sigmas, low, high)
         else:
             return _BatchedDiscreteTruncNormDistributions(mus, sigmas, low, high, step)
-
-    def calculate_custom_distance_distributions(
-        self,
-        distribution: CustomDistanceDistribution,
-        observations: np.ndarray,
-        parameters: _ParzenEstimatorParameters,
-    ) -> _BatchedCategoricalDistributions:
-        consider_prior = parameters.consider_prior or len(observations) == 0
-
-        assert parameters.prior_weight is not None
-        weights = np.full(
-            shape=(len(observations) + consider_prior, len(distribution.choices)),
-            fill_value=parameters.prior_weight / (len(observations) + consider_prior),
-        )
-
-        SIGMA = 1.0
-        for i, observation in enumerate(observations.astype(int)):
-            dists = [
-                distribution.dist_func(distribution.choices[observation], distribution.choices[j])
-                for j in range(len(distribution.choices))
-            ]
-            prob = np.exp(-(np.array(dists) ** 2) / SIGMA)
-            prob /= prob.sum()
-            weights[i] += prob
-        weights /= weights.sum(axis=1, keepdims=True)
-        return _BatchedCategoricalDistributions(weights)
