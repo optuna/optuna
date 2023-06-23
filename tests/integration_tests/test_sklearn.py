@@ -307,6 +307,8 @@ def test_objective_error_score_invalid() -> None:
         optuna_search.fit(X)
 
 
+# This test checks whether OptunaSearchCV completes the study without halting, even if some trials
+# fails due to misconfiguration.
 @pytest.mark.parametrize(
     "param_dist,all_params",
     [
@@ -323,6 +325,7 @@ def test_no_halt_with_error(
     estimator = DecisionTreeRegressor()
     study = create_study(sampler=BruteForceSampler(), direction="maximize")
 
+    # DecisionTreeRegressor raises ValueError when max_depth==0.
     optuna_search = integration.OptunaSearchCV(
         estimator,
         param_dist,
