@@ -565,9 +565,16 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def cv_results_(self) -> Dict[str, Any]:
-        """Results of all trials."""
-
-        return self.study_.cv_results
+        """Return the dictionary has list of all trials.
+        Returns:
+            A list of results of all trials.
+        """
+        cv_results_dict_in_list = [trial_.user_attrs for trial_ in self.trials]
+        cv_results_list_in_dict = {
+            key: [dict_[key] for dict_ in cv_results_dict_in_list]
+            for key in cv_results_dict_in_list[0]
+        }
+        return cv_results_list_in_dict
 
     @property
     def n_trials_(self) -> int:
