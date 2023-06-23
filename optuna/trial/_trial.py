@@ -3,13 +3,11 @@ from __future__ import annotations
 from collections import UserDict
 import copy
 import datetime
-import os
 from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import overload
 from typing import Sequence
-import uuid
 import warnings
 
 import optuna
@@ -17,7 +15,6 @@ from optuna import distributions
 from optuna import logging
 from optuna import pruners
 from optuna._deprecated import deprecated_func
-from optuna.artifact._protocol import ArtifactStore
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
@@ -50,15 +47,9 @@ class Trial(BaseTrial):
 
     """
 
-    def __init__(
-        self,
-        study: "optuna.study.Study",
-        trial_id: int,
-        artifact: Optional[ArtifactStore] = None,
-    ) -> None:
+    def __init__(self, study: "optuna.study.Study", trial_id: int) -> None:
         self.study = study
         self._trial_id = trial_id
-        self.artifact = artifact
 
         # TODO(Yanase): Remove _study_id attribute, and use study._study_id instead.
         self._study_id = self.study._study_id
@@ -761,25 +752,6 @@ class Trial(BaseTrial):
         """
 
         return self._cached_frozen_trial.number
-
-    def upload_artifact(self, file_path: str):
-        if self.artifact is not None:
-            artifact_id = str(uuid.uuid4())
-            filename = os.path.basename(file_path)
-            # abs_path = os.path.abspath(filename)
-            if self._cached_frozen_trial.system_attrs.get("artifacts", None) is None:
-                self._cached_frozen_trial.system_attrs["artifacts"] = []
-            # artifact_index = len(self._cached_frozen_trial.system_attrs["artifacts"])
-            self._cached_frozen_trial.system_attrs["artifacts"].append(
-                {
-                    "artifact_id": artifact_id,
-                    "filename": filename,
-                }
-            )
-            with open(file_path, "rb") as f:
-                self.artifact.write(artifact_id, f)
-        else:
-            warnings.warn("ArtifactStore was not specified, artifacts will not be saved.")
 
 
 class _LazyTrialSystemAttrs(UserDict):
