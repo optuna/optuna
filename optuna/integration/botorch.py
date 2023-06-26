@@ -29,6 +29,7 @@ from optuna.trial import TrialState
 
 with try_import() as _imports:
     from botorch.acquisition.monte_carlo import qExpectedImprovement
+    from botorch.acquisition.monte_carlo import qNoisyExpectedImprovement
     from botorch.acquisition.multi_objective import monte_carlo
     from botorch.acquisition.multi_objective.objective import IdentityMCMultiOutputObjective
     from botorch.acquisition.objective import ConstrainedMCObjective
@@ -173,6 +174,74 @@ def qei_candidates_func(
     return candidates
 
 
+@experimental_func("3.3.0")
+def qnei_candidates_func(
+    train_x: "torch.Tensor",
+    train_obj: "torch.Tensor",
+    train_con: Optional["torch.Tensor"],
+    bounds: "torch.Tensor",
+    pending_x: Optional["torch.Tensor"],
+) -> "torch.Tensor":
+    """Quasi MC-based batch Noisy Expected Improvement (qNEI).
+
+    This function may perform better than qEI (`qei_candidates_func`) when
+    the evaluated values of objective function are noisy.
+
+    .. seealso::
+        :func:`~optuna.integration.botorch.qei_candidates_func` for argument and return value
+        descriptions.
+    """
+    if train_obj.size(-1) != 1:
+        raise ValueError("Objective may only contain single values with qNEI.")
+    if train_con is not None:
+        train_y = torch.cat([train_obj, train_con], dim=-1)
+
+        n_constraints = train_con.size(1)
+        objective = ConstrainedMCObjective(
+            objective=lambda Z: Z[..., 0],
+            constraints=[
+                (lambda Z, i=i: Z[..., -n_constraints + i]) for i in range(n_constraints)
+            ],
+        )
+    else:
+        train_y = train_obj
+
+        objective = None  # Using the default identity objective.
+
+    train_x = normalize(train_x, bounds=bounds)
+    if pending_x is not None:
+        pending_x = normalize(pending_x, bounds=bounds)
+
+    model = SingleTaskGP(train_x, train_y, outcome_transform=Standardize(m=train_y.size(-1)))
+    mll = ExactMarginalLogLikelihood(model.likelihood, model)
+    fit_gpytorch_mll(mll)
+
+    acqf = qNoisyExpectedImprovement(
+        model=model,
+        X_baseline=train_x,
+        sampler=_get_sobol_qmc_normal_sampler(256),
+        objective=objective,
+        X_pending=pending_x,
+    )
+
+    standard_bounds = torch.zeros_like(bounds)
+    standard_bounds[1] = 1
+
+    candidates, _ = optimize_acqf(
+        acq_function=acqf,
+        bounds=standard_bounds,
+        q=1,
+        num_restarts=10,
+        raw_samples=512,
+        options={"batch_limit": 5, "maxiter": 200},
+        sequential=True,
+    )
+
+    candidates = unnormalize(candidates.detach(), bounds=bounds)
+
+    return candidates
+
+
 @experimental_func("2.4.0")
 def qehvi_candidates_func(
     train_x: "torch.Tensor",
@@ -268,7 +337,7 @@ def qnehvi_candidates_func(
     bounds: "torch.Tensor",
     pending_x: Optional["torch.Tensor"],
 ) -> "torch.Tensor":
-    """Quasi MC-based batch Expected Noisy Hypervolume Improvement (qNEHVI).
+    """Quasi MC-based batch Noisy Expected Hypervolume Improvement (qNEHVI).
 
     According to Botorch/Ax documentation,
     this function may perform better than qEHVI (`qehvi_candidates_func`).
