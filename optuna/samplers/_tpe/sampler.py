@@ -445,7 +445,7 @@ class TPESampler(BaseSampler):
                     all((param_name in trial.params) for param_name in search_space)
                 )
             weights_below = _calculate_weights_below_for_multi_objective(
-                scores, indices_below, violations
+                study, below_trials, self._constraints_func
             )[param_mask_below]
             mpe_below = _ParzenEstimator(
                 below, search_space, self._parzen_estimator_parameters, weights_below
@@ -720,18 +720,26 @@ def _split_observation_pairs(
 
 
 def _calculate_weights_below_for_multi_objective(
-    loss_vals: List[Tuple[float, List[float]]],
-    indices: np.ndarray,
-    violations: Optional[List[float]],
+    study: Study,
+    below_trials: list[FrozenTrial],
+    constraints_func: Callable[[FrozenTrial], Sequence[float]] | None,
 ) -> np.ndarray:
-    if violations is None:
-        feasible_mask = np.ones(len(indices), dtype=bool)
-    else:
+    loss_vals = []
+    feasible_mask = np.ones(len(below_trials), dtype=bool)
+    for i, trial in enumerate(below_trials):
         # Hypervolume contributions are calculated only using feasible trials.
-        feasible_mask = np.array(violations, dtype=float)[indices] == 0
-
-    # Multi-objective TPE does not support pruning, so it ignores the ``step``.
-    lvals = np.asarray([v for _, v in loss_vals])[indices[feasible_mask]]
+        if constraints_func is not None:
+            if any(constraint > 0 for constraint in constraints_func(trial)):
+                feasible_mask[i] = False
+                continue
+        values = []
+        for value, direction in zip(trial.values, study.directions):
+            if direction == StudyDirection.MINIMIZE:
+                values.append(value)
+            else:
+                values.append(-value)
+        loss_vals.append(values)
+    lvals = np.asarray(loss_vals, dtype=float)
 
     # Calculate weights based on hypervolume contributions.
     n_below = len(lvals)
@@ -753,6 +761,6 @@ def _calculate_weights_below_for_multi_objective(
         weights_below = np.clip(contributions / np.max(contributions), 0, 1)
 
     # For now, EPS weight is assigned to infeasible trials.
-    weights_below_all = np.full(len(indices), EPS)
+    weights_below_all = np.full(len(below_trials), EPS)
     weights_below_all[feasible_mask] = weights_below
     return weights_below_all
