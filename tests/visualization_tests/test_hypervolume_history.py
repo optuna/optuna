@@ -7,8 +7,8 @@ from optuna.samplers import NSGAIISampler
 from optuna.study import create_study
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
-from optuna.visualization.matplotlib._hypervolume_history import _get_hypervolume_history_info
-from optuna.visualization.matplotlib._hypervolume_history import _HypervolumeHistoryInfo
+from optuna.visualization._hypervolume_history import _get_hypervolume_history_info
+from optuna.visualization._hypervolume_history import _HypervolumeHistoryInfo
 
 
 @pytest.mark.parametrize(
@@ -52,7 +52,6 @@ def test_get_optimization_history_info(directions: str) -> None:
 
     reference_point = np.asarray(signs)
     info = _get_hypervolume_history_info(study, reference_point)
-
     assert info == _HypervolumeHistoryInfo(
-        trial_numbers=[0, 1, 2, 3, 4, 5], values=[0, 0.0625, 0.0625, 0.25, 0.3125, 1.0]
+        trial_numbers=[0, 1, 2, 3, 4, 5], values=[0.0, 0.0625, 0.0625, 0.25, 0.3125, 1.0]
     )
