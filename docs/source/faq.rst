@@ -617,3 +617,68 @@ will retry failed trials when a new trial starts to evaluate.
     )
 
     study = optuna.create_study(storage=storage)
+
+
+How can deal with permutation as a parameter?
+---------------------------------------------
+
+Although it is not straightforward to deal with combinatorial search spaces like permutations with existing API, there exists a convenient technique for handling them. 
+It involves re-parametrization of permutation search space of :math:`n` items as an independent :math:`n`-dimensional integer search space. 
+This technique is based on the concept of `Lehmer code <https://en.wikipedia.org/wiki/Lehmer_code>`_.
+
+A Lehmer code of a sequence is the sequence of integers in the same size, whose :math:`i`-th entry denotes how many inversions the :math:`i`-th entry of the permutation has after itself.
+In other words, the :math:`i`-th entry of the Lehmer code represents the number of entries that are located after and are smaller than the :math:`i`-th entry of the original sequence.
+For instance, the Lehmer code of the permutation :math:`(3, 1, 4, 2, 0)` is :math:`(3, 1, 2, 1, 0)`.
+
+Not only does the Lehmer code provide a unique encoding of permutations into an integer space, but it also has some desirable properties.
+For example, the sum of Lehmer code entries is equal to the minimum number of adjacent transpositions necessary to transform the corresponding permutation into the identity permutation. 
+Additionally, the lexicographical order of the encodings of two permutations is the same as that of the original sequence. 
+Therefore, Lehmer code preserves "closeness" among permutations in some sense, which is important for the optimization algorithm.
+An Optuna implementation example to solve Euclid TSP is as follows:  
+
+.. code-block:: python
+
+    import numpy as np
+
+    import optuna
+
+
+    def decode(lehmer_code: list[int]) -> list[int]:
+        """Decode Lehmer code to permutation.
+
+        This function decodes Lehmer code represented as a list of integers to a permutation.
+        """
+        all_indices = list(range(n))
+        output = []
+        for k in lehmer_code:
+            value = all_indices[k]
+            output.append(value)
+            all_indices.remove(value)
+        return output
+
+
+    # Euclidean coordinates of cities for TSP.
+    city_coordinates = np.array(
+        [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 2.0], [-1.0, -1.0]]
+    )
+    n = len(city_coordinates)
+
+
+    def objective(trial: optuna.Trial) -> float:
+        # Suggest a permutation in the Lehmer code representation.
+        lehmer_code = [trial.suggest_int(f"x{i}", 0, n - i - 1) for i in range(n)]
+        permutation = decode(lehmer_code)
+
+        # Calculate the total distance of the suggested path.
+        total_distance = 0.0
+        for i in range(n):
+            total_distance += np.linalg.norm(
+                city_coordinates[permutation[i]] - city_coordinates[np.roll(permutation, 1)[i]]
+            )
+        return total_distance
+
+
+    study = optuna.create_study()
+    study.optimize(objective, n_trials=10)
+    lehmer_code = study.best_params.values()
+    print(decode(lehmer_code))

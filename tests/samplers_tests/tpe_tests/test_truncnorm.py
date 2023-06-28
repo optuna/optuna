@@ -60,5 +60,5 @@ def test_log_gass_mass(a: float, b: float) -> None:
         [np.linspace(0, 1, num=100), np.array([sys.float_info.min, 1 - sys.float_info.epsilon])]
     ):
         assert truncnorm_ours._log_gauss_mass(np.array([a]), np.array([b])) == pytest.approx(
-            _log_gauss_mass_scipy(a, b), nan_ok=True
+            np.atleast_1d(_log_gauss_mass_scipy(a, b)), nan_ok=True
         ), f"_log_gauss_mass(x={x}, a={a}, b={b})"
