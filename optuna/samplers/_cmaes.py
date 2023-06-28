@@ -247,6 +247,7 @@ class CmaEsSampler(BaseSampler):
         inc_popsize: int = 2,
         use_separable_cma: bool = False,
         with_margin: bool = False,
+        lr_adapt: bool = False,
         source_trials: Optional[List[FrozenTrial]] = None,
     ) -> None:
         self._x0 = x0
@@ -262,6 +263,7 @@ class CmaEsSampler(BaseSampler):
         self._inc_popsize = inc_popsize
         self._use_separable_cma = use_separable_cma
         self._with_margin = with_margin
+        self._lr_adapt = lr_adapt
         self._source_trials = source_trials
 
         if self._restart_strategy:
@@ -299,6 +301,13 @@ class CmaEsSampler(BaseSampler):
                 ExperimentalWarning,
             )
 
+        if self.lr_adapt:
+            warnings.warn(
+                "`lr_adapt` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
+
         if source_trials is not None and (x0 is not None or sigma0 is not None):
             raise ValueError(
                 "It is prohibited to pass `source_trials` argument when "
@@ -309,6 +318,11 @@ class CmaEsSampler(BaseSampler):
         if source_trials is not None and use_separable_cma:
             raise ValueError(
                 "It is prohibited to pass `source_trials` argument when using separable CMA-ES."
+            )
+
+        if lr_adapt and (use_separable_cma or with_margin):
+            raise ValueError(
+                "It is prohibited to pass `use_separable_cma` or `with_margin` argument when using `lr_adapt`."
             )
 
         if restart_strategy not in (
@@ -690,6 +704,7 @@ class CmaEsSampler(BaseSampler):
             seed=self._cma_rng.randint(1, 2**31 - 2),
             n_max_resampling=10 * n_dimension,
             population_size=population_size,
+            lr_adapt=self._lr_adapt
         )
 
     def sample_independent(
