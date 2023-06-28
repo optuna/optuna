@@ -257,11 +257,9 @@ class TPESampler(BaseSampler):
             weights,
             multivariate,
         )
-        self._prior_weight = prior_weight
         self._n_startup_trials = n_startup_trials
         self._n_ei_candidates = n_ei_candidates
         self._gamma = gamma
-        self._weights = weights
 
         self._warn_independent_sampling = warn_independent_sampling
         self._rng = np.random.RandomState(seed)
