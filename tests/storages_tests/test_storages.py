@@ -778,17 +778,21 @@ def test_get_all_trials(storage_mode: str) -> None:
 def test_get_all_trials_params_order(storage_mode: str, param_names: list[str]) -> None:
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
-        trial_id = storage.create_new_trial(study_id, optuna.trial.create_trial(state=TrialState.RUNNING))
+        trial_id = storage.create_new_trial(
+            study_id, optuna.trial.create_trial(state=TrialState.RUNNING)
+        )
         for param_name in param_names:
-            storage.set_trial_param(trial_id, param_name, 1.0, distribution=FloatDistribution(0.0, 2.0))
-        
+            storage.set_trial_param(
+                trial_id, param_name, 1.0, distribution=FloatDistribution(0.0, 2.0)
+            )
+
         if isinstance(storage, _CachedStorage):
             storage.read_trials_from_remote_storage(study_id)
 
         trials = storage.get_all_trials(study_id)
         assert list(trials[0].params.keys()) == param_names
-        
-        
+
+
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_all_trials_deepcopy_option(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:

@@ -864,7 +864,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 )
         else:
             values = None
-        
+
         params = sorted(trial.params, key=lambda p: p.param_id)
 
         return FrozenTrial(
