@@ -33,7 +33,7 @@ pytestmark = pytest.mark.integration
 
 @pytest.mark.parametrize("n_objectives", [1, 2, 4])
 def test_botorch_candidates_func_none(n_objectives: int) -> None:
-    if n_objectives == 1 and sys.version_info < (3, 8):
+    if n_objectives == 1 and version.parse(botorch.version.version) < version.parse("0.8.1"):
         pytest.skip("Python >=3.8 is required for logei_candidates_func.")
 
     n_trials = 3
@@ -102,11 +102,7 @@ def test_botorch_candidates_func() -> None:
     ],
 )
 def test_botorch_specify_candidates_func(candidates_func: Any, n_objectives: int) -> None:
-    if candidates_func == integration.botorch.logei_candidates_func and sys.version_info < (
-        3,
-        8,
-        0,
-    ):
+    if candidates_func == integration.botorch.logei_candidates_func and version.parse(botorch.version.version) < version.parse("0.8.1"):
         pytest.skip("LogExpectedImprovement is not available in Python <3.8.")
 
     n_trials = 4
