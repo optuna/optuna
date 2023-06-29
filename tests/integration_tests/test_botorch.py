@@ -1,4 +1,3 @@
-import sys
 from typing import Any
 from typing import Optional
 from typing import Sequence
@@ -6,6 +5,8 @@ from typing import Tuple
 from unittest.mock import patch
 import warnings
 
+import botorch
+from packaging import version
 import pytest
 
 import optuna
@@ -102,7 +103,9 @@ def test_botorch_candidates_func() -> None:
     ],
 )
 def test_botorch_specify_candidates_func(candidates_func: Any, n_objectives: int) -> None:
-    if candidates_func == integration.botorch.logei_candidates_func and version.parse(botorch.version.version) < version.parse("0.8.1"):
+    if candidates_func == integration.botorch.logei_candidates_func and version.parse(
+        botorch.version.version
+    ) < version.parse("0.8.1"):
         pytest.skip("LogExpectedImprovement is not available in Python <3.8.")
 
     n_trials = 4
