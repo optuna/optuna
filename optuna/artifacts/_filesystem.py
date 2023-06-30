@@ -4,7 +4,7 @@ import os
 import shutil
 from typing import TYPE_CHECKING
 
-from optuna.artifact.exceptions import ArtifactNotFound
+from optuna.artifacts.exceptions import ArtifactNotFound
 
 
 if TYPE_CHECKING:

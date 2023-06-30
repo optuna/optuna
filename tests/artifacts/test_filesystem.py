@@ -2,8 +2,8 @@ import io
 
 import pytest
 
-from optuna.artifact import FileSystemArtifactStore
-from optuna.artifact.exceptions import ArtifactNotFound
+from optuna.artifacts import FileSystemArtifactStore
+from optuna.artifacts.exceptions import ArtifactNotFound
 
 
 def test_upload_download(tmp_path: str) -> None:
