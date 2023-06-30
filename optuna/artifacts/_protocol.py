@@ -21,7 +21,7 @@ class ArtifactStore(Protocol):
     and removing artifacts.
     """
 
-    def open(self, artifact_id: str) -> BinaryIO:
+    def open_reader(self, artifact_id: str) -> BinaryIO:
         """Open the artifact identified by the artifact_id.
 
         This method should return a binary file-like object in read mode, similar to

@@ -34,7 +34,7 @@ class FileSystemArtifactStore:
     def __init__(self, base_path: str) -> None:
         self._base_path = base_path
 
-    def open(self, artifact_id: str) -> BinaryIO:
+    def open_reader(self, artifact_id: str) -> BinaryIO:
         filepath = os.path.join(self._base_path, artifact_id)
         try:
             f = open(filepath, "rb")
