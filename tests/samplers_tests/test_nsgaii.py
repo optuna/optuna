@@ -450,7 +450,7 @@ def test_fast_non_dominated_sort_empty(n_dims: int) -> None:
     for directions in itertools.product(
         [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE], repeat=n_dims
     ):
-        trials: List[FrozenTrial] = []
+        trials: list[FrozenTrial] = []
         population_per_rank = _fast_non_dominated_sort(trials, list(directions), _dominates)
         assert population_per_rank == []
 
