@@ -19,7 +19,6 @@ from optuna.testing.storages import StorageSupplier
 with try_import() as _imports:
     import pytorch_lightning as pl
     from pytorch_lightning import LightningModule
-    from pytorch_lightning.strategies.ddp_spawn import DDPSpawnStrategy
     import torch
     from torch import nn
     from torch.multiprocessing.spawn import ProcessRaisedException
@@ -35,6 +34,7 @@ class Model(LightningModule):
     def __init__(self) -> None:
         super().__init__()
         self._model = nn.Sequential(nn.Linear(4, 8))
+        self.validation_step_outputs: list["torch.Tensor"] = []
 
     def forward(self, data: "torch.Tensor") -> "torch.Tensor":
         return self._model(data)
@@ -47,28 +47,23 @@ class Model(LightningModule):
         loss = F.nll_loss(output, target)
         return {"loss": loss}
 
-    def validation_step(
-        self, batch: Sequence["torch.Tensor"], batch_nb: int
-    ) -> Dict[str, "torch.Tensor"]:
+    def validation_step(self, batch: Sequence["torch.Tensor"], batch_nb: int) -> "torch.Tensor":
         data, target = batch
         output = self.forward(data)
         pred = output.argmax(dim=1, keepdim=True)
         accuracy = pred.eq(target.view_as(pred)).double().mean()
-        return {"validation_accuracy": accuracy}
+        self.validation_step_outputs.append(accuracy)
+        return accuracy
 
-    def validation_epoch_end(
+    def on_validation_epoch_end(
         self,
-        outputs: Union[
-            Sequence[Union["torch.Tensor", Mapping[str, Any]]],
-            Sequence[Sequence[Union["torch.Tensor", Mapping[str, Any]]]],
-        ],
     ) -> None:
-        if not len(outputs):
+        if not len(self.validation_step_outputs):
             return
 
-        accuracy = sum(
-            x["validation_accuracy"] for x in cast(List[Dict[str, "torch.Tensor"]], outputs)
-        ) / len(outputs)
+        accuracy = sum(x for x in cast(List["torch.Tensor"], self.validation_step_outputs)) / len(
+            self.validation_step_outputs
+        )
         self.log("accuracy", accuracy)
 
     def configure_optimizers(self) -> "torch.optim.Optimizer":
@@ -106,13 +101,7 @@ class ModelDDP(Model):
         self.log("accuracy", accuracy, sync_dist=True)
         return {"validation_accuracy": accuracy}
 
-    def validation_epoch_end(
-        self,
-        output: Union[
-            Sequence[Union["torch.Tensor", Mapping[str, Any]]],
-            Sequence[Sequence[Union["torch.Tensor", Mapping[str, Any]]]],
-        ],
-    ) -> None:
+    def on_validation_epoch_end(self) -> None:
         return
 
 
@@ -121,6 +110,7 @@ def test_pytorch_lightning_pruning_callback() -> None:
         callback = PyTorchLightningPruningCallback(trial, monitor="accuracy")
         trainer = pl.Trainer(
             max_epochs=2,
+            accelerator="cpu",
             enable_checkpointing=False,
             callbacks=[callback],
         )
@@ -168,7 +158,7 @@ def test_pytorch_lightning_pruning_callback_ddp_monitor(
             devices=2,
             enable_checkpointing=False,
             callbacks=[callback],
-            strategy=DDPSpawnStrategy(find_unused_parameters=False),
+            strategy="ddp_spawn",
         )
 
         model = ModelDDP()
@@ -206,7 +196,7 @@ def test_pytorch_lightning_pruning_callback_ddp_unsupported_storage() -> None:
             devices=2,
             enable_checkpointing=False,
             callbacks=[callback],
-            strategy=DDPSpawnStrategy(find_unused_parameters=False),
+            strategy="ddp_spawn",
         )
 
         model = ModelDDP()
