@@ -90,6 +90,7 @@ def test_botorch_candidates_func() -> None:
     "candidates_func, n_objectives",
     [
         (integration.botorch.qei_candidates_func, 1),
+        (integration.botorch.qnei_candidates_func, 1),
         (integration.botorch.qehvi_candidates_func, 2),
         (integration.botorch.qparego_candidates_func, 4),
         (integration.botorch.qnehvi_candidates_func, 2),
