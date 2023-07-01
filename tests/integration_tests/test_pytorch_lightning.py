@@ -1,10 +1,6 @@
-from typing import Any
-from typing import cast
-from typing import Dict
-from typing import List
-from typing import Mapping
-from typing import Sequence
-from typing import Union
+from __future__ import annotations
+
+from collections.abc import Sequence
 
 import numpy as np
 import pytest
@@ -41,7 +37,7 @@ class Model(LightningModule):
 
     def training_step(
         self, batch: Sequence["torch.Tensor"], batch_nb: int
-    ) -> Dict[str, "torch.Tensor"]:
+    ) -> dict[str, "torch.Tensor"]:
         data, target = batch
         output = self.forward(data)
         loss = F.nll_loss(output, target)
@@ -61,9 +57,7 @@ class Model(LightningModule):
         if not len(self.validation_step_outputs):
             return
 
-        accuracy = sum(x for x in cast(List["torch.Tensor"], self.validation_step_outputs)) / len(
-            self.validation_step_outputs
-        )
+        accuracy = sum(self.validation_step_outputs) / len(self.validation_step_outputs)
         self.log("accuracy", accuracy)
 
     def configure_optimizers(self) -> "torch.optim.Optimizer":
@@ -86,9 +80,7 @@ class ModelDDP(Model):
     def __init__(self) -> None:
         super().__init__()
 
-    def validation_step(
-        self, batch: Sequence["torch.Tensor"], batch_nb: int
-    ) -> Dict[str, "torch.Tensor"]:
+    def validation_step(self, batch: Sequence["torch.Tensor"], batch_nb: int) -> "torch.Tensor":
         data, target = batch
         output = self.forward(data)
         pred = output.argmax(dim=1, keepdim=True)
@@ -99,7 +91,7 @@ class ModelDDP(Model):
             accuracy = torch.tensor(0.6)
 
         self.log("accuracy", accuracy, sync_dist=True)
-        return {"validation_accuracy": accuracy}
+        return accuracy
 
     def on_validation_epoch_end(self) -> None:
         return
