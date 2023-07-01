@@ -21,6 +21,7 @@ from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.samplers._base import _process_constraints_after_trial
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
+from optuna.samplers.nsgaii._child_generation_strategy import NSGAIIChildGenerationStrategy
 from optuna.samplers.nsgaii._crossover import perform_crossover
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.samplers.nsgaii._crossovers._uniform import UniformCrossover
@@ -31,6 +32,9 @@ from optuna.study._multi_objective import _dominates
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
+
+# Define key names of `Trial.user_attrs`.
+GENERATION_USER_ATTR_KEY = None
 
 # Define key names of `Trial.system_attrs`.
 _GENERATION_KEY = "nsga2:generation"
@@ -120,6 +124,10 @@ class NSGAIISampler(BaseSampler):
         swapping_prob: float = 0.5,
         seed: Optional[int] = None,
         constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
+        child_generation_strategy: Callable[
+            [Study, dict[str, BaseDistribution], list[FrozenTrial]], dict[str, Any]
+        ]
+        | None = None,
     ) -> None:
         # TODO(ohta): Reconsider the default value of each parameter.
 
@@ -173,6 +181,19 @@ class NSGAIISampler(BaseSampler):
         self._constraints_func = constraints_func
         self._search_space = IntersectionSearchSpace()
 
+        self._child_generation_strategy = (
+            child_generation_strategy
+            or NSGAIIChildGenerationStrategy(
+                population_size=population_size,
+                crossover_prob=crossover_prob,
+                mutation_prob=mutation_prob,
+                swapping_prob=swapping_prob,
+                crossover=crossover,
+                constraints_func=constraints_func,
+                seed=seed,
+            )
+        )
+
     def reseed_rng(self) -> None:
         self._random_sampler.reseed_rng()
         self._rng.seed()
@@ -198,43 +219,14 @@ class NSGAIISampler(BaseSampler):
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
         parent_generation, parent_population = self._collect_parent_population(study)
-        trial_id = trial._trial_id
 
         generation = parent_generation + 1
-        study._storage.set_trial_system_attr(trial_id, _GENERATION_KEY, generation)
+        self._set_generation(study, trial, generation)
 
-        dominates_func = _dominates if self._constraints_func is None else _constrained_dominates
+        if parent_generation < 0:
+            return {}
 
-        if parent_generation >= 0:
-            # We choose a child based on the specified crossover method.
-            if self._rng.rand() < self._crossover_prob:
-                child_params = perform_crossover(
-                    self._crossover,
-                    study,
-                    parent_population,
-                    search_space,
-                    self._rng,
-                    self._swapping_prob,
-                    dominates_func,
-                )
-            else:
-                parent_population_size = len(parent_population)
-                parent_params = parent_population[self._rng.choice(parent_population_size)].params
-                child_params = {name: parent_params[name] for name in search_space.keys()}
-
-            n_params = len(child_params)
-            if self._mutation_prob is None:
-                mutation_prob = 1.0 / max(1.0, n_params)
-            else:
-                mutation_prob = self._mutation_prob
-
-            params = {}
-            for param_name in child_params.keys():
-                if self._rng.rand() >= mutation_prob:
-                    params[param_name] = child_params[param_name]
-            return params
-
-        return {}
+        return self._child_generation_strategy(study, search_space, parent_population)
 
     def sample_independent(
         self,
@@ -258,13 +250,14 @@ class NSGAIISampler(BaseSampler):
         generation_to_runnings = defaultdict(list)
         generation_to_population = defaultdict(list)
         for trial in trials:
-            if _GENERATION_KEY not in trial.system_attrs:
+            _generation = self._get_generation(trial)
+            if _generation is None:
                 continue
 
             generation = trial.system_attrs[_GENERATION_KEY]
             if trial.state != optuna.trial.TrialState.COMPLETE:
                 if trial.state == optuna.trial.TrialState.RUNNING:
-                    generation_to_runnings[generation].append(trial)
+                    generation_to_population[_generation].append(trial)
                 continue
 
             # Do not use trials whose states are not COMPLETE, or `constraint` will be unavailable.
@@ -329,7 +322,7 @@ class NSGAIISampler(BaseSampler):
 
     def _select_elite_population(
         self, study: Study, population: List[FrozenTrial]
-    ) -> List[FrozenTrial]:
+    ) -> list[FrozenTrial]:
         _validate_constraints(population, self._constraints_func)
 
         dominates = _dominates if self._constraints_func is None else _constrained_dominates
@@ -358,6 +351,19 @@ class NSGAIISampler(BaseSampler):
         if self._constraints_func is not None:
             _process_constraints_after_trial(self._constraints_func, study, trial, state)
         self._random_sampler.after_trial(study, trial, state, values)
+
+    def _get_generation(self, trial: FrozenTrial) -> int | None:
+        if GENERATION_USER_ATTR_KEY is not None:
+            return trial.user_attrs.get(GENERATION_USER_ATTR_KEY, None)
+        return trial.system_attrs.get(_GENERATION_KEY, None)
+
+    def _set_generation(self, study: Study, trial: FrozenTrial, generation: int) -> None:
+        if GENERATION_USER_ATTR_KEY is not None:
+            study._storage.set_trial_user_attr(
+                trial._trial_id, GENERATION_USER_ATTR_KEY, generation
+            )
+        else:
+            study._storage.set_trial_system_attr(trial._trial_id, _GENERATION_KEY, generation)
 
 
 def _calc_crowding_distance(population: List[FrozenTrial]) -> DefaultDict[int, float]:
