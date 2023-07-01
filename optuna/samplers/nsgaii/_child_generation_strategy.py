@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-import abc
+from collections.abc import Callable
+from collections.abc import Sequence
 from typing import Any
-from typing import Callable
-from typing import Optional
-from typing import Sequence
 import warnings
 
 import numpy as np
@@ -29,8 +27,8 @@ class NSGAIIChildGenerationStrategy:
         mutation_prob: float | None,
         swapping_prob: float,
         crossover: BaseCrossover,
-        constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
-        seed: Optional[int] = None,
+        constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
+        seed: int | None = None,
     ) -> None:
         if not isinstance(population_size, int):
             raise TypeError("`population_size` must be an integer value.")
