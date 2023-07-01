@@ -4,6 +4,7 @@ from collections.abc import Sequence
 import copy
 import itertools
 from typing import Any
+from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
@@ -27,6 +28,7 @@ from optuna.samplers.nsgaii import SPXCrossover
 from optuna.samplers.nsgaii import UNDXCrossover
 from optuna.samplers.nsgaii import UniformCrossover
 from optuna.samplers.nsgaii import VSBXCrossover
+from optuna.samplers.nsgaii._after_trial_strategy import NSGAIIAfterTrialStrategy
 from optuna.samplers.nsgaii._crossover import _inlined_categorical_uniform_crossover
 from optuna.samplers.nsgaii._sampler import _constrained_dominates
 from optuna.samplers.nsgaii._sampler import _fast_non_dominated_sort
@@ -564,6 +566,34 @@ def test_call_after_trial_of_random_sampler() -> None:
     ) as mock_object:
         study.optimize(lambda _: 1.0, n_trials=1)
         assert mock_object.call_count == 1
+
+
+def test_call_after_trial_of_after_trial_strategy() -> None:
+    sampler = NSGAIISampler()
+    study = optuna.create_study(sampler=sampler)
+    with patch.object(sampler, "_after_trial_strategy") as mock_object:
+        study.optimize(lambda _: 1.0, n_trials=1)
+        assert mock_object.call_count == 1
+
+
+@patch("optuna.samplers.nsgaii._after_trial_strategy._process_constraints_after_trial")
+def test_nsgaii_after_trial_strategy(mock_func: MagicMock) -> None:
+    def constraints_func(_: FrozenTrial) -> Sequence[float]:
+        return (float("nan"),)
+
+    state = optuna.trial.TrialState.FAIL
+    study = optuna.create_study()
+    trial = optuna.trial.create_trial(state=state)
+
+    after_trial_strategy_without_constrains = NSGAIIAfterTrialStrategy()
+    after_trial_strategy_without_constrains(study, trial, state)
+    assert mock_func.call_count == 0
+
+    after_trial_strategy_with_constrains = NSGAIIAfterTrialStrategy(
+        constraints_func=constraints_func
+    )
+    after_trial_strategy_with_constrains(study, trial, state)
+    assert mock_func.call_count == 1
 
 
 parametrize_nsga2_sampler = pytest.mark.parametrize(
