@@ -46,7 +46,6 @@ jobs:
         sudo apt-get update
         sudo apt-get -y install openmpi-bin libopenmpi-dev libopenblas-dev
 
-    # TODO(Shinichi): Remove the version constraint on PyTorch Lightning
     # TODO(c-bata): Remove the version constraint on fakeredis
     - name: Install
       run: |
@@ -60,7 +59,6 @@ jobs:
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
         pip install --progress-bar off .[integration] --extra-index-url https://download.pytorch.org/whl/cpu
-        pip install "pytorch-lightning<2.0.0"
         pip install "fakeredis<2.11.1"
 
     - name: Output installed packages

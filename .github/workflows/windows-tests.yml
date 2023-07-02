@@ -41,7 +41,6 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
 
-    # TODO(Shinichi): Remove the version constraint on PyTorch Lightning
     # TODO(c-bata): Remove the version constraint on fakeredis
     - name: Install
       run: |
@@ -53,7 +52,6 @@ jobs:
         optuna --version
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
-        pip install "pytorch-lightning<2.0.0"
         pip install PyQt6 # Install PyQT for using QtAgg as matplotlib backend.
         pip install "fakeredis<2.11.1"
 
@@ -109,7 +107,6 @@ jobs:
       with:
         mpi: "msmpi"
 
-    # TODO(Shinichi): Remove the version constraint on PyTorch Lightning
     # TODO(c-bata): Remove the version constraint on fakeredis
     - name: Install
       run: |
@@ -122,7 +119,6 @@ jobs:
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
         pip install --progress-bar off .[integration]
-        pip install "pytorch-lightning<2.0.0"
         pip install "distributed<2023.3.2"
         pip install "fakeredis<2.11.1"
 
