@@ -106,7 +106,7 @@ def test_botorch_specify_candidates_func(candidates_func: Any, n_objectives: int
     if candidates_func == integration.botorch.logei_candidates_func and version.parse(
         botorch.version.version
     ) < version.parse("0.8.1"):
-        pytest.skip("LogExpectedImprovement is not available in Python <3.8.")
+        pytest.skip("LogExpectedImprovement is not available in botorch <0.8.1.")
 
     n_trials = 4
     n_startup_trials = 2
