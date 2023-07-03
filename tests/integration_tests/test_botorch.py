@@ -35,7 +35,7 @@ pytestmark = pytest.mark.integration
 @pytest.mark.parametrize("n_objectives", [1, 2, 4])
 def test_botorch_candidates_func_none(n_objectives: int) -> None:
     if n_objectives == 1 and version.parse(botorch.version.version) < version.parse("0.8.1"):
-        pytest.skip("Python >=3.8 is required for logei_candidates_func.")
+        pytest.skip("botorch >=0.8.1 is required for logei_candidates_func.")
 
     n_trials = 3
     n_startup_trials = 2
