@@ -778,6 +778,8 @@ def test_get_all_trials(storage_mode: str) -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 @pytest.mark.parametrize("param_names", [["a", "b"], ["b", "a"]])
 def test_get_all_trials_params_order(storage_mode: str, param_names: list[str]) -> None:
+    # We don't actually require that all storages to preserve the order of parameters,
+    # but all current implementations do, so we test this property.
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
         trial_id = storage.create_new_trial(
@@ -787,9 +789,6 @@ def test_get_all_trials_params_order(storage_mode: str, param_names: list[str]) 
             storage.set_trial_param(
                 trial_id, param_name, 1.0, distribution=FloatDistribution(0.0, 2.0)
             )
-
-        if isinstance(storage, _CachedStorage):
-            storage.read_trials_from_remote_storage(study_id)
 
         trials = storage.get_all_trials(study_id)
         assert list(trials[0].params.keys()) == param_names
