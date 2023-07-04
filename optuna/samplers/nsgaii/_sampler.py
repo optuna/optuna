@@ -330,8 +330,12 @@ class NSGAIISampler(BaseSampler):
     def _select_elite_population(
         self, study: Study, population: List[FrozenTrial]
     ) -> List[FrozenTrial]:
+        _validate_constraints(population, self._constraints_func)
+
+        dominates = _dominates if self._constraints_func is None else _constrained_dominates
+        population_per_rank = _fast_non_dominated_sort(population, study.directions, dominates)
+
         elite_population: List[FrozenTrial] = []
-        population_per_rank = self._fast_non_dominated_sort(population, study.directions)
         for population in population_per_rank:
             if len(elite_population) + len(population) < self._population_size:
                 elite_population.extend(population)
@@ -342,56 +346,6 @@ class NSGAIISampler(BaseSampler):
                 break
 
         return elite_population
-
-    def _fast_non_dominated_sort(
-        self,
-        population: List[FrozenTrial],
-        directions: List[optuna.study.StudyDirection],
-    ) -> List[List[FrozenTrial]]:
-        if self._constraints_func is not None:
-            for _trial in population:
-                _constraints = _trial.system_attrs.get(_CONSTRAINTS_KEY)
-                if _constraints is None:
-                    continue
-                if np.any(np.isnan(np.array(_constraints))):
-                    raise ValueError("NaN is not acceptable as constraint value.")
-
-        dominated_count: DefaultDict[int, int] = defaultdict(int)
-        dominates_list = defaultdict(list)
-
-        dominates = _dominates if self._constraints_func is None else _constrained_dominates
-
-        for p, q in itertools.combinations(population, 2):
-            if dominates(p, q, directions):
-                dominates_list[p.number].append(q.number)
-                dominated_count[q.number] += 1
-            elif dominates(q, p, directions):
-                dominates_list[q.number].append(p.number)
-                dominated_count[p.number] += 1
-
-        population_per_rank = []
-        while population:
-            non_dominated_population = []
-            i = 0
-            while i < len(population):
-                if dominated_count[population[i].number] == 0:
-                    individual = population[i]
-                    if i == len(population) - 1:
-                        population.pop()
-                    else:
-                        population[i] = population.pop()
-                    non_dominated_population.append(individual)
-                else:
-                    i += 1
-
-            for x in non_dominated_population:
-                for y in dominates_list[x.number]:
-                    dominated_count[y] -= 1
-
-            assert non_dominated_population
-            population_per_rank.append(non_dominated_population)
-
-        return population_per_rank
 
     def after_trial(
         self,
@@ -534,3 +488,58 @@ def _constrained_dominates(
     violation0 = sum(v for v in constraints0 if v > 0)
     violation1 = sum(v for v in constraints1 if v > 0)
     return violation0 < violation1
+
+
+def _validate_constraints(
+    population: List[FrozenTrial],
+    constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
+) -> None:
+    if constraints_func is None:
+        return
+    for _trial in population:
+        _constraints = _trial.system_attrs.get(_CONSTRAINTS_KEY)
+        if _constraints is None:
+            continue
+        if np.any(np.isnan(np.array(_constraints))):
+            raise ValueError("NaN is not acceptable as constraint value.")
+
+
+def _fast_non_dominated_sort(
+    population: List[FrozenTrial],
+    directions: List[optuna.study.StudyDirection],
+    dominates: Callable[[FrozenTrial, FrozenTrial, List[optuna.study.StudyDirection]], bool],
+) -> List[List[FrozenTrial]]:
+    dominated_count: DefaultDict[int, int] = defaultdict(int)
+    dominates_list = defaultdict(list)
+
+    for p, q in itertools.combinations(population, 2):
+        if dominates(p, q, directions):
+            dominates_list[p.number].append(q.number)
+            dominated_count[q.number] += 1
+        elif dominates(q, p, directions):
+            dominates_list[q.number].append(p.number)
+            dominated_count[p.number] += 1
+
+    population_per_rank = []
+    while population:
+        non_dominated_population = []
+        i = 0
+        while i < len(population):
+            if dominated_count[population[i].number] == 0:
+                individual = population[i]
+                if i == len(population) - 1:
+                    population.pop()
+                else:
+                    population[i] = population.pop()
+                non_dominated_population.append(individual)
+            else:
+                i += 1
+
+        for x in non_dominated_population:
+            for y in dominates_list[x.number]:
+                dominated_count[y] -= 1
+
+        assert non_dominated_population
+        population_per_rank.append(non_dominated_population)
+
+    return population_per_rank

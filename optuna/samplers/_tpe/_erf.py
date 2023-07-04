@@ -38,11 +38,13 @@ pp1 = -3.25042107247001499370e-01
 pp2 = -2.84817495755985104766e-02
 pp3 = -5.77027029648944159157e-03
 pp4 = -2.37630166566501626084e-05
+pp = Polynomial([pp0, pp1, pp2, pp3, pp4])  # type: ignore[no-untyped-call]
 qq1 = 3.97917223959155352819e-01
 qq2 = 6.50222499887672944485e-02
 qq3 = 5.08130628187576562776e-03
 qq4 = 1.32494738004321644526e-04
 qq5 = -3.96022827877536812320e-06
+qq = Polynomial([one, qq1, qq2, qq3, qq4, qq5])  # type: ignore[no-untyped-call]
 
 # Coefficients for approximation to erf in [0.84375,1.25]
 
@@ -53,12 +55,14 @@ pa3 = 3.18346619901161753674e-01
 pa4 = -1.10894694282396677476e-01
 pa5 = 3.54783043256182359371e-02
 pa6 = -2.16637559486879084300e-03
+pa = Polynomial([pa0, pa1, pa2, pa3, pa4, pa5, pa6])  # type: ignore[no-untyped-call]
 qa1 = 1.06420880400844228286e-01
 qa2 = 5.40397917702171048937e-01
 qa3 = 7.18286544141962662868e-02
 qa4 = 1.26171219808761642112e-01
 qa5 = 1.36370839120290507362e-02
 qa6 = 1.19844998467991074170e-02
+qa = Polynomial([one, qa1, qa2, qa3, qa4, qa5, qa6])  # type: ignore[no-untyped-call]
 
 # Coefficients for approximation to erfc in [1.25,1/0.35]
 
@@ -70,6 +74,7 @@ ra4 = -1.62396669462573470355e02
 ra5 = -1.84605092906711035994e02
 ra6 = -8.12874355063065934246e01
 ra7 = -9.81432934416914548592e00
+ra = Polynomial([ra0, ra1, ra2, ra3, ra4, ra5, ra6, ra7])  # type: ignore[no-untyped-call]
 sa1 = 1.96512716674392571292e01
 sa2 = 1.37657754143519042600e02
 sa3 = 4.34565877475229228821e02
@@ -78,6 +83,7 @@ sa5 = 4.29008140027567833386e02
 sa6 = 1.08635005541779435134e02
 sa7 = 6.57024977031928170135e00
 sa8 = -6.04244152148580987438e-02
+sa = Polynomial([one, sa1, sa2, sa3, sa4, sa5, sa6, sa7, sa8])  # type: ignore[no-untyped-call]
 
 # Coefficients for approximation to erfc in [1/.35,28]
 
@@ -88,6 +94,7 @@ rb3 = -1.60636384855821916062e02
 rb4 = -6.37566443368389627722e02
 rb5 = -1.02509513161107724954e03
 rb6 = -4.83519191608651397019e02
+rb = Polynomial([rb0, rb1, rb2, rb3, rb4, rb5, rb6])  # type: ignore[no-untyped-call]
 sb1 = 3.03380607434824582924e01
 sb2 = 3.25792512996573918826e02
 sb3 = 1.53672958608443695994e03
@@ -95,6 +102,7 @@ sb4 = 3.19985821950859553908e03
 sb5 = 2.55305040643316442583e03
 sb6 = 4.74528541206955367215e02
 sb7 = -2.24409524465858183362e01
+sb = Polynomial([one, sb1, sb2, sb3, sb4, sb5, sb6, sb7])  # type: ignore[no-untyped-call]
 
 
 def erf(x: np.ndarray) -> np.ndarray:
@@ -115,15 +123,15 @@ def erf(x: np.ndarray) -> np.ndarray:
 
     def calc_case_small1(x: np.ndarray) -> np.ndarray:
         z = x * x
-        r = Polynomial([pp0, pp1, pp2, pp3, pp4])(z)  # type: ignore[no-untyped-call]
-        s = Polynomial([one, qq1, qq2, qq3, qq4, qq5])(z)  # type: ignore[no-untyped-call]
+        r = pp(z)
+        s = qq(z)
         y = r / s
         return x + x * y
 
     def calc_case_small2(x: np.ndarray) -> np.ndarray:
         s = np.abs(x) - one
-        P = Polynomial([pa0, pa1, pa2, pa3, pa4, pa5, pa6])(s)  # type: ignore[no-untyped-call]
-        Q = Polynomial([one, qa1, qa2, qa3, qa4, qa5, qa6])(s)  # type: ignore[no-untyped-call]
+        P = pa(s)
+        Q = qa(s)
         absout = erx + P / Q
         return absout * np.sign(x)
 
@@ -131,12 +139,8 @@ def erf(x: np.ndarray) -> np.ndarray:
         sign = np.sign(x)
         x = np.abs(x)
         s = one / (x * x)
-        R = Polynomial([ra0, ra1, ra2, ra3, ra4, ra5, ra6, ra7])(  # type: ignore[no-untyped-call]
-            s
-        )
-        S = Polynomial(  # type: ignore[no-untyped-call]
-            [one, sa1, sa2, sa3, sa4, sa5, sa6, sa7, sa8]
-        )(s)
+        R = ra(s)
+        S = sa(s)
         # the following 3 lines are omitted for the following reasons:
         # (1) there are no easy way to implement SET_LOW_WORD equivalent method in NumPy
         # (2) we don't need very high accuracy in our use case.
@@ -150,10 +154,8 @@ def erf(x: np.ndarray) -> np.ndarray:
         sign = np.sign(x)
         x = np.abs(x)
         s = one / (x * x)
-        R = Polynomial([rb0, rb1, rb2, rb3, rb4, rb5, rb6])(s)  # type: ignore[no-untyped-call]
-        S = Polynomial([one, sb1, sb2, sb3, sb4, sb5, sb6, sb7])(  # type: ignore[no-untyped-call]
-            s
-        )
+        R = rb(s)
+        S = sb(s)
         # z = x
         # SET_LOW_WORD(z, 0)
         # r = np.exp(-z * z - 0.5625) * np.exp((z - x) * (z + x) + R / S)

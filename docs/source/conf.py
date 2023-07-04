@@ -16,14 +16,14 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-import pkg_resources
 import warnings
 
 import plotly.io as pio
 from sklearn.exceptions import ConvergenceWarning
 from sphinx_gallery.sorting import FileNameSortKey
 
-__version__ = pkg_resources.get_distribution("optuna").version
+import optuna
+
 
 # -- Project information -----------------------------------------------------
 
@@ -32,9 +32,9 @@ copyright = "2018, Optuna Contributors"
 author = "Optuna Contributors."
 
 # The short X.Y version
-version = __version__
+version = optuna.version.__version__
 # The full version, including alpha/beta/rc tags
-release = __version__
+release = optuna.version.__version__
 
 # -- General configuration ---------------------------------------------------
 
@@ -55,8 +55,6 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
-    # TODO(Shinichi) remove jQuery extension after readthedocs/sphinx_rtd_theme#1452 is resolved.
-    "sphinxcontrib.jquery",
     "sphinx_copybutton",
     "sphinx_gallery.gen_gallery",
     "matplotlib.sphinxext.plot_directive",

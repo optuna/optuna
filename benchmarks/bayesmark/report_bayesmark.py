@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import abc
 from collections import defaultdict
 from dataclasses import dataclass
@@ -6,8 +8,6 @@ import os
 from typing import Dict
 from typing import Generator
 from typing import List
-from typing import Optional
-from typing import Set
 from typing import Tuple
 
 from jinja2 import Environment
@@ -38,7 +38,7 @@ class BaseMetric(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def calculate(self, data: pd.DataFrame) -> List[float]:
+    def calculate(self, data: pd.DataFrame) -> list[float]:
         """Calculates metric for each study in data frame."""
 
         raise NotImplementedError
@@ -48,7 +48,7 @@ class BestValueMetric(BaseMetric):
     name = "Best value"
     precision = 6
 
-    def calculate(self, data: pd.DataFrame) -> List[float]:
+    def calculate(self, data: pd.DataFrame) -> list[float]:
         return data.groupby("uuid").generalization.min().values
 
 
@@ -56,8 +56,8 @@ class AUCMetric(BaseMetric):
     name = "AUC"
     precision = 3
 
-    def calculate(self, data: pd.DataFrame) -> List[float]:
-        aucs: List[float] = list()
+    def calculate(self, data: pd.DataFrame) -> list[float]:
+        aucs: list[float] = list()
         for _, grp in data.groupby("uuid"):
             auc = np.sum(grp.generalization.cummin())
             aucs.append(auc / grp.shape[0])
@@ -68,7 +68,7 @@ class ElapsedMetric(BaseMetric):
     name = "Elapsed"
     precision = 3
 
-    def calculate(self, data: pd.DataFrame) -> List[float]:
+    def calculate(self, data: pd.DataFrame) -> list[float]:
         # Total time does not include evaluation of bayesmark
         # objective function (no Optuna APIs are called there).
         time_cols = ["suggest", "observe"]
@@ -80,7 +80,7 @@ class PartialReport:
         self._data = data
 
     @property
-    def optimizers(self) -> List[str]:
+    def optimizers(self) -> list[str]:
         return list(self._data.opt.unique())
 
     @classmethod
@@ -97,7 +97,7 @@ class PartialReport:
         return np.mean(run_metrics).item(), np.var(run_metrics).item()
 
     def sample_performance(self, metric: BaseMetric) -> Samples:
-        performance: Dict[str, List[float]] = {}
+        performance: dict[str, list[float]] = {}
         for solver, data in self._data.groupby("opt"):
             run_metrics = metric.calculate(data)
             performance[solver] = run_metrics
@@ -105,16 +105,16 @@ class PartialReport:
 
 
 class DewanckerRanker:
-    def __init__(self, metrics: List[BaseMetric]) -> None:
+    def __init__(self, metrics: list[BaseMetric]) -> None:
         self._metrics = metrics
-        self._ranking: Optional[List[str]] = None
-        self._borda: Optional[np.ndarray] = None
+        self._ranking: list[str] | None = None
+        self._borda: np.ndarray | None = None
 
-    def __iter__(self) -> Generator[Tuple[str, int], None, None]:
+    def __iter__(self) -> Generator[tuple[str, int], None, None]:
         yield from zip(self.solvers, self.borda)
 
     @property
-    def solvers(self) -> List[str]:
+    def solvers(self) -> list[str]:
         if self._ranking is None:
             raise ValueError("Call rank first.")
         return self._ranking
@@ -136,11 +136,11 @@ class DewanckerRanker:
                 return cand
         return candidates[-1]
 
-    def _set_ranking(self, wins: Dict[str, int]) -> None:
+    def _set_ranking(self, wins: dict[str, int]) -> None:
         sorted_wins = [k for k, _ in sorted(wins.items(), key=lambda x: x[1])]
         self._ranking = sorted_wins[::-1]
 
-    def _set_borda(self, wins: Dict[str, int]) -> None:
+    def _set_borda(self, wins: dict[str, int]) -> None:
         sorted_wins = np.array(sorted(wins.values()))
         num_wins, num_ties = np.unique(sorted_wins, return_counts=True)
         points = np.searchsorted(sorted_wins, num_wins)
@@ -149,7 +149,7 @@ class DewanckerRanker:
     def rank(self, report: PartialReport) -> None:
         # Implements Section 2.1.1
         # https://proceedings.mlr.press/v64/dewancker_strategy_2016.pdf
-        wins: Dict[str, int] = defaultdict(int)
+        wins: dict[str, int] = defaultdict(int)
         alpha = DewanckerRanker.pick_alpha(report)
         for metric in self._metrics:
             samples = report.sample_performance(metric)
@@ -172,28 +172,28 @@ class DewanckerRanker:
 class Solver:
     rank: int
     name: str
-    results: List[str]
+    results: list[str]
 
 
 @dataclass
 class Problem:
     number: int
     name: str
-    metrics: List[BaseMetric]
-    solvers: List[Solver]
+    metrics: list[BaseMetric]
+    solvers: list[Solver]
 
 
 class BayesmarkReportBuilder:
     def __init__(self) -> None:
-        self.solvers: Set[str] = set()
-        self.datasets: Set[str] = set()
-        self.models: Set[str] = set()
-        self.firsts: Dict[str, int] = defaultdict(int)
-        self.borda: Dict[str, int] = defaultdict(int)
+        self.solvers: set[str] = set()
+        self.datasets: set[str] = set()
+        self.models: set[str] = set()
+        self.firsts: dict[str, int] = defaultdict(int)
+        self.borda: dict[str, int] = defaultdict(int)
         self.metric_precedence = ""
-        self.problems: List[Problem] = []
+        self.problems: list[Problem] = []
 
-    def set_precedence(self, metrics: List[BaseMetric]) -> None:
+    def set_precedence(self, metrics: list[BaseMetric]) -> None:
         self.metric_precedence = " -> ".join([m.name for m in metrics])
 
     def add_problem(
@@ -201,13 +201,13 @@ class BayesmarkReportBuilder:
         name: str,
         report: PartialReport,
         ranking: DewanckerRanker,
-        metrics: List[BaseMetric],
+        metrics: list[BaseMetric],
     ) -> "BayesmarkReportBuilder":
-        solvers: List[Solver] = list()
+        solvers: list[Solver] = list()
         positions = np.abs(ranking.borda - (max(ranking.borda) + 1))
         for pos, solver in zip(positions, ranking.solvers):
             self.solvers.add(solver)
-            results: List[str] = list()
+            results: list[str] = list()
             for metric in metrics:
                 mean, variance = report.summarize_solver(solver, metric)
                 precision = metric.precision

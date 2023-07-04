@@ -28,6 +28,8 @@ DEFAULT_MIN_N_TRIALS = 20
 
 @experimental_class("3.2.0")
 class BaseImprovementEvaluator(metaclass=abc.ABCMeta):
+    """Base class for improvement evaluators."""
+
     @abc.abstractmethod
     def evaluate(
         self,
@@ -39,6 +41,27 @@ class BaseImprovementEvaluator(metaclass=abc.ABCMeta):
 
 @experimental_class("3.2.0")
 class RegretBoundEvaluator(BaseImprovementEvaluator):
+    """An error evaluator for upper bound on the regret with high-probability confidence.
+
+    This evaluator evaluates the regret of current best solution, which defined as the difference
+    between the objective value of the best solution and of the global optimum. To be specific,
+    this evaluator calculates the upper bound on the regret based on the fact that empirical
+    estimator of the objective function is bounded by lower and upper confidence bounds with
+    high probability under the Gaussian process model assumption.
+
+    Args:
+        gp:
+            A Gaussian process model on which evaluation base. If not specified, the default
+            Gaussian process model is used.
+        top_trials_ratio:
+            A ratio of top trials to be considered when estimating the regret. Default to 0.5.
+        min_n_trials:
+            A minimum number of complete trials to estimate the regret. Default to 20.
+        min_lcb_n_additional_samples:
+            A minimum number of additional samples to estimate the lower confidence bound.
+            Default to 2000.
+    """
+
     def __init__(
         self,
         gp: Optional[BaseGaussianProcess] = None,
