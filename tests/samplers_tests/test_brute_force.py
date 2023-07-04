@@ -3,23 +3,29 @@ import pytest
 
 import optuna
 from optuna import samplers
+from optuna.distributions import CategoricalDistribution
+from optuna.samplers._brute_force import _build_tree
 from optuna.samplers._brute_force import _TreeNode
+from optuna.samplers._brute_force import _TrialInfo
 from optuna.trial import Trial
 
 
-def test_tree_node_add_paths() -> None:
+def test_build_tree() -> None:
     tree = _TreeNode()
-    leafs = [
-        tree.add_path([("a", [0, 1, 2], 0), ("b", [0.0, 1.0], 0.0)]),
-        tree.add_path([("a", [0, 1, 2], 0), ("b", [0.0, 1.0], 1.0)]),
-        tree.add_path([("a", [0, 1, 2], 0), ("b", [0.0, 1.0], 1.0)]),
-        tree.add_path([("a", [0, 1, 2], 1), ("b", [0.0, 1.0], 0.0), ("c", [0, 1], 0)]),
-        tree.add_path([("a", [0, 1, 2], 1), ("b", [0.0, 1.0], 0.0)]),
+
+    distr_a = CategoricalDistribution([0, 1, 2])
+    distr_b = CategoricalDistribution([0.0, 1.0])
+    distr_c = CategoricalDistribution([0, 1])
+    trial_infos = [
+        _TrialInfo(is_running=False, params={"a": (distr_a, 0), "b": (distr_b, 0.0)}),
+        _TrialInfo(is_running=False, params={"a": (distr_a, 0), "b": (distr_b, 1.0)}),
+        _TrialInfo(is_running=False, params={"a": (distr_a, 0), "b": (distr_b, 1.0)}),
+        _TrialInfo(
+            is_running=False, params={"a": (distr_a, 1), "b": (distr_b, 0.0), "c": (distr_c, 0)}
+        ),
+        _TrialInfo(is_running=True, params={"a": (distr_a, 1), "b": (distr_b, 0.0)}),
     ]
-    for leaf in leafs:
-        assert leaf is not None
-        if leaf.children is None:
-            leaf.set_leaf()
+    tree = _build_tree(trial_infos)
 
     assert tree == _TreeNode(
         param_name="a",
@@ -49,16 +55,20 @@ def test_tree_node_add_paths() -> None:
     )
 
 
-def test_tree_node_add_paths_error() -> None:
+def test_build_tree_error() -> None:
     with pytest.raises(ValueError):
-        tree = _TreeNode()
-        tree.add_path([("a", [0, 1, 2], 0)])
-        tree.add_path([("a", [0, 1], 0)])
+        trial_infos = [
+            _TrialInfo(is_running=True, params={"a": (CategoricalDistribution([0, 1, 2]), 0)}),
+            _TrialInfo(is_running=True, params={"a": (CategoricalDistribution([0, 1]), 0)}),
+        ]
+        _build_tree(trial_infos)
 
     with pytest.raises(ValueError):
-        tree = _TreeNode()
-        tree.add_path([("a", [0, 1, 2], 0)])
-        tree.add_path([("b", [0, 1, 2], 0)])
+        trial_infos = [
+            _TrialInfo(is_running=True, params={"a": (CategoricalDistribution([0, 1, 2]), 0)}),
+            _TrialInfo(is_running=True, params={"b": (CategoricalDistribution([0, 1, 2]), 0)}),
+        ]
+        _build_tree(trial_infos)
 
 
 def test_tree_node_count_unexpanded() -> None:
@@ -193,6 +203,32 @@ def test_study_optimize_with_single_search_space_user_added() -> None:
         {"a": 1, "c": "y"},
         {"a": 1, "c": None},
         {"a": 2},
+    ]
+    all_suggested_values = [t.params for t in study.trials]
+    assert len(all_suggested_values) == len(expected_suggested_values)
+    for a in all_suggested_values:
+        assert a in expected_suggested_values
+
+
+def test_study_optimize_with_varying_orders() -> None:
+    def objective(trial: Trial) -> float:
+        if trial.number % 2 == 0:
+            trial.suggest_int("a", 0, 1)
+            trial.suggest_int("b", 0, 1)
+        else:
+            trial.suggest_int("b", 0, 1)
+            trial.suggest_int("a", 0, 1)
+        return 0.0
+
+    study = optuna.create_study(sampler=samplers.BruteForceSampler())
+
+    study.optimize(objective)
+
+    expected_suggested_values = [
+        {"a": 0, "b": 0},
+        {"a": 0, "b": 1},
+        {"a": 1, "b": 0},
+        {"a": 1, "b": 1},
     ]
     all_suggested_values = [t.params for t in study.trials]
     assert len(all_suggested_values) == len(expected_suggested_values)

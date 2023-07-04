@@ -1,16 +1,15 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 import decimal
 from typing import Any
-from typing import Dict
-from typing import Iterable
-from typing import List
-from typing import Optional
+from typing import NoReturn
 from typing import Sequence
-from typing import Tuple
 
 import numpy as np
 
 from optuna._experimental import experimental_class
+from optuna.distributions import _categorical_choice_equal
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
@@ -27,43 +26,12 @@ class _TreeNode:
     # This is a class to represent the tree of search space.
 
     # A tree node has three states:
-    # 1. Unexpanded. This is represented by children=None.
+    # 1. Unexpanded. This is represented by param_name=None and children=None.
     # 2. Leaf. This is represented by children={} and param_name=None.
     # 3. Normal node. It has a param_name and non-empty children.
 
-    param_name: Optional[str] = None
-    children: Optional[Dict[Any, "_TreeNode"]] = None
-
-    def expand(self, param_name: Optional[str], search_space: Iterable[Any]) -> None:
-        # If the node is unexpanded, expand it.
-        # Otherwise, check if the node is compatible with the given search space.
-        if self.children is None:
-            # Expand the node
-            self.param_name = param_name
-            self.children = {value: _TreeNode() for value in search_space}
-        else:
-            if self.param_name != param_name:
-                raise ValueError(f"param_name mismatch: {self.param_name} != {param_name}")
-            if self.children.keys() != set(search_space):
-                raise ValueError(
-                    f"search_space mismatch: {set(self.children.keys())} != {set(search_space)}"
-                )
-
-    def set_leaf(self) -> None:
-        self.expand(None, [])
-
-    def add_path(
-        self, params_and_search_spaces: Iterable[Tuple[str, Iterable[Any], Any]]
-    ) -> Optional["_TreeNode"]:
-        # Add a path (i.e. a list of suggested parameters in one trial) to the tree.
-        current_node = self
-        for param_name, search_space, value in params_and_search_spaces:
-            current_node.expand(param_name, search_space)
-            assert current_node.children is not None
-            if value not in current_node.children:
-                return None
-            current_node = current_node.children[value]
-        return current_node
+    param_name: str | None = None
+    children: dict[Any, "_TreeNode"] | None = None
 
     def count_unexpanded(self) -> int:
         # Count the number of unexpanded nodes in the subtree.
@@ -129,50 +97,18 @@ class BruteForceSampler(BaseSampler):
             suggestions during distributed optimization.
     """
 
-    def __init__(self, seed: Optional[int] = None) -> None:
+    def __init__(self, seed: int | None = None) -> None:
         self._rng = np.random.RandomState(seed)
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
-    ) -> Dict[str, BaseDistribution]:
+    ) -> dict[str, BaseDistribution]:
         return {}
 
     def sample_relative(
-        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
-    ) -> Dict[str, Any]:
+        self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
+    ) -> dict[str, Any]:
         return {}
-
-    @staticmethod
-    def _build_tree(trials: Iterable[FrozenTrial], params: Dict[str, Any]) -> _TreeNode:
-        # Build a _TreeNode under given params from the given trials.
-        tree = _TreeNode()
-        incomplete_leaves: List[_TreeNode] = []
-        for trial in trials:
-            if not all(p in trial.params and trial.params[p] == v for p, v in params.items()):
-                continue
-            leaf = tree.add_path(
-                (
-                    (
-                        param_name,
-                        _enumerate_candidates(param_distribution),
-                        param_distribution.to_internal_repr(trial.params[param_name]),
-                    )
-                    for param_name, param_distribution in trial.distributions.items()
-                    if param_name not in params
-                )
-            )
-            if leaf is not None:
-                # The parameters are on the defined grid.
-                if trial.state.is_finished():
-                    leaf.set_leaf()
-                else:
-                    incomplete_leaves.append(leaf)
-
-        # Add all incomplete leaf nodes at the end because they may not have complete search space.
-        for leaf in incomplete_leaves:
-            if leaf.children is None:
-                leaf.set_leaf()
-        return tree
 
     def sample_independent(
         self,
@@ -188,10 +124,15 @@ class BruteForceSampler(BaseSampler):
                 TrialState.RUNNING,
             ),
         )
-        tree = self._build_tree((t for t in trials if t.number != trial.number), trial.params)
-        candidates = _enumerate_candidates(param_distribution)
-        tree.expand(param_name, candidates)
+        trials = [t for t in trials if t.number != trial.number]
+        trial_infos = _get_trial_infos(trials, trial.params)
+        trial_infos.append(
+            _TrialInfo(is_running=True, params={param_name: (param_distribution, None)})
+        )
+        tree = _build_tree(trial_infos)
+
         if tree.count_unexpanded() == 0:
+            candidates = _enumerate_candidates(param_distribution)
             return param_distribution.to_external_repr(self._rng.choice(candidates))
         else:
             return param_distribution.to_external_repr(tree.sample_child(self._rng))
@@ -201,7 +142,7 @@ class BruteForceSampler(BaseSampler):
         study: Study,
         trial: FrozenTrial,
         state: TrialState,
-        values: Optional[Sequence[float]],
+        values: Sequence[float] | None,
     ) -> None:
         trials = study.get_trials(
             deepcopy=False,
@@ -210,23 +151,97 @@ class BruteForceSampler(BaseSampler):
                 TrialState.RUNNING,
             ),
         )
-        tree = self._build_tree(
-            (
-                t
-                if t.number != trial.number
-                else create_trial(
-                    state=state,  # Set current trial as complete.
-                    values=values,
-                    params=trial.params,
-                    distributions=trial.distributions,
-                )
-                for t in trials
-            ),
-            {},
-        )
+        trials = [
+            t
+            if t.number != trial.number
+            else create_trial(
+                state=state,  # Set current trial as complete.
+                values=values,
+                params=trial.params,
+                distributions=trial.distributions,
+            )
+            for t in trials
+        ]
+        trial_infos = _get_trial_infos(trials, {})
+        tree = _build_tree(trial_infos)
 
         if tree.count_unexpanded() == 0:
             study.stop()
+
+
+@dataclass
+class _TrialInfo:
+    is_running: bool
+    params: dict[str, tuple[BaseDistribution, Any | None]]
+
+
+def _build_tree(trial_infos: list[_TrialInfo]) -> _TreeNode:
+    print(trial_infos)
+
+    def _raise_change_dependency() -> NoReturn:
+        raise ValueError(
+            "Parameter dependency change detected. "
+            + "Did you change the objective function during optimization?"
+        )
+
+    nonempty_trial_infos = [info for info in trial_infos if len(info.params) > 0]
+    if len(trial_infos) == 0:
+        return _TreeNode()  # Unexpanded node
+    elif len(trial_infos) > 0 and len(nonempty_trial_infos) == 0:
+        return _TreeNode(param_name=None, children={})  # Leaf node
+    else:
+        print("hoge")
+        if any(info for info in trial_infos if len(info.params) == 0 and not info.is_running):
+            _raise_change_dependency()
+
+        pivot_candidates = [(p, d) for (p, (d, _)) in nonempty_trial_infos[0].params.items()]
+        for param, distr in pivot_candidates:
+            if all(
+                (param in info.params and info.params[param][0] == distr)
+                for info in nonempty_trial_infos
+            ):
+                break
+        else:
+            _raise_change_dependency()
+
+        children_trial_infos = {
+            value: [info for info in nonempty_trial_infos if info.params[param][1] == value]
+            for value in _enumerate_candidates(distr)
+        }
+
+        for infos in children_trial_infos.values():
+            for info in infos:
+                del info.params[param]
+
+        return _TreeNode(
+            param_name=param,
+            children={
+                value: _build_tree(infos) for (value, infos) in children_trial_infos.items()
+            },
+        )
+
+
+def _get_trial_infos(
+    trials: list[FrozenTrial], current_params: dict[str, Any]
+) -> list[_TrialInfo]:
+    return [
+        _TrialInfo(
+            is_running=not trial.state.is_finished(),
+            params={
+                param: (
+                    trial.distributions[param],
+                    trial.distributions[param].to_internal_repr(trial.params[param]),
+                )
+                for param in trial.params
+                if param not in current_params
+            },
+        )
+        for trial in trials
+        if all(
+            param in trial.params and _categorical_choice_equal(trial.params[param], value)
+            for (param, value) in current_params.items()
+        )
+    ]
 
 
 def _enumerate_candidates(param_distribution: BaseDistribution) -> Sequence[Any]:
