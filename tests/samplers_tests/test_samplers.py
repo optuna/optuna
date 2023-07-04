@@ -129,6 +129,10 @@ sampler_class_with_seed: Dict[str, Tuple[Callable[[int], BaseSampler], bool]] = 
 param_sampler_with_seed = []
 param_sampler_name_with_seed = []
 for sampler_name, (sampler_class, integration_flag) in sampler_class_with_seed.items():
+    # TODO(c-bata): Remove this logic after Python 3.7 support is dropped.
+    if sampler_name == "BoTorchSampler" and sys.version_info < (3, 8):
+        continue
+
     if integration_flag:
         param_sampler_with_seed.append(
             pytest.param(sampler_class, id=sampler_name, marks=pytest.mark.integration)
