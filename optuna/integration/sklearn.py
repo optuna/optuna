@@ -570,10 +570,13 @@ class OptunaSearchCV(BaseEstimator):
             A list of CV results of all trials.
         """
         cv_results_dict_in_list = [trial_.user_attrs for trial_ in self.trials_]
-        cv_results_list_in_dict = {
-            key: [dict_[key] for dict_ in cv_results_dict_in_list]
-            for key in cv_results_dict_in_list[0]
-        }
+        if len(cv_results_dict_in_list) == 0:
+            cv_results_list_in_dict = {}
+        else:
+            cv_results_list_in_dict = {
+                key: [dict_[key] for dict_ in cv_results_dict_in_list]
+                for key in cv_results_dict_in_list[0]
+            }
         return cv_results_list_in_dict
 
     @property
