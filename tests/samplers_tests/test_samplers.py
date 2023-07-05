@@ -3,7 +3,6 @@ import multiprocessing
 from multiprocessing.managers import DictProxy
 import os
 import pickle
-import sys
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -63,10 +62,7 @@ parametrize_sampler = pytest.mark.parametrize(
                 n_startup_trials=0,
                 candidates_func=logei_candidates_func,
             ),
-            marks=[
-                pytest.mark.integration,
-                pytest.mark.skipif(sys.version_info < (3, 8), reason="Requires Python 3.8+"),
-            ],
+            marks=pytest.mark.integration,
         ),
         pytest.param(
             lambda: optuna.integration.BoTorchSampler(
