@@ -43,12 +43,6 @@ parametrize_sampler = pytest.mark.parametrize(
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0, use_separable_cma=True),
         pytest.param(
-            lambda: optuna.integration.SkoptSampler(
-                skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
-            ),
-            marks=pytest.mark.integration,
-        ),
-        pytest.param(
             lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
             marks=pytest.mark.integration,
         ),
@@ -67,12 +61,6 @@ parametrize_relative_sampler = pytest.mark.parametrize(
         lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0, use_separable_cma=True),
-        pytest.param(
-            lambda: optuna.integration.SkoptSampler(
-                skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
-            ),
-            marks=pytest.mark.integration,
-        ),
         pytest.param(
             lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
             marks=pytest.mark.integration,
@@ -103,7 +91,6 @@ sampler_class_with_seed: Dict[str, Tuple[Callable[[int], BaseSampler], bool]] = 
         lambda seed: optuna.samplers.CmaEsSampler(seed=seed, use_separable_cma=True),
         False,
     ),
-    "SkoptSampler": (lambda seed: optuna.integration.SkoptSampler(seed=seed), True),
     "PyCmaSampler": (lambda seed: optuna.integration.PyCmaSampler(seed=seed), True),
     "NSGAIISampler": (lambda seed: optuna.samplers.NSGAIISampler(seed=seed), False),
     "NSGAIIISampler": (lambda seed: optuna.samplers.NSGAIIISampler(seed=seed), False),
@@ -136,14 +123,6 @@ parametrize_sampler_name_with_seed = pytest.mark.parametrize(
         (lambda: optuna.samplers.TPESampler(n_startup_trials=0), True, True),
         (lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True), True, True),
         (lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0), True, True),
-        pytest.param(
-            lambda: optuna.integration.SkoptSampler(
-                skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
-            ),
-            False,
-            True,
-            marks=pytest.mark.integration,
-        ),
         pytest.param(
             lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
             False,
@@ -242,12 +221,6 @@ def parametrize_suggest_method(name: str) -> MarkDecorator:
     "sampler_class",
     [
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
-        pytest.param(
-            lambda: optuna.integration.SkoptSampler(
-                skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
-            ),
-            marks=pytest.mark.integration,
-        ),
         pytest.param(
             lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
             marks=pytest.mark.integration,

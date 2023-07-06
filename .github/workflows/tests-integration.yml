@@ -84,7 +84,6 @@ jobs:
             --ignore tests/integration_tests/test_pytorch_ignite.py \
             --ignore tests/integration_tests/test_pytorch_lightning.py \
             --ignore tests/integration_tests/test_shap.py \
-            --ignore tests/integration_tests/test_skopt.py \
             --ignore tests/integration_tests/test_tensorboard.py \
             --ignore tests/integration_tests/lightgbm_tuner_tests \
             --ignore tests/importance_tests/test_init.py \
@@ -106,7 +105,6 @@ jobs:
             --ignore tests/integration_tests/test_pytorch_ignite.py \
             --ignore tests/integration_tests/test_pytorch_lightning.py \
             --ignore tests/integration_tests/test_shap.py \
-            --ignore tests/integration_tests/test_skopt.py \
             --ignore tests/integration_tests/test_tensorboard.py \
             --ignore tests/integration_tests/lightgbm_tuner_tests \
             --ignore tests/importance_tests/test_init.py \
