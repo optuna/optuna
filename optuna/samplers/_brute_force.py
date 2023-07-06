@@ -176,7 +176,6 @@ class _TrialInfo:
 
 
 def _build_tree(trial_infos: list[_TrialInfo]) -> _TreeNode:
-
     def _raise_change_dependency() -> NoReturn:
         raise ValueError(
             "Parameter dependency change detected. "
