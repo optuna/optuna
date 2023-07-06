@@ -10,8 +10,9 @@ from optuna._hypervolume import WFG
 from optuna.logging import get_logger
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study import Study
-from optuna.study._multi_objective import _get_pareto_front_trials_by_trials
+from optuna.study._multi_objective import _dominates
 from optuna.study._study_direction import StudyDirection
+from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 
@@ -115,33 +116,36 @@ def _get_hypervolume_history_info(
     if len(completed_trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
 
-    # Only feasible trials are considered in hypervolume computation.
-    trial_numbers = []
-    best_trials_history = []
-    feasible_trials = []
-    for trial in completed_trials:
-        has_constraints = _CONSTRAINTS_KEY in trial.system_attrs
-        if has_constraints:
-            constraints_values = trial.system_attrs[_CONSTRAINTS_KEY]
-            if all(map(lambda x: x <= 0.0, constraints_values)):
-                feasible_trials.append(trial)
-        else:
-            feasible_trials.append(trial)
-
-        trial_numbers.append(trial.number)
-        best_trials_history.append(
-            _get_pareto_front_trials_by_trials(feasible_trials, study.directions)
-        )
-
-    if len(feasible_trials) == 0:
-        _logger.warning("Your study does not have any feasible trials.")
-
     # Our hypervolume computation module assumes that all objectives are minimized.
     # Here we transform the objective values and the reference point.
     signs = np.asarray([1 if d == StudyDirection.MINIMIZE else -1 for d in study.directions])
     minimization_reference_point = signs * reference_point
+
+    # Only feasible trials are considered in hypervolume computation.
+    trial_numbers = []
     values = []
-    for best_trials in best_trials_history:
+    best_trials: list[FrozenTrial] = []
+    hypervolume = 0.0
+    for trial in completed_trials:
+        trial_numbers.append(trial.number)
+
+        has_constraints = _CONSTRAINTS_KEY in trial.system_attrs
+        if has_constraints:
+            constraints_values = trial.system_attrs[_CONSTRAINTS_KEY]
+            if any(map(lambda x: x > 0.0, constraints_values)):
+                # The trial is infeasible.
+                values.append(hypervolume)
+                continue
+
+        if any(map(lambda t: _dominates(t, trial, study.directions), best_trials)):
+            # The trial is not on the Pareto front.
+            values.append(hypervolume)
+            continue
+
+        best_trials = list(
+            filter(lambda t: not _dominates(trial, t, study.directions), best_trials)
+        ) + [trial]
+
         solution_set = np.asarray(
             list(
                 filter(
@@ -150,8 +154,11 @@ def _get_hypervolume_history_info(
                 )
             )
         )
-        hypervolume = 0.0
         if solution_set.size > 0:
             hypervolume = WFG().compute(solution_set, minimization_reference_point)
         values.append(hypervolume)
+
+    if len(best_trials) == 0:
+        _logger.warning("Your study does not have any feasible trials.")
+
     return _HypervolumeHistoryInfo(trial_numbers, values)
