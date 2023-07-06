@@ -103,8 +103,8 @@ def test_get_optimization_history_info_list(direction: str) -> None:
     assert info_list == [
         _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo([1.0, 2.0, 0.0], None, target_name),
-            _ValuesInfo(best_values, None, "Best Value"),
+            _ValuesInfo([1.0, 2.0, 0.0], None, target_name, [True, True, True]),
+            _ValuesInfo(best_values, None, "Best Value", [True, True, True]),
         )
     ]
 
@@ -115,7 +115,7 @@ def test_get_optimization_history_info_list(direction: str) -> None:
     assert info_list == [
         _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo([0.0, 1.0, 2.0], None, target_name),
+            _ValuesInfo([0.0, 1.0, 2.0], None, target_name, [True, True, True]),
             None,
         )
     ]
@@ -127,6 +127,7 @@ def test_get_optimization_history_info_list_with_multiple_studies(direction: str
     base_values = [1.0, 2.0, 0.0]
     base_best_values = [1.0, 1.0, 0.0] if direction == "minimize" else [1.0, 2.0, 2.0]
     target_name = "Target Name"
+    is_feasibles = [True, True, True]
 
     # Test with trials.
     studies = [create_study(direction=direction) for _ in range(n_studies)]
@@ -141,8 +142,10 @@ def test_get_optimization_history_info_list_with_multiple_studies(direction: str
         best_values_i = [v + i for v in base_best_values]
         assert info == _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo(values_i, None, f"{target_name} of {studies[i].study_name}"),
-            _ValuesInfo(best_values_i, None, f"Best Value of {studies[i].study_name}"),
+            _ValuesInfo(values_i, None, f"{target_name} of {studies[i].study_name}", is_feasibles),
+            _ValuesInfo(
+                best_values_i, None, f"Best Value of {studies[i].study_name}", is_feasibles
+            ),
         )
 
     # Test customized target.
@@ -152,7 +155,9 @@ def test_get_optimization_history_info_list_with_multiple_studies(direction: str
     for i, info in enumerate(info_list):
         assert info == _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo([0.0, 1.0, 2.0], None, f"{target_name} of {studies[i].study_name}"),
+            _ValuesInfo(
+                [0.0, 1.0, 2.0], None, f"{target_name} of {studies[i].study_name}", is_feasibles
+            ),
             None,
         )
 
@@ -183,8 +188,8 @@ def test_get_optimization_history_info_list_with_error_bar(direction: str) -> No
     assert info_list == [
         _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo([1.0, 2.0, 0.0], [0.0, 0.0, 0.0], target_name),
-            _ValuesInfo(best_values, [0.0, 0.0, 0.0], "Best Value"),
+            _ValuesInfo([1.0, 2.0, 0.0], [0.0, 0.0, 0.0], target_name, [True, True, True]),
+            _ValuesInfo(best_values, [0.0, 0.0, 0.0], "Best Value", [True, True, True]),
         )
     ]
 
@@ -195,7 +200,7 @@ def test_get_optimization_history_info_list_with_error_bar(direction: str) -> No
     assert info_list == [
         _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo([0.0, 1.0, 2.0], [0.0, 0.0, 0.0], target_name),
+            _ValuesInfo([0.0, 1.0, 2.0], [0.0, 0.0, 0.0], target_name, [True, True, True]),
             None,
         )
     ]
@@ -216,11 +221,12 @@ def test_error_bar_in_optimization_history(direction: str) -> None:
     )
     mean = np.mean(suggested_params).item()
     std = np.std(suggested_params).item()
+    is_feasibles = [True]
     assert info_list == [
         _OptimizationHistoryInfo(
             [0],
-            _ValuesInfo([mean], [std], "Objective Value"),
-            _ValuesInfo([mean], [std], "Best Value"),
+            _ValuesInfo([mean], [std], "Objective Value", is_feasibles),
+            _ValuesInfo([mean], [std], "Best Value", is_feasibles),
         )
     ]
 
@@ -230,41 +236,53 @@ optimization_history_info_lists = [
     [  # Vanilla.
         _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo([1.0, 2.0, 0.0], None, "Dummy"),
+            _ValuesInfo([1.0, 2.0, 0.0], None, "Dummy", [True, True, True]),
+            None,
+        )
+    ],
+    [  # with infeasible trial.
+        _OptimizationHistoryInfo(
+            [0, 1, 2],
+            _ValuesInfo([1.0, 2.0, 0.0], None, "Dummy", [False, False, False]),
             None,
         )
     ],
     [  # Multiple.
         _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo([1.0, 2.0, 0.0], None, "Dummy"),
+            _ValuesInfo([1.0, 2.0, 0.0], None, "Dummy", [True, True, True]),
             None,
         ),
         _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo([1.0, 1.0, 1.0], None, "Dummy"),
+            _ValuesInfo([1.0, 1.0, 1.0], None, "Dummy", [True, True, True]),
+            None,
+        ),
+        _OptimizationHistoryInfo(
+            [0, 1, 2],
+            _ValuesInfo([1.0, 1.0, 1.0], None, "Dummy", [False, False, False]),
             None,
         ),
     ],
     [  # With best values.
         _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo([1.0, 2.0, 0.0], None, "Dummy"),
-            _ValuesInfo([1.0, 1.0, 1.0], None, "Best Value"),
+            _ValuesInfo([1.0, 2.0, 0.0], None, "Dummy", [True, True, True]),
+            _ValuesInfo([1.0, 1.0, 1.0], None, "Best Value", [True, True, True]),
         )
     ],
     [  # With error bar.
         _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo([1.0, 2.0, 0.0], [1.0, 2.0, 0.0], "Dummy"),
+            _ValuesInfo([1.0, 2.0, 0.0], [1.0, 2.0, 0.0], "Dummy", [True, True, True]),
             None,
         )
     ],
     [  # With best values and error bar.
         _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo([1.0, 2.0, 0.0], [1.0, 2.0, 0.0], "Dummy"),
-            _ValuesInfo([1.0, 1.0, 1.0], [1.0, 2.0, 0.0], "Best Value"),
+            _ValuesInfo([1.0, 2.0, 0.0], [1.0, 2.0, 0.0], "Dummy", [True, True, True]),
+            _ValuesInfo([1.0, 1.0, 1.0], [1.0, 2.0, 0.0], "Best Value", [True, True, True]),
         )
     ],
 ]
@@ -280,6 +298,7 @@ def test_get_optimization_history_plot(
     expected_legends = []
     for info in info_list:
         expected_legends.append(info.values_info.label_name)
+        expected_legends.append("Infeasible Trial")
         if info.best_values_info is not None:
             expected_legends.append(info.best_values_info.label_name)
     legends = [scatter.name for scatter in figure.data if scatter.name is not None]
