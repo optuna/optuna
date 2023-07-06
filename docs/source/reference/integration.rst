@@ -92,9 +92,6 @@ Weights & Biases
 
    optuna.integration.WeightsAndBiasesCallback
 
-MXNet
------
-
 pycma
 -----
 
