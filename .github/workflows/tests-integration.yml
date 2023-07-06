@@ -86,7 +86,6 @@ jobs:
             --ignore tests/integration_tests/test_skopt.py \
             --ignore tests/integration_tests/test_tensorboard.py \
             --ignore tests/integration_tests/lightgbm_tuner_tests \
-            --ignore tests/importance_tests/test_init.py \
             --ignore tests/samplers_tests/test_samplers.py
         else
           pytest tests -m "integration"
@@ -107,7 +106,6 @@ jobs:
             --ignore tests/integration_tests/test_skopt.py \
             --ignore tests/integration_tests/test_tensorboard.py \
             --ignore tests/integration_tests/lightgbm_tuner_tests \
-            --ignore tests/importance_tests/test_init.py \
             --ignore tests/samplers_tests/test_samplers.py
         else
           pytest tests -m "integration and not slow"
