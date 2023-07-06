@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 from collections import OrderedDict
+from collections.abc import Callable
 from typing import Any
-from typing import Callable
-from typing import List
-from typing import Tuple
+from typing import Type
 
 import numpy as np
 import pytest
@@ -23,7 +24,7 @@ from optuna.testing.storages import StorageSupplier
 from optuna.trial import Trial
 
 
-evaluators: List[BaseImportanceEvaluator] = [
+evaluators: list[Type[BaseImportanceEvaluator]] = [
     MeanDecreaseImpurityImportanceEvaluator,
     FanovaImportanceEvaluator,
 ]
@@ -37,7 +38,7 @@ def test_get_param_importance_target_is_none_and_study_is_multi_obj(
     storage_mode: str,
     evaluator_init_func: Callable[[], BaseImportanceEvaluator],
 ) -> None:
-    def objective(trial: Trial) -> Tuple[float, float]:
+    def objective(trial: Trial) -> tuple[float, float]:
         x1 = trial.suggest_float("x1", 0.1, 3)
         x2 = trial.suggest_float("x2", 0.1, 3, log=True)
         x3 = trial.suggest_float("x3", 0, 3, step=1)
