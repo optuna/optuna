@@ -103,6 +103,7 @@ jobs:
         brew install open-mpi
         brew install openblas
 
+    # TODO(Shinichi): Remove the version constraint on Numpy
     # TODO(c-bata): Remove the version constraint on fakeredis
     - name: Install
       run: |
@@ -116,6 +117,7 @@ jobs:
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
         pip install --progress-bar off .[integration]
+        pip install "numpy<1.24.0"
         pip install "fakeredis<2.11.1"
 
     - name: Output installed packages

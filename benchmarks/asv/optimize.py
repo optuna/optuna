@@ -63,7 +63,11 @@ class OptimizeSuite:
         "inmemory, tpe, 1000",
         "inmemory, cmaes, 1000",
         "sqlite, random, 1000",
-        "cached_sqlite, random, 1000",
+        "sqlite, tpe, 1000",
+        "sqlite, cmaes, 1000",
+        "journal, random, 1000",
+        "journal, tpe, 1000",
+        "journal, cmaes, 1000",
     )
     param_names = ["storage, sampler, n_trials"]
     timeout = 600
