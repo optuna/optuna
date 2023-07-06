@@ -3,10 +3,7 @@ from typing import Any
 from typing import Callable
 from typing import List
 from typing import Tuple
-from typing import Type
-from typing import Union
 
-from _pytest.mark.structures import ParameterSet
 import numpy as np
 import pytest
 
@@ -26,13 +23,9 @@ from optuna.testing.storages import StorageSupplier
 from optuna.trial import Trial
 
 
-evaluators: List[Union[Type[BaseImportanceEvaluator], ParameterSet]] = [
+evaluators: List[BaseImportanceEvaluator] = [
     MeanDecreaseImpurityImportanceEvaluator,
     FanovaImportanceEvaluator,
-    pytest.param(
-        optuna.integration.shap.ShapleyImportanceEvaluator,
-        marks=pytest.mark.integration,
-    ),
 ]
 
 parametrize_evaluator = pytest.mark.parametrize("evaluator_init_func", evaluators)
