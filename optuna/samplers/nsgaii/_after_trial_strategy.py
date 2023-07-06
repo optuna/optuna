@@ -22,5 +22,10 @@ class NSGAIIAfterTrialStrategy:
         state: TrialState,
         values: Sequence[float] | None = None,
     ) -> None:
+        """Carry out the after trial process of default NSGA-II.
+
+        This method is called after each trial of the study, examines whether the trial result is
+        valid in terms of constraints, and store the results in system_attrs of the study.
+        """
         if self._constraints_func is not None:
             _process_constraints_after_trial(self._constraints_func, study, trial, state)

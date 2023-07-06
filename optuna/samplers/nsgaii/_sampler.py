@@ -110,6 +110,9 @@ class NSGAIISampler(BaseSampler):
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.5.0.
 
+        after_trial_strategy:
+            A process to be conducted after each trial. Defaults to
+            :class:`~optuna.samplers.nsgaii._after_trial_strategy.NSGAIIAfterTrialStrategy`.
     """
 
     def __init__(
