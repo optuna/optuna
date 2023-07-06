@@ -116,7 +116,7 @@ def test_get_param_importances(
 @pytest.mark.parametrize("normalize", [True, False])
 def test_get_param_importances_with_params(
     storage_mode: str,
-    params: List[str],
+    params: list[str],
     evaluator_init_func: Callable[[], BaseImportanceEvaluator],
     normalize: bool,
 ) -> None:
