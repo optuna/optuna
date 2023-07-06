@@ -176,7 +176,6 @@ class _TrialInfo:
 
 
 def _build_tree(trial_infos: list[_TrialInfo]) -> _TreeNode:
-    print(trial_infos)
 
     def _raise_change_dependency() -> NoReturn:
         raise ValueError(
@@ -190,7 +189,6 @@ def _build_tree(trial_infos: list[_TrialInfo]) -> _TreeNode:
     elif len(trial_infos) > 0 and len(nonempty_trial_infos) == 0:
         return _TreeNode(param_name=None, children={})  # Leaf node
     else:
-        print("hoge")
         if any(info for info in trial_infos if len(info.params) == 0 and not info.is_running):
             _raise_change_dependency()
 
