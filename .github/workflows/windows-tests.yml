@@ -138,10 +138,8 @@ jobs:
 
     - name: Tests
       # Skip allennlp tests since it's not supported on Windows.
-      # TODO(gen740): Don't skip mxnet, because mxnet is supported on Windows.
       run: |
         pytest tests -m "integration" `
           --ignore tests/integration_tests/allennlp_tests/test_allennlp.py `
-          --ignore tests/integration_tests/test_mxnet.py
       env:
         OMP_NUM_THREADS: 1
