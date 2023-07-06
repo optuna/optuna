@@ -130,10 +130,11 @@ jobs:
         pip install pipdeptree
         pipdeptree
 
-
+    # TODO(Shinichi): Remove the version constraint on MXNet
     - name: Tests
       run: |
-        pytest tests -m "integration"
+        pytest tests -m "integration" \
+        --ignore tests/integration_tests/test_mxnet.py
 
       env:
         OMP_NUM_THREADS: 1

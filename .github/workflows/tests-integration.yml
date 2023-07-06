@@ -71,6 +71,7 @@ jobs:
         pip install pipdeptree
         pipdeptree
 
+    # TODO(Shinichi): Remove the version constraint on MXNet
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
@@ -88,11 +89,14 @@ jobs:
             --ignore tests/integration_tests/test_tensorboard.py \
             --ignore tests/integration_tests/lightgbm_tuner_tests \
             --ignore tests/importance_tests/test_init.py \
-            --ignore tests/samplers_tests/test_samplers.py
+            --ignore tests/samplers_tests/test_samplers.py \
+            --ignore tests/integration_tests/test_mxnet.py
         else
-          pytest tests -m "integration"
+          pytest tests -m "integration" \
+           --ignore tests/integration_tests/test_mxnet.py
         fi
 
+    # TODO(Shinichi): Remove the version constraint on MXNet
     - name: Tests
       if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
       run: |
@@ -110,7 +114,9 @@ jobs:
             --ignore tests/integration_tests/test_tensorboard.py \
             --ignore tests/integration_tests/lightgbm_tuner_tests \
             --ignore tests/importance_tests/test_init.py \
-            --ignore tests/samplers_tests/test_samplers.py
+            --ignore tests/samplers_tests/test_samplers.py \
+            --ignore tests/integration_tests/test_mxnet.py
         else
-          pytest tests -m "integration and not slow"
+          pytest tests -m "integration and not slow" \
+          --ignore tests/integration_tests/test_mxnet.py
         fi
