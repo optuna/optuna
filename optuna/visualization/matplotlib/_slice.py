@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 import math
 from typing import Any
 from typing import Callable
@@ -140,12 +141,14 @@ def _generate_slice_subplot(
         y_values = []
         c_values = []
         assert subplot_info.x_labels is not None
+        points_dict = defaultdict(list)
+        for x, y, number in zip(subplot_info.x, subplot_info.y, subplot_info.trial_numbers):
+            points_dict[x].append((y, number))
         for x_label in subplot_info.x_labels:
-            for x, y, number in zip(subplot_info.x, subplot_info.y, subplot_info.trial_numbers):
-                if x == x_label:
-                    x_values.append(str(x))
-                    y_values.append(y)
-                    c_values.append(number)
+            for y, number in points_dict[x_label]:
+                x_values.append(str(x_label))
+                y_values.append(y)
+                c_values.append(number)
         scale = "categorical"
     xlim = _calc_lim_with_padding(x_values, padding_ratio, scale)
     ax.set_xlim(xlim[0], xlim[1])
