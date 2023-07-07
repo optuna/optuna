@@ -10,12 +10,10 @@ import tempfile
 from types import TracebackType
 from typing import Any
 from typing import IO
-from typing import List
-from typing import Type
 
 
 class NamedTemporaryFilePool:
-    tempfile_pool: List[IO[Any]] = []
+    tempfile_pool: list[IO[Any]] = []
 
     def __new__(cls, **kwargs: Any) -> "NamedTemporaryFilePool":
         if not hasattr(cls, "_instance"):
@@ -41,7 +39,7 @@ class NamedTemporaryFilePool:
 
     def __exit__(
         self,
-        exc_type: Type[BaseException],
+        exc_type: type[BaseException],
         exc_val: BaseException,
         exc_tb: TracebackType,
     ) -> None:

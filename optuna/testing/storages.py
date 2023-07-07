@@ -5,7 +5,6 @@ from types import TracebackType
 from typing import Any
 from typing import IO
 from typing import Optional
-from typing import Type
 from typing import Union
 
 import fakeredis
@@ -99,7 +98,7 @@ class StorageSupplier:
             assert False
 
     def __exit__(
-        self, exc_type: Type[BaseException], exc_val: BaseException, exc_tb: TracebackType
+        self, exc_type: type[BaseException], exc_val: BaseException, exc_tb: TracebackType
     ) -> None:
         if self.tempfile:
             self.tempfile.close()
