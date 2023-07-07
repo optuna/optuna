@@ -762,6 +762,13 @@ class TestLightGBMTuner:
 
         assert best_score_second_try == best_score_first_try
 
+        first_try_trials = tuner_first_try.study.trials
+        second_try_trials = tuner_second_try.study.trials
+        assert len(first_try_trials) == len(second_try_trials)
+        for first_trial, second_trial in zip(first_try_trials, second_try_trials):
+            assert first_trial.value == second_trial.value
+            assert first_trial.params == second_trial.params
+
 
 class TestLightGBMTunerCV:
     def _get_tunercv_object(
@@ -1077,3 +1084,10 @@ class TestLightGBMTunerCV:
         best_score_second_try = tuner_second_try.best_score
 
         assert best_score_second_try == best_score_first_try
+
+        first_try_trials = tuner_first_try.study.trials
+        second_try_trials = tuner_second_try.study.trials
+        assert len(first_try_trials) == len(second_try_trials)
+        for first_trial, second_trial in zip(first_try_trials, second_try_trials):
+            assert first_trial.value == second_trial.value
+            assert first_trial.params == second_trial.params
