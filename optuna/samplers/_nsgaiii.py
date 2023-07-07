@@ -24,6 +24,7 @@ from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.samplers.nsgaii._crossovers._uniform import UniformCrossover
 from optuna.samplers.nsgaii._sampler import _constrained_dominates
 from optuna.samplers.nsgaii._sampler import _fast_non_dominated_sort
+from optuna.samplers.nsgaii._sampler import _validate_constraints
 from optuna.study import Study
 from optuna.study._multi_objective import _dominates
 from optuna.trial import FrozenTrial
@@ -65,14 +66,14 @@ class NSGAIIISampler(BaseSampler):
             `target` points since the algorithm prioritizes individuals around reference points.
 
         dividing_parameter:
-            An parameter to determine the density of default reference points. This parameter
+            A parameter to determine the density of default reference points. This parameter
             determines how many divisions are made between reference points on each axis. The
             smaller this value is, the less reference points you have. The default value is 3.
             Note that this parameter is not used when ``reference_points`` is not :obj:`None`.
 
     .. note::
         Other parameters than ``reference_points`` and ``dividing_parameter`` are the same as
-        :class:`~optuna.samplers.nsgaii.NSGAIISampler`.
+        :class:`~optuna.samplers.NSGAIISampler`.
 
     """
 
@@ -299,10 +300,11 @@ class NSGAIIISampler(BaseSampler):
     def _select_elite_population(
         self, study: Study, population: list[FrozenTrial]
     ) -> list[FrozenTrial]:
+        _validate_constraints(population, self._constraints_func)
+
+        dominates = _dominates if self._constraints_func is None else _constrained_dominates
+        population_per_rank = _fast_non_dominated_sort(population, study.directions, dominates)
         elite_population: list[FrozenTrial] = []
-        population_per_rank = _fast_non_dominated_sort(
-            population, study.directions, self._constraints_func
-        )
         for population in population_per_rank:
             if len(elite_population) + len(population) < self._population_size:
                 elite_population.extend(population)

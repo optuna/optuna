@@ -26,7 +26,9 @@ BoTorch
    :nosignatures:
 
    optuna.integration.BoTorchSampler
+   optuna.integration.botorch.logei_candidates_func
    optuna.integration.botorch.qei_candidates_func
+   optuna.integration.botorch.qnei_candidates_func
    optuna.integration.botorch.qehvi_candidates_func
    optuna.integration.botorch.qnehvi_candidates_func
    optuna.integration.botorch.qparego_candidates_func

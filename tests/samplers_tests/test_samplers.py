@@ -25,6 +25,8 @@ from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
+from optuna.integration.botorch import logei_candidates_func
+from optuna.integration.botorch import qei_candidates_func
 from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.testing.objectives import fail_objective
@@ -56,7 +58,17 @@ parametrize_sampler = pytest.mark.parametrize(
         optuna.samplers.NSGAIIISampler,
         optuna.samplers.QMCSampler,
         pytest.param(
-            lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
+            lambda: optuna.integration.BoTorchSampler(
+                n_startup_trials=0,
+                candidates_func=logei_candidates_func,
+            ),
+            marks=pytest.mark.integration,
+        ),
+        pytest.param(
+            lambda: optuna.integration.BoTorchSampler(
+                n_startup_trials=0,
+                candidates_func=qei_candidates_func,
+            ),
             marks=pytest.mark.integration,
         ),
     ],
