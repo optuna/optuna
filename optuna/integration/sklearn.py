@@ -565,7 +565,8 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def cv_results_(self) -> Dict[str, Any]:
-        """A dictionary mapping a metric name to a list of Cross-Validation results of all trials."""
+        """A dictionary mapping a metric name to a list 
+            of Cross-Validation results of all trials."""
         cv_results_dict_in_list = [trial_.user_attrs for trial_ in self.trials_]
         if len(cv_results_dict_in_list) == 0:
             cv_results_list_in_dict = {}
