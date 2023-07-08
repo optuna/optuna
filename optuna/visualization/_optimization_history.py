@@ -28,7 +28,7 @@ class _ValuesInfo(NamedTuple):
     values: list[float]
     stds: list[float] | None
     label_name: str
-    is_feasibles: list[bool]
+    states: list[str]
 
 
 class _OptimizationHistoryInfo(NamedTuple):
@@ -51,14 +51,20 @@ def _get_optimization_history_info_list(
 
     info_list: list[_OptimizationHistoryInfo] = []
     for study in studies:
-        completed_trials = study.get_trials(states=(TrialState.COMPLETE,))
+        trials = study.get_trials()
         label_name = target_name if len(studies) == 1 else f"{target_name} of {study.study_name}"
         values = []
-        is_feasibles = []
-        for trial in completed_trials:
+        value_states = []
+        for trial in trials:
+            if trial.state != TrialState.COMPLETE:
+                values.append(float("nan"))
+                value_states.append("incomplete")
+                continue
             has_constraints = _CONSTRAINTS_KEY in trial.system_attrs
             constraints_value = trial.system_attrs[_CONSTRAINTS_KEY] if has_constraints else [0]
-            is_feasibles.append(all(map(lambda x: x <= 0.0, constraints_value)))
+            value_states.append(
+                "feasible" if all(map(lambda x: x <= 0.0, constraints_value)) else "infeasible"
+            )
             if target is not None:
                 values.append(target(trial))
             else:
@@ -71,24 +77,22 @@ def _get_optimization_history_info_list(
             feasible_best_values = []
             if study.direction == StudyDirection.MINIMIZE:
                 feasible_best_values = [
-                    value if is_feasible else float("inf")
-                    for value, is_feasible in zip(values, is_feasibles)
+                    v if s == "feasible" else float("inf") for v, s in zip(values, value_states)
                 ]
                 best_values = list(np.minimum.accumulate(feasible_best_values))
             else:
                 feasible_best_values = [
-                    value if is_feasible else -float("inf")
-                    for value, is_feasible in zip(values, is_feasibles)
+                    v if s == "feasible" else -float("inf") for v, s in zip(values, value_states)
                 ]
                 best_values = list(np.maximum.accumulate(feasible_best_values))
             best_label_name = (
                 "Best Value" if len(studies) == 1 else f"Best Value of {study.study_name}"
             )
-            best_values_info = _ValuesInfo(best_values, None, best_label_name, is_feasibles)
+            best_values_info = _ValuesInfo(best_values, None, best_label_name, value_states)
         info_list.append(
             _OptimizationHistoryInfo(
-                trial_numbers=[t.number for t in completed_trials],
-                values_info=_ValuesInfo(values, None, label_name, is_feasibles),
+                trial_numbers=[t.number for t in trials],
+                values_info=_ValuesInfo(values, None, label_name, value_states),
                 best_values_info=best_values_info,
             )
         )
@@ -96,7 +100,9 @@ def _get_optimization_history_info_list(
     if len(info_list) == 0:
         _logger.warning("There are no studies.")
 
-    if sum(len(info.trial_numbers) for info in info_list) == 0:
+    feasible_trial_count = sum(info.values_info.states.count("feasible") for info in info_list)
+    infeasible_trial_count = sum(info.values_info.states.count("infeasible") for info in info_list)
+    if feasible_trial_count + infeasible_trial_count == 0:
         _logger.warning("There are no complete trials.")
         info_list.clear()
 
@@ -106,44 +112,48 @@ def _get_optimization_history_info_list(
     # When error_bar=True, a list of 0 or 1 element is returned.
     if len(info_list) == 0:
         return []
+    if feasible_trial_count == 0:
+        _logger.warning("There are no feasible trials.")
+        return []
+
     all_trial_numbers = [number for info in info_list for number in info.trial_numbers]
     max_num_trial = max(all_trial_numbers) + 1
 
     def _aggregate(label_name: str, use_best_value: bool) -> tuple[list[int], _ValuesInfo]:
         # Calculate mean and std of values for each trial number.
         values: list[list[float]] = [[] for _ in range(max_num_trial)]
-        is_feasibles: list[list[bool]] = [[] for _ in range(max_num_trial)]
+        states: list[list[str]] = [[] for _ in range(max_num_trial)]
         assert info_list is not None
         for trial_numbers, values_info, best_values_info in info_list:
             if use_best_value:
                 assert best_values_info is not None
                 values_info = best_values_info
-                for trial_number, value, is_feasible in zip(
-                    trial_numbers, values_info.values, values_info.is_feasibles
-                ):
-                    if not math.isinf(value):
-                        values[trial_number].append(value)
-                    is_feasibles[trial_number].append(is_feasible)
+                for n, v, s in zip(trial_numbers, values_info.values, values_info.states):
+                    if not math.isinf(v):
+                        values[n].append(v)
+                    states[n].append(s)
             else:
-                for trial_number, value, is_feasible in zip(
-                    trial_numbers, values_info.values, values_info.is_feasibles
-                ):
-                    if is_feasible and not math.isinf(value):
-                        values[trial_number].append(value)
-                    is_feasibles[trial_number].append(is_feasible)
-        value_feasibles = [any(f) for f in is_feasibles if len(f) > 0]
+                for n, v, s in zip(trial_numbers, values_info.values, values_info.states):
+                    if s == "feasible" and not math.isinf(v):
+                        values[n].append(v)
+                    states[n].append(s)
+        value_states = [
+            "feasible" if len(s) > 0 and "feasible" in s else "infeasible" for s in states
+        ]
         trial_numbers_union = [
-            i for i in range(max_num_trial) if len(values[i]) > 0 and value_feasibles[i]
+            i for i in range(max_num_trial) if len(values[i]) > 0 and value_states[i] == "feasible"
         ]
         value_means = [
-            np.mean(v).item() for v, f in zip(values, value_feasibles) if len(v) > 0 and f
+            np.mean(v).item()
+            for v, f in zip(values, value_states)
+            if len(v) > 0 and f == "feasible"
         ]
         value_stds = [
-            np.std(v).item() for v, f in zip(values, value_feasibles) if len(v) > 0 and f
+            np.std(v).item()
+            for v, f in zip(values, value_states)
+            if len(v) > 0 and f == "feasible"
         ]
-        return trial_numbers_union, _ValuesInfo(
-            value_means, value_stds, label_name, value_feasibles
-        )
+        return trial_numbers_union, _ValuesInfo(value_means, value_stds, label_name, value_states)
 
     eb_trial_numbers, eb_values_info = _aggregate(target_name, False)
     eb_best_values_info: _ValuesInfo | None = None
@@ -221,28 +231,24 @@ def _get_optimization_history_plot(
     traces = []
     for trial_numbers, values_info, best_values_info in info_list:
         infeasible_trial_numbers = [
-            number
-            for number, is_feasible in zip(trial_numbers, values_info.is_feasibles)
-            if not is_feasible
+            n for n, s in zip(trial_numbers, values_info.states) if s == "infeasible"
         ]
         if values_info.stds is None:
             error_y = None
             feasible_trial_numbers = [
-                number
-                for number, is_feasible in zip(trial_numbers, values_info.is_feasibles)
-                if is_feasible
+                num for num, s in zip(trial_numbers, values_info.states) if s == "feasible"
             ]
             feasible_trial_values = []
-            for i in feasible_trial_numbers:
-                feasible_trial_values.append(values_info.values[i])
+            for num in feasible_trial_numbers:
+                feasible_trial_values.append(values_info.values[num])
             infeasible_trial_values = []
-            for i in infeasible_trial_numbers:
-                infeasible_trial_values.append(values_info.values[i])
+            for num in infeasible_trial_numbers:
+                infeasible_trial_values.append(values_info.values[num])
         else:
-            if False in values_info.is_feasibles:
+            if "infeasible" in values_info.states:
                 _logger.warning(
                     "Your study contains infeasible trials. "
-                    "In optimization history plot,"
+                    "In optimization history plot, "
                     "error bars are calculated for only feasible trial values."
                 )
             error_y = {"type": "data", "array": values_info.stds, "visible": True}
