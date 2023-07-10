@@ -273,7 +273,7 @@ class NSGAIISampler(BaseSampler):
             generation = trial.system_attrs[_GENERATION_KEY]
             if trial.state != optuna.trial.TrialState.COMPLETE:
                 if trial.state == optuna.trial.TrialState.RUNNING:
-                    generation_to_population[_generation].append(trial)
+                    generation_to_runnings[_generation].append(trial)
                 continue
 
             # Do not use trials whose states are not COMPLETE, or `constraint` will be unavailable.
