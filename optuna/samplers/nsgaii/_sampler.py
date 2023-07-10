@@ -1,17 +1,12 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Callable
+from collections.abc import Sequence
 import hashlib
 import itertools
 from typing import Any
-from typing import Callable
 from typing import cast
-from typing import DefaultDict
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Sequence
-from typing import Tuple
 import warnings
 
 import numpy as np
@@ -122,12 +117,12 @@ class NSGAIISampler(BaseSampler):
         self,
         *,
         population_size: int = 50,
-        mutation_prob: Optional[float] = None,
-        crossover: Optional[BaseCrossover] = None,
+        mutation_prob: float | None = None,
+        crossover: BaseCrossover | None = None,
         crossover_prob: float = 0.9,
         swapping_prob: float = 0.5,
-        seed: Optional[int] = None,
-        constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
+        seed: int | None = None,
+        constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
         child_generation_strategy: Callable[
             [Study, dict[str, BaseDistribution], list[FrozenTrial]], dict[str, Any]
         ]
@@ -216,8 +211,8 @@ class NSGAIISampler(BaseSampler):
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
-    ) -> Dict[str, BaseDistribution]:
-        search_space: Dict[str, BaseDistribution] = {}
+    ) -> dict[str, BaseDistribution]:
+        search_space: dict[str, BaseDistribution] = {}
         for name, distribution in self._search_space.calculate(study).items():
             if distribution.single():
                 # The `untransform` method of `optuna._transform._SearchSpaceTransform`
@@ -232,8 +227,8 @@ class NSGAIISampler(BaseSampler):
         self,
         study: Study,
         trial: FrozenTrial,
-        search_space: Dict[str, BaseDistribution],
-    ) -> Dict[str, Any]:
+        search_space: dict[str, BaseDistribution],
+    ) -> dict[str, Any]:
         parent_generation, parent_population = self._collect_parent_population(study)
 
         generation = parent_generation + 1
@@ -260,7 +255,7 @@ class NSGAIISampler(BaseSampler):
             study, trial, param_name, param_distribution
         )
 
-    def _collect_parent_population(self, study: Study) -> Tuple[int, List[FrozenTrial]]:
+    def _collect_parent_population(self, study: Study) -> tuple[int, list[FrozenTrial]]:
         trials = study._get_trials(deepcopy=False, use_cache=True)
 
         generation_to_runnings = defaultdict(list)
@@ -280,7 +275,7 @@ class NSGAIISampler(BaseSampler):
             generation_to_population[generation].append(trial)
 
         hasher = hashlib.sha256()
-        parent_population: List[FrozenTrial] = []
+        parent_population: list[FrozenTrial] = []
         parent_generation = -1
         while True:
             generation = parent_generation + 1
@@ -337,14 +332,14 @@ class NSGAIISampler(BaseSampler):
         return parent_generation, parent_population
 
     def _select_elite_population(
-        self, study: Study, population: List[FrozenTrial]
+        self, study: Study, population: list[FrozenTrial]
     ) -> list[FrozenTrial]:
         _validate_constraints(population, self._constraints_func)
 
         dominates = _dominates if self._constraints_func is None else _constrained_dominates
         population_per_rank = _fast_non_dominated_sort(population, study.directions, dominates)
 
-        elite_population: List[FrozenTrial] = []
+        elite_population: list[FrozenTrial] = []
         for population in population_per_rank:
             if len(elite_population) + len(population) < self._population_size:
                 elite_population.extend(population)
@@ -361,7 +356,7 @@ class NSGAIISampler(BaseSampler):
         study: Study,
         trial: FrozenTrial,
         state: TrialState,
-        values: Optional[Sequence[float]],
+        values: Sequence[float] | None,
     ) -> None:
         assert state in [TrialState.COMPLETE, TrialState.FAIL, TrialState.PRUNED]
         self._after_trial_strategy(study, trial, state, values)
@@ -381,7 +376,7 @@ class NSGAIISampler(BaseSampler):
             study._storage.set_trial_system_attr(trial._trial_id, _GENERATION_KEY, generation)
 
 
-def _calc_crowding_distance(population: List[FrozenTrial]) -> DefaultDict[int, float]:
+def _calc_crowding_distance(population: list[FrozenTrial]) -> defaultdict[int, float]:
     """Calculates the crowding distance of population.
 
     We define the crowding distance as the summation of the crowding distance of each dimension
@@ -397,7 +392,7 @@ def _calc_crowding_distance(population: List[FrozenTrial]) -> DefaultDict[int, f
         * inf - inf and (-inf) - (-inf) is considered to be zero.
     """
 
-    manhattan_distances: DefaultDict[int, float] = defaultdict(float)
+    manhattan_distances: defaultdict[int, float] = defaultdict(float)
     if len(population) == 0:
         return manhattan_distances
 
@@ -410,7 +405,7 @@ def _calc_crowding_distance(population: List[FrozenTrial]) -> DefaultDict[int, f
 
         vs = (
             [-float("inf")]
-            + [cast(List[float], population[j].values)[i] for j in range(len(population))]
+            + [cast(list[float], population[j].values)[i] for j in range(len(population))]
             + [float("inf")]
         )
 
@@ -432,7 +427,7 @@ def _calc_crowding_distance(population: List[FrozenTrial]) -> DefaultDict[int, f
     return manhattan_distances
 
 
-def _crowding_distance_sort(population: List[FrozenTrial]) -> None:
+def _crowding_distance_sort(population: list[FrozenTrial]) -> None:
     manhattan_distances = _calc_crowding_distance(population)
     population.sort(key=lambda x: manhattan_distances[x.number])
     population.reverse()
@@ -512,8 +507,8 @@ def _constrained_dominates(
 
 
 def _validate_constraints(
-    population: List[FrozenTrial],
-    constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
+    population: list[FrozenTrial],
+    constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
 ) -> None:
     if constraints_func is None:
         return
@@ -526,11 +521,11 @@ def _validate_constraints(
 
 
 def _fast_non_dominated_sort(
-    population: List[FrozenTrial],
-    directions: List[optuna.study.StudyDirection],
-    dominates: Callable[[FrozenTrial, FrozenTrial, List[optuna.study.StudyDirection]], bool],
-) -> List[List[FrozenTrial]]:
-    dominated_count: DefaultDict[int, int] = defaultdict(int)
+    population: list[FrozenTrial],
+    directions: list[optuna.study.StudyDirection],
+    dominates: Callable[[FrozenTrial, FrozenTrial, list[optuna.study.StudyDirection]], bool],
+) -> list[list[FrozenTrial]]:
+    dominated_count: defaultdict[int, int] = defaultdict(int)
     dominates_list = defaultdict(list)
 
     for p, q in itertools.combinations(population, 2):
