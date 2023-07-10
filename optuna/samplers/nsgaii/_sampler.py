@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import defaultdict
 import hashlib
 import itertools
@@ -18,9 +20,9 @@ import optuna
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.samplers._base import _CONSTRAINTS_KEY
-from optuna.samplers._base import _process_constraints_after_trial
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
+from optuna.samplers.nsgaii._after_trial_strategy import NSGAIIAfterTrialStrategy
 from optuna.samplers.nsgaii._crossover import perform_crossover
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.samplers.nsgaii._crossovers._uniform import UniformCrossover
@@ -108,6 +110,9 @@ class NSGAIISampler(BaseSampler):
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.5.0.
 
+        after_trial_strategy:
+            A process to be conducted after each trial. Defaults to
+            :class:`~optuna.samplers.nsgaii._after_trial_strategy.NSGAIIAfterTrialStrategy`.
     """
 
     def __init__(
@@ -120,6 +125,10 @@ class NSGAIISampler(BaseSampler):
         swapping_prob: float = 0.5,
         seed: Optional[int] = None,
         constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
+        after_trial_strategy: Callable[
+            [Study, FrozenTrial, TrialState, Sequence[float] | None], None
+        ]
+        | None = None,
     ) -> None:
         # TODO(ohta): Reconsider the default value of each parameter.
 
@@ -172,6 +181,9 @@ class NSGAIISampler(BaseSampler):
         self._rng = np.random.RandomState(seed)
         self._constraints_func = constraints_func
         self._search_space = IntersectionSearchSpace()
+        self._after_trial_strategy = after_trial_strategy or NSGAIIAfterTrialStrategy(
+            constraints_func=constraints_func
+        )
 
     def reseed_rng(self) -> None:
         self._random_sampler.reseed_rng()
@@ -355,8 +367,7 @@ class NSGAIISampler(BaseSampler):
         values: Optional[Sequence[float]],
     ) -> None:
         assert state in [TrialState.COMPLETE, TrialState.FAIL, TrialState.PRUNED]
-        if self._constraints_func is not None:
-            _process_constraints_after_trial(self._constraints_func, study, trial, state)
+        self._after_trial_strategy(study, trial, state, values)
         self._random_sampler.after_trial(study, trial, state, values)
 
 
