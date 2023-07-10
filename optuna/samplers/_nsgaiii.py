@@ -19,7 +19,7 @@ from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._search_space import IntersectionSearchSpace
 from optuna.samplers.nsgaii._after_trial_strategy import NSGAIIAfterTrialStrategy
-from optuna.samplers.nsgaii._crossover import perform_crossover
+from optuna.samplers.nsgaii._child_generation_strategy import NSGAIIChildGenerationStrategy
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.samplers.nsgaii._crossovers._uniform import UniformCrossover
 from optuna.samplers.nsgaii._sampler import _constrained_dominates
@@ -31,9 +31,13 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
+# Define key names of `Trial.user_attrs`.
+GENERATION_USER_ATTR_KEY = None
+
 # Define key names of `Trial.system_attrs`.
 _GENERATION_KEY = "nsga3:generation"
 _POPULATION_CACHE_KEY_PREFIX = "nsga3:population"
+
 # Define a coefficient for scaling intervals, used in _filter_inf() to replace +-inf.
 _COEF = 3
 
@@ -92,6 +96,10 @@ class NSGAIIISampler(BaseSampler):
         | None = None,
         reference_points: np.ndarray | None = None,
         dividing_parameter: int = 3,
+        child_generation_strategy: Callable[
+            [Study, dict[str, BaseDistribution], list[FrozenTrial]], dict[str, Any]
+        ]
+        | None = None,
     ) -> None:
         # TODO(ohta): Reconsider the default value of each parameter.
 
@@ -115,6 +123,12 @@ class NSGAIIISampler(BaseSampler):
         if constraints_func is not None:
             warnings.warn(
                 "The constraints_func option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
+        if child_generation_strategy is not None:
+            warnings.warn(
+                "The child_generation_strategy option is an experimental feature."
                 " The interface can change in the future.",
                 ExperimentalWarning,
             )
@@ -146,6 +160,18 @@ class NSGAIIISampler(BaseSampler):
         self._reference_points = reference_points
         self._dividing_parameter = dividing_parameter
         self._search_space = IntersectionSearchSpace()
+        self._child_generation_strategy = (
+            child_generation_strategy
+            or NSGAIIChildGenerationStrategy(
+                population_size=population_size,
+                crossover_prob=crossover_prob,
+                mutation_prob=mutation_prob,
+                swapping_prob=swapping_prob,
+                crossover=crossover,
+                constraints_func=constraints_func,
+                seed=seed,
+            )
+        )
         self._after_trial_strategy = after_trial_strategy or NSGAIIAfterTrialStrategy(
             constraints_func=constraints_func
         )
@@ -175,43 +201,14 @@ class NSGAIIISampler(BaseSampler):
         search_space: dict[str, BaseDistribution],
     ) -> dict[str, Any]:
         parent_generation, parent_population = self._collect_parent_population(study)
-        trial_id = trial._trial_id
 
         generation = parent_generation + 1
-        study._storage.set_trial_system_attr(trial_id, _GENERATION_KEY, generation)
+        self._set_generation(study, trial, generation)
 
-        dominates_func = _dominates if self._constraints_func is None else _constrained_dominates
+        if parent_generation < 0:
+            return {}
 
-        if parent_generation >= 0:
-            # We choose a child based on the specified crossover method.
-            if self._rng.rand() < self._crossover_prob:
-                child_params = perform_crossover(
-                    self._crossover,
-                    study,
-                    parent_population,
-                    search_space,
-                    self._rng,
-                    self._swapping_prob,
-                    dominates_func,
-                )
-            else:
-                parent_population_size = len(parent_population)
-                parent_params = parent_population[self._rng.choice(parent_population_size)].params
-                child_params = {name: parent_params[name] for name in search_space.keys()}
-
-            n_params = len(child_params)
-            if self._mutation_prob is None:
-                mutation_prob = 1.0 / max(1.0, n_params)
-            else:
-                mutation_prob = self._mutation_prob
-
-            params = {}
-            for param_name in child_params.keys():
-                if self._rng.rand() >= mutation_prob:
-                    params[param_name] = child_params[param_name]
-            return params
-
-        return {}
+        return self._child_generation_strategy(study, search_space, parent_population)
 
     def sample_independent(
         self,
@@ -235,13 +232,14 @@ class NSGAIIISampler(BaseSampler):
         generation_to_runnings = defaultdict(list)
         generation_to_population = defaultdict(list)
         for trial in trials:
-            if _GENERATION_KEY not in trial.system_attrs:
+            _generation = self._get_generation(trial)
+            if _generation is None:
                 continue
 
             generation = trial.system_attrs[_GENERATION_KEY]
             if trial.state != optuna.trial.TrialState.COMPLETE:
                 if trial.state == optuna.trial.TrialState.RUNNING:
-                    generation_to_runnings[generation].append(trial)
+                    generation_to_runnings[_generation].append(trial)
                 continue
 
             # Do not use trials whose states are not COMPLETE, or `constraint` will be unavailable.
@@ -363,6 +361,19 @@ class NSGAIIISampler(BaseSampler):
         assert state in [TrialState.COMPLETE, TrialState.FAIL, TrialState.PRUNED]
         self._after_trial_strategy(study, trial, state, values)
         self._random_sampler.after_trial(study, trial, state, values)
+
+    def _get_generation(self, trial: FrozenTrial) -> int | None:
+        if GENERATION_USER_ATTR_KEY is not None:
+            return trial.user_attrs.get(GENERATION_USER_ATTR_KEY, None)
+        return trial.system_attrs.get(_GENERATION_KEY, None)
+
+    def _set_generation(self, study: Study, trial: FrozenTrial, generation: int) -> None:
+        if GENERATION_USER_ATTR_KEY is not None:
+            study._storage.set_trial_user_attr(
+                trial._trial_id, GENERATION_USER_ATTR_KEY, generation
+            )
+        else:
+            study._storage.set_trial_system_attr(trial._trial_id, _GENERATION_KEY, generation)
 
 
 # TODO(Shinichi) Replace with math.comb after support for python3.7 is deprecated.
