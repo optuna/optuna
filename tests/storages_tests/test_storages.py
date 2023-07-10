@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 from datetime import datetime
 import pickle
@@ -771,6 +773,25 @@ def test_get_all_trials(storage_mode: str) -> None:
         non_existent_study_id = max(study_to_trials.keys()) + 1
         with pytest.raises(KeyError):
             storage.get_all_trials(non_existent_study_id)
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+@pytest.mark.parametrize("param_names", [["a", "b"], ["b", "a"]])
+def test_get_all_trials_params_order(storage_mode: str, param_names: list[str]) -> None:
+    # We don't actually require that all storages to preserve the order of parameters,
+    # but all current implementations do, so we test this property.
+    with StorageSupplier(storage_mode) as storage:
+        study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+        trial_id = storage.create_new_trial(
+            study_id, optuna.trial.create_trial(state=TrialState.RUNNING)
+        )
+        for param_name in param_names:
+            storage.set_trial_param(
+                trial_id, param_name, 1.0, distribution=FloatDistribution(0.0, 2.0)
+            )
+
+        trials = storage.get_all_trials(study_id)
+        assert list(trials[0].params.keys()) == param_names
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
