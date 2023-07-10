@@ -205,6 +205,11 @@ def test_constraints_func_experimental_warning() -> None:
         NSGAIIISampler(constraints_func=lambda _: [0])
 
 
+def test_child_generation_strategy_experimental_warning() -> None:
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        NSGAIIISampler(child_generation_strategy=lambda study, search_space, parent_population: {})
+
+
 def test_call_after_trial_of_random_sampler() -> None:
     sampler = NSGAIIISampler()
     study = optuna.create_study(sampler=sampler)
