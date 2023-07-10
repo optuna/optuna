@@ -12,7 +12,7 @@ from optuna.exceptions import ExperimentalWarning
 from optuna.samplers.nsgaii._crossover import perform_crossover
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.samplers.nsgaii._crossovers._uniform import UniformCrossover
-from optuna.samplers.nsgaii._elite_population_selection_strategy import _constrained_dominates
+from optuna.samplers.nsgaii._sampler import _constrained_dominates
 from optuna.study import Study
 from optuna.study._multi_objective import _dominates
 from optuna.trial import FrozenTrial

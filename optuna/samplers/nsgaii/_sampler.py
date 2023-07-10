@@ -130,7 +130,8 @@ class NSGAIISampler(BaseSampler):
         constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
         child_generation_strategy: Callable[
             [Study, dict[str, BaseDistribution], list[FrozenTrial]], dict[str, Any]
-        ],
+        ]
+        | None = None,
         after_trial_strategy: Callable[
             [Study, FrozenTrial, TrialState, Sequence[float] | None], None
         ]
