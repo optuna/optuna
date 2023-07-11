@@ -86,12 +86,12 @@ class NSGAIIISampler(BaseSampler):
         swapping_prob: float = 0.5,
         seed: int | None = None,
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
+        reference_points: np.ndarray | None = None,
+        dividing_parameter: int = 3,
         after_trial_strategy: Callable[
             [Study, FrozenTrial, TrialState, Sequence[float] | None], None
         ]
         | None = None,
-        reference_points: np.ndarray | None = None,
-        dividing_parameter: int = 3,
     ) -> None:
         # TODO(ohta): Reconsider the default value of each parameter.
 
