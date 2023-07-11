@@ -118,6 +118,12 @@ class NSGAIIISampler(BaseSampler):
                 " The interface can change in the future.",
                 ExperimentalWarning,
             )
+        if after_trial_strategy is not None:
+            warnings.warn(
+                "The after_trial_strategy option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
 
         if crossover is None:
             crossover = UniformCrossover(swapping_prob)
