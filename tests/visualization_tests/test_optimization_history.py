@@ -12,6 +12,7 @@ from optuna.visualization._optimization_history import _get_optimization_history
 from optuna.visualization._optimization_history import _get_optimization_history_plot
 from optuna.visualization._optimization_history import _OptimizationHistoryInfo
 from optuna.visualization._optimization_history import _ValuesInfo
+from optuna.visualization._optimization_history import _ValueState
 
 
 def test_target_is_none_and_study_is_multi_obj() -> None:
@@ -103,8 +104,8 @@ def test_get_optimization_history_info_list(direction: str) -> None:
     assert info_list == [
         _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo([1.0, 2.0, 0.0], None, target_name, ["feasible"] * 3),
-            _ValuesInfo(best_values, None, "Best Value", ["feasible"] * 3),
+            _ValuesInfo([1.0, 2.0, 0.0], None, target_name, [_ValueState.Feasible] * 3),
+            _ValuesInfo(best_values, None, "Best Value", [_ValueState.Feasible] * 3),
         )
     ]
 
@@ -115,7 +116,7 @@ def test_get_optimization_history_info_list(direction: str) -> None:
     assert info_list == [
         _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo([0.0, 1.0, 2.0], None, target_name, ["feasible"] * 3),
+            _ValuesInfo([0.0, 1.0, 2.0], None, target_name, [_ValueState.Feasible] * 3),
             None,
         )
     ]
@@ -127,7 +128,7 @@ def test_get_optimization_history_info_list_with_multiple_studies(direction: str
     base_values = [1.0, 2.0, 0.0]
     base_best_values = [1.0, 1.0, 0.0] if direction == "minimize" else [1.0, 2.0, 2.0]
     target_name = "Target Name"
-    value_states = ["feasible"] * 3
+    value_states = [_ValueState.Feasible] * 3
 
     # Test with trials.
     studies = [create_study(direction=direction) for _ in range(n_studies)]
@@ -188,8 +189,8 @@ def test_get_optimization_history_info_list_with_error_bar(direction: str) -> No
     assert info_list == [
         _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo([1.0, 2.0, 0.0], [0.0, 0.0, 0.0], target_name, ["feasible"] * 3),
-            _ValuesInfo(best_values, [0.0, 0.0, 0.0], "Best Value", ["feasible"] * 3),
+            _ValuesInfo([1.0, 2.0, 0.0], [0.0, 0.0, 0.0], target_name, [_ValueState.Feasible] * 3),
+            _ValuesInfo(best_values, [0.0, 0.0, 0.0], "Best Value", [_ValueState.Feasible] * 3),
         )
     ]
 
@@ -200,7 +201,7 @@ def test_get_optimization_history_info_list_with_error_bar(direction: str) -> No
     assert info_list == [
         _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo([0.0, 1.0, 2.0], [0.0, 0.0, 0.0], target_name, ["feasible"] * 3),
+            _ValuesInfo([0.0, 1.0, 2.0], [0.0, 0.0, 0.0], target_name, [_ValueState.Feasible] * 3),
             None,
         )
     ]
@@ -221,7 +222,7 @@ def test_error_bar_in_optimization_history(direction: str) -> None:
     )
     mean = np.mean(suggested_params).item()
     std = np.std(suggested_params).item()
-    value_states = ["feasible"]
+    value_states = [_ValueState.Feasible]
     assert info_list == [
         _OptimizationHistoryInfo(
             [0],
@@ -236,60 +237,62 @@ optimization_history_info_lists = [
     [  # Vanilla.
         _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo([1.0, 2.0, 0.0], None, "Dummy", ["feasible"] * 3),
+            _ValuesInfo([1.0, 2.0, 0.0], None, "Dummy", [_ValueState.Feasible] * 3),
             None,
         )
     ],
     [  # with infeasible trial.
         _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo([1.0, 2.0, 0.0], None, "Dummy", ["infeasible"] * 3),
+            _ValuesInfo([1.0, 2.0, 0.0], None, "Dummy", [_ValueState.Infeasible] * 3),
             None,
         )
     ],
     [  # with incomplete trial.
         _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo([1.0, 2.0, 0.0], None, "Dummy", ["incomplete"] * 3),
+            _ValuesInfo([1.0, 2.0, 0.0], None, "Dummy", [_ValueState.Incomplete] * 3),
             None,
         )
     ],
     [  # Multiple.
         _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo([1.0, 2.0, 0.0], None, "Dummy", ["feasible"] * 3),
+            _ValuesInfo([1.0, 2.0, 0.0], None, "Dummy", [_ValueState.Feasible] * 3),
             None,
         ),
         _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo([1.0, 1.0, 1.0], None, "Dummy", ["feasible"] * 3),
+            _ValuesInfo([1.0, 1.0, 1.0], None, "Dummy", [_ValueState.Feasible] * 3),
             None,
         ),
         _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo([1.0, 1.0, 1.0], None, "Dummy", ["infeasible"] * 3),
+            _ValuesInfo([1.0, 1.0, 1.0], None, "Dummy", [_ValueState.Infeasible] * 3),
             None,
         ),
     ],
     [  # With best values.
         _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo([1.0, 2.0, 0.0], None, "Dummy", ["feasible"] * 3),
-            _ValuesInfo([1.0, 1.0, 1.0], None, "Best Value", ["feasible"] * 3),
+            _ValuesInfo([1.0, 2.0, 0.0], None, "Dummy", [_ValueState.Feasible] * 3),
+            _ValuesInfo([1.0, 1.0, 1.0], None, "Best Value", [_ValueState.Feasible] * 3),
         )
     ],
     [  # With error bar.
         _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo([1.0, 2.0, 0.0], [1.0, 2.0, 0.0], "Dummy", ["feasible"] * 3),
+            _ValuesInfo([1.0, 2.0, 0.0], [1.0, 2.0, 0.0], "Dummy", [_ValueState.Feasible] * 3),
             None,
         )
     ],
     [  # With best values and error bar.
         _OptimizationHistoryInfo(
             [0, 1, 2],
-            _ValuesInfo([1.0, 2.0, 0.0], [1.0, 2.0, 0.0], "Dummy", ["feasible"] * 3),
-            _ValuesInfo([1.0, 1.0, 1.0], [1.0, 2.0, 0.0], "Best Value", ["feasible"] * 3),
+            _ValuesInfo([1.0, 2.0, 0.0], [1.0, 2.0, 0.0], "Dummy", [_ValueState.Feasible] * 3),
+            _ValuesInfo(
+                [1.0, 1.0, 1.0], [1.0, 2.0, 0.0], "Best Value", [_ValueState.Feasible] * 3
+            ),
         )
     ],
 ]
