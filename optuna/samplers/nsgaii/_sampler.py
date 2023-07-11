@@ -137,20 +137,6 @@ class NSGAIISampler(BaseSampler):
         if not isinstance(population_size, int):
             raise TypeError("`population_size` must be an integer value.")
 
-        if population_size < 2:
-            raise ValueError("`population_size` must be greater than or equal to 2.")
-
-        if not (mutation_prob is None or 0.0 <= mutation_prob <= 1.0):
-            raise ValueError(
-                "`mutation_prob` must be None or a float value within the range [0.0, 1.0]."
-            )
-
-        if not (0.0 <= crossover_prob <= 1.0):
-            raise ValueError("`crossover_prob` must be a float value within the range [0.0, 1.0].")
-
-        if not (0.0 <= swapping_prob <= 1.0):
-            raise ValueError("`swapping_prob` must be a float value within the range [0.0, 1.0].")
-
         if constraints_func is not None:
             warnings.warn(
                 "The constraints_func option is an experimental feature."

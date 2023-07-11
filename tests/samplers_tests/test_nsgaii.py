@@ -116,6 +116,12 @@ def test_swapping_prob() -> None:
     with pytest.raises(ValueError):
         NSGAIISampler(swapping_prob=1.1)
 
+    with pytest.raises(ValueError):
+        UniformCrossover(swapping_prob=-0.5)
+
+    with pytest.raises(ValueError):
+        UniformCrossover(swapping_prob=1.1)
+
 
 @pytest.mark.parametrize("choices", [[-1, 0, 1], [True, False]])
 def test_crossover_casting(choices: list[Any]) -> None:
