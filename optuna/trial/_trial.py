@@ -84,8 +84,6 @@ class Trial(BaseTrial):
     ) -> float:
         """Suggest a value for the floating point parameter.
 
-        .. versionadded:: 1.3.0
-
         Example:
 
             Suggest a momentum, learning rate and scaling factor of learning rate

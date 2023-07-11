@@ -5,10 +5,10 @@ import math
 import pytest
 
 from optuna.study.study import create_study
+from optuna.terminator import CrossValidationErrorEvaluator
+from optuna.terminator import report_cross_validation_scores
+from optuna.terminator import StaticErrorEvaluator
 from optuna.terminator.erroreval import _CROSS_VALIDATION_SCORES_KEY
-from optuna.terminator.erroreval import CrossValidationErrorEvaluator
-from optuna.terminator.erroreval import report_cross_validation_scores
-from optuna.terminator.erroreval import StaticErrorEvaluator
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 

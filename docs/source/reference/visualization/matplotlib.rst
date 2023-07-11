@@ -12,6 +12,7 @@ optuna.visualization.matplotlib
 
     optuna.visualization.matplotlib.plot_contour
     optuna.visualization.matplotlib.plot_edf
+    optuna.visualization.matplotlib.plot_hypervolume_history
     optuna.visualization.matplotlib.plot_intermediate_values
     optuna.visualization.matplotlib.plot_optimization_history
     optuna.visualization.matplotlib.plot_parallel_coordinate
@@ -19,5 +20,6 @@ optuna.visualization.matplotlib
     optuna.visualization.matplotlib.plot_pareto_front
     optuna.visualization.matplotlib.plot_rank
     optuna.visualization.matplotlib.plot_slice
+    optuna.visualization.matplotlib.plot_terminator_improvement
     optuna.visualization.matplotlib.plot_timeline
     optuna.visualization.matplotlib.is_available

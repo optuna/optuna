@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import defaultdict
 import hashlib
 import itertools
@@ -18,9 +20,9 @@ import optuna
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.samplers._base import _CONSTRAINTS_KEY
-from optuna.samplers._base import _process_constraints_after_trial
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
+from optuna.samplers.nsgaii._after_trial_strategy import NSGAIIAfterTrialStrategy
 from optuna.samplers.nsgaii._crossover import perform_crossover
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.samplers.nsgaii._crossovers._uniform import UniformCrossover
@@ -108,6 +110,9 @@ class NSGAIISampler(BaseSampler):
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.5.0.
 
+        after_trial_strategy:
+            A process to be conducted after each trial. Defaults to
+            :class:`~optuna.samplers.nsgaii._after_trial_strategy.NSGAIIAfterTrialStrategy`.
     """
 
     def __init__(
@@ -120,6 +125,10 @@ class NSGAIISampler(BaseSampler):
         swapping_prob: float = 0.5,
         seed: Optional[int] = None,
         constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
+        after_trial_strategy: Callable[
+            [Study, FrozenTrial, TrialState, Sequence[float] | None], None
+        ]
+        | None = None,
     ) -> None:
         # TODO(ohta): Reconsider the default value of each parameter.
 
@@ -172,6 +181,9 @@ class NSGAIISampler(BaseSampler):
         self._rng = np.random.RandomState(seed)
         self._constraints_func = constraints_func
         self._search_space = IntersectionSearchSpace()
+        self._after_trial_strategy = after_trial_strategy or NSGAIIAfterTrialStrategy(
+            constraints_func=constraints_func
+        )
 
     def reseed_rng(self) -> None:
         self._random_sampler.reseed_rng()
@@ -330,8 +342,12 @@ class NSGAIISampler(BaseSampler):
     def _select_elite_population(
         self, study: Study, population: List[FrozenTrial]
     ) -> List[FrozenTrial]:
+        _validate_constraints(population, self._constraints_func)
+
+        dominates = _dominates if self._constraints_func is None else _constrained_dominates
+        population_per_rank = _fast_non_dominated_sort(population, study.directions, dominates)
+
         elite_population: List[FrozenTrial] = []
-        population_per_rank = self._fast_non_dominated_sort(population, study.directions)
         for population in population_per_rank:
             if len(elite_population) + len(population) < self._population_size:
                 elite_population.extend(population)
@@ -343,56 +359,6 @@ class NSGAIISampler(BaseSampler):
 
         return elite_population
 
-    def _fast_non_dominated_sort(
-        self,
-        population: List[FrozenTrial],
-        directions: List[optuna.study.StudyDirection],
-    ) -> List[List[FrozenTrial]]:
-        if self._constraints_func is not None:
-            for _trial in population:
-                _constraints = _trial.system_attrs.get(_CONSTRAINTS_KEY)
-                if _constraints is None:
-                    continue
-                if np.any(np.isnan(np.array(_constraints))):
-                    raise ValueError("NaN is not acceptable as constraint value.")
-
-        dominated_count: DefaultDict[int, int] = defaultdict(int)
-        dominates_list = defaultdict(list)
-
-        dominates = _dominates if self._constraints_func is None else _constrained_dominates
-
-        for p, q in itertools.combinations(population, 2):
-            if dominates(p, q, directions):
-                dominates_list[p.number].append(q.number)
-                dominated_count[q.number] += 1
-            elif dominates(q, p, directions):
-                dominates_list[q.number].append(p.number)
-                dominated_count[p.number] += 1
-
-        population_per_rank = []
-        while population:
-            non_dominated_population = []
-            i = 0
-            while i < len(population):
-                if dominated_count[population[i].number] == 0:
-                    individual = population[i]
-                    if i == len(population) - 1:
-                        population.pop()
-                    else:
-                        population[i] = population.pop()
-                    non_dominated_population.append(individual)
-                else:
-                    i += 1
-
-            for x in non_dominated_population:
-                for y in dominates_list[x.number]:
-                    dominated_count[y] -= 1
-
-            assert non_dominated_population
-            population_per_rank.append(non_dominated_population)
-
-        return population_per_rank
-
     def after_trial(
         self,
         study: Study,
@@ -401,8 +367,7 @@ class NSGAIISampler(BaseSampler):
         values: Optional[Sequence[float]],
     ) -> None:
         assert state in [TrialState.COMPLETE, TrialState.FAIL, TrialState.PRUNED]
-        if self._constraints_func is not None:
-            _process_constraints_after_trial(self._constraints_func, study, trial, state)
+        self._after_trial_strategy(study, trial, state, values)
         self._random_sampler.after_trial(study, trial, state, values)
 
 
@@ -534,3 +499,58 @@ def _constrained_dominates(
     violation0 = sum(v for v in constraints0 if v > 0)
     violation1 = sum(v for v in constraints1 if v > 0)
     return violation0 < violation1
+
+
+def _validate_constraints(
+    population: List[FrozenTrial],
+    constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
+) -> None:
+    if constraints_func is None:
+        return
+    for _trial in population:
+        _constraints = _trial.system_attrs.get(_CONSTRAINTS_KEY)
+        if _constraints is None:
+            continue
+        if np.any(np.isnan(np.array(_constraints))):
+            raise ValueError("NaN is not acceptable as constraint value.")
+
+
+def _fast_non_dominated_sort(
+    population: List[FrozenTrial],
+    directions: List[optuna.study.StudyDirection],
+    dominates: Callable[[FrozenTrial, FrozenTrial, List[optuna.study.StudyDirection]], bool],
+) -> List[List[FrozenTrial]]:
+    dominated_count: DefaultDict[int, int] = defaultdict(int)
+    dominates_list = defaultdict(list)
+
+    for p, q in itertools.combinations(population, 2):
+        if dominates(p, q, directions):
+            dominates_list[p.number].append(q.number)
+            dominated_count[q.number] += 1
+        elif dominates(q, p, directions):
+            dominates_list[q.number].append(p.number)
+            dominated_count[p.number] += 1
+
+    population_per_rank = []
+    while population:
+        non_dominated_population = []
+        i = 0
+        while i < len(population):
+            if dominated_count[population[i].number] == 0:
+                individual = population[i]
+                if i == len(population) - 1:
+                    population.pop()
+                else:
+                    population[i] = population.pop()
+                non_dominated_population.append(individual)
+            else:
+                i += 1
+
+        for x in non_dominated_population:
+            for y in dominates_list[x.number]:
+                dominated_count[y] -= 1
+
+        assert non_dominated_population
+        population_per_rank.append(non_dominated_population)
+
+    return population_per_rank

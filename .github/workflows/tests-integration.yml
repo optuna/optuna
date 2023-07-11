@@ -20,7 +20,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.8', '3.9', '3.10', '3.11']
 
     steps:
     - name: Checkout
@@ -46,7 +46,7 @@ jobs:
         sudo apt-get update
         sudo apt-get -y install openmpi-bin libopenmpi-dev libopenblas-dev
 
-    # TODO(Shinichi): Remove the version constraint on PyTorch Lightning
+    # TODO(Shinichi): Remove the version constraint on Numpy
     # TODO(c-bata): Remove the version constraint on fakeredis
     - name: Install
       run: |
@@ -60,7 +60,7 @@ jobs:
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
         pip install --progress-bar off .[integration] --extra-index-url https://download.pytorch.org/whl/cpu
-        pip install "pytorch-lightning<2.0.0"
+        pip install "numpy<1.24.0"
         pip install "fakeredis<2.11.1"
 
     - name: Output installed packages
@@ -86,7 +86,6 @@ jobs:
             --ignore tests/integration_tests/test_shap.py \
             --ignore tests/integration_tests/test_skopt.py \
             --ignore tests/integration_tests/test_tensorboard.py \
-            --ignore tests/integration_tests/test_tensorflow.py \
             --ignore tests/integration_tests/lightgbm_tuner_tests \
             --ignore tests/importance_tests/test_init.py \
             --ignore tests/samplers_tests/test_samplers.py
@@ -109,7 +108,6 @@ jobs:
             --ignore tests/integration_tests/test_shap.py \
             --ignore tests/integration_tests/test_skopt.py \
             --ignore tests/integration_tests/test_tensorboard.py \
-            --ignore tests/integration_tests/test_tensorflow.py \
             --ignore tests/integration_tests/lightgbm_tuner_tests \
             --ignore tests/importance_tests/test_init.py \
             --ignore tests/samplers_tests/test_samplers.py

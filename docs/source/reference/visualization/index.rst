@@ -8,7 +8,7 @@ The :mod:`~optuna.visualization` module provides utility functions for plotting 
 .. note::
     In the :mod:`optuna.visualization` module, the following functions use plotly to create figures, but `JupyterLab`_ cannot
     render them by default. Please follow this `installation guide`_ to show figures in
-    `JupyterLab`_. 
+    `JupyterLab`_.
 .. note::
     The :func:`~optuna.visualization.plot_param_importances` requires the Python package of `scikit-learn <https://github.com/scikit-learn/scikit-learn>`_.
 
@@ -21,6 +21,7 @@ The :mod:`~optuna.visualization` module provides utility functions for plotting 
 
    optuna.visualization.plot_contour
    optuna.visualization.plot_edf
+   optuna.visualization.plot_hypervolume_history
    optuna.visualization.plot_intermediate_values
    optuna.visualization.plot_optimization_history
    optuna.visualization.plot_parallel_coordinate
@@ -28,6 +29,7 @@ The :mod:`~optuna.visualization` module provides utility functions for plotting 
    optuna.visualization.plot_pareto_front
    optuna.visualization.plot_rank
    optuna.visualization.plot_slice
+   optuna.visualization.plot_terminator_improvement
    optuna.visualization.plot_timeline
    optuna.visualization.is_available
 

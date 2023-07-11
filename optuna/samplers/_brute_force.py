@@ -121,7 +121,9 @@ class BruteForceSampler(BaseSampler):
             deepcopy=False,
             states=(
                 TrialState.COMPLETE,
+                TrialState.PRUNED,
                 TrialState.RUNNING,
+                TrialState.FAIL,
             ),
         )
         trials = [t for t in trials if t.number != trial.number]
@@ -148,7 +150,9 @@ class BruteForceSampler(BaseSampler):
             deepcopy=False,
             states=(
                 TrialState.COMPLETE,
+                TrialState.PRUNED,
                 TrialState.RUNNING,
+                TrialState.FAIL,
             ),
         )
         trials = [
