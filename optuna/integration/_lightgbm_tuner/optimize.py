@@ -557,7 +557,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         param_name = "feature_fraction"
         param_values = np.linspace(0.4, 1.0, n_trials).tolist()
 
-        sampler = optuna.samplers.GridSampler({param_name: param_values})
+        sampler = optuna.samplers.GridSampler({param_name: param_values}, seed=self._optuna_seed)
         self._tune_params([param_name], len(param_values), sampler, "feature_fraction")
 
     def tune_num_leaves(self, n_trials: int = 20) -> None:
@@ -584,7 +584,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         ).tolist()
         param_values = [val for val in param_values if val >= 0.4 and val <= 1.0]
 
-        sampler = optuna.samplers.GridSampler({param_name: param_values})
+        sampler = optuna.samplers.GridSampler({param_name: param_values}, seed=self._optuna_seed)
         self._tune_params([param_name], len(param_values), sampler, "feature_fraction_stage2")
 
     def tune_regularization_factors(self, n_trials: int = 20) -> None:
@@ -599,7 +599,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         param_name = "min_child_samples"
         param_values = [5, 10, 25, 50, 100]
 
-        sampler = optuna.samplers.GridSampler({param_name: param_values})
+        sampler = optuna.samplers.GridSampler({param_name: param_values}, seed=self._optuna_seed)
         self._tune_params([param_name], len(param_values), sampler, "min_data_in_leaf")
 
     def _tune_params(
