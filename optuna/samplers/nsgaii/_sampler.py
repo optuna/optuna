@@ -164,10 +164,6 @@ class NSGAIISampler(BaseSampler):
             )
 
         self._population_size = population_size
-        self._mutation_prob = mutation_prob
-        self._crossover = crossover
-        self._crossover_prob = crossover_prob
-        self._swapping_prob = swapping_prob
         self._random_sampler = RandomSampler(seed=seed)
         self._rng = np.random.RandomState(seed)
         self._constraints_func = constraints_func
