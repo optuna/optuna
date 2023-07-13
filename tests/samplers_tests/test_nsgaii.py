@@ -31,6 +31,7 @@ from optuna.samplers.nsgaii import UNDXCrossover
 from optuna.samplers.nsgaii import UniformCrossover
 from optuna.samplers.nsgaii import VSBXCrossover
 from optuna.samplers.nsgaii._after_trial_strategy import NSGAIIAfterTrialStrategy
+from optuna.samplers.nsgaii._child_generation_strategy import NSGAIIChildGenerationStrategy
 from optuna.samplers.nsgaii._crossover import _inlined_categorical_uniform_crossover
 from optuna.samplers.nsgaii._elite_population_selection_strategy import _constrained_dominates
 from optuna.samplers.nsgaii._sampler import _fast_non_dominated_sort
@@ -77,7 +78,12 @@ def test_population_size() -> None:
 
     with pytest.raises(TypeError):
         # Not an integer.
-        NSGAIISampler(population_size=2.5)  # type: ignore
+        NSGAIISampler(population_size=2.5)  # type: ignore[arg-type]
+
+    with pytest.raises(ValueError):
+        mock_crossover = MagicMock(spec=BaseCrossover)
+        mock_crossover.configure_mock(n_parents=3)
+        NSGAIISampler(population_size=2, crossover=mock_crossover)
 
 
 def test_mutation_prob() -> None:
@@ -570,6 +576,68 @@ def _create_frozen_trial(
     return trial
 
 
+def test_child_generation_strategy_invalid_value() -> None:
+    mutation_prob_err_msg = "The value of `mutation_prob` must be in the range [0, 1]."
+    crossover_prob_err_msg = "The value of `crossover_prob` must be in the range [0, 1]."
+    swapping_prob_err_msg = "The value of `swapping_prob` must be in the range [0, 1]."
+    with pytest.raises(ValueError) as error:
+        NSGAIIChildGenerationStrategy(
+            mutation_prob=1.2,
+            crossover=UniformCrossover(),
+            crossover_prob=0.9,
+            swapping_prob=0.5,
+        )
+    with pytest.raises(ValueError):
+        NSGAIIChildGenerationStrategy(
+            mutation_prob=-0.2,
+            crossover=UniformCrossover(),
+            crossover_prob=0.9,
+            swapping_prob=0.5,
+        )
+    with pytest.raises(ValueError):
+        NSGAIIChildGenerationStrategy(
+            crossover_prob=1.2,
+            crossover=UniformCrossover(),
+            swapping_prob=0.5,
+        )
+    with pytest.raises(ValueError):
+        NSGAIIChildGenerationStrategy(
+            crossover_prob=-0.2,
+            crossover=UniformCrossover(),
+            swapping_prob=0.5,
+        )
+        assert str(error) == crossover_prob_err_msg
+    with pytest.raises(ValueError) as error:
+        NSGAIIChildGenerationStrategy(
+            crossover_prob=0.9,
+            crossover=UniformCrossover(),
+            swapping_prob=1.2,
+        )
+        assert str(error) == swapping_prob_err_msg
+    with pytest.raises(ValueError) as error:
+        NSGAIIChildGenerationStrategy(
+            crossover_prob=0.9,
+            crossover=UniformCrossover(),
+            swapping_prob=-0.2,
+        )
+        assert str(error) == swapping_prob_err_msg
+    with pytest.raises(ValueError):
+        NSGAIIChildGenerationStrategy(
+            crossover_prob=0.9,
+            crossover=3,  # type: ignore[arg-type]
+            swapping_prob=0.5,
+        )
+
+
+def test_child_generation_strategy() -> None:
+    NSGAIIChildGenerationStrategy(
+        crossover_prob=0.0,
+        crossover=UniformCrossover(),
+        mutation_prob=0.0,
+        swapping_prob=0.5,
+    )
+
+
 def test_call_after_trial_of_random_sampler() -> None:
     sampler = NSGAIISampler()
     study = optuna.create_study(sampler=sampler)
@@ -787,7 +855,7 @@ def test_crossover_deterministic(
     def _normal(*args: Any, **kwargs: Any) -> Any:
         if kwargs.get("size") is None:
             return rand_value
-        return np.full(kwargs.get("size"), rand_value)  # type: ignore
+        return np.full(kwargs.get("size"), rand_value)  # type: ignore[arg-type]
 
     rng = Mock()
     rng.rand = Mock(side_effect=_rand)

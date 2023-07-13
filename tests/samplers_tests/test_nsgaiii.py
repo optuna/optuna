@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 from typing import Sequence
+from unittest.mock import MagicMock
 from unittest.mock import patch
 import warnings
 
@@ -61,6 +62,11 @@ def test_population_size() -> None:
     with pytest.raises(TypeError):
         # Not an integer.
         NSGAIIISampler(population_size=2.5)  # type: ignore[arg-type]
+
+    with pytest.raises(ValueError):
+        mock_crossover = MagicMock(spec=BaseCrossover)
+        mock_crossover.configure_mock(n_parents=3)
+        NSGAIIISampler(population_size=2, crossover=mock_crossover)
 
 
 def test_mutation_prob() -> None:

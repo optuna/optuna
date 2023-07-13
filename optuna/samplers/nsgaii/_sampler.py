@@ -134,12 +134,19 @@ class NSGAIISampler(BaseSampler):
         if not isinstance(population_size, int):
             raise TypeError("`population_size` must be an integer value.")
 
+        if population_size < 2:
+            raise ValueError("`population_size` must be greater than or equal to 2.")
+
+        if not isinstance(population_size, int):
+            raise TypeError("`population_size` must be an integer value.")
+
         if constraints_func is not None:
             warnings.warn(
                 "The constraints_func option is an experimental feature."
                 " The interface can change in the future.",
                 ExperimentalWarning,
             )
+
         if child_generation_strategy is not None:
             warnings.warn(
                 "The child_generation_strategy option is an experimental feature."
@@ -156,6 +163,7 @@ class NSGAIISampler(BaseSampler):
                 " For valid crossovers see"
                 " https://optuna.readthedocs.io/en/stable/reference/samplers.html."
             )
+
         if population_size < crossover.n_parents:
             raise ValueError(
                 f"Using {crossover},"
@@ -171,7 +179,6 @@ class NSGAIISampler(BaseSampler):
         self._child_generation_strategy = (
             child_generation_strategy
             or NSGAIIChildGenerationStrategy(
-                population_size=population_size,
                 crossover_prob=crossover_prob,
                 mutation_prob=mutation_prob,
                 swapping_prob=swapping_prob,
