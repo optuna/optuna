@@ -23,10 +23,10 @@ class NSGAIIChildGenerationStrategy:
         self,
         *,
         population_size: int,
-        crossover_prob: float,
         mutation_prob: float | None,
-        swapping_prob: float,
         crossover: BaseCrossover,
+        crossover_prob: float,
+        swapping_prob: float,
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
         seed: int | None = None,
     ) -> None:
