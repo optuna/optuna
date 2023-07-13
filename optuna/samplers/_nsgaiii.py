@@ -7,14 +7,12 @@ import hashlib
 import itertools
 import math
 from typing import Any
-import warnings
 
 import numpy as np
 
 import optuna
 from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
-from optuna.exceptions import ExperimentalWarning
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._search_space import IntersectionSearchSpace
@@ -111,19 +109,6 @@ class NSGAIIISampler(BaseSampler):
 
         if not (0.0 <= swapping_prob <= 1.0):
             raise ValueError("`swapping_prob` must be a float value within the range [0.0, 1.0].")
-
-        if constraints_func is not None:
-            warnings.warn(
-                "The constraints_func option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
-        if after_trial_strategy is not None:
-            warnings.warn(
-                "The after_trial_strategy option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
 
         if crossover is None:
             crossover = UniformCrossover(swapping_prob)
