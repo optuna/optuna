@@ -29,9 +29,6 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
-# Define key names of `Trial.user_attrs`.
-GENERATION_USER_ATTR_KEY = None
-
 # Define key names of `Trial.system_attrs`.
 _GENERATION_KEY = "nsga2:generation"
 _POPULATION_CACHE_KEY_PREFIX = "nsga2:population"
@@ -218,7 +215,7 @@ class NSGAIISampler(BaseSampler):
         parent_generation, parent_population = self._collect_parent_population(study)
 
         generation = parent_generation + 1
-        self._set_generation(study, trial, generation)
+        study._storage.set_trial_system_attr(trial._trial_id, _GENERATION_KEY, generation)
 
         if parent_generation < 0:
             return {}
@@ -247,14 +244,13 @@ class NSGAIISampler(BaseSampler):
         generation_to_runnings = defaultdict(list)
         generation_to_population = defaultdict(list)
         for trial in trials:
-            _generation = self._get_generation(trial)
-            if _generation is None:
+            if _GENERATION_KEY not in trial.system_attrs:
                 continue
 
             generation = trial.system_attrs[_GENERATION_KEY]
             if trial.state != optuna.trial.TrialState.COMPLETE:
                 if trial.state == optuna.trial.TrialState.RUNNING:
-                    generation_to_runnings[_generation].append(trial)
+                    generation_to_runnings[generation].append(trial)
                 continue
 
             # Do not use trials whose states are not COMPLETE, or `constraint` will be unavailable.
@@ -347,19 +343,6 @@ class NSGAIISampler(BaseSampler):
         assert state in [TrialState.COMPLETE, TrialState.FAIL, TrialState.PRUNED]
         self._after_trial_strategy(study, trial, state, values)
         self._random_sampler.after_trial(study, trial, state, values)
-
-    def _get_generation(self, trial: FrozenTrial) -> int | None:
-        if GENERATION_USER_ATTR_KEY is not None:
-            return trial.user_attrs.get(GENERATION_USER_ATTR_KEY, None)
-        return trial.system_attrs.get(_GENERATION_KEY, None)
-
-    def _set_generation(self, study: Study, trial: FrozenTrial, generation: int) -> None:
-        if GENERATION_USER_ATTR_KEY is not None:
-            study._storage.set_trial_user_attr(
-                trial._trial_id, GENERATION_USER_ATTR_KEY, generation
-            )
-        else:
-            study._storage.set_trial_system_attr(trial._trial_id, _GENERATION_KEY, generation)
 
 
 def _calc_crowding_distance(population: list[FrozenTrial]) -> defaultdict[int, float]:
