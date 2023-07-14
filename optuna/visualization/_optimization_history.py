@@ -67,13 +67,11 @@ def _get_optimization_history_info_list(
                 values.append(float("nan"))
                 value_states.append(_ValueState.Incomplete)
                 continue
-            has_constraints = _CONSTRAINTS_KEY in trial.system_attrs
-            constraints_value = trial.system_attrs[_CONSTRAINTS_KEY] if has_constraints else [0]
-            value_states.append(
-                _ValueState.Feasible
-                if all(map(lambda x: x <= 0.0, constraints_value))
-                else _ValueState.Infeasible
-            )
+            constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
+            if constraints is None or all([x <= 0.0 for x in constraints]):
+                value_states.append(_ValueState.Feasible)
+            else:
+                value_states.append(_ValueState.Infeasible)
             if target is not None:
                 values.append(target(trial))
             else:
@@ -143,36 +141,22 @@ def _get_optimization_history_info_list(
             if use_best_value:
                 assert best_values_info is not None
                 values_info = best_values_info
-                for n, v, s in zip(trial_numbers, values_info.values, values_info.states):
-                    if not math.isinf(v):
-                        values[n].append(v)
-                    states[n].append(s)
+            for n, v, s in zip(trial_numbers, values_info.values, values_info.states):
+                if not math.isinf(v):
+                    values[n].append(v)
+                states[n].append(s)
+        trial_numbers_union: list[int] = []
+        value_states: list[_ValueState] = []
+        value_means: list[float] = []
+        value_stds: list[float] = []
+        for i in range(max_num_trial):
+            if len(states[i]) > 0 and _ValueState.Feasible in states[i]:
+                value_states.append(_ValueState.Feasible)
+                trial_numbers_union.append(i)
+                value_means.append(np.mean(values[i]).item())
+                value_stds.append(np.std(values[i]).item())
             else:
-                for n, v, s in zip(trial_numbers, values_info.values, values_info.states):
-                    if s == _ValueState.Feasible and not math.isinf(v):
-                        values[n].append(v)
-                    states[n].append(s)
-        value_states = [
-            _ValueState.Feasible
-            if len(s) > 0 and _ValueState.Feasible in s
-            else _ValueState.Infeasible
-            for s in states
-        ]
-        trial_numbers_union = [
-            i
-            for i in range(max_num_trial)
-            if len(values[i]) > 0 and value_states[i] == _ValueState.Feasible
-        ]
-        value_means = [
-            np.mean(v).item()
-            for v, f in zip(values, value_states)
-            if len(v) > 0 and f == _ValueState.Feasible
-        ]
-        value_stds = [
-            np.std(v).item()
-            for v, f in zip(values, value_states)
-            if len(v) > 0 and f == _ValueState.Feasible
-        ]
+                value_states.append(_ValueState.Infeasible)
         return trial_numbers_union, _ValuesInfo(value_means, value_stds, label_name, value_states)
 
     eb_trial_numbers, eb_values_info = _aggregate(target_name, False)
