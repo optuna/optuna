@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from collections import Counter
-from typing import Sequence
+from collections.abc import Callable
+from collections.abc import Sequence
 from unittest.mock import MagicMock
 from unittest.mock import patch
 import warnings
@@ -27,6 +28,7 @@ from optuna.samplers.nsgaii import SPXCrossover
 from optuna.samplers.nsgaii import UNDXCrossover
 from optuna.samplers.nsgaii import UniformCrossover
 from optuna.samplers.nsgaii import VSBXCrossover
+from optuna.samplers.nsgaii._sampler import _GENERATION_KEY
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 
@@ -214,6 +216,31 @@ def test_constraints_func_experimental_warning() -> None:
 def test_child_generation_strategy_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         NSGAIIISampler(child_generation_strategy=lambda study, search_space, parent_population: {})
+
+
+def test_sample_relative() -> None:
+    n_params = 2
+
+    def objective(trial: optuna.Trial) -> list[float]:
+        xs = [trial.suggest_float(f"x{dim}", -10, 10) for dim in range(n_params)]
+        return xs
+
+    mock_func = MagicMock(spec=Callable, return_value={"x0": 0.0, "x1": 1.1})
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        study = optuna.create_study(
+            sampler=NSGAIIISampler(population_size=2, child_generation_strategy=mock_func),
+            directions=["minimize", "minimize"],
+        )
+    study.optimize(objective, n_trials=3)
+    assert mock_func.call_count == 1
+    for i, trial in enumerate(study.get_trials()):
+        if i < 2:
+            assert trial.system_attrs[_GENERATION_KEY] == 0
+        elif i == 2:
+            assert trial.system_attrs[_GENERATION_KEY] == 1
+            assert trial.params == {"x0": 0.0, "x1": 1.1}
+            assert trial.values == [0.0, 1.1]
 
 
 def test_call_after_trial_of_random_sampler() -> None:
