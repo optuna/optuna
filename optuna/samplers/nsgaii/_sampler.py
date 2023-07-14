@@ -370,7 +370,8 @@ def _calc_crowding_distance(population: list[FrozenTrial]) -> defaultdict[int, f
     for i in range(len(population[0].values)):
         population.sort(key=lambda x: x.values[i])
 
-        # If population have the same values[i], ignore that value.
+        # If all trials in population have the same value in the i-th dimension, ignore the
+        # objective dimension since it does not make difference.
         if population[0].values[i] == population[-1].values[i]:
             continue
 
