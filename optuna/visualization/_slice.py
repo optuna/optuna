@@ -5,6 +5,8 @@ from typing import Callable
 from typing import cast
 from typing import NamedTuple
 
+from optuna.distributions import CategoricalChoiceType
+from optuna.distributions import CategoricalDistribution
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
@@ -13,7 +15,6 @@ from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _check_plot_args
 from optuna.visualization._utils import _filter_nonfinite
 from optuna.visualization._utils import _is_log_scale
-from optuna.visualization._utils import _is_numerical
 
 
 if _imports.is_successful():
@@ -32,6 +33,7 @@ class _SliceSubplotInfo(NamedTuple):
     trial_numbers: list[int]
     is_log: bool
     is_numerical: bool
+    x_labels: tuple[CategoricalChoiceType, ...] | None
 
 
 class _SlicePlotInfo(NamedTuple):
@@ -45,6 +47,7 @@ def _get_slice_subplot_info(
     target: Callable[[FrozenTrial], float] | None,
     log_scale: bool,
     numerical: bool,
+    x_labels: tuple[CategoricalChoiceType, ...] | None,
 ) -> _SliceSubplotInfo:
     if target is None:
 
@@ -60,6 +63,7 @@ def _get_slice_subplot_info(
         trial_numbers=[t.number for t in trials if param in t.params],
         is_log=log_scale,
         is_numerical=numerical,
+        x_labels=x_labels,
     )
 
 
@@ -80,6 +84,18 @@ def _get_slice_plot_info(
         return _SlicePlotInfo(target_name, [])
 
     all_params = {p_name for t in trials for p_name in t.params.keys()}
+
+    distributions = {}
+    for trial in trials:
+        for param_name, distribution in trial.distributions.items():
+            if param_name not in distributions:
+                distributions[param_name] = distribution
+
+    x_labels = {}
+    for param_name, distribution in distributions.items():
+        if isinstance(distribution, CategoricalDistribution):
+            x_labels[param_name] = distribution.choices
+
     if params is None:
         sorted_params = sorted(all_params)
     else:
@@ -96,7 +112,8 @@ def _get_slice_plot_info(
                 param=param,
                 target=target,
                 log_scale=_is_log_scale(trials, param),
-                numerical=_is_numerical(trials, param),
+                numerical=not isinstance(distributions[param], CategoricalDistribution),
+                x_labels=x_labels.get(param),
             )
             for param in sorted_params
         ],
@@ -167,7 +184,11 @@ def _get_slice_plot(info: _SlicePlotInfo) -> "go.Figure":
         figure = go.Figure(data=[_generate_slice_subplot(info.subplots[0])], layout=layout)
         figure.update_xaxes(title_text=info.subplots[0].param_name)
         figure.update_yaxes(title_text=info.target_name)
-        if info.subplots[0].is_log:
+        if not info.subplots[0].is_numerical:
+            figure.update_xaxes(
+                type="category", categoryorder="array", categoryarray=info.subplots[0].x_labels
+            )
+        elif info.subplots[0].is_log:
             figure.update_xaxes(type="log")
     else:
         figure = make_subplots(rows=1, cols=len(info.subplots), shared_yaxes=True)
@@ -182,7 +203,15 @@ def _get_slice_plot(info: _SlicePlotInfo) -> "go.Figure":
             figure.update_xaxes(title_text=subplot_info.param_name, row=1, col=column_index)
             if column_index == 1:
                 figure.update_yaxes(title_text=info.target_name, row=1, col=column_index)
-            if subplot_info.is_log:
+            if not subplot_info.is_numerical:
+                figure.update_xaxes(
+                    type="category",
+                    categoryorder="array",
+                    categoryarray=subplot_info.x_labels,
+                    row=1,
+                    col=column_index,
+                )
+            elif subplot_info.is_log:
                 figure.update_xaxes(type="log", row=1, col=column_index)
         if len(info.subplots) > 3:
             # Ensure that each subplot has a minimum width without relying on autusizing.

@@ -16,14 +16,14 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-import pkg_resources
 import warnings
 
 import plotly.io as pio
 from sklearn.exceptions import ConvergenceWarning
 from sphinx_gallery.sorting import FileNameSortKey
 
-__version__ = pkg_resources.get_distribution("optuna").version
+import optuna
+
 
 # -- Project information -----------------------------------------------------
 
@@ -32,9 +32,9 @@ copyright = "2018, Optuna Contributors"
 author = "Optuna Contributors."
 
 # The short X.Y version
-version = __version__
+version = optuna.version.__version__
 # The full version, including alpha/beta/rc tags
-release = __version__
+release = optuna.version.__version__
 
 # -- General configuration ---------------------------------------------------
 
