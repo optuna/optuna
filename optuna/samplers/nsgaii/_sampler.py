@@ -6,7 +6,6 @@ from collections.abc import Sequence
 import hashlib
 import itertools
 from typing import Any
-from typing import cast
 import warnings
 
 import numpy as np
@@ -369,17 +368,13 @@ def _calc_crowding_distance(population: list[FrozenTrial]) -> defaultdict[int, f
         return manhattan_distances
 
     for i in range(len(population[0].values)):
-        population.sort(key=lambda x: cast(float, x.values[i]))
+        population.sort(key=lambda x: x.values[i])
 
         # If population have the same values[i], ignore that value.
         if population[0].values[i] == population[-1].values[i]:
             continue
 
-        vs = (
-            [-float("inf")]
-            + [cast(list[float], population[j].values)[i] for j in range(len(population))]
-            + [float("inf")]
-        )
+        vs = [-float("inf")] + [trial.values[i] for trial in population] + [float("inf")]
 
         # Smallest finite value.
         v_min = next(x for x in vs if x != -float("inf"))
