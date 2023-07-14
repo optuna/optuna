@@ -4,7 +4,6 @@ import decimal
 import json
 from numbers import Real
 from typing import Any
-from typing import Callable
 from typing import cast
 from typing import Dict
 from typing import Sequence
