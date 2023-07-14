@@ -35,6 +35,7 @@ from optuna.samplers.nsgaii._child_generation_strategy import NSGAIIChildGenerat
 from optuna.samplers.nsgaii._crossover import _inlined_categorical_uniform_crossover
 from optuna.samplers.nsgaii._elite_population_selection_strategy import _constrained_dominates
 from optuna.samplers.nsgaii._sampler import _fast_non_dominated_sort
+from optuna.samplers.nsgaii._sampler import _GENERATION_KEY
 from optuna.samplers.nsgaii._sampler import _validate_constraints
 from optuna.study._multi_objective import _dominates
 from optuna.study._study_direction import StudyDirection
@@ -587,20 +588,23 @@ def test_child_generation_strategy_invalid_value() -> None:
             crossover_prob=0.9,
             swapping_prob=0.5,
         )
-    with pytest.raises(ValueError):
+        assert str(error) == mutation_prob_err_msg
+    with pytest.raises(ValueError) as error:
         NSGAIIChildGenerationStrategy(
             mutation_prob=-0.2,
             crossover=UniformCrossover(),
             crossover_prob=0.9,
             swapping_prob=0.5,
         )
-    with pytest.raises(ValueError):
+        assert str(error) == mutation_prob_err_msg
+    with pytest.raises(ValueError) as error:
         NSGAIIChildGenerationStrategy(
             crossover_prob=1.2,
             crossover=UniformCrossover(),
             swapping_prob=0.5,
         )
-    with pytest.raises(ValueError):
+        assert str(error) == crossover_prob_err_msg
+    with pytest.raises(ValueError) as error:
         NSGAIIChildGenerationStrategy(
             crossover_prob=-0.2,
             crossover=UniformCrossover(),
@@ -629,13 +633,102 @@ def test_child_generation_strategy_invalid_value() -> None:
         )
 
 
-def test_child_generation_strategy() -> None:
-    NSGAIIChildGenerationStrategy(
+@pytest.mark.parametrize(
+    "mutation_prob,child_params",
+    [(0.0, {"x": 1.0, "y": 0.0}), (1.0, {})],
+)
+def test_child_generation_strategy_mutation_prob(
+    mutation_prob: int, child_params: dict[str, float]
+) -> None:
+    child_generation_strategy = NSGAIIChildGenerationStrategy(
         crossover_prob=0.0,
+        crossover=UniformCrossover(),
+        mutation_prob=mutation_prob,
+        swapping_prob=0.5,
+        seed=1,
+    )
+    study = MagicMock(spec=optuna.study.Study)
+    search_space = MagicMock(spec=dict)
+    search_space.keys.return_value = ["x", "y"]
+    parent_population = [
+        optuna.trial.create_trial(
+            params={"x": 1.0, "y": 0},
+            distributions={
+                "x": FloatDistribution(0, 10),
+                "y": CategoricalDistribution([-1, 0, 1]),
+            },
+            value=5.0,
+        )
+    ]
+    assert child_generation_strategy(study, search_space, parent_population) == child_params
+
+
+def test_sample_relative() -> None:
+    n_params = 2
+
+    def objective(trial: optuna.Trial) -> list[float]:
+        xs = [trial.suggest_float(f"x{dim}", -10, 10) for dim in range(n_params)]
+        return xs
+
+    mock_func = MagicMock(spec=Callable, return_value={"x0": 0.0, "x1": 1.1})
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        study = optuna.create_study(
+            sampler=NSGAIISampler(population_size=2, child_generation_strategy=mock_func),
+            directions=["minimize", "minimize"],
+        )
+    study.optimize(objective, n_trials=3)
+    assert mock_func.call_count == 1
+    for i, trial in enumerate(study.get_trials()):
+        if i < 2:
+            assert trial.system_attrs[_GENERATION_KEY] == 0
+        elif i == 2:
+            assert trial.system_attrs[_GENERATION_KEY] == 1
+            assert trial.params == {"x0": 0.0, "x1": 1.1}
+            assert trial.values == [0.0, 1.1]
+
+
+@patch(
+    "optuna.samplers.nsgaii._child_generation_strategy.perform_crossover",
+    return_value={"x": 3.0, "y": 2.0},
+)
+def test_child_generation_strategy_crossover_prob(mock_func: MagicMock) -> None:
+    study = MagicMock(spec=optuna.study.Study)
+    search_space = MagicMock(spec=dict)
+    search_space.keys.return_value = ["x", "y"]
+    parent_population = [
+        optuna.trial.create_trial(
+            params={"x": 1.0, "y": 0},
+            distributions={
+                "x": FloatDistribution(0, 10),
+                "y": CategoricalDistribution([-1, 0, 1]),
+            },
+            value=5.0,
+        )
+    ]
+    child_generation_strategy_always_not_crossover = NSGAIIChildGenerationStrategy(
+        crossover_prob=0.0,
+        crossover=UniformCrossover(),
+        mutation_prob=None,
+        swapping_prob=0.5,
+        seed=1,
+    )
+    assert child_generation_strategy_always_not_crossover(
+        study, search_space, parent_population
+    ) == {"x": 1.0}
+    assert mock_func.call_count == 0
+
+    child_generation_strategy_always_crossover = NSGAIIChildGenerationStrategy(
+        crossover_prob=1.0,
         crossover=UniformCrossover(),
         mutation_prob=0.0,
         swapping_prob=0.5,
     )
+    assert child_generation_strategy_always_crossover(study, search_space, parent_population) == {
+        "x": 3.0,
+        "y": 2.0,
+    }
+    assert mock_func.call_count == 1
 
 
 def test_call_after_trial_of_random_sampler() -> None:
