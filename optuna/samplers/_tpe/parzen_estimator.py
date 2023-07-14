@@ -6,8 +6,8 @@ from typing import Optional
 import numpy as np
 
 from optuna.distributions import BaseDistribution
+from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
-from optuna.distributions import CustomDistanceDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.samplers._tpe.probability_distributions import _BatchedCategoricalDistributions
@@ -30,6 +30,10 @@ class _ParzenEstimatorParameters(
             ("consider_endpoints", bool),
             ("weights", Callable[[int], np.ndarray]),
             ("multivariate", bool),
+            (
+                "categorical_distance_func",
+                dict[str, Callable[[CategoricalChoiceType, CategoricalChoiceType], float]],
+            ),
         ],
     )
 ):
@@ -73,7 +77,7 @@ class _ParzenEstimator:
             weights=weights,
             distributions=[
                 self._calculate_distributions(
-                    transformed_observations[:, i], search_space[param], parameters
+                    transformed_observations[:, i], param, search_space[param], parameters
                 )
                 for i, param in enumerate(search_space)
             ],
@@ -146,12 +150,13 @@ class _ParzenEstimator:
     def _calculate_distributions(
         self,
         transformed_observations: np.ndarray,
+        param_name: str,
         search_space: BaseDistribution,
         parameters: _ParzenEstimatorParameters,
     ) -> _BatchedDistributions:
         if isinstance(search_space, CategoricalDistribution):
             return self._calculate_categorical_distributions(
-                transformed_observations, search_space, parameters
+                transformed_observations, param_name, search_space, parameters
             )
         else:
             assert isinstance(search_space, (FloatDistribution, IntDistribution))
@@ -176,6 +181,7 @@ class _ParzenEstimator:
     def _calculate_categorical_distributions(
         self,
         observations: np.ndarray,
+        param_name: str,
         search_space: CategoricalDistribution,
         parameters: _ParzenEstimatorParameters,
     ) -> _BatchedDistributions:
@@ -187,13 +193,12 @@ class _ParzenEstimator:
             fill_value=parameters.prior_weight / (len(observations) + consider_prior),
         )
 
-        if isinstance(search_space, CustomDistanceDistribution):
+        if param_name in parameters.categorical_distance_func:
+            dist_func = parameters.categorical_distance_func[param_name]
             SIGMA = 1.0
             for i, observation in enumerate(observations.astype(int)):
                 dists = [
-                    search_space.dist_func(
-                        search_space.choices[observation], search_space.choices[j]
-                    )
+                    dist_func(search_space.choices[observation], search_space.choices[j])
                     for j in range(len(search_space.choices))
                 ]
                 prob = np.exp(-(np.array(dists) ** 2) / SIGMA)

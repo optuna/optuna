@@ -15,6 +15,7 @@ import numpy as np
 from optuna._hypervolume import WFG
 from optuna._hypervolume.hssp import _solve_hssp
 from optuna.distributions import BaseDistribution
+from optuna.distributions import CategoricalChoiceType
 from optuna.exceptions import ExperimentalWarning
 from optuna.logging import get_logger
 from optuna.samplers._base import _CONSTRAINTS_KEY
@@ -247,6 +248,9 @@ class TPESampler(BaseSampler):
         warn_independent_sampling: bool = True,
         constant_liar: bool = False,
         constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
+        categorical_distance_func: Optional[
+            dict[str, Callable[[CategoricalChoiceType, CategoricalChoiceType], float]]
+        ] = None,
     ) -> None:
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
             consider_prior,
@@ -255,6 +259,7 @@ class TPESampler(BaseSampler):
             consider_endpoints,
             weights,
             multivariate,
+            categorical_distance_func or {},
         )
         self._prior_weight = prior_weight
         self._n_startup_trials = n_startup_trials

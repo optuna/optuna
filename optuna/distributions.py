@@ -565,16 +565,6 @@ class CategoricalDistribution(BaseDistribution):
     __hash__ = BaseDistribution.__hash__
 
 
-class CustomDistanceDistribution(CategoricalDistribution):
-    def __init__(
-        self,
-        choices: Sequence[CategoricalChoiceType],
-        dist_func: Callable[[CategoricalChoiceType, CategoricalChoiceType], float],
-    ):
-        super().__init__(choices)
-        self.dist_func = dist_func
-
-
 DISTRIBUTION_CLASSES = (
     IntDistribution,
     IntLogUniformDistribution,
@@ -583,7 +573,6 @@ DISTRIBUTION_CLASSES = (
     UniformDistribution,
     LogUniformDistribution,
     DiscreteUniformDistribution,
-    CustomDistanceDistribution,
     CategoricalDistribution,
 )
 
@@ -643,10 +632,7 @@ def distribution_to_json(dist: BaseDistribution) -> str:
 
     """
 
-    attributes = dist._asdict()
-    if isinstance(dist, CustomDistanceDistribution):
-        attributes["dist_func"] = None
-    return json.dumps({"name": dist.__class__.__name__, "attributes": attributes})
+    return json.dumps({"name": dist.__class__.__name__, "attributes": dist._asdict()})
 
 
 def check_distribution_compatibility(
