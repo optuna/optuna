@@ -302,7 +302,7 @@ class _OptunaObjectiveCV(_OptunaObjective):
     def _get_cv_scores(self, cv_results: Dict[str, List[float]]) -> List[float]:
         metric = self._get_metric_for_objective()
         metric_key = f"{metric}-mean"
-        # key name begins with "valid " after v4.0.0.
+        # The prefix "valid " is added to metric name since LightGBM v4.0.0.
         val_scores = (
             cv_results[metric_key]
             if metric_key in cv_results
