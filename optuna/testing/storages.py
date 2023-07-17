@@ -4,8 +4,6 @@ import sys
 from types import TracebackType
 from typing import Any
 from typing import IO
-from typing import Optional
-from typing import Union
 
 import fakeredis
 import pytest
@@ -51,18 +49,18 @@ class StorageSupplier:
     def __init__(self, storage_specifier: str, **kwargs: Any) -> None:
         self.storage_specifier = storage_specifier
         self.extra_args = kwargs
-        self.dask_client: Optional["distributed.Client"] = None
+        self.dask_client: "distributed.Client" | None = None
         self.tempfile: IO[Any] | None = None
 
     def __enter__(
         self,
-    ) -> Union[
-        optuna.storages.InMemoryStorage,
-        optuna.storages._CachedStorage,
-        optuna.storages.RDBStorage,
-        optuna.storages.JournalStorage,
-        "optuna.integration.DaskStorage",
-    ]:
+    ) -> (
+        optuna.storages.InMemoryStorage
+        | optuna.storages._CachedStorage
+        | optuna.storages.RDBStorage
+        | optuna.storages.JournalStorage
+        | "optuna.integration.DaskStorage"
+    ):
         if self.storage_specifier == "inmemory":
             if len(self.extra_args) > 0:
                 raise ValueError("InMemoryStorage does not accept any arguments!")
