@@ -1,6 +1,7 @@
 from optuna.visualization import matplotlib
 from optuna.visualization._contour import plot_contour
 from optuna.visualization._edf import plot_edf
+from optuna.visualization._hypervolume_history import plot_hypervolume_history
 from optuna.visualization._intermediate_values import plot_intermediate_values
 from optuna.visualization._optimization_history import plot_optimization_history
 from optuna.visualization._parallel_coordinate import plot_parallel_coordinate
@@ -18,6 +19,7 @@ __all__ = [
     "matplotlib",
     "plot_contour",
     "plot_edf",
+    "plot_hypervolume_history",
     "plot_intermediate_values",
     "plot_optimization_history",
     "plot_parallel_coordinate",

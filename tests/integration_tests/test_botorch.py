@@ -5,6 +5,8 @@ from typing import Tuple
 from unittest.mock import patch
 import warnings
 
+import botorch
+from packaging import version
 import pytest
 
 import optuna
@@ -32,6 +34,9 @@ pytestmark = pytest.mark.integration
 
 @pytest.mark.parametrize("n_objectives", [1, 2, 4])
 def test_botorch_candidates_func_none(n_objectives: int) -> None:
+    if n_objectives == 1 and version.parse(botorch.version.version) < version.parse("0.8.1"):
+        pytest.skip("botorch >=0.8.1 is required for logei_candidates_func.")
+
     n_trials = 3
     n_startup_trials = 2
 
@@ -46,7 +51,7 @@ def test_botorch_candidates_func_none(n_objectives: int) -> None:
 
     # TODO(hvy): Do not check for the correct candidates function using private APIs.
     if n_objectives == 1:
-        assert sampler._candidates_func is integration.botorch.qei_candidates_func
+        assert sampler._candidates_func is integration.botorch.logei_candidates_func
     elif n_objectives == 2:
         assert sampler._candidates_func is integration.botorch.qehvi_candidates_func
     elif n_objectives == 4:
@@ -89,7 +94,9 @@ def test_botorch_candidates_func() -> None:
 @pytest.mark.parametrize(
     "candidates_func, n_objectives",
     [
+        (integration.botorch.logei_candidates_func, 1),
         (integration.botorch.qei_candidates_func, 1),
+        (integration.botorch.qnei_candidates_func, 1),
         (integration.botorch.qehvi_candidates_func, 2),
         (integration.botorch.qparego_candidates_func, 4),
         (integration.botorch.qnehvi_candidates_func, 2),
@@ -97,6 +104,11 @@ def test_botorch_candidates_func() -> None:
     ],
 )
 def test_botorch_specify_candidates_func(candidates_func: Any, n_objectives: int) -> None:
+    if candidates_func == integration.botorch.logei_candidates_func and version.parse(
+        botorch.version.version
+    ) < version.parse("0.8.1"):
+        pytest.skip("LogExpectedImprovement is not available in botorch <0.8.1.")
+
     n_trials = 4
     n_startup_trials = 2
 

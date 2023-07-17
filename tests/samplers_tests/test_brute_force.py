@@ -275,3 +275,18 @@ def test_study_optimize_with_nonconstant_search_space() -> None:
     )
     with pytest.raises(ValueError):
         study.optimize(objective_decreasing_variable, n_trials=10)
+
+
+def test_study_optimize_with_failed_trials() -> None:
+    def objective(trial: Trial) -> float:
+        x = trial.suggest_int("x", 0, 99)  # NOQA[F811]
+        return np.nan
+
+    study = optuna.create_study(sampler=samplers.BruteForceSampler())
+    study.optimize(objective, n_trials=100)
+
+    expected_suggested_values = [{"x": i} for i in range(100)]
+    all_suggested_values = [t.params for t in study.trials]
+    assert len(all_suggested_values) == len(expected_suggested_values)
+    for a in expected_suggested_values:
+        assert a in all_suggested_values
