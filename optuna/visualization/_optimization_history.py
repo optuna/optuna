@@ -143,7 +143,10 @@ def _get_optimization_history_info_list(
                 values_info = best_values_info
             for n, v, s in zip(trial_numbers, values_info.values, values_info.states):
                 if not math.isinf(v):
-                    values[n].append(v)
+                    if not use_best_value and s == _ValueState.Feasible:
+                        values[n].append(v)
+                    elif use_best_value:
+                        values[n].append(v)
                 states[n].append(s)
         trial_numbers_union: list[int] = []
         value_states: list[_ValueState] = []
