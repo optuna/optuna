@@ -301,7 +301,7 @@ class CmaEsSampler(BaseSampler):
                 ExperimentalWarning,
             )
 
-        if self.lr_adapt:
+        if self._lr_adapt:
             warnings.warn(
                 "`lr_adapt` option is an experimental feature."
                 " The interface can change in the future.",
