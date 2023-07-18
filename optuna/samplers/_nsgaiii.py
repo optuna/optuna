@@ -100,14 +100,8 @@ class NSGAIIISampler(BaseSampler):
     ) -> None:
         # TODO(ohta): Reconsider the default value of each parameter.
 
-        if not isinstance(population_size, int):
-            raise TypeError("`population_size` must be an integer value.")
-
         if population_size < 2:
             raise ValueError("`population_size` must be greater than or equal to 2.")
-
-        if not isinstance(population_size, int):
-            raise TypeError("`population_size` must be an integer value.")
 
         if constraints_func is not None:
             warnings.warn(

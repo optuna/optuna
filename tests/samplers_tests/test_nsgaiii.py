@@ -61,10 +61,6 @@ def test_population_size() -> None:
         # Less than 2.
         NSGAIIISampler(population_size=1)
 
-    with pytest.raises(TypeError):
-        # Not an integer.
-        NSGAIIISampler(population_size=2.5)  # type: ignore[arg-type]
-
     with pytest.raises(ValueError):
         mock_crossover = MagicMock(spec=BaseCrossover)
         mock_crossover.configure_mock(n_parents=3)
