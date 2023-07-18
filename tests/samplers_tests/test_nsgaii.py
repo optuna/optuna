@@ -574,53 +574,44 @@ def _create_frozen_trial(
 
 
 def test_child_generation_strategy_invalid_value() -> None:
-    mutation_prob_err_msg = "The value of `mutation_prob` must be in the range [0, 1]."
-    crossover_prob_err_msg = "The value of `crossover_prob` must be in the range [0, 1]."
-    swapping_prob_err_msg = "The value of `swapping_prob` must be in the range [0, 1]."
-    with pytest.raises(ValueError) as error:
+    with pytest.raises(ValueError):
         NSGAIIChildGenerationStrategy(
             mutation_prob=1.2,
             crossover=UniformCrossover(),
             crossover_prob=0.9,
             swapping_prob=0.5,
         )
-        assert str(error) == mutation_prob_err_msg
-    with pytest.raises(ValueError) as error:
+    with pytest.raises(ValueError):
         NSGAIIChildGenerationStrategy(
             mutation_prob=-0.2,
             crossover=UniformCrossover(),
             crossover_prob=0.9,
             swapping_prob=0.5,
         )
-        assert str(error) == mutation_prob_err_msg
-    with pytest.raises(ValueError) as error:
+    with pytest.raises(ValueError):
         NSGAIIChildGenerationStrategy(
             crossover_prob=1.2,
             crossover=UniformCrossover(),
             swapping_prob=0.5,
         )
-        assert str(error) == crossover_prob_err_msg
-    with pytest.raises(ValueError) as error:
+    with pytest.raises(ValueError):
         NSGAIIChildGenerationStrategy(
             crossover_prob=-0.2,
             crossover=UniformCrossover(),
             swapping_prob=0.5,
         )
-        assert str(error) == crossover_prob_err_msg
-    with pytest.raises(ValueError) as error:
+    with pytest.raises(ValueError):
         NSGAIIChildGenerationStrategy(
             crossover_prob=0.9,
             crossover=UniformCrossover(),
             swapping_prob=1.2,
         )
-        assert str(error) == swapping_prob_err_msg
-    with pytest.raises(ValueError) as error:
+    with pytest.raises(ValueError):
         NSGAIIChildGenerationStrategy(
             crossover_prob=0.9,
             crossover=UniformCrossover(),
             swapping_prob=-0.2,
         )
-        assert str(error) == swapping_prob_err_msg
     with pytest.raises(ValueError):
         NSGAIIChildGenerationStrategy(
             crossover_prob=0.9,
