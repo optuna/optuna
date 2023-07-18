@@ -20,7 +20,7 @@ from optuna.samplers.nsgaii._after_trial_strategy import NSGAIIAfterTrialStrateg
 from optuna.samplers.nsgaii._child_generation_strategy import NSGAIIChildGenerationStrategy
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.samplers.nsgaii._crossovers._uniform import UniformCrossover
-from optuna.samplers.nsgaii._elite_population_selection_strategy import _constrained_dominates
+from optuna.samplers.nsgaii._dominates_function import _constrained_dominates
 from optuna.search_space import IntersectionSearchSpace
 from optuna.study import Study
 from optuna.study._multi_objective import _dominates

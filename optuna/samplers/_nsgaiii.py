@@ -22,7 +22,7 @@ from optuna.samplers.nsgaii._after_trial_strategy import NSGAIIAfterTrialStrateg
 from optuna.samplers.nsgaii._child_generation_strategy import NSGAIIChildGenerationStrategy
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.samplers.nsgaii._crossovers._uniform import UniformCrossover
-from optuna.samplers.nsgaii._elite_population_selection_strategy import _constrained_dominates
+from optuna.samplers.nsgaii._dominates_function import _constrained_dominates
 from optuna.samplers.nsgaii._sampler import _fast_non_dominated_sort
 from optuna.samplers.nsgaii._sampler import _validate_constraints
 from optuna.study import Study
