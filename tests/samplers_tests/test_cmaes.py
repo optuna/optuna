@@ -147,7 +147,6 @@ def test_init_cmaes_opts_lr_adapt(popsize: Optional[int]) -> None:
         assert actual_kwargs["population_size"] == expected_popsize
 
 
-
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 @pytest.mark.parametrize("with_margin", [False, True])
 def test_warm_starting_cmaes(with_margin: bool) -> None:
