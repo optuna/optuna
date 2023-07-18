@@ -120,8 +120,8 @@ def _get_optimization_history_plot(
                 fmt="o",
                 color="tab:blue",
             )
-            infeasible_trial_numbers = []
-            infeasible_trial_values = []
+            infeasible_trial_numbers: list[int] = []
+            infeasible_trial_values: list[float] = []
         else:
             feasible_trial_numbers = [
                 n for n, s in zip(trial_numbers, values_info.states) if s == _ValueState.Feasible
