@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Callable
+from collections.abc import Sequence
 import hashlib
 import itertools
 import math
 from typing import Any
-from typing import Callable
-from typing import Sequence
 import warnings
 
 import numpy as np
@@ -15,15 +15,16 @@ import optuna
 from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
-from optuna.samplers._base import _process_constraints_after_trial
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._search_space import IntersectionSearchSpace
+from optuna.samplers.nsgaii._after_trial_strategy import NSGAIIAfterTrialStrategy
 from optuna.samplers.nsgaii._crossover import perform_crossover
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.samplers.nsgaii._crossovers._uniform import UniformCrossover
 from optuna.samplers.nsgaii._sampler import _constrained_dominates
 from optuna.samplers.nsgaii._sampler import _fast_non_dominated_sort
+from optuna.samplers.nsgaii._sampler import _validate_constraints
 from optuna.study import Study
 from optuna.study._multi_objective import _dominates
 from optuna.trial import FrozenTrial
@@ -85,6 +86,10 @@ class NSGAIIISampler(BaseSampler):
         swapping_prob: float = 0.5,
         seed: int | None = None,
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
+        after_trial_strategy: Callable[
+            [Study, FrozenTrial, TrialState, Sequence[float] | None], None
+        ]
+        | None = None,
         reference_points: np.ndarray | None = None,
         dividing_parameter: int = 3,
     ) -> None:
@@ -141,6 +146,9 @@ class NSGAIIISampler(BaseSampler):
         self._reference_points = reference_points
         self._dividing_parameter = dividing_parameter
         self._search_space = IntersectionSearchSpace()
+        self._after_trial_strategy = after_trial_strategy or NSGAIIAfterTrialStrategy(
+            constraints_func=constraints_func
+        )
 
     def reseed_rng(self) -> None:
         self._random_sampler.reseed_rng()
@@ -299,10 +307,11 @@ class NSGAIIISampler(BaseSampler):
     def _select_elite_population(
         self, study: Study, population: list[FrozenTrial]
     ) -> list[FrozenTrial]:
+        _validate_constraints(population, self._constraints_func)
+
+        dominates = _dominates if self._constraints_func is None else _constrained_dominates
+        population_per_rank = _fast_non_dominated_sort(population, study.directions, dominates)
         elite_population: list[FrozenTrial] = []
-        population_per_rank = _fast_non_dominated_sort(
-            population, study.directions, self._constraints_func
-        )
         for population in population_per_rank:
             if len(elite_population) + len(population) < self._population_size:
                 elite_population.extend(population)
@@ -352,8 +361,7 @@ class NSGAIIISampler(BaseSampler):
         values: Sequence[float] | None,
     ) -> None:
         assert state in [TrialState.COMPLETE, TrialState.FAIL, TrialState.PRUNED]
-        if self._constraints_func is not None:
-            _process_constraints_after_trial(self._constraints_func, study, trial, state)
+        self._after_trial_strategy(study, trial, state, values)
         self._random_sampler.after_trial(study, trial, state, values)
 
 

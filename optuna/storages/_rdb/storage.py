@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import defaultdict
 from contextlib import contextmanager
 import copy
@@ -863,6 +865,8 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         else:
             values = None
 
+        params = sorted(trial.params, key=lambda p: p.param_id)
+
         return FrozenTrial(
             number=trial.number,
             state=trial.state,
@@ -874,11 +878,11 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 p.param_name: distributions.json_to_distribution(
                     p.distribution_json
                 ).to_external_repr(p.param_value)
-                for p in trial.params
+                for p in params
             },
             distributions={
                 p.param_name: distributions.json_to_distribution(p.distribution_json)
-                for p in trial.params
+                for p in params
             },
             user_attrs={attr.key: json.loads(attr.value_json) for attr in trial.user_attributes},
             system_attrs={
