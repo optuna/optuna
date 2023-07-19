@@ -322,7 +322,8 @@ class CmaEsSampler(BaseSampler):
 
         if lr_adapt and (use_separable_cma or with_margin):
             raise ValueError(
-                "It is prohibited to pass `use_separable_cma` or `with_margin` argument when using `lr_adapt`."
+                "It is prohibited to pass `use_separable_cma` or `with_margin` argument when "
+                "using `lr_adapt`."
             )
 
         if restart_strategy not in (
