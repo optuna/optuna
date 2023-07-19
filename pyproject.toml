@@ -33,7 +33,7 @@ classifiers = [
 requires-python = ">=3.7"
 dependencies = [
   "alembic>=1.5.0",
-  "cmaes>=0.9.1",
+  "cmaes>=0.10.0",
   "colorlog",
   "numpy",
   "packaging>=20.0",
