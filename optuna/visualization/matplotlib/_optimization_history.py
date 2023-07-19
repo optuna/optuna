@@ -147,7 +147,6 @@ def _get_optimization_history_plot(
             ax.plot(
                 trial_numbers,
                 best_values_info.values,
-                marker="o",
                 color=cmap(3) if len(info_list) == 1 else cmap(2 * i + 1),
                 alpha=0.5,
                 label=best_values_info.label_name,
