@@ -704,7 +704,7 @@ class CmaEsSampler(BaseSampler):
             seed=self._cma_rng.randint(1, 2**31 - 2),
             n_max_resampling=10 * n_dimension,
             population_size=population_size,
-            lr_adapt=self._lr_adapt
+            lr_adapt=self._lr_adapt,
         )
 
     def sample_independent(
