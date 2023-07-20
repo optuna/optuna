@@ -34,9 +34,11 @@ from optuna.samplers.nsgaii._after_trial_strategy import NSGAIIAfterTrialStrateg
 from optuna.samplers.nsgaii._child_generation_strategy import NSGAIIChildGenerationStrategy
 from optuna.samplers.nsgaii._crossover import _inlined_categorical_uniform_crossover
 from optuna.samplers.nsgaii._dominates_function import _constrained_dominates
-from optuna.samplers.nsgaii._sampler import _fast_non_dominated_sort
+from optuna.samplers.nsgaii._dominates_function import _validate_constraints
+from optuna.samplers.nsgaii._elite_population_selection_strategy import _calc_crowding_distance
+from optuna.samplers.nsgaii._elite_population_selection_strategy import _crowding_distance_sort
+from optuna.samplers.nsgaii._elite_population_selection_strategy import _fast_non_dominated_sort
 from optuna.samplers.nsgaii._sampler import _GENERATION_KEY
-from optuna.samplers.nsgaii._sampler import _validate_constraints
 from optuna.study._multi_objective import _dominates
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -494,7 +496,7 @@ def test_fast_non_dominated_sort_empty(n_dims: int) -> None:
 )
 def test_calc_crowding_distance(values: list[list[float]], expected_dist: list[float]) -> None:
     trials = [_create_frozen_trial(i, value) for i, value in enumerate(values)]
-    crowding_dist = optuna.samplers.nsgaii._sampler._calc_crowding_distance(trials)
+    crowding_dist = _calc_crowding_distance(trials)
     for i in range(len(trials)):
         assert _nan_equal(crowding_dist[i], expected_dist[i]), i
 
@@ -512,8 +514,8 @@ def test_calc_crowding_distance(values: list[list[float]], expected_dist: list[f
 def test_crowding_distance_sort(values: list[list[float]]) -> None:
     """Checks that trials are sorted by the values of `_calc_crowding_distance`."""
     trials = [_create_frozen_trial(i, value) for i, value in enumerate(values)]
-    crowding_dist = optuna.samplers.nsgaii._sampler._calc_crowding_distance(trials)
-    optuna.samplers.nsgaii._sampler._crowding_distance_sort(trials)
+    crowding_dist = _calc_crowding_distance(trials)
+    _crowding_distance_sort(trials)
     sorted_dist = [crowding_dist[t.number] for t in trials]
     assert sorted_dist == sorted(sorted_dist, reverse=True)
 

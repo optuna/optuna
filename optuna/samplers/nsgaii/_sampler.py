@@ -4,7 +4,6 @@ from collections import defaultdict
 from collections.abc import Callable
 from collections.abc import Sequence
 import hashlib
-import itertools
 from typing import Any
 import warnings
 
@@ -13,17 +12,17 @@ import numpy as np
 import optuna
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
-from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
 from optuna.samplers.nsgaii._after_trial_strategy import NSGAIIAfterTrialStrategy
 from optuna.samplers.nsgaii._child_generation_strategy import NSGAIIChildGenerationStrategy
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.samplers.nsgaii._crossovers._uniform import UniformCrossover
-from optuna.samplers.nsgaii._dominates_function import _constrained_dominates
+from optuna.samplers.nsgaii._elite_population_selection_strategy import (
+    NSGAIIElitePopulationSelectionStrategy,
+)
 from optuna.search_space import IntersectionSearchSpace
 from optuna.study import Study
-from optuna.study._multi_objective import _dominates
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -119,6 +118,10 @@ class NSGAIISampler(BaseSampler):
         swapping_prob: float = 0.5,
         seed: int | None = None,
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
+        elite_population_selection_strategy: Callable[
+            [Study, list[FrozenTrial]], list[FrozenTrial]
+        ]
+        | None = None,
         child_generation_strategy: Callable[
             [Study, dict[str, BaseDistribution], list[FrozenTrial]], dict[str, Any]
         ]
@@ -153,6 +156,13 @@ class NSGAIISampler(BaseSampler):
                 ExperimentalWarning,
             )
 
+        if elite_population_selection_strategy is not None:
+            warnings.warn(
+                "The elite_population_selection_strategy option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
+
         if crossover is None:
             crossover = UniformCrossover(swapping_prob)
 
@@ -175,6 +185,13 @@ class NSGAIISampler(BaseSampler):
         self._rng = np.random.RandomState(seed)
         self._constraints_func = constraints_func
         self._search_space = IntersectionSearchSpace()
+
+        self._elite_population_selection_strategy = (
+            elite_population_selection_strategy
+            or NSGAIIElitePopulationSelectionStrategy(
+                population_size=population_size, constraints_func=constraints_func
+            )
+        )
         self._child_generation_strategy = (
             child_generation_strategy
             or NSGAIIChildGenerationStrategy(
@@ -297,7 +314,7 @@ class NSGAIISampler(BaseSampler):
                 population = [trials[n] for n in cached_population_numbers]
             else:
                 population.extend(parent_population)
-                population = self._select_elite_population(study, population)
+                population = self._elite_population_selection_strategy(study, population)
 
                 # To reduce the number of system attribute entries,
                 # we cache the population information only if there are no running trials
@@ -315,26 +332,6 @@ class NSGAIISampler(BaseSampler):
 
         return parent_generation, parent_population
 
-    def _select_elite_population(
-        self, study: Study, population: list[FrozenTrial]
-    ) -> list[FrozenTrial]:
-        _validate_constraints(population, self._constraints_func)
-
-        dominates = _dominates if self._constraints_func is None else _constrained_dominates
-        population_per_rank = _fast_non_dominated_sort(population, study.directions, dominates)
-
-        elite_population: list[FrozenTrial] = []
-        for population in population_per_rank:
-            if len(elite_population) + len(population) < self._population_size:
-                elite_population.extend(population)
-            else:
-                n = self._population_size - len(elite_population)
-                _crowding_distance_sort(population)
-                elite_population.extend(population[:n])
-                break
-
-        return elite_population
-
     def after_trial(
         self,
         study: Study,
@@ -345,112 +342,3 @@ class NSGAIISampler(BaseSampler):
         assert state in [TrialState.COMPLETE, TrialState.FAIL, TrialState.PRUNED]
         self._after_trial_strategy(study, trial, state, values)
         self._random_sampler.after_trial(study, trial, state, values)
-
-
-def _calc_crowding_distance(population: list[FrozenTrial]) -> defaultdict[int, float]:
-    """Calculates the crowding distance of population.
-
-    We define the crowding distance as the summation of the crowding distance of each dimension
-    of value calculated as follows:
-
-    * If all values in that dimension are the same, i.e., [1, 1, 1] or [inf, inf],
-      the crowding distances of all trials in that dimension are zero.
-    * Otherwise, the crowding distances of that dimension is the difference between
-      two nearest values besides that value, one above and one below, divided by the difference
-      between the maximal and minimal finite value of that dimension. Please note that:
-        * the nearest value below the minimum is considered to be -inf and the
-          nearest value above the maximum is considered to be inf, and
-        * inf - inf and (-inf) - (-inf) is considered to be zero.
-    """
-
-    manhattan_distances: defaultdict[int, float] = defaultdict(float)
-    if len(population) == 0:
-        return manhattan_distances
-
-    for i in range(len(population[0].values)):
-        population.sort(key=lambda x: x.values[i])
-
-        # If all trials in population have the same value in the i-th dimension, ignore the
-        # objective dimension since it does not make difference.
-        if population[0].values[i] == population[-1].values[i]:
-            continue
-
-        vs = [-float("inf")] + [trial.values[i] for trial in population] + [float("inf")]
-
-        # Smallest finite value.
-        v_min = next(x for x in vs if x != -float("inf"))
-
-        # Largest finite value.
-        v_max = next(x for x in reversed(vs) if x != float("inf"))
-
-        width = v_max - v_min
-        if width <= 0:
-            # width == 0 or width == -inf
-            width = 1.0
-
-        for j in range(len(population)):
-            # inf - inf and (-inf) - (-inf) is considered to be zero.
-            gap = 0.0 if vs[j] == vs[j + 2] else vs[j + 2] - vs[j]
-            manhattan_distances[population[j].number] += gap / width
-    return manhattan_distances
-
-
-def _crowding_distance_sort(population: list[FrozenTrial]) -> None:
-    manhattan_distances = _calc_crowding_distance(population)
-    population.sort(key=lambda x: manhattan_distances[x.number])
-    population.reverse()
-
-
-def _validate_constraints(
-    population: list[FrozenTrial],
-    constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
-) -> None:
-    if constraints_func is None:
-        return
-    for _trial in population:
-        _constraints = _trial.system_attrs.get(_CONSTRAINTS_KEY)
-        if _constraints is None:
-            continue
-        if np.any(np.isnan(np.array(_constraints))):
-            raise ValueError("NaN is not acceptable as constraint value.")
-
-
-def _fast_non_dominated_sort(
-    population: list[FrozenTrial],
-    directions: list[optuna.study.StudyDirection],
-    dominates: Callable[[FrozenTrial, FrozenTrial, list[optuna.study.StudyDirection]], bool],
-) -> list[list[FrozenTrial]]:
-    dominated_count: defaultdict[int, int] = defaultdict(int)
-    dominates_list = defaultdict(list)
-
-    for p, q in itertools.combinations(population, 2):
-        if dominates(p, q, directions):
-            dominates_list[p.number].append(q.number)
-            dominated_count[q.number] += 1
-        elif dominates(q, p, directions):
-            dominates_list[q.number].append(p.number)
-            dominated_count[p.number] += 1
-
-    population_per_rank = []
-    while population:
-        non_dominated_population = []
-        i = 0
-        while i < len(population):
-            if dominated_count[population[i].number] == 0:
-                individual = population[i]
-                if i == len(population) - 1:
-                    population.pop()
-                else:
-                    population[i] = population.pop()
-                non_dominated_population.append(individual)
-            else:
-                i += 1
-
-        for x in non_dominated_population:
-            for y in dominates_list[x.number]:
-                dominated_count[y] -= 1
-
-        assert non_dominated_population
-        population_per_rank.append(non_dominated_population)
-
-    return population_per_rank

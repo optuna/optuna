@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from collections.abc import Sequence
 import warnings
+
+import numpy as np
 
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study import StudyDirection
@@ -81,3 +84,17 @@ def _constrained_dominates(
     violation0 = sum(v for v in constraints0 if v > 0)
     violation1 = sum(v for v in constraints1 if v > 0)
     return violation0 < violation1
+
+
+def _validate_constraints(
+    population: list[FrozenTrial],
+    constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
+) -> None:
+    if constraints_func is None:
+        return
+    for _trial in population:
+        _constraints = _trial.system_attrs.get(_CONSTRAINTS_KEY)
+        if _constraints is None:
+            continue
+        if np.any(np.isnan(np.array(_constraints))):
+            raise ValueError("NaN is not acceptable as constraint value.")
