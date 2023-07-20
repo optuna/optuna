@@ -20,9 +20,6 @@ class NSGAIIElitePopulationSelectionStrategy:
         population_size: int,
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
     ) -> None:
-        if not isinstance(population_size, int):
-            raise TypeError("`population_size` must be an integer value.")
-
         if population_size < 2:
             raise ValueError("`population_size` must be greater than or equal to 2.")
 
@@ -42,10 +39,10 @@ class NSGAIIElitePopulationSelectionStrategy:
             A list of trials that are selected as elite population.
         """
         _validate_constraints(population, self._constraints_func)
-
-        elite_population: list[FrozenTrial] = []
         dominates = _dominates if self._constraints_func is None else _constrained_dominates
         population_per_rank = _fast_non_dominated_sort(population, study.directions, dominates)
+
+        elite_population: list[FrozenTrial] = []
         for population in population_per_rank:
             if len(elite_population) + len(population) < self._population_size:
                 elite_population.extend(population)
