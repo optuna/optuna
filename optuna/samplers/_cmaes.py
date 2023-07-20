@@ -218,6 +218,18 @@ class CmaEsSampler(BaseSampler):
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v3.1.0.
 
+        lr_adapt:
+            If this is :obj:`True`, CMA-ES with learning rate adaptation is used.
+            This algorithm focuses on working well on multimodal and/or noisy problems
+            with default settings.
+            Currently, this option cannot be used with ``use_separable_cma=True`` nor
+            ``with_margin=True``.
+
+            .. note::
+                Added in v3.3.0 or later, as an experimental feature.
+                The interface may change in newer versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v3.3.0.
+
         source_trials:
             This option is for Warm Starting CMA-ES, a method to transfer prior knowledge on
             similar HPO tasks through the initialization of CMA-ES. This method estimates a
