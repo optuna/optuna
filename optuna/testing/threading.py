@@ -1,14 +1,14 @@
+from __future__ import annotations
+
 import threading
 from typing import Any
 from typing import Callable
-from typing import Optional
-from typing import Tuple
 
 
 class _TestableThread(threading.Thread):
-    def __init__(self, target: Callable[..., Any], args: Tuple):
+    def __init__(self, target: Callable[..., Any], args: tuple):
         threading.Thread.__init__(self, target=target, args=args)
-        self.exc: Optional[BaseException] = None
+        self.exc: BaseException | None = None
 
     def run(self) -> None:
         try:
@@ -16,7 +16,7 @@ class _TestableThread(threading.Thread):
         except BaseException as e:
             self.exc = e
 
-    def join(self, timeout: Optional[float] = None) -> None:
+    def join(self, timeout: float | None = None) -> None:
         super(_TestableThread, self).join(timeout)
         if self.exc:
             raise self.exc
