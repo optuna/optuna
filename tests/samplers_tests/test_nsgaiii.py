@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections import Counter
-from collections.abc import Callable
 from collections.abc import Sequence
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -18,7 +17,6 @@ from optuna.samplers._nsgaiii import _associate_individuals_with_reference_point
 from optuna.samplers._nsgaiii import _COEF
 from optuna.samplers._nsgaiii import _filter_inf
 from optuna.samplers._nsgaiii import _generate_default_reference_point
-from optuna.samplers._nsgaiii import _GENERATION_KEY
 from optuna.samplers._nsgaiii import _normalize_objective_values
 from optuna.samplers._nsgaiii import _POPULATION_CACHE_KEY_PREFIX
 from optuna.samplers._nsgaiii import _preserve_niche_individuals
