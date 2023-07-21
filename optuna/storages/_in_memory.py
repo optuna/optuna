@@ -8,6 +8,7 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from typing import Union
 import uuid
 
 import optuna
@@ -306,7 +307,7 @@ class InMemoryStorage(BaseStorage):
                 self._studies[study_id].best_trial_id = trial_id
 
     def set_trial_intermediate_value(
-        self, trial_id: int, step: int, intermediate_value: float
+        self, trial_id: int, step: int, intermediate_value: Union[float, Sequence[float]]
     ) -> None:
         with self._lock:
             trial = self._get_trial(trial_id)
