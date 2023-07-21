@@ -13,7 +13,6 @@ import time
 from typing import Any
 from typing import cast
 from typing import List
-from typing import Optional
 from typing import Tuple
 from typing import Union
 import warnings
@@ -816,7 +815,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
         params: dict[str, Any],
         train_set: "lgb.Dataset",
         num_boost_round: int = 1000,
-        valid_sets: Optional["VALID_SET_TYPE"] = None,
+        valid_sets: "VALID_SET_TYPE" | None = None,
         valid_names: Any | None = None,
         fobj: Callable[..., Any] | None = None,
         feval: Callable[..., Any] | None = None,
@@ -987,9 +986,9 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         params: dict[str, Any],
         train_set: "lgb.Dataset",
         num_boost_round: int = 1000,
-        folds: Union[
-            Generator[tuple[int, int], None, None], Iterator[tuple[int, int]], "BaseCrossValidator"
-        ]
+        folds: Generator[tuple[int, int], None, None]
+        | Iterator[tuple[int, int]]
+        | "BaseCrossValidator"
         | None = None,
         nfold: int = 5,
         stratified: bool = True,
