@@ -74,39 +74,9 @@ jobs:
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
-        if [ ${{ matrix.python-version }} == 3.11 ]; then
-          pytest tests -m "integration" \
-            --ignore tests/integration_tests/test_botorch.py \
-            --ignore tests/integration_tests/test_fastaiv2.py \
-            --ignore tests/integration_tests/test_lightgbm.py \
-            --ignore tests/integration_tests/test_pytorch_distributed.py \
-            --ignore tests/integration_tests/test_pytorch_ignite.py \
-            --ignore tests/integration_tests/test_pytorch_lightning.py \
-            --ignore tests/integration_tests/test_shap.py \
-            --ignore tests/integration_tests/test_tensorboard.py \
-            --ignore tests/integration_tests/lightgbm_tuner_tests \
-            --ignore tests/importance_tests/test_init.py \
-            --ignore tests/samplers_tests/test_samplers.py
-        else
-          pytest tests -m "integration"
-        fi
+        pytest tests -m "integration"
 
     - name: Tests
       if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
       run: |
-        if [ ${{ matrix.python-version }} == 3.11 ]; then
-          pytest tests -m "integration and not slow" \
-            --ignore tests/integration_tests/test_botorch.py \
-            --ignore tests/integration_tests/test_fastaiv2.py \
-            --ignore tests/integration_tests/test_lightgbm.py \
-            --ignore tests/integration_tests/test_pytorch_distributed.py \
-            --ignore tests/integration_tests/test_pytorch_ignite.py \
-            --ignore tests/integration_tests/test_pytorch_lightning.py \
-            --ignore tests/integration_tests/test_shap.py \
-            --ignore tests/integration_tests/test_tensorboard.py \
-            --ignore tests/integration_tests/lightgbm_tuner_tests \
-            --ignore tests/importance_tests/test_init.py \
-            --ignore tests/samplers_tests/test_samplers.py
-        else
-          pytest tests -m "integration and not slow"
-        fi
+        pytest tests -m "integration"
