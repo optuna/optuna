@@ -1,16 +1,17 @@
+from __future__ import annotations
+
 import abc
+from collections.abc import Callable
+from collections.abc import Container
+from collections.abc import Generator
+from collections.abc import Iterator
 import copy
 import json
 import os
 import pickle
 import time
 from typing import Any
-from typing import Callable
 from typing import cast
-from typing import Container
-from typing import Dict
-from typing import Generator
-from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -64,8 +65,8 @@ _logger = optuna.logging.get_logger(__name__)
 class _BaseTuner:
     def __init__(
         self,
-        lgbm_params: Optional[Dict[str, Any]] = None,
-        lgbm_kwargs: Optional[Dict[str, Any]] = None,
+        lgbm_params: dict[str, Any] | None = None,
+        lgbm_kwargs: dict[str, Any] | None = None,
     ) -> None:
         # Handling alias metrics.
         if lgbm_params is not None:
@@ -92,7 +93,7 @@ class _BaseTuner:
 
     def _get_booster_best_score(self, booster: "lgb.Booster") -> float:
         metric = self._get_metric_for_objective()
-        valid_sets: Optional[VALID_SET_TYPE] = self.lgbm_kwargs.get("valid_sets")
+        valid_sets: VALID_SET_TYPE | None = self.lgbm_kwargs.get("valid_sets")
 
         if self.lgbm_kwargs.get("valid_names") is not None:
             if type(self.lgbm_kwargs["valid_names"]) is str:
@@ -155,14 +156,14 @@ class _OptunaObjective(_BaseTuner):
 
     def __init__(
         self,
-        target_param_names: List[str],
-        lgbm_params: Dict[str, Any],
+        target_param_names: list[str],
+        lgbm_params: dict[str, Any],
         train_set: "lgb.Dataset",
-        lgbm_kwargs: Dict[str, Any],
+        lgbm_kwargs: dict[str, Any],
         best_score: float,
         step_name: str,
-        model_dir: Optional[str],
-        pbar: Optional[tqdm.tqdm] = None,
+        model_dir: str | None,
+        pbar: tqdm.tqdm | None = None,
     ):
         self.target_param_names = target_param_names
         self.pbar = pbar
@@ -172,7 +173,7 @@ class _OptunaObjective(_BaseTuner):
 
         self.trial_count = 0
         self.best_score = best_score
-        self.best_booster_with_trial_number: Optional[Tuple["lgb.Booster", int]] = None
+        self.best_booster_with_trial_number: tuple["lgb.Booster", int] | None = None
         self.step_name = step_name
         self.model_dir = model_dir
 
@@ -279,14 +280,14 @@ class _OptunaObjective(_BaseTuner):
 class _OptunaObjectiveCV(_OptunaObjective):
     def __init__(
         self,
-        target_param_names: List[str],
-        lgbm_params: Dict[str, Any],
+        target_param_names: list[str],
+        lgbm_params: dict[str, Any],
         train_set: "lgb.Dataset",
-        lgbm_kwargs: Dict[str, Any],
+        lgbm_kwargs: dict[str, Any],
         best_score: float,
         step_name: str,
-        model_dir: Optional[str],
-        pbar: Optional[tqdm.tqdm] = None,
+        model_dir: str | None,
+        pbar: tqdm.tqdm | None = None,
     ):
         super().__init__(
             target_param_names,
@@ -299,7 +300,7 @@ class _OptunaObjectiveCV(_OptunaObjective):
             pbar=pbar,
         )
 
-    def _get_cv_scores(self, cv_results: Dict[str, List[float]]) -> List[float]:
+    def _get_cv_scores(self, cv_results: dict[str, list[float]]) -> list[float]:
         metric = self._get_metric_for_objective()
         metric_key = f"{metric}-mean"
         # The prefix "valid " is added to metric name since LightGBM v4.0.0.
@@ -351,25 +352,25 @@ class _LightGBMBaseTuner(_BaseTuner):
 
     def __init__(
         self,
-        params: Dict[str, Any],
+        params: dict[str, Any],
         train_set: "lgb.Dataset",
-        callbacks: List[Callable[..., Any]],
+        callbacks: list[Callable[..., Any]],
         num_boost_round: int = 1000,
-        fobj: Optional[Callable[..., Any]] = None,
-        feval: Optional[Callable[..., Any]] = None,
+        fobj: Callable[..., Any] | None = None,
+        feval: Callable[..., Any] | None = None,
         feature_name: str = "auto",
         categorical_feature: str = "auto",
-        early_stopping_rounds: Optional[int] = None,
-        verbose_eval: Optional[Union[bool, int, str]] = None,
-        time_budget: Optional[int] = None,
-        sample_size: Optional[int] = None,
-        study: Optional[optuna.study.Study] = None,
-        optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
-        verbosity: Optional[int] = None,
+        early_stopping_rounds: int | None = None,
+        verbose_eval: bool | int | str | None = None,
+        time_budget: int | None = None,
+        sample_size: int | None = None,
+        study: optuna.study.Study | None = None,
+        optuna_callbacks: list[Callable[[Study, FrozenTrial], None]] | None = None,
+        verbosity: int | None = None,
         show_progress_bar: bool = True,
-        model_dir: Optional[str] = None,
+        model_dir: str | None = None,
         *,
-        optuna_seed: Optional[int] = None,
+        optuna_seed: int | None = None,
     ) -> None:
         _imports.check()
 
@@ -395,7 +396,7 @@ class _LightGBMBaseTuner(_BaseTuner):
             )
 
         args = [params, train_set]
-        kwargs: Dict[str, Any] = dict(
+        kwargs: dict[str, Any] = dict(
             num_boost_round=num_boost_round,
             feval=feval,
             feature_name=feature_name,
@@ -407,11 +408,9 @@ class _LightGBMBaseTuner(_BaseTuner):
             show_progress_bar=show_progress_bar,
         )
         self._parse_args(*args, **kwargs)
-        self._start_time: Optional[float] = None
+        self._start_time: float | None = None
         self._optuna_callbacks = optuna_callbacks
-        self._best_booster_with_trial_number: Optional[
-            Tuple[Union[lgb.Booster, lgb.CVBooster], int]
-        ] = None
+        self._best_booster_with_trial_number: tuple[lgb.Booster | lgb.CVBooster, int] | None = None
         self._model_dir = model_dir
         self._optuna_seed = optuna_seed
 
@@ -468,7 +467,7 @@ class _LightGBMBaseTuner(_BaseTuner):
             return -np.inf if self.higher_is_better() else np.inf
 
     @property
-    def best_params(self) -> Dict[str, Any]:
+    def best_params(self) -> dict[str, Any]:
         """Return parameters of the best booster."""
         try:
             return json.loads(self.study.best_trial.system_attrs[_LGBM_PARAMS_KEY])
@@ -623,7 +622,7 @@ class _LightGBMBaseTuner(_BaseTuner):
 
     def _tune_params(
         self,
-        target_param_names: List[str],
+        target_param_names: list[str],
         n_trials: int,
         sampler: optuna.samplers.BaseSampler,
         step_name: str,
@@ -680,10 +679,10 @@ class _LightGBMBaseTuner(_BaseTuner):
     @abc.abstractmethod
     def _create_objective(
         self,
-        target_param_names: List[str],
+        target_param_names: list[str],
         train_set: "lgb.Dataset",
         step_name: str,
-        pbar: Optional[tqdm.tqdm],
+        pbar: tqdm.tqdm | None,
     ) -> _OptunaObjective:
         raise NotImplementedError
 
@@ -704,8 +703,8 @@ class _LightGBMBaseTuner(_BaseTuner):
             def get_trials(
                 self,
                 deepcopy: bool = True,
-                states: Optional[Container[TrialState]] = None,
-            ) -> List[optuna.trial.FrozenTrial]:
+                states: Container[TrialState] | None = None,
+            ) -> list[optuna.trial.FrozenTrial]:
                 trials = super()._get_trials(deepcopy=deepcopy, states=states)
                 return [t for t in trials if t.system_attrs.get(_STEP_NAME_KEY) == self._step_name]
 
@@ -808,30 +807,30 @@ class LightGBMTuner(_LightGBMBaseTuner):
 
     def __init__(
         self,
-        params: Dict[str, Any],
+        params: dict[str, Any],
         train_set: "lgb.Dataset",
         num_boost_round: int = 1000,
         valid_sets: Optional["VALID_SET_TYPE"] = None,
-        valid_names: Optional[Any] = None,
-        fobj: Optional[Callable[..., Any]] = None,
-        feval: Optional[Callable[..., Any]] = None,
+        valid_names: Any | None = None,
+        fobj: Callable[..., Any] | None = None,
+        feval: Callable[..., Any] | None = None,
         feature_name: str = "auto",
         categorical_feature: str = "auto",
-        early_stopping_rounds: Optional[int] = None,
-        evals_result: Optional[Dict[Any, Any]] = None,
-        verbose_eval: Optional[Union[bool, int, str]] = "warn",
-        learning_rates: Optional[List[float]] = None,
+        early_stopping_rounds: int | None = None,
+        evals_result: dict[Any, Any] | None = None,
+        verbose_eval: bool | int | str | None = "warn",
+        learning_rates: list[float] | None = None,
         keep_training_booster: bool = False,
-        callbacks: Optional[List[Callable[..., Any]]] = None,
-        time_budget: Optional[int] = None,
-        sample_size: Optional[int] = None,
-        study: Optional[optuna.study.Study] = None,
-        optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
-        model_dir: Optional[str] = None,
-        verbosity: Optional[int] = None,
+        callbacks: list[Callable[..., Any]] | None = None,
+        time_budget: int | None = None,
+        sample_size: int | None = None,
+        study: optuna.study.Study | None = None,
+        optuna_callbacks: list[Callable[[Study, FrozenTrial], None]] | None = None,
+        model_dir: str | None = None,
+        verbosity: int | None = None,
         show_progress_bar: bool = True,
         *,
-        optuna_seed: Optional[int] = None,
+        optuna_seed: int | None = None,
     ) -> None:
         if callbacks is None:
             callbacks = []
@@ -874,17 +873,17 @@ class LightGBMTuner(_LightGBMBaseTuner):
         self.lgbm_kwargs["valid_names"] = valid_names
         self.lgbm_kwargs["keep_training_booster"] = keep_training_booster
 
-        self._best_booster_with_trial_number: Optional[Tuple[lgb.Booster, int]] = None
+        self._best_booster_with_trial_number: tuple[lgb.Booster, int] | None = None
 
         if valid_sets is None:
             raise ValueError("`valid_sets` is required.")
 
     def _create_objective(
         self,
-        target_param_names: List[str],
+        target_param_names: list[str],
         train_set: "lgb.Dataset",
         step_name: str,
-        pbar: Optional[tqdm.tqdm],
+        pbar: tqdm.tqdm | None,
     ) -> _OptunaObjective:
         return _OptunaObjective(
             target_param_names,
@@ -979,39 +978,36 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
 
     def __init__(
         self,
-        params: Dict[str, Any],
+        params: dict[str, Any],
         train_set: "lgb.Dataset",
         num_boost_round: int = 1000,
-        folds: Optional[
-            Union[
-                Generator[Tuple[int, int], None, None],
-                Iterator[Tuple[int, int]],
-                "BaseCrossValidator",
-            ]
-        ] = None,
+        folds: Union[
+            Generator[tuple[int, int], None, None], Iterator[tuple[int, int]], "BaseCrossValidator"
+        ]
+        | None = None,
         nfold: int = 5,
         stratified: bool = True,
         shuffle: bool = True,
-        fobj: Optional[Callable[..., Any]] = None,
-        feval: Optional[Callable[..., Any]] = None,
+        fobj: Callable[..., Any] | None = None,
+        feval: Callable[..., Any] | None = None,
         feature_name: str = "auto",
         categorical_feature: str = "auto",
-        early_stopping_rounds: Optional[int] = None,
-        fpreproc: Optional[Callable[..., Any]] = None,
-        verbose_eval: Optional[Union[bool, int]] = None,
+        early_stopping_rounds: int | None = None,
+        fpreproc: Callable[..., Any] | None = None,
+        verbose_eval: bool | int | None = None,
         show_stdv: bool = True,
         seed: int = 0,
-        callbacks: Optional[List[Callable[..., Any]]] = None,
-        time_budget: Optional[int] = None,
-        sample_size: Optional[int] = None,
-        study: Optional[optuna.study.Study] = None,
-        optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
-        verbosity: Optional[int] = None,
+        callbacks: list[Callable[..., Any]] | None = None,
+        time_budget: int | None = None,
+        sample_size: int | None = None,
+        study: optuna.study.Study | None = None,
+        optuna_callbacks: list[Callable[[Study, FrozenTrial], None]] | None = None,
+        verbosity: int | None = None,
         show_progress_bar: bool = True,
-        model_dir: Optional[str] = None,
+        model_dir: str | None = None,
         return_cvbooster: bool = False,
         *,
-        optuna_seed: Optional[int] = None,
+        optuna_seed: int | None = None,
     ) -> None:
         if callbacks is None:
             callbacks = []
@@ -1052,10 +1048,10 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
 
     def _create_objective(
         self,
-        target_param_names: List[str],
+        target_param_names: list[str],
         train_set: "lgb.Dataset",
         step_name: str,
-        pbar: Optional[tqdm.tqdm],
+        pbar: tqdm.tqdm | None,
     ) -> _OptunaObjective:
         return _OptunaObjectiveCV(
             target_param_names,
