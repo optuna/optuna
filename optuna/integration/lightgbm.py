@@ -92,7 +92,10 @@ class LightGBMPruningCallback:
     ) -> Optional[List]:
         for evaluation_result in env.evaluation_result_list:
             valid_name, metric, current_score, is_higher_better = evaluation_result[:4]
-            if valid_name != target_valid_name or metric != self._metric:
+            # The prefix "valid " is added to metric name since LightGBM v4.0.0.
+            if valid_name != target_valid_name or (
+                metric != "valid " + self._metric and metric != self._metric
+            ):
                 continue
 
             return evaluation_result
