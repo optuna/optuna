@@ -573,50 +573,30 @@ def _create_frozen_trial(
     return trial
 
 
-def test_child_generation_strategy_invalid_value() -> None:
+@pytest.mark.parametrize(
+    "mutation_prob,crossover,crossover_prob,swapping_prob",
+    [
+        (1.2, UniformCrossover(), 0.9, 0.5),
+        (-0.2, UniformCrossover(), 0.9, 0.5),
+        (None, UniformCrossover(), 1.2, 0.5),
+        (None, UniformCrossover(), -0.2, 0.5),
+        (None, UniformCrossover(), 0.9, 1.2),
+        (None, UniformCrossover(), 0.9, -0.2),
+        (None, 3, 0.9, 0.5),
+    ],
+)
+def test_child_generation_strategy_invalid_value(
+    mutation_prob: float,
+    crossover: BaseCrossover | int,
+    crossover_prob: float,
+    swapping_prob: float,
+) -> None:
     with pytest.raises(ValueError):
         NSGAIIChildGenerationStrategy(
-            mutation_prob=1.2,
-            crossover=UniformCrossover(),
-            crossover_prob=0.9,
-            swapping_prob=0.5,
-        )
-    with pytest.raises(ValueError):
-        NSGAIIChildGenerationStrategy(
-            mutation_prob=-0.2,
-            crossover=UniformCrossover(),
-            crossover_prob=0.9,
-            swapping_prob=0.5,
-        )
-    with pytest.raises(ValueError):
-        NSGAIIChildGenerationStrategy(
-            crossover_prob=1.2,
-            crossover=UniformCrossover(),
-            swapping_prob=0.5,
-        )
-    with pytest.raises(ValueError):
-        NSGAIIChildGenerationStrategy(
-            crossover_prob=-0.2,
-            crossover=UniformCrossover(),
-            swapping_prob=0.5,
-        )
-    with pytest.raises(ValueError):
-        NSGAIIChildGenerationStrategy(
-            crossover_prob=0.9,
-            crossover=UniformCrossover(),
-            swapping_prob=1.2,
-        )
-    with pytest.raises(ValueError):
-        NSGAIIChildGenerationStrategy(
-            crossover_prob=0.9,
-            crossover=UniformCrossover(),
-            swapping_prob=-0.2,
-        )
-    with pytest.raises(ValueError):
-        NSGAIIChildGenerationStrategy(
-            crossover_prob=0.9,
-            crossover=3,  # type: ignore[arg-type]
-            swapping_prob=0.5,
+            mutation_prob=mutation_prob,
+            crossover=crossover,  # type: ignore[arg-type]
+            crossover_prob=crossover_prob,
+            swapping_prob=swapping_prob,
         )
 
 
