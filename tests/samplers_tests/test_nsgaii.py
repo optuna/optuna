@@ -545,6 +545,11 @@ def test_constraints_func_experimental_warning() -> None:
         NSGAIISampler(constraints_func=lambda _: [0])
 
 
+def test_after_trial_strategy_experimental_warning() -> None:
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        NSGAIISampler(after_trial_strategy=lambda study, trial, state, value: None)
+
+
 # TODO(ohta): Consider to move this utility function to `optuna.testing` module.
 def _create_frozen_trial(
     number: int, values: Sequence[float], constraints: Sequence[float] | None = None
