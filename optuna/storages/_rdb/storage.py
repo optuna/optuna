@@ -881,6 +881,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         else:
             values = None
 
+        params = sorted(trial.params, key=lambda p: p.param_id)
         unsorted_intermediates: Dict[int, Dict[int, float]] = defaultdict(dict)
         for v in trial.intermediate_values:
             unsorted_intermediates[v.step][
