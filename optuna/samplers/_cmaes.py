@@ -111,6 +111,9 @@ class CmaEsSampler(BaseSampler):
     - `R. Hamano, S. Saito, M. Nomura, S. Shirakawa. CMA-ES with Margin: Lower-Bounding Marginal
       Probability for Mixed-Integer Black-Box Optimization, GECCO. 2022.
       <https://arxiv.org/abs/2205.13482>`_
+    - `M. Nomura, Y. Akimoto, I. Ono. CMA-ES with Learning Rate Adaptation: Can CMA-ES with
+      Default Population Size Solve Multimodal and Noisy Problems?, GECCO. 2023.
+      <https://arxiv.org/abs/2304.03473>`_
 
     .. seealso::
         You can also use :class:`optuna.integration.PyCmaSampler` which is a sampler using cma
