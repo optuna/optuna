@@ -35,6 +35,9 @@ from optuna.samplers.nsgaii._child_generation_strategy import NSGAIIChildGenerat
 from optuna.samplers.nsgaii._crossover import _inlined_categorical_uniform_crossover
 from optuna.samplers.nsgaii._dominates_function import _constrained_dominates
 from optuna.samplers.nsgaii._dominates_function import _validate_constraints
+from optuna.samplers.nsgaii._elite_population_selection_strategy import (
+    NSGAIIElitePopulationSelectionStrategy,
+)
 from optuna.samplers.nsgaii._elite_population_selection_strategy import _calc_crowding_distance
 from optuna.samplers.nsgaii._elite_population_selection_strategy import _crowding_distance_sort
 from optuna.samplers.nsgaii._elite_population_selection_strategy import _fast_non_dominated_sort
@@ -556,6 +559,11 @@ def test_constraints_func_experimental_warning() -> None:
         NSGAIISampler(constraints_func=lambda _: [0])
 
 
+def test_elite_population_selection_strategy_experimental_warning() -> None:
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        NSGAIISampler(elite_population_selection_strategy=lambda study, population: [])
+
+
 def test_child_generation_strategy_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         NSGAIISampler(child_generation_strategy=lambda study, search_space, parent_population: {})
@@ -578,6 +586,11 @@ def _create_frozen_trial(
     trial.number = number
     trial._trial_id = number
     return trial
+
+
+def test_elite_population_selection_strategy_invalid_value() -> None:
+    with pytest.raises(ValueError):
+        NSGAIIElitePopulationSelectionStrategy(population_size=1)
 
 
 @pytest.mark.parametrize(
