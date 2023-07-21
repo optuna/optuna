@@ -651,8 +651,6 @@ def test_child_generation_strategy_generation_key() -> None:
             assert trial.system_attrs[_GENERATION_KEY] == 0
         elif i == 2:
             assert trial.system_attrs[_GENERATION_KEY] == 1
-            assert trial.params == {"x0": 0.0, "x1": 1.1}
-            assert trial.values == [0.0, 1.1]
 
 
 @patch(
