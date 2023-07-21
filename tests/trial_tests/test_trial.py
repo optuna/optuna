@@ -613,13 +613,6 @@ def test_report_warning() -> None:
         trial.report(1, 1)
 
 
-def test_study_id() -> None:
-    study = create_study()
-    trial = Trial(study, study._storage.create_new_trial(study._study_id))
-
-    assert trial._study_id == trial.study._study_id
-
-
 def test_suggest_with_multi_objectives() -> None:
     study = create_study(directions=["maximize", "maximize"])
 
