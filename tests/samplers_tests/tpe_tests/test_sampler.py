@@ -764,24 +764,10 @@ def test_get_observation_pairs(
         (-3, [float("inf")]),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
         (1, [sign * 0.0]),  # PRUNED (without intermediate values)
     ]
+    states = (optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED)
     assert _tpe.sampler._get_observation_pairs(
-        study, ["x"], constraints_enabled=constraints_enabled
+        study, study.get_trials(states=states), constraints_enabled=constraints_enabled
     ) == (
-        {"x": [5.0, 5.0, 5.0, 5.0]},
-        scores,
-        expected_violations,
-    )
-    assert _tpe.sampler._get_observation_pairs(
-        study, ["y"], constraints_enabled=constraints_enabled
-    ) == (
-        {"y": [None, None, None, None]},
-        scores,
-        expected_violations,
-    )
-    assert _tpe.sampler._get_observation_pairs(
-        study, ["z"], constraints_enabled=constraints_enabled
-    ) == (
-        {"z": [0, 0, 0, 0]},  # The internal representation of 'None' for z is 0
         scores,
         expected_violations,
     )
@@ -823,10 +809,10 @@ def test_get_observation_pairs_multi(
     study.optimize(objective, n_trials=5, catch=(RuntimeError,))
 
     sign = 1 if direction == "minimize" else -1
+    states = (optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED)
     assert _tpe.sampler._get_observation_pairs(
-        study, ["x", "y"], constraints_enabled=constraints_enabled
+        study, study.get_trials(states=states), constraints_enabled=constraints_enabled
     ) == (
-        {"x": [5.0, 5.0, 5.0, 5.0], "y": [6.0, 6.0, 6.0, 6.0]},
         [
             (-float("inf"), [sign * 11.0]),  # COMPLETE
             (-7, [sign * 2]),  # PRUNED (with intermediate values)
@@ -953,13 +939,6 @@ def test_split_order(direction: str, constant_liar: bool, constraints: bool) -> 
         )
     )
 
-    values, scores, violations = _tpe.sampler._get_observation_pairs(
-        study,
-        ["x"],
-        constant_liar,
-        constraints,
-    )
-
     if constant_liar:
         states = [
             optuna.trial.TrialState.COMPLETE,
@@ -969,7 +948,12 @@ def test_split_order(direction: str, constant_liar: bool, constraints: bool) -> 
     else:
         states = [optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED]
 
-    assert len(values["x"]) == len(study.get_trials(states=states))
+    scores, violations = _tpe.sampler._get_observation_pairs(
+        study,
+        study.get_trials(states=states),
+        constraints,
+    )
+
     assert len(scores) == len(study.get_trials(states=states))
     if constraints:
         assert violations is not None
@@ -1140,14 +1124,14 @@ def test_constant_liar_observation_pairs(direction: str) -> None:
     # and `-float("inf")` during maximization.
     expected_values = [(float("inf"), [float("inf") * (-1 if direction == "maximize" else 1)])]
 
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], constant_liar=False) == (
-        {"x": []},
+    states = [optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED]
+    assert _tpe.sampler._get_observation_pairs(study, study.get_trials(states=states)) == (
         [],
         None,
     )
 
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], constant_liar=True) == (
-        {"x": [2]},
+    states.append(optuna.trial.TrialState.RUNNING)
+    assert _tpe.sampler._get_observation_pairs(study, study.get_trials(states=states)) == (
         expected_values,
         None,
     )

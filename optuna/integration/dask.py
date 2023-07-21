@@ -424,9 +424,17 @@ class DaskStorage(BaseStorage):
     Optuna storage object.
 
     See `this example <https://github.com/optuna/optuna-examples/blob/master/
-    dask/dask_simple.py>`__
+    dask/dask_simple.py>`_ or the following YouTube video
     for how to use :obj:`DaskStorage` to extend Optuna's in-memory storage class to run across
     multiple processes.
+
+    .. raw:: html
+
+       <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/euT6_h7iIBA"
+        frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media;
+        gyroscope; picture-in-picture" allowfullscreen></iframe>
+       <br>
+       <br>
 
     Args:
         storage:

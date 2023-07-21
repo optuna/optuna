@@ -1,13 +1,12 @@
+from __future__ import annotations
+
 from collections import Counter
+from collections.abc import Callable
+from collections.abc import Sequence
 import copy
 import itertools
 from typing import Any
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Sequence
-from typing import Tuple
+from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
@@ -31,8 +30,11 @@ from optuna.samplers.nsgaii import SPXCrossover
 from optuna.samplers.nsgaii import UNDXCrossover
 from optuna.samplers.nsgaii import UniformCrossover
 from optuna.samplers.nsgaii import VSBXCrossover
+from optuna.samplers.nsgaii._after_trial_strategy import NSGAIIAfterTrialStrategy
 from optuna.samplers.nsgaii._crossover import _inlined_categorical_uniform_crossover
 from optuna.samplers.nsgaii._sampler import _constrained_dominates
+from optuna.samplers.nsgaii._sampler import _fast_non_dominated_sort
+from optuna.samplers.nsgaii._sampler import _validate_constraints
 from optuna.study._multi_objective import _dominates
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -116,7 +118,7 @@ def test_swapping_prob() -> None:
 
 
 @pytest.mark.parametrize("choices", [[-1, 0, 1], [True, False]])
-def test_crossover_casting(choices: List[Any]) -> None:
+def test_crossover_casting(choices: list[Any]) -> None:
     str_choices = list(map(str, choices))
 
     def objective(trial: optuna.Trial) -> Sequence[float]:
@@ -214,7 +216,7 @@ def test_constraints_func_nan() -> None:
     ],
 )
 def test_constrained_dominates_feasible_vs_feasible(
-    direction1: StudyDirection, direction2: StudyDirection, constraints_list: List[List[float]]
+    direction1: StudyDirection, direction2: StudyDirection, constraints_list: list[list[float]]
 ) -> None:
     directions = [direction1, direction2]
     # Check all pairs of trials consisting of these values, i.e.,
@@ -296,7 +298,7 @@ def test_constrained_dominates_infeasible_vs_infeasible(direction: StudyDirectio
     #
 
     # Check all pairs of these constraints.
-    constraints_infeasible_sorted: List[List[List[float]]]
+    constraints_infeasible_sorted: list[list[list[float]]]
     constraints_infeasible_sorted = [
         # These constraints have violation 1.
         [[1, -inf], [1, -1], [1, 0], [0, 1], [-1, 1], [-inf, 1]],
@@ -346,9 +348,9 @@ def test_constrained_dominates_infeasible_vs_infeasible(direction: StudyDirectio
 
 
 def _assert_population_per_rank(
-    trials: List[FrozenTrial],
-    direction: List[StudyDirection],
-    population_per_rank: List[List[FrozenTrial]],
+    trials: list[FrozenTrial],
+    direction: list[StudyDirection],
+    population_per_rank: list[list[FrozenTrial]],
 ) -> None:
     # Check that the number of trials do not change.
     flattened = [trial for rank in population_per_rank for trial in rank]
@@ -376,22 +378,16 @@ def _assert_population_per_rank(
 def test_fast_non_dominated_sort_no_constraints(
     direction1: StudyDirection, direction2: StudyDirection
 ) -> None:
-    sampler = NSGAIISampler()
-
     directions = [direction1, direction2]
     value_list = [10, 20, 20, 30, float("inf"), float("inf"), -float("inf")]
     values = [[v1, v2] for v1 in value_list for v2 in value_list]
 
     trials = [_create_frozen_trial(i, v) for i, v in enumerate(values)]
-    population_per_rank = sampler._fast_non_dominated_sort(copy.copy(trials), directions)
+    population_per_rank = _fast_non_dominated_sort(copy.copy(trials), directions, _dominates)
     _assert_population_per_rank(trials, directions, population_per_rank)
 
 
 def test_fast_non_dominated_sort_with_constraints() -> None:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = NSGAIISampler(constraints_func=lambda _: [0])
-
     value_list = [10, 20, 20, 30, float("inf"), float("inf"), -float("inf")]
     values = [[v1, v2] for v1 in value_list for v2 in value_list]
 
@@ -403,18 +399,17 @@ def test_fast_non_dominated_sort_with_constraints() -> None:
         for i, (v, c) in enumerate(itertools.product(values, constraints))
     ]
     directions = [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
-    population_per_rank = sampler._fast_non_dominated_sort(copy.copy(trials), directions)
+    population_per_rank = _fast_non_dominated_sort(
+        copy.copy(trials), directions, _constrained_dominates
+    )
     _assert_population_per_rank(trials, directions, population_per_rank)
 
 
-def test_fast_non_dominated_sort_with_nan_constraint() -> None:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = NSGAIISampler(constraints_func=lambda _: [0])
-    directions = [StudyDirection.MINIMIZE, StudyDirection.MINIMIZE]
+def test_validate_constraints() -> None:
     with pytest.raises(ValueError):
-        sampler._fast_non_dominated_sort(
-            [_create_frozen_trial(0, [1], [0, float("nan")])], directions
+        _validate_constraints(
+            [_create_frozen_trial(0, [1], [0, float("nan")])],
+            constraints_func=lambda _: [0],
         )
 
 
@@ -432,11 +427,10 @@ def test_fast_non_dominated_sort_with_nan_constraint() -> None:
     ],
 )
 def test_fast_non_dominated_sort_missing_constraint_values(
-    values_and_constraints: List[Tuple[List[float], List[float]]]
+    values_and_constraints: list[tuple[list[float], list[float]]]
 ) -> None:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = NSGAIISampler(constraints_func=lambda _: [0])
 
     values_dim = len(values_and_constraints[0][0])
     for directions in itertools.product(
@@ -445,8 +439,8 @@ def test_fast_non_dominated_sort_missing_constraint_values(
         trials = [_create_frozen_trial(i, v, c) for i, (v, c) in enumerate(values_and_constraints)]
 
         with pytest.warns(UserWarning):
-            population_per_rank = sampler._fast_non_dominated_sort(
-                copy.copy(trials), list(directions)
+            population_per_rank = _fast_non_dominated_sort(
+                copy.copy(trials), list(directions), _constrained_dominates
             )
         _assert_population_per_rank(trials, list(directions), population_per_rank)
 
@@ -456,9 +450,8 @@ def test_fast_non_dominated_sort_empty(n_dims: int) -> None:
     for directions in itertools.product(
         [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE], repeat=n_dims
     ):
-        trials: List[FrozenTrial] = []
-        sampler = NSGAIISampler()
-        population_per_rank = sampler._fast_non_dominated_sort(trials, list(directions))
+        trials: list[FrozenTrial] = []
+        population_per_rank = _fast_non_dominated_sort(trials, list(directions), _dominates)
         assert population_per_rank == []
 
 
@@ -490,7 +483,7 @@ def test_fast_non_dominated_sort_empty(n_dims: int) -> None:
         ),
     ],
 )
-def test_calc_crowding_distance(values: List[List[float]], expected_dist: List[float]) -> None:
+def test_calc_crowding_distance(values: list[list[float]], expected_dist: list[float]) -> None:
     trials = [_create_frozen_trial(i, value) for i, value in enumerate(values)]
     crowding_dist = optuna.samplers.nsgaii._sampler._calc_crowding_distance(trials)
     for i in range(len(trials)):
@@ -507,7 +500,7 @@ def test_calc_crowding_distance(values: List[List[float]], expected_dist: List[f
         [[float("-inf")], [1], [2]],
     ],
 )
-def test_crowding_distance_sort(values: List[List[float]]) -> None:
+def test_crowding_distance_sort(values: list[list[float]]) -> None:
     """Checks that trials are sorted by the values of `_calc_crowding_distance`."""
     trials = [_create_frozen_trial(i, value) for i, value in enumerate(values)]
     crowding_dist = optuna.samplers.nsgaii._sampler._calc_crowding_distance(trials)
@@ -522,7 +515,7 @@ def test_study_system_attr_for_population_cache() -> None:
 
     def get_cached_entries(
         study: optuna.study.Study,
-    ) -> List[Tuple[int, List[int]]]:
+    ) -> list[tuple[int, list[int]]]:
         study_system_attrs = study._storage.get_study_system_attrs(study._study_id)
         return [
             v
@@ -554,7 +547,7 @@ def test_constraints_func_experimental_warning() -> None:
 
 # TODO(ohta): Consider to move this utility function to `optuna.testing` module.
 def _create_frozen_trial(
-    number: int, values: Sequence[float], constraints: Optional[Sequence[float]] = None
+    number: int, values: Sequence[float], constraints: Sequence[float] | None = None
 ) -> optuna.trial.FrozenTrial:
     trial = optuna.trial.create_trial(
         state=optuna.trial.TrialState.COMPLETE,
@@ -574,6 +567,34 @@ def test_call_after_trial_of_random_sampler() -> None:
     ) as mock_object:
         study.optimize(lambda _: 1.0, n_trials=1)
         assert mock_object.call_count == 1
+
+
+def test_call_after_trial_of_after_trial_strategy() -> None:
+    sampler = NSGAIISampler()
+    study = optuna.create_study(sampler=sampler)
+    with patch.object(sampler, "_after_trial_strategy") as mock_object:
+        study.optimize(lambda _: 1.0, n_trials=1)
+        assert mock_object.call_count == 1
+
+
+@patch("optuna.samplers.nsgaii._after_trial_strategy._process_constraints_after_trial")
+def test_nsgaii_after_trial_strategy(mock_func: MagicMock) -> None:
+    def constraints_func(_: FrozenTrial) -> Sequence[float]:
+        return (float("nan"),)
+
+    state = optuna.trial.TrialState.FAIL
+    study = optuna.create_study()
+    trial = optuna.trial.create_trial(state=state)
+
+    after_trial_strategy_without_constrains = NSGAIIAfterTrialStrategy()
+    after_trial_strategy_without_constrains(study, trial, state)
+    assert mock_func.call_count == 0
+
+    after_trial_strategy_with_constrains = NSGAIIAfterTrialStrategy(
+        constraints_func=constraints_func
+    )
+    after_trial_strategy_with_constrains(study, trial, state)
+    assert mock_func.call_count == 1
 
 
 parametrize_nsga2_sampler = pytest.mark.parametrize(
@@ -663,7 +684,7 @@ def test_crossover_numerical_distribution(crossover: BaseCrossover) -> None:
 
 
 def test_crossover_inlined_categorical_distribution() -> None:
-    search_space: Dict[str, BaseDistribution] = {
+    search_space: dict[str, BaseDistribution] = {
         "x": CategoricalDistribution(choices=["a", "c"]),
         "y": CategoricalDistribution(choices=["b", "d"]),
     }
@@ -737,7 +758,7 @@ def test_crossover_deterministic(
     crossover: BaseCrossover, rand_value: float, expected_params: np.ndarray
 ) -> None:
     study = optuna.study.create_study()
-    search_space: Dict[str, BaseDistribution] = {
+    search_space: dict[str, BaseDistribution] = {
         "x": FloatDistribution(1, 10),
         "y": FloatDistribution(1, 10),
     }

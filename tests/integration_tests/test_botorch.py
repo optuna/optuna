@@ -5,6 +5,8 @@ from typing import Tuple
 from unittest.mock import patch
 import warnings
 
+import botorch
+from packaging import version
 import pytest
 
 import optuna
@@ -16,6 +18,7 @@ from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.storages import RDBStorage
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
+from optuna.trial import TrialState
 
 
 with try_import() as _imports:
@@ -31,6 +34,9 @@ pytestmark = pytest.mark.integration
 
 @pytest.mark.parametrize("n_objectives", [1, 2, 4])
 def test_botorch_candidates_func_none(n_objectives: int) -> None:
+    if n_objectives == 1 and version.parse(botorch.version.version) < version.parse("0.8.1"):
+        pytest.skip("botorch >=0.8.1 is required for logei_candidates_func.")
+
     n_trials = 3
     n_startup_trials = 2
 
@@ -45,7 +51,7 @@ def test_botorch_candidates_func_none(n_objectives: int) -> None:
 
     # TODO(hvy): Do not check for the correct candidates function using private APIs.
     if n_objectives == 1:
-        assert sampler._candidates_func is integration.botorch.qei_candidates_func
+        assert sampler._candidates_func is integration.botorch.logei_candidates_func
     elif n_objectives == 2:
         assert sampler._candidates_func is integration.botorch.qehvi_candidates_func
     elif n_objectives == 4:
@@ -62,6 +68,7 @@ def test_botorch_candidates_func() -> None:
         train_obj: torch.Tensor,
         train_con: Optional[torch.Tensor],
         bounds: torch.Tensor,
+        running_x: Optional[torch.Tensor],
     ) -> torch.Tensor:
         assert train_con is None
 
@@ -87,7 +94,9 @@ def test_botorch_candidates_func() -> None:
 @pytest.mark.parametrize(
     "candidates_func, n_objectives",
     [
+        (integration.botorch.logei_candidates_func, 1),
         (integration.botorch.qei_candidates_func, 1),
+        (integration.botorch.qnei_candidates_func, 1),
         (integration.botorch.qehvi_candidates_func, 2),
         (integration.botorch.qparego_candidates_func, 4),
         (integration.botorch.qnehvi_candidates_func, 2),
@@ -95,6 +104,11 @@ def test_botorch_candidates_func() -> None:
     ],
 )
 def test_botorch_specify_candidates_func(candidates_func: Any, n_objectives: int) -> None:
+    if candidates_func == integration.botorch.logei_candidates_func and version.parse(
+        botorch.version.version
+    ) < version.parse("0.8.1"):
+        pytest.skip("LogExpectedImprovement is not available in botorch <0.8.1.")
+
     n_trials = 4
     n_startup_trials = 2
 
@@ -157,6 +171,7 @@ def test_botorch_candidates_func_invalid_batch_size() -> None:
         train_obj: torch.Tensor,
         train_con: Optional[torch.Tensor],
         bounds: torch.Tensor,
+        running_x: Optional[torch.Tensor],
     ) -> torch.Tensor:
         return torch.rand(2, 1)  # Must have the batch size one, not two.
 
@@ -174,6 +189,7 @@ def test_botorch_candidates_func_invalid_dimensionality() -> None:
         train_obj: torch.Tensor,
         train_con: Optional[torch.Tensor],
         bounds: torch.Tensor,
+        running_x: Optional[torch.Tensor],
     ) -> torch.Tensor:
         return torch.rand(1, 1, 1)  # Must have one or two dimensions, not three.
 
@@ -193,6 +209,7 @@ def test_botorch_candidates_func_invalid_candidates_size() -> None:
         train_obj: torch.Tensor,
         train_con: Optional[torch.Tensor],
         bounds: torch.Tensor,
+        running_x: Optional[torch.Tensor],
     ) -> torch.Tensor:
         return torch.rand(n_params - 1)  # Must return candidates for all parameters.
 
@@ -262,6 +279,7 @@ def test_botorch_constraints_func_nan_warning() -> None:
         train_obj: torch.Tensor,
         train_con: Optional[torch.Tensor],
         bounds: torch.Tensor,
+        running_x: Optional[torch.Tensor],
     ) -> torch.Tensor:
         trial_number = train_x.size(0)
 
@@ -312,6 +330,7 @@ def test_botorch_constraints_func_none_warning() -> None:
         train_obj: torch.Tensor,
         train_con: Optional[torch.Tensor],
         bounds: torch.Tensor,
+        running_x: Optional[torch.Tensor],
     ) -> torch.Tensor:
         # `train_con` should be `None` if `constraints_func` always fails.
         assert train_con is None
@@ -354,6 +373,7 @@ def test_botorch_constraints_func_late() -> None:
         train_obj: torch.Tensor,
         train_con: Optional[torch.Tensor],
         bounds: torch.Tensor,
+        running_x: Optional[torch.Tensor],
     ) -> torch.Tensor:
         trial_number = train_x.size(0)
 
@@ -480,3 +500,56 @@ def test_device_argument(device: Optional[torch.device]) -> None:
     sampler = BoTorchSampler(constraints_func=constraints_func, n_startup_trials=1)
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=3)
+
+
+@pytest.mark.parametrize(
+    "candidates_func, n_objectives",
+    [
+        (integration.botorch.qei_candidates_func, 1),
+        (integration.botorch.qehvi_candidates_func, 2),
+        (integration.botorch.qparego_candidates_func, 4),
+        (integration.botorch.qnehvi_candidates_func, 2),
+        (integration.botorch.qnehvi_candidates_func, 3),  # alpha > 0
+    ],
+)
+def test_botorch_consider_running_trials(candidates_func: Any, n_objectives: int) -> None:
+    sampler = BoTorchSampler(
+        candidates_func=candidates_func,
+        n_startup_trials=1,
+        consider_running_trials=True,
+    )
+
+    def objective(trial: Trial) -> Sequence[float]:
+        ret = []
+        for i in range(n_objectives):
+            val = sum(trial.suggest_float(f"x{i}_{j}", 0, 1) for j in range(2))
+            ret.append(val)
+        return ret
+
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
+    study.optimize(objective, n_trials=2)
+    assert len(study.trials) == 2
+
+    # fully suggested running trial
+    running_trial_full = study.ask()
+    _ = objective(running_trial_full)
+    study.optimize(objective, n_trials=1)
+    assert len(study.trials) == 4
+    assert sum(t.state == TrialState.RUNNING for t in study.trials) == 1
+    assert sum(t.state == TrialState.COMPLETE for t in study.trials) == 3
+
+    # partially suggested running trial
+    running_trial_partial = study.ask()
+    for i in range(n_objectives):
+        running_trial_partial.suggest_float(f"x{i}_0", 0, 1)
+    study.optimize(objective, n_trials=1)
+    assert len(study.trials) == 6
+    assert sum(t.state == TrialState.RUNNING for t in study.trials) == 2
+    assert sum(t.state == TrialState.COMPLETE for t in study.trials) == 4
+
+    # not suggested running trial
+    _ = study.ask()
+    study.optimize(objective, n_trials=1)
+    assert len(study.trials) == 8
+    assert sum(t.state == TrialState.RUNNING for t in study.trials) == 3
+    assert sum(t.state == TrialState.COMPLETE for t in study.trials) == 5

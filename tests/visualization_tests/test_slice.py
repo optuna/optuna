@@ -1,9 +1,8 @@
+from __future__ import annotations
+
 from io import BytesIO
 from typing import Any
 from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
 
 import pytest
 
@@ -57,7 +56,7 @@ def _create_study_with_log_scale_and_str_category_2d() -> Study:
 
 def _create_study_mixture_category_types() -> Study:
     study = create_study()
-    distributions: Dict[str, BaseDistribution] = {
+    distributions: dict[str, BaseDistribution] = {
         "param_a": CategoricalDistribution([None, "100"]),
         "param_b": CategoricalDistribution([101, 102.0]),
     }
@@ -102,7 +101,7 @@ def test_plot_slice_customized_target_name(plot_slice: Callable[..., Any]) -> No
 def test_plot_slice(
     plot_slice: Callable[..., Any],
     specific_create_study: Callable[[], Study],
-    params: Optional[List[str]],
+    params: list[str] | None,
 ) -> None:
     study = specific_create_study()
     figure = plot_slice(study, params=params)
@@ -135,7 +134,7 @@ def test_target_is_none_and_study_is_multi_obj() -> None:
     ],
 )
 def test_get_slice_plot_info_empty(
-    specific_create_study: Callable[[], Study], params: Optional[List[str]]
+    specific_create_study: Callable[[], Study], params: list[str] | None
 ) -> None:
     study = specific_create_study()
     info = _get_slice_plot_info(study, params=params, target=None, target_name="Objective Value")
@@ -159,7 +158,7 @@ def test_get_slice_plot_info_non_exist_param_error() -> None:
         None,
     ],
 )
-def test_get_slice_plot_info_params(params: Optional[List[str]]) -> None:
+def test_get_slice_plot_info_params(params: list[str] | None) -> None:
     study = prepare_study_with_trials()
     params = ["param_a", "param_b", "param_c", "param_d"] if params is None else params
     expected_subplot_infos = {
@@ -170,6 +169,7 @@ def test_get_slice_plot_info_params(params: Optional[List[str]]) -> None:
             trial_numbers=[0, 2],
             is_log=False,
             is_numerical=True,
+            x_labels=None,
         ),
         "param_b": _SliceSubplotInfo(
             param_name="param_b",
@@ -178,6 +178,7 @@ def test_get_slice_plot_info_params(params: Optional[List[str]]) -> None:
             trial_numbers=[0, 1, 2],
             is_log=False,
             is_numerical=True,
+            x_labels=None,
         ),
         "param_c": _SliceSubplotInfo(
             param_name="param_c",
@@ -186,6 +187,7 @@ def test_get_slice_plot_info_params(params: Optional[List[str]]) -> None:
             trial_numbers=[0, 2],
             is_log=False,
             is_numerical=True,
+            x_labels=None,
         ),
         "param_d": _SliceSubplotInfo(
             param_name="param_d",
@@ -194,6 +196,7 @@ def test_get_slice_plot_info_params(params: Optional[List[str]]) -> None:
             trial_numbers=[0, 1, 2],
             is_log=False,
             is_numerical=True,
+            x_labels=None,
         ),
     }
 
@@ -223,6 +226,7 @@ def test_get_slice_plot_info_customized_target() -> None:
                 trial_numbers=[0, 2],
                 is_log=False,
                 is_numerical=True,
+                x_labels=None,
             ),
         ],
     )
@@ -235,7 +239,7 @@ def test_get_slice_plot_info_customized_target() -> None:
         ["param_b", "param_a"],  # Second column has 1 observation
     ],
 )
-def test_get_slice_plot_info_for_few_observations(params: List[str]) -> None:
+def test_get_slice_plot_info_for_few_observations(params: list[str]) -> None:
     study = create_study(direction="minimize")
     study.add_trial(
         create_trial(
@@ -266,6 +270,7 @@ def test_get_slice_plot_info_for_few_observations(params: List[str]) -> None:
                 trial_numbers=[0],
                 is_log=False,
                 is_numerical=True,
+                x_labels=None,
             ),
             _SliceSubplotInfo(
                 param_name="param_b",
@@ -274,6 +279,7 @@ def test_get_slice_plot_info_for_few_observations(params: List[str]) -> None:
                 trial_numbers=[0, 1],
                 is_log=False,
                 is_numerical=True,
+                x_labels=None,
             ),
         ],
     )
@@ -282,6 +288,8 @@ def test_get_slice_plot_info_for_few_observations(params: List[str]) -> None:
 def test_get_slice_plot_info_log_scale_and_str_category_2_params() -> None:
     study = _create_study_with_log_scale_and_str_category_2d()
     info = _get_slice_plot_info(study, None, None, "Objective Value")
+    distribution_b = study.trials[0].distributions["param_b"]
+    assert isinstance(distribution_b, CategoricalDistribution)
     assert info == _SlicePlotInfo(
         target_name="Objective Value",
         subplots=[
@@ -292,6 +300,7 @@ def test_get_slice_plot_info_log_scale_and_str_category_2_params() -> None:
                 trial_numbers=[0, 1],
                 is_log=True,
                 is_numerical=True,
+                x_labels=None,
             ),
             _SliceSubplotInfo(
                 param_name="param_b",
@@ -300,6 +309,7 @@ def test_get_slice_plot_info_log_scale_and_str_category_2_params() -> None:
                 trial_numbers=[0, 1],
                 is_log=False,
                 is_numerical=False,
+                x_labels=distribution_b.choices,
             ),
         ],
     )
@@ -308,6 +318,10 @@ def test_get_slice_plot_info_log_scale_and_str_category_2_params() -> None:
 def test_get_slice_plot_info_mixture_category_types() -> None:
     study = _create_study_mixture_category_types()
     info = _get_slice_plot_info(study, None, None, "Objective Value")
+    distribution_a = study.trials[0].distributions["param_a"]
+    distribution_b = study.trials[0].distributions["param_b"]
+    assert isinstance(distribution_a, CategoricalDistribution)
+    assert isinstance(distribution_b, CategoricalDistribution)
     assert info == _SlicePlotInfo(
         target_name="Objective Value",
         subplots=[
@@ -318,6 +332,7 @@ def test_get_slice_plot_info_mixture_category_types() -> None:
                 trial_numbers=[0, 1],
                 is_log=False,
                 is_numerical=False,
+                x_labels=distribution_a.choices,
             ),
             _SliceSubplotInfo(
                 param_name="param_b",
@@ -325,7 +340,8 @@ def test_get_slice_plot_info_mixture_category_types() -> None:
                 y=[0.0, 0.5],
                 trial_numbers=[0, 1],
                 is_log=False,
-                is_numerical=True,
+                is_numerical=False,
+                x_labels=distribution_b.choices,
             ),
         ],
     )
@@ -347,6 +363,7 @@ def test_get_slice_plot_info_nonfinite_removed(value: float) -> None:
                 trial_numbers=[1, 2],
                 is_log=False,
                 is_numerical=True,
+                x_labels=None,
             ),
             _SliceSubplotInfo(
                 param_name="param_d",
@@ -355,6 +372,7 @@ def test_get_slice_plot_info_nonfinite_removed(value: float) -> None:
                 trial_numbers=[1, 2],
                 is_log=False,
                 is_numerical=True,
+                x_labels=None,
             ),
         ],
     )
@@ -380,6 +398,7 @@ def test_get_slice_plot_info_nonfinite_multiobjective(objective: int, value: flo
                 trial_numbers=[1, 2],
                 is_log=False,
                 is_numerical=True,
+                x_labels=None,
             ),
             _SliceSubplotInfo(
                 param_name="param_d",
@@ -388,6 +407,7 @@ def test_get_slice_plot_info_nonfinite_multiobjective(objective: int, value: flo
                 trial_numbers=[1, 2],
                 is_log=False,
                 is_numerical=True,
+                x_labels=None,
             ),
         ],
     )

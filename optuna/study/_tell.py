@@ -65,15 +65,15 @@ def _check_values_are_feasible(study: "optuna.Study", values: Sequence[float]) -
         try:
             float(v)
         except (ValueError, TypeError):
-            return f"The value {repr(v)} could not be cast to float."
+            return f"The value {repr(v)} could not be cast to float"
 
         if math.isnan(v):
-            return f"The value {v} is not acceptable."
+            return f"The value {v} is not acceptable"
 
     if len(study.directions) != len(values):
         return (
             f"The number of the values {len(values)} did not match the number of the objectives "
-            f"{len(study.directions)}."
+            f"{len(study.directions)}"
         )
 
     return None

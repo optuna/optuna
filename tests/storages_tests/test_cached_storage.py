@@ -68,15 +68,6 @@ def test_uncached_set() -> None:
         assert set_mock.call_count == 1
 
     trial_id = storage.create_new_trial(study_id)
-    with patch.object(
-        base_storage, "_check_and_set_param_distribution", return_value=True
-    ) as set_mock:
-        storage.set_trial_param(
-            trial_id, "paramA", 1.2, optuna.distributions.FloatDistribution(-0.2, 2.3)
-        )
-        assert set_mock.call_count == 1
-
-    trial_id = storage.create_new_trial(study_id)
     with patch.object(base_storage, "set_trial_param", return_value=True) as set_mock:
         storage.set_trial_param(
             trial_id, "paramA", 1.2, optuna.distributions.FloatDistribution(-0.2, 2.3)
@@ -112,8 +103,38 @@ def test_read_trials_from_remote_storage() -> None:
         directions=[StudyDirection.MINIMIZE], study_name="test-study"
     )
 
-    storage.read_trials_from_remote_storage(study_id)
+    storage._read_trials_from_remote_storage(study_id)
 
     # Non-existent study.
     with pytest.raises(KeyError):
-        storage.read_trials_from_remote_storage(study_id + 1)
+        storage._read_trials_from_remote_storage(study_id + 1)
+
+    # Create a trial via CachedStorage and update it via backend storage directly.
+    trial_id = storage.create_new_trial(study_id)
+    base_storage.set_trial_param(
+        trial_id, "paramA", 1.2, optuna.distributions.FloatDistribution(-0.2, 2.3)
+    )
+    base_storage.set_trial_state_values(trial_id, TrialState.COMPLETE, values=[0.0])
+    storage._read_trials_from_remote_storage(study_id)
+    assert storage.get_trial(trial_id).state == TrialState.COMPLETE
+
+
+def test_delete_study() -> None:
+    base_storage = RDBStorage("sqlite:///:memory:")
+    storage = _CachedStorage(base_storage)
+
+    study_id1 = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+    trial_id1 = storage.create_new_trial(study_id1)
+    storage.set_trial_state_values(trial_id1, state=TrialState.COMPLETE)
+
+    study_id2 = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+    trial_id2 = storage.create_new_trial(study_id2)
+    storage.set_trial_state_values(trial_id2, state=TrialState.COMPLETE)
+
+    # Update _StudyInfo.finished_trial_ids
+    storage._read_trials_from_remote_storage(study_id1)
+    storage._read_trials_from_remote_storage(study_id2)
+
+    storage.delete_study(study_id1)
+    assert storage._get_cached_trial(trial_id1) is None
+    assert storage._get_cached_trial(trial_id2) is not None

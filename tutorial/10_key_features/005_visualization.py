@@ -1,8 +1,8 @@
 """
 .. _visualization:
 
-5. Quick Visualization for Hyperparameter Optimization Analysis
-===============================================================
+Quick Visualization for Hyperparameter Optimization Analysis
+============================================================
 
 Optuna provides various visualization features in :mod:`optuna.visualization` to analyze optimization results visually.
 
@@ -49,7 +49,9 @@ from optuna.visualization import plot_intermediate_values
 from optuna.visualization import plot_optimization_history
 from optuna.visualization import plot_parallel_coordinate
 from optuna.visualization import plot_param_importances
+from optuna.visualization import plot_rank
 from optuna.visualization import plot_slice
+from optuna.visualization import plot_timeline
 
 SEED = 42
 
@@ -139,3 +141,11 @@ optuna.visualization.plot_param_importances(
 ###################################################################################################
 # Visualize empirical distribution function. See :func:`~optuna.visualization.plot_edf` for the details.
 plot_edf(study)
+
+###################################################################################################
+# Visualize parameter relations with scatter plots colored by objective values. See :func:`~optuna.visualization.plot_rank` for the details.
+plot_rank(study)
+
+###################################################################################################
+# Visualize the optimization timeline of performed trials. See :func:`~optuna.visualization.plot_timeline` for the details.
+plot_timeline(study)

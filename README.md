@@ -85,7 +85,7 @@ Examples can be found in [optuna/optuna-examples](https://github.com/optuna/optu
 
 ## Integrations
 
-[Integrations modules](https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/003_efficient_optimization_algorithms.html#integration-modules-for-pruning), which allow pruning, or early stopping, of unpromising trials are available for the following libraries:
+[Integrations modules](https://optuna-integration.readthedocs.io/en/stable/index.html), which allow pruning, or early stopping, of unpromising trials are available for the following libraries:
 
 * [AllenNLP](https://github.com/optuna/optuna-examples/tree/main/allennlp)
 * [Catalyst](https://github.com/optuna/optuna-examples/tree/main/pytorch/catalyst_simple.py)

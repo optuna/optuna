@@ -32,7 +32,6 @@ from optuna._imports import _LazyImport
 from optuna._typing import JSONSerializable
 from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.distributions import BaseDistribution
-from optuna.storages._cached_storage import _CachedStorage
 from optuna.storages._heartbeat import is_heartbeat_enabled
 from optuna.study._multi_objective import _get_pareto_front_trials
 from optuna.study._optimize import _optimize
@@ -275,8 +274,6 @@ class Study:
     ) -> List[FrozenTrial]:
         if use_cache:
             if self._thread_local.cached_all_trials is None:
-                if isinstance(self._storage, _CachedStorage):
-                    self._storage.read_trials_from_remote_storage(self._study_id)
                 self._thread_local.cached_all_trials = self._storage.get_all_trials(
                     self._study_id, deepcopy=False
                 )
@@ -286,9 +283,6 @@ class Study:
             else:
                 filtered_trials = trials
             return copy.deepcopy(filtered_trials) if deepcopy else filtered_trials
-
-        if isinstance(self._storage, _CachedStorage):
-            self._storage.read_trials_from_remote_storage(self._study_id)
 
         return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy, states=states)
 
@@ -438,14 +432,13 @@ class Study:
             show_progress_bar:
                 Flag to show progress bars or not. To disable progress bar, set this :obj:`False`.
                 Currently, progress bar is experimental feature and disabled
-                when ``n_trials`` is :obj:`None`, ``timeout`` not is :obj:`None`, and
+                when ``n_trials`` is :obj:`None`, ``timeout`` is not :obj:`None`, and
                 ``n_jobs`` :math:`\\ne 1`.
 
         Raises:
             RuntimeError:
                 If nested invocation of this method occurs.
         """
-
         _optimize(
             study=self,
             func=func,
@@ -535,8 +528,6 @@ class Study:
 
         # Sync storage once every trial.
         self._thread_local.cached_all_trials = None
-        if isinstance(self._storage, _CachedStorage):
-            self._storage.read_trials_from_remote_storage(self._study_id)
 
         trial_id = self._pop_waiting_trial_id()
         if trial_id is None:

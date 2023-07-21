@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from collections import UserDict
 import copy
 import datetime
 from typing import Any
@@ -60,6 +63,7 @@ class Trial(BaseTrial):
             study, self._cached_frozen_trial
         )
         self._relative_params: Optional[Dict[str, Any]] = None
+        self._fixed_params = self._cached_frozen_trial.system_attrs.get("fixed_params", {})
 
     @property
     def relative_params(self) -> Dict[str, Any]:
@@ -80,8 +84,6 @@ class Trial(BaseTrial):
         log: bool = False,
     ) -> float:
         """Suggest a value for the floating point parameter.
-
-        .. versionadded:: 1.3.0
 
         Example:
 
@@ -623,7 +625,7 @@ class Trial(BaseTrial):
             param_value = trial.params[name]
         else:
             if self._is_fixed_param(name, distribution):
-                param_value = trial.system_attrs["fixed_params"][name]
+                param_value = self._fixed_params[name]
             elif distribution.single():
                 param_value = distributions._get_single_value(distribution)
             elif self._is_relative_param(name, distribution):
@@ -643,14 +645,10 @@ class Trial(BaseTrial):
         return param_value
 
     def _is_fixed_param(self, name: str, distribution: BaseDistribution) -> bool:
-        system_attrs = self._cached_frozen_trial.system_attrs
-        if "fixed_params" not in system_attrs:
+        if name not in self._fixed_params:
             return False
 
-        if name not in system_attrs["fixed_params"]:
-            return False
-
-        param_value = system_attrs["fixed_params"][name]
+        param_value = self._fixed_params[name]
         param_value_in_internal_repr = distribution.to_internal_repr(param_value)
 
         contained = distribution._contains(param_value_in_internal_repr)
@@ -693,10 +691,12 @@ class Trial(BaseTrial):
             )
 
     def _get_latest_trial(self) -> FrozenTrial:
-        # TODO(eukaryo): Remove this method after `system_attrs` property is deprecated.
-        system_attrs = copy.deepcopy(self.storage.get_trial_system_attrs(self._trial_id))
-        self._cached_frozen_trial.system_attrs = system_attrs
-        return self._cached_frozen_trial
+        # TODO(eukaryo): Remove this method after `system_attrs` property is removed.
+        latest_trial = copy.copy(self._cached_frozen_trial)
+        latest_trial.system_attrs = _LazyTrialSystemAttrs(  # type: ignore[assignment]
+            self._trial_id, self.storage
+        )
+        return latest_trial
 
     @property
     def params(self) -> Dict[str, Any]:
@@ -757,3 +757,18 @@ class Trial(BaseTrial):
         """
 
         return self._cached_frozen_trial.number
+
+
+class _LazyTrialSystemAttrs(UserDict):
+    def __init__(self, trial_id: int, storage: optuna.storages.BaseStorage) -> None:
+        super().__init__()
+        self._trial_id = trial_id
+        self._storage = storage
+        self._initialized = False
+
+    def __getattribute__(self, key: str) -> Any:
+        if key == "data":
+            if not self._initialized:
+                self._initialized = True
+                super().update(self._storage.get_trial_system_attrs(self._trial_id))
+        return super().__getattribute__(key)

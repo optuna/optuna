@@ -185,7 +185,9 @@ class BruteForceSampler(BaseSampler):
             deepcopy=False,
             states=(
                 TrialState.COMPLETE,
+                TrialState.PRUNED,
                 TrialState.RUNNING,
+                TrialState.FAIL,
             ),
         )
         tree = self._build_tree((t for t in trials if t.number != trial.number), trial.params)
@@ -207,7 +209,9 @@ class BruteForceSampler(BaseSampler):
             deepcopy=False,
             states=(
                 TrialState.COMPLETE,
+                TrialState.PRUNED,
                 TrialState.RUNNING,
+                TrialState.FAIL,
             ),
         )
         tree = self._build_tree(

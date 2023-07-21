@@ -978,6 +978,18 @@ def test_callbacks(n_jobs: int) -> None:
     assert states == []
 
 
+def test_optimize_infinite_budget_progbar() -> None:
+    def terminate_study(study: Study, trial: FrozenTrial) -> None:
+        study.stop()
+
+    study = create_study()
+
+    with pytest.warns(UserWarning):
+        study.optimize(
+            func, n_trials=None, timeout=None, show_progress_bar=True, callbacks=[terminate_study]
+        )
+
+
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_trials(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
@@ -1527,7 +1539,7 @@ def test_tell_from_another_process() -> None:
         assert study.best_value == 1.2
 
         # Should fail because the trial0 is already finished.
-        with pytest.raises(RuntimeError):
+        with pytest.raises(ValueError):
             pool.starmap(_process_tell, [(study, trial0, 1.2)])
 
 

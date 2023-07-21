@@ -87,7 +87,6 @@ document = [
 ]
 integration = [
     "botorch>=0.4.0; python_version<'3.11'",
-    "catalyst>=21.3; python_version<'3.11'",
     "catboost>=0.26; sys_platform!='darwin'",
     "catboost>=0.26,<1.2; sys_platform=='darwin'",
     "cma",
@@ -102,9 +101,7 @@ integration = [
     "scikit-learn>=0.24.2",
     "scikit-optimize; python_version<'3.11'",
     "shap; python_version<'3.11'",
-    "skorch; python_version<'3.11'",
     "tensorflow; python_version<'3.11'",
-    "tensorflow-datasets; python_version<'3.11'",
     "torch; python_version<'3.11'",
     "torchaudio; python_version<'3.11'",
     "torchvision; python_version<'3.11'",

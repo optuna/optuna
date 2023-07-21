@@ -7,8 +7,8 @@ import pytest
 
 from optuna.distributions import FloatDistribution
 from optuna.study import StudyDirection
+from optuna.terminator import RegretBoundEvaluator
 from optuna.terminator.improvement._preprocessing import NullPreprocessing
-from optuna.terminator.improvement.evaluator import RegretBoundEvaluator
 from optuna.terminator.improvement.gp.base import _get_beta
 from optuna.terminator.improvement.gp.base import BaseGaussianProcess
 from optuna.trial import create_trial

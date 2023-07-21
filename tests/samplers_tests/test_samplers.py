@@ -1,16 +1,13 @@
+from __future__ import annotations
+
 from collections import OrderedDict
+from collections.abc import Callable
+from collections.abc import Sequence
 import multiprocessing
 from multiprocessing.managers import DictProxy
 import os
 import pickle
 from typing import Any
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Sequence
-from typing import Tuple
-from typing import Union
 from unittest.mock import patch
 import warnings
 
@@ -25,6 +22,8 @@ from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
+from optuna.integration.botorch import logei_candidates_func
+from optuna.integration.botorch import qei_candidates_func
 from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.testing.objectives import fail_objective
@@ -53,9 +52,20 @@ parametrize_sampler = pytest.mark.parametrize(
             marks=pytest.mark.integration,
         ),
         optuna.samplers.NSGAIISampler,
+        optuna.samplers.NSGAIIISampler,
         optuna.samplers.QMCSampler,
         pytest.param(
-            lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
+            lambda: optuna.integration.BoTorchSampler(
+                n_startup_trials=0,
+                candidates_func=logei_candidates_func,
+            ),
+            marks=pytest.mark.integration,
+        ),
+        pytest.param(
+            lambda: optuna.integration.BoTorchSampler(
+                n_startup_trials=0,
+                candidates_func=qei_candidates_func,
+            ),
             marks=pytest.mark.integration,
         ),
     ],
@@ -82,6 +92,7 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
     "multi_objective_sampler_class",
     [
         optuna.samplers.NSGAIISampler,
+        optuna.samplers.NSGAIIISampler,
         lambda: optuna.samplers.TPESampler(n_startup_trials=0),
         pytest.param(
             lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
@@ -89,7 +100,7 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
         ),
     ],
 )
-sampler_class_with_seed: Dict[str, Tuple[Callable[[int], BaseSampler], bool]] = {
+sampler_class_with_seed: dict[str, tuple[Callable[[int], BaseSampler], bool]] = {
     "RandomSampler": (lambda seed: optuna.samplers.RandomSampler(seed=seed), False),
     "TPESampler": (lambda seed: optuna.samplers.TPESampler(seed=seed), False),
     "multivariate TPESampler": (
@@ -104,6 +115,7 @@ sampler_class_with_seed: Dict[str, Tuple[Callable[[int], BaseSampler], bool]] = 
     "SkoptSampler": (lambda seed: optuna.integration.SkoptSampler(seed=seed), True),
     "PyCmaSampler": (lambda seed: optuna.integration.PyCmaSampler(seed=seed), True),
     "NSGAIISampler": (lambda seed: optuna.samplers.NSGAIISampler(seed=seed), False),
+    "NSGAIIISampler": (lambda seed: optuna.samplers.NSGAIIISampler(seed=seed), False),
     "QMCSampler": (lambda seed: optuna.samplers.QMCSampler(seed=seed), False),
     "BoTorchSampler": (lambda seed: optuna.integration.BoTorchSampler(seed=seed), True),
 }
@@ -148,6 +160,7 @@ parametrize_sampler_name_with_seed = pytest.mark.parametrize(
             marks=pytest.mark.integration,
         ),
         (optuna.samplers.NSGAIISampler, True, True),
+        (optuna.samplers.NSGAIIISampler, True, True),
         (
             lambda: optuna.samplers.PartialFixedSampler(
                 fixed_params={"x": 0}, base_sampler=optuna.samplers.RandomSampler()
@@ -170,7 +183,7 @@ def test_sampler_reseed_rng(
     expected_has_rng: bool,
     expected_has_another_sampler: bool,
 ) -> None:
-    def _extract_attr_name_from_sampler_by_cls(sampler: BaseSampler, cls: Any) -> Optional[str]:
+    def _extract_attr_name_from_sampler_by_cls(sampler: BaseSampler, cls: Any) -> str | None:
         for name, attr in sampler.__dict__.items():
             if isinstance(attr, cls):
                 return name
@@ -267,7 +280,7 @@ def test_raise_error_for_samplers_during_multi_objectives(
 
 
 @pytest.mark.parametrize("seed", [None, 0, 169208])
-def test_pickle_random_sampler(seed: Optional[int]) -> None:
+def test_pickle_random_sampler(seed: int | None) -> None:
     sampler = optuna.samplers.RandomSampler(seed)
     restored_sampler = pickle.loads(pickle.dumps(sampler))
     assert sampler._rng.bytes(10) == restored_sampler._rng.bytes(10)
@@ -391,12 +404,12 @@ def test_sample_relative_numerical(
     x_distribution: BaseDistribution,
     y_distribution: BaseDistribution,
 ) -> None:
-    search_space: Dict[str, BaseDistribution] = OrderedDict(x=x_distribution, y=y_distribution)
+    search_space: dict[str, BaseDistribution] = OrderedDict(x=x_distribution, y=y_distribution)
     study = optuna.study.create_study(sampler=relative_sampler_class())
     trial = study.ask(search_space)
     study.tell(trial, sum(trial.params.values()))
 
-    def sample() -> List[Union[int, float]]:
+    def sample() -> list[int | float]:
         params = study.sampler.sample_relative(study, _create_new_trial(study), search_space)
         return [params[name] for name in search_space]
 
@@ -422,14 +435,14 @@ def test_sample_relative_numerical(
 
 @parametrize_relative_sampler
 def test_sample_relative_categorical(relative_sampler_class: Callable[[], BaseSampler]) -> None:
-    search_space: Dict[str, BaseDistribution] = OrderedDict(
+    search_space: dict[str, BaseDistribution] = OrderedDict(
         x=CategoricalDistribution([1, 10, 100]), y=CategoricalDistribution([-1, -10, -100])
     )
     study = optuna.study.create_study(sampler=relative_sampler_class())
     trial = study.ask(search_space)
     study.tell(trial, sum(trial.params.values()))
 
-    def sample() -> List[float]:
+    def sample() -> list[float]:
         params = study.sampler.sample_relative(study, _create_new_trial(study), search_space)
         return [params[name] for name in search_space]
 
@@ -457,14 +470,14 @@ def test_sample_relative_categorical(relative_sampler_class: Callable[[], BaseSa
 def test_sample_relative_mixed(
     relative_sampler_class: Callable[[], BaseSampler], x_distribution: BaseDistribution
 ) -> None:
-    search_space: Dict[str, BaseDistribution] = OrderedDict(
+    search_space: dict[str, BaseDistribution] = OrderedDict(
         x=x_distribution, y=CategoricalDistribution([-1, -10, -100])
     )
     study = optuna.study.create_study(sampler=relative_sampler_class())
     trial = study.ask(search_space)
     study.tell(trial, sum(trial.params.values()))
 
-    def sample() -> List[float]:
+    def sample() -> list[float]:
         params = study.sampler.sample_relative(study, _create_new_trial(study), search_space)
         return [params[name] for name in search_space]
 
@@ -537,8 +550,8 @@ def _create_new_trial(study: Study) -> FrozenTrial:
 class FixedSampler(BaseSampler):
     def __init__(
         self,
-        relative_search_space: Dict[str, BaseDistribution],
-        relative_params: Dict[str, Any],
+        relative_search_space: dict[str, BaseDistribution],
+        relative_params: dict[str, Any],
         unknown_param_value: Any,
     ) -> None:
         self.relative_search_space = relative_search_space
@@ -547,12 +560,12 @@ class FixedSampler(BaseSampler):
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
-    ) -> Dict[str, BaseDistribution]:
+    ) -> dict[str, BaseDistribution]:
         return self.relative_search_space
 
     def sample_relative(
-        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
-    ) -> Dict[str, Any]:
+        self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
+    ) -> dict[str, Any]:
         return self.relative_params
 
     def sample_independent(
@@ -566,7 +579,7 @@ class FixedSampler(BaseSampler):
 
 
 def test_sample_relative() -> None:
-    relative_search_space: Dict[str, BaseDistribution] = {
+    relative_search_space: dict[str, BaseDistribution] = {
         "a": FloatDistribution(low=0, high=5),
         "b": CategoricalDistribution(choices=("foo", "bar", "baz")),
         "c": IntDistribution(low=20, high=50),  # Not exist in `relative_params`.
@@ -699,7 +712,7 @@ def test_after_trial() -> None:
             study: Study,
             trial: FrozenTrial,
             state: TrialState,
-            values: Optional[Sequence[float]],
+            values: Sequence[float] | None,
         ) -> None:
             assert len(study.trials) - 1 == trial.number
             assert trial.state == TrialState.RUNNING
@@ -728,7 +741,7 @@ def test_after_trial_pruning() -> None:
             study: Study,
             trial: FrozenTrial,
             state: TrialState,
-            values: Optional[Sequence[float]],
+            values: Sequence[float] | None,
         ) -> None:
             assert len(study.trials) - 1 == trial.number
             assert trial.state == TrialState.RUNNING
@@ -756,7 +769,7 @@ def test_after_trial_failing() -> None:
             study: Study,
             trial: FrozenTrial,
             state: TrialState,
-            values: Optional[Sequence[float]],
+            values: Sequence[float] | None,
         ) -> None:
             assert len(study.trials) - 1 == trial.number
             assert trial.state == TrialState.RUNNING
@@ -786,7 +799,7 @@ def test_after_trial_failing_in_after_trial() -> None:
             study: Study,
             trial: FrozenTrial,
             state: TrialState,
-            values: Optional[Sequence[float]],
+            values: Sequence[float] | None,
         ) -> None:
             nonlocal n_calls
             n_calls += 1
@@ -823,7 +836,7 @@ def test_after_trial_with_study_tell() -> None:
             study: Study,
             trial: FrozenTrial,
             state: TrialState,
-            values: Optional[Sequence[float]],
+            values: Sequence[float] | None,
         ) -> None:
             nonlocal n_calls
             n_calls += 1

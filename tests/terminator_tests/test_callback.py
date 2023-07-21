@@ -1,7 +1,7 @@
 from optuna.study import create_study
 from optuna.study import Study
-from optuna.terminator.callback import TerminatorCallback
-from optuna.terminator.terminator import BaseTerminator
+from optuna.terminator import BaseTerminator
+from optuna.terminator import TerminatorCallback
 from optuna.trial import TrialState
 
 

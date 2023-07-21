@@ -1,12 +1,9 @@
+from __future__ import annotations
+
 from io import BytesIO
 import math
 from typing import Any
 from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
-from typing import Union
 
 import numpy as np
 import pytest
@@ -27,8 +24,6 @@ from optuna.visualization._rank import _get_rank_info
 from optuna.visualization._rank import _RankPlotInfo
 from optuna.visualization._rank import _RankSubplotInfo
 
-
-RANGE_TYPE = Union[Tuple[str, str], Tuple[float, float]]
 
 parametrize_plot_rank = pytest.mark.parametrize("plot_rank", [plotly_plot_rank])
 
@@ -85,7 +80,7 @@ def _create_study_with_log_scale_and_str_category_3d() -> Study:
 
 def _create_study_mixture_category_types() -> Study:
     study = create_study()
-    distributions: Dict[str, BaseDistribution] = {
+    distributions: dict[str, BaseDistribution] = {
         "param_a": CategoricalDistribution([None, "100"]),
         "param_b": CategoricalDistribution([101, 102.0]),
     }
@@ -114,7 +109,7 @@ def _named_tuple_equal(t1: Any, t2: Any) -> bool:
         return t1 == t2
 
 
-def _get_nested_list_shape(nested_list: List[List[Any]]) -> Tuple[int, int]:
+def _get_nested_list_shape(nested_list: list[list[Any]]) -> tuple[int, int]:
     assert all(len(nested_list[0]) == len(row) for row in nested_list)
     return len(nested_list), len(nested_list[0])
 
@@ -149,7 +144,7 @@ def _get_nested_list_shape(nested_list: List[List[Any]]) -> Tuple[int, int]:
 def test_plot_rank(
     plot_rank: Callable[..., Any],
     specific_create_study: Callable[[], Study],
-    params: Optional[List[str]],
+    params: list[str] | None,
 ) -> None:
     study = specific_create_study()
     figure = plot_rank(study, params=params)
@@ -179,7 +174,7 @@ def test_target_is_none_and_study_is_multi_obj() -> None:
     ],
 )
 def test_get_rank_info_empty(
-    specific_create_study: Callable[[], Study], params: Optional[List[str]]
+    specific_create_study: Callable[[], Study], params: list[str] | None
 ) -> None:
     study = specific_create_study()
     info = _get_rank_info(study, params=params, target=None, target_name="Objective Value")
@@ -195,7 +190,7 @@ def test_get_rank_info_non_exist_param_error() -> None:
 
 
 @pytest.mark.parametrize("params", [[], ["param_a"]])
-def test_get_rank_info_too_short_params(params: List[str]) -> None:
+def test_get_rank_info_too_short_params(params: list[str]) -> None:
     study = prepare_study_with_trials()
     info = _get_rank_info(study, params=params, target=None, target_name="Objective Value")
     assert len(info.params) == len(params)
@@ -249,7 +244,7 @@ def test_get_rank_info_2_params() -> None:
         None,
     ],
 )
-def test_get_rank_info_more_than_2_params(params: Optional[List[str]]) -> None:
+def test_get_rank_info_more_than_2_params(params: list[str] | None) -> None:
     study = prepare_study_with_trials()
     n_params = len(params) if params is not None else 4
     info = _get_rank_info(study, params=params, target=None, target_name="Objective Value")
@@ -264,7 +259,7 @@ def test_get_rank_info_more_than_2_params(params: Optional[List[str]]) -> None:
         ["param_a", "param_b", "param_c"],
     ],
 )
-def test_get_rank_info_customized_target(params: List[str]) -> None:
+def test_get_rank_info_customized_target(params: list[str]) -> None:
     study = prepare_study_with_trials()
     info = _get_rank_info(
         study, params=params, target=lambda t: t.params["param_d"], target_name="param_d"
@@ -282,7 +277,7 @@ def test_get_rank_info_customized_target(params: List[str]) -> None:
         ["param_b", "param_a"],  # `y_axis` has one observation.
     ],
 )
-def test_generate_rank_plot_for_few_observations(params: List[str]) -> None:
+def test_generate_rank_plot_for_few_observations(params: list[str]) -> None:
     study = create_study(direction="minimize")
     study.add_trial(
         create_trial(

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 import math
 from typing import Any
 from typing import Callable
@@ -127,19 +128,31 @@ def _generate_slice_subplot(
     target_name: str,
 ) -> "PathCollection":
     ax.set(xlabel=subplot_info.param_name, ylabel=target_name)
-    x_values = subplot_info.x
     scale = None
     if subplot_info.is_log:
         ax.set_xscale("log")
         scale = "log"
-    elif not subplot_info.is_numerical:
-        x_values = [str(x) for x in subplot_info.x]
+    if subplot_info.is_numerical:
+        x_values = subplot_info.x
+        y_values = subplot_info.y
+        c_values = subplot_info.trial_numbers
+    else:
+        x_values = []
+        y_values = []
+        c_values = []
+        assert subplot_info.x_labels is not None
+        points_dict = defaultdict(list)
+        for x, y, number in zip(subplot_info.x, subplot_info.y, subplot_info.trial_numbers):
+            points_dict[x].append((y, number))
+        for x_label in subplot_info.x_labels:
+            for y, number in points_dict[x_label]:
+                x_values.append(str(x_label))
+                y_values.append(y)
+                c_values.append(number)
         scale = "categorical"
     xlim = _calc_lim_with_padding(x_values, padding_ratio, scale)
     ax.set_xlim(xlim[0], xlim[1])
-    sc = ax.scatter(
-        x_values, subplot_info.y, c=subplot_info.trial_numbers, cmap=cmap, edgecolors="grey"
-    )
+    sc = ax.scatter(x_values, y_values, c=c_values, cmap=cmap, edgecolors="grey")
     ax.label_outer()
 
     return sc

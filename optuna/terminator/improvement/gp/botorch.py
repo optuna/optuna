@@ -5,11 +5,11 @@ from typing import Optional
 import numpy as np
 
 from optuna._imports import try_import
+from optuna.distributions import _is_distribution_log
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.search_space import intersection_search_space
-from optuna.terminator import _distribution_is_log
 from optuna.terminator.improvement.gp.base import BaseGaussianProcess
 from optuna.trial._frozen import FrozenTrial
 from optuna.trial._state import TrialState
@@ -99,7 +99,7 @@ def _convert_trials_to_tensors(trials: list[FrozenTrial]) -> tuple[torch.Tensor,
         for param in sorted_params:
             distribution = search_space[param]
 
-            assert not _distribution_is_log(distribution)
+            assert not _is_distribution_log(distribution)
             assert not isinstance(distribution, CategoricalDistribution)
 
             param_value = float(trial.params[param])

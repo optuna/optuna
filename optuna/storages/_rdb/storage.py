@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import defaultdict
 from contextlib import contextmanager
 import copy
@@ -460,7 +462,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                     if n_retries > 2:
                         raise
 
-            n_retries += 1
+                n_retries += 1
 
             if template_trial:
                 frozen = copy.deepcopy(template_trial)
@@ -912,11 +914,11 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 p.param_name: distributions.json_to_distribution(
                     p.distribution_json
                 ).to_external_repr(p.param_value)
-                for p in trial.params
+                for p in params
             },
             distributions={
                 p.param_name: distributions.json_to_distribution(p.distribution_json)
-                for p in trial.params
+                for p in params
             },
             user_attrs={attr.key: json.loads(attr.value_json) for attr in trial.user_attributes},
             system_attrs={
