@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import pathlib
 
@@ -6,13 +8,15 @@ import pytest
 import optuna
 from optuna.artifacts import FileSystemArtifactStore
 from optuna.artifacts import upload_artifact
+from optuna.artifacts._protocol import ArtifactStore
 from optuna.artifacts._upload import ArtifactMeta
 
 
 @pytest.fixture(params=["FileSystem"])
-def artifact_store(tmp_path: pathlib.PurePath, request):
+def artifact_store(tmp_path: pathlib.PurePath, request) -> ArtifactStore:
     if request.param == "FileSystem":
         return FileSystemArtifactStore(str(tmp_path))
+    assert False, f"Unknown artifact store: {request.param}"
 
 
 def test_upload_artifact(tmp_path, artifact_store) -> None:
