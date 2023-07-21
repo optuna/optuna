@@ -594,6 +594,41 @@ def test_elite_population_selection_strategy_invalid_value() -> None:
 
 
 @pytest.mark.parametrize(
+    "objectives, expected_elite_population",
+    [
+        (
+            [[1.0, 4.0], [2.0, 3.0], [3.0, 2.0], [4.0, 1.0]],
+            [[1.0, 4.0], [2.0, 3.0], [3.0, 2.0], [4.0, 1.0]],
+        ),
+        (
+            [[1.0, 2.0], [2.0, 1.0], [3.0, 3.0], [4.0, 4.0]],
+            [[1.0, 2.0], [2.0, 1.0], [3.0, 3.0], [4.0, 4.0]],
+        ),
+        (
+            [[1.0, 2.0], [2.0, 1.0], [5.0, 3.0], [3.0, 5.0], [4.0, 4.0]],
+            [[1.0, 2.0], [2.0, 1.0], [5.0, 3.0], [3.0, 5.0]],
+        ),
+    ],
+)
+def test_elite_population_selection_strategy_result(
+    objectives: list[list[float]],
+    expected_elite_population: list[list[float]],
+) -> None:
+    population_size = 4
+    elite_population_selection_strategy = NSGAIIElitePopulationSelectionStrategy(
+        population_size=population_size
+    )
+    study = optuna.create_study(directions=["minimize", "minimize"])
+    study.add_trials([optuna.create_trial(values=values) for values in objectives])
+    elite_population_values = [
+        trial.values for trial in elite_population_selection_strategy(study, study.get_trials())
+    ]
+    assert len(elite_population_values) == population_size
+    for values in elite_population_values:
+        assert values in expected_elite_population
+
+
+@pytest.mark.parametrize(
     "mutation_prob,crossover,crossover_prob,swapping_prob",
     [
         (1.2, UniformCrossover(), 0.9, 0.5),
