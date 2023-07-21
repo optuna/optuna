@@ -630,7 +630,7 @@ def test_child_generation_strategy_mutation_prob(
     assert child_generation_strategy(study, search_space, parent_population) == child_params
 
 
-def test_sample_relative() -> None:
+def test_child_generation_strategy_generation_key() -> None:
     n_params = 2
 
     def objective(trial: optuna.Trial) -> list[float]:
