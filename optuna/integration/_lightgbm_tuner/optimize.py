@@ -173,7 +173,9 @@ class _OptunaObjective(_BaseTuner):
 
         self.trial_count = 0
         self.best_score = best_score
-        self.best_booster_with_trial_number: tuple["lgb.Booster", int] | None = None
+        self.best_booster_with_trial_number: tuple[
+            "lgb.Booster" | "lgb.CVBooster", int
+        ] | None = None
         self.step_name = step_name
         self.model_dir = model_dir
 
@@ -300,7 +302,7 @@ class _OptunaObjectiveCV(_OptunaObjective):
             pbar=pbar,
         )
 
-    def _get_cv_scores(self, cv_results: dict[str, list[float]]) -> list[float]:
+    def _get_cv_scores(self, cv_results: dict[str, list[float] | "lgb.CVBooster"]) -> list[float]:
         metric = self._get_metric_for_objective()
         metric_key = f"{metric}-mean"
         # The prefix "valid " is added to metric name since LightGBM v4.0.0.
@@ -309,6 +311,7 @@ class _OptunaObjectiveCV(_OptunaObjective):
             if metric_key in cv_results
             else cv_results["valid " + metric_key]
         )
+        assert not isinstance(val_scores, lgb.CVBooster)
         return val_scores
 
     def __call__(self, trial: optuna.trial.Trial) -> float:
@@ -329,12 +332,14 @@ class _OptunaObjectiveCV(_OptunaObjective):
                 # At version `lightgbm==3.0.0`, :class:`lightgbm.CVBooster` does not
                 # have `__getstate__` which is required for pickle serialization.
                 cvbooster = cv_results["cvbooster"]
+                assert isinstance(cvbooster, lgb.CVBooster)
                 pickle.dump((cvbooster.boosters, cvbooster.best_iteration), fout)
             _logger.info("The booster of trial#{} was saved as {}.".format(trial.number, path))
 
         if self.compare_validation_metrics(val_score, self.best_score):
             self.best_score = val_score
             if self.lgbm_kwargs.get("return_cvbooster"):
+                assert not isinstance(cv_results["cvbooster"], list)
                 self.best_booster_with_trial_number = (cv_results["cvbooster"], trial.number)
 
         self._postprocess(trial, elapsed_secs, average_iteration_time)
@@ -478,7 +483,7 @@ class _LightGBMBaseTuner(_BaseTuner):
             params.update(self.lgbm_params)
             return params
 
-    def get_best_booster(self) -> "lgb.Booster":
+    def get_best_booster(self) -> "lgb.Booster" | "lgb.CVBooster":
         """Return the best booster.
 
         If the best booster cannot be found, :class:`ValueError` will be raised. To prevent the
@@ -488,6 +493,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         """
         if self._best_booster_with_trial_number is not None:
             if self._best_booster_with_trial_number[1] == self.study.best_trial.number:
+                assert isinstance(self._best_booster_with_trial_number[0], lgb.Booster)
                 return self._best_booster_with_trial_number[0]
         if len(self.study.trials) == 0:
             raise ValueError("The best booster is not available because no trials completed.")
@@ -1079,6 +1085,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
             )
         if self._best_booster_with_trial_number is not None:
             if self._best_booster_with_trial_number[1] == self.study.best_trial.number:
+                assert isinstance(self._best_booster_with_trial_number[0], lgb.CVBooster)
                 return self._best_booster_with_trial_number[0]
         if len(self.study.trials) == 0:
             raise ValueError("The best booster is not available because no trials completed.")
