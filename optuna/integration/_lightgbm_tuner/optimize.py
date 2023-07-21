@@ -852,6 +852,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
         super().__init__(
             params,
             train_set,
+            callbacks=callbacks,
             num_boost_round=num_boost_round,
             fobj=fobj,
             feval=feval,
@@ -859,7 +860,6 @@ class LightGBMTuner(_LightGBMBaseTuner):
             categorical_feature=categorical_feature,
             early_stopping_rounds=early_stopping_rounds,
             verbose_eval=verbose_eval,
-            callbacks=callbacks,
             time_budget=time_budget,
             sample_size=sample_size,
             study=study,
@@ -1024,6 +1024,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         super().__init__(
             params,
             train_set,
+            callbacks=callbacks,
             num_boost_round=num_boost_round,
             fobj=fobj,
             feval=feval,
@@ -1031,7 +1032,6 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
             categorical_feature=categorical_feature,
             early_stopping_rounds=early_stopping_rounds,
             verbose_eval=verbose_eval,
-            callbacks=callbacks,
             time_budget=time_budget,
             sample_size=sample_size,
             study=study,
