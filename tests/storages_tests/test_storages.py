@@ -9,7 +9,9 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
+from typing import Union
 
 import numpy as np
 import pytest
@@ -334,7 +336,7 @@ def test_create_new_trial_with_template_trial(
         distributions={"x": FloatDistribution(0, 1)},
         user_attrs={"foo": "bar"},
         system_attrs={"baz": 123},
-        intermediate_values={1: 10, 2: 100, 3: 1000},
+        intermediate_values={1: 10.0, 2: 100.0, 3: 1000.0},
         number=55,  # This entry is ignored.
         trial_id=-1,  # dummy value (unused).
     )
@@ -1025,7 +1027,7 @@ def _generate_trial(generator: random.Random) -> FrozenTrial:
     distributions = {}
     user_attrs = {}
     system_attrs: Dict[str, Any] = {}
-    intermediate_values = {}
+    intermediate_values: Dict[int, Union[float, Sequence[float]]] = {}
     for key, (value, dist) in example_params.items():
         if generator.choice([True, False]):
             params[key] = value
