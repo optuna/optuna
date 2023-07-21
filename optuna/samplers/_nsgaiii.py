@@ -77,6 +77,7 @@ class NSGAIIISampler(BaseSampler):
 
     def __init__(
         self,
+        *,
         population_size: int = 50,
         mutation_prob: float | None = None,
         crossover: BaseCrossover | None = None,
