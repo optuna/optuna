@@ -87,6 +87,7 @@ class NSGAIIISampler(BaseSampler):
         swapping_prob: float = 0.5,
         seed: int | None = None,
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
+        *,
         reference_points: np.ndarray | None = None,
         dividing_parameter: int = 3,
         child_generation_strategy: Callable[
