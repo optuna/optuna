@@ -1,25 +1,26 @@
+from __future__ import annotations
+
 from typing import Any
-from typing import Dict
 
 import optuna
 from optuna.distributions import BaseDistribution
 
 
 class DeterministicSampler(optuna.samplers.BaseSampler):
-    def __init__(self, params: Dict[str, Any]) -> None:
+    def __init__(self, params: dict[str, Any]) -> None:
         self.params = params
 
     def infer_relative_search_space(
         self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial"
-    ) -> Dict[str, BaseDistribution]:
+    ) -> dict[str, BaseDistribution]:
         return {}
 
     def sample_relative(
         self,
         study: "optuna.study.Study",
         trial: "optuna.trial.FrozenTrial",
-        search_space: Dict[str, BaseDistribution],
-    ) -> Dict[str, Any]:
+        search_space: dict[str, BaseDistribution],
+    ) -> dict[str, Any]:
         return {}
 
     def sample_independent(
@@ -39,8 +40,8 @@ class FirstTrialOnlyRandomSampler(optuna.samplers.RandomSampler):
         self,
         study: "optuna.study.Study",
         trial: "optuna.trial.FrozenTrial",
-        search_space: Dict[str, BaseDistribution],
-    ) -> Dict[str, float]:
+        search_space: dict[str, BaseDistribution],
+    ) -> dict[str, float]:
         if len(study.trials) > 1:
             raise RuntimeError("`FirstTrialOnlyRandomSampler` only works on the first trial.")
 

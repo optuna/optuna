@@ -559,6 +559,11 @@ def test_child_generation_strategy_experimental_warning() -> None:
         NSGAIISampler(child_generation_strategy=lambda study, search_space, parent_population: {})
 
 
+def test_after_trial_strategy_experimental_warning() -> None:
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        NSGAIISampler(after_trial_strategy=lambda study, trial, state, value: None)
+
+
 # TODO(ohta): Consider to move this utility function to `optuna.testing` module.
 def _create_frozen_trial(
     number: int, values: Sequence[float], constraints: Sequence[float] | None = None

@@ -27,6 +27,7 @@ from optuna.samplers.nsgaii import SPXCrossover
 from optuna.samplers.nsgaii import UNDXCrossover
 from optuna.samplers.nsgaii import UniformCrossover
 from optuna.samplers.nsgaii import VSBXCrossover
+from optuna.samplers.nsgaii._after_trial_strategy import NSGAIIAfterTrialStrategy
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 
@@ -212,6 +213,11 @@ def test_child_generation_strategy_experimental_warning() -> None:
         NSGAIIISampler(child_generation_strategy=lambda study, search_space, parent_population: {})
 
 
+def test_after_trial_strategy_experimental_warning() -> None:
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        NSGAIIISampler(after_trial_strategy=lambda study, trial, state, value: None)
+
+
 def test_call_after_trial_of_random_sampler() -> None:
     sampler = NSGAIIISampler()
     study = optuna.create_study(sampler=sampler)
@@ -220,6 +226,34 @@ def test_call_after_trial_of_random_sampler() -> None:
     ) as mock_object:
         study.optimize(lambda _: 1.0, n_trials=1)
         assert mock_object.call_count == 1
+
+
+def test_call_after_trial_of_after_trial_strategy() -> None:
+    sampler = NSGAIIISampler()
+    study = optuna.create_study(sampler=sampler)
+    with patch.object(sampler, "_after_trial_strategy") as mock_object:
+        study.optimize(lambda _: 1.0, n_trials=1)
+        assert mock_object.call_count == 1
+
+
+@patch("optuna.samplers.nsgaii._after_trial_strategy._process_constraints_after_trial")
+def test_nsgaii_after_trial_strategy(mock_func: MagicMock) -> None:
+    def constraints_func(_: FrozenTrial) -> Sequence[float]:
+        return (float("nan"),)
+
+    state = optuna.trial.TrialState.FAIL
+    study = optuna.create_study()
+    trial = optuna.trial.create_trial(state=state)
+
+    after_trial_strategy_without_constrains = NSGAIIAfterTrialStrategy()
+    after_trial_strategy_without_constrains(study, trial, state)
+    assert mock_func.call_count == 0
+
+    after_trial_strategy_with_constrains = NSGAIIAfterTrialStrategy(
+        constraints_func=constraints_func
+    )
+    after_trial_strategy_with_constrains(study, trial, state)
+    assert mock_func.call_count == 1
 
 
 parametrize_crossover_population = pytest.mark.parametrize(
