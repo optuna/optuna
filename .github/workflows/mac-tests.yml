@@ -41,7 +41,6 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
 
-    # TODO(Shinichi): Remove the version constraint on PyTorch Lightning
     # TODO(c-bata): Remove the version constraint on fakeredis
     - name: Install
       run: |
@@ -53,7 +52,6 @@ jobs:
         optuna --version
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
-        pip install "pytorch-lightning<2.0.0"
         pip install "fakeredis<2.11.1"
 
     - name: Output installed packages
@@ -106,8 +104,8 @@ jobs:
         brew install openblas
 
     # TODO(Shinichi): Remove the version constraint on Numpy
-    # TODO(Shinichi): Remove the version constraint on PyTorch Lightning
     # TODO(c-bata): Remove the version constraint on fakeredis
+    # TODO(c-bata): Remove the version constraint on LightGBM
     - name: Install
       run: |
         python -m pip install --upgrade pip
@@ -121,8 +119,8 @@ jobs:
         pip install --progress-bar off .[optional]
         pip install --progress-bar off .[integration]
         pip install "numpy<1.24.0"
-        pip install "pytorch-lightning<2.0.0"
         pip install "fakeredis<2.11.1"
+        pip install "lightgbm<4.0.0"
 
     - name: Output installed packages
       run: |

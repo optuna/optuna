@@ -63,7 +63,7 @@ def plot_hypervolume_history(
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their hypervolumes.
-           ``study.n_objectives`` must be 2 or more.
+            The number of objectives must be 2 or more.
 
         reference_point:
             A reference point to use for hypervolume computation.
