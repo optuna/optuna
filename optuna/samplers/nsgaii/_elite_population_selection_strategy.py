@@ -43,13 +43,13 @@ class NSGAIIElitePopulationSelectionStrategy:
         population_per_rank = _fast_non_dominated_sort(population, study.directions, dominates)
 
         elite_population: list[FrozenTrial] = []
-        for population in population_per_rank:
-            if len(elite_population) + len(population) < self._population_size:
-                elite_population.extend(population)
+        for individuals in population_per_rank:
+            if len(elite_population) + len(individuals) < self._population_size:
+                elite_population.extend(individuals)
             else:
                 n = self._population_size - len(elite_population)
-                _crowding_distance_sort(population)
-                elite_population.extend(population[:n])
+                _crowding_distance_sort(individuals)
+                elite_population.extend(individuals[:n])
                 break
 
         return elite_population
