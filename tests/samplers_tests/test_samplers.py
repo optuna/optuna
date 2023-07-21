@@ -675,6 +675,25 @@ def test_multi_objective_sample_independent(
                 np.testing.assert_almost_equal(round_value, value)
 
 
+def test_before_trial() -> None:
+    n_calls = 0
+    n_trials = 3
+
+    class SamplerBeforeTrial(optuna.samplers.RandomSampler):
+        def before_trial(self, study: Study, trial: FrozenTrial) -> None:
+            assert len(study.trials) - 1 == trial.number
+            assert trial.state == TrialState.RUNNING
+            assert trial.values is None
+            nonlocal n_calls
+            n_calls += 1
+
+    sampler = SamplerBeforeTrial()
+    study = optuna.create_study(directions=["minimize", "minimize"], sampler=sampler)
+
+    study.optimize(lambda t: [t.suggest_float("y", -3, 3), t.suggest_int("x", 0, 10)], n_trials=3)
+    assert n_calls == n_trials
+
+
 def test_after_trial() -> None:
     n_calls = 0
     n_trials = 3
