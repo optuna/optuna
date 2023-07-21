@@ -140,10 +140,12 @@ def _tell_with_warning(
 
         last_step = frozen_trial.last_step
         if last_step is not None:
-            last_intermediate_value = frozen_trial.intermediate_values[last_step]
+            last_intermediate_values = frozen_trial.intermediate_values[last_step]
             # intermediate_values can be unacceptable value, i.e., NaN.
-            if _check_values_are_feasible(study, [last_intermediate_value]) is None:
-                values = [last_intermediate_value]
+            if isinstance(last_intermediate_values, float):
+                last_intermediate_values = [last_intermediate_values]
+            if _check_values_are_feasible(study, last_intermediate_values) is None:
+                values = last_intermediate_values
     elif state is None:
         if values is None:
             values_conversion_failure_message = "The value None could not be cast to float."
@@ -164,7 +166,7 @@ def _tell_with_warning(
 
     # Cast values to list of floats.
     if values is not None:
-        # values have beed checked to be castable to floats in _check_values_are_feasible.
+        # values have been checked to be castable to floats in _check_values_are_feasible.
         values = [float(value) for value in values]
 
     # Post-processing and storing the trial.

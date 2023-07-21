@@ -17,6 +17,7 @@ from typing import Optional
 from typing import Sequence
 from typing import Set
 from typing import TYPE_CHECKING
+from typing import Union
 import uuid
 
 import optuna
@@ -546,9 +547,15 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 self._set_trial_system_attr_without_commit(session, trial.trial_id, key, value)
 
             for step, intermediate_value in template_trial.intermediate_values.items():
-                self._set_trial_intermediate_value_without_commit(
-                    session, trial.trial_id, step, intermediate_value
-                )
+                if isinstance(intermediate_value, float):
+                    self._set_trial_intermediate_value_without_commit(
+                        session, trial.trial_id, step, intermediate_value, 0
+                    )
+                else:
+                    for intermediate_value_index, value in enumerate(intermediate_value):
+                        self._set_trial_intermediate_value_without_commit(
+                            session, trial.trial_id, step, value, intermediate_value_index
+                        )
 
             trial.state = template_trial.state
 
@@ -677,12 +684,16 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             trial_value.value_type = value_type
 
     def set_trial_intermediate_value(
-        self, trial_id: int, step: int, intermediate_value: float
+        self, trial_id: int, step: int, intermediate_value: Union[float, Sequence[float]]
     ) -> None:
+        if isinstance(intermediate_value, float):
+            intermediate_value = [intermediate_value]
+
         with _create_scoped_session(self.scoped_session, True) as session:
-            self._set_trial_intermediate_value_without_commit(
-                session, trial_id, step, intermediate_value
-            )
+            for intermediate_value_index, value in enumerate(intermediate_value):
+                self._set_trial_intermediate_value_without_commit(
+                    session, trial_id, step, value, intermediate_value_index
+                )
 
     def _set_trial_intermediate_value_without_commit(
         self,
@@ -690,6 +701,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         trial_id: int,
         step: int,
         intermediate_value: float,
+        intermediate_value_index: int,
     ) -> None:
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
@@ -700,8 +712,10 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         ) = models.TrialIntermediateValueModel.intermediate_value_to_stored_repr(
             intermediate_value
         )
-        trial_intermediate_value = models.TrialIntermediateValueModel.find_by_trial_and_step(
-            trial, step, session
+        trial_intermediate_value = (
+            models.TrialIntermediateValueModel.find_by_trial_and_step_and_intermediate_index(
+                trial, step, intermediate_value_index, session
+            )
         )
         if trial_intermediate_value is None:
             trial_intermediate_value = models.TrialIntermediateValueModel(
@@ -709,11 +723,13 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 step=step,
                 intermediate_value=stored_value,
                 intermediate_value_type=value_type,
+                intermediate_value_index=intermediate_value_index,
             )
             session.add(trial_intermediate_value)
         else:
             trial_intermediate_value.intermediate_value = stored_value
             trial_intermediate_value.intermediate_value_type = value_type
+            trial_intermediate_value.intermediate_value_index = intermediate_value_index
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
         with _create_scoped_session(self.scoped_session, True) as session:
@@ -866,6 +882,27 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             values = None
 
         params = sorted(trial.params, key=lambda p: p.param_id)
+        unsorted_intermediates: Dict[int, Dict[int, float]] = defaultdict(dict)
+        for v in trial.intermediate_values:
+            unsorted_intermediates[v.step][
+                v.intermediate_value_index
+            ] = v.stored_repr_to_intermediate_value(
+                v.intermediate_value, v.intermediate_value_type
+            )
+        intermediate_values: Dict[int, Union[float, Sequence[float]]] = {}
+        if unsorted_intermediates:
+            num_intermediate_values_at_same_step = len(unsorted_intermediates[v.step])
+            if num_intermediate_values_at_same_step != 1:
+                for step, intermediate_indices_and_values in unsorted_intermediates.items():
+                    intermediate_values[step] = tuple(
+                        intermediate_value
+                        for _, intermediate_value in sorted(
+                            intermediate_indices_and_values.items()
+                        )
+                    )
+            else:
+                for step, intermediate_indices_and_values in unsorted_intermediates.items():
+                    intermediate_values[step] = intermediate_indices_and_values[0]
 
         return FrozenTrial(
             number=trial.number,
@@ -888,12 +925,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             system_attrs={
                 attr.key: json.loads(attr.value_json) for attr in trial.system_attributes
             },
-            intermediate_values={
-                v.step: models.TrialIntermediateValueModel.stored_repr_to_intermediate_value(
-                    v.intermediate_value, v.intermediate_value_type
-                )
-                for v in trial.intermediate_values
-            },
+            intermediate_values=intermediate_values,
             trial_id=trial.trial_id,
         )
 
