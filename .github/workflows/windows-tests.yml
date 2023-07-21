@@ -107,7 +107,6 @@ jobs:
       with:
         mpi: "msmpi"
 
-    # TODO(Shinichi): Remove the version constraint on Numpy
     # TODO(c-bata): Remove the version constraint on fakeredis
     # TODO(c-bata): Remove the version constraint on LightGBM
     - name: Install
@@ -121,7 +120,6 @@ jobs:
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
         pip install --progress-bar off .[integration]
-        pip install "numpy<1.24.0"
         pip install "distributed<2023.3.2"
         pip install "fakeredis<2.11.1"
         pip install "lightgbm<4.0.0"
