@@ -28,10 +28,28 @@ class ArtifactMeta:
 def upload_artifact(
     trial: Trial | FrozenTrial | int,
     file_path: str,
-    artifact_store: ArtifactStore,  # prefer with warning
+    artifact_store: ArtifactStore,
     *,
     storage: BaseStorage | None = None,
 ) -> str:
+    """Upload an artifact to the artifact store.
+
+    Args:
+        trial:
+            A :class:`~optuna.trial.Trial` object, a :class:`~optuna.trial.FrozenTrial` object, or
+            an ID of the trial.
+        file_path:
+            A path to the file to be uploaded.
+        artifact_store:
+            An artifact store.
+        storage:
+            A storage object. If trial is not a :class:`~optuna.trial.Trial` object, this argument
+            is required.
+
+    Returns:
+        An artifact ID.
+    """
+
     filename = os.path.basename(file_path)
 
     if isinstance(trial, Trial) and storage is None:
