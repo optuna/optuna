@@ -617,6 +617,7 @@ class TestLightGBMTuner:
             tuner.tune_regularization_factors()
 
         best_booster = tuner.get_best_booster()
+        assert isinstance(best_booster.params, dict)
         assert best_booster.params["lambda_l1"] != unexpected_value
 
         tuner2 = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
