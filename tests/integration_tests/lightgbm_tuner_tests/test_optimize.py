@@ -64,10 +64,9 @@ class TestOptunaObjective:
     def test_init_(self) -> None:
         target_param_names = ["learning_rate"]  # Invalid parameter name.
 
-        with pytest.raises(NotImplementedError) as execinfo:
-            _OptunaObjective(target_param_names, {}, None, {}, 0, "tune_learning_rate", None)
-
-        assert execinfo.type is NotImplementedError
+        with pytest.raises(NotImplementedError):
+            dataset = mock.MagicMock(spec="lgb.Dataset")
+            _OptunaObjective(target_param_names, {}, dataset, {}, 0, "tune_learning_rate", None)
 
     def test_call(self) -> None:
         target_param_names = ["lambda_l1"]
@@ -122,11 +121,9 @@ class TestBaseTuner:
     def test_get_booster_best_score(self) -> None:
         expected_value = 1.0
 
-        class DummyBooster:
-            def __init__(self) -> None:
-                self.best_score = {"valid_0": {"binary_logloss": expected_value}}
-
-        booster = DummyBooster()
+        booster = mock.MagicMock(
+            spec="lgb.Booster", best_score={"valid_0": {"binary_logloss": expected_value}}
+        )
         dummy_dataset = lgb.Dataset(None)
 
         tuner = _BaseTuner(lgbm_kwargs=dict(valid_sets=dummy_dataset))
@@ -166,11 +163,9 @@ class TestBaseTuner:
     def test_get_booster_best_score__using_valid_names_as_str(self) -> None:
         expected_value = 1.0
 
-        class DummyBooster:
-            def __init__(self) -> None:
-                self.best_score = {"dev": {"binary_logloss": expected_value}}
-
-        booster = DummyBooster()
+        booster = mock.MagicMock(
+            spec="lgb.Booster", best_score={"dev": {"binary_logloss": expected_value}}
+        )
         dummy_dataset = lgb.Dataset(None)
 
         tuner = _BaseTuner(lgbm_kwargs={"valid_names": "dev", "valid_sets": dummy_dataset})
@@ -181,14 +176,13 @@ class TestBaseTuner:
         unexpected_value = 0.5
         expected_value = 1.0
 
-        class DummyBooster:
-            def __init__(self) -> None:
-                self.best_score = {
-                    "train": {"binary_logloss": unexpected_value},
-                    "val": {"binary_logloss": expected_value},
-                }
-
-        booster = DummyBooster()
+        booster = mock.MagicMock(
+            spec="lgb.Booster",
+            best_score={
+                "train": {"binary_logloss": unexpected_value},
+                "val": {"binary_logloss": expected_value},
+            },
+        )
         dummy_train_dataset = lgb.Dataset(None)
         dummy_val_dataset = lgb.Dataset(None)
 
