@@ -265,12 +265,15 @@ class TestLightGBMTuner:
         dummy_dataset = lgb.Dataset(None)
         train_set = train_set or mock.MagicMock(spec="lgb.Dataset")
 
-        kwargs = dict(
-            num_boost_round=5, early_stopping_rounds=2, valid_sets=dummy_dataset, study=study
+        runner = lgb.LightGBMTuner(
+            params,
+            train_set,
+            num_boost_round=5,
+            early_stopping_rounds=2,
+            valid_sets=dummy_dataset,
+            study=study,
+            **kwargs_options,
         )
-        kwargs.update(kwargs_options)
-
-        runner = lgb.LightGBMTuner(params, train_set, **kwargs)
         return runner
 
     def test_deprecated_args(self) -> None:
