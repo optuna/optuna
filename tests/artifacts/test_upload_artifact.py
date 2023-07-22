@@ -13,14 +13,14 @@ from optuna.artifacts._upload import ArtifactMeta
 
 
 @pytest.fixture(params=["FileSystem"])
-def artifact_store(tmp_path: pathlib.PurePath, request) -> ArtifactStore:
+def artifact_store(tmp_path: pathlib.PurePath, request: pytest.FixtureRequest) -> ArtifactStore:
     if request.param == "FileSystem":
         return FileSystemArtifactStore(str(tmp_path))
     assert False, f"Unknown artifact store: {request.param}"
 
 
-def test_upload_artifact(tmp_path, artifact_store) -> None:
-    file_path = tmp_path / "dummy.txt"
+def test_upload_artifact(tmp_path: pathlib.PurePath, artifact_store: ArtifactStore) -> None:
+    file_path = str(tmp_path / "dummy.txt")
 
     with open(file_path, "w") as f:
         f.write("foo")
