@@ -263,6 +263,7 @@ class TestLightGBMTuner:
     ) -> lgb.LightGBMTuner:
         # Required keyword arguments.
         dummy_dataset = lgb.Dataset(None)
+        train_set = train_set or mock.MagicMock(spec="lgb.Dataset")
 
         kwargs = dict(
             num_boost_round=5, early_stopping_rounds=2, valid_sets=dummy_dataset, study=study
@@ -325,14 +326,15 @@ class TestLightGBMTuner:
         params: dict[str, Any] = {}
         train_set = lgb.Dataset(None)
         val_set = lgb.Dataset(None)
-        kwargs = dict(
+        runner = lgb.LightGBMTuner(
+            params,
+            train_set,
             num_boost_round=12,
             early_stopping_rounds=10,
             valid_sets=val_set,
             time_budget=600,
             sample_size=1000,
         )
-        runner = lgb.LightGBMTuner(params, train_set, **kwargs)
         new_args = ["time_budget", "time_budget", "sample_size"]
         for new_arg in new_args:
             assert new_arg not in runner.lgbm_kwargs
@@ -495,7 +497,8 @@ class TestLightGBMTuner:
         valid_data = np.zeros((10, 10))
         valid_sets = lgb.Dataset(valid_data)
 
-        tuner = LightGBMTuner(params, None, valid_sets=valid_sets)
+        dataset = mock.MagicMock(spec="lgb.Dataset")
+        tuner = LightGBMTuner(params, dataset, valid_sets=valid_sets)
         assert not tuner.higher_is_better()
 
         with mock.patch("lightgbm.train"), mock.patch.object(
@@ -658,7 +661,8 @@ class TestLightGBMTuner:
 
     @pytest.mark.parametrize("direction, overall_best", [("minimize", 1), ("maximize", 2)])
     def test_create_stepwise_study(self, direction: str, overall_best: int) -> None:
-        tuner = LightGBMTuner({}, None, valid_sets=lgb.Dataset(np.zeros((10, 10))))
+        dataset = mock.MagicMock(spec="lgb.Dataset")
+        tuner = LightGBMTuner({}, dataset, valid_sets=lgb.Dataset(np.zeros((10, 10))))
 
         def objective(trial: optuna.trial.Trial, value: float) -> float:
             trial.storage.set_trial_system_attr(
@@ -774,6 +778,7 @@ class TestLightGBMTunerCV:
         kwargs: dict[str, Any] = dict(num_boost_round=5, early_stopping_rounds=2, study=study)
         kwargs.update(kwargs_options)
 
+        train_set = train_set or mock.MagicMock(spec="lgb.Dataset")
         runner = LightGBMTunerCV(params, train_set, **kwargs)
         return runner
 
