@@ -92,15 +92,6 @@ Weights & Biases
 
    optuna.integration.WeightsAndBiasesCallback
 
-MXNet
------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.MXNetPruningCallback
-
 pycma
 -----
 

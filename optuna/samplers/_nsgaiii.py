@@ -7,22 +7,20 @@ import hashlib
 import itertools
 import math
 from typing import Any
-import warnings
 
 import numpy as np
 
 import optuna
 from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
-from optuna.exceptions import ExperimentalWarning
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._search_space import IntersectionSearchSpace
 from optuna.samplers.nsgaii._after_trial_strategy import NSGAIIAfterTrialStrategy
-from optuna.samplers.nsgaii._crossover import perform_crossover
+from optuna.samplers.nsgaii._child_generation_strategy import NSGAIIChildGenerationStrategy
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.samplers.nsgaii._crossovers._uniform import UniformCrossover
-from optuna.samplers.nsgaii._sampler import _constrained_dominates
+from optuna.samplers.nsgaii._dominates_function import _constrained_dominates
 from optuna.samplers.nsgaii._sampler import _fast_non_dominated_sort
 from optuna.samplers.nsgaii._sampler import _validate_constraints
 from optuna.study import Study
@@ -34,6 +32,7 @@ from optuna.trial import TrialState
 # Define key names of `Trial.system_attrs`.
 _GENERATION_KEY = "nsga3:generation"
 _POPULATION_CACHE_KEY_PREFIX = "nsga3:population"
+
 # Define a coefficient for scaling intervals, used in _filter_inf() to replace +-inf.
 _COEF = 3
 
@@ -79,6 +78,7 @@ class NSGAIIISampler(BaseSampler):
 
     def __init__(
         self,
+        *,
         population_size: int = 50,
         mutation_prob: float | None = None,
         crossover: BaseCrossover | None = None,
@@ -86,17 +86,18 @@ class NSGAIIISampler(BaseSampler):
         swapping_prob: float = 0.5,
         seed: int | None = None,
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
+        reference_points: np.ndarray | None = None,
+        dividing_parameter: int = 3,
+        child_generation_strategy: Callable[
+            [Study, dict[str, BaseDistribution], list[FrozenTrial]], dict[str, Any]
+        ]
+        | None = None,
         after_trial_strategy: Callable[
             [Study, FrozenTrial, TrialState, Sequence[float] | None], None
         ]
         | None = None,
-        reference_points: np.ndarray | None = None,
-        dividing_parameter: int = 3,
     ) -> None:
         # TODO(ohta): Reconsider the default value of each parameter.
-
-        if not isinstance(population_size, int):
-            raise TypeError("`population_size` must be an integer value.")
 
         if population_size < 2:
             raise ValueError("`population_size` must be greater than or equal to 2.")
@@ -112,15 +113,9 @@ class NSGAIIISampler(BaseSampler):
         if not (0.0 <= swapping_prob <= 1.0):
             raise ValueError("`swapping_prob` must be a float value within the range [0.0, 1.0].")
 
-        if constraints_func is not None:
-            warnings.warn(
-                "The constraints_func option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
-
         if crossover is None:
             crossover = UniformCrossover(swapping_prob)
+
         if not isinstance(crossover, BaseCrossover):
             raise ValueError(
                 f"'{crossover}' is not a valid crossover."
@@ -136,16 +131,23 @@ class NSGAIIISampler(BaseSampler):
             )
 
         self._population_size = population_size
-        self._mutation_prob = mutation_prob
-        self._crossover = crossover
-        self._crossover_prob = crossover_prob
-        self._swapping_prob = swapping_prob
         self._random_sampler = RandomSampler(seed=seed)
         self._rng = np.random.RandomState(seed)
         self._constraints_func = constraints_func
         self._reference_points = reference_points
         self._dividing_parameter = dividing_parameter
         self._search_space = IntersectionSearchSpace()
+        self._child_generation_strategy = (
+            child_generation_strategy
+            or NSGAIIChildGenerationStrategy(
+                crossover_prob=crossover_prob,
+                mutation_prob=mutation_prob,
+                swapping_prob=swapping_prob,
+                crossover=crossover,
+                constraints_func=constraints_func,
+                seed=seed,
+            )
+        )
         self._after_trial_strategy = after_trial_strategy or NSGAIIAfterTrialStrategy(
             constraints_func=constraints_func
         )
@@ -175,43 +177,14 @@ class NSGAIIISampler(BaseSampler):
         search_space: dict[str, BaseDistribution],
     ) -> dict[str, Any]:
         parent_generation, parent_population = self._collect_parent_population(study)
-        trial_id = trial._trial_id
 
         generation = parent_generation + 1
-        study._storage.set_trial_system_attr(trial_id, _GENERATION_KEY, generation)
+        study._storage.set_trial_system_attr(trial._trial_id, _GENERATION_KEY, generation)
 
-        dominates_func = _dominates if self._constraints_func is None else _constrained_dominates
+        if parent_generation < 0:
+            return {}
 
-        if parent_generation >= 0:
-            # We choose a child based on the specified crossover method.
-            if self._rng.rand() < self._crossover_prob:
-                child_params = perform_crossover(
-                    self._crossover,
-                    study,
-                    parent_population,
-                    search_space,
-                    self._rng,
-                    self._swapping_prob,
-                    dominates_func,
-                )
-            else:
-                parent_population_size = len(parent_population)
-                parent_params = parent_population[self._rng.choice(parent_population_size)].params
-                child_params = {name: parent_params[name] for name in search_space.keys()}
-
-            n_params = len(child_params)
-            if self._mutation_prob is None:
-                mutation_prob = 1.0 / max(1.0, n_params)
-            else:
-                mutation_prob = self._mutation_prob
-
-            params = {}
-            for param_name in child_params.keys():
-                if self._rng.rand() >= mutation_prob:
-                    params[param_name] = child_params[param_name]
-            return params
-
-        return {}
+        return self._child_generation_strategy(study, search_space, parent_population)
 
     def sample_independent(
         self,
