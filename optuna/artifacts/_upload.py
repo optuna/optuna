@@ -66,7 +66,7 @@ def upload_artifact(
         elif isinstance(trial, int):
             trial_id = trial
         else:
-            raise ValueError("trial must be Trial, FrozenTrial or int")
+            raise ValueError("trial must be Trial, FrozenTrial or int.")
     else:
         raise ValueError("storage is required for FrozenTrial")
 
