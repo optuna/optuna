@@ -482,45 +482,6 @@ class _LightGBMBaseTuner(_BaseTuner):
             params.update(self.lgbm_params)
             return params
 
-    def get_best_booster(self) -> "lgb.Booster" | "lgb.CVBooster":
-        """Return the best booster.
-
-        If the best booster cannot be found, :class:`ValueError` will be raised. To prevent the
-        errors, please save boosters by specifying the ``model_dir`` argument of
-        :meth:`~optuna.integration.lightgbm.LightGBMTuner.__init__`,
-        when you resume tuning or you run tuning in parallel.
-        """
-        if self._best_booster_with_trial_number is not None:
-            if self._best_booster_with_trial_number[1] == self.study.best_trial.number:
-                assert isinstance(self._best_booster_with_trial_number[0], lgb.Booster)
-                return self._best_booster_with_trial_number[0]
-        if len(self.study.trials) == 0:
-            raise ValueError("The best booster is not available because no trials completed.")
-
-        # The best booster exists, but this instance does not have it.
-        # This may be due to resuming or parallelization.
-        if self._model_dir is None:
-            raise ValueError(
-                "The best booster cannot be found. It may be found in the other processes due to "
-                "resuming or distributed computing. Please set the `model_dir` argument of "
-                "`LightGBMTuner.__init__` and make sure that boosters are shared with all "
-                "processes."
-            )
-
-        best_trial = self.study.best_trial
-        path = os.path.join(self._model_dir, "{}.pkl".format(best_trial.number))
-        if not os.path.exists(path):
-            raise ValueError(
-                "The best booster cannot be found in {}. If you execute `LightGBMTuner` in "
-                "distributed environment, please use network file system (e.g., NFS) to share "
-                "models with multiple workers.".format(self._model_dir)
-            )
-
-        with open(path, "rb") as fin:
-            booster = pickle.load(fin)
-
-        return booster
-
     def _parse_args(self, *args: Any, **kwargs: Any) -> None:
         self.auto_options = {
             option_name: kwargs.get(option_name)
@@ -900,6 +861,45 @@ class LightGBMTuner(_LightGBMBaseTuner):
             model_dir=self._model_dir,
             pbar=pbar,
         )
+
+    def get_best_booster(self) -> "lgb.Booster":
+        """Return the best booster.
+
+        If the best booster cannot be found, :class:`ValueError` will be raised. To prevent the
+        errors, please save boosters by specifying the ``model_dir`` argument of
+        :meth:`~optuna.integration.lightgbm.LightGBMTuner.__init__`,
+        when you resume tuning or you run tuning in parallel.
+        """
+        if self._best_booster_with_trial_number is not None:
+            if self._best_booster_with_trial_number[1] == self.study.best_trial.number:
+                assert isinstance(self._best_booster_with_trial_number[0], lgb.Booster)
+                return self._best_booster_with_trial_number[0]
+        if len(self.study.trials) == 0:
+            raise ValueError("The best booster is not available because no trials completed.")
+
+        # The best booster exists, but this instance does not have it.
+        # This may be due to resuming or parallelization.
+        if self._model_dir is None:
+            raise ValueError(
+                "The best booster cannot be found. It may be found in the other processes due to "
+                "resuming or distributed computing. Please set the `model_dir` argument of "
+                "`LightGBMTuner.__init__` and make sure that boosters are shared with all "
+                "processes."
+            )
+
+        best_trial = self.study.best_trial
+        path = os.path.join(self._model_dir, "{}.pkl".format(best_trial.number))
+        if not os.path.exists(path):
+            raise ValueError(
+                "The best booster cannot be found in {}. If you execute `LightGBMTuner` in "
+                "distributed environment, please use network file system (e.g., NFS) to share "
+                "models with multiple workers.".format(self._model_dir)
+            )
+
+        with open(path, "rb") as fin:
+            booster = pickle.load(fin)
+
+        return booster
 
 
 class LightGBMTunerCV(_LightGBMBaseTuner):
