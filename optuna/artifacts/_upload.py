@@ -68,7 +68,7 @@ def upload_artifact(
         else:
             raise ValueError("trial must be Trial, FrozenTrial or int.")
     else:
-        raise ValueError("storage is required for FrozenTrial")
+        raise ValueError("storage is required for FrozenTrial or int.")
 
     artifact_id = str(uuid.uuid4())
 
