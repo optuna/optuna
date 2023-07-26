@@ -103,6 +103,14 @@ class NSGAIISampler(BaseSampler):
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.5.0.
 
+        elite_population_selection_strategy:
+            A process to select individuals to survive from current population pool. Defaults to
+            :class:`~optuna.samplers.nsgaii._elite_population_selection_strategy.NSGAIIElitePopulationSelectionStrategy`.
+
+        child_generation_strategy:
+            A process to generate child parameters from parent trials. Defaults to
+            :class:`~optuna.samplers.nsgaii._after_trial_strategy.NSGAIIChildGenerationStrategy`.
+
         after_trial_strategy:
             A process to be conducted after each trial. Defaults to
             :class:`~optuna.samplers.nsgaii._after_trial_strategy.NSGAIIAfterTrialStrategy`.
