@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from typing import Callable
 from typing import Dict
 from typing import List
@@ -106,7 +105,7 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
         }
 
         if len(non_single_distributions) == 0:
-            return OrderedDict()
+            return {}
 
         trials: List[FrozenTrial] = _get_filtered_trials(study, params=params, target=target)
 

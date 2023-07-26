@@ -1,4 +1,3 @@
-from collections import OrderedDict
 import itertools
 from typing import Dict
 from typing import List
@@ -47,7 +46,7 @@ def test_study_optimize_with_single_search_space() -> None:
     def sorted_values(
         d: Mapping[str, Sequence[GridValueType]]
     ) -> ValuesView[Sequence[GridValueType]]:
-        return OrderedDict(sorted(d.items())).values()
+        return dict(sorted(d.items())).values()
 
     all_grids = itertools.product(*sorted_values(search_space))  # type: ignore
     all_suggested_values = [tuple([p for p in sorted_values(t.params)]) for t in study.trials]

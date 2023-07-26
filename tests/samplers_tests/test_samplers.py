@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections import OrderedDict
 from collections.abc import Callable
 from collections.abc import Sequence
 import multiprocessing
@@ -377,7 +376,7 @@ def test_sample_relative_numerical(
     x_distribution: BaseDistribution,
     y_distribution: BaseDistribution,
 ) -> None:
-    search_space: dict[str, BaseDistribution] = OrderedDict(x=x_distribution, y=y_distribution)
+    search_space: dict[str, BaseDistribution] = dict(x=x_distribution, y=y_distribution)
     study = optuna.study.create_study(sampler=relative_sampler_class())
     trial = study.ask(search_space)
     study.tell(trial, sum(trial.params.values()))
@@ -408,7 +407,7 @@ def test_sample_relative_numerical(
 
 @parametrize_relative_sampler
 def test_sample_relative_categorical(relative_sampler_class: Callable[[], BaseSampler]) -> None:
-    search_space: dict[str, BaseDistribution] = OrderedDict(
+    search_space: dict[str, BaseDistribution] = dict(
         x=CategoricalDistribution([1, 10, 100]), y=CategoricalDistribution([-1, -10, -100])
     )
     study = optuna.study.create_study(sampler=relative_sampler_class())
@@ -443,7 +442,7 @@ def test_sample_relative_categorical(relative_sampler_class: Callable[[], BaseSa
 def test_sample_relative_mixed(
     relative_sampler_class: Callable[[], BaseSampler], x_distribution: BaseDistribution
 ) -> None:
-    search_space: dict[str, BaseDistribution] = OrderedDict(
+    search_space: dict[str, BaseDistribution] = dict(
         x=x_distribution, y=CategoricalDistribution([-1, -10, -100])
     )
     study = optuna.study.create_study(sampler=relative_sampler_class())
