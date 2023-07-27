@@ -57,6 +57,7 @@ checking = [
     "flake8",
     "isort",
     "mypy",
+    "mypy_boto3_s3",
     "types-PyYAML",
     "types-redis",
     "types-setuptools",
