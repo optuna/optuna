@@ -1007,7 +1007,7 @@ class Study:
         """
         if len(self.directions) != len(metric_names):
             raise ValueError(
-                "The number of objectives must match thhe length of the metric names."
+                "The number of objectives must match the length of the metric names."
             )
 
         self._storage.set_study_system_attr(
