@@ -108,6 +108,7 @@ integration = [
     "xgboost",
 ]
 optional = [
+    "boto3",  # optuna/artifacts/_boto3.py.
     "botorch",  # optuna/terminator/gp/botorch
     "matplotlib!=3.6.0",  # optuna/visualization/matplotlib
     "pandas",  # optuna/study.py
