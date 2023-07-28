@@ -736,7 +736,7 @@ class CmaEsSampler(BaseSampler):
                 _, value = max(t.intermediate_values.items())
                 if value is None:
                     continue
-                
+
                 assert isinstance(value, float)
 
                 # We rewrite the value of the trial `t` for sampling, so we need a deepcopy.
