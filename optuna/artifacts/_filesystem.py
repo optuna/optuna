@@ -12,7 +12,12 @@ if TYPE_CHECKING:
 
 
 class FileSystemArtifactStore:
-    """An artifact backend for file systems."""
+    """An artifact backend for file systems.
+
+    Args:
+        base_path: The base path to store artifacts.
+
+    """
 
     def __init__(self, base_path: str) -> None:
         self._base_path = base_path
