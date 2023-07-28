@@ -1,6 +1,7 @@
 import math
 from typing import Any
 from typing import Optional
+import warnings
 
 import optuna
 from optuna.pruners import BasePruner
@@ -124,7 +125,15 @@ class ThresholdPruner(BasePruner):
         ):
             return False
 
+        if study._is_multi_objective():
+            warnings.warn(
+                "This pruner doesn't support multiple intermediate values. Skip pruning."
+            )
+            return False
+
         latest_value = trial.intermediate_values[step]
+        assert isinstance(latest_value, float)
+
         if math.isnan(latest_value):
             return True
 
