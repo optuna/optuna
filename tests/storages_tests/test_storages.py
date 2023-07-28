@@ -871,7 +871,7 @@ def test_get_all_trials_not_modified(storage_mode: str) -> None:
                     if trial.number % 3 == 0:
                         storage.set_trial_state_values(trial._trial_id, TrialState.COMPLETE, [0])
                     elif trial.number % 3 == 1:
-                        storage.set_trial_intermediate_value(trial._trial_id, 0, 0)
+                        storage.set_trial_intermediate_value(trial._trial_id, 0, 0.0)
                         storage.set_trial_state_values(trial._trial_id, TrialState.PRUNED, [0])
                     else:
                         storage.set_trial_state_values(trial._trial_id, TrialState.FAIL)
