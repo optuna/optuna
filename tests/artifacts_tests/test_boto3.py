@@ -13,9 +13,11 @@ from optuna.artifacts.exceptions import ArtifactNotFound
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-    from typing import Annotated
 
     from mypy_boto3_s3 import S3Client
+    from typing_extensions import Annotated
+
+    # TODO(Shinichi) import Annotated from typing after python 3.8 support is dropped.
 
 
 @pytest.fixture()
