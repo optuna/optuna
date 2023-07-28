@@ -40,11 +40,13 @@ def init_mock_client() -> Iterator[tuple[str, S3Client]]:
         s3_client.delete_bucket(Bucket=bucket_name)
 
 
+@pytest.mark.parametrize("avoid_buf_copy", [True, False])
 def test_upload_download(
-    init_mock_client: Annotated[tuple[str, S3Client], pytest.fixture]
+    init_mock_client: Annotated[tuple[str, S3Client], pytest.fixture],
+    avoid_buf_copy: bool,
 ) -> None:
     bucket_name, s3_client = init_mock_client
-    backend = Boto3ArtifactStore(bucket_name)
+    backend = Boto3ArtifactStore(bucket_name, avoid_buf_copy=avoid_buf_copy)
 
     artifact_id = "dummy-uuid"
     dummy_content = b"Hello World"
@@ -59,7 +61,8 @@ def test_upload_download(
     with backend.open_reader(artifact_id) as f:
         actual = f.read()
     assert actual == dummy_content
-    assert buf.closed is False
+    if avoid_buf_copy is False:
+        assert buf.closed is False
 
 
 def test_remove(init_mock_client: Annotated[tuple[str, S3Client], pytest.fixture]) -> None:
