@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from typing import Sequence
+from collections.abc import Sequence
 from unittest.mock import MagicMock
 from unittest.mock import patch
 import warnings
@@ -60,9 +60,10 @@ def test_population_size() -> None:
         # Less than 2.
         NSGAIIISampler(population_size=1)
 
-    with pytest.raises(TypeError):
-        # Not an integer.
-        NSGAIIISampler(population_size=2.5)  # type: ignore[arg-type]
+    with pytest.raises(ValueError):
+        mock_crossover = MagicMock(spec=BaseCrossover)
+        mock_crossover.configure_mock(n_parents=3)
+        NSGAIIISampler(population_size=2, crossover=mock_crossover)
 
 
 def test_mutation_prob() -> None:
@@ -205,6 +206,11 @@ def test_study_system_attr_for_population_cache() -> None:
 def test_constraints_func_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         NSGAIIISampler(constraints_func=lambda _: [0])
+
+
+def test_child_generation_strategy_experimental_warning() -> None:
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        NSGAIIISampler(child_generation_strategy=lambda study, search_space, parent_population: {})
 
 
 def test_after_trial_strategy_experimental_warning() -> None:
