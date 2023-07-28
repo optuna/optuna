@@ -138,7 +138,7 @@ def test_init_cmaes_opts_lr_adapt(popsize: Optional[int]) -> None:
         assert cma_class.call_count == 1
 
         _, actual_kwargs = cma_class.call_args
-        assert actual_kwargs["lr_adapt"] == True
+        assert actual_kwargs["lr_adapt"] is True
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
