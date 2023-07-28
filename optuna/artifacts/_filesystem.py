@@ -16,8 +16,8 @@ class FileSystemArtifactStore:
     """An artifact backend for file systems.
 
     Args:
-        base_path: The base path to store artifacts.
-
+        base_path:
+            The base path to a directory to store artifacts.
     """
 
     def __init__(self, base_path: str | Path) -> None:

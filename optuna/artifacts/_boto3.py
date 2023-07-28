@@ -20,15 +20,17 @@ class Boto3ArtifactStore:
     """An artifact backend for Boto3.
 
     Args:
-        bucket_name: The name of the bucket to store artifacts.
+        bucket_name:
+            The name of the bucket to store artifacts.
 
-        client: A Boto3 client to use for storage operations. If not specified, a new client will
-        be created.
+        client:
+            A Boto3 client to use for storage operations. If not specified, a new client will
+            be created.
 
-        avoid_buf_copy: If True, skip procedure to copy the content of the source file object to a
-        buffer before uploading it to S3 ins. This is default to False because using
-        upload_fileobj() method of Boto3 client might close the source file object.
-
+        avoid_buf_copy:
+            If True, skip procedure to copy the content of the source file object to a buffer
+            before uploading it to S3 ins. This is default to False because using upload_fileobj()
+            method of Boto3 client might close the source file object.
     """
 
     def __init__(
