@@ -225,7 +225,7 @@ class CmaEsSampler(BaseSampler):
             If this is :obj:`True`, CMA-ES with learning rate adaptation is used.
             This algorithm focuses on working well on multimodal and/or noisy problems
             with default settings.
-            Currently, this option cannot be used with ``use_separable_cma=True`` nor
+            Currently, this option cannot be used with ``use_separable_cma=True`` or
             ``with_margin=True``.
 
             .. note::
