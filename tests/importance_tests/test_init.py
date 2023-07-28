@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from typing import Any
 from typing import Callable
 from typing import List
@@ -98,7 +97,7 @@ def test_get_param_importances(
             study, evaluator=evaluator_init_func(), normalize=normalize
         )
 
-        assert isinstance(param_importance, OrderedDict)
+        assert isinstance(param_importance, dict)
         assert len(param_importance) == 6
         assert all(
             param_name in param_importance for param_name in ["x1", "x2", "x3", "x4", "x5", "x6"]
@@ -146,7 +145,7 @@ def test_get_param_importances_with_params(
             study, evaluator=evaluator_init_func(), params=params, normalize=normalize
         )
 
-        assert isinstance(param_importance, OrderedDict)
+        assert isinstance(param_importance, dict)
         assert len(param_importance) == len(params)
         assert all(param in param_importance for param in params)
         for param_name, importance in param_importance.items():
@@ -199,7 +198,7 @@ def test_get_param_importances_with_target(
             normalize=normalize,
         )
 
-        assert isinstance(param_importance, OrderedDict)
+        assert isinstance(param_importance, dict)
         assert len(param_importance) == 3
         assert all(param_name in param_importance for param_name in ["x1", "x2", "x3"])
         prev_importance = float("inf")

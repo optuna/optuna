@@ -1,4 +1,3 @@
-from collections import OrderedDict
 import json
 import os
 import platform
@@ -82,7 +81,7 @@ def _parse_output(output: str, output_format: str) -> Any:
         keys = [r.strip() for r in rows[1].split("|")[1:-1]]
         ret = []
         for record in rows[3:-1]:
-            attrs = OrderedDict()
+            attrs = {}
             for key, attr in zip(keys, record.split("|")[1:-1]):
                 attrs[key] = attr.strip()
             ret.append(attrs)

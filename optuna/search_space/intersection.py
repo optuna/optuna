@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections import OrderedDict
 import copy
 from typing import Dict
 from typing import Tuple
@@ -87,8 +86,8 @@ class IntersectionSearchSpace:
             ordered_dict:
                 A boolean flag determining the return type.
                 If :obj:`False`, the returned object will be a :obj:`dict`.
-                If :obj:`True`, the returned object will be an :obj:`collections.OrderedDict`
-                sorted by keys, i.e. parameter names.
+                If :obj:`True`, the returned object will be a :obj:`dict` sorted by keys, i.e.
+                parameter names.
 
         Returns:
             A dictionary containing the parameter names and parameter's distributions.
@@ -111,7 +110,7 @@ class IntersectionSearchSpace:
         search_space = self._search_space or {}
 
         if ordered_dict:
-            search_space = OrderedDict(sorted(search_space.items(), key=lambda x: x[0]))
+            search_space = dict(sorted(search_space.items(), key=lambda x: x[0]))
 
         return copy.deepcopy(search_space)
 
@@ -140,8 +139,8 @@ def intersection_search_space(
         ordered_dict:
             A boolean flag determining the return type.
             If :obj:`False`, the returned object will be a :obj:`dict`.
-            If :obj:`True`, the returned object will be an :obj:`collections.OrderedDict` sorted by
-            keys, i.e. parameter names.
+            If :obj:`True`, the returned object will be a :obj:`dict` sorted by keys, i.e.
+            parameter names.
         include_pruned:
             Whether pruned trials should be included in the search space.
 
@@ -153,6 +152,6 @@ def intersection_search_space(
     search_space = search_space or {}
 
     if ordered_dict:
-        search_space = OrderedDict(sorted(search_space.items(), key=lambda x: x[0]))
+        search_space = dict(sorted(search_space.items(), key=lambda x: x[0]))
 
     return search_space

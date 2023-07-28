@@ -1,5 +1,3 @@
-from collections import OrderedDict
-
 import pytest
 
 from optuna import create_study
@@ -41,8 +39,8 @@ def test_intersection_search_space() -> None:
         study.get_trials(deepcopy=False)
     )
 
-    # Returning sorted `OrderedDict` instead of `dict`.
-    assert search_space.calculate(study, ordered_dict=True) == OrderedDict(
+    # Returning sorted `dict`.
+    assert search_space.calculate(study, ordered_dict=True) == dict(
         [
             ("x", IntDistribution(low=0, high=10)),
             ("y", FloatDistribution(low=-3, high=3)),
