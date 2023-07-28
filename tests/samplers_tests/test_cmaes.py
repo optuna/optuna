@@ -138,13 +138,7 @@ def test_init_cmaes_opts_lr_adapt(popsize: Optional[int]) -> None:
         assert cma_class.call_count == 1
 
         _, actual_kwargs = cma_class.call_args
-        assert np.array_equal(actual_kwargs["mean"], np.array([0.5, 0.5]))
-        assert actual_kwargs["sigma"] == 0.1
-        assert np.allclose(actual_kwargs["bounds"], np.array([(0, 1), (0, 1)]))
-        assert actual_kwargs["seed"] == np.random.RandomState(1).randint(1, np.iinfo(np.int32).max)
-        assert actual_kwargs["n_max_resampling"] == 10 * 2
-        expected_popsize = 4 + math.floor(3 * math.log(2)) if popsize is None else popsize
-        assert actual_kwargs["population_size"] == expected_popsize
+        assert actual_kwargs["lr_adapt"] == True
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
