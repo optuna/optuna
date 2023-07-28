@@ -310,6 +310,7 @@ class FrozenMultiObjectiveTrial:
             if step not in intermediate_values:
                 intermediate_values[step] = [None for _ in range(n_objectives)]
 
+            assert isinstance(value, float)
             intermediate_values[step][key % n_objectives] = value
         self.intermediate_values = {k: tuple(v) for k, v in intermediate_values.items()}
 
