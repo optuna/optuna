@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections import OrderedDict
 from typing import Callable
 from typing import NamedTuple
 
@@ -58,7 +57,7 @@ def _get_importances_info(
         study, evaluator=evaluator, params=params, target=target
     )
 
-    importances = OrderedDict(reversed(list(importances.items())))
+    importances = dict(reversed(list(importances.items())))
     importance_values = list(importances.values())
     param_names = list(importances.keys())
     importance_labels = [f"{val:.2f}" if val >= 0.01 else "<0.01" for val in importance_values]
