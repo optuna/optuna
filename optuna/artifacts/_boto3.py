@@ -33,7 +33,10 @@ class Boto3ArtifactStore:
             obj = self.client.get_object(Bucket=self.bucket, Key=artifact_id)
         except ClientError as e:
             if _is_not_found_error(e):
-                raise ArtifactNotFound("not found") from e
+                raise ArtifactNotFound(
+                    f"Artifact storage with bucket: {self.bucket}, artifact_id: {artifact_id} was"
+                    " not found"
+                ) from e
             raise
         body = obj.get("Body")
         assert body is not None
@@ -53,7 +56,10 @@ class Boto3ArtifactStore:
             self.client.delete_object(Bucket=self.bucket, Key=artifact_id)
         except ClientError as e:
             if _is_not_found_error(e):
-                raise ArtifactNotFound("not found") from e
+                raise ArtifactNotFound(
+                    f"Artifact storage with bucket: {self.bucket}, artifact_id: {artifact_id} was"
+                    " not found"
+                ) from e
             raise
 
 
