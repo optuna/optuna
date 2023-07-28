@@ -64,8 +64,8 @@ def _is_not_found_error(e: ClientError) -> bool:
 
 
 if TYPE_CHECKING:
-    # A mypy-runtime assertion to ensure that BackendLocalArtifactBackend implements all abstract
-    # methods in ArtifactBackendProtocol.
+    # A mypy-runtime assertion to ensure that Boto3ArtifactStore implements all abstract methods
+    # in ArtifactStore.
     from ._protocol import ArtifactStore
 
     _: ArtifactStore = Boto3ArtifactStore("")
