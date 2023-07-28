@@ -13,7 +13,6 @@ from optuna import pruners
 from optuna import samplers
 from optuna.integration.botorch import BoTorchSampler
 from optuna.integration.cma import PyCmaSampler
-from optuna.integration.skopt import SkoptSampler
 
 
 _SAMPLERS = {
@@ -25,7 +24,6 @@ _SAMPLERS = {
     "QMCSampler": samplers.QMCSampler,
     "BoTorchSampler": BoTorchSampler,
     "PyCmaSampler": PyCmaSampler,
-    "SkoptSampler": SkoptSampler,
 }
 
 _PRUNERS = {

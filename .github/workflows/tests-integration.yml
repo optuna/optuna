@@ -46,9 +46,7 @@ jobs:
         sudo apt-get update
         sudo apt-get -y install openmpi-bin libopenmpi-dev libopenblas-dev
 
-    # TODO(Shinichi): Remove the version constraint on Numpy
     # TODO(c-bata): Remove the version constraint on fakeredis
-    # TODO(c-bata): Remove the version constraint on LightGBM
     - name: Install
       run: |
         python -m pip install --upgrade pip
@@ -61,9 +59,7 @@ jobs:
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
         pip install --progress-bar off .[integration] --extra-index-url https://download.pytorch.org/whl/cpu
-        pip install "numpy<1.24.0"
         pip install "fakeredis<2.11.1"
-        pip install "lightgbm<4.0.0"
 
     - name: Output installed packages
       run: |
@@ -76,43 +72,8 @@ jobs:
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
-        if [ ${{ matrix.python-version }} == 3.11 ]; then
-          pytest tests -m "integration" \
-            --ignore tests/integration_tests/test_botorch.py \
-            --ignore tests/integration_tests/test_fastaiv2.py \
-            --ignore tests/integration_tests/test_lightgbm.py \
-            --ignore tests/integration_tests/test_mxnet.py \
-            --ignore tests/integration_tests/test_pytorch_distributed.py \
-            --ignore tests/integration_tests/test_pytorch_ignite.py \
-            --ignore tests/integration_tests/test_pytorch_lightning.py \
-            --ignore tests/integration_tests/test_shap.py \
-            --ignore tests/integration_tests/test_skopt.py \
-            --ignore tests/integration_tests/test_tensorboard.py \
-            --ignore tests/integration_tests/lightgbm_tuner_tests \
-            --ignore tests/importance_tests/test_init.py \
-            --ignore tests/samplers_tests/test_samplers.py
-        else
-          pytest tests -m "integration"
-        fi
-
+        pytest tests -m "integration"
     - name: Tests
       if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
       run: |
-        if [ ${{ matrix.python-version }} == 3.11 ]; then
-          pytest tests -m "integration and not slow" \
-            --ignore tests/integration_tests/test_botorch.py \
-            --ignore tests/integration_tests/test_fastaiv2.py \
-            --ignore tests/integration_tests/test_lightgbm.py \
-            --ignore tests/integration_tests/test_mxnet.py \
-            --ignore tests/integration_tests/test_pytorch_distributed.py \
-            --ignore tests/integration_tests/test_pytorch_ignite.py \
-            --ignore tests/integration_tests/test_pytorch_lightning.py \
-            --ignore tests/integration_tests/test_shap.py \
-            --ignore tests/integration_tests/test_skopt.py \
-            --ignore tests/integration_tests/test_tensorboard.py \
-            --ignore tests/integration_tests/lightgbm_tuner_tests \
-            --ignore tests/importance_tests/test_init.py \
-            --ignore tests/samplers_tests/test_samplers.py
-        else
-          pytest tests -m "integration and not slow"
-        fi
+        pytest tests -m "integration"

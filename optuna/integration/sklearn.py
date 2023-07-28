@@ -564,6 +564,20 @@ class OptunaSearchCV(BaseEstimator):
         return self.best_estimator_.classes_
 
     @property
+    def cv_results_(self) -> Dict[str, Any]:
+        """A dictionary mapping a metric name to a list of
+        Cross-Validation results of all trials."""
+        cv_results_dict_in_list = [trial_.user_attrs for trial_ in self.trials_]
+        if len(cv_results_dict_in_list) == 0:
+            cv_results_list_in_dict = {}
+        else:
+            cv_results_list_in_dict = {
+                key: [dict_[key] for dict_ in cv_results_dict_in_list]
+                for key in cv_results_dict_in_list[0]
+            }
+        return cv_results_list_in_dict
+
+    @property
     def n_trials_(self) -> int:
         """Actual number of trials."""
 

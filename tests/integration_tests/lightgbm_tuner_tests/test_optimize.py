@@ -56,7 +56,7 @@ def turnoff_train(metric: str = "binary_logloss") -> Generator[None, None, None]
 @contextlib.contextmanager
 def turnoff_cv(metric: str = "binary_logloss") -> Generator[None, None, None]:
     unexpected_value = 0.5
-    dummy_results = {"{}-mean".format(metric): [unexpected_value]}
+    dummy_results = {"valid {}-mean".format(metric): [unexpected_value]}
 
     with mock.patch("lightgbm.cv", return_value=dummy_results):
         yield
