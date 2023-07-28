@@ -1,4 +1,3 @@
-import collections
 import itertools
 from numbers import Real
 from typing import Any
@@ -106,7 +105,7 @@ class GridSampler(BaseSampler):
             for value in param_values:
                 self._check_value(param_name, value)
 
-        self._search_space = collections.OrderedDict()
+        self._search_space = {}
         for param_name, param_values in sorted(search_space.items()):
             self._search_space[param_name] = list(param_values)
 
