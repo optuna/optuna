@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 import shutil
 from typing import TYPE_CHECKING
 
@@ -19,7 +20,10 @@ class FileSystemArtifactStore:
 
     """
 
-    def __init__(self, base_path: str) -> None:
+    def __init__(self, base_path: str | Path) -> None:
+        if isinstance(base_path, str):
+            base_path = Path(base_path)
+        # TODO(Shinichi): Check if the base_path is valid directory.
         self._base_path = base_path
 
     def open_reader(self, artifact_id: str) -> BinaryIO:
