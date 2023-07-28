@@ -872,7 +872,6 @@ class LightGBMTuner(_LightGBMBaseTuner):
         """
         if self._best_booster_with_trial_number is not None:
             if self._best_booster_with_trial_number[1] == self.study.best_trial.number:
-                assert isinstance(self._best_booster_with_trial_number[0], lgb.Booster)
                 return self._best_booster_with_trial_number[0]
         if len(self.study.trials) == 0:
             raise ValueError("The best booster is not available because no trials completed.")
