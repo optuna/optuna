@@ -602,6 +602,7 @@ def _get_observation_pairs(
 
             if len(trial.intermediate_values) > 0:
                 step, intermediate_value = max(trial.intermediate_values.items())
+                assert isinstance(intermediate_value, float)
                 if math.isnan(intermediate_value):
                     score = (-step, [float("inf")])
                 else:
