@@ -102,6 +102,37 @@ def _create_study_mixture_category_types() -> Study:
     return study
 
 
+def _create_study_with_overlapping_params(direction: str) -> Study:
+    study = create_study(direction=direction)
+    distributions = {
+        "param_a": FloatDistribution(1.0, 2.0),
+        "param_b": CategoricalDistribution(["100", "101"]),
+        "param_c": CategoricalDistribution(["foo", "bar"]),
+    }
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"param_a": 1.0, "param_b": "101", "param_c": "foo"},
+            distributions=distributions,
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=1.0,
+            params={"param_a": 1.0, "param_b": "101", "param_c": "bar"},
+            distributions=distributions,
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=1.0,
+            params={"param_a": 2.0, "param_b": "100", "param_c": "foo"},
+            distributions=distributions,
+        )
+    )
+    return study
+
+
 @parametrize_plot_contour
 def test_plot_contour_customized_target_name(plot_contour: Callable[..., Any]) -> None:
     params = ["param_a", "param_b"]
@@ -514,6 +545,40 @@ def test_get_contour_info_nonfinite_multiobjective(objective: int, value: float)
         ],
         reverse_scale=True,
         target_name="Target Name",
+    )
+
+
+@pytest.mark.parametrize("direction,expected", (("minimize", 0.0), ("maximize", 1.0)))
+def test_get_contour_info_overlapping_params(direction: str, expected: float) -> None:
+    study = _create_study_with_overlapping_params(direction)
+    info = _get_contour_info(study, params=["param_a", "param_b"])
+    assert info == _ContourInfo(
+        sorted_params=["param_a", "param_b"],
+        sub_plot_infos=[
+            [
+                _SubContourInfo(
+                    xaxis=_AxisInfo(
+                        name="param_a",
+                        range=(0.95, 2.05),
+                        is_log=False,
+                        is_cat=False,
+                        indices=[0.95, 1.0, 2.0, 2.05],
+                        values=[1.0, 1.0, 2.0],
+                    ),
+                    yaxis=_AxisInfo(
+                        name="param_b",
+                        range=(-0.05, 1.05),
+                        is_log=False,
+                        is_cat=True,
+                        indices=["100", "101"],
+                        values=["101", "101", "100"],
+                    ),
+                    z_values={(1, 1): expected, (2, 0): 1.0},
+                )
+            ]
+        ],
+        reverse_scale=False if direction == "maximize" else True,
+        target_name="Objective Value",
     )
 
 
