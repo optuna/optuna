@@ -51,8 +51,6 @@ class Trial(BaseTrial):
         self.study = study
         self._trial_id = trial_id
 
-        # TODO(Yanase): Remove _study_id attribute, and use study._study_id instead.
-        self._study_id = self.study._study_id
         self.storage = self.study._storage
 
         self._cached_frozen_trial = self.storage.get_trial(self._trial_id)

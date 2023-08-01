@@ -94,8 +94,11 @@ def test_optuna_search_properties() -> None:
     optuna_search.set_user_attr("dataset", "blobs")
 
     assert optuna_search._estimator_type == "classifier"
-    assert type(optuna_search.best_index_) == int
-    assert type(optuna_search.best_params_) == dict
+    assert isinstance(optuna_search.best_index_, int)
+    assert isinstance(optuna_search.best_params_, dict)
+    assert isinstance(optuna_search.cv_results_, dict)
+    for cv_result_list_ in optuna_search.cv_results_.values():
+        assert len(cv_result_list_) == optuna_search.n_trials_
     assert optuna_search.best_score_ is not None
     assert optuna_search.best_trial_ is not None
     assert np.allclose(optuna_search.classes_, np.array([0, 1, 2]))

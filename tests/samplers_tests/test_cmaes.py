@@ -33,6 +33,11 @@ def test_with_margin_experimental_warning() -> None:
         optuna.samplers.CmaEsSampler(with_margin=True)
 
 
+def test_lr_adapt_experimental_warning() -> None:
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        optuna.samplers.CmaEsSampler(lr_adapt=True)
+
+
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 @pytest.mark.parametrize(
     "use_separable_cma, cma_class_str",
@@ -106,6 +111,34 @@ def test_init_cmaes_opts_with_margin(popsize: Optional[int]) -> None:
         assert actual_kwargs["n_max_resampling"] == 10 * 2
         expected_popsize = 4 + math.floor(3 * math.log(2)) if popsize is None else popsize
         assert actual_kwargs["population_size"] == expected_popsize
+
+
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
+@pytest.mark.parametrize("popsize", [None, 8])
+def test_init_cmaes_opts_lr_adapt(popsize: Optional[int]) -> None:
+    sampler = optuna.samplers.CmaEsSampler(
+        x0={"x": 0, "y": 0},
+        sigma0=0.1,
+        seed=1,
+        n_startup_trials=1,
+        popsize=popsize,
+        lr_adapt=True,
+    )
+    study = optuna.create_study(sampler=sampler)
+
+    with patch("optuna.samplers._cmaes.cmaes.CMA") as cma_class:
+        cma_obj = MagicMock()
+        cma_obj.ask.return_value = np.array((-1, -1))
+        cma_obj.generation = 0
+        cma_class.return_value = cma_obj
+        study.optimize(
+            lambda t: t.suggest_float("x", -1, 1) + t.suggest_float("y", -1, 1), n_trials=2
+        )
+
+        assert cma_class.call_count == 1
+
+        _, actual_kwargs = cma_class.call_args
+        assert actual_kwargs["lr_adapt"] is True
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
