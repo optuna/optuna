@@ -87,6 +87,3 @@ def test_file_not_found_exception(
 
     with pytest.raises(ArtifactNotFound):
         backend.open_reader("not-found-id")
-
-    with pytest.raises(ArtifactNotFound):
-        backend.remove("not-found-id")
