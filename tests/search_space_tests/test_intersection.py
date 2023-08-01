@@ -39,16 +39,8 @@ def test_intersection_search_space() -> None:
         study.get_trials(deepcopy=False)
     )
 
-    # Returning sorted `dict`.
-    assert search_space.calculate(study, ordered_dict=True) == dict(
-        [
-            ("x", IntDistribution(low=0, high=10)),
-            ("y", FloatDistribution(low=-3, high=3)),
-        ]
-    )
-    assert search_space.calculate(study, ordered_dict=True) == intersection_search_space(
-        study.get_trials(deepcopy=False), ordered_dict=True
-    )
+    # Returned dict is sorted by parameter names.
+    assert list(search_space.calculate(study).keys()) == ["x", "y"]
 
     # Second trial (only 'y' parameter is suggested in this trial).
     study.optimize(lambda t: t.suggest_float("y", -3, 3), n_trials=1)
