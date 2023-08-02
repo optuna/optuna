@@ -327,8 +327,8 @@ def _get_contour_subplot_info(
 
         existing = z_values.get((x_i, y_i))
         if existing is None or target is not None:
-            # In multi-objective case we don't know which objective was selected in target
-            # function therefore we don't know how to select the best objective value.
+            # When target function is present, we can't be sure what the z-value
+            # represents and therefore we don't know how to select the best one.
             z_values[(x_i, y_i)] = value
         else:
             z_values[(x_i, y_i)] = (
