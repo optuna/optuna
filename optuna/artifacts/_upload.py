@@ -53,7 +53,7 @@ def upload_artifact(
     filename = os.path.basename(file_path)
 
     if isinstance(trial, Trial) and storage is None:
-        storage = trial.study._storage
+        storage = trial.storage
 
     trial_id: int
 
