@@ -5,5 +5,6 @@ from optuna.artifacts._upload import upload_artifact
 
 __all__ = [
     "FileSystemArtifactStore",
+    "Boto3ArtifactStore",
     "upload_artifact",
 ]
