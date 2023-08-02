@@ -107,19 +107,31 @@ class NSGAIISampler(BaseSampler):
             The selection strategy for determining the individuals to survive from the current
             population pool. Default to :obj:`None`.
 
+            .. note::
+
+                The arguments ``elite_population_selection_strategy`` was added in v3.3.0 as an
+                experimental feature. The interface may change in newer versions without prior
+                notice.
+                See https://github.com/optuna/optuna/releases/tag/v3.3.0.
+
         child_generation_strategy:
             The strategy for generating child parameters from parent trials. Defaults to
             :obj:`None`.
+
+            .. note::
+
+                The arguments ``child_generation_strategy`` was added in v3.3.0 as an experimental
+                feature. The interface may change in newer versions without prior notice.
+                See https://github.com/optuna/optuna/releases/tag/v3.3.0.
 
         after_trial_strategy:
             A set of procedure to be conducted after each trial. Defaults to :obj:`None`.
 
             .. note::
 
-                The arguments ``elite_population_selection_strategy``,
-                ``child_generation_strategy``, and ``after_trial_strategy`` was added in v3.3.0 as
-                an experimental feature. The interface may change in newer versions without prior
-                notice. See https://github.com/optuna/optuna/releases/tag/v3.3.0.
+                The arguments ``after_trial_strategy`` was added in v3.3.0 as an experimental
+                feature. The interface may change in newer versions without prior notice.
+                See https://github.com/optuna/optuna/releases/tag/v3.3.0.
     """
 
     def __init__(
