@@ -80,7 +80,7 @@ def upload_artifact(
         mimetype=guess_mimetype or DEFAULT_MIME_TYPE,
         encoding=guess_encoding,
     )
-    attr_key = ARTIFACTS_ATTR_PREFIX + f"{trial_id}:" + artifact_id
+    attr_key = ARTIFACTS_ATTR_PREFIX + artifact_id
     storage.set_trial_system_attr(trial_id, attr_key, json.dumps(asdict(artifact)))
 
     with open(file_path, "rb") as f:
