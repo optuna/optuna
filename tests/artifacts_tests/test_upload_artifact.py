@@ -42,10 +42,10 @@ def test_upload_artifact(tmp_path: pathlib.PurePath, artifact_store: ArtifactSto
     artifact_items = [
         ArtifactMeta(**json.loads(val))
         for key, val in system_attrs.items()
-        if key.startswith("artifacts:0:")
+        if key.startswith("artifacts:")
     ]
 
-    assert len(artifact_items) == 3
+    assert len(artifact_items) == 2
     assert artifact_items[0].artifact_id != artifact_items[1].artifact_id
     assert artifact_items[0].filename == "dummy.txt"
     assert artifact_items[0].mimetype == "text/plain"
