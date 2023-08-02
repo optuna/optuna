@@ -33,7 +33,7 @@ classifiers = [
 requires-python = ">=3.7"
 dependencies = [
   "alembic>=1.5.0",
-  "cmaes>=0.9.1",
+  "cmaes>=0.10.0",
   "colorlog",
   "numpy",
   "packaging>=20.0",
@@ -57,6 +57,7 @@ checking = [
     "flake8",
     "isort",
     "mypy",
+    "mypy_boto3_s3",
     "types-PyYAML",
     "types-redis",
     "types-setuptools",
@@ -86,31 +87,32 @@ document = [
     "torchvision",
 ]
 integration = [
-    "botorch>=0.4.0; python_version<'3.11'",
+    "botorch>=0.4.0",
     "catboost>=0.26; sys_platform!='darwin'",
     "catboost>=0.26,<1.2; sys_platform=='darwin'",
     "cma",
     "distributed",
-    "fastai; python_version<'3.11'",
-    "lightgbm; python_version<'3.11'",
+    "fastai",
+    "lightgbm",
     "mlflow",
     "pandas",
-    "pytorch-ignite; python_version<'3.11'",
-    "pytorch-lightning>=1.6.0; python_version<'3.11'",
+    "pytorch-ignite",
+    "pytorch-lightning>=1.6.0",
     "scikit-learn>=0.24.2",
-    "scikit-optimize; python_version<'3.11'",
-    "shap; python_version<'3.11'",
-    "tensorflow; python_version<'3.11'",
-    "torch; python_version<'3.11'",
-    "torchaudio; python_version<'3.11'",
-    "torchvision; python_version<'3.11'",
+    "scikit-optimize",
+    "shap",
+    "tensorflow",
+    "torch",
+    "torchaudio",
+    "torchvision",
     "wandb",
     "xgboost",
 ]
 optional = [
-    "botorch",  # optuna/terminator/gp/botorch
-    "matplotlib!=3.6.0",  # optuna/visualization/matplotlib
-    "pandas",  # optuna/study.py
+    "boto3",  # optuna/artifacts/_boto3.py.
+    "botorch",  # optuna/terminator/gp/botorch.
+    "matplotlib!=3.6.0",  # optuna/visualization/matplotlib.
+    "pandas",  # optuna/study.py.
     "plotly>=4.9.0",  # optuna/visualization.
     "redis",  # optuna/storages/redis.py.
     "scikit-learn>=0.24.2",
@@ -120,6 +122,7 @@ test = [
     "coverage",
     "fakeredis[lua]",
     "kaleido",
+    "moto",
     "pytest",
     "scipy>=1.9.2; python_version>='3.8'",
 ]

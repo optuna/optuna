@@ -207,7 +207,7 @@ class AddRandomInputs(BasePreprocessing):
         trials: List[optuna.trial.FrozenTrial],
         study_direction: Optional[optuna.study.StudyDirection],
     ) -> List[optuna.trial.FrozenTrial]:
-        search_space = intersection_search_space(trials, ordered_dict=True)
+        search_space = intersection_search_space(trials)
 
         additional_trials = []
         for _ in range(self._n_additional_trials):

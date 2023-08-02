@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections import OrderedDict
 import copy
 from typing import Dict
 from typing import Tuple
@@ -77,21 +76,17 @@ class IntersectionSearchSpace:
 
         self._include_pruned = include_pruned
 
-    def calculate(self, study: Study, ordered_dict: bool = False) -> Dict[str, BaseDistribution]:
+    def calculate(self, study: Study) -> Dict[str, BaseDistribution]:
         """Returns the intersection search space of the :class:`~optuna.study.Study`.
 
         Args:
             study:
                 A study with completed trials. The same study must be passed for one instance
                 of this class through its lifetime.
-            ordered_dict:
-                A boolean flag determining the return type.
-                If :obj:`False`, the returned object will be a :obj:`dict`.
-                If :obj:`True`, the returned object will be an :obj:`collections.OrderedDict`
-                sorted by keys, i.e. parameter names.
 
         Returns:
-            A dictionary containing the parameter names and parameter's distributions.
+            A dictionary containing the parameter names and parameter's distributions sorted by
+            parameter names.
         """
 
         if self._study_id is None:
@@ -109,16 +104,12 @@ class IntersectionSearchSpace:
             self._cached_trial_number,
         )
         search_space = self._search_space or {}
-
-        if ordered_dict:
-            search_space = OrderedDict(sorted(search_space.items(), key=lambda x: x[0]))
-
+        search_space = dict(sorted(search_space.items(), key=lambda x: x[0]))
         return copy.deepcopy(search_space)
 
 
 def intersection_search_space(
     trials: list[optuna.trial.FrozenTrial],
-    ordered_dict: bool = False,
     include_pruned: bool = False,
 ) -> Dict[str, BaseDistribution]:
     """Return the intersection search space of the given trials.
@@ -137,22 +128,15 @@ def intersection_search_space(
     Args:
         trials:
             A list of trials.
-        ordered_dict:
-            A boolean flag determining the return type.
-            If :obj:`False`, the returned object will be a :obj:`dict`.
-            If :obj:`True`, the returned object will be an :obj:`collections.OrderedDict` sorted by
-            keys, i.e. parameter names.
         include_pruned:
             Whether pruned trials should be included in the search space.
 
     Returns:
-        A dictionary containing the parameter names and parameter's distributions.
+        A dictionary containing the parameter names and parameter's distributions sorted by
+        parameter names.
     """
 
     search_space, _ = _calculate(trials, include_pruned)
     search_space = search_space or {}
-
-    if ordered_dict:
-        search_space = OrderedDict(sorted(search_space.items(), key=lambda x: x[0]))
-
+    search_space = dict(sorted(search_space.items(), key=lambda x: x[0]))
     return search_space

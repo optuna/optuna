@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -721,8 +720,8 @@ class BoTorchSampler(BaseSampler):
             # because `InMemoryStorage.create_new_study` always returns the same study ID.
             raise RuntimeError("BoTorchSampler cannot handle multiple studies.")
 
-        search_space: Dict[str, BaseDistribution] = OrderedDict()
-        for name, distribution in self._search_space.calculate(study, ordered_dict=True).items():
+        search_space: Dict[str, BaseDistribution] = {}
+        for name, distribution in self._search_space.calculate(study).items():
             if distribution.single():
                 # built-in `candidates_func` cannot handle distributions that contain just a
                 # single value, so we skip them. Note that the parameter values for such
@@ -738,7 +737,7 @@ class BoTorchSampler(BaseSampler):
         trial: FrozenTrial,
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
-        assert isinstance(search_space, OrderedDict)
+        assert isinstance(search_space, dict)
 
         if len(search_space) == 0:
             return {}
