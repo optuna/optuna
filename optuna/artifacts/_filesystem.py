@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 import shutil
 from typing import TYPE_CHECKING
 
@@ -14,24 +15,15 @@ if TYPE_CHECKING:
 class FileSystemArtifactStore:
     """An artifact backend for file systems.
 
-    Example:
-       .. code-block:: python
-
-           import optuna
-           from optuna_dashboard.artifact import upload_artifact
-           from optuna_dashboard.artifact.file_system import FileSystemBackend
-
-           artifact_backend = FileSystemBackend("./artifacts")
-
-
-           def objective(trial: optuna.Trial) -> float:
-               ... = trial.suggest_float("x", -10, 10)
-               file_path = generate_example_png(...)
-               upload_artifact(artifact_backend, trial, file_path)
-               return ...
+    Args:
+        base_path:
+            The base path to a directory to store artifacts.
     """
 
-    def __init__(self, base_path: str) -> None:
+    def __init__(self, base_path: str | Path) -> None:
+        if isinstance(base_path, str):
+            base_path = Path(base_path)
+        # TODO(Shinichi): Check if the base_path is valid directory.
         self._base_path = base_path
 
     def open_reader(self, artifact_id: str) -> BinaryIO:
