@@ -26,7 +26,7 @@ class ArtifactMeta:
 
 
 def upload_artifact(
-    trial: Trial | FrozenTrial | int,
+    trial: Trial | FrozenTrial,
     file_path: str,
     artifact_store: ArtifactStore,
     *,
