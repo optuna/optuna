@@ -57,18 +57,14 @@ def upload_artifact(
 
     trial_id: int
 
-    if storage is not None:
-        if isinstance(trial, Trial):
-            trial_id = trial._trial_id
-            storage = trial.storage
-        elif isinstance(trial, FrozenTrial):
-            trial_id = trial._trial_id
-        elif isinstance(trial, int):
-            trial_id = trial
-        else:
-            raise ValueError("trial must be Trial, FrozenTrial or int.")
-    else:
+    if storage is None:
         raise ValueError("storage is required for FrozenTrial or int.")
+    if isinstance(trial, Trial) or isinstance(trial, FrozenTrial):
+        trial_id = trial._trial_id
+    elif isinstance(trial, int):
+        trial_id = trial
+    else:
+        raise ValueError("trial must be Trial, FrozenTrial or int.")
 
     artifact_id = str(uuid.uuid4())
 
