@@ -32,18 +32,13 @@ def test_upload_artifact(tmp_path: pathlib.PurePath, artifact_store: ArtifactSto
     upload_artifact(trial, file_path, artifact_store)
 
     frozen_trial = study._storage.get_trial(trial._trial_id)
-    trial_id = frozen_trial._trial_id
-
-    with pytest.raises(ValueError):
-        upload_artifact(trial_id, file_path, artifact_store)
 
     with pytest.raises(ValueError):
         upload_artifact(frozen_trial, file_path, artifact_store)
 
     upload_artifact(frozen_trial, file_path, artifact_store, storage=trial.study._storage)
-    upload_artifact(trial_id, file_path, artifact_store, storage=trial.study._storage)
 
-    system_attrs = trial.study._storage.get_trial(trial_id).system_attrs
+    system_attrs = trial.study._storage.get_trial(frozen_trial._trial_id).system_attrs
     artifact_items = [
         ArtifactMeta(**json.loads(val))
         for key, val in system_attrs.items()
