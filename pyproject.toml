@@ -76,7 +76,7 @@ document = [
     "plotly>=4.9.0",  # optuna/visualization.
     "scikit-learn",
     "scikit-optimize",
-    "sphinx",
+    "sphinx<7",
     "sphinx-copybutton",
     "sphinx-gallery",
     "sphinx-plotly-directive",
