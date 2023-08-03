@@ -132,7 +132,7 @@ def _get_intermediate_plot(info: _IntermediatePlotInfo) -> "go.Figure":
             mode="lines+markers",
             marker=default_marker
             if tinfo.feasible
-            else default_marker.update({"color": "#CCCCCC"}),  # type: ignore[dict-item]
+            else {**default_marker, "color": "#CCCCCC"},
             name="Trial{}".format(tinfo.trial_number),
         )
         for tinfo in trial_infos

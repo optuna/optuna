@@ -108,6 +108,16 @@ def test_intermediate_plot_info() -> None:
                 )
             ]
         ),
+        _IntermediatePlotInfo(
+            trial_infos=[
+                _TrialInfo(
+                    trial_number=0, sorted_intermediate_values=[(0, 1.0), (1, 2.0)], feasible=True
+                ),
+                _TrialInfo(
+                    trial_number=1, sorted_intermediate_values=[(1, 2.0), (0, 1.0)], feasible=False
+                ) 
+            ]
+        ),
     ],
 )
 def test_plot_intermediate_values(
