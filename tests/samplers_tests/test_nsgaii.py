@@ -33,8 +33,8 @@ from optuna.samplers.nsgaii import VSBXCrossover
 from optuna.samplers.nsgaii._after_trial_strategy import NSGAIIAfterTrialStrategy
 from optuna.samplers.nsgaii._child_generation_strategy import NSGAIIChildGenerationStrategy
 from optuna.samplers.nsgaii._crossover import _inlined_categorical_uniform_crossover
-from optuna.samplers.nsgaii._dominates_function import _constrained_dominates
-from optuna.samplers.nsgaii._dominates_function import _validate_constraints
+from optuna.samplers.nsgaii._dominates import _constrained_dominates
+from optuna.samplers.nsgaii._dominates import _validate_constraints
 from optuna.samplers.nsgaii._elite_population_selection_strategy import (
     NSGAIIElitePopulationSelectionStrategy,
 )
