@@ -5,6 +5,7 @@ API Reference
     :maxdepth: 1
 
     optuna
+    artifacts
     cli
     distributions
     exceptions

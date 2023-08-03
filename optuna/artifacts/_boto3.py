@@ -4,9 +4,7 @@ import io
 import shutil
 from typing import TYPE_CHECKING
 
-import boto3
-from botocore.exceptions import ClientError
-
+from optuna._imports import try_import
 from optuna.artifacts.exceptions import ArtifactNotFound
 
 
@@ -14,6 +12,10 @@ if TYPE_CHECKING:
     from typing import BinaryIO
 
     from mypy_boto3_s3 import S3Client
+
+with try_import():
+    import boto3
+    from botocore.exceptions import ClientError
 
 
 class Boto3ArtifactStore:
@@ -31,6 +33,23 @@ class Boto3ArtifactStore:
             If True, skip procedure to copy the content of the source file object to a buffer
             before uploading it to S3 ins. This is default to False because using upload_fileobj()
             method of Boto3 client might close the source file object.
+
+    Example:
+        .. code-block:: python
+
+            import optuna
+            from optuna.artifact import upload_artifact
+            from optuna.artifact.boto3 import Boto3ArtifactStore
+
+
+            artifact_backend = Boto3ArtifactStore("my-bucket")
+
+
+            def objective(trial: optuna.Trial) -> float:
+                ... = trial.suggest_float("x", -10, 10)
+                file_path = generate_example(...)
+                upload_artifact(trial, file_path, artifact_backend)
+                return ...
     """
 
     def __init__(
