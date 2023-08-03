@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from typing import Callable
 from typing import Dict
 from typing import List
@@ -82,7 +81,7 @@ class ShapleyImportanceEvaluator(BaseImportanceEvaluator):
             params = list(distributions.keys())
         assert params is not None
         if len(params) == 0:
-            return OrderedDict()
+            return {}
 
         trials: List[FrozenTrial] = _get_filtered_trials(study, params=params, target=target)
         trans = _SearchSpaceTransform(distributions, transform_log=False, transform_step=False)

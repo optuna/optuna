@@ -89,7 +89,7 @@ def _convert_trials_to_tensors(trials: list[FrozenTrial]) -> tuple[torch.Tensor,
     - the state is COMPLETE for any trial;
     - direction is MINIMIZE for any trial.
     """
-    search_space = intersection_search_space(trials, ordered_dict=True)
+    search_space = intersection_search_space(trials)
     sorted_params = sorted(search_space.keys())
 
     x = []

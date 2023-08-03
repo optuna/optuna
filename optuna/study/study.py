@@ -1006,9 +1006,7 @@ class Study:
             metric_names: A list of metric names for the objective function.
         """
         if len(self.directions) != len(metric_names):
-            raise ValueError(
-                "The number of objectives must match thhe length of the metric names."
-            )
+            raise ValueError("The number of objectives must match the length of the metric names.")
 
         self._storage.set_study_system_attr(
             self._study_id, _SYSTEM_ATTR_METRIC_NAMES, metric_names

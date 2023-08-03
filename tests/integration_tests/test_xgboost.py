@@ -1,5 +1,3 @@
-from collections import OrderedDict
-
 import numpy as np
 import pytest
 
@@ -21,7 +19,7 @@ def test_xgboost_pruning_callback_call() -> None:
     trial = study.ask()
     pruning_callback = XGBoostPruningCallback(trial, "validation-logloss")
     pruning_callback.after_iteration(
-        model=None, epoch=1, evals_log={"validation": OrderedDict({"logloss": [1.0]})}
+        model=None, epoch=1, evals_log={"validation": {"logloss": [1.0]}}
     )
 
     # The pruner is activated.
@@ -30,7 +28,7 @@ def test_xgboost_pruning_callback_call() -> None:
     pruning_callback = XGBoostPruningCallback(trial, "validation-logloss")
     with pytest.raises(optuna.TrialPruned):
         pruning_callback.after_iteration(
-            model=None, epoch=1, evals_log={"validation": OrderedDict({"logloss": [1.0]})}
+            model=None, epoch=1, evals_log={"validation": {"logloss": [1.0]}}
         )
 
 

@@ -148,6 +148,28 @@ class BaseSampler(abc.ABC):
 
         raise NotImplementedError
 
+    def before_trial(self, study: Study, trial: FrozenTrial) -> None:
+        """Trial pre-processing.
+
+        This method is called before the objective function is called and right after the trial is
+        instantiated. More precisely, this method is called during trial initialization, just
+        before the :func:`~optuna.samplers.BaseSampler.infer_relative_search_space` call. In other
+        words, it is responsible for pre-processing that should be done before inferring the search
+        space.
+
+        .. note::
+            Added in v3.3.0 as an experimental feature. The interface may change in newer versions
+            without prior notice. See https://github.com/optuna/optuna/releases/tag/v3.3.0.
+
+        Args:
+            study:
+                Target study object.
+            trial:
+                Target trial object.
+        """
+
+        pass
+
     def after_trial(
         self,
         study: Study,

@@ -26,7 +26,7 @@ __all__ = ["pd"]
 def _create_records_and_aggregate_column(
     study: "optuna.Study", attrs: Tuple[str, ...]
 ) -> Tuple[List[Dict[Tuple[str, str], Any]], List[Tuple[str, str]]]:
-    attrs_to_df_columns: Dict[str, str] = collections.OrderedDict()
+    attrs_to_df_columns: Dict[str, str] = {}
     for attr in attrs:
         if attr.startswith("_"):
             # Python conventional underscores are omitted in the dataframe.

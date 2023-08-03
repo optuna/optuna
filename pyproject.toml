@@ -33,7 +33,7 @@ classifiers = [
 requires-python = ">=3.7"
 dependencies = [
   "alembic>=1.5.0",
-  "cmaes>=0.9.1",
+  "cmaes>=0.10.0",
   "colorlog",
   "numpy",
   "packaging>=20.0",
@@ -57,6 +57,7 @@ checking = [
     "flake8",
     "isort",
     "mypy",
+    "mypy_boto3_s3",
     "types-PyYAML",
     "types-redis",
     "types-setuptools",
@@ -80,7 +81,7 @@ document = [
     "sphinx-copybutton",
     "sphinx-gallery",
     "sphinx-plotly-directive",
-    "sphinx_rtd_theme",
+    "sphinx_rtd_theme>=1.2.0",
     "torch",
     "torchaudio",
     "torchvision",
@@ -108,9 +109,10 @@ integration = [
     "xgboost",
 ]
 optional = [
-    "botorch",  # optuna/terminator/gp/botorch
-    "matplotlib!=3.6.0",  # optuna/visualization/matplotlib
-    "pandas",  # optuna/study.py
+    "boto3",  # optuna/artifacts/_boto3.py.
+    "botorch",  # optuna/terminator/gp/botorch.
+    "matplotlib!=3.6.0",  # optuna/visualization/matplotlib.
+    "pandas",  # optuna/study.py.
     "plotly>=4.9.0",  # optuna/visualization.
     "redis",  # optuna/storages/redis.py.
     "scikit-learn>=0.24.2",
@@ -120,6 +122,7 @@ test = [
     "coverage",
     "fakeredis[lua]",
     "kaleido",
+    "moto",
     "pytest",
     "scipy>=1.9.2; python_version>='3.8'",
 ]

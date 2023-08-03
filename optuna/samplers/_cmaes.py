@@ -111,6 +111,9 @@ class CmaEsSampler(BaseSampler):
     - `R. Hamano, S. Saito, M. Nomura, S. Shirakawa. CMA-ES with Margin: Lower-Bounding Marginal
       Probability for Mixed-Integer Black-Box Optimization, GECCO. 2022.
       <https://arxiv.org/abs/2205.13482>`_
+    - `M. Nomura, Y. Akimoto, I. Ono. CMA-ES with Learning Rate Adaptation: Can CMA-ES with
+      Default Population Size Solve Multimodal and Noisy Problems?, GECCO. 2023.
+      <https://arxiv.org/abs/2304.03473>`_
 
     .. seealso::
         You can also use :class:`optuna.integration.PyCmaSampler` which is a sampler using cma
@@ -218,6 +221,18 @@ class CmaEsSampler(BaseSampler):
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v3.1.0.
 
+        lr_adapt:
+            If this is :obj:`True`, CMA-ES with learning rate adaptation is used.
+            This algorithm focuses on working well on multimodal and/or noisy problems
+            with default settings.
+            Currently, this option cannot be used with ``use_separable_cma=True`` or
+            ``with_margin=True``.
+
+            .. note::
+                Added in v3.3.0 or later, as an experimental feature.
+                The interface may change in newer versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v3.3.0.
+
         source_trials:
             This option is for Warm Starting CMA-ES, a method to transfer prior knowledge on
             similar HPO tasks through the initialization of CMA-ES. This method estimates a
@@ -247,6 +262,7 @@ class CmaEsSampler(BaseSampler):
         inc_popsize: int = 2,
         use_separable_cma: bool = False,
         with_margin: bool = False,
+        lr_adapt: bool = False,
         source_trials: Optional[List[FrozenTrial]] = None,
     ) -> None:
         self._x0 = x0
@@ -262,6 +278,7 @@ class CmaEsSampler(BaseSampler):
         self._inc_popsize = inc_popsize
         self._use_separable_cma = use_separable_cma
         self._with_margin = with_margin
+        self._lr_adapt = lr_adapt
         self._source_trials = source_trials
 
         if self._restart_strategy:
@@ -299,6 +316,13 @@ class CmaEsSampler(BaseSampler):
                 ExperimentalWarning,
             )
 
+        if self._lr_adapt:
+            warnings.warn(
+                "`lr_adapt` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
+
         if source_trials is not None and (x0 is not None or sigma0 is not None):
             raise ValueError(
                 "It is prohibited to pass `source_trials` argument when "
@@ -309,6 +333,12 @@ class CmaEsSampler(BaseSampler):
         if source_trials is not None and use_separable_cma:
             raise ValueError(
                 "It is prohibited to pass `source_trials` argument when using separable CMA-ES."
+            )
+
+        if lr_adapt and (use_separable_cma or with_margin):
+            raise ValueError(
+                "It is prohibited to pass `use_separable_cma` or `with_margin` argument when "
+                "using `lr_adapt`."
             )
 
         if restart_strategy not in (
@@ -690,6 +720,7 @@ class CmaEsSampler(BaseSampler):
             seed=self._cma_rng.randint(1, 2**31 - 2),
             n_max_resampling=10 * n_dimension,
             population_size=population_size,
+            lr_adapt=self._lr_adapt,
         )
 
     def sample_independent(
