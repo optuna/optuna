@@ -768,7 +768,12 @@ class CmaEsSampler(BaseSampler):
                 if value is None:
                     continue
 
-                assert isinstance(value, float)
+                if not isinstance(value, float):
+                    warnings.warn(
+                        "This sampler doesn't support multiple intermediate values. "
+                        "Skip this trial."
+                    )
+                    continue
 
                 # We rewrite the value of the trial `t` for sampling, so we need a deepcopy.
                 copied_t = copy.deepcopy(t)
