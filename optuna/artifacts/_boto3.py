@@ -35,19 +35,19 @@ class Boto3ArtifactStore:
     Example:
         .. code-block:: python
 
-        import optuna
-        from optuna.artifact import upload_artifact
-        from optuna.artifact.boto3 import Boto3Backend
+            import optuna
+            from optuna.artifact import upload_artifact
+            from optuna.artifact.boto3 import Boto3Backend
 
 
-        artifact_backend = Boto3Backend("my-bucket")
+            artifact_backend = Boto3Backend("my-bucket")
 
 
-        def objective(trial: optuna.Trial) -> float:
-            ... = trial.suggest_float("x", -10, 10)
-            file_path = generate_example(...)
-            upload_artifact(trial, file_path, artifact_backend)
-            return ...
+            def objective(trial: optuna.Trial) -> float:
+                ... = trial.suggest_float("x", -10, 10)
+                file_path = generate_example(...)
+                upload_artifact(trial, file_path, artifact_backend)
+                return ...
     """
 
     def __init__(
