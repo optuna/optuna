@@ -4,15 +4,14 @@ import io
 import shutil
 from typing import TYPE_CHECKING
 
-import boto3
-from botocore.exceptions import ClientError
-
 from optuna.artifacts.exceptions import ArtifactNotFound
 
 
 if TYPE_CHECKING:
     from typing import BinaryIO
 
+    import boto3
+    from botocore.exceptions import ClientError
     from mypy_boto3_s3 import S3Client
 
 
