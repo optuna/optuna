@@ -6,6 +6,7 @@ from typing import NamedTuple
 
 from optuna.logging import get_logger
 from optuna.study import Study
+from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
@@ -267,14 +268,14 @@ def _get_contour_info(
     if len(sorted_params) == 2:
         x_param = sorted_params[0]
         y_param = sorted_params[1]
-        sub_plot_info = _get_contour_subplot_info(trials, x_param, y_param, target)
+        sub_plot_info = _get_contour_subplot_info(study, trials, x_param, y_param, target)
         sub_plot_infos = [[sub_plot_info]]
     else:
         sub_plot_infos = []
         for i, y_param in enumerate(sorted_params):
             sub_plot_infos.append([])
             for x_param in sorted_params:
-                sub_plot_info = _get_contour_subplot_info(trials, x_param, y_param, target)
+                sub_plot_info = _get_contour_subplot_info(study, trials, x_param, y_param, target)
                 sub_plot_infos[i].append(sub_plot_info)
 
     reverse_scale = _is_reverse_scale(study, target)
@@ -288,6 +289,7 @@ def _get_contour_info(
 
 
 def _get_contour_subplot_info(
+    study: Study,
     trials: list[FrozenTrial],
     x_param: str,
     y_param: str,
@@ -306,7 +308,7 @@ def _get_contour_subplot_info(
         _logger.warning("Param {} unique value length is less than 2.".format(y_param))
         return _SubContourInfo(xaxis=xaxis, yaxis=yaxis, z_values={})
 
-    z_values = {}
+    z_values: dict[tuple[int, int], float] = {}
     for i, trial in enumerate(trials):
         if x_param not in trial.params or y_param not in trial.params:
             continue
@@ -323,7 +325,17 @@ def _get_contour_subplot_info(
             value = target(trial)
         assert value is not None
 
-        z_values[(x_i, y_i)] = value
+        existing = z_values.get((x_i, y_i))
+        if existing is None or target is not None:
+            # When target function is present, we can't be sure what the z-value
+            # represents and therefore we don't know how to select the best one.
+            z_values[(x_i, y_i)] = value
+        else:
+            z_values[(x_i, y_i)] = (
+                min(existing, value)
+                if study.direction is StudyDirection.MINIMIZE
+                else max(existing, value)
+            )
 
     return _SubContourInfo(xaxis=xaxis, yaxis=yaxis, z_values=z_values)
 
