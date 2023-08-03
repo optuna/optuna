@@ -39,10 +39,10 @@ class Boto3ArtifactStore:
 
             import optuna
             from optuna.artifact import upload_artifact
-            from optuna.artifact.boto3 import Boto3Backend
+            from optuna.artifact.boto3 import Boto3ArtifactStore
 
 
-            artifact_backend = Boto3Backend("my-bucket")
+            artifact_backend = Boto3ArtifactStore("my-bucket")
 
 
             def objective(trial: optuna.Trial) -> float:
