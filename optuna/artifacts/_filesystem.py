@@ -18,6 +18,27 @@ class FileSystemArtifactStore:
     Args:
         base_path:
             The base path to a directory to store artifacts.
+
+    Example:
+        .. code-block:: python
+
+            import os
+
+            import optuna
+            from optuna.artifacts import FileSystemArtifactStore
+            from optuna.artifacts import upload_artifact
+
+
+            base_path = "./artifacts"
+            os.makedirs(base_path, exist_ok=True)
+            artifact_backend = FileSystemArtifactStore(base_path=base_path)
+
+
+            def objective(trial: optuna.Trial) -> float:
+                ... = trial.suggest_float("x", -10, 10)
+                file_path = generate_example(...)
+                upload_artifact(trial, file_path, artifact_backend)
+                return ...
     """
 
     def __init__(self, base_path: str | Path) -> None:
