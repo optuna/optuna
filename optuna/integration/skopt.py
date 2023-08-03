@@ -216,7 +216,7 @@ class SkoptSampler(BaseSampler):
                 if isinstance(value, float):
                     copied_t.value = value
                 else:
-                    copied_t.values = value
+                    continue
                 complete_trials.append(copied_t)
         return complete_trials
 
