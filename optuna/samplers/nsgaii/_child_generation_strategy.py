@@ -9,7 +9,7 @@ import numpy as np
 from optuna.distributions import BaseDistribution
 from optuna.samplers.nsgaii._crossover import perform_crossover
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
-from optuna.samplers.nsgaii._dominates_function import _constrained_dominates
+from optuna.samplers.nsgaii._dominates import _constrained_dominates
 from optuna.study import Study
 from optuna.study._multi_objective import _dominates
 from optuna.trial import FrozenTrial
