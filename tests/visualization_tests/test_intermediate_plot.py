@@ -115,7 +115,7 @@ def test_intermediate_plot_info() -> None:
                 ),
                 _TrialInfo(
                     trial_number=1, sorted_intermediate_values=[(1, 2.0), (0, 1.0)], feasible=False
-                ) 
+                ),
             ]
         ),
     ],
