@@ -88,6 +88,7 @@ class PatientPruner(BasePruner):
             warnings.warn(
                 "This pruner doesn't support multiple intermediate values. Skip pruning."
             )
+            return False
 
         intermediate_values = trial.intermediate_values
         steps = np.asarray(list(intermediate_values.keys()))
