@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Sequence
 import copy
 from datetime import datetime
