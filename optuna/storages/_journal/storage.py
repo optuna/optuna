@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 import copy
 import datetime
 import enum
@@ -8,8 +9,6 @@ from typing import Container
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Sequence
-from typing import Union
 import uuid
 
 import optuna
@@ -333,7 +332,7 @@ class JournalStorage(BaseStorage):
                 return True
 
     def set_trial_intermediate_value(
-        self, trial_id: int, step: int, intermediate_value: Union[float, Sequence[float]]
+        self, trial_id: int, step: int, intermediate_value: float | Sequence[float]
     ) -> None:
         log: Dict[str, Any] = {
             "trial_id": trial_id,

@@ -1,4 +1,5 @@
 import asyncio
+from collections.abc import Sequence
 from datetime import datetime
 from typing import Any
 from typing import Container
@@ -7,7 +8,6 @@ from typing import Generator
 from typing import Iterable
 from typing import List
 from typing import Optional
-from typing import Sequence
 from typing import Tuple
 from typing import Union
 import uuid
@@ -319,7 +319,7 @@ class _OptunaSchedulerExtension:
         storage_name: str,
         trial_id: int,
         step: int,
-        intermediate_value: Union[float, Sequence[float]],
+        intermediate_value: float | Sequence[float],
     ) -> None:
         return self.get_storage(storage_name).set_trial_intermediate_value(
             trial_id=trial_id,
@@ -668,7 +668,7 @@ class DaskStorage(BaseStorage):
         )
 
     def set_trial_intermediate_value(
-        self, trial_id: int, step: int, intermediate_value: Union[float, Sequence[float]]
+        self, trial_id: int, step: int, intermediate_value: float | Sequence[float]
     ) -> None:
         return self.client.sync(  # type: ignore[no-untyped-call]
             self.client.scheduler.optuna_set_trial_intermediate_value,  # type: ignore[union-attr]

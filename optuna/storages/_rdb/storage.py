@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Sequence
 from contextlib import contextmanager
 import copy
 from datetime import datetime
@@ -14,10 +15,8 @@ from typing import Dict
 from typing import Generator
 from typing import List
 from typing import Optional
-from typing import Sequence
 from typing import Set
 from typing import TYPE_CHECKING
-from typing import Union
 import uuid
 
 import optuna
@@ -684,7 +683,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             trial_value.value_type = value_type
 
     def set_trial_intermediate_value(
-        self, trial_id: int, step: int, intermediate_value: Union[float, Sequence[float]]
+        self, trial_id: int, step: int, intermediate_value: float | Sequence[float]
     ) -> None:
         if isinstance(intermediate_value, float):
             intermediate_value = [intermediate_value]
@@ -882,14 +881,14 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             values = None
 
         params = sorted(trial.params, key=lambda p: p.param_id)
-        unsorted_intermediates: Dict[int, Dict[int, float]] = defaultdict(dict)
+        unsorted_intermediates: dict[int, dict[int, float]] = defaultdict(dict)
         for v in trial.intermediate_values:
             unsorted_intermediates[v.step][
                 v.intermediate_value_index
             ] = v.stored_repr_to_intermediate_value(
                 v.intermediate_value, v.intermediate_value_type
             )
-        intermediate_values: Dict[int, Union[float, Sequence[float]]] = {}
+        intermediate_values: dict[int, float | Sequence[float]] = {}
         if unsorted_intermediates:
             num_intermediate_values_at_same_step = len(unsorted_intermediates[v.step])
             if num_intermediate_values_at_same_step != 1:

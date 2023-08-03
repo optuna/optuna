@@ -1,11 +1,11 @@
 import abc
+from collections.abc import Sequence
 from typing import Any
 from typing import cast
 from typing import Container
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Sequence
 from typing import Tuple
 from typing import Union
 
@@ -379,7 +379,7 @@ class BaseStorage(abc.ABC):
 
     @abc.abstractmethod
     def set_trial_intermediate_value(
-        self, trial_id: int, step: int, intermediate_value: Union[float, Sequence[float]]
+        self, trial_id: int, step: int, intermediate_value: float | Sequence[float]
     ) -> None:
         """Report an intermediate value of an objective function.
 

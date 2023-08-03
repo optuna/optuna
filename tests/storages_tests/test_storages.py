@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 import copy
 from datetime import datetime
 import pickle
@@ -9,9 +10,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Sequence
 from typing import Tuple
-from typing import Union
 
 import numpy as np
 import pytest
@@ -1027,7 +1026,7 @@ def _generate_trial(generator: random.Random) -> FrozenTrial:
     distributions = {}
     user_attrs = {}
     system_attrs: Dict[str, Any] = {}
-    intermediate_values: Dict[int, Union[float, Sequence[float]]] = {}
+    intermediate_values: dict[int, float | Sequence[float]] = {}
     for key, (value, dist) in example_params.items():
         if generator.choice([True, False]):
             params[key] = value
