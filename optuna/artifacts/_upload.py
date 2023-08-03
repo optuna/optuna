@@ -7,6 +7,7 @@ import mimetypes
 import os
 import uuid
 
+from optuna._experimental import experimental_func
 from optuna.artifacts._protocol import ArtifactStore
 from optuna.storages import BaseStorage
 from optuna.trial._frozen import FrozenTrial
@@ -25,6 +26,7 @@ class ArtifactMeta:
     encoding: str | None
 
 
+@experimental_func("3.3.0")
 def upload_artifact(
     trial: Trial | FrozenTrial,
     file_path: str,

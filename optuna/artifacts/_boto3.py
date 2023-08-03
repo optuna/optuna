@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 import boto3
 from botocore.exceptions import ClientError
 
+from optuna._experimental import experimental_class
 from optuna.artifacts.exceptions import ArtifactNotFound
 
 
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
 
 
+@experimental_class("3.3.0")
 class Boto3ArtifactStore:
     """An artifact backend for Boto3.
 
