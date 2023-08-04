@@ -28,6 +28,7 @@ __all__ = [
     "Trial",
     "TrialPruned",
     "__version__",
+    "artifacts",
     "copy_study",
     "create_study",
     "create_trial",
@@ -51,5 +52,6 @@ __all__ = [
 ]
 
 
+artifacts = _LazyImport("optuna.artifacts")
 importance = _LazyImport("optuna.importance")
 visualization = _LazyImport("optuna.visualization")
