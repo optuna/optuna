@@ -603,10 +603,6 @@ def _get_observation_pairs(
             if len(trial.intermediate_values) > 0:
                 step, intermediate_value = max(trial.intermediate_values.items())
                 if not isinstance(intermediate_value, float):
-                    warnings.warn(
-                        "This sampler doesn't support multiple intermediate values. "
-                        "Skip this trial."
-                    )
                     continue
 
                 if math.isnan(intermediate_value):

@@ -769,10 +769,6 @@ class CmaEsSampler(BaseSampler):
                     continue
 
                 if not isinstance(value, float):
-                    warnings.warn(
-                        "This sampler doesn't support multiple intermediate values. "
-                        "Skip this trial."
-                    )
                     continue
 
                 # We rewrite the value of the trial `t` for sampling, so we need a deepcopy.
