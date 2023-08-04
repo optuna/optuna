@@ -869,25 +869,17 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         return trials
 
-    def _build_frozen_trial_from_trial_model(self, trial: "models.TrialModel") -> FrozenTrial:
-        values: Optional[List[float]]
-        if trial.values:
-            values = [0 for _ in trial.values]
-            for value_model in trial.values:
-                values[value_model.objective] = TrialValueModel.stored_repr_to_value(
-                    value_model.value, value_model.value_type
-                )
-        else:
-            values = None
-
-        params = sorted(trial.params, key=lambda p: p.param_id)
+    def _build_intermediate_values_from_trial_model(
+        self, trial: "models.TrialModel"
+    ) -> dict[int, float | Sequence[float]]:
         unsorted_intermediates: dict[int, dict[int, float]] = defaultdict(dict)
         for v in trial.intermediate_values:
             unsorted_intermediates[v.step][
                 v.intermediate_value_index
-            ] = v.stored_repr_to_intermediate_value(
+            ] = models.TrialIntermediateValueModel.stored_repr_to_intermediate_value(
                 v.intermediate_value, v.intermediate_value_type
             )
+
         intermediate_values: dict[int, float | Sequence[float]] = {}
         if unsorted_intermediates:
             num_intermediate_values_at_same_step = len(unsorted_intermediates[v.step])
@@ -902,6 +894,20 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             else:
                 for step, intermediate_indices_and_values in unsorted_intermediates.items():
                     intermediate_values[step] = intermediate_indices_and_values[0]
+        return intermediate_values
+
+    def _build_frozen_trial_from_trial_model(self, trial: "models.TrialModel") -> FrozenTrial:
+        values: Optional[List[float]]
+        if trial.values:
+            values = [0 for _ in trial.values]
+            for value_model in trial.values:
+                values[value_model.objective] = TrialValueModel.stored_repr_to_value(
+                    value_model.value, value_model.value_type
+                )
+        else:
+            values = None
+
+        params = sorted(trial.params, key=lambda p: p.param_id)
 
         return FrozenTrial(
             number=trial.number,
@@ -924,7 +930,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             system_attrs={
                 attr.key: json.loads(attr.value_json) for attr in trial.system_attributes
             },
-            intermediate_values=intermediate_values,
+            intermediate_values=self._build_intermediate_values_from_trial_model(trial),
             trial_id=trial.trial_id,
         )
 
