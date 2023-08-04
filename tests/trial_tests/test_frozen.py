@@ -299,7 +299,7 @@ def test_create_trial(state: TrialState) -> None:
     distributions: Dict[str, BaseDistribution] = {"x": FloatDistribution(5, 12)}
     user_attrs = {"foo": "bar"}
     system_attrs = {"baz": "qux"}
-    intermediate_values: Optional[dict[int, float, Sequence[float]]] = {
+    intermediate_values: Optional[dict[int, float | Sequence[float]]] = {
         0: 0.0,
         1: 0.1,
         2: 0.1,
