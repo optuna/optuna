@@ -93,7 +93,7 @@ def _get_intermediate_plot(info: _IntermediatePlotInfo) -> "Axes":
         ax.plot(
             tuple((x for x, _ in tinfo.sorted_intermediate_values)),
             tuple((y for _, y in tinfo.sorted_intermediate_values)),
-            color=cmap(i),
+            color=cmap(i) if tinfo.feasible else "#CCCCCC",
             marker=".",
             alpha=0.7,
             label="Trial{}".format(tinfo.trial_number),
