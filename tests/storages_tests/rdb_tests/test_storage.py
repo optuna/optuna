@@ -20,9 +20,15 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.storages import RDBStorage
 from optuna.storages._rdb.models import SCHEMA_VERSION
+from optuna.storages._rdb.models import StudyDirectionModel
+from optuna.storages._rdb.models import StudyModel
+from optuna.storages._rdb.models import TrialIntermediateValueModel
+from optuna.storages._rdb.models import TrialModel
 from optuna.storages._rdb.models import VersionInfoModel
 from optuna.storages._rdb.storage import _create_scoped_session
+from optuna.study._study_direction import StudyDirection
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
+from optuna.trial import TrialState
 
 from .create_db import mo_objective_test_upgrade
 from .create_db import objective_test_upgrade
@@ -147,6 +153,99 @@ def test_create_scoped_session() -> None:
     with pytest.raises(IntegrityError):
         with _create_scoped_session(storage.scoped_session) as session:
             session.add(v)
+
+
+def test_build_intermediate_values_from_trial_model_for_single_objective() -> None:
+    storage = create_test_storage()
+    session = storage.scoped_session()
+
+    study = StudyModel(
+        study_id=1,
+        study_name="test-study",
+        directions=[
+            StudyDirectionModel(study_id=1, direction=StudyDirection.MINIMIZE, objective=0)
+        ],
+    )
+    trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
+    session.add(study)
+    session.add(trial)
+
+    step_intermediate_value_index_list = [
+        (
+            0,
+            0.0,
+            0,
+        ),
+        (1, 1.0, 0),
+        (2, 2.0, 0),
+    ]
+    for step, intermediate_value, intermediate_value_index in step_intermediate_value_index_list:
+        session.add(
+            TrialIntermediateValueModel(
+                trial_id=trial.trial_id,
+                step=step,
+                intermediate_value=intermediate_value,
+                intermediate_value_type=TrialIntermediateValueModel.TrialIntermediateValueType.FINITE,  # noqa: E501
+                intermediate_value_index=intermediate_value_index,
+            )
+        )
+    session.commit()
+
+    intermediate_values = storage._build_intermediate_values_from_trial_model(trial)
+    assert intermediate_values == {
+        0: 0.0,
+        1: 1.0,
+        2: 2.0,
+    }  # type: ignore
+
+
+def test_build_intermediate_values_from_trial_model_for_multi_objective() -> None:
+    storage = create_test_storage()
+    session = storage.scoped_session()
+
+    directions = [
+        StudyDirectionModel(study_id=1, direction=StudyDirection.MINIMIZE, objective=0),
+        StudyDirectionModel(study_id=1, direction=StudyDirection.MAXIMIZE, objective=1),
+    ]
+    study = StudyModel(study_id=1, study_name="test-study", directions=directions)
+    trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
+    session.add(study)
+    session.add(trial)
+
+    step_intermediate_value_index_list = [
+        (
+            0,
+            0.0,
+            0,
+        ),
+        (0, 1.0, 1),
+        (1, 10.0, 0),
+        (1, 11.0, 1),
+        (2, 21.0, 1),
+        (
+            2,
+            20.0,
+            0,
+        ),
+    ]
+    for step, intermediate_value, intermediate_value_index in step_intermediate_value_index_list:
+        session.add(
+            TrialIntermediateValueModel(
+                trial_id=trial.trial_id,
+                step=step,
+                intermediate_value=intermediate_value,
+                intermediate_value_type=TrialIntermediateValueModel.TrialIntermediateValueType.FINITE,  # noqa: E501
+                intermediate_value_index=intermediate_value_index,
+            )
+        )
+    session.commit()
+
+    intermediate_values = storage._build_intermediate_values_from_trial_model(trial)
+    assert intermediate_values == {
+        0: (0.0, 1.0),
+        1: (10.0, 11.0),
+        2: (20.0, 21.0),
+    }  # type: ignore
 
 
 def test_upgrade_identity() -> None:
