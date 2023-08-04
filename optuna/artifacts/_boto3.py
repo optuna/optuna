@@ -4,6 +4,7 @@ import io
 import shutil
 from typing import TYPE_CHECKING
 
+from optuna._experimental import experimental_class
 from optuna._imports import try_import
 from optuna.artifacts.exceptions import ArtifactNotFound
 
@@ -18,6 +19,7 @@ with try_import():
     from botocore.exceptions import ClientError
 
 
+@experimental_class("3.3.0")
 class Boto3ArtifactStore:
     """An artifact backend for Boto3.
 
