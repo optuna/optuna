@@ -108,7 +108,6 @@ class NSGAIISampler(BaseSampler):
             population pool. Default to :obj:`None`.
 
             .. note::
-
                 The arguments ``elite_population_selection_strategy`` was added in v3.3.0 as an
                 experimental feature. The interface may change in newer versions without prior
                 notice.
@@ -119,7 +118,6 @@ class NSGAIISampler(BaseSampler):
             :obj:`None`.
 
             .. note::
-
                 The arguments ``child_generation_strategy`` was added in v3.3.0 as an experimental
                 feature. The interface may change in newer versions without prior notice.
                 See https://github.com/optuna/optuna/releases/tag/v3.3.0.
@@ -128,7 +126,6 @@ class NSGAIISampler(BaseSampler):
             A set of procedure to be conducted after each trial. Defaults to :obj:`None`.
 
             .. note::
-
                 The arguments ``after_trial_strategy`` was added in v3.3.0 as an experimental
                 feature. The interface may change in newer versions without prior notice.
                 See https://github.com/optuna/optuna/releases/tag/v3.3.0.

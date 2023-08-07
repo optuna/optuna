@@ -6,8 +6,8 @@ from collections.abc import Sequence
 import itertools
 
 import optuna
-from optuna.samplers.nsgaii._dominates_function import _constrained_dominates
-from optuna.samplers.nsgaii._dominates_function import _validate_constraints
+from optuna.samplers.nsgaii._dominates import _constrained_dominates
+from optuna.samplers.nsgaii._dominates import _validate_constraints
 from optuna.study import Study
 from optuna.study._multi_objective import _dominates
 from optuna.trial import FrozenTrial
