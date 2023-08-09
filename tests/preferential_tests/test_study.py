@@ -33,7 +33,7 @@ def test_study_set_and_get_user_attrs(storage_mode: str) -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_report_and_get_preferences(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
-        study = create_study()
+        study = create_study(storage=storage)
         assert len(study.preferences) == 0
 
         for _ in range(2):
