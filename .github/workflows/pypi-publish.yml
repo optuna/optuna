@@ -13,6 +13,8 @@ jobs:
   build-n-publish:
     name: Build and publish Python distributions to PyPI or TestPyPI
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
 
     # Not intended for forks.
     if: github.repository == 'optuna/optuna'
@@ -56,14 +58,9 @@ jobs:
       if: (github.event_name == 'schedule') || (github.event_name == 'release')
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
-        user: __token__
-        password: ${{ secrets.test_pypi_password }}
-        repository_url: https://test.pypi.org/legacy/
+        repository-url: https://test.pypi.org/legacy/
 
     - name: Publish distribution to PyPI
       # The following upload action cannot be executed in the forked repository.
       if: github.event_name == 'release'
       uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        user: __token__
-        password: ${{ secrets.pypi_password }}
