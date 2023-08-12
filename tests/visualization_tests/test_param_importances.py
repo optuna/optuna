@@ -53,7 +53,7 @@ def test_plot_param_importances_customized_target_name(
     study = prepare_study_with_trials()
     figure = plot_param_importances(study, params=params, target_name="Target Name")
     if isinstance(figure, go.Figure):
-        assert figure.layout.xaxis.title.text == "Importance for Target Name"
+        assert figure.layout.xaxis.title.text == "Hyperparameter Importance"
     elif isinstance(figure, Axes):
         assert figure.figure.axes[0].get_xlabel() == "Importance for Target Name"
 
