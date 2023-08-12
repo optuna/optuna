@@ -16,8 +16,6 @@ from optuna.visualization._utils import _filter_nonfinite
 
 
 if _imports.is_successful():
-    import plotly
-
     from optuna.visualization._plotly_imports import go
 
 
