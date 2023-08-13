@@ -146,7 +146,7 @@ def _get_importances_plot(infos: tuple[_ImportancesInfo, ...]) -> "Axes":
         _set_bar_labels(info, fig, ax, offset)
         ax.set_yticks(pos + offset / 2, param_names)
 
-    fig.legend(loc="outside upper right")
+    ax.legend(loc="best")
     return ax
 
 
