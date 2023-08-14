@@ -131,15 +131,6 @@ scikit-optimize
 
    optuna.integration.SkoptSampler
 
-SHAP
----------------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.ShapleyImportanceEvaluator
-
 TensorFlow
 ----------
 
