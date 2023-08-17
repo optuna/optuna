@@ -40,7 +40,9 @@ def _get_intermediate_plot_info(study: Study) -> _IntermediatePlotInfo:
 
     trial_infos = [
         _TrialInfo(
-            trial.number, sorted(trial.intermediate_values.items()), _satisfies_constraints(trial)  # type: ignore
+            trial.number,
+            sorted(trial.intermediate_values.items()),  # type: ignore
+            _satisfies_constraints(trial),
         )
         for trial in trials
         if len(trial.intermediate_values) > 0
