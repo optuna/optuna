@@ -686,8 +686,8 @@ def test_lazy_trial_system_attrs(storage_mode: str) -> None:
         # Then, we create the instance for each method, and test the first and second use.
 
         system_attrs = _LazyTrialSystemAttrs(trial._trial_id, storage)
-        assert system_attrs == {"int": 0, "str": "A"}  # type: ignore[comparison-overlap]
-        assert system_attrs == {"int": 0, "str": "A"}  # type: ignore[comparison-overlap]
+        assert system_attrs == {"int": 0, "str": "A"}
+        assert system_attrs == {"int": 0, "str": "A"}
 
         system_attrs = _LazyTrialSystemAttrs(trial._trial_id, storage)
         assert len(system_attrs) == 2
