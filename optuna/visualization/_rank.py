@@ -195,13 +195,11 @@ def _get_rank_subplot_info(
     xaxis = _get_axis_info(trials, x_param)
     yaxis = _get_axis_info(trials, y_param)
 
-    filtered_ids = np.array(
-        [
-            i
-            for i in range(len(trials))
-            if x_param in trials[i].params and y_param in trials[i].params
-        ]
-    )
+    filtered_ids = [
+        i
+        for i in range(len(trials))
+        if x_param in trials[i].params and y_param in trials[i].params
+    ]
     filtered_trials = [trials[i] for i in filtered_ids]
     xs = [trial.params[x_param] for trial in filtered_trials]
     ys = [trial.params[y_param] for trial in filtered_trials]

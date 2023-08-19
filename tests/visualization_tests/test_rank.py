@@ -101,6 +101,8 @@ def _named_tuple_equal(t1: Any, t2: Any) -> bool:
     if isinstance(t1, np.ndarray):
         return bool(np.all(t1 == t2))
     elif isinstance(t1, tuple) or isinstance(t1, list):
+        if len(t1) != len(t2):
+            return False
         for x, y in zip(t1, t2):
             if not _named_tuple_equal(x, y):
                 return False
@@ -282,10 +284,9 @@ def test_generate_rank_plot_for_few_observations(params: list[str]) -> None:
     study.add_trial(
         create_trial(
             values=[0.0],
-            params={"param_a": 1.0, "param_b": 2.0},
+            params={"param_a": 1.0},
             distributions={
                 "param_a": FloatDistribution(0.0, 3.0),
-                "param_b": FloatDistribution(0.0, 3.0),
             },
         )
     )
@@ -307,7 +308,7 @@ def test_generate_rank_plot_for_few_observations(params: list[str]) -> None:
         ),
         "param_b": _AxisInfo(
             name="param_b",
-            range=(-0.1, 2.1),
+            range=(0.0, 0.0),
             is_log=False,
             is_cat=False,
         ),
