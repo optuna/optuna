@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+from itertools import product
 from typing import NamedTuple
 
 from optuna._experimental import experimental_func
@@ -119,24 +120,19 @@ def _get_timeline_plot(info: _TimelineInfo) -> "go.Figure":
     }
 
     fig = go.Figure()
-    for s in ["CONSTRAINED"] + sorted(TrialState, key=lambda x: x.name):
-        if s == "CONSTRAINED":
-            bars = [b for b in info.bars if b.constrainted]
-            color = "#cccccc"
-        else:
-            bars = [b for b in info.bars if b.state == s and not b.constrainted]
-            color = _cm[s.name]
-            s = s.name
+    for s, constrained in product(sorted(TrialState, key=lambda x: x.name), [False, True]):
+        color = "#cccccc" if constrained else _cm[s.name]
+        bars = [b for b in info.bars if b.state == s and b.constrainted == constrained]
         if len(bars) == 0:
             continue
         fig.add_trace(
             go.Bar(
-                name=s,
+                name=s.name,
                 x=[(b.complete - b.start).total_seconds() * 1000 for b in bars],
                 y=[b.number for b in bars],
                 base=[b.start.isoformat() for b in bars],
                 text=[b.hovertext for b in bars],
-                hovertemplate="%{text}<extra>" + s + "</extra>",
+                hovertemplate="%{text}<extra>" + s.name + "</extra>",
                 orientation="h",
                 marker=dict(color=color),
                 textposition="none",  # Avoid drawing hovertext in a bar.
