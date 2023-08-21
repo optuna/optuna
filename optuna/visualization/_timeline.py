@@ -5,11 +5,12 @@ from typing import NamedTuple
 
 from optuna._experimental import experimental_func
 from optuna.logging import get_logger
+from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study import Study
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _make_hovertext
-from optuna.samplers._base import _CONSTRAINTS_KEY
+
 
 if _imports.is_successful():
     from optuna.visualization._plotly_imports import go
@@ -98,7 +99,7 @@ def _get_timeline_info(study: Study) -> _TimelineInfo:
                 complete=date_complete,
                 state=t.state,
                 hovertext=_make_hovertext(t),
-                constrainted=constrainted
+                constrainted=constrainted,
             )
         )
 
