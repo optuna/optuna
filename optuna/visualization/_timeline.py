@@ -9,7 +9,7 @@ from optuna.study import Study
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _make_hovertext
-
+from optuna.samplers._base import _CONSTRAINTS_KEY
 
 if _imports.is_successful():
     from optuna.visualization._plotly_imports import go
@@ -23,6 +23,7 @@ class _TimelineBarInfo(NamedTuple):
     complete: datetime.datetime
     state: TrialState
     hovertext: str
+    constrainted: bool
 
 
 class _TimelineInfo(NamedTuple):
@@ -82,6 +83,7 @@ def _get_timeline_info(study: Study) -> _TimelineInfo:
     for t in study.get_trials(deepcopy=False):
         date_complete = t.datetime_complete or datetime.datetime.now()
         date_start = t.datetime_start or date_complete
+        constrainted = any([x > 0 for x in t.system_attrs[_CONSTRAINTS_KEY]])
         if date_complete < date_start:
             _logger.warning(
                 (
@@ -96,6 +98,7 @@ def _get_timeline_info(study: Study) -> _TimelineInfo:
                 complete=date_complete,
                 state=t.state,
                 hovertext=_make_hovertext(t),
+                constrainted=constrainted
             )
         )
 
@@ -115,20 +118,26 @@ def _get_timeline_plot(info: _TimelineInfo) -> "go.Figure":
     }
 
     fig = go.Figure()
-    for s in sorted(TrialState, key=lambda x: x.name):
-        bars = [b for b in info.bars if b.state == s]
+    for s in ["CONSTRAINED"] + sorted(TrialState, key=lambda x: x.name):
+        if s == "CONSTRAINED":
+            bars = [b for b in info.bars if b.constrainted]
+            color = "#cccccc"
+        else:
+            bars = [b for b in info.bars if b.state == s and not b.constrainted]
+            color = _cm[s.name]
+            s = s.name
         if len(bars) == 0:
             continue
         fig.add_trace(
             go.Bar(
-                name=s.name,
+                name=s,
                 x=[(b.complete - b.start).total_seconds() * 1000 for b in bars],
                 y=[b.number for b in bars],
                 base=[b.start.isoformat() for b in bars],
                 text=[b.hovertext for b in bars],
-                hovertemplate="%{text}<extra>" + s.name + "</extra>",
+                hovertemplate="%{text}<extra>" + s + "</extra>",
                 orientation="h",
-                marker=dict(color=_cm[s.name]),
+                marker=dict(color=color),
                 textposition="none",  # Avoid drawing hovertext in a bar.
             )
         )
