@@ -25,7 +25,7 @@ class _TimelineBarInfo(NamedTuple):
     complete: datetime.datetime
     state: TrialState
     hovertext: str
-    constrainted: bool
+    infeasible: bool
 
 
 class _TimelineInfo(NamedTuple):
@@ -85,7 +85,7 @@ def _get_timeline_info(study: Study) -> _TimelineInfo:
     for t in study.get_trials(deepcopy=False):
         date_complete = t.datetime_complete or datetime.datetime.now()
         date_start = t.datetime_start or date_complete
-        constrainted = any([x > 0 for x in t.system_attrs[_CONSTRAINTS_KEY]])
+        infeasible = any([x > 0 for x in t.system_attrs[_CONSTRAINTS_KEY]])
         if date_complete < date_start:
             _logger.warning(
                 (
@@ -100,7 +100,7 @@ def _get_timeline_info(study: Study) -> _TimelineInfo:
                 complete=date_complete,
                 state=t.state,
                 hovertext=_make_hovertext(t),
-                constrainted=constrainted,
+                infeasible=infeasible,
             )
         )
 
@@ -112,7 +112,7 @@ def _get_timeline_info(study: Study) -> _TimelineInfo:
 
 def _get_timeline_plot(info: _TimelineInfo) -> "go.Figure":
     _cm = {
-        "COMPLETE": "blue",
+        "COMPLETE": "#cccccc",
         "FAIL": "red",
         "PRUNED": "orange",
         "RUNNING": "green",
@@ -120,14 +120,14 @@ def _get_timeline_plot(info: _TimelineInfo) -> "go.Figure":
     }
 
     fig = go.Figure()
-    for s, constrained in product(sorted(TrialState, key=lambda x: x.name), [False, True]):
-        color = "#cccccc" if constrained else _cm[s.name]
-        bars = [b for b in info.bars if b.state == s and b.constrainted == constrained]
+    for s, infeasible in product(sorted(TrialState, key=lambda x: x.name), [False, True]):
+        color = "#cccccc" if infeasible else _cm[s.name]
+        bars = [b for b in info.bars if b.state == s and b.infeasible == infeasible]
         if len(bars) == 0:
             continue
         fig.add_trace(
             go.Bar(
-                name=s.name,
+                name="INFEASIABLE" if infeasible else s.name,
                 x=[(b.complete - b.start).total_seconds() * 1000 for b in bars],
                 y=[b.number for b in bars],
                 base=[b.start.isoformat() for b in bars],
