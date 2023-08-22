@@ -85,7 +85,11 @@ def _get_timeline_info(study: Study) -> _TimelineInfo:
     for t in study.get_trials(deepcopy=False):
         date_complete = t.datetime_complete or datetime.datetime.now()
         date_start = t.datetime_start or date_complete
-        infeasible = any([x > 0 for x in t.system_attrs[_CONSTRAINTS_KEY]])
+        infeasible = (
+            False
+            if _CONSTRAINTS_KEY not in t.system_attrs
+            else any([x > 0 for x in t.system_attrs[_CONSTRAINTS_KEY]])
+        )
         if date_complete < date_start:
             _logger.warning(
                 (
