@@ -21,22 +21,31 @@ class CARBSSampler(optuna.samplers.BaseMultiObjectiveSampler):
         self._rng.seed()
         self._random_sampler.reseed_rng()
 
-    def _calc_pareto_front(self, study, trial):
-        
-        sorted_trails = sorted(study.trials, key=lambda x: x.cost)
+    def _calc_pareto_front(self, study):
+        complete_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
 
-        #TODO: start from random point in bottom 20%
+        # Sort trials by cost, assuming "cost" is the first objective
+        sorted_trials = sorted(complete_trials, key=lambda x: x.values[0])
 
-        # walk to find best performance at given cost
+        # Initialize best_performance, assuming "performance" is the second objective
         pareto_front = []
-        best_performance = sorted_trails[0].performance
+        best_performance = sorted_trials[0].values[1]
 
-        for i, t in enumerate(sorted_trails):
-            if t.performance > best_performance:
-                pareto_front.append(t)
-                best_performance = t.performance
+        # Check the direction of "performance" optimization
+        if study.directions[1] == optuna.study.StudyDirection.MAXIMIZE:
 
-        return pareto_front 
+            for t in sorted_trials:
+                if t.values[1] > best_performance:
+                    pareto_front.append(t)
+                    best_performance = t.values[1]
+        else:  # If performance is to be minimized
+            for t in sorted_trials:
+                if t.values[1] < best_performance:
+                    pareto_front.append(t)
+                    best_performance = t.values[1]
+
+        return pareto_front
+ 
         
     #TODO: make this work right
     def _sample_candidates(self, trial, n_candidates, search_space):
@@ -50,7 +59,7 @@ class CARBSSampler(optuna.samplers.BaseMultiObjectiveSampler):
         # calculate p_search (CARBS eq. 2)
         p_search = np.exp(- abs(xi - samples)**2 / (2 * sigma**2))
 
-        return [samples[i], p_search[i] for i in range(n_candidates)]
+        return [(samples[i], p_search[i]) for i in range(n_candidates)]
     
     def sample_relative(self, study, trial, search_space):
         if search_space == {}:
@@ -58,7 +67,7 @@ class CARBSSampler(optuna.samplers.BaseMultiObjectiveSampler):
         
         # CARBS algorithm.
         # 1. Calculate pareto front
-        pareto_front = _calculate_pareto_front(study, trial)
+        pareto_front = _calculate_pareto_front(study)
 
         # 2. Generate candidates
         candidates = [_generate_candidates(point, n_candidates, search_space) for point in pareto_front]
@@ -108,34 +117,23 @@ class CARBSSampler(optuna.samplers.BaseMultiObjectiveSampler):
     def sample_independent(self, study, trial, param_name, param_distribution):
         independent_sampler = optuna.samplers.RandomSampler()
         return independent_sampler.sample_independent(study, trial, param_name, param_distribution)
-    
-
-    _generate_candidates(n_candidates, pareto_front, search_radius):
-        '''Not sure pareto front and sampling is implemented correctly here'''
-        pareto_front, search_radius):
-        candidates = []
-        for point in pareto_front:
-            for _ in range(n_candidates):
-                candidate = np.random.normal(loc=point, scale=search_radius) 
-                candidates.append(candidate)
-        return np.array(candidates)
 
 
 if __name__ == "__main__":
-def objective(trial):
-    x = trial.suggest_float("x", -10, 10)
-    y = trial.suggest_float("y", -5, 5)
+    def objective(trial):
+        x = trial.suggest_float("x", -10, 10)
+        y = trial.suggest_float("y", -5, 5)
 
-    cost = x
-    performance = x**2 + y
+        cost = x
+        performance = x**2 + y
 
-    return cost, performance
+        return cost, performance
 
 
-#sampler = CARBSSampler()
-study = optuna.create_study(['minimize', 'maximize'])
-study.optimize(objective, n_trials=100)
+    #sampler = CARBSSampler()
+    study = optuna.create_study(['minimize', 'maximize'])
+    study.optimize(objective, n_trials=100)
 
-best_trial = study.best_trial
-print("Best value: ", best_trial.value)
-print("Parameters that achieve the best value: ", best_trial.params)
+    best_trial = study.best_trial
+    print("Best value: ", best_trial.value)
+    print("Parameters that achieve the best value: ", best_trial.params)
