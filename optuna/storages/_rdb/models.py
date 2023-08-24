@@ -1,30 +1,28 @@
 import enum
 import math
-from typing import Any
-from typing import List
-from typing import Optional
-from typing import Tuple
+from typing import Any, List, Optional, Tuple
 
-from sqlalchemy import asc
-from sqlalchemy import case
-from sqlalchemy import CheckConstraint
-from sqlalchemy import Column
-from sqlalchemy import DateTime
-from sqlalchemy import desc
-from sqlalchemy import Enum
-from sqlalchemy import Float
-from sqlalchemy import ForeignKey
-from sqlalchemy import func
-from sqlalchemy import Integer
-from sqlalchemy import orm
-from sqlalchemy import String
-from sqlalchemy import Text
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import (
+    CheckConstraint,
+    Column,
+    DateTime,
+    Enum,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    asc,
+    case,
+    desc,
+    func,
+    orm,
+)
 
 from optuna import distributions
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import TrialState
-
 
 try:
     from sqlalchemy.orm import declarative_base
@@ -87,11 +85,12 @@ class StudyDirectionModel(BaseModel):
     __table_args__: Any = (UniqueConstraint("study_id", "objective"),)
     study_direction_id = Column(Integer, primary_key=True)
     direction = Column(Enum(StudyDirection), nullable=False)
-    study_id = Column(Integer, ForeignKey("studies.study_id"), nullable=False)
+    study_id = Column(Integer, ForeignKey("studies.study_id", ondelete="CASCADE"), nullable=False)
     objective = Column(Integer, nullable=False)
 
     study = orm.relationship(
-        StudyModel, backref=orm.backref("directions", cascade="all, delete-orphan")
+        StudyModel,
+        backref=orm.backref("directions", cascade="all, delete-orphan", passive_deletes=True),
     )
 
     @classmethod
@@ -103,12 +102,13 @@ class StudyUserAttributeModel(BaseModel):
     __tablename__ = "study_user_attributes"
     __table_args__: Any = (UniqueConstraint("study_id", "key"),)
     study_user_attribute_id = Column(Integer, primary_key=True)
-    study_id = Column(Integer, ForeignKey("studies.study_id"))
+    study_id = Column(Integer, ForeignKey("studies.study_id", ondelete="CASCADE"))
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
     value_json = Column(Text())
 
     study = orm.relationship(
-        StudyModel, backref=orm.backref("user_attributes", cascade="all, delete-orphan")
+        StudyModel,
+        backref=orm.backref("user_attributes", cascade="all, delete-orphan", passive_deletes=True),
     )
 
     @classmethod
@@ -135,12 +135,15 @@ class StudySystemAttributeModel(BaseModel):
     __tablename__ = "study_system_attributes"
     __table_args__: Any = (UniqueConstraint("study_id", "key"),)
     study_system_attribute_id = Column(Integer, primary_key=True)
-    study_id = Column(Integer, ForeignKey("studies.study_id"))
+    study_id = Column(Integer, ForeignKey("studies.study_id", ondelete="CASCADE"))
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
     value_json = Column(Text())
 
     study = orm.relationship(
-        StudyModel, backref=orm.backref("system_attributes", cascade="all, delete-orphan")
+        StudyModel,
+        backref=orm.backref(
+            "system_attributes", cascade="all, delete-orphan", passive_deletes=True
+        ),
     )
 
     @classmethod
@@ -170,13 +173,14 @@ class TrialModel(BaseModel):
     # to be unique. This is to reduce code complexity as table-level locking would be required
     # otherwise. See https://github.com/optuna/optuna/pull/939#discussion_r387447632.
     number = Column(Integer)
-    study_id = Column(Integer, ForeignKey("studies.study_id"), index=True)
+    study_id = Column(Integer, ForeignKey("studies.study_id", ondelete="CASCADE"), index=True)
     state = Column(Enum(TrialState), nullable=False)
     datetime_start = Column(DateTime)
     datetime_complete = Column(DateTime)
 
     study = orm.relationship(
-        StudyModel, backref=orm.backref("trials", cascade="all, delete-orphan")
+        StudyModel,
+        backref=orm.backref("trials", cascade="all, delete-orphan", passive_deletes=True),
     )
 
     @classmethod
@@ -274,12 +278,13 @@ class TrialUserAttributeModel(BaseModel):
     __tablename__ = "trial_user_attributes"
     __table_args__: Any = (UniqueConstraint("trial_id", "key"),)
     trial_user_attribute_id = Column(Integer, primary_key=True)
-    trial_id = Column(Integer, ForeignKey("trials.trial_id"))
+    trial_id = Column(Integer, ForeignKey("trials.trial_id", ondelete="CASCADE"))
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
     value_json = Column(Text())
 
     trial = orm.relationship(
-        TrialModel, backref=orm.backref("user_attributes", cascade="all, delete-orphan")
+        TrialModel,
+        backref=orm.backref("user_attributes", cascade="all, delete-orphan", passive_deletes=True),
     )
 
     @classmethod
@@ -306,12 +311,15 @@ class TrialSystemAttributeModel(BaseModel):
     __tablename__ = "trial_system_attributes"
     __table_args__: Any = (UniqueConstraint("trial_id", "key"),)
     trial_system_attribute_id = Column(Integer, primary_key=True)
-    trial_id = Column(Integer, ForeignKey("trials.trial_id"))
+    trial_id = Column(Integer, ForeignKey("trials.trial_id", ondelete="CASCADE"))
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
     value_json = Column(Text())
 
     trial = orm.relationship(
-        TrialModel, backref=orm.backref("system_attributes", cascade="all, delete-orphan")
+        TrialModel,
+        backref=orm.backref(
+            "system_attributes", cascade="all, delete-orphan", passive_deletes=True
+        ),
     )
 
     @classmethod
@@ -338,13 +346,14 @@ class TrialParamModel(BaseModel):
     __tablename__ = "trial_params"
     __table_args__: Any = (UniqueConstraint("trial_id", "param_name"),)
     param_id = Column(Integer, primary_key=True)
-    trial_id = Column(Integer, ForeignKey("trials.trial_id"))
+    trial_id = Column(Integer, ForeignKey("trials.trial_id", ondelete="CASCADE"))
     param_name = Column(String(MAX_INDEXED_STRING_LENGTH))
     param_value = Column(Float(precision=FLOAT_PRECISION))
     distribution_json = Column(Text())
 
     trial = orm.relationship(
-        TrialModel, backref=orm.backref("params", cascade="all, delete-orphan")
+        TrialModel,
+        backref=orm.backref("params", cascade="all, delete-orphan", passive_deletes=True),
     )
 
     def check_and_add(self, session: orm.Session) -> None:
@@ -409,13 +418,14 @@ class TrialValueModel(BaseModel):
     __tablename__ = "trial_values"
     __table_args__: Any = (UniqueConstraint("trial_id", "objective"),)
     trial_value_id = Column(Integer, primary_key=True)
-    trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
+    trial_id = Column(Integer, ForeignKey("trials.trial_id", ondelete="CASCADE"), nullable=False)
     objective = Column(Integer, nullable=False)
     value = Column(Float(precision=FLOAT_PRECISION), nullable=True)
     value_type = Column(Enum(TrialValueType), nullable=False)
 
     trial = orm.relationship(
-        TrialModel, backref=orm.backref("values", cascade="all, delete-orphan")
+        TrialModel,
+        backref=orm.backref("values", cascade="all, delete-orphan", passive_deletes=True),
     )
 
     @classmethod
@@ -475,13 +485,16 @@ class TrialIntermediateValueModel(BaseModel):
     __tablename__ = "trial_intermediate_values"
     __table_args__: Any = (UniqueConstraint("trial_id", "step"),)
     trial_intermediate_value_id = Column(Integer, primary_key=True)
-    trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
+    trial_id = Column(Integer, ForeignKey("trials.trial_id", ondelete="CASCADE"), nullable=False)
     step = Column(Integer, nullable=False)
     intermediate_value = Column(Float(precision=FLOAT_PRECISION), nullable=True)
     intermediate_value_type = Column(Enum(TrialIntermediateValueType), nullable=False)
 
     trial = orm.relationship(
-        TrialModel, backref=orm.backref("intermediate_values", cascade="all, delete-orphan")
+        TrialModel,
+        backref=orm.backref(
+            "intermediate_values", cascade="all, delete-orphan", passive_deletes=True
+        ),
     )
 
     @classmethod
@@ -542,11 +555,12 @@ class TrialHeartbeatModel(BaseModel):
     __tablename__ = "trial_heartbeats"
     __table_args__: Any = (UniqueConstraint("trial_id"),)
     trial_heartbeat_id = Column(Integer, primary_key=True)
-    trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
+    trial_id = Column(Integer, ForeignKey("trials.trial_id", ondelete="CASCADE"), nullable=False)
     heartbeat = Column(DateTime, nullable=False, default=func.current_timestamp())
 
     trial = orm.relationship(
-        TrialModel, backref=orm.backref("heartbeats", cascade="all, delete-orphan")
+        TrialModel,
+        backref=orm.backref("heartbeats", cascade="all, delete-orphan", passive_deletes=True),
     )
 
     @classmethod
