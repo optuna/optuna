@@ -103,18 +103,31 @@ _ALIAS_METRIC_LIST: List[Dict[str, Any]] = [
     },
 ]
 
+_ALIAS_METRIC_MAP: Dict[str, str] = {
+    alias_name: canonical_metric["metric_name"]
+    for canonical_metric in _ALIAS_METRIC_LIST
+    for alias_name in canonical_metric["alias_names"]
+}
+
 
 def _handling_alias_metrics(lgbm_params: Dict[str, Any]) -> None:
     """Handling alias metrics."""
-
     if "metric" not in lgbm_params.keys():
         return
 
-    for metric in _ALIAS_METRIC_LIST:
-        metric_name = metric["metric_name"]
-        alias_names = metric["alias_names"]
+    if isinstance(lgbm_params["metric"], str):
+        lgbm_params["metric"] = (
+            _ALIAS_METRIC_MAP.get(lgbm_params["metric"]) or lgbm_params["metric"]
+        )
+        return
 
-        for alias_name in alias_names:
-            if lgbm_params["metric"] == alias_name:
-                lgbm_params["metric"] = metric_name
-                break
+    if not isinstance(lgbm_params["metric"], list):
+        raise ValueError(
+            "The `metric` parameter is expected to be a list or a string, but got "
+            f"{type(lgbm_params['metric'])}."
+        )
+
+    canonical_metrics = []
+    for metric in lgbm_params["metric"]:
+        canonical_metrics.append(_ALIAS_METRIC_MAP.get(metric) or metric)
+    lgbm_params["metric"] = canonical_metrics
