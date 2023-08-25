@@ -122,8 +122,8 @@ def test_store_infinite_values(input_values: Sequence[float], expected: Sequence
     trial_id = storage.create_new_trial(study_id)
     storage.set_trial_intermediate_value(trial_id, 1, input_values)
     storage.set_trial_state_values(trial_id, state=TrialState.COMPLETE, values=input_values)
-    assert storage.get_trial(trial_id).value == expected
-    assert storage.get_trial(trial_id).intermediate_values[1] == expected  # type: ignore
+    assert storage.get_trial(trial_id).value == expected[0]
+    assert storage.get_trial(trial_id).intermediate_values[1] == expected
 
 
 def test_store_nan_intermediate_values() -> None:
