@@ -358,14 +358,11 @@ class _LightGBMBaseTuner(_BaseTuner):
         self,
         params: dict[str, Any],
         train_set: "lgb.Dataset",
-        callbacks: list[Callable[..., Any]],
+        callbacks: list[Callable[..., Any]] | None = None,
         num_boost_round: int = 1000,
-        fobj: Callable[..., Any] | None = None,
         feval: Callable[..., Any] | None = None,
         feature_name: str = "auto",
         categorical_feature: str = "auto",
-        early_stopping_rounds: int | None = None,
-        verbose_eval: bool | int | str | None = None,
         time_budget: int | None = None,
         sample_size: int | None = None,
         study: optuna.study.Study | None = None,
@@ -379,26 +376,9 @@ class _LightGBMBaseTuner(_BaseTuner):
         _imports.check()
 
         params = copy.deepcopy(params)
-        if fobj is not None:
-            if "objective" not in params:
-                params["objective"] = fobj
-            else:
-                warnings.warn(
-                    "Objective function is specified by param['objective'] and therefore `fobj`"
-                    " will be ignored.",
-                    UserWarning,
-                )
 
         # Handling alias metrics.
         _handling_alias_metrics(params)
-
-        if early_stopping_rounds is not None:
-            callbacks.append(
-                lgb.early_stopping(
-                    stopping_rounds=early_stopping_rounds, verbose=bool(verbose_eval)
-                )
-            )
-
         args = [params, train_set]
         kwargs: dict[str, Any] = dict(
             num_boost_round=num_boost_round,
@@ -778,14 +758,9 @@ class LightGBMTuner(_LightGBMBaseTuner):
         num_boost_round: int = 1000,
         valid_sets: "VALID_SET_TYPE" | None = None,
         valid_names: Any | None = None,
-        fobj: Callable[..., Any] | None = None,
         feval: Callable[..., Any] | None = None,
         feature_name: str = "auto",
         categorical_feature: str = "auto",
-        early_stopping_rounds: int | None = None,
-        evals_result: dict[Any, Any] | None = None,
-        verbose_eval: bool | int | str | None = "warn",
-        learning_rates: list[float] | None = None,
         keep_training_booster: bool = False,
         callbacks: list[Callable[..., Any]] | None = None,
         time_budget: int | None = None,
@@ -798,33 +773,14 @@ class LightGBMTuner(_LightGBMBaseTuner):
         *,
         optuna_seed: int | None = None,
     ) -> None:
-        if callbacks is None:
-            callbacks = []
-
-        if evals_result is not None:
-            callbacks.append(lgb.record_evaluation(evals_result))
-
-        if learning_rates is not None:
-            callbacks.append(lgb.reset_parameter(learning_rate=learning_rates))
-
-        if verbose_eval == "warn":
-            verbose_eval = False if callbacks else True
-        if verbose_eval is True:
-            callbacks.append(lgb.log_evaluation())
-        elif isinstance(verbose_eval, int):
-            callbacks.append(lgb.log_evaluation(verbose_eval))
-
         super().__init__(
             params,
             train_set,
             callbacks=callbacks,
             num_boost_round=num_boost_round,
-            fobj=fobj,
             feval=feval,
             feature_name=feature_name,
             categorical_feature=categorical_feature,
-            early_stopping_rounds=early_stopping_rounds,
-            verbose_eval=verbose_eval,
             time_budget=time_budget,
             sample_size=sample_size,
             study=study,
@@ -992,14 +948,10 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         nfold: int = 5,
         stratified: bool = True,
         shuffle: bool = True,
-        fobj: Callable[..., Any] | None = None,
         feval: Callable[..., Any] | None = None,
         feature_name: str = "auto",
         categorical_feature: str = "auto",
-        early_stopping_rounds: int | None = None,
         fpreproc: Callable[..., Any] | None = None,
-        verbose_eval: bool | int | None = None,
-        show_stdv: bool = True,
         seed: int = 0,
         callbacks: list[Callable[..., Any]] | None = None,
         time_budget: int | None = None,
@@ -1013,25 +965,14 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         *,
         optuna_seed: int | None = None,
     ) -> None:
-        if callbacks is None:
-            callbacks = []
-
-        if verbose_eval is True:
-            callbacks.append(lgb.log_evaluation(show_stdv=show_stdv))
-        elif isinstance(verbose_eval, int):
-            callbacks.append(lgb.log_evaluation(period=verbose_eval, show_stdv=show_stdv))
-
         super().__init__(
             params,
             train_set,
             callbacks=callbacks,
             num_boost_round=num_boost_round,
-            fobj=fobj,
             feval=feval,
             feature_name=feature_name,
             categorical_feature=categorical_feature,
-            early_stopping_rounds=early_stopping_rounds,
-            verbose_eval=verbose_eval,
             time_budget=time_budget,
             sample_size=sample_size,
             study=study,
