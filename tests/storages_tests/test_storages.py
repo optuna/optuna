@@ -588,36 +588,54 @@ def test_set_trial_intermediate_value(storage_mode: str) -> None:
         trial_id_4 = storage.create_new_trial(study_id)
 
         # Test setting new values.
-        storage.set_trial_intermediate_value(trial_id_1, 0, 0.3)
-        storage.set_trial_intermediate_value(trial_id_1, 2, 0.4)
-        storage.set_trial_intermediate_value(trial_id_3, 0, 0.1)
-        storage.set_trial_intermediate_value(trial_id_3, 1, 0.4)
-        storage.set_trial_intermediate_value(trial_id_3, 2, 0.5)
-        storage.set_trial_intermediate_value(trial_id_3, 3, float("inf"))
-        storage.set_trial_intermediate_value(trial_id_4, 0, float("nan"))
+        storage.set_trial_intermediate_value(trial_id_1, 0, (0.3,))
+        storage.set_trial_intermediate_value(trial_id_1, 2, (0.4,))
+        storage.set_trial_intermediate_value(trial_id_3, 0, (0.1,))
+        storage.set_trial_intermediate_value(trial_id_3, 1, (0.4,))
+        storage.set_trial_intermediate_value(trial_id_3, 2, (0.5,))
+        storage.set_trial_intermediate_value(trial_id_3, 3, (float("inf"),))
+        storage.set_trial_intermediate_value(trial_id_4, 0, (float("nan"),))
 
-        assert storage.get_trial(trial_id_1).intermediate_values == {0: 0.3, 2: 0.4}
+        expected = {0: (0.3,), 2: (0.4,)}
+        for key, expected_value in expected.items():
+            assert (
+                tuple(storage.get_trial(trial_id_1).intermediate_values[key])  # type: ignore
+                == expected_value
+            )
+
         assert storage.get_trial(trial_id_2).intermediate_values == {}
-        assert storage.get_trial(trial_id_3).intermediate_values == {
-            0: 0.1,
-            1: 0.4,
-            2: 0.5,
-            3: float("inf"),
+
+        expected = {
+            0: (0.1,),
+            1: (0.4,),
+            2: (0.5,),
+            3: (float("inf"),),
         }
+        for key, expected_value in expected.items():
+            assert (
+                tuple(storage.get_trial(trial_id_3).intermediate_values[key])  # type: ignore
+                == expected_value
+            )
+
         assert np.isnan(storage.get_trial(trial_id_4).intermediate_values[0])
 
         # Test setting existing step.
-        storage.set_trial_intermediate_value(trial_id_1, 0, 0.2)
-        assert storage.get_trial(trial_id_1).intermediate_values == {0: 0.2, 2: 0.4}
+        storage.set_trial_intermediate_value(trial_id_1, 0, (0.2,))
+        expected = {0: (0.2,), 2: (0.4,)}
+        for key, expected_value in expected.items():
+            assert (
+                tuple(storage.get_trial(trial_id_1).intermediate_values[key])  # type: ignore
+                == expected_value
+            )
 
         non_existent_trial_id = max(trial_id_1, trial_id_2, trial_id_3, trial_id_4) + 1
         with pytest.raises(KeyError):
-            storage.set_trial_intermediate_value(non_existent_trial_id, 0, 0.2)
+            storage.set_trial_intermediate_value(non_existent_trial_id, 0, (0.2,))
 
         storage.set_trial_state_values(trial_id_1, state=TrialState.COMPLETE)
         # Cannot change values of finished trials.
         with pytest.raises(RuntimeError):
-            storage.set_trial_intermediate_value(trial_id_1, 0, 0.2)
+            storage.set_trial_intermediate_value(trial_id_1, 0, (0.2,))
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -870,7 +888,13 @@ def test_get_all_trials_not_modified(storage_mode: str) -> None:
                     if trial.number % 3 == 0:
                         storage.set_trial_state_values(trial._trial_id, TrialState.COMPLETE, [0])
                     elif trial.number % 3 == 1:
-                        storage.set_trial_intermediate_value(trial._trial_id, 0, 0.0)
+                        storage.set_trial_intermediate_value(
+                            trial._trial_id,
+                            0,
+                            [
+                                0.0,
+                            ],
+                        )
                         storage.set_trial_state_values(trial._trial_id, TrialState.PRUNED, [0])
                     else:
                         storage.set_trial_state_values(trial._trial_id, TrialState.FAIL)

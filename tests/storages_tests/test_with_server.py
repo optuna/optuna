@@ -110,18 +110,18 @@ def test_loaded_trials() -> None:
 
 
 @pytest.mark.parametrize(
-    "input_value,expected",
+    "input_values,expected",
     [
-        (float("inf"), float("inf")),
-        (-float("inf"), -float("inf")),
+        ([float("inf")], [float("inf")]),
+        ([-float("inf")], [-float("inf")]),
     ],
 )
-def test_store_infinite_values(input_value: float, expected: float) -> None:
+def test_store_infinite_values(input_values: Sequence[float], expected: Sequence[float]) -> None:
     storage = get_storage()
     study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
     trial_id = storage.create_new_trial(study_id)
-    storage.set_trial_intermediate_value(trial_id, 1, input_value)
-    storage.set_trial_state_values(trial_id, state=TrialState.COMPLETE, values=(input_value,))
+    storage.set_trial_intermediate_value(trial_id, 1, input_values)
+    storage.set_trial_state_values(trial_id, state=TrialState.COMPLETE, values=input_values)
     assert storage.get_trial(trial_id).value == expected
     assert storage.get_trial(trial_id).intermediate_values[1] == expected
 
@@ -132,7 +132,7 @@ def test_store_nan_intermediate_values() -> None:
     trial_id = storage.create_new_trial(study_id)
 
     value = float("nan")
-    storage.set_trial_intermediate_value(trial_id, 1, value)
+    storage.set_trial_intermediate_value(trial_id, 1, (value,))
 
     got_value = storage.get_trial(trial_id).intermediate_values[1]
     assert np.isnan(got_value)

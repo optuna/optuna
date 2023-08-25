@@ -498,7 +498,7 @@ class Trial(BaseTrial):
             )
             return
 
-        self.storage.set_trial_intermediate_value(self._trial_id, step, value)
+        self.storage.set_trial_intermediate_value(self._trial_id, step, (value,))
         self._cached_frozen_trial.intermediate_values[step] = value
 
     def should_prune(self) -> bool:

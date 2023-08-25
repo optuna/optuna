@@ -177,7 +177,7 @@ def test_get_percentile_intermediate_result_over_trials() -> None:
             for i in range(trial_num):
                 trial_id = trial_ids[i]
                 value = values[i]
-                _study._storage.set_trial_intermediate_value(trial_id, step, value)
+                _study._storage.set_trial_intermediate_value(trial_id, step, [value])
 
         # Set trial states complete because this method ignores incomplete trials.
         for trial_id in trial_ids:

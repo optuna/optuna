@@ -82,7 +82,7 @@ def test_uncached_set() -> None:
 
     trial_id = storage.create_new_trial(study_id)
     with patch.object(base_storage, "set_trial_intermediate_value", return_value=None) as set_mock:
-        storage.set_trial_intermediate_value(trial_id, 3, 0.3)
+        storage.set_trial_intermediate_value(trial_id, 3, (0.3,))
         assert set_mock.call_count == 1
 
     trial_id = storage.create_new_trial(study_id)
