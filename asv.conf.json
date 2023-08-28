@@ -76,8 +76,8 @@
     // followed by the pip installed packages).
     //
     "matrix": {
-        "fakeredis": [""],
-        "pytest": [""],
+        "pip+fakeredis": [""],
+        "pip+pytest": [""],
     },
 
     // Combinations of libraries/python versions can be excluded/included
