@@ -8,6 +8,7 @@ from typing import NamedTuple
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.logging import get_logger
+from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -33,6 +34,7 @@ class _SliceSubplotInfo(NamedTuple):
     trial_numbers: list[int]
     is_log: bool
     is_numerical: bool
+    constraints: list[bool]
     x_labels: tuple[CategoricalChoiceType, ...] | None
 
 
@@ -56,15 +58,27 @@ def _get_slice_subplot_info(
 
         target = _target
 
-    return _SliceSubplotInfo(
+    plot_info = _SliceSubplotInfo(
         param_name=param,
-        x=[t.params[param] for t in trials if param in t.params],
-        y=[target(t) for t in trials if param in t.params],
-        trial_numbers=[t.number for t in trials if param in t.params],
+        x=[],
+        y=[],
+        trial_numbers=[],
         is_log=log_scale,
         is_numerical=numerical,
         x_labels=x_labels,
+        constraints=[],
     )
+
+    for t in trials:
+        if param not in t.params:
+            continue
+        plot_info.x.append(t.params[param])
+        plot_info.y.append(target(t))
+        plot_info.trial_numbers.append(t.number)
+        constraints = t.system_attrs.get(_CONSTRAINTS_KEY)
+        plot_info.constraints.append(constraints is None or all([x <= 0.0 for x in constraints]))
+
+    return plot_info
 
 
 def _get_slice_plot_info(
@@ -196,10 +210,11 @@ def _get_slice_plot(info: _SlicePlotInfo) -> "go.Figure":
         showscale = True  # showscale option only needs to be specified once.
         for column_index, subplot_info in enumerate(info.subplots, start=1):
             trace = _generate_slice_subplot(subplot_info)
-            trace.update(marker={"showscale": showscale})  # showscale's default is True.
+            trace[0].update(marker={"showscale": showscale})  # showscale's default is True.
             if showscale:
                 showscale = False
-            figure.add_trace(trace, row=1, col=column_index)
+            for t in trace:
+                figure.add_trace(t, row=1, col=column_index)
             figure.update_xaxes(title_text=subplot_info.param_name, row=1, col=column_index)
             if column_index == 1:
                 figure.update_yaxes(title_text=info.target_name, row=1, col=column_index)
@@ -220,23 +235,48 @@ def _get_slice_plot(info: _SlicePlotInfo) -> "go.Figure":
     return figure
 
 
-def _generate_slice_subplot(subplot_info: _SliceSubplotInfo) -> "Scatter":
-    x = [x if x is not None else "None" for x in subplot_info.x]
-    y = [y if y is not None else "None" for y in subplot_info.y]
+def _generate_slice_subplot(subplot_info: _SliceSubplotInfo) -> list[Scatter]:
+    trace = []
 
-    return go.Scatter(
-        x=x,
-        y=y,
-        mode="markers",
-        marker={
-            "line": {"width": 0.5, "color": "Grey"},
-            "color": subplot_info.trial_numbers,
-            "colorscale": COLOR_SCALE,
-            "colorbar": {
-                "title": "Trial",
-                "x": 1.0,  # Offset the colorbar position with a fixed width `xpad`.
-                "xpad": 40,
+    feasible = []
+    infeasible = []
+    for x, y, c in zip(subplot_info.x, subplot_info.y, subplot_info.constraints):
+        if x is not None or x != "None" or y is not None or y != "None":
+            if c:
+                feasible.append((x, y))
+            else:
+                infeasible.append((x, y))
+
+    trace.append(
+        go.Scatter(
+            x=[x for x, _ in feasible],
+            y=[y for _, y in feasible],
+            mode="markers",
+            marker={
+                "line": {"width": 0.5, "color": "Grey"},
+                "color": subplot_info.trial_numbers,
+                "colorscale": COLOR_SCALE,
+                "colorbar": {
+                    "title": "Trial",
+                    "x": 1.0,  # Offset the colorbar position with a fixed width `xpad`.
+                    "xpad": 40,
+                },
             },
-        },
-        showlegend=False,
+            showlegend=False,
+        )
     )
+    if len(infeasible) > 0:
+        trace.append(
+            go.Scatter(
+                x=[x for x, _ in infeasible],
+                y=[y for _, y in infeasible],
+                mode="markers",
+                name="Infeasible Trial",
+                marker={
+                    "color": "#cccccc",
+                },
+                showlegend=False,
+            )
+        )
+
+    return trace
