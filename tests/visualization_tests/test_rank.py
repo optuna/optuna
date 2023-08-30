@@ -279,7 +279,7 @@ def test_get_rank_info_customized_target(params: list[str]) -> None:
         ["param_b", "param_a"],  # `y_axis` has one observation.
     ],
 )
-def test_generate_rank_plot_for_few_observations(params: list[str]) -> None:
+def test_generate_rank_plot_for_no_plots(params: list[str]) -> None:
     study = create_study(direction="minimize")
     study.add_trial(
         create_trial(
@@ -327,6 +327,73 @@ def test_generate_rank_plot_for_few_observations(params: list[str]) -> None:
                         trials=[],
                         zs=np.array([]),
                         color_idxs=np.array([]),
+                    )
+                ]
+            ],
+            target_name="Objective Value",
+            zs=np.array([0.0, 2.0]),
+            color_idxs=np.array([0.0, 1.0]),
+            has_custom_target=False,
+        ),
+    )
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        ["param_a", "param_b"],  # `x_axis` has one observation.
+        ["param_b", "param_a"],  # `y_axis` has one observation.
+    ],
+)
+def test_generate_rank_plot_for_few_observations(params: list[str]) -> None:
+    study = create_study(direction="minimize")
+    study.add_trial(
+        create_trial(
+            values=[0.0],
+            params={"param_a": 1.0, "param_b": 2.0},
+            distributions={
+                "param_a": FloatDistribution(0.0, 3.0),
+                "param_b": FloatDistribution(0.0, 3.0),
+            },
+        )
+    )
+    study.add_trial(
+        create_trial(
+            values=[2.0],
+            params={"param_b": 0.0},
+            distributions={"param_b": FloatDistribution(0.0, 3.0)},
+        )
+    )
+
+    info = _get_rank_info(study, params=params, target=None, target_name="Objective Value")
+    axis_infos = {
+        "param_a": _AxisInfo(
+            name="param_a",
+            range=(1.0, 1.0),
+            is_log=False,
+            is_cat=False,
+        ),
+        "param_b": _AxisInfo(
+            name="param_b",
+            range=(-0.1, 2.1),
+            is_log=False,
+            is_cat=False,
+        ),
+    }
+    assert _named_tuple_equal(
+        info,
+        _RankPlotInfo(
+            params=params,
+            sub_plot_infos=[
+                [
+                    _RankSubplotInfo(
+                        xaxis=axis_infos[params[0]],
+                        yaxis=axis_infos[params[1]],
+                        xs=[study.get_trials()[0].params[params[0]]],
+                        ys=[study.get_trials()[0].params[params[1]]],
+                        trials=[study.get_trials()[0]],
+                        zs=np.array([0.0]),
+                        color_idxs=np.array([0.0]),
                     )
                 ]
             ],
