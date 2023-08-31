@@ -167,7 +167,11 @@ class FrozenTrial(BaseTrial):
         self._params = params
         self._user_attrs = user_attrs
         self._system_attrs = system_attrs
-        self.intermediate_values = intermediate_values
+        self._intermediate_values: dict[int, Sequence[float]] = dict()
+        for step, value_ in intermediate_values.items():
+            if isinstance(value_, float):
+                value_ = [value_]
+            self._intermediate_values[step] = value_
         self._distributions = distributions
         self._trial_id = trial_id
 
@@ -470,6 +474,17 @@ class FrozenTrial(BaseTrial):
             return self.datetime_complete - self.datetime_start
         else:
             return None
+
+    @property
+    def intermediate_values(self) -> dict[int, float | Sequence[float]]:
+        _intermediate_values: dict[int, float | Sequence[float]] = dict()
+        for step, value_ in self._intermediate_values.items():
+            if len(value_) == 1:
+                _intermediate_values[step] = value_[0]
+            else:
+                _intermediate_values[step] = value_
+
+        return _intermediate_values
 
 
 def create_trial(
