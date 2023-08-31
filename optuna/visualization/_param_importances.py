@@ -124,7 +124,7 @@ def plot_param_importances(
             is :obj:`None`.
 
             .. note::
-                This argument can be used to specify which objective to plot if ``study``is being
+                This argument can be used to specify which objective to plot if ``study`` is being
                 used for multi-objective optimization. For example, to get only the hyperparameter
                 importance of the first objective, use ``target=lambda t: t.values[0]`` for the
                 target parameter.
