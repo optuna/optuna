@@ -184,18 +184,12 @@ class _OptunaObjective(_BaseTuner):
         self.pbar_fmt = "{}, val_score: {:.6f}"
 
     def _check_target_names_supported(self) -> None:
-        supported_param_names = [
-            "lambda_l1",
-            "lambda_l2",
-            "num_leaves",
-            "feature_fraction",
-            "bagging_fraction",
-            "bagging_freq",
-            "min_child_samples",
-        ]
         for target_param_name in self.target_param_names:
-            if target_param_name not in supported_param_names:
-                raise NotImplementedError("Parameter `{}` is not supported for tuning.")
+            if target_param_name in _DEFAULT_LIGHTGBM_PARAMETERS:
+                continue
+            raise NotImplementedError(
+                f"Parameter `{target_param_name}` is not supported for tuning."
+            )
 
     def _preprocess(self, trial: optuna.trial.Trial) -> None:
         if self.pbar is not None:
