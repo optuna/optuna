@@ -98,3 +98,8 @@ def test_handling_alias_metrics(aliases: List[str], expect: str) -> None:
         lgbm_params = {}
         _handling_alias_metrics(lgbm_params)
         assert lgbm_params == {}
+
+
+def test_handling_unexpected_alias_metrics() -> None:
+    with pytest.raises(ValueError):
+        _handling_alias_metrics({"metric": "unexpected"})
