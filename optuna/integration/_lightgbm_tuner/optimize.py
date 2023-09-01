@@ -118,27 +118,27 @@ class _BaseTuner:
         return val_score
 
     def _metric_with_eval_at(self, metric: str) -> str:
-        if metric != "ndcg" and metric != "map":
+        # The parameter eval_at is only available when the metric is ndcg or map
+        if metric not in ["ndcg", "map"]:
             return metric
 
-        eval_at = self.lgbm_params.get("eval_at")
-        if eval_at is None:
-            eval_at = self.lgbm_params.get("{}_at".format(metric))
-        if eval_at is None:
-            eval_at = self.lgbm_params.get("{}_eval_at".format(metric))
-        if eval_at is None:
-            # Set default value of LightGBM.
+        eval_at = (
+            self.lgbm_params.get("eval_at")
+            or self.lgbm_params.get(f"{metric}_at")
+            or self.lgbm_params.get(f"{metric}_eval_at")
+            # Set default value of LightGBM when no possible key is absent.
             # See https://lightgbm.readthedocs.io/en/latest/Parameters.html#eval_at.
-            eval_at = [1, 2, 3, 4, 5]
+            or [1, 2, 3, 4, 5]
+        )
 
         # Optuna can handle only a single metric. Choose first one.
         if isinstance(eval_at, Sequence):
             return f"{metric}@{eval_at[0]}"
         if isinstance(eval_at, int):
-            return "{}@{}".format(metric, eval_at)
+            return f"{metric}@{eval_at}"
         raise ValueError(
-            "The value of eval_at is expected to be int or a list/tuple of int."
-            "'{}' is specified.".format(eval_at)
+            f"The value of eval_at is expected to be int or a list/tuple of int. '{eval_at}' is "
+            "specified."
         )
 
     def higher_is_better(self) -> bool:
