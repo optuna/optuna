@@ -99,7 +99,7 @@ class _BaseTuner:
         if self.lgbm_kwargs.get("valid_names") is not None:
             if isinstance(self.lgbm_kwargs["valid_names"], str):
                 valid_name = self.lgbm_kwargs["valid_names"]
-            elif isinstance(self.lgbm_kwargs["valid_names"], Iterable):
+            elif isinstance(self.lgbm_kwargs["valid_names"], Sequence):
                 valid_name = self.lgbm_kwargs["valid_names"][-1]
             else:
                 raise NotImplementedError
@@ -107,7 +107,7 @@ class _BaseTuner:
         elif isinstance(valid_sets, lgb.Dataset):
             valid_name = "valid_0"
 
-        elif isinstance(valid_sets, Iterable) and len(valid_sets) > 0:
+        elif isinstance(valid_sets, Sequence) and len(valid_sets) > 0:
             valid_set_idx = len(valid_sets) - 1
             valid_name = "valid_{}".format(valid_set_idx)
 
@@ -132,8 +132,8 @@ class _BaseTuner:
             eval_at = [1, 2, 3, 4, 5]
 
         # Optuna can handle only a single metric. Choose first one.
-        if isinstance(eval_at, Iterable):
-            return "{}@{}".format(metric, eval_at[0])
+        if isinstance(eval_at, Sequence):
+            return f"{metric}@{eval_at[0]}"
         if isinstance(eval_at, int):
             return "{}@{}".format(metric, eval_at)
         raise ValueError(
