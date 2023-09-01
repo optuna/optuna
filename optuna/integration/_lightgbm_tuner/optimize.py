@@ -109,7 +109,7 @@ class _BaseTuner:
 
         elif isinstance(valid_sets, Sequence) and len(valid_sets) > 0:
             valid_set_idx = len(valid_sets) - 1
-            valid_name = "valid_{}".format(valid_set_idx)
+            valid_name = f"valid_{valid_set_idx}"
 
         else:
             raise NotImplementedError
@@ -248,10 +248,10 @@ class _OptunaObjective(_BaseTuner):
         average_iteration_time = elapsed_secs / booster.current_iteration()
 
         if self.model_dir is not None:
-            path = os.path.join(self.model_dir, "{}.pkl".format(trial.number))
+            path = os.path.join(self.model_dir, f"{trial.number}.pkl")
             with open(path, "wb") as fout:
                 pickle.dump(booster, fout)
-            _logger.info("The booster of trial#{} was saved as {}.".format(trial.number, path))
+            _logger.info(f"The booster of trial#{trial.number} was saved as {path}.")
 
         if self.compare_validation_metrics(val_score, self.best_score):
             self.best_score = val_score
@@ -328,14 +328,14 @@ class _OptunaObjectiveCV(_OptunaObjective):
         average_iteration_time = elapsed_secs / len(val_scores)
 
         if self.model_dir is not None and self.lgbm_kwargs.get("return_cvbooster"):
-            path = os.path.join(self.model_dir, "{}.pkl".format(trial.number))
+            path = os.path.join(self.model_dir, f"{trial.number}.pkl")
             with open(path, "wb") as fout:
                 # At version `lightgbm==3.0.0`, :class:`lightgbm.CVBooster` does not
                 # have `__getstate__` which is required for pickle serialization.
                 cvbooster = cv_results["cvbooster"]
                 assert isinstance(cvbooster, lgb.CVBooster)
                 pickle.dump((cvbooster.boosters, cvbooster.best_iteration), fout)
-            _logger.info("The booster of trial#{} was saved as {}.".format(trial.number, path))
+            _logger.info(f"The booster of trial#{trial.number} was saved as {path}.")
 
         if self.compare_validation_metrics(val_score, self.best_score):
             self.best_score = val_score
@@ -420,15 +420,15 @@ class _LightGBMBaseTuner(_BaseTuner):
             if self.study.direction != optuna.study.StudyDirection.MAXIMIZE:
                 metric_name = self.lgbm_params.get("metric", "binary_logloss")
                 raise ValueError(
-                    "Study direction is inconsistent with the metric {}. "
-                    "Please set 'maximize' as the direction.".format(metric_name)
+                    f"Study direction is inconsistent with the metric {metric_name}. "
+                    "Please set 'maximize' as the direction."
                 )
         else:
             if self.study.direction != optuna.study.StudyDirection.MINIMIZE:
                 metric_name = self.lgbm_params.get("metric", "binary_logloss")
                 raise ValueError(
-                    "Study direction is inconsistent with the metric {}. "
-                    "Please set 'minimize' as the direction.".format(metric_name)
+                    f"Study direction is inconsistent with the metric {metric_name}. "
+                    "Please set 'minimize' as the direction."
                 )
 
         if verbosity is not None:
@@ -845,12 +845,12 @@ class LightGBMTuner(_LightGBMBaseTuner):
             )
 
         best_trial = self.study.best_trial
-        path = os.path.join(self._model_dir, "{}.pkl".format(best_trial.number))
+        path = os.path.join(self._model_dir, f"{best_trial.number}.pkl")
         if not os.path.exists(path):
             raise ValueError(
-                "The best booster cannot be found in {}. If you execute `LightGBMTuner` in "
-                "distributed environment, please use network file system (e.g., NFS) to share "
-                "models with multiple workers.".format(self._model_dir)
+                f"The best booster cannot be found in {self._model_dir}. If you execute "
+                "`LightGBMTuner` in distributed environment, please use network file system "
+                "(e.g., NFS) to share models with multiple workers."
             )
 
         with open(path, "rb") as fin:
@@ -1042,12 +1042,12 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
             )
 
         best_trial = self.study.best_trial
-        path = os.path.join(self._model_dir, "{}.pkl".format(best_trial.number))
+        path = os.path.join(self._model_dir, f"{best_trial.number}.pkl")
         if not os.path.exists(path):
             raise ValueError(
-                "The best booster cannot be found in {}. If you execute `LightGBMTunerCV` in "
-                "distributed environment, please use network file system (e.g., NFS) to share "
-                "models with multiple workers.".format(self._model_dir)
+                f"The best booster cannot be found in {self._model_dir}. If you execute "
+                "`LightGBMTunerCV` in distributed environment, please use network file system "
+                "(e.g., NFS) to share models with multiple workers."
             )
 
         with open(path, "rb") as fin:
