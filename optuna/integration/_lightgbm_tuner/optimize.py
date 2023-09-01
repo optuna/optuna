@@ -4,7 +4,9 @@ import abc
 from collections.abc import Callable
 from collections.abc import Container
 from collections.abc import Generator
+from collections.abc import Iterable
 from collections.abc import Iterator
+from collections.abc import Sequence
 import copy
 import json
 import os
@@ -78,11 +80,11 @@ class _BaseTuner:
         metric = self.lgbm_params.get("metric", "binary_logloss")
 
         # todo (smly): This implementation is different logic from the LightGBM's python bindings.
-        if type(metric) is str:
+        if isinstance(metric, str):
             pass
-        elif type(metric) is list:
+        elif isinstance(metric, Sequence):
             metric = metric[-1]
-        elif type(metric) is set:
+        elif isinstance(metric, Iterable):
             metric = list(metric)[-1]
         else:
             raise NotImplementedError
@@ -95,17 +97,17 @@ class _BaseTuner:
         valid_sets: VALID_SET_TYPE | None = self.lgbm_kwargs.get("valid_sets")
 
         if self.lgbm_kwargs.get("valid_names") is not None:
-            if type(self.lgbm_kwargs["valid_names"]) is str:
+            if isinstance(self.lgbm_kwargs["valid_names"], str):
                 valid_name = self.lgbm_kwargs["valid_names"]
-            elif type(self.lgbm_kwargs["valid_names"]) in [list, tuple]:
+            elif isinstance(self.lgbm_kwargs["valid_names"], Iterable):
                 valid_name = self.lgbm_kwargs["valid_names"][-1]
             else:
                 raise NotImplementedError
 
-        elif type(valid_sets) is lgb.Dataset:
+        elif isinstance(valid_sets, lgb.Dataset):
             valid_name = "valid_0"
 
-        elif isinstance(valid_sets, (list, tuple)) and len(valid_sets) > 0:
+        elif isinstance(valid_sets, Iterable) and len(valid_sets) > 0:
             valid_set_idx = len(valid_sets) - 1
             valid_name = "valid_{}".format(valid_set_idx)
 
@@ -130,9 +132,9 @@ class _BaseTuner:
             eval_at = [1, 2, 3, 4, 5]
 
         # Optuna can handle only a single metric. Choose first one.
-        if type(eval_at) in [list, tuple]:
+        if isinstance(eval_at, Iterable):
             return "{}@{}".format(metric, eval_at[0])
-        if type(eval_at) is int:
+        if isinstance(eval_at, int):
             return "{}@{}".format(metric, eval_at)
         raise ValueError(
             "The value of eval_at is expected to be int or a list/tuple of int."
