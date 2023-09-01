@@ -116,17 +116,17 @@ def _handling_alias_metrics(lgbm_params: dict[str, Any]) -> None:
     if "metric" not in lgbm_params.keys():
         return
 
+    if not isinstance(lgbm_params["metric"], (str, Iterable)):
+        raise ValueError(
+            "The `metric` parameter is expected to be a string or an iterable object, but got "
+            f"{type(lgbm_params['metric'])}."
+        )
+
     if isinstance(lgbm_params["metric"], str):
         lgbm_params["metric"] = (
             _ALIAS_METRIC_MAP.get(lgbm_params["metric"]) or lgbm_params["metric"]
         )
         return
-
-    if not isinstance(lgbm_params["metric"], Iterable):
-        raise ValueError(
-            "The `metric` parameter is expected to be a string or an iterable object, but got "
-            f"{type(lgbm_params['metric'])}."
-        )
 
     canonical_metrics = []
     for metric in lgbm_params["metric"]:
