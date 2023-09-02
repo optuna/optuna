@@ -1602,3 +1602,57 @@ def get_all_study_summaries(
         )
 
     return study_summaries
+
+
+def get_all_study_names(storage: Union[str, storages.BaseStorage]) -> List[str]:
+    """Get all study names stored in a specified storage.
+
+    Example:
+
+        .. testsetup::
+
+            import os
+
+            if os.path.exists("example.db"):
+                raise RuntimeError("'example.db' already exists. Please remove it.")
+
+        .. testcode::
+
+            import optuna
+
+
+            def objective(trial):
+                x = trial.suggest_float("x", -10, 10)
+                return (x - 2) ** 2
+
+
+            study = optuna.create_study(study_name="example-study", storage="sqlite:///example.db")
+            study.optimize(objective, n_trials=3)
+
+            study_names = optuna.study.get_all_study_names(storage="sqlite:///example.db")
+            assert len(study_names) == 1
+
+            assert study_names[0] == "example-study"
+
+        .. testcleanup::
+
+            os.remove("example.db")
+
+    Args:
+        storage:
+            Database URL such as ``sqlite:///example.db``. Please see also the documentation of
+            :func:`~optuna.study.create_study` for further details.
+
+    Returns:
+        List of all study names in the storage.
+
+    See also:
+        :func:`optuna.get_all_study_names` is an alias of
+        :func:`optuna.study.get_all_study_names`.
+
+    """
+
+    storage = storages.get_storage(storage)
+    study_names = [study.study_name for study in storage.get_all_studies()]
+
+    return study_names
