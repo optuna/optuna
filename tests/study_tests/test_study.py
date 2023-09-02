@@ -24,6 +24,7 @@ from optuna import create_study
 from optuna import create_trial
 from optuna import delete_study
 from optuna import distributions
+from optuna import get_all_study_names
 from optuna import get_all_study_summaries
 from optuna import load_study
 from optuna import logging
@@ -315,6 +316,19 @@ def test_get_all_study_summaries_with_no_trials(storage_mode: str) -> None:
         assert summary.study_name == study.study_name
         assert summary.n_trials == 0
         assert summary.datetime_start is None
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_get_all_study_names(storage_mode: str) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        n_studies = 5
+
+        studies = [create_study(storage=storage) for _ in range(n_studies)]
+        study_names = get_all_study_names(storage)
+
+        assert len(study_names) == n_studies
+        for study, study_name in zip(studies, study_names):
+            assert study_name == study.study_name
 
 
 def test_study_pickle() -> None:
