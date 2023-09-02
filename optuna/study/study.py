@@ -1,18 +1,15 @@
+from __future__ import annotations
+
+from collections.abc import Container
+from collections.abc import Iterable
+from collections.abc import Mapping
 import copy
 from numbers import Real
 import threading
 from typing import Any
 from typing import Callable
 from typing import cast
-from typing import Container
-from typing import Dict
-from typing import Iterable
-from typing import List
-from typing import Mapping
-from typing import Optional
 from typing import Sequence
-from typing import Tuple
-from typing import Type
 from typing import TYPE_CHECKING
 from typing import Union
 import warnings
@@ -58,7 +55,7 @@ _logger = logging.get_logger(__name__)
 
 class _ThreadLocalStudyAttribute(threading.local):
     in_optimize_loop: bool = False
-    cached_all_trials: Optional[List["FrozenTrial"]] = None
+    cached_all_trials: list["FrozenTrial"] | None = None
 
 
 class Study:
@@ -76,9 +73,9 @@ class Study:
     def __init__(
         self,
         study_name: str,
-        storage: Union[str, storages.BaseStorage],
-        sampler: Optional["samplers.BaseSampler"] = None,
-        pruner: Optional[pruners.BasePruner] = None,
+        storage: str | storages.BaseStorage,
+        sampler: "samplers.BaseSampler" | None = None,
+        pruner: pruners.BasePruner | None = None,
     ) -> None:
         self.study_name = study_name
         storage = storages.get_storage(storage)
@@ -93,17 +90,17 @@ class Study:
         self._thread_local = _ThreadLocalStudyAttribute()
         self._stop_flag = False
 
-    def __getstate__(self) -> Dict[Any, Any]:
+    def __getstate__(self) -> dict[Any, Any]:
         state = self.__dict__.copy()
         del state["_thread_local"]
         return state
 
-    def __setstate__(self, state: Dict[Any, Any]) -> None:
+    def __setstate__(self, state: dict[Any, Any]) -> None:
         self.__dict__.update(state)
         self._thread_local = _ThreadLocalStudyAttribute()
 
     @property
-    def best_params(self) -> Dict[str, Any]:
+    def best_params(self) -> dict[str, Any]:
         """Return parameters of the best trial in the study.
 
         .. note::
@@ -160,7 +157,7 @@ class Study:
         return copy.deepcopy(self._storage.get_best_trial(self._study_id))
 
     @property
-    def best_trials(self) -> List[FrozenTrial]:
+    def best_trials(self) -> list[FrozenTrial]:
         """Return trials located at the Pareto front in the study.
 
         A trial is located at the Pareto front if there are no trials that dominate the trial.
@@ -197,7 +194,7 @@ class Study:
         return self.directions[0]
 
     @property
-    def directions(self) -> List[StudyDirection]:
+    def directions(self) -> list[StudyDirection]:
         """Return the directions of the study.
 
         Returns:
@@ -207,7 +204,7 @@ class Study:
         return self._directions
 
     @property
-    def trials(self) -> List[FrozenTrial]:
+    def trials(self) -> list[FrozenTrial]:
         """Return all trials in the study.
 
         The returned trials are ordered by trial number.
@@ -227,8 +224,8 @@ class Study:
     def get_trials(
         self,
         deepcopy: bool = True,
-        states: Optional[Container[TrialState]] = None,
-    ) -> List[FrozenTrial]:
+        states: Container[TrialState] | None = None,
+    ) -> list[FrozenTrial]:
         """Return all trials in the study.
 
         The returned trials are ordered by trial number.
@@ -269,9 +266,9 @@ class Study:
     def _get_trials(
         self,
         deepcopy: bool = True,
-        states: Optional[Container[TrialState]] = None,
+        states: Container[TrialState] | None = None,
         use_cache: bool = False,
-    ) -> List[FrozenTrial]:
+    ) -> list[FrozenTrial]:
         if use_cache:
             if self._thread_local.cached_all_trials is None:
                 self._thread_local.cached_all_trials = self._storage.get_all_trials(
@@ -287,7 +284,7 @@ class Study:
         return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy, states=states)
 
     @property
-    def user_attrs(self) -> Dict[str, Any]:
+    def user_attrs(self) -> dict[str, Any]:
         """Return user attributes.
 
         .. seealso::
@@ -327,7 +324,7 @@ class Study:
 
     @property
     @deprecated_func("3.1.0", "5.0.0")
-    def system_attrs(self) -> Dict[str, Any]:
+    def system_attrs(self) -> dict[str, Any]:
         """Return system attributes.
 
         Returns:
@@ -339,11 +336,11 @@ class Study:
     def optimize(
         self,
         func: ObjectiveFuncType,
-        n_trials: Optional[int] = None,
-        timeout: Optional[float] = None,
+        n_trials: int | None = None,
+        timeout: float | None = None,
         n_jobs: int = 1,
-        catch: Union[Iterable[Type[Exception]], Type[Exception]] = (),
-        callbacks: Optional[List[Callable[["Study", FrozenTrial], None]]] = None,
+        catch: Iterable[type[Exception]] | type[Exception] = (),
+        callbacks: list[Callable[["Study", FrozenTrial], None]] | None = None,
         gc_after_trial: bool = False,
         show_progress_bar: bool = False,
     ) -> None:
@@ -452,7 +449,7 @@ class Study:
         )
 
     def ask(
-        self, fixed_distributions: Optional[Dict[str, BaseDistribution]] = None
+        self, fixed_distributions: dict[str, BaseDistribution] | None = None
     ) -> trial_module.Trial:
         """Create a new trial from which hyperparameters can be suggested.
 
@@ -541,9 +538,9 @@ class Study:
 
     def tell(
         self,
-        trial: Union[trial_module.Trial, int],
-        values: Optional[Union[float, Sequence[float]]] = None,
-        state: Optional[TrialState] = None,
+        trial: trial_module.Trial | int,
+        values: float | Sequence[float] | None = None,
+        state: TrialState | None = None,
         skip_if_finished: bool = False,
     ) -> FrozenTrial:
         """Finish a trial created with :func:`~optuna.study.Study.ask`.
@@ -692,7 +689,7 @@ class Study:
 
     def trials_dataframe(
         self,
-        attrs: Tuple[str, ...] = (
+        attrs: tuple[str, ...] = (
             "number",
             "value",
             "datetime_start",
@@ -797,8 +794,8 @@ class Study:
 
     def enqueue_trial(
         self,
-        params: Dict[str, Any],
-        user_attrs: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any],
+        user_attrs: dict[str, Any] | None = None,
         skip_if_exists: bool = False,
     ) -> None:
         """Enqueue a trial with given parameter values.
@@ -970,7 +967,7 @@ class Study:
             self.add_trial(trial)
 
     @experimental_func("3.2.0")
-    def set_metric_names(self, metric_names: List[str]) -> None:
+    def set_metric_names(self, metric_names: list[str]) -> None:
         """Set metric names.
 
         This method names each dimension of the returned values of the objective function.
@@ -1021,7 +1018,7 @@ class Study:
 
         return len(self.directions) > 1
 
-    def _pop_waiting_trial_id(self) -> Optional[int]:
+    def _pop_waiting_trial_id(self) -> int | None:
         for trial in self._storage.get_all_trials(
             self._study_id, deepcopy=False, states=(TrialState.WAITING,)
         ):
@@ -1040,7 +1037,7 @@ class Study:
                 # Can't have repeated trials if different params are suggested.
                 continue
 
-            repeated_params: List[bool] = []
+            repeated_params: list[bool] = []
             for param_name, param_value in params.items():
                 existing_param = trial_params[param_name]
                 if not isinstance(param_value, type(existing_param)):
@@ -1070,7 +1067,7 @@ class Study:
 
     @deprecated_func("2.5.0", "4.0.0")
     def _tell(
-        self, trial: trial_module.Trial, state: TrialState, values: Optional[List[float]]
+        self, trial: trial_module.Trial, state: TrialState, values: list[float] | None
     ) -> None:
         self.tell(trial, values, state)
 
@@ -1083,7 +1080,7 @@ class Study:
         )
 
         if len(trial.values) > 1:
-            trial_values: Union[List[float], Dict[str, float]]
+            trial_values: list[float] | dict[str, float]
             if metric_names is None:
                 trial_values = trial.values
             else:
@@ -1095,7 +1092,7 @@ class Study:
             )
         elif len(trial.values) == 1:
             best_trial = self.best_trial
-            trial_value: Union[float, Dict[str, float]]
+            trial_value: float | dict[str, float]
             if metric_names is None:
                 trial_value = trial.values[0]
             else:
@@ -1126,13 +1123,13 @@ class Study:
 )
 def create_study(
     *,
-    storage: Optional[Union[str, storages.BaseStorage]] = None,
-    sampler: Optional["samplers.BaseSampler"] = None,
-    pruner: Optional[pruners.BasePruner] = None,
-    study_name: Optional[str] = None,
-    direction: Optional[Union[str, StudyDirection]] = None,
+    storage: str | storages.BaseStorage | None = None,
+    sampler: "samplers.BaseSampler" | None = None,
+    pruner: pruners.BasePruner | None = None,
+    study_name: str | None = None,
+    direction: str | StudyDirection | None = None,
     load_if_exists: bool = False,
-    directions: Optional[Sequence[Union[str, StudyDirection]]] = None,
+    directions: Sequence[str | StudyDirection] | None = None,
 ) -> Study:
     """Create a new :class:`~optuna.study.Study`.
 
@@ -1270,10 +1267,10 @@ def create_study(
 )
 def load_study(
     *,
-    study_name: Optional[str],
-    storage: Union[str, storages.BaseStorage],
-    sampler: Optional["samplers.BaseSampler"] = None,
-    pruner: Optional[pruners.BasePruner] = None,
+    study_name: str | None,
+    storage: str | storages.BaseStorage,
+    sampler: "samplers.BaseSampler" | None = None,
+    pruner: pruners.BasePruner | None = None,
 ) -> Study:
     """Load the existing :class:`~optuna.study.Study` that has the specified name.
 
@@ -1352,7 +1349,7 @@ def load_study(
 def delete_study(
     *,
     study_name: str,
-    storage: Union[str, storages.BaseStorage],
+    storage: str | storages.BaseStorage,
 ) -> None:
     """Delete a :class:`~optuna.study.Study` object.
 
@@ -1413,9 +1410,9 @@ def delete_study(
 def copy_study(
     *,
     from_study_name: str,
-    from_storage: Union[str, storages.BaseStorage],
-    to_storage: Union[str, storages.BaseStorage],
-    to_study_name: Optional[str] = None,
+    from_storage: str | storages.BaseStorage,
+    to_storage: str | storages.BaseStorage,
+    to_study_name: str | None = None,
 ) -> None:
     """Copy study from one storage to another.
 
@@ -1505,8 +1502,8 @@ def copy_study(
 
 
 def get_all_study_summaries(
-    storage: Union[str, storages.BaseStorage], include_best_trial: bool = True
-) -> List[StudySummary]:
+    storage: str | storages.BaseStorage, include_best_trial: bool = True
+) -> list[StudySummary]:
     """Get all history of studies stored in a specified storage.
 
     Example:
@@ -1604,7 +1601,7 @@ def get_all_study_summaries(
     return study_summaries
 
 
-def get_all_study_names(storage: Union[str, storages.BaseStorage]) -> List[str]:
+def get_all_study_names(storage: str | storages.BaseStorage) -> list[str]:
     """Get all study names stored in a specified storage.
 
     Example:
