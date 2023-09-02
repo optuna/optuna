@@ -1328,13 +1328,13 @@ def load_study(
 
     """
     if study_name is None:
-        study_summaries = get_all_study_summaries(storage)
-        if len(study_summaries) != 1:
+        study_names = get_all_study_names(storage)
+        if len(study_names) != 1:
             raise ValueError(
                 f"Could not determine the study name since the storage {storage} does not "
                 "contain exactly 1 study. Specify `study_name`."
             )
-        study_name = study_summaries[0].study_name
+        study_name = study_names[0]
         _logger.info(
             f"Study name was omitted but trying to load '{study_name}' because that was the only "
             "study found in the storage."
