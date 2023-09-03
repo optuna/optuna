@@ -12,7 +12,6 @@ from optuna.storages._journal.file import JournalFileSymlinkLock
 from optuna.storages._journal.redis import JournalRedisStorage
 from optuna.storages._journal.storage import JournalStorage
 from optuna.storages._rdb.storage import RDBStorage
-from optuna.trial import FrozenTrial
 
 
 __all__ = [
