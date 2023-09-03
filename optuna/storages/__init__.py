@@ -12,6 +12,7 @@ from optuna.storages._journal.file import JournalFileSymlinkLock
 from optuna.storages._journal.redis import JournalRedisStorage
 from optuna.storages._journal.storage import JournalStorage
 from optuna.storages._rdb.storage import RDBStorage
+from optuna.trial import FrozenTrial
 
 
 __all__ = [
@@ -45,3 +46,10 @@ def get_storage(storage: Union[None, str, BaseStorage]) -> BaseStorage:
         return _CachedStorage(storage)
     else:
         return storage
+
+
+def unify_intermediate_values_to_sequence(trial: FrozenTrial) -> FrozenTrial:
+    for step, value in trial.intermediate_values.items():
+        if isinstance(value, float):
+            trial.intermediate_values[step] = [value]
+    return trial

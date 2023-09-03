@@ -926,6 +926,12 @@ class Study:
                 f"number of objectives {len(self.directions)} in the study (determined by "
                 "Study.directions)."
             )
+        for intermediate_value in trial.intermediate_values.values():
+            if isinstance(intermediate_value, float):
+                if len(self.directions) != 1:
+                    raise ValueError("error")
+            elif len(self.directions) != len(intermediate_value):
+                raise ValueError("Error")
 
         self._storage.create_new_trial(self._study_id, template_trial=trial)
 

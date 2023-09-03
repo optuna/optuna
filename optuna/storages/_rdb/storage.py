@@ -24,6 +24,7 @@ from optuna import distributions
 from optuna import version
 from optuna._imports import _LazyImport
 from optuna._typing import JSONSerializable
+from optuna.storages import unify_intermediate_values_to_sequence
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages._heartbeat import BaseHeartbeat
@@ -464,6 +465,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 n_retries += 1
 
             if template_trial:
+                template_trial = unify_intermediate_values_to_sequence(template_trial)
                 frozen = copy.deepcopy(template_trial)
                 frozen.number = trial.number
                 frozen.datetime_start = trial.datetime_start
