@@ -22,7 +22,6 @@ from optuna.distributions import distribution_to_json
 from optuna.distributions import json_to_distribution
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages import BaseStorage
-from optuna.storages import unify_intermediate_values_to_sequence
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages._journal.base import BaseJournalLogSnapshot
 from optuna.storages._journal.base import BaseJournalLogStorage
@@ -239,7 +238,6 @@ class JournalStorage(BaseStorage):
         }
 
         if template_trial:
-            template_trial = unify_intermediate_values_to_sequence(template_trial)
             log["state"] = template_trial.state
             if template_trial.values is not None and len(template_trial.values) > 1:
                 log["value"] = None

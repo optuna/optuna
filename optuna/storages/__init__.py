@@ -46,10 +46,3 @@ def get_storage(storage: Union[None, str, BaseStorage]) -> BaseStorage:
         return _CachedStorage(storage)
     else:
         return storage
-
-
-def unify_intermediate_values_to_sequence(trial: FrozenTrial) -> FrozenTrial:
-    for step, value in trial.intermediate_values.items():
-        if isinstance(value, float):
-            trial.intermediate_values[step] = [value]
-    return trial

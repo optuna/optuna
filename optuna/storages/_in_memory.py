@@ -17,7 +17,6 @@ from optuna import distributions  # NOQA
 from optuna._typing import JSONSerializable
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages import BaseStorage
-from optuna.storages import unify_intermediate_values_to_sequence
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
@@ -145,7 +144,6 @@ class InMemoryStorage(BaseStorage):
             if template_trial is None:
                 trial = self._create_running_trial()
             else:
-                template_trial = unify_intermediate_values_to_sequence(template_trial)
                 trial = copy.deepcopy(template_trial)
 
             trial_id = self._max_trial_id + 1
