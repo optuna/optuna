@@ -11,6 +11,7 @@ import pytest
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
+from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study import create_study
 from optuna.study import Study
 from optuna.testing.objectives import fail_objective
@@ -20,6 +21,7 @@ from optuna.visualization import plot_rank as plotly_plot_rank
 from optuna.visualization._plotly_imports import go
 from optuna.visualization._rank import _AxisInfo
 from optuna.visualization._rank import _convert_color_idxs_to_scaled_rgb_colors
+from optuna.visualization._rank import _get_axis_info
 from optuna.visualization._rank import _get_order_with_same_order_averaging
 from optuna.visualization._rank import _get_rank_info
 from optuna.visualization._rank import _RankPlotInfo
@@ -74,6 +76,31 @@ def _create_study_with_log_scale_and_str_category_3d() -> Study:
             value=1.0,
             params={"param_a": 1e-5, "param_b": "100", "param_c": "two"},
             distributions=distributions,
+        )
+    )
+    return study
+
+
+def _create_study_with_constraints() -> Study:
+    study = create_study()
+    distributions: dict[str, BaseDistribution] = {
+        "param_a": FloatDistribution(0.1, 0.2),
+        "param_b": FloatDistribution(0.3, 0.4),
+    }
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"param_a": 0.11, "param_b": 0.31},
+            distributions=distributions,
+            system_attrs={_CONSTRAINTS_KEY: [-0.1, 0.0]},
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=1.0,
+            params={"param_a": 0.19, "param_b": 0.34},
+            distributions=distributions,
+            system_attrs={_CONSTRAINTS_KEY: [0.1, 0.0]},
         )
     )
     return study
@@ -142,6 +169,7 @@ def _get_nested_list_shape(nested_list: list[list[Any]]) -> tuple[int, int]:
         [_create_study_with_log_scale_and_str_category_2d, None],
         [_create_study_with_log_scale_and_str_category_3d, None],
         [_create_study_mixture_category_types, None],
+        [_create_study_with_constraints, None],
     ],
 )
 def test_plot_rank(
@@ -621,6 +649,37 @@ def test_get_rank_info_nonfinite_multiobjective(objective: int, value: float) ->
             zs=np.array([value, 2.0, 1.0]),
             colors=colors,
             has_custom_target=True,
+        ),
+    )
+
+
+def test_generate_rank_info_with_constraints() -> None:
+    study = _create_study_with_constraints()
+    info = _get_rank_info(study, params=None, target=None, target_name="Objective Value")
+    expected_color = _convert_color_idxs_to_scaled_rgb_colors(np.array([0.0, 1.0]))
+    expected_color[1] = [0.8, 0.8, 0.8]
+
+    assert _named_tuple_equal(
+        info,
+        _RankPlotInfo(
+            params=["param_a", "param_b"],
+            sub_plot_infos=[
+                [
+                    _RankSubplotInfo(
+                        xaxis=_get_axis_info(study.trials, "param_a"),
+                        yaxis=_get_axis_info(study.trials, "param_b"),
+                        xs=[0.11, 0.19],
+                        ys=[0.31, 0.34],
+                        trials=study.trials,
+                        zs=np.array([0.0, 1.0]),
+                        colors=expected_color,
+                    )
+                ]
+            ],
+            target_name="Objective Value",
+            zs=np.array([0.0, 1.0]),
+            colors=expected_color,
+            has_custom_target=False,
         ),
     )
 

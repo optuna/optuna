@@ -10,6 +10,7 @@ import numpy as np
 
 from optuna._experimental import experimental_func
 from optuna.logging import get_logger
+from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -196,6 +197,16 @@ def _get_rank_subplot_info(
 ) -> _RankSubplotInfo:
     xaxis = _get_axis_info(trials, x_param)
     yaxis = _get_axis_info(trials, y_param)
+
+    infeasible_trial_ids = []
+    for i in range(len(trials)):
+        constraints = trials[i].system_attrs.get(_CONSTRAINTS_KEY)
+        if constraints is not None and any([x > 0.0 for x in constraints]):
+            infeasible_trial_ids.append(i)
+
+    colors[infeasible_trial_ids] = plotly.colors.unconvert_from_RGB_255(
+        (plotly.colors.hex_to_rgb("#cccccc"))
+    )
 
     filtered_ids = [
         i
