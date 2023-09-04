@@ -45,7 +45,7 @@ class _RankSubplotInfo(NamedTuple):
     ys: list[Any]
     trials: list[FrozenTrial]
     zs: np.ndarray
-    color_idxs: np.ndarray
+    colors: np.ndarray
 
 
 class _RankPlotInfo(NamedTuple):
@@ -53,7 +53,7 @@ class _RankPlotInfo(NamedTuple):
     sub_plot_infos: list[list[_RankSubplotInfo]]
     target_name: str
     zs: np.ndarray
-    color_idxs: np.ndarray
+    colors: np.ndarray
     has_custom_target: bool
 
 
@@ -160,16 +160,18 @@ def _get_rank_info(
     target_values = np.array([target(trial) for trial in trials])
     raw_ranks = _get_order_with_same_order_averaging(target_values)
     color_idxs = raw_ranks / (len(trials) - 1) if len(trials) >= 2 else np.array([0.5])
+    colors = _convert_color_idxs_to_scaled_rgb_colors(color_idxs)
+
     sub_plot_infos: list[list[_RankSubplotInfo]]
     if len(params) == 2:
         x_param = params[0]
         y_param = params[1]
-        sub_plot_info = _get_rank_subplot_info(trials, target_values, color_idxs, x_param, y_param)
+        sub_plot_info = _get_rank_subplot_info(trials, target_values, colors, x_param, y_param)
         sub_plot_infos = [[sub_plot_info]]
     else:
         sub_plot_infos = [
             [
-                _get_rank_subplot_info(trials, target_values, color_idxs, x_param, y_param)
+                _get_rank_subplot_info(trials, target_values, colors, x_param, y_param)
                 for x_param in params
             ]
             for y_param in params
@@ -180,7 +182,7 @@ def _get_rank_info(
         sub_plot_infos=sub_plot_infos,
         target_name=target_name,
         zs=target_values,
-        color_idxs=color_idxs,
+        colors=colors,
         has_custom_target=has_custom_target,
     )
 
@@ -188,7 +190,7 @@ def _get_rank_info(
 def _get_rank_subplot_info(
     trials: list[FrozenTrial],
     target_values: np.ndarray,
-    color_idxs: np.ndarray,
+    colors: np.ndarray,
     x_param: str,
     y_param: str,
 ) -> _RankSubplotInfo:
@@ -204,7 +206,7 @@ def _get_rank_subplot_info(
     xs = [trial.params[x_param] for trial in filtered_trials]
     ys = [trial.params[y_param] for trial in filtered_trials]
     zs = target_values[filtered_ids]
-    color_idxs = color_idxs[filtered_ids]
+    colors = colors[filtered_ids]
     return _RankSubplotInfo(
         xaxis=xaxis,
         yaxis=yaxis,
@@ -212,7 +214,7 @@ def _get_rank_subplot_info(
         ys=ys,
         trials=filtered_trials,
         zs=np.array(zs),
-        color_idxs=np.array(color_idxs),
+        colors=colors,
     )
 
 
@@ -269,10 +271,6 @@ def _get_axis_info(trials: list[FrozenTrial], param_name: str) -> _AxisInfo:
 def _get_rank_subplot(
     info: _RankSubplotInfo, target_name: str, print_raw_objectives: bool
 ) -> "Scatter":
-    colormap = "RdYlBu_r"
-    # sample_colorscale requires plotly >= 5.0.0.
-    colors = plotly.colors.sample_colorscale(colormap, info.color_idxs)
-
     def get_hover_text(trial: FrozenTrial, target_value: float) -> str:
         lines = [f"Trial #{trial.number}"]
         lines += [f"{k}: {v}" for k, v in trial.params.items()]
@@ -285,7 +283,9 @@ def _get_rank_subplot(
         x=info.xs,
         y=info.ys,
         marker={
-            "color": colors,
+            "color": info.colors,
+            "cmin": 0,
+            "cmax": 1,
             "line": {"width": 0.5, "color": "Grey"},
         },
         mode="markers",
@@ -403,3 +403,17 @@ def _get_rank_plot(
     )
     figure.add_trace(colorbar_trace)
     return figure
+
+
+def _convert_color_idxs_to_scaled_rgb_colors(color_idxs: np.ndarray) -> np.ndarray:
+    colormap = "RdYlBu_r"
+    # sample_colorscale requires plotly >= 5.0.0.
+    labeled_colors = plotly.colors.sample_colorscale(colormap, color_idxs)
+    scaled_rgb_colors = np.array(
+        [
+            plotly.colors.unconvert_from_RGB_255(plotly.colors.unlabel_rgb(cl))
+            for cl in labeled_colors
+        ]
+    )
+
+    return scaled_rgb_colors.reshape(-1, 3)

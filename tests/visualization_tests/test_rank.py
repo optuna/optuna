@@ -19,6 +19,7 @@ from optuna.trial import create_trial
 from optuna.visualization import plot_rank as plotly_plot_rank
 from optuna.visualization._plotly_imports import go
 from optuna.visualization._rank import _AxisInfo
+from optuna.visualization._rank import _convert_color_idxs_to_scaled_rgb_colors
 from optuna.visualization._rank import _get_order_with_same_order_averaging
 from optuna.visualization._rank import _get_rank_info
 from optuna.visualization._rank import _RankPlotInfo
@@ -226,13 +227,13 @@ def test_get_rank_info_2_params() -> None:
                         ys=[2.0, 1.0],
                         trials=[study.trials[0], study.trials[2]],
                         zs=np.array([0.0, 1.0]),
-                        color_idxs=np.array([0.0, 0.5]),
+                        colors=_convert_color_idxs_to_scaled_rgb_colors(np.array([0.0, 0.5])),
                     )
                 ]
             ],
             target_name="Objective Value",
             zs=np.array([0.0, 2.0, 1.0]),
-            color_idxs=np.array([0.0, 1.0, 0.5]),
+            colors=_convert_color_idxs_to_scaled_rgb_colors(np.array([0.0, 1.0, 0.5])),
             has_custom_target=False,
         ),
     )
@@ -326,13 +327,13 @@ def test_generate_rank_plot_for_no_plots(params: list[str]) -> None:
                         ys=[],
                         trials=[],
                         zs=np.array([]),
-                        color_idxs=np.array([]),
+                        colors=_convert_color_idxs_to_scaled_rgb_colors(np.array([])),
                     )
                 ]
             ],
             target_name="Objective Value",
             zs=np.array([0.0, 2.0]),
-            color_idxs=np.array([0.0, 1.0]),
+            colors=_convert_color_idxs_to_scaled_rgb_colors(np.array([0.0, 1.0])),
             has_custom_target=False,
         ),
     )
@@ -393,13 +394,13 @@ def test_generate_rank_plot_for_few_observations(params: list[str]) -> None:
                         ys=[study.get_trials()[0].params[params[1]]],
                         trials=[study.get_trials()[0]],
                         zs=np.array([0.0]),
-                        color_idxs=np.array([0.0]),
+                        colors=_convert_color_idxs_to_scaled_rgb_colors(np.array([0.0])),
                     )
                 ]
             ],
             target_name="Objective Value",
             zs=np.array([0.0, 2.0]),
-            color_idxs=np.array([0.0, 1.0]),
+            colors=_convert_color_idxs_to_scaled_rgb_colors(np.array([0.0, 1.0])),
             has_custom_target=False,
         ),
     )
@@ -432,13 +433,13 @@ def test_get_rank_info_log_scale_and_str_category_2_params() -> None:
                         ys=["101", "100"],
                         trials=[study.trials[0], study.trials[1]],
                         zs=np.array([0.0, 1.0]),
-                        color_idxs=np.array([0.0, 1.0]),
+                        colors=_convert_color_idxs_to_scaled_rgb_colors(np.array([0.0, 1.0])),
                     )
                 ]
             ],
             target_name="Objective Value",
             zs=np.array([0.0, 1.0]),
-            color_idxs=np.array([0.0, 1.0]),
+            colors=_convert_color_idxs_to_scaled_rgb_colors(np.array([0.0, 1.0])),
             has_custom_target=False,
         ),
     )
@@ -461,7 +462,7 @@ def test_get_rank_info_log_scale_and_str_category_more_than_2_params() -> None:
 
     param_values = {"param_a": [1e-6, 1e-5], "param_b": ["101", "100"], "param_c": ["one", "two"]}
     zs = np.array([0.0, 1.0])
-    color_idxs = np.array([0.0, 1.0])
+    colors = _convert_color_idxs_to_scaled_rgb_colors(np.array([0.0, 1.0]))
 
     def _check_axis(axis: _AxisInfo, name: str) -> None:
         assert axis.name == name
@@ -481,11 +482,11 @@ def test_get_rank_info_log_scale_and_str_category_more_than_2_params() -> None:
             assert info.sub_plot_infos[yi][xi].ys == param_values[y_param]
             assert info.sub_plot_infos[yi][xi].trials == study.trials
             assert np.all(info.sub_plot_infos[yi][xi].zs == zs)
-            assert np.all(info.sub_plot_infos[yi][xi].color_idxs == color_idxs)
+            assert np.all(info.sub_plot_infos[yi][xi].colors == colors)
 
     info.target_name == "Objective Value"
     assert np.all(info.zs == zs)
-    assert np.all(info.color_idxs == color_idxs)
+    assert np.all(info.colors == colors)
     assert not info.has_custom_target
 
 
@@ -515,13 +516,13 @@ def test_get_rank_info_mixture_category_types() -> None:
                         ys=[101, 102.0],
                         trials=study.trials,
                         zs=np.array([0.0, 0.5]),
-                        color_idxs=np.array([0.0, 1.0]),
+                        colors=_convert_color_idxs_to_scaled_rgb_colors(np.array([0.0, 1.0])),
                     )
                 ]
             ],
             target_name="Objective Value",
             zs=np.array([0.0, 0.5]),
-            color_idxs=np.array([0.0, 1.0]),
+            colors=_convert_color_idxs_to_scaled_rgb_colors(np.array([0.0, 1.0])),
             has_custom_target=False,
         ),
     )
@@ -534,7 +535,11 @@ def test_get_rank_info_nonfinite(value: float) -> None:
         study, params=["param_b", "param_d"], target=None, target_name="Objective Value"
     )
 
-    color_idxs = np.array([0.0, 1.0, 0.5]) if value == float("-inf") else np.array([1.0, 0.5, 0.0])
+    colors = (
+        _convert_color_idxs_to_scaled_rgb_colors(np.array([0.0, 1.0, 0.5]))
+        if value == float("-inf")
+        else _convert_color_idxs_to_scaled_rgb_colors(np.array([1.0, 0.5, 0.0]))
+    )
     assert _named_tuple_equal(
         info,
         _RankPlotInfo(
@@ -558,13 +563,13 @@ def test_get_rank_info_nonfinite(value: float) -> None:
                         ys=[4.0, 4.0, 2.0],
                         trials=study.trials,
                         zs=np.array([value, 2.0, 1.0]),
-                        color_idxs=color_idxs,
+                        colors=colors,
                     )
                 ]
             ],
             target_name="Objective Value",
             zs=np.array([value, 2.0, 1.0]),
-            color_idxs=color_idxs,
+            colors=colors,
             has_custom_target=False,
         ),
     )
@@ -580,7 +585,11 @@ def test_get_rank_info_nonfinite_multiobjective(objective: int, value: float) ->
         target=lambda t: t.values[objective],
         target_name="Target Name",
     )
-    color_idxs = np.array([0.0, 1.0, 0.5]) if value == float("-inf") else np.array([1.0, 0.5, 0.0])
+    colors = (
+        _convert_color_idxs_to_scaled_rgb_colors(np.array([0.0, 1.0, 0.5]))
+        if value == float("-inf")
+        else _convert_color_idxs_to_scaled_rgb_colors(np.array([1.0, 0.5, 0.0]))
+    )
     assert _named_tuple_equal(
         info,
         _RankPlotInfo(
@@ -604,13 +613,13 @@ def test_get_rank_info_nonfinite_multiobjective(objective: int, value: float) ->
                         ys=[4.0, 4.0, 2.0],
                         trials=study.trials,
                         zs=np.array([value, 2.0, 1.0]),
-                        color_idxs=color_idxs,
+                        colors=colors,
                     )
                 ]
             ],
             target_name="Target Name",
             zs=np.array([value, 2.0, 1.0]),
-            color_idxs=color_idxs,
+            colors=colors,
             has_custom_target=True,
         ),
     )
@@ -619,3 +628,13 @@ def test_get_rank_info_nonfinite_multiobjective(objective: int, value: float) ->
 def test_get_order_with_same_order_averaging() -> None:
     x = np.array([6.0, 2.0, 3.0, 1.0, 4.5, 4.5, 8.0, 8.0, 0.0, 8.0])
     assert np.all(x == _get_order_with_same_order_averaging(x))
+
+
+def test_convert_color_idxs_to_scaled_rgb_colors() -> None:
+    x1 = np.array([0.1, 0.2])
+    result1 = _convert_color_idxs_to_scaled_rgb_colors(x1)
+    assert result1.shape == (2, 3)
+
+    x2 = np.array([])
+    result2 = _convert_color_idxs_to_scaled_rgb_colors(x2)
+    assert result2.shape == (0, 3)
