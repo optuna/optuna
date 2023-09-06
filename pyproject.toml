@@ -65,6 +65,7 @@ checking = [
 ]
 document = [
     "cma",
+    "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
     "botorch",
     "distributed",
     "fvcore",
