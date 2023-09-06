@@ -15,6 +15,7 @@ from optuna.exceptions import TrialPruned
 from optuna.study import copy_study
 from optuna.study import create_study
 from optuna.study import delete_study
+from optuna.study import get_all_study_names
 from optuna.study import get_all_study_summaries
 from optuna.study import load_study
 from optuna.study import Study
@@ -35,6 +36,7 @@ __all__ = [
     "delete_study",
     "distributions",
     "exceptions",
+    "get_all_study_names",
     "get_all_study_summaries",
     "importance",
     "integration",
