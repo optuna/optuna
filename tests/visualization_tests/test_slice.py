@@ -170,6 +170,7 @@ def test_get_slice_plot_info_params(params: list[str] | None) -> None:
             is_log=False,
             is_numerical=True,
             x_labels=None,
+            constraints=[True, True],
         ),
         "param_b": _SliceSubplotInfo(
             param_name="param_b",
@@ -179,6 +180,7 @@ def test_get_slice_plot_info_params(params: list[str] | None) -> None:
             is_log=False,
             is_numerical=True,
             x_labels=None,
+            constraints=[True, True, True],
         ),
         "param_c": _SliceSubplotInfo(
             param_name="param_c",
@@ -188,6 +190,7 @@ def test_get_slice_plot_info_params(params: list[str] | None) -> None:
             is_log=False,
             is_numerical=True,
             x_labels=None,
+            constraints=[True, True],
         ),
         "param_d": _SliceSubplotInfo(
             param_name="param_d",
@@ -197,6 +200,7 @@ def test_get_slice_plot_info_params(params: list[str] | None) -> None:
             is_log=False,
             is_numerical=True,
             x_labels=None,
+            constraints=[True, True, True],
         ),
     }
 
@@ -227,6 +231,7 @@ def test_get_slice_plot_info_customized_target() -> None:
                 is_log=False,
                 is_numerical=True,
                 x_labels=None,
+                constraints=[True, True],
             ),
         ],
     )
@@ -271,6 +276,7 @@ def test_get_slice_plot_info_for_few_observations(params: list[str]) -> None:
                 is_log=False,
                 is_numerical=True,
                 x_labels=None,
+                constraints=[True],
             ),
             _SliceSubplotInfo(
                 param_name="param_b",
@@ -280,6 +286,7 @@ def test_get_slice_plot_info_for_few_observations(params: list[str]) -> None:
                 is_log=False,
                 is_numerical=True,
                 x_labels=None,
+                constraints=[True, True],
             ),
         ],
     )
@@ -301,6 +308,7 @@ def test_get_slice_plot_info_log_scale_and_str_category_2_params() -> None:
                 is_log=True,
                 is_numerical=True,
                 x_labels=None,
+                constraints=[True, True],
             ),
             _SliceSubplotInfo(
                 param_name="param_b",
@@ -310,6 +318,7 @@ def test_get_slice_plot_info_log_scale_and_str_category_2_params() -> None:
                 is_log=False,
                 is_numerical=False,
                 x_labels=distribution_b.choices,
+                constraints=[True, True],
             ),
         ],
     )
@@ -333,6 +342,7 @@ def test_get_slice_plot_info_mixture_category_types() -> None:
                 is_log=False,
                 is_numerical=False,
                 x_labels=distribution_a.choices,
+                constraints=[True, True],
             ),
             _SliceSubplotInfo(
                 param_name="param_b",
@@ -342,6 +352,7 @@ def test_get_slice_plot_info_mixture_category_types() -> None:
                 is_log=False,
                 is_numerical=False,
                 x_labels=distribution_b.choices,
+                constraints=[True, True],
             ),
         ],
     )
@@ -364,6 +375,7 @@ def test_get_slice_plot_info_nonfinite_removed(value: float) -> None:
                 is_log=False,
                 is_numerical=True,
                 x_labels=None,
+                constraints=[True, True],
             ),
             _SliceSubplotInfo(
                 param_name="param_d",
@@ -373,6 +385,7 @@ def test_get_slice_plot_info_nonfinite_removed(value: float) -> None:
                 is_log=False,
                 is_numerical=True,
                 x_labels=None,
+                constraints=[True, True],
             ),
         ],
     )
@@ -399,6 +412,7 @@ def test_get_slice_plot_info_nonfinite_multiobjective(objective: int, value: flo
                 is_log=False,
                 is_numerical=True,
                 x_labels=None,
+                constraints=[True, True],
             ),
             _SliceSubplotInfo(
                 param_name="param_d",
@@ -408,6 +422,7 @@ def test_get_slice_plot_info_nonfinite_multiobjective(objective: int, value: flo
                 is_log=False,
                 is_numerical=True,
                 x_labels=None,
+                constraints=[True, True],
             ),
         ],
     )
