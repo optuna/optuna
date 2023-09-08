@@ -238,23 +238,34 @@ def _get_slice_plot(info: _SlicePlotInfo) -> "go.Figure":
 def _generate_slice_subplot(subplot_info: _SliceSubplotInfo) -> list[Scatter]:
     trace = []
 
-    feasible = []
-    infeasible = []
-    for x, y, c in zip(subplot_info.x, subplot_info.y, subplot_info.constraints):
+    class _PlotValues(NamedTuple):
+        x: list[Any]
+        y: list[float]
+        trial_numbers: list[int]
+
+    feasible = _PlotValues([], [], [])
+    infeasible = _PlotValues([], [], [])
+
+    for x, y, num, c in zip(
+        subplot_info.x, subplot_info.y, subplot_info.trial_numbers, subplot_info.constraints
+    ):
         if x is not None or x != "None" or y is not None or y != "None":
             if c:
-                feasible.append((x, y))
+                feasible.x.append(x)
+                feasible.y.append(y)
+                feasible.trial_numbers.append(num)
             else:
-                infeasible.append((x, y))
-
+                infeasible.x.append(x)
+                infeasible.y.append(y)
     trace.append(
         go.Scatter(
-            x=[x for x, _ in feasible],
-            y=[y for _, y in feasible],
+            x=feasible.x,
+            y=feasible.y,
             mode="markers",
+            name="Feasible Trial",
             marker={
                 "line": {"width": 0.5, "color": "Grey"},
-                "color": subplot_info.trial_numbers,
+                "color": feasible.trial_numbers,
                 "colorscale": COLOR_SCALE,
                 "colorbar": {
                     "title": "Trial",
@@ -265,11 +276,11 @@ def _generate_slice_subplot(subplot_info: _SliceSubplotInfo) -> list[Scatter]:
             showlegend=False,
         )
     )
-    if len(infeasible) > 0:
+    if len(infeasible.x) > 0:
         trace.append(
             go.Scatter(
-                x=[x for x, _ in infeasible],
-                y=[y for _, y in infeasible],
+                x=infeasible.x,
+                y=infeasible.y,
                 mode="markers",
                 name="Infeasible Trial",
                 marker={
