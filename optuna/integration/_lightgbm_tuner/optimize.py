@@ -132,7 +132,7 @@ class _BaseTuner:
         )
 
         # Optuna can handle only a single metric. Choose first one.
-        if isinstance(eval_at, Sequence):
+        if isinstance(eval_at, (list, tuple)):
             return f"{metric}@{eval_at[0]}"
         if isinstance(eval_at, int):
             return f"{metric}@{eval_at}"
