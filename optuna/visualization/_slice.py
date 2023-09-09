@@ -195,7 +195,7 @@ def _get_slice_plot(info: _SlicePlotInfo) -> "go.Figure":
     if len(info.subplots) == 0:
         return go.Figure(data=[], layout=layout)
     elif len(info.subplots) == 1:
-        figure = go.Figure(data=[_generate_slice_subplot(info.subplots[0])], layout=layout)
+        figure = go.Figure(data=_generate_slice_subplot(info.subplots[0]), layout=layout)
         figure.update_xaxes(title_text=info.subplots[0].param_name)
         figure.update_yaxes(title_text=info.target_name)
         if not info.subplots[0].is_numerical:
