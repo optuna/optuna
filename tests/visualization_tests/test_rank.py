@@ -133,6 +133,8 @@ def _named_tuple_equal(t1: Any, t2: Any) -> bool:
             return False
         for x, y in zip(t1, t2):
             if not _named_tuple_equal(x, y):
+                print(t1)
+                print(t2)
                 return False
         return True
     else:
@@ -355,7 +357,9 @@ def test_generate_rank_plot_for_no_plots(params: list[str]) -> None:
                         ys=[],
                         trials=[],
                         zs=np.array([]),
-                        colors=_convert_color_idxs_to_scaled_rgb_colors(np.array([])),
+                        colors=_convert_color_idxs_to_scaled_rgb_colors(np.array([])).reshape(
+                            -1, 3
+                        ),
                     )
                 ]
             ],
@@ -657,7 +661,7 @@ def test_generate_rank_info_with_constraints() -> None:
     study = _create_study_with_constraints()
     info = _get_rank_info(study, params=None, target=None, target_name="Objective Value")
     expected_color = _convert_color_idxs_to_scaled_rgb_colors(np.array([0.0, 1.0]))
-    expected_color[1] = [0.8, 0.8, 0.8]
+    expected_color[1] = [204, 204, 204]
 
     assert _named_tuple_equal(
         info,
@@ -696,4 +700,4 @@ def test_convert_color_idxs_to_scaled_rgb_colors() -> None:
 
     x2 = np.array([])
     result2 = _convert_color_idxs_to_scaled_rgb_colors(x2)
-    assert result2.shape == (0, 3)
+    assert result2.shape == (0,)

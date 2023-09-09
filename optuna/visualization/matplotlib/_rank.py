@@ -152,4 +152,4 @@ def _add_rank_subplot(
     if info.yaxis.is_log:
         ax.set_yscale("log")
 
-    return ax.scatter(x=info.xs, y=info.ys, c=info.colors, edgecolors="grey")
+    return ax.scatter(x=info.xs, y=info.ys, c=info.colors / 255, edgecolors="grey")

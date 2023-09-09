@@ -204,9 +204,7 @@ def _get_rank_subplot_info(
         if constraints is not None and any([x > 0.0 for x in constraints]):
             infeasible_trial_ids.append(i)
 
-    colors[infeasible_trial_ids] = plotly.colors.unconvert_from_RGB_255(
-        (plotly.colors.hex_to_rgb("#cccccc"))
-    )
+    colors[infeasible_trial_ids] = plotly.colors.hex_to_rgb("#cccccc")
 
     filtered_ids = [
         i
@@ -295,8 +293,6 @@ def _get_rank_subplot(
         y=info.ys,
         marker={
             "color": list(map(plotly.colors.label_rgb, info.colors)),
-            "cmin": 0,
-            "cmax": 1,
             "line": {"width": 0.5, "color": "Grey"},
         },
         mode="markers",
@@ -420,11 +416,5 @@ def _convert_color_idxs_to_scaled_rgb_colors(color_idxs: np.ndarray) -> np.ndarr
     colormap = "RdYlBu_r"
     # sample_colorscale requires plotly >= 5.0.0.
     labeled_colors = plotly.colors.sample_colorscale(colormap, color_idxs)
-    scaled_rgb_colors = np.array(
-        [
-            plotly.colors.unconvert_from_RGB_255(plotly.colors.unlabel_rgb(cl))
-            for cl in labeled_colors
-        ]
-    )
-
-    return scaled_rgb_colors.reshape(-1, 3)
+    scaled_rgb_colors = np.array([plotly.colors.unlabel_rgb(cl) for cl in labeled_colors])
+    return scaled_rgb_colors
