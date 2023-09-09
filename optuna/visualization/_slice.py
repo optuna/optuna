@@ -43,6 +43,12 @@ class _SlicePlotInfo(NamedTuple):
     subplots: list[_SliceSubplotInfo]
 
 
+class _PlotValues(NamedTuple):
+    x: list[Any]
+    y: list[float]
+    trial_numbers: list[int]
+
+
 def _get_slice_subplot_info(
     trials: list[FrozenTrial],
     param: str,
@@ -237,11 +243,6 @@ def _get_slice_plot(info: _SlicePlotInfo) -> "go.Figure":
 
 def _generate_slice_subplot(subplot_info: _SliceSubplotInfo) -> list[Scatter]:
     trace = []
-
-    class _PlotValues(NamedTuple):
-        x: list[Any]
-        y: list[float]
-        trial_numbers: list[int]
 
     feasible = _PlotValues([], [], [])
     infeasible = _PlotValues([], [], [])
