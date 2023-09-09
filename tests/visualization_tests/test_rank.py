@@ -696,8 +696,8 @@ def test_get_order_with_same_order_averaging() -> None:
 def test_convert_color_idxs_to_scaled_rgb_colors() -> None:
     x1 = np.array([0.1, 0.2])
     result1 = _convert_color_idxs_to_scaled_rgb_colors(x1)
-    assert result1.shape == (2, 3)
+    np.testing.assert_array_equal(result1, [[69, 117, 180], [116, 173, 209]])
 
     x2 = np.array([])
     result2 = _convert_color_idxs_to_scaled_rgb_colors(x2)
-    assert result2.shape == (0,)
+    np.testing.assert_array_equal(result2, [])
