@@ -126,7 +126,8 @@ def _get_rank_plot(
 
     tick_info = _get_tick_info(info.zs)
 
-    cbar = fig.colorbar(pc, ax=axs, ticks=tick_info.coloridxs, cmap=plt.get_cmap("RdYlBu_r"))
+    pc.set_cmap(plt.get_cmap("RdYlBu_r"))
+    cbar = fig.colorbar(pc, ax=axs, ticks=tick_info.coloridxs)
     cbar.ax.set_yticklabels(tick_info.text)
     cbar.outline.set_edgecolor("gray")
     return axs

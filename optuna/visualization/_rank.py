@@ -294,7 +294,7 @@ def _get_rank_subplot(
         x=info.xs,
         y=info.ys,
         marker={
-            "color": info.colors,
+            "color": list(map(plotly.colors.label_rgb, info.colors)),
             "cmin": 0,
             "cmax": 1,
             "line": {"width": 0.5, "color": "Grey"},
