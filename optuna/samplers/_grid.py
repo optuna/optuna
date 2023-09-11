@@ -113,13 +113,12 @@ class GridSampler(BaseSampler):
         self._param_names = sorted(search_space.keys())
         self._n_min_trials = len(self._all_grids)
         self._rng = np.random.RandomState(seed)
+        self._rng.shuffle(self._all_grids)
 
     def reseed_rng(self) -> None:
         self._rng.seed()
 
-    def infer_relative_search_space(
-        self, study: Study, trial: FrozenTrial
-    ) -> Dict[str, BaseDistribution]:
+    def before_trial(self, study: Study, trial: FrozenTrial) -> None:
         # Instead of returning param values, GridSampler puts the target grid id as a system attr,
         # and the values are returned from `sample_independent`. This is because the distribution
         # object is hard to get at the beginning of trial, while we need the access to the object
@@ -128,7 +127,16 @@ class GridSampler(BaseSampler):
         # When the trial is created by RetryFailedTrialCallback or enqueue_trial, we should not
         # assign a new grid_id.
         if "grid_id" in trial.system_attrs or "fixed_params" in trial.system_attrs:
-            return {}
+            return
+
+        if 0 <= trial._trial_id and trial._trial_id < self._n_min_trials:
+            study._storage.set_trial_system_attr(
+                trial._trial_id, "search_space", self._search_space
+            )
+
+            # Here we assume that _trial_id is unique even in a parallel distributed environment.
+            study._storage.set_trial_system_attr(trial._trial_id, "grid_id", trial._trial_id)
+            return
 
         target_grids = self._get_unvisited_grid_ids(study)
 
@@ -153,6 +161,9 @@ class GridSampler(BaseSampler):
         study._storage.set_trial_system_attr(trial._trial_id, "search_space", self._search_space)
         study._storage.set_trial_system_attr(trial._trial_id, "grid_id", grid_id)
 
+    def infer_relative_search_space(
+        self, study: Study, trial: FrozenTrial
+    ) -> Dict[str, BaseDistribution]:
         return {}
 
     def sample_relative(
