@@ -158,7 +158,7 @@ def _generate_slice_subplot(
         feasible_x, feasible_y, feasible_c = _get_categorical_plot_values(subplot_info, feasible)
         infeasible_x, infeasible_y, _ = _get_categorical_plot_values(subplot_info, infeasible)
         scale = "categorical"
-    xlim = _calc_lim_with_padding(feasible_x, padding_ratio, scale)
+    xlim = _calc_lim_with_padding(feasible_x + infeasible_x, padding_ratio, scale)
     ax.set_xlim(xlim[0], xlim[1])
     sc = ax.scatter(feasible_x, feasible_y, c=feasible_c, cmap=cmap, edgecolors="grey")
     ax.scatter(infeasible_x, infeasible_y, c="#cccccc", label="Infeasible Trial")
