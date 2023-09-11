@@ -49,6 +49,12 @@ def upload_artifact(
         storage:
             A storage object. If trial is not a :class:`~optuna.trial.Trial` object, this argument
             is required.
+        mimetype:
+            A MIME type of the artifact. If not specified, the MIME type is guessed from the file
+            extension.
+        encoding:
+            An encoding of the artifact. If not specified, the encoding is guessed from the file
+            extension.
 
     Returns:
         An artifact ID.
