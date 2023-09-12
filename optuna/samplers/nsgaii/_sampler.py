@@ -355,6 +355,9 @@ class NSGAIISampler(BaseSampler):
 
         return parent_generation, parent_population
 
+    def before_trial(self, study: Study, trial: FrozenTrial) -> None:
+        self._random_sampler.before_trial(study, trial)
+
     def after_trial(
         self,
         study: Study,
