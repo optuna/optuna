@@ -133,8 +133,6 @@ class GridSampler(BaseSampler):
             study._storage.set_trial_system_attr(
                 trial._trial_id, "search_space", self._search_space
             )
-
-            # Here we assume that trial.number is unique even in an arbitrary environment.
             study._storage.set_trial_system_attr(trial._trial_id, "grid_id", trial.number)
             return
 
