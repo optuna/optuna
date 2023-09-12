@@ -291,6 +291,9 @@ class PyCmaSampler(BaseSampler):
             )
         )
 
+    def before_trial(self, study: Study, trial: FrozenTrial) -> None:
+        self._independent_sampler.before_trial(study, trial)
+
     def after_trial(
         self,
         study: Study,

@@ -249,6 +249,9 @@ class QMCSampler(BaseSampler):
         sample = trans.bounds[:, 0] + sample * (trans.bounds[:, 1] - trans.bounds[:, 0])
         return trans.untransform(sample[0, :])
 
+    def before_trial(self, study: Study, trial: FrozenTrial) -> None:
+        self._independent_sampler.before_trial(study, trial)
+
     def after_trial(
         self,
         study: "optuna.Study",

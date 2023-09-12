@@ -106,6 +106,9 @@ class PartialFixedSampler(BaseSampler):
                 )
             return param_value
 
+    def before_trial(self, study: Study, trial: FrozenTrial) -> None:
+        self._base_sampler.before_trial(study, trial)
+
     def after_trial(
         self,
         study: Study,

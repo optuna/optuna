@@ -883,6 +883,9 @@ class BoTorchSampler(BaseSampler):
         if self._seed is not None:
             self._seed = numpy.random.RandomState().randint(numpy.iinfo(numpy.int32).max)
 
+    def before_trial(self, study: Study, trial: FrozenTrial) -> None:
+        self._independent_sampler.before_trial(study, trial)
+
     def after_trial(
         self,
         study: Study,

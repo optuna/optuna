@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 import math
 import pickle
@@ -778,6 +780,9 @@ class CmaEsSampler(BaseSampler):
     ) -> List[FrozenTrial]:
         generation_attr_key = self._attr_keys.generation(n_restarts)
         return [t for t in trials if generation == t.system_attrs.get(generation_attr_key, -1)]
+
+    def before_trial(self, study: optuna.Study, trial: FrozenTrial) -> None:
+        self._independent_sampler.before_trial(study, trial)
 
     def after_trial(
         self,
