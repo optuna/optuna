@@ -11,7 +11,9 @@ with optuna._imports.try_import() as _imports:
     xgboost_version = xgb.__version__.split(".")
     xgboost_major_version = int(xgboost_version[0])
     xgboost_minor_version = int(xgboost_version[1])
-    use_callback_cls = xgboost_major_version >= 1 and xgboost_minor_version >= 3
+    use_callback_cls = (
+        xgboost_major_version >= 1 and xgboost_minor_version >= 3
+    ) or xgboost_major_version >= 2
 
 _doc = """Callback for XGBoost to prune unpromising trials.
 
