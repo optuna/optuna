@@ -34,6 +34,8 @@ def upload_artifact(
     artifact_store: ArtifactStore,
     *,
     storage: BaseStorage | None = None,
+    mimetype: str | None = None,
+    encoding: str | None = None,
 ) -> str:
     """Upload an artifact to the artifact store.
 
@@ -48,6 +50,12 @@ def upload_artifact(
         storage:
             A storage object. If trial is not a :class:`~optuna.trial.Trial` object, this argument
             is required.
+        mimetype:
+            A MIME type of the artifact. If not specified, the MIME type is guessed from the file
+            extension.
+        encoding:
+            An encoding of the artifact, which is suitable for use as a ``Content-Encoding``
+            header (e.g. gzip). If not specified, the encoding is guessed from the file extension.
 
     Returns:
         An artifact ID.
@@ -68,8 +76,8 @@ def upload_artifact(
     artifact = ArtifactMeta(
         artifact_id=artifact_id,
         filename=filename,
-        mimetype=guess_mimetype or DEFAULT_MIME_TYPE,
-        encoding=guess_encoding,
+        mimetype=mimetype or guess_mimetype or DEFAULT_MIME_TYPE,
+        encoding=encoding or guess_encoding,
     )
     attr_key = ARTIFACTS_ATTR_PREFIX + artifact_id
     if isinstance(study_or_trial, (Trial, FrozenTrial)):
