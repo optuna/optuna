@@ -5,7 +5,6 @@ from dataclasses import dataclass
 import json
 import mimetypes
 import os
-from typing import Optional
 import uuid
 
 from optuna._experimental import experimental_func
@@ -35,8 +34,8 @@ def upload_artifact(
     artifact_store: ArtifactStore,
     *,
     storage: BaseStorage | None = None,
-    mimetype: Optional[str] = None,
-    encoding: Optional[str] = None,
+    mimetype: str | None = None,
+    encoding: str | None = None,
 ) -> str:
     """Upload an artifact to the artifact store.
 
