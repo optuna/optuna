@@ -110,6 +110,9 @@ jobs:
         python -c 'import optuna'
         optuna --version
 
+        # TODO(c-bata): Remove the version constraint on XGBoost
+        pip install "xgboost<2.0.0"
+
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
         pip install --progress-bar off .[integration]
