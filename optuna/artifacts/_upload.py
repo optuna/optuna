@@ -55,8 +55,8 @@ def upload_artifact(
             A MIME type of the artifact. If not specified, the MIME type is guessed from the file
             extension.
         encoding:
-            An encoding of the artifact. If not specified, the encoding is guessed from the file
-            extension.
+            An encoding of the artifact, which is suitable for use as a ``Content-Encoding``
+            header (e.g. gzip). If not specified, the encoding is guessed from the file extension.
 
     Returns:
         An artifact ID.
