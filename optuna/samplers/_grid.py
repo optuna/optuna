@@ -129,13 +129,13 @@ class GridSampler(BaseSampler):
         if "grid_id" in trial.system_attrs or "fixed_params" in trial.system_attrs:
             return
 
-        if 0 <= trial._trial_id and trial._trial_id < self._n_min_trials:
+        if 0 <= trial.number and trial.number < self._n_min_trials:
             study._storage.set_trial_system_attr(
                 trial._trial_id, "search_space", self._search_space
             )
 
-            # Here we assume that _trial_id is unique even in a parallel distributed environment.
-            study._storage.set_trial_system_attr(trial._trial_id, "grid_id", trial._trial_id)
+            # Here we assume that trial.number is unique even in an arbitrary environment.
+            study._storage.set_trial_system_attr(trial._trial_id, "grid_id", trial.number)
             return
 
         target_grids = self._get_unvisited_grid_ids(study)
