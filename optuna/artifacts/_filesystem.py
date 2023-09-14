@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 @experimental_class("3.3.0")
 class FileSystemArtifactStore:
-    """An artifact backend for file systems.
+    """An artifact store for file systems.
 
     Args:
         base_path:
@@ -33,13 +33,13 @@ class FileSystemArtifactStore:
 
             base_path = "./artifacts"
             os.makedirs(base_path, exist_ok=True)
-            artifact_backend = FileSystemArtifactStore(base_path=base_path)
+            artifact_store = FileSystemArtifactStore(base_path=base_path)
 
 
             def objective(trial: optuna.Trial) -> float:
                 ... = trial.suggest_float("x", -10, 10)
                 file_path = generate_example(...)
-                upload_artifact(trial, file_path, artifact_backend)
+                upload_artifact(trial, file_path, artifact_store)
                 return ...
     """
 
