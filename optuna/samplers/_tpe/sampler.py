@@ -229,7 +229,20 @@ class TPESampler(BaseSampler):
                 Added in v3.0.0 as an experimental feature. The interface may change in newer
                 versions without prior notice.
                 See https://github.com/optuna/optuna/releases/tag/v3.0.0.
+        categorical_distance_func:
+            A dictionary of distance functions for categorical variables. The key is the name of
+            the categorical variable and the value is a distance function that takes two
+            :class:`~optuna.distributions.CategoricalChoiceType` s and returns a :obj:`float`
+            value. The distance function must return a non-negative value.
 
+            While categorical choices are handled equally by default, this option allows users to
+            specify prior knowledge on the structure of categorical variables. When specified,
+            categorical choices closer to current best choices are more likely to be sampled.
+
+            .. note::
+                Added in v3.4.0 as an experimental feature. The interface may change in newer
+                versions without prior notice.
+                See https://github.com/optuna/optuna/releases/tag/v3.4.0.
     """
 
     def __init__(
