@@ -26,7 +26,9 @@ BoTorch
    :nosignatures:
 
    optuna.integration.BoTorchSampler
+   optuna.integration.botorch.logei_candidates_func
    optuna.integration.botorch.qei_candidates_func
+   optuna.integration.botorch.qnei_candidates_func
    optuna.integration.botorch.qehvi_candidates_func
    optuna.integration.botorch.qnehvi_candidates_func
    optuna.integration.botorch.qparego_candidates_func
@@ -90,15 +92,6 @@ Weights & Biases
 
    optuna.integration.WeightsAndBiasesCallback
 
-MXNet
------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.MXNetPruningCallback
-
 pycma
 -----
 
@@ -137,15 +130,6 @@ scikit-optimize
    :nosignatures:
 
    optuna.integration.SkoptSampler
-
-SHAP
----------------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.ShapleyImportanceEvaluator
 
 TensorFlow
 ----------

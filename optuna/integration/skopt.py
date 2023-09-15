@@ -13,6 +13,7 @@ import numpy as np
 import optuna
 from optuna import distributions
 from optuna import samplers
+from optuna._deprecated import deprecated_class
 from optuna._imports import try_import
 from optuna.exceptions import ExperimentalWarning
 from optuna.samplers import BaseSampler
@@ -28,6 +29,7 @@ with try_import() as _imports:
     from skopt.space import space
 
 
+@deprecated_class("3.4.0", "4.0.0")
 class SkoptSampler(BaseSampler):
     """Sampler using Scikit-Optimize as the backend.
 

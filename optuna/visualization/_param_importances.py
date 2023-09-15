@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections import OrderedDict
 from typing import Callable
 from typing import NamedTuple
 
@@ -17,8 +16,6 @@ from optuna.visualization._utils import _filter_nonfinite
 
 
 if _imports.is_successful():
-    import plotly
-
     from optuna.visualization._plotly_imports import go
 
 
@@ -58,7 +55,7 @@ def _get_importances_info(
         study, evaluator=evaluator, params=params, target=target
     )
 
-    importances = OrderedDict(reversed(list(importances.items())))
+    importances = dict(reversed(list(importances.items())))
     importance_values = list(importances.values())
     param_names = list(importances.keys())
     importance_labels = [f"{val:.2f}" if val >= 0.01 else "<0.01" for val in importance_values]
@@ -123,13 +120,16 @@ def plot_param_importances(
         target:
             A function to specify the value to display. If it is :obj:`None` and ``study`` is being
             used for single-objective optimization, the objective values are plotted.
+            For multi-objective optimization, all objectives will be plotted if ``target``
+            is :obj:`None`.
 
             .. note::
-                Specify this argument if ``study`` is being used for multi-objective
-                optimization. For example, to get the hyperparameter importance of the first
-                objective, use ``target=lambda t: t.values[0]`` for the target parameter.
+                This argument can be used to specify which objective to plot if ``study`` is being
+                used for multi-objective optimization. For example, to get only the hyperparameter
+                importance of the first objective, use ``target=lambda t: t.values[0]`` for the
+                target parameter.
         target_name:
-            Target's name to display on the axis label.
+            Target's name to display on the legend.
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
@@ -137,42 +137,55 @@ def plot_param_importances(
 
     _imports.check()
 
-    importances_info = _get_importances_info(study, evaluator, params, target, target_name)
-    hover_template = _get_hover_template(importances_info, study)
-    return _get_importances_plot(importances_info, hover_template)
+    if target or not study._is_multi_objective():
+        importances_infos: tuple[_ImportancesInfo, ...] = (
+            _get_importances_info(
+                study, evaluator, params, target=target, target_name=target_name
+            ),
+        )
+
+    else:
+        n_objectives = len(study.directions)
+        importances_infos = tuple(
+            _get_importances_info(
+                study,
+                evaluator,
+                params,
+                target=lambda t: t.values[objective_id],
+                target_name=f"{target_name} {objective_id}",
+            )
+            for objective_id in range(n_objectives)
+        )
+
+    return _get_importances_plot(importances_infos, study)
 
 
-def _get_importances_plot(info: _ImportancesInfo, hover_template: list[str]) -> "go.Figure":
+def _get_importances_plot(infos: tuple[_ImportancesInfo, ...], study: Study) -> "go.Figure":
     layout = go.Layout(
         title="Hyperparameter Importances",
-        xaxis={"title": f"Importance for {info.target_name}"},
+        xaxis={"title": "Hyperparameter Importance"},
         yaxis={"title": "Hyperparameter"},
-        showlegend=False,
     )
 
-    param_names = info.param_names
-    importance_values = info.importance_values
+    data: list[go.Bar] = []
+    for info in infos:
+        if not info.importance_values:
+            continue
 
-    if len(importance_values) == 0:
-        return go.Figure(data=[], layout=layout)
-
-    fig = go.Figure(
-        data=[
+        data.append(
             go.Bar(
-                x=importance_values,
-                y=param_names,
+                x=info.importance_values,
+                y=info.param_names,
+                name=info.target_name,
                 text=info.importance_labels,
                 textposition="outside",
                 cliponaxis=False,  # Ensure text is not clipped.
-                hovertemplate=hover_template,
-                marker_color=plotly.colors.sequential.Blues[-4],
+                hovertemplate=_get_hover_template(info, study),
                 orientation="h",
             )
-        ],
-        layout=layout,
-    )
+        )
 
-    return fig
+    return go.Figure(data, layout)
 
 
 def _get_distribution(param_name: str, study: Study) -> BaseDistribution:

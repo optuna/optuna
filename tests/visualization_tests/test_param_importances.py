@@ -37,6 +37,16 @@ def _create_study_with_failed_trial() -> Study:
     return study
 
 
+def _create_multiobjective_study_with_failed_trial() -> Study:
+    study = create_study(directions=["minimize", "minimize"])
+    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
+    return study
+
+
+def _create_multiobjective_study() -> Study:
+    return prepare_study_with_trials(n_objectives=2)
+
+
 def test_target_is_none_and_study_is_multi_obj() -> None:
     study = create_study(directions=["minimize", "minimize"])
     with pytest.raises(ValueError):
@@ -53,9 +63,23 @@ def test_plot_param_importances_customized_target_name(
     study = prepare_study_with_trials()
     figure = plot_param_importances(study, params=params, target_name="Target Name")
     if isinstance(figure, go.Figure):
-        assert figure.layout.xaxis.title.text == "Importance for Target Name"
+        assert figure.layout.xaxis.title.text == "Hyperparameter Importance"
     elif isinstance(figure, Axes):
-        assert figure.figure.axes[0].get_xlabel() == "Importance for Target Name"
+        assert figure.figure.axes[0].get_xlabel() == "Hyperparameter Importance"
+
+
+@parametrize_plot_param_importances
+def test_plot_param_importances_multiobjective_all_objectives_displayed(
+    plot_param_importances: Callable[..., Any]
+) -> None:
+    n_objectives = 2
+    params = ["param_a"]
+    study = prepare_study_with_trials(n_objectives)
+    figure = plot_param_importances(study, params=params)
+    if isinstance(figure, go.Figure):
+        assert len(figure.data) == n_objectives
+    elif isinstance(figure, Axes):
+        assert len(figure.patches) == n_objectives * len(params)
 
 
 @parametrize_plot_param_importances
@@ -63,7 +87,9 @@ def test_plot_param_importances_customized_target_name(
     "specific_create_study",
     [
         create_study,
+        _create_multiobjective_study,
         _create_study_with_failed_trial,
+        _create_multiobjective_study_with_failed_trial,
         prepare_study_with_trials,
     ],
 )

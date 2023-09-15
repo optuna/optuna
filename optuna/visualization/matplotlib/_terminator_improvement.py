@@ -34,10 +34,10 @@ def plot_terminator_improvement(
     """Plot the potentials for future objective improvement.
 
     This function visualizes the objective improvement potentials, evaluated
-    with `improvement_evaluator`.
+    with ``improvement_evaluator``.
     It helps to determine whether we should continue the optimization or not.
     You can also plot the error evaluated with
-    `error_evaluator` if the `plot_error` argument is set to :obj:`True`.
+    ``error_evaluator`` if the ``plot_error`` argument is set to :obj:`True`.
     Note that this function may take some time to compute
     the improvement potentials.
 
@@ -83,7 +83,7 @@ def plot_terminator_improvement(
             A :class:`~optuna.study.Study` object whose trials are plotted for their improvement.
         plot_error:
             A flag to show the error. If it is set to :obj:`True`, errors
-            evaluated by `error_evaluator` are also plotted as line graph.
+            evaluated by ``error_evaluator`` are also plotted as line graph.
             Defaults to :obj:`False`.
         improvement_evaluator:
             An object that evaluates the improvement of the objective function.
@@ -92,8 +92,8 @@ def plot_terminator_improvement(
             An object that evaluates the error inherent in the objective function.
             Default to :class:`~optuna.terminator.CrossValidationErrorEvaluator`.
         min_n_trials:
-            min_n_trials: The minimum number of trials before termination is
-            considered. Terminator improvements for trials below this value are
+            The minimum number of trials before termination is considered.
+            Terminator improvements for trials below this value are
             shown in a lighter color. Defaults to ``20``.
 
     Returns:

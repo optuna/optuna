@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from concurrent.futures import as_completed
 from concurrent.futures import ThreadPoolExecutor
 import copy
@@ -8,10 +10,6 @@ import threading
 import time
 from typing import Any
 from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Union
 from unittest.mock import Mock
 from unittest.mock import patch
 import uuid
@@ -24,6 +22,7 @@ from optuna import create_study
 from optuna import create_trial
 from optuna import delete_study
 from optuna import distributions
+from optuna import get_all_study_names
 from optuna import get_all_study_summaries
 from optuna import load_study
 from optuna import logging
@@ -52,7 +51,7 @@ def func(trial: Trial) -> float:
 
 
 class Func:
-    def __init__(self, sleep_sec: Optional[float] = None) -> None:
+    def __init__(self, sleep_sec: float | None = None) -> None:
         self.n_calls = 0
         self.sleep_sec = sleep_sec
         self.lock = threading.Lock()
@@ -70,11 +69,11 @@ class Func:
         return value
 
 
-def check_params(params: Dict[str, Any]) -> None:
+def check_params(params: dict[str, Any]) -> None:
     assert sorted(params.keys()) == ["x", "y", "z"]
 
 
-def check_value(value: Optional[float]) -> None:
+def check_value(value: float | None) -> None:
     assert isinstance(value, float)
     assert -1.0 <= value <= 12.0**2 + 5.0**2 + 1.0
 
@@ -315,6 +314,19 @@ def test_get_all_study_summaries_with_no_trials(storage_mode: str) -> None:
         assert summary.study_name == study.study_name
         assert summary.n_trials == 0
         assert summary.datetime_start is None
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_get_all_study_names(storage_mode: str) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        n_studies = 5
+
+        studies = [create_study(storage=storage) for _ in range(n_studies)]
+        study_names = get_all_study_names(storage)
+
+        assert len(study_names) == n_studies
+        for study, study_name in zip(studies, study_names):
+            assert study_name == study.study_name
 
 
 def test_study_pickle() -> None:
@@ -717,7 +729,7 @@ def test_enqueue_trial_skips_existing_waiting(storage_mode: str) -> None:
     "new_params", [{"x": -5, "y": 5, "z": 5}, {"x": -5}, {"x": -5, "z": 5}, {"x": -5, "y": 6}]
 )
 def test_enqueue_trial_skip_existing_allows_unfixed(
-    storage_mode: str, new_params: Dict[str, int]
+    storage_mode: str, new_params: dict[str, int]
 ) -> None:
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
@@ -978,6 +990,18 @@ def test_callbacks(n_jobs: int) -> None:
     assert states == []
 
 
+def test_optimize_infinite_budget_progbar() -> None:
+    def terminate_study(study: Study, trial: FrozenTrial) -> None:
+        study.stop()
+
+    study = create_study()
+
+    with pytest.warns(UserWarning):
+        study.optimize(
+            func, n_trials=None, timeout=None, show_progress_bar=True, callbacks=[terminate_study]
+        )
+
+
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_trials(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
@@ -1117,7 +1141,7 @@ def test_optimize_with_multi_objectives(n_objectives: int) -> None:
     directions = ["minimize" for _ in range(n_objectives)]
     study = create_study(directions=directions)
 
-    def objective(trial: Trial) -> List[float]:
+    def objective(trial: Trial) -> list[float]:
         return [trial.suggest_float("v{}".format(i), 0, 5) for i in range(n_objectives)]
 
     study.optimize(objective, n_trials=10)
@@ -1142,7 +1166,7 @@ def test_wrong_n_objectives() -> None:
     directions = ["minimize" for _ in range(n_objectives)]
     study = create_study(directions=directions)
 
-    def objective(trial: Trial) -> List[float]:
+    def objective(trial: Trial) -> list[float]:
         return [trial.suggest_float("v{}".format(i), 0, 5) for i in range(n_objectives + 1)]
 
     study.optimize(objective, n_trials=10)
@@ -1499,7 +1523,7 @@ def test_study_summary_datetime_start_calculation(storage_mode: str) -> None:
         assert summaries[0].datetime_start is not None
 
 
-def _process_tell(study: Study, trial: Union[Trial, int], values: float) -> None:
+def _process_tell(study: Study, trial: Trial | int, values: float) -> None:
     study.tell(trial, values)
 
 

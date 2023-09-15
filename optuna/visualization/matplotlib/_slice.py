@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 import math
 from typing import Any
 from typing import Callable
@@ -8,6 +9,7 @@ from optuna._experimental import experimental_func
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.visualization._slice import _get_slice_plot_info
+from optuna.visualization._slice import _PlotValues
 from optuna.visualization._slice import _SlicePlotInfo
 from optuna.visualization._slice import _SliceSubplotInfo
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
@@ -127,22 +129,60 @@ def _generate_slice_subplot(
     target_name: str,
 ) -> "PathCollection":
     ax.set(xlabel=subplot_info.param_name, ylabel=target_name)
-    x_values = subplot_info.x
     scale = None
+
+    feasible = _PlotValues([], [], [])
+    infeasible = _PlotValues([], [], [])
+    for x, y, num, c in zip(
+        subplot_info.x, subplot_info.y, subplot_info.trial_numbers, subplot_info.constraints
+    ):
+        if x is not None or x != "None" or y is not None or y != "None":
+            if c:
+                feasible.x.append(x)
+                feasible.y.append(y)
+                feasible.trial_numbers.append(num)
+            else:
+                infeasible.x.append(x)
+                infeasible.y.append(y)
+                infeasible.trial_numbers.append(num)
     if subplot_info.is_log:
         ax.set_xscale("log")
         scale = "log"
-    elif not subplot_info.is_numerical:
-        x_values = [str(x) for x in subplot_info.x]
+    if subplot_info.is_numerical:
+        feasible_x = feasible.x
+        feasible_y = feasible.y
+        feasible_c = feasible.trial_numbers
+        infeasible_x = infeasible.x
+        infeasible_y = infeasible.y
+    else:
+        feasible_x, feasible_y, feasible_c = _get_categorical_plot_values(subplot_info, feasible)
+        infeasible_x, infeasible_y, _ = _get_categorical_plot_values(subplot_info, infeasible)
         scale = "categorical"
-    xlim = _calc_lim_with_padding(x_values, padding_ratio, scale)
+    xlim = _calc_lim_with_padding(feasible_x + infeasible_x, padding_ratio, scale)
     ax.set_xlim(xlim[0], xlim[1])
-    sc = ax.scatter(
-        x_values, subplot_info.y, c=subplot_info.trial_numbers, cmap=cmap, edgecolors="grey"
-    )
+    sc = ax.scatter(feasible_x, feasible_y, c=feasible_c, cmap=cmap, edgecolors="grey")
+    ax.scatter(infeasible_x, infeasible_y, c="#cccccc", label="Infeasible Trial")
     ax.label_outer()
 
     return sc
+
+
+def _get_categorical_plot_values(
+    subplot_info: _SliceSubplotInfo, values: _PlotValues
+) -> tuple[list[Any], list[float], list[int]]:
+    assert subplot_info.x_labels is not None
+    value_x = []
+    value_y = []
+    value_c = []
+    points_dict = defaultdict(list)
+    for x, y, number in zip(values.x, values.y, values.trial_numbers):
+        points_dict[x].append((y, number))
+    for x_label in subplot_info.x_labels:
+        for y, number in points_dict[x_label]:
+            value_x.append(str(x_label))
+            value_y.append(y)
+            value_c.append(number)
+    return value_x, value_y, value_c
 
 
 def _calc_lim_with_padding(

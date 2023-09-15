@@ -1,6 +1,6 @@
+from __future__ import annotations
+
 from typing import cast
-from typing import List
-from typing import Union
 
 import optuna
 from optuna.samplers import BaseSampler
@@ -10,8 +10,8 @@ from optuna.samplers import TPESampler
 from optuna.testing.storages import StorageSupplier
 
 
-def parse_args(args: str) -> List[Union[int, str]]:
-    ret: List[Union[int, str]] = []
+def parse_args(args: str) -> list[int | str]:
+    ret: list[int | str] = []
     for arg in map(lambda s: s.strip(), args.split(",")):
         try:
             ret.append(int(arg))
@@ -63,7 +63,11 @@ class OptimizeSuite:
         "inmemory, tpe, 1000",
         "inmemory, cmaes, 1000",
         "sqlite, random, 1000",
-        "cached_sqlite, random, 1000",
+        "sqlite, tpe, 1000",
+        "sqlite, cmaes, 1000",
+        "journal, random, 1000",
+        "journal, tpe, 1000",
+        "journal, cmaes, 1000",
     )
     param_names = ["storage, sampler, n_trials"]
     timeout = 600

@@ -23,7 +23,7 @@ class TerminatorCallback:
             A terminator object which determines whether to terminate the optimization by
             assessing the room for optimization and statistical error. Defaults to a
             :class:`~optuna.terminator.Terminator` object with default
-            improvement_evaluator and error_evaluator.
+            ``improvement_evaluator`` and ``error_evaluator``.
 
     Example:
 

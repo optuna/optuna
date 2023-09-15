@@ -96,7 +96,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         trials: List[FrozenTrial],
         study_direction: StudyDirection,
     ) -> float:
-        search_space = intersection_search_space(trials, ordered_dict=True)
+        search_space = intersection_search_space(trials)
         self._validate_input(trials, search_space)
 
         fit_trials = self.get_preprocessing().apply(trials, study_direction)

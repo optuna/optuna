@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from unittest.mock import MagicMock
 import warnings
 
@@ -5,15 +7,18 @@ import numpy as np
 import pytest
 import scipy as sp
 from sklearn.datasets import make_blobs
+from sklearn.datasets import make_regression
 from sklearn.decomposition import PCA
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import SGDClassifier
 from sklearn.neighbors import KernelDensity
+from sklearn.tree import DecisionTreeRegressor
 
 from optuna import distributions
 from optuna import integration
+from optuna.samplers import BruteForceSampler
 from optuna.study import create_study
 
 
@@ -89,8 +94,11 @@ def test_optuna_search_properties() -> None:
     optuna_search.set_user_attr("dataset", "blobs")
 
     assert optuna_search._estimator_type == "classifier"
-    assert type(optuna_search.best_index_) == int
-    assert type(optuna_search.best_params_) == dict
+    assert isinstance(optuna_search.best_index_, int)
+    assert isinstance(optuna_search.best_params_, dict)
+    assert isinstance(optuna_search.cv_results_, dict)
+    for cv_result_list_ in optuna_search.cv_results_.values():
+        assert len(cv_result_list_) == optuna_search.n_trials_
     assert optuna_search.best_score_ is not None
     assert optuna_search.best_trial_ is not None
     assert np.allclose(optuna_search.classes_, np.array([0, 1, 2]))
@@ -300,6 +308,37 @@ def test_objective_error_score_invalid() -> None:
 
     with pytest.raises(ValueError, match="error_score must be 'raise' or numeric."):
         optuna_search.fit(X)
+
+
+# This test checks whether OptunaSearchCV completes the study without halting, even if some trials
+# fails due to misconfiguration.
+@pytest.mark.parametrize(
+    "param_dist,all_params",
+    [
+        ({"max_depth": distributions.IntDistribution(0, 1)}, [0, 1]),
+        ({"max_depth": distributions.IntDistribution(0, 0)}, [0]),
+    ],
+)
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
+@pytest.mark.filterwarnings("ignore::UserWarning")
+def test_no_halt_with_error(
+    param_dist: dict[str, distributions.BaseDistribution], all_params: list[int]
+) -> None:
+    X, y = make_regression(n_samples=100, n_features=10)
+    estimator = DecisionTreeRegressor()
+    study = create_study(sampler=BruteForceSampler(), direction="maximize")
+
+    # DecisionTreeRegressor raises ValueError when max_depth==0.
+    optuna_search = integration.OptunaSearchCV(
+        estimator,
+        param_dist,
+        study=study,
+    )
+    optuna_search.fit(X, y)
+    all_suggested_values = [t.params["max_depth"] for t in study.trials]
+    assert len(all_suggested_values) == len(all_params)
+    for a in all_params:
+        assert a in all_suggested_values
 
 
 # TODO(himkt): Remove this method with the deletion of deprecated distributions.

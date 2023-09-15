@@ -103,11 +103,11 @@ def test_read_trials_from_remote_storage() -> None:
         directions=[StudyDirection.MINIMIZE], study_name="test-study"
     )
 
-    storage.read_trials_from_remote_storage(study_id)
+    storage._read_trials_from_remote_storage(study_id)
 
     # Non-existent study.
     with pytest.raises(KeyError):
-        storage.read_trials_from_remote_storage(study_id + 1)
+        storage._read_trials_from_remote_storage(study_id + 1)
 
     # Create a trial via CachedStorage and update it via backend storage directly.
     trial_id = storage.create_new_trial(study_id)
@@ -115,7 +115,7 @@ def test_read_trials_from_remote_storage() -> None:
         trial_id, "paramA", 1.2, optuna.distributions.FloatDistribution(-0.2, 2.3)
     )
     base_storage.set_trial_state_values(trial_id, TrialState.COMPLETE, values=[0.0])
-    storage.read_trials_from_remote_storage(study_id)
+    storage._read_trials_from_remote_storage(study_id)
     assert storage.get_trial(trial_id).state == TrialState.COMPLETE
 
 
@@ -132,8 +132,8 @@ def test_delete_study() -> None:
     storage.set_trial_state_values(trial_id2, state=TrialState.COMPLETE)
 
     # Update _StudyInfo.finished_trial_ids
-    storage.read_trials_from_remote_storage(study_id1)
-    storage.read_trials_from_remote_storage(study_id2)
+    storage._read_trials_from_remote_storage(study_id1)
+    storage._read_trials_from_remote_storage(study_id2)
 
     storage.delete_study(study_id1)
     assert storage._get_cached_trial(trial_id1) is None

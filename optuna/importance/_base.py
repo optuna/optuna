@@ -1,5 +1,4 @@
 import abc
-from collections import OrderedDict
 from typing import Callable
 from typing import cast
 from typing import Collection
@@ -59,8 +58,8 @@ class BaseImportanceEvaluator(abc.ABC):
                     objective, use ``target=lambda t: t.values[0]`` for the target parameter.
 
         Returns:
-            An :class:`collections.OrderedDict` where the keys are parameter names and the values
-            are assessed importances.
+            A :obj:`dict` where the keys are parameter names and the values are assessed
+            importances.
 
         """
         # TODO(hvy): Reconsider the interface as logic might violate DRY among multiple evaluators.
@@ -72,7 +71,7 @@ def _get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, B
     _check_evaluate_args(completed_trials, params)
 
     if params is None:
-        return intersection_search_space(study.get_trials(deepcopy=False), ordered_dict=True)
+        return intersection_search_space(study.get_trials(deepcopy=False))
 
     # New temporary required to pass mypy. Seems like a bug.
     params_not_none = params
@@ -104,7 +103,7 @@ def _get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, B
             )
 
     assert distributions is not None  # Required to pass mypy.
-    distributions = OrderedDict(
+    distributions = dict(
         sorted(distributions.items(), key=lambda name_and_distribution: name_and_distribution[0])
     )
     return distributions
@@ -172,7 +171,7 @@ def _get_target_values(
 
 
 def _sort_dict_by_importance(param_importances: Dict[str, float]) -> Dict[str, float]:
-    return OrderedDict(
+    return dict(
         reversed(
             sorted(
                 param_importances.items(), key=lambda name_and_importance: name_and_importance[1]

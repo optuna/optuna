@@ -1,18 +1,15 @@
+from __future__ import annotations
+
+from collections.abc import Container
+from collections.abc import Iterable
+from collections.abc import Mapping
 import copy
 from numbers import Real
 import threading
 from typing import Any
 from typing import Callable
 from typing import cast
-from typing import Container
-from typing import Dict
-from typing import Iterable
-from typing import List
-from typing import Mapping
-from typing import Optional
 from typing import Sequence
-from typing import Tuple
-from typing import Type
 from typing import TYPE_CHECKING
 from typing import Union
 import warnings
@@ -32,7 +29,6 @@ from optuna._imports import _LazyImport
 from optuna._typing import JSONSerializable
 from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.distributions import BaseDistribution
-from optuna.storages._cached_storage import _CachedStorage
 from optuna.storages._heartbeat import is_heartbeat_enabled
 from optuna.study._multi_objective import _get_pareto_front_trials
 from optuna.study._optimize import _optimize
@@ -59,7 +55,7 @@ _logger = logging.get_logger(__name__)
 
 class _ThreadLocalStudyAttribute(threading.local):
     in_optimize_loop: bool = False
-    cached_all_trials: Optional[List["FrozenTrial"]] = None
+    cached_all_trials: list["FrozenTrial"] | None = None
 
 
 class Study:
@@ -77,9 +73,9 @@ class Study:
     def __init__(
         self,
         study_name: str,
-        storage: Union[str, storages.BaseStorage],
-        sampler: Optional["samplers.BaseSampler"] = None,
-        pruner: Optional[pruners.BasePruner] = None,
+        storage: str | storages.BaseStorage,
+        sampler: "samplers.BaseSampler" | None = None,
+        pruner: pruners.BasePruner | None = None,
     ) -> None:
         self.study_name = study_name
         storage = storages.get_storage(storage)
@@ -94,17 +90,17 @@ class Study:
         self._thread_local = _ThreadLocalStudyAttribute()
         self._stop_flag = False
 
-    def __getstate__(self) -> Dict[Any, Any]:
+    def __getstate__(self) -> dict[Any, Any]:
         state = self.__dict__.copy()
         del state["_thread_local"]
         return state
 
-    def __setstate__(self, state: Dict[Any, Any]) -> None:
+    def __setstate__(self, state: dict[Any, Any]) -> None:
         self.__dict__.update(state)
         self._thread_local = _ThreadLocalStudyAttribute()
 
     @property
-    def best_params(self) -> Dict[str, Any]:
+    def best_params(self) -> dict[str, Any]:
         """Return parameters of the best trial in the study.
 
         .. note::
@@ -161,7 +157,7 @@ class Study:
         return copy.deepcopy(self._storage.get_best_trial(self._study_id))
 
     @property
-    def best_trials(self) -> List[FrozenTrial]:
+    def best_trials(self) -> list[FrozenTrial]:
         """Return trials located at the Pareto front in the study.
 
         A trial is located at the Pareto front if there are no trials that dominate the trial.
@@ -198,7 +194,7 @@ class Study:
         return self.directions[0]
 
     @property
-    def directions(self) -> List[StudyDirection]:
+    def directions(self) -> list[StudyDirection]:
         """Return the directions of the study.
 
         Returns:
@@ -208,7 +204,7 @@ class Study:
         return self._directions
 
     @property
-    def trials(self) -> List[FrozenTrial]:
+    def trials(self) -> list[FrozenTrial]:
         """Return all trials in the study.
 
         The returned trials are ordered by trial number.
@@ -228,8 +224,8 @@ class Study:
     def get_trials(
         self,
         deepcopy: bool = True,
-        states: Optional[Container[TrialState]] = None,
-    ) -> List[FrozenTrial]:
+        states: Container[TrialState] | None = None,
+    ) -> list[FrozenTrial]:
         """Return all trials in the study.
 
         The returned trials are ordered by trial number.
@@ -270,13 +266,11 @@ class Study:
     def _get_trials(
         self,
         deepcopy: bool = True,
-        states: Optional[Container[TrialState]] = None,
+        states: Container[TrialState] | None = None,
         use_cache: bool = False,
-    ) -> List[FrozenTrial]:
+    ) -> list[FrozenTrial]:
         if use_cache:
             if self._thread_local.cached_all_trials is None:
-                if isinstance(self._storage, _CachedStorage):
-                    self._storage.read_trials_from_remote_storage(self._study_id)
                 self._thread_local.cached_all_trials = self._storage.get_all_trials(
                     self._study_id, deepcopy=False
                 )
@@ -287,13 +281,10 @@ class Study:
                 filtered_trials = trials
             return copy.deepcopy(filtered_trials) if deepcopy else filtered_trials
 
-        if isinstance(self._storage, _CachedStorage):
-            self._storage.read_trials_from_remote_storage(self._study_id)
-
         return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy, states=states)
 
     @property
-    def user_attrs(self) -> Dict[str, Any]:
+    def user_attrs(self) -> dict[str, Any]:
         """Return user attributes.
 
         .. seealso::
@@ -333,7 +324,7 @@ class Study:
 
     @property
     @deprecated_func("3.1.0", "5.0.0")
-    def system_attrs(self) -> Dict[str, Any]:
+    def system_attrs(self) -> dict[str, Any]:
         """Return system attributes.
 
         Returns:
@@ -345,11 +336,11 @@ class Study:
     def optimize(
         self,
         func: ObjectiveFuncType,
-        n_trials: Optional[int] = None,
-        timeout: Optional[float] = None,
+        n_trials: int | None = None,
+        timeout: float | None = None,
         n_jobs: int = 1,
-        catch: Union[Iterable[Type[Exception]], Type[Exception]] = (),
-        callbacks: Optional[List[Callable[["Study", FrozenTrial], None]]] = None,
+        catch: Iterable[type[Exception]] | type[Exception] = (),
+        callbacks: list[Callable[["Study", FrozenTrial], None]] | None = None,
         gc_after_trial: bool = False,
         show_progress_bar: bool = False,
     ) -> None:
@@ -445,7 +436,6 @@ class Study:
             RuntimeError:
                 If nested invocation of this method occurs.
         """
-
         _optimize(
             study=self,
             func=func,
@@ -459,7 +449,7 @@ class Study:
         )
 
     def ask(
-        self, fixed_distributions: Optional[Dict[str, BaseDistribution]] = None
+        self, fixed_distributions: dict[str, BaseDistribution] | None = None
     ) -> trial_module.Trial:
         """Create a new trial from which hyperparameters can be suggested.
 
@@ -535,8 +525,6 @@ class Study:
 
         # Sync storage once every trial.
         self._thread_local.cached_all_trials = None
-        if isinstance(self._storage, _CachedStorage):
-            self._storage.read_trials_from_remote_storage(self._study_id)
 
         trial_id = self._pop_waiting_trial_id()
         if trial_id is None:
@@ -550,9 +538,9 @@ class Study:
 
     def tell(
         self,
-        trial: Union[trial_module.Trial, int],
-        values: Optional[Union[float, Sequence[float]]] = None,
-        state: Optional[TrialState] = None,
+        trial: trial_module.Trial | int,
+        values: float | Sequence[float] | None = None,
+        state: TrialState | None = None,
         skip_if_finished: bool = False,
     ) -> FrozenTrial:
         """Finish a trial created with :func:`~optuna.study.Study.ask`.
@@ -701,7 +689,7 @@ class Study:
 
     def trials_dataframe(
         self,
-        attrs: Tuple[str, ...] = (
+        attrs: tuple[str, ...] = (
             "number",
             "value",
             "datetime_start",
@@ -806,8 +794,8 @@ class Study:
 
     def enqueue_trial(
         self,
-        params: Dict[str, Any],
-        user_attrs: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any],
+        user_attrs: dict[str, Any] | None = None,
         skip_if_exists: bool = False,
     ) -> None:
         """Enqueue a trial with given parameter values.
@@ -979,7 +967,7 @@ class Study:
             self.add_trial(trial)
 
     @experimental_func("3.2.0")
-    def set_metric_names(self, metric_names: List[str]) -> None:
+    def set_metric_names(self, metric_names: list[str]) -> None:
         """Set metric names.
 
         This method names each dimension of the returned values of the objective function.
@@ -1015,9 +1003,7 @@ class Study:
             metric_names: A list of metric names for the objective function.
         """
         if len(self.directions) != len(metric_names):
-            raise ValueError(
-                "The number of objectives must match thhe length of the metric names."
-            )
+            raise ValueError("The number of objectives must match the length of the metric names.")
 
         self._storage.set_study_system_attr(
             self._study_id, _SYSTEM_ATTR_METRIC_NAMES, metric_names
@@ -1032,7 +1018,7 @@ class Study:
 
         return len(self.directions) > 1
 
-    def _pop_waiting_trial_id(self) -> Optional[int]:
+    def _pop_waiting_trial_id(self) -> int | None:
         for trial in self._storage.get_all_trials(
             self._study_id, deepcopy=False, states=(TrialState.WAITING,)
         ):
@@ -1051,7 +1037,7 @@ class Study:
                 # Can't have repeated trials if different params are suggested.
                 continue
 
-            repeated_params: List[bool] = []
+            repeated_params: list[bool] = []
             for param_name, param_value in params.items():
                 existing_param = trial_params[param_name]
                 if not isinstance(param_value, type(existing_param)):
@@ -1081,7 +1067,7 @@ class Study:
 
     @deprecated_func("2.5.0", "4.0.0")
     def _tell(
-        self, trial: trial_module.Trial, state: TrialState, values: Optional[List[float]]
+        self, trial: trial_module.Trial, state: TrialState, values: list[float] | None
     ) -> None:
         self.tell(trial, values, state)
 
@@ -1094,7 +1080,7 @@ class Study:
         )
 
         if len(trial.values) > 1:
-            trial_values: Union[List[float], Dict[str, float]]
+            trial_values: list[float] | dict[str, float]
             if metric_names is None:
                 trial_values = trial.values
             else:
@@ -1106,7 +1092,7 @@ class Study:
             )
         elif len(trial.values) == 1:
             best_trial = self.best_trial
-            trial_value: Union[float, Dict[str, float]]
+            trial_value: float | dict[str, float]
             if metric_names is None:
                 trial_value = trial.values[0]
             else:
@@ -1137,13 +1123,13 @@ class Study:
 )
 def create_study(
     *,
-    storage: Optional[Union[str, storages.BaseStorage]] = None,
-    sampler: Optional["samplers.BaseSampler"] = None,
-    pruner: Optional[pruners.BasePruner] = None,
-    study_name: Optional[str] = None,
-    direction: Optional[Union[str, StudyDirection]] = None,
+    storage: str | storages.BaseStorage | None = None,
+    sampler: "samplers.BaseSampler" | None = None,
+    pruner: pruners.BasePruner | None = None,
+    study_name: str | None = None,
+    direction: str | StudyDirection | None = None,
     load_if_exists: bool = False,
-    directions: Optional[Sequence[Union[str, StudyDirection]]] = None,
+    directions: Sequence[str | StudyDirection] | None = None,
 ) -> Study:
     """Create a new :class:`~optuna.study.Study`.
 
@@ -1281,10 +1267,10 @@ def create_study(
 )
 def load_study(
     *,
-    study_name: Optional[str],
-    storage: Union[str, storages.BaseStorage],
-    sampler: Optional["samplers.BaseSampler"] = None,
-    pruner: Optional[pruners.BasePruner] = None,
+    study_name: str | None,
+    storage: str | storages.BaseStorage,
+    sampler: "samplers.BaseSampler" | None = None,
+    pruner: pruners.BasePruner | None = None,
 ) -> Study:
     """Load the existing :class:`~optuna.study.Study` that has the specified name.
 
@@ -1339,13 +1325,13 @@ def load_study(
 
     """
     if study_name is None:
-        study_summaries = get_all_study_summaries(storage)
-        if len(study_summaries) != 1:
+        study_names = get_all_study_names(storage)
+        if len(study_names) != 1:
             raise ValueError(
                 f"Could not determine the study name since the storage {storage} does not "
                 "contain exactly 1 study. Specify `study_name`."
             )
-        study_name = study_summaries[0].study_name
+        study_name = study_names[0]
         _logger.info(
             f"Study name was omitted but trying to load '{study_name}' because that was the only "
             "study found in the storage."
@@ -1363,7 +1349,7 @@ def load_study(
 def delete_study(
     *,
     study_name: str,
-    storage: Union[str, storages.BaseStorage],
+    storage: str | storages.BaseStorage,
 ) -> None:
     """Delete a :class:`~optuna.study.Study` object.
 
@@ -1424,9 +1410,9 @@ def delete_study(
 def copy_study(
     *,
     from_study_name: str,
-    from_storage: Union[str, storages.BaseStorage],
-    to_storage: Union[str, storages.BaseStorage],
-    to_study_name: Optional[str] = None,
+    from_storage: str | storages.BaseStorage,
+    to_storage: str | storages.BaseStorage,
+    to_study_name: str | None = None,
 ) -> None:
     """Copy study from one storage to another.
 
@@ -1516,8 +1502,8 @@ def copy_study(
 
 
 def get_all_study_summaries(
-    storage: Union[str, storages.BaseStorage], include_best_trial: bool = True
-) -> List[StudySummary]:
+    storage: str | storages.BaseStorage, include_best_trial: bool = True
+) -> list[StudySummary]:
     """Get all history of studies stored in a specified storage.
 
     Example:
@@ -1574,8 +1560,6 @@ def get_all_study_summaries(
     study_summaries = []
 
     for s in frozen_studies:
-        if isinstance(storage, _CachedStorage):
-            storage.read_trials_from_remote_storage(s._study_id)
         all_trials = storage.get_all_trials(s._study_id)
         completed_trials = [t for t in all_trials if t.state == TrialState.COMPLETE]
 
@@ -1615,3 +1599,57 @@ def get_all_study_summaries(
         )
 
     return study_summaries
+
+
+def get_all_study_names(storage: str | storages.BaseStorage) -> list[str]:
+    """Get all study names stored in a specified storage.
+
+    Example:
+
+        .. testsetup::
+
+            import os
+
+            if os.path.exists("example.db"):
+                raise RuntimeError("'example.db' already exists. Please remove it.")
+
+        .. testcode::
+
+            import optuna
+
+
+            def objective(trial):
+                x = trial.suggest_float("x", -10, 10)
+                return (x - 2) ** 2
+
+
+            study = optuna.create_study(study_name="example-study", storage="sqlite:///example.db")
+            study.optimize(objective, n_trials=3)
+
+            study_names = optuna.study.get_all_study_names(storage="sqlite:///example.db")
+            assert len(study_names) == 1
+
+            assert study_names[0] == "example-study"
+
+        .. testcleanup::
+
+            os.remove("example.db")
+
+    Args:
+        storage:
+            Database URL such as ``sqlite:///example.db``. Please see also the documentation of
+            :func:`~optuna.study.create_study` for further details.
+
+    Returns:
+        List of all study names in the storage.
+
+    See also:
+        :func:`optuna.get_all_study_names` is an alias of
+        :func:`optuna.study.get_all_study_names`.
+
+    """
+
+    storage = storages.get_storage(storage)
+    study_names = [study.study_name for study in storage.get_all_studies()]
+
+    return study_names

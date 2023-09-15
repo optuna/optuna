@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -29,6 +28,7 @@ from optuna.trial import TrialState
 
 with try_import() as _imports:
     from botorch.acquisition.monte_carlo import qExpectedImprovement
+    from botorch.acquisition.monte_carlo import qNoisyExpectedImprovement
     from botorch.acquisition.multi_objective import monte_carlo
     from botorch.acquisition.multi_objective.objective import IdentityMCMultiOutputObjective
     from botorch.acquisition.objective import ConstrainedMCObjective
@@ -63,6 +63,99 @@ with try_import() as _imports:
 
 _logger = logging.get_logger(__name__)
 
+with try_import() as _imports_logei:
+    from botorch.acquisition.analytic import LogExpectedImprovement
+
+
+@experimental_func("3.3.0")
+def logei_candidates_func(
+    train_x: "torch.Tensor",
+    train_obj: "torch.Tensor",
+    train_con: Optional["torch.Tensor"],
+    bounds: "torch.Tensor",
+    pending_x: Optional["torch.Tensor"],
+) -> "torch.Tensor":
+    """Log Expected Improvement (LogEI).
+
+    The default value of ``candidates_func`` in :class:`~optuna.integration.BoTorchSampler`
+    with single-objective optimization for non-constrained problems.
+
+    Args:
+        train_x:
+            Previous parameter configurations. A ``torch.Tensor`` of shape
+            ``(n_trials, n_params)``. ``n_trials`` is the number of already observed trials
+            and ``n_params`` is the number of parameters. ``n_params`` may be larger than the
+            actual number of parameters if categorical parameters are included in the search
+            space, since these parameters are one-hot encoded.
+            Values are not normalized.
+        train_obj:
+            Previously observed objectives. A ``torch.Tensor`` of shape
+            ``(n_trials, n_objectives)``. ``n_trials`` is identical to that of ``train_x``.
+            ``n_objectives`` is the number of objectives. Observations are not normalized.
+        train_con:
+            Objective constraints. This option is not supported in ``logei_candidates_func`` and
+            must be :obj:`None`.
+        bounds:
+            Search space bounds. A ``torch.Tensor`` of shape ``(2, n_params)``. ``n_params`` is
+            identical to that of ``train_x``. The first and the second rows correspond to the
+            lower and upper bounds for each parameter respectively.
+        pending_x:
+            Pending parameter configurations. A ``torch.Tensor`` of shape
+            ``(n_pending, n_params)``. ``n_pending`` is the number of the trials which are already
+            suggested all their parameters but have not completed their evaluation, and
+            ``n_params`` is identical to that of ``train_x``.
+
+    Returns:
+        Next set of candidates. Usually the return value of BoTorch's ``optimize_acqf``.
+
+    """
+
+    # We need botorch >=0.8.1 for LogExpectedImprovement.
+    if not _imports_logei.is_successful():
+        raise ImportError(
+            "logei_candidates_func requires botorch >=0.8.1. "
+            "Please upgrade botorch or use qei_candidates_func as candidates_func instead."
+        )
+
+    if train_obj.size(-1) != 1:
+        raise ValueError("Objective may only contain single values with logEI.")
+    if train_con is not None:
+        raise ValueError(
+            "Constraint is not supported with logei_candidates_func. "
+            + "Please use qei_candidates_func instead."
+        )
+    else:
+        train_y = train_obj
+        best_f = train_obj.max()
+
+    train_x = normalize(train_x, bounds=bounds)
+
+    model = SingleTaskGP(train_x, train_y, outcome_transform=Standardize(m=train_y.size(-1)))
+    mll = ExactMarginalLogLikelihood(model.likelihood, model)
+    fit_gpytorch_mll(mll)
+
+    acqf = LogExpectedImprovement(
+        model=model,
+        best_f=best_f,
+    )
+
+    standard_bounds = torch.zeros_like(bounds)
+    standard_bounds[1] = 1
+
+    candidates, _ = optimize_acqf(
+        acq_function=acqf,
+        bounds=standard_bounds,
+        q=1,
+        num_restarts=10,
+        raw_samples=512,
+        options={"batch_limit": 5, "maxiter": 200},
+        sequential=True,
+    )
+
+    candidates = unnormalize(candidates.detach(), bounds=bounds)
+
+    return candidates
+
 
 @experimental_func("2.4.0")
 def qei_candidates_func(
@@ -75,7 +168,7 @@ def qei_candidates_func(
     """Quasi MC-based batch Expected Improvement (qEI).
 
     The default value of ``candidates_func`` in :class:`~optuna.integration.BoTorchSampler`
-    with single-objective optimization.
+    with single-objective optimization for constrained problems.
 
     Args:
         train_x:
@@ -150,6 +243,74 @@ def qei_candidates_func(
     acqf = qExpectedImprovement(
         model=model,
         best_f=best_f,
+        sampler=_get_sobol_qmc_normal_sampler(256),
+        objective=objective,
+        X_pending=pending_x,
+    )
+
+    standard_bounds = torch.zeros_like(bounds)
+    standard_bounds[1] = 1
+
+    candidates, _ = optimize_acqf(
+        acq_function=acqf,
+        bounds=standard_bounds,
+        q=1,
+        num_restarts=10,
+        raw_samples=512,
+        options={"batch_limit": 5, "maxiter": 200},
+        sequential=True,
+    )
+
+    candidates = unnormalize(candidates.detach(), bounds=bounds)
+
+    return candidates
+
+
+@experimental_func("3.3.0")
+def qnei_candidates_func(
+    train_x: "torch.Tensor",
+    train_obj: "torch.Tensor",
+    train_con: Optional["torch.Tensor"],
+    bounds: "torch.Tensor",
+    pending_x: Optional["torch.Tensor"],
+) -> "torch.Tensor":
+    """Quasi MC-based batch Noisy Expected Improvement (qNEI).
+
+    This function may perform better than qEI (`qei_candidates_func`) when
+    the evaluated values of objective function are noisy.
+
+    .. seealso::
+        :func:`~optuna.integration.botorch.qei_candidates_func` for argument and return value
+        descriptions.
+    """
+    if train_obj.size(-1) != 1:
+        raise ValueError("Objective may only contain single values with qNEI.")
+    if train_con is not None:
+        train_y = torch.cat([train_obj, train_con], dim=-1)
+
+        n_constraints = train_con.size(1)
+        objective = ConstrainedMCObjective(
+            objective=lambda Z: Z[..., 0],
+            constraints=[
+                (lambda Z, i=i: Z[..., -n_constraints + i]) for i in range(n_constraints)
+            ],
+        )
+    else:
+        train_y = train_obj
+
+        objective = None  # Using the default identity objective.
+
+    train_x = normalize(train_x, bounds=bounds)
+    if pending_x is not None:
+        pending_x = normalize(pending_x, bounds=bounds)
+
+    model = SingleTaskGP(train_x, train_y, outcome_transform=Standardize(m=train_y.size(-1)))
+    mll = ExactMarginalLogLikelihood(model.likelihood, model)
+    fit_gpytorch_mll(mll)
+
+    acqf = qNoisyExpectedImprovement(
+        model=model,
+        X_baseline=train_x,
         sampler=_get_sobol_qmc_normal_sampler(256),
         objective=objective,
         X_pending=pending_x,
@@ -268,7 +429,7 @@ def qnehvi_candidates_func(
     bounds: "torch.Tensor",
     pending_x: Optional["torch.Tensor"],
 ) -> "torch.Tensor":
-    """Quasi MC-based batch Expected Noisy Hypervolume Improvement (qNEHVI).
+    """Quasi MC-based batch Noisy Expected Hypervolume Improvement (qNEHVI).
 
     According to Botorch/Ax documentation,
     this function may perform better than qEHVI (`qehvi_candidates_func`).
@@ -419,6 +580,8 @@ def qparego_candidates_func(
 
 def _get_default_candidates_func(
     n_objectives: int,
+    has_constraint: bool,
+    consider_running_trials: bool,
 ) -> Callable[
     [
         "torch.Tensor",
@@ -433,8 +596,10 @@ def _get_default_candidates_func(
         return qparego_candidates_func
     elif n_objectives > 1:
         return qehvi_candidates_func
-    else:
+    elif has_constraint or consider_running_trials:
         return qei_candidates_func
+    else:
+        return logei_candidates_func
 
 
 @experimental_class("2.4.0")
@@ -467,8 +632,11 @@ class BoTorchSampler(BaseSampler):
             :obj:`None`. For any constraints that failed to compute, the tensor will contain
             NaN.
 
-            If omitted, it is determined automatically based on the number of objectives. If the
-            number of objectives is one, Quasi MC-based batch Expected Improvement (qEI) is used.
+            If omitted, it is determined automatically based on the number of objectives and
+            whether a constraint is specified. If the
+            number of objectives is one and no constraint is specified, log-Expected Improvement
+            is used. If constraints are specified, quasi MC-based batch Expected Improvement
+            (qEI) is used.
             If the number of objectives is either two or three, Quasi MC-based
             batch Expected Hypervolume Improvement (qEHVI) is used. Otherwise, for larger number
             of objectives, the faster Quasi MC-based extended ParEGO (qParEGO) is used.
@@ -522,7 +690,7 @@ class BoTorchSampler(BaseSampler):
         ] = None,
         constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
         n_startup_trials: int = 10,
-        consider_running_trials: bool = True,
+        consider_running_trials: bool = False,
         independent_sampler: Optional[BaseSampler] = None,
         seed: Optional[int] = None,
         device: Optional["torch.device"] = None,
@@ -552,8 +720,8 @@ class BoTorchSampler(BaseSampler):
             # because `InMemoryStorage.create_new_study` always returns the same study ID.
             raise RuntimeError("BoTorchSampler cannot handle multiple studies.")
 
-        search_space: Dict[str, BaseDistribution] = OrderedDict()
-        for name, distribution in self._search_space.calculate(study, ordered_dict=True).items():
+        search_space: Dict[str, BaseDistribution] = {}
+        for name, distribution in self._search_space.calculate(study).items():
             if distribution.single():
                 # built-in `candidates_func` cannot handle distributions that contain just a
                 # single value, so we skip them. Note that the parameter values for such
@@ -569,7 +737,7 @@ class BoTorchSampler(BaseSampler):
         trial: FrozenTrial,
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
-        assert isinstance(search_space, OrderedDict)
+        assert isinstance(search_space, dict)
 
         if len(search_space) == 0:
             return {}
@@ -654,7 +822,11 @@ class BoTorchSampler(BaseSampler):
         bounds.transpose_(0, 1)
 
         if self._candidates_func is None:
-            self._candidates_func = _get_default_candidates_func(n_objectives=n_objectives)
+            self._candidates_func = _get_default_candidates_func(
+                n_objectives=n_objectives,
+                has_constraint=con is not None,
+                consider_running_trials=self._consider_running_trials,
+            )
 
         completed_values = values[:n_completed_trials]
         completed_params = params[:n_completed_trials]

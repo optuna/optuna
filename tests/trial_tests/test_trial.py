@@ -613,13 +613,6 @@ def test_report_warning() -> None:
         trial.report(1, 1)
 
 
-def test_study_id() -> None:
-    study = create_study()
-    trial = Trial(study, study._storage.create_new_trial(study._study_id))
-
-    assert trial._study_id == trial.study._study_id
-
-
 def test_suggest_with_multi_objectives() -> None:
     study = create_study(directions=["maximize", "maximize"])
 
@@ -693,8 +686,8 @@ def test_lazy_trial_system_attrs(storage_mode: str) -> None:
         # Then, we create the instance for each method, and test the first and second use.
 
         system_attrs = _LazyTrialSystemAttrs(trial._trial_id, storage)
-        assert system_attrs == {"int": 0, "str": "A"}  # type: ignore[comparison-overlap]
-        assert system_attrs == {"int": 0, "str": "A"}  # type: ignore[comparison-overlap]
+        assert system_attrs == {"int": 0, "str": "A"}
+        assert system_attrs == {"int": 0, "str": "A"}
 
         system_attrs = _LazyTrialSystemAttrs(trial._trial_id, storage)
         assert len(system_attrs) == 2

@@ -29,7 +29,8 @@
     // ],
     "build_command": [
         "python -m pip install build wheel",
-        "python -m build --wheel -o {build_cache_dir} {build_dir}"
+        "python -m build --wheel -o {build_cache_dir} {build_dir}",
+        "python -m pip install .[optional,test]"
     ],
 
     // List of branches to benchmark. If not provided, defaults to "master"
@@ -75,10 +76,8 @@
     // pip (with all the conda available packages installed first,
     // followed by the pip installed packages).
     //
-    "matrix": {
-        "fakeredis": [""],
-        "pytest": [""],
-    },
+    // "matrix": {
+    // },
 
     // Combinations of libraries/python versions can be excluded/included
     // from the set to test. Each entry is a dictionary containing additional

@@ -20,7 +20,7 @@ def assert_distribution_almost_equal(
 ) -> None:
     np.testing.assert_almost_equal(d1.weights, d2.weights)
     for d1_, d2_ in zip(d1.distributions, d2.distributions):
-        assert type(d1_) == type(d2_)
+        assert type(d1_) is type(d2_)
         for field1, field2 in zip(d1_, d2_):
             np.testing.assert_almost_equal(np.array(field1), np.array(field2))
 

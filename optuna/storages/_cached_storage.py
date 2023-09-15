@@ -41,23 +41,7 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
     This class is used in :func:`~optuna.get_storage` function and automatically
     wraps :class:`~optuna.storages.RDBStorage` class.
 
-    :class:`~optuna.storages._CachedStorage` meets the following **Consistency** and
-    **Data persistence** requirements.
-
-    **Consistency**
-
-    :class:`~optuna.storages._CachedStorage` will return the latest values of any attributes
-    of a study and a trial by syncing with the backend when necessary. In this class, a method
-    named `read_trials_from_remote_storage(study_id)` is specially defined for this purpose.
-    If the method is called, any successive reads on the `state` attribute of a `Trial`
-    are guaranteed to return the same or more recent values than the value at the time of the
-    call to the method.
-
-    Let `T` be a `Trial`. Let `P` be the process that last updated the `state` attribute of `T`.
-    Then, any reads on any attributes of `T` are guaranteed to return the same or
-    more recent values than any writes by `P` on the attribute before `P` updated
-    the `state` attribute of `T`.
-    The same applies for `user_attrs', 'system_attrs' and 'intermediate_values` attributes.
+    :class:`~optuna.storages._CachedStorage` meets the following **Data persistence** requirements.
 
     **Data persistence**
 
@@ -234,8 +218,7 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
         deepcopy: bool = True,
         states: Optional[Container[TrialState]] = None,
     ) -> List[FrozenTrial]:
-        if study_id not in self._studies:
-            self.read_trials_from_remote_storage(study_id)
+        self._read_trials_from_remote_storage(study_id)
 
         with self._lock:
             study = self._studies[study_id]
@@ -251,7 +234,7 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
             trials = list(sorted(trials.values(), key=lambda t: t.number))
             return copy.deepcopy(trials) if deepcopy else trials
 
-    def read_trials_from_remote_storage(self, study_id: int) -> None:
+    def _read_trials_from_remote_storage(self, study_id: int) -> None:
         with self._lock:
             if study_id not in self._studies:
                 self._studies[study_id] = _StudyInfo()

@@ -56,6 +56,10 @@ jobs:
 
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
+
+        # TODO(not522): Remove this line when torchmetrics can be installed with extra-index-url
+        pip install --progress-bar off torchmetrics
+
         pip install --progress-bar off .[integration] --extra-index-url https://download.pytorch.org/whl/cpu
 
     - name: Output installed packages

@@ -215,17 +215,31 @@ class _Objective:
         if self.enable_pruning:
             scores = self._cross_validate_with_pruning(trial, estimator)
         else:
-            scores = cross_validate(
-                estimator,
-                self.X,
-                self.y,
-                cv=self.cv,
-                error_score=self.error_score,
-                fit_params=self.fit_params,
-                groups=self.groups,
-                return_train_score=self.return_train_score,
-                scoring=self.scoring,
-            )
+            try:
+                scores = cross_validate(
+                    estimator,
+                    self.X,
+                    self.y,
+                    cv=self.cv,
+                    error_score=self.error_score,
+                    fit_params=self.fit_params,
+                    groups=self.groups,
+                    return_train_score=self.return_train_score,
+                    scoring=self.scoring,
+                )
+            except ValueError:
+                n_splits = self.cv.get_n_splits(self.X, self.y, self.groups)
+                fit_time = np.array([np.nan] * n_splits)
+                score_time = np.array([np.nan] * n_splits)
+                test_score = np.array(
+                    [self.error_score if self.error_score is not None else np.nan] * n_splits
+                )
+
+                scores = {
+                    "fit_time": fit_time,
+                    "score_time": score_time,
+                    "test_score": test_score,
+                }
 
         self._store_scores(trial, scores)
 
@@ -512,7 +526,7 @@ class OptunaSearchCV(BaseEstimator):
     def best_index_(self) -> int:
         """Trial number which corresponds to the best candidate parameter setting.
 
-        Retuned value is equivant to ``optuna_search.best_trial_.number``.
+        Returned value is equivalent to ``optuna_search.best_trial_.number``.
         """
 
         return self.best_trial_.number
@@ -548,6 +562,20 @@ class OptunaSearchCV(BaseEstimator):
         self._check_is_fitted()
 
         return self.best_estimator_.classes_
+
+    @property
+    def cv_results_(self) -> Dict[str, Any]:
+        """A dictionary mapping a metric name to a list of
+        Cross-Validation results of all trials."""
+        cv_results_dict_in_list = [trial_.user_attrs for trial_ in self.trials_]
+        if len(cv_results_dict_in_list) == 0:
+            cv_results_list_in_dict = {}
+        else:
+            cv_results_list_in_dict = {
+                key: [dict_[key] for dict_ in cv_results_dict_in_list]
+                for key in cv_results_dict_in_list[0]
+            }
+        return cv_results_list_in_dict
 
     @property
     def n_trials_(self) -> int:
@@ -885,7 +913,7 @@ class OptunaSearchCV(BaseEstimator):
             callbacks=self.callbacks,
         )
 
-        _logger.info("Finished hyperparemeter search!")
+        _logger.info("Finished hyperparameter search!")
 
         if self.refit:
             self._refit(X, y, **fit_params)

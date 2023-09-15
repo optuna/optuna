@@ -81,6 +81,11 @@ def test_handling_alias_parameter() -> None:
         (["auc_mu"], "auc_mu"),
         (["custom", "none", "null", "na"], "custom"),
         ([], None),  # If "metric" not in lgbm_params.keys(): return None.
+        ([["lambdarank"]], ["ndcg"]),
+        (
+            [["lambdarank", "mean_average_precision", "root_mean_squared_error"]],
+            ["ndcg", "map", "rmse"],
+        ),
     ],
 )
 def test_handling_alias_metrics(aliases: List[str], expect: str) -> None:
@@ -93,3 +98,8 @@ def test_handling_alias_metrics(aliases: List[str], expect: str) -> None:
         lgbm_params = {}
         _handling_alias_metrics(lgbm_params)
         assert lgbm_params == {}
+
+
+def test_handling_unexpected_alias_metrics() -> None:
+    with pytest.raises(ValueError):
+        _handling_alias_metrics({"metric": 1})

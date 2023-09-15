@@ -13,5 +13,6 @@ The :mod:`optuna` module is primarily used as an alias for basic Optuna function
    optuna.load_study
    optuna.delete_study
    optuna.copy_study
+   optuna.get_all_study_names
    optuna.get_all_study_summaries
    optuna.TrialPruned

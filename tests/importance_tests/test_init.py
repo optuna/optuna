@@ -1,12 +1,9 @@
-from collections import OrderedDict
-from typing import Any
-from typing import Callable
-from typing import List
-from typing import Tuple
-from typing import Type
-from typing import Union
+from __future__ import annotations
 
-from _pytest.mark.structures import ParameterSet
+from collections.abc import Callable
+from typing import Any
+from typing import Type
+
 import numpy as np
 import pytest
 
@@ -17,7 +14,6 @@ from optuna.importance import BaseImportanceEvaluator
 from optuna.importance import FanovaImportanceEvaluator
 from optuna.importance import get_param_importances
 from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
-import optuna.integration.shap
 from optuna.samplers import RandomSampler
 from optuna.study import create_study
 from optuna.testing.objectives import pruned_objective
@@ -26,13 +22,9 @@ from optuna.testing.storages import StorageSupplier
 from optuna.trial import Trial
 
 
-evaluators: List[Union[Type[BaseImportanceEvaluator], ParameterSet]] = [
+evaluators: list[Type[BaseImportanceEvaluator]] = [
     MeanDecreaseImpurityImportanceEvaluator,
     FanovaImportanceEvaluator,
-    pytest.param(
-        optuna.integration.shap.ShapleyImportanceEvaluator,
-        marks=pytest.mark.integration,
-    ),
 ]
 
 parametrize_evaluator = pytest.mark.parametrize("evaluator_init_func", evaluators)
@@ -44,7 +36,7 @@ def test_get_param_importance_target_is_none_and_study_is_multi_obj(
     storage_mode: str,
     evaluator_init_func: Callable[[], BaseImportanceEvaluator],
 ) -> None:
-    def objective(trial: Trial) -> Tuple[float, float]:
+    def objective(trial: Trial) -> tuple[float, float]:
         x1 = trial.suggest_float("x1", 0.1, 3)
         x2 = trial.suggest_float("x2", 0.1, 3, log=True)
         x3 = trial.suggest_float("x3", 0, 3, step=1)
@@ -98,7 +90,7 @@ def test_get_param_importances(
             study, evaluator=evaluator_init_func(), normalize=normalize
         )
 
-        assert isinstance(param_importance, OrderedDict)
+        assert isinstance(param_importance, dict)
         assert len(param_importance) == 6
         assert all(
             param_name in param_importance for param_name in ["x1", "x2", "x3", "x4", "x5", "x6"]
@@ -122,7 +114,7 @@ def test_get_param_importances(
 @pytest.mark.parametrize("normalize", [True, False])
 def test_get_param_importances_with_params(
     storage_mode: str,
-    params: List[str],
+    params: list[str],
     evaluator_init_func: Callable[[], BaseImportanceEvaluator],
     normalize: bool,
 ) -> None:
@@ -146,7 +138,7 @@ def test_get_param_importances_with_params(
             study, evaluator=evaluator_init_func(), params=params, normalize=normalize
         )
 
-        assert isinstance(param_importance, OrderedDict)
+        assert isinstance(param_importance, dict)
         assert len(param_importance) == len(params)
         assert all(param in param_importance for param in params)
         for param_name, importance in param_importance.items():
@@ -199,7 +191,7 @@ def test_get_param_importances_with_target(
             normalize=normalize,
         )
 
-        assert isinstance(param_importance, OrderedDict)
+        assert isinstance(param_importance, dict)
         assert len(param_importance) == 3
         assert all(param_name in param_importance for param_name in ["x1", "x2", "x3"])
         prev_importance = float("inf")

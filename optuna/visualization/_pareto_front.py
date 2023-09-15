@@ -108,7 +108,7 @@ def plot_pareto_front(
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their objective
-            values. ``study.n_objectives`` must be either 2 or 3 when ``targets`` is :obj:`None`.
+            values. The number of objectives must be either 2 or 3 when ``targets`` is :obj:`None`.
         target_names:
             Objective name list used as the axis titles. If :obj:`None` is specified,
             "Objective {objective_index}" is used instead. If ``targets`` is specified
@@ -275,14 +275,13 @@ def _get_pareto_front_info(
         if len(best_trials) == 0:
             _logger.warning("Your study does not have any completed and feasible trials.")
     else:
-        best_trials = study.best_trials
+        all_trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+        best_trials = _get_pareto_front_trials_by_trials(all_trials, study.directions)
         if len(best_trials) == 0:
             _logger.warning("Your study does not have any completed trials.")
 
         if include_dominated_trials:
-            non_best_trials = _get_non_pareto_front_trials(
-                study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), best_trials
-            )
+            non_best_trials = _get_non_pareto_front_trials(all_trials, best_trials)
         else:
             non_best_trials = []
         infeasible_trials = []

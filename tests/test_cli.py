@@ -1,15 +1,18 @@
-from collections import OrderedDict
 import json
 import os
+import platform
 import re
 import subprocess
 from subprocess import CalledProcessError
+import tempfile
 from typing import Any
 from typing import Callable
 from typing import Optional
 from typing import Tuple
+from unittest.mock import MagicMock
 from unittest.mock import patch
 
+import fakeredis
 import numpy as np
 from pandas import Timedelta
 from pandas import Timestamp
@@ -20,6 +23,9 @@ import optuna
 import optuna.cli
 from optuna.exceptions import CLIUsageError
 from optuna.exceptions import ExperimentalWarning
+from optuna.storages import JournalFileStorage
+from optuna.storages import JournalRedisStorage
+from optuna.storages import JournalStorage
 from optuna.storages import RDBStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.study import StudyDirection
@@ -75,7 +81,7 @@ def _parse_output(output: str, output_format: str) -> Any:
         keys = [r.strip() for r in rows[1].split("|")[1:-1]]
         ret = []
         for record in rows[3:-1]:
-            attrs = OrderedDict()
+            attrs = {}
             for key, attr in zip(keys, record.split("|")[1:-1]):
                 attrs[key] = attr.strip()
             ret.append(attrs)
@@ -1049,6 +1055,51 @@ def test_check_storage_url() -> None:
         optuna.cli._check_storage_url(None)
 
 
+@pytest.mark.skipif(platform.system() == "Windows", reason="Skip on Windows")
+@patch("optuna.storages._journal.redis.redis")
+def test_get_storage_without_storage_class(mock_redis: MagicMock) -> None:
+    with tempfile.NamedTemporaryFile(suffix=".db") as fp:
+        storage = optuna.cli._get_storage(f"sqlite:///{fp.name}", storage_class=None)
+        assert isinstance(storage, RDBStorage)
+
+    with tempfile.NamedTemporaryFile(suffix=".log") as fp:
+        storage = optuna.cli._get_storage(fp.name, storage_class=None)
+        assert isinstance(storage, JournalStorage)
+        assert isinstance(storage._backend, JournalFileStorage)
+
+    mock_redis.Redis = fakeredis.FakeRedis
+    storage = optuna.cli._get_storage("redis://localhost:6379", storage_class=None)
+    assert isinstance(storage, JournalStorage)
+    assert isinstance(storage._backend, JournalRedisStorage)
+
+    with pytest.raises(CLIUsageError):
+        optuna.cli._get_storage("./file-not-found.log", storage_class=None)
+
+
+@pytest.mark.skipif(platform.system() == "Windows", reason="Skip on Windows")
+@patch("optuna.storages._journal.redis.redis")
+def test_get_storage_with_storage_class(mock_redis: MagicMock) -> None:
+    with tempfile.NamedTemporaryFile(suffix=".db") as fp:
+        storage = optuna.cli._get_storage(f"sqlite:///{fp.name}", storage_class=None)
+        assert isinstance(storage, RDBStorage)
+
+    with tempfile.NamedTemporaryFile(suffix=".log") as fp:
+        storage = optuna.cli._get_storage(fp.name, storage_class="JournalFileStorage")
+        assert isinstance(storage, JournalStorage)
+        assert isinstance(storage._backend, JournalFileStorage)
+
+    mock_redis.Redis = fakeredis.FakeRedis
+    storage = optuna.cli._get_storage(
+        "redis:///localhost:6379", storage_class="JournalRedisStorage"
+    )
+    assert isinstance(storage, JournalStorage)
+    assert isinstance(storage._backend, JournalRedisStorage)
+
+    with pytest.raises(CLIUsageError):
+        with tempfile.NamedTemporaryFile(suffix=".db") as fp:
+            optuna.cli._get_storage(f"sqlite:///{fp.name}", storage_class="InMemoryStorage")
+
+
 @pytest.mark.skip_coverage
 def test_storage_upgrade_command() -> None:
     with StorageSupplier("sqlite") as storage:
@@ -1064,6 +1115,16 @@ def test_storage_upgrade_command() -> None:
 
         command.extend(["--storage", storage_url])
         subprocess.check_call(command)
+
+
+@pytest.mark.skip_coverage
+def test_storage_upgrade_command_with_invalid_url() -> None:
+    with StorageSupplier("sqlite") as storage:
+        assert isinstance(storage, RDBStorage)
+
+        command = ["optuna", "storage", "upgrade", "--storage", "invalid-storage-url"]
+        with pytest.raises(CalledProcessError):
+            subprocess.check_call(command)
 
 
 @pytest.mark.skip_coverage

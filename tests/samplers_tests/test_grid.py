@@ -1,4 +1,3 @@
-from collections import OrderedDict
 import itertools
 from typing import Dict
 from typing import List
@@ -14,6 +13,7 @@ import optuna
 from optuna import samplers
 from optuna.samplers._grid import GridValueType
 from optuna.storages import RetryFailedTrialCallback
+from optuna.testing.objectives import fail_objective
 from optuna.testing.objectives import pruned_objective
 from optuna.testing.storages import StorageSupplier
 from optuna.trial import Trial
@@ -46,7 +46,7 @@ def test_study_optimize_with_single_search_space() -> None:
     def sorted_values(
         d: Mapping[str, Sequence[GridValueType]]
     ) -> ValuesView[Sequence[GridValueType]]:
-        return OrderedDict(sorted(d.items())).values()
+        return dict(sorted(d.items())).values()
 
     all_grids = itertools.product(*sorted_values(search_space))  # type: ignore
     all_suggested_values = [tuple([p for p in sorted_values(t.params)]) for t in study.trials]
@@ -91,6 +91,18 @@ def test_study_optimize_with_pruning() -> None:
     search_space: Dict[str, List[GridValueType]] = {"a": [0, 50]}
     study = optuna.create_study(sampler=samplers.GridSampler(search_space))
     study.optimize(pruned_objective, n_trials=None)
+    assert len(study.trials) == 2
+
+
+def test_study_optimize_with_fail() -> None:
+    def objective(trial: Trial) -> float:
+        return trial.suggest_int("a", 0, 100)
+
+    # Failed trials should count towards grid consumption.
+    search_space: Dict[str, List[GridValueType]] = {"a": [0, 50]}
+    study = optuna.create_study(sampler=samplers.GridSampler(search_space))
+    study.optimize(fail_objective, n_trials=1, catch=ValueError)
+    study.optimize(objective, n_trials=None)
     assert len(study.trials) == 2
 
 

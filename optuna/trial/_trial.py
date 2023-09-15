@@ -51,12 +51,12 @@ class Trial(BaseTrial):
         self.study = study
         self._trial_id = trial_id
 
-        # TODO(Yanase): Remove _study_id attribute, and use study._study_id instead.
-        self._study_id = self.study._study_id
         self.storage = self.study._storage
 
         self._cached_frozen_trial = self.storage.get_trial(self._trial_id)
         study = pruners._filter_study(self.study, self._cached_frozen_trial)
+
+        self.study.sampler.before_trial(study, self._cached_frozen_trial)
 
         self.relative_search_space = self.study.sampler.infer_relative_search_space(
             study, self._cached_frozen_trial
@@ -687,7 +687,7 @@ class Trial(BaseTrial):
 
     def _get_latest_trial(self) -> FrozenTrial:
         # TODO(eukaryo): Remove this method after `system_attrs` property is removed.
-        latest_trial = copy.deepcopy(self._cached_frozen_trial)
+        latest_trial = copy.copy(self._cached_frozen_trial)
         latest_trial.system_attrs = _LazyTrialSystemAttrs(  # type: ignore[assignment]
             self._trial_id, self.storage
         )
