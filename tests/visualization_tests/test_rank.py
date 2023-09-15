@@ -133,8 +133,6 @@ def _named_tuple_equal(t1: Any, t2: Any) -> bool:
             return False
         for x, y in zip(t1, t2):
             if not _named_tuple_equal(x, y):
-                print(t1)
-                print(t2)
                 return False
         return True
     else:
