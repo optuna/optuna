@@ -311,6 +311,13 @@ class TPESampler(BaseSampler):
                 ExperimentalWarning,
             )
 
+        if categorical_distance_func is not None:
+            warnings.warn(
+                "The ``categorical_distance_func`` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
+
     def reseed_rng(self) -> None:
         self._rng.seed()
         self._random_sampler.reseed_rng()
