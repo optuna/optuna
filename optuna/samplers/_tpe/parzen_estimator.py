@@ -195,15 +195,17 @@ class _ParzenEstimator:
 
         if param_name in parameters.categorical_distance_func:
             dist_func = parameters.categorical_distance_func[param_name]
-            SIGMA = 1.0
             for i, observation in enumerate(observations.astype(int)):
                 dists = [
                     dist_func(search_space.choices[observation], search_space.choices[j])
                     for j in range(len(search_space.choices))
                 ]
-                prob = np.exp(-(np.array(dists) ** 2) / SIGMA)
-                prob /= prob.sum()
-                weights[i] += prob
+                exponent = -(
+                    (np.array(dists) / max(dists)) ** 2
+                    * np.log((len(observations) + consider_prior) / parameters.prior_weight)
+                    * (np.log(len(search_space.choices)) / np.log(6))
+                )
+                weights[i] = np.exp(exponent)
         else:
             weights[np.arange(len(observations)), observations.astype(int)] += 1
         weights /= weights.sum(axis=1, keepdims=True)
