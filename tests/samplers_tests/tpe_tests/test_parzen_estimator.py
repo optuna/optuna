@@ -56,6 +56,7 @@ def test_init_parzen_estimator(consider_prior: bool, multivariate: bool) -> None
         consider_endpoints=False,
         weights=lambda x: np.arange(x) + 1.0,
         multivariate=multivariate,
+        categorical_distance_func={},
     )
 
     mpe = _ParzenEstimator(MULTIVARIATE_SAMPLES, SEARCH_SPACE, parameters)
@@ -215,6 +216,7 @@ def test_calculate_shape_check(
         consider_endpoints=endpoints,
         weights=default_weights,
         multivariate=multivariate,
+        categorical_distance_func={},
     )
     mpe = _ParzenEstimator(
         {"a": mus}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
@@ -232,6 +234,7 @@ def test_invalid_prior_weight(prior_weight: float, mus: np.ndarray) -> None:
         consider_endpoints=False,
         weights=default_weights,
         multivariate=False,
+        categorical_distance_func={},
     )
     with pytest.raises(ValueError):
         _ParzenEstimator({"a": mus}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters)
@@ -306,6 +309,7 @@ def test_calculate(
         consider_endpoints=flags["endpoints"],
         weights=default_weights,
         multivariate=False,
+        categorical_distance_func={},
     )
     mpe = _ParzenEstimator(
         {"a": mus}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
@@ -342,6 +346,7 @@ def test_invalid_weights(weights: Callable[[int], np.ndarray]) -> None:
         consider_endpoints=False,
         weights=weights,
         multivariate=False,
+        categorical_distance_func={},
     )
     with pytest.raises(ValueError):
         _ParzenEstimator(

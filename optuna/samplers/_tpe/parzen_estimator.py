@@ -32,7 +32,7 @@ class _ParzenEstimatorParameters(
             ("multivariate", bool),
             (
                 "categorical_distance_func",
-                dict[str, Callable[[CategoricalChoiceType, CategoricalChoiceType], float]],
+                Dict[str, Callable[[CategoricalChoiceType, CategoricalChoiceType], float]],
             ),
         ],
     )
