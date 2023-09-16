@@ -1092,16 +1092,14 @@ class Study:
         if not _logger.isEnabledFor(logging.INFO):
             return
 
-        metric_names = self._storage.get_study_system_attrs(self._study_id).get(
-            _SYSTEM_ATTR_METRIC_NAMES
-        )
-
         if len(trial.values) > 1:
             trial_values: list[float] | dict[str, float]
-            if metric_names is None:
+            if self.metric_names is None:
                 trial_values = trial.values
             else:
-                trial_values = {name: value for name, value in zip(metric_names, trial.values)}
+                trial_values = {
+                    name: value for name, value in zip(self.metric_names, trial.values)
+                }
             _logger.info(
                 "Trial {} finished with values: {} and parameters: {}. ".format(
                     trial.number, trial_values, trial.params
@@ -1110,10 +1108,10 @@ class Study:
         elif len(trial.values) == 1:
             best_trial = self.best_trial
             trial_value: float | dict[str, float]
-            if metric_names is None:
+            if self.metric_names is None:
                 trial_value = trial.values[0]
             else:
-                trial_value = {metric_names[0]: trial.values[0]}
+                trial_value = {self.metric_names[0]: trial.values[0]}
             _logger.info(
                 "Trial {} finished with value: {} and parameters: {}. "
                 "Best is trial {} with value: {}.".format(

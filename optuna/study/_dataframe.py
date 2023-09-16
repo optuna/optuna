@@ -8,7 +8,6 @@ from typing import Tuple
 
 import optuna
 from optuna._imports import try_import
-from optuna.study.study import _SYSTEM_ATTR_METRIC_NAMES
 from optuna.trial._state import TrialState
 
 
@@ -41,10 +40,6 @@ def _create_records_and_aggregate_column(
     column_agg: DefaultDict[str, Set] = collections.defaultdict(set)
     non_nested_attr = ""
 
-    metric_names = study._storage.get_study_system_attrs(study._study_id).get(
-        _SYSTEM_ATTR_METRIC_NAMES
-    )
-
     records = []
     for trial in study.get_trials(deepcopy=False):
         record = {}
@@ -62,8 +57,8 @@ def _create_records_and_aggregate_column(
                 trial_values = [None] * len(study.directions) if value is None else value
                 iterator = (
                     enumerate(trial_values)
-                    if metric_names is None
-                    else zip(metric_names, trial_values)
+                    if study.metric_names is None
+                    else zip(study.metric_names, trial_values)
                 )
                 for nested_attr, nested_value in iterator:
                     record[(df_column, nested_attr)] = nested_value
@@ -73,7 +68,9 @@ def _create_records_and_aggregate_column(
                     record[(df_column, nested_attr)] = nested_value
                     column_agg[attr].add((df_column, nested_attr))
             elif attr == "value":
-                nested_attr = non_nested_attr if metric_names is None else metric_names[0]
+                nested_attr = (
+                    non_nested_attr if study.metric_names is None else study.metric_names[0]
+                )
                 record[(df_column, nested_attr)] = value
                 column_agg[attr].add((df_column, nested_attr))
             else:
