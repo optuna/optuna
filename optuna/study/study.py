@@ -4,6 +4,7 @@ from collections.abc import Container
 from collections.abc import Iterable
 from collections.abc import Mapping
 import copy
+from functools import cached_property
 from numbers import Real
 import threading
 from typing import Any
@@ -220,6 +221,19 @@ class Study:
         """
 
         return self.get_trials(deepcopy=True, states=None)
+
+    @cached_property
+    @experimental_func("3.4.0")
+    def metric_names(self) -> list[str] | None:
+        """Return metric names.
+
+        .. note::
+            Use :meth:`~optuna.study.Study.set_metric_names` to set the metric names first.
+
+        Returns:
+            A list with names for each dimension of the returned values of the objective function.
+        """
+        return self._storage.get_study_system_attrs(self._study_id).get(_SYSTEM_ATTR_METRIC_NAMES)
 
     def get_trials(
         self,
@@ -1004,6 +1018,9 @@ class Study:
         """
         if len(self.directions) != len(metric_names):
             raise ValueError("The number of objectives must match the length of the metric names.")
+
+        if "metric_names" in self.__dict__:
+            del self.metric_names
 
         self._storage.set_study_system_attr(
             self._study_id, _SYSTEM_ATTR_METRIC_NAMES, metric_names
