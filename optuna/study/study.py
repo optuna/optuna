@@ -223,7 +223,7 @@ class Study:
         return self.get_trials(deepcopy=True, states=None)
 
     @property
-    @lru_cache  # TODO(xadrianzetx): Switch to @cached_property after Python 3.7 is dropped.
+    @lru_cache()  # TODO(xadrianzetx): Switch to @cached_property after Python 3.7 is dropped.
     @experimental_func("3.4.0")
     def metric_names(self) -> list[str] | None:
         """Return metric names.
