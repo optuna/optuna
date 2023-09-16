@@ -4,7 +4,7 @@ from collections.abc import Container
 from collections.abc import Iterable
 from collections.abc import Mapping
 import copy
-from functools import cached_property
+from functools import lru_cache
 from numbers import Real
 import threading
 from typing import Any
@@ -222,7 +222,8 @@ class Study:
 
         return self.get_trials(deepcopy=True, states=None)
 
-    @cached_property
+    @property
+    @lru_cache  # TODO(xadrianzetx): Switch to @cached_property after Python 3.7 is dropped.
     @experimental_func("3.4.0")
     def metric_names(self) -> list[str] | None:
         """Return metric names.
@@ -1019,8 +1020,7 @@ class Study:
         if len(self.directions) != len(metric_names):
             raise ValueError("The number of objectives must match the length of the metric names.")
 
-        if "metric_names" in self.__dict__:
-            del self.metric_names
+        Study.metric_names.fget.cache_clear()  # type: ignore
 
         self._storage.set_study_system_attr(
             self._study_id, _SYSTEM_ATTR_METRIC_NAMES, metric_names
@@ -1098,7 +1098,8 @@ class Study:
                 trial_values = trial.values
             else:
                 trial_values = {
-                    name: value for name, value in zip(self.metric_names, trial.values)
+                    name: value
+                    for name, value in zip(self.metric_names, trial.values)  # type: ignore
                 }
             _logger.info(
                 "Trial {} finished with values: {} and parameters: {}. ".format(
@@ -1111,7 +1112,7 @@ class Study:
             if self.metric_names is None:
                 trial_value = trial.values[0]
             else:
-                trial_value = {self.metric_names[0]: trial.values[0]}
+                trial_value = {self.metric_names[0]: trial.values[0]}  # type: ignore
             _logger.info(
                 "Trial {} finished with value: {} and parameters: {}. "
                 "Best is trial {} with value: {}.".format(

@@ -58,7 +58,7 @@ def _create_records_and_aggregate_column(
                 iterator = (
                     enumerate(trial_values)
                     if study.metric_names is None
-                    else zip(study.metric_names, trial_values)
+                    else zip(study.metric_names, trial_values)  # type: ignore
                 )
                 for nested_attr, nested_value in iterator:
                     record[(df_column, nested_attr)] = nested_value
@@ -69,7 +69,9 @@ def _create_records_and_aggregate_column(
                     column_agg[attr].add((df_column, nested_attr))
             elif attr == "value":
                 nested_attr = (
-                    non_nested_attr if study.metric_names is None else study.metric_names[0]
+                    non_nested_attr
+                    if study.metric_names is None
+                    else study.metric_names[0]  # type: ignore
                 )
                 record[(df_column, nested_attr)] = value
                 column_agg[attr].add((df_column, nested_attr))

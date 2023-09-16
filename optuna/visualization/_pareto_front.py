@@ -345,7 +345,7 @@ def _get_pareto_front_info(
         if study.metric_names is None:
             target_names = [f"Objective {i}" for i in range(n_targets)]
         else:
-            target_names = study.metric_names
+            target_names = study.metric_names  # type: ignore
     elif len(target_names) != n_targets:
         raise ValueError(f"The length of `target_names` is supposed to be {n_targets}.")
 
@@ -372,7 +372,7 @@ def _get_pareto_front_info(
 
     return _ParetoFrontInfo(
         n_targets=n_targets,
-        target_names=target_names,
+        target_names=target_names,  # type: ignore
         best_trials_with_values=best_trials_with_values,
         non_best_trials_with_values=non_best_trials_with_values,
         infeasible_trials_with_values=infeasible_trials_with_values,
