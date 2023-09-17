@@ -333,6 +333,19 @@ class Study:
 
         return copy.deepcopy(self._storage.get_study_system_attrs(self._study_id))
 
+    @property
+    @experimental_func("3.4.0")
+    def metric_names(self) -> list[str] | None:
+        """Return metric names.
+
+        .. note::
+            Use :meth:`~optuna.study.Study.set_metric_names` to set the metric names first.
+
+        Returns:
+            A list with names for each dimension of the returned values of the objective function.
+        """
+        return self._storage.get_study_system_attrs(self._study_id).get(_SYSTEM_ATTR_METRIC_NAMES)
+
     def optimize(
         self,
         func: ObjectiveFuncType,

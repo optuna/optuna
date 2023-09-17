@@ -1601,3 +1601,18 @@ def test_set_invalid_metric_names() -> None:
     study = create_study(directions=["minimize", "minimize"])
     with pytest.raises(ValueError):
         study.set_metric_names(metric_names)
+
+
+def test_get_metric_names() -> None:
+    study = create_study()
+    assert study.metric_names is None
+    study.set_metric_names(["v0"])
+    assert study.metric_names == ["v0"]
+    study.set_metric_names(["v1"])
+    assert study.metric_names == ["v1"]
+
+
+def test_get_metric_names_experimental_warning() -> None:
+    study = create_study()
+    with pytest.warns(ExperimentalWarning):
+        study.metric_names
