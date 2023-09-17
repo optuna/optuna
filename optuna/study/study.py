@@ -1088,9 +1088,7 @@ class Study:
         if not _logger.isEnabledFor(logging.INFO):
             return
 
-        metric_names = self._storage.get_study_system_attrs(self._study_id).get(
-            _SYSTEM_ATTR_METRIC_NAMES
-        )
+        metric_names = self.metric_names
 
         if len(trial.values) > 1:
             trial_values: list[float] | dict[str, float]
