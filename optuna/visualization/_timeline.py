@@ -116,7 +116,7 @@ def _get_timeline_info(study: Study) -> _TimelineInfo:
 
 def _get_timeline_plot(info: _TimelineInfo) -> "go.Figure":
     _cm = {
-        "COMPLETE": "#cccccc",
+        "COMPLETE": "blue",
         "FAIL": "red",
         "PRUNED": "orange",
         "RUNNING": "green",
@@ -125,7 +125,7 @@ def _get_timeline_plot(info: _TimelineInfo) -> "go.Figure":
 
     fig = go.Figure()
     for s, infeasible in product(sorted(TrialState, key=lambda x: x.name), [False, True]):
-        color = "#cccccc" if infeasible else _cm[s.name]
+        color = "#cccccc" if infeasible and s.name == "COMPLETE" else _cm[s.name]
         bars = [b for b in info.bars if b.state == s and b.infeasible == infeasible]
         if len(bars) == 0:
             continue
