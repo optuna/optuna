@@ -1,5 +1,7 @@
 import itertools
+import multiprocessing
 import time
+from typing import Any
 from typing import Optional
 from unittest.mock import Mock
 from unittest.mock import patch
@@ -233,6 +235,50 @@ def test_fail_stale_trials(grace_period: Optional[int]) -> None:
 
         time.sleep(_grace_period + 1)
         check_change_trial_state_to_fail(study)
+
+
+def run_fail_stale_trials(storage_url: str, sleep_time: int) -> None:
+    heartbeat_interval = 1
+    grace_period = 2
+
+    storage = RDBStorage(storage_url)
+    storage.heartbeat_interval = heartbeat_interval
+    storage.grace_period = grace_period
+
+    original_set_trial_state_values = storage.set_trial_state_values
+
+    def _set_trial_state_values(*args: Any, **kwargs: Any) -> bool:
+        # The second process fails to set state due to the race condition.
+        time.sleep(sleep_time)
+        return original_set_trial_state_values(*args, **kwargs)
+
+    storage.set_trial_state_values = _set_trial_state_values  # type: ignore[method-assign]
+
+    study = optuna.load_study(study_name=None, storage=storage)
+    optuna.storages.fail_stale_trials(study)
+
+
+def test_fail_stale_trials_with_race_condition() -> None:
+    grace_period = 2
+    storage_mode = "sqlite"
+
+    with StorageSupplier(storage_mode) as storage:
+        assert isinstance(storage, RDBStorage)
+
+        study = optuna.create_study(storage=storage)
+
+        trial = study.ask()
+        storage.record_heartbeat(trial._trial_id)
+        time.sleep(grace_period + 1)
+        p1 = multiprocessing.Process(target=run_fail_stale_trials, args=(storage.url, 1))
+        p1.start()
+        p2 = multiprocessing.Process(target=run_fail_stale_trials, args=(storage.url, 2))
+        p2.start()
+        p1.join()
+        p2.join()
+        assert p1.exitcode == 0
+        assert p2.exitcode == 0
+        assert study.trials[0].state is TrialState.FAIL
 
 
 def test_get_stale_trial_ids() -> None:
