@@ -228,17 +228,11 @@ def test_calculate_shape_check(
 @pytest.mark.parametrize("mus", (np.asarray([]), np.asarray([0.4]), np.asarray([-0.4, 0.4])))
 @pytest.mark.parametrize("prior_weight", [1.0, 0.01, 100.0])
 @pytest.mark.parametrize("prior", (True, False))
-@pytest.mark.parametrize("magic_clip", (True, False))
-@pytest.mark.parametrize("endpoints", (True, False))
-@pytest.mark.parametrize("multivariate", (True, False))
 @pytest.mark.parametrize("categorical_distance_func", ({}, {"c": lambda x, y: abs(x - y)}))
 def test_calculate_shape_check_categorical(
     mus: np.ndarray,
     prior_weight: float,
     prior: bool,
-    magic_clip: bool,
-    endpoints: bool,
-    multivariate: bool,
     categorical_distance_func: Dict[
         str,
         Callable[[CategoricalChoiceType, CategoricalChoiceType], float],
@@ -247,10 +241,10 @@ def test_calculate_shape_check_categorical(
     parameters = _ParzenEstimatorParameters(
         prior_weight=prior_weight,
         consider_prior=prior,
-        consider_magic_clip=magic_clip,
-        consider_endpoints=endpoints,
+        consider_magic_clip=True,
+        consider_endpoints=False,
         weights=default_weights,
-        multivariate=multivariate,
+        multivariate=False,
         categorical_distance_func=categorical_distance_func,
     )
     mpe = _ParzenEstimator(
