@@ -123,6 +123,7 @@ class _FanovaTree:
                     continue
 
                 # If subtree starting from node splits on an active feature, push both child nodes.
+                # Here, we use `any` for list because `ndarray.any` is slow.
                 if any(self._subtree_active_features[node_index][active_features].tolist()):
                     for child_node_index in self._get_node_children(node_index):
                         active_nodes.append(child_node_index)
