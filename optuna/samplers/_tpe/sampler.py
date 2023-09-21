@@ -16,6 +16,7 @@ import numpy as np
 from optuna._hypervolume import WFG
 from optuna._hypervolume.hssp import _solve_hssp
 from optuna.distributions import BaseDistribution
+from optuna.distributions import CategoricalChoiceType
 from optuna.exceptions import ExperimentalWarning
 from optuna.logging import get_logger
 from optuna.samplers._base import _CONSTRAINTS_KEY
@@ -228,7 +229,20 @@ class TPESampler(BaseSampler):
                 Added in v3.0.0 as an experimental feature. The interface may change in newer
                 versions without prior notice.
                 See https://github.com/optuna/optuna/releases/tag/v3.0.0.
+        categorical_distance_func:
+            A dictionary of distance functions for categorical parameters. The key is the name of
+            the categorical parameter and the value is a distance function that takes two
+            :class:`~optuna.distributions.CategoricalChoiceType` s and returns a :obj:`float`
+            value. The distance function must return a non-negative value.
 
+            While categorical choices are handled equally by default, this option allows users to
+            specify prior knowledge on the structure of categorical parameters. When specified,
+            categorical choices closer to current best choices are more likely to be sampled.
+
+            .. note::
+                Added in v3.4.0 as an experimental feature. The interface may change in newer
+                versions without prior notice.
+                See https://github.com/optuna/optuna/releases/tag/v3.4.0.
     """
 
     def __init__(
@@ -248,6 +262,9 @@ class TPESampler(BaseSampler):
         warn_independent_sampling: bool = True,
         constant_liar: bool = False,
         constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
+        categorical_distance_func: Optional[
+            dict[str, Callable[[CategoricalChoiceType, CategoricalChoiceType], float]]
+        ] = None,
     ) -> None:
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
             consider_prior,
@@ -256,6 +273,7 @@ class TPESampler(BaseSampler):
             consider_endpoints,
             weights,
             multivariate,
+            categorical_distance_func or {},
         )
         self._n_startup_trials = n_startup_trials
         self._n_ei_candidates = n_ei_candidates
@@ -302,6 +320,13 @@ class TPESampler(BaseSampler):
         if constraints_func is not None:
             warnings.warn(
                 "The ``constraints_func`` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
+
+        if categorical_distance_func is not None:
+            warnings.warn(
+                "The ``categorical_distance_func`` option is an experimental feature."
                 " The interface can change in the future.",
                 ExperimentalWarning,
             )
