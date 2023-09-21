@@ -144,7 +144,7 @@ def _get_timeline_plot(info: _TimelineInfo) -> "go.Figure":
     return fig
 
 
-def _plot_bars(bars: list[_TimelineBarInfo], color: str, name: str, fig: go.Figure):
+def _plot_bars(bars: list[_TimelineBarInfo], color: str, name: str, fig: go.Figure) -> None:
     if len(bars) == 0:
         return
 
