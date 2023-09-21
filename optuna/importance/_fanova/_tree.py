@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from functools import lru_cache
 import itertools
 from typing import List
@@ -134,11 +136,7 @@ class _FanovaTree:
         statistics = self._statistics[node_indices]
         values = statistics[:, 0]
         weights = statistics[:, 1]
-        active_features_cardinalities = numpy.asarray(active_leaf_search_spaces)
-        active_features_cardinalities = (
-            active_features_cardinalities[:, :, 1] - active_features_cardinalities[:, :, 0]
-        )
-        active_features_cardinalities = numpy.prod(active_features_cardinalities, axis=1)
+        active_features_cardinalities = _get_cardinality_batched(active_leaf_search_spaces)
         weights = weights / active_features_cardinalities
 
         value = numpy.average(values, weights=weights)
@@ -307,6 +305,11 @@ class _FanovaTree:
 
 def _get_cardinality(search_spaces: numpy.ndarray) -> float:
     return numpy.prod(search_spaces[:, 1] - search_spaces[:, 0])
+
+
+def _get_cardinality_batched(search_spaces_list: list[numpy.ndarray]) -> float:
+    search_spaces = numpy.asarray(search_spaces_list)
+    return numpy.prod(search_spaces[:, :, 1] - search_spaces[:, :, 0], axis=1)
 
 
 def _get_subspaces(
