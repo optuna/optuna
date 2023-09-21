@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from functools import lru_cache
 import itertools
 from typing import List
 from typing import Set
@@ -93,7 +96,7 @@ class _FanovaTree:
         active_search_spaces = [search_spaces]
 
         node_indices = []
-        active_features_cardinalities = []
+        active_leaf_search_spaces = []
 
         while len(active_nodes) > 0:
             node_index = active_nodes.pop()
@@ -120,7 +123,8 @@ class _FanovaTree:
                     continue
 
                 # If subtree starting from node splits on an active feature, push both child nodes.
-                if (active_features & self._subtree_active_features[node_index]).any():
+                # Here, we use `any` for list because `ndarray.any` is slow.
+                if any(self._subtree_active_features[node_index][active_features].tolist()):
                     for child_node_index in self._get_node_children(node_index):
                         active_nodes.append(child_node_index)
                         active_search_spaces.append(search_spaces)
@@ -128,11 +132,12 @@ class _FanovaTree:
 
             # If node is a leaf or the subtree does not split on any of the active features.
             node_indices.append(node_index)
-            active_features_cardinalities.append(_get_cardinality(search_spaces))
+            active_leaf_search_spaces.append(search_spaces)
 
         statistics = self._statistics[node_indices]
         values = statistics[:, 0]
         weights = statistics[:, 1]
+        active_features_cardinalities = _get_cardinality_batched(active_leaf_search_spaces)
         weights = weights / active_features_cardinalities
 
         value = numpy.average(values, weights=weights)
@@ -242,24 +247,31 @@ class _FanovaTree:
     def _n_nodes(self) -> int:
         return self._tree.node_count
 
+    @lru_cache(maxsize=None)
     def _is_node_leaf(self, node_index: int) -> bool:
         return self._tree.feature[node_index] < 0
 
+    @lru_cache(maxsize=None)
     def _get_node_left_child(self, node_index: int) -> int:
         return self._tree.children_left[node_index]
 
+    @lru_cache(maxsize=None)
     def _get_node_right_child(self, node_index: int) -> int:
         return self._tree.children_right[node_index]
 
+    @lru_cache(maxsize=None)
     def _get_node_children(self, node_index: int) -> Tuple[int, int]:
         return self._get_node_left_child(node_index), self._get_node_right_child(node_index)
 
+    @lru_cache(maxsize=None)
     def _get_node_value(self, node_index: int) -> float:
         return float(self._tree.value[node_index])
 
+    @lru_cache(maxsize=None)
     def _get_node_split_threshold(self, node_index: int) -> float:
         return self._tree.threshold[node_index]
 
+    @lru_cache(maxsize=None)
     def _get_node_split_feature(self, node_index: int) -> int:
         return self._tree.feature[node_index]
 
@@ -294,6 +306,11 @@ class _FanovaTree:
 
 def _get_cardinality(search_spaces: numpy.ndarray) -> float:
     return numpy.prod(search_spaces[:, 1] - search_spaces[:, 0])
+
+
+def _get_cardinality_batched(search_spaces_list: list[numpy.ndarray]) -> float:
+    search_spaces = numpy.asarray(search_spaces_list)
+    return numpy.prod(search_spaces[:, :, 1] - search_spaces[:, :, 0], axis=1)
 
 
 def _get_subspaces(
