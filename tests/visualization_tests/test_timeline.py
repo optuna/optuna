@@ -73,7 +73,7 @@ def test_get_timeline_info_empty() -> None:
         {_CONSTRAINTS_KEY: [1.0]},
     ],
 )
-def test_get_timeline_info(sys_attrs: Optional[Dict[str: Any]]) -> None:
+def test_get_timeline_info(sys_attrs: Optional[Dict[str, Any]]) -> None:
     states = [TrialState.COMPLETE, TrialState.RUNNING, TrialState.WAITING]
     study = _create_study(states, sys_attrs)
     info = _get_timeline_info(study)
