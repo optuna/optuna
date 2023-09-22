@@ -2,10 +2,8 @@ from __future__ import annotations
 
 import datetime
 from io import BytesIO
-from itertools import product
 from typing import Any
 from typing import Dict
-from typing import List
 from typing import Optional
 
 import _pytest.capture
