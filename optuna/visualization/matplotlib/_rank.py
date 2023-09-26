@@ -54,10 +54,18 @@ def plot_rank(
             def objective(trial):
                 x = trial.suggest_float("x", -100, 100)
                 y = trial.suggest_categorical("y", [-1, 0, 1])
+
+                c0 = 400 - (x + y)**2
+                trial.set_user_attr("constraint", [c0])
+
                 return x ** 2 + y
 
 
-            sampler = optuna.samplers.TPESampler(seed=10)
+            def constraints(trial):
+                return trial.user_attrs["constraint"]
+
+
+            sampler = optuna.samplers.TPESampler(seed=10, constraints_func=constraints)
             study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=30)
 
@@ -126,7 +134,8 @@ def _get_rank_plot(
 
     tick_info = _get_tick_info(info.zs)
 
-    cbar = fig.colorbar(pc, ax=axs, ticks=tick_info.coloridxs, cmap=plt.get_cmap("RdYlBu_r"))
+    pc.set_cmap(plt.get_cmap("RdYlBu_r"))
+    cbar = fig.colorbar(pc, ax=axs, ticks=tick_info.coloridxs)
     cbar.ax.set_yticklabels(tick_info.text)
     cbar.outline.set_edgecolor("gray")
     return axs
@@ -151,6 +160,4 @@ def _add_rank_subplot(
     if info.yaxis.is_log:
         ax.set_yscale("log")
 
-    return ax.scatter(
-        x=info.xs, y=info.ys, c=info.color_idxs, cmap=plt.get_cmap("RdYlBu_r"), edgecolors="grey"
-    )
+    return ax.scatter(x=info.xs, y=info.ys, c=info.colors / 255, edgecolors="grey")
