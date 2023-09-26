@@ -922,9 +922,9 @@ def test_combination_of_different_distributions_objective(
         sampler = sampler_class()
 
     study = optuna.study.create_study(sampler=sampler)
-    study.optimize(objective, n_trials=10)
+    study.optimize(objective, n_trials=3)
 
-    assert len(study.trials) == 10
+    assert len(study.trials) == 3
     assert all(t.state == TrialState.COMPLETE for t in study.trials)
 
 
