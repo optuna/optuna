@@ -64,6 +64,7 @@ checking = [
     "typing_extensions>=3.10.0.0",
 ]
 document = [
+    "ase",
     "cma",
     "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
     "botorch",
