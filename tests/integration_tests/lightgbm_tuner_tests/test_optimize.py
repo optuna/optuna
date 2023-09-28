@@ -727,9 +727,9 @@ class TestLightGBMTuner:
         assert callback_mock.call_count == 10
 
     def test_tune_best_score_reproducibility(self) -> None:
-        california = sklearn.datasets.fetch_california_housing()
+        iris = sklearn.datasets.load_iris()
         X_trainval, X_test, y_trainval, y_test = train_test_split(
-            california.data, california.target, random_state=0
+            iris.data, iris.target, random_state=0
         )
 
         train = lgb.Dataset(X_trainval, y_trainval)
@@ -1058,9 +1058,9 @@ class TestLightGBMTunerCV:
                 tuner3.get_best_booster()
 
     def test_tune_best_score_reproducibility(self) -> None:
-        california = sklearn.datasets.fetch_california_housing()
+        iris = sklearn.datasets.load_iris()
         X_trainval, X_test, y_trainval, y_test = train_test_split(
-            california.data, california.target, random_state=0
+            iris.data, iris.target, random_state=0
         )
 
         train = lgb.Dataset(X_trainval, y_trainval)
