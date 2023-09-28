@@ -251,10 +251,10 @@ def create_slab() -> tuple[Atoms, float]:
     bulk_atoms.calc = calculator
 
     a = np.mean(np.diag(bulk_atoms.cell))
-    slab =  fcc111("Pt", a=a, size=(4, 4, 4), vacuum=40.0, periodic=True)
+    slab = fcc111("Pt", a=a, size=(4, 4, 4), vacuum=40.0, periodic=True)
     slab.calc = calculator
     E_slab = get_opt_energy(slab, fmax=1e-4)
-    return slab, E_slab 
+    return slab, E_slab
 
 
 def create_mol() -> tuple[Atoms, float]:
@@ -274,6 +274,7 @@ def atoms_to_json(atoms: Atoms) -> str:
 def json_to_atoms(atoms_str: str) -> Atoms:
     return read(io.StringIO(atoms_str), format="json")
 
+
 ###################################################################################################
 # Each function is as follows.
 #
@@ -283,16 +284,17 @@ def json_to_atoms(atoms_str: str) -> Atoms:
 # - `atoms_to_json`: Converts the chemical structure to a string.
 # - `json_to_atoms`: Converts the string to a chemical structure.
 #
-# Using these functions, the code to search for adsorption structures using Optuna is as follows. The objective function is defined 
-# as class `Objective` in order to carry the artifact store. In its `__call__` method, it retrieves the substance being adsorbed 
-# (`slab`) and the molecule being adsorbed (`mol`), then after sampling their positional relationship using Optuna (multiple 
-# `trial.suggest_xxx` methods), it triggers an adsorption reaction with the `add_adsorbate` function, transitions to a locally 
-# stable structure, then saves the structure in the artifact store and returns the adsorption energy. 
+# Using these functions, the code to search for adsorption structures using Optuna is as follows. The objective function is defined
+# as class `Objective` in order to carry the artifact store. In its `__call__` method, it retrieves the substance being adsorbed
+# (`slab`) and the molecule being adsorbed (`mol`), then after sampling their positional relationship using Optuna (multiple
+# `trial.suggest_xxx` methods), it triggers an adsorption reaction with the `add_adsorbate` function, transitions to a locally
+# stable structure, then saves the structure in the artifact store and returns the adsorption energy.
 #
-# The `main` function contains the code to create a `Study` and execute optimization. When creating a `Study`, a storage is 
-# specified using SQLite, and a back end using the local file system is used for the artifact store. In other words, it corresponds 
-# to Scenario 1 explained in the previous section. After performing 100 trials of optimization, it displays the information for the 
+# The `main` function contains the code to create a `Study` and execute optimization. When creating a `Study`, a storage is
+# specified using SQLite, and a back end using the local file system is used for the artifact store. In other words, it corresponds
+# to Scenario 1 explained in the previous section. After performing 100 trials of optimization, it displays the information for the
 # best trial, and finally saves the chemical structure as `best_atoms.png`. The obtained `best_atoms.png` is shown in Figure 4.
+
 
 class Objective:
     def __init__(self, artifact_store: FileSystemArtifactStore) -> None:
@@ -301,36 +303,36 @@ class Objective:
     def __call__(self, trial: Trial) -> float:
         slab = json_to_atoms(trial.study.user_attrs["slab"])
         E_slab = trial.study.user_attrs["E_slab"]
-        
+
         mol = json_to_atoms(trial.study.user_attrs["mol"])
         E_mol = trial.study.user_attrs["E_mol"]
-        
-        phi = 180. * trial.suggest_float("phi", -1, 1)
-        theta = np.arccos(trial.suggest_float("theta", -1, 1))*180./np.pi
+
+        phi = 180.0 * trial.suggest_float("phi", -1, 1)
+        theta = np.arccos(trial.suggest_float("theta", -1, 1)) * 180.0 / np.pi
         psi = 180 * trial.suggest_float("psi", -1, 1)
         x_pos = trial.suggest_float("x_pos", 0, 0.5)
         y_pos = trial.suggest_float("y_pos", 0, 0.5)
         z_hig = trial.suggest_float("z_hig", 1, 5)
-        xy_position=np.matmul([x_pos,y_pos,0], slab.cell)[:2]
+        xy_position = np.matmul([x_pos, y_pos, 0], slab.cell)[:2]
         mol.euler_rotate(phi=phi, theta=theta, psi=psi)
-        
+
         add_adsorbate(slab, mol, z_hig, xy_position)
         E_slab_mol = get_opt_energy(slab, fmax=1e-2)
-        
+
         write(f"./tmp/{trial.number}.json", slab, format="json")
         artifact_id = upload_artifact(trial, f"./tmp/{trial.number}.json", self._artifact_store)
         trial.set_user_attr("structure", artifact_id)
-        
+
         return E_slab_mol - E_slab - E_mol
 
 
 def main():
     study = create_study(study_name="test_study", storage="sqlite:///sqlite.db")
-    
+
     slab, E_slab = create_slab()
     study.set_user_attr("slab", atoms_to_json(slab))
     study.set_user_attr("E_slab", E_slab)
-    
+
     mol, E_mol = create_mol()
     study.set_user_attr("mol", atoms_to_json(mol))
     study.set_user_attr("E_mol", E_mol)
@@ -358,7 +360,8 @@ def main():
         content = f.read().decode("utf-8")
     best_atoms = json_to_atoms(content)
     print(best_atoms)
-    write("best_atoms.png", best_atoms, rotation=('315x,0y,0z'))
+    write("best_atoms.png", best_atoms, rotation=("315x,0y,0z"))
+
 
 if __name__ == "__main__":
     main()
@@ -370,15 +373,15 @@ if __name__ == "__main__":
 #    * - Fig 4. The chemical structure obtained by the above code.
 #    * - .. image:: TBD
 #
-# As shown above, it is convenient to use the artifact module when performing the optimization of chemical structures with Optuna. 
-# In the case of small structures or fewer trial numbers, it's fine to convert it to a string and save it directly in the RDB. 
-# However, when dealing with complex structures or performing large-scale searches, it's better to save it outside the RDB to 
+# As shown above, it is convenient to use the artifact module when performing the optimization of chemical structures with Optuna.
+# In the case of small structures or fewer trial numbers, it's fine to convert it to a string and save it directly in the RDB.
+# However, when dealing with complex structures or performing large-scale searches, it's better to save it outside the RDB to
 # avoid overloading it, such as in an external file system or AWS S3.
-# 
+#
 # Conclusion
 # ----------
 #
-# The artifact module is a useful feature when you want to save relatively large data for each trial. It can be used for various 
-# purposes such as saving snapshots of machine learning models, optimizing chemical structures, and human-in-the-loop optimization 
-# of images and sounds. It's a powerful assistant for black-box optimization with Optuna. Also, if there are ways to use it that 
+# The artifact module is a useful feature when you want to save relatively large data for each trial. It can be used for various
+# purposes such as saving snapshots of machine learning models, optimizing chemical structures, and human-in-the-loop optimization
+# of images and sounds. It's a powerful assistant for black-box optimization with Optuna. Also, if there are ways to use it that
 # we, the Optuna committers, haven't noticed, please let us know on GitHub discussions. Have a great optimization life with Optuna!
