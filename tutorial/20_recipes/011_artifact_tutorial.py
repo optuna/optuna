@@ -105,6 +105,7 @@ and reference the data using the artifact module.
 The simple pseudocode for the above case  would look something like this:
 
 .. code-block:: python
+
     import os
 
     import optuna
@@ -122,10 +123,15 @@ The simple pseudocode for the above case  would look something like this:
 
         # Creating and writing an artifact.
         file_path = generate_example(...)  # This function returns some kind of file.
-        artifact_id = upload_artifact(trial, file_path, artifact_store)  # The return value is the artifact ID.
-        trial.set_user_attr("artifact_id", artifact_id)  # Save the ID in RDB so that it can be referenced later.
+        artifact_id = upload_artifact(
+            trial, file_path, artifact_store
+        )  # The return value is the artifact ID.
+        trial.set_user_attr(
+            "artifact_id", artifact_id
+        )  # Save the ID in RDB so that it can be referenced later.
 
         return ...
+
 
     study = optuna.create_study(study_name="test_study", storage="sqlite:///sqlite.db")
     study.optimize(objective, n_trials=100)
@@ -165,6 +171,7 @@ between artifact information and non-artifact information (the former is in AWS 
 read and write data transparently. Translating the above process into simple pseudocode would look something like this:
 
 .. code-block:: python
+
     import os
 
     import boto3
@@ -175,28 +182,36 @@ read and write data transparently. Translating the above process into simple pse
 
 
     artifact_store = Boto3ArtifactStore(
-                    client=boto3.client(
-                        "s3",
-                        aws_access_key_id=os.environ["PFS2_AWS_ACCESS_KEY_ID"],  # Assume that these environment variables are set up properly. The same applies below.
-                        aws_secret_access_key=os.environ["PFS2_AWS_SECRET_ACCESS_KEY"],
-                        endpoint_url=os.environ["PFS2_S3_ENDPOINT"],
-                        config=Config(connect_timeout=30, read_timeout=30),
-                    ),
-                    bucket_name=pfs2_bucket,
-                )
+        client=boto3.client(
+            "s3",
+            aws_access_key_id=os.environ[
+                "PFS2_AWS_ACCESS_KEY_ID"
+            ],  # Assume that these environment variables are set up properly. The same applies below.
+            aws_secret_access_key=os.environ["PFS2_AWS_SECRET_ACCESS_KEY"],
+            endpoint_url=os.environ["PFS2_S3_ENDPOINT"],
+            config=Config(connect_timeout=30, read_timeout=30),
+        ),
+        bucket_name=pfs2_bucket,
+    )
+
 
     def objective(trial: optuna.Trial) -> float:
         ... = trial.suggest_float("x", -10, 10)
 
         # Creating and writing an artifact.
         file_path = generate_example(...)  # This function returns some kind of file.
-        artifact_id = upload_artifact(trial, file_path, artifact_store)  # The return value is the artifact ID.
-        trial.set_user_attr("artifact_id", artifact_id)  # Save the ID in RDB so that it can be referenced later.
+        artifact_id = upload_artifact(
+            trial, file_path, artifact_store
+        )  # The return value is the artifact ID.
+        trial.set_user_attr(
+            "artifact_id", artifact_id
+        )  # Save the ID in RDB so that it can be referenced later.
 
         return ...
 
+
     study = optuna.create_study(
-        study_name="test_study", 
+        study_name="test_study",
         storage="mysql://USER:PASS@localhost:3306/test",  # Set the appropriate URL.
     )
     study.optimize(objective, n_trials=100)
