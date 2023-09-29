@@ -324,17 +324,18 @@ def test_split_complete_trials_multi_objective(direction0: str, direction1: str)
             )
         )
 
-    below_trials = _tpe.sampler._split_complete_trials_multi_objective(
+    below_trials, above_trials = _tpe.sampler._split_complete_trials_multi_objective(
         study.trials,
         study,
         2,
     )
     assert [trial.number for trial in below_trials] == [0, 3]
+    assert [trial.number for trial in above_trials] == [1, 2]
 
 
 def test_split_complete_trials_multi_objective_empty() -> None:
     study = optuna.create_study(directions=("minimize", "minimize"))
-    _tpe.sampler._split_complete_trials_multi_objective([], study, 0) == []
+    _tpe.sampler._split_complete_trials_multi_objective([], study, 0) == ([], [])
 
 
 def test_calculate_nondomination_rank() -> None:

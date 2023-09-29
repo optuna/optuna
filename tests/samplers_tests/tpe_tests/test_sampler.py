@@ -832,17 +832,18 @@ def test_split_complete_trials_single_objective(direction: str) -> None:
         )
 
     for n_below in range(len(study.trials) + 1):
-        below_trials = _tpe.sampler._split_complete_trials_single_objective(
+        below_trials, above_trials = _tpe.sampler._split_complete_trials_single_objective(
             study.trials,
             study,
             n_below,
         )
         assert [trial.number for trial in below_trials] == list(range(n_below))
+        assert [trial.number for trial in above_trials] == list(range(n_below, len(study.trials)))
 
 
 def test_split_complete_trials_single_objective_empty() -> None:
     study = optuna.create_study()
-    _tpe.sampler._split_complete_trials_single_objective([], study, 0) == []
+    _tpe.sampler._split_complete_trials_single_objective([], study, 0) == ([], [])
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
@@ -869,17 +870,18 @@ def test_split_pruned_trials(direction: str) -> None:
     )
 
     for n_below in range(len(study.trials) + 1):
-        below_trials = _tpe.sampler._split_pruned_trials(
+        below_trials, above_trials = _tpe.sampler._split_pruned_trials(
             study.trials,
             study,
             n_below,
         )
         assert [trial.number for trial in below_trials] == list(range(n_below))
+        assert [trial.number for trial in above_trials] == list(range(n_below, len(study.trials)))
 
 
 def test_split_pruned_trials_empty() -> None:
     study = optuna.create_study()
-    _tpe.sampler._split_pruned_trials([], study, 0) == []
+    _tpe.sampler._split_pruned_trials([], study, 0) == ([], [])
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
@@ -898,12 +900,13 @@ def test_split_infeasible_trials(direction: str) -> None:
         )
 
     for n_below in range(len(study.trials) + 1):
-        below_trials = _tpe.sampler._split_infeasible_trials(study.trials, n_below)
+        below_trials, above_trials = _tpe.sampler._split_infeasible_trials(study.trials, n_below)
         assert [trial.number for trial in below_trials] == list(range(n_below))
+        assert [trial.number for trial in above_trials] == list(range(n_below, len(study.trials)))
 
 
 def test_split_infeasible_trials_empty() -> None:
-    _tpe.sampler._split_infeasible_trials([], 0) == []
+    _tpe.sampler._split_infeasible_trials([], 0) == ([], [])
 
 
 def frozen_trial_factory(
