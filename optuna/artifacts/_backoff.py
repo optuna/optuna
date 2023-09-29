@@ -22,20 +22,20 @@ class Backoff:
     Example:
        .. code-block:: python
 
-          import optuna
-          from optuna.artifacts import upload_artifact
-          from optuna.artifacts import Boto3ArtifactStore
-          from optuna.artifacts import Backoff
+           import optuna
+           from optuna.artifacts import upload_artifact
+           from optuna.artifacts import Boto3ArtifactStore
+           from optuna.artifacts import Backoff
 
 
-          artifact_store = Backoff(Boto3ArtifactStore("my-bucket"))
+           artifact_store = Backoff(Boto3ArtifactStore("my-bucket"))
 
 
-          def objective(trial: optuna.Trial) -> float:
-              ... = trial.suggest_float("x", -10, 10)
-              file_path = generate_example(...)
-              upload_artifact(trial, file_path, artifact_store)
-              return ...
+           def objective(trial: optuna.Trial) -> float:
+               ... = trial.suggest_float("x", -10, 10)
+               file_path = generate_example(...)
+               upload_artifact(trial, file_path, artifact_store)
+               return ...
     """
 
     def __init__(
