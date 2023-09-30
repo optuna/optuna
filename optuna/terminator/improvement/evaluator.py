@@ -130,7 +130,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             )
 
 
-@experimental_class("3.2.0")
+@experimental_class("3.4.0")
 class BestValueStagnationEvaluator(BaseImprovementEvaluator):
     """
     Evaluates the stagnation period of the best value in an optimization process.
