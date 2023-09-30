@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import NamedTuple
 from collections.abc import Sequence
+from typing import NamedTuple
 
 import numpy as np
 
