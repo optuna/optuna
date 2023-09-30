@@ -11,15 +11,15 @@ import pytest
 
 import optuna
 from optuna.samplers import BaseSampler
-from optuna.samplers import NSGAIIISampler
+from optuna.samplers._nsgaiii.sampler import NSGAIIISampler
 from optuna.samplers._base import _CONSTRAINTS_KEY
-from optuna.samplers._nsgaiii import _associate_individuals_with_reference_points
-from optuna.samplers._nsgaiii import _COEF
-from optuna.samplers._nsgaiii import _filter_inf
-from optuna.samplers._nsgaiii import _generate_default_reference_point
-from optuna.samplers._nsgaiii import _normalize_objective_values
-from optuna.samplers._nsgaiii import _POPULATION_CACHE_KEY_PREFIX
-from optuna.samplers._nsgaiii import _preserve_niche_individuals
+from optuna.samplers._nsgaiii.elite_population_selection_strategy import _associate_individuals_with_reference_points
+from optuna.samplers._nsgaiii.elite_population_selection_strategy import _COEF
+from optuna.samplers._nsgaiii.elite_population_selection_strategy import _filter_inf
+from optuna.samplers._nsgaiii.elite_population_selection_strategy import _generate_default_reference_point
+from optuna.samplers._nsgaiii.elite_population_selection_strategy import _normalize_objective_values
+from optuna.samplers._nsgaiii.sampler import _POPULATION_CACHE_KEY_PREFIX
+from optuna.samplers._nsgaiii.elite_population_selection_strategy import _preserve_niche_individuals
 from optuna.samplers.nsgaii import BaseCrossover
 from optuna.samplers.nsgaii import BLXAlphaCrossover
 from optuna.samplers.nsgaii import SBXCrossover
