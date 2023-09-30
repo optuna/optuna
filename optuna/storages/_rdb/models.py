@@ -568,5 +568,5 @@ class VersionInfoModel(BaseModel):
     @classmethod
     def find(cls, session: orm.Session) -> "VersionInfoModel":
         version_info = session.query(cls).one_or_none()
-
+        assert version_info is not None
         return version_info
