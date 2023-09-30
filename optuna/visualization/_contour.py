@@ -243,16 +243,21 @@ def _get_contour_subplot(
 
     return (
         contour,
-        _create_scatter(feasible.x, feasible.y, "black"),
-        _create_scatter(infeasible.x, infeasible.y, "#cccccc"),
+        _create_scatter(feasible.x, feasible.y, is_feasible=True),
+        _create_scatter(infeasible.x, infeasible.y, is_feasible=False),
     )
 
 
-def _create_scatter(x: list[Any], y: list[Any], marker_color: str) -> Scatter:
+def _create_scatter(x: list[Any], y: list[Any], is_feasible: bool) -> Scatter:
+    edge_color = "Gray" if is_feasible else "#cccccc"
+    marker_color = "black" if is_feasible else "#cccccc"
     return go.Scatter(
         x=x,
         y=y,
-        marker={"line": {"width": 2.0, "color": "Grey"}, "color": marker_color},
+        marker={
+            "line": {"width": 2.0, "color": edge_color},
+            "color": marker_color,
+        },
         mode="markers",
         name="Infeasible Trial",
         showlegend=False,

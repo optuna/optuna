@@ -322,7 +322,7 @@ def _generate_contour_subplot(info: _SubContourInfo, ax: "Axes", cmap: "Colormap
                 marker="o",
                 c="#cccccc",
                 s=20,
-                edgecolors="grey",
+                edgecolors="#cccccc",
                 linewidth=2.0,
             )
 
