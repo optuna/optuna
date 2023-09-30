@@ -7,7 +7,7 @@ import pytest
 
 from optuna.distributions import FloatDistribution
 from optuna.study import StudyDirection
-from optuna.terminator import RegretBoundEvaluator
+from optuna.terminator import BestValueStagnationEvaluator, RegretBoundEvaluator
 from optuna.terminator.improvement._preprocessing import NullPreprocessing
 from optuna.terminator.improvement.gp.base import _get_beta
 from optuna.terminator.improvement.gp.base import BaseGaussianProcess
@@ -59,12 +59,24 @@ def test_evaluate() -> None:
         regret_bound = evaluator.evaluate(trials, study_direction=StudyDirection.MAXIMIZE)
         assert regret_bound == 2.0 * np.sqrt(_get_beta(n_params=1, n_trials=len(trials)))
 
+    evaluator = BestValueStagnationEvaluator(tolerance_steps=1)
+    trials = [create_trial(value=value) for value in [0, 1, 2]]
+    assert evaluator.evaluate(trials=trials, study_direction=StudyDirection.MAXIMIZE) == 1
+    assert evaluator.evaluate(trials=trials, study_direction=StudyDirection.MINIMIZE) == -1
+    trials = [create_trial(value=value) for value in [0, 1, 0]]
+    assert evaluator.evaluate(trials=trials, study_direction=StudyDirection.MAXIMIZE) == 0
+    assert evaluator.evaluate(trials=trials, study_direction=StudyDirection.MINIMIZE) == -1
+    trials = [create_trial(value=value) for value in [0, 0, 0]]
+    assert evaluator.evaluate(trials=trials, study_direction=StudyDirection.MAXIMIZE) == -1
+    assert evaluator.evaluate(trials=trials, study_direction=StudyDirection.MINIMIZE) == -1
+
 
 def test_evaluate_with_no_trial() -> None:
-    evaluator = RegretBoundEvaluator()
+    evaluators = [RegretBoundEvaluator(), BestValueStagnationEvaluator()]
 
     with pytest.raises(ValueError):
-        evaluator.evaluate(trials=[], study_direction=StudyDirection.MAXIMIZE)
+        for evaluator in evaluators:
+            evaluator.evaluate(trials=[], study_direction=StudyDirection.MAXIMIZE)
 
 
 def test_evaluate_with_empty_intersection_search_space() -> None:
