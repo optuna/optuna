@@ -148,7 +148,7 @@ class BestValueStagnationEvaluator(BaseImprovementEvaluator):
         max_stagnation_trials: int = 30,
     ) -> None:
         if max_stagnation_trials < 0:
-            raise ValueError("The number of tolerance of step must not be negative.")
+            raise ValueError("The maximum number of stagnant trials must not be negative.")
         self._max_stagnation_trials = max_stagnation_trials
 
     def evaluate(
