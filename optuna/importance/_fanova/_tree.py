@@ -265,7 +265,7 @@ class _FanovaTree:
 
     @lru_cache(maxsize=None)
     def _get_node_value(self, node_index: int) -> float:
-        return float(self._tree.value[node_index])
+        return float(self._tree.value[node_index].reshape(-1)[0])
 
     @lru_cache(maxsize=None)
     def _get_node_split_threshold(self, node_index: int) -> float:
