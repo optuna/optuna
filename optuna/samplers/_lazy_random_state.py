@@ -8,8 +8,8 @@ class LazyRandomState:
     """Lazy Random State class.
 
 
-    This is a class to initialize just before using random state
-    to prevent same random state when deepcopy is applied to the instance of sampler.
+    This is a class to initialize the random state just before use to prevent
+    duplication of the same random state when deepcopy is applied to the instance of sampler.
     """
 
     def __init__(self, seed: int | None = None) -> None:
