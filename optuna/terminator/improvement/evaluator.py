@@ -132,19 +132,15 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
 
 @experimental_class("3.4.0")
 class BestValueStagnationEvaluator(BaseImprovementEvaluator):
-    """
-    Evaluates the stagnation period of the best value in an optimization process.
+    """Evaluates the stagnation period of the best value in an optimization process.
 
     This class is initialized with a maximum stagnation period (`max_stagnation_trials`)
     and is designed toevaluate the remaining trials before reaching this maximum period
     of allowed stagnation.
 
     Args:
-        - max_stagnation_trials (int): The maximum number of trials allowed for stagnation.
-
-    Example Usage:
-        >>> evaluator = BestValueStagnationEvaluator(max_stagnation_trials=30)
-        >>> stagnated_trials = evaluator.evaluate()
+        max_stagnation_trials (int):
+            The maximum number of trials allowed for stagnation.
     """
 
     def __init__(
