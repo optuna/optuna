@@ -27,7 +27,7 @@ class GCSArtifactStore:
             A google-cloud-storage `Client` to use for storage operations. If not specified, a new
             client will be created with default settings.
 
-        Example:
+    Example:
         .. code-block:: python
 
             import optuna
@@ -42,6 +42,14 @@ class GCSArtifactStore:
                 file_path = generate_example(...)
                 upload_artifact(trial, file_path, artifact_backend)
                 return ...
+
+        Before running this code, you will have to install `gcloud` and run
+
+        .. code-block:: bash
+
+            gcloud auth application-default login
+
+        so that the Cloud Storage library can automatically find the credential.
     """
 
     def __init__(
