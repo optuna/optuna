@@ -35,7 +35,7 @@ Concepts
     :header-rows: 1
 
     * - Fig 1. Concepts of the "artifact".
-    * - .. image:: TBD
+    * - .. image:: https://github.com/optuna/optuna/assets/38826298/112e0b75-9d22-474b-85ea-9f3e0d75fa8d
 
 An "artifact" is associated with an Optuna trial. In Optuna, the objective function is evaluated sequentially to search for the 
 maximum (or minimum) value. Each evaluation of the sequentially repeated objective function is called a trial. Normally, trials and 
@@ -74,9 +74,9 @@ How Trials and Artifacts are Recorded
 -------------------------------------
 
 As explained so far, the artifact module is useful when you want to save large data for each trial. In this section, we explain 
-how artifacts work in the following two scenarios: first when SQLite + local file system-based artifact backend is used (suitable 
-when the entire optimization cycle is completed locally), and second when MySQL + AWS S3-based artifact backend is used (suitable 
-when you want to keep the data in a remote location).
+how artifacts work in the following two scenarios: first when SQLite + local file system-based artifact backend is used 
+(suitable when the entire optimization cycle is completed locally), and second when MySQL + AWS S3-based artifact backend is used 
+(suitable when you want to keep the data in a remote location).
 
 Scenario 1: SQLite + file system-based artifact store
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -85,7 +85,7 @@ Scenario 1: SQLite + file system-based artifact store
     :header-rows: 1
 
     * - Fig 2. SQLite + file system-based artifact store.
-    * - .. image:: TBD
+    * - .. image:: https://github.com/optuna/optuna/assets/38826298/d41d042e-6b78-4615-bf96-05f73a47e9ea
 
 First, we explain a simple case where the optimization is completed locally.
 
@@ -148,7 +148,7 @@ Scenario 2: Remote MySQL RDB server + AWS S3 artifact store
     :header-rows: 1
 
     * - Fig 3. Remote MySQL RDB server + AWS S3 artifact store.
-    * - .. image:: TBD
+    * - .. image:: https://github.com/optuna/optuna/assets/38826298/067efc85-1fad-4b46-a2be-626c64439d7b
 
 Next, we explain the case where data is read and written remotely.
 
@@ -359,7 +359,7 @@ def main():
     base_path = "./artifacts"
     os.makedirs(base_path, exist_ok=True)
     artifact_store = FileSystemArtifactStore(base_path=base_path)
-    study.optimize(Objective(artifact_store), n_trials=100)
+    study.optimize(Objective(artifact_store), n_trials=3)
     print(
         f"Best trial is #{study.best_trial.number}\n"
         f"    Its adsorption energy is {study.best_value}\n"
@@ -388,7 +388,7 @@ if __name__ == "__main__":
 #     :header-rows: 1
 #
 #    * - Fig 4. The chemical structure obtained by the above code.
-#    * - .. image:: TBD
+#    * - .. image:: https://github.com/optuna/optuna/assets/38826298/c6bd62fd-599a-424e-8c2c-ca88af85cc63
 #
 # As shown above, it is convenient to use the artifact module when performing the optimization of chemical structures with Optuna.
 # In the case of small structures or fewer trial numbers, it's fine to convert it to a string and save it directly in the RDB.
