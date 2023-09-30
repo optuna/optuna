@@ -34,6 +34,7 @@ def test_init() -> None:
     session = storage.scoped_session()
 
     version_info = session.query(VersionInfoModel).first()
+    assert version_info is not None
     assert version_info.schema_version == SCHEMA_VERSION
     assert version_info.library_version == optuna.version.__version__
 
@@ -55,6 +56,7 @@ def test_init() -> None:
 def test_init_url_template() -> None:
     with NamedTemporaryFilePool(suffix="{SCHEMA_VERSION}") as tf:
         storage = RDBStorage("sqlite:///" + tf.name)
+        assert storage.engine.url.database is not None
         assert storage.engine.url.database.endswith(str(SCHEMA_VERSION))
 
 
