@@ -5,7 +5,7 @@ import numpy
 
 class LazyRandomState:
 
-    """Lazy Random Sate class.
+    """Lazy Random State class.
 
 
     This is a class to initialize just before using random state
