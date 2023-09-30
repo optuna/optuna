@@ -62,7 +62,7 @@ def test_regret_bound_evaluate() -> None:
 
 
 def test_best_value_stagnation_evaluate() -> None:
-    evaluator = BestValueStagnationEvaluator(tolerance_steps=1)
+    evaluator = BestValueStagnationEvaluator(max_stagnation_trials=1)
     trials = [create_trial(value=value) for value in [0, 1, 2]]
     assert evaluator.evaluate(trials=trials, study_direction=StudyDirection.MAXIMIZE) == 1
     assert evaluator.evaluate(trials=trials, study_direction=StudyDirection.MINIMIZE) == -1

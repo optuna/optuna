@@ -134,11 +134,11 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
 class BestValueStagnationEvaluator(BaseImprovementEvaluator):
     def __init__(
         self,
-        tolerance_steps: int = 30,
+        max_stagnation_trials: int = 30,
     ):
-        if tolerance_steps < 0:
+        if max_stagnation_trials < 0:
             raise ValueError("The number of tolerance of step must not be negative.")
-        self._tolerance_steps = tolerance_steps
+        self._max_stagnation_trials = max_stagnation_trials
 
     def evaluate(
         self,
@@ -148,8 +148,7 @@ class BestValueStagnationEvaluator(BaseImprovementEvaluator):
         is_maximize_direction = True if (study_direction == StudyDirection.MAXIMIZE) else False
         trials = [trial for trial in trials if trial.state == TrialState.COMPLETE]
         if len(trials) == 0:
-            return self._tolerance_steps
-
+            return self._max_stagnation_trials
         current_step = len(trials) - 1
 
         best_step = 0
@@ -163,4 +162,4 @@ class BestValueStagnationEvaluator(BaseImprovementEvaluator):
             elif (not is_maximize_direction) and (best_value > i_step_value):
                 best_step = i_step
 
-        return self._tolerance_steps - (current_step - best_step)
+        return self._max_stagnation_trials - (current_step - best_step)
