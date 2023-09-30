@@ -98,6 +98,20 @@ def test_upload_download(explicit_client: bool) -> None:
         assert actual == dummy_content
 
 
+def test_remove() -> None:
+    with init_mock_client():
+        bucket_name = "mock-bucket"
+        backend = GCSArtifactStore(bucket_name)
+        client = google.cloud.storage.Client()
+
+        artifact_id = "dummy-uuid"
+        backend.write(artifact_id, io.BytesIO(b"Hello"))
+        assert len(list(client.bucket(bucket_name).list_blobs())) == 1
+
+        backend.remove(artifact_id)
+        assert len(list(client.bucket(bucket_name).list_blobs())) == 0
+
+
 def test_file_not_found_exception() -> None:
     with init_mock_client():
         bucket_name = "mock-bucket"
