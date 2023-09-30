@@ -628,5 +628,5 @@ def test_niching_unexpected_target_population_size() -> None:
             population,
             np.array([0]),
             np.array([0.0]),
-            sampler._rng,
+            sampler._rng.rng,
         )
