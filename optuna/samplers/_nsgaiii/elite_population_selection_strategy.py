@@ -8,13 +8,13 @@ import math
 
 import numpy as np
 
-import optuna
 from optuna.samplers.nsgaii._dominates import _constrained_dominates
 from optuna.samplers.nsgaii._dominates import _validate_constraints
 from optuna.samplers.nsgaii._elite_population_selection_strategy import _fast_non_dominated_sort
 from optuna.study import Study
 from optuna.study._multi_objective import _dominates
 from optuna.trial import FrozenTrial
+
 
 # Define a coefficient for scaling intervals, used in _filter_inf() to replace +-inf.
 _COEF = 3
@@ -28,6 +28,7 @@ class NSGAIIIElitePopulationSelectionStrategy:
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
         reference_points: np.ndarray | None = None,
         dividing_parameter: int = 3,
+        seed: int | None = None,
     ) -> None:
         if population_size < 2:
             raise ValueError("`population_size` must be greater than or equal to 2.")
@@ -36,7 +37,7 @@ class NSGAIIIElitePopulationSelectionStrategy:
         self._constraints_func = constraints_func
         self._reference_points = reference_points
         self._dividing_parameter = dividing_parameter
-
+        self._rng = np.random.RandomState(seed)
 
     def __call__(self, study: Study, population: list[FrozenTrial]) -> list[FrozenTrial]:
         """Select elite population from the given trials by NSGA-III algorithm.
