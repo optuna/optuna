@@ -156,10 +156,9 @@ class BestValueStagnationEvaluator(BaseImprovementEvaluator):
         trials: List[FrozenTrial],
         study_direction: StudyDirection,
     ) -> float:
+        self._validate_input(trials)
         is_maximize_direction = True if (study_direction == StudyDirection.MAXIMIZE) else False
-        trials = [trial for trial in trials if trial.state == TrialState.COMPLETE]
-        if len(trials) == 0:
-            return self._max_stagnation_trials
+        trials = [t for t in trials if t.state == TrialState.COMPLETE]
         current_step = len(trials) - 1
 
         best_step = 0
@@ -174,3 +173,12 @@ class BestValueStagnationEvaluator(BaseImprovementEvaluator):
                 best_step = i
 
         return self._max_stagnation_trials - (current_step - best_step)
+
+    @classmethod
+    def _validate_input(
+        cls, trials: List[FrozenTrial],
+    ) -> None:
+        if len([t for t in trials if t.state == TrialState.COMPLETE]) == 0:
+            raise ValueError(
+                "Because no trial has been completed yet, the improvement cannot be evaluated."
+            )

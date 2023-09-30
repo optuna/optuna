@@ -10,6 +10,7 @@ from optuna.study import StudyDirection
 from optuna.terminator import BestValueStagnationEvaluator
 from optuna.terminator import RegretBoundEvaluator
 from optuna.terminator.improvement._preprocessing import NullPreprocessing
+from optuna.terminator.improvement.evaluator import BaseImprovementEvaluator
 from optuna.terminator.improvement.gp.base import _get_beta
 from optuna.terminator.improvement.gp.base import BaseGaussianProcess
 from optuna.trial import create_trial
@@ -76,12 +77,10 @@ def test_best_value_stagnation_evaluate() -> None:
     assert evaluator.evaluate(trials=trials, study_direction=StudyDirection.MINIMIZE) == -1
 
 
-def test_evaluate_with_no_trial() -> None:
-    evaluators = [RegretBoundEvaluator(), BestValueStagnationEvaluator()]
-
+@pytest.mark.parametrize("evaluator", [RegretBoundEvaluator(), BestValueStagnationEvaluator()])
+def test_evaluate_with_no_trial(evaluator: BaseImprovementEvaluator) -> None:
     with pytest.raises(ValueError):
-        for evaluator in evaluators:
-            evaluator.evaluate(trials=[], study_direction=StudyDirection.MAXIMIZE)
+        evaluator.evaluate(trials=[], study_direction=StudyDirection.MAXIMIZE)
 
 
 def test_evaluate_with_empty_intersection_search_space() -> None:
