@@ -167,14 +167,14 @@ class BestValueStagnationEvaluator(BaseImprovementEvaluator):
         current_step = len(trials) - 1
 
         best_step = 0
-        for i_step, trial in enumerate(trials):
+        for i, trial in enumerate(trials):
             best_value = trials[best_step].value
-            i_step_value = trial.value
+            current_value = trial.value
             assert best_value is not None
-            assert i_step_value is not None
-            if is_maximize_direction and (best_value < i_step_value):
-                best_step = i_step
+            assert current_value is not None
+            if is_maximize_direction and (best_value < current_value):
+                best_step = i
             elif (not is_maximize_direction) and (best_value > i_step_value):
-                best_step = i_step
+                best_step = i
 
         return self._max_stagnation_trials - (current_step - best_step)
