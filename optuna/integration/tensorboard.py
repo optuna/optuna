@@ -98,7 +98,7 @@ class TensorBoardCallback:
 
                 self._hp_params[param_name] = hp.HParam(
                     param_name,
-                    hp.Discrete(choices, dtype),
+                    hp.Discrete(choices),
                 )
             else:
                 distribution_list = [
