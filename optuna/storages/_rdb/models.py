@@ -36,6 +36,7 @@ try:
 
     _Column = mapped_column
 except ImportError:
+    # TODO(Shinichi): Remove this after dropping support for SQLAlchemy<2.0.
     from sqlalchemy import Column as _Column  # type: ignore[assignment]
 
 
