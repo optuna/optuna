@@ -3,8 +3,6 @@ from __future__ import annotations
 import datetime
 from io import BytesIO
 from typing import Any
-from typing import Dict
-from typing import Optional
 
 import _pytest.capture
 import pytest
@@ -20,7 +18,7 @@ from optuna.visualization._timeline import plot_timeline
 
 def _create_study(
     trial_states_list: list[TrialState],
-    trial_sys_attrs: Optional[Dict[str, Any]] = None,
+    trial_sys_attrs: dict[str, Any] | None = None,
 ) -> Study:
     study = optuna.create_study()
     fmax = float(len(trial_states_list))
@@ -74,7 +72,7 @@ def test_get_timeline_info_empty() -> None:
         ({_CONSTRAINTS_KEY: [-1.0]}, False),
     ],
 )
-def test_get_timeline_info(trial_sys_attrs: Optional[Dict[str, Any]], infeasible: bool) -> None:
+def test_get_timeline_info(trial_sys_attrs: dict[str, Any] | None, infeasible: bool) -> None:
     states = [TrialState.COMPLETE, TrialState.RUNNING, TrialState.WAITING]
     study = _create_study(states, trial_sys_attrs)
     info = _get_timeline_info(study)
