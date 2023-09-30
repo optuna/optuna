@@ -13,7 +13,7 @@ class LazyRandomState:
     """
 
     def __init__(self, seed: int | None = None) -> None:
-        self._rng: Optional[numpy.random.RandomState] = None
+        self._rng: numpy.random.RandomState | None = None
         if seed is not None:
             self.rng.seed(seed=seed)
 
