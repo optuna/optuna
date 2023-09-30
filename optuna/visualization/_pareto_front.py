@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import collections
-from typing import Any
 from collections.abc import Callable
-from typing import NamedTuple
 from collections.abc import Sequence
+from typing import Any
+from typing import NamedTuple
 import warnings
 
 import optuna
