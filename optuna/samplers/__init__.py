@@ -13,7 +13,6 @@ from optuna.samplers._tpe.multi_objective_sampler import MOTPESampler
 from optuna.samplers._tpe.sampler import TPESampler
 from optuna.samplers.nsgaii._sampler import NSGAIISampler
 
-
 __all__ = [
     "BaseSampler",
     "BruteForceSampler",
