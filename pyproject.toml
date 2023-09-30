@@ -112,6 +112,7 @@ optional = [
     "boto3",  # optuna/artifacts/_boto3.py.
     "botorch",  # optuna/terminator/gp/botorch.
     "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
+    "google-cloud-storage",  # optuna/artifacts/_gcs.py.
     "matplotlib!=3.6.0",  # optuna/visualization/matplotlib.
     "pandas",  # optuna/study.py.
     "plotly>=4.9.0",  # optuna/visualization.
