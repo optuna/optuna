@@ -67,15 +67,16 @@ def test_get_timeline_info_empty() -> None:
 
 
 @pytest.mark.parametrize(
-    "sys_attrs",
+    "trial_sys_attrs, infeasible",
     [
-        None,
-        {_CONSTRAINTS_KEY: [1.0]},
+        (None, False),
+        ({_CONSTRAINTS_KEY: [1.0]}, True),
+        ({_CONSTRAINTS_KEY: [-1.0]}, False),
     ],
 )
-def test_get_timeline_info(sys_attrs: Optional[Dict[str, Any]]) -> None:
+def test_get_timeline_info(trial_sys_attrs: Optional[Dict[str, Any]], infeasible: bool) -> None:
     states = [TrialState.COMPLETE, TrialState.RUNNING, TrialState.WAITING]
-    study = _create_study(states, sys_attrs)
+    study = _create_study(states, trial_sys_attrs)
     info = _get_timeline_info(study)
     assert len(info.bars) == len(study.get_trials())
     for bar, trial in zip(info.bars, study.get_trials()):
@@ -85,7 +86,7 @@ def test_get_timeline_info(sys_attrs: Optional[Dict[str, Any]]) -> None:
         assert isinstance(bar.start, datetime.datetime)
         assert isinstance(bar.complete, datetime.datetime)
         assert bar.start <= bar.complete
-        assert bar.infeasible == (sys_attrs is not None)
+        assert bar.infeasible == infeasible
 
 
 def test_get_timeline_info_negative_elapsed_time(capsys: _pytest.capture.CaptureFixture) -> None:
