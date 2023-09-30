@@ -159,7 +159,7 @@ class BestValueStagnationEvaluator(BaseImprovementEvaluator):
         self,
         trials: List[FrozenTrial],
         study_direction: StudyDirection,
-    ) -> int:
+    ) -> float:
         is_maximize_direction = True if (study_direction == StudyDirection.MAXIMIZE) else False
         trials = [trial for trial in trials if trial.state == TrialState.COMPLETE]
         if len(trials) == 0:
