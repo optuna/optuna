@@ -12,7 +12,7 @@ class LazyRandomState:
     to prevent same random state when deepcopy is applied to the instance of sampler.
     """
 
-    def __init__(self, seed: Optional[int] = None) -> None:
+    def __init__(self, seed: int | None = None) -> None:
         self._rng: Optional[numpy.random.RandomState] = None
         if seed is not None:
             self.rng.seed(seed=seed)
