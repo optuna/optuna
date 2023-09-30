@@ -5,10 +5,11 @@ from typing import cast
 import optuna
 from optuna.samplers import BaseSampler
 from optuna.samplers import CmaEsSampler
+from optuna.samplers import NSGAIISampler
 from optuna.samplers import RandomSampler
 from optuna.samplers import TPESampler
 from optuna.testing.storages import StorageSupplier
-from optuna.samplers import NSGAIISampler
+
 
 def parse_args(args: str) -> list[int | str]:
     ret: list[int | str] = []
@@ -49,9 +50,11 @@ class OptimizeSuite:
     def multi_objective(self, trial: optuna.Trial) -> tuple[float]:
         x = trial.suggest_float("x", -100, 100)
         y = trial.suggest_int("y", -100, 100)
-        return (x**2 + y**2, (x - 2)**2 + (y - 2)**2)
+        return (x**2 + y**2, (x - 2) ** 2 + (y - 2) ** 2)
 
-    def optimize(self, storage_mode: str, sampler_mode: str, n_trials: int, objective_type: str) -> None:
+    def optimize(
+        self, storage_mode: str, sampler_mode: str, n_trials: int, objective_type: str
+    ) -> None:
         with StorageSupplier(storage_mode) as storage:
             sampler = create_sampler(sampler_mode)
             study = optuna.create_study(storage=storage, sampler=sampler)
@@ -61,7 +64,6 @@ class OptimizeSuite:
                 study.optimize(self.multi_objective, n_trials=n_trials)
             else:
                 assert False
-
 
     def time_optimize(self, args: str) -> None:
         storage_mode, sampler_mode, n_trials, objective_type = parse_args(args)
