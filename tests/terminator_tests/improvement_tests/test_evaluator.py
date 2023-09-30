@@ -64,14 +64,17 @@ def test_regret_bound_evaluate() -> None:
 
 def test_best_value_stagnation_evaluate() -> None:
     evaluator = BestValueStagnationEvaluator(max_stagnation_trials=1)
+    # A case of monotonical improvement (best step is the latest element).
     trials = [create_trial(value=value) for value in [0, 1, 2]]
     assert evaluator.evaluate(trials=trials, study_direction=StudyDirection.MAXIMIZE) == 1
     trials = [create_trial(value=value) for value in [2, 1, 0]]
     assert evaluator.evaluate(trials=trials, study_direction=StudyDirection.MINIMIZE) == 1
+    # A case of jagged improvement (best step is the second element).
     trials = [create_trial(value=value) for value in [0, 1, 0]]
     assert evaluator.evaluate(trials=trials, study_direction=StudyDirection.MAXIMIZE) == 0
     trials = [create_trial(value=value) for value in [1, 0, 1]]
     assert evaluator.evaluate(trials=trials, study_direction=StudyDirection.MINIMIZE) == 0
+    # A case of flat improvement (best step is the first element).
     trials = [create_trial(value=value) for value in [0, 0, 0]]
     assert evaluator.evaluate(trials=trials, study_direction=StudyDirection.MAXIMIZE) == -1
     assert evaluator.evaluate(trials=trials, study_direction=StudyDirection.MINIMIZE) == -1
