@@ -26,7 +26,7 @@ class ArtifactStore(Protocol):
 
         This method should return a binary file-like object in read mode, similar to
         ``open(..., mode="rb")``. If the artifact does not exist, an
-        :exc:`~optuna.artifact.exceptions.ArtifactNotFound` exception
+        :exc:`~optuna.artifacts.exceptions.ArtifactNotFound` exception
         should be raised.
 
         Args:
