@@ -5,7 +5,7 @@ from collections.abc import Iterable
 from collections.abc import Mapping
 import copy
 from numbers import Real
-import os
+import sys
 import threading
 from typing import Any
 from typing import Callable
@@ -43,7 +43,7 @@ from optuna.trial import TrialState
 
 _dataframe = _LazyImport("optuna.study._dataframe")
 
-if TYPE_CHECKING or os.environ.get("SPHINX_BUILD") == "1":
+if TYPE_CHECKING or "sphinx" in sys.modules:
     from optuna.study._dataframe import pd
 
 
