@@ -266,7 +266,7 @@ class _FanovaTree:
     @lru_cache(maxsize=None)
     def _get_node_value(self, node_index: int) -> float:
         # self._tree.value: sklearn.tree._tree.Tree.value has
-        # the shape [node_count, n_outputs, max_n_classes]
+        # the shape (node_count, n_outputs, max_n_classes)
         return float(self._tree.value[node_index][0][0])
 
     @lru_cache(maxsize=None)

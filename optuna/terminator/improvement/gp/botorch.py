@@ -77,7 +77,7 @@ class _BoTorchGaussianProcess(BaseGaussianProcess):
             variance = posterior.variance
             std = variance.sqrt()
 
-        return mean.detach().numpy(), std.detach().numpy()
+        return mean.detach().numpy().squeeze(-1), std.detach().numpy().squeeze(-1)
 
 
 def _convert_trials_to_tensors(trials: list[FrozenTrial]) -> tuple[torch.Tensor, torch.Tensor]:
