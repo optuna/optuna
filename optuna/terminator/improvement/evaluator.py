@@ -176,7 +176,8 @@ class BestValueStagnationEvaluator(BaseImprovementEvaluator):
 
     @classmethod
     def _validate_input(
-        cls, trials: List[FrozenTrial],
+        cls,
+        trials: List[FrozenTrial],
     ) -> None:
         if len([t for t in trials if t.state == TrialState.COMPLETE]) == 0:
             raise ValueError(
