@@ -334,7 +334,6 @@ class Study:
         return copy.deepcopy(self._storage.get_study_system_attrs(self._study_id))
 
     @property
-    @experimental_func("3.4.0")
     def metric_names(self) -> list[str] | None:
         """Return metric names.
 
