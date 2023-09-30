@@ -65,10 +65,12 @@ def test_best_value_stagnation_evaluate() -> None:
     evaluator = BestValueStagnationEvaluator(max_stagnation_trials=1)
     trials = [create_trial(value=value) for value in [0, 1, 2]]
     assert evaluator.evaluate(trials=trials, study_direction=StudyDirection.MAXIMIZE) == 1
-    assert evaluator.evaluate(trials=trials, study_direction=StudyDirection.MINIMIZE) == -1
+    trials = [create_trial(value=value) for value in [2, 1, 0]]
+    assert evaluator.evaluate(trials=trials, study_direction=StudyDirection.MINIMIZE) == 1
     trials = [create_trial(value=value) for value in [0, 1, 0]]
     assert evaluator.evaluate(trials=trials, study_direction=StudyDirection.MAXIMIZE) == 0
-    assert evaluator.evaluate(trials=trials, study_direction=StudyDirection.MINIMIZE) == -1
+    trials = [create_trial(value=value) for value in [1, 0, 1]]
+    assert evaluator.evaluate(trials=trials, study_direction=StudyDirection.MINIMIZE) == 0
     trials = [create_trial(value=value) for value in [0, 0, 0]]
     assert evaluator.evaluate(trials=trials, study_direction=StudyDirection.MAXIMIZE) == -1
     assert evaluator.evaluate(trials=trials, study_direction=StudyDirection.MINIMIZE) == -1
