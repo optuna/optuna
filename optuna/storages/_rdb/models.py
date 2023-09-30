@@ -31,6 +31,13 @@ except ImportError:
     # TODO(c-bata): Remove this after dropping support for SQLAlchemy v1.3 or prior.
     from sqlalchemy.ext.declarative import declarative_base
 
+try:
+    from sqlalchemy.orm import mapped_column
+
+    _Column = mapped_column
+except ImportError:
+    from sqlalchemy import Column as _Column  # type: ignore[assignment]
+
 
 # Don't modify this version number anymore.
 # The schema management functionality has been moved to alembic.
@@ -48,8 +55,8 @@ BaseModel: Any = declarative_base()
 
 class StudyModel(BaseModel):
     __tablename__ = "studies"
-    study_id = orm.mapped_column(Integer, primary_key=True)
-    study_name = orm.mapped_column(
+    study_id = _Column(Integer, primary_key=True)
+    study_name = _Column(
         String(MAX_INDEXED_STRING_LENGTH), index=True, unique=True, nullable=False
     )
 
@@ -86,10 +93,10 @@ class StudyModel(BaseModel):
 class StudyDirectionModel(BaseModel):
     __tablename__ = "study_directions"
     __table_args__: Any = (UniqueConstraint("study_id", "objective"),)
-    study_direction_id = orm.mapped_column(Integer, primary_key=True)
-    direction = orm.mapped_column(Enum(StudyDirection), nullable=False)
-    study_id = orm.mapped_column(Integer, ForeignKey("studies.study_id"), nullable=False)
-    objective = orm.mapped_column(Integer, nullable=False)
+    study_direction_id = _Column(Integer, primary_key=True)
+    direction = _Column(Enum(StudyDirection), nullable=False)
+    study_id = _Column(Integer, ForeignKey("studies.study_id"), nullable=False)
+    objective = _Column(Integer, nullable=False)
 
     study = orm.relationship(
         StudyModel, backref=orm.backref("directions", cascade="all, delete-orphan")
@@ -103,10 +110,10 @@ class StudyDirectionModel(BaseModel):
 class StudyUserAttributeModel(BaseModel):
     __tablename__ = "study_user_attributes"
     __table_args__: Any = (UniqueConstraint("study_id", "key"),)
-    study_user_attribute_id = orm.mapped_column(Integer, primary_key=True)
-    study_id = orm.mapped_column(Integer, ForeignKey("studies.study_id"))
-    key = orm.mapped_column(String(MAX_INDEXED_STRING_LENGTH))
-    value_json = orm.mapped_column(Text())
+    study_user_attribute_id = _Column(Integer, primary_key=True)
+    study_id = _Column(Integer, ForeignKey("studies.study_id"))
+    key = _Column(String(MAX_INDEXED_STRING_LENGTH))
+    value_json = _Column(Text())
 
     study = orm.relationship(
         StudyModel, backref=orm.backref("user_attributes", cascade="all, delete-orphan")
@@ -135,10 +142,10 @@ class StudyUserAttributeModel(BaseModel):
 class StudySystemAttributeModel(BaseModel):
     __tablename__ = "study_system_attributes"
     __table_args__: Any = (UniqueConstraint("study_id", "key"),)
-    study_system_attribute_id = orm.mapped_column(Integer, primary_key=True)
-    study_id = orm.mapped_column(Integer, ForeignKey("studies.study_id"))
-    key = orm.mapped_column(String(MAX_INDEXED_STRING_LENGTH))
-    value_json = orm.mapped_column(Text())
+    study_system_attribute_id = _Column(Integer, primary_key=True)
+    study_id = _Column(Integer, ForeignKey("studies.study_id"))
+    key = _Column(String(MAX_INDEXED_STRING_LENGTH))
+    value_json = _Column(Text())
 
     study = orm.relationship(
         StudyModel, backref=orm.backref("system_attributes", cascade="all, delete-orphan")
@@ -166,15 +173,15 @@ class StudySystemAttributeModel(BaseModel):
 
 class TrialModel(BaseModel):
     __tablename__ = "trials"
-    trial_id = orm.mapped_column(Integer, primary_key=True)
+    trial_id = _Column(Integer, primary_key=True)
     # No `UniqueConstraint` is put on the `number` columns although it in practice is constrained
     # to be unique. This is to reduce code complexity as table-level locking would be required
     # otherwise. See https://github.com/optuna/optuna/pull/939#discussion_r387447632.
-    number = orm.mapped_column(Integer)
-    study_id = orm.mapped_column(Integer, ForeignKey("studies.study_id"), index=True)
-    state = orm.mapped_column(Enum(TrialState), nullable=False)
-    datetime_start = orm.mapped_column(DateTime)
-    datetime_complete = orm.mapped_column(DateTime)
+    number = _Column(Integer)
+    study_id = _Column(Integer, ForeignKey("studies.study_id"), index=True)
+    state = _Column(Enum(TrialState), nullable=False)
+    datetime_start = _Column(DateTime)
+    datetime_complete = _Column(DateTime)
 
     study = orm.relationship(
         StudyModel, backref=orm.backref("trials", cascade="all, delete-orphan")
@@ -274,10 +281,10 @@ class TrialModel(BaseModel):
 class TrialUserAttributeModel(BaseModel):
     __tablename__ = "trial_user_attributes"
     __table_args__: Any = (UniqueConstraint("trial_id", "key"),)
-    trial_user_attribute_id = orm.mapped_column(Integer, primary_key=True)
-    trial_id = orm.mapped_column(Integer, ForeignKey("trials.trial_id"))
-    key = orm.mapped_column(String(MAX_INDEXED_STRING_LENGTH))
-    value_json = orm.mapped_column(Text())
+    trial_user_attribute_id = _Column(Integer, primary_key=True)
+    trial_id = _Column(Integer, ForeignKey("trials.trial_id"))
+    key = _Column(String(MAX_INDEXED_STRING_LENGTH))
+    value_json = _Column(Text())
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("user_attributes", cascade="all, delete-orphan")
@@ -306,10 +313,10 @@ class TrialUserAttributeModel(BaseModel):
 class TrialSystemAttributeModel(BaseModel):
     __tablename__ = "trial_system_attributes"
     __table_args__: Any = (UniqueConstraint("trial_id", "key"),)
-    trial_system_attribute_id = orm.mapped_column(Integer, primary_key=True)
-    trial_id = orm.mapped_column(Integer, ForeignKey("trials.trial_id"))
-    key = orm.mapped_column(String(MAX_INDEXED_STRING_LENGTH))
-    value_json = orm.mapped_column(Text())
+    trial_system_attribute_id = _Column(Integer, primary_key=True)
+    trial_id = _Column(Integer, ForeignKey("trials.trial_id"))
+    key = _Column(String(MAX_INDEXED_STRING_LENGTH))
+    value_json = _Column(Text())
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("system_attributes", cascade="all, delete-orphan")
@@ -338,11 +345,11 @@ class TrialSystemAttributeModel(BaseModel):
 class TrialParamModel(BaseModel):
     __tablename__ = "trial_params"
     __table_args__: Any = (UniqueConstraint("trial_id", "param_name"),)
-    param_id = orm.mapped_column(Integer, primary_key=True)
-    trial_id = orm.mapped_column(Integer, ForeignKey("trials.trial_id"))
-    param_name = orm.mapped_column(String(MAX_INDEXED_STRING_LENGTH))
-    param_value = orm.mapped_column(Float(precision=FLOAT_PRECISION))
-    distribution_json = orm.mapped_column(Text())
+    param_id = _Column(Integer, primary_key=True)
+    trial_id = _Column(Integer, ForeignKey("trials.trial_id"))
+    param_name = _Column(String(MAX_INDEXED_STRING_LENGTH))
+    param_value = _Column(Float(precision=FLOAT_PRECISION))
+    distribution_json = _Column(Text())
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("params", cascade="all, delete-orphan")
@@ -409,11 +416,11 @@ class TrialValueModel(BaseModel):
 
     __tablename__ = "trial_values"
     __table_args__: Any = (UniqueConstraint("trial_id", "objective"),)
-    trial_value_id = orm.mapped_column(Integer, primary_key=True)
-    trial_id = orm.mapped_column(Integer, ForeignKey("trials.trial_id"), nullable=False)
-    objective = orm.mapped_column(Integer, nullable=False)
-    value = orm.mapped_column(Float(precision=FLOAT_PRECISION), nullable=True)
-    value_type = orm.mapped_column(Enum(TrialValueType), nullable=False)
+    trial_value_id = _Column(Integer, primary_key=True)
+    trial_id = _Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
+    objective = _Column(Integer, nullable=False)
+    value = _Column(Float(precision=FLOAT_PRECISION), nullable=True)
+    value_type = _Column(Enum(TrialValueType), nullable=False)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("values", cascade="all, delete-orphan")
@@ -475,11 +482,11 @@ class TrialIntermediateValueModel(BaseModel):
 
     __tablename__ = "trial_intermediate_values"
     __table_args__: Any = (UniqueConstraint("trial_id", "step"),)
-    trial_intermediate_value_id = orm.mapped_column(Integer, primary_key=True)
-    trial_id = orm.mapped_column(Integer, ForeignKey("trials.trial_id"), nullable=False)
-    step = orm.mapped_column(Integer, nullable=False)
-    intermediate_value = orm.mapped_column(Float(precision=FLOAT_PRECISION), nullable=True)
-    intermediate_value_type = orm.mapped_column(Enum(TrialIntermediateValueType), nullable=False)
+    trial_intermediate_value_id = _Column(Integer, primary_key=True)
+    trial_id = _Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
+    step = _Column(Integer, nullable=False)
+    intermediate_value = _Column(Float(precision=FLOAT_PRECISION), nullable=True)
+    intermediate_value_type = _Column(Enum(TrialIntermediateValueType), nullable=False)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("intermediate_values", cascade="all, delete-orphan")
@@ -542,9 +549,9 @@ class TrialIntermediateValueModel(BaseModel):
 class TrialHeartbeatModel(BaseModel):
     __tablename__ = "trial_heartbeats"
     __table_args__: Any = (UniqueConstraint("trial_id"),)
-    trial_heartbeat_id = orm.mapped_column(Integer, primary_key=True)
-    trial_id = orm.mapped_column(Integer, ForeignKey("trials.trial_id"), nullable=False)
-    heartbeat = orm.mapped_column(DateTime, nullable=False, default=func.current_timestamp())
+    trial_heartbeat_id = _Column(Integer, primary_key=True)
+    trial_id = _Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
+    heartbeat = _Column(DateTime, nullable=False, default=func.current_timestamp())
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("heartbeats", cascade="all, delete-orphan")
@@ -561,9 +568,9 @@ class VersionInfoModel(BaseModel):
     __tablename__ = "version_info"
     # setting check constraint to ensure the number of rows is at most 1
     __table_args__: Any = (CheckConstraint("version_info_id=1"),)
-    version_info_id = orm.mapped_column(Integer, primary_key=True, autoincrement=False, default=1)
-    schema_version = orm.mapped_column(Integer)
-    library_version = orm.mapped_column(String(MAX_VERSION_LENGTH))
+    version_info_id = _Column(Integer, primary_key=True, autoincrement=False, default=1)
+    schema_version = _Column(Integer)
+    library_version = _Column(String(MAX_VERSION_LENGTH))
 
     @classmethod
     def find(cls, session: orm.Session) -> Optional["VersionInfoModel"]:
