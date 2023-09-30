@@ -32,7 +32,7 @@ from optuna.study import Study
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-
+from optuna.samplers._lazy_random_sate import LazyRandomState
 
 EPS = 1e-12
 _logger = get_logger(__name__)
@@ -280,7 +280,7 @@ class TPESampler(BaseSampler):
         self._gamma = gamma
 
         self._warn_independent_sampling = warn_independent_sampling
-        self._rng = np.random.RandomState(seed)
+        self._rng = LazyRandomState(seed)
         self._random_sampler = RandomSampler(seed=seed)
 
         self._multivariate = multivariate
@@ -332,7 +332,7 @@ class TPESampler(BaseSampler):
             )
 
     def reseed_rng(self) -> None:
-        self._rng.seed()
+        self._rng.rng.seed()
         self._random_sampler.reseed_rng()
 
     def infer_relative_search_space(
@@ -476,7 +476,7 @@ class TPESampler(BaseSampler):
         else:
             mpe_below = _ParzenEstimator(below, search_space, self._parzen_estimator_parameters)
         mpe_above = _ParzenEstimator(above, search_space, self._parzen_estimator_parameters)
-        samples_below = mpe_below.sample(self._rng, self._n_ei_candidates)
+        samples_below = mpe_below.sample(self._rng.rng, self._n_ei_candidates)
         log_likelihoods_below = mpe_below.log_pdf(samples_below)
         log_likelihoods_above = mpe_above.log_pdf(samples_below)
         ret = TPESampler._compare(samples_below, log_likelihoods_below, log_likelihoods_above)

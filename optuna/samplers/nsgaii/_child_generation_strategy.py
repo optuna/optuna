@@ -13,6 +13,7 @@ from optuna.samplers.nsgaii._dominates import _constrained_dominates
 from optuna.study import Study
 from optuna.study._multi_objective import _dominates
 from optuna.trial import FrozenTrial
+from optuna.samplers._lazy_random_sate import LazyRandomState
 
 
 class NSGAIIChildGenerationStrategy:
@@ -49,7 +50,7 @@ class NSGAIIChildGenerationStrategy:
         self._swapping_prob = swapping_prob
         self._crossover = crossover
         self._constraints_func = constraints_func
-        self._rng = np.random.RandomState(seed)
+        self._rng = LazyRandomState(seed)
 
     def __call__(
         self,
@@ -70,19 +71,19 @@ class NSGAIIChildGenerationStrategy:
         """
         dominates = _dominates if self._constraints_func is None else _constrained_dominates
         # We choose a child based on the specified crossover method.
-        if self._rng.rand() < self._crossover_prob:
+        if self._rng.rng.rand() < self._crossover_prob:
             child_params = perform_crossover(
                 self._crossover,
                 study,
                 parent_population,
                 search_space,
-                self._rng,
+                self._rng.rng,
                 self._swapping_prob,
                 dominates,
             )
         else:
             parent_population_size = len(parent_population)
-            parent_params = parent_population[self._rng.choice(parent_population_size)].params
+            parent_params = parent_population[self._rng.rng.choice(parent_population_size)].params
             child_params = {name: parent_params[name] for name in search_space.keys()}
 
         n_params = len(child_params)
@@ -93,6 +94,6 @@ class NSGAIIChildGenerationStrategy:
 
         params = {}
         for param_name in child_params.keys():
-            if self._rng.rand() >= mutation_prob:
+            if self._rng.rng.rand() >= mutation_prob:
                 params[param_name] = child_params[param_name]
         return params
