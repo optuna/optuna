@@ -21,6 +21,7 @@ from optuna.terminator.improvement.gp.botorch import _BoTorchGaussianProcess
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
+
 DEFAULT_TOP_TRIALS_RATIO = 0.5
 DEFAULT_MIN_N_TRIALS = 20
 
@@ -136,7 +137,7 @@ class BestValueStagnationEvaluator(BaseImprovementEvaluator):
         tolerance_steps: int = 30,
     ):
         if tolerance_steps < 0:
-            raise ValueError('The number of tolerance of step must not be negative.')
+            raise ValueError("The number of tolerance of step must not be negative.")
         self._tolerance_steps = tolerance_steps
 
     def evaluate(
@@ -144,7 +145,6 @@ class BestValueStagnationEvaluator(BaseImprovementEvaluator):
         trials: List[FrozenTrial],
         study_direction: StudyDirection,
     ) -> int:
-
         is_maximize_direction = True if (study_direction == StudyDirection.MAXIMIZE) else False
         trials = [trial for trial in trials if trial.state == TrialState.COMPLETE]
         if len(trials) == 0:
@@ -155,9 +155,12 @@ class BestValueStagnationEvaluator(BaseImprovementEvaluator):
         best_step = 0
         for i_step, trial in enumerate(trials):
             best_value = trials[best_step].value
-            if is_maximize_direction and (best_value < trial.value):
+            i_step_value = trial.value
+            assert best_value is not None
+            assert i_step_value is not None
+            if is_maximize_direction and (best_value < i_step_value):
                 best_step = i_step
-            elif (not is_maximize_direction) and (best_value > trial.value):
+            elif (not is_maximize_direction) and (best_value > i_step_value):
                 best_step = i_step
 
         return self._tolerance_steps - (current_step - best_step)

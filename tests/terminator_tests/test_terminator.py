@@ -66,4 +66,3 @@ def test_should_terminate() -> None:
         min_n_trials=1,
     )
     assert not terminator.should_terminate(study)
-

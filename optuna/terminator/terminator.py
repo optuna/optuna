@@ -4,10 +4,12 @@ from typing import Optional
 from optuna._experimental import experimental_class
 from optuna.study.study import Study
 from optuna.terminator.erroreval import BaseErrorEvaluator
-from optuna.terminator.erroreval import CrossValidationErrorEvaluator, StaticErrorEvaluator
+from optuna.terminator.erroreval import CrossValidationErrorEvaluator
+from optuna.terminator.erroreval import StaticErrorEvaluator
 from optuna.terminator.improvement.evaluator import BaseImprovementEvaluator
+from optuna.terminator.improvement.evaluator import BestValueStagnationEvaluator
 from optuna.terminator.improvement.evaluator import DEFAULT_MIN_N_TRIALS
-from optuna.terminator.improvement.evaluator import BestValueStagnationEvaluator, RegretBoundEvaluator
+from optuna.terminator.improvement.evaluator import RegretBoundEvaluator
 from optuna.trial import TrialState
 
 
@@ -110,7 +112,7 @@ class Terminator(BaseTerminator):
 
     def _initialize_error_evalutor(self) -> BaseErrorEvaluator:
         if isinstance(self._improvement_evaluator, BestValueStagnationEvaluator):
-            return StaticErrorEvaluator(const=0)
+            return StaticErrorEvaluator(constant=0)
         return CrossValidationErrorEvaluator()
 
     def should_terminate(self, study: Study) -> bool:
