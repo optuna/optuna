@@ -147,6 +147,9 @@ class BestValueStagnationEvaluator(BaseImprovementEvaluator):
 
         is_maximize_direction = True if (study_direction == StudyDirection.MAXIMIZE) else False
         trials = [trial for trial in trials if trial.state == TrialState.COMPLETE]
+        if len(trials) == 0:
+            return self._tolerance_steps
+
         current_step = len(trials) - 1
 
         best_step = 0
