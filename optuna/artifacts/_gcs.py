@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from io import BytesIO
 from typing import TYPE_CHECKING
 
@@ -13,7 +15,7 @@ with try_import():
     from google.cloud.storage import Client
 
 
-@experimental_class("3.3.0")
+@experimental_class("3.4.0")
 class GCSArtifactStore:
     """An artifact backend for Google Cloud Storage (GCS).
 
@@ -51,7 +53,7 @@ class GCSArtifactStore:
         self.client = client or Client()
         self.bucket_obj = self.client.bucket(bucket_name)
 
-    def open_reader(self, artifact_id: str) -> BinaryIO:
+    def open_reader(self, artifact_id: str) -> "BinaryIO":
         blob = self.bucket_obj.blob(artifact_id)
 
         if blob is None:
@@ -63,7 +65,7 @@ class GCSArtifactStore:
         body = blob.download_as_bytes()
         return BytesIO(body)
 
-    def write(self, artifact_id: str, content_body: BinaryIO) -> None:
+    def write(self, artifact_id: str, content_body: "BinaryIO") -> None:
         blob = self.bucket_obj.blob(artifact_id)
         data = content_body.read()
         blob.upload_from_string(data)
