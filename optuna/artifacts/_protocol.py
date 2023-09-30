@@ -50,7 +50,7 @@ class ArtifactStore(Protocol):
         """Remove the artifact identified by the artifact_id.
 
         This method should delete the artifact from the backend. If the artifact does not
-        exist, an :exc:`~optuna.artifact.exceptions.ArtifactNotFound` exception
+        exist, an :exc:`~optuna.artifacts.exceptions.ArtifactNotFound` exception
         may be raised.
 
         Args:
