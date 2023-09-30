@@ -9,8 +9,7 @@ class LazyRandomState:
 
 
     This is a class to initialize just before using random state
-    to solve the following issue.
-    https://github.com/optuna/optuna/issues/4604
+    to prevent same random state when deepcopy is applied to the instance of sampler.
     """
 
     def __init__(self, seed: Optional[int] = None) -> None:
