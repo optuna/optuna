@@ -22,6 +22,7 @@ from optuna.logging import get_logger
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.samplers._base import _process_constraints_after_trial
 from optuna.samplers._base import BaseSampler
+from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
@@ -32,7 +33,7 @@ from optuna.study import Study
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna.samplers._lazy_random_sate import LazyRandomState
+
 
 EPS = 1e-12
 _logger = get_logger(__name__)

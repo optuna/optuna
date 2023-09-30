@@ -607,7 +607,7 @@ def test_niching(
             population,
             np.array(closest_reference_points),
             np.array(distance_reference_points),
-            sampler._rng,
+            sampler._rng.rng,
         )
     ]
     expected_additional_elite_population = [

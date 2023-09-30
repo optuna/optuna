@@ -10,14 +10,12 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 
-import numpy as np
-
 import optuna
 from optuna import multi_objective
 from optuna._deprecated import deprecated_class
 from optuna.distributions import BaseDistribution
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
-from optuna.samplers._lazy_random_sate import LazyRandomState
+from optuna.samplers._lazy_random_state import LazyRandomState
 
 
 # Define key names of `Trial.system_attrs`.

@@ -7,12 +7,11 @@ import hashlib
 from typing import Any
 import warnings
 
-import numpy as np
-
 import optuna
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.samplers._base import BaseSampler
+from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.samplers._random import RandomSampler
 from optuna.samplers.nsgaii._after_trial_strategy import NSGAIIAfterTrialStrategy
 from optuna.samplers.nsgaii._child_generation_strategy import NSGAIIChildGenerationStrategy
@@ -25,7 +24,6 @@ from optuna.search_space import IntersectionSearchSpace
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna.samplers._lazy_random_sate import LazyRandomState
 
 
 # Define key names of `Trial.system_attrs`.

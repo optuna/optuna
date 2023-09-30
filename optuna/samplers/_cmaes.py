@@ -27,11 +27,11 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.samplers import BaseSampler
+from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.search_space import IntersectionSearchSpace
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna.samplers._lazy_random_sate import LazyRandomState
 
 
 if TYPE_CHECKING:

@@ -16,11 +16,11 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.samplers import BaseSampler
+from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.study import Study
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna.samplers._lazy_random_sate import LazyRandomState
 
 
 @dataclass
