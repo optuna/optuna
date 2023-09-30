@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from typing import BinaryIO
 
 with try_import():
-    from google.cloud.storage import Client
+    import google.cloud.storage
 
 
 @experimental_class("3.4.0")
@@ -55,14 +55,14 @@ class GCSArtifactStore:
     def __init__(
         self,
         bucket_name: str,
-        client: Client | None = None,
+        client: google.cloud.storage.Client | None = None,
     ) -> None:
         self.bucket_name = bucket_name
-        self.client = client or Client()
+        self.client = client or google.cloud.storage.Client()
         self.bucket_obj = self.client.bucket(bucket_name)
 
     def open_reader(self, artifact_id: str) -> "BinaryIO":
-        blob = self.bucket_obj.blob(artifact_id)
+        blob = self.bucket_obj.get_blob(artifact_id)
 
         if blob is None:
             raise ArtifactNotFound(
@@ -83,7 +83,7 @@ class GCSArtifactStore:
 
 
 if TYPE_CHECKING:
-    # A mypy-runtime assertion to ensure that Boto3ArtifactStore implements all abstract methods
+    # A mypy-runtime assertion to ensure that GCS3ArtifactStore implements all abstract methods
     # in ArtifactStore.
     from ._protocol import ArtifactStore
 
