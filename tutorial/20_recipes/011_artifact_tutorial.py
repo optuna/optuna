@@ -73,9 +73,9 @@ using the artifact module is well suited.
 How Trials and Artifacts are Recorded
 -------------------------------------
 
-As explained so far, the artifact module is useful when you want to save large data for each trial. In this section, we explain 
-how artifacts work in the following two scenarios: first when SQLite + local file system-based artifact backend is used 
-(suitable when the entire optimization cycle is completed locally), and second when MySQL + AWS S3-based artifact backend is used 
+As explained so far, the artifact module is useful when you want to save large data for each trial. In this section, we explain
+how artifacts work in the following two scenarios: first when SQLite + local file system-based artifact backend is used
+(suitable when the entire optimization cycle is completed locally), and second when MySQL + AWS S3-based artifact backend is used
 (suitable when you want to keep the data in a remote location).
 
 Scenario 1: SQLite + file system-based artifact store
