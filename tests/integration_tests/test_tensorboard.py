@@ -63,6 +63,36 @@ def test_cast_float() -> None:
     study.optimize(objective, n_trials=1, callbacks=[tbcallback])
 
 
+def test_categorical() -> None:
+    def objective(trial: optuna.trial.Trial) -> float:
+        x = trial.suggest_categorical("x", [1, 2, 3])
+        assert isinstance(x, int)
+        return x
+
+    dirname = tempfile.mkdtemp()
+    metric_name = "target"
+    study_name = "test_tensorboard_integration"
+
+    tbcallback = TensorBoardCallback(dirname, metric_name)
+    study = optuna.create_study(study_name=study_name)
+    study.optimize(objective, n_trials=1, callbacks=[tbcallback])
+
+
+def test_categorical_mixed_types() -> None:
+    def objective(trial: optuna.trial.Trial) -> float:
+        x = trial.suggest_categorical("x", [None, 1, 2, 3, True, "foo"])
+        assert isinstance(x, str)
+        return len(x)
+
+    dirname = tempfile.mkdtemp()
+    metric_name = "target"
+    study_name = "test_tensorboard_integration"
+
+    tbcallback = TensorBoardCallback(dirname, metric_name)
+    study = optuna.create_study(study_name=study_name)
+    study.optimize(objective, n_trials=1, callbacks=[tbcallback])
+
+
 def test_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         TensorBoardCallback(dirname="", metric_name="")
