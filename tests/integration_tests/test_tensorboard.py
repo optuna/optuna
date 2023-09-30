@@ -81,7 +81,7 @@ def test_categorical() -> None:
 def test_categorical_mixed_types() -> None:
     def objective(trial: optuna.trial.Trial) -> float:
         x = trial.suggest_categorical("x", [None, 1, 2, 3, True, "foo"])
-        assert type(x) in (int, float, bool, str)
+        assert x is None or isinstance(x, (int, float, bool, str))
         return len(str(x))
 
     dirname = tempfile.mkdtemp()
@@ -90,7 +90,7 @@ def test_categorical_mixed_types() -> None:
 
     tbcallback = TensorBoardCallback(dirname, metric_name)
     study = optuna.create_study(study_name=study_name)
-    study.optimize(objective, n_trials=1, callbacks=[tbcallback])
+    study.optimize(objective, n_trials=10, callbacks=[tbcallback])
 
 
 def test_experimental_warning() -> None:
