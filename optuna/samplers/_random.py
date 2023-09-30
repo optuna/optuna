@@ -6,7 +6,7 @@ from optuna import distributions
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
-from optuna.samplers._lazy_random_sate import LazyRandomSate
+from optuna.samplers._lazy_random_sate import LazyRandomState
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 
@@ -38,7 +38,7 @@ class RandomSampler(BaseSampler):
     """
 
     def __init__(self, seed: Optional[int] = None) -> None:
-        self._rng = LazyRandomSate(seed)
+        self._rng = LazyRandomState(seed)
 
     def reseed_rng(self) -> None:
         self._rng.rng.seed()

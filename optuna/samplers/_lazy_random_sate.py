@@ -3,7 +3,7 @@ from typing import Optional
 import numpy
 
 
-class LazyRandomSate:
+class LazyRandomState:
 
     """Lazy Random Sate class.
 
