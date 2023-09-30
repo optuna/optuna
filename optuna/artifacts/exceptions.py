@@ -6,7 +6,7 @@ class ArtifactNotFound(OptunaError):
 
     It is typically raised while calling
     :meth:`~optuna.artifacts._protocol.ArtifactStore.open_reader` or
-    :meth:`~optuna.artifact.protocol.ArtifactBackend.remove` methods.
+    :meth:`~optuna.artifacts._protocol.ArtifactStore.remove` methods.
     """
 
     ...
