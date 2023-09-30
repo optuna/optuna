@@ -139,7 +139,7 @@ class BestValueStagnationEvaluator(BaseImprovementEvaluator):
     of allowed stagnation.
 
     Args:
-        max_stagnation_trials (int):
+        max_stagnation_trials:
             The maximum number of trials allowed for stagnation.
     """
 
