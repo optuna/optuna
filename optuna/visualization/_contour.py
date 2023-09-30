@@ -45,7 +45,7 @@ class _SubContourInfo(NamedTuple):
     xaxis: _AxisInfo
     yaxis: _AxisInfo
     z_values: dict[tuple[int, int], float]
-    constraints: list[bool]
+    constraints: list[bool] = []
 
 
 class _ContourInfo(NamedTuple):
