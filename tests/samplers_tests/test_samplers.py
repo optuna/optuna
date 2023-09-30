@@ -24,7 +24,7 @@ from optuna.distributions import IntDistribution
 from optuna.integration.botorch import logei_candidates_func
 from optuna.integration.botorch import qei_candidates_func
 from optuna.samplers import BaseSampler
-from optuna.samplers._lazy_random_sate import LazyRandomState
+from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.study import Study
 from optuna.testing.objectives import fail_objective
 from optuna.testing.objectives import pruned_objective
