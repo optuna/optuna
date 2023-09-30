@@ -194,8 +194,6 @@ def test_sampler_reseed_rng(
             # CmaEsSampler has a RandomState that is not reseed by its reseed_rng method.
             assert str(original_random_state) == str(random_state)
 
-    #
-
     had_sampler_name = _extract_attr_name_from_sampler_by_cls(sampler, BaseSampler)
     has_another_sampler = had_sampler_name is not None
     assert expected_has_another_sampler == has_another_sampler
