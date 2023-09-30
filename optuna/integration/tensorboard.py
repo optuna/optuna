@@ -85,13 +85,13 @@ class TensorBoardCallback:
                 dtype = type(choices[0])
                 if any(not isinstance(choice, dtype) for choice in choices):
                     _logger.warning(
-                        "Choices contains mixed types, which is not supported by TensorBoard."
+                        "Choices contains mixed types, which is not supported by TensorBoard. "
                         "Converting all choices to strings."
                     )
                     choices = tuple(map(str, choices))
                 elif dtype not in (int, float, bool, str):
                     _logger.warning(
-                        f"Choices are of type {dtype}, which is not supported by TensorBoard."
+                        f"Choices are of type {dtype}, which is not supported by TensorBoard. "
                         "Converting all choices to strings."
                     )
                     choices = tuple(map(str, choices))
