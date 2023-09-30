@@ -170,7 +170,7 @@ class BestValueStagnationEvaluator(BaseImprovementEvaluator):
             assert current_value is not None
             if is_maximize_direction and (best_value < current_value):
                 best_step = i
-            elif (not is_maximize_direction) and (best_value > i_step_value):
+            elif (not is_maximize_direction) and (best_value > current_value):
                 best_step = i
 
         return self._max_stagnation_trials - (current_step - best_step)
