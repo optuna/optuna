@@ -35,7 +35,7 @@
 
     // List of branches to benchmark. If not provided, defaults to "master"
     // (for git) or "default" (for mercurial).
-     "branches": ["Enhance_speed_benchmark"], // for git
+    // "branches": ["origin/Enhance_speed_benchmark"], // for git
     // "branches": ["default"],    // for mercurial
 
     // The DVCS being used.  If not set, it will be automatically
