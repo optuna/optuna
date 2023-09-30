@@ -566,7 +566,6 @@ class VersionInfoModel(BaseModel):
     library_version = orm.mapped_column(String(MAX_VERSION_LENGTH))
 
     @classmethod
-    def find(cls, session: orm.Session) -> "VersionInfoModel":
+    def find(cls, session: orm.Session) -> Optional["VersionInfoModel"]:
         version_info = session.query(cls).one_or_none()
-        assert version_info is not None
         return version_info
