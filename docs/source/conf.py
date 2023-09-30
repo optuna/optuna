@@ -16,6 +16,7 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+import os
 import warnings
 
 import plotly.io as pio
@@ -24,6 +25,8 @@ from sphinx_gallery.sorting import FileNameSortKey
 
 import optuna
 
+
+os.environ["SPHINX_BUILD"] = "1"
 
 # -- Project information -----------------------------------------------------
 
