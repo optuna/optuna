@@ -196,8 +196,7 @@ def test_check_distribution_compatibility() -> None:
     )
 
 
-@pytest.mark.parametrize(
-    "value", (0, 1, 4, 10, 11, 1.1, "1", "1.1", "-1.0", True, False))
+@pytest.mark.parametrize("value", (0, 1, 4, 10, 11, 1.1, "1", "1.1", "-1.0", True, False))
 def test_int_internal_representation(value: Any) -> None:
     i = distributions.IntDistribution(low=1, high=10)
 
