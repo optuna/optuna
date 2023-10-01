@@ -62,6 +62,12 @@ def test_regret_bound_evaluate() -> None:
         assert regret_bound == 2.0 * np.sqrt(_get_beta(n_params=1, n_trials=len(trials)))
 
 
+def test_best_value_stagnation_init() -> None:
+    with pytest.raises(ValueError):
+        # Test that a negative `max_stagnation_trials` raises ValueError.
+        BestValueStagnationEvaluator(max_stagnation_trials=-1)
+
+
 def test_best_value_stagnation_evaluate() -> None:
     evaluator = BestValueStagnationEvaluator(max_stagnation_trials=1)
     # A case of monotonical improvement (best step is the latest element).

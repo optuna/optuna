@@ -7,6 +7,7 @@ from optuna.study.study import create_study
 from optuna.terminator import BaseImprovementEvaluator
 from optuna.terminator import StaticErrorEvaluator
 from optuna.terminator import Terminator
+from optuna.terminator.improvement.evaluator import BestValueStagnationEvaluator
 from optuna.trial import FrozenTrial
 
 
@@ -26,6 +27,8 @@ def test_init() -> None:
     with pytest.raises(ValueError):
         # Test that a non-positive `min_n_trials` raises ValueError.
         Terminator(min_n_trials=0)
+
+    Terminator(BestValueStagnationEvaluator(), min_n_trials=1)
 
 
 def test_should_terminate() -> None:
