@@ -19,6 +19,7 @@ from optuna.trial import create_trial
 from optuna.trial import Trial
 from optuna.visualization import plot_param_importances as plotly_plot_param_importances
 from optuna.visualization._param_importances import _get_importances_info
+from optuna.visualization._param_importances import _get_importances_infos
 from optuna.visualization._param_importances import _ImportancesInfo
 from optuna.visualization._plotly_imports import go
 from optuna.visualization.matplotlib import plot_param_importances as plt_plot_param_importances
@@ -137,6 +138,24 @@ def test_get_param_importances_info_empty(
     assert info == _ImportancesInfo(
         importance_values=[], param_names=[], importance_labels=[], target_name="Objective Value"
     )
+
+
+@pytest.mark.parametrize(
+    "specific_create_study,objective_names",
+    [(create_study, ["Foo"]), (_create_multiobjective_study, ["Foo", "Bar"])],
+)
+def test_get_param_importances_infos_custom_objective_names(
+    specific_create_study: Callable[[], Study], objective_names: list[str]
+) -> None:
+    study = specific_create_study()
+    study.set_metric_names(objective_names)
+    n_objectives = len(study.directions)
+
+    infos = _get_importances_infos(
+        study, evaluator=None, params=["param_a"], target=None, target_name="Objective Value"
+    )
+    assert len(infos) == n_objectives
+    assert all(info.target_name == expected for info, expected in zip(infos, objective_names))
 
 
 def test_switch_label_when_param_insignificant() -> None:
