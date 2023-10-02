@@ -15,17 +15,24 @@ TL;DR
 -----
 
 - The artifact module provides a simple way to save and use large data associated with trials.
+
 - Saved artifacts can be visualized just by accessing the web page using optuna-dashboard, and downloading is also easy.
+
 - Thanks to the abstraction of the artifact module, the backend (file system, AWS S3) can be easily switched.
+
 - As the artifact module is tightly linked with Optuna, experiment management can be completed with the Optuna ecosystem alone, simplifying the code base.
 
 Table of Contents
 -----------------
 
 - Concepts
+
 - Situations where artifacts are useful
+
 - How Trials and Artifacts are Recorded
+
 - Example: Optimization of Chemical structures
+
 - Conclusion
 
 Concepts
@@ -55,20 +62,20 @@ Artifacts are useful when you want to save data that is too large to be stored i
 module would be handy in situations like the following:
 
 - Saving snapshots of machine learning models: Suppose you are tuning hyperparameters for a large-scale machine learning model like 
-an LLM. The model is very large, and each round of learning (which corresponds to one trial in Optuna) takes time. To prepare for 
-unexpected incidents during training (such as blackouts at the data center or a preemption of computation jobs by the scheduler), 
-you may want to save snapshots of the model in the middle of training for each trial. These snapshots often tend to be large and 
-are more suitable to be saved as some kinds of files than to be stored in RDB. In such cases, the artifact module is useful.
+  an LLM. The model is very large, and each round of learning (which corresponds to one trial in Optuna) takes time. To prepare for 
+  unexpected incidents during training (such as blackouts at the data center or a preemption of computation jobs by the scheduler), 
+  you may want to save snapshots of the model in the middle of training for each trial. These snapshots often tend to be large and 
+  are more suitable to be saved as some kinds of files than to be stored in RDB. In such cases, the artifact module is useful.
 
 - Optimizing chemical structures: Suppose you are formulating and exploring a problem of finding stable chemical structures as a 
-black-box optimization problem. Evaluating one chemical structure corresponds to one trial in Optuna, and that chemical structure 
-is a complex and large one. It is not appropriate to store such chemical structure data in RDB. It is conceivable to save the 
-chemical structure data in a specific file format, and in such a case, the artifact module is useful.
+  black-box optimization problem. Evaluating one chemical structure corresponds to one trial in Optuna, and that chemical structure 
+  is a complex and large one. It is not appropriate to store such chemical structure data in RDB. It is conceivable to save the 
+  chemical structure data in a specific file format, and in such a case, the artifact module is useful.
 
 - Human-in-the-loop optimization of images: Suppose you are optimizing prompts for a generative model that outputs images. You 
-sample the prompts using Optuna, output images using the generative model, and let humans rate the images for a Human-in-the-loop 
-optimization process. Since the output images are large data, it is not appropriate to use RDB to store them, and in such cases, 
-using the artifact module is well suited.
+  sample the prompts using Optuna, output images using the generative model, and let humans rate the images for a Human-in-the-loop 
+  optimization process. Since the output images are large data, it is not appropriate to use RDB to store them, and in such cases, 
+  using the artifact module is well suited.
 
 How Trials and Artifacts are Recorded
 -------------------------------------
