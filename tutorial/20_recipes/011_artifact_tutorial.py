@@ -246,6 +246,7 @@ chemical structures in addition to Optuna, so please install it with `pip instal
 from __future__ import annotations
 
 import io
+import logging
 import os
 import uuid
 
@@ -257,8 +258,13 @@ from ase.optimize import LBFGS
 import numpy as np
 from optuna.artifacts import FileSystemArtifactStore
 from optuna.artifacts import upload_artifact
+from optuna.logging import get_logger
 from optuna import create_study
 from optuna import Trial
+
+
+# Add stream handler of stdout to show the messages
+get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
 
 
 def get_opt_energy(atoms: Atoms, fmax: float = 0.001) -> float:
