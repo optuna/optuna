@@ -170,24 +170,14 @@ def test_sampler_reseed_rng(
 
     sampler = sampler_class()
 
-    rng_name = _extract_attr_name_from_sampler_by_cls(sampler, np.random.RandomState)
-    using_lazy_rng = False
-    if rng_name is None:
-        rng_name = _extract_attr_name_from_sampler_by_cls(sampler, LazyRandomState)
-        using_lazy_rng = rng_name is not None
+    rng_name = _extract_attr_name_from_sampler_by_cls(sampler, LazyRandomState)
     has_rng = rng_name is not None
     assert expected_has_rng == has_rng
     if has_rng:
         rng_name = str(rng_name)
-        if using_lazy_rng:
-            original_random_state = sampler.__dict__[rng_name].rng.get_state()
-        else:
-            original_random_state = sampler.__dict__[rng_name].get_state()
+        original_random_state = sampler.__dict__[rng_name].rng.get_state()
         sampler.reseed_rng()
-        if using_lazy_rng:
-            random_state = sampler.__dict__[rng_name].rng.get_state()
-        else:
-            random_state = sampler.__dict__[rng_name].get_state()
+        random_state = sampler.__dict__[rng_name].rng.get_state()
         if not isinstance(sampler, optuna.samplers.CmaEsSampler):
             assert str(original_random_state) != str(random_state)
         else:
@@ -201,25 +191,10 @@ def test_sampler_reseed_rng(
     if has_another_sampler:
         had_sampler_name = str(had_sampler_name)
         had_sampler = sampler.__dict__[had_sampler_name]
-        had_sampler_rng_name = _extract_attr_name_from_sampler_by_cls(
-            had_sampler, np.random.RandomState
-        )
-        using_lazy_rng = False
-        if had_sampler_rng_name is None:
-            had_sampler_rng_name = _extract_attr_name_from_sampler_by_cls(
-                had_sampler, LazyRandomState
-            )
-            assert had_sampler_rng_name is not None
-            using_lazy_rng = True
-        if using_lazy_rng:
-            original_had_sampler_random_state = had_sampler.__dict__[
-                had_sampler_rng_name
-            ].rng.get_state()
-        else:
-            original_had_sampler_random_state = had_sampler.__dict__[
-                had_sampler_rng_name
-            ].get_state()
-
+        had_sampler_rng_name = _extract_attr_name_from_sampler_by_cls(had_sampler, LazyRandomState)
+        original_had_sampler_random_state = had_sampler.__dict__[
+            had_sampler_rng_name
+        ].rng.get_state()
         with patch.object(
             had_sampler,
             "reseed_rng",
@@ -229,10 +204,7 @@ def test_sampler_reseed_rng(
             assert mock_object.call_count == 1
 
         had_sampler = sampler.__dict__[had_sampler_name]
-        if using_lazy_rng:
-            had_sampler_random_state = had_sampler.__dict__[had_sampler_rng_name].rng.get_state()
-        else:
-            had_sampler_random_state = had_sampler.__dict__[had_sampler_rng_name].get_state()
+        had_sampler_random_state = had_sampler.__dict__[had_sampler_rng_name].rng.get_state()
         assert str(original_had_sampler_random_state) != str(had_sampler_random_state)
 
 

@@ -14,6 +14,7 @@ import optuna
 from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
 from optuna.samplers._base import BaseSampler
+from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.samplers._random import RandomSampler
 from optuna.samplers.nsgaii._after_trial_strategy import NSGAIIAfterTrialStrategy
 from optuna.samplers.nsgaii._child_generation_strategy import NSGAIIChildGenerationStrategy
@@ -121,7 +122,7 @@ class NSGAIIISampler(BaseSampler):
 
         self._population_size = population_size
         self._random_sampler = RandomSampler(seed=seed)
-        self._rng = np.random.RandomState(seed)
+        self._rng = LazyRandomState(seed)
         self._constraints_func = constraints_func
         self._reference_points = reference_points
         self._dividing_parameter = dividing_parameter
@@ -143,7 +144,7 @@ class NSGAIIISampler(BaseSampler):
 
     def reseed_rng(self) -> None:
         self._random_sampler.reseed_rng()
-        self._rng.seed()
+        self._rng.rng.seed()
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
@@ -309,7 +310,7 @@ class NSGAIIISampler(BaseSampler):
                     population,
                     closest_reference_points,
                     distance_reference_points,
-                    self._rng,
+                    self._rng.rng,
                 )
                 elite_population.extend(additional_elite_population)
                 break

@@ -14,6 +14,7 @@ import numpy as np
 from optuna.distributions import BaseDistribution
 from optuna.logging import get_logger
 from optuna.samplers import BaseSampler
+from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -112,11 +113,11 @@ class GridSampler(BaseSampler):
         self._all_grids = list(itertools.product(*self._search_space.values()))
         self._param_names = sorted(search_space.keys())
         self._n_min_trials = len(self._all_grids)
-        self._rng = np.random.RandomState(seed)
-        self._rng.shuffle(self._all_grids)
+        self._rng = LazyRandomState(seed)
+        self._rng.rng.shuffle(self._all_grids)
 
     def reseed_rng(self) -> None:
-        self._rng.seed()
+        self._rng.rng.seed()
 
     def before_trial(self, study: Study, trial: FrozenTrial) -> None:
         # Instead of returning param values, GridSampler puts the target grid id as a system attr,
@@ -154,7 +155,7 @@ class GridSampler(BaseSampler):
 
         # In distributed optimization, multiple workers may simultaneously pick up the same grid.
         # To make the conflict less frequent, the grid is chosen randomly.
-        grid_id = int(self._rng.choice(target_grids))
+        grid_id = int(self._rng.rng.choice(target_grids))
 
         study._storage.set_trial_system_attr(trial._trial_id, "search_space", self._search_space)
         study._storage.set_trial_system_attr(trial._trial_id, "grid_id", grid_id)
