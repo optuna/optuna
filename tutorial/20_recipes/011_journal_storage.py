@@ -4,8 +4,9 @@
 (File-based) Journal Storage
 ============================
 
-Optuna provides `JournalStorage`. With this feature, you can easily run a distributed optimization
-over network using NFS as the shared storage, without need for setting up RDB or Redis.
+Optuna provides :class:`~optuna.storages.JournalStorage`. With this feature, you can easily run a
+distributed optimization over network using NFS as the shared storage, without need for setting up
+RDB or Redis.
 
 """
 
@@ -41,5 +42,5 @@ study.optimize(objective, n_trials=3)
 # .. note::
 #     In a Windows environment, an error message "A required privilege is not held by the client"
 #     may appear. In this case, you can solve the problem with creating storage by specifying
-#     ``JournalFileOpenLock`` as follows. See the reference of :class:`~optuna.storages.JournalStorage`
-#     for any details.
+#     :class:`~optuna.storages.JournalFileOpenLock`. See the reference of
+#     :class:`~optuna.storages.JournalStorage` for any details.
