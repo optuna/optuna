@@ -95,7 +95,7 @@ def test_categorical_mixed_types() -> None:
 
 def test_categorical_unsupported_types() -> None:
     def objective(trial: optuna.trial.Trial) -> float:
-        x = trial.suggest_categorical("x", [[1, 2], [3, 4, 5], [6]])
+        x = trial.suggest_categorical("x", [[1, 2], [3, 4, 5], [6]])  # type: ignore[list-item]
         assert isinstance(x, list)
         return len(x)
 
