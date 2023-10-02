@@ -146,6 +146,7 @@ The simple pseudocode for the above case  would look something like this:
     best_artifact_id = study.best_trial.user_attrs.get("artifact_id")
     with artifact_store.open_reader(best_artifact_id) as f:
         content = f.read().decode("utf-8")
+
     print(content)
 
 Scenario 2: Remote MySQL RDB server + AWS S3 artifact store
@@ -226,6 +227,7 @@ read and write data transparently. Translating the above process into simple pse
     best_artifact_id = study.best_trial.user_attrs.get("artifact_id")
     with artifact_store.open_reader(best_artifact_id) as f:
         content = f.read().decode("utf-8")
+
     print(content)
 
 Example: Optimization of Chemical Structures
