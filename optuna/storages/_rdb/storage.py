@@ -12,6 +12,7 @@ from typing import Callable
 from typing import Container
 from typing import Dict
 from typing import Generator
+from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -802,6 +803,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             )
 
             if states is not None:
+                # This assertion is for type checkers, since `states` is required to be Container
+                # in the base class while `models.TrialModel.state.in_` requires Iterable.
+                assert isinstance(states, Iterable)
                 query = query.filter(models.TrialModel.state.in_(states))
 
             trial_ids = query.all()
@@ -989,6 +993,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         with _create_scoped_session(self.scoped_session, True) as session:
             current_heartbeat = session.execute(sqlalchemy.func.now()).scalar()
+            assert current_heartbeat is not None
             # Added the following line to prevent mixing of timezone-aware and timezone-naive
             # `datetime` in PostgreSQL. See
             # https://github.com/optuna/optuna/pull/2190#issuecomment-766605088 for details
