@@ -843,7 +843,7 @@ def test_split_complete_trials_single_objective(direction: str) -> None:
 
 def test_split_complete_trials_single_objective_empty() -> None:
     study = optuna.create_study()
-    _tpe.sampler._split_complete_trials_single_objective([], study, 0) == ([], [])
+    assert _tpe.sampler._split_complete_trials_single_objective([], study, 0) == ([], [])
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
@@ -881,7 +881,7 @@ def test_split_pruned_trials(direction: str) -> None:
 
 def test_split_pruned_trials_empty() -> None:
     study = optuna.create_study()
-    _tpe.sampler._split_pruned_trials([], study, 0) == ([], [])
+    assert _tpe.sampler._split_pruned_trials([], study, 0) == ([], [])
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
@@ -906,7 +906,7 @@ def test_split_infeasible_trials(direction: str) -> None:
 
 
 def test_split_infeasible_trials_empty() -> None:
-    _tpe.sampler._split_infeasible_trials([], 0) == ([], [])
+    assert _tpe.sampler._split_infeasible_trials([], 0) == ([], [])
 
 
 def frozen_trial_factory(

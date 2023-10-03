@@ -335,7 +335,7 @@ def test_split_complete_trials_multi_objective(direction0: str, direction1: str)
 
 def test_split_complete_trials_multi_objective_empty() -> None:
     study = optuna.create_study(directions=("minimize", "minimize"))
-    _tpe.sampler._split_complete_trials_multi_objective([], study, 0) == ([], [])
+    assert _tpe.sampler._split_complete_trials_multi_objective([], study, 0) == ([], [])
 
 
 def test_calculate_nondomination_rank() -> None:
