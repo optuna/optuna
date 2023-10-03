@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from concurrent.futures import FIRST_COMPLETED
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
@@ -19,7 +20,6 @@ from typing import Type
 from typing import Union
 import warnings
 
-
 import optuna
 from optuna import exceptions
 from optuna import logging
@@ -34,6 +34,7 @@ from optuna.trial import TrialState
 
 
 _logger = logging.get_logger(__name__)
+
 
 def _optimize(
     study: optuna.Study,
