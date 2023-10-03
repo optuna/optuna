@@ -11,14 +11,15 @@ from optuna.importance._fanova._tree import _FanovaTree
 
 
 @pytest.fixture
-def tree() -> _FanovaTree:
+def tree() -> _FanovaTrTee:
     sklearn_tree = Mock()
     sklearn_tree.n_features = 3
     sklearn_tree.node_count = 5
     sklearn_tree.feature = [1, 2, -1, -1, -1]
     sklearn_tree.children_left = [1, 2, -1, -1, -1]
     sklearn_tree.children_right = [4, 3, -1, -1, -1]
-    sklearn_tree.value = numpy.array([[[-1.0, -1.0, 0.1, 0.2, 0.5]]])
+    # value is of shape (node_count, n_output, max_n_classes)
+    sklearn_tree.value = numpy.array([[[-1.0]], [[-1.0]], [[0.1]], [[0.2]], [[0.5]]])
     sklearn_tree.threshold = [0.5, 1.5, -1.0, -1.0, -1.0]
 
     search_spaces = numpy.array([[0.0, 1.0], [0.0, 1.0], [0.0, 2.0]])
