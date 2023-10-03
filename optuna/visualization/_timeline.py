@@ -5,6 +5,7 @@ from typing import NamedTuple
 
 from optuna._experimental import experimental_func
 from optuna.logging import get_logger
+from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study import Study
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
@@ -23,6 +24,7 @@ class _TimelineBarInfo(NamedTuple):
     complete: datetime.datetime
     state: TrialState
     hovertext: str
+    infeasible: bool
 
 
 class _TimelineInfo(NamedTuple):
@@ -82,6 +84,11 @@ def _get_timeline_info(study: Study) -> _TimelineInfo:
     for t in study.get_trials(deepcopy=False):
         date_complete = t.datetime_complete or datetime.datetime.now()
         date_start = t.datetime_start or date_complete
+        infeasible = (
+            False
+            if _CONSTRAINTS_KEY not in t.system_attrs
+            else any([x > 0 for x in t.system_attrs[_CONSTRAINTS_KEY]])
+        )
         if date_complete < date_start:
             _logger.warning(
                 (
@@ -96,6 +103,7 @@ def _get_timeline_info(study: Study) -> _TimelineInfo:
                 complete=date_complete,
                 state=t.state,
                 hovertext=_make_hovertext(t),
+                infeasible=infeasible,
             )
         )
 
@@ -116,22 +124,14 @@ def _get_timeline_plot(info: _TimelineInfo) -> "go.Figure":
 
     fig = go.Figure()
     for s in sorted(TrialState, key=lambda x: x.name):
-        bars = [b for b in info.bars if b.state == s]
-        if len(bars) == 0:
-            continue
-        fig.add_trace(
-            go.Bar(
-                name=s.name,
-                x=[(b.complete - b.start).total_seconds() * 1000 for b in bars],
-                y=[b.number for b in bars],
-                base=[b.start.isoformat() for b in bars],
-                text=[b.hovertext for b in bars],
-                hovertemplate="%{text}<extra>" + s.name + "</extra>",
-                orientation="h",
-                marker=dict(color=_cm[s.name]),
-                textposition="none",  # Avoid drawing hovertext in a bar.
-            )
-        )
+        if s.name == "COMPLETE":
+            infeasible_bars = [b for b in info.bars if b.state == s and b.infeasible]
+            feasible_bars = [b for b in info.bars if b.state == s and not b.infeasible]
+            _plot_bars(infeasible_bars, "#cccccc", "INFEASIBLE", fig)
+            _plot_bars(feasible_bars, _cm[s.name], s.name, fig)
+        else:
+            bars = [b for b in info.bars if b.state == s]
+            _plot_bars(bars, _cm[s.name], s.name, fig)
     fig.update_xaxes(type="date")
     fig.update_layout(
         go.Layout(
@@ -142,3 +142,22 @@ def _get_timeline_plot(info: _TimelineInfo) -> "go.Figure":
     )
     fig.update_layout(showlegend=True)  # Draw a legend even if all TrialStates are the same.
     return fig
+
+
+def _plot_bars(bars: list[_TimelineBarInfo], color: str, name: str, fig: go.Figure) -> None:
+    if len(bars) == 0:
+        return
+
+    fig.add_trace(
+        go.Bar(
+            name=name,
+            x=[(b.complete - b.start).total_seconds() * 1000 for b in bars],
+            y=[b.number for b in bars],
+            base=[b.start.isoformat() for b in bars],
+            text=[b.hovertext for b in bars],
+            hovertemplate="%{text}<extra>" + name + "</extra>",
+            orientation="h",
+            marker=dict(color=color),
+            textposition="none",  # Avoid drawing hovertext in a bar.
+        )
+    )
