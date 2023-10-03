@@ -149,12 +149,30 @@ def test_get_param_importances_infos_custom_objective_names(
 ) -> None:
     study = specific_create_study()
     study.set_metric_names(objective_names)
-    n_objectives = len(study.directions)
 
     infos = _get_importances_infos(
         study, evaluator=None, params=["param_a"], target=None, target_name="Objective Value"
     )
-    assert len(infos) == n_objectives
+    assert len(infos) == len(study.directions)
+    assert all(info.target_name == expected for info, expected in zip(infos, objective_names))
+
+
+@pytest.mark.parametrize(
+    "specific_create_study,objective_names",
+    [
+        (create_study, ["Objective Value"]),
+        (_create_multiobjective_study, ["Objective Value 0", "Objective Value 1"]),
+    ],
+)
+def test_get_param_importances_infos_default_objective_names(
+    specific_create_study: Callable[[], Study], objective_names: list[str]
+) -> None:
+    study = specific_create_study()
+
+    infos = _get_importances_infos(
+        study, evaluator=None, params=["param_a"], target=None, target_name="Objective Value"
+    )
+    assert len(infos) == len(study.directions)
     assert all(info.target_name == expected for info, expected in zip(infos, objective_names))
 
 
