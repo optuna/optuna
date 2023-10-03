@@ -1,3 +1,4 @@
+from __future__ import annotations
 from concurrent.futures import FIRST_COMPLETED
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
@@ -17,7 +18,7 @@ from typing import Tuple
 from typing import Type
 from typing import Union
 import warnings
-from __future__ import annotations
+
 
 import optuna
 from optuna import exceptions
