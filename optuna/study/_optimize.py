@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 from concurrent.futures import FIRST_COMPLETED
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
@@ -19,6 +18,7 @@ from typing import Tuple
 from typing import Type
 from typing import Union
 import warnings
+
 
 import optuna
 from optuna import exceptions
@@ -43,7 +43,8 @@ def _optimize(
     timeout: Optional[float] = None,
     n_jobs: int = 1,
     catch: Tuple[Type[Exception], ...] = (),
-    callbacks: Optional[List[Callable[optuna.Study, FrozenTrial]]] = None,
+    callbacks: Optional[List[Callable[[optuna.Study, FrozenTrial], None]]] = None
+
     gc_after_trial: bool = False,
     show_progress_bar: bool = False,
 ) -> None:
