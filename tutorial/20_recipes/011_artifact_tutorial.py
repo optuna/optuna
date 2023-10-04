@@ -4,6 +4,9 @@
 Optuna Artifacts Tutorial
 =========================
 
+.. contents:: Table of Contents
+    :depth: 2
+
 The artifact module of Optuna is a module designed for saving comparatively large attributes on a trial-by-trial basis in forms such 
 as files. Introduced from Optuna v3.3, this module finds a broad range of applications, such as utilizing snapshots of large size 
 models for hyperparameter tuning, optimizing massive chemical structures, and even human-in-the-loop optimization employing images 
@@ -21,19 +24,6 @@ TL;DR
 - Thanks to the abstraction of the artifact module, the backend (file system, AWS S3) can be easily switched.
 
 - As the artifact module is tightly linked with Optuna, experiment management can be completed with the Optuna ecosystem alone, simplifying the code base.
-
-Table of Contents
------------------
-
-- Concepts
-
-- Situations where artifacts are useful
-
-- How Trials and Artifacts are Recorded
-
-- Example: Optimization of Chemical structures
-
-- Conclusion
 
 Concepts
 --------
@@ -98,7 +88,7 @@ First, we explain a simple case where the optimization is completed locally.
 
 Normally, Optuna's optimization history is persisted into some kind of a database via storage objects. Here, let's consider a 
 method using SQLite, a lightweight RDB management system, as the backend. With SQLite, data is stored in a single file (e.g., 
-./sqlite.db). The optimization history comprises what parameters were sampled in each trial, what the evaluation values for those 
+./example.db). The optimization history comprises what parameters were sampled in each trial, what the evaluation values for those 
 parameters were, when each trial started and ended, etc. This file is in the SQLite format, and it is not suitable for storing 
 large data. Writing large data entries may cause performance degradation. Note that SQLite is not suitable for distributed parallel 
 optimization. If you want to perform that, please use MySQL as we will explain later, or JournalStorage 
@@ -140,7 +130,7 @@ The simple pseudocode for the above case  would look something like this:
         return ...
 
 
-    study = optuna.create_study(study_name="test_study", storage="sqlite:///sqlite.db")
+    study = optuna.create_study(study_name="test_study", storage="sqlite:///example.db")
     study.optimize(objective, n_trials=100)
     # Loading and displaying artifacts associated with the best trial.
     best_artifact_id = study.best_trial.user_attrs.get("artifact_id")
@@ -360,7 +350,11 @@ class Objective:
 
 
 def main():
-    study = create_study(study_name="test_study", storage="sqlite:///sqlite.db")
+    study = create_study(
+        study_name="test_study", 
+        storage="sqlite:///example.db",
+        load_if_exists=True,
+    )
 
     slab, E_slab = create_slab()
     study.set_user_attr("slab", atoms_to_json(slab))
