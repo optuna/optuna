@@ -12,22 +12,22 @@ import pytest
 import optuna
 from optuna.samplers import BaseSampler
 from optuna.samplers._base import _CONSTRAINTS_KEY
-from optuna.samplers._nsgaiii.elite_population_selection_strategy import (
+from optuna.samplers._nsgaiii._elite_population_selection_strategy import (
     _associate_individuals_with_reference_points,
 )
-from optuna.samplers._nsgaiii.elite_population_selection_strategy import (
+from optuna.samplers._nsgaiii._elite_population_selection_strategy import (
     _generate_default_reference_point,
 )
-from optuna.samplers._nsgaiii.elite_population_selection_strategy import (
+from optuna.samplers._nsgaiii._elite_population_selection_strategy import (
     _normalize_objective_values,
 )
-from optuna.samplers._nsgaiii.elite_population_selection_strategy import (
+from optuna.samplers._nsgaiii._elite_population_selection_strategy import (
     _preserve_niche_individuals,
 )
-from optuna.samplers._nsgaiii.elite_population_selection_strategy import _COEF
-from optuna.samplers._nsgaiii.elite_population_selection_strategy import _filter_inf
-from optuna.samplers._nsgaiii.sampler import _POPULATION_CACHE_KEY_PREFIX
-from optuna.samplers._nsgaiii.sampler import NSGAIIISampler
+from optuna.samplers._nsgaiii._elite_population_selection_strategy import _COEF
+from optuna.samplers._nsgaiii._elite_population_selection_strategy import _filter_inf
+from optuna.samplers._nsgaiii._sampler import _POPULATION_CACHE_KEY_PREFIX
+from optuna.samplers._nsgaiii._sampler import NSGAIIISampler
 from optuna.samplers.nsgaii import BaseCrossover
 from optuna.samplers.nsgaii import BLXAlphaCrossover
 from optuna.samplers.nsgaii import SBXCrossover
@@ -48,7 +48,7 @@ def test_population_size() -> None:
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
 
     generations = Counter(
-        [t.system_attrs[optuna.samplers._nsgaiii.sampler._GENERATION_KEY] for t in study.trials]
+        [t.system_attrs[optuna.samplers._nsgaiii._sampler._GENERATION_KEY] for t in study.trials]
     )
     assert generations == {0: 10, 1: 10, 2: 10, 3: 10}
 
@@ -59,7 +59,7 @@ def test_population_size() -> None:
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
 
     generations = Counter(
-        [t.system_attrs[optuna.samplers._nsgaiii.sampler._GENERATION_KEY] for t in study.trials]
+        [t.system_attrs[optuna.samplers._nsgaiii._sampler._GENERATION_KEY] for t in study.trials]
     )
     assert generations == {i: 2 for i in range(20)}
 
