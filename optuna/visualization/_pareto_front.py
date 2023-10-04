@@ -302,7 +302,7 @@ def _get_pareto_front_info(
     ) -> list[tuple[FrozenTrial, list[float]]]:
         target_values = [targets(trial) for trial in trials]
         for v in target_values:
-            if not isinstance(v, collections.abc.Sequence):
+            if not isinstance(v, Sequence):
                 raise ValueError(
                     "`targets` should return a sequence of target values."
                     " your `targets` returns {}".format(type(v))
