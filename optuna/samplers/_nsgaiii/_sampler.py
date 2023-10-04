@@ -12,7 +12,7 @@ import optuna
 from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
 from optuna.samplers._base import BaseSampler
-from optuna.samplers._nsgaiii.elite_population_selection_strategy import (
+from optuna.samplers._nsgaiii._elite_population_selection_strategy import (
     NSGAIIIElitePopulationSelectionStrategy,
 )
 from optuna.samplers._random import RandomSampler
