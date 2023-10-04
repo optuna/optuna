@@ -47,7 +47,7 @@ class OptimizeSuite:
         y = trial.suggest_int("y", -100, 100)
         return x**2 + y**2
 
-    def multi_objective(self, trial: optuna.Trial) -> tuple[float]:
+    def multi_objective(self, trial: optuna.Trial) -> tuple[float, float]:
         x = trial.suggest_float("x", -100, 100)
         y = trial.suggest_int("y", -100, 100)
         return (x**2 + y**2, (x - 2) ** 2 + (y - 2) ** 2)
