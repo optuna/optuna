@@ -26,7 +26,7 @@ class ArtifactStore(Protocol):
 
         This method should return a binary file-like object in read mode, similar to
         ``open(..., mode="rb")``. If the artifact does not exist, an
-        :exc:`~optuna_dashboard.artifact.exceptions.ArtifactNotFound` exception
+        :exc:`~optuna.artifacts.exceptions.ArtifactNotFound` exception
         should be raised.
 
         Args:
@@ -50,7 +50,7 @@ class ArtifactStore(Protocol):
         """Remove the artifact identified by the artifact_id.
 
         This method should delete the artifact from the backend. If the artifact does not
-        exist, an :exc:`~optuna_dashboard.artifact.exceptions.ArtifactNotFound` exception
+        exist, an :exc:`~optuna.artifacts.exceptions.ArtifactNotFound` exception
         may be raised.
 
         Args:
