@@ -135,7 +135,7 @@ class BestValueStagnationEvaluator(BaseImprovementEvaluator):
     """Evaluates the stagnation period of the best value in an optimization process.
 
     This class is initialized with a maximum stagnation period (`max_stagnation_trials`)
-    and is designed toevaluate the remaining trials before reaching this maximum period
+    and is designed to evaluate the remaining trials before reaching this maximum period
     of allowed stagnation.
 
     Args:
