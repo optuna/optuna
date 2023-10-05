@@ -23,6 +23,7 @@ from optuna.distributions import IntDistribution
 from optuna.samplers import BaseSampler
 from optuna.samplers import NSGAIISampler
 from optuna.samplers._base import _CONSTRAINTS_KEY
+from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.samplers.nsgaii import BaseCrossover
 from optuna.samplers.nsgaii import BLXAlphaCrossover
 from optuna.samplers.nsgaii import SBXCrossover
@@ -652,6 +653,7 @@ def test_child_generation_strategy_invalid_value(
             crossover=crossover,  # type: ignore[arg-type]
             crossover_prob=crossover_prob,
             swapping_prob=swapping_prob,
+            rng=LazyRandomState(),
         )
 
 
@@ -667,7 +669,7 @@ def test_child_generation_strategy_mutation_prob(
         crossover=UniformCrossover(),
         mutation_prob=mutation_prob,
         swapping_prob=0.5,
-        seed=1,
+        rng=LazyRandomState(seed=1),
     )
     study = MagicMock(spec=optuna.study.Study)
     search_space = MagicMock(spec=dict)
@@ -731,7 +733,7 @@ def test_child_generation_strategy_crossover_prob(mock_func: MagicMock) -> None:
         crossover=UniformCrossover(),
         mutation_prob=None,
         swapping_prob=0.5,
-        seed=1,
+        rng=LazyRandomState(seed=1),
     )
     assert child_generation_strategy_always_not_crossover(
         study, search_space, parent_population
@@ -743,6 +745,7 @@ def test_child_generation_strategy_crossover_prob(mock_func: MagicMock) -> None:
         crossover=UniformCrossover(),
         mutation_prob=0.0,
         swapping_prob=0.5,
+        rng=LazyRandomState(),
     )
     assert child_generation_strategy_always_crossover(study, search_space, parent_population) == {
         "x": 3.0,

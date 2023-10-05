@@ -222,7 +222,7 @@ class NSGAIISampler(BaseSampler):
                 swapping_prob=swapping_prob,
                 crossover=crossover,
                 constraints_func=constraints_func,
-                seed=seed,
+                rng=self._rng,
             )
         )
         self._after_trial_strategy = after_trial_strategy or NSGAIIAfterTrialStrategy(
