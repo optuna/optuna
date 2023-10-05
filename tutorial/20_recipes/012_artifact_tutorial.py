@@ -351,7 +351,7 @@ class Objective:
 
 def main():
     study = create_study(
-        study_name="test_study", 
+        study_name="test_study",
         storage="sqlite:///example.db",
         load_if_exists=True,
     )
