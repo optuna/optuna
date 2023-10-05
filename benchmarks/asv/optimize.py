@@ -57,7 +57,13 @@ class OptimizeSuite:
     ) -> None:
         with StorageSupplier(storage_mode) as storage:
             sampler = create_sampler(sampler_mode)
-            study = optuna.create_study(storage=storage, sampler=sampler)
+            if objective_type == "single":
+                directions = ["minimize"]
+            elif objective_type == "multi":
+                directions = ["minimize", "minimize"]
+            else:
+                assert False
+            study = optuna.create_study(storage=storage, sampler=sampler, directions=directions)
             if objective_type == "single":
                 study.optimize(self.objective, n_trials=n_trials)
             elif objective_type == "multi":
