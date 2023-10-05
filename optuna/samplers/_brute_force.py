@@ -16,6 +16,7 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.samplers import BaseSampler
+from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.study import Study
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
@@ -130,7 +131,7 @@ class BruteForceSampler(BaseSampler):
     """
 
     def __init__(self, seed: Optional[int] = None) -> None:
-        self._rng = np.random.RandomState(seed)
+        self._rng = LazyRandomState(seed)
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
@@ -194,9 +195,9 @@ class BruteForceSampler(BaseSampler):
         candidates = _enumerate_candidates(param_distribution)
         tree.expand(param_name, candidates)
         if tree.count_unexpanded() == 0:
-            return param_distribution.to_external_repr(self._rng.choice(candidates))
+            return param_distribution.to_external_repr(self._rng.rng.choice(candidates))
         else:
-            return param_distribution.to_external_repr(tree.sample_child(self._rng))
+            return param_distribution.to_external_repr(tree.sample_child(self._rng.rng))
 
     def after_trial(
         self,

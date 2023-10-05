@@ -4,11 +4,14 @@ from typing import Dict
 import optuna
 from optuna._experimental import experimental_class
 from optuna._imports import try_import
+from optuna.logging import get_logger
 
 
 with try_import() as _imports:
     from tensorboard.plugins.hparams import api as hp
     import tensorflow as tf
+
+_logger = get_logger(__name__)
 
 
 @experimental_class("2.0.0")
@@ -46,7 +49,11 @@ class TensorBoardCallback:
         for param_name, param_value in trial.params.items():
             if param_name not in self._hp_params:
                 self._add_distributions(trial.distributions)
-            hparams[self._hp_params[param_name]] = param_value
+            param = self._hp_params[param_name]
+            if isinstance(param.domain, hp.Discrete):
+                hparams[param] = param.domain.dtype(param_value)
+            else:
+                hparams[param] = param_value
         run_name = "trial-%d" % trial.number
         run_dir = os.path.join(self._dirname, run_name)
         with tf.summary.create_file_writer(run_dir).as_default():
@@ -74,9 +81,24 @@ class TensorBoardCallback:
                     hp.IntInterval(param_distribution.low, param_distribution.high),
                 )
             elif isinstance(param_distribution, optuna.distributions.CategoricalDistribution):
+                choices = param_distribution.choices
+                dtype = type(choices[0])
+                if any(not isinstance(choice, dtype) for choice in choices):
+                    _logger.warning(
+                        "Choices contains mixed types, which is not supported by TensorBoard. "
+                        "Converting all choices to strings."
+                    )
+                    choices = tuple(map(str, choices))
+                elif dtype not in (int, float, bool, str):
+                    _logger.warning(
+                        f"Choices are of type {dtype}, which is not supported by TensorBoard. "
+                        "Converting all choices to strings."
+                    )
+                    choices = tuple(map(str, choices))
+
                 self._hp_params[param_name] = hp.HParam(
                     param_name,
-                    hp.Discrete(param_distribution.choices),
+                    hp.Discrete(choices),
                 )
             else:
                 distribution_list = [
