@@ -1610,9 +1610,3 @@ def test_get_metric_names() -> None:
     assert study.metric_names == ["v0"]
     study.set_metric_names(["v1"])
     assert study.metric_names == ["v1"]
-
-
-def test_get_metric_names_experimental_warning() -> None:
-    study = create_study()
-    with pytest.warns(ExperimentalWarning):
-        study.metric_names

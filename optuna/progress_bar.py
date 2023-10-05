@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import logging
 from typing import Any
-from typing import Optional
 from typing import TYPE_CHECKING
 import warnings
 
@@ -12,7 +13,7 @@ from optuna import logging as optuna_logging
 if TYPE_CHECKING:
     from optuna.study import Study
 
-_tqdm_handler: Optional["_TqdmLoggingHandler"] = None
+_tqdm_handler: _TqdmLoggingHandler | None = None
 
 
 # Reference: https://gist.github.com/hvy/8b80c2cedf02b15c24f85d1fa17ebe02
@@ -43,8 +44,8 @@ class _ProgressBar:
     def __init__(
         self,
         is_valid: bool,
-        n_trials: Optional[int] = None,
-        timeout: Optional[float] = None,
+        n_trials: int | None = None,
+        timeout: float | None = None,
     ) -> None:
         if is_valid and n_trials is None and timeout is None:
             warnings.warn("Progress bar won't be displayed because n_trials and timeout are None.")
@@ -72,7 +73,7 @@ class _ProgressBar:
             optuna_logging.disable_default_handler()
             optuna_logging._get_library_root_logger().addHandler(_tqdm_handler)
 
-    def update(self, elapsed_seconds: float, study: "Study") -> None:
+    def update(self, elapsed_seconds: float, study: Study) -> None:
         """Update the progress bars if ``is_valid`` is :obj:`True`.
 
         Args:

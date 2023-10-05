@@ -3,7 +3,6 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Tuple
 from typing import Union
 from unittest.mock import patch
 from unittest.mock import PropertyMock
@@ -305,93 +304,38 @@ def test_multi_objective_sample_independent_ignored_states() -> None:
     assert len(set(suggestions)) == 1
 
 
-@pytest.mark.parametrize("int_value", [-5, 5, 0])
-@pytest.mark.parametrize(
-    "categorical_value", [1, 0.0, "A", None, True, float("inf"), float("nan")]
-)
-@pytest.mark.parametrize("objective_value", [-5.0, 5.0, 0.0, -float("inf"), float("inf")])
-@pytest.mark.parametrize("multivariate", [True, False])
-@pytest.mark.parametrize("constant_liar", [True, False])
-@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
-def test_multi_objective_get_observation_pairs(
-    int_value: int,
-    categorical_value: optuna.distributions.CategoricalChoiceType,
-    objective_value: float,
-    multivariate: bool,
-    constant_liar: bool,
-) -> None:
-    def objective(trial: optuna.trial.Trial) -> Tuple[float, float]:
-        trial.suggest_int("x", int_value, int_value)
-        trial.suggest_categorical("y", [categorical_value])
-        return objective_value, objective_value
+@pytest.mark.parametrize("direction0", ["minimize", "maximize"])
+@pytest.mark.parametrize("direction1", ["minimize", "maximize"])
+def test_split_complete_trials_multi_objective(direction0: str, direction1: str) -> None:
+    study = optuna.create_study(directions=(direction0, direction1))
 
-    sampler = TPESampler(seed=0, multivariate=multivariate, constant_liar=constant_liar)
-    study = optuna.create_study(directions=["minimize", "maximize"], sampler=sampler)
-    study.optimize(objective, n_trials=2)
-    study.add_trial(
-        optuna.create_trial(
-            state=optuna.trial.TrialState.RUNNING,
-            params={"x": int_value, "y": categorical_value},
-            distributions={
-                "x": optuna.distributions.IntDistribution(int_value, int_value),
-                "y": optuna.distributions.CategoricalDistribution([categorical_value]),
-            },
+    for values in ([-2.0, -1.0], [3.0, 3.0], [0.0, 1.0], [-1.0, 0.0]):
+        value0, value1 = values
+        if direction0 == "maximize":
+            value0 = -value0
+        if direction1 == "maximize":
+            value1 = -value1
+        study.add_trial(
+            optuna.create_trial(
+                state=optuna.trial.TrialState.COMPLETE,
+                values=(value0, value1),
+                params={"x": 0},
+                distributions={"x": optuna.distributions.FloatDistribution(-1.0, 1.0)},
+            )
         )
-    )
 
-    states = [optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED]
-    assert _tpe.sampler._get_observation_pairs(study, study.get_trials(states=states)) == (
-        [(-float("inf"), [objective_value, -objective_value]) for _ in range(2)],
-        None,
-    )
-
-
-@pytest.mark.parametrize("constraint_value", [-2, 2])
-def test_multi_objective_get_observation_pairs_constrained(constraint_value: int) -> None:
-    def objective(trial: optuna.trial.Trial) -> Tuple[float, float]:
-        trial.suggest_int("x", 5, 5)
-        trial.set_user_attr("constraint", (constraint_value, -1))
-        return 5.0, 5.0
-
-    sampler = TPESampler(constraints_func=lambda trial: trial.user_attrs["constraint"], seed=0)
-    study = optuna.create_study(directions=["minimize", "maximize"], sampler=sampler)
-    study.optimize(objective, n_trials=5)
-
-    violations = [max(0, constraint_value) for _ in range(5)]
-    states = (optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED)
-    assert _tpe.sampler._get_observation_pairs(
-        study, study.get_trials(states=states), constraints_enabled=True
-    ) == (
-        [(-float("inf"), [5.0, -5.0]) for _ in range(5)],
-        violations,
-    )
-
-
-def test_multi_objective_split_observation_pairs() -> None:
-    indices_below, indices_above = _tpe.sampler._split_observation_pairs(
-        [
-            (-float("inf"), [-2.0, -1.0]),
-            (-float("inf"), [3.0, 3.0]),
-            (-float("inf"), [0.0, 1.0]),
-            (-float("inf"), [-1.0, 0.0]),
-        ],
+    below_trials, above_trials = _tpe.sampler._split_complete_trials_multi_objective(
+        study.trials,
+        study,
         2,
-        None,
     )
-    assert list(indices_below) == [0, 3]
-    assert list(indices_above) == [1, 2]
+    assert [trial.number for trial in below_trials] == [0, 3]
+    assert [trial.number for trial in above_trials] == [1, 2]
 
 
-def test_multi_objective_split_observation_pairs_with_all_indices_below() -> None:
-    indices_below, indices_above = _tpe.sampler._split_observation_pairs(
-        [
-            (-float("inf"), [1.0, 1.0]),
-        ],
-        1,
-        None,
-    )
-    assert list(indices_below) == [0]
-    assert list(indices_above) == []
+def test_split_complete_trials_multi_objective_empty() -> None:
+    study = optuna.create_study(directions=("minimize", "minimize"))
+    assert _tpe.sampler._split_complete_trials_multi_objective([], study, 0) == ([], [])
 
 
 def test_calculate_nondomination_rank() -> None:
