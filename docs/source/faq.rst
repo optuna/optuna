@@ -620,7 +620,7 @@ will retry failed trials when a new trial starts to evaluate.
 
 
 How can I deal with permutation as a parameter?
----------------------------------------------
+-----------------------------------------------
 
 Although it is not straightforward to deal with combinatorial search spaces like permutations with existing API, there exists a convenient technique for handling them. 
 It involves re-parametrization of permutation search space of :math:`n` items as an independent :math:`n`-dimensional integer search space. 
