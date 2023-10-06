@@ -8,6 +8,7 @@ import math
 
 import numpy as np
 
+from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.samplers.nsgaii._dominates import _constrained_dominates
 from optuna.samplers.nsgaii._dominates import _validate_constraints
 from optuna.samplers.nsgaii._elite_population_selection_strategy import _fast_non_dominated_sort
@@ -37,7 +38,7 @@ class NSGAIIIElitePopulationSelectionStrategy:
         self._constraints_func = constraints_func
         self._reference_points = reference_points
         self._dividing_parameter = dividing_parameter
-        self._rng = np.random.RandomState(seed)
+        self._rng = LazyRandomState(seed)
 
     def __call__(self, study: Study, population: list[FrozenTrial]) -> list[FrozenTrial]:
         """Select elite population from the given trials by NSGA-III algorithm.
@@ -91,7 +92,7 @@ class NSGAIIIElitePopulationSelectionStrategy:
                     population,
                     closest_reference_points,
                     distance_reference_points,
-                    self._rng,
+                    self._rng.rng,
                 )
                 elite_population.extend(additional_elite_population)
                 break

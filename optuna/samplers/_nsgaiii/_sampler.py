@@ -12,6 +12,7 @@ import optuna
 from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
 from optuna.samplers._base import BaseSampler
+from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.samplers._nsgaiii._elite_population_selection_strategy import (
     NSGAIIIElitePopulationSelectionStrategy,
 )
@@ -119,7 +120,7 @@ class NSGAIIISampler(BaseSampler):
 
         self._population_size = population_size
         self._random_sampler = RandomSampler(seed=seed)
-        self._rng = np.random.RandomState(seed)
+        self._rng = LazyRandomState(seed)
         self._constraints_func = constraints_func
         self._search_space = IntersectionSearchSpace()
 
@@ -150,7 +151,7 @@ class NSGAIIISampler(BaseSampler):
 
     def reseed_rng(self) -> None:
         self._random_sampler.reseed_rng()
-        self._rng.seed()
+        self._rng.rng.seed()
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
