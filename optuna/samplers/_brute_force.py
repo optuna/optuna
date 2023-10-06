@@ -170,9 +170,9 @@ class BruteForceSampler(BaseSampler):
                     incomplete_leaves.append(leaf)
 
         # Add all incomplete leaf nodes at the end because they may not have complete search space.
-        for leaf in incomplete_leaves:
-            if leaf.children is None:
-                leaf.set_leaf()
+        # for leaf in incomplete_leaves:
+        #     if leaf.children is None:
+        #         leaf.set_leaf()
         return tree
 
     def sample_independent(
