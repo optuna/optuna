@@ -8,8 +8,8 @@ _ALIAS_GROUP_LIST: list[dict[str, Any]] = [
     {"param_name": "bagging_fraction", "alias_names": ["sub_row", "subsample", "bagging"]},
     {"param_name": "learning_rate", "alias_names": ["shrinkage_rate", "eta"]},
     {
-        "param_name": "min_data_in_leaf",
-        "alias_names": ["min_data_per_leaf", "min_data", "min_child_samples", "min_samples_leaf"],
+        "param_name": "min_child_samples",
+        "alias_names": ["min_data_per_leaf", "min_data", "min_data_in_leaf", "min_samples_leaf"],
     },
     {
         "param_name": "min_sum_hessian_in_leaf",

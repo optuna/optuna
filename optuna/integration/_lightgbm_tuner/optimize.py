@@ -57,7 +57,7 @@ _DEFAULT_LIGHTGBM_PARAMETERS = {
     "feature_fraction": 1.0,
     "bagging_fraction": 1.0,
     "bagging_freq": 0,
-    "min_data_in_leaf": 20,
+    "min_child_samples": 20,
 }
 
 _logger = optuna.logging.get_logger(__name__)
@@ -215,11 +215,11 @@ class _OptunaObjective(_BaseTuner):
             self.lgbm_params["bagging_fraction"] = param_value
         if "bagging_freq" in self.target_param_names:
             self.lgbm_params["bagging_freq"] = trial.suggest_int("bagging_freq", 1, 7)
-        if "min_data_in_leaf" in self.target_param_names:
-            # `GridSampler` is used for sampling min_data_in_leaf value.
+        if "min_child_samples" in self.target_param_names:
+            # `GridSampler` is used for sampling min_child_samples value.
             # The value 1.0 for the hyperparameter is always sampled.
-            param_value = trial.suggest_int("min_data_in_leaf", 5, 100)
-            self.lgbm_params["min_data_in_leaf"] = param_value
+            param_value = trial.suggest_int("min_child_samples", 5, 100)
+            self.lgbm_params["min_child_samples"] = param_value
 
     def _copy_valid_sets(self, valid_sets: "VALID_SET_TYPE") -> "VALID_SET_TYPE":
         if isinstance(valid_sets, list):
@@ -394,12 +394,12 @@ class _LightGBMBaseTuner(_BaseTuner):
         self._model_dir = model_dir
         self._optuna_seed = optuna_seed
 
-        # Should not alter data since `min_data_in_leaf` is tuned.
+        # Should not alter data since `min_child_samples` is tuned.
         # https://lightgbm.readthedocs.io/en/latest/Parameters.html#feature_pre_filter
         if self.lgbm_params.get("feature_pre_filter", False):
             warnings.warn(
                 "feature_pre_filter is given as True but will be set to False. This is required "
-                "for the tuner to tune min_data_in_leaf."
+                "for the tuner to tune min_child_samples."
             )
         self.lgbm_params["feature_pre_filter"] = False
 
@@ -556,11 +556,11 @@ class _LightGBMBaseTuner(_BaseTuner):
         )
 
     def tune_min_data_in_leaf(self) -> None:
-        param_name = "min_data_in_leaf"
+        param_name = "min_child_samples"
         param_values = [5, 10, 25, 50, 100]
 
         sampler = optuna.samplers.GridSampler({param_name: param_values}, seed=self._optuna_seed)
-        self._tune_params([param_name], len(param_values), sampler, "min_data_in_leaf")
+        self._tune_params([param_name], len(param_values), sampler, "min_child_samples")
 
     def _tune_params(
         self,
@@ -678,7 +678,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
 
     It optimizes the following hyperparameters in a stepwise manner:
     ``lambda_l1``, ``lambda_l2``, ``num_leaves``, ``feature_fraction``, ``bagging_fraction``,
-    ``bagging_freq`` and ``min_data_in_leaf``.
+    ``bagging_freq`` and ``min_child_samples``.
 
     You can find the details of the algorithm and benchmark results in `this blog article <https:/
     /medium.com/optuna/lightgbm-tuner-new-optuna-integration-for-hyperparameter-optimization-8b709
