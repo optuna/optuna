@@ -9,7 +9,7 @@ _ALIAS_GROUP_LIST: list[dict[str, Any]] = [
     {"param_name": "learning_rate", "alias_names": ["shrinkage_rate", "eta"]},
     {
         "param_name": "min_data_in_leaf",
-        "alias_names": ["min_data_per_leaf", "min_data", "min_child_samples"],
+        "alias_names": ["min_data_per_leaf", "min_data", "min_child_samples", "min_samples_leaf"],
     },
     {
         "param_name": "min_sum_hessian_in_leaf",
@@ -20,10 +20,19 @@ _ALIAS_GROUP_LIST: list[dict[str, Any]] = [
             "min_child_weight",
         ],
     },
+    {
+        "param_name": "num_leaves",
+        "alias_names": [
+            "num_leaf",
+            "max_leaves",
+            "max_leaf",
+            "max_leaf_nodes",
+        ],
+    },
     {"param_name": "bagging_freq", "alias_names": ["subsample_freq"]},
     {"param_name": "feature_fraction", "alias_names": ["sub_feature", "colsample_bytree"]},
-    {"param_name": "lambda_l1", "alias_names": ["reg_alpha"]},
-    {"param_name": "lambda_l2", "alias_names": ["reg_lambda", "lambda"]},
+    {"param_name": "lambda_l1", "alias_names": ["reg_alpha", "l1_regularization"]},
+    {"param_name": "lambda_l2", "alias_names": ["reg_lambda", "lambda", "l2_regularization"]},
     {"param_name": "min_gain_to_split", "alias_names": ["min_split_gain"]},
 ]
 
