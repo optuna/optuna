@@ -1,7 +1,7 @@
 
 | Integration | Dependencies |
-|:--:|:--:|
-|[AllenNLP](https://github.com/optuna/optuna/tree/master/optuna/integration/allennlp) | allennlp, torch, psutil, _jsonnet |
+|:--|:--|
+|[AllenNLP](https://github.com/optuna/optuna/tree/master/optuna/integration/allennlp) | allennlp, torch, psutil, jsonnet |
 | [BoTorch](https://github.com/optuna/optuna/blob/master/optuna/integration/botorch.py) | botorch, gpytorch, torch |
 | [Catalyst](https://github.com/optuna/optuna/blob/master/optuna/integration/catalyst.py) | catalyst |
 | [CatBoost](https://github.com/optuna/optuna/blob/master/optuna/integration/catboost.py) | catboost |
