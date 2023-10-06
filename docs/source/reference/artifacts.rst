@@ -11,5 +11,6 @@ The :mod:`~optuna.artifacts` module provides the way to manage artifacts (output
 
    optuna.artifacts.FileSystemArtifactStore
    optuna.artifacts.Boto3ArtifactStore
+   optuna.artifacts.GCSArtifactStore
    optuna.artifacts.Backoff
    optuna.artifacts.upload_artifact

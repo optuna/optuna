@@ -10,13 +10,12 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 
-import numpy as np
-
 import optuna
 from optuna import multi_objective
 from optuna._deprecated import deprecated_class
 from optuna.distributions import BaseDistribution
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
+from optuna.samplers._lazy_random_state import LazyRandomState
 
 
 # Define key names of `Trial.system_attrs`.
@@ -90,11 +89,11 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
         self._crossover_prob = crossover_prob
         self._swapping_prob = swapping_prob
         self._random_sampler = multi_objective.samplers.RandomMultiObjectiveSampler(seed=seed)
-        self._rng = np.random.RandomState(seed)
+        self._rng = LazyRandomState(seed)
 
     def reseed_rng(self) -> None:
         self._random_sampler.reseed_rng()
-        self._rng.seed()
+        self._rng.rng.seed()
 
     def infer_relative_search_space(
         self,
@@ -117,7 +116,7 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
 
         if parent_generation >= 0:
             p0 = self._select_parent(study, parent_population)
-            if self._rng.rand() < self._crossover_prob:
+            if self._rng.rng.rand() < self._crossover_prob:
                 p1 = self._select_parent(
                     study, [t for t in parent_population if t._trial_id != p0._trial_id]
                 )
@@ -148,7 +147,7 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
 
         param = p0.params.get(param_name, None)
         parent_params_len = len(p0.params)
-        if param is None or self._rng.rand() < self._swapping_prob:
+        if param is None or self._rng.rng.rand() < self._swapping_prob:
             param = p1.params.get(param_name, None)
             parent_params_len = len(p1.params)
 
@@ -156,7 +155,7 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
         if mutation_prob is None:
             mutation_prob = 1.0 / max(1.0, parent_params_len)
 
-        if param is None or self._rng.rand() < mutation_prob:
+        if param is None or self._rng.rng.rand() < mutation_prob:
             return self._random_sampler.sample_independent(
                 study, trial, param_name, param_distribution
             )
@@ -267,8 +266,8 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
     ) -> "multi_objective.trial.FrozenMultiObjectiveTrial":
         # TODO(ohta): Consider to allow users to specify the number of parent candidates.
         population_size = len(population)
-        candidate0 = population[self._rng.choice(population_size)]
-        candidate1 = population[self._rng.choice(population_size)]
+        candidate0 = population[self._rng.rng.choice(population_size)]
+        candidate1 = population[self._rng.rng.choice(population_size)]
 
         # TODO(ohta): Consider crowding distance.
         if candidate0._dominates(candidate1, study.directions):

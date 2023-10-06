@@ -40,17 +40,17 @@ class Boto3ArtifactStore:
         .. code-block:: python
 
             import optuna
-            from optuna.artifact import upload_artifact
-            from optuna.artifact.boto3 import Boto3ArtifactStore
+            from optuna.artifacts import upload_artifact
+            from optuna.artifacts import Boto3ArtifactStore
 
 
-            artifact_backend = Boto3ArtifactStore("my-bucket")
+            artifact_store = Boto3ArtifactStore("my-bucket")
 
 
             def objective(trial: optuna.Trial) -> float:
                 ... = trial.suggest_float("x", -10, 10)
                 file_path = generate_example(...)
-                upload_artifact(trial, file_path, artifact_backend)
+                upload_artifact(trial, file_path, artifact_store)
                 return ...
     """
 
