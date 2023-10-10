@@ -2,7 +2,7 @@ from optuna._experimental import experimental_func
 from optuna.study import Study
 from optuna.trial import TrialState
 from optuna.visualization._timeline import _get_timeline_info
-from optuna.visualization._timeline import _TimelineInfo
+from optuna.visualization._timeline import _TimelineInfo, _TimelineBarInfo
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 
@@ -10,6 +10,9 @@ if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
     from optuna.visualization.matplotlib._matplotlib_imports import matplotlib
     from optuna.visualization.matplotlib._matplotlib_imports import plt
+
+
+_INFEASIBLE_KEY = "INFEASIBLE"
 
 
 @experimental_func("3.2.0")
@@ -60,15 +63,19 @@ def plot_timeline(study: Study) -> "Axes":
     return _get_timeline_plot(info)
 
 
+def _get_state_name(bar_info: _TimelineBarInfo) -> str:
+    return bar_info.state.name if bar_info.infeasible else _INFEASIBLE_KEY
+
+
 def _get_timeline_plot(info: _TimelineInfo) -> "Axes":
     _cm = {
-        TrialState.COMPLETE: "tab:blue",
-        TrialState.FAIL: "tab:red",
-        TrialState.PRUNED: "tab:orange",
-        TrialState.RUNNING: "tab:green",
-        TrialState.WAITING: "tab:gray",
+        TrialState.COMPLETE.name: "tab:blue",
+        TrialState.FAIL.name: "tab:red",
+        TrialState.PRUNED.name: "tab:orange",
+        _INFEASIBLE_KEY: "tab:brown",
+        TrialState.RUNNING.name: "tab:green",
+        TrialState.WAITING.name: "tab:gray",
     }
-
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
     fig, ax = plt.subplots()
@@ -83,15 +90,15 @@ def _get_timeline_plot(info: _TimelineInfo) -> "Axes":
         y=[b.number for b in info.bars],
         width=[b.complete - b.start for b in info.bars],
         left=[b.start for b in info.bars],
-        color=[_cm[b.state] for b in info.bars],
+        color=[_cm[_get_state_name(b)] for b in info.bars],
     )
 
     # There are 5 types of TrialState in total.
     # However, the legend depicts only types present in the arguments.
     legend_handles = []
-    for state, color in _cm.items():
-        if len([b for b in info.bars if b.state == state]) > 0:
-            legend_handles.append(matplotlib.patches.Patch(color=color, label=state.name))
+    for state_name, color in _cm.items():
+        if any(_get_state_name(b) == state_name for b in info.bars) > 0:
+            legend_handles.append(matplotlib.patches.Patch(color=color, label=state_name))
     ax.legend(handles=legend_handles, loc="upper left", bbox_to_anchor=(1.05, 1.0))
     fig.tight_layout()
 
