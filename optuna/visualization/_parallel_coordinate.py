@@ -214,7 +214,7 @@ def _get_parallel_coordinate_info(
             values = [math.log10(v) for v in values]
             min_value = min(values)
             max_value = max(values)
-            tickvals: list[int | float] = list(range(math.ceil(min_value), math.floor(max_value)))
+            tickvals: list[int | float] = list(range(math.ceil(min_value), math.floor(max_value) + 1))
             if min_value not in tickvals:
                 tickvals = [min_value] + tickvals
             if max_value not in tickvals:
