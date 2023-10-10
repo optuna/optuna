@@ -128,3 +128,59 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
                 "The intersection search space is empty. This condition is not supported by "
                 f"{cls.__name__}."
             )
+
+
+@experimental_class("3.4.0")
+class BestValueStagnationEvaluator(BaseImprovementEvaluator):
+    """Evaluates the stagnation period of the best value in an optimization process.
+
+    This class is initialized with a maximum stagnation period (`max_stagnation_trials`)
+    and is designed to evaluate the remaining trials before reaching this maximum period
+    of allowed stagnation. If this remaining trials reach zero, the trial terminates.
+    Therefore, the default error evaluator is instantiated by StaticErrorEvaluator(const=0).
+
+    Args:
+        max_stagnation_trials:
+            The maximum number of trials allowed for stagnation.
+    """
+
+    def __init__(
+        self,
+        max_stagnation_trials: int = 30,
+    ) -> None:
+        if max_stagnation_trials < 0:
+            raise ValueError("The maximum number of stagnant trials must not be negative.")
+        self._max_stagnation_trials = max_stagnation_trials
+
+    def evaluate(
+        self,
+        trials: List[FrozenTrial],
+        study_direction: StudyDirection,
+    ) -> float:
+        self._validate_input(trials)
+        is_maximize_direction = True if (study_direction == StudyDirection.MAXIMIZE) else False
+        trials = [t for t in trials if t.state == TrialState.COMPLETE]
+        current_step = len(trials) - 1
+
+        best_step = 0
+        for i, trial in enumerate(trials):
+            best_value = trials[best_step].value
+            current_value = trial.value
+            assert best_value is not None
+            assert current_value is not None
+            if is_maximize_direction and (best_value < current_value):
+                best_step = i
+            elif (not is_maximize_direction) and (best_value > current_value):
+                best_step = i
+
+        return self._max_stagnation_trials - (current_step - best_step)
+
+    @classmethod
+    def _validate_input(
+        cls,
+        trials: List[FrozenTrial],
+    ) -> None:
+        if len([t for t in trials if t.state == TrialState.COMPLETE]) == 0:
+            raise ValueError(
+                "Because no trial has been completed yet, the improvement cannot be evaluated."
+            )

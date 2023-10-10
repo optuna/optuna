@@ -13,6 +13,7 @@ The :mod:`~optuna.terminator` module implements a mechanism for automatically te
    optuna.terminator.Terminator
    optuna.terminator.BaseImprovementEvaluator
    optuna.terminator.RegretBoundEvaluator
+   optuna.terminator.BestValueStagnationEvaluator
    optuna.terminator.BaseErrorEvaluator
    optuna.terminator.CrossValidationErrorEvaluator
    optuna.terminator.StaticErrorEvaluator
