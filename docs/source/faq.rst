@@ -698,14 +698,14 @@ Optuna may sometimes suggest parameters evaluated in the past and if you would l
         # Sample parameters.
         x = trial.suggest_int("x", -5, 5)
         y = trial.suggest_int("y", -5, 5)
-        # Fetch all the completed trials
+        # Fetch all the completed trials.
         complete_trials = trial.study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
-        # Check whether we already evaluated the sampled `(x, y)`
+        # Check whether we already evaluated the sampled `(x, y)`.
         for t in reverse(complete_trials):
             if trial.params == t.params:
-                # Use the existing value as trial duplicated the parameters
+                # Use the existing value as trial duplicated the parameters.
                 return t.value
 
-        # Compute the objective function if the parameters are not duplicated
-        # We use the 2D sphere function in this example
+        # Compute the objective function if the parameters are not duplicated.
+        # We use the 2D sphere function in this example.
         return x ** 2 + y ** 2
