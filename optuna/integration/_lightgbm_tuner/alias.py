@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from typing import Any
+import warnings
 
 
 _ALIAS_GROUP_LIST: list[dict[str, Any]] = [
@@ -43,11 +44,20 @@ def _handling_alias_parameters(lgbm_params: dict[str, Any]) -> None:
     for alias_group in _ALIAS_GROUP_LIST:
         param_name = alias_group["param_name"]
         alias_names = alias_group["alias_names"]
+        duplicated_alias: dict[str, Any] = {}
 
         for alias_name in alias_names:
             if alias_name in lgbm_params:
+                duplicated_alias[alias_name] = lgbm_params[alias_name]
                 lgbm_params[param_name] = lgbm_params[alias_name]
                 del lgbm_params[alias_name]
+
+        if len(duplicated_alias) > 1:
+            msg = (
+                f"{param_name} in param detected multiple identical aliases {duplicated_alias}, "
+                f"but we use {param_name}={lgbm_params[param_name]}."
+            )
+            warnings.warn(msg)
 
 
 _ALIAS_METRIC_LIST: list[dict[str, Any]] = [
