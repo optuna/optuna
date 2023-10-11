@@ -5,7 +5,6 @@ from typing import Tuple
 from unittest.mock import patch
 import warnings
 
-import botorch
 from packaging import version
 import pytest
 
@@ -22,6 +21,7 @@ from optuna.trial import TrialState
 
 
 with try_import() as _imports:
+    import botorch
     import torch
 
 if not _imports.is_successful():

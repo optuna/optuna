@@ -20,7 +20,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
 
     services:
       redis:
@@ -77,13 +77,27 @@ jobs:
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
-        pytest tests -m "not integration"
+        if [ ${{ matrix.python-version }} == 3.12 ]; then
+          # TODO(not522): Remove ignores when BoTorch supports Python 3.12
+          pytest tests -m "not integration" \
+            --ignore tests/terminator_tests/ \
+            --ignore tests/visualization_tests/test_terminator_improvement.py
+        else
+          pytest tests -m "not integration"
+        fi
       env:
         SQLALCHEMY_WARN_20: 1
 
     - name: Tests
       if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
       run: |
-        pytest tests -m "not integration and not slow"
+        if [ ${{ matrix.python-version }} == 3.12 ]; then
+          # TODO(not522): Remove ignores when BoTorch supports Python 3.12
+          pytest tests -m "not integration and not slow" \
+            --ignore tests/terminator_tests/ \
+            --ignore tests/visualization_tests/test_terminator_improvement.py
+        else
+          pytest tests -m "not integration and not slow"
+        fi
       env:
         SQLALCHEMY_WARN_20: 1
