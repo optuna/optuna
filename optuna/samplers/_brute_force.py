@@ -144,10 +144,8 @@ class BruteForceSampler(BaseSampler):
 
     @staticmethod
     def _populate_tree(
-        tree: _TreeNode,
-        trials: Iterable[FrozenTrial], 
-        params: Dict[str, Any]
-    ) -> _TreeNode:
+        tree: _TreeNode, trials: Iterable[FrozenTrial], params: Dict[str, Any]
+    ) -> None:
         # Populate tree under given params from the given trials.
         incomplete_leaves: List[_TreeNode] = []
         for trial in trials:
@@ -175,7 +173,6 @@ class BruteForceSampler(BaseSampler):
         for leaf in incomplete_leaves:
             if leaf.children is None:
                 leaf.set_leaf()
-        return tree
 
     def sample_independent(
         self,
