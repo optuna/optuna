@@ -143,9 +143,12 @@ class BruteForceSampler(BaseSampler):
         return {}
 
     @staticmethod
-    def _build_tree(trials: Iterable[FrozenTrial], params: Dict[str, Any]) -> _TreeNode:
-        # Build a _TreeNode under given params from the given trials.
-        tree = _TreeNode()
+    def _populate_tree(
+        tree: _TreeNode,
+        trials: Iterable[FrozenTrial], 
+        params: Dict[str, Any]
+    ) -> _TreeNode:
+        # Populate tree under given params from the given trials.
         incomplete_leaves: List[_TreeNode] = []
         for trial in trials:
             if not all(p in trial.params and trial.params[p] == v for p, v in params.items()):
@@ -190,9 +193,10 @@ class BruteForceSampler(BaseSampler):
                 TrialState.FAIL,
             ),
         )
-        tree = self._build_tree((t for t in trials if t.number != trial.number), trial.params)
+        tree = _TreeNode()
         candidates = _enumerate_candidates(param_distribution)
         tree.expand(param_name, candidates)
+        self._populate_tree(tree, (t for t in trials if t.number != trial.number), trial.params)
         if tree.count_unexpanded() == 0:
             return param_distribution.to_external_repr(self._rng.choice(candidates))
         else:
@@ -214,7 +218,9 @@ class BruteForceSampler(BaseSampler):
                 TrialState.FAIL,
             ),
         )
-        tree = self._build_tree(
+        tree = _TreeNode()
+        self._populate_tree(
+            tree,
             (
                 t
                 if t.number != trial.number
