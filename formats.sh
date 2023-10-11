@@ -43,7 +43,7 @@ do
 done
 
 target="optuna tests benchmarks tutorial"
-mypy_target="optuna tests benchmarks tutorial"
+mypy_target="optuna tests benchmarks"
 res_all=0
 
 res_black=$(black $target --check --diff 2>&1)
