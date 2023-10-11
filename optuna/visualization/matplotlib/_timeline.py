@@ -101,7 +101,7 @@ def _get_timeline_plot(info: _TimelineInfo) -> "Axes":
     # However, the legend depicts only types present in the arguments.
     legend_handles = []
     for state_name, color in _cm.items():
-        if any(_get_state_name(b) == state_name for b in info.bars) > 0:
+        if any(_get_state_name(b) == state_name for b in info.bars):
             legend_handles.append(matplotlib.patches.Patch(color=color, label=state_name))
     ax.legend(handles=legend_handles, loc="upper left", bbox_to_anchor=(1.05, 1.0))
     fig.tight_layout()
