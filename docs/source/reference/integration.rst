@@ -150,7 +150,7 @@ XGBoost
    optuna.integration.XGBoostPruningCallback
 
 Dependencies of each integration
-================================
+--------------------------------
 
 We summarize the necessary dependencies for each integration.
 
