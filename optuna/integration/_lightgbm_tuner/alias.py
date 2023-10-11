@@ -2,14 +2,15 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from typing import Any
+import warnings
 
 
 _ALIAS_GROUP_LIST: list[dict[str, Any]] = [
     {"param_name": "bagging_fraction", "alias_names": ["sub_row", "subsample", "bagging"]},
     {"param_name": "learning_rate", "alias_names": ["shrinkage_rate", "eta"]},
     {
-        "param_name": "min_data_in_leaf",
-        "alias_names": ["min_data_per_leaf", "min_data", "min_child_samples"],
+        "param_name": "min_child_samples",
+        "alias_names": ["min_data_per_leaf", "min_data", "min_data_in_leaf", "min_samples_leaf"],
     },
     {
         "param_name": "min_sum_hessian_in_leaf",
@@ -20,10 +21,19 @@ _ALIAS_GROUP_LIST: list[dict[str, Any]] = [
             "min_child_weight",
         ],
     },
+    {
+        "param_name": "num_leaves",
+        "alias_names": [
+            "num_leaf",
+            "max_leaves",
+            "max_leaf",
+            "max_leaf_nodes",
+        ],
+    },
     {"param_name": "bagging_freq", "alias_names": ["subsample_freq"]},
     {"param_name": "feature_fraction", "alias_names": ["sub_feature", "colsample_bytree"]},
-    {"param_name": "lambda_l1", "alias_names": ["reg_alpha"]},
-    {"param_name": "lambda_l2", "alias_names": ["reg_lambda", "lambda"]},
+    {"param_name": "lambda_l1", "alias_names": ["reg_alpha", "l1_regularization"]},
+    {"param_name": "lambda_l2", "alias_names": ["reg_lambda", "lambda", "l2_regularization"]},
     {"param_name": "min_gain_to_split", "alias_names": ["min_split_gain"]},
 ]
 
@@ -34,11 +44,20 @@ def _handling_alias_parameters(lgbm_params: dict[str, Any]) -> None:
     for alias_group in _ALIAS_GROUP_LIST:
         param_name = alias_group["param_name"]
         alias_names = alias_group["alias_names"]
+        duplicated_alias: dict[str, Any] = {}
 
         for alias_name in alias_names:
             if alias_name in lgbm_params:
+                duplicated_alias[alias_name] = lgbm_params[alias_name]
                 lgbm_params[param_name] = lgbm_params[alias_name]
                 del lgbm_params[alias_name]
+
+        if len(duplicated_alias) > 1:
+            msg = (
+                f"{param_name} in param detected multiple identical aliases {duplicated_alias}, "
+                f"but we use {param_name}={lgbm_params[param_name]}."
+            )
+            warnings.warn(msg)
 
 
 _ALIAS_METRIC_LIST: list[dict[str, Any]] = [
