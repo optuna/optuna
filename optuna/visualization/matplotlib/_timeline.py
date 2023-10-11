@@ -2,7 +2,8 @@ from optuna._experimental import experimental_func
 from optuna.study import Study
 from optuna.trial import TrialState
 from optuna.visualization._timeline import _get_timeline_info
-from optuna.visualization._timeline import _TimelineInfo, _TimelineBarInfo
+from optuna.visualization._timeline import _TimelineBarInfo
+from optuna.visualization._timeline import _TimelineInfo
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 
@@ -64,7 +65,10 @@ def plot_timeline(study: Study) -> "Axes":
 
 
 def _get_state_name(bar_info: _TimelineBarInfo) -> str:
-    return bar_info.state.name if bar_info.infeasible else _INFEASIBLE_KEY
+    if bar_info.state == TrialState.COMPLETE and bar_info.infeasible:
+        return _INFEASIBLE_KEY
+    else:
+        return bar_info.state.name
 
 
 def _get_timeline_plot(info: _TimelineInfo) -> "Axes":
@@ -72,7 +76,7 @@ def _get_timeline_plot(info: _TimelineInfo) -> "Axes":
         TrialState.COMPLETE.name: "tab:blue",
         TrialState.FAIL.name: "tab:red",
         TrialState.PRUNED.name: "tab:orange",
-        _INFEASIBLE_KEY: "tab:brown",
+        _INFEASIBLE_KEY: "#CCCCCC",
         TrialState.RUNNING.name: "tab:green",
         TrialState.WAITING.name: "tab:gray",
     }
