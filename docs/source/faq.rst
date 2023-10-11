@@ -698,8 +698,11 @@ Optuna may sometimes suggest parameters evaluated in the past and if you would l
         # Sample parameters.
         x = trial.suggest_int("x", -5, 5)
         y = trial.suggest_int("y", -5, 5)
-        # Fetch all the completed trials.
-        complete_trials = trial.study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+        # Fetch all the trials to consider.
+        # In this example, we use only completed trials, but users can specify other states
+        # such as TrialState.PRUNED and TrialState.FAILED.
+        states_to_consider = (TrialState.COMPLETE,)
+        trials_to_consider = trial.study.get_trials(deepcopy=False, states=states_to_consider)
         # Check whether we already evaluated the sampled `(x, y)`.
         for t in reverse(complete_trials):
             if trial.params == t.params:
