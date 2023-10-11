@@ -704,7 +704,7 @@ Optuna may sometimes suggest parameters evaluated in the past and if you would l
         states_to_consider = (TrialState.COMPLETE,)
         trials_to_consider = trial.study.get_trials(deepcopy=False, states=states_to_consider)
         # Check whether we already evaluated the sampled `(x, y)`.
-        for t in reverse(complete_trials):
+        for t in reversed(trials_to_consider):
             if trial.params == t.params:
                 # Use the existing value as trial duplicated the parameters.
                 return t.value
@@ -712,3 +712,7 @@ Optuna may sometimes suggest parameters evaluated in the past and if you would l
         # Compute the objective function if the parameters are not duplicated.
         # We use the 2D sphere function in this example.
         return x ** 2 + y ** 2
+    
+
+    study = optuna.create_study()
+    study.optimize(objective, n_trials=100)
