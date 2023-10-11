@@ -42,8 +42,8 @@ do
   esac
 done
 
-target="optuna tests benchmarks"
-mypy_target="optuna tests benchmarks"
+target="optuna tests benchmarks tutorial"
+mypy_target="optuna tests benchmarks tutorial"
 res_all=0
 
 res_black=$(black $target --check --diff 2>&1)
