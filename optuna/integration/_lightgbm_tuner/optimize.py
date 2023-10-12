@@ -32,6 +32,7 @@ with try_import() as _imports:
     import lightgbm as lgb
     from sklearn.model_selection import BaseCrossValidator
 
+
 # Define key names of `Trial.system_attrs`.
 _ELAPSED_SECS_KEY = "lightgbm_tuner:elapsed_secs"
 _AVERAGE_ITERATION_TIME_KEY = "lightgbm_tuner:average_iteration_time"
@@ -87,11 +88,11 @@ class _BaseTuner:
 
         return metric
 
-    def _get_booster_best_score(self, booster: lgb.Booster) -> float:
+    def _get_booster_best_score(self, booster: "lgb.Booster") -> float:
         metric = self._get_metric_for_objective()
-        valid_sets: list[lgb.Dataset] | tuple[
-            lgb.Dataset, ...
-        ] | lgb.Dataset | None = self.lgbm_kwargs.get("valid_sets")
+        valid_sets: list["lgb.Dataset"] | tuple[
+            "lgb.Dataset", ...
+        ] | "lgb.Dataset" | None = self.lgbm_kwargs.get("valid_sets")
 
         if self.lgbm_kwargs.get("valid_names") is not None:
             if isinstance(self.lgbm_kwargs["valid_names"], str):
@@ -156,7 +157,7 @@ class _OptunaObjective(_BaseTuner):
         self,
         target_param_names: list[str],
         lgbm_params: dict[str, Any],
-        train_set: lgb.Dataset,
+        train_set: "lgb.Dataset",
         lgbm_kwargs: dict[str, Any],
         best_score: float,
         step_name: str,
@@ -171,7 +172,9 @@ class _OptunaObjective(_BaseTuner):
 
         self.trial_count = 0
         self.best_score = best_score
-        self.best_booster_with_trial_number: tuple[lgb.Booster | lgb.CVBooster, int] | None = None
+        self.best_booster_with_trial_number: tuple[
+            "lgb.Booster" | "lgb.CVBooster", int
+        ] | None = None
         self.step_name = step_name
         self.model_dir = model_dir
 
@@ -217,8 +220,8 @@ class _OptunaObjective(_BaseTuner):
             self.lgbm_params["min_child_samples"] = param_value
 
     def _copy_valid_sets(
-        self, valid_sets: list[lgb.Dataset] | tuple[lgb.Dataset, ...] | lgb.Dataset
-    ) -> list[lgb.Dataset] | tuple[lgb.Dataset, ...] | lgb.Dataset:
+        self, valid_sets: list["lgb.Dataset"] | tuple["lgb.Dataset", ...] | "lgb.Dataset"
+    ) -> list["lgb.Dataset"] | tuple["lgb.Dataset", ...] | "lgb.Dataset":
         if isinstance(valid_sets, list):
             return [copy.copy(d) for d in valid_sets]
         if isinstance(valid_sets, tuple):
@@ -276,7 +279,7 @@ class _OptunaObjectiveCV(_OptunaObjective):
         self,
         target_param_names: list[str],
         lgbm_params: dict[str, Any],
-        train_set: lgb.Dataset,
+        train_set: "lgb.Dataset",
         lgbm_kwargs: dict[str, Any],
         best_score: float,
         step_name: str,
@@ -294,7 +297,7 @@ class _OptunaObjectiveCV(_OptunaObjective):
             pbar=pbar,
         )
 
-    def _get_cv_scores(self, cv_results: dict[str, list[float] | lgb.CVBooster]) -> list[float]:
+    def _get_cv_scores(self, cv_results: dict[str, list[float] | "lgb.CVBooster"]) -> list[float]:
         metric = self._get_metric_for_objective()
         metric_key = f"{metric}-mean"
         # The prefix "valid " is added to metric name since LightGBM v4.0.0.
@@ -350,7 +353,7 @@ class _LightGBMBaseTuner(_BaseTuner):
     def __init__(
         self,
         params: dict[str, Any],
-        train_set: lgb.Dataset,
+        train_set: "lgb.Dataset",
         callbacks: list[Callable[..., Any]] | None = None,
         num_boost_round: int = 1000,
         feval: Callable[..., Any] | None = None,
@@ -619,7 +622,7 @@ class _LightGBMBaseTuner(_BaseTuner):
     def _create_objective(
         self,
         target_param_names: list[str],
-        train_set: lgb.Dataset,
+        train_set: "lgb.Dataset",
         step_name: str,
         pbar: tqdm.tqdm | None,
     ) -> _OptunaObjective:
@@ -751,9 +754,9 @@ class LightGBMTuner(_LightGBMBaseTuner):
     def __init__(
         self,
         params: dict[str, Any],
-        train_set: lgb.Dataset,
+        train_set: "lgb.Dataset",
         num_boost_round: int = 1000,
-        valid_sets: list[lgb.Dataset] | tuple[lgb.Dataset, ...] | lgb.Dataset | None = None,
+        valid_sets: list["lgb.Dataset"] | tuple["lgb.Dataset", ...] | "lgb.Dataset" | None = None,
         valid_names: Any | None = None,
         feval: Callable[..., Any] | None = None,
         feature_name: str = "auto",
@@ -800,7 +803,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
     def _create_objective(
         self,
         target_param_names: list[str],
-        train_set: lgb.Dataset,
+        train_set: "lgb.Dataset",
         step_name: str,
         pbar: tqdm.tqdm | None,
     ) -> _OptunaObjective:
@@ -815,7 +818,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
             pbar=pbar,
         )
 
-    def get_best_booster(self) -> lgb.Booster:
+    def get_best_booster(self) -> "lgb.Booster":
         """Return the best booster.
 
         If the best booster cannot be found, :class:`ValueError` will be raised. To prevent the
@@ -936,11 +939,11 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
     def __init__(
         self,
         params: dict[str, Any],
-        train_set: lgb.Dataset,
+        train_set: "lgb.Dataset",
         num_boost_round: int = 1000,
         folds: Generator[tuple[int, int], None, None]
         | Iterator[tuple[int, int]]
-        | BaseCrossValidator
+        | "BaseCrossValidator"
         | None = None,
         nfold: int = 5,
         stratified: bool = True,
@@ -991,7 +994,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
     def _create_objective(
         self,
         target_param_names: list[str],
-        train_set: lgb.Dataset,
+        train_set: "lgb.Dataset",
         step_name: str,
         pbar: tqdm.tqdm | None,
     ) -> _OptunaObjective:
@@ -1006,7 +1009,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
             pbar=pbar,
         )
 
-    def get_best_booster(self) -> lgb.CVBooster:
+    def get_best_booster(self) -> "lgb.CVBooster":
         """Return the best cvbooster.
 
         If the best booster cannot be found, :class:`ValueError` will be raised.

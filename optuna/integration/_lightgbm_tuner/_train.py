@@ -16,9 +16,9 @@ with try_import():
 
 def train(
     params: dict[str, Any],
-    train_set: lgb.Dataset,
+    train_set: "lgb.Dataset",
     num_boost_round: int = 1000,
-    valid_sets: list[lgb.Dataset] | tuple[lgb.Dataset, ...] | lgb.Dataset | None = None,
+    valid_sets: list["lgb.Dataset"] | tuple["lgb.Dataset", ...] | "lgb.Dataset" | None = None,
     valid_names: Any | None = None,
     feval: Callable[..., Any] | None = None,
     feature_name: str = "auto",
@@ -34,7 +34,7 @@ def train(
     show_progress_bar: bool = True,
     *,
     optuna_seed: int | None = None,
-) -> lgb.Booster:
+) -> "lgb.Booster":
     """Wrapper of LightGBM Training API to tune hyperparameters.
 
     It optimizes the following hyperparameters in a stepwise manner:
