@@ -13,8 +13,8 @@ from optuna.testing.storages import StorageSupplier
 
 
 with try_import() as _imports:
-    import pytorch_lightning as pl
-    from pytorch_lightning import LightningModule
+    import lightning.pytorch as pl
+    from lightning.pytorch import LightningModule
     import torch
     from torch import nn
     from torch.multiprocessing.spawn import ProcessRaisedException
