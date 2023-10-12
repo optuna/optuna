@@ -382,6 +382,30 @@ class _StudySetUserAttribute(_BaseCommand):
         return 0
 
 
+class _StudyNames(_BaseCommand):
+    """Get all study names stored in a specified storage"""
+
+    def add_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument(
+            "-f",
+            "--format",
+            type=str,
+            choices=("json", "table", "yaml"),
+            default="table",
+            help="Output format.",
+        )
+
+    def take_action(self, parsed_args: Namespace) -> int:
+        storage = _get_storage(parsed_args.storage, parsed_args.storage_class)
+        all_study_names = optuna.get_all_study_names(storage)
+        records = []
+        record_key = ("name", "")
+        for study_name in all_study_names:
+            records.append({record_key: study_name})
+        print(_format_output(records, [record_key], parsed_args.format, flatten=False))
+        return 0
+
+
 class _Studies(_BaseCommand):
     """Show a list of studies."""
 
@@ -917,6 +941,7 @@ _COMMANDS: Dict[str, Type[_BaseCommand]] = {
     "create-study": _CreateStudy,
     "delete-study": _DeleteStudy,
     "study set-user-attr": _StudySetUserAttribute,
+    "study-names": _StudyNames,
     "studies": _Studies,
     "trials": _Trials,
     "best-trial": _BestTrial,
