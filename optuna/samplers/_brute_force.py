@@ -193,9 +193,9 @@ class BruteForceSampler(BaseSampler):
         tree = _TreeNode()
         candidates = _enumerate_candidates(param_distribution)
         tree.expand(param_name, candidates)
-        # Populating must happen after the initialization above to prevent tree from
-        # being initialized as an empty graph, which is created n_jobs > 1
-        # where we get trials.params = {}.
+        # Populating must happen after the initialization above to prevent `tree` from
+        # being initialized as an empty graph, which is created with n_jobs > 1
+        # where we get trials[i].params = {} for some i.
         self._populate_tree(tree, (t for t in trials if t.number != trial.number), trial.params)
         if tree.count_unexpanded() == 0:
             return param_distribution.to_external_repr(self._rng.choice(candidates))
