@@ -619,8 +619,8 @@ will retry failed trials when a new trial starts to evaluate.
     study = optuna.create_study(storage=storage)
 
 
-How can deal with permutation as a parameter?
----------------------------------------------
+How can I deal with permutation as a parameter?
+-----------------------------------------------
 
 Although it is not straightforward to deal with combinatorial search spaces like permutations with existing API, there exists a convenient technique for handling them. 
 It involves re-parametrization of permutation search space of :math:`n` items as an independent :math:`n`-dimensional integer search space. 
@@ -682,3 +682,37 @@ An Optuna implementation example to solve Euclid TSP is as follows:
     study.optimize(objective, n_trials=10)
     lehmer_code = study.best_params.values()
     print(decode(lehmer_code))
+
+How can I ignore duplicated samples?
+------------------------------------
+
+Optuna may sometimes suggest parameters evaluated in the past and if you would like to avoid this problem, you can try out the following workaround:
+
+.. code-block:: python
+
+    import optuna
+    from optuna.trial import TrialState
+
+
+    def objective(trial):
+        # Sample parameters.
+        x = trial.suggest_int("x", -5, 5)
+        y = trial.suggest_int("y", -5, 5)
+        # Fetch all the trials to consider.
+        # In this example, we use only completed trials, but users can specify other states
+        # such as TrialState.PRUNED and TrialState.FAIL.
+        states_to_consider = (TrialState.COMPLETE,)
+        trials_to_consider = trial.study.get_trials(deepcopy=False, states=states_to_consider)
+        # Check whether we already evaluated the sampled `(x, y)`.
+        for t in reversed(trials_to_consider):
+            if trial.params == t.params:
+                # Use the existing value as trial duplicated the parameters.
+                return t.value
+
+        # Compute the objective function if the parameters are not duplicated.
+        # We use the 2D sphere function in this example.
+        return x ** 2 + y ** 2
+    
+
+    study = optuna.create_study()
+    study.optimize(objective, n_trials=100)
