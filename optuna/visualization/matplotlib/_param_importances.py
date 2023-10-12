@@ -9,7 +9,7 @@ from optuna.importance._base import BaseImportanceEvaluator
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
-from optuna.visualization._param_importances import _get_importances_info
+from optuna.visualization._param_importances import _get_importances_infos
 from optuna.visualization._param_importances import _ImportancesInfo
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
@@ -86,32 +86,16 @@ def plot_param_importances(
                 importance of the first objective, use ``target=lambda t: t.values[0]`` for the
                 target parameter.
         target_name:
-            Target's name to display on the axis label.
+            Target's name to display on the axis label. Names set via
+            :meth:`~optuna.study.Study.set_metric_names` will be used if ``target`` is :obj:`None`,
+            overriding this argument.
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
     """
 
     _imports.check()
-
-    if target or not study._is_multi_objective():
-        importances_infos: tuple[_ImportancesInfo, ...] = (
-            _get_importances_info(study, evaluator, params, target, target_name),
-        )
-
-    else:
-        n_objectives = len(study.directions)
-        importances_infos = tuple(
-            _get_importances_info(
-                study,
-                evaluator,
-                params,
-                target=lambda t: t.values[objective_id],
-                target_name=f"{target_name} {objective_id}",
-            )
-            for objective_id in range(n_objectives)
-        )
-
+    importances_infos = _get_importances_infos(study, evaluator, params, target, target_name)
     return _get_importances_plot(importances_infos)
 
 
