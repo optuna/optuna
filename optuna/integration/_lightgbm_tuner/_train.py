@@ -51,8 +51,7 @@ def train(
     :class:`~optuna.integration.lightgbm.LightGBMTuner` instead of this function.
 
     .. note::
-        Arguments and keyword arguments for `lightgbm.train()
-        <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html>`_ can be passed.
+        Arguments and keyword arguments for `lightgbm.train()`_ can be passed.
         For ``params``, please check `the official documentation for LightGBM
         <https://lightgbm.readthedocs.io/en/latest/Parameters.html>`_.
 
@@ -110,6 +109,8 @@ def train(
                 Please enable it when you use this argument.
 
     .. _lightgbm.train(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html
+    .. _LightGBM's verbosity: https://lightgbm.readthedocs.io/en/latest/Parameters.html#verbosity
+    .. _deterministic: https://lightgbm.readthedocs.io/en/latest/Parameters.html#deterministic
     """
     _imports.check()
 
