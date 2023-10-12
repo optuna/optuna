@@ -27,6 +27,7 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.samplers import BaseSampler
+from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.search_space import IntersectionSearchSpace
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -272,7 +273,7 @@ class CmaEsSampler(BaseSampler):
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._n_startup_trials = n_startup_trials
         self._warn_independent_sampling = warn_independent_sampling
-        self._cma_rng = np.random.RandomState(seed)
+        self._cma_rng = LazyRandomState(seed)
         self._search_space = IntersectionSearchSpace()
         self._consider_pruned_trials = consider_pruned_trials
         self._restart_strategy = restart_strategy
@@ -496,7 +497,7 @@ class CmaEsSampler(BaseSampler):
                     popsize_multiplier = self._inc_popsize**n_restarts_with_large
                     popsize = math.floor(
                         self._initial_popsize
-                        * popsize_multiplier ** (self._cma_rng.uniform() ** 2)
+                        * popsize_multiplier ** (self._cma_rng.rng.uniform() ** 2)
                     )
                 else:
                     poptype = "large"
@@ -514,7 +515,7 @@ class CmaEsSampler(BaseSampler):
                 study._storage.set_trial_system_attr(trial._trial_id, key, optimizer_attrs[key])
 
         # Caution: optimizer should update its seed value.
-        seed = self._cma_rng.randint(1, 2**16) + trial.number
+        seed = self._cma_rng.rng.randint(1, 2**16) + trial.number
         optimizer._rng.seed(seed)
         if isinstance(optimizer, cmaes.CMAwM):
             params, x_for_tell = optimizer.ask()
@@ -644,7 +645,7 @@ class CmaEsSampler(BaseSampler):
 
         if self._source_trials is None:
             if randomize_start_point:
-                mean = lower_bounds + (upper_bounds - lower_bounds) * self._cma_rng.rand(
+                mean = lower_bounds + (upper_bounds - lower_bounds) * self._cma_rng.rng.rand(
                     n_dimension
                 )
             elif self._x0 is None:
@@ -686,7 +687,7 @@ class CmaEsSampler(BaseSampler):
                 mean=mean,
                 sigma=sigma0,
                 bounds=trans.bounds,
-                seed=self._cma_rng.randint(1, 2**31 - 2),
+                seed=self._cma_rng.rng.randint(1, 2**31 - 2),
                 n_max_resampling=10 * n_dimension,
                 population_size=population_size,
             )
@@ -709,7 +710,7 @@ class CmaEsSampler(BaseSampler):
                 bounds=trans.bounds,
                 steps=steps,
                 cov=cov,
-                seed=self._cma_rng.randint(1, 2**31 - 2),
+                seed=self._cma_rng.rng.randint(1, 2**31 - 2),
                 n_max_resampling=10 * n_dimension,
                 population_size=population_size,
             )
@@ -719,7 +720,7 @@ class CmaEsSampler(BaseSampler):
             sigma=sigma0,
             cov=cov,
             bounds=trans.bounds,
-            seed=self._cma_rng.randint(1, 2**31 - 2),
+            seed=self._cma_rng.rng.randint(1, 2**31 - 2),
             n_max_resampling=10 * n_dimension,
             population_size=population_size,
             lr_adapt=self._lr_adapt,

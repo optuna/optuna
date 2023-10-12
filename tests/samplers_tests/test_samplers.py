@@ -24,6 +24,7 @@ from optuna.distributions import IntDistribution
 from optuna.integration.botorch import logei_candidates_func
 from optuna.integration.botorch import qei_candidates_func
 from optuna.samplers import BaseSampler
+from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.study import Study
 from optuna.testing.objectives import fail_objective
 from optuna.testing.objectives import pruned_objective
@@ -169,34 +170,31 @@ def test_sampler_reseed_rng(
 
     sampler = sampler_class()
 
-    rng_name = _extract_attr_name_from_sampler_by_cls(sampler, np.random.RandomState)
+    rng_name = _extract_attr_name_from_sampler_by_cls(sampler, LazyRandomState)
     has_rng = rng_name is not None
     assert expected_has_rng == has_rng
+    if has_rng:
+        rng_name = str(rng_name)
+        original_random_state = sampler.__dict__[rng_name].rng.get_state()
+        sampler.reseed_rng()
+        random_state = sampler.__dict__[rng_name].rng.get_state()
+        if not isinstance(sampler, optuna.samplers.CmaEsSampler):
+            assert str(original_random_state) != str(random_state)
+        else:
+            # CmaEsSampler has a RandomState that is not reseed by its reseed_rng method.
+            assert str(original_random_state) == str(random_state)
 
     had_sampler_name = _extract_attr_name_from_sampler_by_cls(sampler, BaseSampler)
     has_another_sampler = had_sampler_name is not None
     assert expected_has_another_sampler == has_another_sampler
 
-    if has_rng:
-        rng_name = str(rng_name)
-        original_random_state = sampler.__dict__[rng_name].get_state()
-        sampler.reseed_rng()
-
-        if not isinstance(sampler, optuna.samplers.CmaEsSampler):
-            assert str(original_random_state) != str(sampler.__dict__[rng_name].get_state())
-        else:
-            # CmaEsSampler has a RandomState that is not reseed by its reseed_rng method.
-            assert str(original_random_state) == str(sampler.__dict__[rng_name].get_state())
-
     if has_another_sampler:
         had_sampler_name = str(had_sampler_name)
         had_sampler = sampler.__dict__[had_sampler_name]
-        had_sampler_rng_name = _extract_attr_name_from_sampler_by_cls(
-            had_sampler, np.random.RandomState
-        )
-
-        original_had_sampler_random_state = had_sampler.__dict__[had_sampler_rng_name].get_state()
-
+        had_sampler_rng_name = _extract_attr_name_from_sampler_by_cls(had_sampler, LazyRandomState)
+        original_had_sampler_random_state = had_sampler.__dict__[
+            had_sampler_rng_name
+        ].rng.get_state()
         with patch.object(
             had_sampler,
             "reseed_rng",
@@ -206,9 +204,8 @@ def test_sampler_reseed_rng(
             assert mock_object.call_count == 1
 
         had_sampler = sampler.__dict__[had_sampler_name]
-        assert str(original_had_sampler_random_state) != str(
-            had_sampler.__dict__[had_sampler_rng_name].get_state()
-        )
+        had_sampler_random_state = had_sampler.__dict__[had_sampler_rng_name].rng.get_state()
+        assert str(original_had_sampler_random_state) != str(had_sampler_random_state)
 
 
 def parametrize_suggest_method(name: str) -> MarkDecorator:
@@ -251,11 +248,11 @@ def test_raise_error_for_samplers_during_multi_objectives(
         )
 
 
-@pytest.mark.parametrize("seed", [None, 0, 169208])
-def test_pickle_random_sampler(seed: int | None) -> None:
+@pytest.mark.parametrize("seed", [0, 169208])
+def test_pickle_random_sampler(seed: int) -> None:
     sampler = optuna.samplers.RandomSampler(seed)
     restored_sampler = pickle.loads(pickle.dumps(sampler))
-    assert sampler._rng.bytes(10) == restored_sampler._rng.bytes(10)
+    assert sampler._rng.rng.bytes(10) == restored_sampler._rng.rng.bytes(10)
 
 
 @parametrize_sampler

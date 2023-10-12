@@ -73,14 +73,14 @@ def test_sample_independent(
 
 def test_random_mo_sampler_reseed_rng() -> None:
     sampler = optuna.multi_objective.samplers.RandomMultiObjectiveSampler()
-    original_random_state = sampler._sampler._rng.get_state()
+    original_random_state = sampler._sampler._rng.rng.get_state()
 
     with patch.object(
         sampler._sampler, "reseed_rng", wraps=sampler._sampler.reseed_rng
     ) as mock_object:
         sampler.reseed_rng()
         assert mock_object.call_count == 1
-    assert str(original_random_state) != str(sampler._sampler._rng.get_state())
+    assert str(original_random_state) != str(sampler._sampler._rng.rng.get_state())
 
 
 @pytest.mark.parametrize(

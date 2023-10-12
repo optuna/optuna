@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+from collections.abc import Sequence
 from enum import Enum
 import math
-from typing import Callable
 from typing import cast
 from typing import NamedTuple
-from typing import Sequence
 
 import numpy as np
 

@@ -22,14 +22,14 @@ class MockSystemAttr:
 @pytest.mark.filterwarnings("ignore::FutureWarning")
 def test_reseed_rng() -> None:
     sampler = MOTPEMultiObjectiveSampler()
-    original_random_state = sampler._motpe_sampler._rng.get_state()
+    original_random_state = sampler._motpe_sampler._rng.rng.get_state()
 
     with patch.object(
         sampler._motpe_sampler, "reseed_rng", wraps=sampler._motpe_sampler.reseed_rng
     ) as mock_object:
         sampler.reseed_rng()
         assert mock_object.call_count == 1
-    assert str(original_random_state) != str(sampler._motpe_sampler._rng.get_state())
+    assert str(original_random_state) != str(sampler._motpe_sampler._rng.rng.get_state())
 
 
 @pytest.mark.filterwarnings("ignore::FutureWarning")

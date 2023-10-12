@@ -85,20 +85,20 @@ class TensorBoardCallback:
                 dtype = type(choices[0])
                 if any(not isinstance(choice, dtype) for choice in choices):
                     _logger.warning(
-                        "Choices contains mixed types, which is not supported by TensorBoard."
+                        "Choices contains mixed types, which is not supported by TensorBoard. "
                         "Converting all choices to strings."
                     )
                     choices = tuple(map(str, choices))
                 elif dtype not in (int, float, bool, str):
                     _logger.warning(
-                        f"Choices are of type {dtype}, which is not supported by TensorBoard."
+                        f"Choices are of type {dtype}, which is not supported by TensorBoard. "
                         "Converting all choices to strings."
                     )
                     choices = tuple(map(str, choices))
 
                 self._hp_params[param_name] = hp.HParam(
                     param_name,
-                    hp.Discrete(choices, dtype),
+                    hp.Discrete(choices),
                 )
             else:
                 distribution_list = [

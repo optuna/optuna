@@ -1,9 +1,7 @@
 import random
 from typing import Callable
 from typing import Dict
-from typing import List
 from typing import Optional
-from typing import Sequence
 from typing import Union
 from unittest.mock import Mock
 from unittest.mock import patch
@@ -15,7 +13,6 @@ import pytest
 
 import optuna
 from optuna import distributions
-from optuna import TrialPruned
 from optuna.samplers import _tpe
 from optuna.samplers import TPESampler
 from optuna.samplers._base import _CONSTRAINTS_KEY
@@ -723,167 +720,9 @@ def test_constrained_sample_independent_zero_startup() -> None:
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-@pytest.mark.parametrize(
-    "constraints_enabled, constraints_func, expected_violations",
-    [
-        (False, None, None),
-        (True, lambda trial: [(-1, -1), (0, -1), (1, -1), (2, -1)][trial.number], [0, 0, 1, 2]),
-    ],
-)
-def test_get_observation_pairs(
-    direction: str,
-    constraints_enabled: bool,
-    constraints_func: Optional[Callable[[optuna.trial.FrozenTrial], Sequence[float]]],
-    expected_violations: List[float],
-) -> None:
-    def objective(trial: Trial) -> float:
-        x = trial.suggest_int("x", 5, 5)
-        z = trial.suggest_categorical("z", [None])
-        if trial.number == 0:
-            return x * int(z is None)
-        elif trial.number == 1:
-            trial.report(1, 4)
-            trial.report(2, 7)
-            raise TrialPruned()
-        elif trial.number == 2:
-            trial.report(float("nan"), 3)
-            raise TrialPruned()
-        elif trial.number == 3:
-            raise TrialPruned()
-        else:
-            raise RuntimeError()
-
-    sampler = TPESampler(constraints_func=constraints_func)
-    study = optuna.create_study(direction=direction, sampler=sampler)
-    study.optimize(objective, n_trials=5, catch=(RuntimeError,))
-
-    sign = 1 if direction == "minimize" else -1
-    scores = [
-        (-float("inf"), [sign * 5.0]),  # COMPLETE
-        (-7, [sign * 2]),  # PRUNED (with intermediate values)
-        (-3, [float("inf")]),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-        (1, [sign * 0.0]),  # PRUNED (without intermediate values)
-    ]
-    states = (optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED)
-    assert _tpe.sampler._get_observation_pairs(
-        study, study.get_trials(states=states), constraints_enabled=constraints_enabled
-    ) == (
-        scores,
-        expected_violations,
-    )
-
-
-@pytest.mark.parametrize("direction", ["minimize", "maximize"])
-@pytest.mark.parametrize(
-    "constraints_enabled, constraints_func, expected_violations",
-    [
-        (False, None, None),
-        (True, lambda trial: [(-1, -1), (0, -1), (1, -1), (2, -1)][trial.number], [0, 0, 1, 2]),
-    ],
-)
-def test_get_observation_pairs_multi(
-    direction: str,
-    constraints_enabled: bool,
-    constraints_func: Optional[Callable[[optuna.trial.FrozenTrial], Sequence[float]]],
-    expected_violations: List[float],
-) -> None:
-    def objective(trial: Trial) -> float:
-        x = trial.suggest_int("x", 5, 5)
-        y = trial.suggest_int("y", 6, 6)
-        if trial.number == 0:
-            return x + y
-        elif trial.number == 1:
-            trial.report(1, 4)
-            trial.report(2, 7)
-            raise TrialPruned()
-        elif trial.number == 2:
-            trial.report(float("nan"), 3)
-            raise TrialPruned()
-        elif trial.number == 3:
-            raise TrialPruned()
-        else:
-            raise RuntimeError()
-
-    sampler = TPESampler(constraints_func=constraints_func)
-    study = optuna.create_study(direction=direction, sampler=sampler)
-    study.optimize(objective, n_trials=5, catch=(RuntimeError,))
-
-    sign = 1 if direction == "minimize" else -1
-    states = (optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED)
-    assert _tpe.sampler._get_observation_pairs(
-        study, study.get_trials(states=states), constraints_enabled=constraints_enabled
-    ) == (
-        [
-            (-float("inf"), [sign * 11.0]),  # COMPLETE
-            (-7, [sign * 2]),  # PRUNED (with intermediate values)
-            (
-                -3,
-                [float("inf")],
-            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-            (1, [sign * 0.0]),  # PRUNED (without intermediate values)
-        ],
-        expected_violations,
-    )
-
-
-def test_split_observation_pairs() -> None:
-    indices_below, indices_above = _tpe.sampler._split_observation_pairs(
-        [
-            (-7, [-2]),  # PRUNED (with intermediate values)
-            (float("inf"), [0.0]),  # PRUNED (without intermediate values)
-            (
-                -3,
-                [float("inf")],
-            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-            (-float("inf"), [-5.0]),  # COMPLETE
-        ],
-        2,
-        None,
-    )
-    assert list(indices_below) == [0, 3]
-    assert list(indices_above) == [1, 2]
-
-
-def test_split_observation_pairs_with_constraints_below_all_feasible() -> None:
-    indices_below, indices_above = _tpe.sampler._split_observation_pairs(
-        [
-            (-7, [-2]),  # PRUNED (with intermediate values)
-            (float("inf"), [0.0]),  # PRUNED (without intermediate values)
-            (
-                -3,
-                [float("inf")],
-            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-            (-float("inf"), [-5.0]),  # COMPLETE
-        ],
-        1,
-        [1, 0, 0, 2],
-    )
-    assert list(indices_below) == [2]
-    assert list(indices_above) == [0, 1, 3]
-
-
-def test_split_observation_pairs_with_constraints_below_include_infeasible() -> None:
-    indices_below, indices_above = _tpe.sampler._split_observation_pairs(
-        [
-            (-7, [-2]),  # PRUNED (with intermediate values)
-            (float("inf"), [0.0]),  # PRUNED (without intermediate values)
-            (
-                -3,
-                [float("inf")],
-            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-            (-float("inf"), [-5.0]),  # COMPLETE
-        ],
-        3,
-        [1, 0, 0, 2],
-    )
-    assert list(indices_below) == [0, 1, 2]
-    assert list(indices_above) == [3]
-
-
-@pytest.mark.parametrize("direction", ["minimize", "maximize"])
 @pytest.mark.parametrize("constant_liar", [True, False])
 @pytest.mark.parametrize("constraints", [True, False])
-def test_split_order(direction: str, constant_liar: bool, constraints: bool) -> None:
+def test_split_trials(direction: str, constant_liar: bool, constraints: bool) -> None:
     study = optuna.create_study(direction=direction)
 
     for value in [-float("inf"), 0, 1, float("inf")]:
@@ -919,7 +758,7 @@ def test_split_order(direction: str, constant_liar: bool, constraints: bool) -> 
     )
 
     if constraints:
-        for value in [1, 2]:
+        for value in [1, 2, float("inf")]:
             study.add_trial(
                 optuna.create_trial(
                     state=optuna.trial.TrialState.COMPLETE,
@@ -939,6 +778,18 @@ def test_split_order(direction: str, constant_liar: bool, constraints: bool) -> 
         )
     )
 
+    study.add_trial(
+        optuna.create_trial(
+            state=optuna.trial.TrialState.FAIL,
+        )
+    )
+
+    study.add_trial(
+        optuna.create_trial(
+            state=optuna.trial.TrialState.WAITING,
+        )
+    )
+
     if constant_liar:
         states = [
             optuna.trial.TrialState.COMPLETE,
@@ -948,24 +799,114 @@ def test_split_order(direction: str, constant_liar: bool, constraints: bool) -> 
     else:
         states = [optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED]
 
-    scores, violations = _tpe.sampler._get_observation_pairs(
-        study,
-        study.get_trials(states=states),
-        constraints,
+    trials = study.get_trials(states=states)
+    finished_trials = study.get_trials(
+        states=(optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED)
+    )
+    for n_below in range(len(finished_trials) + 1):
+        below_trials, above_trials = _tpe.sampler._split_trials(
+            study,
+            trials,
+            n_below,
+            constraints,
+        )
+
+        below_trial_numbers = [trial.number for trial in below_trials]
+        assert below_trial_numbers == list(range(n_below))
+        above_trial_numbers = [trial.number for trial in above_trials]
+        assert above_trial_numbers == list(range(n_below, len(trials)))
+
+
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+def test_split_complete_trials_single_objective(direction: str) -> None:
+    study = optuna.create_study(direction=direction)
+
+    for value in [-float("inf"), 0, 1, float("inf")]:
+        study.add_trial(
+            optuna.create_trial(
+                state=optuna.trial.TrialState.COMPLETE,
+                value=(value if direction == "minimize" else -value),
+                params={"x": 0},
+                distributions={"x": optuna.distributions.FloatDistribution(-1.0, 1.0)},
+            )
+        )
+
+    for n_below in range(len(study.trials) + 1):
+        below_trials, above_trials = _tpe.sampler._split_complete_trials_single_objective(
+            study.trials,
+            study,
+            n_below,
+        )
+        assert [trial.number for trial in below_trials] == list(range(n_below))
+        assert [trial.number for trial in above_trials] == list(range(n_below, len(study.trials)))
+
+
+def test_split_complete_trials_single_objective_empty() -> None:
+    study = optuna.create_study()
+    assert _tpe.sampler._split_complete_trials_single_objective([], study, 0) == ([], [])
+
+
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+def test_split_pruned_trials(direction: str) -> None:
+    study = optuna.create_study(direction=direction)
+
+    for step in [2, 1]:
+        for value in [-float("inf"), 0, 1, float("inf"), float("nan")]:
+            study.add_trial(
+                optuna.create_trial(
+                    state=optuna.trial.TrialState.PRUNED,
+                    params={"x": 0},
+                    distributions={"x": optuna.distributions.FloatDistribution(-1.0, 1.0)},
+                    intermediate_values={step: (value if direction == "minimize" else -value)},
+                )
+            )
+
+    study.add_trial(
+        optuna.create_trial(
+            state=optuna.trial.TrialState.PRUNED,
+            params={"x": 0},
+            distributions={"x": optuna.distributions.FloatDistribution(-1.0, 1.0)},
+        )
     )
 
-    assert len(scores) == len(study.get_trials(states=states))
-    if constraints:
-        assert violations is not None
-        assert len(violations) == len(study.get_trials(states=states))
-    else:
-        assert violations is None
-
-    for gamma in range(1, len(scores)):
-        indices_below, indices_above = _tpe.sampler._split_observation_pairs(
-            scores, gamma, violations
+    for n_below in range(len(study.trials) + 1):
+        below_trials, above_trials = _tpe.sampler._split_pruned_trials(
+            study.trials,
+            study,
+            n_below,
         )
-        assert np.max(indices_below) < np.min(indices_above)
+        assert [trial.number for trial in below_trials] == list(range(n_below))
+        assert [trial.number for trial in above_trials] == list(range(n_below, len(study.trials)))
+
+
+def test_split_pruned_trials_empty() -> None:
+    study = optuna.create_study()
+    assert _tpe.sampler._split_pruned_trials([], study, 0) == ([], [])
+
+
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+def test_split_infeasible_trials(direction: str) -> None:
+    study = optuna.create_study(direction=direction)
+
+    for value in [1, 2, float("inf")]:
+        study.add_trial(
+            optuna.create_trial(
+                state=optuna.trial.TrialState.COMPLETE,
+                value=0,
+                params={"x": 0},
+                distributions={"x": optuna.distributions.FloatDistribution(-1.0, 1.0)},
+                system_attrs={_CONSTRAINTS_KEY: [value]},
+            )
+        )
+
+    for n_below in range(len(study.trials) + 1):
+        below_trials, above_trials = _tpe.sampler._split_infeasible_trials(study.trials, n_below)
+        assert [trial.number for trial in below_trials] == list(range(n_below))
+        assert [trial.number for trial in above_trials] == list(range(n_below, len(study.trials)))
+
+
+def test_split_infeasible_trials_empty() -> None:
+    assert _tpe.sampler._split_infeasible_trials([], 0) == ([], [])
 
 
 def frozen_trial_factory(
@@ -1103,38 +1044,6 @@ def test_invalid_multivariate_and_group() -> None:
 def test_group_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         _ = TPESampler(multivariate=True, group=True)
-
-
-@pytest.mark.parametrize("direction", ["minimize", "maximize"])
-def test_constant_liar_observation_pairs(direction: str) -> None:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(constant_liar=True)
-
-    study = optuna.create_study(sampler=sampler, direction=direction)
-
-    trial = study.ask()
-    trial.suggest_int("x", 2, 2)
-
-    assert (
-        len(study.trials) == 1 and study.trials[0].state == optuna.trial.TrialState.RUNNING
-    ), "Precondition"
-
-    # The value of the constant liar should be penalizing, i.e. `float("inf")` during minimization
-    # and `-float("inf")` during maximization.
-    expected_values = [(float("inf"), [float("inf") * (-1 if direction == "maximize" else 1)])]
-
-    states = [optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED]
-    assert _tpe.sampler._get_observation_pairs(study, study.get_trials(states=states)) == (
-        [],
-        None,
-    )
-
-    states.append(optuna.trial.TrialState.RUNNING)
-    assert _tpe.sampler._get_observation_pairs(study, study.get_trials(states=states)) == (
-        expected_values,
-        None,
-    )
 
 
 def test_constant_liar_experimental_warning() -> None:

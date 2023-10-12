@@ -5,8 +5,8 @@ class ArtifactNotFound(OptunaError):
     """Exception raised when an artifact is not found.
 
     It is typically raised while calling
-    :meth:`~optuna_dashboard.artifact.protocol.ArtifactBackend.open` or
-    :meth:`~optuna_dashboard.artifact.protocol.ArtifactBackend.remove` methods.
+    :meth:`~optuna.artifacts._protocol.ArtifactStore.open_reader` or
+    :meth:`~optuna.artifacts._protocol.ArtifactStore.remove` methods.
     """
 
     ...

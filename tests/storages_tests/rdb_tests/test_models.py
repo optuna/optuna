@@ -130,6 +130,7 @@ class TestTrialModel:
 
         trial_model = session.query(TrialModel).first()
 
+        assert trial_model is not None
         assert trial_model.datetime_start is None
         assert trial_model.datetime_complete is None
 
