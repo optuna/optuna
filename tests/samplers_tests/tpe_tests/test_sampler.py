@@ -1052,7 +1052,8 @@ def test_constant_liar_experimental_warning() -> None:
 
 
 @pytest.mark.parametrize("multivariate", [True, False])
-def test_constant_liar_with_running_trial(multivariate: bool) -> None:
+@pytest.mark.parametrize("multiobjective", [True, False])
+def test_constant_liar_with_running_trial(multivariate: bool, multiobjective: bool) -> None:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = TPESampler(multivariate=multivariate, constant_liar=True, n_startup_trials=0)
@@ -1064,7 +1065,7 @@ def test_constant_liar_with_running_trial(multivariate: bool) -> None:
     trial0.suggest_int("x", 0, 10)
     trial0.suggest_float("y", 0, 10)
     trial0.suggest_categorical("z", [0, 1, 2])
-    study.tell(trial0, 0)
+    study.tell(trial0, [0, 0] if multiobjective else 0)
 
     # Add running trials.
     trial1 = study.ask()
@@ -1079,7 +1080,7 @@ def test_constant_liar_with_running_trial(multivariate: bool) -> None:
     trial.suggest_int("x", 0, 10)
     trial.suggest_float("y", 0, 10)
     trial.suggest_categorical("z", [0, 1, 2])
-    study.tell(trial, 0)
+    study.tell(trial, [0, 0] if multiobjective else 0)
 
 
 def test_categorical_distance_func_experimental_warning() -> None:
