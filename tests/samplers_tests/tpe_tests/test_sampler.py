@@ -817,6 +817,62 @@ def test_split_trials(direction: str, constant_liar: bool, constraints: bool) ->
         assert above_trial_numbers == list(range(n_below, len(trials)))
 
 
+@pytest.mark.parametrize(
+    "directions", [["minimize", "minimize"], ["maximize", "maximize"], ["minimize", "maximize"]]
+)
+def test_split_trials_for_multiobjective_constant_liar(directions: list[str]) -> None:
+    study = optuna.create_study(directions=directions)
+    for obj1 in [-float("inf"), 0, 1, float("inf")]:
+        val1 = obj1 if directions[0] == "minimize" else -obj1
+        for obj2 in [-float("inf"), 0, 1, float("inf")]:
+            val2 = obj2 if directions[1] == "minimize" else -obj2
+            study.add_trial(
+                optuna.create_trial(
+                    state=optuna.trial.TrialState.COMPLETE,
+                    values=[val1, val2],
+                    params={"x": 0},
+                    distributions={"x": optuna.distributions.FloatDistribution(-1.0, 1.0)},
+                )
+            )
+
+    for _ in range(5):
+        study.add_trial(
+            optuna.create_trial(
+                state=optuna.trial.TrialState.RUNNING,
+                params={"x": 0},
+                distributions={"x": optuna.distributions.FloatDistribution(-1.0, 1.0)},
+            )
+        )
+
+    study.add_trial(
+        optuna.create_trial(
+            state=optuna.trial.TrialState.FAIL,
+        )
+    )
+
+    study.add_trial(
+        optuna.create_trial(
+            state=optuna.trial.TrialState.WAITING,
+        )
+    )
+
+    states = [optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.RUNNING]
+    trials = study.get_trials(states=states)
+    finished_trials = study.get_trials(states=(optuna.trial.TrialState.COMPLETE,))
+    ground_truth = [0, 1, 4, 2, 8, 5, 3, 6, 9, 12, 7, 10, 13, 11, 14, 15, 16, 17, 18, 19, 20]
+    for n_below in range(1, len(finished_trials) + 1):
+        below_trials, above_trials = _tpe.sampler._split_trials(
+            study,
+            trials,
+            n_below,
+            constraints_enabled=False,
+        )
+        below_trial_numbers = [trial.number for trial in below_trials]
+        assert below_trial_numbers == np.sort(ground_truth[:n_below]).tolist()
+        above_trial_numbers = [trial.number for trial in above_trials]
+        assert above_trial_numbers == np.sort(ground_truth[n_below:]).tolist()
+
+
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
 def test_split_complete_trials_single_objective(direction: str) -> None:
     study = optuna.create_study(direction=direction)

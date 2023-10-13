@@ -646,6 +646,7 @@ def _split_complete_trials_multi_objective(
     n_below: int,
 ) -> tuple[list[FrozenTrial], list[FrozenTrial]]:
     if n_below == 0:
+        # QUESTION: Shall I change it as well??
         return [], []
 
     lvals = np.asarray([trial.values for trial in trials])
