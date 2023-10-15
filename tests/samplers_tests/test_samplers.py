@@ -1089,12 +1089,12 @@ def test_cache_is_invalidated(
 
     def objective(trial: Trial) -> float:
         assert trial._relative_params is None
-        assert study._thread_local.cached_all_trials is None
+        assert study._cached_all_trials.get() is None
 
         trial.suggest_float("x", -10, 10)
         trial.suggest_float("y", -10, 10)
         assert trial._relative_params is not None
-        assert study._thread_local.cached_all_trials is not None
+        assert study._cached_all_trials.get() is not None
         return -1
 
     study.optimize(objective, n_trials=10, n_jobs=n_jobs)

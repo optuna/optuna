@@ -3,9 +3,9 @@ from __future__ import annotations
 from collections.abc import Container
 from collections.abc import Iterable
 from collections.abc import Mapping
+from contextvars import ContextVar
 import copy
 from numbers import Real
-import threading
 from typing import Any
 from typing import Callable
 from typing import cast
@@ -52,10 +52,10 @@ _SYSTEM_ATTR_METRIC_NAMES = "study:metric_names"
 
 _logger = logging.get_logger(__name__)
 
-
-class _ThreadLocalStudyAttribute(threading.local):
-    in_optimize_loop: bool = False
-    cached_all_trials: list["FrozenTrial"] | None = None
+_in_optimize_loop = ContextVar("_in_optimize_loop", default=False)
+_cached_all_trials: ContextVar[list["FrozenTrial"] | None] = ContextVar(
+    "_cached_all_trials", default=None
+)
 
 
 class Study:
@@ -87,17 +87,20 @@ class Study:
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
 
-        self._thread_local = _ThreadLocalStudyAttribute()
+        self._in_optimize_loop = _in_optimize_loop
+        self._cached_all_trials = _cached_all_trials
         self._stop_flag = False
 
     def __getstate__(self) -> dict[Any, Any]:
         state = self.__dict__.copy()
-        del state["_thread_local"]
+        del state["_in_optimize_loop"]
+        del state["_cached_all_trials"]
         return state
 
     def __setstate__(self, state: dict[Any, Any]) -> None:
         self.__dict__.update(state)
-        self._thread_local = _ThreadLocalStudyAttribute()
+        self._in_optimize_loop = _in_optimize_loop
+        self._cached_all_trials = _cached_all_trials
 
     @property
     def best_params(self) -> dict[str, Any]:
@@ -270,11 +273,10 @@ class Study:
         use_cache: bool = False,
     ) -> list[FrozenTrial]:
         if use_cache:
-            if self._thread_local.cached_all_trials is None:
-                self._thread_local.cached_all_trials = self._storage.get_all_trials(
-                    self._study_id, deepcopy=False
-                )
-            trials = self._thread_local.cached_all_trials
+            trials = self._cached_all_trials.get()
+            if trials is None:
+                trials = self._storage.get_all_trials(self._study_id, deepcopy=False)
+                self._cached_all_trials.set(trials)
             if states is not None:
                 filtered_trials = [t for t in trials if t.state in states]
             else:
@@ -526,7 +528,7 @@ class Study:
             A :class:`~optuna.trial.Trial`.
         """
 
-        if not self._thread_local.in_optimize_loop and is_heartbeat_enabled(self._storage):
+        if not self._in_optimize_loop.get() and is_heartbeat_enabled(self._storage):
             warnings.warn("Heartbeat of storage is supposed to be used with Study.optimize.")
 
         fixed_distributions = fixed_distributions or {}
@@ -536,7 +538,7 @@ class Study:
         }
 
         # Sync storage once every trial.
-        self._thread_local.cached_all_trials = None
+        self._cached_all_trials.set(None)
 
         trial_id = self._pop_waiting_trial_id()
         if trial_id is None:
@@ -796,7 +798,7 @@ class Study:
 
         """
 
-        if not self._thread_local.in_optimize_loop:
+        if not self._in_optimize_loop.get():
             raise RuntimeError(
                 "`Study.stop` is supposed to be invoked inside an objective function or a "
                 "callback."
