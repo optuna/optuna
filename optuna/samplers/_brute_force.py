@@ -33,9 +33,9 @@ class _TreeNode:
     # 3. Normal node. It has a param_name and non-empty children.
 
     param_name: Optional[str] = None
-    children: Optional[Dict[Any, "_TreeNode"]] = None
+    children: Optional[Dict[float, "_TreeNode"]] = None
 
-    def expand(self, param_name: Optional[str], search_space: Iterable[Any]) -> None:
+    def expand(self, param_name: Optional[str], search_space: Iterable[float]) -> None:
         # If the node is unexpanded, expand it.
         # Otherwise, check if the node is compatible with the given search space.
         if self.children is None:
@@ -54,7 +54,7 @@ class _TreeNode:
         self.expand(None, [])
 
     def add_path(
-        self, params_and_search_spaces: Iterable[Tuple[str, Iterable[Any], Any]]
+        self, params_and_search_spaces: Iterable[Tuple[str, Iterable[float], Any]]
     ) -> Optional["_TreeNode"]:
         # Add a path (i.e. a list of suggested parameters in one trial) to the tree.
         current_node = self
