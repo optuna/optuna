@@ -6,6 +6,7 @@ from collections.abc import Mapping
 import copy
 from numbers import Real
 import threading
+import contextvars
 from typing import Any
 from typing import Callable
 from typing import cast
@@ -53,10 +54,9 @@ _SYSTEM_ATTR_METRIC_NAMES = "study:metric_names"
 _logger = logging.get_logger(__name__)
 
 
-class _ThreadLocalStudyAttribute(threading.local):
-    in_optimize_loop: bool = False
-    cached_all_trials: list["FrozenTrial"] | None = None
-
+_ThreadLocalStudyAttribute = contextvars.ContextVar("_ThreadLocalStudyAttribute")
+in_optimize_loop: contextvars.ContextVar[bool] = contextvars.ContextVar("in_optimize_loop", default=False)
+cached_all_trials: contextvars.ContextVar[list["FrozenTrial"] | None] = contextvars.ContextVar("cached_all_trials", default=None)
 
 class Study:
     """A study corresponds to an optimization task, i.e., a set of trials.
