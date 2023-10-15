@@ -52,11 +52,6 @@ _SYSTEM_ATTR_METRIC_NAMES = "study:metric_names"
 
 _logger = logging.get_logger(__name__)
 
-_in_optimize_loop = ContextVar("_in_optimize_loop", default=False)
-_cached_all_trials: ContextVar[list["FrozenTrial"] | None] = ContextVar(
-    "_cached_all_trials", default=None
-)
-
 
 class Study:
     """A study corresponds to an optimization task, i.e., a set of trials.
@@ -86,9 +81,10 @@ class Study:
 
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
-
-        self._in_optimize_loop = _in_optimize_loop
-        self._cached_all_trials = _cached_all_trials
+        self._in_optimize_loop = ContextVar("_in_optimize_loop", default=False)
+        self._cached_all_trials: ContextVar[list["FrozenTrial"] | None] = ContextVar(
+            "_cached_all_trials", default=None
+        )
         self._stop_flag = False
 
     def __getstate__(self) -> dict[Any, Any]:
@@ -99,8 +95,8 @@ class Study:
 
     def __setstate__(self, state: dict[Any, Any]) -> None:
         self.__dict__.update(state)
-        self._in_optimize_loop = _in_optimize_loop
-        self._cached_all_trials = _cached_all_trials
+        self._in_optimize_loop = ContextVar("_in_optimize_loop", default=False)
+        self._cached_all_trials = ContextVar("_cached_all_trials", default=None)
 
     @property
     def best_params(self) -> dict[str, Any]:
