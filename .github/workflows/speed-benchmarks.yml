@@ -40,7 +40,7 @@ jobs:
         python -c 'import optuna'
         optuna --version
 
-        pip install --progress-bar off .[benchmark]
+        pip install --progress-bar off .[benchmark] --extra-index-url https://download.pytorch.org/whl/cpu
         asv machine --yes
 
     - name: Output installed packages
