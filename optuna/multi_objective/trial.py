@@ -8,12 +8,14 @@ from typing import Sequence
 from typing import Union
 
 from optuna import multi_objective
+from optuna._convert_positional_args import convert_positional_args
 from optuna._deprecated import deprecated_class
 from optuna.distributions import BaseDistribution
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState
+from optuna.trial._base import _SUGGEST_INT_POSITIONAL_ARGS
 
 
 CategoricalChoiceType = Union[None, bool, int, float, str]
@@ -87,7 +89,10 @@ class MultiObjectiveTrial:
 
         return self._trial.suggest_discrete_uniform(name, low, high, q)
 
-    def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
+    @convert_positional_args(previous_positional_arg_names=_SUGGEST_INT_POSITIONAL_ARGS)
+    def suggest_int(
+        self, name: str, low: int, high: int, *, step: int = 1, log: bool = False
+    ) -> int:
         """Suggest a value for the integer parameter.
 
         Please refer to the documentation of :func:`optuna.trial.Trial.suggest_int`
