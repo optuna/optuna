@@ -54,7 +54,7 @@ class _TreeNode:
         self.expand(None, [])
 
     def add_path(
-        self, params_and_search_spaces: Iterable[Tuple[str, Iterable[float], Any]]
+        self, params_and_search_spaces: Iterable[Tuple[str, Iterable[float], float]]
     ) -> Optional["_TreeNode"]:
         # Add a path (i.e. a list of suggested parameters in one trial) to the tree.
         current_node = self
@@ -74,7 +74,7 @@ class _TreeNode:
             else sum(child.count_unexpanded() for child in self.children.values())
         )
 
-    def sample_child(self, rng: np.random.RandomState) -> Any:
+    def sample_child(self, rng: np.random.RandomState) -> float:
         assert self.children is not None
         # Sample an unexpanded node in the subtree uniformly, and return the first
         # parameter value in the path to the node.
@@ -240,7 +240,7 @@ class BruteForceSampler(BaseSampler):
             study.stop()
 
 
-def _enumerate_candidates(param_distribution: BaseDistribution) -> Sequence[Any]:
+def _enumerate_candidates(param_distribution: BaseDistribution) -> Sequence[float]:
     if isinstance(param_distribution, FloatDistribution):
         if param_distribution.step is None:
             raise ValueError(
