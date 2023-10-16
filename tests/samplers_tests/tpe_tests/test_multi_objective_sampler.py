@@ -113,7 +113,7 @@ def test_multi_objective_sample_independent_n_startup_trial() -> None:
             mock1.return_value = attrs.value
             mock2.return_value = attrs.value
             sampler.sample_independent(study, trial, "param-a", dist)
-        study._cached_all_trials.set(None)
+        study._reset_cached_trials()
         return sample_method.call_count
 
     sampler = TPESampler(n_startup_trials=16, seed=0)
@@ -265,7 +265,7 @@ def test_multi_objective_sample_independent_handle_unsuccessful_states(
     trial = frozen_trial_factory(32, [0, 0])
     sampler = TPESampler(seed=0)
     all_success_suggestion = suggest(sampler, study, trial, dist, past_trials)
-    study._cached_all_trials.set(None)
+    study._reset_cached_trials()
 
     # Test unsuccessful trials are handled differently.
     state_fn = build_state_fn(state)
