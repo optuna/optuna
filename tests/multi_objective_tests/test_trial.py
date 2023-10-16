@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime
 from typing import List
 from typing import Tuple
@@ -205,3 +207,13 @@ def test_dominates() -> None:
             else:
                 # If `t1` isn't COMPLETE, it doesn't dominate others.
                 assert not t1._dominates(t0, directions)
+
+
+@pytest.mark.parametrize("positional_args_names", [[], ["step"], ["step", "log"]])
+def test_suggest_int_positional_args(positional_args_names: list[str]) -> None:
+    # If log is specified as positional, step must also be provided as positional.
+    study = optuna.multi_objective.create_study(["maximize"])
+    kwargs = dict(step=1, log=False)
+    args = [kwargs[name] for name in positional_args_names]
+    # No error should not be raised even if the coding style is old.
+    study.optimize(lambda trial: [trial.suggest_int("x", -1, 1, *args)], n_trials=1)
