@@ -128,11 +128,11 @@ def test_check_distribution_suggest_discrete_uniform(storage_mode: str) -> None:
         assert len([r for r in record if r.category != FutureWarning]) == 1
 
         with pytest.raises(ValueError):
-            trial.suggest_int("x", 10, 20, 2)
+            trial.suggest_int("x", 10, 20, step=2)
 
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
         with pytest.raises(ValueError):
-            trial.suggest_int("x", 10, 20, 2)
+            trial.suggest_int("x", 10, 20, step=2)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
