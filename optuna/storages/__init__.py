@@ -1,4 +1,6 @@
-from typing import Optional, Type,Union
+from typing import Optional
+from typing import Type
+from typing import Union
 
 from optuna._callbacks import RetryFailedTrialCallback
 from optuna.storages._base import BaseStorage
@@ -12,6 +14,7 @@ from optuna.storages._journal.file import JournalFileSymlinkLock
 from optuna.storages._journal.redis import JournalRedisStorage
 from optuna.storages._journal.storage import JournalStorage
 from optuna.storages._rdb.storage import RDBStorage
+
 
 __all__ = [
     "BaseStorage",
@@ -27,6 +30,7 @@ __all__ = [
     "_CachedStorage",
     "fail_stale_trials",
 ]
+
 
 def get_storage(storage: Optional[Union[str, Type[BaseStorage]]]) -> BaseStorage:
     """Only for internal usage. It might be deprecated in the future."""
