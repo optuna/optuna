@@ -126,9 +126,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
                     raise RuntimeError("torch distributed is not initialized.")
                 default_pg: "ProcessGroup" = dist.group.WORLD
                 if dist.get_backend(default_pg) == "nccl":
-                    new_group: "ProcessGroup" = dist.new_group(  # type: ignore[no-untyped-call]
-                        backend="gloo"
-                    )
+                    new_group: "ProcessGroup" = dist.new_group(backend="gloo")
                     _g_pg = new_group
                 else:
                     _g_pg = default_pg
