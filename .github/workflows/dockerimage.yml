@@ -27,8 +27,8 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    # TODO (nzw0301): Remove `exclude` once integration works with Python 3.11.
     # NOTE (nabenabe0928): 3.8 exists for the check of the oldest version with dev.
+    # TODO (nabenabe0928): Remove `exclude` of Python3.8 x non-dev once 3.7 is removed.
     strategy:
       matrix:
         python_version: ['3.7', '3.8', '3.11']
@@ -36,6 +36,8 @@ jobs:
         exclude:
         - python_version: '3.7'
           build_type: 'dev'
+        - python_version: '3.8'
+          build_type: ''
 
     # This action cannot be executed in the forked repository.
     if: github.repository == 'optuna/optuna'
