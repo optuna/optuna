@@ -1,3 +1,5 @@
+from typing import Optional
+from typing import Type
 from typing import Union
 
 from optuna._callbacks import RetryFailedTrialCallback
@@ -30,7 +32,7 @@ __all__ = [
 ]
 
 
-def get_storage(storage: Union[None, str, BaseStorage]) -> BaseStorage:
+def get_storage(storage: Optional[Union[str, Type[BaseStorage]]]) -> BaseStorage:
     """Only for internal usage. It might be deprecated in the future."""
 
     if storage is None:
