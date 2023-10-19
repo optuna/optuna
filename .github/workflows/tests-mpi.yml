@@ -19,7 +19,15 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.8', '3.11']
+        include:
+          - python-version: '3.8'
+            schedule-only: true
+          - python-version: '3.9'
+            schedule-only: true
+          - python-version: '3.10'
+            schedule-only: true
+          - python-version: '3.11'
+            schedule-only: false
 
     steps:
     - name: Checkout
@@ -70,7 +78,21 @@ jobs:
         pip install pipdeptree
         pipdeptree
 
+    - name: Scheduled tests
+      if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+      run: |
+        export OMPI_MCA_rmaps_base_oversubscribe=yes
+
+        # Question(nabenabe0928) Why is Python 3.11 skipped?? We can skip it from `matrix`.
+        if [ ${{ matrix.python-version }} != 3.11 ]; then
+          mpirun -n 2 -- pytest tests/integration_tests/test_pytorch_distributed.py
+        fi
+
+      env:
+        OMP_NUM_THREADS: 1
+
     - name: Tests
+      if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' && !matrix.schedule-only }}
       run: |
         export OMPI_MCA_rmaps_base_oversubscribe=yes
 

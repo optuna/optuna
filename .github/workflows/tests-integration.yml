@@ -20,7 +20,15 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.8', '3.11']
+        include:
+          - python-version: '3.8'
+            schedule-only: true
+          - python-version: '3.9'
+            schedule-only: true
+          - python-version: '3.10'
+            schedule-only: true
+          - python-version: '3.11'
+            schedule-only: false
 
     steps:
     - name: Checkout
@@ -73,6 +81,6 @@ jobs:
         pytest tests -m "integration"
         
     - name: Tests
-      if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
+      if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' && !matrix.schedule-only }}
       run: |
         pytest tests -m "integration"

@@ -92,7 +92,7 @@ jobs:
         SQLALCHEMY_WARN_20: 1
 
     - name: Tests
-      if:  ${{ (github.event_name != 'schedule' && github.event_name != 'workflow_dispatch') && !matrix.schedule-only }}
+      if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' && !matrix.schedule-only }}
       run: |
         pytest tests -m "not integration and not slow"
       env:
