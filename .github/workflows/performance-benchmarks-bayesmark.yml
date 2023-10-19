@@ -59,7 +59,7 @@ jobs:
         python -c 'import optuna'
         optuna --version
 
-        pip install --progress-bar off .[benchmark]
+        pip install --progress-bar off .[benchmark] --extra-index-url https://download.pytorch.org/whl/cpu
         pip install --progress-bar off bayesmark matplotlib pandas
 
     - name: Output installed packages

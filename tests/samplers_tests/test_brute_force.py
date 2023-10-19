@@ -290,3 +290,12 @@ def test_study_optimize_with_failed_trials() -> None:
     assert len(all_suggested_values) == len(expected_suggested_values)
     for a in expected_suggested_values:
         assert a in all_suggested_values
+
+
+def test_parallel_optimize() -> None:
+    study = optuna.create_study(sampler=samplers.BruteForceSampler())
+    trial1 = study.ask()
+    trial2 = study.ask()
+    x1 = trial1.suggest_categorical("x", ["a", "b"])
+    x2 = trial2.suggest_categorical("x", ["a", "b"])
+    assert {x1, x2} == {"a", "b"}

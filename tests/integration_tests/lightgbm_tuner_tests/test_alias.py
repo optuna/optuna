@@ -37,8 +37,33 @@ def test_handling_alias_parameter() -> None:
     }
     _handling_alias_parameters(params)
     assert "min_data" not in params
-    assert "min_data_in_leaf" in params
-    assert params["min_data_in_leaf"] == 0.2
+    assert "min_child_samples" in params
+    assert params["min_child_samples"] == 0.2
+
+
+def test_handling_alias_parameter_duplication() -> None:
+    params = {
+        "num_boost_round": 5,
+        "early_stopping_rounds": 2,
+        "min_data": 0.2,
+        "min_child_samples": 0.3,
+        "l1_regularization": 0.0,
+        "l2_regularization": 0.0,
+        "reg_alpha": 0.0,
+        "reg_lambda": 0.0,
+    }
+    _handling_alias_parameters(params)
+    # Here are the main alias names
+    assert "min_child_samples" in params
+    assert "lambda_l1" in params
+    assert "lambda_l2" in params
+
+    # None of them are the main alias names
+    assert "min_data" not in params
+    assert "l1_regularization" not in params
+    assert "l2_regularization" not in params
+    assert "reg_alpha" not in params
+    assert "reg_lambda" not in params
 
 
 @pytest.mark.parametrize(

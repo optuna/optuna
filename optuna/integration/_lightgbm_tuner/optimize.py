@@ -394,12 +394,12 @@ class _LightGBMBaseTuner(_BaseTuner):
         self._model_dir = model_dir
         self._optuna_seed = optuna_seed
 
-        # Should not alter data since `min_data_in_leaf` is tuned.
+        # Should not alter data since `min_child_samples` is tuned.
         # https://lightgbm.readthedocs.io/en/latest/Parameters.html#feature_pre_filter
         if self.lgbm_params.get("feature_pre_filter", False):
             warnings.warn(
                 "feature_pre_filter is given as True but will be set to False. This is required "
-                "for the tuner to tune min_data_in_leaf."
+                "for the tuner to tune min_child_samples."
             )
         self.lgbm_params["feature_pre_filter"] = False
 
@@ -560,7 +560,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         param_values = [5, 10, 25, 50, 100]
 
         sampler = optuna.samplers.GridSampler({param_name: param_values}, seed=self._optuna_seed)
-        self._tune_params([param_name], len(param_values), sampler, "min_data_in_leaf")
+        self._tune_params([param_name], len(param_values), sampler, "min_child_samples")
 
     def _tune_params(
         self,

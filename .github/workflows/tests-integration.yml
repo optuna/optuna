@@ -56,7 +56,7 @@ jobs:
         optuna --version
 
         pip install --progress-bar off .[test]
-        pip install --progress-bar off .[optional]
+        pip install --progress-bar off .[optional] --extra-index-url https://download.pytorch.org/whl/cpu
         pip install --progress-bar off .[integration] --extra-index-url https://download.pytorch.org/whl/cpu
 
     - name: Output installed packages

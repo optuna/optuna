@@ -344,13 +344,13 @@ def test_updates_properties(storage_mode: str) -> None:
         if dist.get_rank() == 0:
             [getattr(trial, p) for p in property_names]
 
-        dist.barrier()  # type: ignore[no-untyped-call]
+        dist.barrier()
 
         # Same with rank 1.
         if dist.get_rank() == 1:
             [getattr(trial, p) for p in property_names]
 
-        dist.barrier()  # type: ignore[no-untyped-call]
+        dist.barrier()
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
