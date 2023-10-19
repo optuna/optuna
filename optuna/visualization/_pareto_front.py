@@ -72,6 +72,9 @@ def plot_pareto_front(
 
             fig = optuna.visualization.plot_pareto_front(study)
             fig.show()
+            
+        .. seealso::
+	        To customize the generated diagram afterwards (change title, ...), use the function 'update_layout()' of plotly. See https://plotly.com/python/reference/layout/.
 
     Example:
 
