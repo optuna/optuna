@@ -1,3 +1,4 @@
+from __future__ import annotations
 from concurrent.futures import FIRST_COMPLETED
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
@@ -18,6 +19,7 @@ from typing import Type
 from typing import Union
 import warnings
 
+
 import optuna
 from optuna import exceptions
 from optuna import logging
@@ -35,13 +37,14 @@ _logger = logging.get_logger(__name__)
 
 
 def _optimize(
-    study: "optuna.Study",
-    func: "optuna.study.study.ObjectiveFuncType",
+    study: optuna.Study,
+    func: optuna.study.study.ObjectiveFuncType,
     n_trials: Optional[int] = None,
     timeout: Optional[float] = None,
     n_jobs: int = 1,
     catch: Tuple[Type[Exception], ...] = (),
-    callbacks: Optional[List[Callable[["optuna.Study", FrozenTrial], None]]] = None,
+    callbacks: Optional[List[Callable[[optuna.Study, FrozenTrial], None]]] = None
+
     gc_after_trial: bool = False,
     show_progress_bar: bool = False,
 ) -> None:
@@ -123,8 +126,8 @@ def _optimize(
 
 
 def _optimize_sequential(
-    study: "optuna.Study",
-    func: "optuna.study.study.ObjectiveFuncType",
+    study: optuna.Study,
+    func: optuna.study.study.ObjectiveFuncType,
     n_trials: Optional[int],
     timeout: Optional[float],
     catch: Tuple[Type[Exception], ...],
@@ -181,8 +184,8 @@ def _optimize_sequential(
 
 
 def _run_trial(
-    study: "optuna.Study",
-    func: "optuna.study.study.ObjectiveFuncType",
+    study: optuna.Study,
+    func: optuna.study.study.ObjectiveFuncType,
     catch: Tuple[Type[Exception], ...],
 ) -> trial_module.FrozenTrial:
     if is_heartbeat_enabled(study._storage):
