@@ -84,16 +84,16 @@ jobs:
         pip install pipdeptree
         pipdeptree
 
-    - name: Scheduled tests
-      if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    - name: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'Scheduled tests' || 'Tests' }}
+      # The first two conditions are for `Scheduled tests` and the last one is for `Tests`
+      if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || !matrix.schedule-only)
       run: |
-        pytest tests -m "not integration"
-      env:
-        SQLALCHEMY_WARN_20: 1
-
-    - name: Tests
-      if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' && !matrix.schedule-only }}
-      run: |
-        pytest tests -m "not integration and not slow"
+        if [ ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }} ]: then
+          # Scheduled tests
+          pytest tests -m "not integration"
+        else:
+          # Tests
+          pytest tests -m "not integration and not slow"
+        fi
       env:
         SQLALCHEMY_WARN_20: 1

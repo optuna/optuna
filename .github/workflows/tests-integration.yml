@@ -75,12 +75,8 @@ jobs:
         pip install pipdeptree
         pipdeptree
 
-    - name: Scheduled tests
-      if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
-      run: |
-        pytest tests -m "integration"
-        
-    - name: Tests
-      if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' && !matrix.schedule-only }}
+    - name: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'Scheduled tests' || 'Tests' }}
+      # The first two conditions are for `Scheduled tests` and the last one is for `Tests`
+      if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || !matrix.schedule-only)
       run: |
         pytest tests -m "integration"
