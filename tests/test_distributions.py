@@ -30,6 +30,7 @@ EXAMPLE_DISTRIBUTIONS: Dict[str, Any] = {
     "c1": distributions.CategoricalDistribution(choices=_choices),
     "c2": distributions.CategoricalDistribution(choices=("Roppongi", "Azabu")),
     "c3": distributions.CategoricalDistribution(choices=["Roppongi", "Azabu"]),
+    "c4": distributions.CategoricalDistribution(choices=[("src",), ("dst",), ("src", "dst")]),
 }
 
 EXAMPLE_JSONS = {
@@ -52,6 +53,8 @@ EXAMPLE_JSONS = {
     "c1": f'{{"name": "CategoricalDistribution", "attributes": {{"choices": {_choices_json}}}}}',
     "c2": '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}',
     "c3": '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}',
+    "c4": '{"name": "CategoricalDistribution", '
+    '"attributes": {"choices": [["src"], ["dst"], ["src", "dst"]]}}',
 }
 
 EXAMPLE_ABBREVIATED_JSONS = {
@@ -68,6 +71,7 @@ EXAMPLE_ABBREVIATED_JSONS = {
     "c1": f'{{"type": "categorical", "choices": {_choices_json}}}',
     "c2": '{"type": "categorical", "choices": ["Roppongi", "Azabu"]}',
     "c3": '{"type": "categorical", "choices": ["Roppongi", "Azabu"]}',
+    "c4": '{"type": "categorical", "choices": [["src"], ["dst"], ["src", "dst"]]}',
 }
 
 

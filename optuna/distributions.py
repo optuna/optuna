@@ -7,6 +7,7 @@ from typing import Any
 from typing import cast
 from typing import Dict
 from typing import Sequence
+from typing import Tuple
 from typing import Union
 import warnings
 
@@ -15,7 +16,7 @@ import numpy as np
 from optuna._deprecated import deprecated_class
 
 
-CategoricalChoiceType = Union[None, bool, int, float, str]
+CategoricalChoiceType = Union[None, bool, int, float, str, Tuple["CategoricalChoiceType", ...]]
 
 
 _float_distribution_deprecated_msg = (
@@ -503,7 +504,7 @@ class CategoricalDistribution(BaseDistribution):
 
         Not all types are guaranteed to be compatible with all storages. It is recommended to
         restrict the types of the choices to :obj:`None`, :class:`bool`, :class:`int`,
-        :class:`float` and :class:`str`.
+        :class:`float`, :class:`str`, and :class`tuple`.
 
     Attributes:
         choices:
@@ -515,11 +516,11 @@ class CategoricalDistribution(BaseDistribution):
         if len(choices) == 0:
             raise ValueError("The `choices` must contain one or more elements.")
         for choice in choices:
-            if choice is not None and not isinstance(choice, (bool, int, float, str)):
+            if choice is not None and not isinstance(choice, (bool, int, float, str, tuple)):
                 message = (
                     "Choices for a categorical distribution should be a tuple of None, bool, "
-                    "int, float and str for persistent storage but contains {} which is of type "
-                    "{}.".format(choice, type(choice).__name__)
+                    "int, float, str, and tuple for persistent storage but contains {} which "
+                    "is of type {}.".format(choice, type(choice).__name__)
                 )
                 warnings.warn(message)
 
@@ -591,7 +592,10 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
 
     if "name" in json_dict:
         if json_dict["name"] == CategoricalDistribution.__name__:
-            json_dict["attributes"]["choices"] = tuple(json_dict["attributes"]["choices"])
+            choices = json_dict["attributes"]["choices"]
+            # Cast list to tuple to ensure hashability
+            choices = [tuple(choice) if isinstance(choice, list) else choice for choice in choices]
+            json_dict["attributes"]["choices"] = tuple(choices)
 
         for cls in DISTRIBUTION_CLASSES:
             if json_dict["name"] == cls.__name__:
@@ -602,7 +606,10 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
     else:
         # Deserialize a distribution from an abbreviated format.
         if json_dict["type"] == "categorical":
-            return CategoricalDistribution(json_dict["choices"])
+            choices = json_dict["choices"]
+            # Cast list to tuple to ensure hashability
+            choices = [tuple(choice) if isinstance(choice, list) else choice for choice in choices]
+            return CategoricalDistribution(choices)
         elif json_dict["type"] in ("float", "int"):
             low = json_dict["low"]
             high = json_dict["high"]

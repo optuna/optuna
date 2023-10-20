@@ -7,6 +7,7 @@ from typing import Mapping
 from typing import Optional
 from typing import overload
 from typing import Sequence
+from typing import Tuple
 import warnings
 
 from optuna import distributions
@@ -246,6 +247,12 @@ class FrozenTrial(BaseTrial):
 
     @overload
     def suggest_categorical(self, name: str, choices: Sequence[str]) -> str:
+        ...
+
+    @overload
+    def suggest_categorical(
+        self, name: str, choices: Sequence[Tuple[CategoricalChoiceType, ...]]
+    ) -> Tuple[CategoricalChoiceType, ...]:
         ...
 
     @overload

@@ -5,18 +5,16 @@ from typing import List
 from typing import Optional
 from typing import overload
 from typing import Sequence
-from typing import Union
+from typing import Tuple
 
 from optuna import multi_objective
 from optuna._deprecated import deprecated_class
 from optuna.distributions import BaseDistribution
+from optuna.distributions import CategoricalChoiceType
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState
-
-
-CategoricalChoiceType = Union[None, bool, int, float, str]
 
 
 @deprecated_class("2.4.0", "4.0.0")
@@ -114,6 +112,12 @@ class MultiObjectiveTrial:
 
     @overload
     def suggest_categorical(self, name: str, choices: Sequence[str]) -> str:
+        ...
+
+    @overload
+    def suggest_categorical(
+        self, name: str, choices: Sequence[Tuple[CategoricalChoiceType, ...]]
+    ) -> Tuple[CategoricalChoiceType, ...]:
         ...
 
     @overload

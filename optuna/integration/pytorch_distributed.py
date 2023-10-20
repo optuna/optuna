@@ -7,6 +7,7 @@ from typing import Dict
 from typing import Optional
 from typing import overload
 from typing import Sequence
+from typing import Tuple
 from typing import TYPE_CHECKING
 from typing import TypeVar
 
@@ -207,6 +208,12 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
     @overload
     def suggest_categorical(self, name: str, choices: Sequence[str]) -> str:
+        ...
+
+    @overload
+    def suggest_categorical(
+        self, name: str, choices: Sequence[Tuple[CategoricalChoiceType, ...]]
+    ) -> Tuple[CategoricalChoiceType, ...]:
         ...
 
     @overload

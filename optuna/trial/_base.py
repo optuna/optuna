@@ -5,6 +5,7 @@ from typing import Dict
 from typing import Optional
 from typing import overload
 from typing import Sequence
+from typing import Tuple
 
 from optuna._deprecated import deprecated_func
 from optuna.distributions import BaseDistribution
@@ -71,6 +72,13 @@ class BaseTrial(abc.ABC):
     @overload
     @abc.abstractmethod
     def suggest_categorical(self, name: str, choices: Sequence[str]) -> str:
+        ...
+
+    @overload
+    @abc.abstractmethod
+    def suggest_categorical(
+        self, name: str, choices: Sequence[Tuple[CategoricalChoiceType, ...]]
+    ) -> Tuple[CategoricalChoiceType, ...]:
         ...
 
     @overload
