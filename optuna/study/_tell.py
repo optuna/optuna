@@ -100,7 +100,7 @@ def _tell_with_warning(
     """
 
     # We must invalidate all trials cache here as it is only valid within a trial.
-    study._thread_local.cached_all_trials = None
+    study._reset_cached_trials()
 
     # Validate the trial argument.
     frozen_trial = _get_frozen_trial(study, trial)
