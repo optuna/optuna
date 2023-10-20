@@ -75,7 +75,7 @@ def plot_pareto_front(
 
         .. seealso::
             To customize the generated diagram afterwards (change title, ...), use the
-            function 'update_layout()' of plotly. See https://plotly.com/python/reference/layout/.
+            function ``update_layout()`` of plotly. See https://plotly.com/python/reference/layout/.
 
     Example:
 
