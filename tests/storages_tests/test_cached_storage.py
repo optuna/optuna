@@ -3,10 +3,12 @@ from unittest.mock import patch
 import pytest
 
 import optuna
-from optuna.storages._cached_storage import _CachedStorage
 from optuna.storages._rdb.storage import RDBStorage
 from optuna.study import StudyDirection
 from optuna.trial import TrialState
+
+
+_CachedStorage = RDBStorage._CachedStorage
 
 
 def test_create_trial() -> None:

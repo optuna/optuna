@@ -3,10 +3,10 @@ import warnings
 from packaging import version
 
 import optuna
-from optuna.storages._cached_storage import _CachedStorage
 from optuna.storages._rdb.storage import RDBStorage
 
 
+_CachedStorage = RDBStorage._CachedStorage
 # Define key names of `Trial.system_attrs`.
 _EPOCH_KEY = "ddp_pl:epoch"
 _INTERMEDIATE_VALUE = "ddp_pl:intermediate_value"
