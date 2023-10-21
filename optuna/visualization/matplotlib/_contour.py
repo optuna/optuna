@@ -204,7 +204,17 @@ def _calculate_griddata(
 
     # Return empty values when x or y has no value.
     if len(x_values) == 0 or len(y_values) == 0:
-        return np.array([]), np.array([]), np.array([]), [], [], [], [], _PlotValues([], []), _PlotValues([], [])
+        return (
+            np.array([]),
+            np.array([]),
+            np.array([]),
+            [],
+            [],
+            [],
+            [],
+            _PlotValues([], []),
+            _PlotValues([], []),
+        )
 
     def _calculate_axis_data(
         axis: _AxisInfo,
