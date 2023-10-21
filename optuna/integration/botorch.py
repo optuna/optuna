@@ -30,6 +30,7 @@ with try_import() as _imports:
     from botorch.acquisition.monte_carlo import qExpectedImprovement
     from botorch.acquisition.monte_carlo import qNoisyExpectedImprovement
     from botorch.acquisition.multi_objective import monte_carlo
+    from botorch.acquisition.multi_objective.analytic import ExpectedHypervolumeImprovement
     from botorch.acquisition.multi_objective.objective import IdentityMCMultiOutputObjective
     from botorch.acquisition.objective import ConstrainedMCObjective
     from botorch.acquisition.objective import GenericMCObjective
@@ -420,6 +421,70 @@ def qehvi_candidates_func(
 
     return candidates
 
+@experimental_func("3.5.0")
+def ehvi_candidates_func(
+    train_x: "torch.Tensor",
+    train_obj: "torch.Tensor",
+    train_con: Optional["torch.Tensor"],
+    bounds: "torch.Tensor",
+    pending_x: Optional["torch.Tensor"],
+) -> "torch.Tensor":
+    """Expected Hypervolume Improvement (EHVI).
+
+    The default value of ``candidates_func`` in class:`~optuna.integration.BoTorchSampler`
+    with multi-objective optimization without constraints.
+
+    .. seealso::
+        :func:`~optuna.integration.botorch.qei_candidates_func` for argument and return value
+        descriptions.
+    """
+
+    n_objectives = train_obj.size(-1)
+    if train_con is not None:
+        raise ValueError("Constraints are not supported with ehvi_candidates_func.")
+
+    train_y = train_obj
+    train_x = normalize(train_x, bounds=bounds)
+
+    model = SingleTaskGP(train_x, train_y, outcome_transform=Standardize(m=train_y.size(-1)))
+    mll = ExactMarginalLogLikelihood(model.likelihood, model)
+    fit_gpytorch_mll(mll)
+
+    # Approximate box decomposition similar to Ax when the number of objectives is large.
+    # https://github.com/facebook/Ax/blob/master/ax/models/torch/botorch_moo_defaults
+    if n_objectives > 2:
+        alpha = 10 ** (-8 + n_objectives)
+    else:
+        alpha = 0.0
+
+    ref_point = train_obj.min(dim=0).values - 1e-8
+
+    partitioning = NondominatedPartitioning(ref_point=ref_point, Y=train_y, alpha=alpha)
+
+    ref_point_list = ref_point.tolist()
+
+    acqf = ExpectedHypervolumeImprovement(
+        model=model,
+        ref_point=ref_point_list,
+        partitioning=partitioning,
+    )
+    standard_bounds = torch.zeros_like(bounds)
+    standard_bounds[1] = 1
+
+    candidates, _ = optimize_acqf(
+        acq_function=acqf,
+        bounds=standard_bounds,
+        q=1,
+        num_restarts=20,
+        raw_samples=1024,
+        options={"batch_limit": 5, "maxiter": 200},
+        sequential=True,
+    )
+
+    candidates = unnormalize(candidates.detach(), bounds=bounds)
+
+    return candidates
+
 
 @experimental_func("3.1.0")
 def qnehvi_candidates_func(
@@ -592,7 +657,9 @@ def _get_default_candidates_func(
     ],
     "torch.Tensor",
 ]:
-    if n_objectives > 3:
+    if n_objectives > 3 and not has_constraint and not consider_running_trials:
+        return ehvi_candidates_func
+    elif n_objectives > 3:
         return qparego_candidates_func
     elif n_objectives > 1:
         return qehvi_candidates_func
