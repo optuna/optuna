@@ -421,6 +421,7 @@ def qehvi_candidates_func(
 
     return candidates
 
+
 @experimental_func("3.5.0")
 def ehvi_candidates_func(
     train_x: "torch.Tensor",
