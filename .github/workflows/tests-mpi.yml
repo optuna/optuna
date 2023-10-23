@@ -21,16 +21,31 @@ jobs:
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11']
 
-    steps:
+    steps: 
+    - name: Check for skip
+      id: check-for-skip
+      # The oldest and latest versions must be adapted.
+      run: |
+        if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ matrix.python-version }}" = "3.8" ] || [ "${{ matrix.python-version }}" = "3.11" ] ; then
+          echo "job_mode=run" >> $GITHUB_OUTPUT
+          echo "Run the checks"
+        else
+          echo "job_mode=skip" >> $GITHUB_OUTPUT
+          echo "Skip the checks"
+        fi
+
     - name: Checkout
+      if: steps.check-for-skip.outputs.job_mode == 'run'
       uses: actions/checkout@v3
 
     - name: Setup Python${{ matrix.python-version }}
+      if: steps.check-for-skip.outputs.job_mode == 'run'
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
     - name: Setup cache
+      if: steps.check-for-skip.outputs.job_mode == 'run'
       uses: actions/cache@v3
       env:
         cache-name: test-mpi
@@ -41,11 +56,13 @@ jobs:
           ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
 
     - name: Setup environment
+      if: steps.check-for-skip.outputs.job_mode == 'run'
       run: |
         sudo apt-get update
         sudo apt-get -y install openmpi-bin libopenmpi-dev
 
     - name: Install
+      if: steps.check-for-skip.outputs.job_mode == 'run'
       run: |
         python -m pip install --upgrade pip
 
@@ -63,14 +80,17 @@ jobs:
         pip install --progress-bar off .[integration] --extra-index-url https://download.pytorch.org/whl/cpu
 
     - name: Output installed packages
+      if: steps.check-for-skip.outputs.job_mode == 'run'
       run: |
         pip freeze --all
     - name: Output dependency tree
+      if: steps.check-for-skip.outputs.job_mode == 'run'
       run: |
         pip install pipdeptree
         pipdeptree
 
     - name: Tests
+      if: steps.check-for-skip.outputs.job_mode == 'run'
       run: |
         export OMPI_MCA_rmaps_base_oversubscribe=yes
 
