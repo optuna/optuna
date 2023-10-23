@@ -50,7 +50,7 @@ class FastAIV1PruningCallback(TrackerCallback):
 
     Args:
         learn:
-            `fastai.basic_train.Learner <https://docs.fast.ai/basic_train.html#Learner>`_.
+            `fastai.basic_train.Learner <https://fastai1.fast.ai/basic_train.html#Learner>`_.
         trial:
             A :class:`~optuna.trial.Trial` corresponding to the current
             evaluation of the objective function.
