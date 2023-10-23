@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Mapping
 from typing import Sequence
 from typing import Union
@@ -12,6 +14,5 @@ JSONSerializable = Union[
     bool,
     None,
 ]
-
 
 __all__ = ["JSONSerializable"]
