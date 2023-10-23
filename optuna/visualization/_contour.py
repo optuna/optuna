@@ -251,6 +251,7 @@ def _get_contour_subplot(
 def _create_scatter(x: list[Any], y: list[Any], is_feasible: bool) -> Scatter:
     edge_color = "Gray" if is_feasible else "#cccccc"
     marker_color = "black" if is_feasible else "#cccccc"
+    name = "Feasible Trial" if is_feasible else "Infeasible Trial"
     return go.Scatter(
         x=x,
         y=y,
@@ -259,7 +260,7 @@ def _create_scatter(x: list[Any], y: list[Any], is_feasible: bool) -> Scatter:
             "color": marker_color,
         },
         mode="markers",
-        name="Infeasible Trial",
+        name=name,
         showlegend=False,
     )
 
