@@ -96,7 +96,7 @@ class Study:
     def __setstate__(self, state: dict[Any, Any]) -> None:
         self.__dict__.update(state)
         self._in_optimize_loop = ContextVar("_in_optimize_loop", default=False)
-        self._reset_cached_trials()
+        self._cached_all_trials = ContextVar("_cached_all_trials", default=None)
 
     @property
     def best_params(self) -> dict[str, Any]:
@@ -280,9 +280,6 @@ class Study:
             return copy.deepcopy(filtered_trials) if deepcopy else filtered_trials
 
         return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy, states=states)
-
-    def _reset_cached_trials(self) -> None:
-        self._cached_all_trials = ContextVar("_cached_all_trials", default=None)
 
     @property
     def user_attrs(self) -> dict[str, Any]:
@@ -537,7 +534,7 @@ class Study:
         }
 
         # Sync storage once every trial.
-        self._reset_cached_trials()
+        self._cached_all_trials.set(None)
 
         trial_id = self._pop_waiting_trial_id()
         if trial_id is None:

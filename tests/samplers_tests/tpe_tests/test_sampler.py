@@ -171,7 +171,7 @@ def test_sample_relative_n_startup_trial() -> None:
     with patch.object(study._storage, "get_all_trials", return_value=past_trials[:4]):
         assert sampler.sample_relative(study, trial, {"param-a": dist}) == {}
     # sample_relative returns some value for only 7 observations.
-    study._reset_cached_trials()
+    study._cached_all_trials.set(None)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         assert "param-a" in sampler.sample_relative(study, trial, {"param-a": dist}).keys()
 
@@ -474,7 +474,7 @@ def test_sample_independent_n_startup_trial() -> None:
             sampler.sample_independent(study, trial, "param-a", dist)
     assert sample_method.call_count == 1
     sampler = TPESampler(n_startup_trials=5, seed=0)
-    study._reset_cached_trials()
+    study._cached_all_trials.set(None)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         with patch.object(
             optuna.samplers.RandomSampler, "sample_independent", return_value=1.0
