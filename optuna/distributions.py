@@ -17,6 +17,16 @@ from optuna._deprecated import deprecated_class
 
 
 CategoricalChoiceType = Union[None, bool, int, float, str, Tuple["CategoricalChoiceType", ...]]
+# `ConvertableChoiceType` is a type used for JSON deserialization into `CategoricalChoiceType`.
+ConvertableChoiceType = Union[
+    None,
+    bool,
+    int,
+    float,
+    str,
+    Tuple["ConvertableChoiceType", ...],
+    list["ConvertableChoiceType"],
+]
 
 
 _float_distribution_deprecated_msg = (
@@ -516,15 +526,25 @@ class CategoricalDistribution(BaseDistribution):
         if len(choices) == 0:
             raise ValueError("The `choices` must contain one or more elements.")
         for choice in choices:
-            if choice is not None and not isinstance(choice, (bool, int, float, str, tuple)):
-                message = (
-                    "Choices for a categorical distribution should be a tuple of None, bool, "
-                    "int, float, str, and tuple for persistent storage but contains {} which "
-                    "is of type {}.".format(choice, type(choice).__name__)
-                )
-                warnings.warn(message)
+            CategoricalDistribution._check_choice(choice)
 
         self.choices = tuple(choices)
+
+    @staticmethod
+    def _check_choice(choice: Any) -> None:
+        if choice is None or isinstance(choice, (bool, int, float, str)):
+            return
+        if isinstance(choice, tuple):
+            for value in choice:
+                CategoricalDistribution._check_choice(value)
+            return
+
+        message = (
+            "Choices for a categorical distribution should be a tuple of None, bool, "
+            "int, float, str, and tuple for persistent storage but contains {} which "
+            "is of type {}.".format(choice, type(choice).__name__)
+        )
+        warnings.warn(message)
 
     def to_external_repr(self, param_value_in_internal_repr: float) -> CategoricalChoiceType:
         return self.choices[int(param_value_in_internal_repr)]
@@ -577,6 +597,17 @@ DISTRIBUTION_CLASSES = (
 )
 
 
+def _to_categorical_choices(choice: ConvertableChoiceType) -> CategoricalChoiceType:
+    if choice is None or isinstance(choice, (bool, int, float, str)):
+        return choice
+    if isinstance(choice, (tuple, list)):
+        return tuple(_to_categorical_choices(value) for value in choice)
+
+    raise ValueError(
+        "Unknwon categorical choice type during JSON-deserialization: {}".format(type(choice))
+    )
+
+
 def json_to_distribution(json_str: str) -> BaseDistribution:
     """Deserialize a distribution in JSON format.
 
@@ -592,10 +623,9 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
 
     if "name" in json_dict:
         if json_dict["name"] == CategoricalDistribution.__name__:
-            choices = json_dict["attributes"]["choices"]
-            # Cast list to tuple to ensure hashability
-            choices = [tuple(choice) if isinstance(choice, list) else choice for choice in choices]
-            json_dict["attributes"]["choices"] = tuple(choices)
+            json_dict["attributes"]["choices"] = _to_categorical_choices(
+                json_dict["attributes"]["choices"]
+            )
 
         for cls in DISTRIBUTION_CLASSES:
             if json_dict["name"] == cls.__name__:
@@ -606,10 +636,7 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
     else:
         # Deserialize a distribution from an abbreviated format.
         if json_dict["type"] == "categorical":
-            choices = json_dict["choices"]
-            # Cast list to tuple to ensure hashability
-            choices = [tuple(choice) if isinstance(choice, list) else choice for choice in choices]
-            return CategoricalDistribution(choices)
+            return CategoricalDistribution(_to_categorical_choices(json_dict["choices"]))
         elif json_dict["type"] in ("float", "int"):
             low = json_dict["low"]
             high = json_dict["high"]

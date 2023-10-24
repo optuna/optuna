@@ -30,7 +30,9 @@ EXAMPLE_DISTRIBUTIONS: Dict[str, Any] = {
     "c1": distributions.CategoricalDistribution(choices=_choices),
     "c2": distributions.CategoricalDistribution(choices=("Roppongi", "Azabu")),
     "c3": distributions.CategoricalDistribution(choices=["Roppongi", "Azabu"]),
-    "c4": distributions.CategoricalDistribution(choices=[("src",), ("dst",), ("src", "dst")]),
+    "c4": distributions.CategoricalDistribution(
+        choices=[("foo",), ("foo", "bar"), ("foo", ("foo", "bar"))]
+    ),
 }
 
 EXAMPLE_JSONS = {
@@ -54,7 +56,7 @@ EXAMPLE_JSONS = {
     "c2": '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}',
     "c3": '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}',
     "c4": '{"name": "CategoricalDistribution", '
-    '"attributes": {"choices": [["src"], ["dst"], ["src", "dst"]]}}',
+    '"attributes": {"choices": [["foo"], ["foo", "bar"], ["foo", ["foo", "bar"]]]}}',
 }
 
 EXAMPLE_ABBREVIATED_JSONS = {
@@ -71,7 +73,7 @@ EXAMPLE_ABBREVIATED_JSONS = {
     "c1": f'{{"type": "categorical", "choices": {_choices_json}}}',
     "c2": '{"type": "categorical", "choices": ["Roppongi", "Azabu"]}',
     "c3": '{"type": "categorical", "choices": ["Roppongi", "Azabu"]}',
-    "c4": '{"type": "categorical", "choices": [["src"], ["dst"], ["src", "dst"]]}',
+    "c4": '{"type": "categorical", "choices": [["foo"], ["foo", "bar"], ["foo", ["foo", "bar"]]]}',
 }
 
 
@@ -611,3 +613,8 @@ def test_is_distribution_log() -> None:
 
     cd = distributions.CategoricalDistribution(choices=["a", "b", "c"])
     assert not distributions._is_distribution_log(cd)
+
+
+def test_to_categorical_choices_error() -> None:
+    with pytest.raises(ValueError):
+        distributions._to_categorical_choices([set()])
