@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
-from typing import Callable
 
 from optuna._imports import try_import
 from optuna.integration._lightgbm_tuner.optimize import _imports
