@@ -13,10 +13,10 @@ _INTERMEDIATE_VALUE = "ddp_pl:intermediate_value"
 _PRUNED_KEY = "ddp_pl:pruned"
 
 with optuna._imports.try_import() as _imports:
-    import pytorch_lightning as pl
-    from pytorch_lightning import LightningModule
-    from pytorch_lightning import Trainer
-    from pytorch_lightning.callbacks import Callback
+    import lightning.pytorch as pl
+    from lightning.pytorch import LightningModule
+    from lightning.pytorch import Trainer
+    from lightning.pytorch.callbacks import Callback
 
 if not _imports.is_successful():
     Callback = object  # type: ignore[assignment, misc]  # NOQA[F811]
