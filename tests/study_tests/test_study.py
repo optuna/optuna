@@ -13,6 +13,7 @@ from typing import Callable
 from unittest.mock import Mock
 from unittest.mock import patch
 import uuid
+import warnings
 
 import _pytest.capture
 import pytest
@@ -911,7 +912,9 @@ def test_optimize_progbar_no_constraints(
     n_jobs: int, capsys: _pytest.capture.CaptureFixture
 ) -> None:
     study = create_study()
-    study.optimize(stop_objective(5), n_jobs=n_jobs, show_progress_bar=True)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UserWarning)
+        study.optimize(stop_objective(5), n_jobs=n_jobs, show_progress_bar=True)
     _, err = capsys.readouterr()
 
     # We can't simply test if stderr is empty, since we're not sure
