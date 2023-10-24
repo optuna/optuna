@@ -80,8 +80,8 @@ def test_categorical() -> None:
 
 def test_categorical_mixed_types() -> None:
     def objective(trial: optuna.trial.Trial) -> float:
-        x = trial.suggest_categorical("x", [None, 1, 2, 3.14, True, "foo"])
-        assert x is None or isinstance(x, (int, float, bool, str))
+        x = trial.suggest_categorical("x", [None, 1, 2, 3.14, True, "foo", ("foo", "bar")])
+        assert x is None or isinstance(x, (int, float, bool, str, tuple))
         return len(str(x))
 
     dirname = tempfile.mkdtemp()

@@ -323,7 +323,7 @@ def test_int(sampler_class: Callable[[], BaseSampler], distribution: IntDistribu
 
 
 @parametrize_sampler
-@pytest.mark.parametrize("choices", [(1, 2, 3), ("a", "b", "c"), (1, "a")])
+@pytest.mark.parametrize("choices", [(1, 2, 3), ("a", "b", "c"), (1, "a"), ((1, 2), (1, 3))])
 def test_categorical(
     sampler_class: Callable[[], BaseSampler], choices: Sequence[CategoricalChoiceType]
 ) -> None:
