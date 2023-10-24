@@ -6,6 +6,7 @@ from numbers import Real
 from typing import Any
 from typing import cast
 from typing import Dict
+from typing import List
 from typing import Sequence
 from typing import Tuple
 from typing import Union
@@ -25,7 +26,7 @@ ConvertableChoiceType = Union[
     float,
     str,
     Tuple["ConvertableChoiceType", ...],
-    list["ConvertableChoiceType"],
+    List["ConvertableChoiceType"],
 ]
 
 
@@ -597,7 +598,9 @@ DISTRIBUTION_CLASSES = (
 )
 
 
-def _to_categorical_choices(choice: ConvertableChoiceType) -> CategoricalChoiceType:
+def _to_categorical_choices(
+    choice: ConvertableChoiceType,
+) -> CategoricalChoiceType:
     if choice is None or isinstance(choice, (bool, int, float, str)):
         return choice
     if isinstance(choice, (tuple, list)):
@@ -623,8 +626,8 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
 
     if "name" in json_dict:
         if json_dict["name"] == CategoricalDistribution.__name__:
-            json_dict["attributes"]["choices"] = _to_categorical_choices(
-                json_dict["attributes"]["choices"]
+            json_dict["attributes"]["choices"] = tuple(
+                _to_categorical_choices(value) for value in json_dict["attributes"]["choices"]
             )
 
         for cls in DISTRIBUTION_CLASSES:
@@ -636,7 +639,9 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
     else:
         # Deserialize a distribution from an abbreviated format.
         if json_dict["type"] == "categorical":
-            return CategoricalDistribution(_to_categorical_choices(json_dict["choices"]))
+            return CategoricalDistribution(
+                tuple(_to_categorical_choices(value) for value in json_dict["choices"])
+            )
         elif json_dict["type"] in ("float", "int"):
             low = json_dict["low"]
             high = json_dict["high"]

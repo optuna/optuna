@@ -617,4 +617,4 @@ def test_is_distribution_log() -> None:
 
 def test_to_categorical_choices_error() -> None:
     with pytest.raises(ValueError):
-        distributions._to_categorical_choices([set()])
+        distributions._to_categorical_choices([set()])  # type: ignore
