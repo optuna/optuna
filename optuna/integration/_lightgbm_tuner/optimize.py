@@ -14,9 +14,6 @@ import pickle
 import time
 from typing import Any
 from typing import cast
-from typing import List
-from typing import Tuple
-from typing import Union
 import warnings
 
 import numpy as np
@@ -35,7 +32,6 @@ with try_import() as _imports:
     import lightgbm as lgb
     from sklearn.model_selection import BaseCrossValidator
 
-    VALID_SET_TYPE = Union[List[lgb.Dataset], Tuple[lgb.Dataset, ...], lgb.Dataset]
 
 # Define key names of `Trial.system_attrs`.
 _ELAPSED_SECS_KEY = "lightgbm_tuner:elapsed_secs"
@@ -94,7 +90,9 @@ class _BaseTuner:
 
     def _get_booster_best_score(self, booster: "lgb.Booster") -> float:
         metric = self._get_metric_for_objective()
-        valid_sets: VALID_SET_TYPE | None = self.lgbm_kwargs.get("valid_sets")
+        valid_sets: list["lgb.Dataset"] | tuple[
+            "lgb.Dataset", ...
+        ] | "lgb.Dataset" | None = self.lgbm_kwargs.get("valid_sets")
 
         if self.lgbm_kwargs.get("valid_names") is not None:
             if isinstance(self.lgbm_kwargs["valid_names"], str):
@@ -221,7 +219,9 @@ class _OptunaObjective(_BaseTuner):
             param_value = trial.suggest_int("min_child_samples", 5, 100)
             self.lgbm_params["min_child_samples"] = param_value
 
-    def _copy_valid_sets(self, valid_sets: "VALID_SET_TYPE") -> "VALID_SET_TYPE":
+    def _copy_valid_sets(
+        self, valid_sets: list["lgb.Dataset"] | tuple["lgb.Dataset", ...] | "lgb.Dataset"
+    ) -> list["lgb.Dataset"] | tuple["lgb.Dataset", ...] | "lgb.Dataset":
         if isinstance(valid_sets, list):
             return [copy.copy(d) for d in valid_sets]
         if isinstance(valid_sets, tuple):
@@ -629,8 +629,8 @@ class _LightGBMBaseTuner(_BaseTuner):
         raise NotImplementedError
 
     def _create_stepwise_study(
-        self, study: "optuna.study.Study", step_name: str
-    ) -> "optuna.study.Study":
+        self, study: optuna.study.Study, step_name: str
+    ) -> optuna.study.Study:
         # This class is assumed to be passed to a sampler and a pruner corresponding to the step.
         class _StepwiseStudy(optuna.study.Study):
             def __init__(self, study: optuna.study.Study, step_name: str) -> None:
@@ -684,8 +684,12 @@ class LightGBMTuner(_LightGBMBaseTuner):
     /medium.com/optuna/lightgbm-tuner-new-optuna-integration-for-hyperparameter-optimization-8b709
     5e99258>`_ by `Kohei Ozaki <https://www.kaggle.com/confirm>`_, a Kaggle Grandmaster.
 
-    Arguments and keyword arguments for `lightgbm.train()
-    <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html>`_ can be passed.
+    .. note::
+        Arguments and keyword arguments for `lightgbm.train()
+        <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html>`_ can be passed.
+        For ``params``, please check `the official documentation for LightGBM
+        <https://lightgbm.readthedocs.io/en/latest/Parameters.html>`_.
+
     The arguments that only :class:`~optuna.integration.lightgbm.LightGBMTuner` has are
     listed below:
 
@@ -752,7 +756,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
         params: dict[str, Any],
         train_set: "lgb.Dataset",
         num_boost_round: int = 1000,
-        valid_sets: "VALID_SET_TYPE" | None = None,
+        valid_sets: list["lgb.Dataset"] | tuple["lgb.Dataset", ...] | "lgb.Dataset" | None = None,
         valid_names: Any | None = None,
         feval: Callable[..., Any] | None = None,
         feature_name: str = "auto",
@@ -864,8 +868,12 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
     `a simple example <https://github.com/optuna/optuna-examples/tree/main/lightgbm/
     lightgbm_tuner_cv.py>`_ which optimizes the validation log loss of cancer detection.
 
-    Arguments and keyword arguments for `lightgbm.cv()`_ can be passed except
-    ``metrics``, ``init_model`` and ``eval_train_metric``.
+    .. note::
+        Arguments and keyword arguments for `lightgbm.cv()`_ can be passed except
+        ``metrics``, ``init_model`` and ``eval_train_metric``.
+        For ``params``, please check `the official documentation for LightGBM
+        <https://lightgbm.readthedocs.io/en/latest/Parameters.html>`_.
+
     The arguments that only :class:`~optuna.integration.lightgbm.LightGBMTunerCV` has are
     listed below:
 
