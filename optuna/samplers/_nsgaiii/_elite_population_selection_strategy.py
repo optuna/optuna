@@ -29,7 +29,7 @@ class NSGAIIIElitePopulationSelectionStrategy:
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
         reference_points: np.ndarray | None = None,
         dividing_parameter: int = 3,
-        seed: int | None = None,
+        rng: LazyRandomState,
     ) -> None:
         if population_size < 2:
             raise ValueError("`population_size` must be greater than or equal to 2.")
@@ -38,7 +38,7 @@ class NSGAIIIElitePopulationSelectionStrategy:
         self._constraints_func = constraints_func
         self._reference_points = reference_points
         self._dividing_parameter = dividing_parameter
-        self._rng = LazyRandomState(seed)
+        self._rng = rng
 
     def __call__(self, study: Study, population: list[FrozenTrial]) -> list[FrozenTrial]:
         """Select elite population from the given trials by NSGA-III algorithm.

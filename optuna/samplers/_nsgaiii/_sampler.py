@@ -131,7 +131,7 @@ class NSGAIIISampler(BaseSampler):
                 constraints_func=constraints_func,
                 reference_points=reference_points,
                 dividing_parameter=dividing_parameter,
-                seed=seed,
+                rng=self._rng,
             )
         )
         self._child_generation_strategy = (
@@ -142,7 +142,7 @@ class NSGAIIISampler(BaseSampler):
                 swapping_prob=swapping_prob,
                 crossover=crossover,
                 constraints_func=constraints_func,
-                seed=seed,
+                rng=self._rng,
             )
         )
         self._after_trial_strategy = after_trial_strategy or NSGAIIAfterTrialStrategy(

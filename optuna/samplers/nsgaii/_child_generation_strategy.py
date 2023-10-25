@@ -23,7 +23,7 @@ class NSGAIIChildGenerationStrategy:
         crossover_prob: float,
         swapping_prob: float,
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
-        seed: int | None = None,
+        rng: LazyRandomState,
     ) -> None:
         if not (mutation_prob is None or 0.0 <= mutation_prob <= 1.0):
             raise ValueError(
@@ -48,7 +48,7 @@ class NSGAIIChildGenerationStrategy:
         self._swapping_prob = swapping_prob
         self._crossover = crossover
         self._constraints_func = constraints_func
-        self._rng = LazyRandomState(seed)
+        self._rng = rng
 
     def __call__(
         self,
