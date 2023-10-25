@@ -64,6 +64,7 @@ checking = [
     "typing_extensions>=3.10.0.0",
 ]
 document = [
+    "ase",
     "cma",
     "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
     "botorch",
@@ -94,10 +95,10 @@ integration = [
     "distributed",
     "fastai",
     "lightgbm",
+    "lightning",
     "mlflow",
     "pandas",
     "pytorch-ignite",
-    "pytorch-lightning>=1.6.0",
     "scikit-learn>=0.24.2",
     "scikit-optimize",
     "shap",

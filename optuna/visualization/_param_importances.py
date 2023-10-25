@@ -68,6 +68,48 @@ def _get_importances_info(
     )
 
 
+def _get_importances_infos(
+    study: Study,
+    evaluator: BaseImportanceEvaluator | None,
+    params: list[str] | None,
+    target: Callable[[FrozenTrial], float] | None,
+    target_name: str,
+) -> tuple[_ImportancesInfo, ...]:
+    metric_names = study.metric_names
+    if target or not study._is_multi_objective():
+        target_name = metric_names[0] if metric_names is not None and not target else target_name
+        importances_infos: tuple[_ImportancesInfo, ...] = (
+            _get_importances_info(
+                study,
+                evaluator,
+                params,
+                target=target,
+                target_name=target_name,
+            ),
+        )
+
+    else:
+        n_objectives = len(study.directions)
+        target_names = (
+            metric_names
+            if metric_names is not None
+            else (f"{target_name} {objective_id}" for objective_id in range(n_objectives))
+        )
+
+        importances_infos = tuple(
+            _get_importances_info(
+                study,
+                evaluator,
+                params,
+                target=lambda t: t.values[objective_id],
+                target_name=target_name,
+            )
+            for objective_id, target_name in enumerate(target_names)
+        )
+
+    return importances_infos
+
+
 def plot_param_importances(
     study: Study,
     evaluator: BaseImportanceEvaluator | None = None,
@@ -137,34 +179,16 @@ def plot_param_importances(
                 importance of the first objective, use ``target=lambda t: t.values[0]`` for the
                 target parameter.
         target_name:
-            Target's name to display on the legend.
+            Target's name to display on the legend. Names set via
+            :meth:`~optuna.study.Study.set_metric_names` will be used if ``target`` is :obj:`None`,
+            overriding this argument.
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
     """
 
     _imports.check()
-
-    if target or not study._is_multi_objective():
-        importances_infos: tuple[_ImportancesInfo, ...] = (
-            _get_importances_info(
-                study, evaluator, params, target=target, target_name=target_name
-            ),
-        )
-
-    else:
-        n_objectives = len(study.directions)
-        importances_infos = tuple(
-            _get_importances_info(
-                study,
-                evaluator,
-                params,
-                target=lambda t: t.values[objective_id],
-                target_name=f"{target_name} {objective_id}",
-            )
-            for objective_id in range(n_objectives)
-        )
-
+    importances_infos = _get_importances_infos(study, evaluator, params, target, target_name)
     return _get_importances_plot(importances_infos, study)
 
 

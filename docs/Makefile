@@ -31,3 +31,6 @@ clean:
 	rm -rf source/tutorial/10_key_features
 	rm -rf source/tutorial/20_recipes
 	rm -f ../tutorial/**/*.db
+	rm -rf ../tutorial/20_recipes/artifacts
+	rm -rf ../tutorial/20_recipes/tmp
+	rm -rf ../tutorial/20_recipes/best_atoms.png

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import abc
 from typing import Optional
 
@@ -5,7 +7,9 @@ from optuna._experimental import experimental_class
 from optuna.study.study import Study
 from optuna.terminator.erroreval import BaseErrorEvaluator
 from optuna.terminator.erroreval import CrossValidationErrorEvaluator
+from optuna.terminator.erroreval import StaticErrorEvaluator
 from optuna.terminator.improvement.evaluator import BaseImprovementEvaluator
+from optuna.terminator.improvement.evaluator import BestValueStagnationEvaluator
 from optuna.terminator.improvement.evaluator import DEFAULT_MIN_N_TRIALS
 from optuna.terminator.improvement.evaluator import RegretBoundEvaluator
 from optuna.trial import TrialState
@@ -105,8 +109,13 @@ class Terminator(BaseTerminator):
             raise ValueError("`min_n_trials` is expected to be a positive integer.")
 
         self._improvement_evaluator = improvement_evaluator or RegretBoundEvaluator()
-        self._error_evaluator = error_evaluator or CrossValidationErrorEvaluator()
+        self._error_evaluator = error_evaluator or self._initialize_error_evalutor()
         self._min_n_trials = min_n_trials
+
+    def _initialize_error_evalutor(self) -> BaseErrorEvaluator:
+        if isinstance(self._improvement_evaluator, BestValueStagnationEvaluator):
+            return StaticErrorEvaluator(constant=0)
+        return CrossValidationErrorEvaluator()
 
     def should_terminate(self, study: Study) -> bool:
         """Judge whether the study should be terminated based on the reported values."""
@@ -115,13 +124,14 @@ class Terminator(BaseTerminator):
         if len(trials) < self._min_n_trials:
             return False
 
-        regret_bound = self._improvement_evaluator.evaluate(
+        improvement = self._improvement_evaluator.evaluate(
             trials=study.trials,
             study_direction=study.direction,
         )
+
         error = self._error_evaluator.evaluate(
             trials=study.trials, study_direction=study.direction
         )
-        should_terminate = regret_bound < error
 
+        should_terminate = improvement < error
         return should_terminate

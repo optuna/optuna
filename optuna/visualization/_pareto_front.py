@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import collections
+from collections.abc import Callable
+from collections.abc import Sequence
 from typing import Any
-from typing import Callable
 from typing import NamedTuple
-from typing import Sequence
 import warnings
 
 import optuna
@@ -302,7 +301,7 @@ def _get_pareto_front_info(
     ) -> list[tuple[FrozenTrial, list[float]]]:
         target_values = [targets(trial) for trial in trials]
         for v in target_values:
-            if not isinstance(v, collections.abc.Sequence):
+            if not isinstance(v, Sequence):
                 raise ValueError(
                     "`targets` should return a sequence of target values."
                     " your `targets` returns {}".format(type(v))
