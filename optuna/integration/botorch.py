@@ -452,8 +452,8 @@ def ehvi_candidates_func(
     fit_gpytorch_mll(mll)
 
     # Approximate box decomposition similar to Ax when the number of objectives is large.
-    # https://github.com/facebook/Ax/blob/master/ax/models/torch/botorch_moo_defaults
-    if n_objectives > 2:
+    # https://github.com/pytorch/botorch/blob/36d09a4297c2a0ff385077b7fcdd5a9d308e40cc/botorch/acquisition/multi_objective/utils.py#L46-L63
+    if n_objectives > 4:
         alpha = 10 ** (-8 + n_objectives)
     else:
         alpha = 0.0
