@@ -13,10 +13,10 @@ _INTERMEDIATE_VALUE = "ddp_pl:intermediate_value"
 _PRUNED_KEY = "ddp_pl:pruned"
 
 with optuna._imports.try_import() as _imports:
-    import pytorch_lightning as pl
-    from pytorch_lightning import LightningModule
-    from pytorch_lightning import Trainer
-    from pytorch_lightning.callbacks import Callback
+    import lightning.pytorch as pl
+    from lightning.pytorch import LightningModule
+    from lightning.pytorch import Trainer
+    from lightning.pytorch.callbacks import Callback
 
 if not _imports.is_successful():
     Callback = object  # type: ignore[assignment, misc]  # NOQA[F811]
@@ -38,8 +38,8 @@ class PyTorchLightningPruningCallback(Callback):
         monitor:
             An evaluation metric for pruning, e.g., ``val_loss`` or
             ``val_acc``. The metrics are obtained from the returned dictionaries from e.g.
-            ``pytorch_lightning.LightningModule.training_step`` or
-            ``pytorch_lightning.LightningModule.validation_epoch_end`` and the names thus depend on
+            ``lightning.pytorch.LightningModule.training_step`` or
+            ``lightning.pytorch.LightningModule.validation_epoch_end`` and the names thus depend on
             how this dictionary is formatted.
 
 
@@ -149,7 +149,7 @@ class PyTorchLightningPruningCallback(Callback):
         Currently, ``intermediate_values`` are not properly propagated between processes due to
         storage cache. Therefore, necessary information is kept in trial_system_attrs when the
         trial runs in a distributed situation. Please call this method right after calling
-        ``pytorch_lightning.Trainer.fit()``.
+        ``lightning.pytorch.Trainer.fit()``.
         If a callback doesn't have any backend storage for DDP, this method does nothing.
         """
 
