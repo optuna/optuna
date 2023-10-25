@@ -605,9 +605,11 @@ def _split_trials(
 
     # We divide data into below and above.
     below_complete, above_complete = _split_complete_trials(complete_trials, study, n_below)
-    n_below -= len(below_complete)
+    # This ensures `n_below` is non-negative to prevent unexpected trial splits.
+    n_below = max(0, n_below - len(below_complete))
     below_pruned, above_pruned = _split_pruned_trials(pruned_trials, study, n_below)
-    n_below -= len(below_pruned)
+    # This ensures `n_below` is non-negative to prevent unexpected trial splits.
+    n_below = max(0, n_below - len(below_pruned))
     below_infeasible, above_infeasible = _split_infeasible_trials(infeasible_trials, n_below)
 
     below_trials = below_complete + below_pruned + below_infeasible
