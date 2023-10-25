@@ -320,7 +320,8 @@ def test_retry_failed_trial_callback_repetitive_failure(storage_mode: str) -> No
 
         # Make repeatedly failed and retried trials by heartbeat.
         for _ in range(n_trials):
-            trial = study.ask()
+            with pytest.warns(UserWarning):
+                trial = study.ask()
             storage.record_heartbeat(trial._trial_id)
             time.sleep(grace_period + 1)
             optuna.storages.fail_stale_trials(study)
