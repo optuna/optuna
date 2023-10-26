@@ -74,9 +74,9 @@ def _parse_output(output: str, output_format: str) -> Any:
     if output_format == "value":
         # Currently, _parse_output with output_format="value" is used only for
         # `study-names` command.
-        return [{"name": values} for values in output.split(os.linesep)]
+        return [{"name": values} for values in output.split("\n")]
     elif output_format == "table":
-        rows = output.split(os.linesep)
+        rows = output.split("\n")
         assert all(len(rows[0]) == len(row) for row in rows)
         # Check ruled lines.
         assert rows[0] == rows[2] == rows[-1]

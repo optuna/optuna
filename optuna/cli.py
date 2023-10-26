@@ -193,7 +193,7 @@ def _dump_value(records: List[Dict[str, Any]], header: List[str]) -> str:
         for column_name in header:
             row.append(str(record.get(column_name, "")))
         values.append(" ".join(row))
-    return os.linesep.join(values)
+    return "\n".join(values)
 
 
 def _dump_table(records: List[Dict[str, Any]], header: List[str]) -> str:
