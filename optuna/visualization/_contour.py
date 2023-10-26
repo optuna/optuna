@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import math
+from typing import Any
 from typing import Callable
 from typing import NamedTuple
 
 from optuna.logging import get_logger
+from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
@@ -43,6 +45,7 @@ class _SubContourInfo(NamedTuple):
     xaxis: _AxisInfo
     yaxis: _AxisInfo
     z_values: dict[tuple[int, int], float]
+    constraints: list[bool] = []
 
 
 class _ContourInfo(NamedTuple):
@@ -50,6 +53,11 @@ class _ContourInfo(NamedTuple):
     sub_plot_infos: list[list[_SubContourInfo]]
     reverse_scale: bool
     target_name: str
+
+
+class _PlotValues(NamedTuple):
+    x: list[Any]
+    y: list[Any]
 
 
 def plot_contour(
@@ -194,15 +202,22 @@ def _get_contour_subplot(
     info: _SubContourInfo,
     reverse_scale: bool,
     target_name: str = "Objective Value",
-) -> tuple["Contour", "Scatter"]:
+) -> tuple["Contour", "Scatter", "Scatter"]:
     x_indices = info.xaxis.indices
     y_indices = info.yaxis.indices
-    x_values = []
-    y_values = []
-    for x_value, y_value in zip(info.xaxis.values, info.yaxis.values):
+
+    feasible = _PlotValues([], [])
+    infeasible = _PlotValues([], [])
+
+    for x_value, y_value, c in zip(info.xaxis.values, info.yaxis.values, info.constraints):
         if x_value is not None and y_value is not None:
-            x_values.append(x_value)
-            y_values.append(y_value)
+            if c:
+                feasible.x.append(x_value)
+                feasible.y.append(y_value)
+            else:
+                infeasible.x.append(x_value)
+                infeasible.y.append(y_value)
+
     z_values = [
         [float("nan") for _ in range(len(info.xaxis.indices))]
         for _ in range(len(info.yaxis.indices))
@@ -211,7 +226,7 @@ def _get_contour_subplot(
         z_values[y_i][x_i] = z_value
 
     if len(x_indices) < 2 or len(y_indices) < 2:
-        return go.Contour(), go.Scatter()
+        return go.Contour(), go.Scatter(), go.Scatter()
 
     contour = go.Contour(
         x=x_indices,
@@ -226,15 +241,28 @@ def _get_contour_subplot(
         reversescale=reverse_scale,
     )
 
-    scatter = go.Scatter(
-        x=x_values,
-        y=y_values,
-        marker={"line": {"width": 2.0, "color": "Grey"}, "color": "black"},
-        mode="markers",
-        showlegend=False,
+    return (
+        contour,
+        _create_scatter(feasible.x, feasible.y, is_feasible=True),
+        _create_scatter(infeasible.x, infeasible.y, is_feasible=False),
     )
 
-    return contour, scatter
+
+def _create_scatter(x: list[Any], y: list[Any], is_feasible: bool) -> Scatter:
+    edge_color = "Gray" if is_feasible else "#cccccc"
+    marker_color = "black" if is_feasible else "#cccccc"
+    name = "Feasible Trial" if is_feasible else "Infeasible Trial"
+    return go.Scatter(
+        x=x,
+        y=y,
+        marker={
+            "line": {"width": 2.0, "color": edge_color},
+            "color": marker_color,
+        },
+        mode="markers",
+        name=name,
+        showlegend=False,
+    )
 
 
 def _get_contour_info(
@@ -337,7 +365,17 @@ def _get_contour_subplot_info(
                 else max(existing, value)
             )
 
-    return _SubContourInfo(xaxis=xaxis, yaxis=yaxis, z_values=z_values)
+    return _SubContourInfo(
+        xaxis=xaxis,
+        yaxis=yaxis,
+        z_values=z_values,
+        constraints=[_satisfy_constraints(t) for t in trials],
+    )
+
+
+def _satisfy_constraints(trial: FrozenTrial) -> bool:
+    constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
+    return constraints is None or all([x <= 0.0 for x in constraints])
 
 
 def _get_axis_info(trials: list[FrozenTrial], param_name: str) -> _AxisInfo:
