@@ -88,6 +88,7 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
     optuna.samplers.BruteForceSampler
     optuna.samplers.IntersectionSearchSpace
     optuna.samplers.intersection_search_space
+    .. optuna.samplers.MOTPESampler 
 
 .. note::
     The following :mod:`optuna.samplers.nsgaii` module defines crossover operations used by :class:`~optuna.samplers.NSGAIISampler`.
