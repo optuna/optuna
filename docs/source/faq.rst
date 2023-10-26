@@ -182,8 +182,6 @@ To make the parameters suggested by Optuna reproducible, you can specify a fixed
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective)
 
-To make the pruning by :class:`~optuna.pruners.HyperbandPruner` reproducible, you can specify ``study_name`` of :class:`~optuna.study.Study` and `hash seed <https://docs.python.org/3/using/cmdline.html#envvar-PYTHONHASHSEED>`_.
-
 However, there are two caveats.
 
 First, when optimizing a study in distributed or parallel mode, there is inherent non-determinism.
