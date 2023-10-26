@@ -71,8 +71,11 @@ def _parse_output(output: str, output_format: str) -> Any:
         For table format, a list of dict formatted rows.
         For JSON or YAML format, a list or a dict corresponding to ``output``.
     """
-
-    if output_format == "table":
+    if output_format == "value":
+        # Currently, _parse_output with output_format="value" is used only for
+        # `study-names` command.
+        return [{"name": values} for values in output.split(os.linesep)]
+    elif output_format == "table":
         rows = output.split(os.linesep)
         assert all(len(rows[0]) == len(row) for row in rows)
         # Check ruled lines.
@@ -323,7 +326,7 @@ def test_study_names_command(output_format: Optional[str]) -> None:
         if output_format is not None:
             command += ["--format", output_format]
         output = str(subprocess.check_output(command).decode().strip())
-        study_names = _parse_output(output, output_format or "table")
+        study_names = _parse_output(output, output_format or "value")
 
         # Check user_attrs are not printed.
         assert len(study_names) == 1
@@ -345,7 +348,7 @@ def test_study_names_command(output_format: Optional[str]) -> None:
         if output_format is not None:
             command += ["--format", output_format]
         output = str(subprocess.check_output(command).decode().strip())
-        study_names = _parse_output(output, output_format or "table")
+        study_names = _parse_output(output, output_format or "value")
 
         assert len(study_names) == 2
         for i, study_name in enumerate(study_names):

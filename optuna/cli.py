@@ -186,6 +186,16 @@ class CellValue:
             return f"{value:<{width}}"
 
 
+def _dump_value(records: List[Dict[str, Any]], header: List[str]) -> str:
+    values = []
+    for record in records:
+        row = []
+        for column_name in header:
+            row.append(str(record.get(column_name, "")))
+        values.append(" ".join(row))
+    return os.linesep.join(values)
+
+
 def _dump_table(records: List[Dict[str, Any]], header: List[str]) -> str:
     rows = []
     for record in records:
@@ -233,7 +243,12 @@ def _format_output(
     else:
         values, header = _convert_to_dict([records], columns, flatten)
 
-    if output_format == "table":
+    if output_format == "value":
+        if isinstance(records, list):
+            return _dump_value(values, header).strip()
+        else:
+            return str(values[0]).strip()
+    elif output_format == "table":
         return _dump_table(values, header).strip()
     elif output_format == "json":
         if isinstance(records, list):
@@ -390,8 +405,8 @@ class _StudyNames(_BaseCommand):
             "-f",
             "--format",
             type=str,
-            choices=("json", "table", "yaml"),
-            default="table",
+            choices=("value", "json", "table", "yaml"),
+            default="value",
             help="Output format.",
         )
 
