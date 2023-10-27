@@ -1,8 +1,8 @@
+from __future__ import annotations
+
+from collections.abc import Sequence
 import datetime
 from typing import Any
-from typing import Dict
-from typing import Optional
-from typing import Sequence
 import warnings
 
 from optuna import logging
@@ -53,15 +53,15 @@ class StudySummary:
     def __init__(
         self,
         study_name: str,
-        direction: Optional[StudyDirection],
-        best_trial: Optional[trial.FrozenTrial],
-        user_attrs: Dict[str, Any],
-        system_attrs: Dict[str, Any],
+        direction: StudyDirection | None,
+        best_trial: trial.FrozenTrial | None,
+        user_attrs: dict[str, Any],
+        system_attrs: dict[str, Any],
         n_trials: int,
-        datetime_start: Optional[datetime.datetime],
+        datetime_start: datetime.datetime | None,
         study_id: int,
         *,
-        directions: Optional[Sequence[StudyDirection]] = None,
+        directions: Sequence[StudyDirection] | None = None,
     ):
         self.study_name = study_name
         if direction is None and directions is None:
@@ -111,7 +111,7 @@ class StudySummary:
         return self._directions
 
     @property
-    def system_attrs(self) -> Dict[str, Any]:
+    def system_attrs(self) -> dict[str, Any]:
         warnings.warn(
             "`system_attrs` has been deprecated in v3.1.0. "
             "The removal of this feature is currently scheduled for v5.0.0, "
