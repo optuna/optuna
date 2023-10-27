@@ -206,10 +206,6 @@ class TPESampler(BaseSampler):
                 workers is high.
 
             .. note::
-                This feature can be used for only single-objective optimization; this argument is
-                ignored for multi-objective optimization.
-
-            .. note::
                 Added in v2.8.0 as an experimental feature. The interface may change in newer
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.8.0.
@@ -437,7 +433,7 @@ class TPESampler(BaseSampler):
     def _sample(
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
-        if self._constant_liar and not study._is_multi_objective():
+        if self._constant_liar:
             states = [TrialState.COMPLETE, TrialState.PRUNED, TrialState.RUNNING]
         else:
             states = [TrialState.COMPLETE, TrialState.PRUNED]

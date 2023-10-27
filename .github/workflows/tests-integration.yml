@@ -75,4 +75,4 @@ jobs:
     - name: Tests
       if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
       run: |
-        pytest tests -m "integration"
+        pytest tests -m "integration and not slow"
