@@ -1,10 +1,9 @@
+from __future__ import annotations
+
 import collections
 from typing import Any
 from typing import DefaultDict
-from typing import Dict
-from typing import List
 from typing import Set
-from typing import Tuple
 
 import optuna
 from optuna._imports import try_import
@@ -23,9 +22,9 @@ __all__ = ["pd"]
 
 
 def _create_records_and_aggregate_column(
-    study: "optuna.Study", attrs: Tuple[str, ...]
-) -> Tuple[List[Dict[Tuple[str, str], Any]], List[Tuple[str, str]]]:
-    attrs_to_df_columns: Dict[str, str] = {}
+    study: "optuna.Study", attrs: tuple[str, ...]
+) -> tuple[list[dict[tuple[str, str], Any]], list[tuple[str, str]]]:
+    attrs_to_df_columns: dict[str, str] = {}
     for attr in attrs:
         if attr.startswith("_"):
             # Python conventional underscores are omitted in the dataframe.
@@ -79,21 +78,21 @@ def _create_records_and_aggregate_column(
 
         records.append(record)
 
-    columns: List[Tuple[str, str]] = sum(
+    columns: list[tuple[str, str]] = sum(
         (sorted(column_agg[k]) for k in attrs if k in column_agg), []
     )
 
     return records, columns
 
 
-def _flatten_columns(columns: List[Tuple[str, str]]) -> List[str]:
+def _flatten_columns(columns: list[tuple[str, str]]) -> list[str]:
     # Flatten the `MultiIndex` columns where names are concatenated with underscores.
     # Filtering is required to omit non-nested columns avoiding unwanted trailing underscores.
     return ["_".join(filter(lambda c: c, map(lambda c: str(c), col))) for col in columns]
 
 
 def _trials_dataframe(
-    study: "optuna.Study", attrs: Tuple[str, ...], multi_index: bool
+    study: "optuna.Study", attrs: tuple[str, ...], multi_index: bool
 ) -> "pd.DataFrame":
     _imports.check()
 
