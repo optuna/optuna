@@ -1,8 +1,7 @@
+from __future__ import annotations
+
+from collections.abc import Sequence
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Sequence
 
 from optuna import logging
 from optuna.study._study_direction import StudyDirection
@@ -38,12 +37,12 @@ class FrozenStudy:
     def __init__(
         self,
         study_name: str,
-        direction: Optional[StudyDirection],
-        user_attrs: Dict[str, Any],
-        system_attrs: Dict[str, Any],
+        direction: StudyDirection | None,
+        user_attrs: dict[str, Any],
+        system_attrs: dict[str, Any],
         study_id: int,
         *,
-        directions: Optional[Sequence[StudyDirection]] = None,
+        directions: Sequence[StudyDirection] | None = None,
     ):
         self.study_name = study_name
         if direction is None and directions is None:
@@ -86,5 +85,5 @@ class FrozenStudy:
         return self._directions[0]
 
     @property
-    def directions(self) -> List[StudyDirection]:
+    def directions(self) -> list[StudyDirection]:
         return self._directions
