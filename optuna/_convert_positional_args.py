@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from collections.abc import Sequence
 from functools import wraps
-from inspect import signature
 from inspect import Parameter
+from inspect import signature
 from typing import Any
 from typing import TYPE_CHECKING
 from typing import TypeVar
@@ -21,17 +21,15 @@ if TYPE_CHECKING:
 def _get_positional_arg_names(func: "Callable[_P, _T]") -> list[str]:
     params = signature(func).parameters
     positional_arg_names = [
-        name for name, p in params.items()
+        name
+        for name, p in params.items()
         if p.default == Parameter.empty and p.kind == p.POSITIONAL_OR_KEYWORD
     ]
     return positional_arg_names
 
 
 def _infer_given_args(previous_positional_arg_names: Sequence[str], *args: Any) -> dict[str, Any]:
-    inferred_args = {
-        arg_name: val
-        for val, arg_name in zip(args, previous_positional_arg_names)
-    }
+    inferred_args = {arg_name: val for val, arg_name in zip(args, previous_positional_arg_names)}
     return inferred_args
 
 
