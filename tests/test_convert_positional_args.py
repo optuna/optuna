@@ -33,18 +33,10 @@ def test_convert_positional_args_future_warning() -> None:
         decorated_func(1, b=2, c=3)  # type: ignore
         decorated_func(a=1, b=2, c=3)  # No warning.
 
-    assert len(record) == 5
-    count_give_all = 0
-    count_give_kwargs = 0
+    assert len(record) == 2
     for warn in record.list:
-        msg = warn.message.args[0]
-        count_give_all += "give all" in msg
-        count_give_kwargs += "as a keyword argument" in msg
         assert isinstance(warn.message, FutureWarning)
         assert _sample_func.__name__ in str(warn.message)
-
-    assert count_give_all == 2
-    assert count_give_kwargs == 3
 
 
 def test_convert_positional_args_mypy_type_inference() -> None:
@@ -113,4 +105,4 @@ def test_convert_positional_args_invalid_positional_args() -> None:
 
         with pytest.raises(TypeError) as record:
             decorated_func(1, 3, b=2)  # type: ignore
-        assert str(record.value) == "_sample_func() got multiple values for argument 'b'."
+        assert str(record.value) == "_sample_func() got multiple values for arguments {'b'}."
