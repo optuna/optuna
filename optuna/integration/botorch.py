@@ -384,7 +384,7 @@ def qehvi_candidates_func(
     fit_gpytorch_mll(mll)
 
     # Approximate box decomposition similar to Ax when the number of objectives is large.
-    # https://github.com/facebook/Ax/blob/master/ax/models/torch/botorch_moo_defaults
+    # https://github.com/pytorch/botorch/blob/36d09a4297c2a0ff385077b7fcdd5a9d308e40cc/botorch/acquisition/multi_objective/utils.py#L46-L63
     if n_objectives > 2:
         alpha = 10 ** (-8 + n_objectives)
     else:
@@ -432,7 +432,7 @@ def ehvi_candidates_func(
 ) -> "torch.Tensor":
     """Expected Hypervolume Improvement (EHVI).
 
-    The default value of ``candidates_func`` in class:`~optuna.integration.BoTorchSampler`
+    The default value of ``candidates_func`` in :class:`~optuna.integration.BoTorchSampler`
     with multi-objective optimization without constraints.
 
     .. seealso::
@@ -532,7 +532,7 @@ def qnehvi_candidates_func(
     fit_gpytorch_mll(mll)
 
     # Approximate box decomposition similar to Ax when the number of objectives is large.
-    # https://github.com/facebook/Ax/blob/master/ax/models/torch/botorch_moo_defaults
+    # https://github.com/pytorch/botorch/blob/36d09a4297c2a0ff385077b7fcdd5a9d308e40cc/botorch/acquisition/multi_objective/utils.py#L46-L63
     if n_objectives > 2:
         alpha = 10 ** (-8 + n_objectives)
     else:
@@ -706,8 +706,10 @@ class BoTorchSampler(BaseSampler):
             is used. If constraints are specified, quasi MC-based batch Expected Improvement
             (qEI) is used.
             If the number of objectives is either two or three, Quasi MC-based
-            batch Expected Hypervolume Improvement (qEHVI) is used. Otherwise, for larger number
-            of objectives, the faster Quasi MC-based extended ParEGO (qParEGO) is used.
+            batch Expected Hypervolume Improvement (qEHVI) is used. Otherwise, for a larger number
+            of objectives, analytic Expected Hypervolume Improvement is used if no constraints
+            are specified, or the faster Quasi MC-based extended ParEGO (qParEGO) is used if 
+            constraints are present.
 
             The function should assume *maximization* of the objective.
 
