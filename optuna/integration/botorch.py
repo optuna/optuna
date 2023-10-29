@@ -708,7 +708,7 @@ class BoTorchSampler(BaseSampler):
             If the number of objectives is either two or three, Quasi MC-based
             batch Expected Hypervolume Improvement (qEHVI) is used. Otherwise, for a larger number
             of objectives, analytic Expected Hypervolume Improvement is used if no constraints
-            are specified, or the faster Quasi MC-based extended ParEGO (qParEGO) is used if 
+            are specified, or the faster Quasi MC-based extended ParEGO (qParEGO) is used if
             constraints are present.
 
             The function should assume *maximization* of the objective.
