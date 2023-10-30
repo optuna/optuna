@@ -18,7 +18,8 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-    - id: set-matrix
+    - name: Define workflow matrix
+      id: set-matrix
       run: |
         if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] ; then
           # Schedule --> run all the versions
@@ -34,8 +35,7 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
-      matrix:
-        python-version: ${{fromJson(needs.define-matrix.outputs.matrix)}}
+      matrix: ${{fromJson(needs.define-matrix.outputs.matrix)}}
 
     steps:
     - name: Checkout
