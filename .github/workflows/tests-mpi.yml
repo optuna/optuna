@@ -22,10 +22,10 @@ jobs:
       id: set-matrix
       run: |
         if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] ; then
-          # Schedule --> run all the versions
+          echo "Schedule tests (run all the versions)"
           echo "::set-output name=matrix::{\"python-version\":[\"3.8\", \"3.9\", \"3.10\", \"3.11\"]}"
         else
-          # PR push --> run only the oldest and the latest versions
+          echo "PR push tests (run only the oldest and the latest versions)"
           echo "::set-output name=matrix::{\"python-version\":[\"3.8\", \"3.11\"]}"
         fi
 
