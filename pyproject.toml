@@ -8,8 +8,7 @@ description = "A hyperparameter optimization framework"
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [
-  {name = "Takuya Akiba"},
-  {email = "akiba@preferred.jp"}
+  {name = "Takuya Akiba"}
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
