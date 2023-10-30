@@ -1,6 +1,7 @@
 name: Tests (MPI)
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
