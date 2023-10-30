@@ -646,7 +646,8 @@ def _split_complete_trials_multi_objective(
     n_below: int,
 ) -> tuple[list[FrozenTrial], list[FrozenTrial]]:
     if n_below == 0:
-        return [], trials
+        # The type of trials must be `list`, but not `Sequence`. 
+        return [], [t for t in trials]
 
     lvals = np.asarray([trial.values for trial in trials])
     for i, direction in enumerate(study.directions):
