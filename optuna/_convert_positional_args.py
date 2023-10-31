@@ -59,8 +59,7 @@ def convert_positional_args(
                 kwargs_expected = set(inferred_args) - set(positional_arg_names)
                 warnings.warn(
                     f"{func.__name__}() got {kwargs_expected} as positional arguments "
-                    "but they were expected to be given as keyword arguments."
-                    " See https://github.com/optuna/optuna/issues/3324 for details.",
+                    "but they were expected to be given as keyword arguments.",
                     FutureWarning,
                     stacklevel=warning_stacklevel,
                 )
