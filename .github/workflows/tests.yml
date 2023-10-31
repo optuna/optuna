@@ -74,30 +74,23 @@ jobs:
         pip install pipdeptree
         pipdeptree
 
-    - name: Scheduled tests
-      if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
-      run: |
-        if [ ${{ matrix.python-version }} == 3.12 ]; then
-          # TODO(not522): Remove ignores when BoTorch supports Python 3.12
-          pytest tests -m "not integration" \
-            --ignore tests/terminator_tests/ \
-            --ignore tests/visualization_tests/test_terminator_improvement.py
-        else
-          pytest tests -m "not integration"
-        fi
-      env:
-        SQLALCHEMY_WARN_20: 1
-
     - name: Tests
-      if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
       run: |
-        if [ ${{ matrix.python-version }} == 3.12 ]; then
-          # TODO(not522): Remove ignores when BoTorch supports Python 3.12
-          pytest tests -m "not integration and not slow" \
-            --ignore tests/terminator_tests/ \
-            --ignore tests/visualization_tests/test_terminator_improvement.py
+        if [ "${{ github.event_name }}" = "schedule" ] || \
+           [ "${{ github.event_name }}" = "workflow_dispatch" ] ; then
+          target="not integration"
         else
-          pytest tests -m "not integration and not slow"
+          target="not integration and not slow"
         fi
+
+        if [ "${{ matrix.python-version }}" = "3.12" ] ; then
+          # TODO(not522): Remove ignores when BoTorch supports Python 3.12
+          ignore_option="--ignore tests/terminator_tests/ \
+          --ignore tests/visualization_tests/test_terminator_improvement.py"
+        else
+          ignore_option=""
+        fi
+
+        pytest tests -m "$target" $ignore_option
       env:
         SQLALCHEMY_WARN_20: 1
