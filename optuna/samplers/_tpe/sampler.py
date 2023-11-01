@@ -108,6 +108,7 @@ class TPESampler(BaseSampler):
 
             import optuna
 
+
             def objective(trial):
                 x = trial.suggest_float("x", -100, 100)
                 y = trial.suggest_categorical("y", [-1, 0, 1])
