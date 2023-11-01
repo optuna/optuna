@@ -26,12 +26,13 @@ from optuna.trial import FrozenTrial
 class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
     """Multi-objective sampler using the MOTPE algorithm.
 
-    This sampler is a multiobjective version of :class:`~optuna.samplers.TPESampler`.
+    This sampler is a multi-objective version of :class:`~optuna.samplers.TPESampler`.
 
     .. note::
         For `v2.9.0 <https://github.com/optuna/optuna/releases/tag/v2.9.0>`_ or later,
-        MOTPEMultiObjectiveSampler is deprecated and :class:`~optuna.samplers.TPESampler` should be
-        used instead. The following code shows how you run TPESampler on a multi-objective task:
+        This sampler is deprecated and :class:`~optuna.samplers.TPESampler` should be
+        used instead. The following code shows how you run :class:`~optuna.samplers.TPESampler` on
+        a multi-objective task:
 
         .. testcode::
 

@@ -78,6 +78,7 @@ class TPESampler(BaseSampler):
       Better Empirical Performance <https://arxiv.org/abs/2304.11127>`_
 
     For multi-objective TPE (MOTPE), please refer to the following papers:
+
     - `Multiobjective Tree-Structured Parzen Estimator for Computationally Expensive Optimization
       Problems <https://dl.acm.org/doi/10.1145/3377930.3389817>`_
     - `Multiobjective Tree-Structured Parzen Estimator <https://doi.org/10.1613/jair.1.13188>`_
@@ -101,8 +102,8 @@ class TPESampler(BaseSampler):
 
     .. note::
         For `v2.9.0 <https://github.com/optuna/optuna/releases/tag/v2.9.0>`_ or later,
-        :class:`~optuna.samplers.MOTPESampler` is deprecated and TPESampler should be used instead.
-        The following code shows how you run TPESampler on a multi-objective task:
+        :class:`~optuna.samplers.MOTPESampler` is deprecated and this sampler should be used
+        instead. The following code shows how you apply this sampler to a multi-objective task:
 
         .. testcode::
 
