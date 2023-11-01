@@ -31,8 +31,8 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
     .. note::
         For `v2.9.0 <https://github.com/optuna/optuna/releases/tag/v2.9.0>`_ or later,
         This sampler is deprecated and :class:`~optuna.samplers.TPESampler` should be
-        used instead. The following code shows how you run :class:`~optuna.samplers.TPESampler` on
-        a multi-objective task:
+        used instead. The following code shows how you apply :class:`~optuna.samplers.TPESampler`
+        to a multi-objective task:
 
         .. testcode::
 
@@ -52,7 +52,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             study = optuna.create_study(directions=["minimize", "maximize"], sampler=sampler)
             study.optimize(objective, n_trials=100)
 
-    For further information about MOTPE algorithm, please refer to the following paper:
+    For further information about MOTPE algorithm, please refer to the following papers:
 
     - `Multiobjective tree-structured parzen estimator for computationally expensive optimization
       problems <https://dl.acm.org/doi/abs/10.1145/3377930.3389817>`_
