@@ -28,6 +28,28 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
 
     This sampler is a multiobjective version of :class:`~optuna.samplers.TPESampler`.
 
+    .. note::
+        For `v2.9.0 <https://github.com/optuna/optuna/releases/tag/v2.9.0>`_ or later,
+        MOTPEMultiObjectiveSampler is deprecated and :class:`~optuna.samplers.TPESampler` should be
+        used instead. The following code shows how you run TPESampler on a multi-objective task:
+
+        .. testcode::
+
+            import optuna
+
+            def objective(trial):
+                x = trial.suggest_float("x", -100, 100)
+                y = trial.suggest_categorical("y", [-1, 0, 1])
+                f1 = x**2 + y
+                f2 = -((x - 2) ** 2 + y)
+                return f1, f2
+
+
+            # We minimize the first objective and the second objective.
+            sampler = optuna.samplers.TPESampler()
+            study = optuna.create_study(directions=["minimize", "maximize"], sampler=sampler)
+            study.optimize(objective, n_trials=100)
+
     For further information about MOTPE algorithm, please refer to the following paper:
 
     - `Multiobjective tree-structured parzen estimator for computationally expensive optimization
