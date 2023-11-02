@@ -47,7 +47,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
                 return f1, f2
 
 
-            # We minimize the first objective and the second objective.
+            # We minimize the first objective and maximize the second objective.
             sampler = optuna.samplers.TPESampler()
             study = optuna.create_study(directions=["minimize", "maximize"], sampler=sampler)
             study.optimize(objective, n_trials=100)
