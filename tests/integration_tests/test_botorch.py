@@ -55,7 +55,7 @@ def test_botorch_candidates_func_none(n_objectives: int) -> None:
     elif n_objectives == 2:
         assert sampler._candidates_func is integration.botorch.qehvi_candidates_func
     elif n_objectives == 4:
-        assert sampler._candidates_func is integration.botorch.qparego_candidates_func
+        assert sampler._candidates_func is integration.botorch.ehvi_candidates_func
     else:
         assert False, "Should not reach."
 
@@ -94,6 +94,8 @@ def test_botorch_candidates_func() -> None:
 @pytest.mark.parametrize(
     "candidates_func, n_objectives",
     [
+        (integration.botorch.ehvi_candidates_func, 4),
+        (integration.botorch.ehvi_candidates_func, 5),  # alpha > 0
         (integration.botorch.logei_candidates_func, 1),
         (integration.botorch.qei_candidates_func, 1),
         (integration.botorch.qnei_candidates_func, 1),
