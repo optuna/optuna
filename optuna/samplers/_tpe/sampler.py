@@ -102,8 +102,9 @@ class TPESampler(BaseSampler):
 
     .. note::
         For `v2.9.0 <https://github.com/optuna/optuna/releases/tag/v2.9.0>`_ or later,
-        :class:`~optuna.samplers.MOTPESampler` is deprecated and this sampler should be used
-        instead. The following code shows how you apply this sampler to a multi-objective task:
+        :class:`~optuna.samplers.MOTPESampler` is deprecated and
+        :class:`~optuna.samplers.TPESampler` should be used instead. The following code shows
+        how you apply :class:`~optuna.samplers.TPESampler` to a multi-objective task:
 
         .. testcode::
 
