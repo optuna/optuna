@@ -41,10 +41,6 @@ parametrize_sampler = pytest.mark.parametrize(
         lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0, use_separable_cma=True),
-        pytest.param(
-            lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
-            marks=pytest.mark.integration,
-        ),
         optuna.samplers.NSGAIISampler,
         optuna.samplers.NSGAIIISampler,
         optuna.samplers.QMCSampler,
@@ -70,10 +66,6 @@ parametrize_relative_sampler = pytest.mark.parametrize(
         lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0, use_separable_cma=True),
-        pytest.param(
-            lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
-            marks=pytest.mark.integration,
-        ),
     ],
 )
 parametrize_multi_objective_sampler = pytest.mark.parametrize(
@@ -100,7 +92,6 @@ sampler_class_with_seed: dict[str, tuple[Callable[[int], BaseSampler], bool]] = 
         lambda seed: optuna.samplers.CmaEsSampler(seed=seed, use_separable_cma=True),
         False,
     ),
-    "PyCmaSampler": (lambda seed: optuna.integration.PyCmaSampler(seed=seed), True),
     "NSGAIISampler": (lambda seed: optuna.samplers.NSGAIISampler(seed=seed), False),
     "NSGAIIISampler": (lambda seed: optuna.samplers.NSGAIIISampler(seed=seed), False),
     "QMCSampler": (lambda seed: optuna.samplers.QMCSampler(seed=seed), False),
@@ -132,12 +123,6 @@ parametrize_sampler_name_with_seed = pytest.mark.parametrize(
         (lambda: optuna.samplers.TPESampler(n_startup_trials=0), True, True),
         (lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True), True, True),
         (lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0), True, True),
-        pytest.param(
-            lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
-            False,
-            True,
-            marks=pytest.mark.integration,
-        ),
         (optuna.samplers.NSGAIISampler, True, True),
         (optuna.samplers.NSGAIIISampler, True, True),
         (
@@ -226,10 +211,6 @@ def parametrize_suggest_method(name: str) -> MarkDecorator:
     "sampler_class",
     [
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
-        pytest.param(
-            lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
-            marks=pytest.mark.integration,
-        ),
     ],
 )
 def test_raise_error_for_samplers_during_multi_objectives(
