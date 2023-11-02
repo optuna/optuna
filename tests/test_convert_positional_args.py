@@ -10,6 +10,12 @@ def _sample_func(*, a: int, b: int, c: int) -> int:
     return a + b + c
 
 
+class _SimpleClass:
+    @convert_positional_args(previous_positional_arg_names=["self", "a", "b"])
+    def simple_method(self, a: int, *, b: int, c: int = 1) -> None:
+        pass
+
+
 def test_convert_positional_args_decorator() -> None:
     previous_positional_arg_names: List[str] = []
     decorator_converter = convert_positional_args(
@@ -18,6 +24,19 @@ def test_convert_positional_args_decorator() -> None:
 
     decorated_func = decorator_converter(_sample_func)
     assert decorated_func.__name__ == _sample_func.__name__
+
+
+def test_convert_positional_args_future_warning_for_methods() -> None:
+    simple_class = _SimpleClass()
+    with pytest.warns(FutureWarning) as record:
+        simple_class.simple_method(1, 2, c=3)  # type: ignore
+        simple_class.simple_method(1, b=2, c=3)  # No warning.
+        simple_class.simple_method(a=1, b=2, c=3)  # No warning.
+
+    assert len(record) == 1
+    for warn in record.list:
+        assert isinstance(warn.message, FutureWarning)
+        assert "simple_method" in str(warn.message)
 
 
 def test_convert_positional_args_future_warning() -> None:
@@ -105,4 +124,4 @@ def test_convert_positional_args_invalid_positional_args() -> None:
 
         with pytest.raises(TypeError) as record:
             decorated_func(1, 3, b=2)  # type: ignore
-        assert str(record.value) == "_sample_func() got multiple values for argument 'b'."
+        assert str(record.value) == "_sample_func() got multiple values for arguments {'b'}."
