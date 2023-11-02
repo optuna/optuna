@@ -64,6 +64,7 @@ with try_import() as _imports:
 _logger = logging.get_logger(__name__)
 
 with try_import() as _imports_logei:
+    from botorch.acquisition.analytic import LogConstrainedExpectedImprovement
     from botorch.acquisition.analytic import LogExpectedImprovement
 
 
@@ -119,11 +120,24 @@ def logei_candidates_func(
 
     if train_obj.size(-1) != 1:
         raise ValueError("Objective may only contain single values with logEI.")
+
     if train_con is not None:
-        raise ValueError(
-            "Constraint is not supported with logei_candidates_func. "
-            + "Please use qei_candidates_func instead."
-        )
+        train_y = torch.cat([train_obj, train_con], dim=-1)
+
+        is_feas = (train_con <= 0).all(dim=-1)
+        train_obj_feas = train_obj[is_feas]
+
+        if train_obj_feas.numel() == 0:
+            # TODO(hvy): Do not use 0 as the best observation.
+            _logger.warning(
+                "No objective values are feasible. Using 0 as the best objective in qEI."
+            )
+            best_f = torch.zeros(())
+        else:
+            best_f = train_obj_feas.max()
+
+        n_constraints = train_con.size(1)
+
     else:
         train_y = train_obj
         best_f = train_obj.max()
@@ -134,10 +148,18 @@ def logei_candidates_func(
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
     fit_gpytorch_mll(mll)
 
-    acqf = LogExpectedImprovement(
-        model=model,
-        best_f=best_f,
-    )
+    if train_con is not None:
+        acqf = LogConstrainedExpectedImprovement(
+            model=model,
+            best_f=best_f,
+            objective_index=0,
+            constraints={i: (None, None) for i in range(1, n_constraints + 1)},
+        )
+    else:
+        acqf = LogExpectedImprovement(
+            model=model,
+            best_f=best_f,
+        )
 
     standard_bounds = torch.zeros_like(bounds)
     standard_bounds[1] = 1
