@@ -243,7 +243,10 @@ class _Objective:
                 }
 
         self._store_scores(trial, scores)
-        report_cross_validation_scores(trial, scores["test_score"])
+        test_scores = (
+            scores if isinstance(scores["test_score"], list) else scores["test_score"].tolist()
+        )
+        report_cross_validation_scores(trial, test_scores)
 
         return trial.user_attrs["mean_test_score"]
 

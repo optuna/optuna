@@ -380,10 +380,7 @@ def test_optuna_search_convert_deprecated_distribution() -> None:
     assert optuna_search.param_distributions == expected_param_dist
 
 
-@patch("optuna.integration.sklearn.report_cross_validation_scores")
-def test_callbacks(mock: MagicMock) -> None:
-    mock.return_value = None
-
+def test_callbacks() -> None:
     callbacks = []
 
     for _ in range(2):
