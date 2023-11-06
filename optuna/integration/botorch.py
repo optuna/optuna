@@ -123,6 +123,7 @@ def logei_candidates_func(
     if train_obj.size(-1) != 1:
         raise ValueError("Objective may only contain single values with logEI.")
     if train_con is not None:
+        n_constraints = train_con.size(1)
         train_y = torch.cat([train_obj, train_con], dim=-1)
 
         is_feas = (train_con <= 0).all(dim=-1)
@@ -146,9 +147,7 @@ def logei_candidates_func(
     model = SingleTaskGP(train_x, train_y, outcome_transform=Standardize(m=train_y.size(-1)))
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
     fit_gpytorch_mll(mll)
-
-    if train_con is not None:
-        n_constraints = train_con.size(1)
+    if train_con is not None and n_constraints > 0:
         acqf = LogConstrainedExpectedImprovement(
             model=model,
             best_f=best_f,
@@ -188,9 +187,6 @@ def qei_candidates_func(
     pending_x: Optional["torch.Tensor"],
 ) -> "torch.Tensor":
     """Quasi MC-based batch Expected Improvement (qEI).
-
-    The default value of ``candidates_func`` in :class:`~optuna.integration.BoTorchSampler`
-    with single-objective optimization.
 
     Args:
         train_x:
@@ -618,7 +614,7 @@ def _get_default_candidates_func(
         return qparego_candidates_func
     elif n_objectives > 1:
         return qehvi_candidates_func
-    elif has_constraint or consider_running_trials:
+    elif consider_running_trials:
         return qei_candidates_func
     else:
         return logei_candidates_func
