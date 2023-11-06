@@ -29,10 +29,10 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
     This sampler is a multi-objective version of :class:`~optuna.samplers.TPESampler`.
 
     .. note::
-        For `v2.9.0 <https://github.com/optuna/optuna/releases/tag/v2.9.0>`_ or later,
-        This sampler is deprecated and :class:`~optuna.samplers.TPESampler` should be
-        used instead. The following code shows how you apply :class:`~optuna.samplers.TPESampler`
-        to a multi-objective task:
+        For `v2.4.0 <https://github.com/optuna/optuna/releases/tag/v2.4.0>`_ or later,
+        :class:`~optuna.multi_objective.samplers.MOTPEMultiObjectiveSampler` is deprecated and
+        :class:`~optuna.samplers.TPESampler` should be used instead. The following code shows how
+        you apply :class:`~optuna.samplers.TPESampler` to a multi-objective task:
 
         .. testcode::
 
