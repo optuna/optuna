@@ -37,8 +37,7 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
-      matrix:
-        python-version: ${{fromJson(needs.define-matrix.outputs.matrix)}}
+      matrix: ${{fromJson(needs.define-matrix.outputs.matrix)}}
 
     services:
       redis:
