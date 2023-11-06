@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from unittest.mock import MagicMock
+from unittest.mock import patch
 import warnings
 
 import numpy as np
@@ -20,6 +21,7 @@ from optuna import distributions
 from optuna import integration
 from optuna.samplers import BruteForceSampler
 from optuna.study import create_study
+from optuna.terminator.erroreval import _CROSS_VALIDATION_SCORES_KEY
 
 
 pytestmark = pytest.mark.integration
@@ -378,7 +380,10 @@ def test_optuna_search_convert_deprecated_distribution() -> None:
     assert optuna_search.param_distributions == expected_param_dist
 
 
-def test_callbacks() -> None:
+@patch("optuna.integration.sklearn.report_cross_validation_scores")
+def test_callbacks(mock: MagicMock) -> None:
+    mock.return_value = None
+
     callbacks = []
 
     for _ in range(2):
@@ -409,3 +414,22 @@ def test_callbacks() -> None:
         for trial in optuna_search.trials_:
             callback.assert_any_call(optuna_search.study_, trial)
         assert callback.call_count == n_trials
+
+
+@pytest.mark.filterwarnings("ignore::UserWarning")
+@patch("optuna.integration.sklearn.cross_validate")
+def test_terminator_cv_score_reporting(mock: MagicMock) -> None:
+    scores = {
+        "fit_time": np.array([2.01, 1.78, 3.22]),
+        "score_time": np.array([0.33, 0.35, 0.48]),
+        "test_score": np.array([0.04, 2.0, 1.5]),
+    }
+    mock.return_value = scores
+
+    X, _ = make_blobs(n_samples=10)
+    est = PCA()
+    optuna_search = integration.OptunaSearchCV(est, {}, cv=3, error_score="raise", random_state=0)
+    optuna_search.fit(X)
+
+    for trial in optuna_search.study_.trials:
+        assert (trial.system_attrs[_CROSS_VALIDATION_SCORES_KEY] == scores["test_score"]).all()
