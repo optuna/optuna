@@ -186,6 +186,16 @@ class CellValue:
             return f"{value:<{width}}"
 
 
+def _dump_value(records: List[Dict[str, Any]], header: List[str]) -> str:
+    values = []
+    for record in records:
+        row = []
+        for column_name in header:
+            row.append(str(record.get(column_name, "")))
+        values.append(" ".join(row))
+    return "\n".join(values)
+
+
 def _dump_table(records: List[Dict[str, Any]], header: List[str]) -> str:
     rows = []
     for record in records:
@@ -233,7 +243,12 @@ def _format_output(
     else:
         values, header = _convert_to_dict([records], columns, flatten)
 
-    if output_format == "table":
+    if output_format == "value":
+        if isinstance(records, list):
+            return _dump_value(values, header).strip()
+        else:
+            return str(values[0]).strip()
+    elif output_format == "table":
         return _dump_table(values, header).strip()
     elif output_format == "json":
         if isinstance(records, list):
@@ -379,6 +394,30 @@ class _StudySetUserAttribute(_BaseCommand):
         study.set_user_attr(parsed_args.key, parsed_args.value)
 
         self.logger.info("Attribute successfully written.")
+        return 0
+
+
+class _StudyNames(_BaseCommand):
+    """Get all study names stored in a specified storage"""
+
+    def add_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument(
+            "-f",
+            "--format",
+            type=str,
+            choices=("value", "json", "table", "yaml"),
+            default="value",
+            help="Output format.",
+        )
+
+    def take_action(self, parsed_args: Namespace) -> int:
+        storage = _get_storage(parsed_args.storage, parsed_args.storage_class)
+        all_study_names = optuna.get_all_study_names(storage)
+        records = []
+        record_key = ("name", "")
+        for study_name in all_study_names:
+            records.append({record_key: study_name})
+        print(_format_output(records, [record_key], parsed_args.format, flatten=False))
         return 0
 
 
@@ -917,6 +956,7 @@ _COMMANDS: Dict[str, Type[_BaseCommand]] = {
     "create-study": _CreateStudy,
     "delete-study": _DeleteStudy,
     "study set-user-attr": _StudySetUserAttribute,
+    "study-names": _StudyNames,
     "studies": _Studies,
     "trials": _Trials,
     "best-trial": _BestTrial,
