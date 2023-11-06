@@ -76,11 +76,15 @@ class TPESampler(BaseSampler):
       Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`_
     - `Tree-Structured Parzen Estimator: Understanding Its Algorithm Components and Their Roles for
       Better Empirical Performance <https://arxiv.org/abs/2304.11127>`_
-    - `Multiobjective tree-structured parzen estimator for computationally expensive optimization
-      problems <https://dl.acm.org/doi/10.1145/3377930.3389817>`_
+
+    For multi-objective TPE (MOTPE), please refer to the following papers:
+
+    - `Multiobjective Tree-Structured Parzen Estimator for Computationally Expensive Optimization
+      Problems <https://dl.acm.org/doi/10.1145/3377930.3389817>`_
     - `Multiobjective Tree-Structured Parzen Estimator <https://doi.org/10.1613/jair.1.13188>`_
 
     Example:
+        An example of a single-objective optimization is as follows:
 
         .. testcode::
 
@@ -95,6 +99,28 @@ class TPESampler(BaseSampler):
 
             study = optuna.create_study(sampler=TPESampler())
             study.optimize(objective, n_trials=10)
+
+    .. note::
+        :class:`~optuna.samplers.TPESampler` can handle a multi-objective task as well and
+        the following shows an example:
+
+        .. testcode::
+
+            import optuna
+
+
+            def objective(trial):
+                x = trial.suggest_float("x", -100, 100)
+                y = trial.suggest_categorical("y", [-1, 0, 1])
+                f1 = x**2 + y
+                f2 = -((x - 2) ** 2 + y)
+                return f1, f2
+
+
+            # We minimize the first objective and maximize the second objective.
+            sampler = optuna.samplers.TPESampler()
+            study = optuna.create_study(directions=["minimize", "maximize"], sampler=sampler)
+            study.optimize(objective, n_trials=100)
 
     Args:
         consider_prior:
