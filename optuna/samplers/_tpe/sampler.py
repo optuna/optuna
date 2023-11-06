@@ -99,10 +99,8 @@ class TPESampler(BaseSampler):
             study.optimize(objective, n_trials=10)
 
     .. note::
-        For `v2.9.0 <https://github.com/optuna/optuna/releases/tag/v2.9.0>`_ or later,
-        :class:`~optuna.samplers.MOTPESampler` is deprecated and
-        :class:`~optuna.samplers.TPESampler` should be used instead. The following code shows
-        how you apply :class:`~optuna.samplers.TPESampler` to a multi-objective task:
+        :class:`~optuna.samplers.TPESampler` can handle a multi-objective task as well and
+        the following shows an example:
 
         .. testcode::
 
