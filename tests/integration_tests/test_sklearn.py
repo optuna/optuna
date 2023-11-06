@@ -419,7 +419,7 @@ def test_terminator_cv_score_reporting(mock: MagicMock) -> None:
     scores = {
         "fit_time": np.array([2.01, 1.78, 3.22]),
         "score_time": np.array([0.33, 0.35, 0.48]),
-        "test_score": np.array([0.04, 2.0, 1.5]),
+        "test_score": np.array([0.04, 0.80, 0.70]),
     }
     mock.return_value = scores
 
