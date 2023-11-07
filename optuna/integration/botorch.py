@@ -122,8 +122,9 @@ def logei_candidates_func(
 
     if train_obj.size(-1) != 1:
         raise ValueError("Objective may only contain single values with logEI.")
-    if train_con is not None:
-        n_constraints = train_con.size(1)
+    n_constraints = train_con.size(1) if train_con is not None else 0
+    if n_constraints > 0:
+        assert train_con is not None
         train_y = torch.cat([train_obj, train_con], dim=-1)
 
         is_feas = (train_con <= 0).all(dim=-1)
@@ -147,7 +148,7 @@ def logei_candidates_func(
     model = SingleTaskGP(train_x, train_y, outcome_transform=Standardize(m=train_y.size(-1)))
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
     fit_gpytorch_mll(mll)
-    if train_con is not None and n_constraints > 0:
+    if n_constraints > 0:
         acqf = LogConstrainedExpectedImprovement(
             model=model,
             best_f=best_f,
