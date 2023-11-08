@@ -90,10 +90,7 @@ jobs:
     - name: Tests
       run: |
         export OMPI_MCA_rmaps_base_oversubscribe=yes
-
-        if [ ${{ matrix.python-version }} != 3.11 ]; then
-          mpirun -n 2 -- pytest tests/integration_tests/test_pytorch_distributed.py
-        fi
+        mpirun -n 2 -- pytest tests/integration_tests/test_pytorch_distributed.py
 
       env:
         OMP_NUM_THREADS: 1
