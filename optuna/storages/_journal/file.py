@@ -157,7 +157,8 @@ class JournalFileStorage(BaseJournalLogStorage):
     def __init__(self, file_path: str, lock_obj: Optional[JournalFileBaseLock] = None) -> None:
         self._file_path: str = file_path
         self._lock = lock_obj or JournalFileSymlinkLock(self._file_path)
-        open(self._file_path, "ab").close()  # Create a file if it does not exist
+        if not os.path.exists(self._file_path):
+            open(self._file_path, "ab").close()  # Create a file if it does not exist
         self._log_number_offset: Dict[int, int] = {0: 0}
 
     def read_logs(self, log_number_from: int) -> List[Dict[str, Any]]:
