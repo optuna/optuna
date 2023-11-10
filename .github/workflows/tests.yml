@@ -27,7 +27,6 @@ jobs:
           echo "matrix={\"python-version\":[\"3.7\", \"3.8\", \"3.9\", \"3.10\", \"3.11\", \"3.12\"]}" >> $GITHUB_OUTPUT
         else
           echo "PR push tests (run only the oldest and the latest versions)"
-          # QUESTION: Shall I run 3.11 as well because BoTorch will not be tested on 3.12 right now? 
           echo "matrix={\"python-version\":[\"3.7\", \"3.12\"]}" >> $GITHUB_OUTPUT
         fi
 
