@@ -714,7 +714,7 @@ class OptunaSearchCV(BaseEstimator):
         error_score: Union[Number, float, str] = np.nan,
         max_iter: int = 1000,
         n_jobs: Optional[int] = None,
-        n_trials: int = 10,
+        n_trials: Optional[int] = 10,
         random_state: Optional[Union[int, np.random.RandomState]] = None,
         refit: bool = True,
         return_train_score: bool = False,
