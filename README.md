@@ -87,19 +87,21 @@ Examples can be found in [optuna/optuna-examples](https://github.com/optuna/optu
 
 [Integrations modules](https://optuna-integration.readthedocs.io/en/stable/index.html), which allow pruning, or early stopping, of unpromising trials are available for the following libraries:
 
-* [AllenNLP](https://github.com/optuna/optuna-examples/tree/main/allennlp)
 * [Catalyst](https://github.com/optuna/optuna-examples/tree/main/pytorch/catalyst_simple.py)
 * [Catboost](https://github.com/optuna/optuna-examples/tree/main/catboost/catboost_pruning.py)
-* [Chainer](https://github.com/optuna/optuna-examples/tree/main/chainer/chainer_integration.py)
+* [Dask](https://github.com/optuna/optuna-examples/tree/main/dask/dask_simple.py)
 * FastAI ([V1](https://github.com/optuna/optuna-examples/tree/main/fastai/fastaiv1_simple.py), [V2](https://github.com/optuna/optuna-examples/tree/main/fastai/fastaiv2_simple.py))
 * [Keras](https://github.com/optuna/optuna-examples/tree/main/keras/keras_integration.py)
 * [LightGBM](https://github.com/optuna/optuna-examples/tree/main/lightgbm/lightgbm_integration.py)
+* [MLflow](https://github.com/optuna/optuna-examples/tree/main/mlflow/keras_mlflow.py)
 * [MXNet](https://github.com/optuna/optuna-examples/tree/main/mxnet/mxnet_integration.py)
 * [PyTorch](https://github.com/optuna/optuna-examples/tree/main/pytorch/pytorch_simple.py)
 * [PyTorch Ignite](https://github.com/optuna/optuna-examples/tree/main/pytorch/pytorch_ignite_simple.py)
 * [PyTorch Lightning](https://github.com/optuna/optuna-examples/tree/main/pytorch/pytorch_lightning_simple.py)
+* [TensorBoard](https://github.com/optuna/optuna-examples/tree/main/tensorboard/tensorboard_simple.py)
 * [TensorFlow](https://github.com/optuna/optuna-examples/tree/main/tensorflow/tensorflow_estimator_integration.py)
 * [tf.keras](https://github.com/optuna/optuna-examples/tree/main/tfkeras/tfkeras_integration.py)
+* [Weights & Biases](https://github.com/optuna/optuna-examples/tree/main/wandb/wandb_integration.py)
 * [XGBoost](https://github.com/optuna/optuna-examples/tree/main/xgboost/xgboost_integration.py)
 
 
