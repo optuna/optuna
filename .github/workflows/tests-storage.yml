@@ -1,6 +1,7 @@
 name: Tests (Storage with server)
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
