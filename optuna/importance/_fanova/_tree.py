@@ -53,11 +53,11 @@ class _FanovaTree:
 
         # For each midpoint along the given dimensions, traverse this tree to compute the
         # marginal predictions.
-        midpoints = [self._split_midpoints[f] for f in features]
-        sizes = [self._split_sizes[f] for f in features]
+        selected_midpoints = [self._split_midpoints[f] for f in features]
+        selected_sizes = [self._split_sizes[f] for f in features]
 
-        product_midpoints = itertools.product(*midpoints)
-        product_sizes = itertools.product(*sizes)
+        product_midpoints = itertools.product(*selected_midpoints)
+        product_sizes = itertools.product(*selected_sizes)
 
         sample = numpy.full(self._n_features, fill_value=numpy.nan, dtype=numpy.float64)
 
