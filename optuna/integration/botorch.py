@@ -135,7 +135,7 @@ def logei_candidates_func(
             _logger.warning(
                 "No objective values are feasible. Using 0 as the best objective in logEI."
             )
-            best_f = torch.zeros(())
+            best_f = train_obj.min()
         else:
             best_f = train_obj_feas.max()
 
@@ -153,7 +153,7 @@ def logei_candidates_func(
             model=model,
             best_f=best_f,
             objective_index=0,
-            constraints={i: (None, None) for i in range(1, n_constraints + 1)},
+            constraints={i: (None, 0.0) for i in range(1, n_constraints + 1)},
         )
     else:
         acqf = LogExpectedImprovement(
