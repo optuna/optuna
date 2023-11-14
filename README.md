@@ -90,7 +90,7 @@ Examples can be found in [optuna/optuna-examples](https://github.com/optuna/optu
 * [Catalyst](https://github.com/optuna/optuna-examples/tree/main/pytorch/catalyst_simple.py)
 * [Catboost](https://github.com/optuna/optuna-examples/tree/main/catboost/catboost_pruning.py)
 * [Dask](https://github.com/optuna/optuna-examples/tree/main/dask/dask_simple.py)
-* FastAI ([V1](https://github.com/optuna/optuna-examples/tree/main/fastai/fastaiv1_simple.py), [V2](https://github.com/optuna/optuna-examples/tree/main/fastai/fastaiv2_simple.py))
+* [fastai (v2)](https://github.com/optuna/optuna-examples/tree/main/fastai/fastaiv2_simple.py)
 * [Keras](https://github.com/optuna/optuna-examples/tree/main/keras/keras_integration.py)
 * [LightGBM](https://github.com/optuna/optuna-examples/tree/main/lightgbm/lightgbm_integration.py)
 * [MLflow](https://github.com/optuna/optuna-examples/tree/main/mlflow/keras_mlflow.py)
