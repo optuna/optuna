@@ -714,3 +714,53 @@ Optuna may sometimes suggest parameters evaluated in the past and if you would l
 
     study = optuna.create_study()
     study.optimize(objective, n_trials=100)
+
+How can I combine cross-validation and pruning?
+------------------------------------
+Cross-validation is a technique which splits the data into :math:`k` subsets, training the model on the first :math:`k-1` and testing it on the final set. You can implement cross validation using an ML framework of your choice within the objective function.
+
+Pruning is a technique which can save computation when performing parameter optimization in a ``study`` by terminating a trial early if its intermediate results are worse than previous trials. Optuna offers several ``pruners`` in the ``optuna.pruners`` module.
+
+Here's an example of how you can combine pruning and cross-validation in Optuna for hyperparameter optimization on the MNIST dataset using scikit-learn:
+
+.. code-block:: python
+    
+    import optuna
+    from sklearn.model_selection import cross_val_score
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.datasets import fetch_openml
+    
+    # Load the MNIST dataset
+    mnist = fetch_openml('mnist_784')
+    X, y = mnist.data, mnist.target
+
+    # Define the objective function for Optuna
+    def objective(trial):
+        # Define hyperparameters to be optimized
+        n_estimators = trial.suggest_int('n_estimators', 50, 200)
+        max_depth = trial.suggest_int('max_depth', 5, 30)
+    
+        # Create a RandomForestClassifier with the hyperparameters
+        clf = RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth, random_state=42)
+    
+        # Perform cross-validation with pruning
+        try:
+            # Use cross_val_score with 3-fold cross-validation
+            scores = cross_val_score(clf, X, y, cv=3, n_jobs=-1, scoring='accuracy', verbose=1)
+    
+            # Return the mean accuracy as the objective value
+            return scores.mean()
+    
+        except optuna.TrialPruned as e:
+            # If trial is pruned, return a value indicating incomplete trial
+            return float('nan')
+    
+    # Create a study and optimize the objective function
+    study = optuna.create_study(direction='maximize', pruner=optuna.pruners.MedianPruner())
+    study.optimize(objective, n_trials=10)
+    
+    # Print the best hyperparameters and their corresponding accuracy
+    best_trial = study.best_trial
+    print(f"Best Trial - Params: {best_trial.params}, Accuracy: {best_trial.value}")
+
+In this example, the objective function uses ``cross_val_score`` from scikit-learn with 3-fold cross-validation. The study of this objective function uses ``MedianPruner`` from ``optuna.pruners``, which terminates a trial when, at a given step, the trial's best intermediate result is worse than the median of the intermediate results from previous trials.
