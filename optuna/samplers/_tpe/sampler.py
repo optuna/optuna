@@ -74,6 +74,8 @@ class TPESampler(BaseSampler):
       <https://papers.nips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf>`_
     - `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
       Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`_
+    - `Tree-Structured Parzen Estimator: Understanding Its Algorithm Components and Their Roles for
+      Better Empirical Performance <https://arxiv.org/abs/2304.11127>`_
 
     For multi-objective TPE (MOTPE), please refer to the following papers:
 
