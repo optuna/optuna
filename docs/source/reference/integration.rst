@@ -52,17 +52,6 @@ Dask
 
    optuna.integration.DaskStorage
 
-fast.ai
--------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.FastAIV1PruningCallback
-   optuna.integration.FastAIV2PruningCallback
-   optuna.integration.FastAIPruningCallback
-
 LightGBM
 --------
 
