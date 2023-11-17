@@ -93,7 +93,6 @@ integration = [
     "catboost>=0.26,<1.2; sys_platform=='darwin'",
     "cma",
     "distributed",
-    "fastai",
     "lightgbm",
     "lightning",
     "mlflow",
