@@ -39,6 +39,7 @@ jobs:
         pip install --progress-bar off -U .[test]
         pip install --progress-bar off -U bayesmark
         pip install --progress-bar off -U kurobako
+        pip install --progress-bar off -U "mypy<1.7.0"
 
     - name: Output installed packages
       run: |
