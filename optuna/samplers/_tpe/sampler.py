@@ -538,7 +538,7 @@ class TPESampler(BaseSampler):
 
         if sample_size != acq_fn_vals.size:
             raise ValueError(
-                "The sizes of `samples` and `acq_fn_vals` must be same , but got "
+                "The sizes of `samples` and `acq_fn_vals` must be same, but got "
                 f"(samples.size, acq_fn_vals.size) = ({sample_size}, {acq_fn_vals.size})."
             )
 
