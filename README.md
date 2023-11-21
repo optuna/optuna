@@ -105,7 +105,7 @@ Examples can be found in [optuna/optuna-examples](https://github.com/optuna/optu
 
 ## Integrations
 
-Optuna has integration features with various 3rd party libraries. Integrations are found in [optuna/optuna-integration](https://github.com/optuna/optuna-integration) and the document is [here](https://optuna-integration.readthedocs.io/en/stable/index.html). This includes integrations with libraries such as the following.
+Optuna has integration features with various third-party libraries. Integrations can be found in [optuna/optuna-integration](https://github.com/optuna/optuna-integration) and the document is available [here](https://optuna-integration.readthedocs.io/en/stable/index.html). Integrations support libraries such as the following:
 
 * [Catalyst](https://github.com/optuna/optuna-examples/tree/main/pytorch/catalyst_simple.py)
 * [Catboost](https://github.com/optuna/optuna-examples/tree/main/catboost/catboost_pruning.py)
