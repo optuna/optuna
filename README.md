@@ -79,13 +79,33 @@ study = optuna.create_study()  # Create a new study.
 study.optimize(objective, n_trials=100)  # Invoke optimization of the objective function.
 ```
 
+
+## Installation
+
+Optuna is available at [the Python Package Index](https://pypi.org/project/optuna/) and on [Anaconda Cloud](https://anaconda.org/conda-forge/optuna).
+
+```bash
+# PyPI
+$ pip install optuna
+```
+
+```bash
+# Anaconda Cloud
+$ conda install -c conda-forge optuna
+```
+
+Optuna supports Python 3.7 or newer.
+
+Also, we also provide Optuna docker images on [DockerHub](https://hub.docker.com/r/optuna/optuna).
+
+
 ## Examples
 
 Examples can be found in [optuna/optuna-examples](https://github.com/optuna/optuna-examples).
 
 ## Integrations
 
-[Integrations modules](https://optuna-integration.readthedocs.io/en/stable/index.html), which allow pruning, or early stopping, of unpromising trials are available for the following libraries:
+Optuna has integration features with various third-party libraries. Integrations can be found in [optuna/optuna-integration](https://github.com/optuna/optuna-integration) and the document is available [here](https://optuna-integration.readthedocs.io/en/stable/index.html). Integrations support libraries such as the following:
 
 * [Catalyst](https://github.com/optuna/optuna-examples/tree/main/pytorch/catalyst_simple.py)
 * [Catboost](https://github.com/optuna/optuna-examples/tree/main/catboost/catboost_pruning.py)
@@ -124,23 +144,6 @@ Listening on http://localhost:8080/
 Hit Ctrl-C to quit.
 ```
 
-## Installation
-
-Optuna is available at [the Python Package Index](https://pypi.org/project/optuna/) and on [Anaconda Cloud](https://anaconda.org/conda-forge/optuna).
-
-```bash
-# PyPI
-$ pip install optuna
-```
-
-```bash
-# Anaconda Cloud
-$ conda install -c conda-forge optuna
-```
-
-Optuna supports Python 3.7 or newer.
-
-Also, we also provide Optuna docker images on [DockerHub](https://hub.docker.com/r/optuna/optuna).
 
 ## Communication
 
