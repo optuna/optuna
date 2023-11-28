@@ -14,29 +14,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  define-matrix:
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-    steps:
-    - name: Define workflow matrix
-      id: set-matrix
-      run: |
-        if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] ; then
-          echo "Schedule tests (run all the versions)"
-          echo "matrix={\"python-version\":[\"3.8\", \"3.9\", \"3.10\", \"3.11\"]}" >> $GITHUB_OUTPUT
-        else
-          echo "PR push tests (run only the oldest and the latest versions)"
-          echo "matrix={\"python-version\":[\"3.8\", \"3.11\"]}" >> $GITHUB_OUTPUT
-        fi
-
   tests-mpi:
     if: (github.event_name == 'schedule' && github.repository == 'optuna/optuna') || (github.event_name != 'schedule')
-    needs: define-matrix
     runs-on: ubuntu-latest
 
     strategy:
-      matrix: ${{fromJson(needs.define-matrix.outputs.matrix)}}
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+        should-skip:
+          - ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'Scheduled' || '' }}
+        exclude:
+          - should-skip: ""
+            python-version: "3.9"
+          - should-skip: ""
+            python-version: "3.10"
 
     steps:
     - name: Checkout
