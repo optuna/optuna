@@ -8,8 +8,7 @@ description = "A hyperparameter optimization framework"
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [
-  {name = "Takuya Akiba"},
-  {email = "akiba@preferred.jp"}
+  {name = "Takuya Akiba"}
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -22,6 +21,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3 :: Only",
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Mathematics",
@@ -111,7 +111,7 @@ integration = [
 ]
 optional = [
     "boto3",  # optuna/artifacts/_boto3.py.
-    "botorch",  # optuna/terminator/gp/botorch.
+    "botorch; python_version<='3.11'",  # optuna/terminator/gp/botorch.
     "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
     "google-cloud-storage",  # optuna/artifacts/_gcs.py.
     "matplotlib!=3.6.0",  # optuna/visualization/matplotlib.

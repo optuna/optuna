@@ -13,6 +13,7 @@ from optuna.trial import FrozenTrial
 from optuna.visualization._contour import _AxisInfo
 from optuna.visualization._contour import _ContourInfo
 from optuna.visualization._contour import _get_contour_info
+from optuna.visualization._contour import _PlotValues
 from optuna.visualization._contour import _SubContourInfo
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
@@ -174,9 +175,7 @@ class _LabelEncoder:
 
 
 def _calculate_griddata(
-    xaxis: _AxisInfo,
-    yaxis: _AxisInfo,
-    z_values_dict: dict[tuple[int, int], float],
+    info: _SubContourInfo,
 ) -> tuple[
     np.ndarray,
     np.ndarray,
@@ -185,9 +184,13 @@ def _calculate_griddata(
     list[str],
     list[int],
     list[str],
-    list[int | float],
-    list[int | float],
+    _PlotValues,
+    _PlotValues,
 ]:
+    xaxis = info.xaxis
+    yaxis = info.yaxis
+    z_values_dict = info.z_values
+
     x_values = []
     y_values = []
     z_values = []
@@ -201,7 +204,17 @@ def _calculate_griddata(
 
     # Return empty values when x or y has no value.
     if len(x_values) == 0 or len(y_values) == 0:
-        return np.array([]), np.array([]), np.array([]), [], [], [], [], [], []
+        return (
+            np.array([]),
+            np.array([]),
+            np.array([]),
+            [],
+            [],
+            [],
+            [],
+            _PlotValues([], []),
+            _PlotValues([], []),
+        )
 
     def _calculate_axis_data(
         axis: _AxisInfo,
@@ -244,6 +257,18 @@ def _calculate_griddata(
         zmap = _create_zmap(transformed_x_values, transformed_y_values, z_values, xi, yi)
         zi = _interpolate_zmap(zmap, CONTOUR_POINT_NUM)
 
+    # categorize by constraints
+    feasible = _PlotValues([], [])
+    infeasible = _PlotValues([], [])
+
+    for x_value, y_value, c in zip(transformed_x_values, transformed_y_values, info.constraints):
+        if c:
+            feasible.x.append(x_value)
+            feasible.y.append(y_value)
+        else:
+            infeasible.x.append(x_value)
+            infeasible.y.append(y_value)
+
     return (
         xi,
         yi,
@@ -252,8 +277,8 @@ def _calculate_griddata(
         cat_param_labels_x,
         cat_param_pos_y,
         cat_param_labels_y,
-        transformed_x_values,
-        transformed_y_values,
+        feasible,
+        infeasible,
     )
 
 
@@ -278,9 +303,9 @@ def _generate_contour_subplot(info: _SubContourInfo, ax: "Axes", cmap: "Colormap
         x_cat_param_label,
         y_cat_param_pos,
         y_cat_param_label,
-        x_values,
-        y_values,
-    ) = _calculate_griddata(info.xaxis, info.yaxis, info.z_values)
+        feasible_plot_values,
+        infeasible_plot_values,
+    ) = _calculate_griddata(info)
     cs = None
     if len(zi) > 0:
         if info.xaxis.is_log:
@@ -293,14 +318,24 @@ def _generate_contour_subplot(info: _SubContourInfo, ax: "Axes", cmap: "Colormap
             cs = ax.contourf(xi, yi, zi, 15, cmap=cmap.reversed())
             # Plot data points.
             ax.scatter(
-                x_values,
-                y_values,
+                feasible_plot_values.x,
+                feasible_plot_values.y,
                 marker="o",
                 c="black",
                 s=20,
                 edgecolors="grey",
                 linewidth=2.0,
             )
+            ax.scatter(
+                infeasible_plot_values.x,
+                infeasible_plot_values.y,
+                marker="o",
+                c="#cccccc",
+                s=20,
+                edgecolors="grey",
+                linewidth=2.0,
+            )
+
     if info.xaxis.is_cat:
         ax.set_xticks(x_cat_param_pos)
         ax.set_xticklabels(x_cat_param_label)

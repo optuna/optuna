@@ -24,6 +24,7 @@ from optuna._experimental import experimental_class
 from optuna._imports import try_import
 from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.study import StudyDirection
+from optuna.terminator import report_cross_validation_scores
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 
@@ -242,6 +243,10 @@ class _Objective:
                 }
 
         self._store_scores(trial, scores)
+
+        test_scores = scores["test_score"]
+        scores_list = test_scores if isinstance(test_scores, list) else test_scores.tolist()
+        report_cross_validation_scores(trial, scores_list)
 
         return trial.user_attrs["mean_test_score"]
 

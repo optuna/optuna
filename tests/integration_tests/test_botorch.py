@@ -5,7 +5,6 @@ from typing import Tuple
 from unittest.mock import patch
 import warnings
 
-import botorch
 from packaging import version
 import pytest
 
@@ -22,6 +21,7 @@ from optuna.trial import TrialState
 
 
 with try_import() as _imports:
+    import botorch
     import torch
 
 if not _imports.is_successful():
@@ -55,7 +55,7 @@ def test_botorch_candidates_func_none(n_objectives: int) -> None:
     elif n_objectives == 2:
         assert sampler._candidates_func is integration.botorch.qehvi_candidates_func
     elif n_objectives == 4:
-        assert sampler._candidates_func is integration.botorch.qparego_candidates_func
+        assert sampler._candidates_func is integration.botorch.ehvi_candidates_func
     else:
         assert False, "Should not reach."
 
@@ -94,13 +94,16 @@ def test_botorch_candidates_func() -> None:
 @pytest.mark.parametrize(
     "candidates_func, n_objectives",
     [
+        (integration.botorch.ehvi_candidates_func, 4),
+        (integration.botorch.ehvi_candidates_func, 5),  # alpha > 0
         (integration.botorch.logei_candidates_func, 1),
         (integration.botorch.qei_candidates_func, 1),
         (integration.botorch.qnei_candidates_func, 1),
         (integration.botorch.qehvi_candidates_func, 2),
+        (integration.botorch.qehvi_candidates_func, 7),  # alpha > 0
         (integration.botorch.qparego_candidates_func, 4),
         (integration.botorch.qnehvi_candidates_func, 2),
-        (integration.botorch.qnehvi_candidates_func, 3),  # alpha > 0
+        (integration.botorch.qnehvi_candidates_func, 6),  # alpha > 0
     ],
 )
 def test_botorch_specify_candidates_func(candidates_func: Any, n_objectives: int) -> None:

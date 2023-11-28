@@ -74,11 +74,17 @@ class TPESampler(BaseSampler):
       <https://papers.nips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf>`_
     - `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
       Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`_
-    - `Multiobjective tree-structured parzen estimator for computationally expensive optimization
-      problems <https://dl.acm.org/doi/10.1145/3377930.3389817>`_
+    - `Tree-Structured Parzen Estimator: Understanding Its Algorithm Components and Their Roles for
+      Better Empirical Performance <https://arxiv.org/abs/2304.11127>`_
+
+    For multi-objective TPE (MOTPE), please refer to the following papers:
+
+    - `Multiobjective Tree-Structured Parzen Estimator for Computationally Expensive Optimization
+      Problems <https://dl.acm.org/doi/10.1145/3377930.3389817>`_
     - `Multiobjective Tree-Structured Parzen Estimator <https://doi.org/10.1613/jair.1.13188>`_
 
     Example:
+        An example of a single-objective optimization is as follows:
 
         .. testcode::
 
@@ -93,6 +99,28 @@ class TPESampler(BaseSampler):
 
             study = optuna.create_study(sampler=TPESampler())
             study.optimize(objective, n_trials=10)
+
+    .. note::
+        :class:`~optuna.samplers.TPESampler` can handle a multi-objective task as well and
+        the following shows an example:
+
+        .. testcode::
+
+            import optuna
+
+
+            def objective(trial):
+                x = trial.suggest_float("x", -100, 100)
+                y = trial.suggest_categorical("y", [-1, 0, 1])
+                f1 = x**2 + y
+                f2 = -((x - 2) ** 2 + y)
+                return f1, f2
+
+
+            # We minimize the first objective and maximize the second objective.
+            sampler = optuna.samplers.TPESampler()
+            study = optuna.create_study(directions=["minimize", "maximize"], sampler=sampler)
+            study.optimize(objective, n_trials=100)
 
     Args:
         consider_prior:
@@ -204,10 +232,6 @@ class TPESampler(BaseSampler):
                 configurations. In particular, if each objective function evaluation is costly
                 and the durations of the running states are significant, and/or the number of
                 workers is high.
-
-            .. note::
-                This feature can be used for only single-objective optimization; this argument is
-                ignored for multi-objective optimization.
 
             .. note::
                 Added in v2.8.0 as an experimental feature. The interface may change in newer
@@ -437,7 +461,7 @@ class TPESampler(BaseSampler):
     def _sample(
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
-        if self._constant_liar and not study._is_multi_objective():
+        if self._constant_liar:
             states = [TrialState.COMPLETE, TrialState.PRUNED, TrialState.RUNNING]
         else:
             states = [TrialState.COMPLETE, TrialState.PRUNED]
@@ -648,7 +672,8 @@ def _split_complete_trials_multi_objective(
     n_below: int,
 ) -> tuple[list[FrozenTrial], list[FrozenTrial]]:
     if n_below == 0:
-        return [], []
+        # The type of trials must be `list`, but not `Sequence`.
+        return [], list(trials)
 
     lvals = np.asarray([trial.values for trial in trials])
     for i, direction in enumerate(study.directions):

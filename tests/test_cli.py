@@ -71,8 +71,11 @@ def _parse_output(output: str, output_format: str) -> Any:
         For table format, a list of dict formatted rows.
         For JSON or YAML format, a list or a dict corresponding to ``output``.
     """
-
-    if output_format == "table":
+    if output_format == "value":
+        # Currently, _parse_output with output_format="value" is used only for
+        # `study-names` command.
+        return [{"name": values} for values in output.split(os.linesep)]
+    elif output_format == "table":
         rows = output.split(os.linesep)
         assert all(len(rows[0]) == len(row) for row in rows)
         # Check ruled lines.
@@ -295,6 +298,71 @@ def test_study_set_user_attr_command() -> None:
         study_user_attrs = storage.get_study_user_attrs(study_id)
         assert len(study_user_attrs) == 2
         assert all(study_user_attrs[k] == v for k, v in example_attrs.items())
+
+
+@pytest.mark.skip_coverage
+@pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
+def test_study_names_command(output_format: Optional[str]) -> None:
+    with StorageSupplier("sqlite") as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
+
+        expected_study_names = ["study-names-test1", "study-names-test2"]
+        expected_column_name = "name"
+
+        # Create a study.
+        command = [
+            "optuna",
+            "create-study",
+            "--storage",
+            storage_url,
+            "--study-name",
+            expected_study_names[0],
+        ]
+        subprocess.check_output(command)
+
+        # Get study names.
+        command = ["optuna", "study-names", "--storage", storage_url]
+        if output_format is not None:
+            command += ["--format", output_format]
+        output = str(subprocess.check_output(command).decode().strip())
+        study_names = _parse_output(output, output_format or "value")
+
+        # Check user_attrs are not printed.
+        assert len(study_names) == 1
+        assert study_names[0]["name"] == expected_study_names[0]
+
+        # Create another study.
+        command = [
+            "optuna",
+            "create-study",
+            "--storage",
+            storage_url,
+            "--study-name",
+            expected_study_names[1],
+        ]
+        subprocess.check_output(command)
+
+        # Get study names.
+        command = ["optuna", "study-names", "--storage", storage_url]
+        if output_format is not None:
+            command += ["--format", output_format]
+        output = str(subprocess.check_output(command).decode().strip())
+        study_names = _parse_output(output, output_format or "value")
+
+        assert len(study_names) == 2
+        for i, study_name in enumerate(study_names):
+            assert list(study_name.keys()) == [expected_column_name]
+            assert study_name["name"] == expected_study_names[i]
+
+
+@pytest.mark.skip_coverage
+def test_study_names_command_without_storage_url() -> None:
+    with pytest.raises(subprocess.CalledProcessError):
+        subprocess.check_output(
+            ["optuna", "study-names", "--study-name", "dummy_study"],
+            env={k: v for k, v in os.environ.items() if k != "OPTUNA_STORAGE"},
+        )
 
 
 @pytest.mark.skip_coverage
