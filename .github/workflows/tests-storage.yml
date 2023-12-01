@@ -24,14 +24,14 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
-        should-skip:
+        test-trigger-type:
           - ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'Scheduled' || '' }}
         exclude:
-          - should-skip: ""
+          - test-trigger-type: ""
             python-version: "3.8"
-          - should-skip: ""
+          - test-trigger-type: ""
             python-version: "3.9"
-          - should-skip: ""
+          - test-trigger-type: ""
             python-version: "3.10"
 
     services:
