@@ -131,7 +131,6 @@ def logei_candidates_func(
         train_obj_feas = train_obj[is_feas]
 
         if train_obj_feas.numel() == 0:
-            # TODO(sousu4): Do not use 0 as the best observation.
             _logger.warning(
                 "No objective values are feasible. Using 0 as the best objective in logEI."
             )
