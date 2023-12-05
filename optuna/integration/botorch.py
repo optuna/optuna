@@ -65,6 +65,7 @@ with try_import() as _imports:
 _logger = logging.get_logger(__name__)
 
 with try_import() as _imports_logei:
+    from botorch.acquisition.analytic import LogConstrainedExpectedImprovement
     from botorch.acquisition.analytic import LogExpectedImprovement
 
 
@@ -79,7 +80,7 @@ def logei_candidates_func(
     """Log Expected Improvement (LogEI).
 
     The default value of ``candidates_func`` in :class:`~optuna.integration.BoTorchSampler`
-    with single-objective optimization for non-constrained problems.
+    with single-objective optimization.
 
     Args:
         train_x:
@@ -94,8 +95,10 @@ def logei_candidates_func(
             ``(n_trials, n_objectives)``. ``n_trials`` is identical to that of ``train_x``.
             ``n_objectives`` is the number of objectives. Observations are not normalized.
         train_con:
-            Objective constraints. This option is not supported in ``logei_candidates_func`` and
-            must be :obj:`None`.
+            Objective constraints. A ``torch.Tensor`` of shape ``(n_trials, n_constraints)``.
+            ``n_trials`` is identical to that of ``train_x``. ``n_constraints`` is the number of
+            constraints. A constraint is violated if strictly larger than 0. If no constraints are
+            involved in the optimization, this argument will be :obj:`None`.
         bounds:
             Search space bounds. A ``torch.Tensor`` of shape ``(2, n_params)``. ``n_params`` is
             identical to that of ``train_x``. The first and the second rows correspond to the
@@ -120,11 +123,22 @@ def logei_candidates_func(
 
     if train_obj.size(-1) != 1:
         raise ValueError("Objective may only contain single values with logEI.")
-    if train_con is not None:
-        raise ValueError(
-            "Constraint is not supported with logei_candidates_func. "
-            + "Please use qei_candidates_func instead."
-        )
+    n_constraints = train_con.size(1) if train_con is not None else 0
+    if n_constraints > 0:
+        assert train_con is not None
+        train_y = torch.cat([train_obj, train_con], dim=-1)
+
+        is_feas = (train_con <= 0).all(dim=-1)
+        train_obj_feas = train_obj[is_feas]
+
+        if train_obj_feas.numel() == 0:
+            _logger.warning(
+                "No objective values are feasible. Using 0 as the best objective in logEI."
+            )
+            best_f = train_obj.min()
+        else:
+            best_f = train_obj_feas.max()
+
     else:
         train_y = train_obj
         best_f = train_obj.max()
@@ -134,11 +148,18 @@ def logei_candidates_func(
     model = SingleTaskGP(train_x, train_y, outcome_transform=Standardize(m=train_y.size(-1)))
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
     fit_gpytorch_mll(mll)
-
-    acqf = LogExpectedImprovement(
-        model=model,
-        best_f=best_f,
-    )
+    if n_constraints > 0:
+        acqf = LogConstrainedExpectedImprovement(
+            model=model,
+            best_f=best_f,
+            objective_index=0,
+            constraints={i: (None, 0.0) for i in range(1, n_constraints + 1)},
+        )
+    else:
+        acqf = LogExpectedImprovement(
+            model=model,
+            best_f=best_f,
+        )
 
     standard_bounds = torch.zeros_like(bounds)
     standard_bounds[1] = 1
@@ -167,9 +188,6 @@ def qei_candidates_func(
     pending_x: Optional["torch.Tensor"],
 ) -> "torch.Tensor":
     """Quasi MC-based batch Expected Improvement (qEI).
-
-    The default value of ``candidates_func`` in :class:`~optuna.integration.BoTorchSampler`
-    with single-objective optimization for constrained problems.
 
     Args:
         train_x:
@@ -664,7 +682,7 @@ def _get_default_candidates_func(
         return qparego_candidates_func
     elif n_objectives > 1:
         return qehvi_candidates_func
-    elif has_constraint or consider_running_trials:
+    elif consider_running_trials:
         return qei_candidates_func
     else:
         return logei_candidates_func
