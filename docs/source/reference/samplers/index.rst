@@ -50,7 +50,7 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
     This means that, for example, the actual time complexity of :class:`~optuna.samplers.RandomSampler` is :math:`O(d+n+d) = O(d+n)`.
     From another perspective, with the exception of :class:`~optuna.samplers.NSGAIISampler`, all time complexity is written for single-objective optimization.
 
-    (**): The budget depends on the number of parameters and the number of objectives.
+    (**): (1) The budget depends on the number of parameters and the number of objectives. (2) This budget includes ``n_startup_trials`` if a sampler has ``n_startup_trials`` as one of its arguments.
 
     (\*\*\*): This time complexity assumes that the number of population size :math:`p` and the number of parallelization are regular.
     This means that the number of parallelization should not exceed the number of population size :math:`p`.
