@@ -52,6 +52,8 @@ jobs:
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
         pip install PyQt6 # Install PyQT for using QtAgg as matplotlib backend.
+        # TODO(not522): Remove the version constraint.
+        pip install "PyQt6-Qt6<=6.6.0"
         pip install "kaleido<=0.1.0post1"  # TODO(HideakiImamura): Remove this after fixing https://github.com/plotly/Kaleido/issues/110
 
     - name: Output installed packages
