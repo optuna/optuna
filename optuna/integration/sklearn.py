@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+from collections.abc import Callable
+from collections.abc import Iterable
+from collections.abc import Mapping
 from logging import DEBUG
 from logging import INFO
 from logging import WARNING
@@ -5,12 +10,7 @@ from numbers import Integral
 from numbers import Number
 from time import time
 from typing import Any
-from typing import Callable
-from typing import Dict
-from typing import Iterable
 from typing import List
-from typing import Mapping
-from typing import Optional
 from typing import Union
 
 import numpy as np
@@ -53,14 +53,14 @@ ArrayLikeType = Union[List, np.ndarray, "pd.Series", "spmatrix"]
 OneDimArrayLikeType = Union[List[float], np.ndarray, "pd.Series"]
 TwoDimArrayLikeType = Union[List[List[float]], np.ndarray, "pd.DataFrame", "spmatrix"]
 IterableType = Union[List, "pd.DataFrame", np.ndarray, "pd.Series", "spmatrix", None]
-IndexableType = Optional[Iterable]
+IndexableType = Union[Iterable, None]
 
 _logger = logging.get_logger(__name__)
 
 
 def _check_fit_params(
-    X: TwoDimArrayLikeType, fit_params: Dict, indices: OneDimArrayLikeType
-) -> Dict:
+    X: TwoDimArrayLikeType, fit_params: dict, indices: OneDimArrayLikeType
+) -> dict:
     fit_params_validated = {}
     for key, value in fit_params.items():
         # NOTE Original implementation:
@@ -114,8 +114,8 @@ def _num_samples(x: ArrayLikeType) -> int:
 
 
 def _safe_indexing(
-    X: Union[OneDimArrayLikeType, TwoDimArrayLikeType], indices: OneDimArrayLikeType
-) -> Union[OneDimArrayLikeType, TwoDimArrayLikeType]:
+    X: OneDimArrayLikeType | TwoDimArrayLikeType, indices: OneDimArrayLikeType
+) -> OneDimArrayLikeType | TwoDimArrayLikeType:
     if X is None:
         return X
 
@@ -184,12 +184,12 @@ class _Objective:
         estimator: "sklearn.base.BaseEstimator",
         param_distributions: Mapping[str, distributions.BaseDistribution],
         X: TwoDimArrayLikeType,
-        y: Optional[Union[OneDimArrayLikeType, TwoDimArrayLikeType]],
+        y: OneDimArrayLikeType | TwoDimArrayLikeType | None,
         cv: "BaseCrossValidator",
         enable_pruning: bool,
-        error_score: Union[Number, float, str],
-        fit_params: Dict[str, Any],
-        groups: Optional[OneDimArrayLikeType],
+        error_score: Number | float | str,
+        fit_params: dict[str, Any],
+        groups: OneDimArrayLikeType | None,
         max_iter: int,
         return_train_score: bool,
         scoring: Callable[..., Number],
@@ -296,7 +296,7 @@ class _Objective:
 
         return scores
 
-    def _get_params(self, trial: Trial) -> Dict[str, Any]:
+    def _get_params(self, trial: Trial) -> dict[str, Any]:
         return {
             name: trial._suggest(name, distribution)
             for name, distribution in self.param_distributions.items()
@@ -305,10 +305,10 @@ class _Objective:
     def _partial_fit_and_score(
         self,
         estimator: "sklearn.base.BaseEstimator",
-        train: List[int],
-        test: List[int],
-        partial_fit_params: Dict[str, Any],
-    ) -> List[Number]:
+        train: list[int],
+        test: list[int],
+        partial_fit_params: dict[str, Any],
+    ) -> list[Number]:
         X_train, y_train = _safe_split(estimator, self.X, self.y, train)
         X_test, y_test = _safe_split(estimator, self.X, self.y, test, train_indices=train)
 
@@ -537,7 +537,7 @@ class OptunaSearchCV(BaseEstimator):
         return self.best_trial_.number
 
     @property
-    def best_params_(self) -> Dict[str, Any]:
+    def best_params_(self) -> dict[str, Any]:
         """Parameters of the best trial in the :class:`~optuna.study.Study`."""
 
         self._check_is_fitted()
@@ -569,7 +569,7 @@ class OptunaSearchCV(BaseEstimator):
         return self.best_estimator_.classes_
 
     @property
-    def cv_results_(self) -> Dict[str, Any]:
+    def cv_results_(self) -> dict[str, Any]:
         """A dictionary mapping a metric name to a list of
         Cross-Validation results of all trials."""
         cv_results_dict_in_list = [trial_.user_attrs for trial_ in self.trials_]
@@ -589,7 +589,7 @@ class OptunaSearchCV(BaseEstimator):
         return len(self.trials_)
 
     @property
-    def trials_(self) -> List[FrozenTrial]:
+    def trials_(self) -> list[FrozenTrial]:
         """All trials in the :class:`~optuna.study.Study`."""
 
         self._check_is_fitted()
@@ -597,7 +597,7 @@ class OptunaSearchCV(BaseEstimator):
         return self.study_.trials
 
     @property
-    def user_attrs_(self) -> Dict[str, Any]:
+    def user_attrs_(self) -> dict[str, Any]:
         """User attributes in the :class:`~optuna.study.Study`."""
 
         self._check_is_fitted()
@@ -605,7 +605,7 @@ class OptunaSearchCV(BaseEstimator):
         return self.study_.user_attrs
 
     @property
-    def decision_function(self) -> Callable[..., Union[OneDimArrayLikeType, TwoDimArrayLikeType]]:
+    def decision_function(self) -> Callable[..., OneDimArrayLikeType | TwoDimArrayLikeType]:
         """Call ``decision_function`` on the best estimator.
 
         This is available only if the underlying estimator supports
@@ -629,7 +629,7 @@ class OptunaSearchCV(BaseEstimator):
         return self.best_estimator_.inverse_transform
 
     @property
-    def predict(self) -> Callable[..., Union[OneDimArrayLikeType, TwoDimArrayLikeType]]:
+    def predict(self) -> Callable[..., OneDimArrayLikeType | TwoDimArrayLikeType]:
         """Call ``predict`` on the best estimator.
 
         This is available only if the underlying estimator supports ``predict``
@@ -709,21 +709,21 @@ class OptunaSearchCV(BaseEstimator):
         estimator: "sklearn.base.BaseEstimator",
         param_distributions: Mapping[str, distributions.BaseDistribution],
         *,
-        cv: Optional[Union[int, "BaseCrossValidator", Iterable]] = None,
+        cv: int | "BaseCrossValidator" | Iterable | None = None,
         enable_pruning: bool = False,
-        error_score: Union[Number, float, str] = np.nan,
+        error_score: Number | float | str = np.nan,
         max_iter: int = 1000,
-        n_jobs: Optional[int] = None,
-        n_trials: int = 10,
-        random_state: Optional[Union[int, np.random.RandomState]] = None,
+        n_jobs: int | None = None,
+        n_trials: int | None = 10,
+        random_state: int | np.random.RandomState | None = None,
         refit: bool = True,
         return_train_score: bool = False,
-        scoring: Optional[Union[Callable[..., float], str]] = None,
-        study: Optional[study_module.Study] = None,
-        subsample: Union[float, int] = 1.0,
-        timeout: Optional[float] = None,
+        scoring: Callable[..., float] | str | None = None,
+        study: study_module.Study | None = None,
+        subsample: float | int = 1.0,
+        timeout: float | None = None,
         verbose: int = 0,
-        callbacks: Optional[List[Callable[[study_module.Study, FrozenTrial], None]]] = None,
+        callbacks: list[Callable[[study_module.Study, FrozenTrial], None]] | None = None,
     ) -> None:
         _imports.check()
 
@@ -784,13 +784,13 @@ class OptunaSearchCV(BaseEstimator):
         if self.study is not None and self.study.direction != StudyDirection.MAXIMIZE:
             raise ValueError("direction of study must be 'maximize'.")
 
-    def _more_tags(self) -> Dict[str, bool]:
+    def _more_tags(self) -> dict[str, bool]:
         return {"non_deterministic": True, "no_validation": True}
 
     def _refit(
         self,
         X: TwoDimArrayLikeType,
-        y: Optional[Union[OneDimArrayLikeType, TwoDimArrayLikeType]] = None,
+        y: OneDimArrayLikeType | TwoDimArrayLikeType | None = None,
         **fit_params: Any,
     ) -> "OptunaSearchCV":
         n_samples = _num_samples(X)
@@ -817,8 +817,8 @@ class OptunaSearchCV(BaseEstimator):
     def fit(
         self,
         X: TwoDimArrayLikeType,
-        y: Optional[Union[OneDimArrayLikeType, TwoDimArrayLikeType]] = None,
-        groups: Optional[OneDimArrayLikeType] = None,
+        y: OneDimArrayLikeType | TwoDimArrayLikeType | None = None,
+        groups: OneDimArrayLikeType | None = None,
         **fit_params: Any,
     ) -> "OptunaSearchCV":
         """Run fit with all sets of parameters.
@@ -930,7 +930,7 @@ class OptunaSearchCV(BaseEstimator):
     def score(
         self,
         X: TwoDimArrayLikeType,
-        y: Optional[Union[OneDimArrayLikeType, TwoDimArrayLikeType]] = None,
+        y: OneDimArrayLikeType | TwoDimArrayLikeType | None = None,
     ) -> float:
         """Return the score on the given data.
 
