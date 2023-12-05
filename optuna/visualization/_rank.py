@@ -28,9 +28,8 @@ if plotly_is_available:
     from optuna.visualization._plotly_imports import plotly
     from optuna.visualization._plotly_imports import Scatter
 if matplotlib_imports.is_successful():
-    # TODO(c-bata): Refactor to remove matplotlib and plotly dependencies in `_get_rank_info()` for a more modular design.
-    # This is a temporary workaround to resolve import errors when using matplotlib.
-    # See https://github.com/optuna/optuna/issues/5115 for details.
+    # TODO(c-bata): Refactor to remove matplotlib and plotly dependencies in `_get_rank_info()`.
+    # See https://github.com/optuna/optuna/pull/5133#discussion_r1414761672 for the discussion.
     from optuna.visualization.matplotlib._matplotlib_imports import plt as matplotlib_plt
 
 _logger = get_logger(__name__)
