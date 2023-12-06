@@ -436,5 +436,5 @@ def _convert_color_idxs_to_scaled_rgb_colors(color_idxs: np.ndarray) -> np.ndarr
     else:
         cmap = matplotlib_plt.get_cmap(colormap)
         colors = cmap(color_idxs)[:, :3]  # Drop alpha values.
-        rgb_colors = np.asarray(colors * 256, dtype=int)
+        rgb_colors = np.asarray(colors * 255, dtype=int)
         return rgb_colors
