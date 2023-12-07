@@ -321,6 +321,10 @@ class FrozenTrial(BaseTrial):
                     "`datetime_complete` is supposed to be None for an unfinished trial."
                 )
 
+        if self.state == TrialState.PRUNED and self._values is not None:
+            raise ValueError("`value` is supposed not to be set for a pruned trial.")
+        if self.state == TrialState.FAIL and self._values is not None:
+            raise ValueError("`value` is supposed not to be set for a failed trial.")
         if self.state == TrialState.COMPLETE and self._values is None:
             raise ValueError("`value` is supposed to be set for a complete trial.")
 
@@ -329,6 +333,11 @@ class FrozenTrial(BaseTrial):
                 "Inconsistent parameters {} and distributions {}.".format(
                     set(self.params.keys()), set(self.distributions.keys())
                 )
+            )
+        elif self.state == TrialState.WAITING and len(self.params.keys()) != 0:
+            raise ValueError(
+                "Both parameters and distributions are supposed to be empty "
+                "when the trial state is waiting."
             )
 
         for param_name, param_value in self.params.items():
