@@ -96,8 +96,8 @@ class _EfficientParzenEstimator(_ParzenEstimator):
         # Scott's rule by Scott, D.W. (1992),
         # Multivariate Density Estimation: Theory, Practice, and Visualization.
         sigma_est = 1.059 * min(IQR / 1.34, sigma_est) * n_trials ** (-0.2)
-        # To avoid numerical errors. Note that 1/2 means 2sigma will fit in the target grid.
-        sigma_est = max(sigma_est, 1.0 / 2.0)
+        # To avoid numerical errors. 0.5/1.64 means 1.64sigma (=90%) will fit in the target grid.
+        sigma_est = max(sigma_est, 0.5 / 1.64)
         return _BatchedDiscreteTruncNormDistributions(
             mu=values,
             sigma=np.full(self.n_grids, sigma_est),
