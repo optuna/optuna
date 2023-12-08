@@ -479,11 +479,13 @@ class TPESampler(BaseSampler):
         mpe_below = self._build_parzen_estimator(
             study, search_space, below_trials, handle_below=True
         )
-        mpe_above = self._build_parzen_estimator(study, search_space, above_trials)
+        mpe_above = self._build_parzen_estimator(
+            study, search_space, above_trials, handle_below=False
+        )
 
         samples_below = mpe_below.sample(self._rng.rng, self._n_ei_candidates)
-        acq_fn_vals = self._compute_acquisition_function(samples_below, mpe_below, mpe_above)
-        ret = TPESampler._compare(samples_below, acq_fn_vals)
+        acq_func_vals = self._compute_acquisition_func(samples_below, mpe_below, mpe_above)
+        ret = TPESampler._compare(samples_below, acq_func_vals)
 
         for param_name, dist in search_space.items():
             ret[param_name] = dist.to_external_repr(ret[param_name])
@@ -495,7 +497,7 @@ class TPESampler(BaseSampler):
         study: Study,
         search_space: dict[str, BaseDistribution],
         trials: list[FrozenTrial],
-        handle_below: bool = False,
+        handle_below: bool,
     ) -> _ParzenEstimator:
         observations = self._get_internal_repr(trials, search_space)
         if handle_below and study._is_multi_objective():
@@ -515,7 +517,7 @@ class TPESampler(BaseSampler):
 
         return mpe
 
-    def _compute_acquisition_function(
+    def _compute_acquisition_func(
         self,
         samples: dict[str, np.ndarray],
         mpe_below: _ParzenEstimator,
@@ -523,26 +525,26 @@ class TPESampler(BaseSampler):
     ) -> np.ndarray:
         log_likelihoods_below = mpe_below.log_pdf(samples)
         log_likelihoods_above = mpe_above.log_pdf(samples)
-        acq_fn_vals = log_likelihoods_below - log_likelihoods_above
-        return acq_fn_vals
+        acq_func_vals = log_likelihoods_below - log_likelihoods_above
+        return acq_func_vals
 
     @classmethod
     def _compare(
         cls,
         samples: Dict[str, np.ndarray],
-        acq_fn_vals: np.ndarray,
+        acq_func_vals: np.ndarray,
     ) -> dict[str, int | float]:
         sample_size = next(iter(samples.values())).size
         if sample_size == 0:
             raise ValueError(f"The size of `samples` must be positive, but got {sample_size}.")
 
-        if sample_size != acq_fn_vals.size:
+        if sample_size != acq_func_vals.size:
             raise ValueError(
-                "The sizes of `samples` and `acq_fn_vals` must be same, but got "
-                f"(samples.size, acq_fn_vals.size) = ({sample_size}, {acq_fn_vals.size})."
+                "The sizes of `samples` and `acq_func_vals` must be same, but got "
+                f"(samples.size, acq_func_vals.size) = ({sample_size}, {acq_func_vals.size})."
             )
 
-        best_idx = np.argmax(acq_fn_vals)
+        best_idx = np.argmax(acq_func_vals)
         return {k: v[best_idx].item() for k, v in samples.items()}
 
     @staticmethod
