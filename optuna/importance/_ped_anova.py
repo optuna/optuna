@@ -82,7 +82,7 @@ class _EfficientParzenEstimator(_ParzenEstimator):
             dists = np.array(
                 [
                     # If indices are not used, their weights will not be used.
-                    [dist_func(choices, c) if i in used_indices else 1.0 for c in choices]
+                    [dist_func(choices[i], c) if i in used_indices else 1.0 for c in choices]
                     for i in range(n_choices)
                 ]
             )
