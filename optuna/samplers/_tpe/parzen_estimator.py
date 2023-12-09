@@ -185,29 +185,27 @@ class _ParzenEstimator:
         search_space: CategoricalDistribution,
         parameters: _ParzenEstimatorParameters,
     ) -> _BatchedDistributions:
-        consider_prior = parameters.consider_prior or len(observations) == 0
+        choices = search_space.choices
+        n_choices = len(choices)
+        n_samples = len(observations) + (parameters.consider_prior or len(observations) == 0)
 
         assert parameters.prior_weight is not None
         weights = np.full(
-            shape=(len(observations) + consider_prior, len(search_space.choices)),
-            fill_value=parameters.prior_weight / (len(observations) + consider_prior),
+            shape=(n_samples, n_choices),
+            fill_value=parameters.prior_weight / n_samples,
         )
 
         if param_name in parameters.categorical_distance_func:
             dist_func = parameters.categorical_distance_func[param_name]
-            for i, observation in enumerate(observations.astype(int)):
-                dists = [
-                    dist_func(search_space.choices[observation], search_space.choices[j])
-                    for j in range(len(search_space.choices))
-                ]
-                exponent = -(
-                    (np.array(dists) / max(dists)) ** 2
-                    * np.log((len(observations) + consider_prior) / parameters.prior_weight)
-                    * (np.log(len(search_space.choices)) / np.log(6))
-                )
-                weights[i] = np.exp(exponent)
+            dists = np.array([[dist_func(c1, c2) for c1 in choices] for c2 in choices])
+            max_dists = np.max(dists, axis=1)
+            coef = np.log(n_samples / parameters.prior_weight) * np.log(n_choices) / np.log(6)
+            categorical_weights = np.exp(-dists / max_dists[:, np.newaxis] * coef)
+            categorical_weights /= np.sum(categorical_weights, axis=1, keepdims=True)
+            weights = categorical_weights[observations.astype(int)]
         else:
             weights[np.arange(len(observations)), observations.astype(int)] += 1
+
         weights /= weights.sum(axis=1, keepdims=True)
         return _BatchedCategoricalDistributions(weights)
 
