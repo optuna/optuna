@@ -16,9 +16,9 @@ from optuna.importance._base import _get_target_values
 from optuna.importance._base import _sort_dict_by_importance
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
-from optuna.samplers._tpe.probability_distributions import _BatchedDistributions
 from optuna.samplers._tpe.probability_distributions import _BatchedCategoricalDistributions
 from optuna.samplers._tpe.probability_distributions import _BatchedDiscreteTruncNormDistributions
+from optuna.samplers._tpe.probability_distributions import _BatchedDistributions
 from optuna.samplers._tpe.probability_distributions import _MixtureOfProductDistribution
 from optuna.study import Study
 from optuna.trial import FrozenTrial
@@ -28,7 +28,7 @@ class _EfficientParzenEstimator(_ParzenEstimator):
     def __init__(
         self,
         param_name: str,
-        dist: BaseDistribution,
+        dist: IntDistribution | CategoricalDistribution,
         counts: np.ndarray,
         categorical_distance_func: Callable[[CategoricalChoiceType, CategoricalChoiceType], float]
         | None,
@@ -62,7 +62,9 @@ class _EfficientParzenEstimator(_ParzenEstimator):
         return np.exp(self.log_pdf({self._param_name: samples}))
 
     def _calculate_categorical_distributions_efficient(self) -> _BatchedDistributions:
-        choices = self._search_space[self._param_name].choices
+        distribution = self._search_space[self._param_name]
+        assert isinstance(distribution, CategoricalDistribution), "Mypy redefinition."
+        choices = distribution.choices
         n_choices = len(choices)
         if n_choices != self._counts.size:
             raise ValueError(
@@ -263,7 +265,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     def _get_grids_and_grid_indices_of_trials(
         self,
         param_name: str,
-        dist: IntDistribution,
+        dist: IntDistribution | FloatDistribution,
         trials: list[FrozenTrial],
     ) -> tuple[np.ndarray, np.ndarray]:
         if isinstance(dist, FloatDistribution):
@@ -293,7 +295,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     def _count_numerical_param_in_grid(
         self,
         param_name: str,
-        dist: CategoricalDistribution,
+        dist: IntDistribution | FloatDistribution,
         trials: list[FrozenTrial],
     ) -> np.ndarray:
         grids, grid_indices_of_trials = self._get_grids_and_grid_indices_of_trials(
@@ -327,6 +329,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         dist: BaseDistribution,
         trials: list[FrozenTrial],
     ) -> _EfficientParzenEstimator:
+        rounded_dist: IntDistribution | CategoricalDistribution
         if isinstance(dist, (IntDistribution, FloatDistribution)):
             counts = self._count_numerical_param_in_grid(param_name, dist, trials)
             rounded_dist = IntDistribution(low=0, high=counts.size - 1)
@@ -334,11 +337,14 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             counts = self._count_categorical_param_in_grid(param_name, dist, trials)
             rounded_dist = dist
         else:
-            assert False, "Should not be reached."
+            raise ValueError(f"Got an unknown dist with the type {type(dist)}.")
 
         categorical_distance_func = self._categorical_distance_func.get(param_name, None)
         return _EfficientParzenEstimator(
-            param_name, rounded_dist, counts, categorical_distance_func,
+            param_name,
+            rounded_dist,
+            counts,
+            categorical_distance_func,
         )
 
     def _get_trials_better_than_cutoff_or_baseline(
@@ -350,7 +356,6 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         trials = _get_filtered_trials(study, params=params, target=target)
         target_values = _get_target_values(trials, target)
 
-        approx_method = "higher" if self._minimize else "lower"
         if self._cutoff_value is not None:
             cutoff_value = self._cutoff_value
         else:
@@ -358,7 +363,11 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             cutoff_quantile = (
                 self._cutoff_quantile if self._minimize else 1 - self._cutoff_quantile
             )
-            cutoff_value = np.quantile(target_values, cutoff_quantile, method=approx_method)
+            cutoff_value = np.quantile(
+                target_values,
+                cutoff_quantile,
+                method="higher" if self._minimize else "lower",
+            )
 
         if self._baseline_value is not None:
             baseline_value = self._baseline_value
@@ -367,7 +376,11 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             baseline_quantile = (
                 self._baseline_quantile if self._minimize else 1 - self._baseline_quantile
             )
-            baseline_value = np.quantile(target_values, baseline_quantile, method=approx_method)
+            baseline_value = np.quantile(
+                target_values,
+                baseline_quantile,
+                method="higher" if self._minimize else "lower",
+            )
 
         n_trials = len(trials)
         if self._minimize:
@@ -403,7 +416,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         grids = np.arange(pe_cutoff.n_grids)
         pdf_baseline = pe_baseline.pdf(grids) + 1e-12
         pdf_cutoff = pe_cutoff.pdf(grids) + 1e-12
-        return pdf_cutoff @ ((pdf_baseline / pdf_cutoff - 1) ** 2)
+        return float(pdf_cutoff @ ((pdf_baseline / pdf_cutoff - 1) ** 2))
 
     def evaluate(
         self,
