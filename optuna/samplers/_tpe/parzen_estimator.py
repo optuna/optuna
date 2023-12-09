@@ -196,7 +196,10 @@ class _ParzenEstimator:
         )
 
         observed_indices = observations.astype(int)
-        if param_name in parameters.categorical_distance_func:
+        if observed_indices.size == 0:
+            # Do nothing.
+            pass
+        elif param_name in parameters.categorical_distance_func:
             # TODO(nabenabe0928): Think about how to handle combinatorial explosion.
             # The time complexity is O(n_choices * used_indices.size), so n_choices cannot be huge.
             used_indices, rev_indices = np.unique(observed_indices, return_inverse=True)
