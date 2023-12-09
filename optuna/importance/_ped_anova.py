@@ -25,6 +25,8 @@ from optuna.trial import FrozenTrial
 
 
 class _EfficientParzenEstimator(_ParzenEstimator):
+    """Fast implementation for 1D ParzenEstimator."""
+
     def __init__(
         self,
         param_name: str,
@@ -76,10 +78,17 @@ class _EfficientParzenEstimator(_ParzenEstimator):
         if dist_func is None:
             weights = np.identity(n_choices)
         else:
-            dists = np.array([[dist_func(c1, c2) for c1 in choices] for c2 in choices])
+            used_indices = set([i for i, c in enumerate(self._counts) if c != 0])
+            dists = np.array(
+                [
+                    # If indices are not used, their weights will not be used.
+                    [dist_func(choices, c) if i in used_indices else 1.0 for c in choices]
+                    for i in range(n_choices)
+                ]
+            )
             max_dists = np.max(dists, axis=1)
             coef = np.log(self._n_trials) * np.log(n_choices) / np.log(6)
-            weights = np.exp(-dists / max_dists[:, np.newaxis] * coef)
+            weights = np.exp(-((dists / max_dists[:, np.newaxis]) ** 2) * coef)
             weights /= np.sum(weights, axis=1, keepdims=True)
 
         return _BatchedCategoricalDistributions(weights=weights)
