@@ -1,14 +1,12 @@
+from __future__ import annotations
+
 from typing import Callable
-from typing import Dict
-from typing import List
 from typing import Optional
 
 import numpy
 
 from optuna._transform import _SearchSpaceTransform
-from optuna.importance._base import _get_distributions
-from optuna.importance._base import _get_filtered_trials
-from optuna.importance._base import _get_target_values
+from optuna.importance._base import _before_evaluate
 from optuna.importance._base import _get_trans_params
 from optuna.importance._base import _param_importances_to_dict
 from optuna.importance._base import _sort_dict_by_importance
@@ -78,22 +76,11 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
     def evaluate(
         self,
         study: Study,
-        params: Optional[List[str]] = None,
+        params: list[str] | None = None,
         *,
-        target: Optional[Callable[[FrozenTrial], float]] = None,
-    ) -> Dict[str, float]:
-        if target is None and study._is_multi_objective():
-            raise ValueError(
-                "If the `study` is being used for multi-objective optimization, "
-                "please specify the `target`. For example, use "
-                "`target=lambda t: t.values[0]` for the first objective value."
-            )
-
-        distributions = _get_distributions(study, params=params)
-        if params is None:
-            params = list(distributions.keys())
-        assert params is not None
-
+        target: Callable[[FrozenTrial], float] | None = None,
+    ) -> dict[str, float]:
+        _, distributions, trials, target_values = _before_evaluate(study, params, target)
         # fANOVA does not support parameter distributions with a single value.
         # However, there is no reason to calculate parameter importance in such case anyway,
         # since it will always be 0 as the parameter is constant in the objective function.
@@ -107,14 +94,11 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
         if len(non_single_distributions) == 0:
             return {}
 
-        trials: List[FrozenTrial] = _get_filtered_trials(study, params=params, target=target)
-
         trans = _SearchSpaceTransform(
             non_single_distributions, transform_log=False, transform_step=False
         )
 
         trans_params: numpy.ndarray = _get_trans_params(trials, trans)
-        target_values: numpy.ndarray = _get_target_values(trials, target)
 
         evaluator = self._evaluator
         evaluator.fit(

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import abc
 from typing import Callable
 from typing import cast
@@ -24,10 +26,10 @@ class BaseImportanceEvaluator(abc.ABC):
     def evaluate(
         self,
         study: Study,
-        params: Optional[List[str]] = None,
+        params: list[str] | None = None,
         *,
-        target: Optional[Callable[[FrozenTrial], float]] = None,
-    ) -> Dict[str, float]:
+        target: Callable[[FrozenTrial], float] | None = None,
+    ) -> dict[str, float]:
         """Evaluate parameter importances based on completed trials in the given study.
 
         .. note::
@@ -64,6 +66,28 @@ class BaseImportanceEvaluator(abc.ABC):
         """
         # TODO(hvy): Reconsider the interface as logic might violate DRY among multiple evaluators.
         raise NotImplementedError
+
+
+def _before_evaluate(
+    study: Study,
+    params: list[str] | None,
+    target: Callable[[FrozenTrial], float] | None,
+) -> tuple[list[str], dict[str, BaseDistribution], list[FrozenTrial], numpy.ndarray]:
+    if target is None and study._is_multi_objective():
+        raise ValueError(
+            "If the `study` is being used for multi-objective optimization, "
+            "please specify the `target`. For example, use "
+            "`target=lambda t: t.values[0]` for the first objective value."
+        )
+
+    distributions = _get_distributions(study, params=params)
+    if params is None:
+        params = list(distributions.keys())
+
+    assert params is not None
+    trials = _get_filtered_trials(study, params=params, target=target)
+    target_values = _get_target_values(trials, target)
+    return params, distributions, trials, target_values
 
 
 def _get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, BaseDistribution]:
