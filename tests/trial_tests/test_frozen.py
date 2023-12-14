@@ -148,6 +148,14 @@ def test_validate() -> None:
         with pytest.raises(ValueError):
             invalid_trial._validate()
 
+    # Invalid: `state` is `PRUNED` or `FAIL`, and `value` is set.
+    for state in [TrialState.PRUNED, TrialState.FAIL]:
+        invalid_trial = copy.copy(valid_trial)
+        invalid_trial.state = state
+        invalid_trial.value = 1.0
+        with pytest.raises(ValueError):
+            invalid_trial._validate()
+
     # Invalid: `state` is `COMPLETE` and `value` is not set.
     invalid_trial = copy.copy(valid_trial)
     invalid_trial.value = None
@@ -170,6 +178,36 @@ def test_validate() -> None:
         invalid_trial.distributions = distributions
         with pytest.raises(ValueError):
             invalid_trial._validate()
+
+    # Consistent `params` and `distributions`
+    consistent_pairs: List[Tuple[Dict[str, Any], Dict[str, BaseDistribution]]] = [
+        ({"x": 0.1, "y": 0.5}, {"x": FloatDistribution(0, 1), "y": FloatDistribution(0.1, 1.0)}),
+        ({"x": 0.1}, {"x": FloatDistribution(0, 1)}),
+    ]
+
+    # Invalid: `state` is `WAITING`, and `params` and `distributions` are set.
+    for params, distributions in consistent_pairs:
+        invalid_trial = copy.copy(valid_trial)
+        invalid_trial.state = TrialState.WAITING
+        invalid_trial.params = params
+        invalid_trial.distributions = distributions
+        with pytest.raises(ValueError):
+            invalid_trial._validate()
+
+    # Invalid: `state` is `WAITING` or `RUNNING`, and `intermediate_values` is set.
+    for state in [TrialState.WAITING, TrialState.RUNNING]:
+        invalid_trial = copy.copy(valid_trial)
+        invalid_trial.state = state
+        invalid_trial.intermediate_values = {0: 0.0}
+        with pytest.raises(ValueError):
+            invalid_trial._validate()
+
+    # Invalid: `state` is `WAITING` and `fixed_params` is not in `system_attrs`.
+    invalid_trial = copy.copy(valid_trial)
+    invalid_trial.state = TrialState.WAITING
+    invalid_trial.system_attrs = {}
+    with pytest.raises(ValueError):
+        invalid_trial._validate()
 
 
 def test_number() -> None:
@@ -296,6 +334,9 @@ def test_create_trial(state: TrialState) -> None:
     user_attrs = {"foo": "bar"}
     system_attrs = {"baz": "qux"}
     intermediate_values = {0: 0.0, 1: 0.1, 2: 0.1}
+
+    if state == TrialState.FAIL:
+        value = None
 
     trial = create_trial(
         state=state,
