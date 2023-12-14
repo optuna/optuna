@@ -339,7 +339,15 @@ class FrozenTrial(BaseTrial):
                 "Both parameters and distributions are supposed to be empty "
                 "when the trial state is waiting."
             )
+        
+        if self.state == TrialState.WAITING and len(self.intermediate_values) != 0:
+            raise ValueError("`intermediate_values` is supposed to be empty for a waiting trial.")
+        if self.state == TrialState.RUNNING and len(self.intermediate_values) != 0:
+            raise ValueError("`intermediate_values` is supposed to be empty for a running trial.")
 
+        if self.state == TrialState.WAITING and "fixed_params" not in self.system_attrs:
+            raise ValueError("`fixed_params` is supposed to be in system_attrs for a waiting trial.")
+        
         for param_name, param_value in self.params.items():
             distribution = self.distributions[param_name]
 
