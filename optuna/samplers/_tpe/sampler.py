@@ -532,19 +532,20 @@ class TPESampler(BaseSampler):
     def _compare(
         cls,
         samples: Dict[str, np.ndarray],
-        acq_func_vals: np.ndarray,
+        acquisition_func_vals: np.ndarray,
     ) -> dict[str, int | float]:
         sample_size = next(iter(samples.values())).size
         if sample_size == 0:
             raise ValueError(f"The size of `samples` must be positive, but got {sample_size}.")
 
-        if sample_size != acq_func_vals.size:
+        if sample_size != acquisition_func_vals.size:
             raise ValueError(
-                "The sizes of `samples` and `acq_func_vals` must be same, but got "
-                f"(samples.size, acq_func_vals.size) = ({sample_size}, {acq_func_vals.size})."
+                "The sizes of `samples` and `acquisition_func_vals` must be same, but got "
+                "(samples.size, acquisition_func_vals.size) = "
+                f"({sample_size}, {acquisition_func_vals.size})."
             )
 
-        best_idx = np.argmax(acq_func_vals)
+        best_idx = np.argmax(acquisition_func_vals)
         return {k: v[best_idx].item() for k, v in samples.items()}
 
     @staticmethod
