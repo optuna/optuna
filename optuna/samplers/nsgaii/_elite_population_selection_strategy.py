@@ -38,7 +38,7 @@ class NSGAIIElitePopulationSelectionStrategy:
         Returns:
             A list of trials that are selected as elite population.
         """
-        _validate_constraints(population, self._constraints_func)
+        _validate_constraints(population, is_constrained=self._constraints_func is not None)
         dominates = _dominates if self._constraints_func is None else _constrained_dominates
         population_per_rank = _fast_non_dominated_sort(population, study.directions, dominates)
 
