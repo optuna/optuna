@@ -17,7 +17,7 @@ from optuna.distributions import IntDistribution
 from optuna.integration.cma import _Optimizer
 from optuna.study._study_direction import StudyDirection
 from optuna.testing.distributions import UnsupportedDistribution
-from optuna.trial import FrozenTrial
+from optuna.testing.trials import _create_frozen_trial
 from optuna.trial import Trial
 from optuna.trial import TrialState
 
@@ -226,10 +226,13 @@ class TestOptimizer:
             search_space, x0, 0.2, None, {"popsize": 3, "seed": 1}
         )
 
-        trials = [_create_frozen_trial(x0, search_space)]
+        trials = [_create_frozen_trial(params=x0, param_distributions=search_space)]
         assert -1 == optimizer.tell(trials, direction)
 
-        trials = [_create_frozen_trial(x0, search_space, number=i) for i in range(3)]
+        trials = [
+            _create_frozen_trial(params=x0, param_distributions=search_space, number=i)
+            for i in range(3)
+        ]
         assert 2 == optimizer.tell(trials, direction)
 
     @staticmethod
@@ -241,8 +244,12 @@ class TestOptimizer:
             search_space, x0, 0.2, None, {"popsize": 2, "seed": 1}
         )
 
-        trials = [_create_frozen_trial(x0, search_space)]
-        trials.append(_create_frozen_trial(x0, search_space, state, len(trials)))
+        trials = [_create_frozen_trial(params=x0, param_distributions=search_space)]
+        trials.append(
+            _create_frozen_trial(
+                params=x0, param_distributions=search_space, state=state, number=len(trials)
+            )
+        )
         assert -1 == optimizer.tell(trials, StudyDirection.MINIMIZE)
 
     @staticmethod
@@ -253,15 +260,18 @@ class TestOptimizer:
             search_space, x0, 0.2, None, {"popsize": 2, "seed": 1}
         )
 
-        trials = [_create_frozen_trial(x0, search_space)]
+        trials = [_create_frozen_trial(params=x0, param_distributions=search_space)]
         distributions = trials[0].distributions.copy()
         distributions["additional"] = FloatDistribution(0, 100)
-        trials.append(_create_frozen_trial(x0, distributions, number=1))
+        trials.append(_create_frozen_trial(params=x0, param_distributions=search_space, number=1))
         assert 1 == optimizer.tell(trials, StudyDirection.MINIMIZE)
 
     @staticmethod
     def test_ask(search_space: Dict[str, BaseDistribution], x0: Dict[str, Any]) -> None:
-        trials = [_create_frozen_trial(x0, search_space, number=i) for i in range(3)]
+        trials = [
+            _create_frozen_trial(params=x0, param_distributions=search_space, number=i)
+            for i in range(3)
+        ]
 
         # Create 0-th individual.
         optimizer = _Optimizer(search_space, x0, 0.2, None, {"popsize": 3, "seed": 1})
@@ -273,7 +283,9 @@ class TestOptimizer:
         last_told = optimizer.tell(trials, StudyDirection.MINIMIZE)
         distributions = trials[0].distributions.copy()
         distributions["additional"] = FloatDistribution(0, 100)
-        trials.append(_create_frozen_trial(x0, distributions, number=len(trials)))
+        trials.append(
+            _create_frozen_trial(params=x0, param_distributions=search_space, number=len(trials))
+        )
         params1 = optimizer.ask(trials, last_told)
 
         assert params0 != params1
@@ -281,7 +293,9 @@ class TestOptimizer:
 
         # Create first individual.
         optimizer = _Optimizer(search_space, x0, 0.2, None, {"popsize": 3, "seed": 1})
-        trials.append(_create_frozen_trial(x0, search_space, number=len(trials)))
+        trials.append(
+            _create_frozen_trial(params=x0, param_distributions=search_space, number=len(trials))
+        )
         last_told = optimizer.tell(trials, StudyDirection.MINIMIZE)
         params2 = optimizer.ask(trials, last_told)
 
@@ -291,7 +305,11 @@ class TestOptimizer:
         last_told = optimizer.tell(trials, StudyDirection.MINIMIZE)
         # Other worker adds three trials.
         for _ in range(3):
-            trials.append(_create_frozen_trial(x0, search_space, number=len(trials)))
+            trials.append(
+                _create_frozen_trial(
+                    params=x0, param_distributions=search_space, number=len(trials)
+                )
+            )
         params3 = optimizer.ask(trials, last_told)
 
         assert params0 != params3
@@ -302,16 +320,19 @@ class TestOptimizer:
         optimizer = optuna.integration.cma._Optimizer(search_space, x0, 0.1, None, {})
 
         # Compatible.
-        trial = _create_frozen_trial(x0, search_space)
-        assert optimizer._is_compatible(trial)
-
-        # Compatible.
-        trial = _create_frozen_trial(x0, dict(search_space, u=FloatDistribution(-10, 10)))
+        trial = _create_frozen_trial(params=x0, param_distributions=search_space)
         assert optimizer._is_compatible(trial)
 
         # Compatible.
         trial = _create_frozen_trial(
-            dict(x0, unknown=7), dict(search_space, unknown=FloatDistribution(0, 10))
+            params=x0, param_distributions=dict(search_space, u=FloatDistribution(-10, 10))
+        )
+        assert optimizer._is_compatible(trial)
+
+        # Compatible.
+        trial = _create_frozen_trial(
+            params=dict(x0, unknown=7),
+            param_distributions=dict(search_space, unknown=FloatDistribution(0, 10)),
         )
         assert optimizer._is_compatible(trial)
 
@@ -320,37 +341,19 @@ class TestOptimizer:
         del param["u"]
         dist = dict(search_space)
         del dist["u"]
-        trial = _create_frozen_trial(param, dist)
+        trial = _create_frozen_trial(params=param, param_distributions=dist)
         assert not optimizer._is_compatible(trial)
 
         # Incompatible (the value of 'u' is out of range).
         trial = _create_frozen_trial(
-            dict(x0, u=20), dict(search_space, u=FloatDistribution(-100, 100))
+            params=dict(x0, u=20),
+            param_distributions=dict(search_space, u=FloatDistribution(-100, 100)),
         )
         assert not optimizer._is_compatible(trial)
 
         # Error (different distribution class).
-        trial = _create_frozen_trial(x0, dict(search_space, u=IntDistribution(-2, 2)))
+        trial = _create_frozen_trial(
+            params=x0, param_distributions=dict(search_space, u=IntDistribution(-2, 2))
+        )
         with pytest.raises(ValueError):
             optimizer._is_compatible(trial)
-
-
-def _create_frozen_trial(
-    params: Dict[str, Any],
-    param_distributions: Dict[str, BaseDistribution],
-    state: TrialState = TrialState.COMPLETE,
-    number: int = 0,
-) -> FrozenTrial:
-    return FrozenTrial(
-        number=number,
-        value=1.0,
-        state=state,
-        user_attrs={},
-        system_attrs={},
-        params=params,
-        distributions=param_distributions,
-        intermediate_values={},
-        datetime_start=None,
-        datetime_complete=None,
-        trial_id=number,
-    )
