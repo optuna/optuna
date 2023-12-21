@@ -29,6 +29,7 @@ from optuna.search_space import IntersectionSearchSpace
 from optuna.search_space.group_decomposed import _GroupDecomposedSearchSpace
 from optuna.search_space.group_decomposed import _SearchSpaceGroup
 from optuna.study import Study
+from optuna.study._multi_objective import _fast_non_dominated_sort
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -589,21 +590,6 @@ class TPESampler(BaseSampler):
         self._random_sampler.after_trial(study, trial, state, values)
 
 
-def _calculate_nondomination_rank(loss_vals: np.ndarray, n_below: int) -> np.ndarray:
-    ranks = np.full(len(loss_vals), -1)
-    num_ranked = 0
-    rank = 0
-    domination_mat = np.all(loss_vals[:, None, :] >= loss_vals[None, :, :], axis=2) & np.any(
-        loss_vals[:, None, :] > loss_vals[None, :, :], axis=2
-    )
-    while num_ranked < n_below:
-        counts = np.sum((ranks == -1)[None, :] & domination_mat, axis=1)
-        num_ranked += np.sum((counts == 0) & (ranks == -1))
-        ranks[(counts == 0) & (ranks == -1)] = rank
-        rank += 1
-    return ranks
-
-
 def _split_trials(
     study: Study,
     trials: list[FrozenTrial],
@@ -675,13 +661,11 @@ def _split_complete_trials_multi_objective(
         # The type of trials must be `list`, but not `Sequence`.
         return [], list(trials)
 
-    lvals = np.asarray([trial.values for trial in trials])
-    for i, direction in enumerate(study.directions):
-        if direction == StudyDirection.MAXIMIZE:
-            lvals[:, i] *= -1
+    lvals = np.array([trial.values for trial in trials])
+    lvals *= np.array([-1.0 if d == StudyDirection.MAXIMIZE else 1.0 for d in study.directions])
 
     # Solving HSSP for variables number of times is a waste of time.
-    nondomination_ranks = _calculate_nondomination_rank(lvals, n_below)
+    nondomination_ranks = _fast_non_dominated_sort(lvals, n_below=n_below)
     assert 0 <= n_below <= len(lvals)
 
     indices = np.array(range(len(lvals)))
