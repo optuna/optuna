@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from collections.abc import Sequence
 import warnings
 
@@ -88,13 +87,25 @@ def _constrained_dominates(
 
 def _validate_constraints(
     population: list[FrozenTrial],
-    constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
+    *,
+    is_constrained: bool = False,
 ) -> None:
-    if constraints_func is None:
+    if not is_constrained:
         return
+    assert len(population) > 0
+
+    num_constraints = None
     for _trial in population:
         _constraints = _trial.system_attrs.get(_CONSTRAINTS_KEY)
         if _constraints is None:
+            warnings.warn(
+                f"Trial {_trial.number} does not have constraint values."
+                " It will be dominated by the other trials."
+            )
             continue
+        # Initialize num_constraints with the number of constraints of the first trial with values.
+        num_constraints = len(_constraints) if num_constraints is None else num_constraints
         if np.any(np.isnan(np.array(_constraints))):
             raise ValueError("NaN is not acceptable as constraint value.")
+        elif len(_constraints) != num_constraints:
+            raise ValueError("Trials with different numbers of constraints cannot be compared.")
