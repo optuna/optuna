@@ -85,6 +85,24 @@ def _constrained_dominates(
     return violation0 < violation1
 
 
+def _evaluate_penalty(population: Sequence[FrozenTrial]) -> np.ndarray:
+    """Evaluate feasibility of trials in population.
+    Returns:
+        A list of feasibility status T/F/None of trials in population, where T/F means
+        feasible/infeasible and None means that the trial does not have constraint values.
+    """
+
+    penalty: list[float] = []
+    for trial in population:
+        constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
+        if constraints is None:
+            penalty.append(float("inf"))
+        else:
+            assert isinstance(constraints, (list, tuple))
+            penalty.append(sum(v for v in constraints if v > 0))
+    return np.array(penalty)
+
+
 def _validate_constraints(
     population: list[FrozenTrial],
     *,
