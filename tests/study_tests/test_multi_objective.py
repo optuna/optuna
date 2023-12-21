@@ -1,7 +1,9 @@
+import numpy as np
 import pytest
 
 from optuna.study import StudyDirection
 from optuna.study._multi_objective import _dominates
+from optuna.study._multi_objective import _fast_non_dominated_sort
 from optuna.trial import create_trial
 from optuna.trial import TrialState
 
@@ -110,3 +112,41 @@ def test_dominates_complete_vs_incomplete(t1_state: TrialState) -> None:
 
     assert _dominates(t2, t1, list(directions))
     assert not _dominates(t1, t2, list(directions))
+
+
+def test_calculate_nondomination_rank() -> None:
+    # Single objective
+    test_case = np.asarray([[10], [20], [20], [30]])
+    ranks = list(_fast_non_dominated_sort(test_case, n_below=len(test_case)))
+    assert ranks == [0, 1, 1, 2]
+
+    # Two objectives
+    test_case = np.asarray([[10, 30], [10, 10], [20, 20], [30, 10], [15, 15]])
+    ranks = list(_fast_non_dominated_sort(test_case, n_below=len(test_case)))
+    assert ranks == [1, 0, 2, 1, 1]
+
+    # Three objectives
+    test_case = np.asarray([[5, 5, 4], [5, 5, 5], [9, 9, 0], [5, 7, 5], [0, 0, 9], [0, 9, 9]])
+    ranks = list(_fast_non_dominated_sort(test_case, n_below=len(test_case)))
+    assert ranks == [0, 1, 0, 2, 0, 1]
+
+    # The negative values are included.
+    test_case = np.asarray(
+        [[-5, -5, -4], [-5, -5, 5], [-9, -9, 0], [5, 7, 5], [0, 0, -9], [0, -9, 9]]
+    )
+    ranks = list(_fast_non_dominated_sort(test_case, n_below=len(test_case)))
+    assert ranks == [0, 1, 0, 2, 0, 1]
+
+    # The +inf is included.
+    test_case = np.asarray(
+        [[1, 1], [1, float("inf")], [float("inf"), 1], [float("inf"), float("inf")]]
+    )
+    ranks = list(_fast_non_dominated_sort(test_case, n_below=len(test_case)))
+    assert ranks == [0, 1, 1, 2]
+
+    # The -inf is included.
+    test_case = np.asarray(
+        [[1, 1], [1, -float("inf")], [-float("inf"), 1], [-float("inf"), -float("inf")]]
+    )
+    ranks = list(_fast_non_dominated_sort(test_case, n_below=len(test_case)))
+    assert ranks == [2, 1, 1, 0]
