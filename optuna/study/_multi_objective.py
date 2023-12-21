@@ -1,6 +1,11 @@
+from __future__ import annotations
+
+from collections import defaultdict
 from typing import List
 from typing import Optional
 from typing import Sequence
+
+import numpy as np
 
 import optuna
 from optuna.study._study_direction import StudyDirection
@@ -67,6 +72,52 @@ def _get_pareto_front_trials_by_trials(
 
 def _get_pareto_front_trials(study: "optuna.study.Study") -> List[FrozenTrial]:
     return _get_pareto_front_trials_by_trials(study.trials, study.directions)
+
+
+def _fast_non_dominated_sort(
+    objective_values: np.ndarray,
+    *,
+    penalty: np.ndarray | None = None,
+    n_below: int | None = None,
+) -> np.ndarray:
+    if penalty is None:
+        penalty = np.zeros_like(objective_values[:, 0])
+
+    # Calculate the domination matrix.
+    # The resulting matrix `domination_matrix` is a boolean matrix where
+    # `domination_matrix[i, j] == True` means that the j-th trial dominates the i-th trial in the
+    # given multi objective minimization problem.
+    domination_mat = np.all(
+        objective_values[:, np.newaxis, :] >= objective_values[np.newaxis, :, :], axis=2
+    ) & np.any(objective_values[:, np.newaxis, :] > objective_values[np.newaxis, :, :], axis=2)
+
+    # Filter the domination relations by the penalty on the constraints.
+    domination_mat |= penalty[:, np.newaxis] > penalty
+    domination_mat &= penalty[:, np.newaxis] >= penalty
+
+    domination_list = np.nonzero(domination_mat)
+    domination_map = defaultdict(list)
+    for dominated_idx, dominating_idx in zip(*domination_list):
+        domination_map[dominating_idx].append(dominated_idx)
+
+    ranks = np.full(len(objective_values), -1)
+    dominated_count = np.sum(domination_mat, axis=1)
+
+    rank = -1
+    ranked_idx_num = 0
+    n_below = n_below or len(objective_values)
+    while ranked_idx_num < n_below:
+        # Find the non-dominated trials and assign the rank.
+        (non_dominated_idxs,) = np.nonzero(dominated_count == 0)
+        ranked_idx_num += len(non_dominated_idxs)
+        rank += 1
+        ranks[non_dominated_idxs] = rank
+
+        # Update the dominated count.
+        dominated_count[non_dominated_idxs] = -1
+        for non_dominated_idx in non_dominated_idxs:
+            dominated_count[domination_map[non_dominated_idx]] -= 1
+    return ranks
 
 
 def _dominates(
