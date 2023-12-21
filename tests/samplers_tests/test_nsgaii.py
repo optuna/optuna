@@ -1,47 +1,51 @@
 from __future__ import annotations
 
-from collections import Counter
-from collections.abc import Callable
-from collections.abc import Sequence
 import copy
 import itertools
-from typing import Any
-from unittest.mock import MagicMock
-from unittest.mock import Mock
-from unittest.mock import patch
 import warnings
+from collections import Counter
+from collections.abc import Callable, Sequence
+from typing import Any
+from unittest.mock import MagicMock, Mock, patch
 
 import numpy as np
 import pytest
 
 import optuna
 from optuna._transform import _SearchSpaceTransform
-from optuna.distributions import BaseDistribution
-from optuna.distributions import CategoricalDistribution
-from optuna.distributions import FloatDistribution
-from optuna.distributions import IntDistribution
-from optuna.samplers import BaseSampler
-from optuna.samplers import NSGAIISampler
+from optuna.distributions import (
+    BaseDistribution,
+    CategoricalDistribution,
+    FloatDistribution,
+    IntDistribution,
+)
+from optuna.samplers import BaseSampler, NSGAIISampler
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.samplers._lazy_random_state import LazyRandomState
-from optuna.samplers.nsgaii import BaseCrossover
-from optuna.samplers.nsgaii import BLXAlphaCrossover
-from optuna.samplers.nsgaii import SBXCrossover
-from optuna.samplers.nsgaii import SPXCrossover
-from optuna.samplers.nsgaii import UNDXCrossover
-from optuna.samplers.nsgaii import UniformCrossover
-from optuna.samplers.nsgaii import VSBXCrossover
+from optuna.samplers.nsgaii import (
+    BaseCrossover,
+    BLXAlphaCrossover,
+    SBXCrossover,
+    SPXCrossover,
+    UNDXCrossover,
+    UniformCrossover,
+    VSBXCrossover,
+)
 from optuna.samplers.nsgaii._after_trial_strategy import NSGAIIAfterTrialStrategy
-from optuna.samplers.nsgaii._child_generation_strategy import NSGAIIChildGenerationStrategy
+from optuna.samplers.nsgaii._child_generation_strategy import (
+    NSGAIIChildGenerationStrategy,
+)
+from optuna.samplers.nsgaii._constraints_evaluation import (
+    _constrained_dominates,
+    _validate_constraints,
+)
 from optuna.samplers.nsgaii._crossover import _inlined_categorical_uniform_crossover
-from optuna.samplers.nsgaii._dominates import _constrained_dominates
-from optuna.samplers.nsgaii._dominates import _validate_constraints
 from optuna.samplers.nsgaii._elite_population_selection_strategy import (
     NSGAIIElitePopulationSelectionStrategy,
+    _calc_crowding_distance,
+    _crowding_distance_sort,
+    _fast_non_dominated_sort,
 )
-from optuna.samplers.nsgaii._elite_population_selection_strategy import _calc_crowding_distance
-from optuna.samplers.nsgaii._elite_population_selection_strategy import _crowding_distance_sort
-from optuna.samplers.nsgaii._elite_population_selection_strategy import _fast_non_dominated_sort
 from optuna.samplers.nsgaii._sampler import _GENERATION_KEY
 from optuna.study._multi_objective import _dominates
 from optuna.study._study_direction import StudyDirection
