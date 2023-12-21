@@ -3,9 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from collections.abc import Callable
 from collections.abc import Sequence
-import itertools
 
-import optuna
 from optuna.samplers.nsgaii._constraints_evaluation import _constrained_dominates
 from optuna.samplers.nsgaii._constraints_evaluation import _validate_constraints
 from optuna.study import Study
@@ -107,44 +105,3 @@ def _crowding_distance_sort(population: list[FrozenTrial]) -> None:
     manhattan_distances = _calc_crowding_distance(population)
     population.sort(key=lambda x: manhattan_distances[x.number])
     population.reverse()
-
-
-def _fast_non_dominated_sort(
-    population: list[FrozenTrial],
-    directions: list[optuna.study.StudyDirection],
-    dominates: Callable[[FrozenTrial, FrozenTrial, list[optuna.study.StudyDirection]], bool],
-) -> list[list[FrozenTrial]]:
-    dominated_count: defaultdict[int, int] = defaultdict(int)
-    dominates_list = defaultdict(list)
-
-    for p, q in itertools.combinations(population, 2):
-        if dominates(p, q, directions):
-            dominates_list[p.number].append(q.number)
-            dominated_count[q.number] += 1
-        elif dominates(q, p, directions):
-            dominates_list[q.number].append(p.number)
-            dominated_count[p.number] += 1
-
-    population_per_rank = []
-    while population:
-        non_dominated_population = []
-        i = 0
-        while i < len(population):
-            if dominated_count[population[i].number] == 0:
-                individual = population[i]
-                if i == len(population) - 1:
-                    population.pop()
-                else:
-                    population[i] = population.pop()
-                non_dominated_population.append(individual)
-            else:
-                i += 1
-
-        for x in non_dominated_population:
-            for y in dominates_list[x.number]:
-                dominated_count[y] -= 1
-
-        assert non_dominated_population
-        population_per_rank.append(non_dominated_population)
-
-    return population_per_rank
