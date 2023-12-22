@@ -80,20 +80,32 @@ def _fast_non_dominated_sort(
     penalty: np.ndarray | None = None,
     n_below: int | None = None,
 ) -> np.ndarray:
-    if penalty is None:
-        penalty = np.zeros_like(objective_values[:, 0])
-
     # Calculate the domination matrix.
     # The resulting matrix `domination_matrix` is a boolean matrix where
     # `domination_matrix[i, j] == True` means that the j-th trial dominates the i-th trial in the
     # given multi objective minimization problem.
+
+    # First, we calculate the domination matrix for the objective values.
     domination_mat = np.all(
         objective_values[:, np.newaxis, :] >= objective_values[np.newaxis, :, :], axis=2
     ) & np.any(objective_values[:, np.newaxis, :] > objective_values[np.newaxis, :, :], axis=2)
-
-    # Filter the domination relations by the penalty on the constraints.
-    domination_mat |= penalty[:, np.newaxis] > penalty
-    domination_mat &= penalty[:, np.newaxis] >= penalty
+    if penalty is not None:
+        # Filter the domination relations by the penalty on the constraints.
+        # When a penalty score does not exist, the trial is considered to be dominated by the
+        # other trials with a penalty score.
+        is_nan = np.isnan(penalty)
+        domination_mat |= is_nan[:, np.newaxis] & ~is_nan
+        domination_mat &= is_nan[:, np.newaxis] | ~is_nan
+        # When the penalty score is equal and the both trials are explicitly infeasible, i.e., the
+        # scores are bounded, the domination relationship is discarded.
+        is_infeasible = penalty > 0
+        domination_mat &= ~(
+            (penalty[:, np.newaxis] == penalty) & (is_infeasible[:, np.newaxis] | is_infeasible)
+        )
+        # If the penalty score is dominated, the value domination relationship is overwritten.
+        penalty = np.where(is_nan, np.inf, penalty)
+        domination_mat |= penalty[:, np.newaxis] > penalty
+        domination_mat &= penalty[:, np.newaxis] >= penalty
 
     domination_list = np.nonzero(domination_mat)
     domination_map = defaultdict(list)

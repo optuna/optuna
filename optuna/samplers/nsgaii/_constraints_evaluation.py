@@ -96,7 +96,7 @@ def _evaluate_penalty(population: Sequence[FrozenTrial]) -> np.ndarray:
     for trial in population:
         constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
         if constraints is None:
-            penalty.append(float("inf"))
+            penalty.append(np.nan)
         else:
             assert isinstance(constraints, (list, tuple))
             penalty.append(sum(v for v in constraints if v > 0))
