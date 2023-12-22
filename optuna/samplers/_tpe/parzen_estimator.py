@@ -187,19 +187,19 @@ class _ParzenEstimator:
     ) -> _BatchedDistributions:
         choices = search_space.choices
         n_choices = len(choices)
-        n_kernels = len(observations) + (parameters.consider_prior or len(observations) == 0)
+        if len(observations) == 0:
+            return _BatchedCategoricalDistributions(
+                weights=np.full((1, n_choices), fill_value=1.0 / n_choices)
+            )
 
+        n_kernels = len(observations) + parameters.consider_prior
         assert parameters.prior_weight is not None
         weights = np.full(
             shape=(n_kernels, n_choices),
             fill_value=parameters.prior_weight / n_kernels,
         )
-
         observed_indices = observations.astype(int)
-        if len(observed_indices) == 0:
-            # Do nothing.
-            pass
-        elif param_name in parameters.categorical_distance_func:
+        if param_name in parameters.categorical_distance_func:
             # TODO(nabenabe0928): Think about how to handle combinatorial explosion.
             # The time complexity is O(n_choices * used_indices.size), so n_choices cannot be huge.
             used_indices, rev_indices = np.unique(observed_indices, return_inverse=True)
