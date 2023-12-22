@@ -121,15 +121,6 @@ scikit-optimize
 
    optuna.integration.SkoptSampler
 
-TensorFlow
-----------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.TensorBoardCallback
-
 XGBoost
 -------
 
