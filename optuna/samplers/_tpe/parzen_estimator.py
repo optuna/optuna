@@ -205,10 +205,9 @@ class _ParzenEstimator:
             used_indices, rev_indices = np.unique(observed_indices, return_inverse=True)
             dist_func = parameters.categorical_distance_func[param_name]
             dists = np.array([[dist_func(choices[i], c) for c in choices] for i in used_indices])
-            max_dists = np.max(dists, axis=1)
             coef = np.log(n_kernels / parameters.prior_weight) * np.log(n_choices) / np.log(6)
-            categorical_weights = np.exp(-((dists / max_dists[:, np.newaxis]) ** 2) * coef)
-            weights[: len(observed_indices)] = categorical_weights[rev_indices]
+            cat_weights = np.exp(-((dists / np.max(dists, axis=1)[:, np.newaxis]) ** 2) * coef)
+            weights[: len(observed_indices)] = cat_weights[rev_indices]
         else:
             weights[np.arange(len(observed_indices)), observed_indices] += 1
 
