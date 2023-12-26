@@ -133,6 +133,6 @@ jobs:
     - name: Tests MPI
       run: |
         export OMPI_MCA_rmaps_base_oversubscribe=yes
-        mpirun -n 2 -- pytest tests/integration_tests/test_pytorch_distributed.py
+        mpirun -n 2 pytest -- tests/integration_tests/test_pytorch_distributed.py
       env:
         OMP_NUM_THREADS: 1
