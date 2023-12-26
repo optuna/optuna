@@ -10,6 +10,7 @@ from optuna.integration import _lightgbm_tuner as tuner
 
 if TYPE_CHECKING:
     from lightgbm.basic import _LGBM_BoosterEvalMethodResultType
+    from lightgbm.basic import _LGBM_BoosterEvalMethodResultWithStandardDeviationType
     from lightgbm.callback import CallbackEnv
 
 
@@ -94,7 +95,11 @@ class LightGBMPruningCallback:
 
     def _find_evaluation_result(
         self, target_valid_name: str, env: CallbackEnv
-    ) -> _LGBM_BoosterEvalMethodResultType | None:
+    ) -> (
+        _LGBM_BoosterEvalMethodResultType
+        | _LGBM_BoosterEvalMethodResultWithStandardDeviationType
+        | None
+    ):
         evaluation_result_list = env.evaluation_result_list
         if evaluation_result_list is None:
             return None
