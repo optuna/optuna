@@ -84,7 +84,10 @@ def _get_max_datetime_complete(study: Study) -> datetime.datetime:
     if _is_running_trials_in_study(study, max_run_duration):
         return datetime.datetime.now()
 
-    return max(t.datetime_complete for t in study.trials if t.datetime_complete is not None)
+    return max(
+        [t.datetime_complete for t in study.trials if t.datetime_complete is not None],
+        default=datetime.datetime.now(),
+    )
 
 
 def _get_max_run_duration(study: Study) -> datetime.timedelta | None:
