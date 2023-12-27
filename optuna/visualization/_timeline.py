@@ -125,7 +125,6 @@ def _get_timeline_info(study: Study) -> _TimelineInfo:
     max_datetime = _get_max_datetime_complete(study)
     for t in study.get_trials(deepcopy=False):
         date_start = t.datetime_start or max_datetime
-        # TODO: Check whether this works when date_start == date_complete.
         date_complete = (
             max_datetime if t.state == TrialState.RUNNING else t.datetime_complete or date_start
         )
