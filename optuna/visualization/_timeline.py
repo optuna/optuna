@@ -16,6 +16,7 @@ if _imports.is_successful():
     from optuna.visualization._plotly_imports import go
 
 _logger = get_logger(__name__)
+_TIMEINF = 1 << 60
 
 
 class _TimelineBarInfo(NamedTuple):
@@ -79,11 +80,55 @@ def plot_timeline(study: Study) -> "go.Figure":
     return _get_timeline_plot(info)
 
 
+def _get_max_datetime_complete(study: Study) -> datetime.datetime:
+    max_run_duration_micsec = _get_max_run_duration_in_microseconds(study)
+    if _is_running_trials_in_study(study, max_run_duration_micsec):
+        return datetime.datetime.now()
+
+    return max(t.datetime_complete for t in study.trials if t.datetime_complete is not None)
+
+
+def _get_max_run_duration_in_microseconds(study: Study) -> int:
+    max_run_duration_micsec = -_TIMEINF
+    for t in study.trials:
+        if t.datetime_complete is None or t.datetime_start is None:
+            continue
+        time_delta = t.datetime_complete - t.datetime_start
+        max_run_duration_micsec = max(max_run_duration_micsec, time_delta.microseconds)
+
+    return max_run_duration_micsec
+
+
+def _is_running_trials_in_study(study: Study, max_run_duration_micsec: int) -> bool:
+    if max_run_duration_micsec == -_TIMEINF and [
+        TrialState.RUNNING == t.state for t in study.trials
+    ]:
+        return True
+
+    now = datetime.datetime.now()
+    for t in study.trials:
+        if t.state == TrialState.RUNNING:
+            continue
+
+        date_start = t.datetime_start or now
+        time_delta = now - date_start
+        if time_delta.microseconds < 5 * max_run_duration_micsec:
+            # This heuristic is to check whether we have trials that were somehow killed,
+            # still remain as `RUNNING` in `study`.
+            return True
+
+    return False
+
+
 def _get_timeline_info(study: Study) -> _TimelineInfo:
     bars = []
+    max_datetime = _get_max_datetime_complete(study)
     for t in study.get_trials(deepcopy=False):
-        date_complete = t.datetime_complete or datetime.datetime.now()
-        date_start = t.datetime_start or date_complete
+        date_start = t.datetime_start or max_datetime
+        # TODO: Check whether this works when date_start == date_complete.
+        date_complete = (
+            max_datetime if t.state == TrialState.RUNNING else t.datetime_complete or date_start
+        )
         infeasible = (
             False
             if _CONSTRAINTS_KEY not in t.system_attrs
