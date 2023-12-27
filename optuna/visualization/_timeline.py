@@ -16,7 +16,6 @@ if _imports.is_successful():
     from optuna.visualization._plotly_imports import go
 
 _logger = get_logger(__name__)
-_TIMEINF = 1 << 60
 
 
 class _TimelineBarInfo(NamedTuple):
@@ -81,38 +80,41 @@ def plot_timeline(study: Study) -> "go.Figure":
 
 
 def _get_max_datetime_complete(study: Study) -> datetime.datetime:
-    max_run_duration_micsec = _get_max_run_duration_in_microseconds(study)
-    if _is_running_trials_in_study(study, max_run_duration_micsec):
+    max_run_duration = _get_max_run_duration(study)
+    if _is_running_trials_in_study(study, max_run_duration):
         return datetime.datetime.now()
 
     return max(t.datetime_complete for t in study.trials if t.datetime_complete is not None)
 
 
-def _get_max_run_duration_in_microseconds(study: Study) -> int:
-    max_run_duration_micsec = -_TIMEINF
+def _get_max_run_duration(study: Study) -> datetime.timedelta | None:
+    max_run_duration = None
     for t in study.trials:
         if t.datetime_complete is None or t.datetime_start is None:
             continue
         time_delta = t.datetime_complete - t.datetime_start
-        max_run_duration_micsec = max(max_run_duration_micsec, time_delta.microseconds)
+        if max_run_duration is not None:
+            max_run_duration = max(max_run_duration, time_delta)
+        else:
+            max_run_duration = time_delta
 
-    return max_run_duration_micsec
+    return max_run_duration
 
 
-def _is_running_trials_in_study(study: Study, max_run_duration_micsec: int) -> bool:
-    if max_run_duration_micsec == -_TIMEINF and [
-        TrialState.RUNNING == t.state for t in study.trials
-    ]:
+def _is_running_trials_in_study(study: Study, max_run_duration: datetime.timedelta | None) -> bool:
+    if max_run_duration is None and [TrialState.RUNNING == t.state for t in study.trials]:
         return True
+    elif max_run_duration is None:
+        return False
 
     now = datetime.datetime.now()
     for t in study.trials:
-        if t.state == TrialState.RUNNING:
+        if t.state != TrialState.RUNNING:
             continue
 
         date_start = t.datetime_start or now
         time_delta = now - date_start
-        if time_delta.microseconds < 5 * max_run_duration_micsec:
+        if time_delta.total_seconds() < 5 * max_run_duration.total_seconds():
             # This heuristic is to check whether we have trials that were somehow killed,
             # still remain as `RUNNING` in `study`.
             return True
@@ -126,7 +128,9 @@ def _get_timeline_info(study: Study) -> _TimelineInfo:
     for t in study.get_trials(deepcopy=False):
         date_start = t.datetime_start or max_datetime
         date_complete = (
-            max_datetime if t.state == TrialState.RUNNING else t.datetime_complete or date_start
+            max_datetime + datetime.timedelta(seconds=1)
+            if t.state == TrialState.RUNNING
+            else t.datetime_complete or date_start
         )
         infeasible = (
             False
