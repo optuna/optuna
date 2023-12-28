@@ -710,7 +710,7 @@ Optuna may sometimes suggest parameters evaluated in the past and if you would l
         # Compute the objective function if the parameters are not duplicated.
         # We use the 2D sphere function in this example.
         return x ** 2 + y ** 2
-    
+
 
     study = optuna.create_study()
     study.optimize(objective, n_trials=100)
