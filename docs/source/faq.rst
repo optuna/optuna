@@ -63,7 +63,7 @@ Below is an example that uses ``lambda``:
     study = optuna.create_study()
     study.optimize(lambda trial: objective(trial, min_x, max_x), n_trials=100)
 
-Please also refer to `sklearn_addtitional_args.py <https://github.com/optuna/optuna-examples/tree/main/sklearn/sklearn_additional_args.py>`_ example,
+Please also refer to `sklearn_additional_args.py <https://github.com/optuna/optuna-examples/tree/main/sklearn/sklearn_additional_args.py>`_ example,
 which reuses the dataset instead of loading it in each trial execution.
 
 
@@ -710,7 +710,7 @@ Optuna may sometimes suggest parameters evaluated in the past and if you would l
         # Compute the objective function if the parameters are not duplicated.
         # We use the 2D sphere function in this example.
         return x ** 2 + y ** 2
-    
+
 
     study = optuna.create_study()
     study.optimize(objective, n_trials=100)
