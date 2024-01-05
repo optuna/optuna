@@ -21,14 +21,13 @@ class GPSampler(optuna.samplers.BaseSampler):
     def __init__(
         self, 
         *, 
-        seed: int = 0, 
+        seed: int | None = None, 
         independent_sampler: optuna.samplers.BaseSampler | None = None,
         n_startup_trials: int = 10,
         log_prior: Callable[[KernelParams], torch.Tensor] | None = None,
         minimum_noise: float = 1e-6,
     ) -> None:
-        self._rng = np.random.RandomState(seed=seed)
-        self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed + 1)
+        self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._intersection_search_space = optuna.search_space.IntersectionSearchSpace()
         self._n_startup_trials = n_startup_trials
         self._log_prior = log_prior or default_log_prior
@@ -36,7 +35,6 @@ class GPSampler(optuna.samplers.BaseSampler):
         self._minimum_noise = minimum_noise
 
     def reseed_rng(self) -> None:
-        self._rng.seed()
         self._independent_sampler.reseed_rng()
 
     def infer_relative_search_space(
@@ -54,6 +52,8 @@ class GPSampler(optuna.samplers.BaseSampler):
         trials = study._get_trials(deepcopy=False, states=states, use_cache=True)
         if len(trials) < self._n_startup_trials:
             return {}
+        
+        
 
         internal_search_space, transformed_params = get_search_space_and_transformed_params(trials, search_space)
         values = np.array([trial.value for trial in trials])
