@@ -47,7 +47,6 @@ class GPSampler(optuna.samplers.BaseSampler):
     def sample_relative(
         self, study: optuna.Study, trial: optuna.trial.FrozenTrial, search_space: dict[str, optuna.distributions.BaseDistribution]
     ) -> dict[str, Any]:
-        print(search_space)
         if search_space == {}:
             return {}
 

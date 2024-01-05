@@ -20,11 +20,6 @@ def logei(mean: torch.Tensor, var: torch.Tensor, f0: torch.Tensor) -> torch.Tens
     sigma = torch.sqrt(var)
     st_val = standard_logei((mean - f0) / sigma)
     val = 0.5 * torch.log(var) + st_val
-    if not torch.isfinite(val).all():
-        print("nonfinite val!")
-        nan_mask = ~torch.isfinite(val)
-        print(mean[nan_mask].detach().numpy(), var[nan_mask].detach().numpy(), f0.detach().numpy(), val[nan_mask].detach().numpy())
-        raise RuntimeError("nonfinite val!")
     return val
 
 def eval_logei(kernel_params: KernelParams, X: torch.Tensor, is_categorical: torch.Tensor, cov_Y_Y_inv: torch.Tensor, cov_Y_Y_inv_Y: torch.Tensor, max_Y: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
@@ -46,8 +41,6 @@ class Acqf(NamedTuple):
 def create_acqf(kernel_params: KernelParams, search_space: SearchSpace, X: np.ndarray, Y: np.ndarray) -> Acqf:
     with torch.no_grad():
         K = kernel(torch.from_numpy(search_space.param_type == CATEGORICAL), kernel_params, torch.from_numpy(X), torch.from_numpy(X))
-        print(torch.linalg.eigvalsh(K))
-        print(kernel_params.noise)
         cov_Y_Y_inv = torch.linalg.inv(K + kernel_params.noise * torch.eye(X.shape[0], dtype=torch.float64)).detach().numpy()
     cov_Y_Y_inv_Y = cov_Y_Y_inv @ Y
 
