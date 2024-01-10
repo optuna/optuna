@@ -644,6 +644,16 @@ def test_enqueue_trial_properly_sets_user_attr(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_enqueue_trial_with_non_dict_parameters(storage_mode: str) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        assert len(study.trials) == 0
+
+        with pytest.raises(TypeError):
+            study.enqueue_trial(params=[17, 12])  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_enqueue_trial_with_out_of_range_parameters(storage_mode: str) -> None:
     fixed_value = 11
 
