@@ -12,10 +12,88 @@ from optuna.trial import FrozenTrial
 
 @experimental_class("3.6.0")
 class WilcoxonPruner(BasePruner):
+    """Pruner based on the Wilcoxon signed-rank test <https://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test>`_.
+
+    This pruner performs the Wilcoxon signed-rank test between the current trial and the current best trial,
+    and stops whenever the pruner is sure up to a given p-value that the current trial is worse than the best one.
+
+    This pruner is effective for objective functions (median, mean, etc.) that
+    aggregates multiple evaluations.
+    This includes the mean performance of n (e.g., 100)
+    shuffled inputs, the mean performance of k-fold cross validation, etc.
+    There can be "easy" or "hard" inputs (the pruner handles correspondence of
+    the inputs between different trials),
+    but it is recommended to shuffle the order of inputs once before the optimization.
+
+    When you use this pruner, you must call `Trial.report(value, step)` function **for each `step = 1, 2, ..., N`** with
+    the **past average values of evaluations** (`value=np.mean(evaluation_values[:step])`), regardless of the actual
+    objective function. This interface is designed so that other pruners can be used interchangeably.
+
+    .. seealso::
+        Please refer to :meth:`~optuna.trial.Trial.report`.
+
+    Example:
+
+        .. testcode::
+
+            import optuna
+            import numpy as np
+
+            # For demonstrative purposes, we will use a toy evaluation function.
+            # We will minimize the mean value of `eval_func` over the input dataset.
+            def eval_func(param, input_):
+                return (param - input_) ** 2
+
+
+            input_data = np.linspace(-1, 1, 100)
+
+            # It is recommended to shuffle the input data once before optimization.
+            np.random.shuffle(input_data)
+
+
+            def objective(trial):
+                s = 0.0
+                for i in range(len(input_data)):
+                    param = trial.suggest_uniform("param", -1, 1)
+                    s += eval_func(param, input_data[i])
+
+                    trial.report(s / (i + 1), i + 1)
+                    if trial.should_prune():
+                        raise optuna.TrialPruned()
+
+                return s / len(input_data)
+
+
+            study = optuna.study.create_study(
+                pruner=optuna.pruners.WilcoxonPruner(p_threshold=0.1)
+            )
+            study.optimize(objective, n_trials=100)
+
+    Args:
+        p_threshold:
+            The p-value threshold for pruning. This value should be between 0 and 1.
+            A trial will be pruned whenever the pruner is sure up to the given p-value
+            that the current trial is worse than the best trial.
+            The larger this value is, the more aggressive pruning will be performed.
+            Defaults to 0.1.
+
+            .. note::
+                Contrary to the usual statistical wisdom, this pruner repeatedly
+                performs statistical tests between the current trial and the
+                current best trial with increasing samples.
+                Please expect around ~2x probability of falsely pruning
+                a good trial, compared to the usual false positive rate of
+                performing the statistical test only once.
+
+        n_startup_steps:
+            The number of steps before which no trials are pruned.
+            Defaults to 0 (pruning kicks in from the very first step).
+    """  # NOQA: E501
+
     def __init__(
         self,
         *,
-        p_threshold: float = 0.2,
+        p_threshold: float = 0.1,
         n_startup_steps: int = 0,
     ) -> None:
         if n_startup_steps < 0:
@@ -45,7 +123,7 @@ class WilcoxonPruner(BasePruner):
             return step_values
 
         step = trial.last_step
-        if step is None or step < self._n_startup_steps:
+        if step is None or step <= self._n_startup_steps:
             return False
 
         step_values = extract_step_values(trial)
