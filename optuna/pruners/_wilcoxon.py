@@ -41,6 +41,7 @@ class WilcoxonPruner(BasePruner):
             import optuna
             import numpy as np
 
+
             # For demonstrative purposes, we will use a toy evaluation function.
             # We will minimize the mean value of `eval_func` over the input dataset.
             def eval_func(param, input_):
