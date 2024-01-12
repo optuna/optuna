@@ -25,7 +25,7 @@ __all__ = [
     "PercentilePruner",
     "SuccessiveHalvingPruner",
     "ThresholdPruner",
-    "WilcoxonPruner"
+    "WilcoxonPruner",
 ]
 
 
