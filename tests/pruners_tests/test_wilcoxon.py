@@ -1,14 +1,6 @@
-import math
-from typing import List
-from typing import Tuple
-import warnings
-
 import pytest
 
 import optuna
-from optuna.study import Study
-from optuna.study import StudyDirection
-from optuna.trial import TrialState
 
 
 def test_wilcoxon_pruner_constructor() -> None:
@@ -24,6 +16,7 @@ def test_wilcoxon_pruner_constructor() -> None:
     with pytest.raises(ValueError):
         optuna.pruners.WilcoxonPruner(n_startup_steps=-5)
 
+
 def test_wilcoxon_pruner_first_trial() -> None:
     # A pruner is not activated at a first trial.
     pruner = optuna.pruners.WilcoxonPruner()
@@ -35,40 +28,39 @@ def test_wilcoxon_pruner_first_trial() -> None:
     trial.report(2, 2)
     assert not trial.should_prune()
 
+
 @pytest.mark.parametrize(
     "p_threshold,step_values,expected_should_prune",
     [
-        (
-            0.2,
-            [-1, 1, 2, 3, 4, 5, -2, -3], 
-            [False, False, False, True, True, True, True, True]
-        ),
-        (
-            0.15,
-            [-1, 1, 2, 3, 4, 5, -2, -3], 
-            [False, False, False, False, True, True, True, False]
-        ),
-    ]
+        (0.2, [-1, 1, 2, 3, 4, 5, -2, -3], [False, False, False, True, True, True, True, True]),
+        (0.15, [-1, 1, 2, 3, 4, 5, -2, -3], [False, False, False, False, True, True, True, False]),
+    ],
 )
 def test_wilcoxon_pruner_normal(
     p_threshold: float,
-    step_values: list[float], 
+    step_values: list[float],
     expected_should_prune: list[bool],
 ) -> None:
-
     pruner = optuna.pruners.WilcoxonPruner(n_startup_steps=0, p_threshold=p_threshold)
     study = optuna.study.create_study(pruner=pruner)
 
     # Insert the best trial
-    study.add_trial(optuna.trial.create_trial(value=0, params={}, distributions={}, intermediate_values={step: 0 for step in range(1, 10)}))
+    study.add_trial(
+        optuna.trial.create_trial(
+            value=0,
+            params={},
+            distributions={},
+            intermediate_values={step: 0 for step in range(1, 10)},
+        )
+    )
 
     trial = study.ask()
 
     should_prune = [False] * len(step_values)
 
     for step_i in range(len(step_values)):
-        intermediate_average = sum(step_values[:step_i+1]) / (step_i+1)
-        trial.report(intermediate_average, step_i+1)
+        intermediate_average = sum(step_values[: step_i + 1]) / (step_i + 1)
+        trial.report(intermediate_average, step_i + 1)
         should_prune[step_i] = trial.should_prune()
 
     assert should_prune == expected_should_prune
@@ -78,8 +70,8 @@ def test_wilcoxon_pruner_normal(
     "intermediate_values",
     [
         {0: 2},  # Must start from step 1
-        {1: 1, 3: 2}, # No value for step 2
-    ]
+        {1: 1, 3: 2},  # No value for step 2
+    ],
 )
 def test_wilcoxon_pruner_invalid(
     intermediate_values: dict[int, float],
@@ -94,6 +86,7 @@ def test_wilcoxon_pruner_invalid(
             trial.report(value, step)
             trial.should_prune()
 
+
 @pytest.mark.parametrize(
     "best_intermediate_values,intermediate_values",
     [
@@ -102,7 +95,7 @@ def test_wilcoxon_pruner_invalid(
         ({1: 1}, {1: 1, 2: 2}),  # Current trial has more values than best trial
         ({1: 1}, {1: float("nan")}),  # NaN value
         ({1: float("nan")}, {1: 1}),  # NaN value
-    ]
+    ],
 )
 def test_wilcoxon_pruner_warn_bad_best_trial(
     best_intermediate_values: dict[int, float],
@@ -112,15 +105,13 @@ def test_wilcoxon_pruner_warn_bad_best_trial(
     study = optuna.study.create_study(pruner=pruner)
 
     # Insert best trial
-    study.add_trial(optuna.trial.create_trial(
-        value=0, 
-        params={}, 
-        distributions={}, 
-        intermediate_values=best_intermediate_values
-    ))
+    study.add_trial(
+        optuna.trial.create_trial(
+            value=0, params={}, distributions={}, intermediate_values=best_intermediate_values
+        )
+    )
     trial = study.ask()
     with pytest.warns(UserWarning):
         for step, value in intermediate_values.items():
             trial.report(value, step)
             trial.should_prune()
-
