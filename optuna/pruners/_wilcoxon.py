@@ -125,10 +125,7 @@ class WilcoxonPruner(BasePruner):
             step_values = np.diff(intermediate_average_values * np.arange(step + 1))
             return step_values
 
-        step = trial.last_step
-        if step is None or step <= self._n_startup_steps:
-            return False
-
+        step = len(trial.intermediate_values)
         step_values = extract_step_values(trial)
         if step_values is None:
             raise ValueError(
@@ -142,6 +139,9 @@ class WilcoxonPruner(BasePruner):
                 f"The intermediate values of the current trial (trial {trial.number}) "
                 f"contain NaNs. WilcoxonPruner will not prune this trial."
             )
+            return False
+
+        if step <= self._n_startup_steps:
             return False
 
         try:
