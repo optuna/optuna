@@ -1,21 +1,29 @@
-import numba
-from typing import NamedTuple
-import numpy as np
+from __future__ import annotations
+
 import math
-import scipy.stats.qmc
-import optuna
 from typing import Any
+from typing import NamedTuple
+
+import numpy as np
+import scipy.stats.qmc
+
+import optuna
+
 
 LINEAR = 0
 LOG = 1
 CATEGORICAL = 2
+
 
 class SearchSpace(NamedTuple):
     param_type: np.ndarray
     bounds: np.ndarray
     step: np.ndarray
 
-def untransform_one_param(x: np.ndarray, param_type: int, bounds: tuple[float, float], step: float) -> np.ndarray:
+
+def untransform_one_param(
+    x: np.ndarray, param_type: int, bounds: tuple[float, float], step: float
+) -> np.ndarray:
     if param_type == CATEGORICAL:
         return x
     else:
@@ -28,7 +36,9 @@ def untransform_one_param(x: np.ndarray, param_type: int, bounds: tuple[float, f
         return x
 
 
-def transform_one_param(x: np.ndarray, param_type: int, bounds: tuple[float, float], step: float) -> np.ndarray:
+def transform_one_param(
+    x: np.ndarray, param_type: int, bounds: tuple[float, float], step: float
+) -> np.ndarray:
     if param_type == CATEGORICAL:
         return x
     else:
@@ -39,15 +49,19 @@ def transform_one_param(x: np.ndarray, param_type: int, bounds: tuple[float, flo
         x = (x - bounds2[0]) / (bounds2[1] - bounds2[0])
         return x
 
-def round_one_transformed_param(x: np.ndarray, param_type: int, bounds: tuple[float, float], step: float) -> np.ndarray:
+
+def round_one_transformed_param(
+    x: np.ndarray, param_type: int, bounds: tuple[float, float], step: float
+) -> np.ndarray:
     assert param_type != CATEGORICAL
     if step == 0.0:
         return x
-    
+
     x = untransform_one_param(x, param_type, bounds, step)
     x = (x - bounds[0] + 0.5 * step) // step * step + bounds[0]
     x = transform_one_param(x, param_type, bounds, step)
     return x
+
 
 def sample_transformed_params(n: int, search_space: SearchSpace) -> np.ndarray:
     dim = search_space.param_type.shape[0]
@@ -58,11 +72,14 @@ def sample_transformed_params(n: int, search_space: SearchSpace) -> np.ndarray:
         if param_types[i] == CATEGORICAL:
             xs[:, i] = np.floor(xs[:, i] * bounds[i, 1])
         elif steps[i] != 0.0:
-            round_one_transformed_param(xs[:, i], param_types[i], (bounds[i, 0], bounds[i, 1]), steps[i])
+            xs[:, i] = round_one_transformed_param(
+                xs[:, i], param_types[i], (bounds[i, 0], bounds[i, 1]), steps[i]
+            )
     return xs
 
+
 def get_search_space_and_transformed_params(
-    trials: list[optuna.trial.FrozenTrial], 
+    trials: list[optuna.trial.FrozenTrial],
     optuna_search_space: dict[str, optuna.distributions.BaseDistribution],
 ) -> tuple[SearchSpace, np.ndarray]:
     param_type = np.zeros(len(optuna_search_space), dtype=np.int64)
@@ -78,10 +95,13 @@ def get_search_space_and_transformed_params(
             for ti, trial in enumerate(trials):
                 values[ti, i] = distribution.to_internal_repr(trial.params[param])
         else:
-            assert isinstance(distribution, (
-                optuna.distributions.FloatDistribution, 
-                optuna.distributions.IntDistribution,
-            ))
+            assert isinstance(
+                distribution,
+                (
+                    optuna.distributions.FloatDistribution,
+                    optuna.distributions.IntDistribution,
+                ),
+            )
             if distribution.log:
                 param_type[i] = LOG
             else:
@@ -96,8 +116,11 @@ def get_search_space_and_transformed_params(
             external_values = np.zeros((len(trials),))
             for ti, trial in enumerate(trials):
                 external_values[ti] = trial.params[param]
-            values[:, i] = transform_one_param(external_values, param_type[i], (bounds[i, 0], bounds[i, 1]), step[i])
+            values[:, i] = transform_one_param(
+                external_values, param_type[i], (bounds[i, 0], bounds[i, 1]), step[i]
+            )
     return SearchSpace(param_type, bounds, step), values
+
 
 def get_untransformed_param(
     optuna_search_space: dict[str, optuna.distributions.BaseDistribution],
@@ -108,10 +131,13 @@ def get_untransformed_param(
         if isinstance(distribution, optuna.distributions.CategoricalDistribution):
             ret[param] = distribution.to_external_repr(transformed_param[i])
         else:
-            assert isinstance(distribution, (
-                optuna.distributions.FloatDistribution, 
-                optuna.distributions.IntDistribution,
-            ))
+            assert isinstance(
+                distribution,
+                (
+                    optuna.distributions.FloatDistribution,
+                    optuna.distributions.IntDistribution,
+                ),
+            )
             if distribution.log:
                 param_type = LOG
             else:
@@ -121,5 +147,9 @@ def get_untransformed_param(
             else:
                 step = distribution.step
             bounds = (distribution.low, distribution.high)
-            ret[param] = untransform_one_param(transformed_param[i], param_type, bounds, step)
+            x = float(untransform_one_param(transformed_param[i], param_type, bounds, step))
+            x = min(max(x, distribution.low), distribution.high)
+            if isinstance(distribution, optuna.distributions.IntDistribution):
+                x = round(x)
+            ret[param] = x
     return ret

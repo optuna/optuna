@@ -48,6 +48,7 @@ parametrize_sampler = pytest.mark.parametrize(
         optuna.samplers.NSGAIISampler,
         optuna.samplers.NSGAIIISampler,
         optuna.samplers.QMCSampler,
+        lambda: optuna.samplers.GPSampler(n_startup_trials=0),
         pytest.param(
             lambda: optuna.integration.BoTorchSampler(
                 n_startup_trials=0,
