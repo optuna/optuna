@@ -105,19 +105,15 @@ def _get_max_run_duration(study: Study) -> datetime.timedelta | None:
 
 
 def _is_running_trials_in_study(study: Study, max_run_duration: datetime.timedelta | None) -> bool:
-    if max_run_duration is None and [TrialState.RUNNING == t.state for t in study.trials]:
-        return True
-    elif max_run_duration is None:
-        return False
+    running_trials = study.get_trials(states=(TrialState.RUNNING, ), deepcopy=False)
+    if max_run_duration is None:
+        return len(running_trials) > 0
 
     now = datetime.datetime.now()
-    for t in study.trials:
-        if t.state != TrialState.RUNNING:
-            continue
-
-        date_start = t.datetime_start or now
-        time_delta = now - date_start
-        if time_delta.total_seconds() < 5 * max_run_duration.total_seconds():
+    for t in running_trials:
+        assert t.datetime_start is not None, "Running trial should have datetime_start."
+        time_delta = now - t.datetime_start
+        if time_delta < 5 * max_run_duration:
             # This heuristic is to check whether we have trials that were somehow killed,
             # still remain as `RUNNING` in `study`.
             return True
