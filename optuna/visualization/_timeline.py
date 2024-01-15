@@ -105,20 +105,19 @@ def _get_max_run_duration(study: Study) -> datetime.timedelta | None:
 
 
 def _is_running_trials_in_study(study: Study, max_run_duration: datetime.timedelta | None) -> bool:
-    running_trials = study.get_trials(states=(TrialState.RUNNING, ), deepcopy=False)
+    running_trials = study.get_trials(states=(TrialState.RUNNING,), deepcopy=False)
     if max_run_duration is None:
         return len(running_trials) > 0
 
     now = datetime.datetime.now()
-    for t in running_trials:
-        assert t.datetime_start is not None, "Running trial should have datetime_start."
-        time_delta = now - t.datetime_start
-        if time_delta < 5 * max_run_duration:
-            # This heuristic is to check whether we have trials that were somehow killed,
-            # still remain as `RUNNING` in `study`.
-            return True
-
-    return False
+    # This heuristic is to check whether we have trials that were somehow killed,
+    # still remain as `RUNNING` in `study`.
+    return any(
+        now - t.datetime_start < 5 * max_run_duration
+        for t in running_trials
+        # MyPy redefinition: Running trial should have datetime_start.
+        if t.datetime_start is not None
+    )
 
 
 def _get_timeline_info(study: Study) -> _TimelineInfo:
