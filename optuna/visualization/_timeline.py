@@ -80,7 +80,14 @@ def plot_timeline(study: Study) -> "go.Figure":
 
 
 def _get_max_datetime_complete(study: Study) -> datetime.datetime:
-    max_run_duration = _get_max_run_duration(study)
+    max_run_duration = max(
+        [
+            t.datetime_complete - t.datetime_start
+            for t in study.trials
+            if t.datetime_complete is not None and t.datetime_start is not None
+        ],
+        default=None,
+    )
     if _is_running_trials_in_study(study, max_run_duration):
         return datetime.datetime.now()
 
@@ -88,20 +95,6 @@ def _get_max_datetime_complete(study: Study) -> datetime.datetime:
         [t.datetime_complete for t in study.trials if t.datetime_complete is not None],
         default=datetime.datetime.now(),
     )
-
-
-def _get_max_run_duration(study: Study) -> datetime.timedelta | None:
-    max_run_duration = None
-    for t in study.trials:
-        if t.datetime_complete is None or t.datetime_start is None:
-            continue
-        time_delta = t.datetime_complete - t.datetime_start
-        if max_run_duration is not None:
-            max_run_duration = max(max_run_duration, time_delta)
-        else:
-            max_run_duration = time_delta
-
-    return max_run_duration
 
 
 def _is_running_trials_in_study(study: Study, max_run_duration: datetime.timedelta | None) -> bool:
@@ -123,12 +116,13 @@ def _is_running_trials_in_study(study: Study, max_run_duration: datetime.timedel
 def _get_timeline_info(study: Study) -> _TimelineInfo:
     bars = []
     max_datetime = _get_max_datetime_complete(study)
+    timedelta_for_small_bar = datetime.timedelta(seconds=1)
     for t in study.get_trials(deepcopy=False):
         date_start = t.datetime_start or max_datetime
         date_complete = (
-            max_datetime + datetime.timedelta(seconds=1)
+            max_datetime + timedelta_for_small_bar
             if t.state == TrialState.RUNNING
-            else t.datetime_complete or date_start
+            else t.datetime_complete or date_start + timedelta_for_small_bar
         )
         infeasible = (
             False
