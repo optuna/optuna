@@ -6,6 +6,7 @@ import multiprocessing
 from multiprocessing.managers import DictProxy
 import os
 import pickle
+import sys
 from typing import Any
 from unittest.mock import patch
 import warnings
@@ -48,7 +49,14 @@ parametrize_sampler = pytest.mark.parametrize(
         optuna.samplers.NSGAIISampler,
         optuna.samplers.NSGAIIISampler,
         optuna.samplers.QMCSampler,
-        lambda: optuna.samplers.GPSampler(n_startup_trials=0),
+        pytest.param(
+            lambda: optuna.samplers.GPSampler(n_startup_trials=0),
+            marks=pytest.mark.skipif(
+                # TODO(contramundum53): Remove this skip when PyTorch supports Python 3.12.
+                sys.version_info >= (3, 12, 0),
+                reason="PyTorch does not support Python 3.12 yet.",
+            )
+        ),
         pytest.param(
             lambda: optuna.integration.BoTorchSampler(
                 n_startup_trials=0,
