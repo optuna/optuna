@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 import math
 import typing
 from typing import Callable
-from typing import NamedTuple
 
 import numpy as np
 import scipy.optimize
@@ -35,7 +35,8 @@ def matern52_kernel_from_sqdist(sqdist: torch.Tensor) -> torch.Tensor:
     return Matern52KernelFromSqdist.apply(sqdist)  # type: ignore
 
 
-class KernelParams(NamedTuple):
+@dataclass(frozen=True)
+class KernelParams:
     inv_sq_lengthscales: torch.Tensor
     kernel_scale: torch.Tensor
     noise: torch.Tensor
@@ -64,9 +65,6 @@ def posterior(
     return (mean, torch.clamp(var, min=0.0))
 
 
-LOG_2PI = math.log(2 * math.pi)
-
-
 def marginal_log_likelihood(
     X: torch.Tensor,
     Y: torch.Tensor,
@@ -81,7 +79,7 @@ def marginal_log_likelihood(
     logdet = torch.log(torch.diag(cov_Y_Y_chol)).sum()
     chol_cov_inv_Y = torch.linalg.solve_triangular(cov_Y_Y_chol, Y[:, None], upper=False)[:, 0]
     # return -0.5 * log(2pi|Σ|) - 0.5 * (Y - μ)^T Σ^-1 (Y - μ))
-    return -0.5 * (logdet + LOG_2PI + torch.vdot(chol_cov_inv_Y, chol_cov_inv_Y))
+    return -0.5 * (logdet + math.log(2 * math.pi) + torch.vdot(chol_cov_inv_Y, chol_cov_inv_Y))
 
 
 def fit_kernel_params(

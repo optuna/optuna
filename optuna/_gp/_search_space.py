@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+from enum import IntEnum
 import math
 from typing import Any
-from typing import NamedTuple
 
 import numpy as np
 import scipy.stats.qmc
@@ -10,40 +11,42 @@ import scipy.stats.qmc
 import optuna
 
 
-LINEAR = 0
-LOG = 1
-CATEGORICAL = 2
+class ParamType(IntEnum):
+    LINEAR = 0
+    LOG = 1
+    CATEGORICAL = 2
 
 
-class SearchSpace(NamedTuple):
+@dataclass(frozen=True)
+class SearchSpace:
     param_type: np.ndarray
     bounds: np.ndarray
     step: np.ndarray
 
 
 def untransform_one_param(
-    x: np.ndarray, param_type: int, bounds: tuple[float, float], step: float
+    x: np.ndarray, param_type: ParamType, bounds: tuple[float, float], step: float
 ) -> np.ndarray:
-    if param_type == CATEGORICAL:
+    if param_type == ParamType.CATEGORICAL:
         return x
     else:
         bounds2 = (bounds[0] - 0.5 * step, bounds[1] + 0.5 * step)
-        if param_type == LOG:
+        if param_type == ParamType.LOG:
             bounds2 = (math.log(bounds2[0]), math.log(bounds2[1]))
         x = x * (bounds2[1] - bounds2[0]) + bounds2[0]
-        if param_type == LOG:
+        if param_type == ParamType.LOG:
             x = np.exp(x)
         return x
 
 
 def transform_one_param(
-    x: np.ndarray, param_type: int, bounds: tuple[float, float], step: float
+    x: np.ndarray, param_type: ParamType, bounds: tuple[float, float], step: float
 ) -> np.ndarray:
-    if param_type == CATEGORICAL:
+    if param_type == ParamType.CATEGORICAL:
         return x
     else:
         bounds2 = (bounds[0] - 0.5 * step, bounds[1] + 0.5 * step)
-        if param_type == LOG:
+        if param_type == ParamType.LOG:
             bounds2 = (math.log(bounds2[0]), math.log(bounds2[1]))
             x = np.log(x)
         x = (x - bounds2[0]) / (bounds2[1] - bounds2[0])
@@ -51,9 +54,9 @@ def transform_one_param(
 
 
 def round_one_transformed_param(
-    x: np.ndarray, param_type: int, bounds: tuple[float, float], step: float
+    x: np.ndarray, param_type: ParamType, bounds: tuple[float, float], step: float
 ) -> np.ndarray:
-    assert param_type != CATEGORICAL
+    assert param_type != ParamType.CATEGORICAL
     if step == 0.0:
         return x
 
@@ -69,7 +72,7 @@ def sample_transformed_params(n: int, search_space: SearchSpace) -> np.ndarray:
     qmc_engine = scipy.stats.qmc.Sobol(dim, scramble=True)
     xs = qmc_engine.random(n)
     for i in range(dim):
-        if param_types[i] == CATEGORICAL:
+        if param_types[i] == ParamType.CATEGORICAL:
             xs[:, i] = np.floor(xs[:, i] * bounds[i, 1])
         elif steps[i] != 0.0:
             xs[:, i] = round_one_transformed_param(
@@ -88,7 +91,7 @@ def get_search_space_and_transformed_params(
     values = np.zeros((len(trials), len(optuna_search_space)), dtype=np.float64)
     for i, (param, distribution) in enumerate(optuna_search_space.items()):
         if isinstance(distribution, optuna.distributions.CategoricalDistribution):
-            param_type[i] = CATEGORICAL
+            param_type[i] = ParamType.CATEGORICAL
             bounds[i, 0] = 0.0
             bounds[i, 1] = len(distribution.choices)
             step[i] = 1.0
@@ -103,9 +106,9 @@ def get_search_space_and_transformed_params(
                 ),
             )
             if distribution.log:
-                param_type[i] = LOG
+                param_type[i] = ParamType.LOG
             else:
-                param_type[i] = LINEAR
+                param_type[i] = ParamType.LINEAR
             if distribution.step is None:
                 step[i] = 0.0
             else:
@@ -139,9 +142,9 @@ def get_untransformed_param(
                 ),
             )
             if distribution.log:
-                param_type = LOG
+                param_type = ParamType.LOG
             else:
-                param_type = LINEAR
+                param_type = ParamType.LINEAR
             if distribution.step is None:
                 step = 0.0
             else:

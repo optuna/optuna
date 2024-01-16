@@ -129,7 +129,7 @@ class GPSampler(BaseSampler):
         kernel_params = _gp.fit_kernel_params(
             X=transformed_params,
             Y=values,
-            is_categorical=internal_search_space.param_type == _search_space.CATEGORICAL,
+            is_categorical=internal_search_space.param_type == _search_space.ParamType.CATEGORICAL,
             log_prior=self._log_prior,
             minimum_noise=self._minimum_noise,
             kernel_params0=self._last_kernel_params,

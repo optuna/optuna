@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 import math
-from typing import NamedTuple
 
 import numpy as np
 import torch
@@ -10,7 +10,7 @@ from ._gp import kernel
 from ._gp import KernelParams
 from ._gp import MATERN_KERNEL0
 from ._gp import posterior
-from ._search_space import CATEGORICAL
+from ._search_space import ParamType
 from ._search_space import SearchSpace
 
 
@@ -49,7 +49,8 @@ def eval_logei(
     return val
 
 
-class Acqf(NamedTuple):
+@dataclass(frozen=True)
+class Acqf:
     kernel_params: KernelParams
     X: np.ndarray
     search_space: SearchSpace
@@ -63,7 +64,7 @@ def create_acqf(
 ) -> Acqf:
     with torch.no_grad():
         K = kernel(
-            torch.from_numpy(search_space.param_type == CATEGORICAL),
+            torch.from_numpy(search_space.param_type == ParamType.CATEGORICAL),
             kernel_params,
             torch.from_numpy(X),
             torch.from_numpy(X),
@@ -89,7 +90,7 @@ def eval_acqf(acqf: Acqf, x: torch.Tensor) -> torch.Tensor:
     return eval_logei(
         kernel_params=acqf.kernel_params,
         X=torch.from_numpy(acqf.X),
-        is_categorical=torch.from_numpy(acqf.search_space.param_type == CATEGORICAL),
+        is_categorical=torch.from_numpy(acqf.search_space.param_type == ParamType.CATEGORICAL),
         cov_Y_Y_inv=torch.from_numpy(acqf.cov_Y_Y_inv),
         cov_Y_Y_inv_Y=torch.from_numpy(acqf.cov_Y_Y_inv_Y),
         max_Y=torch.tensor(acqf.max_Y, dtype=torch.float64),
