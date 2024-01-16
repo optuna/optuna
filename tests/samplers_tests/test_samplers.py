@@ -55,7 +55,7 @@ parametrize_sampler = pytest.mark.parametrize(
                 # TODO(contramundum53): Remove this skip when PyTorch supports Python 3.12.
                 sys.version_info >= (3, 12, 0),
                 reason="PyTorch does not support Python 3.12 yet.",
-            )
+            ),
         ),
         pytest.param(
             lambda: optuna.integration.BoTorchSampler(
