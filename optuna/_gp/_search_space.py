@@ -68,7 +68,9 @@ def round_one_transformed_param(
 
 def sample_transformed_params(n: int, search_space: SearchSpace) -> np.ndarray:
     dim = search_space.param_type.shape[0]
-    param_types, bounds, steps = search_space
+    param_types = search_space.param_type
+    bounds = search_space.bounds
+    steps = search_space.step
     qmc_engine = scipy.stats.qmc.Sobol(dim, scramble=True)
     xs = qmc_engine.random(n)
     for i in range(dim):
