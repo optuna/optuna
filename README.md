@@ -83,7 +83,7 @@ study.optimize(objective, n_trials=100)  # Invoke optimization of the objective 
 ```
 </details>
 
-> [!TIP]
+> [!NOTE]
 > More examples can be found in [optuna/optuna-examples](https://github.com/optuna/optuna-examples).
 >
 > The examples cover diverse problem setups such as multi-objective optimization, constrained optimization, pruning, and distributed optimization. 
@@ -102,7 +102,7 @@ $ pip install optuna
 $ conda install -c conda-forge optuna
 ```
 
-> [!TIP]
+> [!IMPORTANT]
 > Optuna supports Python 3.7 or newer.
 >
 > Also, we also provide Optuna docker images on [DockerHub](https://hub.docker.com/r/optuna/optuna).
