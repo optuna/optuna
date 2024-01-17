@@ -48,6 +48,9 @@ hyperparameter values (e.g., `regressor` and `svr_c`) through multiple *trials* 
 `n_trials=100`). Optuna is a framework designed for the automation and the acceleration of the
 optimization *studies*.
 
+<details open>
+<summary>Sample code with scikit-learn</summary>
+
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/optuna/optuna-examples/blob/main/quickstart.ipynb)
 
 ```python
@@ -78,7 +81,30 @@ def objective(trial):
 study = optuna.create_study()  # Create a new study.
 study.optimize(objective, n_trials=100)  # Invoke optimization of the objective function.
 ```
+</details>
 
+
+<details>
+<summary>Sample code with a toy function</summary>
+
+```python optimize_toy.py
+import optuna
+
+# Define an objective function to be minimized.
+def objective(trial):
+    x1 = trial.suggest_float("x1", -100, 100)
+    x2 = trial.suggest_float("x2", -100, 100)
+    return x1 ** 2 + x2 ** 2  # An objective value linked with the Trial object.
+
+
+study = optuna.create_study()  # Create a new study.
+study.optimize(objective, n_trials=100)  # Invoke optimization of the objective function.
+```
+
+```shell
+$ python optimize_toy.py
+```
+</details>
 
 ## Installation
 
@@ -94,9 +120,10 @@ $ pip install optuna
 $ conda install -c conda-forge optuna
 ```
 
-Optuna supports Python 3.7 or newer.
-
-Also, we also provide Optuna docker images on [DockerHub](https://hub.docker.com/r/optuna/optuna).
+> [!TIP]
+> Optuna supports Python 3.7 or newer.
+>
+> Also, we also provide Optuna docker images on [DockerHub](https://hub.docker.com/r/optuna/optuna).
 
 
 ## Examples
@@ -105,7 +132,9 @@ Examples can be found in [optuna/optuna-examples](https://github.com/optuna/optu
 
 ## Integrations
 
-Optuna has integration features with various third-party libraries. Integrations can be found in [optuna/optuna-integration](https://github.com/optuna/optuna-integration) and the document is available [here](https://optuna-integration.readthedocs.io/en/stable/index.html). Integrations support libraries such as the following:
+Optuna has integration features with various third-party libraries. Integrations can be found in [optuna/optuna-integration](https://github.com/optuna/optuna-integration) and the document is available [here](https://optuna-integration.readthedocs.io/en/stable/index.html).
+<details open>
+<summary>Supported integration libraries</summary>
 
 * [Catalyst](https://github.com/optuna/optuna-examples/tree/main/pytorch/catalyst_simple.py)
 * [Catboost](https://github.com/optuna/optuna-examples/tree/main/catboost/catboost_pruning.py)
@@ -123,7 +152,7 @@ Optuna has integration features with various third-party libraries. Integrations
 * [tf.keras](https://github.com/optuna/optuna-examples/tree/main/tfkeras/tfkeras_integration.py)
 * [Weights & Biases](https://github.com/optuna/optuna-examples/tree/main/wandb/wandb_integration.py)
 * [XGBoost](https://github.com/optuna/optuna-examples/tree/main/xgboost/xgboost_integration.py)
-
+</details>
 
 ## Web Dashboard
 
