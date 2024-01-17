@@ -51,8 +51,6 @@ optimization *studies*.
 <details open>
 <summary>Sample code with scikit-learn</summary>
 
-**To reviewers. we can also close here by default by using `<details>`.**
-
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/optuna/optuna-examples/blob/main/quickstart.ipynb)
 
 ```python
@@ -112,6 +110,7 @@ $ conda install -c conda-forge optuna
 ## Integrations
 
 Optuna has integration features with various third-party libraries. Integrations can be found in [optuna/optuna-integration](https://github.com/optuna/optuna-integration) and the document is available [here](https://optuna-integration.readthedocs.io/en/stable/index.html).
+
 <details>
 <summary>Supported integration libraries</summary>
 
@@ -210,7 +209,7 @@ For general guidelines on how to contribute to the project, take a look at [CONT
 
 If you use Optuna in one of your research projects, please cite [our KDD paper](https://arxiv.org/abs/1907.10902) "Optuna: A Next-generation Hyperparameter Optimization Framework":
 
-<details>
+<details open>
 <summary>BibTeX</summary>
 
 ```bibtex
