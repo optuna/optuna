@@ -87,7 +87,9 @@ study.optimize(objective, n_trials=100)  # Invoke optimization of the objective 
 <details>
 <summary>Sample code with a toy function</summary>
 
-```python optimize_toy.py
+Save the following code as `optimize_toy.py` and run it via `python optimize_toy.py`.
+
+```python
 import optuna
 
 # Define an objective function to be minimized.
@@ -101,9 +103,6 @@ study = optuna.create_study()  # Create a new study.
 study.optimize(objective, n_trials=100)  # Invoke optimization of the objective function.
 ```
 
-```shell
-$ python optimize_toy.py
-```
 </details>
 
 ## Installation
@@ -163,15 +162,43 @@ Feature requests and bug reports welcome!
 
 ![optuna-dashboard](https://user-images.githubusercontent.com/5564044/204975098-95c2cb8c-0fb5-4388-abc4-da32f56cb4e5.gif)
 
-Install `optuna-dashboard` via pip:
+`optuna-dashboard` can be installed via pip:
 
-```
+```shell
 $ pip install optuna-dashboard
+```
+
+<details>
+<summary>Sample code with a toy function</summary>
+
+Save the following code as `optimize_toy.py`.
+
+```python
+import optuna
+
+
+def objective(trial):
+    x1 = trial.suggest_float("x1", -100, 100)
+    x2 = trial.suggest_float("x2", -100, 100)
+    return x1 ** 2 + 0.01 * x2 ** 2
+
+
+study = optuna.create_study(storage="sqlite:///db.sqlite3")  # Create a new study with database.
+study.optimize(objective, n_trials=100)
+```
+
+```shell
+# Run the study specified above
+$ python optimize_toy.py
+
+# Launch the dashboard based on the storage `sqlite:///db.sqlite3`
 $ optuna-dashboard sqlite:///db.sqlite3
 ...
 Listening on http://localhost:8080/
 Hit Ctrl-C to quit.
 ```
+
+</details>
 
 
 ## Communication
