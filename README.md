@@ -48,10 +48,10 @@ hyperparameter values (e.g., `regressor` and `svr_c`) through multiple *trials* 
 `n_trials=100`). Optuna is a framework designed for automation and acceleration of
 optimization *studies*.
 
-<details>
+<details open>
 <summary>Sample code with scikit-learn</summary>
 
-**To reviewers. we can also open here by default by using `<details open>`.**
+**To reviewers. we can also close here by default by using `<details>`.**
 
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/optuna/optuna-examples/blob/main/quickstart.ipynb)
 
@@ -150,40 +150,40 @@ $ pip install optuna-dashboard
 
 > [!TIP]
 > Please check out the convenience of Optuna Dashboard using the sample code below.
->
-> <details>
-> <summary>Sample code with a toy function</summary>
-> 
-> Save the following code as `optimize_toy.py`.
-> 
-> ```python
-> import optuna
-> 
-> 
-> def objective(trial):
->     x1 = trial.suggest_float("x1", -100, 100)
->     x2 = trial.suggest_float("x2", -100, 100)
->     return x1 ** 2 + 0.01 * x2 ** 2
-> 
-> 
-> study = optuna.create_study(storage="sqlite:///db.sqlite3")  # Create a new study with database.
-> study.optimize(objective, n_trials=100)
-> ```
->
-> Then try the commands below:
-> 
-> ```shell
-> # Run the study specified above
-> $ python optimize_toy.py
-> 
-> # Launch the dashboard based on the storage `sqlite:///db.sqlite3`
-> $ optuna-dashboard sqlite:///db.sqlite3
-> ...
-> Listening on http://localhost:8080/
-> Hit Ctrl-C to quit.
-> ```
-> 
-> </details>
+
+<details>
+<summary>Sample code to launch Optuna Dashboard</summary>
+
+Save the following code as `optimize_toy.py`.
+
+```python
+import optuna
+
+
+def objective(trial):
+    x1 = trial.suggest_float("x1", -100, 100)
+    x2 = trial.suggest_float("x2", -100, 100)
+    return x1 ** 2 + 0.01 * x2 ** 2
+
+
+study = optuna.create_study(storage="sqlite:///db.sqlite3")  # Create a new study with database.
+study.optimize(objective, n_trials=100)
+```
+
+Then try the commands below:
+
+```shell
+# Run the study specified above
+$ python optimize_toy.py
+
+# Launch the dashboard based on the storage `sqlite:///db.sqlite3`
+$ optuna-dashboard sqlite:///db.sqlite3
+...
+Listening on http://localhost:8080/
+Hit Ctrl-C to quit.
+```
+
+</details>
 
 
 ## Communication
