@@ -31,7 +31,7 @@ Optuna has modern functionalities as follows:
 - [Efficient optimization algorithms](https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/003_efficient_optimization_algorithms.html)
   - Adopt state-of-the-art algorithms for sampling hyperparameters and efficiently pruning unpromising trials.
 - [Easy parallelization](https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/004_distributed.html)
-  - Scale studies to tens or hundreds or workers with little or no changes to the code.
+  - Scale studies to tens or hundreds of workers with little or no changes to the code.
 - [Quick visualization](https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/005_visualization.html)
   - Inspect optimization histories from a variety of plotting functions.
 
@@ -45,7 +45,7 @@ We use the terms *study* and *trial* as follows:
 
 Please refer to the sample code below. The goal of a *study* is to find out the optimal set of
 hyperparameter values (e.g., `regressor` and `svr_c`) through multiple *trials* (e.g.,
-`n_trials=100`). Optuna is a framework designed for the automation and the acceleration of the
+`n_trials=100`). Optuna is a framework designed for automation and acceleration of
 optimization *studies*.
 
 <details>
@@ -107,7 +107,7 @@ $ conda install -c conda-forge optuna
 > [!IMPORTANT]
 > Optuna supports Python 3.7 or newer.
 >
-> Also, we also provide Optuna docker images on [DockerHub](https://hub.docker.com/r/optuna/optuna).
+> Also, we provide Optuna docker images on [DockerHub](https://hub.docker.com/r/optuna/optuna).
 
 ## Integrations
 
@@ -136,9 +136,9 @@ Optuna has integration features with various third-party libraries. Integrations
 ## Web Dashboard
 
 [Optuna Dashboard](https://github.com/optuna/optuna-dashboard) is a real-time web dashboard for Optuna.
-You can check the optimization history, hyperparameter importances, etc. in graphs and tables.
+You can check the optimization history, hyperparameter importance, etc. in graphs and tables.
 You don't need to create a Python script to call [Optuna's visualization](https://optuna.readthedocs.io/en/stable/reference/visualization/index.html) functions.
-Feature requests and bug reports welcome!
+Feature requests and bug reports are welcome!
 
 ![optuna-dashboard](https://user-images.githubusercontent.com/5564044/204975098-95c2cb8c-0fb5-4388-abc4-da32f56cb4e5.gif)
 
@@ -199,11 +199,11 @@ $ pip install optuna-dashboard
 
 Any contributions to Optuna are more than welcome!
 
-If you are new to Optuna, please check the [good first issues](https://github.com/optuna/optuna/labels/good%20first%20issue). They are relatively simple, well-defined and are often good starting points for you to get familiar with the contribution workflow and other developers.
+If you are new to Optuna, please check the [good first issues](https://github.com/optuna/optuna/labels/good%20first%20issue). They are relatively simple, well-defined, and often good starting points for you to get familiar with the contribution workflow and other developers.
 
 If you already have contributed to Optuna, we recommend the other [contribution-welcome issues](https://github.com/optuna/optuna/labels/contribution-welcome).
 
-For general guidelines how to contribute to the project, take a look at [CONTRIBUTING.md](./CONTRIBUTING.md).
+For general guidelines on how to contribute to the project, take a look at [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 
 ## Reference
