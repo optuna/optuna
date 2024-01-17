@@ -5,12 +5,16 @@ optuna.artifacts
 
 The :mod:`~optuna.artifacts` module provides the way to manage artifacts (output files) in Optuna.
 
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
+.. autoclass:: optuna.artifacts.FileSystemArtifactStore
+   :no-members:
 
-   optuna.artifacts.FileSystemArtifactStore
-   optuna.artifacts.Boto3ArtifactStore
-   optuna.artifacts.GCSArtifactStore
-   optuna.artifacts.Backoff
-   optuna.artifacts.upload_artifact
+.. autoclass:: optuna.artifacts.Boto3ArtifactStore
+   :no-members:
+
+.. autoclass:: optuna.artifacts.GCSArtifactStore
+   :no-members:
+
+.. autoclass:: optuna.artifacts.Backoff
+   :no-members:
+
+.. autofunction:: optuna.artifacts.upload_artifact
