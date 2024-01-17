@@ -43,13 +43,15 @@ We use the terms *study* and *trial* as follows:
 - Study: optimization based on an objective function
 - Trial: a single execution of the objective function
 
-Please refer to sample code below. The goal of a *study* is to find out the optimal set of
+Please refer to the sample code below. The goal of a *study* is to find out the optimal set of
 hyperparameter values (e.g., `regressor` and `svr_c`) through multiple *trials* (e.g.,
 `n_trials=100`). Optuna is a framework designed for the automation and the acceleration of the
 optimization *studies*.
 
-<details open>
+<details>
 <summary>Sample code with scikit-learn</summary>
+
+**To reviewers. we can also open here by default by using `<details open>`.**
 
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/optuna/optuna-examples/blob/main/quickstart.ipynb)
 
