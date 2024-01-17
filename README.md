@@ -83,27 +83,10 @@ study.optimize(objective, n_trials=100)  # Invoke optimization of the objective 
 ```
 </details>
 
-
-<details>
-<summary>Sample code with a toy function</summary>
-
-Save the following code as `optimize_toy.py` and run it via `python optimize_toy.py`.
-
-```python
-import optuna
-
-# Define an objective function to be minimized.
-def objective(trial):
-    x1 = trial.suggest_float("x1", -100, 100)
-    x2 = trial.suggest_float("x2", -100, 100)
-    return x1 ** 2 + x2 ** 2  # An objective value linked with the Trial object.
-
-
-study = optuna.create_study()  # Create a new study.
-study.optimize(objective, n_trials=100)  # Invoke optimization of the objective function.
-```
-
-</details>
+> [!TIP]
+> More examples can be found in [optuna/optuna-examples](https://github.com/optuna/optuna-examples).
+>
+> The examples cover diverse problem setups such as multi-objective optimization, constrained optimization, pruning, and distributed optimization. 
 
 ## Installation
 
@@ -123,11 +106,6 @@ $ conda install -c conda-forge optuna
 > Optuna supports Python 3.7 or newer.
 >
 > Also, we also provide Optuna docker images on [DockerHub](https://hub.docker.com/r/optuna/optuna).
-
-
-## Examples
-
-Examples can be found in [optuna/optuna-examples](https://github.com/optuna/optuna-examples).
 
 ## Integrations
 
@@ -226,5 +204,18 @@ For general guidelines how to contribute to the project, take a look at [CONTRIB
 
 ## Reference
 
-Takuya Akiba, Shotaro Sano, Toshihiko Yanase, Takeru Ohta, and Masanori Koyama. 2019.
-Optuna: A Next-generation Hyperparameter Optimization Framework. In KDD ([arXiv](https://arxiv.org/abs/1907.10902)).
+If you use Optuna in one of your research projects, please cite [our KDD paper](https://arxiv.org/abs/1907.10902) "Optuna: A Next-generation Hyperparameter Optimization Framework":
+
+<details>
+<summary>BibTeX</summary>
+
+```bibtex
+@inproceedings{akiba2019optuna,
+  title={{O}ptuna: A Next-Generation Hyperparameter Optimization Framework},
+  author={Akiba, Takuya and Sano, Shotaro and Yanase, Toshihiko and Ohta, Takeru and Koyama, Masanori},
+  booktitle={The 25th ACM SIGKDD International Conference on Knowledge Discovery \& Data Mining},
+  pages={2623--2631},
+  year={2019}
+}
+```
+</details>
