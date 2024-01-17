@@ -110,7 +110,7 @@ $ conda install -c conda-forge optuna
 ## Integrations
 
 Optuna has integration features with various third-party libraries. Integrations can be found in [optuna/optuna-integration](https://github.com/optuna/optuna-integration) and the document is available [here](https://optuna-integration.readthedocs.io/en/stable/index.html).
-<details open>
+<details>
 <summary>Supported integration libraries</summary>
 
 * [Catalyst](https://github.com/optuna/optuna-examples/tree/main/pytorch/catalyst_simple.py)
@@ -167,6 +167,8 @@ $ pip install optuna-dashboard
 > study = optuna.create_study(storage="sqlite:///db.sqlite3")  # Create a new study with database.
 > study.optimize(objective, n_trials=100)
 > ```
+>
+> Then try the commands below:
 > 
 > ```shell
 > # Run the study specified above
