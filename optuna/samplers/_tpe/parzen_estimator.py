@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Callable
 from typing import Dict
 from typing import NamedTuple
@@ -20,24 +22,16 @@ from optuna.samplers._tpe.probability_distributions import _MixtureOfProductDist
 EPS = 1e-12
 
 
-class _ParzenEstimatorParameters(
-    NamedTuple(
-        "_ParzenEstimatorParameters",
-        [
-            ("consider_prior", bool),
-            ("prior_weight", Optional[float]),
-            ("consider_magic_clip", bool),
-            ("consider_endpoints", bool),
-            ("weights", Callable[[int], np.ndarray]),
-            ("multivariate", bool),
-            (
-                "categorical_distance_func",
-                Dict[str, Callable[[CategoricalChoiceType, CategoricalChoiceType], float]],
-            ),
-        ],
-    )
-):
-    pass
+class _ParzenEstimatorParameters(NamedTuple):
+    consider_prior: bool
+    prior_weight: float | None
+    consider_magic_clip: bool
+    consider_endpoints: bool
+    weights: Callable[[int], np.ndarray]
+    multivariate: bool
+    categorical_distance_func: dict[
+        str, Callable[[CategoricalChoiceType, CategoricalChoiceType], float]
+    ]
 
 
 class _ParzenEstimator:
