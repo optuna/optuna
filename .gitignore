@@ -112,11 +112,15 @@ ENV/
 # Sphinx
 tutorial/**/example.db
 tutorial/**/example-study.db
+tutorial/20_recipes/artifacts/
+tutorial/20_recipes/best_atoms.png
+tutorial/20_recipes/tmp/
 docs/_build/
 docs/source/reference/generated/
 docs/source/reference/multi_objective/generated/
 docs/source/reference/visualization/generated/
 docs/source/reference/samplers/generated
+docs/source/sg_execution_times.rst
 docs/source/tutorial/**
 !docs/source/tutorial/index.rst
 
