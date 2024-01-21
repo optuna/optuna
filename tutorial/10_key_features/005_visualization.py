@@ -153,7 +153,7 @@ plot_timeline(study)
 ###################################################################################################
 # Customize generated figures
 # ---------------------------
-# In functions provided in :mod:`optuna.visualization` and :mod:`optuna.visualization.matplotlib`,
+# In :mod:`optuna.visualization` and :mod:`optuna.visualization.matplotlib`,
 # a function returns an editable figure object; users can modify the generated figure for their demand
 # by using API of the visualization library.
 # The following example replaces figure titles drawn by Plotly-based :func:`~optuna.visualization.plot_intermediate_values` manually.
