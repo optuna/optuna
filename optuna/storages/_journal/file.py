@@ -164,28 +164,36 @@ class JournalFileStorage(BaseJournalLogStorage):
     def read_logs(self, log_number_from: int) -> List[Dict[str, Any]]:
         logs = []
         with open(self._file_path, "rb") as f:
+            remaining_log_size = os.stat(self._file_path).st_size
             log_number_start = 0
             if log_number_from in self._log_number_offset:
                 f.seek(self._log_number_offset[log_number_from])
                 log_number_start = log_number_from
+                remaining_log_size -= self._log_number_offset[log_number_from]
 
             last_decode_error = None
             for log_number, line in enumerate(f, start=log_number_start):
                 if last_decode_error is not None:
                     raise last_decode_error
+                byte_len = len(line)
+                remaining_log_size -= byte_len
+                if remaining_log_size < 0:
+                    break
                 if log_number + 1 not in self._log_number_offset:
-                    byte_len = len(line)
                     self._log_number_offset[log_number + 1] = (
                         self._log_number_offset[log_number] + byte_len
                     )
                 if log_number < log_number_from:
+                    continue
+                if line == os.linesep.encode("utf-8"):  # to avoid json.loads('\n')
                     continue
                 try:
                     logs.append(json.loads(line))
                 except json.JSONDecodeError as err:
                     last_decode_error = err
                     del self._log_number_offset[log_number + 1]
-
+                if remaining_log_size == 0:
+                    break
             return logs
 
     def append_logs(self, logs: List[Dict[str, Any]]) -> None:
