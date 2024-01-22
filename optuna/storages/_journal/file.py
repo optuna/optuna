@@ -190,7 +190,6 @@ class JournalFileStorage(BaseJournalLogStorage):
                     "\r",
                     "\r\n",
                 ]:  # to avoid json.loads(<line separator>)
-                    print('bang!')
                     continue
                 try:
                     logs.append(json.loads(line))
