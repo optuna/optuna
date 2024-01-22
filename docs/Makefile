@@ -28,6 +28,7 @@ clean:
 	rm -rf $(BUILDDIR)/*
 	rm -rf source/reference/generated/
 	rm -rf source/reference/visualization/generated/
+	rm source/sg_execution_times.rst
 	rm -rf source/tutorial/10_key_features
 	rm -rf source/tutorial/20_recipes
 	rm -f ../tutorial/**/*.db
