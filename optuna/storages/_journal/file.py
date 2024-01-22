@@ -185,7 +185,12 @@ class JournalFileStorage(BaseJournalLogStorage):
                     )
                 if log_number < log_number_from:
                     continue
-                if line == os.linesep.encode("utf-8"):  # to avoid json.loads('\n')
+                if line.decode("utf-8") in [
+                    "\n",
+                    "\r",
+                    "\r\n",
+                ]:  # to avoid json.loads(<line separator>)
+                    print('bang!')
                     continue
                 try:
                     logs.append(json.loads(line))
