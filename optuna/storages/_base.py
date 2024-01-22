@@ -17,6 +17,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
+_CONSTRAINTS_KEY = "constraints"
 DEFAULT_STUDY_NAME_PREFIX = "no-name-"
 
 
@@ -537,7 +538,15 @@ class BaseStorage(abc.ABC):
         """
         all_trials = self.get_all_trials(study_id, deepcopy=False, states=[TrialState.COMPLETE])
 
-        if len(all_trials) == 0:
+        feasible_trials = []
+        for trial in all_trials:
+            if _CONSTRAINTS_KEY in trial.system_attrs:
+                continue
+            constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
+            if constraints is None or all([x <= 0.0 for x in constraints]):
+                feasible_trials.append(trial)
+
+        if len(feasible_trials) == 0:
             raise ValueError("No trials are completed yet.")
 
         directions = self.get_study_directions(study_id)
@@ -548,9 +557,9 @@ class BaseStorage(abc.ABC):
         direction = directions[0]
 
         if direction == StudyDirection.MAXIMIZE:
-            best_trial = max(all_trials, key=lambda t: cast(float, t.value))
+            best_trial = max(feasible_trials, key=lambda t: cast(float, t.value))
         else:
-            best_trial = min(all_trials, key=lambda t: cast(float, t.value))
+            best_trial = min(feasible_trials, key=lambda t: cast(float, t.value))
 
         return best_trial
 
