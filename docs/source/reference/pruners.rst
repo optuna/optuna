@@ -23,3 +23,4 @@ The :mod:`~optuna.pruners` module defines a :class:`~optuna.pruners.BasePruner` 
    optuna.pruners.SuccessiveHalvingPruner
    optuna.pruners.HyperbandPruner
    optuna.pruners.ThresholdPruner
+   optuna.pruners.WilcoxonPruner
