@@ -15,8 +15,6 @@ def _get_feasible_trials(trials: Sequence[FrozenTrial]) -> List[FrozenTrial]:
     trials = [trial for trial in trials if trial.state == TrialState.COMPLETE]
     feasible_trials = []
     for trial in trials:
-        if _CONSTRAINTS_KEY in trial.system_attrs:
-            continue
         constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
         if constraints is None or all([x <= 0.0 for x in constraints]):
             feasible_trials.append(trial)

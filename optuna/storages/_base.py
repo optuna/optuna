@@ -540,8 +540,6 @@ class BaseStorage(abc.ABC):
 
         feasible_trials = []
         for trial in all_trials:
-            if _CONSTRAINTS_KEY in trial.system_attrs:
-                continue
             constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
             if constraints is None or all([x <= 0.0 for x in constraints]):
                 feasible_trials.append(trial)
