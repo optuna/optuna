@@ -174,9 +174,6 @@ class JournalFileStorage(BaseJournalLogStorage):
 
             last_decode_error = None
             for log_number, line in enumerate(f, start=log_number_start):
-                if log_number < log_number_from:
-                    continue
-
                 byte_len = len(line)
                 remaining_log_size -= byte_len
                 if remaining_log_size < 0:
@@ -187,6 +184,8 @@ class JournalFileStorage(BaseJournalLogStorage):
                     self._log_number_offset[log_number + 1] = (
                         self._log_number_offset[log_number] + byte_len
                     )
+                if log_number < log_number_from:
+                    continue
 
                 # Ensure that each line ends with line separators (\n, \r\n)
                 if not line.endswith(b"\n") and not line.endswith(b"\r\n"):
