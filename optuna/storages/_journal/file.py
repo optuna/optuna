@@ -165,7 +165,7 @@ class JournalFileStorage(BaseJournalLogStorage):
     def read_logs(self, log_number_from: int) -> List[Dict[str, Any]]:
         logs = []
         with open(self._file_path, "rb") as f:
-            # Maintain remaining_log_size to allow writing by another process while reading the log.
+            # Maintain remaining_log_size to allow writing by another process while reading the log
             remaining_log_size = os.stat(self._file_path).st_size
             log_number_start = 0
             if log_number_from in self._log_number_offset:
@@ -189,8 +189,8 @@ class JournalFileStorage(BaseJournalLogStorage):
                         self._log_number_offset[log_number] + byte_len
                     )
 
-                # Ensure that each line ends with line separators (\n, \r\n).
-                if not line.endswith(b'\n') and not line.endswith(b'\r\n'):
+                # Ensure that each line ends with line separators (\n, \r\n)
+                if not line.endswith(b"\n") and not line.endswith(b"\r\n"):
                     last_decode_error = StorageInternalError("Invalid log format.")
                     del self._log_number_offset[log_number + 1]
                     continue
