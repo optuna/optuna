@@ -12,7 +12,7 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
     :ref:`user_defined_sampler` tutorial could be helpful if you want to implement your own sampler classes.
 
 +----------------------------------+-------------------------------+-------------------------------+-------------------------------+-------------------------------+-----------------------------------------------------------------------------+-------------------------------+-------------------------------+-------------------------------------------------------------------------------+
-|                                  |         RandomSampler         |          GridSampler          |          TPESampler           |         CmaEsSampler          |                                NSGAIISampler                                |          QMCSampler           |        BoTorchSampler         |                               BruteForceSampler                               |
+|                                  |         RandomSampler         |          GridSampler          |          TPESampler           |         CmaEsSampler          |                                NSGAIISampler                                |          QMCSampler           |           GPSampler           |                               BruteForceSampler                               |
 +==================================+===============================+===============================+===============================+===============================+=============================================================================+===============================+===============================+===============================================================================+
 | Float parameters                 |:math:`\color{green}\checkmark`|:math:`\color{green}\checkmark`|:math:`\color{green}\checkmark`|:math:`\color{green}\checkmark`|                           :math:`\blacktriangle`                            |:math:`\color{green}\checkmark`|:math:`\color{green}\checkmark`|:math:`\color{green}\checkmark` (:math:`\color{red}\times` for infinite domain)|
 +----------------------------------+-------------------------------+-------------------------------+-------------------------------+-------------------------------+-----------------------------------------------------------------------------+-------------------------------+-------------------------------+-------------------------------------------------------------------------------+
@@ -81,6 +81,7 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
     optuna.samplers.RandomSampler
     optuna.samplers.TPESampler
     optuna.samplers.CmaEsSampler
+    optuna.samplers.GPSampler
     optuna.samplers.PartialFixedSampler
     optuna.samplers.NSGAIISampler
     optuna.samplers.NSGAIIISampler

@@ -25,6 +25,8 @@ Optuna provides the following sampling algorithms:
 
 - CMA-ES based algorithm implemented in :class:`~optuna.samplers.CmaEsSampler`
 
+- Gaussian process-based algorithm implemented in :class:`~optuna.samplers.GPSampler`
+
 - Algorithm to enable partial fixed parameters implemented in :class:`~optuna.samplers.PartialFixedSampler`
 
 - Nondominated Sorting Genetic Algorithm II implemented in :class:`~optuna.samplers.NSGAIISampler`

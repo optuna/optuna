@@ -44,11 +44,14 @@ def eval_logei(
     cov_Y_Y_inv_Y: torch.Tensor,
     max_Y: torch.Tensor,
     x: torch.Tensor,
+    # Additional noise to prevent numerical instability.
+    # Usually this is set to a very small value.
+    stabilizing_noise: float,
 ) -> torch.Tensor:
     K_x_X = kernel(is_categorical, kernel_params, x[..., None, :], X)[..., 0, :]
     K_x_x = MATERN_KERNEL0 * kernel_params.kernel_scale
     (mean, var) = posterior(cov_Y_Y_inv, cov_Y_Y_inv_Y, K_x_X, K_x_x)
-    val = logei(mean, var + kernel_params.noise, max_Y)
+    val = logei(mean, var + stabilizing_noise, max_Y)
 
     return val
 
@@ -61,10 +64,15 @@ class Acqf:
     cov_Y_Y_inv: np.ndarray
     cov_Y_Y_inv_Y: np.ndarray
     max_Y: np.ndarray
+    acqf_stabilizing_noise: float
 
 
 def create_acqf(
-    kernel_params: KernelParams, search_space: SearchSpace, X: np.ndarray, Y: np.ndarray
+    kernel_params: KernelParams,
+    search_space: SearchSpace,
+    X: np.ndarray,
+    Y: np.ndarray,
+    acqf_stabilizing_noise: float = 1e-12,
 ) -> Acqf:
     with torch.no_grad():
         K = kernel(
@@ -87,6 +95,7 @@ def create_acqf(
         cov_Y_Y_inv=cov_Y_Y_inv,
         cov_Y_Y_inv_Y=cov_Y_Y_inv_Y,
         max_Y=np.max(Y),
+        acqf_stabilizing_noise=acqf_stabilizing_noise,
     )
 
 
@@ -99,6 +108,7 @@ def eval_acqf(acqf: Acqf, x: torch.Tensor) -> torch.Tensor:
         cov_Y_Y_inv_Y=torch.from_numpy(acqf.cov_Y_Y_inv_Y),
         max_Y=torch.tensor(acqf.max_Y, dtype=torch.float64),
         x=x,
+        stabilizing_noise=acqf.acqf_stabilizing_noise,
     )
 
 
