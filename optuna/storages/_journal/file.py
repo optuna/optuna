@@ -11,7 +11,6 @@ from typing import List
 from typing import Optional
 import uuid
 
-from optuna.exceptions import StorageInternalError
 from optuna.storages._journal.base import BaseJournalLogStorage
 
 
@@ -191,7 +190,7 @@ class JournalFileStorage(BaseJournalLogStorage):
 
                 # Ensure that each line ends with line separators (\n, \r\n)
                 if not line.endswith(b"\n") and not line.endswith(b"\r\n"):
-                    last_decode_error = StorageInternalError("Invalid log format.")
+                    last_decode_error = ValueError("Invalid log format.")
                     del self._log_number_offset[log_number + 1]
                     continue
                 try:
