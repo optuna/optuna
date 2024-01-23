@@ -10,7 +10,7 @@ from ._gp import kernel
 from ._gp import KernelParams
 from ._gp import MATERN_KERNEL0
 from ._gp import posterior
-from ._search_space import ParamType
+from ._search_space import ScaleType
 from ._search_space import SearchSpace
 
 
@@ -20,19 +20,28 @@ def standard_logei(z: torch.Tensor) -> torch.Tensor:
     # We switch the implementation depending on the value of z to
     # avoid numerical instability.
     small = z < -25
-    cdf = 0.5 * torch.special.erfc(-z * math.sqrt(0.5))
-    pdf = torch.exp(-0.5 * z**2) * (1.0 / math.sqrt(2 * math.pi))
-    val_normal = torch.log(z * cdf + pdf)
-    r = math.sqrt(0.5 * math.pi) * torch.special.erfcx(-z * math.sqrt(0.5))
-    val_small = -0.5 * z * z + torch.log((z * r + 1) * (1.0 / math.sqrt(2 * math.pi)))
-    return torch.where(small, val_small, val_normal)
+
+    vals = torch.empty_like(z)
+    # Eq. (9) in ref: https://arxiv.org/pdf/2310.20708.pdf
+    # NOTE: We do not use the third condition because ours is good enough.
+    z_small = z[small]
+    z_normal = z[~small]
+    sqrt_2pi = math.sqrt(2 * math.pi)
+    # First condition
+    cdf = 0.5 * torch.special.erfc(-z_normal * math.sqrt(0.5))
+    pdf = torch.exp(-0.5 * z_normal**2) * (1 / sqrt_2pi)
+    vals[~small] = torch.log(z_normal * cdf + pdf)
+    # Second condition
+    r = math.sqrt(0.5 * math.pi) * torch.special.erfcx(-z_small * math.sqrt(0.5))
+    vals[small] = -0.5 * z_small**2 + torch.log((z_small * r + 1) * (1 / sqrt_2pi))
+    return vals
 
 
 def logei(mean: torch.Tensor, var: torch.Tensor, f0: torch.Tensor) -> torch.Tensor:
     # E_{y ~ N(mean, var)}[max(0, y-f0)]
     sigma = torch.sqrt(var)
     st_val = standard_logei((mean - f0) / sigma)
-    val = 0.5 * torch.log(var) + st_val
+    val = torch.log(sigma) + st_val
     return val
 
 
@@ -76,7 +85,7 @@ def create_acqf(
 ) -> Acqf:
     with torch.no_grad():
         K = kernel(
-            torch.from_numpy(search_space.param_type == ParamType.CATEGORICAL),
+            torch.from_numpy(search_space.scale_types == ScaleType.CATEGORICAL),
             kernel_params,
             torch.from_numpy(X),
             torch.from_numpy(X),
@@ -103,7 +112,7 @@ def eval_acqf(acqf: Acqf, x: torch.Tensor) -> torch.Tensor:
     return eval_logei(
         kernel_params=acqf.kernel_params,
         X=torch.from_numpy(acqf.X),
-        is_categorical=torch.from_numpy(acqf.search_space.param_type == ParamType.CATEGORICAL),
+        is_categorical=torch.from_numpy(acqf.search_space.scale_types == ScaleType.CATEGORICAL),
         cov_Y_Y_inv=torch.from_numpy(acqf.cov_Y_Y_inv),
         cov_Y_Y_inv_Y=torch.from_numpy(acqf.cov_Y_Y_inv_Y),
         max_Y=torch.tensor(acqf.max_Y, dtype=torch.float64),

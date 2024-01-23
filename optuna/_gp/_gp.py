@@ -21,14 +21,15 @@ import torch
 # cov_Y_Y_inv[len(trials), len(trials)]: inv of the covariance matrix of Y = (V[f(X) + noise])^-1
 # cov_Y_Y_inv_Y[len(trials)]: cov_Y_Y_inv @ Y
 # max_Y: maximum of Y (Note that we transform the objective values such that it is maximized.)
+# d2: squared distance between two points
 
 
-class Matern52KernelFromSqdist(torch.autograd.Function):
+class Matern52Kernel(torch.autograd.Function):
     @staticmethod
-    def forward(ctx: typing.Any, sqdist: torch.Tensor) -> torch.Tensor:  # type: ignore
-        sqrt5d = torch.sqrt(5 * sqdist)
+    def forward(ctx: typing.Any, squared_distance: torch.Tensor) -> torch.Tensor:  # type: ignore
+        sqrt5d = torch.sqrt(5 * squared_distance)
         exp_part = torch.exp(-sqrt5d)
-        val = exp_part * ((1 / 3) * sqrt5d * sqrt5d + sqrt5d + 1)
+        val = exp_part * ((5 / 3) * squared_distance + sqrt5d + 1)
         deriv = (-5 / 6) * (sqrt5d + 1) * exp_part
         ctx.save_for_backward(deriv)
         return val
@@ -39,68 +40,72 @@ class Matern52KernelFromSqdist(torch.autograd.Function):
         return deriv * grad
 
 
-# This is the value of the Matern 5/2 kernel at sqdist=0.
+# This is the value of the Matern 5/2 kernel at squared_distance=0.
 MATERN_KERNEL0 = 1.0
 
 
-def matern52_kernel_from_sqdist(sqdist: torch.Tensor) -> torch.Tensor:
-    # sqrt5d = sqrt(5 * sqdist)
+def matern52_kernel_from_squared_distance(squared_distance: torch.Tensor) -> torch.Tensor:
+    # sqrt5d = sqrt(5 * squared_distance)
     # exp(sqrt5d) * (1/3 * sqrt5d ** 2 + sqrt5d + 1)
     #
     # We cannot let PyTorch differentiate the above expression because
-    # the gradient runs into 0/0 at sqdist=0.
-    return Matern52KernelFromSqdist.apply(sqdist)  # type: ignore
+    # the gradient runs into 0/0 at squared_distance=0.
+    return Matern52Kernel.apply(squared_distance)  # type: ignore
 
 
 @dataclass(frozen=True)
 class KernelParams:
     # Kernel parameters to fit.
-    inv_sq_lengthscales: torch.Tensor
-    kernel_scale: torch.Tensor
-    noise: torch.Tensor
+    inv_sq_lengthscales: torch.Tensor  # [len(params)]
+    kernel_scale: torch.Tensor  # Scalar
+    noise: torch.Tensor  # Scalar
 
 
 def kernel(
-    is_categorical: torch.Tensor, kernel_params: KernelParams, X1: torch.Tensor, X2: torch.Tensor
-) -> torch.Tensor:
-    # kernel(x1, x2) = kernel_scale * matern52_kernel_from_sqdist(d2(x1, x2) * inv_sq_lengthscales)
+    is_categorical: torch.Tensor,  # [len(params)]
+    kernel_params: KernelParams,
+    X1: torch.Tensor,  # [...batch_shape, n_A, len(params)]
+    X2: torch.Tensor,  # [...batch_shape, n_B, len(params)]
+) -> torch.Tensor:  # [...batch_shape, n_A, n_B]
+    # kernel(x1, x2) = kernel_scale * matern52_kernel_from_squared_distance(
+    #                     d2(x1, x2) * inv_sq_lengthscales)
     # d2(x1, x2) = sum_i d2_i(x1_i, x2_i)
     # d2_i(x1_i, x2_i) = (x1_i - x2_i) ** 2  # if x_i is continuous
     # d2_i(x1_i, x2_i) = 1 if x1_i != x2_i else 0  # if x_i is categorical
 
     d2 = (X1[..., :, None, :] - X2[..., None, :, :]) ** 2
+
+    # Use the Hamming distance for categorical parameters.
     d2[..., is_categorical] = torch.where(
         d2[..., is_categorical] > 0.0,
         torch.tensor(1.0, dtype=torch.float64),
         torch.tensor(0.0, dtype=torch.float64),
     )
     d2 = (d2 * kernel_params.inv_sq_lengthscales).sum(dim=-1)
-    return matern52_kernel_from_sqdist(d2) * kernel_params.kernel_scale
+    return matern52_kernel_from_squared_distance(d2) * kernel_params.kernel_scale
 
 
 def posterior(
-    cov_Y_Y_inv: torch.Tensor,
-    cov_Y_Y_inv_Y: torch.Tensor,
-    K_x_X: torch.Tensor,
-    K_x_x: torch.Tensor,
-) -> tuple[torch.Tensor, torch.Tensor]:
+    cov_Y_Y_inv: torch.Tensor,  # [len(trials), len(trials)]
+    cov_Y_Y_inv_Y: torch.Tensor,  # [len(trials)]
+    K_x_X: torch.Tensor,  # [(batch,) len(trials)]
+    K_x_x: torch.Tensor,  # Scalar or [(batch,)]
+) -> tuple[torch.Tensor, torch.Tensor]:  # [(batch,)], [(batch,)]
     # mean = K_x_X @ inv(K_X_X + noise * I) @ Y
     # var = K_x_x - K_x_X @ inv(K_X_X + noise * I) @ K_x_X.T
 
     mean = K_x_X @ cov_Y_Y_inv_Y  # [batch]
-    kalman_gain = K_x_X @ cov_Y_Y_inv  # [batch, N]
-
-    var = K_x_x - (K_x_X * kalman_gain).sum(dim=-1)  # [batch]
+    var = K_x_x - (K_x_X * (K_x_X @ cov_Y_Y_inv)).sum(dim=-1)  # [batch]
     # We need to clamp the variance to avoid negative values due to numerical errors.
     return (mean, torch.clamp(var, min=0.0))
 
 
 def marginal_log_likelihood(
-    X: torch.Tensor,
-    Y: torch.Tensor,
-    is_categorical: torch.Tensor,
+    X: torch.Tensor,  # [len(trials), len(params)]
+    Y: torch.Tensor,  # [len(trials)]
+    is_categorical: torch.Tensor,  # [len(params)]
     kernel_params: KernelParams,
-) -> torch.Tensor:
+) -> torch.Tensor:  # Scalar
     # -0.5 * log(2pi|Σ|) - 0.5 * (Y - μ)^T Σ^-1 (Y - μ)), where μ = 0 and Σ^-1 = cov_Y_Y_inv
     # We apply the cholesky decomposition to efficiently compute log(|Σ|) and Σ^-1.
 
@@ -115,9 +120,9 @@ def marginal_log_likelihood(
 
 
 def fit_kernel_params(
-    X: np.ndarray,
-    Y: np.ndarray,
-    is_categorical: np.ndarray,
+    X: np.ndarray,  # [len(trials), len(params)]
+    Y: np.ndarray,  # [len(trials)]
+    is_categorical: np.ndarray,  # [len(params)]
     log_prior: Callable[[KernelParams], torch.Tensor],
     minimum_noise: float = 0.0,
     kernel_params0: KernelParams | None = None,

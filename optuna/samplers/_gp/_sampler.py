@@ -104,6 +104,11 @@ class GPSampler(BaseSampler):
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
     ) -> dict[str, Any]:
+        if len(study.directions) > 1:
+            raise NotImplementedError(
+                "GPSampler currently does not support multi-objective optimization."
+            )
+
         if search_space == {}:
             return {}
 
@@ -114,8 +119,8 @@ class GPSampler(BaseSampler):
 
         (
             internal_search_space,
-            transformed_params,
-        ) = _search_space.get_search_space_and_transformed_params(trials, search_space)
+            normalized_params,
+        ) = _search_space.get_search_space_and_normalized_params(trials, search_space)
         score_vals = np.array([trial.value for trial in trials])
         if study.direction == StudyDirection.MINIMIZE:
             score_vals = -score_vals
@@ -126,13 +131,14 @@ class GPSampler(BaseSampler):
 
         if self._kernel_params_cache is not None and len(
             self._kernel_params_cache.inv_sq_lengthscales
-        ) != len(internal_search_space.param_type):
+        ) != len(internal_search_space.scale_types):
             self._kernel_params_cache = None
 
         kernel_params = _gp.fit_kernel_params(
-            X=transformed_params,
+            X=normalized_params,
             Y=score_vals,
-            is_categorical=internal_search_space.param_type == _search_space.ParamType.CATEGORICAL,
+            is_categorical=internal_search_space.scale_types
+            == _search_space.ScaleType.CATEGORICAL,
             log_prior=self._log_prior,
             minimum_noise=self._minimum_noise,
             kernel_params0=self._kernel_params_cache,
@@ -142,13 +148,11 @@ class GPSampler(BaseSampler):
         acqf = _acqf.create_acqf(
             kernel_params=kernel_params,
             search_space=internal_search_space,
-            X=transformed_params,
+            X=normalized_params,
             Y=score_vals,
         )
-        transformed_param, _ = _optim.optimize_acqf_sample(
-            acqf, n_samples=self._optimize_n_samples
-        )
-        return _search_space.get_untransformed_param(search_space, transformed_param)
+        normalized_param, _ = _optim.optimize_acqf_sample(acqf, n_samples=self._optimize_n_samples)
+        return _search_space.get_unnormalized_param(search_space, normalized_param)
 
     def sample_independent(
         self,
