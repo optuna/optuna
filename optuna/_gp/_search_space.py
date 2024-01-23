@@ -25,45 +25,45 @@ class SearchSpace:
 
 
 def untransform_one_param(
-    x: np.ndarray, param_type: ParamType, bounds: tuple[float, float], step: float
+    param_value: np.ndarray, param_type: ParamType, bounds: tuple[float, float], step: float
 ) -> np.ndarray:
     if param_type == ParamType.CATEGORICAL:
-        return x
+        return param_value
     else:
         bounds2 = (bounds[0] - 0.5 * step, bounds[1] + 0.5 * step)
         if param_type == ParamType.LOG:
             bounds2 = (math.log(bounds2[0]), math.log(bounds2[1]))
-        x = x * (bounds2[1] - bounds2[0]) + bounds2[0]
+        param_value = param_value * (bounds2[1] - bounds2[0]) + bounds2[0]
         if param_type == ParamType.LOG:
-            x = np.exp(x)
-        return x
+            param_value = np.exp(param_value)
+        return param_value
 
 
 def transform_one_param(
-    x: np.ndarray, param_type: ParamType, bounds: tuple[float, float], step: float
+    param_value: np.ndarray, param_type: ParamType, bounds: tuple[float, float], step: float
 ) -> np.ndarray:
     if param_type == ParamType.CATEGORICAL:
-        return x
+        return param_value
     else:
         bounds2 = (bounds[0] - 0.5 * step, bounds[1] + 0.5 * step)
         if param_type == ParamType.LOG:
             bounds2 = (math.log(bounds2[0]), math.log(bounds2[1]))
-            x = np.log(x)
-        x = (x - bounds2[0]) / (bounds2[1] - bounds2[0])
-        return x
+            param_value = np.log(param_value)
+        param_value = (param_value - bounds2[0]) / (bounds2[1] - bounds2[0])
+        return param_value
 
 
 def round_one_transformed_param(
-    x: np.ndarray, param_type: ParamType, bounds: tuple[float, float], step: float
+    param_value: np.ndarray, param_type: ParamType, bounds: tuple[float, float], step: float
 ) -> np.ndarray:
     assert param_type != ParamType.CATEGORICAL
     if step == 0.0:
-        return x
+        return param_value
 
-    x = untransform_one_param(x, param_type, bounds, step)
-    x = (x - bounds[0] + 0.5 * step) // step * step + bounds[0]
-    x = transform_one_param(x, param_type, bounds, step)
-    return x
+    param_value = untransform_one_param(param_value, param_type, bounds, step)
+    param_value = (param_value - bounds[0] + 0.5 * step) // step * step + bounds[0]
+    param_value = transform_one_param(param_value, param_type, bounds, step)
+    return param_value
 
 
 def sample_transformed_params(n: int, search_space: SearchSpace) -> np.ndarray:
@@ -72,15 +72,15 @@ def sample_transformed_params(n: int, search_space: SearchSpace) -> np.ndarray:
     bounds = search_space.bounds
     steps = search_space.step
     qmc_engine = scipy.stats.qmc.Sobol(dim, scramble=True)
-    xs = qmc_engine.random(n)
+    param_values = qmc_engine.random(n)
     for i in range(dim):
         if param_types[i] == ParamType.CATEGORICAL:
-            xs[:, i] = np.floor(xs[:, i] * bounds[i, 1])
+            param_values[:, i] = np.floor(param_values[:, i] * bounds[i, 1])
         elif steps[i] != 0.0:
-            xs[:, i] = round_one_transformed_param(
-                xs[:, i], param_types[i], (bounds[i, 0], bounds[i, 1]), steps[i]
+            param_values[:, i] = round_one_transformed_param(
+                param_values[:, i], param_types[i], (bounds[i, 0], bounds[i, 1]), steps[i]
             )
-    return xs
+    return param_values
 
 
 def get_search_space_and_transformed_params(
@@ -152,9 +152,11 @@ def get_untransformed_param(
             else:
                 step = distribution.step
             bounds = (distribution.low, distribution.high)
-            x = float(untransform_one_param(transformed_param[i], param_type, bounds, step))
-            x = min(max(x, distribution.low), distribution.high)
+            param_value = float(
+                untransform_one_param(transformed_param[i], param_type, bounds, step)
+            )
+            param_value = min(max(param_value, distribution.low), distribution.high)
             if isinstance(distribution, optuna.distributions.IntDistribution):
-                x = round(x)
-            ret[param] = x
+                param_value = round(param_value)
+            ret[param] = param_value
     return ret

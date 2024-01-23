@@ -33,7 +33,9 @@ else:
     _acqf = _LazyImport("optuna._gp._acqf")
 
 
-def default_log_prior(kernel_params: "_gp.KernelParams") -> "torch.Tensor":
+def log_prior(kernel_params: "_gp.KernelParams") -> "torch.Tensor":
+    # Log of prior distribution of kernel parameters.
+
     def gamma_log_prior(x: "torch.Tensor", concentration: float, rate: float) -> "torch.Tensor":
         return (concentration - 1) * torch.log(x) - rate * x
 
@@ -85,9 +87,10 @@ class GPSampler(BaseSampler):
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._intersection_search_space = optuna.search_space.IntersectionSearchSpace()
         self._n_startup_trials = n_startup_trials
-        self._log_prior: "Callable[[_gp.KernelParams], torch.Tensor]" = default_log_prior
+        self._log_prior: "Callable[[_gp.KernelParams], torch.Tensor]" = log_prior
         self._minimum_noise: float = 1e-6
-        self._last_kernel_params: "_gp.KernelParams | None" = None
+        # We cache the kernel parameters for initial values of fitting the next time.
+        self._kernel_params_cache: "_gp.KernelParams | None" = None
         self._optimize_n_samples: int = 2048
 
     def reseed_rng(self) -> None:
@@ -113,37 +116,39 @@ class GPSampler(BaseSampler):
             internal_search_space,
             transformed_params,
         ) = _search_space.get_search_space_and_transformed_params(trials, search_space)
-        values = np.array([trial.value for trial in trials])
+        score_vals = np.array([trial.value for trial in trials])
         if study.direction == StudyDirection.MINIMIZE:
-            values = -values
-        values -= values.mean()
+            score_vals = -score_vals
+        score_vals -= score_vals.mean()
 
         EPS = 1e-10
-        values /= max(EPS, values.std())
+        score_vals /= max(EPS, score_vals.std())
 
-        if self._last_kernel_params is not None and len(
-            self._last_kernel_params.inv_sq_lengthscales
+        if self._kernel_params_cache is not None and len(
+            self._kernel_params_cache.inv_sq_lengthscales
         ) != len(internal_search_space.param_type):
-            self._last_kernel_params = None
+            self._kernel_params_cache = None
 
         kernel_params = _gp.fit_kernel_params(
             X=transformed_params,
-            Y=values,
+            Y=score_vals,
             is_categorical=internal_search_space.param_type == _search_space.ParamType.CATEGORICAL,
             log_prior=self._log_prior,
             minimum_noise=self._minimum_noise,
-            kernel_params0=self._last_kernel_params,
+            kernel_params0=self._kernel_params_cache,
         )
-        self._last_kernel_params = kernel_params
+        self._kernel_params_cache = kernel_params
 
         acqf = _acqf.create_acqf(
             kernel_params=kernel_params,
             search_space=internal_search_space,
             X=transformed_params,
-            Y=values,
+            Y=score_vals,
         )
-        x, _ = _optim.optimize_acqf_sample(acqf, n_samples=self._optimize_n_samples)
-        return _search_space.get_untransformed_param(search_space, x)
+        transformed_param, _ = _optim.optimize_acqf_sample(
+            acqf, n_samples=self._optimize_n_samples
+        )
+        return _search_space.get_untransformed_param(search_space, transformed_param)
 
     def sample_independent(
         self,

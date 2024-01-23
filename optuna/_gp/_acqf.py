@@ -16,6 +16,9 @@ from ._search_space import SearchSpace
 
 def standard_logei(z: torch.Tensor) -> torch.Tensor:
     # E_{x ~ N(0, 1)}[max(0, x+z)]
+
+    # We switch the implementation depending on the value of z to
+    # avoid numerical instability.
     small = z < -25
     cdf = 0.5 * torch.special.erfc(-z * math.sqrt(0.5))
     pdf = torch.exp(-0.5 * z**2) * (1.0 / math.sqrt(2 * math.pi))
@@ -26,6 +29,7 @@ def standard_logei(z: torch.Tensor) -> torch.Tensor:
 
 
 def logei(mean: torch.Tensor, var: torch.Tensor, f0: torch.Tensor) -> torch.Tensor:
+    # E_{y ~ N(mean, var)}[max(0, y-f0)]
     sigma = torch.sqrt(var)
     st_val = standard_logei((mean - f0) / sigma)
     val = 0.5 * torch.log(var) + st_val
@@ -41,9 +45,9 @@ def eval_logei(
     max_Y: torch.Tensor,
     x: torch.Tensor,
 ) -> torch.Tensor:
-    KxX = kernel(is_categorical, kernel_params, x[..., None, :], X)[..., 0, :]
-    Kxx = MATERN_KERNEL0 * kernel_params.kernel_scale
-    (mean, var) = posterior(cov_Y_Y_inv, cov_Y_Y_inv_Y, KxX, Kxx)
+    K_x_X = kernel(is_categorical, kernel_params, x[..., None, :], X)[..., 0, :]
+    K_x_x = MATERN_KERNEL0 * kernel_params.kernel_scale
+    (mean, var) = posterior(cov_Y_Y_inv, cov_Y_Y_inv_Y, K_x_X, K_x_x)
     val = logei(mean, var + kernel_params.noise, max_Y)
 
     return val
