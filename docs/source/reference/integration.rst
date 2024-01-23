@@ -6,8 +6,8 @@ optuna.integration
 The :mod:`~optuna.integration` module contains classes used to integrate Optuna with external machine learning frameworks.
 
 .. note::
-   Optuna's integration modules for third-party libraries have started migrating from Optuna itself to a package called 
-   `optuna-integration`. Please check the `repository <https://github.com/optuna/optuna-integration>`_ and 
+   Optuna's integration modules for third-party libraries have started migrating from Optuna itself to a package called
+   `optuna-integration`. Please check the `repository <https://github.com/optuna/optuna-integration>`_ and
    the `documentation <https://optuna-integration.readthedocs.io/en/latest/index.html>`_.
 
 For most of the ML frameworks supported by Optuna, the corresponding Optuna integration class serves only to implement a callback object and functions, compliant with the framework's specific callback API, to be called with each intermediate step in the model training. The functionality implemented in these callbacks across the different ML frameworks includes:
@@ -33,15 +33,6 @@ BoTorch
    optuna.integration.botorch.qehvi_candidates_func
    optuna.integration.botorch.qnehvi_candidates_func
    optuna.integration.botorch.qparego_candidates_func
-
-CatBoost
---------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.CatBoostPruningCallback
 
 Dask
 ----
@@ -143,8 +134,6 @@ We summarize the necessary dependencies for each integration.
 | `BoTorch <https://github.com/optuna/optuna/blob/master/optuna/integration/botorch.py>`_                                                                                           | botorch, gpytorch, torch           |
 +-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------------------------+
 | `Catalyst <https://github.com/optuna/optuna/blob/master/optuna/integration/catalyst.py>`_                                                                                         | catalyst                           |
-+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------------------------+
-| `CatBoost <https://github.com/optuna/optuna/blob/master/optuna/integration/catboost.py>`_                                                                                         | catboost                           |
 +-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------------------------+
 | `ChainerMN <https://github.com/optuna/optuna/blob/master/optuna/integration/chainermn.py>`_                                                                                       | chainermn                          |
 +-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------------------------+
