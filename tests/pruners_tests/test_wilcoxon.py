@@ -52,7 +52,7 @@ def test_wilcoxon_pruner_normal(
             value=0,
             params={},
             distributions={},
-            intermediate_values={step: 0 for step in range(1, 10)},
+            intermediate_values={step: 0 for step in range(10)},
         )
     )
 
@@ -61,40 +61,16 @@ def test_wilcoxon_pruner_normal(
     should_prune = [False] * len(step_values)
 
     for step_i in range(len(step_values)):
-        intermediate_average = sum(step_values[: step_i + 1]) / (step_i + 1)
-        trial.report(intermediate_average, step_i + 1)
+        trial.report(step_values[step_i], step_i)
         should_prune[step_i] = trial.should_prune()
 
     assert should_prune == expected_should_prune
 
 
 @pytest.mark.parametrize(
-    "intermediate_values",
-    [
-        {0: 2},  # Must start from step 1
-        {1: 1, 3: 2},  # No value for step 2
-    ],
-)
-def test_wilcoxon_pruner_invalid(
-    intermediate_values: dict[int, float],
-) -> None:
-    pruner = optuna.pruners.WilcoxonPruner()
-    study = optuna.study.create_study(pruner=pruner)
-    trial = study.ask()
-
-    # Invalid intermediate steps raise errors
-    with pytest.raises(ValueError):
-        for step, value in intermediate_values.items():
-            trial.report(value, step)
-            trial.should_prune()
-
-
-@pytest.mark.parametrize(
     "best_intermediate_values,intermediate_values",
     [
-        ({0: 2}, {1: 1}),  # Best trial must start from step 1
-        ({1: 1, 3: 2}, {1: 1}),  # Best trial has no value for step 2
-        ({1: 1}, {1: 1, 2: 2}),  # Current trial has more values than best trial
+        ({1: 1}, {1: 1, 2: 2}),  # Current trial has more steps than best trial
         ({1: 1}, {1: float("nan")}),  # NaN value
         ({1: float("nan")}, {1: 1}),  # NaN value
     ],

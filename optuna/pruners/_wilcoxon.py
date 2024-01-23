@@ -27,9 +27,10 @@ class WilcoxonPruner(BasePruner):
     the inputs between different trials),
     but it is recommended to shuffle the order of inputs once before the optimization.
 
-    When you use this pruner, you must call `Trial.report(value, step)` function **for each `step = 1, 2, ..., N`** with
-    the **past average values of evaluations** (`value=np.mean(evaluation_values[:step])`), regardless of the actual
-    objective function. This interface is designed so that other pruners can be used interchangeably.
+    When you use this pruner, you must call `Trial.report(value, step)` function for each step (e.g., input id) with
+    the evaluated value. This is different from other pruners in that the reported value need not converge
+    to the real value. (To use pruners such as `SuccessiveHalvingPruner` in the same setting, you must provide e.g.,
+    the historical average of the evaluated values.)
 
     .. seealso::
         Please refer to :meth:`~optuna.trial.Trial.report`.
@@ -58,9 +59,9 @@ class WilcoxonPruner(BasePruner):
                 s = 0.0
                 for i in range(len(input_data)):
                     param = trial.suggest_uniform("param", -1, 1)
-                    s += eval_func(param, input_data[i])
-
-                    trial.report(s / (i + 1), i + 1)
+                    loss = eval_func(param, input_data[i])
+                    trial.report(loss, i)
+                    s += loss
                     if trial.should_prune():
                         raise optuna.TrialPruned()
 
@@ -110,29 +111,10 @@ class WilcoxonPruner(BasePruner):
     def prune(self, study: "optuna.study.Study", trial: FrozenTrial) -> bool:
         ss = _LazyImport("scipy.stats")
 
-        def extract_step_values(t: FrozenTrial) -> np.ndarray | None:
-            step = t.last_step
-            if step is None:
-                return np.empty((0,))
+        if len(trial.intermediate_values) == 0:
+            return False
 
-            all_steps = list(t.intermediate_values.keys())
-            if all_steps != list(range(1, step + 1)):
-                return None
-
-            intermediate_average_values = np.array(
-                [0] + [t.intermediate_values[step] for step in all_steps]
-            )
-            step_values = np.diff(intermediate_average_values * np.arange(step + 1))
-            return step_values
-
-        step = len(trial.intermediate_values)
-        step_values = extract_step_values(trial)
-        if step_values is None:
-            raise ValueError(
-                "WilcoxonPruner requires intermediate average values to be "
-                "given at step [1, 2, ..., n], but got "
-                f"{list(trial.intermediate_values.keys())} for trial {trial.number})."
-            )
+        steps, step_values = np.array(list(trial.intermediate_values.items())).T
 
         if np.any(np.isnan(step_values)):
             warnings.warn(
@@ -141,34 +123,12 @@ class WilcoxonPruner(BasePruner):
             )
             return False
 
-        if step <= self._n_startup_steps:
-            return False
-
         try:
             best_trial = study.best_trial
         except ValueError:
             return False
 
-        best_step_values = extract_step_values(best_trial)
-        if best_step_values is None:
-            warnings.warn(
-                "WilcoxonPruner requires intermediate average values to be "
-                "given at steps [1, 2, ..., n], but the best trial "
-                f"(trial {best_trial.number}) has intermediate values at "
-                f"steps {list(best_trial.intermediate_values.keys())}. "
-                "WilcoxonPruner will not prune the current trial."
-            )
-            return False
-
-        if len(best_step_values) < len(step_values):
-            warnings.warn(
-                f"The best trial (trial {best_trial.number}) has less "
-                f"({len(best_step_values)}) steps than the current trial. Only the "
-                f"first {len(best_step_values)} intermediate values will be compared."
-            )
-            step_values = step_values[: len(best_step_values)]
-        elif len(best_step_values) > len(step_values):
-            best_step_values = best_step_values[: len(step_values)]
+        best_steps, best_step_values = np.array(list(best_trial.intermediate_values.items())).T
 
         if np.any(np.isnan(best_step_values)):
             warnings.warn(
@@ -177,13 +137,24 @@ class WilcoxonPruner(BasePruner):
             )
             return False
 
-        diffs = step_values - best_step_values
-        diffs[np.isnan(diffs)] = 0  # inf - inf or (-inf) - (-inf)
-        if study.direction == StudyDirection.MAXIMIZE:
-            diffs *= -1
+        _, idx1, idx2 = np.intersect1d(steps, best_steps, return_indices=True)
 
-        if len(diffs) == 0:
+        if len(idx1) < len(step_values):
+            warnings.warn(
+                "WilcoxonPruner finds steps existing in the current trial "
+                "but does not exist in the best trial. "
+                "Those values are ignored."
+            )
+
+        diff_values = step_values[idx1] - best_step_values[idx2]
+        # Overwrite (inf - inf) or (-inf) - (-inf) with 0.
+        diff_values[step_values[idx1] == best_step_values[idx2]] = 0
+
+        if len(diff_values) < self._n_startup_steps:
             return False
 
-        p = ss.wilcoxon(diffs, alternative="greater", zero_method="zsplit").pvalue
+        alt = "less" if study.direction == StudyDirection.MAXIMIZE else "greater"
+
+        # We use zsplit to avoid the problem when all values are zero.
+        p = ss.wilcoxon(diff_values, alternative=alt, zero_method="zsplit").pvalue
         return p < self._p_threshold
