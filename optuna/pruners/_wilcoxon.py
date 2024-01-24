@@ -109,7 +109,7 @@ class WilcoxonPruner(BasePruner):
         self._p_threshold = p_threshold
 
     def prune(self, study: "optuna.study.Study", trial: FrozenTrial) -> bool:
-        ss = _LazyImport("scipy.stats")
+        import scipy.stats as ss
 
         if len(trial.intermediate_values) == 0:
             return False
