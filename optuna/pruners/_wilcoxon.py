@@ -6,7 +6,6 @@ import numpy as np
 
 import optuna
 from optuna._experimental import experimental_class
-from optuna._imports import _LazyImport
 from optuna.pruners import BasePruner
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -109,6 +108,7 @@ class WilcoxonPruner(BasePruner):
         self._p_threshold = p_threshold
 
     def prune(self, study: "optuna.study.Study", trial: FrozenTrial) -> bool:
+        # Import scipy in the method because it is an optional dependency.
         import scipy.stats as ss
 
         if len(trial.intermediate_values) == 0:
