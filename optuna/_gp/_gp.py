@@ -14,9 +14,9 @@ import torch
 # X[len(trials), len(params)]: observed parameter values.
 # Y[len(trials)]: observed objective values.
 # x[(batch_len,) len(params)]: parameter value to evaluate. Possibly batched.
-# K_X_X[len(trials), len(trials)]: kernel matrix of X = V[f(X)]
-# K_x_X[(batch_len,) len(trials)]: kernel matrix of x and X = Cov[f(x), f(X)]
-# K_x_x: kernel value (scalar) of x = V[f(x)].
+# cov_fX_fX[len(trials), len(trials)]: kernel matrix of X = V[f(X)]
+# cov_fx_fX[(batch_len,) len(trials)]: kernel matrix of x and X = Cov[f(x), f(X)]
+# cov_fx_fx: kernel value (scalar) of x = V[f(x)].
 #     Since we use a Matern 5/2 kernel, we assume this value to be a constant.
 # cov_Y_Y_inv[len(trials), len(trials)]: inv of the covariance matrix of Y = (V[f(X) + noise])^-1
 # cov_Y_Y_inv_Y[len(trials)]: cov_Y_Y_inv @ Y
@@ -88,14 +88,14 @@ def kernel(
 def posterior(
     cov_Y_Y_inv: torch.Tensor,  # [len(trials), len(trials)]
     cov_Y_Y_inv_Y: torch.Tensor,  # [len(trials)]
-    K_x_X: torch.Tensor,  # [(batch,) len(trials)]
-    K_x_x: torch.Tensor,  # Scalar or [(batch,)]
+    cov_fx_fX: torch.Tensor,  # [(batch,) len(trials)]
+    cov_fx_fx: torch.Tensor,  # Scalar or [(batch,)]
 ) -> tuple[torch.Tensor, torch.Tensor]:  # [(batch,)], [(batch,)]
-    # mean = K_x_X @ inv(K_X_X + noise * I) @ Y
-    # var = K_x_x - K_x_X @ inv(K_X_X + noise * I) @ K_x_X.T
+    # mean = cov_fx_fX @ inv(cov_fX_fX + noise * I) @ Y
+    # var = cov_fx_fx - cov_fx_fX @ inv(cov_fX_fX + noise * I) @ cov_fx_fX.T
 
-    mean = K_x_X @ cov_Y_Y_inv_Y  # [batch]
-    var = K_x_x - (K_x_X * (K_x_X @ cov_Y_Y_inv)).sum(dim=-1)  # [batch]
+    mean = cov_fx_fX @ cov_Y_Y_inv_Y  # [batch]
+    var = cov_fx_fx - (cov_fx_fX * (cov_fx_fX @ cov_Y_Y_inv)).sum(dim=-1)  # [batch]
     # We need to clamp the variance to avoid negative values due to numerical errors.
     return (mean, torch.clamp(var, min=0.0))
 
@@ -109,14 +109,16 @@ def marginal_log_likelihood(
     # -0.5 * log(2pi|Σ|) - 0.5 * (Y - μ)^T Σ^-1 (Y - μ)), where μ = 0 and Σ^-1 = cov_Y_Y_inv
     # We apply the cholesky decomposition to efficiently compute log(|Σ|) and Σ^-1.
 
-    K_X_X = kernel(is_categorical, kernel_params, X, X)
+    cov_fX_fX = kernel(is_categorical, kernel_params, X, X)
 
     cov_Y_Y_chol = torch.linalg.cholesky(
-        K_X_X + kernel_params.noise * torch.eye(X.shape[0], dtype=torch.float64)
+        cov_fX_fX + kernel_params.noise * torch.eye(X.shape[0], dtype=torch.float64)
     )
     logdet = torch.log(torch.diag(cov_Y_Y_chol)).sum()
-    chol_cov_inv_Y = torch.linalg.solve_triangular(cov_Y_Y_chol, Y[:, None], upper=False)[:, 0]
-    return -0.5 * (logdet + math.log(2 * math.pi) + torch.vdot(chol_cov_inv_Y, chol_cov_inv_Y))
+    cov_Y_Y_chol_inv_Y = torch.linalg.solve_triangular(cov_Y_Y_chol, Y[:, None], upper=False)[:, 0]
+    return -0.5 * (
+        logdet + math.log(2 * math.pi) + torch.vdot(cov_Y_Y_chol_inv_Y, cov_Y_Y_chol_inv_Y)
+    )
 
 
 def fit_kernel_params(

@@ -57,9 +57,9 @@ def eval_logei(
     # Usually this is set to a very small value.
     stabilizing_noise: float,
 ) -> torch.Tensor:
-    K_x_X = kernel(is_categorical, kernel_params, x[..., None, :], X)[..., 0, :]
-    K_x_x = MATERN_KERNEL0 * kernel_params.kernel_scale
-    (mean, var) = posterior(cov_Y_Y_inv, cov_Y_Y_inv_Y, K_x_X, K_x_x)
+    cov_fx_fX = kernel(is_categorical, kernel_params, x[..., None, :], X)[..., 0, :]
+    cov_fx_fx = MATERN_KERNEL0 * kernel_params.kernel_scale
+    (mean, var) = posterior(cov_Y_Y_inv, cov_Y_Y_inv_Y, cov_fx_fX, cov_fx_fx)
     val = logei(mean, var + stabilizing_noise, max_Y)
 
     return val
