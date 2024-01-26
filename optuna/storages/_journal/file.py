@@ -188,7 +188,7 @@ class JournalFileStorage(BaseJournalLogStorage):
                     continue
 
                 # Ensure that each line ends with line separators (\n, \r\n)
-                if not line.endswith(b"\n"):
+                if not line.endswith(os.linesep.encode()):
                     last_decode_error = ValueError("Invalid log format.")
                     del self._log_number_offset[log_number + 1]
                     continue
