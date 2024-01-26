@@ -9,6 +9,7 @@ from typing import Sequence
 from typing import Tuple
 from typing import Union
 
+from optuna import logging
 from optuna._typing import JSONSerializable
 from optuna.distributions import BaseDistribution
 from optuna.study._frozen import FrozenStudy
@@ -19,6 +20,8 @@ from optuna.trial import TrialState
 
 _CONSTRAINTS_KEY = "constraints"
 DEFAULT_STUDY_NAME_PREFIX = "no-name-"
+
+_logger = logging.get_logger(__name__)
 
 
 class BaseStorage(abc.ABC):
@@ -538,6 +541,7 @@ class BaseStorage(abc.ABC):
         """
         all_trials = self.get_all_trials(study_id, deepcopy=False, states=[TrialState.COMPLETE])
 
+        _logger.warning("Get COMPLETE and feasible best_trial")
         feasible_trials = []
         for trial in all_trials:
             constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)

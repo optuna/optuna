@@ -3,6 +3,7 @@ from typing import Optional
 from typing import Sequence
 
 import optuna
+from optuna import logging
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -10,8 +11,11 @@ from optuna.trial import TrialState
 
 _CONSTRAINTS_KEY = "constraints"
 
+_logger = logging.get_logger(__name__)
+
 
 def _get_feasible_trials(trials: Sequence[FrozenTrial]) -> List[FrozenTrial]:
+    _logger.warning("Calculate pareto front for feasible trials.")
     trials = [trial for trial in trials if trial.state == TrialState.COMPLETE]
     feasible_trials = []
     for trial in trials:
