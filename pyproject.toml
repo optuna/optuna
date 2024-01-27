@@ -122,7 +122,7 @@ test = [
     "coverage",
     "fakeredis[lua]",
     "kaleido",
-    "moto",
+    "moto>=5.0.0",
     "pytest",
     "scipy>=1.9.2; python_version>='3.8'",
 ]
