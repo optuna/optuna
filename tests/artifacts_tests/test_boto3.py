@@ -4,7 +4,12 @@ import io
 from typing import TYPE_CHECKING
 
 import boto3
-from moto import mock_aws
+
+try:
+    from moto import mock_aws
+except ImportError:
+    from moto import mock_s3 as mock_aws
+
 import pytest
 
 from optuna.artifacts import Boto3ArtifactStore
