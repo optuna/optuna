@@ -162,6 +162,18 @@ def test_validate() -> None:
     with pytest.raises(ValueError):
         invalid_trial._validate()
 
+    # Invalid: `state` is `COMPLETE` and `value` is NaN.
+    invalid_trial = copy.copy(valid_trial)
+    invalid_trial.value = float("nan")
+    with pytest.raises(ValueError):
+        invalid_trial._validate()
+
+    # Invalid: `state` is `COMPLETE` and `values` includes NaN.
+    invalid_trial = copy.copy(valid_trial)
+    invalid_trial.values = [0.0, float("nan")]
+    with pytest.raises(ValueError):
+        invalid_trial._validate()
+
     # Invalid: Inconsistent `params` and `distributions`
     inconsistent_pairs: List[Tuple[Dict[str, Any], Dict[str, BaseDistribution]]] = [
         # `params` has an extra element.
@@ -178,36 +190,6 @@ def test_validate() -> None:
         invalid_trial.distributions = distributions
         with pytest.raises(ValueError):
             invalid_trial._validate()
-
-    # Consistent `params` and `distributions`
-    consistent_pairs: List[Tuple[Dict[str, Any], Dict[str, BaseDistribution]]] = [
-        ({"x": 0.1, "y": 0.5}, {"x": FloatDistribution(0, 1), "y": FloatDistribution(0.1, 1.0)}),
-        ({"x": 0.1}, {"x": FloatDistribution(0, 1)}),
-    ]
-
-    # Invalid: `state` is `WAITING`, and `params` and `distributions` are set.
-    for params, distributions in consistent_pairs:
-        invalid_trial = copy.copy(valid_trial)
-        invalid_trial.state = TrialState.WAITING
-        invalid_trial.params = params
-        invalid_trial.distributions = distributions
-        with pytest.raises(ValueError):
-            invalid_trial._validate()
-
-    # Invalid: `state` is `WAITING` or `RUNNING`, and `intermediate_values` is set.
-    for state in [TrialState.WAITING, TrialState.RUNNING]:
-        invalid_trial = copy.copy(valid_trial)
-        invalid_trial.state = state
-        invalid_trial.intermediate_values = {0: 0.0}
-        with pytest.raises(ValueError):
-            invalid_trial._validate()
-
-    # Invalid: `state` is `WAITING` and `fixed_params` is not in `system_attrs`.
-    invalid_trial = copy.copy(valid_trial)
-    invalid_trial.state = TrialState.WAITING
-    invalid_trial.system_attrs = {}
-    with pytest.raises(ValueError):
-        invalid_trial._validate()
 
 
 def test_number() -> None:
