@@ -83,17 +83,6 @@ pycma
    optuna.integration.PyCmaSampler
    optuna.integration.CmaEsSampler
 
-PyTorch
--------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.PyTorchIgnitePruningHandler
-   optuna.integration.PyTorchLightningPruningCallback
-   optuna.integration.TorchDistributedTrial
-
 scikit-learn
 ------------
 
