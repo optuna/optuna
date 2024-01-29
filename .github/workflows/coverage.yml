@@ -85,7 +85,7 @@ jobs:
         COVERAGE_COVERAGE: yes
       run: |
         export OMPI_MCA_rmaps_base_oversubscribe=yes
-        mpirun -n 2 -- coverage run -m pytest tests/integration_tests/test_pytorch_distributed.py
+        mpirun -n 2 coverage run -m pytest tests/integration_tests/test_pytorch_distributed.py
         coverage combine --append
         coverage xml
 
