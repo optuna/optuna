@@ -30,12 +30,15 @@ class Matern52Kernel(torch.autograd.Function):
         sqrt5d = torch.sqrt(5 * squared_distance)
         exp_part = torch.exp(-sqrt5d)
         val = exp_part * ((5 / 3) * squared_distance + sqrt5d + 1)
+        # Notice that the derivative is taken w.r.t. d^2, but not w.r.t. d.
         deriv = (-5 / 6) * (sqrt5d + 1) * exp_part
         ctx.save_for_backward(deriv)
         return val
 
     @staticmethod
     def backward(ctx: typing.Any, grad: torch.Tensor) -> torch.Tensor:  # type: ignore
+        # Let x be squared_distance, f(x) be forward(ctx, x), and g(f) be a provided function,
+        # then deriv := df/dx, grad := dg/df, and deriv * grad = df/dx * dg/df = dg/dx.
         (deriv,) = ctx.saved_tensors
         return deriv * grad
 
