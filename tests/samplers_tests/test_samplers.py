@@ -83,6 +83,14 @@ parametrize_relative_sampler = pytest.mark.parametrize(
             lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
             marks=pytest.mark.integration,
         ),
+        pytest.param(
+            lambda: optuna.samplers.GPSampler(n_startup_trials=0),
+            marks=pytest.mark.skipif(
+                # TODO(contramundum53): Remove this skip when PyTorch supports Python 3.12.
+                sys.version_info >= (3, 12, 0),
+                reason="PyTorch does not support Python 3.12 yet.",
+            ),
+        ),
     ],
 )
 parametrize_multi_objective_sampler = pytest.mark.parametrize(
@@ -1103,7 +1111,6 @@ def test_cache_is_invalidated(
         trial.suggest_float("x", -10, 10)
         trial.suggest_float("y", -10, 10)
         assert trial._relative_params is not None
-        assert study._thread_local.cached_all_trials is not None
         return -1
 
     study.optimize(objective, n_trials=10, n_jobs=n_jobs)

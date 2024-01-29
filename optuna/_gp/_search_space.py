@@ -142,9 +142,12 @@ def get_unnormalized_param(
             step = 0.0 if distribution.step is None else distribution.step
             bounds = (distribution.low, distribution.high)
             param_value = float(
-                unnormalize_one_param(normalized_param[i], scale_type, bounds, step)
+                np.clip(
+                    unnormalize_one_param(normalized_param[i], scale_type, bounds, step),
+                    distribution.low,
+                    distribution.high,
+                )
             )
-            param_value = np.clip(param_value, distribution.low, distribution.high)
             if isinstance(distribution, IntDistribution):
                 param_value = round(param_value)
             ret[param] = param_value
