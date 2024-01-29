@@ -1,4 +1,5 @@
 import datetime
+import math
 from typing import Any
 from typing import cast
 from typing import Dict
@@ -327,6 +328,8 @@ class FrozenTrial(BaseTrial):
             raise ValueError("`value` is supposed not to be set for a failed trial.")
         if self.state == TrialState.COMPLETE and self._values is None:
             raise ValueError("`value` is supposed to be set for a complete trial.")
+        if self.state == TrialState.COMPLETE and any([math.isnan(x) for x in self._values]):
+            raise ValueError("`value` is supposed not to be NaN for a complete trial.")
 
         if set(self.params.keys()) != set(self.distributions.keys()):
             raise ValueError(
@@ -334,20 +337,7 @@ class FrozenTrial(BaseTrial):
                     set(self.params.keys()), set(self.distributions.keys())
                 )
             )
-        elif self.state == TrialState.WAITING and len(self.params.keys()) != 0:
-            raise ValueError(
-                "Both parameters and distributions are supposed to be empty "
-                "when the trial state is waiting."
-            )
-        
-        if self.state == TrialState.WAITING and len(self.intermediate_values) != 0:
-            raise ValueError("`intermediate_values` is supposed to be empty for a waiting trial.")
-        if self.state == TrialState.RUNNING and len(self.intermediate_values) != 0:
-            raise ValueError("`intermediate_values` is supposed to be empty for a running trial.")
 
-        if self.state == TrialState.WAITING and "fixed_params" not in self.system_attrs:
-            raise ValueError("`fixed_params` is supposed to be in system_attrs for a waiting trial.")
-        
         for param_name, param_value in self.params.items():
             distribution = self.distributions[param_name]
 
