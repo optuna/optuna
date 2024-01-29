@@ -117,7 +117,9 @@ def marginal_log_likelihood(
     logdet = torch.log(torch.diag(cov_Y_Y_chol)).sum()
     cov_Y_Y_chol_inv_Y = torch.linalg.solve_triangular(cov_Y_Y_chol, Y[:, None], upper=False)[:, 0]
     return -0.5 * (
-        logdet + math.log(2 * math.pi) + torch.vdot(cov_Y_Y_chol_inv_Y, cov_Y_Y_chol_inv_Y)
+        logdet
+        + X.shape[0] * math.log(2 * math.pi)
+        + torch.vdot(cov_Y_Y_chol_inv_Y, cov_Y_Y_chol_inv_Y)
     )
 
 
