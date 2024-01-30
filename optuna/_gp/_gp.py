@@ -109,8 +109,8 @@ def marginal_log_likelihood(
     is_categorical: torch.Tensor,  # [len(params)]
     kernel_params: KernelParams,
 ) -> torch.Tensor:  # Scalar
-    # -0.5 * log(2pi|Σ|) - 0.5 * (Y - μ)^T Σ^-1 (Y - μ)), where μ = 0 and Σ^-1 = cov_Y_Y_inv
-    # We apply the cholesky decomposition to efficiently compute log(|Σ|) and Σ^-1.
+    # -0.5 * log((2pi)^n |C|) - 0.5 * Y^T C^-1 Y, where C^-1 = cov_Y_Y_inv
+    # We apply the cholesky decomposition to efficiently compute log(|C|) and C^-1.
 
     cov_fX_fX = kernel(is_categorical, kernel_params, X, X)
 
