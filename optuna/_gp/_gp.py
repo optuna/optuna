@@ -117,7 +117,7 @@ def marginal_log_likelihood(
     cov_Y_Y_chol = torch.linalg.cholesky(
         cov_fX_fX + kernel_params.noise * torch.eye(X.shape[0], dtype=torch.float64)
     )
-    logdet = torch.log(torch.diag(cov_Y_Y_chol)).sum()
+    logdet = 2 * torch.log(torch.diag(cov_Y_Y_chol)).sum()  # log |L| = 0.5 * log|L^T L| = 0.5 * log|C| 
     # cov_Y_Y_chol @ cov_Y_Y_chol_inv_Y = Y --> cov_Y_Y_chol_inv_Y = inv(cov_Y_Y_chol) @ Y
     cov_Y_Y_chol_inv_Y = torch.linalg.solve_triangular(cov_Y_Y_chol, Y[:, None], upper=False)[:, 0]
     return -0.5 * (
