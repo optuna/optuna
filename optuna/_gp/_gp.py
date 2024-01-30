@@ -123,7 +123,8 @@ def marginal_log_likelihood(
     return -0.5 * (
         logdet
         + X.shape[0] * math.log(2 * math.pi)
-        + torch.vdot(cov_Y_Y_chol_inv_Y, cov_Y_Y_chol_inv_Y)
+        # Y^T C^-1 Y = Y^T inv(L^T L) Y --> cov_Y_Y_chol_inv_Y @ cov_Y_Y_chol_inv_Y
+        + (cov_Y_Y_chol_inv_Y @ cov_Y_Y_chol_inv_Y)
     )
 
 
