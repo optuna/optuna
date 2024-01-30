@@ -38,7 +38,7 @@ def standard_logei(z: torch.Tensor) -> torch.Tensor:
 
 
 def logei(mean: torch.Tensor, var: torch.Tensor, f0: torch.Tensor) -> torch.Tensor:
-    # E_{y ~ N(mean, var)}[max(0, y-f0)]
+    # Return E_{y ~ N(mean, var)}[max(0, y-f0)]
     sigma = torch.sqrt(var)
     st_val = standard_logei((mean - f0) / sigma)
     val = torch.log(sigma) + st_val
