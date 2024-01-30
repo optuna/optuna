@@ -15,7 +15,7 @@ from ._search_space import SearchSpace
 
 
 def standard_logei(z: torch.Tensor) -> torch.Tensor:
-    # E_{x ~ N(0, 1)}[max(0, x+z)]
+    # Return E_{x ~ N(0, 1)}[max(0, x+z)]
 
     # We switch the implementation depending on the value of z to
     # avoid numerical instability.
