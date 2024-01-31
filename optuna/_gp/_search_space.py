@@ -31,6 +31,7 @@ class SearchSpace:
 def unnormalize_one_param(
     param_value: np.ndarray, scale_type: ScaleType, bounds: tuple[float, float], step: float
 ) -> np.ndarray:
+    # param_value can be batched, or not.
     if scale_type == ScaleType.CATEGORICAL:
         return param_value
     low, high = (bounds[0] - 0.5 * step, bounds[1] + 0.5 * step)
@@ -45,6 +46,7 @@ def unnormalize_one_param(
 def normalize_one_param(
     param_value: np.ndarray, scale_type: ScaleType, bounds: tuple[float, float], step: float
 ) -> np.ndarray:
+    # param_value can be batched, or not.
     if scale_type == ScaleType.CATEGORICAL:
         return param_value
     low, high = (bounds[0] - 0.5 * step, bounds[1] + 0.5 * step)

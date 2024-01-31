@@ -7,8 +7,8 @@ import numpy as np
 import torch
 
 from ._gp import kernel
+from ._gp import kernel_at_zero_distance
 from ._gp import KernelParamsTensor
-from ._gp import MATERN_KERNEL0
 from ._gp import posterior
 from ._search_space import ScaleType
 from ._search_space import SearchSpace
@@ -58,7 +58,7 @@ def eval_logei(
     stabilizing_noise: float,
 ) -> torch.Tensor:
     cov_fx_fX = kernel(is_categorical, kernel_params, x[..., None, :], X)[..., 0, :]
-    cov_fx_fx = MATERN_KERNEL0 * kernel_params.kernel_scale
+    cov_fx_fx = kernel_at_zero_distance(is_categorical, kernel_params)
     (mean, var) = posterior(cov_Y_Y_inv, cov_Y_Y_inv_Y, cov_fx_fX, cov_fx_fx)
     val = logei(mean, var + stabilizing_noise, max_Y)
 

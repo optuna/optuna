@@ -43,10 +43,6 @@ class Matern52Kernel(torch.autograd.Function):
         return deriv * grad
 
 
-# This is the value of the Matern 5/2 kernel at squared_distance=0.
-MATERN_KERNEL0 = 1.0
-
-
 def matern52_kernel_from_squared_distance(squared_distance: torch.Tensor) -> torch.Tensor:
     # sqrt5d = sqrt(5 * squared_distance)
     # exp(sqrt5d) * (1/3 * sqrt5d ** 2 + sqrt5d + 1)
@@ -79,13 +75,17 @@ def kernel(
     d2 = (X1[..., :, None, :] - X2[..., None, :, :]) ** 2
 
     # Use the Hamming distance for categorical parameters.
-    d2[..., is_categorical] = torch.where(
-        d2[..., is_categorical] > 0.0,
-        torch.tensor(1.0, dtype=torch.float64),
-        torch.tensor(0.0, dtype=torch.float64),
-    )
+    d2[..., is_categorical] = (d2[..., is_categorical] > 0.0).type(torch.float64)
     d2 = (d2 * kernel_params.inverse_squared_lengthscales).sum(dim=-1)
     return matern52_kernel_from_squared_distance(d2) * kernel_params.kernel_scale
+
+
+def kernel_at_zero_distance(
+    is_categorical: torch.Tensor,  # [len(params)]
+    kernel_params: KernelParamsTensor,
+) -> torch.Tensor:  # [...batch_shape, n_A, n_B]
+    # kernel(x, x) = kernel_scale
+    return kernel_params.kernel_scale
 
 
 def posterior(
