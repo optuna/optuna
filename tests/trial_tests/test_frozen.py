@@ -310,7 +310,7 @@ def test_init() -> None:
 # experimental.
 @pytest.mark.parametrize("state", [TrialState.COMPLETE, TrialState.FAIL])
 def test_create_trial(state: TrialState) -> None:
-    value = 0.2
+    value: Optional[float] = 0.2
     params = {"x": 10}
     distributions: Dict[str, BaseDistribution] = {"x": FloatDistribution(5, 12)}
     user_attrs = {"foo": "bar"}
@@ -322,7 +322,7 @@ def test_create_trial(state: TrialState) -> None:
 
     trial = create_trial(
         state=state,
-        value=value,
+        value=value if state == TrialState.COMPLETE else None,
         params=params,
         distributions=distributions,
         user_attrs=user_attrs,
@@ -342,7 +342,15 @@ def test_create_trial(state: TrialState) -> None:
     assert (trial.datetime_complete is not None) == state.is_finished()
 
     with pytest.raises(ValueError):
-        create_trial(state=state, value=value, values=(value,))
+        create_trial(
+            state=state,
+            value=0.2 if state != TrialState.COMPLETE else None,
+            params=params,
+            distributions=distributions,
+            user_attrs=user_attrs,
+            system_attrs=system_attrs,
+            intermediate_values=intermediate_values,
+        )
 
 
 # Deprecated distributions are internally converted to corresponding distributions.
