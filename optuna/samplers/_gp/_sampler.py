@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 from typing import Callable
+from typing import cast
 from typing import Sequence
 from typing import TYPE_CHECKING
+import warnings
 
 import numpy as np
 
@@ -33,14 +35,16 @@ else:
     _acqf = _LazyImport("optuna._gp._acqf")
 
 
-def log_prior(kernel_params: "_gp.KernelParams") -> "torch.Tensor":
+def log_prior(kernel_params: "_gp.KernelParamsTensor") -> "torch.Tensor":
     # Log of prior distribution of kernel parameters.
 
     def gamma_log_prior(x: "torch.Tensor", concentration: float, rate: float) -> "torch.Tensor":
+        # We omit the constant factor `rate ** concentration / factorial(concentration)`.
         return (concentration - 1) * torch.log(x) - rate * x
 
+    # NOTE(contramundum53): The parameters below were picked qualitatively.
     return (
-        gamma_log_prior(kernel_params.inv_sq_lengthscales, 2, 0.5).sum()
+        gamma_log_prior(kernel_params.inverse_squared_lengthscales, 2, 0.5).sum()
         + gamma_log_prior(kernel_params.kernel_scale, 2, 1)
         + gamma_log_prior(kernel_params.noise, 1.1, 20)
     )
@@ -87,10 +91,10 @@ class GPSampler(BaseSampler):
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._intersection_search_space = optuna.search_space.IntersectionSearchSpace()
         self._n_startup_trials = n_startup_trials
-        self._log_prior: "Callable[[_gp.KernelParams], torch.Tensor]" = log_prior
+        self._log_prior: "Callable[[_gp.KernelParamsTensor], torch.Tensor]" = log_prior
         self._minimum_noise: float = 1e-6
         # We cache the kernel parameters for initial values of fitting the next time.
-        self._kernel_params_cache: "_gp.KernelParams | None" = None
+        self._kernel_params_cache: "_gp.KernelParamsTensor | None" = None
         self._optimize_n_samples: int = 2048
 
     def reseed_rng(self) -> None:
@@ -114,6 +118,7 @@ class GPSampler(BaseSampler):
 
         states = (TrialState.COMPLETE,)
         trials = study._get_trials(deepcopy=False, states=states, use_cache=True)
+
         if len(trials) < self._n_startup_trials:
             return {}
 
@@ -121,23 +126,41 @@ class GPSampler(BaseSampler):
             internal_search_space,
             normalized_params,
         ) = _search_space.get_search_space_and_normalized_params(trials, search_space)
+
         _sign = -1.0 if study.direction == StudyDirection.MINIMIZE else 1.0
-        score_vals = np.array([_sign * trial.value for trial in trials])
+        score_vals = np.array([_sign * cast(float, trial.value) for trial in trials])
+
+        if np.any(~np.isfinite(score_vals)):
+            warnings.warn(
+                "GPSampler cannot handle infinite values. "
+                "We clamp those values to worst/best finite value."
+            )
+
+            finite_score_vals = score_vals[np.isfinite(score_vals)]
+            if len(finite_score_vals) == 0:
+                best_finite_score = worst_finite_score = 0.0
+            else:
+                best_finite_score = np.max(finite_score_vals)
+                worst_finite_score = np.min(finite_score_vals)
+
+            score_vals = np.clip(score_vals, worst_finite_score, best_finite_score)
+
         standarized_score_vals = (score_vals - score_vals.mean()) / max(1e-10, score_vals.std())
 
         if self._kernel_params_cache is not None and len(
-            self._kernel_params_cache.inv_sq_lengthscales
+            self._kernel_params_cache.inverse_squared_lengthscales
         ) != len(internal_search_space.scale_types):
+            # Clear cache if the search space changes.
             self._kernel_params_cache = None
 
         kernel_params = _gp.fit_kernel_params(
             X=normalized_params,
-            Y=score_vals,
+            Y=standarized_score_vals,
             is_categorical=internal_search_space.scale_types
             == _search_space.ScaleType.CATEGORICAL,
             log_prior=self._log_prior,
             minimum_noise=self._minimum_noise,
-            kernel_params0=self._kernel_params_cache,
+            initial_kernel_params=self._kernel_params_cache,
         )
         self._kernel_params_cache = kernel_params
 
@@ -145,7 +168,7 @@ class GPSampler(BaseSampler):
             kernel_params=kernel_params,
             search_space=internal_search_space,
             X=normalized_params,
-            Y=score_vals,
+            Y=standarized_score_vals,
         )
         normalized_param, _ = _optim.optimize_acqf_sample(acqf, n_samples=self._optimize_n_samples)
         return _search_space.get_unnormalized_param(search_space, normalized_param)

@@ -7,7 +7,7 @@ import numpy as np
 import torch
 
 from ._gp import kernel
-from ._gp import KernelParams
+from ._gp import KernelParamsTensor
 from ._gp import MATERN_KERNEL0
 from ._gp import posterior
 from ._search_space import ScaleType
@@ -46,7 +46,7 @@ def logei(mean: torch.Tensor, var: torch.Tensor, f0: torch.Tensor) -> torch.Tens
 
 
 def eval_logei(
-    kernel_params: KernelParams,
+    kernel_params: KernelParamsTensor,
     X: torch.Tensor,
     is_categorical: torch.Tensor,
     cov_Y_Y_inv: torch.Tensor,
@@ -66,8 +66,9 @@ def eval_logei(
 
 
 @dataclass(frozen=True)
-class Acqf:
-    kernel_params: KernelParams
+class AcquisitionFunction:
+    # Currently only logEI is supported.
+    kernel_params: KernelParamsTensor
     X: np.ndarray
     search_space: SearchSpace
     cov_Y_Y_inv: np.ndarray
@@ -77,38 +78,32 @@ class Acqf:
 
 
 def create_acqf(
-    kernel_params: KernelParams,
+    kernel_params: KernelParamsTensor,
     search_space: SearchSpace,
     X: np.ndarray,
     Y: np.ndarray,
     acqf_stabilizing_noise: float = 1e-12,
-) -> Acqf:
+) -> AcquisitionFunction:
+    X_tensor = torch.from_numpy(X)
+    is_categorical = torch.from_numpy(search_space.scale_types == ScaleType.CATEGORICAL)
     with torch.no_grad():
-        K = kernel(
-            torch.from_numpy(search_space.scale_types == ScaleType.CATEGORICAL),
-            kernel_params,
-            torch.from_numpy(X),
-            torch.from_numpy(X),
-        )
-        cov_Y_Y_inv = (
-            torch.linalg.inv(K + kernel_params.noise * torch.eye(X.shape[0], dtype=torch.float64))
-            .detach()
-            .numpy()
-        )
-    cov_Y_Y_inv_Y = cov_Y_Y_inv @ Y
+        cov_Y_Y = kernel(is_categorical, kernel_params, X_tensor, X_tensor).detach().numpy()
 
-    return Acqf(
+    cov_Y_Y[np.diag_indices(X.shape[0])] += kernel_params.noise.item()
+    cov_Y_Y_inv = np.linalg.inv(cov_Y_Y)
+
+    return AcquisitionFunction(
         kernel_params=kernel_params,
         X=X,
         search_space=search_space,
         cov_Y_Y_inv=cov_Y_Y_inv,
-        cov_Y_Y_inv_Y=cov_Y_Y_inv_Y,
+        cov_Y_Y_inv_Y=cov_Y_Y_inv @ Y,
         max_Y=np.max(Y),
         acqf_stabilizing_noise=acqf_stabilizing_noise,
     )
 
 
-def eval_acqf(acqf: Acqf, x: torch.Tensor) -> torch.Tensor:
+def eval_acqf(acqf: AcquisitionFunction, x: torch.Tensor) -> torch.Tensor:
     return eval_logei(
         kernel_params=acqf.kernel_params,
         X=torch.from_numpy(acqf.X),
@@ -121,6 +116,6 @@ def eval_acqf(acqf: Acqf, x: torch.Tensor) -> torch.Tensor:
     )
 
 
-def eval_acqf_no_grad(acqf: Acqf, x: np.ndarray) -> np.ndarray:
+def eval_acqf_no_grad(acqf: AcquisitionFunction, x: np.ndarray) -> np.ndarray:
     with torch.no_grad():
         return eval_acqf(acqf, torch.from_numpy(x)).detach().numpy()

@@ -57,21 +57,21 @@ def matern52_kernel_from_squared_distance(squared_distance: torch.Tensor) -> tor
 
 
 @dataclass(frozen=True)
-class KernelParams:
+class KernelParamsTensor:
     # Kernel parameters to fit.
-    inv_sq_lengthscales: torch.Tensor  # [len(params)]
+    inverse_squared_lengthscales: torch.Tensor  # [len(params)]
     kernel_scale: torch.Tensor  # Scalar
     noise: torch.Tensor  # Scalar
 
 
 def kernel(
     is_categorical: torch.Tensor,  # [len(params)]
-    kernel_params: KernelParams,
+    kernel_params: KernelParamsTensor,
     X1: torch.Tensor,  # [...batch_shape, n_A, len(params)]
     X2: torch.Tensor,  # [...batch_shape, n_B, len(params)]
 ) -> torch.Tensor:  # [...batch_shape, n_A, n_B]
     # kernel(x1, x2) = kernel_scale * matern52_kernel_from_squared_distance(
-    #                     d2(x1, x2) * inv_sq_lengthscales)
+    #                     d2(x1, x2) * inverse_squared_lengthscales)
     # d2(x1, x2) = sum_i d2_i(x1_i, x2_i)
     # d2_i(x1_i, x2_i) = (x1_i - x2_i) ** 2  # if x_i is continuous
     # d2_i(x1_i, x2_i) = 1 if x1_i != x2_i else 0  # if x_i is categorical
@@ -84,7 +84,7 @@ def kernel(
         torch.tensor(1.0, dtype=torch.float64),
         torch.tensor(0.0, dtype=torch.float64),
     )
-    d2 = (d2 * kernel_params.inv_sq_lengthscales).sum(dim=-1)
+    d2 = (d2 * kernel_params.inverse_squared_lengthscales).sum(dim=-1)
     return matern52_kernel_from_squared_distance(d2) * kernel_params.kernel_scale
 
 
@@ -107,7 +107,7 @@ def marginal_log_likelihood(
     X: torch.Tensor,  # [len(trials), len(params)]
     Y: torch.Tensor,  # [len(trials)]
     is_categorical: torch.Tensor,  # [len(params)]
-    kernel_params: KernelParams,
+    kernel_params: KernelParamsTensor,
 ) -> torch.Tensor:  # Scalar
     # -0.5 * log((2pi)^n |C|) - 0.5 * Y^T C^-1 Y, where C^-1 = cov_Y_Y_inv
     # We apply the cholesky decomposition to efficiently compute log(|C|) and C^-1.
@@ -117,7 +117,9 @@ def marginal_log_likelihood(
     cov_Y_Y_chol = torch.linalg.cholesky(
         cov_fX_fX + kernel_params.noise * torch.eye(X.shape[0], dtype=torch.float64)
     )
-    logdet = 2 * torch.log(torch.diag(cov_Y_Y_chol)).sum()  # log |L| = 0.5 * log|L^T L| = 0.5 * log|C| 
+    logdet = (
+        2 * torch.log(torch.diag(cov_Y_Y_chol)).sum()
+    )  # log |L| = 0.5 * log|L^T L| = 0.5 * log|C|
     # cov_Y_Y_chol @ cov_Y_Y_chol_inv_Y = Y --> cov_Y_Y_chol_inv_Y = inv(cov_Y_Y_chol) @ Y
     cov_Y_Y_chol_inv_Y = torch.linalg.solve_triangular(cov_Y_Y_chol, Y[:, None], upper=False)[:, 0]
     return -0.5 * (
@@ -132,13 +134,14 @@ def fit_kernel_params(
     X: np.ndarray,  # [len(trials), len(params)]
     Y: np.ndarray,  # [len(trials)]
     is_categorical: np.ndarray,  # [len(params)]
-    log_prior: Callable[[KernelParams], torch.Tensor],
+    log_prior: Callable[[KernelParamsTensor], torch.Tensor],
     minimum_noise: float = 0.0,
-    kernel_params0: KernelParams | None = None,
-) -> KernelParams:
-    if kernel_params0 is None:
-        kernel_params0 = KernelParams(
-            inv_sq_lengthscales=torch.ones(X.shape[1], dtype=torch.float64),
+    initial_kernel_params: KernelParamsTensor | None = None,
+) -> KernelParamsTensor:
+    n_params = X.shape[1]
+    if initial_kernel_params is None:
+        initial_kernel_params = KernelParamsTensor(
+            inverse_squared_lengthscales=torch.ones(n_params, dtype=torch.float64),
             kernel_scale=torch.tensor(1.0, dtype=torch.float64),
             noise=torch.tensor(1.0, dtype=torch.float64),
         )
@@ -148,44 +151,38 @@ def fit_kernel_params(
     # of the marginal log likelihood.
     # We also enforce the noise parameter to be greater than `minimum_noise` to avoid
     # pathological behavior of maximum likelihood estimation.
-    repr0 = np.concatenate(
+    initial_raw_params = np.concatenate(
         [
-            np.log(kernel_params0.inv_sq_lengthscales.detach().numpy()),
+            np.log(initial_kernel_params.inverse_squared_lengthscales.detach().numpy()),
             [
-                np.log(kernel_params0.kernel_scale.item()),
-                np.log(kernel_params0.noise.item() - minimum_noise),
+                np.log(initial_kernel_params.kernel_scale.item()),
+                np.log(initial_kernel_params.noise.item() - minimum_noise),
             ],
         ]
     )
 
-    def loss_func(repr: np.ndarray) -> tuple[float, np.ndarray]:
-        log_inv_sq_lengthscales = torch.tensor(
-            repr[: X.shape[1]], dtype=torch.float64, requires_grad=True
-        )
-        log_kernel_scale = torch.tensor(repr[X.shape[1]], dtype=torch.float64, requires_grad=True)
-        log_noise = torch.tensor(repr[X.shape[1] + 1], dtype=torch.float64, requires_grad=True)
-        params = KernelParams(
-            inv_sq_lengthscales=torch.exp(log_inv_sq_lengthscales),
-            kernel_scale=torch.exp(log_kernel_scale),
-            noise=torch.exp(log_noise) + minimum_noise,
+    def loss_func(raw_params: np.ndarray) -> tuple[float, np.ndarray]:
+        raw_params_tensor = torch.from_numpy(raw_params)
+        raw_params_tensor.requires_grad_(True)
+        params = KernelParamsTensor(
+            inverse_squared_lengthscales=torch.exp(raw_params_tensor[:n_params]),
+            kernel_scale=torch.exp(raw_params_tensor[n_params]),
+            noise=torch.exp(raw_params_tensor[n_params + 1]) + minimum_noise,
         )
         loss = -marginal_log_likelihood(
             torch.from_numpy(X), torch.from_numpy(Y), torch.from_numpy(is_categorical), params
         ) - log_prior(params)
         loss.backward()  # type: ignore
-        return loss.item(), np.concatenate(
-            [
-                log_inv_sq_lengthscales.grad.detach().numpy(),  # type: ignore
-                [log_kernel_scale.grad.item(), log_noise.grad.item()],  # type: ignore
-            ]
-        )
+        return loss.item(), raw_params_tensor.grad.detach().numpy()  # type: ignore
 
-    res = scipy.optimize.minimize(loss_func, repr0, jac=True)
-    repr_opt = res.x
+    # jac=True means loss_func returns the gradient for gradient descent.
+    res = scipy.optimize.minimize(loss_func, initial_raw_params, jac=True)
 
-    return KernelParams(
-        inv_sq_lengthscales=torch.exp(torch.tensor(repr_opt[: X.shape[1]], dtype=torch.float64)),
-        kernel_scale=torch.exp(torch.tensor(repr_opt[X.shape[1]], dtype=torch.float64)),
-        noise=torch.exp(torch.tensor(repr_opt[X.shape[1] + 1], dtype=torch.float64))
-        + minimum_noise,
+    # TODO(contramundum53): Handle the case where the optimization fails.
+    raw_params_opt_tensor = torch.from_numpy(res.x)
+
+    return KernelParamsTensor(
+        inverse_squared_lengthscales=torch.exp(raw_params_opt_tensor[:n_params]),
+        kernel_scale=torch.exp(raw_params_opt_tensor[n_params]),
+        noise=torch.exp(raw_params_opt_tensor[n_params + 1]) + minimum_noise,
     )
