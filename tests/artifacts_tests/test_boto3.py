@@ -4,11 +4,16 @@ import io
 from typing import TYPE_CHECKING
 
 import boto3
-from moto import mock_s3
 import pytest
 
 from optuna.artifacts import Boto3ArtifactStore
 from optuna.artifacts.exceptions import ArtifactNotFound
+
+
+try:
+    from moto import mock_aws
+except ImportError:
+    from moto import mock_s3 as mock_aws
 
 
 if TYPE_CHECKING:
@@ -22,7 +27,7 @@ if TYPE_CHECKING:
 
 @pytest.fixture()
 def init_mock_client() -> Iterator[tuple[str, S3Client]]:
-    with mock_s3():
+    with mock_aws():
         # Runs before each test
         bucket_name = "moto-bucket"
         s3_client = boto3.client("s3")
