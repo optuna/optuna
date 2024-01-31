@@ -121,13 +121,9 @@ class GPSampler(BaseSampler):
             internal_search_space,
             normalized_params,
         ) = _search_space.get_search_space_and_normalized_params(trials, search_space)
-        score_vals = np.array([trial.value for trial in trials])
-        if study.direction == StudyDirection.MINIMIZE:
-            score_vals = -score_vals
-        score_vals -= score_vals.mean()
-
-        EPS = 1e-10
-        score_vals /= max(EPS, score_vals.std())
+        _sign = -1.0 if study.direction == StudyDirection.MINIMIZE else 1.0
+        score_vals = np.array([_sign * trial.value for trial in trials])
+        standarized_score_vals = (score_vals - score_vals.mean()) / max(1e-10, score_vals.std())
 
         if self._kernel_params_cache is not None and len(
             self._kernel_params_cache.inv_sq_lengthscales
