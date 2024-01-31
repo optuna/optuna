@@ -726,7 +726,7 @@ class TestLightGBMTuner:
 
         assert callback_mock.call_count == 10
 
-    @pytest.mark.skip(reason="Fail since 28 Jan 2024.")
+    @pytest.mark.skip(reason="Fail since 28 Jan 2024. TODO(nabenabe0928): Fix here.")
     def test_tune_best_score_reproducibility(self) -> None:
         iris = sklearn.datasets.load_iris()
         X_trainval, X_test, y_trainval, y_test = train_test_split(
@@ -1058,7 +1058,7 @@ class TestLightGBMTunerCV:
             with pytest.raises(ValueError):
                 tuner3.get_best_booster()
 
-    @pytest.mark.skip(reason="Fail since 28 Jan 2024.")
+    @pytest.mark.skip(reason="Fail since 28 Jan 2024. TODO(nabenabe0928): Fix here.")
     def test_tune_best_score_reproducibility(self) -> None:
         iris = sklearn.datasets.load_iris()
         X_trainval, X_test, y_trainval, y_test = train_test_split(
