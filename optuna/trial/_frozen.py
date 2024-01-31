@@ -328,7 +328,7 @@ class FrozenTrial(BaseTrial):
             raise ValueError("`value` is supposed not to be set for a failed trial.")
         if self.state == TrialState.COMPLETE and self._values is None:
             raise ValueError("`value` is supposed to be set for a complete trial.")
-        self_values: List[float] = self._values
+        self_values: List[float] = self._values if self._values is not None else []  # for mypy
         if self.state == TrialState.COMPLETE and any([math.isnan(x) for x in self_values]):
             raise ValueError("`value` is supposed not to be NaN for a complete trial.")
 
