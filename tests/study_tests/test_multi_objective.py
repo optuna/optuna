@@ -135,6 +135,18 @@ def test_dominates_complete_vs_incomplete(t1_state: TrialState) -> None:
             [[1, 1], [1, -float("inf")], [-float("inf"), 1], [-float("inf"), -float("inf")]],
             [2, 1, 1, 0],
         ),  # -infs are included.
+        (
+            [[1, 1], [1, 1], [1, 2], [2, 1], [0, 1.5], [1.5, 0], [0, 1.5]],
+            [0, 0, 1, 1, 0, 0, 0],
+        ),  # Two objectives with duplicate values are included.
+        (
+            [[1, 1], [1, 1], [1, 2], [2, 1], [1, 1], [0, 1.5], [0, 1.5]],
+            [0, 0, 1, 1, 0, 0, 0],
+        ),  # Two objectives with duplicate values are included.
+        (
+            [[1, 1, 1], [1, 1, 1], [1, 1, 2], [1, 2, 1], [2, 1, 1], [0, 1.5, 1.5], [0, 1.5, 1.5]],
+            [0, 0, 1, 1, 1, 0, 0],
+        ),  # Three objectives with duplicate values are included.
     ],
 )
 def test_calculate_nondomination_rank(trial_values: list[float], trial_ranks: list[int]) -> None:
