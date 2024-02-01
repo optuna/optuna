@@ -83,7 +83,7 @@ document = [
     "sphinx-gallery",
     "sphinx-plotly-directive",
     "sphinx_rtd_theme>=1.2.0",
-    "torch<=2.1.2",
+    "torch",
     "torchaudio",
     "torchvision",
 ]
@@ -100,7 +100,7 @@ integration = [
     "scikit-optimize",
     "shap",
     "tensorflow",
-    "torch<=2.1.2",
+    "torch",
     "torchaudio",
     "torchvision",
     "wandb",
