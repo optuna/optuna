@@ -322,10 +322,8 @@ class FrozenTrial(BaseTrial):
                     "`datetime_complete` is supposed to be None for an unfinished trial."
                 )
 
-        if self.state == TrialState.PRUNED and self._values is not None:
-            raise ValueError("`value` is supposed not to be set for a pruned trial.")
-        if self.state == TrialState.FAIL and self._values is not None:
-            raise ValueError("`value` is supposed not to be set for a failed trial.")
+        if self.state in (TrialState.PRUNED, TrialState.FAIL) and self._values is not None:
+            raise ValueError(f"values should be None for a trial with state {self.state}, but got {self._values}.")
         if self.state == TrialState.COMPLETE and self._values is None:
             raise ValueError("`value` is supposed to be set for a complete trial.")
         self_values: List[float] = self._values if self._values is not None else []  # for mypy
