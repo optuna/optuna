@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 import warnings
 
 import numpy as np
@@ -11,9 +12,17 @@ from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 
 
+if TYPE_CHECKING:
+    import scipy.stats as ss
+else:
+    from optuna._imports import _LazyImport
+
+    ss = _LazyImport("scipy.stats")
+
+
 @experimental_class("3.6.0")
 class WilcoxonPruner(BasePruner):
-    """Pruner based on the `Wilcoxon signed-rank test <https://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test>`_.
+    """Pruner based on the `Wilcoxon signed-rank test <https://en.wikipedia.org/w/index.php?title=Wilcoxon_signed-rank_test&oldid=1195011212>`_.
 
     This pruner performs the Wilcoxon signed-rank test between the current trial and the current best trial,
     and stops whenever the pruner is sure up to a given p-value that the current trial is worse than the best one.
@@ -72,6 +81,11 @@ class WilcoxonPruner(BasePruner):
             )
             study.optimize(objective, n_trials=100)
 
+
+    .. note::
+        This pruner cannot handle ``infinity`` or ``nan`` values.
+        Trials containing those values are never pruned.
+
     Args:
         p_threshold:
             The p-value threshold for pruning. This value should be between 0 and 1.
@@ -111,18 +125,15 @@ class WilcoxonPruner(BasePruner):
         self._p_threshold = p_threshold
 
     def prune(self, study: "optuna.study.Study", trial: FrozenTrial) -> bool:
-        # Import scipy in the method because it is an optional dependency.
-        import scipy.stats as ss
-
         if len(trial.intermediate_values) == 0:
             return False
 
         steps, step_values = np.array(list(trial.intermediate_values.items())).T
 
-        if np.any(np.isnan(step_values)):
+        if np.any(~np.isfinite(step_values)):
             warnings.warn(
                 f"The intermediate values of the current trial (trial {trial.number}) "
-                f"contain NaNs. WilcoxonPruner will not prune this trial."
+                f"contain infinity/NaNs. WilcoxonPruner will not prune this trial."
             )
             return False
 
@@ -133,10 +144,10 @@ class WilcoxonPruner(BasePruner):
 
         best_steps, best_step_values = np.array(list(best_trial.intermediate_values.items())).T
 
-        if np.any(np.isnan(best_step_values)):
+        if np.any(~np.isfinite(best_step_values)):
             warnings.warn(
                 f"The intermediate values of the best trial (trial {best_trial.number}) "
-                f"contain NaNs. WilcoxonPruner will not prune the current trial."
+                f"contain infinity/NaNs. WilcoxonPruner will not prune the current trial."
             )
             return False
 
@@ -150,8 +161,6 @@ class WilcoxonPruner(BasePruner):
             )
 
         diff_values = step_values[idx1] - best_step_values[idx2]
-        # Overwrite (inf - inf) or (-inf) - (-inf) with 0.
-        diff_values[step_values[idx1] == best_step_values[idx2]] = 0
 
         if len(diff_values) < self._n_startup_steps:
             return False

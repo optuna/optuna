@@ -73,6 +73,8 @@ def test_wilcoxon_pruner_normal(
         ({1: 1}, {1: 1, 2: 2}),  # Current trial has more steps than best trial
         ({1: 1}, {1: float("nan")}),  # NaN value
         ({1: float("nan")}, {1: 1}),  # NaN value
+        ({1: 1}, {1: float("inf")}),  # NaN value
+        ({1: float("inf")}, {1: 1}),  # NaN value
     ],
 )
 def test_wilcoxon_pruner_warn_bad_best_trial(
