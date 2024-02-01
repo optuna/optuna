@@ -57,7 +57,7 @@ class WilcoxonPruner(BasePruner):
             def objective(trial):
                 s = 0.0
                 for i in range(len(input_data)):
-                    param = trial.suggest_uniform("param", -1, 1)
+                    param = trial.suggest_float("param", -1, 1)
                     loss = eval_func(param, input_data[i])
                     trial.report(loss, i)
                     s += loss
