@@ -13,7 +13,7 @@ from optuna.trial import FrozenTrial
 
 @experimental_class("3.6.0")
 class WilcoxonPruner(BasePruner):
-    """Pruner based on the Wilcoxon signed-rank test <https://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test>`_.
+    """Pruner based on the `Wilcoxon signed-rank test <https://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test>`_.
 
     This pruner performs the Wilcoxon signed-rank test between the current trial and the current best trial,
     and stops whenever the pruner is sure up to a given p-value that the current trial is worse than the best one.
@@ -90,6 +90,9 @@ class WilcoxonPruner(BasePruner):
 
         n_startup_steps:
             The number of steps before which no trials are pruned.
+            Pruning starts only after you have `n_startup_steps` steps of
+            available observations for comparison between the current trial
+            and the best trial.
             Defaults to 0 (pruning kicks in from the very first step).
     """  # NOQA: E501
 
