@@ -125,7 +125,6 @@ def _calculate_nondomination_rank(
     # `domination_matrix[i, j] == True` means that the j-th trial dominates the i-th trial in the
     # given multi objective minimization problem.
 
-    # First, we calculate the domination matrix for the objective values.
     domination_mat = np.all(
         objective_values[:, np.newaxis, :] >= objective_values[np.newaxis, :, :], axis=2
     ) & np.any(objective_values[:, np.newaxis, :] > objective_values[np.newaxis, :, :], axis=2)
