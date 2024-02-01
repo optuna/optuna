@@ -80,6 +80,46 @@ def _fast_non_dominated_sort(
     penalty: np.ndarray | None = None,
     n_below: int | None = None,
 ) -> np.ndarray:
+    if penalty is None:
+        ranks, _ = _calculate_nondomination_rank(objective_values, n_below=n_below)
+        return ranks
+
+    if len(penalty) != len(objective_values):
+        raise ValueError(
+            "The length of penalty and objective_values must be same, but got "
+            "len(penalty)={} and len(objective_values)={}.".format(
+                len(penalty), len(objective_values)
+            )
+        )
+
+    # First, we calculate the domination rank for feasible trials.
+    is_feasible = np.logical_and(~np.isnan(penalty), penalty <= 0)
+    nondomination_rank = np.zeros(len(objective_values), dtype=int)
+    ranks, bottom_rank = _calculate_nondomination_rank(
+        objective_values[is_feasible], n_below=n_below
+    )
+    nondomination_rank[is_feasible] += ranks
+
+    # Second, we calculate the domination rank for infeasible trials.
+    is_infeasible = np.logical_and(~np.isnan(penalty), penalty > 0)
+    ranks, bottom_rank = _calculate_nondomination_rank(
+        penalty[is_infeasible, np.newaxis],
+    )
+    nondomination_rank[is_infeasible] += ranks + bottom_rank + 1
+
+    # Third, we calculate the domination rank for trials with no penalty information.
+    is_nan = np.isnan(penalty)
+    ranks, _ = _calculate_nondomination_rank(objective_values[is_nan], n_below=n_below)
+    nondomination_rank[is_nan] += ranks + bottom_rank + 1
+
+    return nondomination_rank
+
+
+def _calculate_nondomination_rank(
+    objective_values: np.ndarray,
+    *,
+    n_below: int | None = None,
+) -> tuple[np.ndarray, int]:
     # Calculate the domination matrix.
     # The resulting matrix `domination_matrix` is a boolean matrix where
     # `domination_matrix[i, j] == True` means that the j-th trial dominates the i-th trial in the
@@ -89,23 +129,6 @@ def _fast_non_dominated_sort(
     domination_mat = np.all(
         objective_values[:, np.newaxis, :] >= objective_values[np.newaxis, :, :], axis=2
     ) & np.any(objective_values[:, np.newaxis, :] > objective_values[np.newaxis, :, :], axis=2)
-    if penalty is not None:
-        # Filter the domination relations by the penalty on the constraints.
-        # When a penalty score does not exist, the trial is considered to be dominated by the
-        # other trials with a penalty score.
-        is_nan = np.isnan(penalty)
-        domination_mat |= is_nan[:, np.newaxis] & ~is_nan
-        domination_mat &= is_nan[:, np.newaxis] | ~is_nan
-        # When the penalty score is equal and the both trials are explicitly infeasible, i.e., the
-        # scores are bounded, the domination relationship is discarded.
-        is_infeasible = penalty > 0
-        domination_mat &= ~(
-            (penalty[:, np.newaxis] == penalty) & (is_infeasible[:, np.newaxis] | is_infeasible)
-        )
-        # If the penalty score is dominated, the value domination relationship is overwritten.
-        penalty = np.where(is_nan, np.inf, penalty)
-        domination_mat |= penalty[:, np.newaxis] > penalty
-        domination_mat &= penalty[:, np.newaxis] >= penalty
 
     domination_list = np.nonzero(domination_mat)
     domination_map = defaultdict(list)
@@ -118,7 +141,7 @@ def _fast_non_dominated_sort(
     rank = -1
     ranked_idx_num = 0
     n_below = n_below or len(objective_values)
-    while ranked_idx_num < n_below:
+    while ranked_idx_num < len(objective_values):
         # Find the non-dominated trials and assign the rank.
         (non_dominated_idxs,) = np.nonzero(dominated_count == 0)
         ranked_idx_num += len(non_dominated_idxs)
@@ -129,7 +152,10 @@ def _fast_non_dominated_sort(
         dominated_count[non_dominated_idxs] = -1
         for non_dominated_idx in non_dominated_idxs:
             dominated_count[domination_map[non_dominated_idx]] -= 1
-    return ranks
+        # We only need to rank the top `n_below` trials when `n_below` is specified.
+        if ranked_idx_num >= n_below:
+            break
+    return ranks, rank
 
 
 def _dominates(
