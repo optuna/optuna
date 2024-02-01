@@ -17,40 +17,35 @@ from optuna.trial import FrozenTrial
 
 
 class QuantileFilter:
-    def __init__(
-        self,
-        quantile: float,
-        is_lower_better: bool,
-        min_n_top_trials: int,
-        target: Callable[[FrozenTrial], float] | None = None,
-    ):
+    def __init__(self, quantile: float, min_n_top_trials: int):
         if quantile < 0 or quantile > 1:
             raise ValueError(f"quantile must be in [0, 1], but got {quantile}.")
         if min_n_top_trials <= 0:
             raise ValueError(f"min_n_top_trials must be positive, but got {min_n_top_trials}.")
 
         self._quantile = quantile
-        self._is_lower_better = is_lower_better
         self._min_n_top_trials = min_n_top_trials
-        self._target = target
 
-    def filter(self, trials: list[FrozenTrial]) -> list[FrozenTrial]:
-        sign = 1.0 if self._is_lower_better else -1.0
-        target_loss_values = sign * np.asarray(
-            [t.value if self._target is None else self._target(t) for t in trials]
-        )
+    def filter(
+        self,
+        trials: list[FrozenTrial],
+        is_lower_better: bool,
+        target: Callable[[FrozenTrial], float] | None = None,
+    ) -> list[FrozenTrial]:
+        sign = 1.0 if is_lower_better else -1.0
+        loss_values = sign * np.asarray([t.value if target is None else target(t) for t in trials])
         min_n_top_trials = self._min_n_top_trials
-        if min_n_top_trials > target_loss_values.size:
+        if min_n_top_trials > loss_values.size:
             raise ValueError(
                 f"len(trials) must be larger than or equal to min_n_top_trials={min_n_top_trials}"
                 f", but got len(trials)={len(trials)}."
             )
 
         cutoff_val = max(
-            np.partition(target_loss_values, min_n_top_trials - 1)[min_n_top_trials - 1],
-            np.quantile(target_loss_values, self._quantile, method="higher"),
+            np.partition(loss_values, min_n_top_trials - 1)[min_n_top_trials - 1],
+            np.quantile(loss_values, self._quantile, method="higher"),
         )
-        should_keep_trials = target_loss_values <= cutoff_val
+        should_keep_trials = loss_values <= cutoff_val
         return [t for t, should_keep in zip(trials, should_keep_trials) if should_keep]
 
 
@@ -130,9 +125,9 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             )
             is_lower_better = True
 
-        top_trials = QuantileFilter(
-            self._baseline_quantile, is_lower_better, self._min_n_top_trials, target
-        ).filter(trials)
+        top_trials = QuantileFilter(self._baseline_quantile, self._min_n_top_trials).filter(
+            trials, is_lower_better, target
+        )
 
         if len(trials) == len(top_trials):
             warnings.warn("All trials are in top trials, which gives equal importances.")
