@@ -69,14 +69,23 @@ PyTorch
    optuna.integration.PyTorchLightningPruningCallback
    optuna.integration.TorchDistributedTrial
 
-XGBoost
--------
+scikit-learn
+------------
 
 .. autosummary::
    :toctree: generated/
    :nosignatures:
 
-   optuna.integration.XGBoostPruningCallback
+   optuna.integration.OptunaSearchCV
+
+scikit-optimize
+---------------
+
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
+
+   optuna.integration.SkoptSampler
 
 Dependencies of each integration
 --------------------------------
