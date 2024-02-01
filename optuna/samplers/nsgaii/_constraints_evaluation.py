@@ -110,7 +110,9 @@ def _validate_constraints(
     if not is_constrained:
         return
 
-    num_constraints = None
+    num_constraints = max(
+        [len(t.system_attrs.get(_CONSTRAINTS_KEY, [])) for t in population], default=0
+    )
     for _trial in population:
         _constraints = _trial.system_attrs.get(_CONSTRAINTS_KEY)
         if _constraints is None:
@@ -119,8 +121,6 @@ def _validate_constraints(
                 " It will be dominated by the other trials."
             )
             continue
-        # Initialize num_constraints with the number of constraints of the first trial with values.
-        num_constraints = len(_constraints) if num_constraints is None else num_constraints
         if np.any(np.isnan(np.array(_constraints))):
             raise ValueError("NaN is not acceptable as constraint value.")
         elif len(_constraints) != num_constraints:
