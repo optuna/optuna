@@ -419,9 +419,20 @@ def test_rank_population_with_constraints() -> None:
 
 
 def test_validate_constraints() -> None:
+    # Nan is not allowed in constraints.
     with pytest.raises(ValueError):
         _validate_constraints(
             [_create_frozen_trial(number=0, values=[1], constraints=[0, float("nan")])],
+            is_constrained=True,
+        )
+
+    # Different numbers of constraints are not allowed.
+    with pytest.raises(ValueError):
+        _validate_constraints(
+            [
+                _create_frozen_trial(number=0, values=[1], constraints=[0]),
+                _create_frozen_trial(number=1, values=[1], constraints=[0, 1]),
+            ],
             is_constrained=True,
         )
 
