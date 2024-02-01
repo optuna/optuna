@@ -51,9 +51,12 @@ class GridSampler(BaseSampler):
 
     Note:
 
-        :class:`~optuna.samplers.GridSampler` automatically stops the optimization if all
-        combinations in the passed ``search_space`` have already been evaluated, internally
-        invoking the :func:`~optuna.study.Study.stop` method.
+        This sampler with :ref:`ask_and_tell` raises :exc:`RuntimeError` just after evaluating
+        the final grid. This is because :class:`~optuna.samplers.GridSampler` automatically
+        stops the optimization if all combinations in the passed ``search_space`` have already
+        been evaluated, internally invoking the :func:`~optuna.study.Study.stop` method.
+        As a workaround, we need to handle the error manually as in
+        https://github.com/optuna/optuna/issues/4121#issuecomment-1305289910.
 
     Note:
 

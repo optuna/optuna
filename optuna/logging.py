@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from logging import CRITICAL
 from logging import DEBUG
@@ -9,7 +11,6 @@ from logging import WARNING
 import os
 import sys
 import threading
-from typing import Optional
 
 import colorlog
 
@@ -25,7 +26,7 @@ __all__ = [
 ]
 
 _lock: threading.Lock = threading.Lock()
-_default_handler: Optional[logging.Handler] = None
+_default_handler: logging.Handler | None = None
 
 
 def create_default_formatter() -> logging.Formatter:

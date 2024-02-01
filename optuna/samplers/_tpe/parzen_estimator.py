@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Callable
 from typing import Dict
 from typing import NamedTuple
@@ -20,24 +22,16 @@ from optuna.samplers._tpe.probability_distributions import _MixtureOfProductDist
 EPS = 1e-12
 
 
-class _ParzenEstimatorParameters(
-    NamedTuple(
-        "_ParzenEstimatorParameters",
-        [
-            ("consider_prior", bool),
-            ("prior_weight", Optional[float]),
-            ("consider_magic_clip", bool),
-            ("consider_endpoints", bool),
-            ("weights", Callable[[int], np.ndarray]),
-            ("multivariate", bool),
-            (
-                "categorical_distance_func",
-                Dict[str, Callable[[CategoricalChoiceType, CategoricalChoiceType], float]],
-            ),
-        ],
-    )
-):
-    pass
+class _ParzenEstimatorParameters(NamedTuple):
+    consider_prior: bool
+    prior_weight: float | None
+    consider_magic_clip: bool
+    consider_endpoints: bool
+    weights: Callable[[int], np.ndarray]
+    multivariate: bool
+    categorical_distance_func: dict[
+        str, Callable[[CategoricalChoiceType, CategoricalChoiceType], float]
+    ]
 
 
 class _ParzenEstimator:
@@ -185,29 +179,32 @@ class _ParzenEstimator:
         search_space: CategoricalDistribution,
         parameters: _ParzenEstimatorParameters,
     ) -> _BatchedDistributions:
-        consider_prior = parameters.consider_prior or len(observations) == 0
+        choices = search_space.choices
+        n_choices = len(choices)
+        if len(observations) == 0:
+            return _BatchedCategoricalDistributions(
+                weights=np.full((1, n_choices), fill_value=1.0 / n_choices)
+            )
 
+        n_kernels = len(observations) + parameters.consider_prior
         assert parameters.prior_weight is not None
         weights = np.full(
-            shape=(len(observations) + consider_prior, len(search_space.choices)),
-            fill_value=parameters.prior_weight / (len(observations) + consider_prior),
+            shape=(n_kernels, n_choices),
+            fill_value=parameters.prior_weight / n_kernels,
         )
-
+        observed_indices = observations.astype(int)
         if param_name in parameters.categorical_distance_func:
+            # TODO(nabenabe0928): Think about how to handle combinatorial explosion.
+            # The time complexity is O(n_choices * used_indices.size), so n_choices cannot be huge.
+            used_indices, rev_indices = np.unique(observed_indices, return_inverse=True)
             dist_func = parameters.categorical_distance_func[param_name]
-            for i, observation in enumerate(observations.astype(int)):
-                dists = [
-                    dist_func(search_space.choices[observation], search_space.choices[j])
-                    for j in range(len(search_space.choices))
-                ]
-                exponent = -(
-                    (np.array(dists) / max(dists)) ** 2
-                    * np.log((len(observations) + consider_prior) / parameters.prior_weight)
-                    * (np.log(len(search_space.choices)) / np.log(6))
-                )
-                weights[i] = np.exp(exponent)
+            dists = np.array([[dist_func(choices[i], c) for c in choices] for i in used_indices])
+            coef = np.log(n_kernels / parameters.prior_weight) * np.log(n_choices) / np.log(6)
+            cat_weights = np.exp(-((dists / np.max(dists, axis=1)[:, np.newaxis]) ** 2) * coef)
+            weights[: len(observed_indices)] = cat_weights[rev_indices]
         else:
-            weights[np.arange(len(observations)), observations.astype(int)] += 1
+            weights[np.arange(len(observed_indices)), observed_indices] += 1
+
         weights /= weights.sum(axis=1, keepdims=True)
         return _BatchedCategoricalDistributions(weights)
 
