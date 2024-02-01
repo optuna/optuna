@@ -4,14 +4,14 @@ import numpy as np
 import pytest
 
 import optuna
-from optuna._gp._search_space import get_search_space_and_normalized_params
-from optuna._gp._search_space import get_unnormalized_param
-from optuna._gp._search_space import normalize_one_param
-from optuna._gp._search_space import round_one_normalized_param
-from optuna._gp._search_space import sample_normalized_params
-from optuna._gp._search_space import ScaleType
-from optuna._gp._search_space import SearchSpace
-from optuna._gp._search_space import unnormalize_one_param
+from optuna._gp.search_space import get_search_space_and_normalized_params
+from optuna._gp.search_space import get_unnormalized_param
+from optuna._gp.search_space import normalize_one_param
+from optuna._gp.search_space import round_one_normalized_param
+from optuna._gp.search_space import sample_normalized_params
+from optuna._gp.search_space import ScaleType
+from optuna._gp.search_space import SearchSpace
+from optuna._gp.search_space import unnormalize_one_param
 from optuna._transform import _SearchSpaceTransform
 
 
@@ -99,7 +99,7 @@ def test_sample_normalized_params() -> None:
         bounds=np.array([(0.0, 10.0), (1.0, 10.0), (10.0, 100.0), (10.0, 100.0), (0.0, 5.0)]),
         steps=np.array([0.0, 1.0, 0.0, 1.0, 1.0]),
     )
-    samples = sample_normalized_params(n=128, search_space=search_space)
+    samples = sample_normalized_params(n=128, search_space=search_space, seed=0)
     assert samples.shape == (128, 5)
     assert np.all((samples[:, :4] >= 0.0) & (samples[:, :4] <= 1.0))
 

@@ -4,15 +4,23 @@ from dataclasses import dataclass
 from enum import IntEnum
 import math
 from typing import Any
+from typing import TYPE_CHECKING
 
 import numpy as np
-import scipy.stats.qmc
 
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.trial import FrozenTrial
+
+
+if TYPE_CHECKING:
+    import scipy.stats.qmc as qmc
+else:
+    from optuna._imports import _LazyImport
+
+    qmc = _LazyImport("scipy.stats.qmc")
 
 
 class ScaleType(IntEnum):
@@ -70,12 +78,12 @@ def round_one_normalized_param(
     return param_value
 
 
-def sample_normalized_params(n: int, search_space: SearchSpace) -> np.ndarray:
+def sample_normalized_params(n: int, search_space: SearchSpace, seed: int | None) -> np.ndarray:
     dim = search_space.scale_types.shape[0]
     scale_types = search_space.scale_types
     bounds = search_space.bounds
     steps = search_space.steps
-    qmc_engine = scipy.stats.qmc.Sobol(dim, scramble=True)
+    qmc_engine = qmc.Sobol(dim, scramble=True, seed=seed)
     param_values = qmc_engine.random(n)
     for i in range(dim):
         if scale_types[i] == ScaleType.CATEGORICAL:

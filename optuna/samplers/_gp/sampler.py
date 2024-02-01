@@ -14,6 +14,7 @@ from optuna._experimental import experimental_class
 from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
 from optuna.samplers._base import BaseSampler
+from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
@@ -23,19 +24,19 @@ from optuna.trial import TrialState
 if TYPE_CHECKING:
     import torch
 
-    import optuna._gp._acqf as _acqf
-    import optuna._gp._gp as _gp
-    import optuna._gp._optim as _optim
-    import optuna._gp._search_space as _search_space
+    import optuna._gp.acqf as acqf
+    import optuna._gp.gp as gp
+    import optuna._gp.optim as optim
+    import optuna._gp.search_space as gp_search_space
 else:
     torch = _LazyImport("torch")
-    _search_space = _LazyImport("optuna._gp._search_space")
-    _gp = _LazyImport("optuna._gp._gp")
-    _optim = _LazyImport("optuna._gp._optim")
-    _acqf = _LazyImport("optuna._gp._acqf")
+    gp_search_space = _LazyImport("optuna._gp.search_space")
+    gp = _LazyImport("optuna._gp.gp")
+    optim = _LazyImport("optuna._gp.optim")
+    acqf = _LazyImport("optuna._gp.acqf")
 
 
-def log_prior(kernel_params: "_gp.KernelParamsTensor") -> "torch.Tensor":
+def log_prior(kernel_params: "gp.KernelParamsTensor") -> "torch.Tensor":
     # Log of prior distribution of kernel parameters.
 
     def gamma_log_prior(x: "torch.Tensor", concentration: float, rate: float) -> "torch.Tensor":
@@ -46,7 +47,7 @@ def log_prior(kernel_params: "_gp.KernelParamsTensor") -> "torch.Tensor":
     return (
         gamma_log_prior(kernel_params.inverse_squared_lengthscales, 2, 0.5).sum()
         + gamma_log_prior(kernel_params.kernel_scale, 2, 1)
-        + gamma_log_prior(kernel_params.noise, 1.1, 20)
+        + gamma_log_prior(kernel_params.noise_var, 1.1, 20)
     )
 
 
@@ -88,16 +89,18 @@ class GPSampler(BaseSampler):
         independent_sampler: BaseSampler | None = None,
         n_startup_trials: int = 10,
     ) -> None:
+        self._rng = LazyRandomState(seed)
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._intersection_search_space = optuna.search_space.IntersectionSearchSpace()
         self._n_startup_trials = n_startup_trials
-        self._log_prior: "Callable[[_gp.KernelParamsTensor], torch.Tensor]" = log_prior
+        self._log_prior: "Callable[[gp.KernelParamsTensor], torch.Tensor]" = log_prior
         self._minimum_noise: float = 1e-6
         # We cache the kernel parameters for initial values of fitting the next time.
-        self._kernel_params_cache: "_gp.KernelParamsTensor | None" = None
+        self._kernel_params_cache: "gp.KernelParamsTensor | None" = None
         self._optimize_n_samples: int = 2048
 
     def reseed_rng(self) -> None:
+        self._rng.rng.seed()
         self._independent_sampler.reseed_rng()
 
     def infer_relative_search_space(
@@ -108,10 +111,7 @@ class GPSampler(BaseSampler):
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
     ) -> dict[str, Any]:
-        if len(study.directions) > 1:
-            raise NotImplementedError(
-                "GPSampler currently does not support multi-objective optimization."
-            )
+        self._raise_error_if_multi_objective(study)
 
         if search_space == {}:
             return {}
@@ -125,7 +125,7 @@ class GPSampler(BaseSampler):
         (
             internal_search_space,
             normalized_params,
-        ) = _search_space.get_search_space_and_normalized_params(trials, search_space)
+        ) = gp_search_space.get_search_space_and_normalized_params(trials, search_space)
 
         _sign = -1.0 if study.direction == StudyDirection.MINIMIZE else 1.0
         score_vals = np.array([_sign * cast(float, trial.value) for trial in trials])
@@ -137,11 +137,8 @@ class GPSampler(BaseSampler):
             )
 
             finite_score_vals = score_vals[np.isfinite(score_vals)]
-            if len(finite_score_vals) == 0:
-                best_finite_score = worst_finite_score = 0.0
-            else:
-                best_finite_score = np.max(finite_score_vals)
-                worst_finite_score = np.min(finite_score_vals)
+            best_finite_score = np.max(finite_score_vals, initial=0.0)
+            worst_finite_score = np.min(finite_score_vals, initial=0.0)
 
             score_vals = np.clip(score_vals, worst_finite_score, best_finite_score)
 
@@ -153,25 +150,28 @@ class GPSampler(BaseSampler):
             # Clear cache if the search space changes.
             self._kernel_params_cache = None
 
-        kernel_params = _gp.fit_kernel_params(
+        kernel_params = gp.fit_kernel_params(
             X=normalized_params,
             Y=standarized_score_vals,
             is_categorical=internal_search_space.scale_types
-            == _search_space.ScaleType.CATEGORICAL,
+            == gp_search_space.ScaleType.CATEGORICAL,
             log_prior=self._log_prior,
             minimum_noise=self._minimum_noise,
             initial_kernel_params=self._kernel_params_cache,
         )
         self._kernel_params_cache = kernel_params
 
-        acqf = _acqf.create_acqf(
+        acqf_params = acqf.create_acqf_params(
             kernel_params=kernel_params,
             search_space=internal_search_space,
             X=normalized_params,
             Y=standarized_score_vals,
         )
-        normalized_param, _ = _optim.optimize_acqf_sample(acqf, n_samples=self._optimize_n_samples)
-        return _search_space.get_unnormalized_param(search_space, normalized_param)
+
+        normalized_param, _ = optim.optimize_acqf_sample(
+            acqf_params, n_samples=self._optimize_n_samples, seed=self._rng.rng.randint(2**32)
+        )
+        return gp_search_space.get_unnormalized_param(search_space, normalized_param)
 
     def sample_independent(
         self,

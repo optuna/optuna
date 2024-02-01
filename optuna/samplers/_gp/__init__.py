@@ -1,4 +1,4 @@
-from ._sampler import GPSampler
+from .sampler import GPSampler
 
 
 __all__ = ["GPSampler"]

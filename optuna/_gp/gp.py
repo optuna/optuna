@@ -4,10 +4,18 @@ from dataclasses import dataclass
 import math
 import typing
 from typing import Callable
+from typing import TYPE_CHECKING
 
 import numpy as np
-import scipy.optimize
 import torch
+
+
+if TYPE_CHECKING:
+    import scipy.optimize as so
+else:
+    from optuna._imports import _LazyImport
+
+    so = _LazyImport("scipy.optimize")
 
 
 # This GP implementation uses the following notation:
@@ -57,7 +65,7 @@ class KernelParamsTensor:
     # Kernel parameters to fit.
     inverse_squared_lengthscales: torch.Tensor  # [len(params)]
     kernel_scale: torch.Tensor  # Scalar
-    noise: torch.Tensor  # Scalar
+    noise_var: torch.Tensor  # Scalar
 
 
 def kernel(
@@ -81,7 +89,6 @@ def kernel(
 
 
 def kernel_at_zero_distance(
-    is_categorical: torch.Tensor,  # [len(params)]
     kernel_params: KernelParamsTensor,
 ) -> torch.Tensor:  # [...batch_shape, n_A, n_B]
     # kernel(x, x) = kernel_scale
@@ -115,11 +122,10 @@ def marginal_log_likelihood(
     cov_fX_fX = kernel(is_categorical, kernel_params, X, X)
 
     cov_Y_Y_chol = torch.linalg.cholesky(
-        cov_fX_fX + kernel_params.noise * torch.eye(X.shape[0], dtype=torch.float64)
+        cov_fX_fX + kernel_params.noise_var * torch.eye(X.shape[0], dtype=torch.float64)
     )
-    logdet = (
-        2 * torch.log(torch.diag(cov_Y_Y_chol)).sum()
-    )  # log |L| = 0.5 * log|L^T L| = 0.5 * log|C|
+    # log |L| = 0.5 * log|L^T L| = 0.5 * log|C|
+    logdet = 2 * torch.log(torch.diag(cov_Y_Y_chol)).sum()
     # cov_Y_Y_chol @ cov_Y_Y_chol_inv_Y = Y --> cov_Y_Y_chol_inv_Y = inv(cov_Y_Y_chol) @ Y
     cov_Y_Y_chol_inv_Y = torch.linalg.solve_triangular(cov_Y_Y_chol, Y[:, None], upper=False)[:, 0]
     return -0.5 * (
@@ -143,7 +149,7 @@ def fit_kernel_params(
         initial_kernel_params = KernelParamsTensor(
             inverse_squared_lengthscales=torch.ones(n_params, dtype=torch.float64),
             kernel_scale=torch.tensor(1.0, dtype=torch.float64),
-            noise=torch.tensor(1.0, dtype=torch.float64),
+            noise_var=torch.tensor(1.0, dtype=torch.float64),
         )
 
     # We apply log transform to enforce the positivity of the kernel parameters.
@@ -156,7 +162,7 @@ def fit_kernel_params(
             np.log(initial_kernel_params.inverse_squared_lengthscales.detach().numpy()),
             [
                 np.log(initial_kernel_params.kernel_scale.item()),
-                np.log(initial_kernel_params.noise.item() - minimum_noise),
+                np.log(initial_kernel_params.noise_var.item() - minimum_noise),
             ],
         ]
     )
@@ -167,7 +173,7 @@ def fit_kernel_params(
         params = KernelParamsTensor(
             inverse_squared_lengthscales=torch.exp(raw_params_tensor[:n_params]),
             kernel_scale=torch.exp(raw_params_tensor[n_params]),
-            noise=torch.exp(raw_params_tensor[n_params + 1]) + minimum_noise,
+            noise_var=torch.exp(raw_params_tensor[n_params + 1]) + minimum_noise,
         )
         loss = -marginal_log_likelihood(
             torch.from_numpy(X), torch.from_numpy(Y), torch.from_numpy(is_categorical), params
@@ -176,7 +182,7 @@ def fit_kernel_params(
         return loss.item(), raw_params_tensor.grad.detach().numpy()  # type: ignore
 
     # jac=True means loss_func returns the gradient for gradient descent.
-    res = scipy.optimize.minimize(loss_func, initial_raw_params, jac=True)
+    res = so.minimize(loss_func, initial_raw_params, jac=True)
 
     # TODO(contramundum53): Handle the case where the optimization fails.
     raw_params_opt_tensor = torch.from_numpy(res.x)
@@ -184,5 +190,5 @@ def fit_kernel_params(
     return KernelParamsTensor(
         inverse_squared_lengthscales=torch.exp(raw_params_opt_tensor[:n_params]),
         kernel_scale=torch.exp(raw_params_opt_tensor[n_params]),
-        noise=torch.exp(raw_params_opt_tensor[n_params + 1]) + minimum_noise,
+        noise_var=torch.exp(raw_params_opt_tensor[n_params + 1]) + minimum_noise,
     )
