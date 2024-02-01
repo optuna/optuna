@@ -109,7 +109,6 @@ def _validate_constraints(
 ) -> None:
     if not is_constrained:
         return
-    assert len(population) > 0
 
     num_constraints = None
     for _trial in population:
