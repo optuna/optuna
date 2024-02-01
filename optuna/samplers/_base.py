@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import abc
 from typing import Any
 from typing import Callable
@@ -219,6 +221,13 @@ class BaseSampler(abc.ABC):
                 "If the study is being used for multi-objective optimization, "
                 f"{self.__class__.__name__} cannot be used."
             )
+
+    def _fork_seed(self, seed: int | None, n_output: int) -> list[int | None]:
+        if seed is None:
+            return [None] * n_output
+        else:
+            seeding_rng = np.random.RandomState(seed)
+            return list(seeding_rng.random_integers(0, np.iinfo(np.int32).max, size=n_output))
 
 
 _CONSTRAINTS_KEY = "constraints"

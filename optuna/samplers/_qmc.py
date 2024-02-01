@@ -152,8 +152,9 @@ class QMCSampler(BaseSampler):
         warn_independent_sampling: bool = True,
     ) -> None:
         self._scramble = scramble
-        self._seed = np.random.PCG64().random_raw() if seed is None else seed
-        self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
+        qmc_seed, random_sampler_seed = self._fork_seed(seed, n_output=2)
+        self._seed = np.random.PCG64().random_raw() if qmc_seed is None else qmc_seed
+        self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=random_sampler_seed)
         self._initial_search_space: Optional[Dict[str, BaseDistribution]] = None
         self._warn_independent_sampling = warn_independent_sampling
 

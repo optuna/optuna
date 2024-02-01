@@ -203,8 +203,9 @@ class NSGAIISampler(BaseSampler):
             )
 
         self._population_size = population_size
-        self._random_sampler = RandomSampler(seed=seed)
-        self._rng = LazyRandomState(seed)
+        nsgaii_seed, random_sampler_seed = self._fork_seed(seed, n_output=2)
+        self._random_sampler = RandomSampler(seed=random_sampler_seed)
+        self._rng = LazyRandomState(nsgaii_seed)
         self._constraints_func = constraints_func
         self._search_space = IntersectionSearchSpace()
 

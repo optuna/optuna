@@ -303,8 +303,9 @@ class TPESampler(BaseSampler):
         self._gamma = gamma
 
         self._warn_independent_sampling = warn_independent_sampling
-        self._rng = LazyRandomState(seed)
-        self._random_sampler = RandomSampler(seed=seed)
+        tpe_seed, random_sampler_seed = self._fork_seed(seed, n_output=2)
+        self._rng = LazyRandomState(tpe_seed)
+        self._random_sampler = RandomSampler(seed=random_sampler_seed)
 
         self._multivariate = multivariate
         self._group = group
