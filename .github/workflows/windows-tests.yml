@@ -121,8 +121,8 @@ jobs:
 
         # TODO(nabenabe0928): Remove the version constraint on Torch.
         pip install "torch<2.2.0"
+        pip install "torchaudio<2.2.0"
         pip install "torchvision<0.17.0"
-        pip install "lightning<2.1.4"
 
     - name: Output installed packages
       run: |
