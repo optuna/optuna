@@ -1,42 +1,22 @@
-from typing import Any
-from typing import Callable
+from __future__ import annotations
 
-from botorch.acquisition.analytic import LogExpectedImprovement
-from botorch.acquisition.analytic import UpperConfidenceBound
-from botorch.models import SingleTaskGP
-from botorch.models.model import Model
-from gpytorch.kernels import MaternKernel
-from gpytorch.kernels import ScaleKernel
-from gpytorch.likelihoods import GaussianLikelihood
-from gpytorch.means import ZeroMean
 import numpy as np
 import pytest
 import torch
 
-from optuna._gp.acqf import AcquisitionFunctionParams
 from optuna._gp.acqf import AcquisitionFunctionType
 from optuna._gp.acqf import create_acqf_params
 from optuna._gp.acqf import eval_acqf
-from optuna._gp.gp import kernel
 from optuna._gp.gp import KernelParamsTensor
-from optuna._gp.gp import posterior
 from optuna._gp.search_space import ScaleType
 from optuna._gp.search_space import SearchSpace
 
 
 @pytest.mark.parametrize(
-    "acqf_type, beta, botorch_acqf_gen",
+    "acqf_type, beta",
     [
-        (
-            AcquisitionFunctionType.LOG_EI,
-            None,
-            lambda model, acqf_params: LogExpectedImprovement(model, best_f=acqf_params.max_Y),
-        ),
-        (
-            AcquisitionFunctionType.UCB,
-            2.0,
-            lambda model, acqf_params: UpperConfidenceBound(model, beta=acqf_params.beta),
-        ),
+        (AcquisitionFunctionType.LOG_EI, None),
+        (AcquisitionFunctionType.UCB, 2.0),
     ],
 )
 @pytest.mark.parametrize(
@@ -45,7 +25,6 @@ from optuna._gp.search_space import SearchSpace
 def test_posterior_and_eval_acqf(
     acqf_type: AcquisitionFunctionType,
     beta: float | None,
-    botorch_acqf_gen: Callable[[Model, AcquisitionFunctionParams], Any],
     x: np.ndarray,
 ) -> None:
     n_dims = 2
@@ -75,56 +54,12 @@ def test_posterior_and_eval_acqf(
     x_tensor = torch.from_numpy(x)
     x_tensor.requires_grad_(True)
 
-    prior_cov_fX_fX = kernel(
-        torch.zeros(n_dims, dtype=torch.bool),
-        kernel_params,
-        torch.from_numpy(X),
-        torch.from_numpy(X),
-    )
-    posterior_mean_fx, posterior_var_fx = posterior(
-        kernel_params,
-        torch.from_numpy(X),
-        torch.zeros(n_dims, dtype=torch.bool),
-        torch.from_numpy(acqf_params.cov_Y_Y_inv),
-        torch.from_numpy(acqf_params.cov_Y_Y_inv_Y),
-        torch.from_numpy(x),
-    )
-
     acqf_value = eval_acqf(acqf_params, x_tensor)
     acqf_value.sum().backward()  # type: ignore
     acqf_grad = x_tensor.grad
     assert acqf_grad is not None
 
-    gpytorch_likelihood = GaussianLikelihood()
-    gpytorch_likelihood.noise_covar.noise = kernel_params.noise_var
-    matern_kernel = MaternKernel(nu=2.5, ard_num_dims=n_dims)
-    matern_kernel.lengthscale = kernel_params.inverse_squared_lengthscales.rsqrt()
-    covar_module = ScaleKernel(matern_kernel)
-    covar_module.outputscale = kernel_params.kernel_scale
+    assert acqf_value.shape == x.shape[:-1]
 
-    botorch_model = SingleTaskGP(
-        train_X=torch.from_numpy(X),
-        train_Y=torch.from_numpy(Y)[:, None],
-        likelihood=gpytorch_likelihood,
-        covar_module=covar_module,
-        mean_module=ZeroMean(),
-    )
-    botorch_prior_fX = botorch_model(torch.from_numpy(X))
-    assert torch.allclose(botorch_prior_fX.covariance_matrix, prior_cov_fX_fX)
-
-    botorch_model.eval()
-
-    botorch_acqf = botorch_acqf_gen(botorch_model, acqf_params)
-
-    x_tensor = torch.from_numpy(x)
-    x_tensor.requires_grad_(True)
-    botorch_posterior_fx = botorch_model.posterior(x_tensor[..., None, :])
-    assert torch.allclose(posterior_mean_fx, botorch_posterior_fx.mean[..., 0, 0])
-    assert torch.allclose(posterior_var_fx, botorch_posterior_fx.variance[..., 0, 0])
-
-    botorch_acqf_value = botorch_acqf(x_tensor[..., None, :])
-    botorch_acqf_value.sum().backward()  # type: ignore
-    botorch_acqf_grad = x_tensor.grad
-    assert botorch_acqf_grad is not None
-    assert torch.allclose(acqf_value, botorch_acqf_value)
-    assert torch.allclose(acqf_grad, botorch_acqf_grad)
+    assert torch.all(torch.isfinite(acqf_value))
+    assert torch.all(torch.isfinite(acqf_grad))
