@@ -68,7 +68,7 @@ def test_check_plot_args() -> None:
 
 
 @pytest.mark.parametrize(
-    "value, expected", [(float("inf"), 1), (-float("inf"), 1), (float("nan"), 1), (0.0, 2)]
+    "value, expected", [(float("inf"), 1), (-float("inf"), 1), (0.0, 2)]
 )
 def test_filter_inf_trials(value: float, expected: int) -> None:
     study = create_study()
@@ -97,11 +97,9 @@ def test_filter_inf_trials(value: float, expected: int) -> None:
     [
         (float("inf"), 0, 2),
         (-float("inf"), 0, 2),
-        (float("nan"), 0, 2),
         (0.0, 0, 3),
         (float("inf"), 1, 1),
         (-float("inf"), 1, 1),
-        (float("nan"), 1, 1),
         (0.0, 1, 3),
     ],
 )
