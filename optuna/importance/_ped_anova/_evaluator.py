@@ -53,7 +53,8 @@ class QuantileFilter:
 
         cutoff_val = max(
             np.partition(loss_values, min_n_top_trials - 1)[min_n_top_trials - 1],
-            # TODO(nabenabe0928): Replace `interpolation` with `method` if possible.
+            # TODO(nabenabe0928): Replace `interpolation` with `method` after dropping Python3.7.
+            # TODO(nabenabe0928): Remove the type ignore below with the change above as well.
             np.quantile(
                 loss_values, self._quantile, interpolation="higher"
             ),  # type: ignore[call-overload]
