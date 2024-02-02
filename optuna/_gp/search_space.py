@@ -61,6 +61,8 @@ def normalize_one_param(
     if scale_type == ScaleType.LOG:
         low, high = (math.log(low), math.log(high))
         param_value = np.log(param_value)
+    if high == low:
+        return np.full_like(param_value, 0.5)
     param_value = (param_value - low) / (high - low)
     return param_value
 
