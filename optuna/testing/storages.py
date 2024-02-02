@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import sys
 from types import TracebackType
 from typing import Any
 from typing import IO
 
 import fakeredis
-import pytest
 
 import optuna
 from optuna.storages import JournalFileStorage
