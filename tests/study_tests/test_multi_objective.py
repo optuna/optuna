@@ -1,3 +1,4 @@
+from typing import List
 from typing import Optional
 
 import pytest
@@ -96,8 +97,8 @@ def test_dominates_invalid() -> None:
 def test_dominates_incomplete_vs_incomplete(t1_state: TrialState, t2_state: TrialState) -> None:
     directions = [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
 
-    t1_values: Optional[list[int]] = [1, 1]
-    t2_values: Optional[list[int]] = [0, 2]
+    t1_values: Optional[List[int]] = [1, 1]
+    t2_values: Optional[List[int]] = [0, 2]
     if t1_state == TrialState.FAIL or t1_state == TrialState.PRUNED:
         t1_values = None
     if t2_state == TrialState.FAIL or t2_state == TrialState.PRUNED:
@@ -113,7 +114,7 @@ def test_dominates_incomplete_vs_incomplete(t1_state: TrialState, t2_state: Tria
 def test_dominates_complete_vs_incomplete(t1_state: TrialState) -> None:
     directions = [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
 
-    t1_values: Optional[list[int]] = [0, 2]
+    t1_values: Optional[List[int]] = [0, 2]
     if t1_state == TrialState.FAIL or t1_state == TrialState.PRUNED:
         t1_values = None
 
