@@ -157,7 +157,8 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         if target is not None:
             warnings.warn(
                 f"{self.__class__.__name__} computes the importances of params to achieve "
-                "low `target` values. If this is not what you want, please multiply target by -1."
+                "low `target` values. If this is not what you want, "
+                "please modify target, e.g., by multiplying the output by -1."
             )
             is_lower_better = True
 
