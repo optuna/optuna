@@ -5,6 +5,7 @@ import math
 from typing import TYPE_CHECKING
 
 import numpy as np
+from enum import IntEnum
 
 from optuna._gp.gp import kernel
 from optuna._gp.gp import kernel_at_zero_distance
@@ -45,7 +46,7 @@ def standard_logei(z: torch.Tensor) -> torch.Tensor:
     return vals
 
 
-def logei(mean: torch.Tensor, var: torch.Tensor, f0: torch.Tensor) -> torch.Tensor:
+def logei(mean: torch.Tensor, var: torch.Tensor, f0: float) -> torch.Tensor:
     # Return E_{y ~ N(mean, var)}[max(0, y-f0)]
     sigma = torch.sqrt(var)
     st_val = standard_logei((mean - f0) / sigma)
@@ -53,44 +54,35 @@ def logei(mean: torch.Tensor, var: torch.Tensor, f0: torch.Tensor) -> torch.Tens
     return val
 
 
-def eval_logei(
-    kernel_params: KernelParamsTensor,
-    X: torch.Tensor,
-    is_categorical: torch.Tensor,
-    cov_Y_Y_inv: torch.Tensor,
-    cov_Y_Y_inv_Y: torch.Tensor,
-    max_Y: torch.Tensor,
-    x: torch.Tensor,
-    # Additional noise to prevent numerical instability.
-    # Usually this is set to a very small value.
-    stabilizing_noise: float,
-) -> torch.Tensor:
-    cov_fx_fX = kernel(is_categorical, kernel_params, x[..., None, :], X)[..., 0, :]
-    cov_fx_fx = kernel_at_zero_distance(kernel_params)
-    (mean, var) = posterior(cov_Y_Y_inv, cov_Y_Y_inv_Y, cov_fx_fX, cov_fx_fx)
-    val = logei(mean, var + stabilizing_noise, max_Y)
-
-    return val
+def ucb(mean: torch.Tensor, var: torch.Tensor, beta: float) -> torch.Tensor:
+    return mean + torch.sqrt(beta * var)
 
 
 # TODO(contramundum53): consider abstraction for acquisition functions.
+class AcquisitionFunctionType(IntEnum):
+    LOG_EI = 0
+    UCB = 1
+
 @dataclass(frozen=True)
 class AcquisitionFunctionParams:
-    # Currently only logEI is supported.
+    acqf_type: AcquisitionFunctionType
     kernel_params: KernelParamsTensor
     X: np.ndarray
     search_space: SearchSpace
     cov_Y_Y_inv: np.ndarray
     cov_Y_Y_inv_Y: np.ndarray
-    max_Y: np.ndarray
+    max_Y: float
+    beta: float | None
     acqf_stabilizing_noise: float
 
 
 def create_acqf_params(
+    acqf_type: AcquisitionFunctionType,
     kernel_params: KernelParamsTensor,
     search_space: SearchSpace,
     X: np.ndarray,
     Y: np.ndarray,
+    beta: float | None = None,
     acqf_stabilizing_noise: float = 1e-12,
 ) -> AcquisitionFunctionParams:
     X_tensor = torch.from_numpy(X)
@@ -102,29 +94,41 @@ def create_acqf_params(
     cov_Y_Y_inv = np.linalg.inv(cov_Y_Y)
 
     return AcquisitionFunctionParams(
+        acqf_type=acqf_type,
         kernel_params=kernel_params,
         X=X,
         search_space=search_space,
         cov_Y_Y_inv=cov_Y_Y_inv,
         cov_Y_Y_inv_Y=cov_Y_Y_inv @ Y,
         max_Y=np.max(Y),
+        beta=beta,
         acqf_stabilizing_noise=acqf_stabilizing_noise,
     )
 
 
 def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.Tensor:
-    return eval_logei(
-        kernel_params=acqf_params.kernel_params,
-        X=torch.from_numpy(acqf_params.X),
-        is_categorical=torch.from_numpy(
+    mean, var = posterior(
+        acqf_params.kernel_params, 
+        torch.from_numpy(acqf_params.X),
+        torch.from_numpy(
             acqf_params.search_space.scale_types == ScaleType.CATEGORICAL
-        ),
-        cov_Y_Y_inv=torch.from_numpy(acqf_params.cov_Y_Y_inv),
-        cov_Y_Y_inv_Y=torch.from_numpy(acqf_params.cov_Y_Y_inv_Y),
-        max_Y=torch.tensor(acqf_params.max_Y, dtype=torch.float64),
-        x=x,
-        stabilizing_noise=acqf_params.acqf_stabilizing_noise,
+        ), 
+        torch.from_numpy(acqf_params.cov_Y_Y_inv),
+        torch.from_numpy(acqf_params.cov_Y_Y_inv_Y),
+        x,
     )
+
+    if acqf_params.acqf_type == AcquisitionFunctionType.LOG_EI:
+        return logei(
+            mean=mean, 
+            var=var + acqf_params.acqf_stabilizing_noise, 
+            f0=acqf_params.max_Y
+        )
+    elif acqf_params.acqf_type == AcquisitionFunctionType.UCB:
+        assert acqf_params.beta is not None
+        return ucb(mean=mean, var=var, beta=acqf_params.beta)
+    else:
+        assert False  # Unknown acquisition function type.
 
 
 def eval_acqf_no_grad(acqf_params: AcquisitionFunctionParams, x: np.ndarray) -> np.ndarray:
