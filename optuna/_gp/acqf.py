@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import math
+from typing import TYPE_CHECKING
 
 import numpy as np
-import torch
 
 from optuna._gp.gp import kernel
 from optuna._gp.gp import kernel_at_zero_distance
@@ -12,6 +12,14 @@ from optuna._gp.gp import KernelParamsTensor
 from optuna._gp.gp import posterior
 from optuna._gp.search_space import ScaleType
 from optuna._gp.search_space import SearchSpace
+
+
+if TYPE_CHECKING:
+    import torch
+else:
+    from optuna._imports import _LazyImport
+
+    torch = _LazyImport("torch")
 
 
 def standard_logei(z: torch.Tensor) -> torch.Tensor:

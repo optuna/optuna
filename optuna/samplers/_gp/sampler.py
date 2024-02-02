@@ -11,7 +11,6 @@ import numpy as np
 
 import optuna
 from optuna._experimental import experimental_class
-from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
@@ -29,6 +28,8 @@ if TYPE_CHECKING:
     import optuna._gp.optim as optim
     import optuna._gp.search_space as gp_search_space
 else:
+    from optuna._imports import _LazyImport
+
     torch = _LazyImport("torch")
     gp_search_space = _LazyImport("optuna._gp.search_space")
     gp = _LazyImport("optuna._gp.gp")
@@ -44,6 +45,7 @@ def log_prior(kernel_params: "gp.KernelParamsTensor") -> "torch.Tensor":
         return (concentration - 1) * torch.log(x) - rate * x
 
     # NOTE(contramundum53): The parameters below were picked qualitatively.
+    # TODO(contramundum53): Check whether these priors are appropriate.
     return (
         gamma_log_prior(kernel_params.inverse_squared_lengthscales, 2, 0.5).sum()
         + gamma_log_prior(kernel_params.kernel_scale, 2, 1)
@@ -61,7 +63,7 @@ class GPSampler(BaseSampler):
     The current implementation uses:
         - Matern kernel with nu=2.5 (twice differentiable),
         - Automatic relevance determination (ARD) for the length scale of each parameter,
-        - Gamma prior for lengthscales, kernel scale, and noise scale,
+        - Gamma prior for inverse squared lengthscales, kernel scale, and noise variance,
         - Log Expected Improvement (logEI) as the acquisition function, and
         - Quasi-Monte Carlo (QMC) sampling to optimize the acquisition function.
 
@@ -71,12 +73,13 @@ class GPSampler(BaseSampler):
 
     Args:
         seed:
-            Random seed passed to `independent_sampler`.
-            Defaults to None (random seed is used).
+            Random seed to initialize internal random number generator.
+            Defaults to None (a seed is picked randomly).
 
         independent_sampler:
             Sampler used for initial sampling (for the first `n_startup_trials` trials)
-            and for conditional parameters. Defaults to `None` (a random sampler is used).
+            and for conditional parameters. Defaults to `None`
+            (a random sampler with the same `seed` is used).
 
         n_startup_trials:
             Number of initial trials. Defaults to 10.
@@ -106,7 +109,13 @@ class GPSampler(BaseSampler):
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
     ) -> dict[str, BaseDistribution]:
-        return self._intersection_search_space.calculate(study)
+        search_space = {}
+        for name, distribution in self._intersection_search_space.calculate(study).items():
+            if distribution.single():
+                continue
+            search_space[name] = distribution
+
+        return search_space
 
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
@@ -153,8 +162,9 @@ class GPSampler(BaseSampler):
         kernel_params = gp.fit_kernel_params(
             X=normalized_params,
             Y=standarized_score_vals,
-            is_categorical=internal_search_space.scale_types
-            == gp_search_space.ScaleType.CATEGORICAL,
+            is_categorical=(
+                internal_search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
+            ),
             log_prior=self._log_prior,
             minimum_noise=self._minimum_noise,
             initial_kernel_params=self._kernel_params_cache,

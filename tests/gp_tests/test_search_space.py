@@ -20,6 +20,7 @@ from optuna._transform import _SearchSpaceTransform
     [
         (ScaleType.LINEAR, (0.0, 10.0), 0.0, 2.0, 0.2),
         (ScaleType.LINEAR, (0.0, 9.0), 1.0, 2.0, 0.25),
+        (ScaleType.LINEAR, (0.5, 8.5), 2.0, 2.5, 0.3),
         (ScaleType.LOG, (10**0.0, 10**10.0), 0.0, 10**2.0, 0.2),
         (
             ScaleType.LOG,

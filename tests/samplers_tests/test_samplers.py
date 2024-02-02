@@ -34,10 +34,12 @@ from optuna.trial import Trial
 from optuna.trial import TrialState
 
 
-def get_gp_sampler(*args: Any, **kwargs: Any) -> optuna.samplers.GPSampler:
+def get_gp_sampler(
+    *, n_startup_trials: int = 0, seed: int | None = None
+) -> optuna.samplers.GPSampler:
     if sys.version_info >= (3, 12, 0):
         pytest.skip("PyTorch does not support Python 3.12 yet.")
-    return optuna.samplers.GPSampler(*args, **kwargs)
+    return optuna.samplers.GPSampler(n_startup_trials=n_startup_trials, seed=seed)
 
 
 parametrize_sampler = pytest.mark.parametrize(

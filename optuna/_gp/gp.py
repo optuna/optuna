@@ -7,15 +7,16 @@ from typing import Callable
 from typing import TYPE_CHECKING
 
 import numpy as np
-import torch
 
 
 if TYPE_CHECKING:
     import scipy.optimize as so
+    import torch
 else:
     from optuna._imports import _LazyImport
 
     so = _LazyImport("scipy.optimize")
+    torch = _LazyImport("torch")
 
 
 # This GP implementation uses the following notation:
