@@ -10,6 +10,7 @@ import optuna
 from optuna.storages import JournalFileStorage
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 
+
 STORAGE_MODES: list[Any] = [
     "inmemory",
     "sqlite",
