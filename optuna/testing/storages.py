@@ -12,28 +12,12 @@ import optuna
 from optuna.storages import JournalFileStorage
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 
-
-try:
-    import distributed
-except ImportError:
-    pass
-
 STORAGE_MODES: list[Any] = [
     "inmemory",
     "sqlite",
     "cached_sqlite",
     "journal",
     "journal_redis",
-    pytest.param(
-        "dask",
-        marks=[
-            pytest.mark.integration,
-            pytest.mark.skipif(
-                sys.version_info[:2] >= (3, 11),
-                reason="distributed doesn't yet support Python 3.11",
-            ),
-        ],
-    ),
 ]
 
 
@@ -49,7 +33,6 @@ class StorageSupplier:
     def __init__(self, storage_specifier: str, **kwargs: Any) -> None:
         self.storage_specifier = storage_specifier
         self.extra_args = kwargs
-        self.dask_client: "distributed.Client" | None = None
         self.tempfile: IO[Any] | None = None
 
     def __enter__(
@@ -59,7 +42,6 @@ class StorageSupplier:
         | optuna.storages._CachedStorage
         | optuna.storages.RDBStorage
         | optuna.storages.JournalStorage
-        | "optuna.integration.DaskStorage"
     ):
         if self.storage_specifier == "inmemory":
             if len(self.extra_args) > 0:
@@ -88,10 +70,6 @@ class StorageSupplier:
             self.tempfile = NamedTemporaryFilePool().tempfile()
             file_storage = JournalFileStorage(self.tempfile.name)
             return optuna.storages.JournalStorage(file_storage)
-        elif self.storage_specifier == "dask":
-            self.dask_client = distributed.Client()  # type: ignore[no-untyped-call]
-
-            return optuna.integration.DaskStorage(client=self.dask_client, **self.extra_args)
         else:
             assert False
 
@@ -100,7 +78,3 @@ class StorageSupplier:
     ) -> None:
         if self.tempfile:
             self.tempfile.close()
-
-        if self.dask_client:
-            self.dask_client.shutdown()  # type: ignore[no-untyped-call]
-            self.dask_client.close()  # type: ignore[no-untyped-call]
