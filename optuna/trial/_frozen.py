@@ -324,7 +324,8 @@ class FrozenTrial(BaseTrial):
 
         if self.state in (TrialState.PRUNED, TrialState.FAIL) and self._values is not None:
             raise ValueError(
-                f"values should be None for a trial with state {self.state}, but got {self._values}."
+                f"values should be None for a trial with state {self.state}, "
+                f"but got {self._values}."
             )
         if self.state == TrialState.COMPLETE:
             if self._values is None:
