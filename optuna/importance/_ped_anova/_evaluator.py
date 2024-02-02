@@ -53,7 +53,10 @@ class QuantileFilter:
 
         cutoff_val = max(
             np.partition(loss_values, min_n_top_trials - 1)[min_n_top_trials - 1],
-            np.quantile(loss_values, self._quantile, method="higher"),
+            # TODO(nabenabe0928): Replace `interpolation` with `method` if possible.
+            np.quantile(
+                loss_values, self._quantile, interpolation="higher"
+            ),  # type: ignore[call-overload]
         )
         should_keep_trials = loss_values <= cutoff_val
         return [t for t, should_keep in zip(trials, should_keep_trials) if should_keep]
