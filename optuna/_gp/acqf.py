@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import IntEnum
 import math
 from typing import TYPE_CHECKING
 
 import numpy as np
-from enum import IntEnum
 
 from optuna._gp.gp import kernel
-from optuna._gp.gp import kernel_at_zero_distance
 from optuna._gp.gp import KernelParamsTensor
 from optuna._gp.gp import posterior
 from optuna._gp.search_space import ScaleType
@@ -63,6 +62,7 @@ class AcquisitionFunctionType(IntEnum):
     LOG_EI = 0
     UCB = 1
 
+
 @dataclass(frozen=True)
 class AcquisitionFunctionParams:
     acqf_type: AcquisitionFunctionType
@@ -108,22 +108,16 @@ def create_acqf_params(
 
 def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.Tensor:
     mean, var = posterior(
-        acqf_params.kernel_params, 
+        acqf_params.kernel_params,
         torch.from_numpy(acqf_params.X),
-        torch.from_numpy(
-            acqf_params.search_space.scale_types == ScaleType.CATEGORICAL
-        ), 
+        torch.from_numpy(acqf_params.search_space.scale_types == ScaleType.CATEGORICAL),
         torch.from_numpy(acqf_params.cov_Y_Y_inv),
         torch.from_numpy(acqf_params.cov_Y_Y_inv_Y),
         x,
     )
 
     if acqf_params.acqf_type == AcquisitionFunctionType.LOG_EI:
-        return logei(
-            mean=mean, 
-            var=var + acqf_params.acqf_stabilizing_noise, 
-            f0=acqf_params.max_Y
-        )
+        return logei(mean=mean, var=var + acqf_params.acqf_stabilizing_noise, f0=acqf_params.max_Y)
     elif acqf_params.acqf_type == AcquisitionFunctionType.UCB:
         assert acqf_params.beta is not None
         return ucb(mean=mean, var=var, beta=acqf_params.beta)

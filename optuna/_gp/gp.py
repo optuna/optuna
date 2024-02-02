@@ -106,7 +106,7 @@ def posterior(
 ) -> tuple[torch.Tensor, torch.Tensor]:  # (mean: [(batch,)], var: [(batch,)])
     cov_fx_fX = kernel(is_categorical, kernel_params, x[..., None, :], X)[..., 0, :]
     cov_fx_fx = kernel_at_zero_distance(kernel_params)
-    
+
     # mean = cov_fx_fX @ inv(cov_fX_fX + noise * I) @ Y
     # var = cov_fx_fx - cov_fx_fX @ inv(cov_fX_fX + noise * I) @ cov_fx_fX.T
     mean = cov_fx_fX @ cov_Y_Y_inv_Y  # [batch]

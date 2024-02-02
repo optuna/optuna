@@ -1,32 +1,53 @@
-from optuna._gp.gp import KernelParamsTensor, kernel, posterior
-from optuna._gp.acqf import AcquisitionFunctionType, eval_acqf, AcquisitionFunctionParams, create_acqf_params
-from optuna._gp.search_space import SearchSpace, ScaleType
+from typing import Any
+from typing import Callable
+
+from botorch.acquisition.analytic import LogExpectedImprovement
+from botorch.acquisition.analytic import UpperConfidenceBound
+from botorch.models import SingleTaskGP
+from botorch.models.model import Model
+from gpytorch.kernels import MaternKernel
+from gpytorch.kernels import ScaleKernel
+from gpytorch.likelihoods import GaussianLikelihood
+from gpytorch.means import ZeroMean
 import numpy as np
 import pytest
-
-from botorch.models.model import Model
-from botorch.models import SingleTaskGP
-from gpytorch.kernels import MaternKernel, ScaleKernel
-from gpytorch.likelihoods import GaussianLikelihood
-from gpytorch.likelihoods.noise_models import HomoskedasticNoise
-from gpytorch.means import ZeroMean
-from botorch.acquisition.analytic import LogExpectedImprovement, UpperConfidenceBound
-from typing import Callable, Any
 import torch
+
+from optuna._gp.acqf import AcquisitionFunctionParams
+from optuna._gp.acqf import AcquisitionFunctionType
+from optuna._gp.acqf import create_acqf_params
+from optuna._gp.acqf import eval_acqf
+from optuna._gp.gp import kernel
+from optuna._gp.gp import KernelParamsTensor
+from optuna._gp.gp import posterior
+from optuna._gp.search_space import ScaleType
+from optuna._gp.search_space import SearchSpace
+
 
 @pytest.mark.parametrize(
     "acqf_type, beta, botorch_acqf_gen",
     [
-        (AcquisitionFunctionType.LOG_EI, None, lambda model, acqf_params: LogExpectedImprovement(model, best_f=acqf_params.max_Y)),
-        (AcquisitionFunctionType.UCB, 2.0, lambda model, acqf_params: UpperConfidenceBound(model, beta=acqf_params.beta))
-    ]
+        (
+            AcquisitionFunctionType.LOG_EI,
+            None,
+            lambda model, acqf_params: LogExpectedImprovement(model, best_f=acqf_params.max_Y),
+        ),
+        (
+            AcquisitionFunctionType.UCB,
+            2.0,
+            lambda model, acqf_params: UpperConfidenceBound(model, beta=acqf_params.beta),
+        ),
+    ],
 )
-@pytest.mark.parametrize("x",[
-    np.array([0.15, 0.12]),  # unbatched
-    np.array([[0.15, 0.12], [0.0, 1.0]])  # batched
-])
-def test_posterior_and_eval_acqf(acqf_type: AcquisitionFunctionType, beta: float | None, botorch_acqf_gen: Callable[[Model, AcquisitionFunctionParams], Any], x: np.ndarray) -> None:
-
+@pytest.mark.parametrize(
+    "x", [np.array([0.15, 0.12]), np.array([[0.15, 0.12], [0.0, 1.0]])]  # unbatched  # batched
+)
+def test_posterior_and_eval_acqf(
+    acqf_type: AcquisitionFunctionType,
+    beta: float | None,
+    botorch_acqf_gen: Callable[[Model, AcquisitionFunctionParams], Any],
+    x: np.ndarray,
+) -> None:
     n_dims = 2
     X = np.array([[0.1, 0.2], [0.2, 0.3], [0.3, 0.1]])
     Y = np.array([1.0, 2.0, 3.0])
@@ -36,11 +57,10 @@ def test_posterior_and_eval_acqf(acqf_type: AcquisitionFunctionType, beta: float
         noise_var=torch.tensor(0.1, dtype=torch.float64),
     )
     search_space = SearchSpace(
-        scale_types=np.full(n_dims, ScaleType.LINEAR), 
-        bounds=np.array([[0.0, 1.0] * n_dims]), 
-        steps=np.zeros(n_dims)
+        scale_types=np.full(n_dims, ScaleType.LINEAR),
+        bounds=np.array([[0.0, 1.0] * n_dims]),
+        steps=np.zeros(n_dims),
     )
-
 
     acqf_params = create_acqf_params(
         acqf_type=acqf_type,
@@ -55,14 +75,25 @@ def test_posterior_and_eval_acqf(acqf_type: AcquisitionFunctionType, beta: float
     x_tensor = torch.from_numpy(x)
     x_tensor.requires_grad_(True)
 
-    prior_cov_fX_fX = kernel(torch.zeros(n_dims, dtype=torch.bool), kernel_params, torch.from_numpy(X), torch.from_numpy(X))
-    posterior_mean_fx, posterior_var_fx = posterior(kernel_params, torch.from_numpy(X), torch.zeros(n_dims, dtype=torch.bool), acqf_params.cov_Y_Y_inv, acqf_params.cov_Y_Y_inv_Y, torch.from_numpy(x))
+    prior_cov_fX_fX = kernel(
+        torch.zeros(n_dims, dtype=torch.bool),
+        kernel_params,
+        torch.from_numpy(X),
+        torch.from_numpy(X),
+    )
+    posterior_mean_fx, posterior_var_fx = posterior(
+        kernel_params,
+        torch.from_numpy(X),
+        torch.zeros(n_dims, dtype=torch.bool),
+        torch.from_numpy(acqf_params.cov_Y_Y_inv),
+        torch.from_numpy(acqf_params.cov_Y_Y_inv_Y),
+        torch.from_numpy(x),
+    )
 
     acqf_value = eval_acqf(acqf_params, x_tensor)
-    acqf_value.sum().backward()
+    acqf_value.sum().backward()  # type: ignore
     acqf_grad = x_tensor.grad
     assert acqf_grad is not None
-
 
     gpytorch_likelihood = GaussianLikelihood()
     gpytorch_likelihood.noise_covar.noise = kernel_params.noise_var
@@ -72,8 +103,8 @@ def test_posterior_and_eval_acqf(acqf_type: AcquisitionFunctionType, beta: float
     covar_module.outputscale = kernel_params.kernel_scale
 
     botorch_model = SingleTaskGP(
-        train_X = torch.from_numpy(X),
-        train_Y = torch.from_numpy(Y)[:, None],
+        train_X=torch.from_numpy(X),
+        train_Y=torch.from_numpy(Y)[:, None],
         likelihood=gpytorch_likelihood,
         covar_module=covar_module,
         mean_module=ZeroMean(),
@@ -92,12 +123,8 @@ def test_posterior_and_eval_acqf(acqf_type: AcquisitionFunctionType, beta: float
     assert torch.allclose(posterior_var_fx, botorch_posterior_fx.variance[..., 0, 0])
 
     botorch_acqf_value = botorch_acqf(x_tensor[..., None, :])
-    botorch_acqf_value.sum().backward()
+    botorch_acqf_value.sum().backward()  # type: ignore
     botorch_acqf_grad = x_tensor.grad
     assert botorch_acqf_grad is not None
     assert torch.allclose(acqf_value, botorch_acqf_value)
     assert torch.allclose(acqf_grad, botorch_acqf_grad)
-
-
-
-
