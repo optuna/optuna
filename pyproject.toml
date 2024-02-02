@@ -90,7 +90,6 @@ document = [
 integration = [
     "botorch>=0.4.0",
     "cma",
-    "distributed",
     "lightgbm",
     "lightning",
     "mlflow",
