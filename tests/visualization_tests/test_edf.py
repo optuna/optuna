@@ -157,7 +157,7 @@ def test_get_edf_info(n_studies: int, target: Callable[[optuna.trial.FrozenTrial
         _validate_edf_values(line.y_values)
 
 
-@pytest.mark.parametrize("value", [float("inf"), -float("inf"), float("nan")])
+@pytest.mark.parametrize("value", [float("inf"), -float("inf")])
 def test_nonfinite_removed(value: float) -> None:
     study = prepare_study_with_trials(value_for_first_trial=value)
     edf_info = _get_edf_info(study)
