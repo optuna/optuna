@@ -29,7 +29,11 @@ def get_study(seed: int, n_trials: int, is_multi_obj: bool) -> Study:
     # Assumes that `seed` can be fixed to reproduce identical results.
     directions = ["minimize", "minimize"] if is_multi_obj else ["minimize"]
     study = create_study(sampler=RandomSampler(seed=seed), directions=directions)
-    study.optimize(multi_objective_function if is_multi_obj else objective, n_trials=n_trials)
+    if is_multi_obj:
+        study.optimize(multi_objective_function, n_trials=n_trials)
+    else:
+        study.optimize(objective, n_trials=n_trials)
+
     return study
 
 
@@ -73,7 +77,7 @@ def _test_evaluator_with_infinite(
 
     if is_multi_obj:
         assert target_idx is not None
-        target = lambda t: t.values[target_idx]
+        target = lambda t: t.values[target_idx]  # noqa: E731
     else:
         target = None
 
