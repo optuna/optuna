@@ -94,8 +94,14 @@ def test_dominates_invalid() -> None:
 def test_dominates_incomplete_vs_incomplete(t1_state: TrialState, t2_state: TrialState) -> None:
     directions = [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
 
-    t1 = create_trial(values=[1, 1], state=t1_state)
-    t2 = create_trial(values=[0, 2], state=t2_state)
+    t1_values = [1, 1]
+    t2_values = [0, 2]
+    if t1_state == TrialState.FAIL or t1_state == TrialState.PRUNED:
+        t1_values = None
+    if t2_state == TrialState.FAIL or t2_state == TrialState.PRUNED:
+        t2_values = None
+    t1 = create_trial(values=t1_values, state=t1_state)
+    t2 = create_trial(values=t2_values, state=t2_state)
 
     assert not _dominates(t2, t1, list(directions))
     assert not _dominates(t1, t2, list(directions))
@@ -105,7 +111,11 @@ def test_dominates_incomplete_vs_incomplete(t1_state: TrialState, t2_state: Tria
 def test_dominates_complete_vs_incomplete(t1_state: TrialState) -> None:
     directions = [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
 
-    t1 = create_trial(values=[0, 2], state=t1_state)
+    t1_values = [0, 2]
+    if t1_state == TrialState.FAIL or t1_state == TrialState.PRUNED:
+        t1_values = None
+
+    t1 = create_trial(values=t1_values, state=t1_state)
     t2 = create_trial(values=[1, 1], state=TrialState.COMPLETE)
 
     assert _dominates(t2, t1, list(directions))
