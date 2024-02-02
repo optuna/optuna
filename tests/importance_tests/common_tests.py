@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from optuna import create_study
+from optuna import Study
 from optuna import Trial
 from optuna.distributions import FloatDistribution
 from optuna.importance import BaseImportanceEvaluator
@@ -24,14 +25,18 @@ def multi_objective_function(trial: Trial) -> tuple[float, float]:
     return x1, x2 * x3
 
 
+def get_study(seed: int, n_trials: int, is_multi_obj: bool) -> Study:
+    # Assumes that `seed` can be fixed to reproduce identical results.
+    directions = ["minimize", "minimize"] if is_multi_obj else ["minimize"]
+    study = create_study(sampler=RandomSampler(seed=seed), directions=directions)
+    study.optimize(multi_objective_function if is_multi_obj else objective, n_trials=n_trials)
+    return study
+
+
 def _test_n_trees_of_tree_based_evaluator(
     evaluator_cls: type[FanovaImportanceEvaluator | MeanDecreaseImpurityImportanceEvaluator],
 ) -> None:
-    # Assumes that `seed` can be fixed to reproduce identical results.
-
-    study = create_study(sampler=RandomSampler(seed=0))
-    study.optimize(objective, n_trials=3)
-
+    study = get_study(seed=0, n_trials=3, is_multi_obj=False)
     evaluator = evaluator_cls(n_trees=10, seed=0)
     param_importance = evaluator.evaluate(study)
 
@@ -44,11 +49,7 @@ def _test_n_trees_of_tree_based_evaluator(
 def _test_max_depth_of_tree_based_evaluator(
     evaluator_cls: type[FanovaImportanceEvaluator | MeanDecreaseImpurityImportanceEvaluator],
 ) -> None:
-    # Assumes that `seed` can be fixed to reproduce identical results.
-
-    study = create_study(sampler=RandomSampler(seed=0))
-    study.optimize(objective, n_trials=3)
-
+    study = get_study(seed=0, n_trials=3, is_multi_obj=False)
     evaluator = evaluator_cls(max_depth=1, seed=0)
     param_importance = evaluator.evaluate(study)
 
@@ -59,27 +60,30 @@ def _test_max_depth_of_tree_based_evaluator(
 
 
 def _test_evaluator_with_infinite(
-    evaluator_cls: type[BaseImportanceEvaluator], inf_value: float
+    evaluator_cls: type[BaseImportanceEvaluator], inf_value: float, target_idx: int | None = None
 ) -> None:
     # The test ensures that trials with infinite values are ignored to calculate importance scores.
-    n_trial = 10
-    seed = 13
-
-    # Importance scores are calculated without a trial with an inf value.
-    study = create_study(sampler=RandomSampler(seed=seed))
-    study.optimize(objective, n_trials=n_trial)
+    is_multi_obj = target_idx is not None
+    study = get_study(seed=13, n_trials=10, is_multi_obj=is_multi_obj)
 
     try:
-        evaluator = evaluator_cls(seed=seed)  # type: ignore[call-arg]
+        evaluator = evaluator_cls(seed=13)  # type: ignore[call-arg]
     except TypeError:  # evaluator does not take seed.
         evaluator = evaluator_cls()
 
-    param_importance_without_inf = evaluator.evaluate(study)
+    if is_multi_obj:
+        assert target_idx is not None
+        target = lambda t: t.values[target_idx]
+    else:
+        target = None
+
+    # Importance scores are calculated without a trial with an inf value.
+    param_importance_without_inf = evaluator.evaluate(study, target=target)
 
     # A trial with an inf value is added into the study manually.
     study.add_trial(
         create_trial(
-            value=inf_value,
+            values=[inf_value] if not is_multi_obj else [inf_value, inf_value],
             params={"x1": 1.0, "x2": 1.0, "x3": 3.0},
             distributions={
                 "x1": FloatDistribution(low=0.1, high=3),
@@ -89,46 +93,7 @@ def _test_evaluator_with_infinite(
         )
     )
     # Importance scores are calculated with a trial with an inf value.
-    param_importance_with_inf = evaluator.evaluate(study)
-
-    # Obtained importance scores should be the same between with inf and without inf,
-    # because the last trial whose objective value is an inf is ignored.
-    # PED-ANOVA can handle inf, so anyways the length should be identical.
-    assert param_importance_with_inf == param_importance_without_inf
-
-
-def _test_multi_objective_evaluator_with_infinite(
-    evaluator_cls: type[BaseImportanceEvaluator], target_idx: int, inf_value: float
-) -> None:
-    # The test ensures that trials with infinite values are ignored to calculate importance scores.
-    n_trial = 10
-    seed = 13
-
-    # Importance scores are calculated without a trial with an inf value.
-    study = create_study(directions=["minimize", "minimize"], sampler=RandomSampler(seed=seed))
-    study.optimize(multi_objective_function, n_trials=n_trial)
-
-    try:
-        evaluator = evaluator_cls(seed=seed)  # type: ignore[call-arg]
-    except TypeError:  # evaluator does not take seed.
-        evaluator = evaluator_cls()
-
-    param_importance_without_inf = evaluator.evaluate(study, target=lambda t: t.values[target_idx])
-
-    # A trial with an inf value is added into the study manually.
-    study.add_trial(
-        create_trial(
-            values=[inf_value, inf_value],
-            params={"x1": 1.0, "x2": 1.0, "x3": 3.0},
-            distributions={
-                "x1": FloatDistribution(low=0.1, high=3),
-                "x2": FloatDistribution(low=0.1, high=3, log=True),
-                "x3": FloatDistribution(low=2, high=4, log=True),
-            },
-        )
-    )
-    # Importance scores are calculated with a trial with an inf value.
-    param_importance_with_inf = evaluator.evaluate(study, target=lambda t: t.values[target_idx])
+    param_importance_with_inf = evaluator.evaluate(study, target=target)
 
     # Obtained importance scores should be the same between with inf and without inf,
     # because the last trial whose objective value is an inf is ignored.
