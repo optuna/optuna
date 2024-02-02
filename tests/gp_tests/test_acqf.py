@@ -22,7 +22,7 @@ from optuna._gp.search_space import SearchSpace
 @pytest.mark.parametrize(
     "x", [np.array([0.15, 0.12]), np.array([[0.15, 0.12], [0.0, 1.0]])]  # unbatched  # batched
 )
-def test_posterior_and_eval_acqf(
+def test_eval_acqf(
     acqf_type: AcquisitionFunctionType,
     beta: float | None,
     x: np.ndarray,
