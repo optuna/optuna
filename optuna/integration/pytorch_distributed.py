@@ -21,7 +21,7 @@ from optuna.distributions import CategoricalChoiceType
 with try_import() as _imports:
     import torch
     import torch.distributed as dist
-    from torch.distributed import ProcessGroup  # type: ignore[attr-defined]
+    from torch.distributed import ProcessGroup
 
 
 if TYPE_CHECKING:
