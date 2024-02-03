@@ -3,9 +3,6 @@ from __future__ import annotations
 import copy
 import datetime
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
 from typing import Tuple
 
 import pytest
@@ -26,8 +23,8 @@ from optuna.trial import TrialState
 def _create_trial(
     *,
     value: float = 0.2,
-    params: Dict[str, Any] = {"x": 10},
-    distributions: Dict[str, BaseDistribution] = {"x": FloatDistribution(5, 12)},
+    params: dict[str, Any] = {"x": 10},
+    distributions: dict[str, BaseDistribution] = {"x": FloatDistribution(5, 12)},
 ) -> FrozenTrial:
     trial = optuna.trial.create_trial(value=value, params=params, distributions=distributions)
     trial.number = 0
@@ -175,7 +172,7 @@ def test_validate() -> None:
         invalid_trial._validate()
 
     # Invalid: Inconsistent `params` and `distributions`
-    inconsistent_pairs: List[Tuple[Dict[str, Any], Dict[str, BaseDistribution]]] = [
+    inconsistent_pairs: list[Tuple[dict[str, Any], dict[str, BaseDistribution]]] = [
         # `params` has an extra element.
         ({"x": 0.1, "y": 0.5}, {"x": FloatDistribution(0, 1)}),
         # `distributions` has an extra element.
@@ -253,7 +250,7 @@ def test_called_single_methods_when_multi() -> None:
     state = TrialState.COMPLETE
     values = (0.2, 0.3)
     params = {"x": 10}
-    distributions: Dict[str, BaseDistribution] = {"x": FloatDistribution(5, 12)}
+    distributions: dict[str, BaseDistribution] = {"x": FloatDistribution(5, 12)}
     user_attrs = {"foo": "bar"}
     system_attrs = {"baz": "qux"}
     intermediate_values = {0: 0.0, 1: 0.1, 2: 0.1}
@@ -279,7 +276,7 @@ def test_called_single_methods_when_multi() -> None:
 
 
 def test_init() -> None:
-    def _create_trial(value: Optional[float], values: Optional[List[float]]) -> FrozenTrial:
+    def _create_trial(value: float | None, values: list[float] | None) -> FrozenTrial:
         return FrozenTrial(
             number=0,
             trial_id=0,
@@ -310,9 +307,9 @@ def test_init() -> None:
 # experimental.
 @pytest.mark.parametrize("state", [TrialState.COMPLETE, TrialState.FAIL])
 def test_create_trial(state: TrialState) -> None:
-    value: Optional[float] = 0.2
+    value: float | None = 0.2
     params = {"x": 10}
-    distributions: Dict[str, BaseDistribution] = {"x": FloatDistribution(5, 12)}
+    distributions: dict[str, BaseDistribution] = {"x": FloatDistribution(5, 12)}
     user_attrs = {"foo": "bar"}
     system_attrs = {"baz": "qux"}
     intermediate_values = {0: 0.0, 1: 0.1, 2: 0.1}
