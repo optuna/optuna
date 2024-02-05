@@ -27,7 +27,7 @@ def _create_study(
             optuna.trial.create_trial(
                 params={"x": float(i)},
                 distributions={"x": optuna.distributions.FloatDistribution(-1.0, fmax)},
-                value=0.0,
+                value=0.0 if s == TrialState.COMPLETE else None,
                 state=s,
                 system_attrs=trial_sys_attrs,
             )
