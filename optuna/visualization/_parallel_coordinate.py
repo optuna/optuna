@@ -95,7 +95,7 @@ def plot_parallel_coordinate(
             Target's name to display on the axis label and the legend.
 
     Returns:
-        A :class:`plotly.graph_objs.Figure` object.
+        A :class:`plotly.graph_objects.Figure` object.
 
     .. note::
         The colormap is reversed when the ``target`` argument isn't :obj:`None` or ``direction``

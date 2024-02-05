@@ -75,6 +75,12 @@ def _dominates(
     values0 = trial0.values
     values1 = trial1.values
 
+    if trial0.state != TrialState.COMPLETE:
+        return False
+
+    if trial1.state != TrialState.COMPLETE:
+        return True
+
     assert values0 is not None
     assert values1 is not None
 
@@ -85,12 +91,6 @@ def _dominates(
         raise ValueError(
             "The number of the values and the number of the objectives are mismatched."
         )
-
-    if trial0.state != TrialState.COMPLETE:
-        return False
-
-    if trial1.state != TrialState.COMPLETE:
-        return True
 
     normalized_values0 = [_normalize_value(v, d) for v, d in zip(values0, directions)]
     normalized_values1 = [_normalize_value(v, d) for v, d in zip(values1, directions)]
