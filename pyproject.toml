@@ -51,7 +51,7 @@ benchmark = [
   "virtualenv"
 ]
 checking = [
-    "black",
+    "black<24.0.0",
     "blackdoc",
     "flake8",
     "isort",
@@ -89,8 +89,6 @@ document = [
 ]
 integration = [
     "botorch>=0.4.0",
-    "catboost>=0.26; sys_platform!='darwin'",
-    "catboost>=0.26,<1.2; sys_platform=='darwin'",
     "cma",
     "distributed",
     "lightgbm",

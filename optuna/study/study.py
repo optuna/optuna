@@ -854,6 +854,9 @@ class Study:
             hyperparameters manually.
         """
 
+        if not isinstance(params, dict):
+            raise TypeError("params must be a dictionary.")
+
         if skip_if_exists and self._should_skip_enqueue(params):
             _logger.info(f"Trial with params {params} already exists. Skipping enqueue.")
             return
