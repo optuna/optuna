@@ -94,15 +94,6 @@ PyTorch
    optuna.integration.PyTorchLightningPruningCallback
    optuna.integration.TorchDistributedTrial
 
-scikit-learn
-------------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.OptunaSearchCV
-
 scikit-optimize
 ---------------
 
