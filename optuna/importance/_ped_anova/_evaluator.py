@@ -24,7 +24,7 @@ class QuantileFilter:
         min_n_top_trials: int,
         target: Callable[[FrozenTrial], float] | None,
     ):
-        if quantile < 0 or quantile > 1:
+        if not (0 <= quantile <= 1):  # nan must also be rejected.
             raise ValueError(f"quantile must be in [0, 1], but got {quantile}.")
         if min_n_top_trials <= 0:
             raise ValueError(f"min_n_top_trials must be positive, but got {min_n_top_trials}.")
