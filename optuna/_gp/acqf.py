@@ -122,7 +122,7 @@ def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.
         assert acqf_params.beta is not None
         return ucb(mean=mean, var=var, beta=acqf_params.beta)
     else:
-        assert False  # Unknown acquisition function type.
+        assert False, "Unknown acquisition function type."
 
 
 def eval_acqf_no_grad(acqf_params: AcquisitionFunctionParams, x: np.ndarray) -> np.ndarray:
