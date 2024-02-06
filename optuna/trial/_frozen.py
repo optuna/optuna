@@ -1,4 +1,5 @@
 import datetime
+import math
 from typing import Any
 from typing import cast
 from typing import Dict
@@ -321,8 +322,16 @@ class FrozenTrial(BaseTrial):
                     "`datetime_complete` is supposed to be None for an unfinished trial."
                 )
 
-        if self.state == TrialState.COMPLETE and self._values is None:
-            raise ValueError("`value` is supposed to be set for a complete trial.")
+        if self.state in (TrialState.PRUNED, TrialState.FAIL) and self._values is not None:
+            raise ValueError(
+                f"values should be None for a trial with state {self.state}, "
+                f"but got {self._values}."
+            )
+        if self.state == TrialState.COMPLETE:
+            if self._values is None:
+                raise ValueError("values should be set for a complete trial.")
+            elif any(math.isnan(x) for x in self._values):
+                raise ValueError("values should not contain NaN.")
 
         if set(self.params.keys()) != set(self.distributions.keys()):
             raise ValueError(

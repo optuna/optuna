@@ -72,7 +72,7 @@ def plot_timeline(study: Study) -> "go.Figure":
             their lifetime.
 
     Returns:
-        A :class:`plotly.graph_objs.Figure` object.
+        A :class:`plotly.graph_objects.Figure` object.
     """
     _imports.check()
     info = _get_timeline_info(study)

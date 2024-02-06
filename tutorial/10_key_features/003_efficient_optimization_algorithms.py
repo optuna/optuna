@@ -82,6 +82,8 @@ print(f"Sampler is {study.sampler.__class__.__name__}")
 #
 # - Threshold pruning algorithm implemented in :class:`~optuna.pruners.ThresholdPruner`
 #
+# - A pruning algorithm based on `Wilcoxon signed-rank test <https://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test>`_ implemented in :class:`~optuna.pruners.WilcoxonPruner`
+#
 # We use :class:`~optuna.pruners.MedianPruner` in most examples,
 # though basically it is outperformed by :class:`~optuna.pruners.SuccessiveHalvingPruner` and
 # :class:`~optuna.pruners.HyperbandPruner` as in `this benchmark result <https://github.com/optuna/optuna/wiki/Benchmarks-with-Kurobako>`_.

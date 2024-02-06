@@ -110,7 +110,7 @@ def plot_edf(
             Target's name to display on the axis label.
 
     Returns:
-        A :class:`plotly.graph_objs.Figure` object.
+        A :class:`plotly.graph_objects.Figure` object.
     """
 
     _imports.check()
