@@ -109,6 +109,9 @@ optional = [
     "redis",  # optuna/storages/redis.py.
     "scikit-learn>=0.24.2",
     # optuna/visualization/param_importances.py.
+    "scipy",  # optuna/samplers/_gp
+    # TODO(contramundum53): Remove the constraint after torch supports python 3.12.
+    "torch; python_version<='3.11'",  # optuna/samplers/_gp
 ]
 test = [
     "coverage",
@@ -117,6 +120,8 @@ test = [
     "moto",
     "pytest",
     "scipy>=1.9.2; python_version>='3.8'",
+    # TODO(contramundum53): Remove the constraint after torch supports python 3.12.
+    "torch; python_version<='3.11'",
 ]
 
 [project.urls]

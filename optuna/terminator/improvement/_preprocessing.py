@@ -196,7 +196,7 @@ class AddRandomInputs(BasePreprocessing):
     def __init__(
         self,
         n_additional_trials: int,
-        dummy_value: float = np.nan,
+        dummy_value: float = 0.0,
     ) -> None:
         self._n_additional_trials = n_additional_trials
         self._dummy_value = dummy_value

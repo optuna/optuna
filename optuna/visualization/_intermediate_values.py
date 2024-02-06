@@ -103,7 +103,7 @@ def plot_intermediate_values(study: Study) -> "go.Figure":
             values.
 
     Returns:
-        A :class:`plotly.graph_objs.Figure` object.
+        A :class:`plotly.graph_objects.Figure` object.
     """
 
     _imports.check()

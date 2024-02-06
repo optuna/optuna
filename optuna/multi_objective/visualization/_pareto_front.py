@@ -65,7 +65,7 @@ def plot_pareto_front(
 
 
     Returns:
-        A :class:`plotly.graph_objs.Figure` object.
+        A :class:`plotly.graph_objects.Figure` object.
 
     """
 
