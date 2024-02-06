@@ -83,6 +83,8 @@ document = [
     "sphinx-gallery",
     "sphinx-plotly-directive",
     "sphinx_rtd_theme>=1.2.0",
+    "torch",
+    "torchvision",
 ]
 integration = [
     "botorch>=0.4.0",
