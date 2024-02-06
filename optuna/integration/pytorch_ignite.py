@@ -1,4 +1,4 @@
-from optuna.integration.pytorch_ignite import PyTorchIgnitePruningHandler
+from optuna_integration.pytorch_ignite import PyTorchIgnitePruningHandler
 
 
 __all__ = ["PyTorchIgnitePruningHandler"]

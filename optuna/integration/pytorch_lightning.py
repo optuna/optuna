@@ -1,4 +1,4 @@
-from optuna.integration.pytorch_lightning import PyTorchLightningPruningCallback
+from optuna_integration.pytorch_lightning import PyTorchLightningPruningCallback
 
 
 __all__ = ["PyTorchLightningPruningCallback"]
