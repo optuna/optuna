@@ -181,7 +181,7 @@ class GPSampler(BaseSampler):
         normalized_param, _ = optim.optimize_acqf_sample(
             acqf_params,
             n_samples=self._optimize_n_samples,
-            seed=self._rng.rng.random_integers(0, np.iinfo(np.int32).max),
+            seed=self._rng.rng.randint(np.iinfo(np.int32).max),
         )
         return gp_search_space.get_unnormalized_param(search_space, normalized_param)
 
