@@ -10,7 +10,7 @@ from optuna._gp.acqf import eval_acqf
 from optuna._gp.gp import KernelParamsTensor
 from optuna._gp.search_space import ScaleType
 from optuna._gp.search_space import SearchSpace
-
+import sys
 
 @pytest.mark.parametrize(
     "acqf_type, beta",
@@ -21,6 +21,10 @@ from optuna._gp.search_space import SearchSpace
 )
 @pytest.mark.parametrize(
     "x", [np.array([0.15, 0.12]), np.array([[0.15, 0.12], [0.0, 1.0]])]  # unbatched  # batched
+)
+@pytest.mark.skipif(
+    sys.version_info >= (3, 12),
+    reason="PyTorch does not support Python 3.12 yet.",
 )
 def test_eval_acqf(
     acqf_type: AcquisitionFunctionType,
