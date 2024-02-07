@@ -67,7 +67,6 @@ document = [
     "ase",
     "cma",
     "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
-    "botorch",
     "distributed",
     "fvcore",
     "lightgbm",
@@ -88,7 +87,6 @@ document = [
     "torchvision",
 ]
 integration = [
-    "botorch>=0.4.0",
     "cma",
     "distributed",
     "lightgbm",
