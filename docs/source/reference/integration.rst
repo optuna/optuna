@@ -34,15 +34,6 @@ BoTorch
    optuna.integration.botorch.qnehvi_candidates_func
    optuna.integration.botorch.qparego_candidates_func
 
-Dask
-----
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.DaskStorage
-
 LightGBM
 --------
 
@@ -82,15 +73,6 @@ pycma
 
    optuna.integration.PyCmaSampler
    optuna.integration.CmaEsSampler
-
-scikit-learn
-------------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.OptunaSearchCV
 
 scikit-optimize
 ---------------

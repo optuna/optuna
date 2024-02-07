@@ -68,7 +68,6 @@ document = [
     "cma",
     "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
     "botorch",
-    "distributed",
     "fvcore",
     "lightgbm",
     "matplotlib!=3.6.0",
@@ -89,10 +88,8 @@ document = [
 integration = [
     "botorch>=0.4.0",
     "cma",
-    "distributed",
     "lightgbm",
     "mlflow",
-    "pandas",
     "scikit-learn>=0.24.2",
     "scikit-optimize",
     "shap",
