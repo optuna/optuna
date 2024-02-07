@@ -8,7 +8,7 @@ Thanks to user-defined samplers, you can:
 
 - experiment your own sampling algorithms,
 - implement task-specific algorithms to refine the optimization performance, or
-- wrap other optimization libraries to integrate them into Optuna pipelines (e.g., :class:`~optuna.integration.BoTorchSampler`).
+- wrap other optimization libraries to integrate them into Optuna pipelines (e.g., `BoTorchSampler <https://optuna-integration.readthedocs.io/en/stable/reference/generated/optuna_integration.BoTorchSampler.html>`_).
 
 This section describes the internal behavior of sampler classes and shows an example of implementing a user-defined sampler.
 
@@ -17,7 +17,7 @@ Overview of Sampler
 -------------------
 
 A sampler has the responsibility to determine the parameter values to be evaluated in a trial.
-When a `suggest` API (e.g., :func:`~optuna.trial.Trial.suggest_float`) is called inside an objective function, the corresponding distribution object (e.g., `BoTorchSampler <https://optuna-integration.readthedocs.io/en/stable/reference/generated/optuna_integration.BoTorchSampler.html>`_ is created internally. A sampler samples a parameter value from the distribution. The sampled value is returned to the caller of the `suggest` API and evaluated in the objective function.
+When a `suggest` API (e.g., :func:`~optuna.trial.Trial.suggest_float`) is called inside an objective function, the corresponding distribution object (e.g., :class:`~optuna.distributions.FloatDistribution`) is created internally. A sampler samples a parameter value from the distribution. The sampled value is returned to the caller of the `suggest` API and evaluated in the objective function.
 
 To create a new sampler, you need to define a class that inherits :class:`~optuna.samplers.BaseSampler`.
 The base class has three abstract methods;
