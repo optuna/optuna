@@ -67,7 +67,6 @@ document = [
     "ase",
     "cma",
     "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
-    "distributed",
     "fvcore",
     "lightgbm",
     "matplotlib!=3.6.0",
@@ -88,7 +87,6 @@ document = [
 ]
 integration = [
     "cma",
-    "distributed",
     "lightgbm",
     "lightning",
     "mlflow",
