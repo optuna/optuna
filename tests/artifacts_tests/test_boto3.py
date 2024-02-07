@@ -12,7 +12,7 @@ from optuna.artifacts.exceptions import ArtifactNotFound
 
 try:
     # TODO(nabenabe0928): Replace it with `from moto import mock_aws` after dropping Python3.7.
-    from moto import mock_aws  # type: ignore[attr-defined]
+    from moto import mock_aws
 except ImportError:
     from moto import mock_s3 as mock_aws  # type: ignore[attr-defined,no-redef]
 
