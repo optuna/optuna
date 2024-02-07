@@ -18,22 +18,6 @@ For most of the ML frameworks supported by Optuna, the corresponding Optuna inte
 
 For scikit-learn, an integrated :class:`~optuna.integration.OptunaSearchCV` estimator is available that combines scikit-learn BaseEstimator functionality with access to a class-level ``Study`` object.
 
-BoTorch
--------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.BoTorchSampler
-   optuna.integration.botorch.ehvi_candidates_func
-   optuna.integration.botorch.logei_candidates_func
-   optuna.integration.botorch.qei_candidates_func
-   optuna.integration.botorch.qnei_candidates_func
-   optuna.integration.botorch.qehvi_candidates_func
-   optuna.integration.botorch.qnehvi_candidates_func
-   optuna.integration.botorch.qparego_candidates_func
-
 LightGBM
 --------
 

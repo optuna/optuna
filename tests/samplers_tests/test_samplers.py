@@ -22,8 +22,6 @@ from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
-from optuna.integration.botorch import logei_candidates_func
-from optuna.integration.botorch import qei_candidates_func
 from optuna.samplers import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.study import Study
@@ -58,20 +56,6 @@ parametrize_sampler = pytest.mark.parametrize(
         optuna.samplers.NSGAIIISampler,
         optuna.samplers.QMCSampler,
         lambda: get_gp_sampler(n_startup_trials=0),
-        pytest.param(
-            lambda: optuna.integration.BoTorchSampler(
-                n_startup_trials=0,
-                candidates_func=logei_candidates_func,
-            ),
-            marks=pytest.mark.integration,
-        ),
-        pytest.param(
-            lambda: optuna.integration.BoTorchSampler(
-                n_startup_trials=0,
-                candidates_func=qei_candidates_func,
-            ),
-            marks=pytest.mark.integration,
-        ),
     ],
 )
 parametrize_relative_sampler = pytest.mark.parametrize(
@@ -93,10 +77,6 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
         optuna.samplers.NSGAIISampler,
         optuna.samplers.NSGAIIISampler,
         lambda: optuna.samplers.TPESampler(n_startup_trials=0),
-        pytest.param(
-            lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
-            marks=pytest.mark.integration,
-        ),
     ],
 )
 
@@ -117,7 +97,6 @@ sampler_class_with_seed: dict[str, tuple[Callable[[int], BaseSampler], bool]] = 
     "NSGAIISampler": (lambda seed: optuna.samplers.NSGAIISampler(seed=seed), False),
     "NSGAIIISampler": (lambda seed: optuna.samplers.NSGAIIISampler(seed=seed), False),
     "QMCSampler": (lambda seed: optuna.samplers.QMCSampler(seed=seed), False),
-    "BoTorchSampler": (lambda seed: optuna.integration.BoTorchSampler(seed=seed), True),
     "GPSampler": (lambda seed: get_gp_sampler(seed=seed, n_startup_trials=0), False),
 }
 param_sampler_with_seed = []
@@ -163,12 +142,6 @@ parametrize_sampler_name_with_seed = pytest.mark.parametrize(
         ),
         (lambda: optuna.samplers.GridSampler(search_space={"x": [0]}), True, False),
         (lambda: optuna.samplers.QMCSampler(), False, True),
-        pytest.param(
-            lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
-            False,
-            True,
-            marks=pytest.mark.integration,
-        ),
         (lambda: get_gp_sampler(n_startup_trials=0), True, True),
     ],
 )

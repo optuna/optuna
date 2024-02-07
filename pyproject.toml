@@ -65,9 +65,9 @@ checking = [
 ]
 document = [
     "ase",
+    "botorch",
     "cma",
     "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
-    "botorch",
     "fvcore",
     "lightgbm",
     "matplotlib!=3.6.0",
@@ -87,7 +87,6 @@ document = [
     "torchvision",
 ]
 integration = [
-    "botorch>=0.4.0",
     "cma",
     "lightgbm",
     "lightning",
