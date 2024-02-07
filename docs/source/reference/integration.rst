@@ -34,15 +34,6 @@ BoTorch
    optuna.integration.botorch.qnehvi_candidates_func
    optuna.integration.botorch.qparego_candidates_func
 
-Dask
-----
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.DaskStorage
-
 LightGBM
 --------
 
