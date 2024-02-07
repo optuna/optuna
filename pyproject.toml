@@ -68,7 +68,6 @@ document = [
     "cma",
     "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
     "botorch",
-    "distributed",
     "fvcore",
     "lightgbm",
     "matplotlib!=3.6.0",
@@ -90,7 +89,6 @@ document = [
 integration = [
     "botorch>=0.4.0",
     "cma",
-    "distributed",
     "lightgbm",
     "lightning",
     "mlflow",
