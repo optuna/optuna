@@ -122,10 +122,7 @@ def _rank_population(
         return []
 
     objective_values = np.array(
-        [
-            trial.values if trial.values else [float("inf")] * len(directions)
-            for trial in population
-        ],
+        [trial.values for trial in population],
         dtype=np.float64,
     )
     objective_values *= np.array(
