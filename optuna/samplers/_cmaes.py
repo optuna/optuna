@@ -248,7 +248,7 @@ class CmaEsSampler(BaseSampler):
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.6.0.
 
-    """
+    """  # NOQA: E501
 
     def __init__(
         self,
