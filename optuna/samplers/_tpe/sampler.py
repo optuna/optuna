@@ -160,7 +160,7 @@ class TPESampler(BaseSampler):
                 <https://papers.nips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf>`_
                 ). The weights of good trials, i.e., trials to construct `l(x)`, are computed by a
                 rule based on the hypervolume contribution proposed in the `paper of MOTPE
-                <https://doi.org/10.1145/3377930.3389817>`_.
+                <https://doi.org/10.1613/jair.1.13188>`_.
         seed:
             Seed for random number generator.
         multivariate:
