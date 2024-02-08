@@ -178,10 +178,10 @@ study.optimize(objective, n_trials=20)
 #
 # For the complete list of Optuna's integration modules, see :mod:`~optuna.integration`.
 #
-# For example, :class:`~optuna.integration.XGBoostPruningCallback` introduces pruning without directly changing the logic of training iteration.
-# (See also `example <https://github.com/optuna/optuna-examples/tree/main/xgboost/xgboost_integration.py>`_ for the entire script.)
+# For example, :class:`~optuna.integration.LightGBMPruningCallback` introduces pruning without directly changing the logic of training iteration.
+# (See also `example <https://github.com/optuna/optuna-examples/blob/main/lightgbm/lightgbm_integration.py>`_ for the entire script.)
 #
 # .. code-block:: python
 #
-#         pruning_callback = optuna.integration.XGBoostPruningCallback(trial, 'validation-error')
-#         bst = xgb.train(param, dtrain, evals=[(dvalid, 'validation')], callbacks=[pruning_callback])
+#         pruning_callback = optuna.integration.LightGBMPruningCallback(trial, 'validation-error')
+#         gbm = lgb.train(param, dtrain, valid_sets=[dvalid], callbacks=[pruning_callback])
