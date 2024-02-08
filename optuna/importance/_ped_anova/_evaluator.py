@@ -56,7 +56,7 @@ class QuantileFilter:
             # TODO(nabenabe0928): Replace `interpolation` with `method` after dropping Python3.7.
             # TODO(nabenabe0928): Remove the type ignore below with the change above as well.
             np.quantile(
-                loss_values, self._quantile, interpolation="higher"
+                loss_values, self._quantile, interpolation="inverted_cdf"
             ),  # type: ignore[call-overload]
         )
         should_keep_trials = loss_values <= cutoff_val
