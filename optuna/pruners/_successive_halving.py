@@ -12,10 +12,11 @@ from optuna.trial._state import TrialState
 class SuccessiveHalvingPruner(BasePruner):
     """Pruner using Asynchronous Successive Halving Algorithm.
 
-    `Successive Halving <https://arxiv.org/abs/1502.07943>`_ is a bandit-based algorithm to
-    identify the best one among multiple configurations. This class implements an asynchronous
-    version of Successive Halving. Please refer to the paper of
-    `Asynchronous Successive Halving <http://arxiv.org/abs/1810.05934>`_ for detailed descriptions.
+    `Successive Halving <https://proceedings.mlr.press/v51/jamieson16.html>`_ is a bandit-based
+    algorithm to identify the best one among multiple configurations. This class implements an
+    asynchronous version of Successive Halving. Please refer to the paper of
+    `Asynchronous Successive Halving <https://proceedings.mlsys.org/paper_files/paper/2020/file/
+    a06f20b349c6cf09a6b171c71b88bbfc-Paper.pdf>`_ for detailed descriptions.
 
     Note that, this class does not take care of the parameter for the maximum
     resource, referred to as :math:`R` in the paper. The maximum resource allocated to a trial is
@@ -70,8 +71,9 @@ class SuccessiveHalvingPruner(BasePruner):
     Args:
         min_resource:
             A parameter for specifying the minimum resource allocated to a trial
-            (in the `paper <http://arxiv.org/abs/1810.05934>`_ this parameter is
-            referred to as :math:`r`).
+            (in the `paper <https://proceedings.mlsys.org/paper_files/paper/2020/file/
+            a06f20b349c6cf09a6b171c71b88bbfc-Paper.pdf>`_ this parameter is referred to as
+            :math:`r`).
             This parameter defaults to 'auto' where the value is determined based on a heuristic
             that looks at the number of required steps for the first trial to complete.
 
@@ -96,13 +98,15 @@ class SuccessiveHalvingPruner(BasePruner):
                 manually specify the minimum possible step to ``min_resource``.
         reduction_factor:
             A parameter for specifying reduction factor of promotable trials
-            (in the `paper <http://arxiv.org/abs/1810.05934>`_ this parameter is
+            (in the `paper <https://proceedings.mlsys.org/paper_files/paper/2020/file/
+            a06f20b349c6cf09a6b171c71b88bbfc-Paper.pdf>`_ this parameter is
             referred to as :math:`\\eta`).  At the completion point of each rung,
             about :math:`{1 \\over \\mathsf{reduction}\\_\\mathsf{factor}}`
             trials will be promoted.
         min_early_stopping_rate:
             A parameter for specifying the minimum early-stopping rate
-            (in the `paper <http://arxiv.org/abs/1810.05934>`_ this parameter is
+            (in the `paper <https://proceedings.mlsys.org/paper_files/paper/2020/file/
+            a06f20b349c6cf09a6b171c71b88bbfc-Paper.pdf>`_ this parameter is
             referred to as :math:`s`).
         bootstrap_count:
             Minimum number of trials that need to complete a rung before any trial

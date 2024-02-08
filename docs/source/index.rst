@@ -104,7 +104,7 @@ Reference
 
 Takuya Akiba, Shotaro Sano, Toshihiko Yanase, Takeru Ohta, and Masanori
 Koyama. 2019. Optuna: A Next-generation Hyperparameter Optimization
-Framework. In KDD (`arXiv <https://arxiv.org/abs/1907.10902>`__).
+Framework. In KDD (`paper <https://doi.org/10.1145/3292500.3330701>`__).
 
 .. toctree::
    :maxdepth: 2
