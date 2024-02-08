@@ -75,7 +75,6 @@ document = [
     "pillow",
     "plotly>=4.9.0",  # optuna/visualization.
     "scikit-learn",
-    "scikit-optimize",
     "sphinx",
     "sphinx-copybutton",
     "sphinx-gallery",
@@ -92,7 +91,6 @@ integration = [
     "mlflow",
     "pytorch-ignite",
     "scikit-learn>=0.24.2",
-    "scikit-optimize",
     "shap",
     "tensorflow",
     "torch",
