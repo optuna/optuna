@@ -146,7 +146,7 @@ def fit_kernel_params(
     Y: np.ndarray,  # [len(trials)]
     is_categorical: np.ndarray,  # [len(params)]
     log_prior: Callable[[KernelParamsTensor], torch.Tensor],
-    minimum_noise: float = 0.0,
+    minimum_noise: float,
     initial_kernel_params: KernelParamsTensor | None = None,
 ) -> KernelParamsTensor:
     n_params = X.shape[1]
