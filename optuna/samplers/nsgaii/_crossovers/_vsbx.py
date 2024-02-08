@@ -18,7 +18,7 @@ class VSBXCrossover(BaseCrossover):
     - `Pedro J. Ballester, Jonathan N. Carter.
       Real-Parameter Genetic Algorithms for Finding Multiple Optimal Solutions
       in Multi-modal Optimization. GECCO 2003: 706-717
-      <https://link.springer.com/chapter/10.1007/3-540-45105-6_86>`_
+      <https://doi.org/10.1007/3-540-45105-6_86>`_
 
     Args:
         eta:

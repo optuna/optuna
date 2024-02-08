@@ -15,7 +15,7 @@ class BLXAlphaCrossover(BaseCrossover):
 
     - `Eshelman, L. and J. D. Schaffer.
       Real-Coded Genetic Algorithms and Interval-Schemata. FOGA (1992).
-      <https://www.sciencedirect.com/science/article/abs/pii/B9780080948324500180>`_
+      <https://doi.org/10.1016/B978-0-08-094832-4.50018-0>`_
 
     Args:
         alpha:
