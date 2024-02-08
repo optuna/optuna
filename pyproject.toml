@@ -96,7 +96,6 @@ integration = [
     "torch",
     "torchaudio",
     "torchvision",
-    "wandb",
     "xgboost",
 ]
 optional = [
