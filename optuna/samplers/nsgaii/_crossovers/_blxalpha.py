@@ -34,7 +34,7 @@ class BLXAlphaCrossover(BaseCrossover):
         study: Study,
         search_space_bounds: np.ndarray,
     ) -> np.ndarray:
-        # http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.465.6900&rep=rep1&type=pdf
+        # https://doi.org/10.1109/CEC.2001.934452
         # Section 2 Crossover Operators for RCGA 2.1 Blend Crossover
 
         parents_min = parents_params.min(axis=0)
