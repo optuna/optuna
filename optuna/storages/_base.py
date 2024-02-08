@@ -9,7 +9,6 @@ from typing import Sequence
 from typing import Tuple
 from typing import Union
 
-from optuna import logging
 from optuna._typing import JSONSerializable
 from optuna.distributions import BaseDistribution
 from optuna.study._frozen import FrozenStudy
@@ -18,10 +17,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
-_CONSTRAINTS_KEY = "constraints"
 DEFAULT_STUDY_NAME_PREFIX = "no-name-"
-
-_logger = logging.get_logger(__name__)
 
 
 class BaseStorage(abc.ABC):
@@ -541,14 +537,7 @@ class BaseStorage(abc.ABC):
         """
         all_trials = self.get_all_trials(study_id, deepcopy=False, states=[TrialState.COMPLETE])
 
-        _logger.warning("Get COMPLETE and feasible best_trial")
-        feasible_trials = []
-        for trial in all_trials:
-            constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
-            if constraints is None or all([x <= 0.0 for x in constraints]):
-                feasible_trials.append(trial)
-
-        if len(feasible_trials) == 0:
+        if len(all_trials) == 0:
             raise ValueError("No trials are completed yet.")
 
         directions = self.get_study_directions(study_id)
@@ -559,9 +548,9 @@ class BaseStorage(abc.ABC):
         direction = directions[0]
 
         if direction == StudyDirection.MAXIMIZE:
-            best_trial = max(feasible_trials, key=lambda t: cast(float, t.value))
+            best_trial = max(all_trials, key=lambda t: cast(float, t.value))
         else:
-            best_trial = min(feasible_trials, key=lambda t: cast(float, t.value))
+            best_trial = min(all_trials, key=lambda t: cast(float, t.value))
 
         return best_trial
 
