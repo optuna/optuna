@@ -119,7 +119,7 @@ class CmaEsSampler(BaseSampler):
       <https://arxiv.org/abs/2304.03473>`_
 
     .. seealso::
-        You can also use :class:`optuna.integration.PyCmaSampler` which is a sampler using cma
+        You can also use `optuna_integration.PyCmaSampler <https://optuna-integration.readthedocs.io/en/stable/reference/generated/optuna_integration.PyCmaSampler.html#optuna_integration.PyCmaSampler>`_ which is a sampler using cma
         library as the backend.
 
     Args:
