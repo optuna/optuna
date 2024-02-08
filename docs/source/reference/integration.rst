@@ -69,15 +69,6 @@ PyTorch
    optuna.integration.PyTorchLightningPruningCallback
    optuna.integration.TorchDistributedTrial
 
-scikit-optimize
----------------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.SkoptSampler
-
 XGBoost
 -------
 

@@ -47,7 +47,6 @@ benchmark = [
   "asv>=0.5.0",
   "botorch",
   "cma",
-  "scikit-optimize",
   "virtualenv"
 ]
 checking = [
