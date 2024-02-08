@@ -52,9 +52,7 @@ class NSGAIIIElitePopulationSelectionStrategy:
         """
         _validate_constraints(population, is_constrained=self._constraints_func is not None)
         population_per_rank = _rank_population(
-            population,
-            study.directions,
-            is_constrained=self._constraints_func is not None,
+            population, study.directions, is_constrained=self._constraints_func is not None
         )
 
         elite_population: list[FrozenTrial] = []
