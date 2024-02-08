@@ -48,6 +48,7 @@ if TYPE_CHECKING:
 
 ObjectiveFuncType = Callable[[trial_module.Trial], Union[float, Sequence[float]]]
 _SYSTEM_ATTR_METRIC_NAMES = "study:metric_names"
+_CONSTRAINTS_KEY = "constraints"
 
 
 _logger = logging.get_logger(__name__)
@@ -170,6 +171,77 @@ class Study:
         """
 
         return _get_pareto_front_trials(self)
+
+    @property
+    @experimental_func("3.6.0")
+    def best_feasible_trial(self) -> FrozenTrial:
+        """Return the best feasible trial in the study.
+        This attribute is slower than best_trials because it takes constraints into account.
+
+        .. note::
+            This feature can only be used for single-objective optimization.
+            If your study is multi-objective,
+            use :attr:`~optuna.study.Study.best_feasible_trials` instead.
+
+        Returns:
+            A :class:`~optuna.trial.FrozenTrial` object of the best trial.
+
+        .. seealso::
+            The :ref:`reuse_best_trial` tutorial provides a detailed example of how to use this
+            method.
+
+        """
+        warnings.warn(
+            "This attribute is slower than best_trial because it takes constraints into account.",
+            UserWarning,
+        )
+
+        if self._is_multi_objective():
+            raise RuntimeError(
+                "A single best trial cannot be retrieved from a multi-objective study. Consider "
+                "using Study.best_trials to retrieve a list containing the best trials."
+            )
+        trials = self._storage.get_all_trials(self._study_id, states=[TrialState.COMPLETE])
+        if len(trials) == 0:
+            raise ValueError("No trials are completed yet.")
+
+        feasible_trials = []
+        for trial in trials:
+            constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
+            if constraints is None or all([x <= 0.0 for x in constraints]):
+                feasible_trials.append(trial)
+
+        if len(feasible_trials) == 0:
+            raise ValueError("There are no feasible trials.")
+
+        if len(self.directions) > 1:
+            raise RuntimeError(
+                "Best trial can be obtained only for single-objective optimization."
+            )
+        direction = self.directions[0]
+
+        if direction == StudyDirection.MAXIMIZE:
+            best_feasible_trial = max(feasible_trials, key=lambda t: cast(float, t.value))
+        else:
+            best_feasible_trial = min(feasible_trials, key=lambda t: cast(float, t.value))
+
+        return best_feasible_trial
+
+    @property
+    @experimental_func("3.6.0")
+    def best_feasible_trials(self) -> list[FrozenTrial]:
+        """Return trials located at the Pareto front in the study which consider constraints.
+        This property is slower than best_trials because it takes constraints into account.
+
+        Returns:
+            A list of :class:`~optuna.trial.FrozenTrial` objects.
+        """
+        warnings.warn(
+            "This attribute is slower than best_trials because it takes constraints into account.",
+            UserWarning,
+        )
+
+        return _get_pareto_front_trials(self, True)
 
     @property
     def direction(self) -> StudyDirection:

@@ -3,7 +3,6 @@ from typing import Optional
 from typing import Sequence
 
 import optuna
-from optuna import logging
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -11,12 +10,8 @@ from optuna.trial import TrialState
 
 _CONSTRAINTS_KEY = "constraints"
 
-_logger = logging.get_logger(__name__)
-
 
 def _get_feasible_trials(trials: Sequence[FrozenTrial]) -> List[FrozenTrial]:
-    _logger.warning("Calculate pareto front for feasible trials.")
-    trials = [trial for trial in trials if trial.state == TrialState.COMPLETE]
     feasible_trials = []
     for trial in trials:
         constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
@@ -26,9 +21,11 @@ def _get_feasible_trials(trials: Sequence[FrozenTrial]) -> List[FrozenTrial]:
 
 
 def _get_pareto_front_trials_2d(
-    trials: Sequence[FrozenTrial], directions: Sequence[StudyDirection]
+    trials: Sequence[FrozenTrial], directions: Sequence[StudyDirection], consider_constraint: bool
 ) -> List[FrozenTrial]:
-    trials = _get_feasible_trials(trials)
+    trials = [t for t in trials if t.state == TrialState.COMPLETE]
+    if consider_constraint:
+        trials = _get_feasible_trials(trials)
 
     n_trials = len(trials)
     if n_trials == 0:
@@ -55,10 +52,12 @@ def _get_pareto_front_trials_2d(
 
 
 def _get_pareto_front_trials_nd(
-    trials: Sequence[FrozenTrial], directions: Sequence[StudyDirection]
+    trials: Sequence[FrozenTrial], directions: Sequence[StudyDirection], consider_constraint: bool
 ) -> List[FrozenTrial]:
     pareto_front = []
-    trials = _get_feasible_trials(trials)
+    trials = [t for t in trials if t.state == TrialState.COMPLETE]
+    if consider_constraint:
+        trials = _get_feasible_trials(trials)
 
     # TODO(vincent): Optimize (use the fast non dominated sort defined in the NSGA-II paper).
     for trial in trials:
@@ -75,15 +74,21 @@ def _get_pareto_front_trials_nd(
 
 
 def _get_pareto_front_trials_by_trials(
-    trials: Sequence[FrozenTrial], directions: Sequence[StudyDirection]
+    trials: Sequence[FrozenTrial], directions: Sequence[StudyDirection], consider_constraint: bool
 ) -> List[FrozenTrial]:
     if len(directions) == 2:
-        return _get_pareto_front_trials_2d(trials, directions)  # Log-linear in number of trials.
-    return _get_pareto_front_trials_nd(trials, directions)  # Quadratic in number of trials.
+        return _get_pareto_front_trials_2d(
+            trials, directions, consider_constraint
+        )  # Log-linear in number of trials.
+    return _get_pareto_front_trials_nd(
+        trials, directions, consider_constraint
+    )  # Quadratic in number of trials.
 
 
-def _get_pareto_front_trials(study: "optuna.study.Study") -> List[FrozenTrial]:
-    return _get_pareto_front_trials_by_trials(study.trials, study.directions)
+def _get_pareto_front_trials(
+    study: "optuna.study.Study", consider_constraint: bool = False
+) -> List[FrozenTrial]:
+    return _get_pareto_front_trials_by_trials(study.trials, study.directions, consider_constraint)
 
 
 def _dominates(
