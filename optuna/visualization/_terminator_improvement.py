@@ -108,7 +108,7 @@ def plot_terminator_improvement(
             shown in a lighter color. Defaults to ``20``.
 
     Returns:
-        A :class:`plotly.graph_objs.Figure` object.
+        A :class:`plotly.graph_objects.Figure` object.
     """
     _imports.check()
 

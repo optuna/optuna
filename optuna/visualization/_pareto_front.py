@@ -150,7 +150,7 @@ def plot_pareto_front(
                 See https://github.com/optuna/optuna/releases/tag/v3.0.0.
 
     Returns:
-        A :class:`plotly.graph_objs.Figure` object.
+        A :class:`plotly.graph_objects.Figure` object.
     """
 
     _imports.check()

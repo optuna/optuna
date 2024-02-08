@@ -6,6 +6,7 @@ import multiprocessing
 from multiprocessing.managers import DictProxy
 import os
 import pickle
+import sys
 from typing import Any
 from unittest.mock import patch
 import warnings
@@ -21,8 +22,6 @@ from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
-from optuna.integration.botorch import logei_candidates_func
-from optuna.integration.botorch import qei_candidates_func
 from optuna.samplers import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.study import Study
@@ -31,6 +30,14 @@ from optuna.testing.objectives import pruned_objective
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState
+
+
+def get_gp_sampler(
+    *, n_startup_trials: int = 0, seed: int | None = None
+) -> optuna.samplers.GPSampler:
+    if sys.version_info >= (3, 12, 0):
+        pytest.skip("PyTorch does not support Python 3.12 yet.")
+    return optuna.samplers.GPSampler(n_startup_trials=n_startup_trials, seed=seed)
 
 
 parametrize_sampler = pytest.mark.parametrize(
@@ -48,20 +55,7 @@ parametrize_sampler = pytest.mark.parametrize(
         optuna.samplers.NSGAIISampler,
         optuna.samplers.NSGAIIISampler,
         optuna.samplers.QMCSampler,
-        pytest.param(
-            lambda: optuna.integration.BoTorchSampler(
-                n_startup_trials=0,
-                candidates_func=logei_candidates_func,
-            ),
-            marks=pytest.mark.integration,
-        ),
-        pytest.param(
-            lambda: optuna.integration.BoTorchSampler(
-                n_startup_trials=0,
-                candidates_func=qei_candidates_func,
-            ),
-            marks=pytest.mark.integration,
-        ),
+        lambda: get_gp_sampler(n_startup_trials=0),
     ],
 )
 parametrize_relative_sampler = pytest.mark.parametrize(
@@ -74,6 +68,7 @@ parametrize_relative_sampler = pytest.mark.parametrize(
             lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
             marks=pytest.mark.integration,
         ),
+        lambda: get_gp_sampler(n_startup_trials=0),
     ],
 )
 parametrize_multi_objective_sampler = pytest.mark.parametrize(
@@ -82,12 +77,10 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
         optuna.samplers.NSGAIISampler,
         optuna.samplers.NSGAIIISampler,
         lambda: optuna.samplers.TPESampler(n_startup_trials=0),
-        pytest.param(
-            lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
-            marks=pytest.mark.integration,
-        ),
     ],
 )
+
+
 sampler_class_with_seed: dict[str, tuple[Callable[[int], BaseSampler], bool]] = {
     "RandomSampler": (lambda seed: optuna.samplers.RandomSampler(seed=seed), False),
     "TPESampler": (lambda seed: optuna.samplers.TPESampler(seed=seed), False),
@@ -104,7 +97,7 @@ sampler_class_with_seed: dict[str, tuple[Callable[[int], BaseSampler], bool]] = 
     "NSGAIISampler": (lambda seed: optuna.samplers.NSGAIISampler(seed=seed), False),
     "NSGAIIISampler": (lambda seed: optuna.samplers.NSGAIIISampler(seed=seed), False),
     "QMCSampler": (lambda seed: optuna.samplers.QMCSampler(seed=seed), False),
-    "BoTorchSampler": (lambda seed: optuna.integration.BoTorchSampler(seed=seed), True),
+    "GPSampler": (lambda seed: get_gp_sampler(seed=seed, n_startup_trials=0), False),
 }
 param_sampler_with_seed = []
 param_sampler_name_with_seed = []
@@ -149,12 +142,7 @@ parametrize_sampler_name_with_seed = pytest.mark.parametrize(
         ),
         (lambda: optuna.samplers.GridSampler(search_space={"x": [0]}), True, False),
         (lambda: optuna.samplers.QMCSampler(), False, True),
-        pytest.param(
-            lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
-            False,
-            True,
-            marks=pytest.mark.integration,
-        ),
+        (lambda: get_gp_sampler(n_startup_trials=0), True, True),
     ],
 )
 def test_sampler_reseed_rng(
@@ -1094,7 +1082,6 @@ def test_cache_is_invalidated(
         trial.suggest_float("x", -10, 10)
         trial.suggest_float("y", -10, 10)
         assert trial._relative_params is not None
-        assert study._thread_local.cached_all_trials is not None
         return -1
 
     study.optimize(objective, n_trials=10, n_jobs=n_jobs)

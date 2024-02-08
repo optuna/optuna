@@ -65,10 +65,9 @@ checking = [
 ]
 document = [
     "ase",
+    "botorch",
     "cma",
     "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
-    "botorch",
-    "distributed",
     "fvcore",
     "lightgbm",
     "matplotlib!=3.6.0",
@@ -88,13 +87,10 @@ document = [
     "torchvision",
 ]
 integration = [
-    "botorch>=0.4.0",
     "cma",
-    "distributed",
     "lightgbm",
     "lightning",
     "mlflow",
-    "pandas",
     "pytorch-ignite",
     "scikit-learn>=0.24.2",
     "scikit-optimize",
@@ -117,6 +113,9 @@ optional = [
     "redis",  # optuna/storages/redis.py.
     "scikit-learn>=0.24.2",
     # optuna/visualization/param_importances.py.
+    "scipy",  # optuna/samplers/_gp
+    # TODO(contramundum53): Remove the constraint after torch supports python 3.12.
+    "torch; python_version<='3.11'",  # optuna/samplers/_gp
 ]
 test = [
     "coverage",
@@ -125,6 +124,8 @@ test = [
     "moto",
     "pytest",
     "scipy>=1.9.2; python_version>='3.8'",
+    # TODO(contramundum53): Remove the constraint after torch supports python 3.12.
+    "torch; python_version<='3.11'",
 ]
 
 [project.urls]

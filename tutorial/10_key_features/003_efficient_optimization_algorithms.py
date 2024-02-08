@@ -25,6 +25,8 @@ Optuna provides the following sampling algorithms:
 
 - CMA-ES based algorithm implemented in :class:`~optuna.samplers.CmaEsSampler`
 
+- Gaussian process-based algorithm implemented in :class:`~optuna.samplers.GPSampler`
+
 - Algorithm to enable partial fixed parameters implemented in :class:`~optuna.samplers.PartialFixedSampler`
 
 - Nondominated Sorting Genetic Algorithm II implemented in :class:`~optuna.samplers.NSGAIISampler`
@@ -79,6 +81,8 @@ print(f"Sampler is {study.sampler.__class__.__name__}")
 # - Hyperband algorithm implemented in :class:`~optuna.pruners.HyperbandPruner`
 #
 # - Threshold pruning algorithm implemented in :class:`~optuna.pruners.ThresholdPruner`
+#
+# - A pruning algorithm based on `Wilcoxon signed-rank test <https://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test>`_ implemented in :class:`~optuna.pruners.WilcoxonPruner`
 #
 # We use :class:`~optuna.pruners.MedianPruner` in most examples,
 # though basically it is outperformed by :class:`~optuna.pruners.SuccessiveHalvingPruner` and
