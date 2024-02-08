@@ -58,6 +58,7 @@ def ucb(mean: torch.Tensor, var: torch.Tensor, beta: float) -> torch.Tensor:
 
 
 # TODO(contramundum53): consider abstraction for acquisition functions.
+# NOTE: Acquisition function is not class on purpose to integrate numba in the future.
 class AcquisitionFunctionType(IntEnum):
     LOG_EI = 0
     UCB = 1
