@@ -119,10 +119,7 @@ def _rank_population(
     if len(population) == 0:
         return []
 
-    objective_values = np.array(
-        [trial.values for trial in population],
-        dtype=np.float64,
-    )
+    objective_values = np.array([trial.values for trial in population], dtype=np.float64)
     objective_values *= np.array(
         [-1.0 if d == StudyDirection.MAXIMIZE else 1.0 for d in directions]
     )
