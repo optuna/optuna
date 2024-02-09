@@ -6,19 +6,19 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from optuna._experimental import experimental_class
+from optuna._gp import gp
+from optuna._gp import optim
+import optuna._gp.acqf as acqf
+from optuna._gp.prior import default_log_prior
+from optuna._gp.prior import DEFAULT_MINIMUM_NOISE_VAR
+from optuna._gp.search_space import get_search_space_and_normalized_params
+from optuna._gp.search_space import ScaleType
 from optuna.distributions import BaseDistribution
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.search_space import intersection_search_space
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-
-
-from optuna._gp import gp
-import optuna._gp.acqf as acqf
-from optuna._gp.prior import default_log_prior, DEFAULT_MINIMUM_NOISE_VAR
-from optuna._gp.search_space import get_search_space_and_normalized_params, ScaleType
-from optuna._gp import optim
 
 
 if TYPE_CHECKING:
@@ -105,7 +105,9 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         # _gp module assumes that optimization direction is maximization
         sign = -1 if study_direction == StudyDirection.MINIMIZE else 1
         values = np.array([t.value for t in complete_trials]) * sign
-        gp_search_space, normalized_params = get_search_space_and_normalized_params(complete_trials, optuna_search_space)
+        gp_search_space, normalized_params = get_search_space_and_normalized_params(
+            complete_trials, optuna_search_space
+        )
 
         top_n = int(len(trials) * self._top_trials_ratio)
         top_n = max(top_n, self._min_n_trials)
@@ -122,9 +124,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         kernel_params = gp.fit_kernel_params(
             X=normalized_top_n_params,
             Y=standarized_top_n_values,
-            is_categorical=(
-                gp_search_space.scale_types == ScaleType.CATEGORICAL
-            ),
+            is_categorical=(gp_search_space.scale_types == ScaleType.CATEGORICAL),
             log_prior=self._log_prior,
             minimum_noise=self._minimum_noise,
             initial_kernel_params=None,
@@ -148,7 +148,12 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             seed=self._rng.rng.randint(np.iinfo(np.int32).max),
         )
         with torch.no_grad():  # type: ignore
-            standardized_ucb_value = max(standardized_ucb_value, acqf.eval_acqf(ucb_acqf_params, torch.from_numpy(normalized_top_n_params)).max().item())
+            standardized_ucb_value = max(
+                standardized_ucb_value,
+                acqf.eval_acqf(ucb_acqf_params, torch.from_numpy(normalized_top_n_params))
+                .max()
+                .item(),
+            )
         ucb_value = standardized_ucb_value * top_n_values_std + top_n_values_mean
 
         lcb_acqf_params = acqf.create_acqf_params(
@@ -160,7 +165,11 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             sqrt_beta=-sqrt_beta,
         )
         with torch.no_grad():  # type: ignore
-            standardized_lcb_value = acqf.eval_acqf(lcb_acqf_params, torch.from_numpy(normalized_top_n_params)).max().item()
+            standardized_lcb_value = (
+                acqf.eval_acqf(lcb_acqf_params, torch.from_numpy(normalized_top_n_params))
+                .max()
+                .item()
+            )
         lcb_value = standardized_lcb_value * top_n_values_std + top_n_values_mean
 
         regret_bound = ucb_value - lcb_value

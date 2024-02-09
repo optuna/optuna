@@ -1,8 +1,3 @@
-from typing import List
-from typing import Tuple
-from unittest import mock
-
-import numpy as np
 import pytest
 
 from optuna.distributions import FloatDistribution
@@ -11,7 +6,6 @@ from optuna.terminator import BestValueStagnationEvaluator
 from optuna.terminator import RegretBoundEvaluator
 from optuna.terminator.improvement.evaluator import BaseImprovementEvaluator
 from optuna.trial import create_trial
-from optuna.trial import FrozenTrial
 
 
 # TODO(g-votte): test the following edge cases

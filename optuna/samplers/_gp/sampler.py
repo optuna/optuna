@@ -81,7 +81,9 @@ class GPSampler(BaseSampler):
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._intersection_search_space = optuna.search_space.IntersectionSearchSpace()
         self._n_startup_trials = n_startup_trials
-        self._log_prior: "Callable[[gp.KernelParamsTensor], torch.Tensor]" = prior.default_log_prior
+        self._log_prior: "Callable[[gp.KernelParamsTensor], torch.Tensor]" = (
+            prior.default_log_prior
+        )
         self._minimum_noise: float = prior.DEFAULT_MINIMUM_NOISE_VAR
         # We cache the kernel parameters for initial values of fitting the next time.
         self._kernel_params_cache: "gp.KernelParamsTensor | None" = None
