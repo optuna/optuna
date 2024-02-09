@@ -94,7 +94,6 @@ integration = [
     "torch",
     "torchaudio",
     "torchvision",
-    "xgboost",
 ]
 optional = [
     "boto3",  # optuna/artifacts/_boto3.py.

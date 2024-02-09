@@ -50,15 +50,6 @@ PyTorch
    optuna.integration.PyTorchLightningPruningCallback
    optuna.integration.TorchDistributedTrial
 
-XGBoost
--------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.XGBoostPruningCallback
-
 Dependencies of each integration
 --------------------------------
 
