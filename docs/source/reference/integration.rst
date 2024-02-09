@@ -39,24 +39,6 @@ MLflow
 
    optuna.integration.MLflowCallback
 
-Weights & Biases
-----------------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.WeightsAndBiasesCallback
-
-XGBoost
--------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.XGBoostPruningCallback
-
 Dependencies of each integration
 --------------------------------
 

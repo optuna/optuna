@@ -88,8 +88,6 @@ integration = [
     "scikit-learn>=0.24.2",
     "shap",
     "tensorflow",
-    "wandb",
-    "xgboost",
 ]
 optional = [
     "boto3",  # optuna/artifacts/_boto3.py.
