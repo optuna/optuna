@@ -39,7 +39,8 @@ def _get_beta(n_params: int, n_trials: int, delta: float = 0.1) -> float:
     beta = 2 * np.log(n_params * n_trials**2 * np.pi**2 / 6 / delta)
 
     # The following div is according to the original paper: "We then further scale it down
-    # by a factor of 5 as defined in the experiments in `Srinivas et al. (2010) <https://dl.acm.org/doi/10.5555/3104322.3104451>`_"
+    # by a factor of 5 as defined in the experiments in
+    # `Srinivas et al. (2010) <https://dl.acm.org/doi/10.5555/3104322.3104451>`_"
     beta /= 5
 
     return beta
