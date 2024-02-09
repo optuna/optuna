@@ -5,7 +5,7 @@ from collections.abc import Callable
 import pytest
 
 import optuna
-from optuna.importance._ped_anova._evaluator import QuantileFilter
+from optuna.importance._ped_anova.evaluator import QuantileFilter
 from optuna.trial import FrozenTrial
 
 

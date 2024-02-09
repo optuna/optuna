@@ -10,7 +10,7 @@ from optuna.importance._base import _get_distributions
 from optuna.importance._base import _get_filtered_trials
 from optuna.importance._base import _sort_dict_by_importance
 from optuna.importance._base import BaseImportanceEvaluator
-from optuna.importance._ped_anova._scott_parzen_estimator import _build_parzen_estimator
+from optuna.importance._ped_anova.scott_parzen_estimator import _build_parzen_estimator
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
