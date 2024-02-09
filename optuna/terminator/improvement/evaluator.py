@@ -8,13 +8,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from optuna._experimental import experimental_class
-from optuna._gp import gp
-from optuna._gp import optim
-import optuna._gp.acqf as acqf
-from optuna._gp.prior import default_log_prior
-from optuna._gp.prior import DEFAULT_MINIMUM_NOISE_VAR
-from optuna._gp.search_space import get_search_space_and_normalized_params
-from optuna._gp.search_space import ScaleType
 from optuna.distributions import BaseDistribution
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.search_space import intersection_search_space
@@ -25,11 +18,21 @@ from optuna.trial import TrialState
 
 if TYPE_CHECKING:
     import torch
+
+    from optuna._gp import acqf
+    from optuna._gp import gp
+    from optuna._gp import optim
+    from optuna._gp import prior
+    from optuna._gp import search_space
 else:
     from optuna._imports import _LazyImport
 
     torch = _LazyImport("torch")
-
+    gp = _LazyImport("optuna._gp.gp")
+    optim = _LazyImport("optuna._gp.optim")
+    acqf = _LazyImport("optuna._gp.acqf")
+    prior = _LazyImport("optuna._gp.prior")
+    search_space = _LazyImport("optuna._gp.search_space")
 
 DEFAULT_TOP_TRIALS_RATIO = 0.5
 DEFAULT_MIN_N_TRIALS = 20
@@ -90,8 +93,8 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
     ) -> None:
         self._top_trials_ratio = top_trials_ratio
         self._min_n_trials = min_n_trials
-        self._log_prior = default_log_prior
-        self._minimum_noise = DEFAULT_MINIMUM_NOISE_VAR
+        self._log_prior = prior.default_log_prior
+        self._minimum_noise = prior.DEFAULT_MINIMUM_NOISE_VAR
         self._optimize_n_samples = 2048
         self._rng = LazyRandomState(seed)
 
@@ -108,7 +111,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         # _gp module assumes that optimization direction is maximization
         sign = -1 if study_direction == StudyDirection.MINIMIZE else 1
         values = np.array([t.value for t in complete_trials]) * sign
-        gp_search_space, normalized_params = get_search_space_and_normalized_params(
+        gp_search_space, normalized_params = search_space.get_search_space_and_normalized_params(
             complete_trials, optuna_search_space
         )
 
@@ -127,7 +130,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         kernel_params = gp.fit_kernel_params(
             X=normalized_top_n_params,
             Y=standarized_top_n_values,
-            is_categorical=(gp_search_space.scale_types == ScaleType.CATEGORICAL),
+            is_categorical=(gp_search_space.scale_types == search_space.ScaleType.CATEGORICAL),
             log_prior=self._log_prior,
             minimum_noise=self._minimum_noise,
             initial_kernel_params=None,
