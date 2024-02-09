@@ -24,11 +24,7 @@ class _ScottParzenEstimator(_ParzenEstimator):
         consider_prior: bool,
         prior_weight: float,
     ):
-        if not isinstance(dist, (CategoricalDistribution, IntDistribution)):
-            raise ValueError(
-                f"Only IntDistribution and CategoricalDistribution are supported, but got {dist}."
-            )
-
+        assert isinstance(dist, (CategoricalDistribution, IntDistribution))
         self._n_steps = len(counts)
         self._param_name = param_name
         self._counts = counts.copy()
@@ -50,8 +46,8 @@ class _ScottParzenEstimator(_ParzenEstimator):
     def _calculate_numerical_distributions(
         self,
         observations: np.ndarray,
-        low: float,  # <-- int (, but typing follows the original)
-        high: float,  # <-- int (, but typing follows the original)
+        low: float,  # The type is actually int, but typing follows the original
+        high: float,  # The type is actually int, but typing follows the original
         step: float | None,
         parameters: _ParzenEstimatorParameters,
     ) -> _BatchedDistributions:
@@ -70,8 +66,8 @@ class _ScottParzenEstimator(_ParzenEstimator):
         count_cum = np.cumsum(counts_non_zero)
         idx_q25 = np.searchsorted(count_cum, n_trials // 4, side="left")
         idx_q75 = np.searchsorted(count_cum, n_trials * 3 // 4, side="right")
-        IQR = mus[min(mus.size - 1, idx_q75)] - mus[idx_q25]
-        sigma_est = 1.059 * min(IQR / 1.34, sigma_est) * n_trials ** (-0.2)
+        interquantile_range = mus[min(mus.size - 1, idx_q75)] - mus[idx_q25]
+        sigma_est = 1.059 * min(interquantile_range / 1.34, sigma_est) * n_trials ** (-0.2)
         # To avoid numerical errors. 0.5/1.64 means 1.64sigma (=90%) will fit in the target grid.
         sigmas = np.full_like(mus, max(sigma_est, 0.5 / 1.64), dtype=np.float64)
         if parameters.consider_prior:
@@ -154,7 +150,7 @@ def _build_parzen_estimator(
         counts = _count_categorical_param_in_grid(param_name, dist, trials)
         rounded_dist = dist
     else:
-        raise ValueError(f"Got an unknown dist with the type {type(dist)}.")
+        assert False, f"Got an unknown dist with the type {type(dist)}."
 
     return _ScottParzenEstimator(
         param_name, rounded_dist, counts.astype(np.float64), consider_prior, prior_weight
