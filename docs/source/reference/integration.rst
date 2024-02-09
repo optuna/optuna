@@ -48,16 +48,6 @@ Weights & Biases
 
    optuna.integration.WeightsAndBiasesCallback
 
-pycma
------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.PyCmaSampler
-   optuna.integration.CmaEsSampler
-
 PyTorch
 -------
 

@@ -116,7 +116,7 @@ class CmaEsSampler(BaseSampler):
       <https://doi.org/10.1145/3583131.3590358>`_
 
     .. seealso::
-        You can also use :class:`optuna.integration.PyCmaSampler` which is a sampler using cma
+        You can also use `optuna_integration.PyCmaSampler <https://optuna-integration.readthedocs.io/en/stable/reference/generated/optuna_integration.PyCmaSampler.html#optuna_integration.PyCmaSampler>`_ which is a sampler using cma
         library as the backend.
 
     Args:
@@ -245,7 +245,7 @@ class CmaEsSampler(BaseSampler):
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.6.0.
 
-    """
+    """  # NOQA: E501
 
     def __init__(
         self,
