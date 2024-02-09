@@ -36,6 +36,7 @@ else:
     gp = _LazyImport("optuna._gp.gp")
     optim = _LazyImport("optuna._gp.optim")
     acqf = _LazyImport("optuna._gp.acqf")
+    prior = _LazyImport("optuna._gp.prior")
 
 
 @experimental_class("3.6.0")
