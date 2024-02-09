@@ -19,7 +19,7 @@ class UNDXCrossover(BaseCrossover):
       for real-coded genetic algorithms,
       Proceedings of the 1999 Congress on Evolutionary Computation-CEC99
       (Cat. No. 99TH8406), 1999, pp. 1581-1588 Vol. 2
-      <https://ieeexplore.ieee.org/document/782672>`_
+      <https://doi.org/10.1109/CEC.1999.782672>`_
 
     Args:
         sigma_xi:
@@ -69,7 +69,7 @@ class UNDXCrossover(BaseCrossover):
         study: Study,
         search_space_bounds: np.ndarray,
     ) -> np.ndarray:
-        # https://ieeexplore.ieee.org/document/782672
+        # https://doi.org/10.1109/CEC.1999.782672
         # Section 2 Unimodal Normal Distribution Crossover
         n = len(search_space_bounds)
         xp = (parents_params[0] + parents_params[1]) / 2  # Section 2 (2).

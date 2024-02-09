@@ -40,7 +40,7 @@ class NSGAIISampler(BaseSampler):
     For further information about NSGA-II, please refer to the following paper:
 
     - `A fast and elitist multiobjective genetic algorithm: NSGA-II
-      <https://ieeexplore.ieee.org/document/996017>`_
+      <https://doi.org/10.1109/4235.996017>`_
 
     Args:
         population_size:
