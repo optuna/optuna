@@ -21,7 +21,7 @@ from optuna._gp.search_space import SearchSpace
 
 
 @pytest.mark.parametrize(
-    "acqf_type, beta",
+    "acqf_type, sqrt_beta",
     [
         (AcquisitionFunctionType.LOG_EI, None),
         (AcquisitionFunctionType.UCB, 2.0),
@@ -32,7 +32,7 @@ from optuna._gp.search_space import SearchSpace
 )
 def test_eval_acqf(
     acqf_type: AcquisitionFunctionType,
-    beta: float | None,
+    sqrt_beta: float | None,
     x: np.ndarray,
 ) -> None:
     n_dims = 2
@@ -55,7 +55,7 @@ def test_eval_acqf(
         search_space=search_space,
         X=X,
         Y=Y,
-        beta=beta,
+        sqrt_beta=sqrt_beta,
         acqf_stabilizing_noise=0.0,
     )
 

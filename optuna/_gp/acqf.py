@@ -53,8 +53,8 @@ def logei(mean: torch.Tensor, var: torch.Tensor, f0: float) -> torch.Tensor:
     return val
 
 
-def ucb(mean: torch.Tensor, var: torch.Tensor, beta: float) -> torch.Tensor:
-    return mean + torch.sqrt(beta * var)
+def ucb(mean: torch.Tensor, var: torch.Tensor, sqrt_beta: float) -> torch.Tensor:
+    return mean + sqrt_beta * torch.sqrt(var)
 
 
 # TODO(contramundum53): consider abstraction for acquisition functions.
@@ -73,7 +73,7 @@ class AcquisitionFunctionParams:
     cov_Y_Y_inv: np.ndarray
     cov_Y_Y_inv_Y: np.ndarray
     max_Y: float
-    beta: float | None
+    sqrt_beta: float | None
     acqf_stabilizing_noise: float
 
 
@@ -83,7 +83,7 @@ def create_acqf_params(
     search_space: SearchSpace,
     X: np.ndarray,
     Y: np.ndarray,
-    beta: float | None = None,
+    sqrt_beta: float | None = None,
     acqf_stabilizing_noise: float = 1e-12,
 ) -> AcquisitionFunctionParams:
     X_tensor = torch.from_numpy(X)
@@ -102,7 +102,7 @@ def create_acqf_params(
         cov_Y_Y_inv=cov_Y_Y_inv,
         cov_Y_Y_inv_Y=cov_Y_Y_inv @ Y,
         max_Y=np.max(Y),
-        beta=beta,
+        sqrt_beta=sqrt_beta,
         acqf_stabilizing_noise=acqf_stabilizing_noise,
     )
 
@@ -120,8 +120,8 @@ def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.
     if acqf_params.acqf_type == AcquisitionFunctionType.LOG_EI:
         return logei(mean=mean, var=var + acqf_params.acqf_stabilizing_noise, f0=acqf_params.max_Y)
     elif acqf_params.acqf_type == AcquisitionFunctionType.UCB:
-        assert acqf_params.beta is not None, "beta must be given to UCB."
-        return ucb(mean=mean, var=var, beta=acqf_params.beta)
+        assert acqf_params.sqrt_beta is not None, "sqrt_beta must be given to UCB."
+        return ucb(mean=mean, var=var, sqrt_beta=acqf_params.sqrt_beta)
     else:
         assert False, "Unknown acquisition function type."
 

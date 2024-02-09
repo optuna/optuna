@@ -1,29 +1,46 @@
 import abc
 from typing import Dict
 from typing import List
-from typing import Optional
+from typing import TYPE_CHECKING
+
+import numpy as np
 
 from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
+from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.search_space import intersection_search_space
 from optuna.study import StudyDirection
-from optuna.terminator.improvement._preprocessing import AddRandomInputs
-from optuna.terminator.improvement._preprocessing import BasePreprocessing
-from optuna.terminator.improvement._preprocessing import OneToHot
-from optuna.terminator.improvement._preprocessing import PreprocessingPipeline
-from optuna.terminator.improvement._preprocessing import SelectTopTrials
-from optuna.terminator.improvement._preprocessing import ToMinimize
-from optuna.terminator.improvement._preprocessing import UnscaleLog
-from optuna.terminator.improvement.gp.base import _min_lcb
-from optuna.terminator.improvement.gp.base import _min_ucb
-from optuna.terminator.improvement.gp.base import BaseGaussianProcess
-from optuna.terminator.improvement.gp.botorch import _BoTorchGaussianProcess
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
+from optuna._gp import gp
+import optuna._gp.acqf as acqf
+from optuna._gp.prior import default_log_prior, DEFAULT_MINIMUM_NOISE_VAR
+from optuna._gp.search_space import get_search_space_and_normalized_params, ScaleType
+from optuna._gp import optim
+
+
+if TYPE_CHECKING:
+    import torch
+else:
+    from optuna._imports import _LazyImport
+
+    torch = _LazyImport("torch")
+
+
 DEFAULT_TOP_TRIALS_RATIO = 0.5
 DEFAULT_MIN_N_TRIALS = 20
+
+
+def _get_beta(n_params: int, n_trials: int, delta: float = 0.1) -> float:
+    beta = 2 * np.log(n_params * n_trials**2 * np.pi**2 / 6 / delta)
+
+    # The following div is according to the original paper: "We then further scale it down
+    # by a factor of 5 as defined in the experiments in Srinivas et al. (2010)"
+    beta /= 5
+
+    return beta
 
 
 @experimental_class("3.2.0")
@@ -64,53 +81,89 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
 
     def __init__(
         self,
-        gp: Optional[BaseGaussianProcess] = None,
         top_trials_ratio: float = DEFAULT_TOP_TRIALS_RATIO,
         min_n_trials: int = DEFAULT_MIN_N_TRIALS,
-        min_lcb_n_additional_samples: int = 2000,
+        seed: int | None = None,
     ) -> None:
-        self._gp = gp or _BoTorchGaussianProcess()
         self._top_trials_ratio = top_trials_ratio
         self._min_n_trials = min_n_trials
-        self._min_lcb_n_additional_samples = min_lcb_n_additional_samples
-
-    def get_preprocessing(self, add_random_inputs: bool = False) -> BasePreprocessing:
-        processes = [
-            SelectTopTrials(
-                top_trials_ratio=self._top_trials_ratio,
-                min_n_trials=self._min_n_trials,
-            ),
-            UnscaleLog(),
-            ToMinimize(),
-        ]
-
-        if add_random_inputs:
-            processes += [AddRandomInputs(self._min_lcb_n_additional_samples)]
-
-        processes += [OneToHot()]
-
-        return PreprocessingPipeline(processes)
+        self._log_prior = default_log_prior
+        self._minimum_noise = DEFAULT_MINIMUM_NOISE_VAR
+        self._optimize_n_samples = 2048
+        self._rng = LazyRandomState(seed)
 
     def evaluate(
         self,
         trials: List[FrozenTrial],
         study_direction: StudyDirection,
     ) -> float:
-        search_space = intersection_search_space(trials)
-        self._validate_input(trials, search_space)
+        optuna_search_space = intersection_search_space(trials)
+        self._validate_input(trials, optuna_search_space)
 
-        fit_trials = self.get_preprocessing().apply(trials, study_direction)
-        lcb_trials = self.get_preprocessing(add_random_inputs=True).apply(trials, study_direction)
+        complete_trials = [t for t in trials if t.state == TrialState.COMPLETE]
 
-        n_params = len(search_space)
-        n_trials = len(fit_trials)
+        # _gp module assumes that optimization direction is maximization
+        sign = -1 if study_direction == StudyDirection.MINIMIZE else 1
+        values = np.array([t.value for t in complete_trials]) * sign
+        gp_search_space, normalized_params = get_search_space_and_normalized_params(complete_trials, optuna_search_space)
 
-        self._gp.fit(fit_trials)
+        top_n = int(len(trials) * self._top_trials_ratio)
+        top_n = max(top_n, self._min_n_trials)
+        top_n = min(top_n, len(trials))
+        indices = np.argsort(-values)[:top_n]
 
-        ucb = _min_ucb(trials=fit_trials, gp=self._gp, n_params=n_params, n_trials=n_trials)
-        lcb = _min_lcb(trials=lcb_trials, gp=self._gp, n_params=n_params, n_trials=n_trials)
+        top_n_values = values[indices]
+        top_n_values_mean = top_n_values.mean()
+        top_n_values_std = max(1e-10, top_n_values.std())
 
-        regret_bound = ucb - lcb
+        standarized_top_n_values = (top_n_values - top_n_values_mean) / top_n_values_std
+        normalized_top_n_params = normalized_params[indices]
+
+        kernel_params = gp.fit_kernel_params(
+            X=normalized_top_n_params,
+            Y=standarized_top_n_values,
+            is_categorical=(
+                gp_search_space.scale_types == ScaleType.CATEGORICAL
+            ),
+            log_prior=self._log_prior,
+            minimum_noise=self._minimum_noise,
+            initial_kernel_params=None,
+        )
+
+        n_params = len(optuna_search_space)
+
+        # calculate max_ucb
+        sqrt_beta = np.sqrt(_get_beta(n_params, top_n))
+        ucb_acqf_params = acqf.create_acqf_params(
+            acqf_type=acqf.AcquisitionFunctionType.UCB,
+            kernel_params=kernel_params,
+            search_space=gp_search_space,
+            X=normalized_top_n_params,
+            Y=standarized_top_n_values,
+            sqrt_beta=sqrt_beta,
+        )
+        _, standardized_ucb_value = optim.optimize_acqf_sample(
+            ucb_acqf_params,
+            n_samples=self._optimize_n_samples,
+            seed=self._rng.rng.randint(np.iinfo(np.int32).max),
+        )
+        with torch.no_grad():  # type: ignore
+            standardized_ucb_value = max(standardized_ucb_value, acqf.eval_acqf(ucb_acqf_params, torch.from_numpy(normalized_top_n_params)).max().item())
+        ucb_value = standardized_ucb_value * top_n_values_std + top_n_values_mean
+
+        lcb_acqf_params = acqf.create_acqf_params(
+            acqf_type=acqf.AcquisitionFunctionType.UCB,
+            kernel_params=kernel_params,
+            search_space=gp_search_space,
+            X=normalized_top_n_params,
+            Y=standarized_top_n_values,
+            sqrt_beta=-sqrt_beta,
+        )
+        with torch.no_grad():  # type: ignore
+            standardized_lcb_value = acqf.eval_acqf(lcb_acqf_params, torch.from_numpy(normalized_top_n_params)).max().item()
+        lcb_value = standardized_lcb_value * top_n_values_std + top_n_values_mean
+
+        regret_bound = ucb_value - lcb_value
 
         return regret_bound
 
