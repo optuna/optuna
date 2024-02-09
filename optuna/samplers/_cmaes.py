@@ -99,27 +99,24 @@ class CmaEsSampler(BaseSampler):
       <https://arxiv.org/abs/1604.00772>`_
     - `A. Auger and N. Hansen. A restart CMA evolution strategy with increasing population
       size. In Proceedings of the IEEE Congress on Evolutionary Computation (CEC 2005),
-      pages 1769–1776. IEEE Press, 2005.
-      <http://www.cmap.polytechnique.fr/~nikolaus.hansen/cec2005ipopcmaes.pdf>`_
+      pages 1769–1776. IEEE Press, 2005. <https://doi.org/10.1109/CEC.2005.1554902>`_
     - `N. Hansen. Benchmarking a BI-Population CMA-ES on the BBOB-2009 Function Testbed.
-      GECCO Workshop, 2009.
-      <https://dl.acm.org/doi/10.1145/1570256.1570333>`_
+      GECCO Workshop, 2009. <https://doi.org/10.1145/1570256.1570333>`_
     - `Raymond Ros, Nikolaus Hansen. A Simple Modification in CMA-ES Achieving Linear Time and
       Space Complexity. 10th International Conference on Parallel Problem Solving From Nature,
-      Sep 2008, Dortmund, Germany. inria-00287367.
-      <https://hal.inria.fr/inria-00287367/document>`_
+      Sep 2008, Dortmund, Germany. inria-00287367. <https://doi.org/10.1007/978-3-540-87700-4_30>`_
     - `Masahiro Nomura, Shuhei Watanabe, Youhei Akimoto, Yoshihiko Ozaki, Masaki Onishi.
       Warm Starting CMA-ES for Hyperparameter Optimization, AAAI. 2021.
-      <https://arxiv.org/abs/2012.06932>`_
+      <https://doi.org/10.1609/aaai.v35i10.17109>`_
     - `R. Hamano, S. Saito, M. Nomura, S. Shirakawa. CMA-ES with Margin: Lower-Bounding Marginal
       Probability for Mixed-Integer Black-Box Optimization, GECCO. 2022.
-      <https://arxiv.org/abs/2205.13482>`_
+      <https://doi.org/10.1145/3512290.3528827>`_
     - `M. Nomura, Y. Akimoto, I. Ono. CMA-ES with Learning Rate Adaptation: Can CMA-ES with
       Default Population Size Solve Multimodal and Noisy Problems?, GECCO. 2023.
-      <https://arxiv.org/abs/2304.03473>`_
+      <https://doi.org/10.1145/3583131.3590358>`_
 
     .. seealso::
-        You can also use :class:`optuna.integration.PyCmaSampler` which is a sampler using cma
+        You can also use `optuna_integration.PyCmaSampler <https://optuna-integration.readthedocs.io/en/stable/reference/generated/optuna_integration.PyCmaSampler.html#optuna_integration.PyCmaSampler>`_ which is a sampler using cma
         library as the backend.
 
     Args:
@@ -248,7 +245,7 @@ class CmaEsSampler(BaseSampler):
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.6.0.
 
-    """
+    """  # NOQA: E501
 
     def __init__(
         self,

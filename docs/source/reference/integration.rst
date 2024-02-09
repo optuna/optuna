@@ -39,16 +39,6 @@ MLflow
 
    optuna.integration.MLflowCallback
 
-pycma
------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.PyCmaSampler
-   optuna.integration.CmaEsSampler
-
 PyTorch
 -------
 

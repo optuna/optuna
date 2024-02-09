@@ -56,6 +56,12 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
     This means that the number of parallelization should not exceed the number of population size :math:`p`.
 
 .. note::
+    Samplers initialize their random number generators by specifying ``seed`` argument at initialization.
+    However, samplers reseed them when ``n_jobs!=1`` of :func:`optuna.study.Study.optimize` to avoid sampling duplicated parameters by using the same generator.
+    Thus we can hardly reproduce the optimization results with ``n_jobs!=1``.
+    For the same reason, make sure that use either ``seed=None`` or different ``seed`` values among processes with distributed optimization explained in :ref:`distributed` tutorial.
+
+.. note::
     For float, integer, or categorical parameters, see :ref:`configurations` tutorial.
 
     For pruning, see :ref:`pruning` tutorial.
