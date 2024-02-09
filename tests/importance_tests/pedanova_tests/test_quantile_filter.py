@@ -9,34 +9,8 @@ from optuna.importance._ped_anova.evaluator import _QuantileFilter
 from optuna.trial import FrozenTrial
 
 
-def test_init() -> None:
-    with pytest.raises(ValueError, match=r"quantile must be in *"):
-        _QuantileFilter(quantile=10.0, is_lower_better=True, min_n_top_trials=2, target=None)
-    with pytest.raises(ValueError, match=r"quantile must be in *"):
-        _QuantileFilter(quantile=-1, is_lower_better=True, min_n_top_trials=2, target=None)
-    with pytest.raises(ValueError, match=r"min_n_top_trials must be positive*"):
-        _QuantileFilter(quantile=0.1, is_lower_better=True, min_n_top_trials=-1, target=None)
-
-
-def test_filter_must_have_target_for_multi_objective() -> None:
-    trials = [optuna.create_trial(values=[1.0, 1.0])]
-    _filter = _QuantileFilter(quantile=0.1, is_lower_better=True, min_n_top_trials=1, target=None)
-    with pytest.raises(ValueError, match=".*used for multi-objective.*"):
-        _filter.filter(trials)
-
-
-def test_len_trials_must_be_larger_than_or_equal_to_min_n_top_trials() -> None:
-    trials = [optuna.create_trial(value=1.0) for _ in range(2)]
-    _filter = _QuantileFilter(quantile=0.1, is_lower_better=True, min_n_top_trials=2, target=None)
-    _filter.filter(trials)  # This is OK.
-
-    trials.pop(0)
-    assert len(trials) == 1
-    with pytest.raises(ValueError, match=r"len\(trials\) must be larger than or equal to.*"):
-        _filter.filter(trials)
-
-
-_VALUES = list(range(10))[::-1]
+_VALUES = list([float(i) for i in range(10)])[::-1]
+_MULTI_VALUES = [[float(i), float(j)] for i, j in zip(range(10), reversed(range(10)))]
 
 
 @pytest.mark.parametrize(
@@ -51,6 +25,12 @@ _VALUES = list(range(10))[::-1]
         (0.5, False, _VALUES[:], None, list(range(10))[:5]),
         (0.51, False, _VALUES[:], None, list(range(10))[:6]),
         # No tests for target!=None and is_lower_better=False because it is not used.
+        (0.49, True, _MULTI_VALUES[:], lambda t: t.values[0], list(range(10))[:5]),
+        (0.5, True, _MULTI_VALUES[:], lambda t: t.values[0], list(range(10))[:5]),
+        (0.51, True, _MULTI_VALUES[:], lambda t: t.values[0], list(range(10))[:6]),
+        (0.49, True, _MULTI_VALUES[:], lambda t: t.values[1], list(range(10))[-5:]),
+        (0.5, True, _MULTI_VALUES[:], lambda t: t.values[1], list(range(10))[-5:]),
+        (0.51, True, _MULTI_VALUES[:], lambda t: t.values[1], list(range(10))[-6:]),
     ],
 )
 def test_filter(

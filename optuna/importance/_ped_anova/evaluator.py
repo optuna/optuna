@@ -207,12 +207,8 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
 
         trials = _get_filtered_trials(study, params=params, target=target)
         n_params = len(non_single_dists)
-        if target is None and max([len(t.values) for t in trials], default=1) > 1:
-            raise ValueError(
-                "If the `study` is being used for multi-objective optimization, "
-                "please specify the `target`. For example, use "
-                "`target=lambda t: t.values[0]` for the first objective value."
-            )
+        # The following should be tested at _get_filtered_trials.
+        assert target is not None or max([len(t.values) for t in trials], default=1) == 1
         if len(trials) <= self._min_n_top_trials:
             param_importances = {k: 1.0 / n_params for k in non_single_dists}
             param_importances.update({k: 0.0 for k in single_dists})

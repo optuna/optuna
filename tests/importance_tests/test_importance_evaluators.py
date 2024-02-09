@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from optuna import create_study
 from optuna import Study
 from optuna import Trial
@@ -7,6 +9,7 @@ from optuna.distributions import FloatDistribution
 from optuna.importance import BaseImportanceEvaluator
 from optuna.importance import FanovaImportanceEvaluator
 from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
+from optuna.importance import PedAnovaImportanceEvaluator
 from optuna.samplers import RandomSampler
 from optuna.trial import create_trial
 
@@ -37,6 +40,9 @@ def get_study(seed: int, n_trials: int, is_multi_obj: bool) -> Study:
     return study
 
 
+@pytest.mark.parametrize(
+    "evaluator_cls", (FanovaImportanceEvaluator, MeanDecreaseImpurityImportanceEvaluator)
+)
 def _test_n_trees_of_tree_based_evaluator(
     evaluator_cls: type[FanovaImportanceEvaluator | MeanDecreaseImpurityImportanceEvaluator],
 ) -> None:
@@ -50,6 +56,9 @@ def _test_n_trees_of_tree_based_evaluator(
     assert param_importance != param_importance_different_n_trees
 
 
+@pytest.mark.parametrize(
+    "evaluator_cls", (FanovaImportanceEvaluator, MeanDecreaseImpurityImportanceEvaluator)
+)
 def _test_max_depth_of_tree_based_evaluator(
     evaluator_cls: type[FanovaImportanceEvaluator | MeanDecreaseImpurityImportanceEvaluator],
 ) -> None:
@@ -61,6 +70,29 @@ def _test_max_depth_of_tree_based_evaluator(
     param_importance_different_max_depth = evaluator.evaluate(study)
 
     assert param_importance != param_importance_different_max_depth
+
+
+def test_direction_of_ped_anova() -> None:
+    study_minimize = get_study(seed=0, n_trials=20, is_multi_obj=False)
+    study_maximize = create_study(direction="maximize")
+    study_maximize.add_trials(study_minimize.trials)
+
+    evaluator = PedAnovaImportanceEvaluator()
+    assert evaluator.evaluate(study_minimize) != evaluator.evaluate(study_maximize)
+
+
+def test_baseline_quantile_of_ped_anova() -> None:
+    study = get_study(seed=0, n_trials=20, is_multi_obj=False)
+    default_evaluator = PedAnovaImportanceEvaluator()
+    evaluator = PedAnovaImportanceEvaluator(baseline_quantile=0.3)
+    assert evaluator.evaluate(study) != default_evaluator.evaluate(study)
+
+
+def test_evaluate_on_local_of_ped_anova() -> None:
+    study = get_study(seed=0, n_trials=20, is_multi_obj=False)
+    default_evaluator = PedAnovaImportanceEvaluator()
+    global_evaluator = PedAnovaImportanceEvaluator(evaluate_on_local=False)
+    assert global_evaluator.evaluate(study) != default_evaluator.evaluate(study)
 
 
 def _test_evaluator_with_infinite(
@@ -103,3 +135,41 @@ def _test_evaluator_with_infinite(
     # because the last trial whose objective value is an inf is ignored.
     # PED-ANOVA can handle inf, so anyways the length should be identical.
     assert param_importance_with_inf == param_importance_without_inf
+
+
+def test_error_in_ped_anova():
+    with pytest.raises(RuntimeError, match=r".*multi-objective optimization.*"):
+        evaluator = PedAnovaImportanceEvaluator()
+        study = get_study(seed=0, n_trials=5, is_multi_obj=True)
+        evaluator.evaluate(study)
+
+
+@pytest.mark.parametrize(
+    "evaluator_cls",
+    (
+        FanovaImportanceEvaluator,
+        MeanDecreaseImpurityImportanceEvaluator,
+        PedAnovaImportanceEvaluator,
+    ),
+)
+@pytest.mark.parametrize("inf_value", [float("inf"), -float("inf")])
+def test_importance_evaluator_with_infinite(
+    evaluator_cls: type[BaseImportanceEvaluator], inf_value: float
+) -> None:
+    _test_evaluator_with_infinite(evaluator_cls, inf_value)
+
+
+@pytest.mark.parametrize(
+    "evaluator_cls",
+    (
+        FanovaImportanceEvaluator,
+        MeanDecreaseImpurityImportanceEvaluator,
+        PedAnovaImportanceEvaluator,
+    ),
+)
+@pytest.mark.parametrize("target_idx", [0, 1])
+@pytest.mark.parametrize("inf_value", [float("inf"), -float("inf")])
+def test_multi_objective_importance_evaluator_with_infinite(
+    evaluator_cls: type[BaseImportanceEvaluator], target_idx: int, inf_value: float
+) -> None:
+    _test_evaluator_with_infinite(evaluator_cls, inf_value, target_idx)
