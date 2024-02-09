@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections import Callable
+from collections.abc import Callable
 
 import pytest
 
@@ -42,20 +42,26 @@ def test_len_trials_must_be_larger_than_or_equal_to_min_n_top_trials() -> None:
         (0.1, True, [1.0, 2.0], None, [0, 1]),  # Check min_n_trials = 2
         (0.5, True, list([float(i) for i in range(10)])[::-1], None, list(range(10))[5:]),
         (1.0, True, [1.0, 2.0], None, [0, 1]),
-    ]
+    ],
 )
 def test_filter(
     quantile: float,
     is_lower_better: bool,
-    values: list[float | list[float]],
+    values: list[float] | list[list[float]],
     target: Callable[[FrozenTrial], float] | None,
     filtered_indices: list[int],
 ) -> None:
     _filter = QuantileFilter(quantile, is_lower_better, min_n_top_trials=2, target=target)
-    trials = [
-        optuna.create_trial(**dict(value=v) if isinstance(v, float) else dict(values=v))
-        for v in values
-    ]
+
+    def _create_trial(v: float | list[float]) -> FrozenTrial:
+        if isinstance(v, float):
+            return optuna.create_trial(value=v)
+        elif isinstance(v, list):
+            return optuna.create_trial(values=v)
+        else:
+            assert False, f"Unexpected Type for {v}"
+
+    trials = [_create_trial(v) for v in values]
     for i, t in enumerate(trials):
         t.set_user_attr("index", i)
 

@@ -51,13 +51,15 @@ class QuantileFilter:
                 f", but got len(trials)={len(trials)}."
             )
 
+        def _quantile(v: np.ndarray, q: float) -> float:
+            cutoff_index = int(np.ceil(q * loss_values.size)) - 1
+            return float(np.partition(loss_values, cutoff_index)[cutoff_index])
+
         cutoff_val = max(
             np.partition(loss_values, min_n_top_trials - 1)[min_n_top_trials - 1],
-            # TODO(nabenabe0928): Replace `interpolation` with `method` after dropping Python3.7.
-            # TODO(nabenabe0928): Remove the type ignore below with the change above as well.
-            np.quantile(
-                loss_values, self._quantile, interpolation="inverted_cdf"
-            ),  # type: ignore[call-overload]
+            # TODO(nabenabe0928): After dropping Python3.7, replace below with
+            # np.quantile(loss_values, self._quantile, method="inverted_cdf")
+            _quantile(loss_values, self._quantile),
         )
         should_keep_trials = loss_values <= cutoff_val
         return [t for t, should_keep in zip(trials, should_keep_trials) if should_keep]
