@@ -39,15 +39,6 @@ MLflow
 
    optuna.integration.MLflowCallback
 
-Weights & Biases
-----------------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.WeightsAndBiasesCallback
-
 PyTorch
 -------
 
