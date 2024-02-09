@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-
 import pytest
 
 from optuna.importance import PedAnovaImportanceEvaluator
 from optuna.study import create_study
-from optuna.trial import FrozenTrial
 from tests.importance_tests.common_tests import _test_evaluator_with_infinite
 from tests.importance_tests.common_tests import get_study
 
@@ -32,22 +29,6 @@ def test_evaluate_on_local_of_ped_anova() -> None:
     default_evaluator = PedAnovaImportanceEvaluator()
     global_evaluator = PedAnovaImportanceEvaluator(evaluate_on_local=False)
     assert global_evaluator.evaluate(study) != default_evaluator.evaluate(study)
-
-
-@pytest.mark.parametrize(
-    "custom_filter",
-    [
-        lambda trials: [t for t in trials if t.value < 5.0],
-        lambda trials: [t for t, keep in zip(trials, [True, False] * 10) if keep],
-    ],
-)
-def test_custom_filter_of_ped_anova(
-    custom_filter: Callable[[list[FrozenTrial]], list[FrozenTrial]]
-) -> None:
-    study = get_study(seed=0, n_trials=20, is_multi_obj=False)
-    default_evaluator = PedAnovaImportanceEvaluator()
-    evaluator = PedAnovaImportanceEvaluator(custom_filter=custom_filter)
-    assert evaluator.evaluate(study) != default_evaluator.evaluate(study)
 
 
 @pytest.mark.parametrize("inf_value", [float("inf"), -float("inf")])

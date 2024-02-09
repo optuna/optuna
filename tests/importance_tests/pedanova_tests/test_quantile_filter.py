@@ -36,6 +36,9 @@ def test_len_trials_must_be_larger_than_or_equal_to_min_n_top_trials() -> None:
         _filter.filter(trials)
 
 
+_VALUES = list(range(10))[::-1]
+
+
 @pytest.mark.parametrize(
     "quantile,is_lower_better,values,target,filtered_indices",
     [

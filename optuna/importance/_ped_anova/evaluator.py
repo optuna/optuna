@@ -193,24 +193,20 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         *,
         target: Callable[[FrozenTrial], float] | None = None,
     ) -> dict[str, float]:
-        distributions = _get_distributions(study, params=params)
+        dists = _get_distributions(study, params=params)
         if params is None:
-            params = list(distributions.keys())
+            params = list(dists.keys())
 
         assert params is not None
         # PED-ANOVA does not support parameter distributions with a single value,
         # because the importance of such params become zero.
-        non_single_distributions = {
-            name: dist for name, dist in distributions.items() if not dist.single()
-        }
-        single_distributions = {
-            name: dist for name, dist in distributions.items() if dist.single()
-        }
-        if len(non_single_distributions) == 0:
+        non_single_dists = {name: dist for name, dist in dists.items() if not dist.single()}
+        single_dists = {name: dist for name, dist in dists.items() if dist.single()}
+        if len(non_single_dists) == 0:
             return {}
 
         trials = _get_filtered_trials(study, params=params, target=target)
-        n_params = len(non_single_distributions)
+        n_params = len(non_single_dists)
         if target is None and max([len(t.values) for t in trials], default=1) > 1:
             raise ValueError(
                 "If the `study` is being used for multi-objective optimization, "
@@ -218,14 +214,14 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
                 "`target=lambda t: t.values[0]` for the first objective value."
             )
         if len(trials) <= self._min_n_top_trials:
-            param_importances = {k: 1.0 / n_params for k in param_importances}
-            param_importances.update({k: 0.0 for k in single_distributions})
+            param_importances = {k: 1.0 / n_params for k in non_single_dists}
+            param_importances.update({k: 0.0 for k in single_dists})
             return {k: 1.0 / n_params for k in param_importances}
 
         top_trials = self._get_top_trials(study, trials, params, target)
         importance_sum = 0.0
         param_importances = {}
-        for param_name, dist in non_single_distributions.items():
+        for param_name, dist in non_single_dists.items():
             param_importances[param_name] = self._compute_pearson_divergence(
                 param_name, dist, top_trials=top_trials, all_trials=trials
             )
@@ -235,7 +231,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             param_importances = {k: v / importance_sum for k, v in param_importances.items()}
         else:
             # It happens when pdf_local == pdf_top for all params.
-            param_importances = {k: 1.0 / n_params for k in param_importances}
+            param_importances = {k: 1.0 / n_params for k in non_single_dists}
 
-        param_importances.update({k: 0.0 for k in single_distributions})
+        param_importances.update({k: 0.0 for k in single_dists})
         return _sort_dict_by_importance(param_importances)
