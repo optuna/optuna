@@ -137,7 +137,7 @@ def _test_evaluator_with_infinite(
     assert param_importance_with_inf == param_importance_without_inf
 
 
-def test_error_in_ped_anova():
+def test_error_in_ped_anova() -> None:
     with pytest.raises(RuntimeError, match=r".*multi-objective optimization.*"):
         evaluator = PedAnovaImportanceEvaluator()
         study = get_study(seed=0, n_trials=5, is_multi_obj=True)
