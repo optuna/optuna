@@ -11,12 +11,16 @@ from optuna.importance._base import _get_filtered_trials
 from optuna.importance._base import _sort_dict_by_importance
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._ped_anova.scott_parzen_estimator import _build_parzen_estimator
+from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 
 
-class QuantileFilter:
+_logger = get_logger(__name__)
+
+
+class _QuantileFilter:
     def __init__(
         self,
         quantile: float,
@@ -24,10 +28,8 @@ class QuantileFilter:
         min_n_top_trials: int,
         target: Callable[[FrozenTrial], float] | None,
     ):
-        if not (0 <= quantile <= 1):  # nan must also be rejected.
-            raise ValueError(f"quantile must be in [0, 1], but got {quantile}.")
-        if min_n_top_trials <= 0:
-            raise ValueError(f"min_n_top_trials must be positive, but got {min_n_top_trials}.")
+        assert 0 <= quantile <= 1, "quantile must be in [0, 1]."
+        assert min_n_top_trials > 0, "min_n_top_trials must be positive."
 
         self._quantile = quantile
         self._is_lower_better = is_lower_better
@@ -36,20 +38,10 @@ class QuantileFilter:
 
     def filter(self, trials: list[FrozenTrial]) -> list[FrozenTrial]:
         target, min_n_top_trials = self._target, self._min_n_top_trials
-        if target is None and max([len(t.values) for t in trials], default=1) > 1:
-            raise ValueError(
-                "If the `study` is being used for multi-objective optimization, "
-                "please specify the `target`. For example, use "
-                "`target=lambda t: t.values[0]` for the first objective value."
-            )
-
         sign = 1.0 if self._is_lower_better else -1.0
         loss_values = sign * np.asarray([t.value if target is None else target(t) for t in trials])
-        if min_n_top_trials > loss_values.size:
-            raise ValueError(
-                f"len(trials) must be larger than or equal to min_n_top_trials={min_n_top_trials}"
-                f", but got len(trials)={len(trials)}."
-            )
+        err_msg = "len(trials) must be larger than or equal to min_n_top_trials"
+        assert min_n_top_trials <= loss_values.size, err_msg
 
         def _quantile(v: np.ndarray, q: float) -> float:
             cutoff_index = int(np.ceil(q * loss_values.size)) - 1
@@ -68,12 +60,10 @@ class QuantileFilter:
 class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     """PED-ANOVA importance evaluator.
 
-    Implements the PED-ANOVA hyperparameter importance evaluation algorithm in
-    `PED-ANOVA: Efficiently Quantifying Hyperparameter Importance in Arbitrary Subspaces
-      <https://arxiv.org/abs/2304.10255>`_.
+    Implements the PED-ANOVA hyperparameter importance evaluation algorithm.
 
     PED-ANOVA fits Parzen estimators of :class:`~optuna.trial.TrialState.COMPLETE` trials better
-    than a user-specified baseline. Users can specify the baseline either by a quantile.
+    than a user-specified baseline. Users can specify the baseline by a quantile.
     The importance can be interpreted as how important each hyperparameter is to get
     the performance better than baseline.
 
@@ -89,45 +79,40 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
 
     .. note::
 
-        Please refer to the original work available at https://github.com/nabenabe0928/local-anova.
+        Please refer to `the original work <https://github.com/nabenabe0928/local-anova>`_.
 
     Args:
         baseline_quantile:
-            Compute the importance of achieving top-`baseline_quantile` quantile `target_value`.
+            Compute the importance of achieving top-`baseline_quantile` quantile objective value.
             For example, `baseline_quantile=0.1` means that the importances give the information
             of which parameters were important to achieve the top-10% performance during
-            the specified `study`.
+            optimization.
         evaluate_on_local:
             Whether we measure the importance in the local or global space.
-            If `True`, the importances imply how importance each parameter is during `study`.
-            Meanwhile, `evaluate_on_local=False` gives the importances in the specified
-            `search_space`. `evaluate_on_local=True` is especially useful when users modify search
-            space during the specified `study`.
-        custom_filter:
-            If given, the importance of each parameter to achieve filtered trials will be computed.
-            If not specified, we compute the importance of achieving `baseline_quantile` in trials.
+            If :obj:`True`, the importances imply how importance each parameter is during
+            optimization. Meanwhile, `evaluate_on_local=False` gives the importances in the
+            specified search_space. `evaluate_on_local=True` is especially useful when users
+            modify search space during optimization.
 
-            Example:
-                The following custom_filter allows calculating the importance of achieving
-                the value of lower than 1.0.
+        Example:
+            An example of using PED-ANOVA is as follows:
 
-                .. testcode::
+            .. testcode::
 
-                    import optuna
-                    from optuna.importance import PedAnovaImportanceEvaluator
+                import optuna
+                from optuna.importance import PedAnovaImportanceEvaluator
 
 
-                    def objective(trial):
-                        x1 = trial.suggest_float("x1", -10, 10)
-                        x2 = trial.suggest_float("x2", -10, 10)
-                        return x1 + x2 / 1000
+                def objective(trial):
+                    x1 = trial.suggest_float("x1", -10, 10)
+                    x2 = trial.suggest_float("x2", -10, 10)
+                    return x1 + x2 / 1000
 
 
-                    study = optuna.create_study()
-                    study.optimize(objective, n_trials=100)
-                    custom_filter = lambda trials: [t for t in trials if t.value < 1.0]
-                    evaluator = PedAnovaImportanceEvaluator(custom_filter=custom_filter)
-                    evaluator.evaluate(study)
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=100)
+                evaluator = PedAnovaImportanceEvaluator()
+                evaluator.evaluate(study)
 
     """
 
@@ -136,11 +121,10 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         *,
         baseline_quantile: float = 0.1,
         evaluate_on_local: bool = True,
-        custom_filter: Callable[[list[FrozenTrial]], list[FrozenTrial]] | None = None,
     ):
+        assert 0.0 <= baseline_quantile <= 1.0, "baseline_quantile must be in [0, 1]."
         self._baseline_quantile = baseline_quantile
         self._evaluate_on_local = evaluate_on_local
-        self._custom_filter = custom_filter
 
         # Advanced Setups.
         # Discretize a domain [low, high] as `np.linspace(low, high, n_steps)`.
@@ -168,20 +152,12 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             )
             is_lower_better = True
 
-        if self._custom_filter is not None:
-            top_trials = self._custom_filter(trials)
-        else:
-            top_trials = QuantileFilter(
-                self._baseline_quantile, is_lower_better, self._min_n_top_trials, target
-            ).filter(trials)
+        top_trials = _QuantileFilter(
+            self._baseline_quantile, is_lower_better, self._min_n_top_trials, target
+        ).filter(trials)
 
         if len(trials) == len(top_trials):
-            warnings.warn("All trials are in top trials, which gives equal importances.")
-        elif len(top_trials) < self._min_n_top_trials:
-            raise ValueError(
-                f"custom_filter must give at least {self._min_n_top_trials} trials "
-                f"after the filtering, but got {len(top_trials)} trials."
-            )
+            _logger.warning("All trials are in top trials, which gives equal importances.")
 
         return top_trials
 
@@ -196,6 +172,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         pe_top = _build_parzen_estimator(
             param_name, dist, top_trials, self._n_steps, consider_prior, prior_weight
         )
+        # NOTE: pe_top.n_steps could be different from self._n_steps.
         grids = np.arange(pe_top.n_steps)
         pdf_top = pe_top.pdf(grids) + 1e-12
 
@@ -233,6 +210,18 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             return {}
 
         trials = _get_filtered_trials(study, params=params, target=target)
+        n_params = len(non_single_distributions)
+        if target is None and max([len(t.values) for t in trials], default=1) > 1:
+            raise ValueError(
+                "If the `study` is being used for multi-objective optimization, "
+                "please specify the `target`. For example, use "
+                "`target=lambda t: t.values[0]` for the first objective value."
+            )
+        if len(trials) <= self._min_n_top_trials:
+            param_importances = {k: 1.0 / n_params for k in param_importances}
+            param_importances.update({k: 0.0 for k in single_distributions})
+            return {k: 1.0 / n_params for k in param_importances}
+
         top_trials = self._get_top_trials(study, trials, params, target)
         importance_sum = 0.0
         param_importances = {}
@@ -245,8 +234,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         if importance_sum > 0.0:
             param_importances = {k: v / importance_sum for k, v in param_importances.items()}
         else:
-            assert len(trials) == len(top_trials), "Unexpected Error."
-            n_params = len(param_importances)
+            # It happens when pdf_local == pdf_top for all params.
             param_importances = {k: 1.0 / n_params for k in param_importances}
 
         param_importances.update({k: 0.0 for k in single_distributions})

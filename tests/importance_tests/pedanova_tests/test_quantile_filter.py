@@ -5,29 +5,29 @@ from collections.abc import Callable
 import pytest
 
 import optuna
-from optuna.importance._ped_anova.evaluator import QuantileFilter
+from optuna.importance._ped_anova.evaluator import _QuantileFilter
 from optuna.trial import FrozenTrial
 
 
 def test_init() -> None:
     with pytest.raises(ValueError, match=r"quantile must be in *"):
-        QuantileFilter(quantile=10.0, is_lower_better=True, min_n_top_trials=2, target=None)
+        _QuantileFilter(quantile=10.0, is_lower_better=True, min_n_top_trials=2, target=None)
     with pytest.raises(ValueError, match=r"quantile must be in *"):
-        QuantileFilter(quantile=-1, is_lower_better=True, min_n_top_trials=2, target=None)
+        _QuantileFilter(quantile=-1, is_lower_better=True, min_n_top_trials=2, target=None)
     with pytest.raises(ValueError, match=r"min_n_top_trials must be positive*"):
-        QuantileFilter(quantile=0.1, is_lower_better=True, min_n_top_trials=-1, target=None)
+        _QuantileFilter(quantile=0.1, is_lower_better=True, min_n_top_trials=-1, target=None)
 
 
 def test_filter_must_have_target_for_multi_objective() -> None:
     trials = [optuna.create_trial(values=[1.0, 1.0])]
-    _filter = QuantileFilter(quantile=0.1, is_lower_better=True, min_n_top_trials=1, target=None)
+    _filter = _QuantileFilter(quantile=0.1, is_lower_better=True, min_n_top_trials=1, target=None)
     with pytest.raises(ValueError, match=".*used for multi-objective.*"):
         _filter.filter(trials)
 
 
 def test_len_trials_must_be_larger_than_or_equal_to_min_n_top_trials() -> None:
     trials = [optuna.create_trial(value=1.0) for _ in range(2)]
-    _filter = QuantileFilter(quantile=0.1, is_lower_better=True, min_n_top_trials=2, target=None)
+    _filter = _QuantileFilter(quantile=0.1, is_lower_better=True, min_n_top_trials=2, target=None)
     _filter.filter(trials)  # This is OK.
 
     trials.pop(0)
@@ -57,7 +57,7 @@ def test_filter(
     target: Callable[[FrozenTrial], float] | None,
     filtered_indices: list[int],
 ) -> None:
-    _filter = QuantileFilter(quantile, is_lower_better, min_n_top_trials=2, target=target)
+    _filter = _QuantileFilter(quantile, is_lower_better, min_n_top_trials=2, target=target)
 
     def _create_trial(v: float | list[float]) -> FrozenTrial:
         if isinstance(v, float):
