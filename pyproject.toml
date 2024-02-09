@@ -64,7 +64,6 @@ checking = [
 ]
 document = [
     "ase",
-    "cma",
     "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
     "fvcore",
     "lightgbm",
@@ -84,7 +83,6 @@ document = [
     "torchvision",
 ]
 integration = [
-    "cma",
     "lightgbm",
     "lightning",
     "mlflow",
@@ -95,8 +93,6 @@ integration = [
     "torch",
     "torchaudio",
     "torchvision",
-    "wandb",
-    "xgboost",
 ]
 optional = [
     "boto3",  # optuna/artifacts/_boto3.py.
