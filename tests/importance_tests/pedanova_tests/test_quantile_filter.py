@@ -40,8 +40,14 @@ def test_len_trials_must_be_larger_than_or_equal_to_min_n_top_trials() -> None:
     "quantile,is_lower_better,values,target,filtered_indices",
     [
         (0.1, True, [1.0, 2.0], None, [0, 1]),  # Check min_n_trials = 2
-        (0.5, True, list([float(i) for i in range(10)])[::-1], None, list(range(10))[5:]),
+        (0.49, True, _VALUES[:], None, list(range(10))[-5:]),
+        (0.5, True, _VALUES[:], None, list(range(10))[-5:]),
+        (0.51, True, _VALUES[:], None, list(range(10))[-6:]),
         (1.0, True, [1.0, 2.0], None, [0, 1]),
+        (0.49, False, _VALUES[:], None, list(range(10))[:5]),
+        (0.5, False, _VALUES[:], None, list(range(10))[:5]),
+        (0.51, False, _VALUES[:], None, list(range(10))[:6]),
+        # No tests for target!=None and is_lower_better=False because it is not used.
     ],
 )
 def test_filter(
