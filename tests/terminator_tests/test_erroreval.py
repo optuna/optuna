@@ -1,8 +1,15 @@
 from __future__ import annotations
 
 import math
+import sys
 
 import pytest
+
+
+# TODO(y0z): Remove this block after torch supports Python 3.12.
+if sys.version_info >= (3, 12):
+    pytest.skip("PyTorch does not support python 3.12.", allow_module_level=True)
+
 
 from optuna.study.study import create_study
 from optuna.terminator import CrossValidationErrorEvaluator
