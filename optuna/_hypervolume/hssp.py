@@ -19,7 +19,7 @@ def _solve_hssp(
     paper:
 
     - `Greedy Hypervolume Subset Selection in Low Dimensions
-       <https://ieeexplore.ieee.org/document/7570501>`_
+       <https://doi.org/10.1162/EVCO_a_00188>`_
     """
     selected_vecs: List[np.ndarray] = []
     selected_indices: List[int] = []
