@@ -433,7 +433,7 @@ You can verify the transformation by calculating the elements of the Jacobian.
 How can I optimize a model with some constraints?
 -------------------------------------------------
 
-When you want to optimize a model with constraints, you can use the following classes: :class:`~optuna.samplers.TPESampler`, :class:`~optuna.samplers.NSGAIISampler` or :class:`~optuna.integration.BoTorchSampler`.
+When you want to optimize a model with constraints, you can use the following classes: :class:`~optuna.samplers.TPESampler`, :class:`~optuna.samplers.NSGAIISampler` or `BoTorchSampler <https://optuna-integration.readthedocs.io/en/stable/reference/generated/optuna_integration.BoTorchSampler.html>`_.
 The following example is a benchmark of Binh and Korn function, a multi-objective optimization, with constraints using :class:`~optuna.samplers.NSGAIISampler`. This one has two constraints :math:`c_0 = (x-5)^2 + y^2 - 25 \le 0` and :math:`c_1 = -(x - 8)^2 - (y + 3)^2 + 7.7 \le 0` and finds the optimal solution satisfying these constraints.
 
 
@@ -488,7 +488,7 @@ The following example is a benchmark of Binh and Korn function, a multi-objectiv
         )
         print("    Params: {}".format(trial.params))
 
-If you are interested in an example for :class:`~optuna.integration.BoTorchSampler`, please refer to `this sample code <https://github.com/optuna/optuna-examples/blob/main/multi_objective/botorch_simple.py>`_.
+If you are interested in an example for `BoTorchSampler <https://optuna-integration.readthedocs.io/en/stable/reference/generated/optuna_integration.BoTorchSampler.html>`_, please refer to `this sample code <https://github.com/optuna/optuna-examples/blob/main/multi_objective/botorch_simple.py>`_.
 
 
 There are two kinds of constrained optimizations, one with soft constraints and the other with hard constraints.
@@ -620,8 +620,8 @@ will retry failed trials when a new trial starts to evaluate.
 How can I deal with permutation as a parameter?
 -----------------------------------------------
 
-Although it is not straightforward to deal with combinatorial search spaces like permutations with existing API, there exists a convenient technique for handling them. 
-It involves re-parametrization of permutation search space of :math:`n` items as an independent :math:`n`-dimensional integer search space. 
+Although it is not straightforward to deal with combinatorial search spaces like permutations with existing API, there exists a convenient technique for handling them.
+It involves re-parametrization of permutation search space of :math:`n` items as an independent :math:`n`-dimensional integer search space.
 This technique is based on the concept of `Lehmer code <https://en.wikipedia.org/wiki/Lehmer_code>`_.
 
 A Lehmer code of a sequence is the sequence of integers in the same size, whose :math:`i`-th entry denotes how many inversions the :math:`i`-th entry of the permutation has after itself.
@@ -629,10 +629,10 @@ In other words, the :math:`i`-th entry of the Lehmer code represents the number 
 For instance, the Lehmer code of the permutation :math:`(3, 1, 4, 2, 0)` is :math:`(3, 1, 2, 1, 0)`.
 
 Not only does the Lehmer code provide a unique encoding of permutations into an integer space, but it also has some desirable properties.
-For example, the sum of Lehmer code entries is equal to the minimum number of adjacent transpositions necessary to transform the corresponding permutation into the identity permutation. 
-Additionally, the lexicographical order of the encodings of two permutations is the same as that of the original sequence. 
+For example, the sum of Lehmer code entries is equal to the minimum number of adjacent transpositions necessary to transform the corresponding permutation into the identity permutation.
+Additionally, the lexicographical order of the encodings of two permutations is the same as that of the original sequence.
 Therefore, Lehmer code preserves "closeness" among permutations in some sense, which is important for the optimization algorithm.
-An Optuna implementation example to solve Euclid TSP is as follows:  
+An Optuna implementation example to solve Euclid TSP is as follows:
 
 .. code-block:: python
 

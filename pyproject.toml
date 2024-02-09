@@ -47,7 +47,6 @@ benchmark = [
   "asv>=0.5.0",
   "botorch",
   "cma",
-  "scikit-optimize",
   "virtualenv"
 ]
 checking = [
@@ -65,9 +64,8 @@ checking = [
 ]
 document = [
     "ase",
-    "cma",
-    "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
     "botorch",
+    "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
     "fvcore",
     "lightgbm",
     "matplotlib!=3.6.0",
@@ -76,7 +74,6 @@ document = [
     "pillow",
     "plotly>=4.9.0",  # optuna/visualization.
     "scikit-learn",
-    "scikit-optimize",
     "sphinx",
     "sphinx-copybutton",
     "sphinx-gallery",
@@ -86,12 +83,9 @@ document = [
     "torchvision",
 ]
 integration = [
-    "botorch>=0.4.0",
-    "cma",
     "lightgbm",
     "mlflow",
     "scikit-learn>=0.24.2",
-    "scikit-optimize",
     "shap",
     "tensorflow",
     "wandb",

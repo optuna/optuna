@@ -97,14 +97,18 @@ def kernel_at_zero_distance(
 
 
 def posterior(
+    kernel_params: KernelParamsTensor,
+    X: torch.Tensor,  # [len(trials), len(params)]
+    is_categorical: torch.Tensor,  # bool[len(params)]
     cov_Y_Y_inv: torch.Tensor,  # [len(trials), len(trials)]
     cov_Y_Y_inv_Y: torch.Tensor,  # [len(trials)]
-    cov_fx_fX: torch.Tensor,  # [(batch,) len(trials)]
-    cov_fx_fx: torch.Tensor,  # Scalar or [(batch,)]
-) -> tuple[torch.Tensor, torch.Tensor]:  # [(batch,)], [(batch,)]
+    x: torch.Tensor,  # [(batch,) len(params)]
+) -> tuple[torch.Tensor, torch.Tensor]:  # (mean: [(batch,)], var: [(batch,)])
+    cov_fx_fX = kernel(is_categorical, kernel_params, x[..., None, :], X)[..., 0, :]
+    cov_fx_fx = kernel_at_zero_distance(kernel_params)
+
     # mean = cov_fx_fX @ inv(cov_fX_fX + noise * I) @ Y
     # var = cov_fx_fx - cov_fx_fX @ inv(cov_fX_fX + noise * I) @ cov_fx_fX.T
-
     mean = cov_fx_fX @ cov_Y_Y_inv_Y  # [batch]
     var = cov_fx_fx - (cov_fx_fX * (cov_fx_fX @ cov_Y_Y_inv)).sum(dim=-1)  # [batch]
     # We need to clamp the variance to avoid negative values due to numerical errors.
@@ -142,7 +146,7 @@ def fit_kernel_params(
     Y: np.ndarray,  # [len(trials)]
     is_categorical: np.ndarray,  # [len(params)]
     log_prior: Callable[[KernelParamsTensor], torch.Tensor],
-    minimum_noise: float = 0.0,
+    minimum_noise: float,
     initial_kernel_params: KernelParamsTensor | None = None,
 ) -> KernelParamsTensor:
     n_params = X.shape[1]
