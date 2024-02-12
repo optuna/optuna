@@ -20,4 +20,4 @@ The :mod:`~optuna.terminator` module implements a mechanism for automatically te
    optuna.terminator.TerminatorCallback
    optuna.terminator.report_cross_validation_scores
 
-For an example of using the this module, please refer to `this example <https://github.com/optuna/optuna-examples/tree/main/terminator>`_.
+For an example of using this module, please refer to `this example <https://github.com/optuna/optuna-examples/tree/main/terminator>`_.
