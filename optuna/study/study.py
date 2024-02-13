@@ -176,7 +176,7 @@ class Study:
     @experimental_func("3.6.0")
     def best_feasible_trial(self) -> FrozenTrial:
         """Return the best feasible trial in the study.
-        This attribute is slower than best_trial
+        This attribute is slower than :attr:`~optuna.study.Study.best_trial`
         because it checks for feasibility for all complete trials.
 
         .. note::
@@ -233,7 +233,7 @@ class Study:
     @experimental_func("3.6.0")
     def best_feasible_trials(self) -> list[FrozenTrial]:
         """Return trials located at the Pareto front in the study which consider constraints.
-        This attribute is slower than best_trials
+        This attribute is slower than :attr:`~optuna.study.Study.best_trials`
         because it checks for feasibility for all complete trials.
 
         Returns:
