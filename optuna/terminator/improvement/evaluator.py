@@ -145,7 +145,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         # UCB over the search space. (Original: LCB over the search space. See Change 1 above.)
         standardized_ucb_value = max(
             acqf.eval_acqf_no_grad(ucb_acqf_params, normalized_top_n_params).max(),
-            default=optim.optimize_acqf_sample(ucb_acqf_params, self._optimize_n_samples, seed)[1],
+            optim.optimize_acqf_sample(ucb_acqf_params, self._optimize_n_samples, seed)[1]
         )
 
         # calculate min_lcb
@@ -197,7 +197,6 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         )
 
         standardized_regret_bound = self._compute_standardized_regret_bound(
-            optuna_search_space,
             kernel_params,
             gp_search_space,
             normalized_top_n_params,
