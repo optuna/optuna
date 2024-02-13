@@ -116,7 +116,6 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
 
     def _compute_standardized_regret_bound(
         self,
-        optuna_search_space: Dict[str, BaseDistribution],
         kernel_params: gp.KernelParamsTensor,
         gp_search_space: search_space.SearchSpace,
         normalized_top_n_params: np.ndarray,
