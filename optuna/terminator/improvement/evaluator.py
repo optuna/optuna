@@ -158,7 +158,9 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             beta=beta,
         )
         # LCB over the top trials. (Original: UCB over the top trials. See Change 2 above.)
-        standardized_lcb_value = np.max(acqf.eval_acqf_no_grad(lcb_acqf_params, normalized_top_n_params))
+        standardized_lcb_value = np.max(
+            acqf.eval_acqf_no_grad(lcb_acqf_params, normalized_top_n_params)
+        )
 
         # max(UCB) - max(LCB). (Original: min(UCB) - min(LCB). See Change 3 above.)
         return standardized_ucb_value - standardized_lcb_value  # standardized regret bound
