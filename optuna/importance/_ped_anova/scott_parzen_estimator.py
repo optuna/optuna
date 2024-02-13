@@ -25,6 +25,10 @@ class _ScottParzenEstimator(_ParzenEstimator):
         prior_weight: float,
     ):
         assert isinstance(dist, (CategoricalDistribution, IntDistribution))
+        assert not isinstance(dist, IntDistribution) or dist.low == 0
+        n_choices = dist.high + 1 if isinstance(dist, IntDistribution) else len(dist.choices)
+        assert len(counts) == n_choices, counts
+
         self._n_steps = len(counts)
         self._param_name = param_name
         self._counts = counts.copy()
@@ -152,6 +156,7 @@ def _build_parzen_estimator(
     else:
         assert False, f"Got an unknown dist with the type {type(dist)}."
 
+    # counts.astype(float) is necessary for weight calculation in ParzenEstimator.
     return _ScottParzenEstimator(
         param_name, rounded_dist, counts.astype(np.float64), consider_prior, prior_weight
     )
