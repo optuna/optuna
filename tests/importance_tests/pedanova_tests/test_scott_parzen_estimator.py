@@ -103,11 +103,16 @@ def test_build_cat_scott_parzen_estimator(counts: np.ndarray, weights: np.ndarra
 
 
 @pytest.mark.parametrize(
-    "dist,params,expected_outcome", [
+    "dist,params,expected_outcome",
+    [
         (IntDistribution(low=-5, high=5), [-5, -5, 1, 5, 5], [2, 0, 1, 0, 2]),
         (IntDistribution(low=1, high=8, log=True), list(range(1, 9)), [1, 1, 3, 3]),
         (FloatDistribution(low=-5.0, high=5.0), np.linspace(-5, 5, 100), [13, 25, 24, 25, 13]),
-        (FloatDistribution(low=1, high=8, log=True), [float(i) for i in range(1, 9)], [1, 1, 1, 3, 2]),
+        (
+            FloatDistribution(low=1, high=8, log=True),
+            [float(i) for i in range(1, 9)],
+            [1, 1, 1, 3, 2],
+        ),
     ],
 )
 def test_count_numerical_param_in_grid(
