@@ -88,7 +88,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
 
     For further information about this evaluator, please refer to the following paper:
 
-    - `Automatic termination for hyperparameter optimization <https://proceedings.mlr.press/v188/makarova22a.html>`_
+    - `Automatic Termination for Hyperparameter Optimization <https://proceedings.mlr.press/v188/makarova22a.html>`_
     """  # NOQA: E501
 
     def __init__(
