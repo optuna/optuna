@@ -145,13 +145,12 @@ def test_validate() -> None:
         with pytest.raises(ValueError):
             invalid_trial._validate()
 
-    # Invalid: `state` is `PRUNED` or `FAIL`, and `value` is set.
-    for state in [TrialState.PRUNED, TrialState.FAIL]:
-        invalid_trial = copy.copy(valid_trial)
-        invalid_trial.state = state
-        invalid_trial.value = 1.0
-        with pytest.raises(ValueError):
-            invalid_trial._validate()
+    # Invalid: `state` is `FAIL`, and `value` is set.
+    invalid_trial = copy.copy(valid_trial)
+    invalid_trial.state = TrialState.FAIL
+    invalid_trial.value = 1.0
+    with pytest.raises(ValueError):
+        invalid_trial._validate()
 
     # Invalid: `state` is `COMPLETE` and `value` is not set.
     invalid_trial = copy.copy(valid_trial)
