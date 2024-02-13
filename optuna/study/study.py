@@ -176,7 +176,8 @@ class Study:
     @experimental_func("3.6.0")
     def best_feasible_trial(self) -> FrozenTrial:
         """Return the best feasible trial in the study.
-        This attribute is slower than best_trials because it takes constraints into account.
+        This attribute is slower than best_trial
+        because it checks for feasibility for all complete trials.
 
         .. note::
             This feature can only be used for single-objective optimization.
@@ -192,7 +193,8 @@ class Study:
 
         """
         warnings.warn(
-            "This attribute is slower than best_trial because it takes constraints into account.",
+            "This attribute is slower than best_trial"
+            "because it checks for feasibility for all complete trials.",
             UserWarning,
         )
 
@@ -231,13 +233,15 @@ class Study:
     @experimental_func("3.6.0")
     def best_feasible_trials(self) -> list[FrozenTrial]:
         """Return trials located at the Pareto front in the study which consider constraints.
-        This property is slower than best_trials because it takes constraints into account.
+        This attribute is slower than best_trials
+        because it checks for feasibility for all complete trials.
 
         Returns:
             A list of :class:`~optuna.trial.FrozenTrial` objects.
         """
         warnings.warn(
-            "This attribute is slower than best_trials because it takes constraints into account.",
+            "This attribute is slower than best_trials"
+            "because it checks for feasibility for all complete trials.",
             UserWarning,
         )
 
