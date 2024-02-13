@@ -56,6 +56,7 @@ def logei(mean: torch.Tensor, var: torch.Tensor, f0: float) -> torch.Tensor:
 def ucb(mean: torch.Tensor, var: torch.Tensor, beta: float) -> torch.Tensor:
     return mean + torch.sqrt(beta * var)
 
+
 def lcb(mean: torch.Tensor, var: torch.Tensor, beta: float) -> torch.Tensor:
     return mean - torch.sqrt(beta * var)
 
