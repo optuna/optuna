@@ -118,9 +118,9 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         top_n = int(len(trials) * self._top_trials_ratio)
         top_n = max(top_n, self._min_n_trials)
         top_n = min(top_n, len(trials))
-        indices = np.argsort(-values)[:top_n]
-
-        top_n_values = values[indices]
+        top_n_val = np.partition(-score_vals, top_n - 1)[top_n - 1]
+        top_indices = score_vals >= top_n_val
+        top_n_values = score_vals[top_indices]
         top_n_values_mean = top_n_values.mean()
         top_n_values_std = max(1e-10, top_n_values.std())
 
