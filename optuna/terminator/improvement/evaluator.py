@@ -102,6 +102,78 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         self._optimize_n_samples = 2048
         self._rng = LazyRandomState(seed)
 
+    def _get_top_n(
+        self, normalized_params: np.ndarray, values: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
+        assert len(normalized_params) == len(values)
+        n_trials = len(normalized_params)
+        top_n = np.clip(int(n_trials * self._top_trials_ratio), self._min_n_trials, n_trials)
+        top_n_val = np.partition(values, n_trials - top_n)[n_trials - top_n]
+        top_n_mask = values >= top_n_val
+        return normalized_params[top_n_mask], values[top_n_mask]
+
+    def _compute_standardized_regret_bound(
+        self,
+        optuna_search_space: Dict[str, BaseDistribution],
+        kernel_params: gp.KernelParamsTensor,
+        gp_search_space: search_space.SearchSpace,
+        normalized_top_n_params: np.ndarray,
+        standarized_top_n_values: np.ndarray,
+    ) -> float:
+        """
+        In the original paper, f(x) was intended to be minimized, but here we would like to
+        maximize f(x). Hence, the following changes happen:
+            1. min(ucb) over top trials becomes max(lcb) over top trials, and
+            2. min(lcb) over the search space becomes max(ucb) over the search space, and
+            3. Regret bound becomes max(ucb) over the search space minus max(lcb) over top trials.
+        """
+
+        n_params = len(optuna_search_space)
+
+        # calculate max_ucb
+        beta = np.sqrt(_get_beta(n_params, len(normalized_top_n_params)))
+        ucb_acqf_params = acqf.create_acqf_params(
+            acqf_type=acqf.AcquisitionFunctionType.UCB,
+            kernel_params=kernel_params,
+            search_space=gp_search_space,
+            X=normalized_top_n_params,
+            Y=standarized_top_n_values,
+            beta=beta,
+        )
+        _, standardized_ucb_value = optim.optimize_acqf_sample(
+            ucb_acqf_params,
+            n_samples=self._optimize_n_samples,
+            seed=self._rng.rng.randint(np.iinfo(np.int32).max),
+        )
+        with torch.no_grad():  # type: ignore
+            # UCB over the search space. (Original: LCB over the search space. See Change 1 above.)
+            standardized_ucb_value = max(
+                standardized_ucb_value,
+                acqf.eval_acqf(ucb_acqf_params, torch.from_numpy(normalized_top_n_params))
+                .max()
+                .item(),
+            )
+
+        # calculate min_lcb
+        lcb_acqf_params = acqf.create_acqf_params(
+            acqf_type=acqf.AcquisitionFunctionType.LCB,
+            kernel_params=kernel_params,
+            search_space=gp_search_space,
+            X=normalized_top_n_params,
+            Y=standarized_top_n_values,
+            beta=beta,
+        )
+        with torch.no_grad():  # type: ignore
+            # LCB over the top trials. (Original: UCB over the top trials. See Change 2 above.)
+            standardized_lcb_value = (
+                acqf.eval_acqf(lcb_acqf_params, torch.from_numpy(normalized_top_n_params))
+                .max()
+                .item()
+            )
+
+        # max(UCB) - max(LCB). (Original: min(UCB) - min(LCB). See Change 3 above.)
+        return standardized_ucb_value - standardized_lcb_value  # standardized regret bound
+
     def evaluate(
         self,
         trials: List[FrozenTrial],
@@ -118,18 +190,10 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         gp_search_space, normalized_params = search_space.get_search_space_and_normalized_params(
             complete_trials, optuna_search_space
         )
-
-        top_n = int(len(trials) * self._top_trials_ratio)
-        top_n = max(top_n, self._min_n_trials)
-        top_n = min(top_n, len(trials))
-        top_n_val = np.partition(-values, top_n - 1)[top_n - 1]
-        top_n_indices = values >= top_n_val
-        top_n_values = values[top_n_indices]
+        normalized_top_n_params, top_n_values = self._get_top_n(normalized_params, values)
         top_n_values_mean = top_n_values.mean()
         top_n_values_std = max(1e-10, top_n_values.std())
-
         standarized_top_n_values = (top_n_values - top_n_values_mean) / top_n_values_std
-        normalized_top_n_params = normalized_params[top_n_indices]
 
         kernel_params = gp.fit_kernel_params(
             X=normalized_top_n_params,
@@ -140,50 +204,14 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             initial_kernel_params=None,
         )
 
-        n_params = len(optuna_search_space)
-
-        # calculate max_ucb
-        beta = np.sqrt(_get_beta(n_params, top_n))
-        ucb_acqf_params = acqf.create_acqf_params(
-            acqf_type=acqf.AcquisitionFunctionType.UCB,
-            kernel_params=kernel_params,
-            search_space=gp_search_space,
-            X=normalized_top_n_params,
-            Y=standarized_top_n_values,
-            beta=beta,
+        standardized_regret_bound = self._compute_standardized_regret_bound(
+            optuna_search_space,
+            kernel_params,
+            gp_search_space,
+            normalized_top_n_params,
+            standarized_top_n_values,
         )
-        _, standardized_ucb_value = optim.optimize_acqf_sample(
-            ucb_acqf_params,
-            n_samples=self._optimize_n_samples,
-            seed=self._rng.rng.randint(np.iinfo(np.int32).max),
-        )
-        with torch.no_grad():  # type: ignore
-            standardized_ucb_value = max(
-                standardized_ucb_value,
-                acqf.eval_acqf(ucb_acqf_params, torch.from_numpy(normalized_top_n_params))
-                .max()
-                .item(),
-            )
-        ucb_value = standardized_ucb_value * top_n_values_std + top_n_values_mean
-        lcb_acqf_params = acqf.create_acqf_params(
-            acqf_type=acqf.AcquisitionFunctionType.UCB,
-            kernel_params=kernel_params,
-            search_space=gp_search_space,
-            X=normalized_top_n_params,
-            Y=standarized_top_n_values,
-            beta=beta,
-        )
-        with torch.no_grad():  # type: ignore
-            standardized_lcb_value = (
-                acqf.eval_acqf(lcb_acqf_params, torch.from_numpy(normalized_top_n_params))
-                .max()
-                .item()
-            )
-        lcb_value = standardized_lcb_value * top_n_values_std + top_n_values_mean
-
-        regret_bound = ucb_value - lcb_value
-
-        return regret_bound
+        return standardized_regret_bound * top_n_values_std  # regret bound
 
     @classmethod
     def _validate_input(

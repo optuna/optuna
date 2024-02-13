@@ -88,7 +88,7 @@ def create_acqf_params(
     search_space: SearchSpace,
     X: np.ndarray,
     Y: np.ndarray,
-    sqrt_beta: float | None = None,
+    beta: float | None = None,
     acqf_stabilizing_noise: float = 1e-12,
 ) -> AcquisitionFunctionParams:
     X_tensor = torch.from_numpy(X)
@@ -107,7 +107,7 @@ def create_acqf_params(
         cov_Y_Y_inv=cov_Y_Y_inv,
         cov_Y_Y_inv_Y=cov_Y_Y_inv @ Y,
         max_Y=np.max(Y),
-        sqrt_beta=sqrt_beta,
+        beta=beta,
         acqf_stabilizing_noise=acqf_stabilizing_noise,
     )
 
