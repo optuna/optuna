@@ -150,9 +150,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         # UCB over the search space. (Original: LCB over the search space. See Change 1 above.)
         standardized_ucb_value = max(
             standardized_ucb_value,
-            acqf.eval_acqf_no_grad(ucb_acqf_params, torch.from_numpy(normalized_top_n_params))
-            .max()
-            .item(),
+            float(acqf.eval_acqf_no_grad(ucb_acqf_params, normalized_top_n_params).max().item()),
         )
 
         # calculate min_lcb
@@ -165,10 +163,8 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             beta=beta,
         )
         # LCB over the top trials. (Original: UCB over the top trials. See Change 2 above.)
-        standardized_lcb_value = (
-            acqf.eval_acqf_no_grad(lcb_acqf_params, torch.from_numpy(normalized_top_n_params))
-            .max()
-            .item()
+        standardized_lcb_value = float(
+            acqf.eval_acqf_no_grad(lcb_acqf_params, normalized_top_n_params).max().item()
         )
 
         # max(UCB) - max(LCB). (Original: min(UCB) - min(LCB). See Change 3 above.)
