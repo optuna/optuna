@@ -149,3 +149,18 @@ plot_rank(study)
 ###################################################################################################
 # Visualize the optimization timeline of performed trials. See :func:`~optuna.visualization.plot_timeline` for the details.
 plot_timeline(study)
+
+###################################################################################################
+# Customize generated figures
+# ---------------------------
+# In :mod:`optuna.visualization` and :mod:`optuna.visualization.matplotlib`, a function returns an editable figure object:
+# :class:`plotly.graph_objects.Figure` or :class:`matplotlib.axes.Axes` depending on the module.
+# This allows users to modify the generated figure for their demand by using API of the visualization library.
+# The following example replaces figure titles drawn by Plotly-based :func:`~optuna.visualization.plot_intermediate_values` manually.
+fig = plot_intermediate_values(study)
+
+fig.update_layout(
+    title="Hyperparameter optimization for GBDT-based binary classification",
+    xaxis_title="Iteration",
+    yaxis_title="Validation AUC",
+)
