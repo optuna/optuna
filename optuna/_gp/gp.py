@@ -5,6 +5,7 @@ import math
 import typing
 from typing import Callable
 from typing import TYPE_CHECKING
+import warnings
 
 import numpy as np
 
@@ -150,27 +151,6 @@ def fit_kernel_params(
     initial_kernel_params: KernelParamsTensor | None = None,
 ) -> KernelParamsTensor:
     n_params = X.shape[1]
-    if initial_kernel_params is None:
-        initial_kernel_params = KernelParamsTensor(
-            inverse_squared_lengthscales=torch.ones(n_params, dtype=torch.float64),
-            kernel_scale=torch.tensor(1.0, dtype=torch.float64),
-            noise_var=torch.tensor(1.0, dtype=torch.float64),
-        )
-
-    # We apply log transform to enforce the positivity of the kernel parameters.
-    # Note that we cannot just use the constraint because of the numerical unstability
-    # of the marginal log likelihood.
-    # We also enforce the noise parameter to be greater than `minimum_noise` to avoid
-    # pathological behavior of maximum likelihood estimation.
-    initial_raw_params = np.concatenate(
-        [
-            np.log(initial_kernel_params.inverse_squared_lengthscales.detach().numpy()),
-            [
-                np.log(initial_kernel_params.kernel_scale.item()),
-                np.log(initial_kernel_params.noise_var.item() - minimum_noise),
-            ],
-        ]
-    )
 
     def loss_func(raw_params: np.ndarray) -> tuple[float, np.ndarray]:
         raw_params_tensor = torch.from_numpy(raw_params)
@@ -186,11 +166,54 @@ def fit_kernel_params(
         loss.backward()  # type: ignore
         return loss.item(), raw_params_tensor.grad.detach().numpy()  # type: ignore
 
-    # jac=True means loss_func returns the gradient for gradient descent.
-    res = so.minimize(loss_func, initial_raw_params, jac=True)
+    default_initial_kernel_params = KernelParamsTensor(
+        inverse_squared_lengthscales=torch.ones(n_params, dtype=torch.float64),
+        kernel_scale=torch.tensor(1.0, dtype=torch.float64),
+        noise_var=torch.tensor(1.0, dtype=torch.float64),
+    )
+    if initial_kernel_params is None:
+        initial_kernel_params = default_initial_kernel_params
 
-    # TODO(contramundum53): Handle the case where the optimization fails.
-    raw_params_opt_tensor = torch.from_numpy(res.x)
+    # jac=True means loss_func returns the gradient for gradient descent.
+    def optimize(initial_kernel_params: KernelParamsTensor) -> np.ndarray:
+        # We apply log transform to enforce the positivity of the kernel parameters.
+        # Note that we cannot just use the constraint because of the numerical unstability
+        # of the marginal log likelihood.
+        # We also enforce the noise parameter to be greater than `minimum_noise` to avoid
+        # pathological behavior of maximum likelihood estimation.
+        initial_raw_params = np.concatenate(
+            [
+                np.log(initial_kernel_params.inverse_squared_lengthscales.detach().numpy()),
+                [
+                    np.log(initial_kernel_params.kernel_scale.item()),
+                    np.log(initial_kernel_params.noise_var.item() - minimum_noise),
+                ],
+            ]
+        )
+
+        # loss_func may throw RuntimeError due to numerical errors.
+        res = so.minimize(loss_func, initial_raw_params, jac=True)
+        if not res.success:
+            raise RuntimeError(f"Optimization failed: {res.message}")
+        return res.x
+
+    try:
+        # First try optimizing the kernel parameters with the provided
+        # initial_kernel_params, but if it fails, rerun the optimization
+        # with the default initial_kernel_params.
+        # This increases the robustness of the optimization.
+        raw_params_opt = optimize(initial_kernel_params)
+    except RuntimeError:
+        try:
+            raw_params_opt = optimize(default_initial_kernel_params)
+        except RuntimeError as e:
+            warnings.warn(
+                f"The optimization of the kernel parameters failed. ({e})"
+                "The kernel parameters are set to the initial values."
+            )
+            return default_initial_kernel_params
+
+    raw_params_opt_tensor = torch.from_numpy(raw_params_opt)
 
     return KernelParamsTensor(
         inverse_squared_lengthscales=torch.exp(raw_params_opt_tensor[:n_params]),
