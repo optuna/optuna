@@ -33,7 +33,7 @@ from optuna._gp.search_space import SearchSpace
 )
 def test_eval_acqf(
     acqf_type: AcquisitionFunctionType,
-    sqrt_beta: float | None,
+    beta: float | None,
     x: np.ndarray,
 ) -> None:
     n_dims = 2
@@ -56,7 +56,7 @@ def test_eval_acqf(
         search_space=search_space,
         X=X,
         Y=Y,
-        sqrt_beta=sqrt_beta,
+        beta=beta,
         acqf_stabilizing_noise=0.0,
     )
 
