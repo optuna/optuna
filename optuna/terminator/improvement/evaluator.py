@@ -141,15 +141,11 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             Y=standarized_top_n_values,
             beta=beta,
         )
-        _, standardized_ucb_value = optim.optimize_acqf_sample(
-            ucb_acqf_params,
-            n_samples=self._optimize_n_samples,
-            seed=self._rng.rng.randint(np.iinfo(np.int32).max),
-        )
+        seed = self._rng.rng.randint(np.iinfo(np.int32).max)
         # UCB over the search space. (Original: LCB over the search space. See Change 1 above.)
-        standardized_ucb_value = max(
-            standardized_ucb_value,
-            float(acqf.eval_acqf_no_grad(ucb_acqf_params, normalized_top_n_params).max().item()),
+        max_ucb = max(
+            acqf.eval_acqf_no_grad(ucb_acqf_params, normalized_top_n_params).max(),
+            default=optim.optimize_acqf_sample(ucb_acqf_params, self._optimize_n_samples, seed)[1],
         )
 
         # calculate min_lcb
