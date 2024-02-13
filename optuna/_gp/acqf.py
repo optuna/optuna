@@ -129,7 +129,7 @@ def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.
         return ucb(mean=mean, var=var, beta=acqf_params.beta)
     elif acqf_params.acqf_type == AcquisitionFunctionType.LCB:
         assert acqf_params.beta is not None, "beta must be given to LCB."
-        return ucb(mean=mean, var=var, beta=acqf_params.beta)
+        return lcb(mean=mean, var=var, beta=acqf_params.beta)
     else:
         assert False, "Unknown acquisition function type."
 
