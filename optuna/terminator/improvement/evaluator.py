@@ -83,7 +83,11 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         min_lcb_n_additional_samples:
             A minimum number of additional samples to estimate the lower confidence bound.
             Default to 2000.
-    """
+
+    For further information about this evaluator, please refer to the following paper:
+
+    - `Automatic termination for hyperparameter optimization <https://proceedings.mlr.press/v188/makarova22a.html>`_
+    """  # NOQA: E501
 
     def __init__(
         self,
@@ -118,14 +122,14 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         top_n = int(len(trials) * self._top_trials_ratio)
         top_n = max(top_n, self._min_n_trials)
         top_n = min(top_n, len(trials))
-        top_n_val = np.partition(-score_vals, top_n - 1)[top_n - 1]
-        top_indices = score_vals >= top_n_val
-        top_n_values = score_vals[top_indices]
+        top_n_val = np.partition(-values, top_n - 1)[top_n - 1]
+        top_n_indices = values >= top_n_val
+        top_n_values = values[top_n_indices]
         top_n_values_mean = top_n_values.mean()
         top_n_values_std = max(1e-10, top_n_values.std())
 
         standarized_top_n_values = (top_n_values - top_n_values_mean) / top_n_values_std
-        normalized_top_n_params = normalized_params[indices]
+        normalized_top_n_params = normalized_params[top_n_indices]
 
         kernel_params = gp.fit_kernel_params(
             X=normalized_top_n_params,
@@ -139,14 +143,14 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         n_params = len(optuna_search_space)
 
         # calculate max_ucb
-        sqrt_beta = np.sqrt(_get_beta(n_params, top_n))
+        beta = np.sqrt(_get_beta(n_params, top_n))
         ucb_acqf_params = acqf.create_acqf_params(
             acqf_type=acqf.AcquisitionFunctionType.UCB,
             kernel_params=kernel_params,
             search_space=gp_search_space,
             X=normalized_top_n_params,
             Y=standarized_top_n_values,
-            sqrt_beta=sqrt_beta,
+            beta=beta,
         )
         _, standardized_ucb_value = optim.optimize_acqf_sample(
             ucb_acqf_params,
@@ -161,14 +165,13 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
                 .item(),
             )
         ucb_value = standardized_ucb_value * top_n_values_std + top_n_values_mean
-
         lcb_acqf_params = acqf.create_acqf_params(
             acqf_type=acqf.AcquisitionFunctionType.UCB,
             kernel_params=kernel_params,
             search_space=gp_search_space,
             X=normalized_top_n_params,
             Y=standarized_top_n_values,
-            sqrt_beta=-sqrt_beta,
+            beta=beta,
         )
         with torch.no_grad():  # type: ignore
             standardized_lcb_value = (
