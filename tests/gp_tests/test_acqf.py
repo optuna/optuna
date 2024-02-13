@@ -21,10 +21,11 @@ from optuna._gp.search_space import SearchSpace
 
 
 @pytest.mark.parametrize(
-    "acqf_type, sqrt_beta",
+    "acqf_type, beta",
     [
         (AcquisitionFunctionType.LOG_EI, None),
         (AcquisitionFunctionType.UCB, 2.0),
+        (AcquisitionFunctionType.LCB, 2.0),
     ],
 )
 @pytest.mark.parametrize(
