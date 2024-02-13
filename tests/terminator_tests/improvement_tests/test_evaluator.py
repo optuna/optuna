@@ -1,5 +1,3 @@
-import sys
-
 import pytest
 
 from optuna.distributions import FloatDistribution
