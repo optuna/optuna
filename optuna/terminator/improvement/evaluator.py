@@ -192,6 +192,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             is_categorical=(gp_search_space.scale_types == search_space.ScaleType.CATEGORICAL),
             log_prior=self._log_prior,
             minimum_noise=self._minimum_noise,
+            # TODO(y0z): Add `kernel_params_cache` to speedup.
             initial_kernel_params=None,
         )
 
