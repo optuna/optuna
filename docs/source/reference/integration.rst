@@ -30,15 +30,6 @@ LightGBM
    optuna.integration.lightgbm.LightGBMTuner
    optuna.integration.lightgbm.LightGBMTunerCV
 
-MLflow
-------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.MLflowCallback
-
 PyTorch
 -------
 

@@ -69,7 +69,6 @@ document = [
     "fvcore",
     "lightgbm",
     "matplotlib!=3.6.0",
-    "mlflow",
     "pandas",
     "pillow",
     "plotly>=4.9.0",  # optuna/visualization.
@@ -86,7 +85,6 @@ document = [
 integration = [
     "lightgbm",
     "lightning",
-    "mlflow",
     "pytorch-ignite",
     "scikit-learn>=0.24.2",
     "shap",
