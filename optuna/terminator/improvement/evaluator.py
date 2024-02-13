@@ -39,6 +39,8 @@ DEFAULT_MIN_N_TRIALS = 20
 
 
 def _get_beta(n_params: int, n_trials: int, delta: float = 0.1) -> float:
+    # TODO(nabenabe0928): Check the original implementation to verify.
+    # Especially, |D| seems to be the domain size, but not the dimension based on Theorem 1.
     beta = 2 * np.log(n_params * n_trials**2 * np.pi**2 / 6 / delta)
 
     # The following div is according to the original paper: "We then further scale it down
