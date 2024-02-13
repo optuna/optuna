@@ -129,10 +129,10 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             3. Regret bound becomes max(ucb) over the search space minus max(lcb) over top trials.
         """
 
-        n_params = len(optuna_search_space)
+        n_trials, n_params = normalized_top_n_params.shape
 
         # calculate max_ucb
-        beta = _get_beta(n_params, len(normalized_top_n_params))
+        beta = _get_beta(n_params, n_trials)
         ucb_acqf_params = acqf.create_acqf_params(
             acqf_type=acqf.AcquisitionFunctionType.UCB,
             kernel_params=kernel_params,
