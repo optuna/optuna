@@ -145,14 +145,13 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             n_samples=self._optimize_n_samples,
             seed=self._rng.rng.randint(np.iinfo(np.int32).max),
         )
-        with torch.no_grad():  # type: ignore
-            # UCB over the search space. (Original: LCB over the search space. See Change 1 above.)
-            standardized_ucb_value = max(
-                standardized_ucb_value,
-                acqf.eval_acqf(ucb_acqf_params, torch.from_numpy(normalized_top_n_params))
-                .max()
-                .item(),
-            )
+        # UCB over the search space. (Original: LCB over the search space. See Change 1 above.)
+        standardized_ucb_value = max(
+            standardized_ucb_value,
+            acqf.eval_acqf_no_grad(ucb_acqf_params, torch.from_numpy(normalized_top_n_params))
+            .max()
+            .item(),
+        )
 
         # calculate min_lcb
         lcb_acqf_params = acqf.create_acqf_params(
@@ -163,13 +162,12 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             Y=standarized_top_n_values,
             beta=beta,
         )
-        with torch.no_grad():  # type: ignore
-            # LCB over the top trials. (Original: UCB over the top trials. See Change 2 above.)
-            standardized_lcb_value = (
-                acqf.eval_acqf(lcb_acqf_params, torch.from_numpy(normalized_top_n_params))
-                .max()
-                .item()
-            )
+        # LCB over the top trials. (Original: UCB over the top trials. See Change 2 above.)
+        standardized_lcb_value = (
+            acqf.eval_acqf_no_grad(lcb_acqf_params, torch.from_numpy(normalized_top_n_params))
+            .max()
+            .item()
+        )
 
         # max(UCB) - max(LCB). (Original: min(UCB) - min(LCB). See Change 3 above.)
         return standardized_ucb_value - standardized_lcb_value  # standardized regret bound
