@@ -131,7 +131,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         n_params = len(optuna_search_space)
 
         # calculate max_ucb
-        beta = np.sqrt(_get_beta(n_params, len(normalized_top_n_params)))
+        beta = _get_beta(n_params, len(normalized_top_n_params))
         ucb_acqf_params = acqf.create_acqf_params(
             acqf_type=acqf.AcquisitionFunctionType.UCB,
             kernel_params=kernel_params,
