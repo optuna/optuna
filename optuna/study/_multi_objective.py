@@ -21,7 +21,9 @@ def _get_feasible_trials(trials: Sequence[FrozenTrial]) -> List[FrozenTrial]:
 
 
 def _get_pareto_front_trials_2d(
-    trials: Sequence[FrozenTrial], directions: Sequence[StudyDirection], consider_constraint: bool
+    trials: Sequence[FrozenTrial],
+    directions: Sequence[StudyDirection],
+    consider_constraint: bool = False,
 ) -> List[FrozenTrial]:
     trials = [t for t in trials if t.state == TrialState.COMPLETE]
     if consider_constraint:
@@ -52,7 +54,9 @@ def _get_pareto_front_trials_2d(
 
 
 def _get_pareto_front_trials_nd(
-    trials: Sequence[FrozenTrial], directions: Sequence[StudyDirection], consider_constraint: bool
+    trials: Sequence[FrozenTrial],
+    directions: Sequence[StudyDirection],
+    consider_constraint: bool = False,
 ) -> List[FrozenTrial]:
     pareto_front = []
     trials = [t for t in trials if t.state == TrialState.COMPLETE]
@@ -74,7 +78,9 @@ def _get_pareto_front_trials_nd(
 
 
 def _get_pareto_front_trials_by_trials(
-    trials: Sequence[FrozenTrial], directions: Sequence[StudyDirection], consider_constraint: bool
+    trials: Sequence[FrozenTrial],
+    directions: Sequence[StudyDirection],
+    consider_constraint: bool = False,
 ) -> List[FrozenTrial]:
     if len(directions) == 2:
         return _get_pareto_front_trials_2d(
