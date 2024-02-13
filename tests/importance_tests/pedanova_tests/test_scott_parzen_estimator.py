@@ -3,8 +3,14 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+from optuna import create_trial
+from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
+from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
+from optuna.importance._ped_anova.scott_parzen_estimator import _build_parzen_estimator
+from optuna.importance._ped_anova.scott_parzen_estimator import _count_categorical_param_in_grid
+from optuna.importance._ped_anova.scott_parzen_estimator import _count_numerical_param_in_grid
 from optuna.importance._ped_anova.scott_parzen_estimator import _ScottParzenEstimator
 from optuna.samplers._tpe.probability_distributions import _BatchedCategoricalDistributions
 from optuna.samplers._tpe.probability_distributions import _BatchedDiscreteTruncNormDistributions
@@ -94,3 +100,65 @@ def test_build_cat_scott_parzen_estimator(counts: np.ndarray, weights: np.ndarra
     dist = _BatchedCategoricalDistributions(weights=np.identity(counts.size)[counts > 0.0])
     expected_dist = _MixtureOfProductDistribution(weights=weights, distributions=[dist])
     assert_distribution_almost_equal(pe._mixture_distribution, expected_dist)
+
+
+@pytest.mark.parametrize(
+    "dist,params,expected_outcome", [
+        (IntDistribution(low=-5, high=5), [-5, -5, 1, 5, 5], [2, 0, 1, 0, 2]),
+        (IntDistribution(low=1, high=8, log=True), list(range(1, 9)), [1, 1, 3, 3]),
+        (FloatDistribution(low=-5.0, high=5.0), np.linspace(-5, 5, 100), [13, 25, 24, 25, 13]),
+        (FloatDistribution(low=1, high=8, log=True), [float(i) for i in range(1, 9)], [1, 1, 1, 3, 2]),
+    ],
+)
+def test_count_numerical_param_in_grid(
+    dist: IntDistribution | FloatDistribution,
+    params: list[int] | list[float],
+    expected_outcome: list[int],
+) -> None:
+    trials = [create_trial(value=0.0, params={"a": p}, distributions={"a": dist}) for p in params]
+    res = _count_numerical_param_in_grid(param_name="a", dist=dist, trials=trials, n_steps=5)
+    assert np.all(np.asarray(expected_outcome) == res), res
+
+
+def test_count_categorical_param_in_grid() -> None:
+    params = ["a", "b", "a", "d", "a", "a", "d"]
+    dist = CategoricalDistribution(choices=["a", "b", "c", "d"])
+    expected_outcome = [4, 1, 0, 2]
+    trials = [create_trial(value=0.0, params={"a": p}, distributions={"a": dist}) for p in params]
+    res = _count_categorical_param_in_grid(param_name="a", dist=dist, trials=trials)
+    assert np.all(np.asarray(expected_outcome) == res)
+
+
+@pytest.mark.parametrize(
+    "dist,params",
+    [
+        (IntDistribution(low=-5, high=5), [1, 2, 3]),
+        (IntDistribution(low=1, high=8, log=True), [1, 2, 4, 8]),
+        (FloatDistribution(low=-5.0, high=5.0), [1.0, 2.0, 3.0]),
+        (FloatDistribution(low=1.0, high=8.0, log=True), [1.0, 2.0, 8.0]),
+        (CategoricalDistribution(choices=["a", "b", "c"]), ["a", "b", "b"]),
+    ],
+)
+def test_build_parzen_estimator(
+    dist: BaseDistribution,
+    params: list[int] | list[float] | list[str],
+) -> None:
+    trials = [create_trial(value=0.0, params={"a": p}, distributions={"a": dist}) for p in params]
+    pe = _build_parzen_estimator(
+        param_name="a",
+        dist=dist,
+        trials=trials,
+        n_steps=50,
+        consider_prior=True,
+        prior_weight=1.0,
+    )
+    if isinstance(dist, (IntDistribution, FloatDistribution)):
+        assert isinstance(
+            pe._mixture_distribution.distributions[0], _BatchedDiscreteTruncNormDistributions
+        )
+    elif isinstance(dist, CategoricalDistribution):
+        assert isinstance(
+            pe._mixture_distribution.distributions[0], _BatchedCategoricalDistributions
+        )
+    else:
+        assert False, "Should not be reached."
