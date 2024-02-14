@@ -55,10 +55,8 @@ from optuna.visualization import plot_timeline
 
 try:
     import optuna_integration
-
-    is_integration_available = True
-except ImportError:
-    is_integration_available = False
+except ModuleNotFoundError:
+    raise ModuleNotFoundError("Please run `pip install optuna-integration lightgbm` first.")
 
 
 SEED = 42
