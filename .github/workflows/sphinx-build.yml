@@ -40,8 +40,8 @@ jobs:
         python -m pip install -U pip
         pip install --progress-bar off -U .[document] --extra-index-url https://download.pytorch.org/whl/cpu
 
-        # Install optuna integration from optuna-integration master
-        pip install git+https://github.com/optuna/optuna-integration@master
+        # Install optuna integration from optuna-integration main
+        pip install git+https://github.com/optuna/optuna-integration@main
 
     - name: Output installed packages
       run: |
