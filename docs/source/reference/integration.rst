@@ -39,17 +39,6 @@ MLflow
 
    optuna.integration.MLflowCallback
 
-PyTorch
--------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.PyTorchIgnitePruningHandler
-   optuna.integration.PyTorchLightningPruningCallback
-   optuna.integration.TorchDistributedTrial
-
 Dependencies of each integration
 --------------------------------
 
