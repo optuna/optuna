@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import numpy as np
 import pytest
 
 from optuna import create_study
@@ -72,6 +73,22 @@ def _test_max_depth_of_tree_based_evaluator(
     assert param_importance != param_importance_different_max_depth
 
 
+def test_small_n_trials_for_ped_anova() -> None:
+    study = get_study(seed=0, n_trials=2, is_multi_obj=False)
+    evaluator = PedAnovaImportanceEvaluator()
+    param_importance = list(evaluator.evaluate(study).values())
+    n_params = len(param_importance)
+    assert np.allclose(param_importance, np.full(n_params, 1.0 / n_params))
+
+
+def test_small_n_trials() -> None:
+    study = get_study(seed=0, n_trials=100, is_multi_obj=False)
+    evaluator = PedAnovaImportanceEvaluator(baseline_quantile=1.0)
+    param_importance = list(evaluator.evaluate(study).values())
+    n_params = len(param_importance)
+    assert np.allclose(param_importance, np.full(n_params, 1.0 / n_params))
+
+
 def test_direction_of_ped_anova() -> None:
     study_minimize = get_study(seed=0, n_trials=20, is_multi_obj=False)
     study_maximize = create_study(direction="maximize")
@@ -137,11 +154,40 @@ def _test_evaluator_with_infinite(
     assert param_importance_with_inf == param_importance_without_inf
 
 
+def _test_evaluator_with_only_non_single_dists(
+    evaluator_cls: type[BaseImportanceEvaluator],
+) -> None:
+    study = create_study(sampler=RandomSampler(seed=0))
+    study.optimize(lambda trial: trial.suggest_float("a", 0.0, 0.0), n_trials=3)
+
+    try:
+        evaluator = evaluator_cls(seed=13)  # type: ignore[call-arg]
+    except TypeError:  # evaluator does not take seed.
+        evaluator = evaluator_cls()
+
+    param_importance = evaluator.evaluate(study)
+    assert param_importance == {}
+
+
 def test_error_in_ped_anova() -> None:
     with pytest.raises(RuntimeError, match=r".*multi-objective optimization.*"):
         evaluator = PedAnovaImportanceEvaluator()
         study = get_study(seed=0, n_trials=5, is_multi_obj=True)
         evaluator.evaluate(study)
+
+
+@pytest.mark.parametrize(
+    "evaluator_cls",
+    (
+        FanovaImportanceEvaluator,
+        MeanDecreaseImpurityImportanceEvaluator,
+        PedAnovaImportanceEvaluator,
+    ),
+)
+def test_importance_evaluator_with_only_non_single_dists(
+    evaluator_cls: type[BaseImportanceEvaluator],
+) -> None:
+    _test_evaluator_with_only_non_single_dists(evaluator_cls)
 
 
 @pytest.mark.parametrize(

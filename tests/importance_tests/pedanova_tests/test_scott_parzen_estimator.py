@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 import pytest
 
@@ -167,3 +169,25 @@ def test_build_parzen_estimator(
         )
     else:
         assert False, "Should not be reached."
+
+
+def test_assert_in_build_parzen_estimator() -> None:
+    class UnknownDistribution(BaseDistribution):
+        def to_internal_repr(self, param_value_in_external_repr: Any) -> float:
+            raise NotImplementedError
+
+        def single(self) -> bool:
+            raise NotImplementedError
+
+        def _contains(self, param_value_in_internal_repr: float) -> bool:
+            raise NotImplementedError
+
+    with pytest.raises(AssertionError, match=r"Got an unknown dist*"):
+        _build_parzen_estimator(
+            param_name="a",
+            dist=UnknownDistribution(),
+            trials=[],
+            n_steps=50,
+            consider_prior=True,
+            prior_weight=1.0,
+        )
