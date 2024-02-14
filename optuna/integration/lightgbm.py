@@ -2,8 +2,15 @@ import os
 import sys
 from types import ModuleType
 from typing import Any
+from typing import TYPE_CHECKING
 
 import optuna_integration.lightgbm as lgb
+
+
+if TYPE_CHECKING:
+    from optuna.integration.lightgbm_tuner import LightGBMPruningCallback
+    from optuna.integration.lightgbm_tuner import LightGBMTuner
+    from optuna.integration.lightgbm_tuner import LightGBMTunerCV
 
 
 __all__ = [
