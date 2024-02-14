@@ -79,6 +79,58 @@ optimization *studies*.
     study = optuna.create_study()  # Create a new study.
     study.optimize(objective, n_trials=100)  # Invoke optimization of the objective function.
 
+Web Dashboard
+-------------
+
+`Optuna Dashboard <https://github.com/optuna/optuna-dashboard>`_ is a real-time web dashboard for Optuna.
+You can check the optimization history, hyperparameter importance, etc. in graphs and tables.
+You don't need to create a Python script to call `Optuna's visualization <https://optuna.readthedocs.io/en/stable/reference/visualization/index.html>`_ functions.
+Feature requests and bug reports are welcome!
+
+.. image:: https://user-images.githubusercontent.com/5564044/204975098-95c2cb8c-0fb5-4388-abc4-da32f56cb4e5.gif
+
+``optuna-dashboard`` can be installed via pip:
+
+.. code-block:: bash
+
+  $ pip install optuna-dashboard
+
+.. TIP::
+
+  Please check out the convenience of Optuna Dashboard using the sample code below.
+
+Sample code to launch Optuna Dashboard
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Save the following code as ``optimize_toy.py``.
+
+.. code-block:: python
+
+  import optuna
+
+
+  def objective(trial):
+      x1 = trial.suggest_float("x1", -100, 100)
+      x2 = trial.suggest_float("x2", -100, 100)
+      return x1 ** 2 + 0.01 * x2 ** 2
+
+
+  study = optuna.create_study(storage="sqlite:///db.sqlite3")  # Create a new study with database.
+  study.optimize(objective, n_trials=100)
+
+Then try the commands below:
+
+.. code-block:: bash
+
+  # Run the study specified above
+  $ python optimize_toy.py
+
+  # Launch the dashboard based on the storage `sqlite:///db.sqlite3`
+  $ optuna-dashboard sqlite:///db.sqlite3
+  ...
+  Listening on http://localhost:8080/
+  Hit Ctrl-C to quit.
+
 Communication
 -------------
 
