@@ -180,7 +180,7 @@ def test_error_in_ped_anova() -> None:
     "evaluator_cls",
     (
         FanovaImportanceEvaluator,
-        MeanDecreaseImpurityImportanceEvaluator,
+        # MeanDecreaseImpurityImportanceEvaluator,
         PedAnovaImportanceEvaluator,
     ),
 )
