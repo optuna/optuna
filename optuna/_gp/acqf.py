@@ -57,11 +57,16 @@ def ucb(mean: torch.Tensor, var: torch.Tensor, beta: float) -> torch.Tensor:
     return mean + torch.sqrt(beta * var)
 
 
+def lcb(mean: torch.Tensor, var: torch.Tensor, beta: float) -> torch.Tensor:
+    return mean - torch.sqrt(beta * var)
+
+
 # TODO(contramundum53): consider abstraction for acquisition functions.
 # NOTE: Acquisition function is not class on purpose to integrate numba in the future.
 class AcquisitionFunctionType(IntEnum):
     LOG_EI = 0
     UCB = 1
+    LCB = 2
 
 
 @dataclass(frozen=True)
@@ -122,6 +127,9 @@ def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.
     elif acqf_params.acqf_type == AcquisitionFunctionType.UCB:
         assert acqf_params.beta is not None, "beta must be given to UCB."
         return ucb(mean=mean, var=var, beta=acqf_params.beta)
+    elif acqf_params.acqf_type == AcquisitionFunctionType.LCB:
+        assert acqf_params.beta is not None, "beta must be given to LCB."
+        return lcb(mean=mean, var=var, beta=acqf_params.beta)
     else:
         assert False, "Unknown acquisition function type."
 
