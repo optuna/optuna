@@ -209,7 +209,7 @@ def fit_kernel_params(
         except RuntimeError as e:
             warnings.warn(
                 f"The optimization of the kernel parameters failed. ({e})"
-                "The kernel parameters are set to the initial values."
+                "The kernel parameters are set to the default values."
             )
             return default_initial_kernel_params
 
