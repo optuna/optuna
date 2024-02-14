@@ -38,10 +38,8 @@ jobs:
     - name: Install Dependencies
       run: |
         python -m pip install -U pip
-        pip install --progress-bar off -U .[document] --extra-index-url https://download.pytorch.org/whl/cpu
-
-        # Install optuna integration from optuna-integration main
         pip install git+https://github.com/optuna/optuna-integration@main
+        pip install --progress-bar off -U .[document] --extra-index-url https://download.pytorch.org/whl/cpu
 
     - name: Output installed packages
       run: |
@@ -94,6 +92,7 @@ jobs:
     - name: Install Dependencies
       run: |
         python -m pip install -U pip
+        pip install git+https://github.com/optuna/optuna-integration@main
         pip install --progress-bar off -U .[document] --extra-index-url https://download.pytorch.org/whl/cpu
 
     - name: Output installed packages
