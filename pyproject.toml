@@ -80,19 +80,13 @@ document = [
     "sphinx-plotly-directive",
     "sphinx_rtd_theme>=1.2.0",
     "torch",
-    "torchaudio",
     "torchvision",
 ]
 integration = [
-    "lightning",
     "mlflow",
-    "pytorch-ignite",
     "scikit-learn>=0.24.2",
     "shap",
     "tensorflow",
-    "torch",
-    "torchaudio",
-    "torchvision",
 ]
 optional = [
     "boto3",  # optuna/artifacts/_boto3.py.
