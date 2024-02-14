@@ -64,7 +64,6 @@ checking = [
 ]
 document = [
     "ase",
-    "botorch",
     "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
     "fvcore",
     "lightgbm",
@@ -79,23 +78,16 @@ document = [
     "sphinx-plotly-directive",
     "sphinx_rtd_theme>=1.2.0",
     "torch",
-    "torchaudio",
     "torchvision",
 ]
 integration = [
     "lightgbm",
-    "lightning",
-    "pytorch-ignite",
     "scikit-learn>=0.24.2",
     "shap",
     "tensorflow",
-    "torch",
-    "torchaudio",
-    "torchvision",
 ]
 optional = [
     "boto3",  # optuna/artifacts/_boto3.py.
-    "botorch; python_version<='3.11'",  # optuna/terminator/gp/botorch.
     "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
     "google-cloud-storage",  # optuna/artifacts/_gcs.py.
     "matplotlib!=3.6.0",  # optuna/visualization/matplotlib.

@@ -25,6 +25,7 @@ from optuna._gp.search_space import SearchSpace
     [
         (AcquisitionFunctionType.LOG_EI, None),
         (AcquisitionFunctionType.UCB, 2.0),
+        (AcquisitionFunctionType.LCB, 2.0),
     ],
 )
 @pytest.mark.parametrize(

@@ -95,8 +95,9 @@ jobs:
         fi
 
         if [ "${{ matrix.python-version }}" = "3.12" ] ; then
-          # TODO(not522): Remove ignores when BoTorch supports Python 3.12
+          # TODO(not522): Remove ignores when BoTorch/Torch supports Python 3.12
           ignore_option="--ignore tests/terminator_tests/ \
+          --ignore tests/terminator_tests/improvement_tests/ \
           --ignore tests/visualization_tests/test_terminator_improvement.py"
         else
           ignore_option=""
