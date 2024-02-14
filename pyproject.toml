@@ -84,7 +84,6 @@ document = [
     "torchvision",
 ]
 integration = [
-    "lightgbm",
     "lightning",
     "mlflow",
     "pytorch-ignite",
