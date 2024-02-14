@@ -82,11 +82,11 @@ def objective(trial):
         "min_child_samples": trial.suggest_int("min_child_samples", 5, 100),
     }
 
-    if is_integration_available:
+    try:
         pruning_callback = optuna_integration.LightGBMPruningCallback(trial, "auc")
         gbm = lgb.train(param, dtrain, valid_sets=[dvalid], callbacks=[pruning_callback])
-    else:
-        gbm = lgb.train(param, dtrain, valid_sets=[dvalid])
+    except ImportError:
+        raise ImportError("Please run `pip install lightgbm` to use LightGBMPruningCallback.")
 
     preds = gbm.predict(valid_x)
     pred_labels = np.rint(preds)
