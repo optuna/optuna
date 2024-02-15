@@ -98,8 +98,8 @@ def _get_grids_and_grid_indices_of_trials(
 ) -> tuple[int, np.ndarray]:
     assert isinstance(dist, (FloatDistribution, IntDistribution)), "Unexpected distribution."
     if isinstance(dist, IntDistribution) and dist.log:
-        log_2_domain_size = int(np.ceil(np.log(dist.high - dist.low + 1) / np.log(2))) + 1
-        n_steps = min(log_2_domain_size, n_steps)
+        log2_domain_size = int(np.ceil(np.log(dist.high - dist.low + 1) / np.log(2))) + 1
+        n_steps = min(log2_domain_size, n_steps)
     elif dist.step is not None:
         assert not dist.log, "log must be False when step is not None."
         n_steps = min(round((dist.high - dist.low) / dist.step) + 1, n_steps)
