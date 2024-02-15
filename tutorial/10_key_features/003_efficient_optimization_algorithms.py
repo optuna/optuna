@@ -178,7 +178,7 @@ study.optimize(objective, n_trials=20)
 #
 # For the complete list of Optuna's integration modules, see :mod:`~optuna.integration`.
 #
-# For example, `optuna_integration.LightGBMPruningCallback <https://optuna-integration.readthedocs.io/en/stable/reference/generated/optuna_integration.LightGBMPruningCallback.html>`_ introduces pruning without directly changing the logic of training iteration.
+# For example, `LightGBMPruningCallback <https://optuna-integration.readthedocs.io/en/stable/reference/generated/optuna_integration.LightGBMPruningCallback.html>`_ introduces pruning without directly changing the logic of training iteration.
 # (See also `example <https://github.com/optuna/optuna-examples/blob/main/lightgbm/lightgbm_integration.py>`_ for the entire script.)
 #
 # .. code-block:: text
