@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from optuna.logging import get_logger
+
 
 if TYPE_CHECKING:
     import scipy.optimize as so
@@ -18,6 +20,7 @@ else:
     so = _LazyImport("scipy.optimize")
     torch = _LazyImport("torch")
 
+logger = get_logger(__name__)
 
 # This GP implementation uses the following notation:
 # X[len(trials), len(params)]: observed parameter values.
@@ -141,21 +144,15 @@ def marginal_log_likelihood(
     )
 
 
-def fit_kernel_params(
+def _fit_kernel_params(
     X: np.ndarray,  # [len(trials), len(params)]
     Y: np.ndarray,  # [len(trials)]
     is_categorical: np.ndarray,  # [len(params)]
     log_prior: Callable[[KernelParamsTensor], torch.Tensor],
     minimum_noise: float,
-    initial_kernel_params: KernelParamsTensor | None = None,
+    initial_kernel_params: KernelParamsTensor,
 ) -> KernelParamsTensor:
     n_params = X.shape[1]
-    if initial_kernel_params is None:
-        initial_kernel_params = KernelParamsTensor(
-            inverse_squared_lengthscales=torch.ones(n_params, dtype=torch.float64),
-            kernel_scale=torch.tensor(1.0, dtype=torch.float64),
-            noise_var=torch.tensor(1.0, dtype=torch.float64),
-        )
 
     # We apply log transform to enforce the positivity of the kernel parameters.
     # Note that we cannot just use the constraint because of the numerical unstability
@@ -188,6 +185,8 @@ def fit_kernel_params(
 
     # jac=True means loss_func returns the gradient for gradient descent.
     res = so.minimize(loss_func, initial_raw_params, jac=True)
+    if not res.success:
+        raise RuntimeError(f"Optimization failed: {res.message}")
 
     # TODO(contramundum53): Handle the case where the optimization fails.
     raw_params_opt_tensor = torch.from_numpy(res.x)
@@ -197,3 +196,38 @@ def fit_kernel_params(
         kernel_scale=torch.exp(raw_params_opt_tensor[n_params]),
         noise_var=torch.exp(raw_params_opt_tensor[n_params + 1]) + minimum_noise,
     )
+
+
+def fit_kernel_params(
+    X: np.ndarray,
+    Y: np.ndarray,
+    is_categorical: np.ndarray,
+    log_prior: Callable[[KernelParamsTensor], torch.Tensor],
+    minimum_noise: float,
+    initial_kernel_params: KernelParamsTensor | None = None,
+) -> KernelParamsTensor:
+    default_initial_kernel_params = KernelParamsTensor(
+        inverse_squared_lengthscales=torch.ones(X.shape[1], dtype=torch.float64),
+        kernel_scale=torch.tensor(1.0, dtype=torch.float64),
+        noise_var=torch.tensor(1.0, dtype=torch.float64),
+    )
+    if initial_kernel_params is None:
+        initial_kernel_params = default_initial_kernel_params
+
+    error = None
+    # First try optimizing the kernel params with the provided initial_kernel_params,
+    # but if it fails, rerun the optimization with the default initial_kernel_params.
+    # This increases the robustness of the optimization.
+    for init_kernel_params in [initial_kernel_params, default_initial_kernel_params]:
+        try:
+            return _fit_kernel_params(
+                X, Y, is_categorical, log_prior, minimum_noise, init_kernel_params
+            )
+        except RuntimeError as e:
+            error = e
+
+    logger.warn(
+        f"The optimization of kernel_params failed: \n{error}\n"
+        "The default initial kernel params will be used instead."
+    )
+    return default_initial_kernel_params
