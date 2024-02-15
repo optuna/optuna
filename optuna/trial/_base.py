@@ -55,35 +55,28 @@ class BaseTrial(abc.ABC):
 
     @overload
     @abc.abstractmethod
-    def suggest_categorical(self, name: str, choices: Sequence[None]) -> None:
-        ...
+    def suggest_categorical(self, name: str, choices: Sequence[None]) -> None: ...  # noqa: E704
+    @overload
+    @abc.abstractmethod
+    def suggest_categorical(self, name: str, choices: Sequence[bool]) -> bool: ...  # noqa: E704
 
     @overload
     @abc.abstractmethod
-    def suggest_categorical(self, name: str, choices: Sequence[bool]) -> bool:
-        ...
+    def suggest_categorical(self, name: str, choices: Sequence[int]) -> int: ...  # noqa: E704
 
     @overload
     @abc.abstractmethod
-    def suggest_categorical(self, name: str, choices: Sequence[int]) -> int:
-        ...
+    def suggest_categorical(self, name: str, choices: Sequence[float]) -> float: ...  # noqa: E704
 
     @overload
     @abc.abstractmethod
-    def suggest_categorical(self, name: str, choices: Sequence[float]) -> float:
-        ...
+    def suggest_categorical(self, name: str, choices: Sequence[str]) -> str: ...  # noqa: E704
 
     @overload
     @abc.abstractmethod
-    def suggest_categorical(self, name: str, choices: Sequence[str]) -> str:
-        ...
-
-    @overload
-    @abc.abstractmethod
-    def suggest_categorical(
+    def suggest_categorical(  # noqa: E704
         self, name: str, choices: Sequence[CategoricalChoiceType]
-    ) -> CategoricalChoiceType:
-        ...
+    ) -> CategoricalChoiceType: ...
 
     @abc.abstractmethod
     def suggest_categorical(
