@@ -183,10 +183,7 @@ study.optimize(objective, n_trials=20)
 #
 # .. code-block:: python
 #
-#         try:
-#            import optuna_integration
+#         import optuna_integration
 #
-#            pruning_callback = optuna_integration.LightGBMPruningCallback(trial, 'validation-error')
-#            gbm = lgb.train(param, dtrain, valid_sets=[dvalid], callbacks=[pruning_callback])
-#         except ImportError:
-#            ...
+#         pruning_callback = optuna_integration.LightGBMPruningCallback(trial, 'validation-error')
+#         gbm = lgb.train(param, dtrain, valid_sets=[dvalid], callbacks=[pruning_callback])

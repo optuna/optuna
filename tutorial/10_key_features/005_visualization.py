@@ -53,12 +53,7 @@ from optuna.visualization import plot_rank
 from optuna.visualization import plot_slice
 from optuna.visualization import plot_timeline
 
-try:
-    import optuna_integration
-
-    is_integration_available = True
-except ImportError:
-    is_integration_available = False
+import optuna_integration
 
 
 SEED = 42
@@ -84,11 +79,8 @@ def objective(trial):
         "min_child_samples": trial.suggest_int("min_child_samples", 5, 100),
     }
 
-    if is_integration_available:
-        pruning_callback = optuna_integration.LightGBMPruningCallback(trial, "auc")
-        gbm = lgb.train(param, dtrain, valid_sets=[dvalid], callbacks=[pruning_callback])
-    else:
-        gbm = lgb.train(param, dtrain, valid_sets=[dvalid])
+    pruning_callback = optuna_integration.LightGBMPruningCallback(trial, "auc")
+    gbm = lgb.train(param, dtrain, valid_sets=[dvalid], callbacks=[pruning_callback])
 
     preds = gbm.predict(valid_x)
     pred_labels = np.rint(preds)
@@ -111,8 +103,8 @@ study.optimize(objective, n_trials=100, timeout=600)
 plot_optimization_history(study)
 
 ###################################################################################################
-# Visualize the learning curves of the trials (note: this example requires `optuna_integration`).
-# See :func:`~optuna.visualization.plot_intermediate_values` for the details and another example of visualization.
+# Visualize the learning curves of the trials.
+# See :func:`~optuna.visualization.plot_intermediate_values` for the details.
 plot_intermediate_values(study)
 
 ###################################################################################################
@@ -168,7 +160,6 @@ plot_timeline(study)
 # :class:`plotly.graph_objects.Figure` or :class:`matplotlib.axes.Axes` depending on the module.
 # This allows users to modify the generated figure for their demand by using API of the visualization library.
 # The following example replaces figure titles drawn by Plotly-based :func:`~optuna.visualization.plot_intermediate_values` manually.
-# (Note: this example requires `optuna_integration`.)
 fig = plot_intermediate_values(study)
 
 fig.update_layout(
