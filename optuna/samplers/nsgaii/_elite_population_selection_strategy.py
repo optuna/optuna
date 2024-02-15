@@ -128,6 +128,8 @@ def _rank_population(
     domination_ranks = _fast_non_dominated_sort(objective_values, penalty=penalty)
     population_per_rank: list[list[FrozenTrial]] = [[] for _ in range(max(domination_ranks) + 1)]
     for trial, rank in zip(population, domination_ranks):
+        if rank == -1:
+            continue
         population_per_rank[rank].append(trial)
 
     return population_per_rank
