@@ -142,8 +142,10 @@ def test_count_categorical_param_in_grid() -> None:
     [
         (IntDistribution(low=-5, high=5), [1, 2, 3]),
         (IntDistribution(low=1, high=8, log=True), [1, 2, 4, 8]),
+        (IntDistribution(low=-5, high=5, step=2), [1, 3, 5]),
         (FloatDistribution(low=-5.0, high=5.0), [1.0, 2.0, 3.0]),
         (FloatDistribution(low=1.0, high=8.0, log=True), [1.0, 2.0, 8.0]),
+        (FloatDistribution(low=-5.0, high=5.0, step=0.5), [1.0, 2.0, 3.0]),
         (CategoricalDistribution(choices=["a", "b", "c"]), ["a", "b", "b"]),
     ],
 )
