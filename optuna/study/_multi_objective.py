@@ -119,12 +119,15 @@ def _calculate_nondomination_rank(
     objective_values: np.ndarray,
     *,
     n_below: int | None = None,
+    base_rank: int = 0,
 ) -> tuple[np.ndarray, int]:
-    # Calculate the domination matrix.
-    # The resulting matrix `domination_matrix` is a boolean matrix where
+    # Normalize n_below.
+    n_below = n_below or len(objective_values)
+    n_below = min(n_below, len(objective_values))
+
+    # The ndarray `domination_matrix` is a boolean 2d matrix where
     # `domination_matrix[i, j] == True` means that the j-th trial dominates the i-th trial in the
     # given multi objective minimization problem.
-
     domination_mat = np.all(
         objective_values[:, np.newaxis, :] >= objective_values[np.newaxis, :, :], axis=2
     ) & np.any(objective_values[:, np.newaxis, :] > objective_values[np.newaxis, :, :], axis=2)
@@ -137,9 +140,8 @@ def _calculate_nondomination_rank(
     ranks = np.full(len(objective_values), -1)
     dominated_count = np.sum(domination_mat, axis=1)
 
-    rank = -1
+    rank = base_rank - 1
     ranked_idx_num = 0
-    n_below = n_below or len(objective_values)
     while ranked_idx_num < n_below:
         # Find the non-dominated trials and assign the rank.
         (non_dominated_idxs,) = np.nonzero(dominated_count == 0)
