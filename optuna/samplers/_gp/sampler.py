@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     import optuna._gp.acqf as acqf
     import optuna._gp.gp as gp
     import optuna._gp.optim as optim
+    import optuna._gp.prior as prior
     import optuna._gp.search_space as gp_search_space
 else:
     from optuna._imports import _LazyImport
@@ -35,22 +36,7 @@ else:
     gp = _LazyImport("optuna._gp.gp")
     optim = _LazyImport("optuna._gp.optim")
     acqf = _LazyImport("optuna._gp.acqf")
-
-
-def log_prior(kernel_params: "gp.KernelParamsTensor") -> "torch.Tensor":
-    # Log of prior distribution of kernel parameters.
-
-    def gamma_log_prior(x: "torch.Tensor", concentration: float, rate: float) -> "torch.Tensor":
-        # We omit the constant factor `rate ** concentration / factorial(concentration)`.
-        return (concentration - 1) * torch.log(x) - rate * x
-
-    # NOTE(contramundum53): The parameters below were picked qualitatively.
-    # TODO(contramundum53): Check whether these priors are appropriate.
-    return (
-        gamma_log_prior(kernel_params.inverse_squared_lengthscales, 2, 0.5).sum()
-        + gamma_log_prior(kernel_params.kernel_scale, 2, 1)
-        + gamma_log_prior(kernel_params.noise_var, 1.1, 20)
-    )
+    prior = _LazyImport("optuna._gp.prior")
 
 
 @experimental_class("3.6.0")
@@ -96,8 +82,10 @@ class GPSampler(BaseSampler):
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._intersection_search_space = optuna.search_space.IntersectionSearchSpace()
         self._n_startup_trials = n_startup_trials
-        self._log_prior: "Callable[[gp.KernelParamsTensor], torch.Tensor]" = log_prior
-        self._minimum_noise: float = 1e-6
+        self._log_prior: "Callable[[gp.KernelParamsTensor], torch.Tensor]" = (
+            prior.default_log_prior
+        )
+        self._minimum_noise: float = prior.DEFAULT_MINIMUM_NOISE_VAR
         # We cache the kernel parameters for initial values of fitting the next time.
         self._kernel_params_cache: "gp.KernelParamsTensor | None" = None
         self._optimize_n_samples: int = 2048
