@@ -5,9 +5,10 @@ import math
 import typing
 from typing import Callable
 from typing import TYPE_CHECKING
-import warnings
 
 import numpy as np
+
+from optuna.logging import get_logger
 
 
 if TYPE_CHECKING:
@@ -19,6 +20,7 @@ else:
     so = _LazyImport("scipy.optimize")
     torch = _LazyImport("torch")
 
+logger = get_logger(__name__)
 
 # This GP implementation uses the following notation:
 # X[len(trials), len(params)]: observed parameter values.
@@ -142,15 +144,30 @@ def marginal_log_likelihood(
     )
 
 
-def fit_kernel_params(
+def _fit_kernel_params(
     X: np.ndarray,  # [len(trials), len(params)]
     Y: np.ndarray,  # [len(trials)]
     is_categorical: np.ndarray,  # [len(params)]
     log_prior: Callable[[KernelParamsTensor], torch.Tensor],
     minimum_noise: float,
-    initial_kernel_params: KernelParamsTensor | None = None,
+    initial_kernel_params: KernelParamsTensor,
 ) -> KernelParamsTensor:
     n_params = X.shape[1]
+
+    # We apply log transform to enforce the positivity of the kernel parameters.
+    # Note that we cannot just use the constraint because of the numerical unstability
+    # of the marginal log likelihood.
+    # We also enforce the noise parameter to be greater than `minimum_noise` to avoid
+    # pathological behavior of maximum likelihood estimation.
+    initial_raw_params = np.concatenate(
+        [
+            np.log(initial_kernel_params.inverse_squared_lengthscales.detach().numpy()),
+            [
+                np.log(initial_kernel_params.kernel_scale.item()),
+                np.log(initial_kernel_params.noise_var.item() - minimum_noise),
+            ],
+        ]
+    )
 
     def loss_func(raw_params: np.ndarray) -> tuple[float, np.ndarray]:
         raw_params_tensor = torch.from_numpy(raw_params)
@@ -166,57 +183,51 @@ def fit_kernel_params(
         loss.backward()  # type: ignore
         return loss.item(), raw_params_tensor.grad.detach().numpy()  # type: ignore
 
-    default_initial_kernel_params = KernelParamsTensor(
-        inverse_squared_lengthscales=torch.ones(n_params, dtype=torch.float64),
-        kernel_scale=torch.tensor(1.0, dtype=torch.float64),
-        noise_var=torch.tensor(1.0, dtype=torch.float64),
-    )
-    if initial_kernel_params is None:
-        initial_kernel_params = default_initial_kernel_params
-
     # jac=True means loss_func returns the gradient for gradient descent.
-    def optimize(initial_kernel_params: KernelParamsTensor) -> np.ndarray:
-        # We apply log transform to enforce the positivity of the kernel parameters.
-        # Note that we cannot just use the constraint because of the numerical unstability
-        # of the marginal log likelihood.
-        # We also enforce the noise parameter to be greater than `minimum_noise` to avoid
-        # pathological behavior of maximum likelihood estimation.
-        initial_raw_params = np.concatenate(
-            [
-                np.log(initial_kernel_params.inverse_squared_lengthscales.detach().numpy()),
-                [
-                    np.log(initial_kernel_params.kernel_scale.item()),
-                    np.log(initial_kernel_params.noise_var.item() - minimum_noise),
-                ],
-            ]
-        )
+    res = so.minimize(loss_func, initial_raw_params, jac=True)
+    if not res.success:
+        raise RuntimeError(f"Optimization failed: {res.message}")
 
-        # loss_func may throw RuntimeError due to numerical errors.
-        res = so.minimize(loss_func, initial_raw_params, jac=True)
-        if not res.success:
-            raise RuntimeError(f"Optimization failed: {res.message}")
-        return res.x
-
-    try:
-        # First try optimizing the kernel parameters with the provided
-        # initial_kernel_params, but if it fails, rerun the optimization
-        # with the default initial_kernel_params.
-        # This increases the robustness of the optimization.
-        raw_params_opt = optimize(initial_kernel_params)
-    except RuntimeError:
-        try:
-            raw_params_opt = optimize(default_initial_kernel_params)
-        except RuntimeError as e:
-            warnings.warn(
-                f"The optimization of the kernel parameters failed. ({e})"
-                "The kernel parameters are set to the initial values."
-            )
-            return default_initial_kernel_params
-
-    raw_params_opt_tensor = torch.from_numpy(raw_params_opt)
+    # TODO(contramundum53): Handle the case where the optimization fails.
+    raw_params_opt_tensor = torch.from_numpy(res.x)
 
     return KernelParamsTensor(
         inverse_squared_lengthscales=torch.exp(raw_params_opt_tensor[:n_params]),
         kernel_scale=torch.exp(raw_params_opt_tensor[n_params]),
         noise_var=torch.exp(raw_params_opt_tensor[n_params + 1]) + minimum_noise,
     )
+
+
+def fit_kernel_params(
+    X: np.ndarray,
+    Y: np.ndarray,
+    is_categorical: np.ndarray,
+    log_prior: Callable[[KernelParamsTensor], torch.Tensor],
+    minimum_noise: float,
+    initial_kernel_params: KernelParamsTensor | None = None,
+) -> KernelParamsTensor:
+    default_initial_kernel_params = KernelParamsTensor(
+        inverse_squared_lengthscales=torch.ones(X.shape[1], dtype=torch.float64),
+        kernel_scale=torch.tensor(1.0, dtype=torch.float64),
+        noise_var=torch.tensor(1.0, dtype=torch.float64),
+    )
+    if initial_kernel_params is None:
+        initial_kernel_params = default_initial_kernel_params
+
+    error = None
+    # First try optimizing the kernel params with the provided initial_kernel_params,
+    # but if it fails, rerun the optimization with the default initial_kernel_params.
+    # This increases the robustness of the optimization.
+    for init_kernel_params in [initial_kernel_params, default_initial_kernel_params]:
+        try:
+            return _fit_kernel_params(
+                X, Y, is_categorical, log_prior, minimum_noise, init_kernel_params
+            )
+        except RuntimeError as e:
+            error = e
+
+    logger.warn(
+        f"The optimization of kernel_params failed: \n{error}\n"
+        "The default initial kernel params will be used instead."
+    )
+    return default_initial_kernel_params
