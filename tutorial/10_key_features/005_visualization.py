@@ -79,6 +79,7 @@ def objective(trial):
         "min_child_samples": trial.suggest_int("min_child_samples", 5, 100),
     }
 
+    # Add a callback for pruning.
     pruning_callback = optuna_integration.LightGBMPruningCallback(trial, "auc")
     gbm = lgb.train(param, dtrain, valid_sets=[dvalid], callbacks=[pruning_callback])
 
@@ -103,8 +104,7 @@ study.optimize(objective, n_trials=100, timeout=600)
 plot_optimization_history(study)
 
 ###################################################################################################
-# Visualize the learning curves of the trials.
-# See :func:`~optuna.visualization.plot_intermediate_values` for the details.
+# Visualize the learning curves of the trials. See :func:`~optuna.visualization.plot_intermediate_values` for the details.
 plot_intermediate_values(study)
 
 ###################################################################################################

@@ -58,6 +58,7 @@ def objective(trial):
         "min_child_samples": trial.suggest_int("min_child_samples", 5, 100),
     }
 
+    # Add a callback for pruning.
     pruning_callback = optuna_integration.LightGBMPruningCallback(trial, "auc")
     gbm = lgb.train(param, dtrain, valid_sets=[dvalid], callbacks=[pruning_callback])
 
