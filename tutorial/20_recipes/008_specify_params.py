@@ -37,8 +37,6 @@ from sklearn.model_selection import train_test_split
 
 import optuna
 
-import optuna_integration
-
 
 ###################################################################################################
 # Define the objective function.
@@ -59,8 +57,7 @@ def objective(trial):
     }
 
     # Add a callback for pruning.
-    pruning_callback = optuna_integration.LightGBMPruningCallback(trial, "auc")
-    gbm = lgb.train(param, dtrain, valid_sets=[dvalid], callbacks=[pruning_callback])
+    gbm = lgb.train(param, dtrain, valid_sets=[dvalid])
 
     preds = gbm.predict(valid_x)
     pred_labels = np.rint(preds)

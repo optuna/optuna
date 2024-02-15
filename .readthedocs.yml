@@ -9,9 +9,6 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.11"
-  jobs:
-    post_install:
-      - pip install git+https://github.com/optuna/optuna-integration@main
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:

@@ -181,9 +181,9 @@ study.optimize(objective, n_trials=20)
 # For example, `optuna_integration.LightGBMPruningCallback <https://optuna-integration.readthedocs.io/en/stable/reference/generated/optuna_integration.LightGBMPruningCallback.html>`_ introduces pruning without directly changing the logic of training iteration.
 # (See also `example <https://github.com/optuna/optuna-examples/blob/main/lightgbm/lightgbm_integration.py>`_ for the entire script.)
 #
-# .. code-block:: python
+# .. code-block:: text
 #
-#         import optuna_integration
+#         import optuna.integration
 #
-#         pruning_callback = optuna_integration.LightGBMPruningCallback(trial, 'validation-error')
+#         pruning_callback = optuna.integration.LightGBMPruningCallback(trial, 'validation-error')
 #         gbm = lgb.train(param, dtrain, valid_sets=[dvalid], callbacks=[pruning_callback])
