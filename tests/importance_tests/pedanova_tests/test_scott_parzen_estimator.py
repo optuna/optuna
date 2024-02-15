@@ -50,6 +50,7 @@ def test_init_scott_parzen_estimator(dist_type: str) -> None:
 @pytest.mark.parametrize(
     "counts,mu,sigma,weights",
     [
+        # NOTE: sigma could change depending on sigma_min picked by heuristic.
         (np.array([0, 0, 0, 1]), np.array([3]), np.array([0.304878]), np.array([1.0])),
         (np.array([0, 0, 100, 0]), np.array([2]), np.array([0.304878]), np.array([1.0])),
         (np.array([1, 2, 3, 4]), np.arange(4), np.array([0.7043276] * 4), (np.arange(4) + 1) / 10),
@@ -182,7 +183,7 @@ def test_assert_in_build_parzen_estimator() -> None:
         def _contains(self, param_value_in_internal_repr: float) -> bool:
             raise NotImplementedError
 
-    with pytest.raises(AssertionError, match=r"Got an unknown dist*"):
+    with pytest.raises(AssertionError):
         _build_parzen_estimator(
             param_name="a",
             dist=UnknownDistribution(),

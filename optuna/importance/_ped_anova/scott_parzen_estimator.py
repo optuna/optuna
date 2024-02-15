@@ -73,7 +73,8 @@ class _ScottParzenEstimator(_ParzenEstimator):
         interquantile_range = mus[min(mus.size - 1, idx_q75)] - mus[idx_q25]
         sigma_est = 1.059 * min(interquantile_range / 1.34, sigma_est) * n_trials ** (-0.2)
         # To avoid numerical errors. 0.5/1.64 means 1.64sigma (=90%) will fit in the target grid.
-        sigmas = np.full_like(mus, max(sigma_est, 0.5 / 1.64), dtype=np.float64)
+        sigma_min = 0.5 / 1.64
+        sigmas = np.full_like(mus, max(sigma_est, sigma_min), dtype=np.float64)
         if parameters.consider_prior:
             mus = np.append(mus, [0.5 * (low + high)])
             sigmas = np.append(sigmas, [1.0 * (high - low + 1)])

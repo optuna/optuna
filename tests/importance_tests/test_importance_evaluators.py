@@ -116,7 +116,7 @@ def test_evaluator_with_infinite(
 
 
 @parametrize_evaluator
-def test_evaluator_with_only_non_single_dists(evaluator: BaseImportanceEvaluator) -> None:
+def test_evaluator_with_only_single_dists(evaluator: BaseImportanceEvaluator) -> None:
     if isinstance(evaluator, MeanDecreaseImpurityImportanceEvaluator):
         # MeanDecreaseImpurityImportanceEvaluator does not handle as intended.
         # TODO(nabenabe0928): Fix MeanDecreaseImpurityImportanceEvaluator so that it behaves
