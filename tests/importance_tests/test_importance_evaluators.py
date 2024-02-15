@@ -14,6 +14,19 @@ from optuna.samplers import RandomSampler
 from optuna.trial import create_trial
 
 
+parametrize_tree_based_evaluator_class = pytest.mark.parametrize(
+    "evaluator_cls", (FanovaImportanceEvaluator, MeanDecreaseImpurityImportanceEvaluator)
+)
+parametrize_evaluator = pytest.mark.parametrize(
+    "evaluator",
+    (
+        FanovaImportanceEvaluator(seed=0),
+        MeanDecreaseImpurityImportanceEvaluator(seed=0),
+        PedAnovaImportanceEvaluator(),
+    ),
+)
+
+
 def objective(trial: Trial) -> float:
     x1 = trial.suggest_float("x1", 0.1, 3)
     x2 = trial.suggest_float("x2", 0.1, 3, log=True)
@@ -40,10 +53,8 @@ def get_study(seed: int, n_trials: int, is_multi_obj: bool) -> Study:
     return study
 
 
-@pytest.mark.parametrize(
-    "evaluator_cls", (FanovaImportanceEvaluator, MeanDecreaseImpurityImportanceEvaluator)
-)
-def _test_n_trees_of_tree_based_evaluator(
+@parametrize_tree_based_evaluator_class
+def test_n_trees_of_tree_based_evaluator(
     evaluator_cls: type[FanovaImportanceEvaluator | MeanDecreaseImpurityImportanceEvaluator],
 ) -> None:
     study = get_study(seed=0, n_trials=3, is_multi_obj=False)
@@ -56,10 +67,8 @@ def _test_n_trees_of_tree_based_evaluator(
     assert param_importance != param_importance_different_n_trees
 
 
-@pytest.mark.parametrize(
-    "evaluator_cls", (FanovaImportanceEvaluator, MeanDecreaseImpurityImportanceEvaluator)
-)
-def _test_max_depth_of_tree_based_evaluator(
+@parametrize_tree_based_evaluator_class
+def test_max_depth_of_tree_based_evaluator(
     evaluator_cls: type[FanovaImportanceEvaluator | MeanDecreaseImpurityImportanceEvaluator],
 ) -> None:
     study = get_study(seed=0, n_trials=3, is_multi_obj=False)
@@ -72,24 +81,16 @@ def _test_max_depth_of_tree_based_evaluator(
     assert param_importance != param_importance_different_max_depth
 
 
-def _test_evaluator_with_infinite(
-    evaluator_cls: type[BaseImportanceEvaluator], inf_value: float, target_idx: int | None = None
+@parametrize_evaluator
+@pytest.mark.parametrize("inf_value", [float("inf"), -float("inf")])
+@pytest.mark.parametrize("target_idx", [0, 1, None])
+def test_evaluator_with_infinite(
+    evaluator: BaseImportanceEvaluator, inf_value: float, target_idx: int | None
 ) -> None:
     # The test ensures that trials with infinite values are ignored to calculate importance scores.
     is_multi_obj = target_idx is not None
     study = get_study(seed=13, n_trials=10, is_multi_obj=is_multi_obj)
-
-    try:
-        evaluator = evaluator_cls(seed=13)  # type: ignore[call-arg]
-    except TypeError:  # evaluator does not take seed.
-        evaluator = evaluator_cls()
-
-    if is_multi_obj:
-        assert target_idx is not None
-        target = lambda t: t.values[target_idx]  # noqa: E731
-    else:
-        target = None
-
+    target = (lambda t: t.values[target_idx]) if is_multi_obj else None  # noqa: E731
     # Importance scores are calculated without a trial with an inf value.
     param_importance_without_inf = evaluator.evaluate(study, target=target)
 
@@ -114,61 +115,15 @@ def _test_evaluator_with_infinite(
     assert param_importance_with_inf == param_importance_without_inf
 
 
-def _test_evaluator_with_only_non_single_dists(
-    evaluator_cls: type[BaseImportanceEvaluator],
-) -> None:
+@parametrize_evaluator
+def test_evaluator_with_only_non_single_dists(evaluator: BaseImportanceEvaluator) -> None:
+    if isinstance(evaluator, MeanDecreaseImpurityImportanceEvaluator):
+        # MeanDecreaseImpurityImportanceEvaluator does not handle as intended.
+        # TODO(nabenabe0928): Fix MeanDecreaseImpurityImportanceEvaluator so that it behaves
+        # identically to the other evaluators.
+        return
+
     study = create_study(sampler=RandomSampler(seed=0))
     study.optimize(lambda trial: trial.suggest_float("a", 0.0, 0.0), n_trials=3)
-
-    try:
-        evaluator = evaluator_cls(seed=13)  # type: ignore[call-arg]
-    except TypeError:  # evaluator does not take seed.
-        evaluator = evaluator_cls()
-
     param_importance = evaluator.evaluate(study)
     assert param_importance == {}
-
-
-@pytest.mark.parametrize(
-    "evaluator_cls",
-    (
-        FanovaImportanceEvaluator,
-        # MeanDecreaseImpurityImportanceEvaluator,
-        PedAnovaImportanceEvaluator,
-    ),
-)
-def test_importance_evaluator_with_only_non_single_dists(
-    evaluator_cls: type[BaseImportanceEvaluator],
-) -> None:
-    _test_evaluator_with_only_non_single_dists(evaluator_cls)
-
-
-@pytest.mark.parametrize(
-    "evaluator_cls",
-    (
-        FanovaImportanceEvaluator,
-        MeanDecreaseImpurityImportanceEvaluator,
-        PedAnovaImportanceEvaluator,
-    ),
-)
-@pytest.mark.parametrize("inf_value", [float("inf"), -float("inf")])
-def test_importance_evaluator_with_infinite(
-    evaluator_cls: type[BaseImportanceEvaluator], inf_value: float
-) -> None:
-    _test_evaluator_with_infinite(evaluator_cls, inf_value)
-
-
-@pytest.mark.parametrize(
-    "evaluator_cls",
-    (
-        FanovaImportanceEvaluator,
-        MeanDecreaseImpurityImportanceEvaluator,
-        PedAnovaImportanceEvaluator,
-    ),
-)
-@pytest.mark.parametrize("target_idx", [0, 1])
-@pytest.mark.parametrize("inf_value", [float("inf"), -float("inf")])
-def test_multi_objective_importance_evaluator_with_infinite(
-    evaluator_cls: type[BaseImportanceEvaluator], target_idx: int, inf_value: float
-) -> None:
-    _test_evaluator_with_infinite(evaluator_cls, inf_value, target_idx)
