@@ -140,7 +140,7 @@ def _calculate_nondomination_rank(
     rank = -1
     ranked_idx_num = 0
     n_below = n_below or len(objective_values)
-    while ranked_idx_num < len(objective_values):
+    while ranked_idx_num < n_below:
         # Find the non-dominated trials and assign the rank.
         (non_dominated_idxs,) = np.nonzero(dominated_count == 0)
         ranked_idx_num += len(non_dominated_idxs)
@@ -151,9 +151,7 @@ def _calculate_nondomination_rank(
         dominated_count[non_dominated_idxs] = -1
         for non_dominated_idx in non_dominated_idxs:
             dominated_count[domination_map[non_dominated_idx]] -= 1
-        # We only need to rank the top `n_below` trials when `n_below` is specified.
-        if ranked_idx_num >= n_below:
-            break
+
     return ranks, rank
 
 
