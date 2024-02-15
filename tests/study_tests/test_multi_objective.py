@@ -151,6 +151,6 @@ def test_dominates_complete_vs_incomplete(t1_state: TrialState) -> None:
         ),  # Three objectives with duplicate values are included.
     ],
 )
-def test_calculate_nondomination_rank(trial_values: list[float], trial_ranks: list[int]) -> None:
+def test_fast_non_dominated_sort(trial_values: list[float], trial_ranks: list[int]) -> None:
     ranks = list(_fast_non_dominated_sort(np.array(trial_values)))
     assert np.array_equal(ranks, trial_ranks)
