@@ -41,7 +41,7 @@ jobs:
     # This action cannot be executed in the forked repository.
     if: github.repository == 'optuna/optuna'
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set ENV
       run: |
