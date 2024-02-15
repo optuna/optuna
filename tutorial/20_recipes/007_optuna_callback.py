@@ -12,7 +12,6 @@ it takes :class:`~optuna.study.Study` and :class:`~optuna.trial.FrozenTrial` as 
 :class:`~optuna.integration.MLflowCallback` is a great example.
 """
 
-
 ###################################################################################################
 # Stop optimization after some trials are pruned in a row
 # -------------------------------------------------------

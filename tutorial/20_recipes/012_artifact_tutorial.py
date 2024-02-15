@@ -235,6 +235,7 @@ molecule as input and outputs the adsorption energy, this problem is solved as a
 First, let's import the necessary modules and define some helper functions. You need to install the ASE library for handling 
 chemical structures in addition to Optuna, so please install it with `pip install ase`.
 """
+
 from __future__ import annotations
 
 import io

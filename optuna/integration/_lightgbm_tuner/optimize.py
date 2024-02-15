@@ -90,9 +90,9 @@ class _BaseTuner:
 
     def _get_booster_best_score(self, booster: "lgb.Booster") -> float:
         metric = self._get_metric_for_objective()
-        valid_sets: list["lgb.Dataset"] | tuple[
-            "lgb.Dataset", ...
-        ] | "lgb.Dataset" | None = self.lgbm_kwargs.get("valid_sets")
+        valid_sets: list["lgb.Dataset"] | tuple["lgb.Dataset", ...] | "lgb.Dataset" | None = (
+            self.lgbm_kwargs.get("valid_sets")
+        )
 
         if self.lgbm_kwargs.get("valid_names") is not None:
             if isinstance(self.lgbm_kwargs["valid_names"], str):
@@ -172,9 +172,9 @@ class _OptunaObjective(_BaseTuner):
 
         self.trial_count = 0
         self.best_score = best_score
-        self.best_booster_with_trial_number: tuple[
-            "lgb.Booster" | "lgb.CVBooster", int
-        ] | None = None
+        self.best_booster_with_trial_number: tuple["lgb.Booster" | "lgb.CVBooster", int] | None = (
+            None
+        )
         self.step_name = step_name
         self.model_dir = model_dir
 
@@ -945,10 +945,12 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         params: dict[str, Any],
         train_set: "lgb.Dataset",
         num_boost_round: int = 1000,
-        folds: Generator[tuple[int, int], None, None]
-        | Iterator[tuple[int, int]]
-        | "BaseCrossValidator"
-        | None = None,
+        folds: (
+            Generator[tuple[int, int], None, None]
+            | Iterator[tuple[int, int]]
+            | "BaseCrossValidator"
+            | None
+        ) = None,
         nfold: int = 5,
         stratified: bool = True,
         shuffle: bool = True,
