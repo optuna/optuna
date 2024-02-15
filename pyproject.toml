@@ -82,7 +82,6 @@ document = [
     "torchvision",
 ]
 integration = [
-    "lightgbm",
     "mlflow",
     "scikit-learn>=0.24.2",
     "shap",

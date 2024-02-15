@@ -53,6 +53,7 @@ from optuna.visualization import plot_rank
 from optuna.visualization import plot_slice
 from optuna.visualization import plot_timeline
 
+
 SEED = 42
 
 np.random.seed(SEED)
@@ -77,8 +78,7 @@ def objective(trial):
     }
 
     # Add a callback for pruning.
-    pruning_callback = optuna.integration.LightGBMPruningCallback(trial, "auc")
-    gbm = lgb.train(param, dtrain, valid_sets=[dvalid], callbacks=[pruning_callback])
+    gbm = lgb.train(param, dtrain, valid_sets=[dvalid])
 
     preds = gbm.predict(valid_x)
     pred_labels = np.rint(preds)
@@ -99,10 +99,6 @@ study.optimize(objective, n_trials=100, timeout=600)
 # --------------
 # Visualize the optimization history. See :func:`~optuna.visualization.plot_optimization_history` for the details.
 plot_optimization_history(study)
-
-###################################################################################################
-# Visualize the learning curves of the trials. See :func:`~optuna.visualization.plot_intermediate_values` for the details.
-plot_intermediate_values(study)
 
 ###################################################################################################
 # Visualize high-dimensional parameter relationships. See :func:`~optuna.visualization.plot_parallel_coordinate` for the details.
@@ -149,18 +145,3 @@ plot_rank(study)
 ###################################################################################################
 # Visualize the optimization timeline of performed trials. See :func:`~optuna.visualization.plot_timeline` for the details.
 plot_timeline(study)
-
-###################################################################################################
-# Customize generated figures
-# ---------------------------
-# In :mod:`optuna.visualization` and :mod:`optuna.visualization.matplotlib`, a function returns an editable figure object:
-# :class:`plotly.graph_objects.Figure` or :class:`matplotlib.axes.Axes` depending on the module.
-# This allows users to modify the generated figure for their demand by using API of the visualization library.
-# The following example replaces figure titles drawn by Plotly-based :func:`~optuna.visualization.plot_intermediate_values` manually.
-fig = plot_intermediate_values(study)
-
-fig.update_layout(
-    title="Hyperparameter optimization for GBDT-based binary classification",
-    xaxis_title="Iteration",
-    yaxis_title="Validation AUC",
-)
