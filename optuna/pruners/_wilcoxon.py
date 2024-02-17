@@ -32,8 +32,8 @@ class WilcoxonPruner(BasePruner):
     This includes the mean performance of n (e.g., 100)
     shuffled inputs, the mean performance of k-fold cross validation, etc.
     There can be "easy" or "hard" inputs (the pruner handles correspondence of
-    the inputs between different trials),
-    but it is recommended to shuffle the order of inputs once before the optimization.
+    the inputs between different trials).
+    In each trial, it is recommended to shuffle the order in which data is processed.
 
     When you use this pruner, you must call `Trial.report(value, step)` function for each step (e.g., input id) with
     the evaluated value. This is different from other pruners in that the reported value need not converge
@@ -58,22 +58,22 @@ class WilcoxonPruner(BasePruner):
 
 
             input_data = np.linspace(-1, 1, 100)
-
-            # It is recommended to shuffle the input data once before optimization.
-            np.random.shuffle(input_data)
+            rng = np.random.default_rng()
 
 
             def objective(trial):
-                s = 0.0
-                for i in range(len(input_data)):
+                # In each trial, it is recommended to shuffle the order in which data is processed.
+                ordering = rng.permutation(range(len(input_data)))
+                s = []
+                for i in ordering:
                     param = trial.suggest_float("param", -1, 1)
                     loss = eval_func(param, input_data[i])
                     trial.report(loss, i)
-                    s += loss
+                    s.append(loss)
                     if trial.should_prune():
                         raise optuna.TrialPruned()
 
-                return s / len(input_data)
+                return sum(s) / len(s)
 
 
             study = optuna.study.create_study(
@@ -153,13 +153,6 @@ class WilcoxonPruner(BasePruner):
 
         _, idx1, idx2 = np.intersect1d(steps, best_steps, return_indices=True)
 
-        if len(idx1) < len(step_values):
-            warnings.warn(
-                "WilcoxonPruner finds steps existing in the current trial "
-                "but does not exist in the best trial. "
-                "Those values are ignored."
-            )
-
         diff_values = step_values[idx1] - best_step_values[idx2]
 
         if len(diff_values) < self._n_startup_steps:
@@ -167,6 +160,21 @@ class WilcoxonPruner(BasePruner):
 
         alt = "less" if study.direction == StudyDirection.MAXIMIZE else "greater"
 
+        if alt == "less":
+            average_is_best = best_trial.value <= sum(step_values) / len(step_values)
+        else:
+            average_is_best = best_trial.value >= sum(step_values) / len(step_values)
+
         # We use zsplit to avoid the problem when all values are zero.
         p = ss.wilcoxon(diff_values, alternative=alt, zero_method="zsplit").pvalue
+
+        if p < self._p_threshold and average_is_best:
+            # WilcoxonPruner found the current trial should be pruned,
+            # but the value of the best trial was not better than
+            # the average of the current trial's intermediate values.
+            # For safety, WilcoxonPruner concludes it should not be pruned.
+            # If this if-statement is frequently satisfied,
+            # it may be due to the nature of the data set, too big p_threshold,
+            # or the order of problem solving may not have shuffled.
+            return False
         return p < self._p_threshold
