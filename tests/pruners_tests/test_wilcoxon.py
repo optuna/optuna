@@ -102,7 +102,7 @@ def test_wilcoxon_pruner_warn_bad_best_trial(
             trial.should_prune()
 
 
-def test_wilcoxon_pruner_if_average_is_best_then_not_prune():
+def test_wilcoxon_pruner_if_average_is_best_then_not_prune() -> None:
     pruner = optuna.pruners.WilcoxonPruner(p_threshold=0.5)
     study = optuna.study.create_study(direction="minimize", pruner=pruner)
 
