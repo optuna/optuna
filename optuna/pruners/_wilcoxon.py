@@ -154,8 +154,8 @@ class WilcoxonPruner(BasePruner):
         _, idx1, idx2 = np.intersect1d(steps, best_steps, return_indices=True)
 
         if len(idx1) < len(step_values):
-            # This if-statement is never satisfied if following "average_is_best" safety.
-            # Because the safety ensures that the best trial always has the all steps.
+            # This if-statement is never satisfied if following "average_is_best" safety works,
+            # because the safety ensures that the best trial always has the all steps.
             warnings.warn(
                 "WilcoxonPruner finds steps existing in the current trial "
                 "but does not exist in the best trial. "
