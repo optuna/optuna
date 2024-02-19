@@ -56,7 +56,6 @@ def objective(trial):
         "min_child_samples": trial.suggest_int("min_child_samples", 5, 100),
     }
 
-    # Add a callback for pruning.
     gbm = lgb.train(param, dtrain, valid_sets=[dvalid])
 
     preds = gbm.predict(valid_x)
