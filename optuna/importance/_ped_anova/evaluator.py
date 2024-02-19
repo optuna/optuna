@@ -96,25 +96,25 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             specified search_space. `evaluate_on_local=True` is especially useful when users
             modify search space during optimization.
 
-        Example:
-            An example of using PED-ANOVA is as follows:
+    Example:
+        An example of using PED-ANOVA is as follows:
 
-            .. testcode::
+        .. testcode::
 
-                import optuna
-                from optuna.importance import PedAnovaImportanceEvaluator
-
-
-                def objective(trial):
-                    x1 = trial.suggest_float("x1", -10, 10)
-                    x2 = trial.suggest_float("x2", -10, 10)
-                    return x1 + x2 / 1000
+            import optuna
+            from optuna.importance import PedAnovaImportanceEvaluator
 
 
-                study = optuna.create_study()
-                study.optimize(objective, n_trials=100)
-                evaluator = PedAnovaImportanceEvaluator()
-                evaluator.evaluate(study)
+            def objective(trial):
+                x1 = trial.suggest_float("x1", -10, 10)
+                x2 = trial.suggest_float("x2", -10, 10)
+                return x1 + x2 / 1000
+
+
+            study = optuna.create_study()
+            study.optimize(objective, n_trials=100)
+            evaluator = PedAnovaImportanceEvaluator()
+            evaluator.evaluate(study)
 
     """
 
