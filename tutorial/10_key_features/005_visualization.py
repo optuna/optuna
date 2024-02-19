@@ -105,6 +105,7 @@ def eval_model(model, valid_loader):
 
     return accuracy
 
+
 ###################################################################################################
 # Define the objective function.
 def objective(trial):
