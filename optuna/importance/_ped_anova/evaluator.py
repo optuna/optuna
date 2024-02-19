@@ -5,6 +5,7 @@ import warnings
 
 import numpy as np
 
+from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
 from optuna.importance._base import _get_distributions
 from optuna.importance._base import _get_filtered_trials
@@ -57,6 +58,7 @@ class _QuantileFilter:
         return [t for t, should_keep in zip(trials, should_keep_trials) if should_keep]
 
 
+@experimental_class("3.6.0")
 class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     """PED-ANOVA importance evaluator.
 
