@@ -1024,6 +1024,10 @@ def unset_seed_in_test(request: SubRequest) -> None:
 @pytest.mark.slow
 @parametrize_sampler_name_with_seed
 def test_reproducible_in_other_process(sampler_name: str, unset_seed_in_test: None) -> None:
+    # TODO(HideakiImamura): Remove the constraint after torch supports python 3.12.
+    if sys.version_info >= (3, 12, 0) and sampler_name == "GPSampler":
+        pytest.skip("PyTorch does not support Python 3.12 yet.")
+
     # This test should be tested without `PYTHONHASHSEED`. However, some tool such as tox
     # set the environmental variable "PYTHONHASHSEED" by default.
     # To do so, this test calls a finalizer: `unset_seed_in_test`.
