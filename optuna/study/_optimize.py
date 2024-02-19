@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+from collections.abc import Sequence
 from concurrent.futures import FIRST_COMPLETED
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
@@ -10,7 +12,6 @@ import os
 import sys
 from typing import Any
 from typing import Callable
-from collections.abc import Sequence
 import warnings
 
 import optuna
