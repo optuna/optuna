@@ -71,6 +71,7 @@ class WilcoxonPruner(BasePruner):
                     trial.report(loss, i)
                     s.append(loss)
                     if trial.should_prune():
+                        # return sum(s) / len(s)  # An advanced technique (see the note below).
                         raise optuna.TrialPruned()
 
                 return sum(s) / len(s)
@@ -85,6 +86,16 @@ class WilcoxonPruner(BasePruner):
     .. note::
         This pruner cannot handle ``infinity`` or ``nan`` values.
         Trials containing those values are never pruned.
+
+    .. note::
+        As an advanced technique, if `trial.should_prune()` returns `True`, 
+        you can return an estimation of the final value (e.g., the average of all evaluated values) 
+        instead of `raise optuna.TrialPruned()`. 
+        Some algorithms including `TPESampler` internally split trials into below (good) and above (bad), 
+        and pruned trial will always be classified as above. 
+        However, there are some trials that are slightly worse than the best trial and will be pruned, 
+        but they should be classified as below (e.g., top 10%). 
+        This technique provides beneficial information about such trials to these algorithms.
 
     Args:
         p_threshold:
@@ -178,12 +189,9 @@ class WilcoxonPruner(BasePruner):
         p = ss.wilcoxon(diff_values, alternative=alt, zero_method="zsplit").pvalue
 
         if p < self._p_threshold and average_is_best:
-            # WilcoxonPruner found the current trial should be pruned,
+            # ss.wilcoxon found the current trial is probably worse than the best trial,
             # but the value of the best trial was not better than
             # the average of the current trial's intermediate values.
-            # For safety, WilcoxonPruner concludes it should not be pruned.
-            # If this if-statement is frequently satisfied,
-            # it may be due to the nature of the data set, too big p_threshold,
-            # or the order of problem solving may not have shuffled.
+            # For safety, WilcoxonPruner concludes not to prune it for now.
             return False
         return p < self._p_threshold
