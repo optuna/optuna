@@ -167,11 +167,11 @@ class WilcoxonPruner(BasePruner):
         if len(diff_values) < self._n_startup_steps:
             return False
 
-        alt = "less" if study.direction == StudyDirection.MAXIMIZE else "greater"
-
-        if alt == "less":
+        if study.direction == StudyDirection.MAXIMIZE:
+            alt = "less"
             average_is_best = best_trial.value <= sum(step_values) / len(step_values)
         else:
+            alt = "greater"
             average_is_best = best_trial.value >= sum(step_values) / len(step_values)
 
         # We use zsplit to avoid the problem when all values are zero.
