@@ -9,11 +9,6 @@ on:
       - tests/visualization_tests/matplotlib_tests/**
       - .github/workflows/matplotlib-tests.yml
       - optuna/visualization/**.py
-  push:
-    paths:
-      - tests/visualization_tests/matplotlib_tests/**
-      - .github/workflows/matplotlib-tests.yml
-      - optuna/visualization/**.py
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
