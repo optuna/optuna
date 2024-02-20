@@ -1,0 +1,80 @@
+# Run tests and integration tests on Mac, which are triggered by each master push.
+# Currently, Python3.8 is only used as an environment.
+# This is mainly for the sake of speed.
+name: matplotlib-tests
+
+on:
+  pull_request:
+    paths:
+      - tests/visualization_tests/matplotlib_tests
+      - .github/workflows/matplotlib-tests.yml
+      - optuna/visualization/**.py
+  push:
+    paths:
+      - tests/visualization_tests/matplotlib_tests
+      - .github/workflows/matplotlib-tests.yml
+      - optuna/visualization/**.py
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests-mac:
+    runs-on: ubuntu-latest
+
+    # Scheduled Tests are disabled for forks.
+    if: (github.event_name == 'schedule' && github.repository == 'optuna/optuna') || (github.event_name != 'schedule')
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Setup Python3.8
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.8
+
+    - name: Setup cache
+      uses: actions/cache@v3
+      env:
+        cache-name: test
+      with:
+        path: ~/Library/Caches/pip
+        key: ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
+        restore-keys: |
+          ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
+
+    - name: Install
+      run: |
+        python -m pip install --upgrade pip
+        pip install --progress-bar off -U setuptools
+        # Install minimal dependencies and confirm that `import optuna` is successful.
+        pip install --progress-bar off .
+        python -c 'import optuna'
+        optuna --version
+        pip install --progress-bar off .[test]
+        pip install --progress-bar off .[optional]
+
+    - name: Output installed packages
+      run: |
+        pip freeze --all
+    - name: Output dependency tree
+      run: |
+        pip install pipdeptree
+        pipdeptree
+
+
+    - name: Scheduled tests
+      if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+      run: |
+        pytest tests -m "not integration"
+    - name: Tests with Plotly
+      if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
+      run: |
+        pytest tests/visualization_tests/matplotlib_tests
+    - name: Tests without Plotly
+      if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
+      run: |
+        pip uninstall -y plotly
+        pytest tests/visualization_tests/matplotlib_tests
+
