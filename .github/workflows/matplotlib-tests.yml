@@ -6,12 +6,12 @@ name: matplotlib-tests
 on:
   pull_request:
     paths:
-      - tests/visualization_tests/matplotlib_tests
+      - tests/visualization_tests/matplotlib_tests/**
       - .github/workflows/matplotlib-tests.yml
       - optuna/visualization/**.py
   push:
     paths:
-      - tests/visualization_tests/matplotlib_tests
+      - tests/visualization_tests/matplotlib_tests/**
       - .github/workflows/matplotlib-tests.yml
       - optuna/visualization/**.py
 
