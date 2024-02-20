@@ -54,7 +54,7 @@ from optuna.visualization import plot_slice
 from optuna.visualization import plot_timeline
 
 
-SEED = 42
+SEED = 13
 torch.manual_seed(SEED)
 
 DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
