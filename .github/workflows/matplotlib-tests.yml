@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  tests-mac:
+  matplotlib-tests:
     runs-on: ubuntu-latest
 
     # Scheduled Tests are disabled for forks.
