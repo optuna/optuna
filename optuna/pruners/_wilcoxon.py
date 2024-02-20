@@ -71,8 +71,8 @@ class WilcoxonPruner(BasePruner):
                     trial.report(loss, i)
                     s.append(loss)
                     if trial.should_prune():
-                        # return sum(s) / len(s)  # An advanced technique (see the note below).
-                        raise optuna.TrialPruned()
+                        return sum(s) / len(s)  # An advanced technique (see the note below).
+                        # raise optuna.TrialPruned()
 
                 return sum(s) / len(s)
 
