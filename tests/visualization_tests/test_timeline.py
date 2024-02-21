@@ -11,10 +11,33 @@ import optuna
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study.study import Study
 from optuna.trial import TrialState
-from optuna.visualization._plotly_imports import go
+from optuna.visualization._plotly_imports import _imports as plotly_imports
+
+
+if plotly_imports.is_successful():
+    from optuna.visualization._plotly_imports import go
+
 from optuna.visualization._timeline import _get_timeline_info
 from optuna.visualization._timeline import plot_timeline
-from tests.visualization_tests.utils import _create_study
+
+
+def _create_study(
+    trial_states_list: list[TrialState],
+    trial_sys_attrs: dict[str, Any] | None = None,
+) -> Study:
+    study = optuna.create_study()
+    fmax = float(len(trial_states_list))
+    for i, s in enumerate(trial_states_list):
+        study.add_trial(
+            optuna.trial.create_trial(
+                params={"x": float(i)},
+                distributions={"x": optuna.distributions.FloatDistribution(-1.0, fmax)},
+                value=0.0 if s == TrialState.COMPLETE else None,
+                state=s,
+                system_attrs=trial_sys_attrs,
+            )
+        )
+    return study
 
 
 def _create_study_negative_elapsed_time() -> Study:

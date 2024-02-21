@@ -6,7 +6,7 @@ import pytest
 
 from optuna.trial import TrialState
 from optuna.visualization.matplotlib._timeline import plot_timeline
-from tests.visualization_tests.utils import _create_study
+from tests.visualization_tests.test_timeline import _create_study
 
 
 @pytest.mark.parametrize(
