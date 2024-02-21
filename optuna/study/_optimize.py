@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from collections.abc import Sequence
 from concurrent.futures import FIRST_COMPLETED
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
@@ -9,13 +12,6 @@ import os
 import sys
 from typing import Any
 from typing import Callable
-from typing import List
-from typing import Optional
-from typing import Sequence
-from typing import Set
-from typing import Tuple
-from typing import Type
-from typing import Union
 import warnings
 
 import optuna
@@ -37,11 +33,11 @@ _logger = logging.get_logger(__name__)
 def _optimize(
     study: "optuna.Study",
     func: "optuna.study.study.ObjectiveFuncType",
-    n_trials: Optional[int] = None,
-    timeout: Optional[float] = None,
+    n_trials: int | None = None,
+    timeout: float | None = None,
     n_jobs: int = 1,
-    catch: Tuple[Type[Exception], ...] = (),
-    callbacks: Optional[List[Callable[["optuna.Study", FrozenTrial], None]]] = None,
+    catch: tuple[type[Exception], ...] = (),
+    callbacks: list[Callable[["optuna.Study", FrozenTrial], None]] | None = None,
     gc_after_trial: bool = False,
     show_progress_bar: bool = False,
 ) -> None:
@@ -80,7 +76,7 @@ def _optimize(
                 n_jobs = os.cpu_count() or 1
 
             time_start = datetime.datetime.now()
-            futures: Set[Future] = set()
+            futures: set[Future] = set()
 
             with ThreadPoolExecutor(max_workers=n_jobs) as executor:
                 for n_submitted_trials in itertools.count():
@@ -125,14 +121,14 @@ def _optimize(
 def _optimize_sequential(
     study: "optuna.Study",
     func: "optuna.study.study.ObjectiveFuncType",
-    n_trials: Optional[int],
-    timeout: Optional[float],
-    catch: Tuple[Type[Exception], ...],
-    callbacks: Optional[List[Callable[["optuna.Study", FrozenTrial], None]]],
+    n_trials: int | None,
+    timeout: float | None,
+    catch: tuple[type[Exception], ...],
+    callbacks: list[Callable[["optuna.Study", FrozenTrial], None]] | None,
     gc_after_trial: bool,
     reseed_sampler_rng: bool,
-    time_start: Optional[datetime.datetime],
-    progress_bar: Optional[pbar_module._ProgressBar],
+    time_start: datetime.datetime | None,
+    progress_bar: pbar_module._ProgressBar | None,
 ) -> None:
     # Here we set `in_optimize_loop = True`, not at the beginning of the `_optimize()` function.
     # Because it is a thread-local object and `n_jobs` option spawns new threads.
@@ -183,17 +179,17 @@ def _optimize_sequential(
 def _run_trial(
     study: "optuna.Study",
     func: "optuna.study.study.ObjectiveFuncType",
-    catch: Tuple[Type[Exception], ...],
+    catch: tuple[type[Exception], ...],
 ) -> trial_module.FrozenTrial:
     if is_heartbeat_enabled(study._storage):
         optuna.storages.fail_stale_trials(study)
 
     trial = study.ask()
 
-    state: Optional[TrialState] = None
-    value_or_values: Optional[Union[float, Sequence[float]]] = None
-    func_err: Optional[Union[Exception, KeyboardInterrupt]] = None
-    func_err_fail_exc_info: Optional[Any] = None
+    state: TrialState | None = None
+    value_or_values: float | Sequence[float] | None = None
+    func_err: Exception | KeyboardInterrupt | None = None
+    func_err_fail_exc_info: Any | None = None
 
     with get_heartbeat_thread(trial._trial_id, study._storage):
         try:
@@ -254,7 +250,7 @@ def _run_trial(
 
 def _log_failed_trial(
     trial: FrozenTrial,
-    message: Union[str, Warning],
+    message: str | Warning,
     exc_info: Any = None,
     value_or_values: Any = None,
 ) -> None:
