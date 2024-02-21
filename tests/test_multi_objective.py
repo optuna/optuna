@@ -1,4 +1,4 @@
-from typing import Tuple
+from __future__ import annotations
 
 from optuna import create_study
 from optuna import trial
@@ -7,7 +7,7 @@ from optuna.study._multi_objective import _get_pareto_front_trials_nd
 from optuna.trial import FrozenTrial
 
 
-def _trial_to_values(t: FrozenTrial) -> Tuple[float, ...]:
+def _trial_to_values(t: FrozenTrial) -> tuple[float, ...]:
     assert t.values is not None
     return tuple(t.values)
 

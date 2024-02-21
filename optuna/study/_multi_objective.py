@@ -1,6 +1,6 @@
-from typing import List
-from typing import Optional
-from typing import Sequence
+from __future__ import annotations
+
+from collections.abc import Sequence
 
 import optuna
 from optuna.study._study_direction import StudyDirection
@@ -11,7 +11,7 @@ from optuna.trial import TrialState
 _CONSTRAINTS_KEY = "constraints"
 
 
-def _get_feasible_trials(trials: Sequence[FrozenTrial]) -> List[FrozenTrial]:
+def _get_feasible_trials(trials: Sequence[FrozenTrial]) -> list[FrozenTrial]:
     feasible_trials = []
     for trial in trials:
         constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
@@ -24,7 +24,7 @@ def _get_pareto_front_trials_2d(
     trials: Sequence[FrozenTrial],
     directions: Sequence[StudyDirection],
     consider_constraint: bool = False,
-) -> List[FrozenTrial]:
+) -> list[FrozenTrial]:
     trials = [t for t in trials if t.state == TrialState.COMPLETE]
     if consider_constraint:
         trials = _get_feasible_trials(trials)
@@ -57,7 +57,7 @@ def _get_pareto_front_trials_nd(
     trials: Sequence[FrozenTrial],
     directions: Sequence[StudyDirection],
     consider_constraint: bool = False,
-) -> List[FrozenTrial]:
+) -> list[FrozenTrial]:
     pareto_front = []
     trials = [t for t in trials if t.state == TrialState.COMPLETE]
     if consider_constraint:
@@ -81,7 +81,7 @@ def _get_pareto_front_trials_by_trials(
     trials: Sequence[FrozenTrial],
     directions: Sequence[StudyDirection],
     consider_constraint: bool = False,
-) -> List[FrozenTrial]:
+) -> list[FrozenTrial]:
     if len(directions) == 2:
         return _get_pareto_front_trials_2d(
             trials, directions, consider_constraint
@@ -93,7 +93,7 @@ def _get_pareto_front_trials_by_trials(
 
 def _get_pareto_front_trials(
     study: "optuna.study.Study", consider_constraint: bool = False
-) -> List[FrozenTrial]:
+) -> list[FrozenTrial]:
     return _get_pareto_front_trials_by_trials(study.trials, study.directions, consider_constraint)
 
 
@@ -129,7 +129,7 @@ def _dominates(
     return all(v0 <= v1 for v0, v1 in zip(normalized_values0, normalized_values1))
 
 
-def _normalize_value(value: Optional[float], direction: StudyDirection) -> float:
+def _normalize_value(value: None | float, direction: StudyDirection) -> float:
     if value is None:
         value = float("inf")
 
