@@ -29,7 +29,6 @@ from optuna import load_study
 from optuna import logging
 from optuna import Study
 from optuna import Trial
-from optuna import trial as trial_module
 from optuna import TrialPruned
 from optuna.exceptions import DuplicatedStudyError
 from optuna.exceptions import ExperimentalWarning
@@ -1624,24 +1623,3 @@ def test_get_metric_names() -> None:
     assert study.metric_names == ["v0"]
     study.set_metric_names(["v1"])
     assert study.metric_names == ["v1"]
-
-
-def test_best_feasible_trial() -> None:
-    study = create_study(direction="minimize")
-    trials = [
-        trial_module.create_trial(value=1, system_attrs={"constraints": [1]}),
-        trial_module.create_trial(value=2, system_attrs={"constraints": [0]}),
-    ]
-    study.add_trials(trials)
-    assert study.best_feasible_trial == study.trials[1]
-
-
-def test_best_feasible_trials() -> None:
-    study = create_study(directions=["minimize", "maximize"])
-    trials = [
-        trial_module.create_trial(values=[1, 1], system_attrs={"constraints": [0]}),
-        trial_module.create_trial(values=[2, 2], system_attrs={"constraints": [1]}),
-        trial_module.create_trial(values=[3, 2], system_attrs={"constraints": [0]}),
-    ]
-    study.add_trials(trials)
-    assert study.best_feasible_trials == [study.trials[0], study.trials[2]]
