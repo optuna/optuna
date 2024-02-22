@@ -150,9 +150,22 @@ rng = np.random.default_rng(seed=44444)
 
 ###################################################################################################
 # We counts the number of evaluation to know how many problems is pruned.
+#
 
 
 num_evaluation = 0
+
+
+###################################################################################################
+# .. note::
+#     As an advanced workaround, if `trial.should_prune()` returns `True`,
+#     you can return an estimation of the final value (e.g., the average of all evaluated values)
+#     instead of `raise optuna.TrialPruned()`.
+#     Some algorithms including `TPESampler` internally split trials into below (good) and above (bad),
+#     and pruned trial will always be classified as above.
+#     However, there are some trials that are slightly worse than the best trial and will be pruned,
+#     but they should be classified as below (e.g., top 10%).
+#     This workaround provides beneficial information about such trials to these algorithms.
 
 
 def objective(trial):
@@ -177,13 +190,14 @@ def objective(trial):
 
         trial.report(result_cost, i)
         if trial.should_prune():
-            return sum(results) / len(results)
+            return sum(results) / len(results)  # It is the advanced workaround.
+            # raise optuna.TrialPruned()
 
     return sum(results) / len(results)
 
 
 ###################################################################################################
-# We use `TPESampler`` with `WilcoxonPruner``.
+# We use `TPESampler` with `WilcoxonPruner`.
 
 
 NUM_TRIAL = 100
@@ -201,3 +215,10 @@ study.optimize(objective, n_trials=NUM_TRIAL)
 print(f"The number of trials: {len(study.trials)}")
 print(f"Best value: {study.best_value} (params: {study.best_params})")
 print(f"Number of evaluation: {num_evaluation} / {NUM_PROBLEM * NUM_TRIAL}")
+
+
+###################################################################################################
+# Visualize the optimization history. See :func:`~optuna.visualization.plot_optimization_history` for the details.
+
+
+optuna.visualization.plot_optimization_history(study)
