@@ -102,22 +102,22 @@ class MultiObjectiveTrial:
         return self._trial.suggest_int(name, low, high, step=step, log=log)
 
     @overload
-    def suggest_categorical(self, name: str, choices: Sequence[None]) -> None: ...  # noqa: E704
+    def suggest_categorical(self, name: str, choices: Sequence[None]) -> None: ...
 
     @overload
-    def suggest_categorical(self, name: str, choices: Sequence[bool]) -> bool: ...  # noqa: E704
+    def suggest_categorical(self, name: str, choices: Sequence[bool]) -> bool: ...
 
     @overload
-    def suggest_categorical(self, name: str, choices: Sequence[int]) -> int: ...  # noqa: E704
+    def suggest_categorical(self, name: str, choices: Sequence[int]) -> int: ...
 
     @overload
-    def suggest_categorical(self, name: str, choices: Sequence[float]) -> float: ...  # noqa: E704
+    def suggest_categorical(self, name: str, choices: Sequence[float]) -> float: ...
 
     @overload
-    def suggest_categorical(self, name: str, choices: Sequence[str]) -> str: ...  # noqa: E704
+    def suggest_categorical(self, name: str, choices: Sequence[str]) -> str: ...
 
     @overload
-    def suggest_categorical(  # noqa: E704
+    def suggest_categorical(
         self, name: str, choices: Sequence[CategoricalChoiceType]
     ) -> CategoricalChoiceType: ...
 

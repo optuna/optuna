@@ -235,22 +235,22 @@ class FrozenTrial(BaseTrial):
         return int(self._suggest(name, IntDistribution(low, high, log=log, step=step)))
 
     @overload
-    def suggest_categorical(self, name: str, choices: Sequence[None]) -> None: ...  # noqa: E704
+    def suggest_categorical(self, name: str, choices: Sequence[None]) -> None: ...
 
     @overload
-    def suggest_categorical(self, name: str, choices: Sequence[bool]) -> bool: ...  # noqa: E704
+    def suggest_categorical(self, name: str, choices: Sequence[bool]) -> bool: ...
 
     @overload
-    def suggest_categorical(self, name: str, choices: Sequence[int]) -> int: ...  # noqa: E704
+    def suggest_categorical(self, name: str, choices: Sequence[int]) -> int: ...
 
     @overload
-    def suggest_categorical(self, name: str, choices: Sequence[float]) -> float: ...  # noqa: E704
+    def suggest_categorical(self, name: str, choices: Sequence[float]) -> float: ...
 
     @overload
-    def suggest_categorical(self, name: str, choices: Sequence[str]) -> str: ...  # noqa: E704
+    def suggest_categorical(self, name: str, choices: Sequence[str]) -> str: ...
 
     @overload
-    def suggest_categorical(  # noqa: E704
+    def suggest_categorical(
         self, name: str, choices: Sequence[CategoricalChoiceType]
     ) -> CategoricalChoiceType: ...
 
