@@ -154,3 +154,10 @@ def test_dominates_complete_vs_incomplete(t1_state: TrialState) -> None:
 def test_fast_non_dominated_sort(trial_values: list[float], trial_ranks: list[int]) -> None:
     ranks = list(_fast_non_dominated_sort(np.array(trial_values)))
     assert np.array_equal(ranks, trial_ranks)
+
+
+def test_fast_non_dominated_sort_invalid() -> None:
+    with pytest.raises(ValueError):
+        _fast_non_dominated_sort(
+            np.array([[1.0, 2.0], [3.0, 4.0]]), penalty=np.array([1.0, 2.0, 3.0])
+        )
