@@ -103,9 +103,9 @@ def test_get_pareto_front_info_unconstrained(
         n_targets=2,
         target_names=target_names or metric_names or ["Objective 0", "Objective 1"],
         best_trials_with_values=[(trials[2], [0, 2]), (trials[3], [1, 0])],
-        non_best_trials_with_values=[(trials[0], [1, 2]), (trials[1], [1, 1])]
-        if include_dominated_trials
-        else [],
+        non_best_trials_with_values=(
+            [(trials[0], [1, 2]), (trials[1], [1, 1])] if include_dominated_trials else []
+        ),
         infeasible_trials_with_values=[],
         axis_order=axis_order or [0, 1],
         include_dominated_trials=include_dominated_trials,
@@ -190,9 +190,9 @@ def test_get_pareto_front_info_3d(
         n_targets=3,
         target_names=target_names or ["Objective 0", "Objective 1", "Objective 2"],
         best_trials_with_values=[(trials[2], [0, 2, 1]), (trials[3], [1, 0, 1])],
-        non_best_trials_with_values=[(trials[0], [1, 2, 1]), (trials[1], [1, 1, 1])]
-        if include_dominated_trials
-        else [],
+        non_best_trials_with_values=(
+            [(trials[0], [1, 2, 1]), (trials[1], [1, 1, 1])] if include_dominated_trials else []
+        ),
         infeasible_trials_with_values=[],
         axis_order=axis_order or [0, 1, 2],
         include_dominated_trials=include_dominated_trials,
