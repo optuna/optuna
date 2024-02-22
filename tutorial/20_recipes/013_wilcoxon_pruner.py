@@ -150,13 +150,45 @@ rng = np.random.default_rng(seed=44444)
 
 ###################################################################################################
 # We counts the number of evaluation to know how many problems is pruned.
-#
 
 
 num_evaluation = 0
 
 
 ###################################################################################################
+# In this tutorial, we optimize three parameters: T0, alpha, and patience.
+#
+# T0 (Initial Temperature)
+# -----------------------------
+#
+# In Simulated Annealing, the concept of "temperature" is an analogy to control the randomness
+# of the search process. The initial temperature, denoted as T0, sets the starting level of
+# this temperature. A higher initial temperature allows the algorithm to explore a wider range of
+# solutions and to accept worse solutions with higher probability, facilitating escape from local
+# optima. As the algorithm progresses, the temperature is gradually decreased, leading to a more
+# refined search around promising areas,
+# ultimately aiming for convergence towards an optimal solution.
+#
+# Alpha (Cooling Rate)
+# -----------------------------
+#
+# Alpha is a parameter that dictates the rate at which the temperature is decreased in each
+# iteration of the algorithm. It is typically a value between 0 and 1, and
+# it's used to multiply the current temperature to obtain the temperature for the next iteration,
+# following the formula T = alpha * T. A smaller alpha value results in a quicker decrease
+# in temperature, making the algorithm converge faster but potentially missing broader exploration.
+#
+# Patience
+# -----------------------------
+# In this specific context, patience refers to the mechanism of reverting to the best solution
+# found so far after a certain number of iterations without improvement. This concept is
+# somewhat akin to a "reset" or "rollback" function, where if the algorithm hasn't found a
+# better solution within the defined 'patience' threshold (a set number of iterations),
+# it will revert to the best solution it has encountered. This strategy can prevent the
+# algorithm from wandering too far from promising regions of the solution space and can
+# help in maintaining a focus on refining the best solutions found, rather than continuing
+# to explore less promising paths.
+#
 # .. note::
 #     As an advanced workaround, if `trial.should_prune()` returns `True`,
 #     you can return an estimation of the final value (e.g., the average of all evaluated values)
