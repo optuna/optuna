@@ -130,8 +130,8 @@ def _calculate_nondomination_rank(
     n_below = n_below or len(objective_values)
     n_below = min(n_below, len(objective_values))
 
-    # The ndarray `domination_matrix` is a boolean 2d matrix where
-    # `domination_matrix[i, j] == True` means that the j-th trial dominates the i-th trial in the
+    # The ndarray `domination_mat` is a boolean 2d matrix where
+    # `domination_mat[i, j] == True` means that the j-th trial dominates the i-th trial in the
     # given multi objective minimization problem.
     domination_mat = np.all(
         objective_values[:, np.newaxis, :] >= objective_values[np.newaxis, :, :], axis=2
