@@ -37,9 +37,7 @@ def simulated_annealing(vertices, initial_idxs, options: SAOptions):
     N = len(vertices)
     assert len(idxs) == N
 
-    cost = sum(
-        [norm(vertices[idxs[i]] - vertices[idxs[(i + 1) % N]]) for i in range(N)]
-    )
+    cost = sum([norm(vertices[idxs[i]] - vertices[idxs[(i + 1) % N]]) for i in range(N)])
     best_idxs = idxs.copy()
     best_cost = cost
 
@@ -105,11 +103,12 @@ rng = np.random.default_rng(seed=44444)
 
 
 ###################################################################################################
-# In each trial, it is recommended to shuffle the order in which data is processed.
 # We counts the number of evaluation to know how many problems is pruned.
 
 
 num_evaluation = 0
+
+
 def objective(trial):
     global num_evaluation
     patience = trial.suggest_int("patience", 10, 1000, log=True)
