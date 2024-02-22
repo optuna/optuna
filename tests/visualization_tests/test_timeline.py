@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 from io import BytesIO
 from typing import Any
+from typing import Callable
 
 import _pytest.capture
 import pytest
@@ -11,23 +12,33 @@ import optuna
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study.study import Study
 from optuna.trial import TrialState
+from optuna.visualization import plot_timeline as plotly_plot_timeline
 from optuna.visualization._plotly_imports import _imports as plotly_imports
+from optuna.visualization._timeline import _get_timeline_info
+from optuna.visualization.matplotlib import plot_timeline as plt_plot_timeline
+from optuna.visualization.matplotlib._matplotlib_imports import _imports as plt_imports
 
 
 if plotly_imports.is_successful():
     from optuna.visualization._plotly_imports import go
 
-from optuna.visualization._timeline import _get_timeline_info
-from optuna.visualization._timeline import plot_timeline
+if plt_imports.is_successful():
+    from optuna.visualization.matplotlib._matplotlib_imports import plt
+
+
+parametrize_plot_timeline = pytest.mark.parametrize(
+    "plot_timeline",
+    [plotly_plot_timeline, plt_plot_timeline],
+)
 
 
 def _create_study(
-    trial_states_list: list[TrialState],
+    trial_states: list[TrialState],
     trial_sys_attrs: dict[str, Any] | None = None,
 ) -> Study:
     study = optuna.create_study()
-    fmax = float(len(trial_states_list))
-    for i, s in enumerate(trial_states_list):
+    fmax = float(len(trial_states))
+    for i, s in enumerate(trial_states):
         study.add_trial(
             optuna.trial.create_trial(
                 params={"x": float(i)},
@@ -114,16 +125,23 @@ def test_get_timeline_info_negative_elapsed_time(capsys: _pytest.capture.Capture
         assert bar.complete < bar.start
 
 
+@parametrize_plot_timeline
 @pytest.mark.parametrize(
-    "trial_states_list",
+    "trial_states",
     [
         [],
         [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL],
         [TrialState.FAIL, TrialState.PRUNED, TrialState.COMPLETE],
     ],
 )
-def test_get_timeline_plot(trial_states_list: list[TrialState]) -> None:
-    study = _create_study(trial_states_list)
-    fig = plot_timeline(study)
-    assert type(fig) is go.Figure
-    fig.write_image(BytesIO())
+def test_get_timeline_plot(
+    plot_timeline: Callable[..., Any], trial_states: list[TrialState]
+) -> None:
+    study = _create_study(trial_states)
+    figure = plot_timeline(study)
+
+    if isinstance(figure, go.Figure):
+        figure.write_image(BytesIO())
+    else:
+        plt.savefig(BytesIO())
+        plt.close()
