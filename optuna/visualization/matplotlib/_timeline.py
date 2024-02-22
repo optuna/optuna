@@ -107,11 +107,11 @@ def _get_timeline_plot(info: _TimelineInfo) -> "Axes":
     fig.tight_layout()
 
     assert len(info.bars) > 0
-    start_time = min([b.start for b in info.bars])
-    complete_time = max([b.complete for b in info.bars])
-    margin = (complete_time - start_time) * 0.05
+    first_start_time = min([b.start for b in info.bars])
+    last_complete_time = max([b.complete for b in info.bars])
+    margin = (last_complete_time - first_start_time) * 0.05
 
-    ax.set_xlim(right=complete_time + margin, left=start_time - margin)
+    ax.set_xlim(right=last_complete_time + margin, left=first_start_time - margin)
     ax.yaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
     ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter("%H:%M:%S"))
     plt.gcf().autofmt_xdate()
