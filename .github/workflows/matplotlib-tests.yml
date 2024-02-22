@@ -3,9 +3,9 @@ name: matplotlib-tests
 on:
   pull_request:
     paths:
-      - tests/visualization_tests/**
       - .github/workflows/matplotlib-tests.yml
       - optuna/visualization/**.py
+      - tests/visualization_tests/**
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
