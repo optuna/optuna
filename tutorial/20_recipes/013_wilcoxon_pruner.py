@@ -7,7 +7,50 @@ Wilcoxon Pruner
 This tutorial showcases Optuna's wilcoxon pruner.
 This pruner is effective for objective functions that averages multiple evaluations.
 
-We solve Traveling Salesman Problem(TSP) by Simulated Annealing(SA).
+We solve Traveling Salesman Problem (TSP) by Simulated Annealing (SA).
+
+Overview of Traveling Salesman Problem
+-----------------------------
+
+Traveling Salesman Problem (TSP) is a classic problem in combinatorial optimization
+that involves finding the shortest possible route for a salesman
+who needs to visit a set of cities, each exactly once, and return to the starting city.
+TThe problem is classified as NP-hard, indicating that it is extremely challenging
+and that no efficient algorithm is known to solve all instances of the problem
+within a reasonable amount of time.
+
+TSP has been extensively studied in fields such as mathematics, computer science,
+and operations research, and has numerous practical applications in logistics,
+manufacturing, and DNA sequencing, among others.
+Exact solutions can be obtained for small instances; however,
+due to the computational complexity involved, approximation algorithms or
+heuristic methods are commonly employed for larger instances.
+
+Overview of Simulated Annealing
+-----------------------------
+
+Simulated Annealing (SA) is a probabilistic optimization algorithm used to find
+the global optimum of a given function.
+Inspired by the physical process of annealing in metallurgy,
+where materials such as metal or glass are heated to a high temperature
+and then cooled slowly to remove defects and reduce energy states,
+the algorithm mimics this process to search for solutions in the problem space.
+
+The algorithm starts with an initial solution and then moves to
+a neighboring solution with a certain probability that depends on the
+difference in the energy states (or costs) of the solutions and
+a global parameter called "temperature". At high temperatures,
+the algorithm is more likely to accept worse solutions,
+allowing it to explore the solution space more freely and
+avoid getting stuck in local optima.
+As the temperature decreases according to a cooling schedule,
+the algorithm becomes more conservative, accepting only solutions
+that improve the objective function or those that do not significantly worsen it.
+
+This method allows the SA algorithm to balance exploration and exploitation,
+making it effective for solving complex optimization problems where
+the solution space is large and potentially rugged with many local optima.
+
 """
 
 import math
@@ -23,6 +66,11 @@ class SAOptions(NamedTuple):
     T0: float = 1.0
     alpha: float = 1.0
     patience: int = 300
+
+
+###################################################################################################
+# .. note::
+#     The following `simulated_annealing` function can be acceralated by `numba`.
 
 
 def simulated_annealing(vertices, initial_idxs, options: SAOptions):
