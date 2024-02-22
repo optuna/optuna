@@ -7,13 +7,12 @@ Wilcoxon Pruner
 This tutorial showcases Optuna's wilcoxon pruner.
 This pruner is effective for objective functions that averages multiple evaluations.
 
-We solve Traveling Salesman Problem(TSP) by Simulated Annealing(SA) accelerated by `numba`.
+We solve Traveling Salesman Problem(TSP) by Simulated Annealing(SA).
 """
 
 import math
 from typing import NamedTuple
 
-import numba
 import numpy as np
 import optuna
 from numpy.linalg import norm
@@ -26,7 +25,6 @@ class SAOptions(NamedTuple):
     patience: int = 300
 
 
-@numba.njit
 def simulated_annealing(vertices, initial_idxs, options: SAOptions):
 
     def temperature(t: float):
