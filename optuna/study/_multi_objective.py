@@ -80,6 +80,39 @@ def _fast_non_dominated_sort(
     penalty: np.ndarray | None = None,
     n_below: int | None = None,
 ) -> np.ndarray:
+    """Perform the fast non-dominated sort algorithm.
+
+    The fast non-dominated sort algorithm assigns a rank to each trial based on the dominance
+    relationship of the trials, determined by the objective values and the penalty values. The
+    algorithm is based on `the constrained NSGA-II algorithm
+    <https://doi.org/10.1109/4235.99601>`_, but the handling of the case when penalty
+    values are None is different. The algorithm assigns the rank according to the following
+    rules:
+
+    1. Feasible trials: First, the algorithm assigns the rank to feasible trials, whose penalty
+        values are less than or equal to 0, according to unconstrained version of fast non-
+        dominated sort.
+    2. Infeasible trials: Next, the algorithm assigns the rank from the minimum penalty value of to
+        the maximum penalty value.
+    3. Trials with no penalty information (constraints value is None): Finally, The algorithm
+        assigns the rank to trials with no penalty information according to unconstrained version
+        of fast non-dominated sort. Note that only this step is different from the original
+        constrained NSGA-II algorithm.
+    Plus, the algorithm terminates whenever the number of sorted trials reaches n_below.
+
+    Args:
+        objective_values:
+            Objective values of each trials.
+        penalty:
+            Constraints values of each trials. Defaults to None.
+        n_below: The minimum number of top trials required to be sorted. The algorithm will
+            terminate when the number of sorted trials reaches n_below. Defaults to None.
+
+    Returns:
+        An ndarray in the shape of (n_trials,), where each element is the non-dominated rank of each
+        trial. The rank is 0-indexed and rank -1 means that the algorithm terminated before the
+        trial was sorted.
+    """
     if penalty is None:
         ranks, _ = _calculate_nondomination_rank(objective_values, n_below=n_below)
         return ranks
