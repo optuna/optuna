@@ -109,9 +109,9 @@ def _fast_non_dominated_sort(
             terminate when the number of sorted trials reaches n_below. Defaults to None.
 
     Returns:
-        An ndarray in the shape of (n_trials,), where each element is the non-dominated rank of each
-        trial. The rank is 0-indexed and rank -1 means that the algorithm terminated before the
-        trial was sorted.
+        An ndarray in the shape of (n_trials,), where each element is the non-dominated rank of
+        each trial. The rank is 0-indexed and rank -1 means that the algorithm terminated before
+        the trial was sorted.
     """
     if penalty is None:
         ranks, _ = _calculate_nondomination_rank(objective_values, n_below=n_below)
