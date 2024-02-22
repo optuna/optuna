@@ -126,6 +126,8 @@ def _calculate_nondomination_rank(
     n_below: int | None = None,
     base_rank: int = 0,
 ) -> tuple[np.ndarray, int]:
+    if n_below is not None and n_below <= 0:
+        return np.full(len(objective_values), -1), base_rank
     # Normalize n_below.
     n_below = n_below or len(objective_values)
     n_below = min(n_below, len(objective_values))
