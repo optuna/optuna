@@ -56,10 +56,6 @@ jobs:
         pipdeptree
 
 
-    - name: Scheduled tests
-      if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
-      run: |
-        pytest tests -m "not integration"
 
     - name: Tests without Plotly
       if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
