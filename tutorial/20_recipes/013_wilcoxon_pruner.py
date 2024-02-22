@@ -112,7 +112,7 @@ def objective(trial):
     patience = trial.suggest_int("patience", 10, 1000, log=True)
     T0 = trial.suggest_float("T0", 0.1, 10.0, log=True)
     alpha = trial.suggest_float("alpha", 1.1, 10.0, log=True)
-    options = SAOptions(max_iter=1000000, patience=patience, T0=T0, alpha=alpha)
+    options = SAOptions(max_iter=10000, patience=patience, T0=T0, alpha=alpha)
     ordering = rng.permutation(range(len(dataset)))
     results = []
     for i in ordering:
