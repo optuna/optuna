@@ -60,10 +60,7 @@ jobs:
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
         pytest tests -m "not integration"
-    - name: Tests with Plotly
-      if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
-      run: |
-        pytest tests/visualization_tests/matplotlib_tests
+
     - name: Tests without Plotly
       if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
       run: |
