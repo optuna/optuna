@@ -105,11 +105,13 @@ def _fast_non_dominated_sort(
 
     # Second, we calculate the domination rank for infeasible trials.
     is_infeasible = np.logical_and(~is_penalty_nan, penalty > 0)
-    ranks, bottom_rank = _calculate_nondomination_rank(
-        penalty[is_infeasible, np.newaxis], n_below=n_below, base_rank=bottom_rank + 1
-    )
-    nondomination_rank[is_infeasible] += 1 + ranks
-    n_below -= np.count_nonzero(is_infeasible)
+    num_infeasible_trials = np.count_nonzero(is_infeasible)
+    if num_infeasible_trials > 0:
+        _, ranks = np.unique(penalty[is_infeasible], return_inverse=True)
+        ranks += 1
+        nondomination_rank[is_infeasible] += 1 + bottom_rank + ranks
+        bottom_rank += np.max(ranks)
+        n_below -= num_infeasible_trials
 
     # Third, we calculate the domination rank for trials with no penalty information.
     ranks, _ = _calculate_nondomination_rank(
