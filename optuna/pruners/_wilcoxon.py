@@ -71,7 +71,7 @@ class WilcoxonPruner(BasePruner):
                     trial.report(loss, i)
                     s.append(loss)
                     if trial.should_prune():
-                        return sum(s) / len(s)  # An advanced technique (see the note below).
+                        return sum(s) / len(s)  # An advanced workaround (see the note below).
                         # raise optuna.TrialPruned()
 
                 return sum(s) / len(s)
@@ -88,14 +88,14 @@ class WilcoxonPruner(BasePruner):
         Trials containing those values are never pruned.
 
     .. note::
-        As an advanced technique, if `trial.should_prune()` returns `True`,
+        As an advanced workaround, if `trial.should_prune()` returns `True`,
         you can return an estimation of the final value (e.g., the average of all evaluated values)
         instead of `raise optuna.TrialPruned()`.
         Some algorithms including `TPESampler` internally split trials into below (good) and above (bad),
         and pruned trial will always be classified as above.
         However, there are some trials that are slightly worse than the best trial and will be pruned,
         but they should be classified as below (e.g., top 10%).
-        This technique provides beneficial information about such trials to these algorithms.
+        This workaround provides beneficial information about such trials to these algorithms.
 
     Args:
         p_threshold:
