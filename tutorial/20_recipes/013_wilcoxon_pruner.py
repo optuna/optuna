@@ -250,7 +250,7 @@ print(f"Number of evaluation: {num_evaluation} / {NUM_PROBLEM * NUM_TRIAL}")
 
 
 ###################################################################################################
-# Visualize the optimization history. See :func:`~optuna.visualization.plot_optimization_history` for the details.
+# Visualize the optimization history.
 
 
 optuna.visualization.plot_optimization_history(study)
