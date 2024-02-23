@@ -118,7 +118,7 @@ def _tell_with_warning(
     values: Optional[Sequence[float]]
     if value_or_values is None:
         values = None
-    elif isinstance(value_or_values, Sequence):
+    elif not isinstance(value_or_values, str) and isinstance(value_or_values, Sequence):
         values = value_or_values
     else:
         values = [value_or_values]
