@@ -54,9 +54,6 @@ jobs:
       run: |
         pip install pipdeptree
         pipdeptree
-
-
-
     - name: Tests without Plotly
       if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
       run: |
