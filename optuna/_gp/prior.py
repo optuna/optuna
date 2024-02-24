@@ -26,7 +26,10 @@ def default_log_prior(kernel_params: "gp.KernelParamsTensor") -> "torch.Tensor":
     # NOTE(contramundum53): The parameters below were picked qualitatively.
     # TODO(contramundum53): Check whether these priors are appropriate.
     return (
-        -(0.1 / kernel_params.inverse_squared_lengthscales + 0.1 * kernel_params.inverse_squared_lengthscales).sum()
+        -(
+            0.1 / kernel_params.inverse_squared_lengthscales
+            + 0.1 * kernel_params.inverse_squared_lengthscales
+        ).sum()
         + gamma_log_prior(kernel_params.kernel_scale, 2, 1)
         + gamma_log_prior(kernel_params.noise_var, 1.1, 30)
     )

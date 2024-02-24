@@ -80,7 +80,9 @@ def round_one_normalized_param(
     return param_value
 
 
-def sample_normalized_params(n: int, search_space: SearchSpace, rng: np.random.RandomState | None) -> np.ndarray:
+def sample_normalized_params(
+    n: int, search_space: SearchSpace, rng: np.random.RandomState | None
+) -> np.ndarray:
     rng = rng or np.random.RandomState()
     dim = search_space.scale_types.shape[0]
     scale_types = search_space.scale_types

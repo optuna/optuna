@@ -138,7 +138,10 @@ def eval_acqf_no_grad(acqf_params: AcquisitionFunctionParams, x: np.ndarray) -> 
     with torch.no_grad():
         return eval_acqf(acqf_params, torch.from_numpy(x)).detach().numpy()
 
-def eval_acqf_with_grad(acqf_params: AcquisitionFunctionParams, x: np.ndarray) -> tuple[float, np.ndarray]:
+
+def eval_acqf_with_grad(
+    acqf_params: AcquisitionFunctionParams, x: np.ndarray
+) -> tuple[float, np.ndarray]:
     assert x.ndim == 1
     x_tensor = torch.from_numpy(x)
     x_tensor.requires_grad_(True)

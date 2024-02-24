@@ -77,7 +77,7 @@ class GPSampler(BaseSampler):
         seed: int | None = None,
         independent_sampler: BaseSampler | None = None,
         n_startup_trials: int = 10,
-        deterministic: bool = False
+        deterministic: bool = False,
     ) -> None:
         self._rng = LazyRandomState(seed)
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
@@ -106,7 +106,7 @@ class GPSampler(BaseSampler):
             search_space[name] = distribution
 
         return search_space
-    
+
     def _optimize_acqf(
         self,
         acqf_params: "acqf.AcquisitionFunctionParams",
@@ -185,7 +185,9 @@ class GPSampler(BaseSampler):
             Y=standarized_score_vals,
         )
 
-        normalized_param = self._optimize_acqf(acqf_params, normalized_params[np.argmax(standarized_score_vals), :])
+        normalized_param = self._optimize_acqf(
+            acqf_params, normalized_params[np.argmax(standarized_score_vals), :]
+        )
         return gp_search_space.get_unnormalized_param(search_space, normalized_param)
 
     def sample_independent(

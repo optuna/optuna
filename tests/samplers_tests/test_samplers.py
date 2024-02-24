@@ -37,7 +37,9 @@ def get_gp_sampler(
 ) -> optuna.samplers.GPSampler:
     if sys.version_info >= (3, 12, 0):
         pytest.skip("PyTorch does not support Python 3.12 yet.")
-    return optuna.samplers.GPSampler(n_startup_trials=n_startup_trials, seed=seed, deterministic=deterministic)
+    return optuna.samplers.GPSampler(
+        n_startup_trials=n_startup_trials, seed=seed, deterministic=deterministic
+    )
 
 
 parametrize_sampler = pytest.mark.parametrize(

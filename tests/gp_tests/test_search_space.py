@@ -101,7 +101,9 @@ def test_sample_normalized_params() -> None:
         bounds=np.array([(0.0, 10.0), (1.0, 10.0), (10.0, 100.0), (10.0, 100.0), (0.0, 5.0)]),
         steps=np.array([0.0, 1.0, 0.0, 1.0, 1.0]),
     )
-    samples = sample_normalized_params(n=128, search_space=search_space, seed=0)
+    samples = sample_normalized_params(
+        n=128, search_space=search_space, rng=np.random.RandomState(0)
+    )
     assert samples.shape == (128, 5)
     assert np.all((samples[:, :4] >= 0.0) & (samples[:, :4] <= 1.0))
 

@@ -167,7 +167,7 @@ def _fit_kernel_params(
             [
                 np.log(initial_kernel_params.kernel_scale.item()),
                 # We add 0.01 * minimum_noise to initial noise_var to avoid instability.
-                np.log(initial_kernel_params.noise_var.item() - 0.99 * minimum_noise), 
+                np.log(initial_kernel_params.noise_var.item() - 0.99 * minimum_noise),
             ],
         ]
     )
@@ -189,7 +189,9 @@ def _fit_kernel_params(
         return loss.item(), raw_params_tensor.grad.detach().numpy()  # type: ignore
 
     # jac=True means loss_func returns the gradient for gradient descent.
-    res = so.minimize(loss_func, initial_raw_params, jac=True, method="l-bfgs-b", options={"gtol": gtol})
+    res = so.minimize(
+        loss_func, initial_raw_params, jac=True, method="l-bfgs-b", options={"gtol": gtol}
+    )
     if not res.success:
         raise RuntimeError(f"Optimization failed: {res.message}")
 
