@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
     import optuna._gp.acqf as acqf
     import optuna._gp.gp as gp
-    import optuna._gp.optim as optim
+    import optuna._gp.optim_mixed as optim_mixed
     import optuna._gp.prior as prior
     import optuna._gp.search_space as gp_search_space
 else:
@@ -34,7 +34,7 @@ else:
     torch = _LazyImport("torch")
     gp_search_space = _LazyImport("optuna._gp.search_space")
     gp = _LazyImport("optuna._gp.gp")
-    optim = _LazyImport("optuna._gp.optim")
+    optim_mixed = _LazyImport("optuna._gp.optim_mixed")
     acqf = _LazyImport("optuna._gp.acqf")
     prior = _LazyImport("optuna._gp.prior")
 
@@ -77,6 +77,7 @@ class GPSampler(BaseSampler):
         seed: int | None = None,
         independent_sampler: BaseSampler | None = None,
         n_startup_trials: int = 10,
+        deterministic: bool = False
     ) -> None:
         self._rng = LazyRandomState(seed)
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
@@ -89,6 +90,7 @@ class GPSampler(BaseSampler):
         # We cache the kernel parameters for initial values of fitting the next time.
         self._kernel_params_cache: "gp.KernelParamsTensor | None" = None
         self._optimize_n_samples: int = 2048
+        self._deterministic = deterministic
 
     def reseed_rng(self) -> None:
         self._rng.rng.seed()
@@ -104,6 +106,21 @@ class GPSampler(BaseSampler):
             search_space[name] = distribution
 
         return search_space
+    
+    def _optimize_acqf(
+        self,
+        acqf_params: "acqf.AcquisitionFunctionParams",
+        best_params: np.ndarray,
+    ) -> np.ndarray:
+        normalized_params, _acqf_val = optim_mixed.optimize_acqf_mixed(
+            acqf_params,
+            given_initial_xs=best_params[None, :],
+            n_additional_samples=2048,
+            n_local_search=10,
+            tol=1e-4,
+            rng=self._rng.rng,
+        )
+        return normalized_params
 
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
@@ -156,6 +173,7 @@ class GPSampler(BaseSampler):
             log_prior=self._log_prior,
             minimum_noise=self._minimum_noise,
             initial_kernel_params=self._kernel_params_cache,
+            deterministic=self._deterministic,
         )
         self._kernel_params_cache = kernel_params
 
@@ -167,11 +185,7 @@ class GPSampler(BaseSampler):
             Y=standarized_score_vals,
         )
 
-        normalized_param, _ = optim.optimize_acqf_sample(
-            acqf_params,
-            n_samples=self._optimize_n_samples,
-            seed=self._rng.rng.randint(np.iinfo(np.int32).max),
-        )
+        normalized_param = self._optimize_acqf(acqf_params, normalized_params[np.argmax(standarized_score_vals), :])
         return gp_search_space.get_unnormalized_param(search_space, normalized_param)
 
     def sample_independent(
