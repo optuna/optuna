@@ -48,13 +48,15 @@ def local_search_mixed(
 
     noncontinuous_params = np.where(steps > 0)[0]
     noncontinuous_param_choices = [
-        np.arange(bounds[i, 1])
-        if scale_types[i] == ScaleType.CATEGORICAL
-        else normalize_one_param(
-            param_value=np.arange(bounds[i, 0], bounds[i, 1] + 0.5 * steps[i], steps[i]),
-            scale_type=ScaleType(scale_types[i]),
-            bounds=(bounds[i, 0], bounds[i, 1]),
-            step=steps[i],
+        (
+            np.arange(bounds[i, 1])
+            if scale_types[i] == ScaleType.CATEGORICAL
+            else normalize_one_param(
+                param_value=np.arange(bounds[i, 0], bounds[i, 1] + 0.5 * steps[i], steps[i]),
+                scale_type=ScaleType(scale_types[i]),
+                bounds=(bounds[i, 0], bounds[i, 1]),
+                step=steps[i],
+            )
         )
         for i in noncontinuous_params
     ]
