@@ -223,13 +223,15 @@ class BruteForceSampler(BaseSampler):
         self._populate_tree(
             tree,
             (
-                t
-                if t.number != trial.number
-                else create_trial(
-                    state=state,  # Set current trial as complete.
-                    values=values,
-                    params=trial.params,
-                    distributions=trial.distributions,
+                (
+                    t
+                    if t.number != trial.number
+                    else create_trial(
+                        state=state,  # Set current trial as complete.
+                        values=values,
+                        params=trial.params,
+                        distributions=trial.distributions,
+                    )
                 )
                 for t in trials
             ),

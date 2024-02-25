@@ -26,7 +26,6 @@ Let us assume you are not in IPython shell and writing Python script files inste
 It is totally fine to write scripts like the following:
 """
 
-
 import optuna
 
 

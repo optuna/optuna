@@ -50,7 +50,7 @@ benchmark = [
   "virtualenv"
 ]
 checking = [
-    "black<24.0.0",
+    "black",
     "blackdoc",
     "flake8",
     "isort",

@@ -4,7 +4,6 @@ import numpy
 
 
 class LazyRandomState:
-
     """Lazy Random State class.
 
 

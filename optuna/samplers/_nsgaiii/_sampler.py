@@ -83,18 +83,16 @@ class NSGAIIISampler(BaseSampler):
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
         reference_points: np.ndarray | None = None,
         dividing_parameter: int = 3,
-        elite_population_selection_strategy: Callable[
-            [Study, list[FrozenTrial]], list[FrozenTrial]
-        ]
-        | None = None,
-        child_generation_strategy: Callable[
-            [Study, dict[str, BaseDistribution], list[FrozenTrial]], dict[str, Any]
-        ]
-        | None = None,
-        after_trial_strategy: Callable[
-            [Study, FrozenTrial, TrialState, Sequence[float] | None], None
-        ]
-        | None = None,
+        elite_population_selection_strategy: (
+            Callable[[Study, list[FrozenTrial]], list[FrozenTrial]] | None
+        ) = None,
+        child_generation_strategy: (
+            Callable[[Study, dict[str, BaseDistribution], list[FrozenTrial]], dict[str, Any]]
+            | None
+        ) = None,
+        after_trial_strategy: (
+            Callable[[Study, FrozenTrial, TrialState, Sequence[float] | None], None] | None
+        ) = None,
     ) -> None:
         # TODO(ohta): Reconsider the default value of each parameter.
 
