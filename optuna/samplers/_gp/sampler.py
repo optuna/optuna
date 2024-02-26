@@ -73,7 +73,8 @@ class GPSampler(BaseSampler):
         deterministic:
             This flag notifies the sampler whether the objective function is deterministic.
             If `True`, the sampler will fix the noise variance of the surrogate model to
-            the minimum value (near 0). Defaults to `False`.
+            the minimum value (slightly above 0 to ensure numerical stability).
+            Defaults to `False`.
     """
 
     def __init__(
