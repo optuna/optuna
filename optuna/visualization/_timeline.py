@@ -115,34 +115,35 @@ def _is_running_trials_in_study(study: Study, max_run_duration: datetime.timedel
 
 def _get_timeline_info(study: Study) -> _TimelineInfo:
     bars = []
+
     max_datetime = _get_max_datetime_complete(study)
     timedelta_for_small_bar = datetime.timedelta(seconds=1)
-    for t in study.get_trials(deepcopy=False):
-        date_start = t.datetime_start or max_datetime
-        date_complete = (
+    for trial in study.get_trials(deepcopy=False):
+        datetime_start = trial.datetime_start or max_datetime
+        datetime_complete = (
             max_datetime + timedelta_for_small_bar
-            if t.state == TrialState.RUNNING
-            else t.datetime_complete or date_start + timedelta_for_small_bar
+            if trial.state == TrialState.RUNNING
+            else trial.datetime_complete or datetime_start + timedelta_for_small_bar
         )
         infeasible = (
             False
-            if _CONSTRAINTS_KEY not in t.system_attrs
-            else any([x > 0 for x in t.system_attrs[_CONSTRAINTS_KEY]])
+            if _CONSTRAINTS_KEY not in trial.system_attrs
+            else any([x > 0 for x in trial.system_attrs[_CONSTRAINTS_KEY]])
         )
-        if date_complete < date_start:
+        if datetime_complete < datetime_start:
             _logger.warning(
                 (
-                    f"The start and end times for Trial {t.number} seem to be reversed. "
-                    f"The start time is {date_start} and the end time is {date_complete}."
+                    f"The start and end times for Trial {trial.number} seem to be reversed. "
+                    f"The start time is {datetime_start} and the end time is {datetime_complete}."
                 )
             )
         bars.append(
             _TimelineBarInfo(
-                number=t.number,
-                start=date_start,
-                complete=date_complete,
-                state=t.state,
-                hovertext=_make_hovertext(t),
+                number=trial.number,
+                start=datetime_start,
+                complete=datetime_complete,
+                state=trial.state,
+                hovertext=_make_hovertext(trial),
                 infeasible=infeasible,
             )
         )
@@ -163,15 +164,15 @@ def _get_timeline_plot(info: _TimelineInfo) -> "go.Figure":
     }
 
     fig = go.Figure()
-    for s in sorted(TrialState, key=lambda x: x.name):
-        if s.name == "COMPLETE":
-            infeasible_bars = [b for b in info.bars if b.state == s and b.infeasible]
-            feasible_bars = [b for b in info.bars if b.state == s and not b.infeasible]
+    for state in sorted(TrialState, key=lambda x: x.name):
+        if state.name == "COMPLETE":
+            infeasible_bars = [b for b in info.bars if b.state == state and b.infeasible]
+            feasible_bars = [b for b in info.bars if b.state == state and not b.infeasible]
             _plot_bars(infeasible_bars, "#cccccc", "INFEASIBLE", fig)
-            _plot_bars(feasible_bars, _cm[s.name], s.name, fig)
+            _plot_bars(feasible_bars, _cm[state.name], state.name, fig)
         else:
-            bars = [b for b in info.bars if b.state == s]
-            _plot_bars(bars, _cm[s.name], s.name, fig)
+            bars = [b for b in info.bars if b.state == state]
+            _plot_bars(bars, _cm[state.name], state.name, fig)
     fig.update_xaxes(type="date")
     fig.update_layout(
         go.Layout(
