@@ -79,11 +79,51 @@ def plot_timeline(study: Study) -> "go.Figure":
     return _get_timeline_plot(info)
 
 
+def _get_max_datetime_complete(study: Study) -> datetime.datetime:
+    max_run_duration = max(
+        [
+            t.datetime_complete - t.datetime_start
+            for t in study.trials
+            if t.datetime_complete is not None and t.datetime_start is not None
+        ],
+        default=None,
+    )
+    if _is_running_trials_in_study(study, max_run_duration):
+        return datetime.datetime.now()
+
+    return max(
+        [t.datetime_complete for t in study.trials if t.datetime_complete is not None],
+        default=datetime.datetime.now(),
+    )
+
+
+def _is_running_trials_in_study(study: Study, max_run_duration: datetime.timedelta | None) -> bool:
+    running_trials = study.get_trials(states=(TrialState.RUNNING,), deepcopy=False)
+    if max_run_duration is None:
+        return len(running_trials) > 0
+
+    now = datetime.datetime.now()
+    # This heuristic is to check whether we have trials that were somehow killed,
+    # still remain as `RUNNING` in `study`.
+    return any(
+        now - t.datetime_start < 5 * max_run_duration
+        for t in running_trials
+        # MyPy redefinition: Running trial should have datetime_start.
+        if t.datetime_start is not None
+    )
+
+
 def _get_timeline_info(study: Study) -> _TimelineInfo:
     bars = []
+    max_datetime = _get_max_datetime_complete(study)
+    timedelta_for_small_bar = datetime.timedelta(seconds=1)
     for t in study.get_trials(deepcopy=False):
-        date_complete = t.datetime_complete or datetime.datetime.now()
-        date_start = t.datetime_start or date_complete
+        date_start = t.datetime_start or max_datetime
+        date_complete = (
+            max_datetime + timedelta_for_small_bar
+            if t.state == TrialState.RUNNING
+            else t.datetime_complete or date_start + timedelta_for_small_bar
+        )
         infeasible = (
             False
             if _CONSTRAINTS_KEY not in t.system_attrs
