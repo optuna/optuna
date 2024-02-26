@@ -1,4 +1,4 @@
-# Run tests and integration tests on Windows, which are triggered by each master push.
+# Run tests on Windows, which are triggered by each master push.
 # Currently, Python3.9 is only used as an environment.
 # This is mainly for the sake of speed.
 name: windows-tests
