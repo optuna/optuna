@@ -15,7 +15,7 @@ Overview of Traveling Salesman Problem
 Traveling Salesman Problem (TSP) is a classic problem in combinatorial optimization
 that involves finding the shortest possible route for a salesman
 who needs to visit a set of cities, each exactly once, and return to the starting city.
-TThe problem is classified as NP-hard, indicating that it is extremely challenging
+The problem is classified as NP-hard, indicating that it is extremely challenging
 and that no efficient algorithm is known to solve all instances of the problem
 within a reasonable amount of time.
 
