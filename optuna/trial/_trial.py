@@ -403,7 +403,12 @@ class Trial(BaseTrial):
 
         return self._suggest(name, CategoricalDistribution(choices=choices))
 
-    def report(self, value: float, step: int) -> None:
+    def report(
+        self,
+        value: float | Sequence[float],
+        step: int,
+        index_of_objectives: Optional[int | Sequence[int]] = None,
+    ) -> None:
         """Report an objective function value for a given step.
 
         The reported values are used by the pruners to determine whether this trial should be
@@ -421,10 +426,6 @@ class Trial(BaseTrial):
             If this method is called multiple times at the same ``step`` in a trial,
             the reported ``value`` only the first time is stored and the reported values
             from the second time are ignored.
-
-        .. note::
-            :func:`~optuna.trial.Trial.report` does not support multi-objective
-            optimization.
 
         Example:
 
@@ -462,43 +463,82 @@ class Trial(BaseTrial):
 
         Args:
             value:
-                A value returned from the objective function.
+                Intermediate value(s) of the objective function(s) at a given step.
             step:
                 Step of the trial (e.g., Epoch of neural network training). Note that pruners
                 assume that ``step`` starts at zero. For example,
                 :class:`~optuna.pruners.MedianPruner` simply checks if ``step`` is less than
                 ``n_warmup_steps`` as the warmup mechanism.
                 ``step`` must be a positive integer.
+            index_of_objectives:
+                The index of associated objective values to specify which objective's ``value``.
+                If this is :obj:`None`, ``index_of_objectives=0`` and ``index_of_objectives = list(range(len(values)))`` are used
+                for single_objective and multiobjective optimization respectively.
         """
 
-        if len(self.study.directions) > 1:
-            raise NotImplementedError(
-                "Trial.report is not supported for multi-objective optimization."
-            )
+        num_objectives = len(self.study.directions)
+        if num_objectives > 1:
+            pass
+            # todo(nzw0301): show Experimental warning?.
 
+        values: list[float]
         try:
             # For convenience, we allow users to report a value that can be cast to `float`.
-            value = float(value)
+            values = [float(value)]  # type: ignore
         except (TypeError, ValueError):
-            message = "The `value` argument is of type '{}' but supposed to be a float.".format(
-                type(value).__name__
-            )
-            raise TypeError(message) from None
+            try:
+                assert not isinstance(value, float)
+                values = [float(v) for v in value]
+            except (TypeError, ValueError):
+                message = (
+                    "The `value` argument is of type '{}' but supposed to be either a float"
+                    " or Iterable of float.".format(type(value).__name__)
+                )
+                raise TypeError(message) from None
 
         if step < 0:
             raise ValueError("The `step` argument is {} but cannot be negative.".format(step))
 
-        if step in self._cached_frozen_trial.intermediate_values:
-            # Do nothing if already reported.
-            warnings.warn(
-                "The reported value is ignored because this `step` {} is already reported.".format(
-                    step
-                )
+        indexes_of_objectives: list[int]
+        if index_of_objectives is None:
+            indexes_of_objectives = list(range(len(values)))
+        elif isinstance(index_of_objectives, int):
+            indexes_of_objectives = [index_of_objectives]
+        else:
+            indexes_of_objectives = list(index_of_objectives)
+
+        if len(values) != len(indexes_of_objectives):
+            raise ValueError(
+                f"The number of reported intermediate values, {len(values)}, "
+                f"mismatches with specified the size of `index_of_objectives`, {len(indexes_of_objectives)}."
             )
+
+        for index, intermediate_value in zip(indexes_of_objectives, values):
+            if index < 0:
+                ValueError("``index_of_objectives`` should be or contain only non-negative.")
+            if index >= num_objectives:
+                IndexError(
+                    "``index_of_objectives`` should be or contains only a smaller value than the number of objectives."
+                )
+
+        if step in self._cached_frozen_trial.multiple_intermediate_values[index]:
+            # Do nothing if already reported.
+            if num_objectives == 1:
+                warnings.warn(
+                    "The reported value is ignored because this `step` {} is already reported.".format(
+                        step
+                    )
+                )
+            else:
+                warnings.warn(
+                    "The reported value for {}th objective is ignored because this `step` {} is already reported.".format(
+                        index, step
+                    )
+                )
             return
 
-        self.storage.set_trial_intermediate_value(self._trial_id, step, value)
-        self._cached_frozen_trial.intermediate_values[step] = value
+        self.storage.set_trial_intermediate_value(self._trial_id, step, value, index)
+        self._cached_frozen_trial.multiple_intermediate_values[index][step] = value
 
     def should_prune(self) -> bool:
         """Suggest whether the trial should be pruned or not.
