@@ -10,7 +10,7 @@ This pruner is effective for objective functions that averages multiple evaluati
 We solve Traveling Salesman Problem (TSP) by Simulated Annealing (SA).
 
 Overview of Traveling Salesman Problem
------------------------------
+--------------------------------------
 
 Traveling Salesman Problem (TSP) is a classic problem in combinatorial optimization
 that involves finding the shortest possible route for a salesman
@@ -27,7 +27,7 @@ due to the computational complexity involved, approximation algorithms or
 heuristic methods are commonly employed for larger instances.
 
 Overview of Simulated Annealing
------------------------------
+-------------------------------
 
 Simulated Annealing (SA) is a probabilistic optimization algorithm used to find
 the global optimum of a given function.
@@ -180,6 +180,7 @@ num_evaluation = 0
 #
 # Patience
 # -----------------------------
+#
 # In this specific context, patience refers to the mechanism of reverting to the best solution
 # found so far after a certain number of iterations without improvement. This concept is
 # somewhat akin to a "reset" or "rollback" function, where if the algorithm hasn't found a
