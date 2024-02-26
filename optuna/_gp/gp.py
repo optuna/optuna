@@ -186,6 +186,8 @@ def _fit_kernel_params(
             torch.from_numpy(X), torch.from_numpy(Y), torch.from_numpy(is_categorical), params
         ) - log_prior(params)
         loss.backward()  # type: ignore
+        if deterministic:
+            assert raw_params_tensor.grad[n_params + 1] == 0
         return loss.item(), raw_params_tensor.grad.detach().numpy()  # type: ignore
 
     # jac=True means loss_func returns the gradient for gradient descent.
