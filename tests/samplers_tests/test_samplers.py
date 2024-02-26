@@ -6,7 +6,6 @@ import multiprocessing
 from multiprocessing.managers import DictProxy
 import os
 import pickle
-import sys
 from typing import Any
 from unittest.mock import patch
 import warnings
