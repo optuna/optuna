@@ -32,8 +32,8 @@ class WilcoxonPruner(BasePruner):
     This includes the mean performance of n (e.g., 100)
     shuffled inputs, the mean performance of k-fold cross validation, etc.
     There can be "easy" or "hard" inputs (the pruner handles correspondence of
-    the inputs between different trials),
-    but it is recommended to shuffle the order of inputs once before the optimization.
+    the inputs between different trials).
+    In each trial, it is recommended to shuffle the order in which data is processed.
 
     When you use this pruner, you must call `Trial.report(value, step)` function for each step (e.g., input id) with
     the evaluated value. This is different from other pruners in that the reported value need not converge
@@ -58,22 +58,23 @@ class WilcoxonPruner(BasePruner):
 
 
             input_data = np.linspace(-1, 1, 100)
-
-            # It is recommended to shuffle the input data once before optimization.
-            np.random.shuffle(input_data)
+            rng = np.random.default_rng()
 
 
             def objective(trial):
-                s = 0.0
-                for i in range(len(input_data)):
+                # In each trial, it is recommended to shuffle the order in which data is processed.
+                ordering = rng.permutation(range(len(input_data)))
+                s = []
+                for i in ordering:
                     param = trial.suggest_float("param", -1, 1)
                     loss = eval_func(param, input_data[i])
                     trial.report(loss, i)
-                    s += loss
+                    s.append(loss)
                     if trial.should_prune():
-                        raise optuna.TrialPruned()
+                        return sum(s) / len(s)  # An advanced workaround (see the note below).
+                        # raise optuna.TrialPruned()
 
-                return s / len(input_data)
+                return sum(s) / len(s)
 
 
             study = optuna.study.create_study(
@@ -85,6 +86,16 @@ class WilcoxonPruner(BasePruner):
     .. note::
         This pruner cannot handle ``infinity`` or ``nan`` values.
         Trials containing those values are never pruned.
+
+    .. note::
+        As an advanced workaround, if `trial.should_prune()` returns `True`,
+        you can return an estimation of the final value (e.g., the average of all evaluated values)
+        instead of `raise optuna.TrialPruned()`.
+        Some algorithms including `TPESampler` internally split trials into below (good) and above (bad),
+        and pruned trial will always be classified as above.
+        However, there are some trials that are slightly worse than the best trial and will be pruned,
+        but they should be classified as below (e.g., top 10%).
+        This workaround provides beneficial information about such trials to these algorithms.
 
     Args:
         p_threshold:
@@ -154,6 +165,8 @@ class WilcoxonPruner(BasePruner):
         _, idx1, idx2 = np.intersect1d(steps, best_steps, return_indices=True)
 
         if len(idx1) < len(step_values):
+            # This if-statement is never satisfied if following "average_is_best" safety works,
+            # because the safety ensures that the best trial always has the all steps.
             warnings.warn(
                 "WilcoxonPruner finds steps existing in the current trial "
                 "but does not exist in the best trial. "
@@ -165,8 +178,20 @@ class WilcoxonPruner(BasePruner):
         if len(diff_values) < self._n_startup_steps:
             return False
 
-        alt = "less" if study.direction == StudyDirection.MAXIMIZE else "greater"
+        if study.direction == StudyDirection.MAXIMIZE:
+            alt = "less"
+            average_is_best = best_trial.value <= sum(step_values) / len(step_values)
+        else:
+            alt = "greater"
+            average_is_best = best_trial.value >= sum(step_values) / len(step_values)
 
         # We use zsplit to avoid the problem when all values are zero.
         p = ss.wilcoxon(diff_values, alternative=alt, zero_method="zsplit").pvalue
+
+        if p < self._p_threshold and average_is_best:
+            # ss.wilcoxon found the current trial is probably worse than the best trial,
+            # but the value of the best trial was not better than
+            # the average of the current trial's intermediate values.
+            # For safety, WilcoxonPruner concludes not to prune it for now.
+            return False
         return p < self._p_threshold
