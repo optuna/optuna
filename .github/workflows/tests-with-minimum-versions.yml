@@ -84,9 +84,9 @@ jobs:
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
-        pytest tests -m "not integration"
+        pytest tests
 
     - name: Tests
       if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
       run: |
-        pytest tests -m "not integration and not slow"
+        pytest tests -m "not slow"
