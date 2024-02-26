@@ -217,7 +217,7 @@ class FrozenTrial(BaseTrial):
                 )
                 for field in self.__dict__
             )
-            + ", value=None",
+            + ", value=None, intermediate_values=None",
         )
 
     def suggest_float(
