@@ -47,6 +47,9 @@ As the temperature decreases according to a cooling schedule,
 the algorithm becomes more conservative, accepting only solutions
 that improve the objective function or those that do not significantly worsen it.
 
+Main Tutorial
+=============
+
 This method allows the SA algorithm to balance exploration and exploitation,
 making it effective for solving complex optimization problems where
 the solution space is large and potentially rugged with many local optima.
