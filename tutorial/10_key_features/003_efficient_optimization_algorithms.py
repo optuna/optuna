@@ -65,6 +65,7 @@ print(f"Sampler is {study.sampler.__class__.__name__}")
 # ------------------
 #
 # ``Pruners`` automatically stop unpromising trials at the early stages of the training (a.k.a., automated early-stopping).
+# Currently :mod:`~optuna.pruners` module is expected to be used only for single-objective optimization.
 #
 # Optuna provides the following pruning algorithms:
 #
