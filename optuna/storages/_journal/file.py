@@ -49,7 +49,7 @@ class JournalFileSymlinkLock(JournalFileBaseLock):
         """Acquire a lock in a blocking way by creating a symbolic link of a file.
 
         Returns:
-            :obj:`True` if it succeeded in creating a symbolic link of `self._lock_target_file`.
+            :obj:`True` if it succeeded in creating a symbolic link of ``self._lock_target_file``.
 
         """
         sleep_secs = 0.001
@@ -101,7 +101,7 @@ class JournalFileOpenLock(JournalFileBaseLock):
         """Acquire a lock in a blocking way by creating a lock file.
 
         Returns:
-            :obj:`True` if it succeeded in creating a `self._lock_file`
+            :obj:`True` if it succeeded in creating a ``self._lock_file``.
 
         """
         sleep_secs = 0.001
@@ -158,13 +158,14 @@ class JournalFileStorage(BaseJournalLogStorage):
         self._file_path: str = file_path
         self._lock = lock_obj or JournalFileSymlinkLock(self._file_path)
         if not os.path.exists(self._file_path):
-            open(self._file_path, "ab").close()  # Create a file if it does not exist
+            open(self._file_path, "ab").close()  # Create a file if it does not exist.
         self._log_number_offset: Dict[int, int] = {0: 0}
 
     def read_logs(self, log_number_from: int) -> List[Dict[str, Any]]:
         logs = []
         with open(self._file_path, "rb") as f:
-            # Maintain remaining_log_size to allow writing by another process while reading the log
+            # Maintain remaining_log_size to allow writing by another process
+            # while reading the log.
             remaining_log_size = os.stat(self._file_path).st_size
             log_number_start = 0
             if log_number_from in self._log_number_offset:
@@ -187,7 +188,7 @@ class JournalFileStorage(BaseJournalLogStorage):
                 if log_number < log_number_from:
                     continue
 
-                # Ensure that each line ends with line separators (\n, \r\n)
+                # Ensure that each line ends with line separators (\n, \r\n).
                 if not line.endswith(b"\n"):
                     last_decode_error = ValueError("Invalid log format.")
                     del self._log_number_offset[log_number + 1]
