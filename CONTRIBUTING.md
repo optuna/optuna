@@ -139,7 +139,7 @@ unit tests are stored under the [tests directory](./tests).
 
 Please install some required packages at first.
 ```bash
-# Install required packages to test all modules without integration modules.
+# Install required packages to test all modules.
 pip install ".[test,optional]"
 ```
 
