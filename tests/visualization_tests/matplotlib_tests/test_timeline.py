@@ -13,8 +13,8 @@ from tests.visualization_tests.test_timeline import _create_study
     "trial_states_list",
     [
         [],
-        [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL],
-        [TrialState.FAIL, TrialState.PRUNED, TrialState.COMPLETE],
+        [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL, TrialState.RUNNING],
+        [TrialState.RUNNING, TrialState.FAIL, TrialState.PRUNED, TrialState.COMPLETE],
     ],
 )
 def test_get_timeline_plot(trial_states_list: list[TrialState]) -> None:
