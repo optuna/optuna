@@ -20,7 +20,7 @@ def default_log_prior(kernel_params: "gp.KernelParamsTensor") -> "torch.Tensor":
     # Log of prior distribution of kernel parameters.
 
     def gamma_log_prior(x: "torch.Tensor", concentration: float, rate: float) -> "torch.Tensor":
-        # We omit the constant factor `rate ** concentration / Γ(concentration)`.
+        # We omit the constant factor `rate ** concentration / Gamma(concentration)`.
         return (concentration - 1) * torch.log(x) - rate * x
 
     # NOTE(contramundum53): The parameters below were picked qualitatively.
