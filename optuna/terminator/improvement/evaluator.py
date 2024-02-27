@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from optuna._gp import search_space
 else:
     from optuna._imports import _LazyImport
+
     gp = _LazyImport("optuna._gp.gp")
     optim_sample = _LazyImport("optuna._gp.optim_sample")
     acqf = _LazyImport("optuna._gp.acqf")

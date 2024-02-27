@@ -71,7 +71,7 @@ class GPSampler(BaseSampler):
             Number of initial trials. Defaults to 10.
 
         deterministic_objective:
-            This flag notifies the sampler whether the objective function is deterministic_objective.
+            Whether the objective function is deterministic or not.
             If `True`, the sampler will fix the noise variance of the surrogate model to
             the minimum value (slightly above 0 to ensure numerical stability).
             Defaults to `False`.

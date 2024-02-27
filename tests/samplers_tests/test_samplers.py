@@ -6,7 +6,6 @@ import multiprocessing
 from multiprocessing.managers import DictProxy
 import os
 import pickle
-import sys
 from typing import Any
 from unittest.mock import patch
 import warnings
@@ -35,10 +34,10 @@ from optuna.trial import TrialState
 def get_gp_sampler(
     *, n_startup_trials: int = 0, deterministic_objective: bool = False, seed: int | None = None
 ) -> optuna.samplers.GPSampler:
-    if sys.version_info >= (3, 12, 0):
-        pytest.skip("PyTorch does not support Python 3.12 yet.")
     return optuna.samplers.GPSampler(
-        n_startup_trials=n_startup_trials, seed=seed, deterministic_objective=deterministic_objective
+        n_startup_trials=n_startup_trials,
+        seed=seed,
+        deterministic_objective=deterministic_objective,
     )
 
 
@@ -1028,10 +1027,6 @@ def unset_seed_in_test(request: SubRequest) -> None:
 @pytest.mark.slow
 @parametrize_sampler_name_with_seed
 def test_reproducible_in_other_process(sampler_name: str, unset_seed_in_test: None) -> None:
-    # TODO(HideakiImamura): Remove the constraint after torch supports python 3.12.
-    if sys.version_info >= (3, 12, 0) and sampler_name == "GPSampler":
-        pytest.skip("PyTorch does not support Python 3.12 yet.")
-
     # This test should be tested without `PYTHONHASHSEED`. However, some tool such as tox
     # set the environmental variable "PYTHONHASHSEED" by default.
     # To do so, this test calls a finalizer: `unset_seed_in_test`.
