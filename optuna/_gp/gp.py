@@ -150,7 +150,7 @@ def _fit_kernel_params(
     is_categorical: np.ndarray,  # [len(params)]
     log_prior: Callable[[KernelParamsTensor], torch.Tensor],
     minimum_noise: float,
-    deterministic: bool,
+    deterministic_objective: bool,
     initial_kernel_params: KernelParamsTensor,
     gtol: float,
 ) -> KernelParamsTensor:
@@ -180,13 +180,13 @@ def _fit_kernel_params(
             kernel_scale=torch.exp(raw_params_tensor[n_params]),
             noise_var=torch.exp(raw_params_tensor[n_params + 1]) + minimum_noise,
         )
-        if deterministic:
+        if deterministic_objective:
             params.noise_var = torch.tensor(minimum_noise, dtype=torch.float64)
         loss = -marginal_log_likelihood(
             torch.from_numpy(X), torch.from_numpy(Y), torch.from_numpy(is_categorical), params
         ) - log_prior(params)
         loss.backward()  # type: ignore
-        if deterministic:
+        if deterministic_objective:
             assert raw_params_tensor.grad[n_params + 1] == 0
         return loss.item(), raw_params_tensor.grad.detach().numpy()  # type: ignore
 
@@ -204,7 +204,7 @@ def _fit_kernel_params(
         kernel_scale=torch.exp(raw_params_opt_tensor[n_params]),
         noise_var=torch.exp(raw_params_opt_tensor[n_params + 1]) + minimum_noise,
     )
-    if deterministic:
+    if deterministic_objective:
         res.noise_var = torch.tensor(minimum_noise, dtype=torch.float64)
     return res
 
@@ -215,7 +215,7 @@ def fit_kernel_params(
     is_categorical: np.ndarray,
     log_prior: Callable[[KernelParamsTensor], torch.Tensor],
     minimum_noise: float,
-    deterministic: bool,
+    deterministic_objective: bool,
     initial_kernel_params: KernelParamsTensor | None = None,
     gtol: float = 1e-2,
 ) -> KernelParamsTensor:
@@ -240,7 +240,7 @@ def fit_kernel_params(
                 log_prior=log_prior,
                 minimum_noise=minimum_noise,
                 initial_kernel_params=init_kernel_params,
-                deterministic=deterministic,
+                deterministic_objective=deterministic_objective,
                 gtol=gtol,
             )
         except RuntimeError as e:
