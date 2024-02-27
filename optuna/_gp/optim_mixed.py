@@ -224,11 +224,16 @@ def optimize_acqf_mixed(
     tol: float = 1e-4,
     rng: np.random.RandomState | None = None,
 ) -> tuple[np.ndarray, float]:
+
     rng = rng or np.random.RandomState()
 
     dim = acqf_params.search_space.scale_types.shape[0]
     if given_initial_xs is None:
         given_initial_xs = np.empty((0, dim))
+
+    assert (
+        len(given_initial_xs) <= n_local_search - 1
+    ), "We must choose at least 1 best sampled point + given_initial_xs as start points."
 
     sampled_xs = sample_normalized_params(n_additional_samples, acqf_params.search_space, rng=rng)
 
@@ -238,16 +243,22 @@ def optimize_acqf_mixed(
 
     max_i = np.argmax(f_vals)
 
-    # Choose the start points of local search (sample from prob. exp(f_vals) without replacement)
-    # We do this by first sampling from exponential distributions and then sorting the indices.
-    zs = -np.log(rng.rand(f_vals.shape[0])) / np.maximum(1e-200, np.exp(f_vals - f_vals[max_i]))
-    zs[max_i] = 0.0  # Always sample the best point
-    idxs = np.argsort(zs)[: max(0, n_local_search - len(given_initial_xs))]
+    probs = np.exp(f_vals - f_vals[max_i])
+    probs[max_i] = 0.0
+    probs /= probs.sum()
+    remaining_idxs = rng.choice(
+        len(sampled_xs),
+        size=n_local_search - len(given_initial_xs) - 1,
+        replace=False,
+        p=probs,
+    )
 
-    best_x = sampled_xs[idxs[0], :]
-    best_f = float(f_vals[idxs[0]])
+    best_x = sampled_xs[max_i, :]
+    best_f = float(f_vals[max_i])
 
-    for x_guess in np.vstack([sampled_xs[idxs, :], given_initial_xs]):
+    for x_guess in np.vstack(
+        [sampled_xs[max_i, :], sampled_xs[remaining_idxs, :], given_initial_xs]
+    ):
         x, f = local_search_mixed(acqf_params, x_guess, tol=tol)
         if f > best_f:
             best_x = x

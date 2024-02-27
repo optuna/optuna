@@ -17,8 +17,6 @@ from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
-    import torch
-
     from optuna._gp import acqf
     from optuna._gp import gp
     from optuna._gp import optim_sample
@@ -26,8 +24,6 @@ if TYPE_CHECKING:
     from optuna._gp import search_space
 else:
     from optuna._imports import _LazyImport
-
-    torch = _LazyImport("torch")
     gp = _LazyImport("optuna._gp.gp")
     optim_sample = _LazyImport("optuna._gp.optim_sample")
     acqf = _LazyImport("optuna._gp.acqf")
@@ -193,7 +189,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             is_categorical=(gp_search_space.scale_types == search_space.ScaleType.CATEGORICAL),
             log_prior=self._log_prior,
             minimum_noise=self._minimum_noise,
-            deterministic=False,
+            deterministic_objective=False,
             # TODO(y0z): Add `kernel_params_cache` to speedup.
             initial_kernel_params=None,
         )

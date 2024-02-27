@@ -70,8 +70,8 @@ class GPSampler(BaseSampler):
         n_startup_trials:
             Number of initial trials. Defaults to 10.
 
-        deterministic:
-            This flag notifies the sampler whether the objective function is deterministic.
+        deterministic_objective:
+            This flag notifies the sampler whether the objective function is deterministic_objective.
             If `True`, the sampler will fix the noise variance of the surrogate model to
             the minimum value (slightly above 0 to ensure numerical stability).
             Defaults to `False`.
@@ -83,7 +83,7 @@ class GPSampler(BaseSampler):
         seed: int | None = None,
         independent_sampler: BaseSampler | None = None,
         n_startup_trials: int = 10,
-        deterministic: bool = False,
+        deterministic_objective: bool = False,
     ) -> None:
         self._rng = LazyRandomState(seed)
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
@@ -96,7 +96,7 @@ class GPSampler(BaseSampler):
         # We cache the kernel parameters for initial values of fitting the next time.
         self._kernel_params_cache: "gp.KernelParamsTensor | None" = None
         self._optimize_n_samples: int = 2048
-        self._deterministic = deterministic
+        self._deterministic = deterministic_objective
 
     def reseed_rng(self) -> None:
         self._rng.rng.seed()
@@ -179,7 +179,7 @@ class GPSampler(BaseSampler):
             log_prior=self._log_prior,
             minimum_noise=self._minimum_noise,
             initial_kernel_params=self._kernel_params_cache,
-            deterministic=self._deterministic,
+            deterministic_objective=self._deterministic,
         )
         self._kernel_params_cache = kernel_params
 
