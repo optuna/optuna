@@ -117,7 +117,7 @@ class GPSampler(BaseSampler):
         self,
         acqf_params: "acqf.AcquisitionFunctionParams",
     ) -> np.ndarray:
-        normalized_params, _acqf_val = optim_sample.optimize_acqf_sample(
+        normalized_params, _ = optim_sample.optimize_acqf_sample(
             acqf_params,
             n_samples=self._optimize_n_samples,
             rng=self._rng.rng,
