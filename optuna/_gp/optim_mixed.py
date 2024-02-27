@@ -111,7 +111,7 @@ def local_search_mixed(
         fvals = eval_acqf_no_grad(acqf_params, all_params)
         best_idx = np.argmax(fvals)
 
-        if fvals[best_idx] >= fval:
+        if fvals[best_idx] > fval:
             fval = fvals[best_idx]
             normalized_params[param_idx] = choices_except_current[best_idx]
             return True
