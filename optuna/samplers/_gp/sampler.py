@@ -71,7 +71,7 @@ class GPSampler(BaseSampler):
             Number of initial trials. Defaults to 10.
 
         deterministic_objective:
-            This flag notifies the sampler whether the objective function is deterministic.
+            Whether the objective function is deterministic or not.
             If `True`, the sampler will fix the noise variance of the surrogate model to
             the minimum value (slightly above 0 to ensure numerical stability).
             Defaults to `False`.
@@ -117,7 +117,7 @@ class GPSampler(BaseSampler):
         self,
         acqf_params: "acqf.AcquisitionFunctionParams",
     ) -> np.ndarray:
-        normalized_params, _acqf_val = optim_sample.optimize_acqf_sample(
+        normalized_params, _ = optim_sample.optimize_acqf_sample(
             acqf_params,
             n_samples=self._optimize_n_samples,
             rng=self._rng.rng,
