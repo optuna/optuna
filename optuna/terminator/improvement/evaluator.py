@@ -194,7 +194,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             log_prior=self._log_prior,
             minimum_noise=self._minimum_noise,
             # TODO(contramundum53): Add option to specify this.
-            deterministic=False,
+            deterministic_objective=False,
             # TODO(y0z): Add `kernel_params_cache` to speedup.
             initial_kernel_params=None,
         )
