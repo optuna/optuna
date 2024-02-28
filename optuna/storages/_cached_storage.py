@@ -187,9 +187,11 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
         return self._backend.set_trial_state_values(trial_id, state=state, values=values)
 
     def set_trial_intermediate_value(
-        self, trial_id: int, step: int, intermediate_value: float
+        self, trial_id: int, step: int, intermediate_value: float, index_of_objectives: int
     ) -> None:
-        self._backend.set_trial_intermediate_value(trial_id, step, intermediate_value)
+        self._backend.set_trial_intermediate_value(
+            trial_id, step, intermediate_value, index_of_objectives
+        )
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
         self._backend.set_trial_user_attr(trial_id, key=key, value=value)

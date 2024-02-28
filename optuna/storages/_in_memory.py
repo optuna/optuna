@@ -147,6 +147,7 @@ class InMemoryStorage(BaseStorage):
             trial_id = self._max_trial_id + 1
             self._max_trial_id += 1
             trial.number = len(self._studies[study_id].trials)
+            trial.multiple_intermediate_values = [{} for _ in self._studies[study_id].directions]
             trial._trial_id = trial_id
             self._trial_id_to_study_id_and_number[trial_id] = (study_id, trial.number)
             self._studies[study_id].trials.append(trial)
@@ -167,6 +168,7 @@ class InMemoryStorage(BaseStorage):
             intermediate_values={},
             datetime_start=datetime.now(),
             datetime_complete=None,
+            multi_objective_intermediate_values=None,
         )
 
     def set_trial_param(
@@ -306,15 +308,17 @@ class InMemoryStorage(BaseStorage):
                 self._studies[study_id].best_trial_id = trial_id
 
     def set_trial_intermediate_value(
-        self, trial_id: int, step: int, intermediate_value: float
+        self, trial_id: int, step: int, intermediate_value: float, index_of_objectives: int
     ) -> None:
         with self._lock:
             trial = self._get_trial(trial_id)
             self.check_trial_is_updatable(trial_id, trial.state)
 
             trial = copy.copy(trial)
-            trial.intermediate_values = copy.copy(trial.intermediate_values)
-            trial.intermediate_values[step] = intermediate_value
+            trial.multiple_intermediate_values[index_of_objectives] = copy.copy(
+                trial.multiple_intermediate_values[index_of_objectives]
+            )
+            trial.multiple_intermediate_values[index_of_objectives][step] = intermediate_value
             self._set_trial(trial_id, trial)
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:

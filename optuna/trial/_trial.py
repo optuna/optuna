@@ -5,6 +5,7 @@ import copy
 import datetime
 from typing import Any
 from typing import Dict
+from typing import Iterable
 from typing import Optional
 from typing import overload
 from typing import Sequence
@@ -405,9 +406,9 @@ class Trial(BaseTrial):
 
     def report(
         self,
-        value: float | Sequence[float],
+        value: float | Iterable[float],
         step: int,
-        index_of_objectives: Optional[int | Sequence[int]] = None,
+        index_of_objectives: Optional[int | Iterable[int]] = None,
     ) -> None:
         """Report an objective function value for a given step.
 
@@ -479,7 +480,7 @@ class Trial(BaseTrial):
         num_objectives = len(self.study.directions)
         if num_objectives > 1:
             pass
-            # todo(nzw0301): show Experimental warning?.
+            # todo(nzw0301): warning experimental feature?
 
         values: list[float]
         try:
@@ -521,24 +522,28 @@ class Trial(BaseTrial):
                     "``index_of_objectives`` should be or contains only a smaller value than the number of objectives."
                 )
 
-        if step in self._cached_frozen_trial.multiple_intermediate_values[index]:
-            # Do nothing if already reported.
-            if num_objectives == 1:
-                warnings.warn(
-                    "The reported value is ignored because this `step` {} is already reported.".format(
-                        step
+            if step in self._cached_frozen_trial.multiple_intermediate_values[index]:
+                # Do nothing if already reported.
+                if num_objectives == 1:
+                    warnings.warn(
+                        "The reported value is ignored because this `step` {} is already reported.".format(
+                            step
+                        )
                     )
-                )
-            else:
-                warnings.warn(
-                    "The reported value for {}th objective is ignored because this `step` {} is already reported.".format(
-                        index, step
+                else:
+                    warnings.warn(
+                        "The reported value for {}th objective is ignored because this `step` {} is already reported.".format(
+                            index, step
+                        )
                     )
-                )
-            return
+                return
 
-        self.storage.set_trial_intermediate_value(self._trial_id, step, value, index)
-        self._cached_frozen_trial.multiple_intermediate_values[index][step] = value
+            self.storage.set_trial_intermediate_value(
+                self._trial_id, step, intermediate_value, index
+            )
+            self._cached_frozen_trial.multiple_intermediate_values[index][
+                step
+            ] = intermediate_value
 
     def should_prune(self) -> bool:
         """Suggest whether the trial should be pruned or not.
