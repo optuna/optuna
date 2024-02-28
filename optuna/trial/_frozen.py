@@ -174,16 +174,16 @@ class FrozenTrial(BaseTrial):
         self._user_attrs = user_attrs
         self._system_attrs = system_attrs
 
-        self._multi_objective_intermediate_values: List[Dict[int, float]] = []
+        self._multi_objective_intermediate_values: Dict[int, Dict[int, float]] = {}
         if intermediate_values and multi_objective_intermediate_values:
             raise ValueError(
                 "Specify only one of `intermediate_values` and ' + \
                     `multi_objective_intermediate_values`."
             )
         elif intermediate_values:
-            self._multi_objective_intermediate_values = [intermediate_values]
+            self._multi_objective_intermediate_values[0] = intermediate_values
         elif multi_objective_intermediate_values is not None:
-            self._multi_objective_intermediate_values = list(multi_objective_intermediate_values)
+            self._multi_objective_intermediate_values = multi_objective_intermediate_values
         self._distributions = distributions
         self._trial_id = trial_id
 
@@ -442,13 +442,13 @@ class FrozenTrial(BaseTrial):
     # These `_get_values`, `_set_values`, and `values = property(_get_values, _set_values)` are
     # defined to pass the mypy.
     # See https://github.com/python/mypy/issues/3004#issuecomment-726022329.
-    def _get_multi_objective_intermediate_values(self) -> List[Dict[int, float]]:
+    def _get_multi_objective_intermediate_values(self) -> Dict[int, Dict[int, float]]:
         return self._multi_objective_intermediate_values
 
     def _set_multi_objective_intermediate_values(
-        self, values: Sequence[Dict[int, float]]
+        self, values: Dict[int, Dict[int, float]]
     ) -> None:
-        self._multi_objective_intermediate_values = list(values)
+        self._multi_objective_intermediate_values = values
 
     multi_objective_intermediate_values = property(
         _get_multi_objective_intermediate_values, _set_multi_objective_intermediate_values
@@ -508,7 +508,7 @@ class FrozenTrial(BaseTrial):
             return max(self.intermediate_values.keys())
 
     @property
-    def last_steps(self) -> Optional[Sequence[int]]:
+    def last_steps(self) -> Optional[Dict[int, int]]:
         """Return the maximum step per :attr:`multi_objective_intermediate_values` in the trial.
 
         Returns:
@@ -518,10 +518,10 @@ class FrozenTrial(BaseTrial):
         if len(self.multi_objective_intermediate_values) == 0:
             return None
         else:
-            return [
-                max(intermediate_values.keys())
-                for intermediate_values in self.multi_objective_intermediate_values
-            ]
+            return {
+                index: max(intermediate_values.keys())
+                for index, intermediate_values in self.multi_objective_intermediate_values.items()
+            }
 
     @property
     def duration(self) -> Optional[datetime.timedelta]:
@@ -547,7 +547,7 @@ def create_trial(
     user_attrs: Optional[Dict[str, Any]] = None,
     system_attrs: Optional[Dict[str, Any]] = None,
     intermediate_values: Optional[Dict[int, float]] = None,
-    multi_objective_intermediate_values: Optional[Sequence[Dict[int, float]]] = None,
+    multi_objective_intermediate_values: Optional[Dict[int, Dict[int, float]]] = None,
 ) -> FrozenTrial:
     """Create a new :class:`~optuna.trial.FrozenTrial`.
 

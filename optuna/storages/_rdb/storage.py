@@ -482,9 +482,10 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                     system_attrs={},
                     intermediate_values={},
                     trial_id=trial.trial_id,
-                    multi_objective_intermediate_values=None,
+                    multi_objective_intermediate_values=[
+                        {} for _ in self.get_study_directions(study_id)
+                    ],
                 )
-
             return frozen
 
     def _get_prepared_new_trial(
@@ -546,7 +547,10 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             for key, value in template_trial.system_attrs.items():
                 self._set_trial_system_attr_without_commit(session, trial.trial_id, key, value)
 
-            for index_of_objective, intermediate_values in template_trial.multi_objective_intermediate_values:
+            for (
+                index_of_objective,
+                intermediate_values,
+            ) in template_trial.multi_objective_intermediate_values:
                 for step, intermediate_value in intermediate_values.items():
                     self._set_trial_intermediate_value_without_commit(
                         session, trial.trial_id, step, intermediate_value, index_of_objective
@@ -692,7 +696,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         trial_id: int,
         step: int,
         intermediate_value: float,
-        index_of_objective: int
+        index_of_objective: int,
     ) -> None:
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
@@ -703,8 +707,10 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         ) = models.TrialIntermediateValueModel.intermediate_value_to_stored_repr(
             intermediate_value
         )
-        trial_intermediate_value = models.TrialIntermediateValueModel.find_by_trial_and_step_and_index_of_objective(
-            trial, step, index_of_objective, session
+        trial_intermediate_value = (
+            models.TrialIntermediateValueModel.find_by_trial_and_step_and_index_of_objective(
+                trial, step, index_of_objective, session
+            )
         )
         if trial_intermediate_value is None:
             trial_intermediate_value = models.TrialIntermediateValueModel(
@@ -873,6 +879,18 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         params = sorted(trial.params, key=lambda p: p.param_id)
 
+        multi_objective_intermediate_values: Dict[int, Dict[int, float]] = {}
+        for v in trial.intermediate_values:
+            intermediate_value = (
+                models.TrialIntermediateValueModel.stored_repr_to_intermediate_value(
+                    v.intermediate_value, v.intermediate_value_type
+                )
+            )
+            target_objective_intermediate_values = multi_objective_intermediate_values.get(
+                v.index_of_objective, {}
+            )
+            target_objective_intermediate_values[v.step] = intermediate_value
+
         return FrozenTrial(
             number=trial.number,
             state=trial.state,
@@ -894,13 +912,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             system_attrs={
                 attr.key: json.loads(attr.value_json) for attr in trial.system_attributes
             },
-            intermediate_values={
-                v.step: models.TrialIntermediateValueModel.stored_repr_to_intermediate_value(
-                    v.intermediate_value, v.intermediate_value_type
-                )
-                for v in trial.intermediate_values
-            },
+            intermediate_values=None,
             trial_id=trial.trial_id,
+            multi_objective_intermediate_values=multi_objective_intermediate_values,
         )
 
     def get_best_trial(self, study_id: int) -> FrozenTrial:

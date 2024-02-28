@@ -522,7 +522,10 @@ class Trial(BaseTrial):
                     "``index_of_objectives`` should be or contains only a smaller value than the number of objectives."
                 )
 
-            if step in self._cached_frozen_trial.multi_objective_intermediate_values[index]:
+            if (
+                index in self._cached_frozen_trial.multi_objective_intermediate_values
+                and step in self._cached_frozen_trial.multi_objective_intermediate_values[index]
+            ):
                 # Do nothing if already reported.
                 if num_objectives == 1:
                     warnings.warn(
