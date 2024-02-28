@@ -482,9 +482,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                     system_attrs={},
                     intermediate_values={},
                     trial_id=trial.trial_id,
-                    multi_objective_intermediate_values=[
-                        {} for _ in self.get_study_directions(study_id)
-                    ],
+                    multi_objective_intermediate_values={},
                 )
             return frozen
 
@@ -718,6 +716,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 step=step,
                 intermediate_value=stored_value,
                 intermediate_value_type=value_type,
+                index_of_objective=index_of_objective,
             )
             session.add(trial_intermediate_value)
         else:

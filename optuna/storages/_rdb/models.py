@@ -482,7 +482,7 @@ class TrialIntermediateValueModel(BaseModel):
         NAN = 4
 
     __tablename__ = "trial_intermediate_values"
-    __table_args__: Any = (UniqueConstraint("trial_id", "step"),)
+    __table_args__: Any = (UniqueConstraint("trial_id", "step", "index_of_objective"),)
     trial_intermediate_value_id = _Column(Integer, primary_key=True)
     trial_id = _Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
     step = _Column(Integer, nullable=False)

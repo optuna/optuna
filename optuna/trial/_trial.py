@@ -544,6 +544,8 @@ class Trial(BaseTrial):
             self.storage.set_trial_intermediate_value(
                 self._trial_id, step, intermediate_value, index
             )
+            if index not in self._cached_frozen_trial.multi_objective_intermediate_values:
+                self._cached_frozen_trial.multi_objective_intermediate_values[index] = {}
             self._cached_frozen_trial.multi_objective_intermediate_values[index][
                 step
             ] = intermediate_value

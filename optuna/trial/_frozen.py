@@ -157,7 +157,7 @@ class FrozenTrial(BaseTrial):
         trial_id: int,
         *,
         values: Optional[Sequence[float]] = None,
-        multi_objective_intermediate_values: Optional[Sequence[Dict[int, float]]] = None,
+        multi_objective_intermediate_values: Optional[Dict[int, Dict[int, float]]] = None,
     ) -> None:
         self._number = number
         self.state = state
@@ -437,7 +437,7 @@ class FrozenTrial(BaseTrial):
             raise RuntimeError(
                 "This attribute is not available during multi-objective optimization."
             )
-        self._multi_objective_intermediate_values = [values]
+        self._multi_objective_intermediate_values[0] = values
 
     # These `_get_values`, `_set_values`, and `values = property(_get_values, _set_values)` are
     # defined to pass the mypy.
@@ -627,7 +627,7 @@ def create_trial(
     user_attrs = user_attrs or {}
     system_attrs = system_attrs or {}
     intermediate_values = intermediate_values or {}
-    multi_objective_intermediate_values = multi_objective_intermediate_values or []
+    multi_objective_intermediate_values = multi_objective_intermediate_values or {}
 
     if state == TrialState.WAITING:
         datetime_start = None

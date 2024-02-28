@@ -315,9 +315,12 @@ class InMemoryStorage(BaseStorage):
             self.check_trial_is_updatable(trial_id, trial.state)
 
             trial = copy.copy(trial)
-            trial.multi_objective_intermediate_values[index_of_objectives] = copy.copy(
-                trial.multi_objective_intermediate_values[index_of_objectives]
-            )
+            if index_of_objectives in trial.multi_objective_intermediate_values:
+                trial.multi_objective_intermediate_values[index_of_objectives] = copy.copy(
+                    trial.multi_objective_intermediate_values[index_of_objectives]
+                )
+            else:
+                trial.multi_objective_intermediate_values[index_of_objectives] = {}
             trial.multi_objective_intermediate_values[index_of_objectives][
                 step
             ] = intermediate_value
