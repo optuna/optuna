@@ -24,6 +24,155 @@ else:
 _logger = get_logger(__name__)
 
 
+def _local_search_continuous(
+    acqf_params: AcquisitionFunctionParams,
+    initial_params: np.ndarray,
+    initial_fval: float,
+    continuous_params: np.ndarray,
+    continuous_param_scale: np.ndarray,
+    tol: float,
+) -> tuple[np.ndarray, float] | None:
+    if len(continuous_params) == 0:
+        return None
+    normalized_params = initial_params.copy()
+
+    def negfun_continuous_with_grad(x: np.ndarray) -> tuple[float, np.ndarray]:
+        normalized_params[continuous_params] = x * continuous_param_scale
+        (fval, grad) = eval_acqf_with_grad(acqf_params, normalized_params)
+        # Flip sign because scipy minimizes functions.
+        return (-fval, -grad[continuous_params] * continuous_param_scale)
+
+    x_opt, fval_opt, info = so.fmin_l_bfgs_b(
+        func=negfun_continuous_with_grad,
+        x0=normalized_params[continuous_params] / continuous_param_scale,
+        bounds=[(0, 1 / s) for s in continuous_param_scale],
+        pgtol=math.sqrt(tol),
+        maxiter=200,
+    )
+
+    if info["warnflag"] == 2:
+        fval_opt = negfun_continuous_with_grad(x_opt)[0]
+
+    if -fval_opt < initial_fval or info["nit"] == 0:
+        return None  # Return None if the optimization did not improve the value.
+    else:
+        normalized_params[continuous_params] = x_opt * continuous_param_scale
+        return (normalized_params, -fval_opt)
+
+
+def _local_search_discrete_exhaustive_search(
+    acqf_params: AcquisitionFunctionParams,
+    initial_params: np.ndarray,
+    initial_fval: float,
+    param_idx: int,
+    choices: np.ndarray,
+) -> tuple[np.ndarray, float] | None:
+    choices_except_current = choices[choices != initial_params[param_idx]]
+
+    all_params = np.repeat(initial_params[None, :], len(choices_except_current), axis=0)
+    all_params[:, param_idx] = choices_except_current
+    fvals = eval_acqf_no_grad(acqf_params, all_params)
+    best_idx = np.argmax(fvals)
+
+    if fvals[best_idx] > initial_fval:
+        return (all_params[best_idx, :], fvals[best_idx])
+    else:
+        return None
+
+
+def _local_search_discrete_line_search(
+    acqf_params: AcquisitionFunctionParams,
+    initial_params: np.ndarray,
+    initial_fval: float,
+    param_idx: int,
+    choices: np.ndarray,
+    xtol: float,
+) -> tuple[np.ndarray, float] | None:
+    if len(choices) == 1:
+        # Do not optimize anything when there's only one choice.
+        return None
+
+    def get_rounded_index(x: float) -> int:
+        i = int(np.clip(np.searchsorted(choices, x), 1, len(choices) - 1))
+        return i - 1 if abs(x - choices[i - 1]) < abs(x - choices[i]) else i
+
+    current_choice_i = get_rounded_index(initial_params[param_idx])
+    assert initial_params[param_idx] == choices[current_choice_i]
+
+    negval_cache = {current_choice_i: -initial_fval}
+
+    normalized_params = initial_params.copy()
+
+    def inegfun_cached(i: int) -> float:
+        nonlocal negval_cache, normalized_params
+        # Function value at choices[i].
+        cache_val = negval_cache.get(i)
+        if cache_val is not None:
+            return cache_val
+        normalized_params[param_idx] = choices[i]
+
+        # Flip sign because scipy minimizes functions.
+        negval = -float(eval_acqf_no_grad(acqf_params, normalized_params))
+        negval_cache[i] = negval
+        return negval
+
+    def negfun_interpolated(x: float) -> float:
+        if x < choices[0] or x > choices[-1]:
+            return np.inf
+        i1 = int(np.clip(np.searchsorted(choices, x), 1, len(choices) - 1))
+        i0 = i1 - 1
+
+        f0, f1 = inegfun_cached(i0), inegfun_cached(i1)
+
+        w0 = (choices[i1] - x) / (choices[i1] - choices[i0])
+        w1 = 1.0 - w0
+
+        return w0 * f0 + w1 * f1
+
+    EPS = 1e-12
+    res = so.minimize_scalar(
+        negfun_interpolated,
+        # The values of this bracket are (inf, -fval, inf).
+        # This trivially satisfies the bracket condition if fval is finite.
+        bracket=(choices[0] - EPS, choices[current_choice_i], choices[-1] + EPS),
+        method="brent",
+        tol=xtol,
+    )
+    i_star = get_rounded_index(res.x)
+    fval_new = -inegfun_cached(i_star)
+
+    # We check both conditions because of numerical errors.
+    if i_star != current_choice_i and fval_new > initial_fval:
+        normalized_params[param_idx] = choices[i_star]
+        return (normalized_params, fval_new)
+    else:
+        return None
+
+
+# If the number of possible parameter values is small, we just perform an exhaustive search.
+# This is faster and better than the line search.
+MAX_INT_EXHAUSTIVE_SEARCH_PARAMS = 16
+
+
+def _local_search_discrete(
+    acqf_params: AcquisitionFunctionParams,
+    initial_params: np.ndarray,
+    initial_fval: float,
+    param_idx: int,
+    choices: np.ndarray,
+    xtol: float,
+) -> tuple[np.ndarray, float] | None:
+    scale_type = acqf_params.search_space.scale_types[param_idx]
+    if scale_type == ScaleType.CATEGORICAL or len(choices) <= MAX_INT_EXHAUSTIVE_SEARCH_PARAMS:
+        return _local_search_discrete_exhaustive_search(
+            acqf_params, initial_params, initial_fval, param_idx, choices
+        )
+    else:
+        return _local_search_discrete_line_search(
+            acqf_params, initial_params, initial_fval, param_idx, choices, xtol
+        )
+
+
 def local_search_mixed(
     acqf_params: AcquisitionFunctionParams,
     initial_normalized_params: np.ndarray,
@@ -44,7 +193,6 @@ def local_search_mixed(
     # We use an isotropic kernel, so scaling the gradient will make
     # the hessian better-conditioned.
     continuous_param_scale = 1 / np.sqrt(inverse_squared_lengthscales[continuous_params])
-    continuous_scaled_bounds = [(0, 1 / s) for s in continuous_param_scale]
 
     noncontinuous_params = np.where(steps > 0)[0]
     noncontinuous_param_choices = [
@@ -60,6 +208,7 @@ def local_search_mixed(
         )
         for i in noncontinuous_params
     ]
+
     noncontinuous_paramwise_xtol = [
         # Enough to discriminate between two choices.
         np.min(np.diff(choices), initial=np.inf) / 4
@@ -69,127 +218,25 @@ def local_search_mixed(
     normalized_params = initial_normalized_params.copy()
     fval = float(eval_acqf_no_grad(acqf_params, normalized_params))
 
-    def optimize_continuous() -> bool:
-        nonlocal normalized_params, fval
+    NEVER = -1
+    CONTINUOUS = -2
+    last_changed_param = NEVER
 
-        old_continuous_params = normalized_params[continuous_params].copy()
-
-        def negfun_continuous_with_grad(x: np.ndarray) -> tuple[float, np.ndarray]:
-            normalized_params[continuous_params] = x * continuous_param_scale
-            (fval, grad) = eval_acqf_with_grad(acqf_params, normalized_params)
-            # Flip sign because scipy minimizes functions.
-            return (-fval, -grad[continuous_params] * continuous_param_scale)
-
-        x_opt, fval_opt, info = so.fmin_l_bfgs_b(
-            func=negfun_continuous_with_grad,
-            x0=normalized_params[continuous_params] / continuous_param_scale,
-            bounds=continuous_scaled_bounds,
-            pgtol=math.sqrt(tol),
-            maxiter=200,
-        )
-
-        if info["warnflag"] == 2:
-            fval_opt = negfun_continuous_with_grad(x_opt)[0]
-
-        if -fval_opt < fval:
-            normalized_params[continuous_params] = old_continuous_params
-            return False
-
-        normalized_params[continuous_params] = x_opt * continuous_param_scale
-        fval = -fval_opt
-
-        return info["nit"] != 0  # True if parameters are updated.
-
-    def optimize_exhaustive_search(param_idx: int, choices: np.ndarray) -> bool:
-        nonlocal normalized_params, fval
-
-        current_choice = normalized_params[param_idx]
-        choices_except_current = choices[choices != normalized_params[param_idx]]
-
-        all_params = np.repeat(normalized_params[None, :], len(choices_except_current), axis=0)
-        all_params[:, param_idx] = choices_except_current
-        fvals = eval_acqf_no_grad(acqf_params, all_params)
-        best_idx = np.argmax(fvals)
-
-        if fvals[best_idx] >= fval:
-            fval = fvals[best_idx]
-            normalized_params[param_idx] = choices_except_current[best_idx]
-            return True
-        else:
-            normalized_params[param_idx] = current_choice
-            return False
-
-    def optimize_discrete_line_search(param_idx: int, choices: np.ndarray, xtol: float) -> bool:
-        nonlocal normalized_params, fval
-
-        if len(choices) == 1:
-            # Do not optimize anything when there's only one choice.
-            return False
-
-        def get_rounded_index(x: float) -> int:
-            i = int(np.clip(np.searchsorted(choices, x), 1, len(choices) - 1))
-            return i - 1 if abs(x - choices[i - 1]) < abs(x - choices[i]) else i
-
-        current_choice_i = get_rounded_index(normalized_params[param_idx])
-        assert normalized_params[param_idx] == choices[current_choice_i]
-
-        negval_cache = {current_choice_i: -fval}
-
-        def inegfun_cached(i: int) -> float:
-            nonlocal negval_cache
-            # Function value at choices[i].
-            cache_val = negval_cache.get(i)
-            if cache_val is not None:
-                return cache_val
-            normalized_params[param_idx] = choices[i]
-
-            # Flip sign because scipy minimizes functions.
-            negval = -float(eval_acqf_no_grad(acqf_params, normalized_params))
-            negval_cache[i] = negval
-            return negval
-
-        def negfun_interpolated(x: float) -> float:
-            if x < choices[0] or x > choices[-1]:
-                return np.inf
-            i1 = int(np.clip(np.searchsorted(choices, x), 1, len(choices) - 1))
-            i0 = i1 - 1
-
-            f0, f1 = inegfun_cached(i0), inegfun_cached(i1)
-
-            w0 = (choices[i1] - x) / (choices[i1] - choices[i0])
-            w1 = 1.0 - w0
-
-            return w0 * f0 + w1 * f1
-
-        EPS = 1e-12
-        res = so.minimize_scalar(
-            negfun_interpolated,
-            # The values of this bracket are (inf, -fval, inf).
-            # This trivially satisfies the bracket condition if fval is finite.
-            bracket=(choices[0] - EPS, choices[current_choice_i], choices[-1] + EPS),
-            method="brent",
-            tol=xtol,
-        )
-        i_star = get_rounded_index(res.x)
-        fval_new = -inegfun_cached(i_star)
-
-        normalized_params[param_idx] = choices[i_star]
-        fval = fval_new
-        return i_star != current_choice_i
-
-    # If the number of possible parameter values is small, we just perform an exhaustive search.
-    # This is faster and better than the line search.
-    MAX_INT_EXHAUSTIVE_SEARCH_PARAMS = 16
-
-    last_changed_param = -1
     for _ in range(max_iter):
-        if len(continuous_params) > 0:
-            if last_changed_param == continuous_params[0]:
-                # Parameters not changed since last time.
-                return (normalized_params, fval)
-            changed = optimize_continuous()
-            if changed:
-                last_changed_param = continuous_params[0]
+        if last_changed_param == CONTINUOUS:
+            # Parameters not changed since last time.
+            return (normalized_params, fval)
+        res = _local_search_continuous(
+            acqf_params,
+            normalized_params,
+            fval,
+            continuous_params,
+            continuous_param_scale,
+            tol,
+        )
+        if res is not None:
+            normalized_params, fval = res
+            last_changed_param = CONTINUOUS
 
         for i, choices, xtol in zip(
             noncontinuous_params, noncontinuous_param_choices, noncontinuous_paramwise_xtol
@@ -197,17 +244,12 @@ def local_search_mixed(
             if last_changed_param == i:
                 # Parameters not changed since last time.
                 return (normalized_params, fval)
-            if (
-                scale_types[i] == ScaleType.CATEGORICAL
-                or len(choices) <= MAX_INT_EXHAUSTIVE_SEARCH_PARAMS
-            ):
-                changed = optimize_exhaustive_search(i, choices)
-            else:
-                changed = optimize_discrete_line_search(i, choices, xtol)
-            if changed:
+            res = _local_search_discrete(acqf_params, normalized_params, fval, i, choices, xtol)
+            if res is not None:
+                normalized_params, fval = res
                 last_changed_param = i
 
-        if last_changed_param == -1:
+        if last_changed_param == NEVER:
             # Parameters not changed from the beginning.
             return (normalized_params, fval)
 
