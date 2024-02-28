@@ -486,6 +486,7 @@ class TrialIntermediateValueModel(BaseModel):
     trial_intermediate_value_id = _Column(Integer, primary_key=True)
     trial_id = _Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
     step = _Column(Integer, nullable=False)
+    index_of_objective = _Column(Integer, nullable=False)
     intermediate_value = _Column(Float(precision=FLOAT_PRECISION), nullable=True)
     intermediate_value_type = _Column(Enum(TrialIntermediateValueType), nullable=False)
 
@@ -526,13 +527,14 @@ class TrialIntermediateValueModel(BaseModel):
             return value
 
     @classmethod
-    def find_by_trial_and_step(
-        cls, trial: TrialModel, step: int, session: orm.Session
+    def find_by_trial_and_step_and_index_of_objective(
+        cls, trial: TrialModel, step: int, index_of_objective: int, session: orm.Session
     ) -> Optional["TrialIntermediateValueModel"]:
         trial_intermediate_value = (
             session.query(cls)
             .filter(cls.trial_id == trial.trial_id)
             .filter(cls.step == step)
+            .filter(cls.index_of_objective == index_of_objective)
             .one_or_none()
         )
 
