@@ -548,7 +548,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             for (
                 index_of_objective,
                 intermediate_values,
-            ) in template_trial.multi_objective_intermediate_values:
+            ) in template_trial.multi_objective_intermediate_values.items():
                 for step, intermediate_value in intermediate_values.items():
                     self._set_trial_intermediate_value_without_commit(
                         session, trial.trial_id, step, intermediate_value, index_of_objective
@@ -889,6 +889,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 v.index_of_objective, {}
             )
             target_objective_intermediate_values[v.step] = intermediate_value
+            multi_objective_intermediate_values[v.index_of_objective] = (
+                target_objective_intermediate_values
+            )
 
         return FrozenTrial(
             number=trial.number,
@@ -911,7 +914,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             system_attrs={
                 attr.key: json.loads(attr.value_json) for attr in trial.system_attributes
             },
-            intermediate_values=None,
+            intermediate_values={},
             trial_id=trial.trial_id,
             multi_objective_intermediate_values=multi_objective_intermediate_values,
         )
