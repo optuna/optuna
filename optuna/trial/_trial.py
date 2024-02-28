@@ -522,7 +522,7 @@ class Trial(BaseTrial):
                     "``index_of_objectives`` should be or contains only a smaller value than the number of objectives."
                 )
 
-            if step in self._cached_frozen_trial.multiple_intermediate_values[index]:
+            if step in self._cached_frozen_trial.multi_objective_intermediate_values[index]:
                 # Do nothing if already reported.
                 if num_objectives == 1:
                     warnings.warn(
@@ -541,7 +541,7 @@ class Trial(BaseTrial):
             self.storage.set_trial_intermediate_value(
                 self._trial_id, step, intermediate_value, index
             )
-            self._cached_frozen_trial.multiple_intermediate_values[index][
+            self._cached_frozen_trial.multi_objective_intermediate_values[index][
                 step
             ] = intermediate_value
 

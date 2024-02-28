@@ -442,16 +442,16 @@ class FrozenTrial(BaseTrial):
     # These `_get_values`, `_set_values`, and `values = property(_get_values, _set_values)` are
     # defined to pass the mypy.
     # See https://github.com/python/mypy/issues/3004#issuecomment-726022329.
-    def _get_multiple_objective_intermediate_values(self) -> List[Dict[int, float]]:
+    def _get_multi_objective_intermediate_values(self) -> List[Dict[int, float]]:
         return self._multi_objective_intermediate_values
 
-    def _set_multiple_objective_intermediate_values(
+    def _set_multi_objective_intermediate_values(
         self, values: Sequence[Dict[int, float]]
     ) -> None:
         self._multi_objective_intermediate_values = list(values)
 
-    multiple_intermediate_values = property(
-        _get_multiple_objective_intermediate_values, _set_multiple_objective_intermediate_values
+    multi_objective_intermediate_values = property(
+        _get_multi_objective_intermediate_values, _set_multi_objective_intermediate_values
     )
 
     @property
@@ -515,12 +515,12 @@ class FrozenTrial(BaseTrial):
             The maximum steps of intermediates.
         """
 
-        if len(self.multiple_intermediate_values) == 0:
+        if len(self.multi_objective_intermediate_values) == 0:
             return None
         else:
             return [
                 max(intermediate_values.keys())
-                for intermediate_values in self.multiple_intermediate_values
+                for intermediate_values in self.multi_objective_intermediate_values
             ]
 
     @property

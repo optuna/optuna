@@ -147,7 +147,7 @@ class InMemoryStorage(BaseStorage):
             trial_id = self._max_trial_id + 1
             self._max_trial_id += 1
             trial.number = len(self._studies[study_id].trials)
-            trial.multiple_intermediate_values = [{} for _ in self._studies[study_id].directions]
+            trial.multi_objective_intermediate_values = [{} for _ in self._studies[study_id].directions]
             trial._trial_id = trial_id
             self._trial_id_to_study_id_and_number[trial_id] = (study_id, trial.number)
             self._studies[study_id].trials.append(trial)
@@ -315,10 +315,10 @@ class InMemoryStorage(BaseStorage):
             self.check_trial_is_updatable(trial_id, trial.state)
 
             trial = copy.copy(trial)
-            trial.multiple_intermediate_values[index_of_objectives] = copy.copy(
-                trial.multiple_intermediate_values[index_of_objectives]
+            trial.multi_objective_intermediate_values[index_of_objectives] = copy.copy(
+                trial.multi_objective_intermediate_values[index_of_objectives]
             )
-            trial.multiple_intermediate_values[index_of_objectives][step] = intermediate_value
+            trial.multi_objective_intermediate_values[index_of_objectives][step] = intermediate_value
             self._set_trial(trial_id, trial)
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
