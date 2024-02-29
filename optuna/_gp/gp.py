@@ -64,7 +64,7 @@ def matern52_kernel_from_squared_distance(squared_distance: torch.Tensor) -> tor
     return Matern52Kernel.apply(squared_distance)  # type: ignore
 
 
-@dataclass
+@dataclass(frozen=True)
 class KernelParamsTensor:
     # Kernel parameters to fit.
     inverse_squared_lengthscales: torch.Tensor  # [len(params)]
@@ -178,22 +178,29 @@ def _fit_kernel_params(
         params = KernelParamsTensor(
             inverse_squared_lengthscales=torch.exp(raw_params_tensor[:n_params]),
             kernel_scale=torch.exp(raw_params_tensor[n_params]),
-            noise_var=torch.exp(raw_params_tensor[n_params + 1]) + minimum_noise,
+            noise_var=(
+                torch.tensor(minimum_noise, dtype=torch.float64)
+                if deterministic_objective
+                else torch.exp(raw_params_tensor[n_params + 1]) + minimum_noise
+            ),
         )
-        if deterministic_objective:
-            params.noise_var = torch.tensor(minimum_noise, dtype=torch.float64)
         loss = -marginal_log_likelihood(
             torch.from_numpy(X), torch.from_numpy(Y), torch.from_numpy(is_categorical), params
         ) - log_prior(params)
         loss.backward()  # type: ignore
         # scipy.minimize requires all the gradients to be zero for termination.
-        assert not deterministic_objective or raw_params_tensor.grad[n_params + 1] == 0
+        raw_noise_var_grad = raw_params_tensor.grad[n_params + 1]  # type: ignore
+        assert not deterministic_objective or raw_noise_var_grad == 0
         return loss.item(), raw_params_tensor.grad.detach().numpy()  # type: ignore
 
     # jac=True means loss_func returns the gradient for gradient descent.
     res = so.minimize(
         # We need a high gtol value because the loss_func can have high numerically errors.
-        loss_func, initial_raw_params, jac=True, method="l-bfgs-b", options={"gtol": gtol}
+        loss_func,
+        initial_raw_params,
+        jac=True,
+        method="l-bfgs-b",
+        options={"gtol": gtol},
     )
     if not res.success:
         raise RuntimeError(f"Optimization failed: {res.message}")
@@ -203,10 +210,12 @@ def _fit_kernel_params(
     res = KernelParamsTensor(
         inverse_squared_lengthscales=torch.exp(raw_params_opt_tensor[:n_params]),
         kernel_scale=torch.exp(raw_params_opt_tensor[n_params]),
-        noise_var=torch.exp(raw_params_opt_tensor[n_params + 1]) + minimum_noise,
+        noise_var=(
+            torch.tensor(minimum_noise, dtype=torch.float64)
+            if deterministic_objective
+            else minimum_noise + torch.exp(raw_params_opt_tensor[n_params + 1])
+        ),
     )
-    if deterministic_objective:
-        res.noise_var = torch.tensor(minimum_noise, dtype=torch.float64)
     return res
 
 
