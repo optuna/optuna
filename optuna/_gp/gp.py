@@ -192,6 +192,7 @@ def _fit_kernel_params(
 
     # jac=True means loss_func returns the gradient for gradient descent.
     res = so.minimize(
+        # We need a high gtol value because the loss_func can have high numerically errors.
         loss_func, initial_raw_params, jac=True, method="l-bfgs-b", options={"gtol": gtol}
     )
     if not res.success:
