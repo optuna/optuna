@@ -2,7 +2,7 @@
 .. _wilcoxon_pruner:
 
 Early-stopping independent evaluations by WilcoxonPruner
-===============
+============================================================
 
 This tutorial showcases Optuna's Wilcoxon pruner.
 This pruner is effective for objective functions that averages multiple evaluations.
