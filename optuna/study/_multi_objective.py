@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import List
-from typing import Optional
-from typing import Sequence
+from collections.abc import Sequence
 
 import numpy as np
 
@@ -13,10 +11,26 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
+_CONSTRAINTS_KEY = "constraints"
+
+
+def _get_feasible_trials(trials: Sequence[FrozenTrial]) -> list[FrozenTrial]:
+    feasible_trials = []
+    for trial in trials:
+        constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
+        if constraints is None or all([x <= 0.0 for x in constraints]):
+            feasible_trials.append(trial)
+    return feasible_trials
+
+
 def _get_pareto_front_trials_2d(
-    trials: Sequence[FrozenTrial], directions: Sequence[StudyDirection]
-) -> List[FrozenTrial]:
-    trials = [trial for trial in trials if trial.state == TrialState.COMPLETE]
+    trials: Sequence[FrozenTrial],
+    directions: Sequence[StudyDirection],
+    consider_constraint: bool = False,
+) -> list[FrozenTrial]:
+    trials = [t for t in trials if t.state == TrialState.COMPLETE]
+    if consider_constraint:
+        trials = _get_feasible_trials(trials)
 
     n_trials = len(trials)
     if n_trials == 0:
@@ -43,10 +57,14 @@ def _get_pareto_front_trials_2d(
 
 
 def _get_pareto_front_trials_nd(
-    trials: Sequence[FrozenTrial], directions: Sequence[StudyDirection]
-) -> List[FrozenTrial]:
+    trials: Sequence[FrozenTrial],
+    directions: Sequence[StudyDirection],
+    consider_constraint: bool = False,
+) -> list[FrozenTrial]:
     pareto_front = []
     trials = [t for t in trials if t.state == TrialState.COMPLETE]
+    if consider_constraint:
+        trials = _get_feasible_trials(trials)
 
     # TODO(vincent): Optimize (use the fast non dominated sort defined in the NSGA-II paper).
     for trial in trials:
@@ -63,15 +81,23 @@ def _get_pareto_front_trials_nd(
 
 
 def _get_pareto_front_trials_by_trials(
-    trials: Sequence[FrozenTrial], directions: Sequence[StudyDirection]
-) -> List[FrozenTrial]:
+    trials: Sequence[FrozenTrial],
+    directions: Sequence[StudyDirection],
+    consider_constraint: bool = False,
+) -> list[FrozenTrial]:
     if len(directions) == 2:
-        return _get_pareto_front_trials_2d(trials, directions)  # Log-linear in number of trials.
-    return _get_pareto_front_trials_nd(trials, directions)  # Quadratic in number of trials.
+        return _get_pareto_front_trials_2d(
+            trials, directions, consider_constraint
+        )  # Log-linear in number of trials.
+    return _get_pareto_front_trials_nd(
+        trials, directions, consider_constraint
+    )  # Quadratic in number of trials.
 
 
-def _get_pareto_front_trials(study: "optuna.study.Study") -> List[FrozenTrial]:
-    return _get_pareto_front_trials_by_trials(study.trials, study.directions)
+def _get_pareto_front_trials(
+    study: "optuna.study.Study", consider_constraint: bool = False
+) -> list[FrozenTrial]:
+    return _get_pareto_front_trials_by_trials(study.trials, study.directions, consider_constraint)
 
 
 def _fast_non_dominated_sort(
@@ -231,7 +257,7 @@ def _dominates(
     return all(v0 <= v1 for v0, v1 in zip(normalized_values0, normalized_values1))
 
 
-def _normalize_value(value: Optional[float], direction: StudyDirection) -> float:
+def _normalize_value(value: None | float, direction: StudyDirection) -> float:
     if value is None:
         value = float("inf")
 
