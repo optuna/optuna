@@ -56,7 +56,7 @@ the optimal schedule may vary significantly between different types of problems.
 Finding a good cooling schedule is an integral part of successfully applying SA.
 
 Main Tutorial: Tuning SA Parameters for Solving TSP
-=============
+====================================================
 """
 
 from dataclasses import dataclass
