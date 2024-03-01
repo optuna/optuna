@@ -181,14 +181,6 @@ count = 0
 
 
 ###################################################################################################
-# In each trial, it is recommended to shuffle the order in which data is processed.
-# We make pseudo random number generator here.
-
-
-rng = np.random.default_rng(seed=0)
-
-
-###################################################################################################
 # We counts the number of evaluation to know how many problems is pruned.
 
 
