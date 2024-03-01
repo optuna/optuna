@@ -150,7 +150,9 @@ def _fit_kernel_params(
     is_categorical: np.ndarray,  # [len(params)]
     log_prior: Callable[[KernelParamsTensor], torch.Tensor],
     minimum_noise: float,
+    deterministic_objective: bool,
     initial_kernel_params: KernelParamsTensor,
+    gtol: float,
 ) -> KernelParamsTensor:
     n_params = X.shape[1]
 
@@ -164,7 +166,8 @@ def _fit_kernel_params(
             np.log(initial_kernel_params.inverse_squared_lengthscales.detach().numpy()),
             [
                 np.log(initial_kernel_params.kernel_scale.item()),
-                np.log(initial_kernel_params.noise_var.item() - minimum_noise),
+                # We add 0.01 * minimum_noise to initial noise_var to avoid instability.
+                np.log(initial_kernel_params.noise_var.item() - 0.99 * minimum_noise),
             ],
         ]
     )
@@ -175,27 +178,45 @@ def _fit_kernel_params(
         params = KernelParamsTensor(
             inverse_squared_lengthscales=torch.exp(raw_params_tensor[:n_params]),
             kernel_scale=torch.exp(raw_params_tensor[n_params]),
-            noise_var=torch.exp(raw_params_tensor[n_params + 1]) + minimum_noise,
+            noise_var=(
+                torch.tensor(minimum_noise, dtype=torch.float64)
+                if deterministic_objective
+                else torch.exp(raw_params_tensor[n_params + 1]) + minimum_noise
+            ),
         )
         loss = -marginal_log_likelihood(
             torch.from_numpy(X), torch.from_numpy(Y), torch.from_numpy(is_categorical), params
         ) - log_prior(params)
         loss.backward()  # type: ignore
+        # scipy.minimize requires all the gradients to be zero for termination.
+        raw_noise_var_grad = raw_params_tensor.grad[n_params + 1]  # type: ignore
+        assert not deterministic_objective or raw_noise_var_grad == 0
         return loss.item(), raw_params_tensor.grad.detach().numpy()  # type: ignore
 
     # jac=True means loss_func returns the gradient for gradient descent.
-    res = so.minimize(loss_func, initial_raw_params, jac=True)
+    res = so.minimize(
+        # Too small `gtol` causes instability in loss_func optimization.
+        loss_func,
+        initial_raw_params,
+        jac=True,
+        method="l-bfgs-b",
+        options={"gtol": gtol},
+    )
     if not res.success:
         raise RuntimeError(f"Optimization failed: {res.message}")
 
-    # TODO(contramundum53): Handle the case where the optimization fails.
     raw_params_opt_tensor = torch.from_numpy(res.x)
 
-    return KernelParamsTensor(
+    res = KernelParamsTensor(
         inverse_squared_lengthscales=torch.exp(raw_params_opt_tensor[:n_params]),
         kernel_scale=torch.exp(raw_params_opt_tensor[n_params]),
-        noise_var=torch.exp(raw_params_opt_tensor[n_params + 1]) + minimum_noise,
+        noise_var=(
+            torch.tensor(minimum_noise, dtype=torch.float64)
+            if deterministic_objective
+            else minimum_noise + torch.exp(raw_params_opt_tensor[n_params + 1])
+        ),
     )
+    return res
 
 
 def fit_kernel_params(
@@ -204,7 +225,9 @@ def fit_kernel_params(
     is_categorical: np.ndarray,
     log_prior: Callable[[KernelParamsTensor], torch.Tensor],
     minimum_noise: float,
+    deterministic_objective: bool,
     initial_kernel_params: KernelParamsTensor | None = None,
+    gtol: float = 1e-2,
 ) -> KernelParamsTensor:
     default_initial_kernel_params = KernelParamsTensor(
         inverse_squared_lengthscales=torch.ones(X.shape[1], dtype=torch.float64),
@@ -221,7 +244,14 @@ def fit_kernel_params(
     for init_kernel_params in [initial_kernel_params, default_initial_kernel_params]:
         try:
             return _fit_kernel_params(
-                X, Y, is_categorical, log_prior, minimum_noise, init_kernel_params
+                X=X,
+                Y=Y,
+                is_categorical=is_categorical,
+                log_prior=log_prior,
+                minimum_noise=minimum_noise,
+                initial_kernel_params=init_kernel_params,
+                deterministic_objective=deterministic_objective,
+                gtol=gtol,
             )
         except RuntimeError as e:
             error = e

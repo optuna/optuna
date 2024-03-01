@@ -32,9 +32,13 @@ from optuna.trial import TrialState
 
 
 def get_gp_sampler(
-    *, n_startup_trials: int = 0, seed: int | None = None
+    *, n_startup_trials: int = 0, deterministic_objective: bool = False, seed: int | None = None
 ) -> optuna.samplers.GPSampler:
-    return optuna.samplers.GPSampler(n_startup_trials=n_startup_trials, seed=seed)
+    return optuna.samplers.GPSampler(
+        n_startup_trials=n_startup_trials,
+        seed=seed,
+        deterministic_objective=deterministic_objective,
+    )
 
 
 parametrize_sampler = pytest.mark.parametrize(
@@ -49,6 +53,7 @@ parametrize_sampler = pytest.mark.parametrize(
         optuna.samplers.NSGAIIISampler,
         optuna.samplers.QMCSampler,
         lambda: get_gp_sampler(n_startup_trials=0),
+        lambda: get_gp_sampler(n_startup_trials=0, deterministic_objective=True),
     ],
 )
 parametrize_relative_sampler = pytest.mark.parametrize(
@@ -58,6 +63,7 @@ parametrize_relative_sampler = pytest.mark.parametrize(
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0, use_separable_cma=True),
         lambda: get_gp_sampler(n_startup_trials=0),
+        lambda: get_gp_sampler(n_startup_trials=0, deterministic_objective=True),
     ],
 )
 parametrize_multi_objective_sampler = pytest.mark.parametrize(
