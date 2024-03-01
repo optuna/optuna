@@ -304,7 +304,9 @@ optuna.visualization.plot_optimization_history(study)
 
 
 x_values = [x for x in range(len(study.trials)) if x != study.best_trial.number]
-y_values = [len(t.intermediate_values) for t in study.trials if t.number != study.best_trial.number]
+y_values = [
+    len(t.intermediate_values) for t in study.trials if t.number != study.best_trial.number
+]
 best_trial_y = [len(study.best_trial.intermediate_values)]
 best_trial_x = [study.best_trial.number]
 fig = go.Figure()
