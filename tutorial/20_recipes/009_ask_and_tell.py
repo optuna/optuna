@@ -20,6 +20,7 @@ Apply Optuna to an existing optimization problem with minimum modifications
 Let's consider the traditional supervised classification problem; you aim to maximize the validation accuracy.
 To do so, you train `LogisticRegression` as a simple model.
 """
+
 import numpy as np
 from sklearn.datasets import make_classification
 from sklearn.linear_model import LogisticRegression

@@ -28,7 +28,6 @@ from optuna._typing import JSONSerializable
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages._heartbeat import BaseHeartbeat
-from optuna.storages._rdb.models import TrialValueModel
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -665,7 +664,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
     ) -> None:
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
-        stored_value, value_type = TrialValueModel.value_to_stored_repr(value)
+        stored_value, value_type = models.TrialValueModel.value_to_stored_repr(value)
 
         trial_value = models.TrialValueModel.find_by_trial_and_objective(trial, objective, session)
         if trial_value is None:
@@ -863,7 +862,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         if trial.values:
             values = [0 for _ in trial.values]
             for value_model in trial.values:
-                values[value_model.objective] = TrialValueModel.stored_repr_to_value(
+                values[value_model.objective] = models.TrialValueModel.stored_repr_to_value(
                     value_model.value, value_model.value_type
                 )
         else:

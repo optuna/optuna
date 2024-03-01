@@ -207,7 +207,7 @@ For general guidelines on how to contribute to the project, take a look at [CONT
 
 ## Reference
 
-If you use Optuna in one of your research projects, please cite [our KDD paper](https://arxiv.org/abs/1907.10902) "Optuna: A Next-generation Hyperparameter Optimization Framework":
+If you use Optuna in one of your research projects, please cite [our KDD paper](https://doi.org/10.1145/3292500.3330701) "Optuna: A Next-generation Hyperparameter Optimization Framework":
 
 <details open>
 <summary>BibTeX</summary>

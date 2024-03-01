@@ -8,6 +8,7 @@ from optuna.exceptions import ExperimentalWarning
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova import FanovaImportanceEvaluator
 from optuna.importance._mean_decrease_impurity import MeanDecreaseImpurityImportanceEvaluator
+from optuna.importance._ped_anova import PedAnovaImportanceEvaluator
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 
@@ -16,6 +17,7 @@ __all__ = [
     "BaseImportanceEvaluator",
     "FanovaImportanceEvaluator",
     "MeanDecreaseImpurityImportanceEvaluator",
+    "PedAnovaImportanceEvaluator",
     "get_param_importances",
 ]
 

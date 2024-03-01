@@ -1,7 +1,11 @@
+from __future__ import annotations
+
+import numpy as np
 import pytest
 
 from optuna.study import StudyDirection
 from optuna.study._multi_objective import _dominates
+from optuna.study._multi_objective import _fast_non_dominated_sort
 from optuna.trial import create_trial
 from optuna.trial import TrialState
 
@@ -94,8 +98,8 @@ def test_dominates_invalid() -> None:
 def test_dominates_incomplete_vs_incomplete(t1_state: TrialState, t2_state: TrialState) -> None:
     directions = [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
 
-    t1 = create_trial(values=[1, 1], state=t1_state)
-    t2 = create_trial(values=[0, 2], state=t2_state)
+    t1 = create_trial(values=None, state=t1_state)
+    t2 = create_trial(values=None, state=t2_state)
 
     assert not _dominates(t2, t1, list(directions))
     assert not _dominates(t1, t2, list(directions))
@@ -105,8 +109,55 @@ def test_dominates_incomplete_vs_incomplete(t1_state: TrialState, t2_state: Tria
 def test_dominates_complete_vs_incomplete(t1_state: TrialState) -> None:
     directions = [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
 
-    t1 = create_trial(values=[0, 2], state=t1_state)
+    t1 = create_trial(values=None, state=t1_state)
     t2 = create_trial(values=[1, 1], state=TrialState.COMPLETE)
 
     assert _dominates(t2, t1, list(directions))
     assert not _dominates(t1, t2, list(directions))
+
+
+@pytest.mark.parametrize(
+    ("trial_values", "trial_ranks"),
+    [
+        ([[10], [20], [20], [30]], [0, 1, 1, 2]),  # Single objective
+        ([[10, 30], [10, 10], [20, 20], [30, 10], [15, 15]], [1, 0, 2, 1, 1]),  # Two objectives
+        (
+            [[5, 5, 4], [5, 5, 5], [9, 9, 0], [5, 7, 5], [0, 0, 9], [0, 9, 9]],
+            [0, 1, 0, 2, 0, 1],
+        ),  # Three objectives
+        (
+            [[-5, -5, -4], [-5, -5, 5], [-9, -9, 0], [5, 7, 5], [0, 0, -9], [0, -9, 9]],
+            [0, 1, 0, 2, 0, 1],
+        ),  # Negative values are included.
+        (
+            [[1, 1], [1, float("inf")], [float("inf"), 1], [float("inf"), float("inf")]],
+            [0, 1, 1, 2],
+        ),  # +infs are included.
+        (
+            [[1, 1], [1, -float("inf")], [-float("inf"), 1], [-float("inf"), -float("inf")]],
+            [2, 1, 1, 0],
+        ),  # -infs are included.
+        (
+            [[1, 1], [1, 1], [1, 2], [2, 1], [0, 1.5], [1.5, 0], [0, 1.5]],
+            [0, 0, 1, 1, 0, 0, 0],
+        ),  # Two objectives with duplicate values are included.
+        (
+            [[1, 1], [1, 1], [1, 2], [2, 1], [1, 1], [0, 1.5], [0, 1.5]],
+            [0, 0, 1, 1, 0, 0, 0],
+        ),  # Two objectives with duplicate values are included.
+        (
+            [[1, 1, 1], [1, 1, 1], [1, 1, 2], [1, 2, 1], [2, 1, 1], [0, 1.5, 1.5], [0, 1.5, 1.5]],
+            [0, 0, 1, 1, 1, 0, 0],
+        ),  # Three objectives with duplicate values are included.
+    ],
+)
+def test_fast_non_dominated_sort(trial_values: list[float], trial_ranks: list[int]) -> None:
+    ranks = list(_fast_non_dominated_sort(np.array(trial_values)))
+    assert np.array_equal(ranks, trial_ranks)
+
+
+def test_fast_non_dominated_sort_invalid() -> None:
+    with pytest.raises(ValueError):
+        _fast_non_dominated_sort(
+            np.array([[1.0, 2.0], [3.0, 4.0]]), penalty=np.array([1.0, 2.0, 3.0])
+        )

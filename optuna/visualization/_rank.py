@@ -121,7 +121,7 @@ def plot_rank(
             Target's name to display on the color bar.
 
     Returns:
-        A :class:`plotly.graph_objs.Figure` object.
+        A :class:`plotly.graph_objects.Figure` object.
 
     .. note::
         This function requires plotly >= 5.0.0.

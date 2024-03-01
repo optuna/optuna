@@ -18,7 +18,7 @@ class VSBXCrossover(BaseCrossover):
     - `Pedro J. Ballester, Jonathan N. Carter.
       Real-Parameter Genetic Algorithms for Finding Multiple Optimal Solutions
       in Multi-modal Optimization. GECCO 2003: 706-717
-      <https://link.springer.com/chapter/10.1007/3-540-45105-6_86>`_
+      <https://doi.org/10.1007/3-540-45105-6_86>`_
 
     Args:
         eta:
@@ -39,7 +39,7 @@ class VSBXCrossover(BaseCrossover):
         study: Study,
         search_space_bounds: np.ndarray,
     ) -> np.ndarray:
-        # https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.422.952&rep=rep1&type=pdf
+        # https://doi.org/10.1007/3-540-45105-6_86
         # Section 3.2 Crossover Schemes (vSBX)
         if self._eta is None:
             eta = 20.0 if study._is_multi_objective() else 2.0

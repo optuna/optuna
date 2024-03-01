@@ -12,6 +12,8 @@ from optuna.terminator import BaseErrorEvaluator
 from optuna.terminator import BaseImprovementEvaluator
 from optuna.terminator import CrossValidationErrorEvaluator
 from optuna.terminator import RegretBoundEvaluator
+from optuna.terminator.erroreval import StaticErrorEvaluator
+from optuna.terminator.improvement.evaluator import BestValueStagnationEvaluator
 from optuna.terminator.improvement.evaluator import DEFAULT_MIN_N_TRIALS
 from optuna.visualization._plotly_imports import _imports
 
@@ -108,7 +110,7 @@ def plot_terminator_improvement(
             shown in a lighter color. Defaults to ``20``.
 
     Returns:
-        A :class:`plotly.graph_objs.Figure` object.
+        A :class:`plotly.graph_objects.Figure` object.
     """
     _imports.check()
 
@@ -128,7 +130,10 @@ def _get_improvement_info(
     if improvement_evaluator is None:
         improvement_evaluator = RegretBoundEvaluator()
     if error_evaluator is None:
-        error_evaluator = CrossValidationErrorEvaluator()
+        if isinstance(improvement_evaluator, BestValueStagnationEvaluator):
+            error_evaluator = StaticErrorEvaluator(constant=0)
+        else:
+            error_evaluator = CrossValidationErrorEvaluator()
 
     trial_numbers = []
     completed_trials = []

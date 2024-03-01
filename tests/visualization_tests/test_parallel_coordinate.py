@@ -764,7 +764,7 @@ def test_get_parallel_coordinate_info_only_missing_params() -> None:
     )
 
 
-@pytest.mark.parametrize("value", [float("inf"), -float("inf"), float("nan")])
+@pytest.mark.parametrize("value", [float("inf"), -float("inf")])
 def test_nonfinite_removed(value: float) -> None:
     study = prepare_study_with_trials(value_for_first_trial=value)
     info = _get_parallel_coordinate_info(study)
@@ -772,7 +772,7 @@ def test_nonfinite_removed(value: float) -> None:
 
 
 @pytest.mark.parametrize("objective", (0, 1))
-@pytest.mark.parametrize("value", (float("inf"), -float("inf"), float("nan")))
+@pytest.mark.parametrize("value", (float("inf"), -float("inf")))
 def test_nonfinite_multiobjective(objective: int, value: float) -> None:
     study = prepare_study_with_trials(n_objectives=2, value_for_first_trial=value)
     info = _get_parallel_coordinate_info(

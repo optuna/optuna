@@ -70,7 +70,7 @@ def plot_hypervolume_history(
             The dimension of the reference point must be the same as the number of objectives.
 
     Returns:
-        A :class:`plotly.graph_objs.Figure` object.
+        A :class:`plotly.graph_objects.Figure` object.
     """
 
     _imports.check()

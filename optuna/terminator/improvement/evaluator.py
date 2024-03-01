@@ -1,29 +1,54 @@
+from __future__ import annotations
+
 import abc
 from typing import Dict
 from typing import List
-from typing import Optional
+from typing import TYPE_CHECKING
+
+import numpy as np
 
 from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
+from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.search_space import intersection_search_space
 from optuna.study import StudyDirection
-from optuna.terminator.improvement._preprocessing import AddRandomInputs
-from optuna.terminator.improvement._preprocessing import BasePreprocessing
-from optuna.terminator.improvement._preprocessing import OneToHot
-from optuna.terminator.improvement._preprocessing import PreprocessingPipeline
-from optuna.terminator.improvement._preprocessing import SelectTopTrials
-from optuna.terminator.improvement._preprocessing import ToMinimize
-from optuna.terminator.improvement._preprocessing import UnscaleLog
-from optuna.terminator.improvement.gp.base import _min_lcb
-from optuna.terminator.improvement.gp.base import _min_ucb
-from optuna.terminator.improvement.gp.base import BaseGaussianProcess
-from optuna.terminator.improvement.gp.botorch import _BoTorchGaussianProcess
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
+if TYPE_CHECKING:
+    import torch
+
+    from optuna._gp import acqf
+    from optuna._gp import gp
+    from optuna._gp import optim
+    from optuna._gp import prior
+    from optuna._gp import search_space
+else:
+    from optuna._imports import _LazyImport
+
+    torch = _LazyImport("torch")
+    gp = _LazyImport("optuna._gp.gp")
+    optim = _LazyImport("optuna._gp.optim")
+    acqf = _LazyImport("optuna._gp.acqf")
+    prior = _LazyImport("optuna._gp.prior")
+    search_space = _LazyImport("optuna._gp.search_space")
+
 DEFAULT_TOP_TRIALS_RATIO = 0.5
 DEFAULT_MIN_N_TRIALS = 20
+
+
+def _get_beta(n_params: int, n_trials: int, delta: float = 0.1) -> float:
+    # TODO(nabenabe0928): Check the original implementation to verify.
+    # Especially, |D| seems to be the domain size, but not the dimension based on Theorem 1.
+    beta = 2 * np.log(n_params * n_trials**2 * np.pi**2 / 6 / delta)
+
+    # The following div is according to the original paper: "We then further scale it down
+    # by a factor of 5 as defined in the experiments in
+    # `Srinivas et al. (2010) <https://dl.acm.org/doi/10.5555/3104322.3104451>`_"
+    beta /= 5
+
+    return beta
 
 
 @experimental_class("3.2.0")
@@ -60,59 +85,124 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         min_lcb_n_additional_samples:
             A minimum number of additional samples to estimate the lower confidence bound.
             Default to 2000.
-    """
+
+    For further information about this evaluator, please refer to the following paper:
+
+    - `Automatic Termination for Hyperparameter Optimization <https://proceedings.mlr.press/v188/makarova22a.html>`_
+    """  # NOQA: E501
 
     def __init__(
         self,
-        gp: Optional[BaseGaussianProcess] = None,
         top_trials_ratio: float = DEFAULT_TOP_TRIALS_RATIO,
         min_n_trials: int = DEFAULT_MIN_N_TRIALS,
-        min_lcb_n_additional_samples: int = 2000,
+        seed: int | None = None,
     ) -> None:
-        self._gp = gp or _BoTorchGaussianProcess()
         self._top_trials_ratio = top_trials_ratio
         self._min_n_trials = min_n_trials
-        self._min_lcb_n_additional_samples = min_lcb_n_additional_samples
+        self._log_prior = prior.default_log_prior
+        self._minimum_noise = prior.DEFAULT_MINIMUM_NOISE_VAR
+        self._optimize_n_samples = 2048
+        self._rng = LazyRandomState(seed)
 
-    def get_preprocessing(self, add_random_inputs: bool = False) -> BasePreprocessing:
-        processes = [
-            SelectTopTrials(
-                top_trials_ratio=self._top_trials_ratio,
-                min_n_trials=self._min_n_trials,
-            ),
-            UnscaleLog(),
-            ToMinimize(),
-        ]
+    def _get_top_n(
+        self, normalized_params: np.ndarray, values: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
+        assert len(normalized_params) == len(values)
+        n_trials = len(normalized_params)
+        top_n = np.clip(int(n_trials * self._top_trials_ratio), self._min_n_trials, n_trials)
+        top_n_val = np.partition(values, n_trials - top_n)[n_trials - top_n]
+        top_n_mask = values >= top_n_val
+        return normalized_params[top_n_mask], values[top_n_mask]
 
-        if add_random_inputs:
-            processes += [AddRandomInputs(self._min_lcb_n_additional_samples)]
+    def _compute_standardized_regret_bound(
+        self,
+        kernel_params: gp.KernelParamsTensor,
+        gp_search_space: search_space.SearchSpace,
+        normalized_top_n_params: np.ndarray,
+        standarized_top_n_values: np.ndarray,
+    ) -> float:
+        """
+        In the original paper, f(x) was intended to be minimized, but here we would like to
+        maximize f(x). Hence, the following changes happen:
+            1. min(ucb) over top trials becomes max(lcb) over top trials, and
+            2. min(lcb) over the search space becomes max(ucb) over the search space, and
+            3. Regret bound becomes max(ucb) over the search space minus max(lcb) over top trials.
+        """
 
-        processes += [OneToHot()]
+        n_trials, n_params = normalized_top_n_params.shape
 
-        return PreprocessingPipeline(processes)
+        # calculate max_ucb
+        beta = _get_beta(n_params, n_trials)
+        ucb_acqf_params = acqf.create_acqf_params(
+            acqf_type=acqf.AcquisitionFunctionType.UCB,
+            kernel_params=kernel_params,
+            search_space=gp_search_space,
+            X=normalized_top_n_params,
+            Y=standarized_top_n_values,
+            beta=beta,
+        )
+        seed = self._rng.rng.randint(np.iinfo(np.int32).max)
+        # UCB over the search space. (Original: LCB over the search space. See Change 1 above.)
+        standardized_ucb_value = max(
+            acqf.eval_acqf_no_grad(ucb_acqf_params, normalized_top_n_params).max(),
+            optim.optimize_acqf_sample(ucb_acqf_params, self._optimize_n_samples, seed)[1],
+        )
+
+        # calculate min_lcb
+        lcb_acqf_params = acqf.create_acqf_params(
+            acqf_type=acqf.AcquisitionFunctionType.LCB,
+            kernel_params=kernel_params,
+            search_space=gp_search_space,
+            X=normalized_top_n_params,
+            Y=standarized_top_n_values,
+            beta=beta,
+        )
+        # LCB over the top trials. (Original: UCB over the top trials. See Change 2 above.)
+        standardized_lcb_value = np.max(
+            acqf.eval_acqf_no_grad(lcb_acqf_params, normalized_top_n_params)
+        )
+
+        # max(UCB) - max(LCB). (Original: min(UCB) - min(LCB). See Change 3 above.)
+        return standardized_ucb_value - standardized_lcb_value  # standardized regret bound
 
     def evaluate(
         self,
         trials: List[FrozenTrial],
         study_direction: StudyDirection,
     ) -> float:
-        search_space = intersection_search_space(trials)
-        self._validate_input(trials, search_space)
+        optuna_search_space = intersection_search_space(trials)
+        self._validate_input(trials, optuna_search_space)
 
-        fit_trials = self.get_preprocessing().apply(trials, study_direction)
-        lcb_trials = self.get_preprocessing(add_random_inputs=True).apply(trials, study_direction)
+        complete_trials = [t for t in trials if t.state == TrialState.COMPLETE]
 
-        n_params = len(search_space)
-        n_trials = len(fit_trials)
+        # _gp module assumes that optimization direction is maximization
+        sign = -1 if study_direction == StudyDirection.MINIMIZE else 1
+        values = np.array([t.value for t in complete_trials]) * sign
+        gp_search_space, normalized_params = search_space.get_search_space_and_normalized_params(
+            complete_trials, optuna_search_space
+        )
+        normalized_top_n_params, top_n_values = self._get_top_n(normalized_params, values)
+        top_n_values_mean = top_n_values.mean()
+        top_n_values_std = max(1e-10, top_n_values.std())
+        standarized_top_n_values = (top_n_values - top_n_values_mean) / top_n_values_std
 
-        self._gp.fit(fit_trials)
+        kernel_params = gp.fit_kernel_params(
+            X=normalized_top_n_params,
+            Y=standarized_top_n_values,
+            is_categorical=(gp_search_space.scale_types == search_space.ScaleType.CATEGORICAL),
+            log_prior=self._log_prior,
+            minimum_noise=self._minimum_noise,
+            # TODO(y0z): Add `kernel_params_cache` to speedup.
+            initial_kernel_params=None,
+        )
 
-        ucb = _min_ucb(trials=fit_trials, gp=self._gp, n_params=n_params, n_trials=n_trials)
-        lcb = _min_lcb(trials=lcb_trials, gp=self._gp, n_params=n_params, n_trials=n_trials)
-
-        regret_bound = ucb - lcb
-
-        return regret_bound
+        standardized_regret_bound = self._compute_standardized_regret_bound(
+            kernel_params,
+            gp_search_space,
+            normalized_top_n_params,
+            standarized_top_n_values,
+        )
+        return standardized_regret_bound * top_n_values_std  # regret bound
 
     @classmethod
     def _validate_input(

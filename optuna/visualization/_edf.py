@@ -49,7 +49,8 @@ def plot_edf(
 
         EDF is useful to analyze and improve search spaces.
         For instance, you can see a practical use case of EDF in the paper
-        `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
+        `Designing Network Design Spaces
+        <https://doi.ieeecomputersociety.org/10.1109/CVPR42600.2020.01044>`_.
 
     .. note::
 
@@ -110,7 +111,7 @@ def plot_edf(
             Target's name to display on the axis label.
 
     Returns:
-        A :class:`plotly.graph_objs.Figure` object.
+        A :class:`plotly.graph_objects.Figure` object.
     """
 
     _imports.check()

@@ -55,35 +55,29 @@ class BaseTrial(abc.ABC):
 
     @overload
     @abc.abstractmethod
-    def suggest_categorical(self, name: str, choices: Sequence[None]) -> None:
-        ...
+    def suggest_categorical(self, name: str, choices: Sequence[None]) -> None: ...
 
     @overload
     @abc.abstractmethod
-    def suggest_categorical(self, name: str, choices: Sequence[bool]) -> bool:
-        ...
+    def suggest_categorical(self, name: str, choices: Sequence[bool]) -> bool: ...
 
     @overload
     @abc.abstractmethod
-    def suggest_categorical(self, name: str, choices: Sequence[int]) -> int:
-        ...
+    def suggest_categorical(self, name: str, choices: Sequence[int]) -> int: ...
 
     @overload
     @abc.abstractmethod
-    def suggest_categorical(self, name: str, choices: Sequence[float]) -> float:
-        ...
+    def suggest_categorical(self, name: str, choices: Sequence[float]) -> float: ...
 
     @overload
     @abc.abstractmethod
-    def suggest_categorical(self, name: str, choices: Sequence[str]) -> str:
-        ...
+    def suggest_categorical(self, name: str, choices: Sequence[str]) -> str: ...
 
     @overload
     @abc.abstractmethod
     def suggest_categorical(
         self, name: str, choices: Sequence[CategoricalChoiceType]
-    ) -> CategoricalChoiceType:
-        ...
+    ) -> CategoricalChoiceType: ...
 
     @abc.abstractmethod
     def suggest_categorical(

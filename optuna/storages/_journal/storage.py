@@ -74,8 +74,7 @@ class JournalStorage(BaseStorage):
             import optuna
 
 
-            def objective(trial):
-                ...
+            def objective(trial): ...
 
 
             storage = optuna.storages.JournalStorage(

@@ -34,7 +34,7 @@ class Terminator(BaseTerminator):
     For further information about the algorithm, please refer to the following paper:
 
     - `A. Makarova et al. Automatic termination for hyperparameter optimization.
-      <https://arxiv.org/abs/2104.08166>`_
+      <https://proceedings.mlr.press/v188/makarova22a.html>`_
 
     Args:
         improvement_evaluator:

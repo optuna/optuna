@@ -67,9 +67,7 @@ def test_check_plot_args() -> None:
         _check_plot_args(study, lambda t: cast(float, t.value), "Objective Value")
 
 
-@pytest.mark.parametrize(
-    "value, expected", [(float("inf"), 1), (-float("inf"), 1), (float("nan"), 1), (0.0, 2)]
-)
+@pytest.mark.parametrize("value, expected", [(float("inf"), 1), (-float("inf"), 1), (0.0, 2)])
 def test_filter_inf_trials(value: float, expected: int) -> None:
     study = create_study()
     study.add_trial(
@@ -97,11 +95,9 @@ def test_filter_inf_trials(value: float, expected: int) -> None:
     [
         (float("inf"), 0, 2),
         (-float("inf"), 0, 2),
-        (float("nan"), 0, 2),
         (0.0, 0, 3),
         (float("inf"), 1, 1),
         (-float("inf"), 1, 1),
-        (float("nan"), 1, 1),
         (0.0, 1, 3),
     ],
 )

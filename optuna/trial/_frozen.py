@@ -1,4 +1,5 @@
 import datetime
+import math
 from typing import Any
 from typing import cast
 from typing import Dict
@@ -234,30 +235,24 @@ class FrozenTrial(BaseTrial):
         return int(self._suggest(name, IntDistribution(low, high, log=log, step=step)))
 
     @overload
-    def suggest_categorical(self, name: str, choices: Sequence[None]) -> None:
-        ...
+    def suggest_categorical(self, name: str, choices: Sequence[None]) -> None: ...
 
     @overload
-    def suggest_categorical(self, name: str, choices: Sequence[bool]) -> bool:
-        ...
+    def suggest_categorical(self, name: str, choices: Sequence[bool]) -> bool: ...
 
     @overload
-    def suggest_categorical(self, name: str, choices: Sequence[int]) -> int:
-        ...
+    def suggest_categorical(self, name: str, choices: Sequence[int]) -> int: ...
 
     @overload
-    def suggest_categorical(self, name: str, choices: Sequence[float]) -> float:
-        ...
+    def suggest_categorical(self, name: str, choices: Sequence[float]) -> float: ...
 
     @overload
-    def suggest_categorical(self, name: str, choices: Sequence[str]) -> str:
-        ...
+    def suggest_categorical(self, name: str, choices: Sequence[str]) -> str: ...
 
     @overload
     def suggest_categorical(
         self, name: str, choices: Sequence[CategoricalChoiceType]
-    ) -> CategoricalChoiceType:
-        ...
+    ) -> CategoricalChoiceType: ...
 
     def suggest_categorical(
         self, name: str, choices: Sequence[CategoricalChoiceType]
@@ -321,8 +316,13 @@ class FrozenTrial(BaseTrial):
                     "`datetime_complete` is supposed to be None for an unfinished trial."
                 )
 
-        if self.state == TrialState.COMPLETE and self._values is None:
-            raise ValueError("`value` is supposed to be set for a complete trial.")
+        if self.state == TrialState.FAIL and self._values is not None:
+            raise ValueError(f"values should be None for a failed trial, but got {self._values}.")
+        if self.state == TrialState.COMPLETE:
+            if self._values is None:
+                raise ValueError("values should be set for a complete trial.")
+            elif any(math.isnan(x) for x in self._values):
+                raise ValueError("values should not contain NaN.")
 
         if set(self.params.keys()) != set(self.distributions.keys()):
             raise ValueError(

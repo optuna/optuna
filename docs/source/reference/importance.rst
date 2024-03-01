@@ -19,3 +19,4 @@ The :mod:`~optuna.importance` module provides functionality for evaluating hyper
    optuna.importance.get_param_importances
    optuna.importance.FanovaImportanceEvaluator
    optuna.importance.MeanDecreaseImpurityImportanceEvaluator
+   optuna.importance.PedAnovaImportanceEvaluator

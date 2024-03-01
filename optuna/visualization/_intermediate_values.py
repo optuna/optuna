@@ -103,7 +103,7 @@ def plot_intermediate_values(study: Study) -> "go.Figure":
             values.
 
     Returns:
-        A :class:`plotly.graph_objs.Figure` object.
+        A :class:`plotly.graph_objects.Figure` object.
     """
 
     _imports.check()
@@ -130,9 +130,11 @@ def _get_intermediate_plot(info: _IntermediatePlotInfo) -> "go.Figure":
             x=tuple((x for x, _ in tinfo.sorted_intermediate_values)),
             y=tuple((y for _, y in tinfo.sorted_intermediate_values)),
             mode="lines+markers",
-            marker=default_marker
-            if tinfo.feasible
-            else {**default_marker, "color": "#CCCCCC"},  # type: ignore[dict-item]
+            marker=(
+                default_marker
+                if tinfo.feasible
+                else {**default_marker, "color": "#CCCCCC"}  # type: ignore[dict-item]
+            ),
             name="Trial{}".format(tinfo.trial_number),
         )
         for tinfo in trial_infos

@@ -216,7 +216,7 @@ def plot_optimization_history(
             A flag to show the error bar.
 
     Returns:
-        A :class:`plotly.graph_objs.Figure` object.
+        A :class:`plotly.graph_objects.Figure` object.
     """
 
     _imports.check()

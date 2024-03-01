@@ -8,6 +8,7 @@ from optuna.pruners._patient import PatientPruner
 from optuna.pruners._percentile import PercentilePruner
 from optuna.pruners._successive_halving import SuccessiveHalvingPruner
 from optuna.pruners._threshold import ThresholdPruner
+from optuna.pruners._wilcoxon import WilcoxonPruner
 
 
 if TYPE_CHECKING:
@@ -24,6 +25,7 @@ __all__ = [
     "PercentilePruner",
     "SuccessiveHalvingPruner",
     "ThresholdPruner",
+    "WilcoxonPruner",
 ]
 
 

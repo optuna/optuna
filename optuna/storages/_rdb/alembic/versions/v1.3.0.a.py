@@ -5,6 +5,7 @@ Revises: v1.2.0.a
 Create Date: 2020-02-14 16:23:04.800808
 
 """
+
 import json
 
 from alembic import op

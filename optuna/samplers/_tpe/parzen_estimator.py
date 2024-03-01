@@ -115,29 +115,35 @@ class _ParzenEstimator:
     def _transform(self, samples_dict: Dict[str, np.ndarray]) -> np.ndarray:
         return np.array(
             [
-                np.log(samples_dict[param])
-                if self._is_log(self._search_space[param])
-                else samples_dict[param]
+                (
+                    np.log(samples_dict[param])
+                    if self._is_log(self._search_space[param])
+                    else samples_dict[param]
+                )
                 for param in self._search_space
             ]
         ).T
 
     def _untransform(self, samples_array: np.ndarray) -> Dict[str, np.ndarray]:
         res = {
-            param: np.exp(samples_array[:, i])
-            if self._is_log(self._search_space[param])
-            else samples_array[:, i]
+            param: (
+                np.exp(samples_array[:, i])
+                if self._is_log(self._search_space[param])
+                else samples_array[:, i]
+            )
             for i, param in enumerate(self._search_space)
         }
         # TODO(contramundum53): Remove this line after fixing log-Int hack.
         return {
-            param: np.clip(
-                dist.low + np.round((res[param] - dist.low) / dist.step) * dist.step,
-                dist.low,
-                dist.high,
+            param: (
+                np.clip(
+                    dist.low + np.round((res[param] - dist.low) / dist.step) * dist.step,
+                    dist.low,
+                    dist.high,
+                )
+                if isinstance(dist, IntDistribution)
+                else res[param]
             )
-            if isinstance(dist, IntDistribution)
-            else res[param]
             for (param, dist) in self._search_space.items()
         }
 

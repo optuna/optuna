@@ -14,7 +14,6 @@ With optional arguments of ``step`` and ``log``, we can discretize or take the l
 integer and floating point parameters.
 """
 
-
 import optuna
 
 

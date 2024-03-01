@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections import Counter
 from collections.abc import Callable
 from collections.abc import Sequence
-import copy
 import itertools
 from typing import Any
 from unittest.mock import MagicMock
@@ -33,15 +32,15 @@ from optuna.samplers.nsgaii import UniformCrossover
 from optuna.samplers.nsgaii import VSBXCrossover
 from optuna.samplers.nsgaii._after_trial_strategy import NSGAIIAfterTrialStrategy
 from optuna.samplers.nsgaii._child_generation_strategy import NSGAIIChildGenerationStrategy
+from optuna.samplers.nsgaii._constraints_evaluation import _constrained_dominates
+from optuna.samplers.nsgaii._constraints_evaluation import _validate_constraints
 from optuna.samplers.nsgaii._crossover import _inlined_categorical_uniform_crossover
-from optuna.samplers.nsgaii._dominates import _constrained_dominates
-from optuna.samplers.nsgaii._dominates import _validate_constraints
 from optuna.samplers.nsgaii._elite_population_selection_strategy import (
     NSGAIIElitePopulationSelectionStrategy,
 )
 from optuna.samplers.nsgaii._elite_population_selection_strategy import _calc_crowding_distance
 from optuna.samplers.nsgaii._elite_population_selection_strategy import _crowding_distance_sort
-from optuna.samplers.nsgaii._elite_population_selection_strategy import _fast_non_dominated_sort
+from optuna.samplers.nsgaii._elite_population_selection_strategy import _rank_population
 from optuna.samplers.nsgaii._sampler import _GENERATION_KEY
 from optuna.study._multi_objective import _dominates
 from optuna.study._study_direction import StudyDirection
@@ -391,7 +390,7 @@ def _assert_population_per_rank(
 
 @pytest.mark.parametrize("direction1", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
 @pytest.mark.parametrize("direction2", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
-def test_fast_non_dominated_sort_no_constraints(
+def test_rank_population_no_constraints(
     direction1: StudyDirection, direction2: StudyDirection
 ) -> None:
     directions = [direction1, direction2]
@@ -399,11 +398,11 @@ def test_fast_non_dominated_sort_no_constraints(
     values = [[v1, v2] for v1 in value_list for v2 in value_list]
 
     trials = [_create_frozen_trial(number=i, values=v) for i, v in enumerate(values)]
-    population_per_rank = _fast_non_dominated_sort(copy.copy(trials), directions, _dominates)
+    population_per_rank = _rank_population(trials, directions)
     _assert_population_per_rank(trials, directions, population_per_rank)
 
 
-def test_fast_non_dominated_sort_with_constraints() -> None:
+def test_rank_population_with_constraints() -> None:
     value_list = [10, 20, 20, 30, float("inf"), float("inf"), -float("inf")]
     values = [[v1, v2] for v1 in value_list for v2 in value_list]
 
@@ -415,17 +414,26 @@ def test_fast_non_dominated_sort_with_constraints() -> None:
         for i, (v, c) in enumerate(itertools.product(values, constraints))
     ]
     directions = [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
-    population_per_rank = _fast_non_dominated_sort(
-        copy.copy(trials), directions, _constrained_dominates
-    )
+    population_per_rank = _rank_population(trials, directions, is_constrained=True)
     _assert_population_per_rank(trials, directions, population_per_rank)
 
 
 def test_validate_constraints() -> None:
+    # Nan is not allowed in constraints.
     with pytest.raises(ValueError):
         _validate_constraints(
             [_create_frozen_trial(number=0, values=[1], constraints=[0, float("nan")])],
-            constraints_func=lambda _: [0],
+            is_constrained=True,
+        )
+
+    # Different numbers of constraints are not allowed.
+    with pytest.raises(ValueError):
+        _validate_constraints(
+            [
+                _create_frozen_trial(number=0, values=[1], constraints=[0]),
+                _create_frozen_trial(number=1, values=[1], constraints=[0, 1]),
+            ],
+            is_constrained=True,
         )
 
 
@@ -442,7 +450,7 @@ def test_validate_constraints() -> None:
         ],
     ],
 )
-def test_fast_non_dominated_sort_missing_constraint_values(
+def test_rank_population_missing_constraint_values(
     values_and_constraints: list[tuple[list[float], list[float]]]
 ) -> None:
     with warnings.catch_warnings():
@@ -458,19 +466,18 @@ def test_fast_non_dominated_sort_missing_constraint_values(
         ]
 
         with pytest.warns(UserWarning):
-            population_per_rank = _fast_non_dominated_sort(
-                copy.copy(trials), list(directions), _constrained_dominates
-            )
+            _validate_constraints(trials, is_constrained=True)
+        population_per_rank = _rank_population(trials, list(directions), is_constrained=True)
         _assert_population_per_rank(trials, list(directions), population_per_rank)
 
 
 @pytest.mark.parametrize("n_dims", [1, 2, 3])
-def test_fast_non_dominated_sort_empty(n_dims: int) -> None:
+def test_rank_population_empty(n_dims: int) -> None:
     for directions in itertools.product(
         [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE], repeat=n_dims
     ):
         trials: list[FrozenTrial] = []
-        population_per_rank = _fast_non_dominated_sort(trials, list(directions), _dominates)
+        population_per_rank = _rank_population(trials, list(directions))
         assert population_per_rank == []
 
 

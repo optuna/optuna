@@ -9,9 +9,8 @@ This tutorial showcases how to use & implement Optuna ``Callback`` for :func:`~o
 ``Callback`` is called after every evaluation of ``objective``, and
 it takes :class:`~optuna.study.Study` and :class:`~optuna.trial.FrozenTrial` as arguments, and does some work.
 
-:class:`~optuna.integration.MLflowCallback` is a great example.
+`MLflowCallback <https://optuna-integration.readthedocs.io/en/stable/reference/generated/optuna_integration.MLflowCallback.html>`_ is a great example.
 """
-
 
 ###################################################################################################
 # Stop optimization after some trials are pruned in a row
