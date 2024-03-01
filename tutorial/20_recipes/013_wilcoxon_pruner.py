@@ -317,4 +317,4 @@ fig.update_layout(
     xaxis_title="Trial number",
     yaxis_title="Number of evaluations before pruned",
 )
-fig.show()
+fig
