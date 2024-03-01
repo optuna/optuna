@@ -304,18 +304,12 @@ optuna.visualization.plot_optimization_history(study)
 
 
 x_values = [x for x in range(len(study.trials)) if x != study.best_trial.number]
-y_values = [
-    len(t.intermediate_values)
-    for t in study.trials
-    if t.number != study.best_trial.number
-]
+y_values = [len(t.intermediate_values) for t in study.trials if t.number != study.best_trial.number]
 best_trial_y = [len(study.best_trial.intermediate_values)]
 best_trial_x = [study.best_trial.number]
 fig = go.Figure()
 fig.add_trace(go.Bar(x=x_values, y=y_values, name="Evaluations"))
-fig.add_trace(
-    go.Bar(x=best_trial_x, y=best_trial_y, name="Best Trial", marker_color="red")
-)
+fig.add_trace(go.Bar(x=best_trial_x, y=best_trial_y, name="Best Trial", marker_color="red"))
 fig.update_layout(
     title="Number of evaluations in each trial",
     xaxis_title="Trial number",
