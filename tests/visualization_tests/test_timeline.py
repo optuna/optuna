@@ -12,7 +12,12 @@ import optuna
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study.study import Study
 from optuna.trial import TrialState
-from optuna.visualization._plotly_imports import go
+from optuna.visualization._plotly_imports import _imports as plotly_imports
+
+
+if plotly_imports.is_successful():
+    from optuna.visualization._plotly_imports import go
+
 from optuna.visualization._timeline import _get_timeline_info
 from optuna.visualization._timeline import plot_timeline
 

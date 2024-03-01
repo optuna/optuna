@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from collections.abc import Sequence
 import warnings
 
@@ -86,15 +85,43 @@ def _constrained_dominates(
     return violation0 < violation1
 
 
+def _evaluate_penalty(population: Sequence[FrozenTrial]) -> np.ndarray:
+    """Evaluate feasibility of trials in population.
+    Returns:
+        A list of feasibility status T/F/None of trials in population, where T/F means
+        feasible/infeasible and None means that the trial does not have constraint values.
+    """
+
+    penalty: list[float] = []
+    for trial in population:
+        constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
+        if constraints is None:
+            penalty.append(np.nan)
+        else:
+            penalty.append(sum(v for v in constraints if v > 0))
+    return np.array(penalty)
+
+
 def _validate_constraints(
     population: list[FrozenTrial],
-    constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
+    *,
+    is_constrained: bool = False,
 ) -> None:
-    if constraints_func is None:
+    if not is_constrained:
         return
+
+    num_constraints = max(
+        [len(t.system_attrs.get(_CONSTRAINTS_KEY, [])) for t in population], default=0
+    )
     for _trial in population:
         _constraints = _trial.system_attrs.get(_CONSTRAINTS_KEY)
         if _constraints is None:
+            warnings.warn(
+                f"Trial {_trial.number} does not have constraint values."
+                " It will be dominated by the other trials."
+            )
             continue
         if np.any(np.isnan(np.array(_constraints))):
             raise ValueError("NaN is not acceptable as constraint value.")
+        elif len(_constraints) != num_constraints:
+            raise ValueError("Trials with different numbers of constraints cannot be compared.")
