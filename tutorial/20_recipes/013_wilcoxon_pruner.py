@@ -1,10 +1,10 @@
 """
 .. _wilcoxon_pruner:
 
-Wilcoxon Pruner
+Early-stopping independent evaluations by WilcoxonPruner
 ===============
 
-This tutorial showcases Optuna's wilcoxon pruner.
+This tutorial showcases Optuna's Wilcoxon pruner.
 This pruner is effective for objective functions that averages multiple evaluations.
 
 We solve Traveling Salesman Problem (TSP) by Simulated Annealing (SA).
@@ -47,56 +47,85 @@ As the temperature decreases according to a cooling schedule,
 the algorithm becomes more conservative, accepting only solutions
 that improve the objective function or those that do not significantly worsen it.
 
-Main Tutorial
-=============
-
 This method allows the SA algorithm to balance exploration and exploitation,
 making it effective for solving complex optimization problems where
 the solution space is large and potentially rugged with many local optima.
+However, determining an effective cooling schedule is problem-dependent and
+can be challenging. There is no one-size-fits-all approach, and
+the optimal schedule may vary significantly between different types of problems.
+Finding a good cooling schedule is an integral part of successfully applying SA.
 
+Main Tutorial: Tuning SA Parameters for Solving TSP
+=============
 """
 
+from dataclasses import dataclass
 import math
-from typing import NamedTuple
 
 import numpy as np
 import optuna
+import plotly.graph_objects as go
 from numpy.linalg import norm
 
 
-class SAOptions(NamedTuple):
-    max_iter: int = 1000
+@dataclass
+class SAOptions:
+    max_iter: int = 10000
     T0: float = 1.0
-    alpha: float = 1.0
-    patience: int = 300
+    alpha: float = 2.0
+    patience: int = 50
+
+
+def tsp_cost(vertices: np.ndarray, idxs: np.ndarray) -> float:
+    return norm(vertices[idxs] - vertices[np.roll(idxs, 1)], axis=-1).sum()
+
+
+###################################################################################################
+# Greedy solution for initial guess.
+
+
+def tsp_greedy(vertices: np.ndarray) -> np.ndarray:
+    idxs = [0]
+    for _ in range(len(vertices) - 1):
+        dists_from_last = norm(vertices[idxs[-1], None] - vertices, axis=-1)
+        dists_from_last[idxs] = np.inf
+        idxs.append(np.argmin(dists_from_last))
+    return np.array(idxs)
 
 
 ###################################################################################################
 # .. note::
-#     The following `simulated_annealing` function can be acceralated by `numba`.
+#     The following `tsp_simulated_annealing` function can be acceralated by `numba`.
+# .. note::
+#     For simplicity, we will use the 2-opt neighborhood search to solve TSP.
+#     The 2-opt method is valued for its fundamental approach, straightforward implementation,
+#     and broad applicability. However, it's important to note that for more complex TSP instances,
+#     there are significantly more advanced methods than the 2-opt neighborhood search,
+#     such as Iterated Local Search (ILS) combined with Lin-Kernighan heuristics.
 
 
-def simulated_annealing(vertices, initial_idxs, options: SAOptions):
+def tsp_simulated_annealing(vertices: np.ndarray, options: SAOptions) -> np.ndarray:
 
     def temperature(t: float):
         # t: 0 ... 1
         return options.T0 * (1 - t) ** options.alpha
 
-    idxs = initial_idxs.copy()
     N = len(vertices)
-    assert len(idxs) == N
 
-    cost = sum([norm(vertices[idxs[i]] - vertices[idxs[(i + 1) % N]]) for i in range(N)])
+    idxs = tsp_greedy(vertices)
+    cost = tsp_cost(vertices, idxs)
     best_idxs = idxs.copy()
     best_cost = cost
-
     remaining_patience = options.patience
-    np.random.seed(11111)
 
     for iter in range(options.max_iter):
+
         i = np.random.randint(0, N)
         j = (i + 2 + np.random.randint(0, N - 3)) % N
         i, j = min(i, j), max(i, j)
+        # Reverse the order of vertices between range [i+1, j].
+
+        # cost difference by 2-opt reversal
         delta_cost = (
             -norm(vertices[idxs[(i + 1) % N]] - vertices[idxs[i]])
             - norm(vertices[idxs[j]] - vertices[idxs[(j + 1) % N]])
@@ -104,15 +133,18 @@ def simulated_annealing(vertices, initial_idxs, options: SAOptions):
             + norm(vertices[idxs[(i + 1) % N]] - vertices[idxs[(j + 1) % N]])
         )
         temp = temperature(iter / options.max_iter)
-
-        if delta_cost <= 0.0 or np.random.rand() < math.exp(-delta_cost / temp):
+        if delta_cost <= 0.0 or np.random.random() < math.exp(-delta_cost / temp):
+            # accept the 2-opt reversal
             cost += delta_cost
             idxs[i + 1 : j + 1] = idxs[i + 1 : j + 1][::-1]
             if cost < best_cost:
                 best_idxs[:] = idxs
                 best_cost = cost
+                remaining_patience = options.patience
 
-        if cost >= best_cost:
+        if cost > best_cost:
+            # If the best solution is not updated for "patience" iteratoins,
+            # restart from the best solution.
             remaining_patience -= 1
             if remaining_patience == 0:
                 idxs[:] = best_idxs
@@ -126,21 +158,26 @@ def simulated_annealing(vertices, initial_idxs, options: SAOptions):
 # We make a random dataset of TSP.
 
 
-def make_dataset(num_vertex, num_problem, seed):
+def make_dataset(num_vertex: int, num_problem: int, seed: int = 0) -> np.ndarray:
     rng = np.random.default_rng(seed=seed)
-    dataset = []
-    for _ in range(num_problem):
-        dataset.append(
-            {
-                "vertices": rng.random((num_vertex, 2)),
-                "idxs": rng.permutation(num_vertex),
-            }
-        )
-    return dataset
+    return rng.random((num_problem, num_vertex, 2))
 
 
-NUM_PROBLEM = 20
-dataset = make_dataset(200, NUM_PROBLEM, seed=33333)
+dataset = make_dataset(
+    num_vertex=100,
+    num_problem=50,
+)
+
+N_TRIALS = 50
+
+
+###################################################################################################
+# We set a very small number of SA iterations for demonstration purpose.
+# In practice, you should set a larger number of iterations.
+
+
+N_SA_ITER = 10000
+count = 0
 
 
 ###################################################################################################
@@ -148,7 +185,7 @@ dataset = make_dataset(200, NUM_PROBLEM, seed=33333)
 # We make pseudo random number generator here.
 
 
-rng = np.random.default_rng(seed=44444)
+rng = np.random.default_rng(seed=0)
 
 
 ###################################################################################################
@@ -159,35 +196,35 @@ num_evaluation = 0
 
 
 ###################################################################################################
-# In this tutorial, we optimize three parameters: T0, alpha, and patience.
+# In this tutorial, we optimize three parameters: `T0`, `alpha`, and `patience`.
 #
-# T0 (Initial Temperature)
+# `T0` (Initial Temperature)
 # -----------------------------
 #
 # In Simulated Annealing, the concept of "temperature" is an analogy to control the randomness
-# of the search process. The initial temperature, denoted as T0, sets the starting level of
+# of the search process. The initial temperature, denoted as `T0`, sets the starting level of
 # this temperature. A higher initial temperature allows the algorithm to explore a wider range of
 # solutions and to accept worse solutions with higher probability, facilitating escape from local
 # optima. As the algorithm progresses, the temperature is gradually decreased, leading to a more
 # refined search around promising areas,
 # ultimately aiming for convergence towards an optimal solution.
 #
-# Alpha (Cooling Rate)
+# `Alpha` (Cooling Rate)
 # -----------------------------
 #
-# Alpha is a parameter that dictates the rate at which the temperature is decreased in each
+# `Alpha` is a parameter that dictates the rate at which the temperature is decreased in each
 # iteration of the algorithm. It is typically a value between 0 and 1, and
 # it's used to multiply the current temperature to obtain the temperature for the next iteration,
-# following the formula T = alpha * T. A smaller alpha value results in a quicker decrease
+# following the formula `T = Alpha * T`. A smaller `Alpha` value results in a quicker decrease
 # in temperature, making the algorithm converge faster but potentially missing broader exploration.
 #
-# Patience
+# `patience`
 # -----------------------------
 #
-# In this specific context, patience refers to the mechanism of reverting to the best solution
+# In this specific context, `patience` refers to the mechanism of reverting to the best solution
 # found so far after a certain number of iterations without improvement. This concept is
 # somewhat akin to a "reset" or "rollback" function, where if the algorithm hasn't found a
-# better solution within the defined 'patience' threshold (a set number of iterations),
+# better solution within the defined `patience` threshold (a set number of iterations),
 # it will revert to the best solution it has encountered. This strategy can prevent the
 # algorithm from wandering too far from promising regions of the solution space and can
 # help in maintaining a focus on refining the best solutions found, rather than continuing
@@ -204,30 +241,32 @@ num_evaluation = 0
 #     This workaround provides beneficial information about such trials to these algorithms.
 
 
-def objective(trial):
+def objective(trial: optuna.Trial) -> float:
     global num_evaluation
-    patience = trial.suggest_int("patience", 10, 1000, log=True)
-    T0 = trial.suggest_float("T0", 0.1, 10.0, log=True)
-    alpha = trial.suggest_float("alpha", 1.1, 10.0, log=True)
-    options = SAOptions(max_iter=10000, patience=patience, T0=T0, alpha=alpha)
-    ordering = rng.permutation(range(len(dataset)))
+    options = SAOptions(
+        max_iter=N_SA_ITER,
+        T0=trial.suggest_float("T0", 0.01, 10.0, log=True),
+        alpha=trial.suggest_float("alpha", 1.0, 10.0, log=True),
+        patience=trial.suggest_int("patience", 10, 1000, log=True),
+    )
     results = []
+
+    # For best results, shuffle the evaluation order in each trial.
+    ordering = np.random.permutation(len(dataset))
     for i in ordering:
         num_evaluation += 1
-        d = dataset[i]
-        result_idxs = simulated_annealing(d["vertices"], d["idxs"], options)
-        result_cost = 0.0
-        n = len(d["vertices"])
-        for j in range(n):
-            result_cost += norm(
-                d["vertices"][result_idxs[j]] - d["vertices"][result_idxs[(j + 1) % n]]
-            )
+        result_idxs = tsp_simulated_annealing(vertices=dataset[i], options=options)
+        result_cost = tsp_cost(dataset[i], result_idxs)
         results.append(result_cost)
 
         trial.report(result_cost, i)
         if trial.should_prune():
-            return sum(results) / len(results)  # It is the advanced workaround.
             # raise optuna.TrialPruned()
+
+            # Return the current predicted value when pruned.
+            # This is a workaround for the problem that
+            # current TPE sampler cannot utilize pruned trials effectively.
+            return sum(results) / len(results)
 
     return sum(results) / len(results)
 
@@ -236,12 +275,12 @@ def objective(trial):
 # We use `TPESampler` with `WilcoxonPruner`.
 
 
-NUM_TRIAL = 100
-sampler = optuna.samplers.TPESampler(seed=55555)
-pruner = optuna.pruners.WilcoxonPruner(p_threshold=0.05)
+np.random.seed(0)
+sampler = optuna.samplers.TPESampler(seed=1)
+pruner = optuna.pruners.WilcoxonPruner(p_threshold=0.1)
 study = optuna.create_study(direction="minimize", sampler=sampler, pruner=pruner)
-study.enqueue_trial({"patience": 300, "T0": 1.0, "alpha": 1.8})  # default params
-study.optimize(objective, n_trials=NUM_TRIAL)
+study.enqueue_trial({"T0": 1.0, "alpha": 2.0, "patience": 50})  # default params
+study.optimize(objective, n_trials=N_TRIALS)
 
 
 ###################################################################################################
@@ -250,7 +289,7 @@ study.optimize(objective, n_trials=NUM_TRIAL)
 
 print(f"The number of trials: {len(study.trials)}")
 print(f"Best value: {study.best_value} (params: {study.best_params})")
-print(f"Number of evaluation: {num_evaluation} / {NUM_PROBLEM * NUM_TRIAL}")
+print(f"Number of evaluation: {num_evaluation} / {len(dataset) * N_TRIALS}")
 
 
 ###################################################################################################
@@ -258,3 +297,28 @@ print(f"Number of evaluation: {num_evaluation} / {NUM_PROBLEM * NUM_TRIAL}")
 
 
 optuna.visualization.plot_optimization_history(study)
+
+
+###################################################################################################
+# Visualize the number of evaluations in each trial.
+
+
+x_values = [x for x in range(len(study.trials)) if x != study.best_trial.number]
+y_values = [
+    len(t.intermediate_values)
+    for t in study.trials
+    if t.number != study.best_trial.number
+]
+best_trial_y = [len(study.best_trial.intermediate_values)]
+best_trial_x = [study.best_trial.number]
+fig = go.Figure()
+fig.add_trace(go.Bar(x=x_values, y=y_values, name="Evaluations"))
+fig.add_trace(
+    go.Bar(x=best_trial_x, y=best_trial_y, name="Best Trial", marker_color="red")
+)
+fig.update_layout(
+    title="Number of evaluations in each trial",
+    xaxis_title="Trial number",
+    yaxis_title="Number of evaluations before pruned",
+)
+fig.show()
