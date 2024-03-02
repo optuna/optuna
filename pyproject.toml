@@ -96,11 +96,7 @@ optional = [
   "scikit-learn>=0.24.2",
   # optuna/visualization/param_importances.py.
   "scipy",  # optuna/samplers/_gp
-<<<<<<< HEAD
-"torch",  # optuna/samplers/_gp
-=======
   "torch",  # optuna/samplers/_gp
->>>>>>> 9c80d915228dd119805f1bfd7a9216fddebbfd26
 ]
 test = [
   "coverage",

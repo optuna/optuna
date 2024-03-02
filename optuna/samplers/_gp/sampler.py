@@ -118,6 +118,9 @@ class GPSampler(BaseSampler):
         acqf_params: "acqf.AcquisitionFunctionParams",
         best_params: np.ndarray,
     ) -> np.ndarray:
+        # Advanced users can override this method to change the optimization algorithm.
+        # However, we do not make any effort to keep backward compatibility between versions.
+        # Particularly, we may remove this function in future refactoring.
         normalized_params, _acqf_val = optim_mixed.optimize_acqf_mixed(
             acqf_params,
             given_initial_xs=best_params[None, :],
