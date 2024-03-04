@@ -184,8 +184,6 @@ def _fit_kernel_params(
                 else torch.exp(raw_params_tensor[n_params + 1]) + minimum_noise
             ),
         )
-        if deterministic_objective:
-            params.noise_var = torch.tensor(minimum_noise, dtype=torch.float64)
         loss = -marginal_log_likelihood(
             torch.from_numpy(X), torch.from_numpy(Y), torch.from_numpy(is_categorical), params
         ) - log_prior(params)
