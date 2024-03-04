@@ -64,7 +64,7 @@ def matern52_kernel_from_squared_distance(squared_distance: torch.Tensor) -> tor
     return Matern52Kernel.apply(squared_distance)  # type: ignore
 
 
-@dataclass
+@dataclass(frozen=True)
 class KernelParamsTensor:
     # Kernel parameters to fit.
     inverse_squared_lengthscales: torch.Tensor  # [len(params)]
