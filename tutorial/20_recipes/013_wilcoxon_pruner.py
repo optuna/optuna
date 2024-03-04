@@ -320,10 +320,10 @@ d = dataset[0]
 result_idxs = tsp_greedy(d)
 result_idxs = np.append(result_idxs, result_idxs[0])
 fig = go.Figure()
-fig.add_trace(go.Scatter(x=d[result_idxs, 0], y=d[result_idxs, 1], mode='lines+markers'))
+fig.add_trace(go.Scatter(x=d[result_idxs, 0], y=d[result_idxs, 1], mode="lines+markers"))
 fig.update_layout(
     title=f"greedy solution (initial guess),  cost: {tsp_cost(d, result_idxs):.3f}",
-    xaxis=dict(scaleanchor="y", scaleratio=1)
+    xaxis=dict(scaleanchor="y", scaleratio=1),
 )
 fig
 
@@ -338,9 +338,9 @@ options = SAOptions(
 result_idxs = tsp_simulated_annealing(d, options)
 result_idxs = np.append(result_idxs, result_idxs[0])
 fig = go.Figure()
-fig.add_trace(go.Scatter(x=d[result_idxs, 0], y=d[result_idxs, 1], mode='lines+markers'))
+fig.add_trace(go.Scatter(x=d[result_idxs, 0], y=d[result_idxs, 1], mode="lines+markers"))
 fig.update_layout(
     title=f"n_iter: {options.max_iter}, cost: {tsp_cost(d, result_idxs):.3f}",
-    xaxis=dict(scaleanchor="y", scaleratio=1)
+    xaxis=dict(scaleanchor="y", scaleratio=1),
 )
 fig
