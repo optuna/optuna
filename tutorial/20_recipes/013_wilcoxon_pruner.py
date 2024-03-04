@@ -313,7 +313,7 @@ fig
 
 
 ###################################################################################################
-# Visualize the initial guess and the solution found by SA of one of the problems.
+# Visualize the greedy solution (used by initial guess) of a TSP problem.
 
 
 d = dataset[0]
@@ -326,6 +326,10 @@ fig.update_layout(
     xaxis=dict(scaleanchor="y", scaleratio=1),
 )
 fig
+
+
+###################################################################################################
+# Visualize the solution found by `tsp_simulated_annealing` of the same TSP problem.
 
 
 params = study.best_params
