@@ -89,9 +89,9 @@ jobs:
       run: |
         if [ "${{ github.event_name }}" = "schedule" ] || \
            [ "${{ github.event_name }}" = "workflow_dispatch" ] ; then
-          target="not integration"
+          target=""
         else
-          target="not integration and not slow"
+          target="not slow"
         fi
 
         if [ "${{ matrix.python-version }}" = "3.12" ] ; then
