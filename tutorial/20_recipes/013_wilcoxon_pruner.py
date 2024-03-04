@@ -4,7 +4,7 @@
 Early-stopping independent evaluations by WilcoxonPruner
 ============================================================
 
-This tutorial showcases Optuna's Wilcoxon pruner.
+This tutorial showcases Optuna's WilcoxonPruner.
 This pruner is effective for objective functions that averages multiple evaluations.
 
 We solve Traveling Salesman Problem (TSP) by Simulated Annealing (SA).
@@ -309,4 +309,34 @@ fig.update_layout(
     xaxis_title="Trial number",
     yaxis_title="Number of evaluations before pruned",
 )
+fig
+
+
+###################################################################################################
+# Visualize the initial guess and the solution found by SA of one of the problems.
+
+
+d = dataset[0]
+result_idxs = tsp_greedy(d)
+result_idxs = np.append(result_idxs, result_idxs[0])
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=d[result_idxs, 0], y=d[result_idxs, 1], mode='lines+markers'))
+fig.update_layout(title=f"greedy solution (initial guess),  cost: {tsp_cost(d, result_idxs):.3f}",
+                  xaxis=dict(scaleanchor="y", scaleratio=1))
+fig
+
+
+params = study.best_params
+options = SAOptions(
+    max_iter=N_SA_ITER,
+    patience=params["patience"],
+    T0=params["T0"],
+    alpha=params["alpha"],
+)
+result_idxs = tsp_simulated_annealing(d, options)
+result_idxs = np.append(result_idxs, result_idxs[0])
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=d[result_idxs, 0], y=d[result_idxs, 1], mode='lines+markers'))
+fig.update_layout(title=f"n_iter: {options.max_iter}, cost: {tsp_cost(d, result_idxs):.3f}",
+                  xaxis=dict(scaleanchor="y", scaleratio=1))
 fig
