@@ -188,25 +188,14 @@ num_evaluation = 0
 ###################################################################################################
 # In this tutorial, we optimize three parameters: `T0`, `alpha`, and `patience`.
 #
-# `T0` (Initial Temperature)
+# `T0` and `alpha` defining the temperature schedule
 # -----------------------------
 #
-# In Simulated Annealing, the concept of "temperature" is an analogy to control the randomness
-# of the search process. The initial temperature, denoted as `T0`, sets the starting level of
-# this temperature. A higher initial temperature allows the algorithm to explore a wider range of
-# solutions and to accept worse solutions with higher probability, facilitating escape from local
-# optima. As the algorithm progresses, the temperature is gradually decreased, leading to a more
-# refined search around promising areas,
-# ultimately aiming for convergence towards an optimal solution.
-#
-# `Alpha` (Cooling Rate)
-# -----------------------------
-#
-# `Alpha` is a parameter that dictates the rate at which the temperature is decreased in each
-# iteration of the algorithm. It is typically a value between 0 and 1, and
-# it's used to multiply the current temperature to obtain the temperature for the next iteration,
-# following the formula `T = Alpha * T`. A smaller `Alpha` value results in a quicker decrease
-# in temperature, making the algorithm converge faster but potentially missing broader exploration.
+# In simulated annealing, it is important to determine a good temperature scheduling, but
+# there is no "silver schedule" that is good for all problems, so we must tune the schedule
+# for this problem.
+# This code parametrizes the temperature as a monomial function `T0 * (1 - t) ** alpha`, where 
+# `t` progresses from 0 to 1. We try to optimize the two parameters `T0` and `alpha`.
 #
 # `patience`
 # -----------------------------
