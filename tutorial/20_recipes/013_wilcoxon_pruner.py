@@ -85,8 +85,6 @@ def tsp_greedy(vertices: np.ndarray) -> np.ndarray:
 
 ###################################################################################################
 # .. note::
-#     The following `tsp_simulated_annealing` function can be acceralated by `numba`.
-# .. note::
 #     For simplicity of implementation, we use SA with the 2-opt neighborhood to solve TSP,
 #     but note that this is far from the "best" way to solve TSP. There are significantly more
 #     advanced methods than this method.
