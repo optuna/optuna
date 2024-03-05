@@ -10,7 +10,7 @@ This pruner is effective for objective functions that averages multiple evaluati
 We solve Traveling Salesman Problem (TSP) by Simulated Annealing (SA).
 
 Overview: Solving Traveling Salesman Problem with Simulated Annealing
---------------------------------------
+----------------------------------------------------------------------------
 
 Traveling Salesman Problem (TSP) is a classic problem in combinatorial optimization
 that involves finding the shortest possible route for a salesman
@@ -21,9 +21,29 @@ manufacturing, and DNA sequencing, among others.
 The problem is classified as NP-hard, so approximation algorithms or
 heuristic methods are commonly employed for larger instances.
 
-One simple heuristic method applicable to TSP is simulated annealing (SA). SA starts with an initial solution (it can be constructed by a simpler heuristic like greedy method), and it randomly checks the neighborhood (defined later) of the solution. If a neighbor is better, the solution is updated to the neighbor. If the neighbor is worse, SA still updates the solution to the neighbor with probability $e^{-\Delta c / T}$, where $\Delta c (> 0)$ is the difference of the cost (sum of the distance) between the new solution and the old one and $T$ is a parameter called "temperature". The temperature controls how much worsening of the solution is tolerated to escape from the local minimum (high means more tolerant). If the temperature is too low, SA will quickly fall into a local minimum; if the temperature is too high, SA will be like a random walk and the optimization will be inefficient. Typically, we set a "temperature schedule" that starts from a high temperature and gradually decreases to zero.
+One simple heuristic method applicable to TSP is simulated annealing (SA).
+SA starts with an initial solution (it can be constructed by a simpler heuristic
+like greedy method), and it randomly checks the neighborhood (defined later)
+of the solution. If a neighbor is better, the solution is updated to the neighbor.
+If the neighbor is worse, SA still updates the solution to the neighbor with
+probability $e^{-\Delta c / T}$, where $\Delta c (> 0)$ is the difference of
+the cost (sum of the distance) between the new solution and the old one and
+$T$ is a parameter called "temperature". The temperature controls
+how much worsening of the solution is tolerated to escape from the local minimum
+(high means more tolerant). If the temperature is too low, SA will quickly
+fall into a local minimum; if the temperature is too high, SA will be like
+a random walk and the optimization will be inefficient. Typically, we set a
+"temperature schedule" that starts from a high temperature and gradually
+decreases to zero.
 
-There are several ways to define neighborhood for TSP, but we use a simple neighborhood called 2-opt. 2-opt neighbor chooses a path in the current solution and reverses the visiting order in the path. For example, if the initial solution is `a→b→c→d→e→a`, `a→d→c→c→e→a` is a 2-opt neighbor (the path from `b` to `d` is reversed). This neighborhood is good because computing the difference of the cost can be done in constant time (we only need to care about the start and the end of the chosen path). 
+There are several ways to define neighborhood for TSP, but we use a
+simple neighborhood called 2-opt. 2-opt neighbor chooses a path in
+the current solution and reverses the visiting order in the path.
+For example, if the initial solution is `a→b→c→d→e→a`, `a→d→c→c→e→a` is
+a 2-opt neighbor (the path from `b` to `d` is reversed).
+This neighborhood is good because computing the difference of the cost
+can be done in constant time (we only need to care about the start
+and the end of the chosen path).
 
 Main Tutorial: Tuning SA Parameters for TSP
 ====================================================
@@ -170,7 +190,7 @@ num_evaluation = 0
 # `patience`
 # -----------------------------
 #
-# This parameter specifies a threshold of how many iterations we allow the annealing process 
+# This parameter specifies a threshold of how many iterations we allow the annealing process
 # continue without updating the best value. Practically, simulated annealing often drives
 # the solution far away from the current best solution, and rolling back to the best solution
 # periodically often improves optimization efficiency a lot. However, if the rollback happens
