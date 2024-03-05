@@ -9,51 +9,21 @@ This pruner is effective for objective functions that averages multiple evaluati
 
 We solve Traveling Salesman Problem (TSP) by Simulated Annealing (SA).
 
-Overview of Traveling Salesman Problem
+Overview: Solving Traveling Salesman Problem with Simulated Annealing
 --------------------------------------
 
 Traveling Salesman Problem (TSP) is a classic problem in combinatorial optimization
 that involves finding the shortest possible route for a salesman
 who needs to visit a set of cities, each exactly once, and return to the starting city.
-The problem is classified as NP-hard, indicating that it is extremely challenging
-and that no efficient algorithm is known to solve all instances of the problem
-within a reasonable amount of time.
-
 TSP has been extensively studied in fields such as mathematics, computer science,
 and operations research, and has numerous practical applications in logistics,
 manufacturing, and DNA sequencing, among others.
-Exact solutions can be obtained for small instances; however,
-due to the computational complexity involved, approximation algorithms or
+The problem is classified as NP-hard, so approximation algorithms or
 heuristic methods are commonly employed for larger instances.
 
-Overview of Simulated Annealing
--------------------------------
+One simple heuristic method applicable to TSP is simulated annealing (SA). SA starts with an initial solution (it can be constructed by a simpler heuristic like greedy method), and it randomly checks the neighborhood (defined later) of the solution. If a neighbor is better, the solution is updated to the neighbor. If the neighbor is worse, SA still updates the solution to the neighbor with probability $e^{-\Delta c / T}$, where $\Delta c (> 0)$ is the difference of the cost (sum of the distance) between the new solution and the old one and $T$ is a parameter called "temperature". The temperature controls how much worsening of the solution is tolerated to escape from the local minimum (high means more tolerant). If the temperature is too low, SA will quickly fall into a local minimum; if the temperature is too high, SA will be like a random walk and the optimization will be inefficient. Typically, we set a "temperature schedule" that starts from a high temperature and gradually decreases to zero.
 
-Simulated Annealing (SA) is a probabilistic optimization algorithm used to find
-the global optimum of a given function.
-Inspired by the physical process of annealing in metallurgy,
-where materials such as metal or glass are heated to a high temperature
-and then cooled slowly to remove defects and reduce energy states,
-the algorithm mimics this process to search for solutions in the problem space.
-
-The algorithm starts with an initial solution and then moves to
-a neighboring solution with a certain probability that depends on the
-difference in the energy states (or costs) of the solutions and
-a global parameter called "temperature". At high temperatures,
-the algorithm is more likely to accept worse solutions,
-allowing it to explore the solution space more freely and
-avoid getting stuck in local optima.
-As the temperature decreases according to a cooling schedule,
-the algorithm becomes more conservative, accepting only solutions
-that improve the objective function or those that do not significantly worsen it.
-
-This method allows the SA algorithm to balance exploration and exploitation,
-making it effective for solving complex optimization problems where
-the solution space is large and potentially rugged with many local optima.
-However, determining an effective cooling schedule is problem-dependent and
-can be challenging. There is no one-size-fits-all approach, and
-the optimal schedule may vary significantly between different types of problems.
-Finding a good cooling schedule is an integral part of successfully applying SA.
+There are several ways to define neighborhood for TSP, but we use a simple neighborhood called 2-opt. 2-opt neighbor chooses a path in the current solution and reverses the visiting order in the path. For example, if the initial solution is `a→b→c→d→e→a`, `a→d→c→c→e→a` is a 2-opt neighbor (the path from `b` to `d` is reversed). This neighborhood is good because computing the difference of the cost can be done in constant time (we only need to care about the start and the end of the chosen path). 
 
 Main Tutorial: Tuning SA Parameters for TSP
 ====================================================
