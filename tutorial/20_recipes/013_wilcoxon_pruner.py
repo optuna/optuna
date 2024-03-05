@@ -189,7 +189,7 @@ num_evaluation = 0
 # In this tutorial, we optimize three parameters: `T0`, `alpha`, and `patience`.
 #
 # `T0` and `alpha` defining the temperature schedule
-# -----------------------------
+# ---------------------------------------------------------------------------------------
 #
 # In simulated annealing, it is important to determine a good temperature scheduling, but
 # there is no "silver schedule" that is good for all problems, so we must tune the schedule
