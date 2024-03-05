@@ -97,11 +97,9 @@ def tsp_greedy(vertices: np.ndarray) -> np.ndarray:
 # .. note::
 #     The following `tsp_simulated_annealing` function can be acceralated by `numba`.
 # .. note::
-#     For simplicity, we will use the 2-opt neighborhood search to solve TSP.
-#     The 2-opt method is valued for its fundamental approach, straightforward implementation,
-#     and broad applicability. However, it's important to note that for more complex TSP instances,
-#     there are significantly more advanced methods than the 2-opt neighborhood search,
-#     such as Iterated Local Search (ILS) combined with Lin-Kernighan heuristics.
+#     For simplicity of implementation, we use SA with the 2-opt neighborhood to solve TSP,
+#     but note that this is far from the "best" way to solve TSP. There are significantly more
+#     advanced methods than this method.
 
 
 def tsp_simulated_annealing(vertices: np.ndarray, options: SAOptions) -> np.ndarray:
