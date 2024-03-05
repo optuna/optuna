@@ -55,7 +55,7 @@ can be challenging. There is no one-size-fits-all approach, and
 the optimal schedule may vary significantly between different types of problems.
 Finding a good cooling schedule is an integral part of successfully applying SA.
 
-Main Tutorial: Tuning SA Parameters for Solving TSP
+Main Tutorial: Tuning SA Parameters for TSP
 ====================================================
 """
 
