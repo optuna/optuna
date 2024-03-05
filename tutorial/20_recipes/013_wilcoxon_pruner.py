@@ -200,14 +200,12 @@ num_evaluation = 0
 # `patience`
 # -----------------------------
 #
-# In this specific context, `patience` refers to the mechanism of reverting to the best solution
-# found so far after a certain number of iterations without improvement. This concept is
-# somewhat akin to a "reset" or "rollback" function, where if the algorithm hasn't found a
-# better solution within the defined `patience` threshold (a set number of iterations),
-# it will revert to the best solution it has encountered. This strategy can prevent the
-# algorithm from wandering too far from promising regions of the solution space and can
-# help in maintaining a focus on refining the best solutions found, rather than continuing
-# to explore less promising paths.
+# This parameter specifies a threshold of how many iterations we allow the annealing process 
+# continue without updating the best value. Practically, simulated annealing often drives
+# the solution far away from the current best solution, and rolling back to the best solution
+# periodically often improves optimization efficiency a lot. However, if the rollback happens
+# too often, the optimization may get stuck in a local optimum, so we must tune the threshold
+# to a sensible amount.
 #
 # .. note::
 #     As an advanced workaround, if `trial.should_prune()` returns `True`,
