@@ -208,14 +208,13 @@ num_evaluation = 0
 # to a sensible amount.
 #
 # .. note::
-#     As an advanced workaround, if `trial.should_prune()` returns `True`,
-#     you can return an estimation of the final value (e.g., the average of all evaluated values)
+#     Some algorithms, including the default `TPESampler`, currently cannot utilize the
+#     information of pruned trials effectively (especially when the last intermediate value
+#     is not the best approximation to the final objective function).
+#     As a workaround for this issue, you can return an estimation of the final value
+#     (e.g., the average of all evaluated values) when `trial.should_prune()` returns `True`,
 #     instead of `raise optuna.TrialPruned()`.
-#     Some algorithms including `TPESampler` internally split trials into below (good) and above (bad),
-#     and pruned trial will always be classified as above.
-#     However, there are some trials that are slightly worse than the best trial and will be pruned,
-#     but they should be classified as below (e.g., top 10%).
-#     This workaround provides beneficial information about such trials to these algorithms.
+#     This will improve the sampler performance.
 
 
 def objective(trial: optuna.Trial) -> float:
