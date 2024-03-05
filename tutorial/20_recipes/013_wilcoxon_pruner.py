@@ -198,7 +198,7 @@ num_evaluation = 0
 # to a sensible amount.
 #
 # .. note::
-#     Some algorithms, including the default `TPESampler`, currently cannot utilize the
+#     Some samplers, including the default `TPESampler`, currently cannot utilize the
 #     information of pruned trials effectively (especially when the last intermediate value
 #     is not the best approximation to the final objective function).
 #     As a workaround for this issue, you can return an estimation of the final value
