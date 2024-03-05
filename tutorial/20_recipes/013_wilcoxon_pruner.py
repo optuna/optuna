@@ -39,7 +39,7 @@ decreases to zero.
 There are several ways to define neighborhood for TSP, but we use a
 simple neighborhood called 2-opt. 2-opt neighbor chooses a path in
 the current solution and reverses the visiting order in the path.
-For example, if the initial solution is `a→b→c→d→e→a`, `a→d→c→c→e→a` is
+For example, if the initial solution is `a→b→c→d→e→a`, `a→d→c→b→e→a` is
 a 2-opt neighbor (the path from `b` to `d` is reversed).
 This neighborhood is good because computing the difference of the cost
 can be done in constant time (we only need to care about the start
