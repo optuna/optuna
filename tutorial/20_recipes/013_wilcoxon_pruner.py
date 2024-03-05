@@ -194,7 +194,7 @@ num_evaluation = 0
 # In simulated annealing, it is important to determine a good temperature scheduling, but
 # there is no "silver schedule" that is good for all problems, so we must tune the schedule
 # for this problem.
-# This code parametrizes the temperature as a monomial function `T0 * (1 - t) ** alpha`, where 
+# This code parametrizes the temperature as a monomial function `T0 * (1 - t) ** alpha`, where
 # `t` progresses from 0 to 1. We try to optimize the two parameters `T0` and `alpha`.
 #
 # `patience`
