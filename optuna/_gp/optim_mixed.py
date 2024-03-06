@@ -133,15 +133,12 @@ def _local_search_discrete_line_search(
     def negfun_interpolated(x: float) -> float:
         if x < choices[0] or x > choices[-1]:
             return np.inf
-        i1 = int(np.clip(np.searchsorted(choices, x), 1, len(choices) - 1))
-        i0 = i1 - 1
-
-        f0, f1 = inegfun_cached(i0), inegfun_cached(i1)
-
-        w0 = (choices[i1] - x) / (choices[i1] - choices[i0])
-        w1 = 1.0 - w0
-
-        return w0 * f0 + w1 * f1
+        right = int(np.clip(np.searchsorted(choices, x), 1, len(choices) - 1))
+        left = right - 1
+        neg_acqf_left, neg_acqf_right = inegfun_cached(left), inegfun_cached(right)
+        w_left = (choices[right] - x) / (choices[right] - choices[left])
+        w_right = 1.0 - w_left
+        return w_left * neg_acqf_left + w_right * neg_acqf_right
 
     EPS = 1e-12
     res = so.minimize_scalar(
