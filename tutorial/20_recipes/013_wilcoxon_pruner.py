@@ -4,11 +4,11 @@
 Early-stopping independent evaluations by WilcoxonPruner
 ============================================================
 
-This tutorial showcases Optuna's `WilcoxonPruner <https://optuna.readthedocs.io/en/latest/reference/generated/optuna.pruners.WilcoxonPruner.html>`.
+This tutorial showcases Optuna's `WilcoxonPruner <https://optuna.readthedocs.io/en/latest/reference/generated/optuna.pruners.WilcoxonPruner.html>`_.
 This pruner is effective for objective functions that averages multiple evaluations.
 
-We solve `Traveling Salesman Problem (TSP) <https://en.wikipedia.org/w/index.php?title=Travelling_salesman_problem&oldid=1211575788>`
-by `Simulated Annealing (SA) <https://en.wikipedia.org/w/index.php?title=Simulated_annealing&oldid=1187355062>`.
+We solve `Traveling Salesman Problem (TSP) <https://en.wikipedia.org/w/index.php?title=Travelling_salesman_problem&oldid=1211575788>`_
+by `Simulated Annealing (SA) <https://en.wikipedia.org/w/index.php?title=Simulated_annealing&oldid=1187355062>`_.
 
 Overview: Solving Traveling Salesman Problem with Simulated Annealing
 ----------------------------------------------------------------------------
@@ -28,7 +28,7 @@ like greedy method), and it randomly checks the neighborhood (defined later)
 of the solution. If a neighbor is better, the solution is updated to the neighbor.
 If the neighbor is worse, SA still updates the solution to the neighbor with
 probability :math:`e^{-\Delta c / T}`, where
-:math:`\Delta c (> 0)`$` is the difference of
+:math:`\Delta c (> 0)` is the difference of
 the cost (sum of the distance) between the new solution and the old one and
 :math:`T` is a parameter called "temperature". The temperature controls
 how much worsening of the solution is tolerated to escape from the local minimum
