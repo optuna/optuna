@@ -54,7 +54,9 @@ def _local_search_continuous(
         fval_opt = negfun_continuous_with_grad(x_opt)[0]
 
     if -fval_opt < initial_fval or info["nit"] == 0:
-        return None  # Return None if the optimization did not improve the value.
+        # Return None if the optimization did not improve the value.
+        # `nit` is the number of iterations.
+        return None  # 
     else:
         normalized_params[continuous_params] = x_opt * continuous_param_scale
         return (normalized_params, -fval_opt)
