@@ -40,6 +40,7 @@ def _local_search_continuous(
         normalized_params[continuous_params] = x * continuous_param_scale
         (fval, grad) = eval_acqf_with_grad(acqf_params, normalized_params)
         # Flip sign because scipy minimizes functions.
+        # Let the scaled acqf be g(x) and the acqf be f(sx), then dg/dx = df/dx * s.
         return (-fval, -grad[continuous_params] * continuous_param_scale)
 
     x_opt, fval_opt, info = so.fmin_l_bfgs_b(
