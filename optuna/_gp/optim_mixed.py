@@ -32,6 +32,19 @@ def _local_search_continuous(
     continuous_param_scale: np.ndarray,
     tol: float,
 ) -> tuple[np.ndarray, float] | None:
+    """
+    This function optimizes the acquisition function using preconditioning.
+    Preconditioning equalizes the variances caused by each parameter and
+    speeds up the convergence.
+
+    In Optuna, acquisition functions use Matern 5/2 kernel, which is a function of `x / l`
+    where `x` is `normalized_params` and `l` is the corresponding lengthscales.
+    Then acquisition functions are a function of `x / l`, i.e. `f(x / l)`.
+    As `l` has different values for each param, it makes the function ill-conditioned.
+    By transforming `x / l` to `zl / l = z`, the function becomes `f(z)` and has equal variances w.r.t. `z`.
+    So optimization w.r.t. `z` instead of `x` is the preconditioning here and speeds up the convergence.
+    As the domain of `x` is [0, 1], that of `z` becomes [0, 1/l].
+    """
     if len(continuous_params) == 0:
         return None
     normalized_params = initial_params.copy()
