@@ -7,7 +7,8 @@ Early-stopping independent evaluations by WilcoxonPruner
 This tutorial showcases Optuna's WilcoxonPruner.
 This pruner is effective for objective functions that averages multiple evaluations.
 
-We solve Traveling Salesman Problem (TSP) by Simulated Annealing (SA).
+We solve `Traveling Salesman Problem (TSP) <https://en.wikipedia.org/w/index.php?title=Travelling_salesman_problem&oldid=1211575788>`
+by `Simulated Annealing (SA) <https://en.wikipedia.org/w/index.php?title=Simulated_annealing&oldid=1187355062>`.
 
 Overview: Solving Traveling Salesman Problem with Simulated Annealing
 ----------------------------------------------------------------------------
@@ -26,9 +27,10 @@ SA starts with an initial solution (it can be constructed by a simpler heuristic
 like greedy method), and it randomly checks the neighborhood (defined later)
 of the solution. If a neighbor is better, the solution is updated to the neighbor.
 If the neighbor is worse, SA still updates the solution to the neighbor with
-probability $e^{-\Delta c / T}$, where $\Delta c (> 0)$ is the difference of
+probability :math:`e^{-\Delta c / T}`, where
+:math:`\Delta c (> 0)` is the difference of
 the cost (sum of the distance) between the new solution and the old one and
-$T$ is a parameter called "temperature". The temperature controls
+:math:`T` is a parameter called "temperature". The temperature controls
 how much worsening of the solution is tolerated to escape from the local minimum
 (high means more tolerant). If the temperature is too low, SA will quickly
 fall into a local minimum; if the temperature is too high, SA will be like
@@ -47,7 +49,7 @@ and the end of the chosen path).
 
 Main Tutorial: Tuning SA Parameters for TSP
 ====================================================
-"""
+"""  # NOQA
 
 from dataclasses import dataclass
 import math
