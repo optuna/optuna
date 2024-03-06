@@ -224,7 +224,8 @@ def local_search_mixed(
     ]
 
     noncontinuous_paramwise_xtol = [
-        # Enough to discriminate between two choices.
+        # Terminate discrete optimizations once the change in x becomes smaller than this.
+        # Basically, if the change is smaller than min(dx) / 4, it is useless to see more details.
         np.min(np.diff(choices), initial=np.inf) / 4
         for choices in noncontinuous_param_choices
     ]
