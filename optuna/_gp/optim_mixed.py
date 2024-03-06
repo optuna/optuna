@@ -37,6 +37,7 @@ def _local_search_continuous(
     normalized_params = initial_params.copy()
 
     def negfun_continuous_with_grad(x: np.ndarray) -> tuple[float, np.ndarray]:
+        # Scale back to the original domain, i.e. [0, 1], from [0, 1/s].
         normalized_params[continuous_params] = x * continuous_param_scale
         (fval, grad) = eval_acqf_with_grad(acqf_params, normalized_params)
         # Flip sign because scipy minimizes functions.
