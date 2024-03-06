@@ -202,7 +202,7 @@ def local_search_mixed(
             else normalize_one_param(
                 param_value=np.arange(bounds[i, 0], bounds[i, 1] + 0.5 * steps[i], steps[i]),
                 scale_type=ScaleType(scale_types[i]),
-                bounds=(bounds[i, 0], bounds[i, 1]),
+                bounds=tuple(bounds[i]),
                 step=steps[i],
             )
         )
