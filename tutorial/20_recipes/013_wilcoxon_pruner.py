@@ -4,7 +4,7 @@
 Early-stopping independent evaluations by WilcoxonPruner
 ============================================================
 
-This tutorial showcases Optuna's WilcoxonPruner.
+This tutorial showcases Optuna's `WilcoxonPruner <https://optuna.readthedocs.io/en/latest/reference/generated/optuna.pruners.WilcoxonPruner.html>`.
 This pruner is effective for objective functions that averages multiple evaluations.
 
 We solve `Traveling Salesman Problem (TSP) <https://en.wikipedia.org/w/index.php?title=Travelling_salesman_problem&oldid=1211575788>`
@@ -28,7 +28,7 @@ like greedy method), and it randomly checks the neighborhood (defined later)
 of the solution. If a neighbor is better, the solution is updated to the neighbor.
 If the neighbor is worse, SA still updates the solution to the neighbor with
 probability :math:`e^{-\Delta c / T}`, where
-:math:`\Delta c (> 0)` is the difference of
+:math:`\Delta c (> 0)`$` is the difference of
 the cost (sum of the distance) between the new solution and the old one and
 :math:`T` is a parameter called "temperature". The temperature controls
 how much worsening of the solution is tolerated to escape from the local minimum
@@ -176,18 +176,18 @@ num_evaluation = 0
 
 
 ###################################################################################################
-# In this tutorial, we optimize three parameters: `T0`, `alpha`, and `patience`.
+# In this tutorial, we optimize three parameters: ``T0``, ``alpha``, and ``patience``.
 #
-# `T0` and `alpha` defining the temperature schedule
+# ``T0`` and ``alpha`` defining the temperature schedule
 # ---------------------------------------------------------------------------------------
 #
 # In simulated annealing, it is important to determine a good temperature scheduling, but
 # there is no "silver schedule" that is good for all problems, so we must tune the schedule
 # for this problem.
-# This code parametrizes the temperature as a monomial function `T0 * (1 - t) ** alpha`, where
-# `t` progresses from 0 to 1. We try to optimize the two parameters `T0` and `alpha`.
+# This code parametrizes the temperature as a monomial function ``T0 * (1 - t) ** alpha``, where
+# `t` progresses from 0 to 1. We try to optimize the two parameters ``T0`` and ``alpha``.
 #
-# `patience`
+# ``patience``
 # -----------------------------
 #
 # This parameter specifies a threshold of how many iterations we allow the annealing process
@@ -198,11 +198,11 @@ num_evaluation = 0
 # to a sensible amount.
 #
 # .. note::
-#     Some samplers, including the default `TPESampler`, currently cannot utilize the
+#     Some samplers, including the default ``TPESampler``, currently cannot utilize the
 #     information of pruned trials effectively (especially when the last intermediate value
 #     is not the best approximation to the final objective function).
 #     As a workaround for this issue, you can return an estimation of the final value
-#     (e.g., the average of all evaluated values) when `trial.should_prune()` returns `True`,
+#     (e.g., the average of all evaluated values) when ``trial.should_prune()`` returns ``True``,
 #     instead of `raise optuna.TrialPruned()`.
 #     This will improve the sampler performance.
 
@@ -238,7 +238,7 @@ def objective(trial: optuna.Trial) -> float:
 
 
 ###################################################################################################
-# We use `TPESampler` with `WilcoxonPruner`.
+# We use ``TPESampler`` with ``WilcoxonPruner``.
 
 
 np.random.seed(0)
@@ -303,7 +303,7 @@ fig
 
 
 ###################################################################################################
-# Visualize the solution found by `tsp_simulated_annealing` of the same TSP problem.
+# Visualize the solution found by ``tsp_simulated_annealing`` of the same TSP problem.
 
 
 params = study.best_params
