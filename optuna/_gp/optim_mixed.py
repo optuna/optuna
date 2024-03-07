@@ -296,7 +296,7 @@ def optimize_acqf_mixed(
 
     # We use a modified roulette wheel selection to pick the initial param for each local search.
     probs = np.exp(f_vals - f_vals[max_i])
-    probs[max_i] = 0.0
+    probs[max_i] = 0.0  # We already picked the best param, so remove it from roulette.
     probs /= probs.sum()
     remaining_idxs = rng.choice(
         len(sampled_xs),
