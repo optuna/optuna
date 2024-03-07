@@ -39,7 +39,7 @@ a random walk and the optimization will be inefficient. Typically, we set a
 decreases to zero.
 
 There are several ways to define neighborhood for TSP, but we use a
-simple neighborhood called 2-opt. 2-opt neighbor chooses a path in
+simple neighborhood called `2-opt <https://en.wikipedia.org/wiki/2-opt>`_. 2-opt neighbor chooses a path in
 the current solution and reverses the visiting order in the path.
 For example, if the initial solution is `a→b→c→d→e→a`, `a→d→c→b→e→a` is
 a 2-opt neighbor (the path from `b` to `d` is reversed).
@@ -49,6 +49,9 @@ and the end of the chosen path).
 
 Main Tutorial: Tuning SA Parameters for TSP
 ====================================================
+
+First, let's import some packages and define the parameters setting of SA
+and the cost function of TSP.
 """  # NOQA
 
 from dataclasses import dataclass
@@ -92,10 +95,14 @@ def tsp_greedy(vertices: np.ndarray) -> np.ndarray:
 #     advanced methods than this method.
 
 
+###################################################################################################
+# The implementation of SA with 2-opt neighborhood is following.
+
+
 def tsp_simulated_annealing(vertices: np.ndarray, options: SAOptions) -> np.ndarray:
 
     def temperature(t: float):
-        # t: 0 ... 1
+        assert 0.0 <= t and t <= 1.0
         return options.T0 * (1 - t) ** options.alpha
 
     N = len(vertices)
@@ -161,7 +168,7 @@ N_TRIALS = 50
 
 ###################################################################################################
 # We set a very small number of SA iterations for demonstration purpose.
-# In practice, you should set a larger number of iterations.
+# In practice, you should set a larger number of iterations (e.g., 1000000).
 
 
 N_SA_ITER = 10000
@@ -207,6 +214,11 @@ num_evaluation = 0
 #     This will improve the sampler performance.
 
 
+###################################################################################################
+# We define the objective function to be optimized as follows.
+# We early stop the evaluation by using the pruner.
+
+
 def objective(trial: optuna.Trial) -> float:
     global num_evaluation
     options = SAOptions(
@@ -227,7 +239,7 @@ def objective(trial: optuna.Trial) -> float:
 
         trial.report(result_cost, i)
         if trial.should_prune():
-            # raise optuna.TrialPruned()
+            # raise optuna.TrialPruned()  # This is a standard logic of pruning in Optuna.
 
             # Return the current predicted value when pruned.
             # This is a workaround for the problem that
@@ -260,6 +272,7 @@ print(f"Number of evaluation: {num_evaluation} / {len(dataset) * N_TRIALS}")
 
 ###################################################################################################
 # Visualize the optimization history.
+# Note that this plot shows both completed and pruned trials in same ways.
 
 
 optuna.visualization.plot_optimization_history(study)
