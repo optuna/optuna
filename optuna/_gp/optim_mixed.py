@@ -89,10 +89,10 @@ def _exhaustive_search(
     fvals = eval_acqf_no_grad(acqf_params, all_params)
     best_idx = np.argmax(fvals)
 
-    if fvals[best_idx] > initial_fval:
+    if fvals[best_idx] > initial_fval:  # Improved.
         return (all_params[best_idx, :], fvals[best_idx], True)
-    else:
-        return (initial_params, initial_fval, False)
+
+    return (initial_params, initial_fval, False)  # No improvement.
 
 
 def _discrete_line_search(
