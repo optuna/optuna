@@ -158,8 +158,8 @@ def _discrete_line_search(
     if opt_idx != current_choice_i and fval_opt > initial_fval:
         normalized_params[param_idx] = grids[opt_idx]
         return (normalized_params, fval_opt, True)
-    else:
-        return (initial_params, initial_fval, False)
+
+    return (initial_params, initial_fval, False)  # No improvement.
 
 
 def _local_search_discrete(
