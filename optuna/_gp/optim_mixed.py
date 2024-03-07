@@ -269,8 +269,8 @@ def local_search_mixed(
 def optimize_acqf_mixed(
     acqf_params: AcquisitionFunctionParams,
     *,
-    given_initial_xs: np.ndarray | None = None,
-    n_additional_samples: int = 2048,
+    warmstart_normalized_params_array: np.ndarray | None = None,
+    n_preliminary_samples: int = 2048,
     n_local_search: int = 10,
     tol: float = 1e-4,
     rng: np.random.RandomState | None = None,
@@ -279,14 +279,14 @@ def optimize_acqf_mixed(
     rng = rng or np.random.RandomState()
 
     dim = acqf_params.search_space.scale_types.shape[0]
-    if given_initial_xs is None:
-        given_initial_xs = np.empty((0, dim))
+    if warmstart_normalized_params_array is None:
+        warmstart_normalized_params_array = np.empty((0, dim))
 
     assert (
-        len(given_initial_xs) <= n_local_search - 1
+        len(warmstart_normalized_params_array) <= n_local_search - 1
     ), "We must choose at least 1 best sampled point + given_initial_xs as start points."
 
-    sampled_xs = sample_normalized_params(n_additional_samples, acqf_params.search_space, rng=rng)
+    sampled_xs = sample_normalized_params(n_preliminary_samples, acqf_params.search_space, rng=rng)
 
     # Evaluate all values at initial samples
     f_vals = eval_acqf_no_grad(acqf_params, sampled_xs)
@@ -298,9 +298,9 @@ def optimize_acqf_mixed(
     probs = np.exp(f_vals - f_vals[max_i])
     probs[max_i] = 0.0  # We already picked the best param, so remove it from roulette.
     probs /= probs.sum()
-    remaining_idxs = rng.choice(
+    chosen_idxs = rng.choice(
         len(sampled_xs),
-        size=n_local_search - len(given_initial_xs) - 1,
+        size=n_local_search - len(warmstart_normalized_params_array) - 1,
         replace=False,
         p=probs,
     )
@@ -309,7 +309,7 @@ def optimize_acqf_mixed(
     best_f = float(f_vals[max_i])
 
     for x_guess in np.vstack(
-        [sampled_xs[max_i, :], sampled_xs[remaining_idxs, :], given_initial_xs]
+        [sampled_xs[max_i, :], sampled_xs[chosen_idxs, :], warmstart_normalized_params_array]
     ):
         x, f = local_search_mixed(acqf_params, x_guess, tol=tol)
         if f > best_f:
