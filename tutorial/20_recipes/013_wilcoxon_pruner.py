@@ -1,7 +1,7 @@
 """
 .. _wilcoxon_pruner:
 
-Early-stopping independent evaluations by WilcoxonPruner
+Early-stopping independent evaluations by Wilcoxon pruner
 ============================================================
 
 This tutorial showcases Optuna's `WilcoxonPruner <https://optuna.readthedocs.io/en/latest/reference/generated/optuna.pruners.WilcoxonPruner.html>`_.
@@ -39,7 +39,7 @@ a random walk and the optimization will be inefficient. Typically, we set a
 decreases to zero.
 
 There are several ways to define neighborhood for TSP, but we use a
-simple neighborhood called `2-opt <https://en.wikipedia.org/wiki/2-opt>`_. 2-opt neighbor chooses a path in
+simple neighborhood called `2-opt <https://en.wikipedia.org/w/index.php?title=2-opt&oldid=1194969927>`_. 2-opt neighbor chooses a path in
 the current solution and reverses the visiting order in the path.
 For example, if the initial solution is `a→b→c→d→e→a`, `a→d→c→b→e→a` is
 a 2-opt neighbor (the path from `b` to `d` is reversed).
