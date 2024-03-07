@@ -29,7 +29,7 @@ def _gradient_ascent(
     initial_params: np.ndarray,
     initial_fval: float,
     continuous_indices: np.ndarray,
-    lengthscale: np.ndarray,
+    lengthscales: np.ndarray,
     tol: float,
 ) -> tuple[np.ndarray, float, bool]:
     """
@@ -53,23 +53,23 @@ def _gradient_ascent(
 
     def negative_acqf_with_grad(scaled_x: np.ndarray) -> tuple[float, np.ndarray]:
         # Scale back to the original domain, i.e. [0, 1], from [0, 1/s].
-        normalized_params[continuous_indices] = scaled_x * lengthscale
+        normalized_params[continuous_indices] = scaled_x * lengthscales
         (fval, grad) = eval_acqf_with_grad(acqf_params, normalized_params)
         # Flip sign because scipy minimizes functions.
         # Let the scaled acqf be g(x) and the acqf be f(sx), then dg/dx = df/dx * s.
-        return (-fval, -grad[continuous_indices] * lengthscale)
+        return (-fval, -grad[continuous_indices] * lengthscales)
 
     scaled_cont_x_opt, neg_fval_opt, info = so.fmin_l_bfgs_b(
         func=negative_acqf_with_grad,
-        x0=normalized_params[continuous_indices] / lengthscale,
-        bounds=[(0, 1 / s) for s in lengthscale],
+        x0=normalized_params[continuous_indices] / lengthscales,
+        bounds=[(0, 1 / s) for s in lengthscales],
         pgtol=math.sqrt(tol),
         maxiter=200,
     )
 
     if -neg_fval_opt > initial_fval and info["nit"] > 0:  # Improved.
         # `nit` is the number of iterations.
-        normalized_params[continuous_indices] = scaled_cont_x_opt * lengthscale
+        normalized_params[continuous_indices] = scaled_cont_x_opt * lengthscales
         return (normalized_params, -neg_fval_opt, True)
 
     return (initial_params, initial_fval, False)  # No improvement.
@@ -203,7 +203,7 @@ def local_search_mixed(
     # This is a technique for speeding up optimization.
     # We use an isotropic kernel, so scaling the gradient will make
     # the hessian better-conditioned.
-    lengthscale = 1 / np.sqrt(inverse_squared_lengthscales[continuous_indices])
+    lengthscales = 1 / np.sqrt(inverse_squared_lengthscales[continuous_indices])
 
     discrete_indices = np.where(steps > 0)[0]
     choices_of_discrete_params = [
@@ -220,7 +220,7 @@ def local_search_mixed(
         for i in discrete_indices
     ]
 
-    noncontinuous_paramwise_xtol = [
+    discrete_xtols = [
         # Terminate discrete optimizations once the change in x becomes smaller than this.
         # Basically, if the change is smaller than min(dx) / 4, it is useless to see more details.
         np.min(np.diff(choices), initial=np.inf) / 4
@@ -242,15 +242,13 @@ def local_search_mixed(
             best_normalized_params,
             best_fval,
             continuous_indices,
-            lengthscale,
+            lengthscales,
             tol,
         )
         if updated:
             last_changed_param = CONTINUOUS
 
-        for i, choices, xtol in zip(
-            discrete_indices, choices_of_discrete_params, noncontinuous_paramwise_xtol
-        ):
+        for i, choices, xtol in zip(discrete_indices, choices_of_discrete_params, discrete_xtols):
             if last_changed_param == i:
                 # Parameters not changed since last time.
                 return (best_normalized_params, best_fval)
