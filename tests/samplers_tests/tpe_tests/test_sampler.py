@@ -776,7 +776,6 @@ def test_split_trials(direction: str, constant_liar: bool, constraints: bool) ->
             state=optuna.trial.TrialState.RUNNING,
             params={"x": 0},
             distributions={"x": optuna.distributions.FloatDistribution(-1.0, 1.0)},
-            system_attrs={_CONSTRAINTS_KEY: [-1]},
         )
     )
 
