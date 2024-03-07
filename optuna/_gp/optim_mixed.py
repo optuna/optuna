@@ -67,12 +67,12 @@ def _gradient_ascent(
         maxiter=200,
     )
 
-    if -neg_fval_opt < initial_fval or info["nit"] == 0:
+    if -neg_fval_opt > initial_fval and info["nit"] > 0:  # Improved.
         # `nit` is the number of iterations.
-        return (initial_params, initial_fval, False)
-    else:
         normalized_params[continuous_indices] = scaled_cont_x_opt * lengthscale
         return (normalized_params, -neg_fval_opt, True)
+
+    return (initial_params, initial_fval, False)  # No improvement.
 
 
 def _exhaustive_search(
