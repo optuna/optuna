@@ -139,11 +139,8 @@ unit tests are stored under the [tests directory](./tests).
 
 Please install some required packages at first.
 ```bash
-# Install required packages to test all modules without integration modules.
+# Install required packages to test all modules.
 pip install ".[test,optional]"
-
-# Install required packages to test all modules including integration modules.
-pip install ".[integration]" -f https://download.pytorch.org/whl/torch_stable.html
 ```
 
 You can run your tests as follows:
@@ -151,9 +148,6 @@ You can run your tests as follows:
 ```bash
 # Run all the unit tests.
 pytest
-
-# Run all the unit tests without integrations.
-pytest -m "not integration"
 
 # Run all the unit tests defined in the specified test file.
 pytest tests/${TARGET_TEST_FILE_NAME}
