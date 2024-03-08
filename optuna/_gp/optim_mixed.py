@@ -304,14 +304,13 @@ def optimize_acqf_mixed(
         replace=False,
         p=probs,
     )
+    chosen_idxs = np.append(max_i, chosen_idxs)
 
     best_x = sampled_xs[max_i, :]
     best_f = float(f_vals[max_i])
 
-    for x_guess in np.vstack(
-        [sampled_xs[max_i, :], sampled_xs[chosen_idxs, :], warmstart_normalized_params_array]
-    ):
-        x, f = local_search_mixed(acqf_params, x_guess, tol=tol)
+    for x_warmstart in np.vstack([sampled_xs[chosen_idxs, :], warmstart_normalized_params_array]):
+        x, f = local_search_mixed(acqf_params, x_warmstart, tol=tol)
         if f > best_f:
             best_x = x
             best_f = f
