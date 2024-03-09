@@ -173,7 +173,7 @@ def _fast_non_dominated_sort(
         loss_values[is_penalty_nan], n_below=n_below
     )
     nondomination_rank[is_penalty_nan] = ranks_in_penalty_nan + top_rank_in_penalty_nan
-
+    assert np.all(nondomination_rank != -1), "All the rank must be updated."
     return nondomination_rank
 
 
