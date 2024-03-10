@@ -162,7 +162,7 @@ def _fast_non_dominated_sort(
     top_rank_in_infeasible = np.max(nondomination_rank[is_feasible], initial=-1) + 1
     is_infeasible = np.logical_and(~is_penalty_nan, penalty > 0)
     n_infeasible = np.count_nonzero(is_infeasible)
-    if is_infeasible > 0:
+    if n_infeasible > 0:
         _, ranks_in_infeas = np.unique(penalty[is_infeasible], return_inverse=True)
         nondomination_rank[is_infeasible] = ranks_in_infeas + top_rank_in_infeasible
         n_below -= n_infeasible
