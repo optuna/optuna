@@ -135,8 +135,8 @@ def _fast_non_dominated_sort(
 
     Returns:
         An ndarray in the shape of (n_trials,), where each element is the non-dominated rank of
-        each trial. The rank is 0-indexed and rank -1 means that the algorithm terminated before
-        the trial was sorted.
+        each trial. The rank is 0-indexed. All the rank worse than the top-n_below has the same
+        value larger than or equal to n_below.
     """
     if penalty is None:
         return _calculate_nondomination_rank(loss_values, n_below=n_below)
@@ -219,10 +219,6 @@ def _calculate_nondomination_rank(
     if n_below is not None and n_below <= 0:
         return np.zeros(len(loss_values), dtype=int)
 
-    # Normalize n_below.
-    n_below = n_below or len(loss_values)
-    n_below = min(n_below, len(loss_values))
-
     (n_trials, n_objectives) = loss_values.shape
     if n_objectives == 1:
         _, ranks = np.unique(loss_values[:, 0], return_inverse=True)
@@ -235,6 +231,8 @@ def _calculate_nondomination_rank(
         )
 
     n_unique = unique_lexsorted_loss_values.shape[0]
+    # Clip n_below.
+    n_below = min(n_below or len(unique_lexsorted_loss_values), len(unique_lexsorted_loss_values))
     ranks = np.zeros(n_unique, dtype=int)
     rank = 0
     indices = np.arange(n_unique)
