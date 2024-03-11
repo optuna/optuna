@@ -29,34 +29,34 @@ class WFG(BaseHypervolume):
         if self._reference_point.shape[0] == 2:
             return _compute_2d(solution_set, self._reference_point)
 
-        return self._compute_rec(solution_set[solution_set[:, 0].argsort()].astype(np.float64))
+        return self._compute_hv(solution_set[solution_set[:, 0].argsort()].astype(np.float64))
 
-    def _compute_rec(self, solution_set: np.ndarray) -> float:
+    def _compute_hv(self, sorted_solutions: np.ndarray) -> float:
         assert self._reference_point is not None
-        if solution_set.shape[0] == 1:
-            return float(_rectangular_space(solution_set[0], self._reference_point))
-        elif solution_set.shape[0] == 2:
+        if sorted_solutions.shape[0] == 1:
+            return float(_rectangular_space(sorted_solutions[0], self._reference_point))
+        elif sorted_solutions.shape[0] == 2:
             # S(A v B) = S(A) + S(B) - S(A ^ B).
-            intersec_node = np.maximum(solution_set[0], solution_set[1])
+            intersec_node = np.maximum(sorted_solutions[0], sorted_solutions[1])
             intersec = _rectangular_space(self._reference_point, intersec_node)
-            return np.sum(_rectangular_space(self._reference_point, solution_set)) - intersec
+            return np.sum(_rectangular_space(self._reference_point, sorted_solutions)) - intersec
 
-        inclusive_hvs = _rectangular_space(self._reference_point, solution_set)
-        limited_solutions = np.maximum(solution_set[:, np.newaxis], solution_set)
+        inclusive_hvs = _rectangular_space(self._reference_point, sorted_solutions)
+        limited_solutions_array = np.maximum(sorted_solutions[:, np.newaxis], sorted_solutions)
         return sum(
-            self._compute_exclusive_hv(limited_solutions[i, i + 1 :], inclusive_hv)
+            self._compute_exclusive_hv(limited_solutions_array[i, i + 1 :], inclusive_hv)
             for i, inclusive_hv in enumerate(inclusive_hvs)
         )
 
-    def _compute_exclusive_hv(self, limited_solution: np.ndarray, inclusive_hv: float) -> float:
+    def _compute_exclusive_hv(self, limited_solutions: np.ndarray, inclusive_hv: float) -> float:
         assert self._reference_point is not None
-        if limited_solution.shape[0] == 0:
+        if limited_solutions.shape[0] == 0:
             return inclusive_hv
-        elif limited_solution.shape[0] == 1:
-            inner = float(_rectangular_space(limited_solution[0], self._reference_point))
+        elif limited_solutions.shape[0] == 1:
+            inner = float(_rectangular_space(limited_solutions[0], self._reference_point))
             return inclusive_hv - inner
 
-        unique_lexsorted_solutions = np.unique(limited_solution, axis=0)
+        unique_lexsorted_solutions = np.unique(limited_solutions, axis=0)
         on_front = _is_pareto_front(unique_lexsorted_solutions)
         limited_pareto_sols = unique_lexsorted_solutions[on_front]
-        return inclusive_hv - self._compute_rec(limited_pareto_sols)
+        return inclusive_hv - self._compute_hv(limited_pareto_sols)
