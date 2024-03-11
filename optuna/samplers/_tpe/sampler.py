@@ -620,14 +620,16 @@ def _split_trials(
     infeasible_trials = []
 
     for trial in trials:
-        if constraints_enabled and _get_infeasible_trial_score(trial) > 0:
+        if trial.state == TrialState.RUNNING:
+            # We should check if the trial is RUNNING before the feasibility check
+            # because its constraint values have not yet been set.
+            running_trials.append(trial)
+        elif constraints_enabled and _get_infeasible_trial_score(trial) > 0:
             infeasible_trials.append(trial)
         elif trial.state == TrialState.COMPLETE:
             complete_trials.append(trial)
         elif trial.state == TrialState.PRUNED:
             pruned_trials.append(trial)
-        elif trial.state == TrialState.RUNNING:
-            running_trials.append(trial)
         else:
             assert False
 
