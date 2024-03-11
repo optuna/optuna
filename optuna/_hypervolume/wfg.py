@@ -8,6 +8,7 @@ from optuna.study._multi_objective import _is_pareto_front
 
 
 def _rectangular_space(p0: np.ndarray, p1: np.ndarray) -> np.ndarray:
+    # NOTE: If both p0 and p1 are 1d array, this func returns np.float, which is castable to float.
     return np.abs(np.prod(p0 - p1, axis=-1))
 
 
@@ -21,7 +22,7 @@ class WFG(BaseHypervolume):
     """
 
     def __init__(self) -> None:
-        self._reference_point: Optional[np.ndarray] = None
+        self._reference_point: np.ndarray | None = None
 
     def _compute(self, solution_set: np.ndarray, reference_point: np.ndarray) -> float:
         self._reference_point = reference_point.astype(np.float64)
@@ -37,10 +38,8 @@ class WFG(BaseHypervolume):
         elif solution_set.shape[0] == 2:
             # S(A v B) = S(A) + S(B) - S(A ^ B).
             intersec_node = np.maximum(solution_set[0], solution_set[1])
-            return (
-                np.sum(_rectangular_space(self._reference_point, solution_set)) -
-                _rectangular_space(self._reference_point, intersec_node)
-            )
+            intersec = _rectangular_space(self._reference_point, intersec_node)
+            return np.sum(_rectangular_space(self._reference_point, solution_set)) - intersec
 
         inclusive_hvs = _rectangular_space(self._reference_point, solution_set)
         limited_solutions = np.maximum(solution_set[:, np.newaxis], solution_set)
@@ -54,7 +53,7 @@ class WFG(BaseHypervolume):
         if limited_solution.shape[0] == 0:
             return inclusive_hv
         elif limited_solution.shape[0] == 1:
-            inner = _rectangular_space(limited_solution[0], self._reference_point)
+            inner = float(_rectangular_space(limited_solution[0], self._reference_point))
             return inclusive_hv - inner
 
         unique_lexsorted_solutions = np.unique(limited_solution, axis=0)
