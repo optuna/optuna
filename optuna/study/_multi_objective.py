@@ -31,6 +31,11 @@ def _get_pareto_front_trials_by_trials(
     if consider_constraint:
         trials = _get_feasible_trials(trials)
 
+    if any(len(t.values) != len(directions) for t in trials):
+        raise ValueError(
+            "The number of the values and the number of the objectives must be identical."
+        )
+
     loss_values = np.asarray([[_normalize_value(v, d) for v, d in (t.values, directions)] for t in trials])
     unique_lexsorted_loss_values, order_inv = np.unique(loss_values, axis=0)
     on_front = _is_pareto_front(unique_lexsorted_loss_values)[order_inv]
@@ -226,7 +231,7 @@ def _dominates(
     return all(v0 <= v1 for v0, v1 in zip(normalized_values0, normalized_values1))
 
 
-def _normalize_value(value: None | float, direction: StudyDirection) -> float:
+def _normalize_value(value: float | None, direction: StudyDirection) -> float:
     if value is None:
         value = float("inf")
 
