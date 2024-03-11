@@ -218,6 +218,9 @@ class GridSampler(BaseSampler):
             if grid_id == target_grids[0]:
                 study.stop()
 
+    def is_exhausted(self) -> bool:
+        return (len(self._get_unvisited_grid_ids()) == 0)
+
     @staticmethod
     def _check_value(param_name: str, param_value: Any) -> None:
         if param_value is None or isinstance(param_value, (str, int, float, bool)):
