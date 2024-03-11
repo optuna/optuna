@@ -1,10 +1,14 @@
-from typing import Optional
+from __future__ import annotations
 
 import numpy as np
 
 from optuna._hypervolume import _compute_2d
 from optuna._hypervolume import BaseHypervolume
 from optuna.study._multi_objective import _is_pareto_front
+
+
+def _rectangular_space(p0: np.ndarray, p1: np.ndarray) -> np.ndarray:
+    return np.abs(np.prod(p0 - p1, axis=-1))
 
 
 class WFG(BaseHypervolume):
@@ -26,27 +30,19 @@ class WFG(BaseHypervolume):
 
         return self._compute_rec(solution_set[solution_set[:, 0].argsort()].astype(np.float64))
 
-    def _compute_hv_directly(self, solution_set: np.ndarray) -> float:
-        assert 1 <= solution_set.shape[0] <= 2
-        if solution_set.shape[0] == 1:
-            return np.abs(np.prod(solution_set[0] - self._reference_point))
-
-        volume_sum = np.sum(np.abs(np.prod(self._reference_point - solution_set, axis=-1)))
-        intersec = np.prod(self._reference_point - np.maximum(solution_set[0], solution_set[1]))
-        return volume_sum - intersec
-
     def _compute_rec(self, solution_set: np.ndarray) -> float:
         assert self._reference_point is not None
         if solution_set.shape[0] == 1:
-            return np.abs(np.prod(solution_set[0] - self._reference_point))
+            return float(_rectangular_space(solution_set[0], self._reference_point))
         elif solution_set.shape[0] == 2:
             # S(A v B) = S(A) + S(B) - S(A ^ B).
+            intersec_node = np.maximum(solution_set[0], solution_set[1])
             return (
-                np.sum(np.abs(np.prod(self._reference_point - solution_set, axis=-1))) -
-                np.prod(self._reference_point - np.maximum(solution_set[0], solution_set[1]))
+                np.sum(_rectangular_space(self._reference_point, solution_set)) -
+                _rectangular_space(self._reference_point, intersec_node)
             )
 
-        inclusive_hvs = np.abs(np.prod(self._reference_point - solution_set, axis=-1))
+        inclusive_hvs = _rectangular_space(self._reference_point, solution_set)
         limited_solutions = np.maximum(solution_set[:, np.newaxis], solution_set)
         return sum(
             self._compute_exclusive_hv(limited_solutions[i, i + 1 :], inclusive_hv)
@@ -58,7 +54,7 @@ class WFG(BaseHypervolume):
         if limited_solution.shape[0] == 0:
             return inclusive_hv
         elif limited_solution.shape[0] == 1:
-            inner = np.abs(np.prod(limited_solution[0] - self._reference_point))
+            inner = _rectangular_space(limited_solution[0], self._reference_point)
             return inclusive_hv - inner
 
         unique_lexsorted_solutions = np.unique(limited_solution, axis=0)
