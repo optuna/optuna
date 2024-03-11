@@ -57,7 +57,7 @@ checking = [
   "mypy",
   "mypy_boto3_s3",
   "types-PyYAML",
-  "types-redis",
+  "types-redis<4.6.0.20240311",
   "types-setuptools",
   "types-tqdm",
   "typing_extensions>=3.10.0.0",
@@ -87,7 +87,7 @@ optional = [
   "matplotlib!=3.6.0",  # optuna/visualization/matplotlib.
   "pandas",  # optuna/study.py.
   "plotly>=4.9.0",  # optuna/visualization.
-  "redis",  # optuna/storages/redis.py.
+  "redis<5.0.3",  # optuna/storages/redis.py.
   "scikit-learn>=0.24.2",
   # optuna/visualization/param_importances.py.
   "scipy",  # optuna/samplers/_gp
@@ -95,7 +95,7 @@ optional = [
 ]
 test = [
   "coverage",
-  "fakeredis[lua]",
+  "fakeredis[lua]<2.21.2",
   "kaleido",
   "moto",
   "pytest",
