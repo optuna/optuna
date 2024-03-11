@@ -178,6 +178,8 @@ def _fast_non_dominated_sort(
 
 
 def _is_pareto_front_nd(unique_lexsorted_loss_values: np.ndarray) -> np.ndarray:
+    # NOTE(nabenabe0928): I tried the Kung's algorithm below, but it was not really quick.
+    # https://github.com/optuna/optuna/pull/5302#issuecomment-1988665532
     loss_values = unique_lexsorted_loss_values.copy()
     n_trials = loss_values.shape[0]
     on_front = np.zeros(n_trials, dtype=bool)
