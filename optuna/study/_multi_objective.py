@@ -22,75 +22,19 @@ def _get_feasible_trials(trials: Sequence[FrozenTrial]) -> list[FrozenTrial]:
     return feasible_trials
 
 
-def _get_pareto_front_trials_2d(
-    trials: Sequence[FrozenTrial],
-    directions: Sequence[StudyDirection],
-    consider_constraint: bool = False,
-) -> list[FrozenTrial]:
-    trials = [t for t in trials if t.state == TrialState.COMPLETE]
-    if consider_constraint:
-        trials = _get_feasible_trials(trials)
-
-    n_trials = len(trials)
-    if n_trials == 0:
-        return []
-
-    trials.sort(
-        key=lambda trial: (
-            _normalize_value(trial.values[0], directions[0]),
-            _normalize_value(trial.values[1], directions[1]),
-        ),
-    )
-
-    last_nondominated_trial = trials[0]
-    pareto_front = [last_nondominated_trial]
-    for i in range(1, n_trials):
-        trial = trials[i]
-        if _dominates(last_nondominated_trial, trial, directions):
-            continue
-        pareto_front.append(trial)
-        last_nondominated_trial = trial
-
-    pareto_front.sort(key=lambda trial: trial.number)
-    return pareto_front
-
-
-def _get_pareto_front_trials_nd(
-    trials: Sequence[FrozenTrial],
-    directions: Sequence[StudyDirection],
-    consider_constraint: bool = False,
-) -> list[FrozenTrial]:
-    pareto_front = []
-    trials = [t for t in trials if t.state == TrialState.COMPLETE]
-    if consider_constraint:
-        trials = _get_feasible_trials(trials)
-
-    # TODO(vincent): Optimize (use the fast non dominated sort defined in the NSGA-II paper).
-    for trial in trials:
-        dominated = False
-        for other in trials:
-            if _dominates(other, trial, directions):
-                dominated = True
-                break
-
-        if not dominated:
-            pareto_front.append(trial)
-
-    return pareto_front
-
-
 def _get_pareto_front_trials_by_trials(
     trials: Sequence[FrozenTrial],
     directions: Sequence[StudyDirection],
     consider_constraint: bool = False,
 ) -> list[FrozenTrial]:
-    if len(directions) == 2:
-        return _get_pareto_front_trials_2d(
-            trials, directions, consider_constraint
-        )  # Log-linear in number of trials.
-    return _get_pareto_front_trials_nd(
-        trials, directions, consider_constraint
-    )  # Quadratic in number of trials.
+    trials = [t for t in trials if t.state == TrialState.COMPLETE]
+    if consider_constraint:
+        trials = _get_feasible_trials(trials)
+
+    loss_values = np.asarray([[_normalize_value(v, d) for v, d in (t.values, directions)] for t in trials])
+    unique_lexsorted_loss_values, order_inv = np.unique(loss_values, axis=0)
+    on_front = _is_pareto_front(unique_lexsorted_loss_values)[order_inv]
+    return [t for t, is_pareto in zip(trials, on_front) if is_pareto] 
 
 
 def _get_pareto_front_trials(
