@@ -36,4 +36,6 @@ def _compute_2d(solution_set: np.ndarray, reference_point: np.ndarray) -> float:
     used_solution = sorted_solution_set[mask]
     edge_length_x = reference_point[0] - used_solution[:, 0]
     edge_length_y = reference_points_y_cummin[mask] - used_solution[:, 1]
-    return edge_length_x @ edge_length_y
+    volume = edge_length_x @ edge_length_y
+    assert volume >= 0, "Hypervolume must be non negative."
+    return volume
