@@ -27,19 +27,24 @@ def _get_pareto_front_trials_by_trials(
     directions: Sequence[StudyDirection],
     consider_constraint: bool = False,
 ) -> list[FrozenTrial]:
+    # NOTE(nabenabe0928): Vectorization relies on all the trials being complete.
     trials = [t for t in trials if t.state == TrialState.COMPLETE]
     if consider_constraint:
         trials = _get_feasible_trials(trials)
+    if len(trials) == 0:
+        return []
 
     if any(len(t.values) != len(directions) for t in trials):
         raise ValueError(
             "The number of the values and the number of the objectives must be identical."
         )
 
-    loss_values = np.asarray([[_normalize_value(v, d) for v, d in (t.values, directions)] for t in trials])
-    unique_lexsorted_loss_values, order_inv = np.unique(loss_values, axis=0)
+    loss_values = np.asarray(
+        [[_normalize_value(v, d) for v, d in zip(t.values, directions)] for t in trials]
+    )
+    unique_lexsorted_loss_values, order_inv = np.unique(loss_values, return_inverse=True, axis=0)
     on_front = _is_pareto_front(unique_lexsorted_loss_values)[order_inv]
-    return [t for t, is_pareto in zip(trials, on_front) if is_pareto] 
+    return [t for t, is_pareto in zip(trials, on_front) if is_pareto]
 
 
 def _get_pareto_front_trials(
