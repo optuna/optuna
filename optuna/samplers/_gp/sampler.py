@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
     import optuna._gp.acqf as acqf
     import optuna._gp.gp as gp
-    import optuna._gp.optim_sample as optim_sample
+    import optuna._gp.optim_mixed as optim_mixed
     import optuna._gp.prior as prior
     import optuna._gp.search_space as gp_search_space
 else:
@@ -34,7 +34,7 @@ else:
     torch = _LazyImport("torch")
     gp_search_space = _LazyImport("optuna._gp.search_space")
     gp = _LazyImport("optuna._gp.gp")
-    optim_sample = _LazyImport("optuna._gp.optim_sample")
+    optim_mixed = _LazyImport("optuna._gp.optim_mixed")
     acqf = _LazyImport("optuna._gp.acqf")
     prior = _LazyImport("optuna._gp.prior")
 
@@ -116,13 +116,17 @@ class GPSampler(BaseSampler):
     def _optimize_acqf(
         self,
         acqf_params: "acqf.AcquisitionFunctionParams",
+        best_params: np.ndarray,
     ) -> np.ndarray:
         # Advanced users can override this method to change the optimization algorithm.
         # However, we do not make any effort to keep backward compatibility between versions.
         # Particularly, we may remove this function in future refactoring.
-        normalized_params, _ = optim_sample.optimize_acqf_sample(
+        normalized_params, _acqf_val = optim_mixed.optimize_acqf_mixed(
             acqf_params,
-            n_samples=self._optimize_n_samples,
+            warmstart_normalized_params_array=best_params[None, :],
+            n_preliminary_samples=2048,
+            n_local_search=10,
+            tol=1e-4,
             rng=self._rng.rng,
         )
         return normalized_params
@@ -190,7 +194,9 @@ class GPSampler(BaseSampler):
             Y=standarized_score_vals,
         )
 
-        normalized_param = self._optimize_acqf(acqf_params)
+        normalized_param = self._optimize_acqf(
+            acqf_params, normalized_params[np.argmax(standarized_score_vals), :]
+        )
         return gp_search_space.get_unnormalized_param(search_space, normalized_param)
 
     def sample_independent(
