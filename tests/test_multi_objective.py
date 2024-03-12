@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import pytest
 from typing import Sequence
+
+import pytest
 
 from optuna import create_study
 from optuna import trial
@@ -16,24 +17,27 @@ def _trial_to_values(t: FrozenTrial) -> tuple[float, ...]:
 
 
 def assert_is_output_equal_to_ans(
-    trials: list[FrozenTrial], directions: Sequence[StudyDirection], ans: set[int]
+    trials: list[FrozenTrial], directions: Sequence[StudyDirection], ans: set[tuple[int]]
 ) -> None:
     res = {_trial_to_values(t) for t in _get_pareto_front_trials_by_trials(trials, directions)}
     assert res == ans
 
 
-@pytest.mark.parametrize("directions,values_set,ans_set", [
-    (
-        ["minimize", "maximize"],
-        [[2, 2], [1, 1], [3, 1], [3, 2], [1, 3]],
-        [{(2, 2)}] + [{(1, 1), (2, 2)}] * 3 + [{(1, 3)}],
-    ),
-    (
-        ["minimize", "maximize", "minimize"],
-        [[2, 2, 2], [1, 1, 1], [3, 1, 3], [3, 2, 3], [1, 3, 1]],
-        [{(2, 2, 2)}] + [{(1, 1, 1), (2, 2, 2)}] * 3 + [{(1, 3, 1)}],
-    ),
-])
+@pytest.mark.parametrize(
+    "directions,values_set,ans_set",
+    [
+        (
+            ["minimize", "maximize"],
+            [[2, 2], [1, 1], [3, 1], [3, 2], [1, 3]],
+            [{(2, 2)}] + [{(1, 1), (2, 2)}] * 3 + [{(1, 3)}],
+        ),
+        (
+            ["minimize", "maximize", "minimize"],
+            [[2, 2, 2], [1, 1, 1], [3, 1, 3], [3, 2, 3], [1, 3, 1]],
+            [{(2, 2, 2)}] + [{(1, 1, 1), (2, 2, 2)}] * 3 + [{(1, 3, 1)}],
+        ),
+    ],
+)
 def test_get_pareto_front_trials(
     directions: list[str], values_set: list[list[int]], ans_set: list[set[tuple[int]]]
 ) -> None:
@@ -50,16 +54,17 @@ def test_get_pareto_front_trials(
     assert len(_get_pareto_front_trials_by_trials(study.trials, study.directions)) == 2
 
 
-@pytest.mark.parametrize("directions,values_set,ans_set", [
-    (
-        ["minimize", "maximize"], [[1, 1], [2, 2], [3, 2]], [{(1, 1), (2, 2)}, {(1, 1), (3, 2)}]
-    ),
-    (
-        ["minimize", "maximize", "minimize"],
-        [[1, 1, 1], [2, 2, 2], [3, 2, 3]],
-        [{(1, 1, 1), (2, 2, 2)}, {(1, 1, 1), (3, 2, 3)}],
-    ),
-])
+@pytest.mark.parametrize(
+    "directions,values_set,ans_set",
+    [
+        (["minimize", "maximize"], [[1, 1], [2, 2], [3, 2]], [{(1, 1), (2, 2)}, {(1, 1), (3, 2)}]),
+        (
+            ["minimize", "maximize", "minimize"],
+            [[1, 1, 1], [2, 2, 2], [3, 2, 3]],
+            [{(1, 1, 1), (2, 2, 2)}, {(1, 1, 1), (3, 2, 3)}],
+        ),
+    ],
+)
 def test_get_pareto_front_trials_with_constraint(
     directions: list[str], values_set: list[list[int]], ans_set: list[set[tuple[int]]]
 ) -> None:
