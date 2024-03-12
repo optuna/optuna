@@ -17,8 +17,6 @@ from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
-    import torch
-
     from optuna._gp import acqf
     from optuna._gp import gp
     from optuna._gp import optim_sample
@@ -27,7 +25,6 @@ if TYPE_CHECKING:
 else:
     from optuna._imports import _LazyImport
 
-    torch = _LazyImport("torch")
     gp = _LazyImport("optuna._gp.gp")
     optim_sample = _LazyImport("optuna._gp.optim_sample")
     acqf = _LazyImport("optuna._gp.acqf")
