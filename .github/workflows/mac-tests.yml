@@ -51,6 +51,8 @@ jobs:
         optuna --version
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
+        # TODO(c-bata): Remove a version constraint after releasing https://github.com/cunla/fakeredis-py/pull/303
+        pip install --progress-bar off 'fakeredis[lua]<2.21.2'
 
     - name: Output installed packages
       run: |

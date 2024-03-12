@@ -65,6 +65,8 @@ jobs:
 
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional] --extra-index-url https://download.pytorch.org/whl/cpu
+        # TODO(c-bata): Remove a version constraint after releasing https://github.com/cunla/fakeredis-py/pull/303
+        pip install --progress-bar off 'fakeredis[lua]<2.21.2'
 
     - name: Install dependencies with minimum versions
       run: |
