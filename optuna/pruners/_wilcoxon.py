@@ -93,7 +93,7 @@ class WilcoxonPruner(BasePruner):
 
 
             study = optuna.create_study(pruner=optuna.pruners.WilcoxonPruner(p_threshold=0.1))
-            study.optimize(objective)
+            study.optimize(objective, n_trials=100)
 
 
 
