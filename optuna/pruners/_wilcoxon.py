@@ -27,16 +27,18 @@ class WilcoxonPruner(BasePruner):
     This pruner performs the Wilcoxon signed-rank test between the current trial and the current best trial,
     and stops whenever the pruner is sure up to a given p-value that the current trial is worse than the best one.
 
-    This pruner is effective for objective functions (median, mean, etc.) that
-    aggregates multiple evaluations.
-    This includes the mean performance of n (e.g., 100)
-    shuffled inputs, the mean performance of k-fold cross validation, etc.
-    There can be "easy" or "hard" inputs (the pruner handles correspondence of
-    the inputs between different trials).
-    In each trial, it is recommended to shuffle the order in which data is processed.
+    This pruner is effective for optimizing the mean/median of some (costly-to-evaluate) performance scores over a set of problem instances.
+    Example applications include the optimization of:
+    - the mean performance of a heuristic method (simulated annealing, genetic algorithm, SAT solver, etc.) on a set of problem instances,
+    - the k-fold cross-validation score of a machine learning model, and
+    - the accuracy of outputs of a large language model (LLM) on a set of questions.
 
-    When you use this pruner, you must call `Trial.report(value, step)` function for each step (e.g., input id) with
-    the evaluated value. This is different from other pruners in that the reported value need not converge
+    There can be "easy" or "hard" instances (the pruner handles correspondence of the instances between different trials).
+    In each trial, it is recommended to shuffle the evaluation order, so that the optimization doesn't overfit to the instances in the beginning.
+
+    When you use this pruner, you must call `Trial.report(value, step)` function for each step (instance id) with
+    the evaluated value. The instance id may not be in ascending order.
+    This is different from other pruners in that the reported value need not converge
     to the real value. (To use pruners such as `SuccessiveHalvingPruner` in the same setting, you must provide e.g.,
     the historical average of the evaluated values.)
 
@@ -51,36 +53,48 @@ class WilcoxonPruner(BasePruner):
             import numpy as np
 
 
-            # For demonstrative purposes, we will use a toy evaluation function.
-            # We will minimize the mean value of `eval_func` over the input dataset.
-            def eval_func(param, input_):
-                return (param - input_) ** 2
+            # We minimize the mean evaluation loss over all the problem instances.
+            def evaluate(param, instance):
+                # A toy loss function for demonstrative purpose.
+                return (param - instance) ** 2
 
 
-            input_data = np.linspace(-1, 1, 100)
-            rng = np.random.default_rng()
+            problem_instances = np.linspace(-1, 1, 100)
 
 
             def objective(trial):
-                # In each trial, it is recommended to shuffle the order in which data is processed.
-                ordering = rng.permutation(range(len(input_data)))
-                s = []
-                for i in ordering:
-                    param = trial.suggest_float("param", -1, 1)
-                    loss = eval_func(param, input_data[i])
-                    trial.report(loss, i)
-                    s.append(loss)
+                # Sample a parameter.
+                param = trial.suggest_float("param", -1, 1)
+
+                # Evaluate performance of the parameter.
+                results = []
+
+                # For best results, shuffle the evaluation order in each trial.
+                instance_ids = np.random.permutation(len(problem_instances))
+                for id in instance_ids:
+                    loss = evaluate(param, problem_instances[id])
+                    results.append(loss)
+
+                    # Report loss together with the instance id.
+                    # CAVEAT: You need to pass the same id for the same instance,
+                    # otherwise WilcoxonPruner cannot correctly pair the losses across trials and
+                    # the pruning performance will degrade.
+                    trial.report(loss, id)
+
                     if trial.should_prune():
-                        return sum(s) / len(s)  # An advanced workaround (see the note below).
                         # raise optuna.TrialPruned()
 
-                return sum(s) / len(s)
+                        # Return the current predicted value instead of raising `TrialPruned`.
+                        # This is a workaround to tell the Optuna about the evaluation
+                        # results in pruned trials. (See the note below.)
+                        return sum(results) / len(results)
+
+                return sum(results) / len(results)
 
 
-            study = optuna.study.create_study(
-                pruner=optuna.pruners.WilcoxonPruner(p_threshold=0.1)
-            )
+            study = optuna.create_study(pruner=optuna.pruners.WilcoxonPruner(p_threshold=0.1))
             study.optimize(objective, n_trials=100)
+
 
 
     .. note::
@@ -88,14 +102,12 @@ class WilcoxonPruner(BasePruner):
         Trials containing those values are never pruned.
 
     .. note::
-        As an advanced workaround, if `trial.should_prune()` returns `True`,
-        you can return an estimation of the final value (e.g., the average of all evaluated values)
-        instead of `raise optuna.TrialPruned()`.
-        Some algorithms including `TPESampler` internally split trials into below (good) and above (bad),
-        and pruned trial will always be classified as above.
-        However, there are some trials that are slightly worse than the best trial and will be pruned,
-        but they should be classified as below (e.g., top 10%).
-        This workaround provides beneficial information about such trials to these algorithms.
+        If `trial.should_prune()` returns `True`, you can return an
+        estimation of the final value (e.g., the average of all evaluated
+        values) instead of `raise optuna.TrialPruned()`.
+        This is a workaround for the problem that currently there is no way
+        to tell Optuna the predicted objective value for trials raising
+        `TrialPruned`.
 
     Args:
         p_threshold:
@@ -106,12 +118,11 @@ class WilcoxonPruner(BasePruner):
             Defaults to 0.1.
 
             .. note::
-                Contrary to the usual statistical wisdom, this pruner repeatedly
-                performs statistical tests between the current trial and the
-                current best trial with increasing samples.
-                Please expect around ~2x probability of falsely pruning
-                a good trial, compared to the usual false positive rate of
-                performing the statistical test only once.
+                This pruner repeatedly performs statistical tests between the
+                current trial and the current best trial with increasing samples.
+                The false-positive rate of such a sequential test is different from
+                performing the test only once. To get the nominal false-positive rate,
+                please specify the Pocock-corrected p-value.
 
         n_startup_steps:
             The number of steps before which no trials are pruned.
