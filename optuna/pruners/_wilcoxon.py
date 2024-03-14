@@ -58,8 +58,6 @@ class WilcoxonPruner(BasePruner):
 
 
             problem_instances = np.linspace(-1, 1, 100)
-            rng = np.random.default_rng()
-
 
             def objective(trial):
                 # Sample a parameter.
