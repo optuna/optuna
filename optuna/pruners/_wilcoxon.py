@@ -33,7 +33,7 @@ class WilcoxonPruner(BasePruner):
     - the k-fold cross-validation score of a machine learning model, and
     - the accuracy of outputs of a large language model (LLM) on a set of questions.
 
-    There can be "easy" or "hard" inputs (the pruner handles correspondence of the inputs between different trials).
+    There can be "easy" or "hard" instances (the pruner handles correspondence of the instances between different trials).
     In each trial, it is recommended to shuffle the order in which data is processed, so that the optimization doesn't overfit to the instances in the beginning.
 
     When you use this pruner, you must call `Trial.report(value, step)` function for each step (instance id) with
