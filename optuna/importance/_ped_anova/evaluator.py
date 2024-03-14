@@ -85,7 +85,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
 
     Args:
         baseline_quantile:
-            Compute the importance of achieving top-`baseline_quantile` quantile objective value.
+            Compute the importance of achieving top-``baseline_quantile`` quantile objective value.
             For example, ``baseline_quantile=0.1`` means that the importances give the information
             of which parameters were important to achieve the top-10% performance during
             optimization.
