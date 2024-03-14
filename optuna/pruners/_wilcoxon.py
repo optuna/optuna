@@ -59,6 +59,7 @@ class WilcoxonPruner(BasePruner):
 
             problem_instances = np.linspace(-1, 1, 100)
 
+
             def objective(trial):
                 # Sample a parameter.
                 param = trial.suggest_float("param", -1, 1)
