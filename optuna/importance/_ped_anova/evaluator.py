@@ -51,7 +51,7 @@ class _QuantileFilter:
         cutoff_val = max(
             np.partition(loss_values, min_n_top_trials - 1)[min_n_top_trials - 1],
             # TODO(nabenabe0928): After dropping Python3.7, replace below with
-            # np.quantile(loss_values, self._quantile, method="inverted_cdf")
+            # np.quantile(loss_values, self._quantile, method="inverted_cdf").
             _quantile(loss_values, self._quantile),
         )
         should_keep_trials = loss_values <= cutoff_val
@@ -85,15 +85,15 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
 
     Args:
         baseline_quantile:
-            Compute the importance of achieving top-`baseline_quantile` quantile objective value.
-            For example, `baseline_quantile=0.1` means that the importances give the information
+            Compute the importance of achieving top-``baseline_quantile`` quantile objective value.
+            For example, ``baseline_quantile=0.1`` means that the importances give the information
             of which parameters were important to achieve the top-10% performance during
             optimization.
         evaluate_on_local:
             Whether we measure the importance in the local or global space.
             If :obj:`True`, the importances imply how importance each parameter is during
-            optimization. Meanwhile, `evaluate_on_local=False` gives the importances in the
-            specified search_space. `evaluate_on_local=True` is especially useful when users
+            optimization. Meanwhile, ``evaluate_on_local=False`` gives the importances in the
+            specified search_space. ``evaluate_on_local=True`` is especially useful when users
             modify search space during optimization.
 
     Example:
