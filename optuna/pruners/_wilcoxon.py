@@ -52,7 +52,7 @@ class WilcoxonPruner(BasePruner):
 
 
             # We minimize the mean evaluation loss over all the problem instances.
-            def eval_func(param, instance):
+            def evaluate(param, instance):
                 # A toy loss function for demonstrative purpose.
                 return (param - instance) ** 2
 
