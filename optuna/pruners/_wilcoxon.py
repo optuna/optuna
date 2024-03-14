@@ -27,16 +27,18 @@ class WilcoxonPruner(BasePruner):
     This pruner performs the Wilcoxon signed-rank test between the current trial and the current best trial,
     and stops whenever the pruner is sure up to a given p-value that the current trial is worse than the best one.
 
-    This pruner is effective for objective functions (median, mean, etc.) that
-    aggregates multiple evaluations.
-    This includes the mean performance of n (e.g., 100)
-    shuffled inputs, the mean performance of k-fold cross validation, etc.
-    There can be "easy" or "hard" inputs (the pruner handles correspondence of
-    the inputs between different trials).
-    In each trial, it is recommended to shuffle the order in which data is processed.
+    This pruner is effective for optimizing the mean/median of some (costly-to-evaluate) performance scores over a set of problem instances.
+    Example applications include the optimization of:
+    - the mean performance of a heuristic method (simulated annealing, genetic algorithm, SAT solver, etc.) on a set of problem instances,
+    - the k-fold cross-validation score of a machine learning model, and
+    - the accuracy of outputs of a large language model (LLM) on a set of questions.
 
-    When you use this pruner, you must call `Trial.report(value, step)` function for each step (e.g., input id) with
-    the evaluated value. This is different from other pruners in that the reported value need not converge
+    There can be "easy" or "hard" inputs (the pruner handles correspondence of the inputs between different trials).
+    In each trial, it is recommended to shuffle the order in which data is processed, so that the optimization doesn't overfit to the instances in the beginning.
+
+    When you use this pruner, you must call `Trial.report(value, step)` function for each step (instance id) with
+    the evaluated value. The instance id may not be in ascending order.
+    This is different from other pruners in that the reported value need not converge
     to the real value. (To use pruners such as `SuccessiveHalvingPruner` in the same setting, you must provide e.g.,
     the historical average of the evaluated values.)
 
@@ -65,7 +67,7 @@ class WilcoxonPruner(BasePruner):
                 param = trial.suggest_float("param", -1, 1)
 
                 # Evaluate performance of the parameter.
-                # In each trial, it is recommended to shuffle the order in which data is processed.
+                results = []
 
                 # For best results, shuffle the evaluation order in each trial.
                 instance_ids = np.random.permutation(len(problem_instances))
