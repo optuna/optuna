@@ -1307,6 +1307,11 @@ def test_tell() -> None:
     assert len(study.trials) == 6
     assert len(study.get_trials(states=(TrialState.FAIL,))) == 1
 
+    # String value is not allowed
+    study.tell(study.ask(), "2.2")  # type: ignore
+    assert len(study.trials) == 7
+    assert len(study.get_trials(states=(TrialState.FAIL,))) == 2
+
 
 def test_tell_pruned() -> None:
     study = create_study()

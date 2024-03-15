@@ -66,7 +66,7 @@ def test_n_trials_equal_to_min_n_top_trials() -> None:
     study = get_study(seed=0, n_trials=evaluator._min_n_top_trials, is_multi_obj=False)
     param_importance = list(evaluator.evaluate(study).values())
     n_params = len(param_importance)
-    assert np.allclose(param_importance, np.full(n_params, 1.0 / n_params))
+    assert np.allclose(param_importance, np.zeros(n_params))
 
 
 def test_baseline_quantile_is_1() -> None:
@@ -76,7 +76,7 @@ def test_baseline_quantile_is_1() -> None:
     param_importance = list(evaluator.evaluate(study).values())
     n_params = len(param_importance)
     # When top_trials == all_trials, all the importances become identical.
-    assert np.allclose(param_importance, np.full(n_params, 1.0 / n_params))
+    assert np.allclose(param_importance, np.zeros(n_params))
 
 
 def test_direction() -> None:
