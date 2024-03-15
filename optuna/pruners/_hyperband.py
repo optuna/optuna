@@ -139,7 +139,7 @@ class HyperbandPruner(BasePruner):
     def __init__(
         self,
         min_resource: int = 1,
-        max_resource: str|int = "auto",
+        max_resource: str | int = "auto",
         reduction_factor: int = 3,
         bootstrap_count: int = 0,
     ) -> None:
@@ -150,7 +150,7 @@ class HyperbandPruner(BasePruner):
         self._bootstrap_count = bootstrap_count
         self._total_trial_allocation_budget = 0
         self._trial_allocation_budgets: list[int] = []
-        self._n_brackets: int|None = None
+        self._n_brackets: int | None = None
 
         if not isinstance(self._max_resource, int) and self._max_resource != "auto":
             raise ValueError(
