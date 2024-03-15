@@ -82,8 +82,6 @@ class WilcoxonPruner(BasePruner):
                     trial.report(loss, id)
 
                     if trial.should_prune():
-                        # raise optuna.TrialPruned()
-
                         # Return the current predicted value instead of raising `TrialPruned`.
                         # This is a workaround to tell the Optuna about the evaluation
                         # results in pruned trials. (See the note below.)
