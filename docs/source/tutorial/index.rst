@@ -43,6 +43,7 @@ Showcases the recipes that might help you using Optuna with comfort.
 - :doc:`20_recipes/011_journal_storage`
 - `Human-in-the-loop Optimization with Optuna Dashboard <https://optuna-dashboard.readthedocs.io/en/latest/tutorials/hitl.html>`_
 - :doc:`20_recipes/012_artifact_tutorial`
+- :doc:`20_recipes/013_wilcoxon_pruner`
 
 .. only:: html
 

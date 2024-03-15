@@ -1,24 +1,19 @@
-# Run tests on Mac, which are triggered by each master push.
-# Currently, Python3.8 is only used as an environment.
-# This is mainly for the sake of speed.
-name: mac-tests
+name: matplotlib-tests
 
 on:
-  push:
-    branches:
-      - master
-  pull_request: {}
-  schedule:
-    - cron: '0 23 * * SUN-THU'
-  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/matplotlib-tests.yml
+      - optuna/visualization/**.py
+      - tests/visualization_tests/**
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  tests-mac:
-    runs-on: macos-latest
+  matplotlib-tests:
+    runs-on: ubuntu-latest
 
     # Scheduled Tests are disabled for forks.
     if: (github.event_name == 'schedule' && github.repository == 'optuna/optuna') || (github.event_name != 'schedule')
@@ -34,9 +29,9 @@ jobs:
     - name: Setup cache
       uses: actions/cache@v3
       env:
-        cache-name: test
+        cache-name: test-matplotlib
       with:
-        path: ~/Library/Caches/pip
+        path:  ~/.cache/pip
         key: ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
         restore-keys: |
           ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
@@ -51,8 +46,6 @@ jobs:
         optuna --version
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
-        # TODO(c-bata): Remove a version constraint after releasing https://github.com/cunla/fakeredis-py/pull/303
-        pip install --progress-bar off 'fakeredis[lua]<2.21.2'
 
     - name: Output installed packages
       run: |
@@ -61,13 +54,9 @@ jobs:
       run: |
         pip install pipdeptree
         pipdeptree
-
-
-    - name: Scheduled tests
-      if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
-      run: |
-        pytest tests
-    - name: Tests
+    - name: Tests without Plotly
       if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
       run: |
-        pytest tests -m "not slow"
+        pip uninstall -y plotly
+        pytest tests/visualization_tests/matplotlib_tests
+

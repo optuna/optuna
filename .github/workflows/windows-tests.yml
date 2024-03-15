@@ -1,4 +1,4 @@
-# Run tests and integration tests on Windows, which are triggered by each master push.
+# Run tests on Windows, which are triggered by each master push.
 # Currently, Python3.9 is only used as an environment.
 # This is mainly for the sake of speed.
 name: windows-tests
@@ -51,6 +51,8 @@ jobs:
         optuna --version
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional]
+        # TODO(c-bata): Remove a version constraint after releasing https://github.com/cunla/fakeredis-py/pull/303
+        pip install --progress-bar off 'fakeredis[lua]<2.21.2'
         pip install PyQt6 # Install PyQT for using QtAgg as matplotlib backend.
         pip install "kaleido<=0.1.0post1"  # TODO(HideakiImamura): Remove this after fixing https://github.com/plotly/Kaleido/issues/110
 
@@ -65,7 +67,7 @@ jobs:
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
-        pytest -m "not integration"
+        pytest
       env:
         SQLALCHEMY_WARN_20: 1
         MPLBACKEND: "QtAgg" # Use QtAgg as matplotlib backend.
@@ -73,64 +75,6 @@ jobs:
     - name: Tests
       if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
       run: |
-        pytest -m "not integration and not slow"
+        pytest -m "not slow"
       env:
         MPLBACKEND: "QtAgg" # Use QtAgg as matplotlib backend.
-
-  tests-integration-windows:
-    runs-on: windows-latest
-
-    # Not intended for forks.
-    if: (github.event_name == 'schedule' && github.repository == 'optuna/optuna') || (github.event_name != 'schedule')
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-
-    - name: Setup Python3.9
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.9"
-
-    - name: Setup cache
-      uses: actions/cache@v3
-      env:
-        cache-name: windows-test-integration
-      with:
-        path: ~\\AppData\\Local\\pip\\Cache
-        key: ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
-        restore-keys: |
-          ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
-
-    - name: Setup MPI
-      uses: mpi4py/setup-mpi@v1
-      with:
-        mpi: "msmpi"
-
-    - name: Install
-      run: |
-        python -m pip install --upgrade pip
-        pip install --progress-bar off -U setuptools
-        # Install minimal dependencies and confirm that `import optuna` is successful.
-        pip install --progress-bar off .
-        python -c 'import optuna'
-        optuna --version
-        pip install --progress-bar off .[test]
-        pip install --progress-bar off .[optional]
-        pip install --progress-bar off .[integration]
-        pip install "distributed<2023.3.2"
-
-    - name: Output installed packages
-      run: |
-        pip freeze --all
-    - name: Output dependency tree
-      run: |
-        pip install pipdeptree
-        pipdeptree
-
-    - name: Tests
-      # Skip allennlp tests since it's not supported on Windows.
-      run: |
-        pytest tests -m "integration" `
-          --ignore tests/integration_tests/allennlp_tests/test_allennlp.py `
-      env:
-        OMP_NUM_THREADS: 1

@@ -53,7 +53,8 @@ jobs:
 
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional] --extra-index-url https://download.pytorch.org/whl/cpu
-        pip install --progress-bar off .[integration] --extra-index-url https://download.pytorch.org/whl/cpu
+        # TODO(c-bata): Remove a version constraint after releasing https://github.com/cunla/fakeredis-py/pull/303
+        pip install --progress-bar off 'fakeredis[lua]<2.21.2'
 
         echo 'import coverage; coverage.process_startup()' > sitecustomize.py
 

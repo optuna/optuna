@@ -338,44 +338,6 @@ def test_split_complete_trials_multi_objective_empty() -> None:
     assert _tpe.sampler._split_complete_trials_multi_objective([], study, 0) == ([], [])
 
 
-def test_calculate_nondomination_rank() -> None:
-    # Single objective
-    test_case = np.asarray([[10], [20], [20], [30]])
-    ranks = list(_tpe.sampler._calculate_nondomination_rank(test_case, len(test_case)))
-    assert ranks == [0, 1, 1, 2]
-
-    # Two objectives
-    test_case = np.asarray([[10, 30], [10, 10], [20, 20], [30, 10], [15, 15]])
-    ranks = list(_tpe.sampler._calculate_nondomination_rank(test_case, len(test_case)))
-    assert ranks == [1, 0, 2, 1, 1]
-
-    # Three objectives
-    test_case = np.asarray([[5, 5, 4], [5, 5, 5], [9, 9, 0], [5, 7, 5], [0, 0, 9], [0, 9, 9]])
-    ranks = list(_tpe.sampler._calculate_nondomination_rank(test_case, len(test_case)))
-    assert ranks == [0, 1, 0, 2, 0, 1]
-
-    # The negative values are included.
-    test_case = np.asarray(
-        [[-5, -5, -4], [-5, -5, 5], [-9, -9, 0], [5, 7, 5], [0, 0, -9], [0, -9, 9]]
-    )
-    ranks = list(_tpe.sampler._calculate_nondomination_rank(test_case, len(test_case)))
-    assert ranks == [0, 1, 0, 2, 0, 1]
-
-    # The +inf is included.
-    test_case = np.asarray(
-        [[1, 1], [1, float("inf")], [float("inf"), 1], [float("inf"), float("inf")]]
-    )
-    ranks = list(_tpe.sampler._calculate_nondomination_rank(test_case, len(test_case)))
-    assert ranks == [0, 1, 1, 2]
-
-    # The -inf is included.
-    test_case = np.asarray(
-        [[1, 1], [1, -float("inf")], [-float("inf"), 1], [-float("inf"), -float("inf")]]
-    )
-    ranks = list(_tpe.sampler._calculate_nondomination_rank(test_case, len(test_case)))
-    assert ranks == [2, 1, 1, 0]
-
-
 def test_calculate_weights_below_for_multi_objective() -> None:
     # No sample.
     study = optuna.create_study(directions=["minimize", "minimize"])

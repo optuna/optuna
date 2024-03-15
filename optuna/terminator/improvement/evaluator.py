@@ -17,19 +17,16 @@ from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
-    import torch
-
     from optuna._gp import acqf
     from optuna._gp import gp
-    from optuna._gp import optim
+    from optuna._gp import optim_sample
     from optuna._gp import prior
     from optuna._gp import search_space
 else:
     from optuna._imports import _LazyImport
 
-    torch = _LazyImport("torch")
     gp = _LazyImport("optuna._gp.gp")
-    optim = _LazyImport("optuna._gp.optim")
+    optim_sample = _LazyImport("optuna._gp.optim_sample")
     acqf = _LazyImport("optuna._gp.acqf")
     prior = _LazyImport("optuna._gp.prior")
     search_space = _LazyImport("optuna._gp.search_space")
@@ -141,11 +138,12 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             Y=standarized_top_n_values,
             beta=beta,
         )
-        seed = self._rng.rng.randint(np.iinfo(np.int32).max)
         # UCB over the search space. (Original: LCB over the search space. See Change 1 above.)
         standardized_ucb_value = max(
             acqf.eval_acqf_no_grad(ucb_acqf_params, normalized_top_n_params).max(),
-            optim.optimize_acqf_sample(ucb_acqf_params, self._optimize_n_samples, seed)[1],
+            optim_sample.optimize_acqf_sample(
+                ucb_acqf_params, n_samples=self._optimize_n_samples, rng=self._rng.rng
+            )[1],
         )
 
         # calculate min_lcb
@@ -192,6 +190,8 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             is_categorical=(gp_search_space.scale_types == search_space.ScaleType.CATEGORICAL),
             log_prior=self._log_prior,
             minimum_noise=self._minimum_noise,
+            # TODO(contramundum53): Add option to specify this.
+            deterministic_objective=False,
             # TODO(y0z): Add `kernel_params_cache` to speedup.
             initial_kernel_params=None,
         )

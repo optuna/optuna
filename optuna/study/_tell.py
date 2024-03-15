@@ -1,5 +1,6 @@
 import copy
 import math
+from numbers import Real
 from typing import Optional
 from typing import Sequence
 from typing import Union
@@ -62,10 +63,8 @@ def _check_values_are_feasible(study: "optuna.Study", values: Sequence[float]) -
     for v in values:
         # TODO(Imamura): Construct error message taking into account all values and do not early
         # return `value` is assumed to be ignored on failure so we can set it to any value.
-        try:
-            float(v)
-        except (ValueError, TypeError):
-            return f"The value {repr(v)} could not be cast to float"
+        if not isinstance(v, Real):
+            return f"The value {repr(v)} should be real number."
 
         if math.isnan(v):
             return f"The value {v} is not acceptable"
@@ -118,7 +117,7 @@ def _tell_with_warning(
     values: Optional[Sequence[float]]
     if value_or_values is None:
         values = None
-    elif isinstance(value_or_values, Sequence):
+    elif not isinstance(value_or_values, str) and isinstance(value_or_values, Sequence):
         values = value_or_values
     else:
         values = [value_or_values]

@@ -9,11 +9,9 @@ import math
 import numpy as np
 
 from optuna.samplers._lazy_random_state import LazyRandomState
-from optuna.samplers.nsgaii._dominates import _constrained_dominates
-from optuna.samplers.nsgaii._dominates import _validate_constraints
-from optuna.samplers.nsgaii._elite_population_selection_strategy import _fast_non_dominated_sort
+from optuna.samplers.nsgaii._constraints_evaluation import _validate_constraints
+from optuna.samplers.nsgaii._elite_population_selection_strategy import _rank_population
 from optuna.study import Study
-from optuna.study._multi_objective import _dominates
 from optuna.trial import FrozenTrial
 
 
@@ -52,10 +50,11 @@ class NSGAIIIElitePopulationSelectionStrategy:
         Returns:
             A list of trials that are selected as elite population.
         """
-        _validate_constraints(population, self._constraints_func)
+        _validate_constraints(population, is_constrained=self._constraints_func is not None)
+        population_per_rank = _rank_population(
+            population, study.directions, is_constrained=self._constraints_func is not None
+        )
 
-        dominates = _dominates if self._constraints_func is None else _constrained_dominates
-        population_per_rank = _fast_non_dominated_sort(population, study.directions, dominates)
         elite_population: list[FrozenTrial] = []
         for population in population_per_rank:
             if len(elite_population) + len(population) < self._population_size:

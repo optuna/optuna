@@ -76,6 +76,8 @@ jobs:
 
         pip install --progress-bar off .[test]
         pip install --progress-bar off .[optional] --extra-index-url https://download.pytorch.org/whl/cpu
+        # TODO(c-bata): Remove a version constraint after releasing https://github.com/cunla/fakeredis-py/pull/303
+        pip install --progress-bar off 'fakeredis[lua]<2.21.2'
 
     - name: Output installed packages
       run: |
@@ -89,9 +91,9 @@ jobs:
       run: |
         if [ "${{ github.event_name }}" = "schedule" ] || \
            [ "${{ github.event_name }}" = "workflow_dispatch" ] ; then
-          target="not integration"
+          target=""
         else
-          target="not integration and not slow"
+          target="not slow"
         fi
 
         if [ "${{ matrix.python-version }}" = "3.12" ] ; then
