@@ -126,7 +126,7 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
         param_importances = numpy.array(
             [evaluator.get_importance(i)[0] for i in range(len(non_single_distributions))]
         )
-        #Normalize is here to keep the backward compatibility.
+        # We normalize here to keep the backward compatibility.
         param_importances /= numpy.sum(param_importances)
 
         return _sort_dict_by_importance(
