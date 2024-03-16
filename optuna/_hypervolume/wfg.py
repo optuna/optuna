@@ -7,7 +7,7 @@ from optuna._hypervolume import BaseHypervolume
 from optuna.study._multi_objective import _is_pareto_front
 
 
-def _rectangular_space(p0: np.ndarray, p1: np.ndarray) -> np.ndarray:
+def _hyper_rectangular_volume(p0: np.ndarray, p1: np.ndarray) -> np.ndarray:
     # NOTE: If both p0 and p1 are 1d array, this func returns np.float, which is castable to float.
     return np.abs(np.prod(p0 - p1, axis=-1))
 
@@ -34,14 +34,15 @@ class WFG(BaseHypervolume):
     def _compute_hv(self, sorted_solutions: np.ndarray) -> float:
         assert self._reference_point is not None
         if sorted_solutions.shape[0] == 1:
-            return float(_rectangular_space(sorted_solutions[0], self._reference_point))
+            return float(_hyper_rectangular_volume(sorted_solutions[0], self._reference_point))
         elif sorted_solutions.shape[0] == 2:
             # S(A v B) = S(A) + S(B) - S(A ^ B).
             intersec_node = np.maximum(sorted_solutions[0], sorted_solutions[1])
-            intersec = _rectangular_space(self._reference_point, intersec_node)
-            return np.sum(_rectangular_space(self._reference_point, sorted_solutions)) - intersec
+            intersec = _hyper_rectangular_volume(self._reference_point, intersec_node)
+            volume_sum = np.sum(_hyper_rectangular_volume(self._reference_point, sorted_solutions))
+            return volume_sum - intersec
 
-        inclusive_hvs = _rectangular_space(self._reference_point, sorted_solutions)
+        inclusive_hvs = _hyper_rectangular_volume(self._reference_point, sorted_solutions)
         limited_solutions_array = np.maximum(sorted_solutions[:, np.newaxis], sorted_solutions)
         return sum(
             self._compute_exclusive_hv(limited_solutions_array[i, i + 1 :], inclusive_hv)
@@ -53,7 +54,7 @@ class WFG(BaseHypervolume):
         if limited_solutions.shape[0] == 0:
             return inclusive_hv
         elif limited_solutions.shape[0] == 1:
-            inner = float(_rectangular_space(limited_solutions[0], self._reference_point))
+            inner = float(_hyper_rectangular_volume(limited_solutions[0], self._reference_point))
             return inclusive_hv - inner
 
         unique_lexsorted_solutions = np.unique(limited_solutions, axis=0)
