@@ -3,7 +3,6 @@ from __future__ import annotations
 import binascii
 import math
 from typing import Container
-from typing import Optional
 
 import optuna
 from optuna import logging
@@ -296,7 +295,7 @@ class HyperbandPruner(BasePruner):
             def get_trials(
                 self,
                 deepcopy: bool = True,
-                states: Optional[Container[TrialState]] = None,
+                states: Container[TrialState] | None = None,
             ) -> list["optuna.trial.FrozenTrial"]:
                 trials = super()._get_trials(deepcopy=deepcopy, states=states)
                 pruner = self.pruner
