@@ -1,8 +1,8 @@
 from __future__ import annotations
+from collections.abc import Container
 
 import binascii
 import math
-from typing import Container
 
 import optuna
 from optuna import logging
