@@ -23,10 +23,7 @@ def _solve_hssp(
     """
     selected_vecs: List[np.ndarray] = []
     selected_indices: List[int] = []
-    contributions = [
-        optuna._hypervolume.WFG().compute(np.asarray([v]), reference_point)
-        for v in rank_i_loss_vals
-    ]
+    contributions = np.prod(reference_point - rank_i_loss_vals, axis=-1)
     hv_selected = 0.0
     while len(selected_indices) < subset_size:
         max_index = int(np.argmax(contributions))
