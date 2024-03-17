@@ -1,7 +1,7 @@
 from __future__ import annotations
-from collections.abc import Container
 
 import binascii
+from collections.abc import Container
 import math
 
 import optuna
