@@ -51,7 +51,7 @@ class _QuantileFilter:
         cutoff_val = max(
             np.partition(loss_values, min_n_top_trials - 1)[min_n_top_trials - 1],
             # TODO(nabenabe0928): After dropping Python3.7, replace below with
-            # np.quantile(loss_values, self._quantile, method="inverted_cdf")
+            # np.quantile(loss_values, self._quantile, method="inverted_cdf").
             _quantile(loss_values, self._quantile),
         )
         should_keep_trials = loss_values <= cutoff_val
@@ -85,15 +85,15 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
 
     Args:
         baseline_quantile:
-            Compute the importance of achieving top-`baseline_quantile` quantile objective value.
-            For example, `baseline_quantile=0.1` means that the importances give the information
+            Compute the importance of achieving top-``baseline_quantile`` quantile objective value.
+            For example, ``baseline_quantile=0.1`` means that the importances give the information
             of which parameters were important to achieve the top-10% performance during
             optimization.
         evaluate_on_local:
             Whether we measure the importance in the local or global space.
             If :obj:`True`, the importances imply how importance each parameter is during
-            optimization. Meanwhile, `evaluate_on_local=False` gives the importances in the
-            specified search_space. `evaluate_on_local=True` is especially useful when users
+            optimization. Meanwhile, ``evaluate_on_local=False`` gives the importances in the
+            specified search_space. ``evaluate_on_local=True`` is especially useful when users
             modify search space during optimization.
 
     Example:
@@ -170,6 +170,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         top_trials: list[FrozenTrial],
         all_trials: list[FrozenTrial],
     ) -> float:
+        # When pdf_all == pdf_top, i.e. all_trials == top_trials, this method will give 0.0.
         consider_prior, prior_weight = self._consider_prior, self._prior_weight
         pe_top = _build_parzen_estimator(
             param_name, dist, top_trials, self._n_steps, consider_prior, prior_weight
@@ -214,22 +215,17 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         if len(trials) <= self._min_n_top_trials:
             param_importances = {k: 1.0 / n_params for k in non_single_dists}
             param_importances.update({k: 0.0 for k in single_dists})
-            return {k: 1.0 / n_params for k in param_importances}
+            return {k: 0.0 for k in param_importances}
 
         top_trials = self._get_top_trials(study, trials, params, target)
+        quantile = len(top_trials) / len(trials)
         importance_sum = 0.0
         param_importances = {}
         for param_name, dist in non_single_dists.items():
-            param_importances[param_name] = self._compute_pearson_divergence(
+            param_importances[param_name] = quantile * self._compute_pearson_divergence(
                 param_name, dist, top_trials=top_trials, all_trials=trials
             )
             importance_sum += param_importances[param_name]
-
-        if importance_sum > 0.0:
-            param_importances = {k: v / importance_sum for k, v in param_importances.items()}
-        else:
-            # It happens when pdf_local == pdf_top for all params.
-            param_importances = {k: 1.0 / n_params for k in non_single_dists}
 
         param_importances.update({k: 0.0 for k in single_dists})
         return _sort_dict_by_importance(param_importances)
