@@ -254,3 +254,11 @@ def test_nan() -> None:
         lambda trial: 1 if np.isnan(trial.suggest_categorical("x", [0, float("nan")])) else 0
     )
     assert len(study.get_trials()) == 2
+
+def test_is_exhausted() -> None:
+    search_space = {"a": [0, 50]}
+    sampler = samplers.GridSampler(search_space)
+    study = optuna.create_study(sampler=sampler)
+    assert not sampler.is_exhausted(study)
+    study.optimize(lambda trial: trial.suggest_categorical("a", [0, 1]))
+    assert sampler.is_exhausted(study)
