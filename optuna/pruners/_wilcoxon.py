@@ -71,19 +71,17 @@ class WilcoxonPruner(BasePruner):
 
                 # For best results, shuffle the evaluation order in each trial.
                 instance_ids = np.random.permutation(len(problem_instances))
-                for id in instance_ids:
-                    loss = evaluate(param, problem_instances[id])
+                for instance_id in instance_ids:
+                    loss = evaluate(param, problem_instances[instance_id])
                     results.append(loss)
 
                     # Report loss together with the instance id.
                     # CAVEAT: You need to pass the same id for the same instance,
                     # otherwise WilcoxonPruner cannot correctly pair the losses across trials and
                     # the pruning performance will degrade.
-                    trial.report(loss, id)
+                    trial.report(loss, instance_id)
 
                     if trial.should_prune():
-                        # raise optuna.TrialPruned()
-
                         # Return the current predicted value instead of raising `TrialPruned`.
                         # This is a workaround to tell the Optuna about the evaluation
                         # results in pruned trials. (See the note below.)
