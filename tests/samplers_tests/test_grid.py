@@ -255,6 +255,7 @@ def test_nan() -> None:
     )
     assert len(study.get_trials()) == 2
 
+
 def test_is_exhausted() -> None:
     search_space = {"a": [0, 50]}
     sampler = samplers.GridSampler(search_space)
