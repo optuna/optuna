@@ -261,5 +261,5 @@ def test_is_exhausted() -> None:
     sampler = samplers.GridSampler(search_space)
     study = optuna.create_study(sampler=sampler)
     assert not sampler.is_exhausted(study)
-    study.optimize(lambda trial: trial.suggest_categorical("a", [0, 1]))
+    study.optimize(lambda trial: trial.suggest_categorical("a", [0, 50]))
     assert sampler.is_exhausted(study)
