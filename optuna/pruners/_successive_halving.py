@@ -214,13 +214,13 @@ class SuccessiveHalvingPruner(BasePruner):
             rung += 1
 
 
-def _estimate_min_resource(trials: list["optuna.trial.FrozenTrial"]) -> int:
+def _estimate_min_resource(trials: list["optuna.trial.FrozenTrial"]) -> int | None:
     n_steps = [
         t.last_step for t in trials if t.state == TrialState.COMPLETE and t.last_step is not None
     ]
 
     if not n_steps:
-        return None
+        return 0
 
     # Get the maximum number of steps and divide it by 100.
     last_step = max(n_steps)
@@ -241,7 +241,7 @@ def _completed_rung_key(rung: int) -> str:
 
 def _get_competing_values(
     trials: list["optuna.trial.FrozenTrial"], value: float, rung_key: str
-) -> float:
+) -> list[float]:
     competing_values = [t.system_attrs[rung_key] for t in trials if rung_key in t.system_attrs]
     competing_values.append(value)
     return competing_values
