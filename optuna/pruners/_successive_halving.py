@@ -220,7 +220,7 @@ def _estimate_min_resource(trials: list["optuna.trial.FrozenTrial"]) -> int | No
     ]
 
     if not n_steps:
-        return 0
+        return None
 
     # Get the maximum number of steps and divide it by 100.
     last_step = max(n_steps)
