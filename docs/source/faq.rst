@@ -715,11 +715,12 @@ Optuna may sometimes suggest parameters evaluated in the past and if you would l
     study = optuna.create_study()
     study.optimize(objective, n_trials=100)
 
-How can I sample the expected best parameters based on the evaluated trials?
+How can I sample the best expected parameters based on the evaluated trials?
 ----------------------------------------------------------------------------
 
 As the optimization often overtunes the parameters of an objective function with an observational noise, it is convenient to sample the best parameters based on the debiased objective function.
-:class:`~optuna.samplers.GPSampler` enables us to sample the best-expected parameters using the mean estimation of parameters.
+:class:`~optuna.samplers.GPSampler` enables us to sample the best expected parameters using the mean estimation of parameters.
+Note that the best expected parameters are defined as :math:`\mathrm{arg}\min_{x \in X} \mathbb{E}_{f}[f(x)]` where :math:`f` follows the Gaussian process.
 However, as we made the interface of :class:`~optuna.samplers.GPSampler` as simple as possible, we need to tweak it as follows:
 
 .. code-block:: python
@@ -731,7 +732,7 @@ However, as we made the interface of :class:`~optuna.samplers.GPSampler` as simp
     from optuna._gp.optim_mixed import optimize_acqf_mixed
 
 
-    class ExpectedBestParamSampler(optuna.samplers.GPSampler):
+    class BestExpectedParamSampler(optuna.samplers.GPSampler):
         # Inherit `GPSampler` so as to use another acquisition function.
 
         def _optimize_acqf(self, acqf_params, best_params):
@@ -749,7 +750,8 @@ However, as we made the interface of :class:`~optuna.samplers.GPSampler` as simp
     def objective(trial, evaluate_func=True):
         X = np.array([trial.suggest_float(f"x{i}", -5, 5) for i in range(2)])
         if evaluate_func:
-            # Could be a very expensive evaluation.
+            # Could be a very expensive evaluation in practice such as a training of DNN.
+            # In this example, we just use a simple sphere function.
             return np.sum(X ** 2)
         else:
             # Skip a potentially expensive evaluation.
@@ -762,16 +764,16 @@ However, as we made the interface of :class:`~optuna.samplers.GPSampler` as simp
     study.optimize(objective, n_trials=20)
 
     # Create another study for the best guess.
-    study_for_best_guess = optuna.create_study(sampler=ExpectedBestParamSampler(seed=seed))
+    study_for_best_guess = optuna.create_study(sampler=BestExpectedParamSampler(seed=seed))
     # Add all the trials from the last study for the best guess.
     study_for_best_guess.add_trials(study.trials)
 
     # Create a new trial for the best guess.
-    # NOTE: expected_best_trial is empty until `suggest_XXX` in the objective is called.
-    expected_best_trial = study_for_best_guess.ask()
+    # NOTE: best_expected_trial is empty until `suggest_XXX` in the objective is called.
+    best_expected_trial = study_for_best_guess.ask()
 
     # Fill up the trial with the best guess.
     # NOTE: It is not necessary to get the objective function value, but you can also evaluate it.
-    objective(expected_best_trial, evaluate_func=False)
-    print(f"Expected Best Params: {expected_best_trial.params}")
+    objective(best_expected_trial, evaluate_func=False)
+    print(f"Best Expected Params: {best_expected_trial.params}")
 
