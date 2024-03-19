@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import math
-from typing import Optional
 
 import optuna
 from optuna.pruners._base import BasePruner
@@ -215,7 +214,7 @@ class SuccessiveHalvingPruner(BasePruner):
             rung += 1
 
 
-def _estimate_min_resource(trials: list["optuna.trial.FrozenTrial"]) -> Optional[int]:
+def _estimate_min_resource(trials: list["optuna.trial.FrozenTrial"]) -> int:
     n_steps = [
         t.last_step for t in trials if t.state == TrialState.COMPLETE and t.last_step is not None
     ]
@@ -242,7 +241,7 @@ def _completed_rung_key(rung: int) -> str:
 
 def _get_competing_values(
     trials: list["optuna.trial.FrozenTrial"], value: float, rung_key: str
-) -> list[float]:
+) -> float:
     competing_values = [t.system_attrs[rung_key] for t in trials if rung_key in t.system_attrs]
     competing_values.append(value)
     return competing_values
