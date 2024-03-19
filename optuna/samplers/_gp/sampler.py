@@ -54,27 +54,27 @@ class GPSampler(BaseSampler):
         - Quasi-Monte Carlo (QMC) sampling to optimize the acquisition function.
 
     .. note::
-        This sampler requires `scipy` and `pytorch`.
-        You can install these dependencies with `pip install scipy pytorch`.
+        This sampler requires ``scipy`` and ``pytorch``.
+        You can install these dependencies with ``pip install scipy pytorch``.
 
     Args:
         seed:
             Random seed to initialize internal random number generator.
-            Defaults to None (a seed is picked randomly).
+            Defaults to :obj:`None` (a seed is picked randomly).
 
         independent_sampler:
-            Sampler used for initial sampling (for the first `n_startup_trials` trials)
-            and for conditional parameters. Defaults to `None`
-            (a random sampler with the same `seed` is used).
+            Sampler used for initial sampling (for the first ``n_startup_trials`` trials)
+            and for conditional parameters. Defaults to :obj:`None`
+            (a random sampler with the same ``seed`` is used).
 
         n_startup_trials:
             Number of initial trials. Defaults to 10.
 
         deterministic_objective:
             Whether the objective function is deterministic or not.
-            If `True`, the sampler will fix the noise variance of the surrogate model to
+            If :obj:`True`, the sampler will fix the noise variance of the surrogate model to
             the minimum value (slightly above 0 to ensure numerical stability).
-            Defaults to `False`.
+            Defaults to :obj:`False`.
     """
 
     def __init__(

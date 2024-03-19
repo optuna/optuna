@@ -29,18 +29,20 @@ class WilcoxonPruner(BasePruner):
 
     This pruner is effective for optimizing the mean/median of some (costly-to-evaluate) performance scores over a set of problem instances.
     Example applications include the optimization of:
-    - the mean performance of a heuristic method (simulated annealing, genetic algorithm, SAT solver, etc.) on a set of problem instances,
-    - the k-fold cross-validation score of a machine learning model, and
-    - the accuracy of outputs of a large language model (LLM) on a set of questions.
+
+    * the mean performance of a heuristic method (simulated annealing, genetic algorithm, SAT solver, etc.) on a set of problem instances,
+    * the k-fold cross-validation score of a machine learning model, and
+    * the accuracy of outputs of a large language model (LLM) on a set of questions.
 
     There can be "easy" or "hard" instances (the pruner handles correspondence of the instances between different trials).
     In each trial, it is recommended to shuffle the evaluation order, so that the optimization doesn't overfit to the instances in the beginning.
 
-    When you use this pruner, you must call `Trial.report(value, step)` function for each step (instance id) with
+    When you use this pruner, you must call ``Trial.report(value, step)`` method for each step (instance id) with
     the evaluated value. The instance id may not be in ascending order.
     This is different from other pruners in that the reported value need not converge
-    to the real value. (To use pruners such as `SuccessiveHalvingPruner` in the same setting, you must provide e.g.,
-    the historical average of the evaluated values.)
+    to the real value. To use pruners such as :class:`~optuna.pruners.SuccessiveHalvingPruner`
+    in the same setting, you must provide e.g.,
+    the historical average of the evaluated values.
 
     .. seealso::
         Please refer to :meth:`~optuna.trial.Trial.report`.
@@ -100,12 +102,12 @@ class WilcoxonPruner(BasePruner):
         Trials containing those values are never pruned.
 
     .. note::
-        If `trial.should_prune()` returns `True`, you can return an
+        If :func:`~optuna.trial.FrozenTrial.should_prune` returns :obj:`True`, you can return an
         estimation of the final value (e.g., the average of all evaluated
-        values) instead of `raise optuna.TrialPruned()`.
+        values) instead of ``raise optuna.TrialPruned()``.
         This is a workaround for the problem that currently there is no way
         to tell Optuna the predicted objective value for trials raising
-        `TrialPruned`.
+        :class:`optuna.TrialPruned`.
 
     Args:
         p_threshold:
@@ -124,7 +126,7 @@ class WilcoxonPruner(BasePruner):
 
         n_startup_steps:
             The number of steps before which no trials are pruned.
-            Pruning starts only after you have `n_startup_steps` steps of
+            Pruning starts only after you have ``n_startup_steps`` steps of
             available observations for comparison between the current trial
             and the best trial.
             Defaults to 0 (pruning kicks in from the very first step).
