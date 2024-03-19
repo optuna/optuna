@@ -280,6 +280,6 @@ class GridSampler(BaseSampler):
 
     def is_exhausted(self, study: Study) -> bool:
         """
-        Returns True if the grid of GridSampler is exhausted, else returns False
+        Return True if all the possible params are evaluated, otherwise return False.
         """
         return len(self._get_unvisited_grid_ids(study)) == 0
