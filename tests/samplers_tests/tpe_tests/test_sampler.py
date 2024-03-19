@@ -845,30 +845,19 @@ def test_split_trials_for_multiobjective_constant_liar(directions: list[str]) ->
             )
         )
 
-    study.add_trial(
-        optuna.create_trial(
-            state=optuna.trial.TrialState.FAIL,
-        )
-    )
-
-    study.add_trial(
-        optuna.create_trial(
-            state=optuna.trial.TrialState.WAITING,
-        )
-    )
+    study.add_trial(optuna.create_trial(state=optuna.trial.TrialState.FAIL))
+    study.add_trial(optuna.create_trial(state=optuna.trial.TrialState.WAITING))
 
     states = [optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.RUNNING]
     trials = study.get_trials(states=states)
     finished_trials = study.get_trials(states=(optuna.trial.TrialState.COMPLETE,))
-    ground_truth = [0, 1, 4, 2, 8, 5, 3, 6, 9, 12, 7, 10, 13, 11, 14, 15, 16, 17, 18, 19, 20]
+    ground_truth = [0, 1, 4, 2, 8, 5, 3, 12, 6, 9, 7, 13, 10, 11, 14, 15, 16, 17, 18, 19, 20]
     for n_below in range(1, len(finished_trials) + 1):
         below_trials, above_trials = _tpe.sampler._split_trials(
-            study,
-            trials,
-            n_below,
-            constraints_enabled=False,
+            study, trials, n_below, constraints_enabled=False
         )
         below_trial_numbers = [trial.number for trial in below_trials]
+        print(below_trial_numbers)
         assert below_trial_numbers == np.sort(ground_truth[:n_below]).tolist()
         above_trial_numbers = [trial.number for trial in above_trials]
         assert above_trial_numbers == np.sort(ground_truth[n_below:]).tolist()

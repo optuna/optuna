@@ -20,9 +20,9 @@ def _solve_hssp_2d(
     sorted_loss_vals = rank_i_loss_vals[order]
     rectangle_diagonal_points = np.repeat(reference_point[np.newaxis, :], n_trials, axis=0)
     for i in range(subset_size):
-        contribs = np.prod(rectangle_diagonal_points - sorted_loss_vals, axis=-1)
-        # NOTE(nabenabe0928): `is_chosen` is necessary for loss_vals with `nan` or `inf`.
-        max_index = indices[~is_chosen][np.argmax(contribs[~is_chosen])]
+        # NOTE: `is_chosen` is necessary to avoid duplications especially with `nan` or `inf`.
+        contribs = np.prod(rectangle_diagonal_points - sorted_loss_vals, axis=-1)[~is_chosen]
+        max_index = indices[~is_chosen][np.argmax(contribs)]
         is_chosen[max_index] = True
         rectangle_diagonal_points[: max_index + 1, 0] = np.minimum(
             sorted_loss_vals[max_index, 0], rectangle_diagonal_points[: max_index + 1, 0]
