@@ -24,8 +24,8 @@ def _solve_hssp_2d(
         # NOTE(nabenabe0928): `is_chosen` is necessary for loss_vals with `nan` or `inf`.
         max_index = indices[~is_chosen][np.argmax(contribs[~is_chosen])]
         is_chosen[max_index] = True
-        rectangle_diagonal_points[:max_index + 1, 0] = np.minimum(
-            sorted_loss_vals[max_index, 0], rectangle_diagonal_points[:max_index + 1, 0]
+        rectangle_diagonal_points[: max_index + 1, 0] = np.minimum(
+            sorted_loss_vals[max_index, 0], rectangle_diagonal_points[: max_index + 1, 0]
         )
         rectangle_diagonal_points[max_index:, 1] = np.minimum(
             sorted_loss_vals[max_index, 1], rectangle_diagonal_points[max_index:, 1]
