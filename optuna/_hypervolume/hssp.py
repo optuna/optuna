@@ -11,19 +11,18 @@ def _solve_hssp_2d(
     subset_size: int,
     reference_point: np.ndarray,
 ) -> np.ndarray:
-    # The time complexity is O(subset_size * rank_i_loss_vals.shape[0]).
+    # The time complexity is O(K(N - K)) where K = subset_size and N = rank_i_loss_vals.shape[0].
     assert rank_i_loss_vals.shape[-1] == 2 and subset_size <= rank_i_loss_vals.shape[0]
     n_trials = rank_i_loss_vals.shape[0]
-    is_chosen = np.zeros(n_trials, dtype=bool)
-    indices = np.arange(n_trials, dtype=int)
     order = np.argsort(rank_i_loss_vals[:, 0])
     sorted_loss_vals = rank_i_loss_vals[order]
     rectangle_diagonal_points = np.repeat(reference_point[np.newaxis, :], n_trials, axis=0)
+
+    subset_indices = np.zeros(subset_size, dtype=int)
     for i in range(subset_size):
-        # NOTE: `is_chosen` is necessary to avoid duplications especially with `nan` or `inf`.
-        contribs = np.prod(rectangle_diagonal_points - sorted_loss_vals, axis=-1)[~is_chosen]
-        max_index = indices[~is_chosen][np.argmax(contribs)]
-        is_chosen[max_index] = True
+        contribs = np.prod(rectangle_diagonal_points - sorted_loss_vals, axis=-1)
+        max_index = np.argmax(contribs)
+        subset_indices[i] = rank_i_indices[order[max_index]]
         rectangle_diagonal_points[: max_index + 1, 0] = np.minimum(
             sorted_loss_vals[max_index, 0], rectangle_diagonal_points[: max_index + 1, 0]
         )
@@ -31,7 +30,14 @@ def _solve_hssp_2d(
             sorted_loss_vals[max_index, 1], rectangle_diagonal_points[max_index:, 1]
         )
 
-    return rank_i_indices[order[is_chosen]]
+        keep = np.ones(n_trials - i, dtype=bool)
+        keep[max_index] = False
+        # Remove the chosen point.
+        order = order[keep]
+        rectangle_diagonal_points = rectangle_diagonal_points[keep]
+        sorted_loss_vals = sorted_loss_vals[keep]
+
+    return subset_indices
 
 
 def _solve_hssp(
