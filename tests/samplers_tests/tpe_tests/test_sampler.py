@@ -857,7 +857,6 @@ def test_split_trials_for_multiobjective_constant_liar(directions: list[str]) ->
             study, trials, n_below, constraints_enabled=False
         )
         below_trial_numbers = [trial.number for trial in below_trials]
-        print(below_trial_numbers)
         assert below_trial_numbers == np.sort(ground_truth[:n_below]).tolist()
         above_trial_numbers = [trial.number for trial in above_trials]
         assert above_trial_numbers == np.sort(ground_truth[n_below:]).tolist()
