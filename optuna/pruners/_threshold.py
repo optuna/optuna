@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import math
 from typing import Any
-from typing import Optional
 
 import optuna
 from optuna.pruners import BasePruner
@@ -79,8 +80,8 @@ class ThresholdPruner(BasePruner):
 
     def __init__(
         self,
-        lower: Optional[float] = None,
-        upper: Optional[float] = None,
+        lower: float | None = None,
+        upper: float | None = None,
         n_warmup_steps: int = 0,
         interval_steps: int = 1,
     ) -> None:
