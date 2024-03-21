@@ -50,8 +50,8 @@ class _ScottParzenEstimator(_ParzenEstimator):
     def _calculate_numerical_distributions(
         self,
         observations: np.ndarray,
-        low: float,  # The type is actually int, but typing follows the original
-        high: float,  # The type is actually int, but typing follows the original
+        low: float,  # The type is actually int, but typing follows the original.
+        high: float,  # The type is actually int, but typing follows the original.
         step: float | None,
         parameters: _ParzenEstimatorParameters,
     ) -> _BatchedDistributions:

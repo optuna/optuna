@@ -1,9 +1,8 @@
+from __future__ import annotations
+
 import binascii
+from collections.abc import Container
 import math
-from typing import Container
-from typing import List
-from typing import Optional
-from typing import Union
 
 import optuna
 from optuna import logging
@@ -139,18 +138,18 @@ class HyperbandPruner(BasePruner):
     def __init__(
         self,
         min_resource: int = 1,
-        max_resource: Union[str, int] = "auto",
+        max_resource: str | int = "auto",
         reduction_factor: int = 3,
         bootstrap_count: int = 0,
     ) -> None:
         self._min_resource = min_resource
         self._max_resource = max_resource
         self._reduction_factor = reduction_factor
-        self._pruners: List[SuccessiveHalvingPruner] = []
+        self._pruners: list[SuccessiveHalvingPruner] = []
         self._bootstrap_count = bootstrap_count
         self._total_trial_allocation_budget = 0
-        self._trial_allocation_budgets: List[int] = []
-        self._n_brackets: Optional[int] = None
+        self._trial_allocation_budgets: list[int] = []
+        self._n_brackets: int | None = None
 
         if not isinstance(self._max_resource, int) and self._max_resource != "auto":
             raise ValueError(
@@ -296,8 +295,8 @@ class HyperbandPruner(BasePruner):
             def get_trials(
                 self,
                 deepcopy: bool = True,
-                states: Optional[Container[TrialState]] = None,
-            ) -> List["optuna.trial.FrozenTrial"]:
+                states: Container[TrialState] | None = None,
+            ) -> list["optuna.trial.FrozenTrial"]:
                 trials = super()._get_trials(deepcopy=deepcopy, states=states)
                 pruner = self.pruner
                 assert isinstance(pruner, HyperbandPruner)
