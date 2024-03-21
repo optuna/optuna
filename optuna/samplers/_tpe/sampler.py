@@ -28,7 +28,7 @@ from optuna.search_space import IntersectionSearchSpace
 from optuna.search_space.group_decomposed import _GroupDecomposedSearchSpace
 from optuna.search_space.group_decomposed import _SearchSpaceGroup
 from optuna.study import Study
-from optuna.study._multi_objective import _fast_non_dominated_sort
+from optuna.study._multi_objective import _fast_non_domination_rank
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -685,7 +685,7 @@ def _split_complete_trials_multi_objective(
     lvals *= np.array([-1.0 if d == StudyDirection.MAXIMIZE else 1.0 for d in study.directions])
 
     # Solving HSSP for variables number of times is a waste of time.
-    nondomination_ranks = _fast_non_dominated_sort(lvals, n_below=n_below)
+    nondomination_ranks = _fast_non_domination_rank(lvals, n_below=n_below)
     assert 0 <= n_below <= len(lvals)
 
     indices = np.array(range(len(lvals)))
