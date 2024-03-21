@@ -13,8 +13,9 @@ def _compute_2d(solution_set: np.ndarray, reference_point: np.ndarray) -> float:
         reference_point:
             The reference point to compute the hypervolume.
     """
+    assert solution_set.shape[1] == 2 and reference_point.shape[0] == 2
 
-    # Descending order in the 1st objective, and ascending order in the 2nd objective.
+    # Ascending order in the 1st objective, and descending order in the 2nd objective.
     sorted_solution_set = solution_set[np.lexsort((-solution_set[:, 1], solution_set[:, 0]))]
     reference_points_y = np.append(reference_point[1], sorted_solution_set[:-1, 1])
     reference_points_y_cummin = np.minimum.accumulate(reference_points_y)

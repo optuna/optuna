@@ -172,7 +172,6 @@ N_TRIALS = 50
 
 
 N_SA_ITER = 10000
-count = 0
 
 
 ###################################################################################################
@@ -230,20 +229,18 @@ def objective(trial: optuna.Trial) -> float:
     results = []
 
     # For best results, shuffle the evaluation order in each trial.
-    ordering = np.random.permutation(len(dataset))
-    for i in ordering:
+    instance_ids = np.random.permutation(len(dataset))
+    for instance_id in instance_ids:
         num_evaluation += 1
-        result_idxs = tsp_simulated_annealing(vertices=dataset[i], options=options)
-        result_cost = tsp_cost(dataset[i], result_idxs)
+        result_idxs = tsp_simulated_annealing(vertices=dataset[instance_id], options=options)
+        result_cost = tsp_cost(dataset[instance_id], result_idxs)
         results.append(result_cost)
 
-        trial.report(result_cost, i)
+        trial.report(result_cost, instance_id)
         if trial.should_prune():
-            # raise optuna.TrialPruned()  # This is a standard logic of pruning in Optuna.
-
-            # Return the current predicted value when pruned.
-            # This is a workaround for the problem that
-            # current TPE sampler cannot utilize pruned trials effectively.
+            # Return the current predicted value instead of raising `TrialPruned`.
+            # This is a workaround to tell the Optuna about the evaluation
+            # results in pruned trials.
             return sum(results) / len(results)
 
     return sum(results) / len(results)
