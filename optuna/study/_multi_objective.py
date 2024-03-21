@@ -185,12 +185,12 @@ def _calculate_nondomination_rank(
     if n_objectives == 1:
         _, ranks = np.unique(loss_values[:, 0], return_inverse=True)
         return ranks
-    else:
-        # It ensures that trials[j] will not dominate trials[i] for i < j.
-        # np.unique does lexsort.
-        unique_lexsorted_loss_values, order_inv = np.unique(
-            loss_values, return_inverse=True, axis=0
-        )
+
+    # It ensures that trials[j] will not dominate trials[i] for i < j.
+    # np.unique does lexsort.
+    unique_lexsorted_loss_values, order_inv = np.unique(
+        loss_values, return_inverse=True, axis=0
+    )
 
     n_unique = unique_lexsorted_loss_values.shape[0]
     # Clip n_below.
