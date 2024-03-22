@@ -41,8 +41,7 @@ class WilcoxonPruner(BasePruner):
     the evaluated value. The instance id may not be in ascending order.
     This is different from other pruners in that the reported value need not converge
     to the real value. To use pruners such as :class:`~optuna.pruners.SuccessiveHalvingPruner`
-    in the same setting, you must provide e.g.,
-    the historical average of the evaluated values.
+    in the same setting, you must provide e.g., the historical average of the evaluated values.
 
     .. seealso::
         Please refer to :meth:`~optuna.trial.Trial.report`.
