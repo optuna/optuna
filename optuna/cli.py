@@ -268,7 +268,7 @@ def _format_output(
 class _BaseCommand:
     """Base class for commands.
 
-    Note that commands class are not supposed to be called by library users.
+    Note that command classes are not supposed to be called by library users.
     They are used only in this file to manage optuna CLI commands.
     """
 
