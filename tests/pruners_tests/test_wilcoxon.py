@@ -45,7 +45,6 @@ def test_wilcoxon_pruner_when_best_trial_has_no_intermediate_value() -> None:
     assert not trial.should_prune()
 
 
-
 @pytest.mark.parametrize(
     "p_threshold,step_values,expected_should_prune",
     [

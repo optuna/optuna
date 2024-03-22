@@ -152,7 +152,7 @@ class WilcoxonPruner(BasePruner):
             best_trial = study.best_trial
         except ValueError:
             return False
-        
+
         if len(best_trial.intermediate_values) == 0:
             return False
 
