@@ -152,6 +152,9 @@ class WilcoxonPruner(BasePruner):
             best_trial = study.best_trial
         except ValueError:
             return False
+        
+        if len(best_trial.intermediate_values) == 0:
+            return False
 
         best_steps, best_step_values = np.array(list(best_trial.intermediate_values.items())).T
 
