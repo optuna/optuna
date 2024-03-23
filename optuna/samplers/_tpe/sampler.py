@@ -703,8 +703,6 @@ def _split_complete_trials_multi_objective(
     # Hypervolume subset selection problem (HSSP)-based selection
     subset_size = n_below - last_idx
     if subset_size > 0:
-        # TODO(nabenabe0928): Do not call HSSP if subset_size == rank_i_indices.size.
-        # TODO(nabenabe0928): Do not call HSSP if reference_point include `inf` or `nan`.
         rank_i_lvals = lvals[nondomination_ranks == i]
         rank_i_indices = indices[nondomination_ranks == i]
         worst_point = np.max(rank_i_lvals, axis=0)

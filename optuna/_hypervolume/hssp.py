@@ -21,7 +21,8 @@ def _solve_hssp(
     - `Greedy Hypervolume Subset Selection in Low Dimensions
        <https://doi.org/10.1162/EVCO_a_00188>`_
     """
-    assert np.all(reference_point - rank_i_loss_vals >= 0)
+    assert subset_size != rank_i_indices.size
+    assert not np.any(reference_point - rank_i_loss_vals < 0)
     n_objectives = reference_point.size
     contribs = np.prod(reference_point - rank_i_loss_vals, axis=-1)
     selected_indices = np.zeros(subset_size, dtype=int)
@@ -54,7 +55,8 @@ def _solve_hssp(
 
             selected_vecs[k + 1] = rank_i_loss_vals[indices[i]].copy()
             hv_plus = optuna._hypervolume.WFG().compute(selected_vecs[: k + 2], reference_point)
-            contribs[i] = hv_plus - hv_selected
+            # inf - inf in the contribution calculation is always inf.
+            contribs[i] = hv_plus - hv_selected if not np.isinf(hv_plus) else np.inf
             max_contrib = max(contribs[i], max_contrib)
 
     return rank_i_indices[selected_indices]
