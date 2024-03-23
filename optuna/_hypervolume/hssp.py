@@ -21,7 +21,9 @@ def _solve_hssp(
     - `Greedy Hypervolume Subset Selection in Low Dimensions
        <https://doi.org/10.1162/EVCO_a_00188>`_
     """
-    assert subset_size != rank_i_indices.size
+    if subset_size == rank_i_indices.size:
+        return rank_i_indices
+
     assert not np.any(reference_point - rank_i_loss_vals < 0)
     n_objectives = reference_point.size
     contribs = np.prod(reference_point - rank_i_loss_vals, axis=-1)
@@ -41,11 +43,12 @@ def _solve_hssp(
 
         hv_selected = optuna._hypervolume.WFG().compute(selected_vecs[: k + 1], reference_point)
         max_contrib = 0.0
-        # S = selected_indices \ {indices[max_index]}, T = selected_indices.
-        # We update from contribs[i] = HV(S v {i}) - HV(S) to contribs[i] = HV(T v {i}) - HV(T).
-        # However, as we skip the update time to time, contribs[i] = HV(S' v {i}) - HV(S') where
-        # S' is a subset of S, so HV(S' v {i}) - HV(S') >= HV(T v {i}) - HV(T) holds
-        # from submodularity. We start from i with a larger upper bound HV(S' v {i}) - HV(S').
+        # S=selected_indices \ {indices[max_index]}, T=selected_indices, and S' is a subset of S.
+        # As we would like to know argmax H(T v {i}) in the next iteration, we can skip HV
+        # calculations for j if H(T v {i}) - H(T) > H(S' v {j}) - H(S') >= H(T v {j}) - H(T).
+        # We used the submodularity for the inequality above. As the upper bound of contribs[i] is
+        # H(S' v {j}) - H(S'), we start to update from i with a higher upper bound so that we can
+        # skip more HV calculations.
         index_from_larger_upper_bound_contrib = np.argsort(-contribs)
         for i in index_from_larger_upper_bound_contrib:
             if contribs[i] < max_contrib:
