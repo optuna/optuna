@@ -30,13 +30,14 @@ def _solve_hssp(
         max_index = int(np.argmax(contribs))
         selected_indices[k] = indices[max_index]
         selected_vecs[k] = rank_i_loss_vals[indices[max_index]].copy()
-        keep = contribs >= 0.0
+        keep = np.ones(contribs.size, dtype=bool)
+        keep[max_index] = False
         contribs = contribs[keep]
         indices = indices[keep]
         if k == subset_size - 1:
             break
 
-        hv_selected = optuna._hypervolume.WFG().compute(selected_vecs[:k + 1], reference_point)
+        hv_selected = optuna._hypervolume.WFG().compute(selected_vecs[: k + 1], reference_point)
         max_contrib = 0.0
         index_from_larger_contrib = np.argsort(-contribs)
         for i in index_from_larger_contrib:
@@ -46,7 +47,7 @@ def _solve_hssp(
                 continue
 
             selected_vecs[k + 1] = rank_i_loss_vals[indices[i]].copy()
-            hv_plus = optuna._hypervolume.WFG().compute(selected_vecs[:k + 2], reference_point)
+            hv_plus = optuna._hypervolume.WFG().compute(selected_vecs[: k + 2], reference_point)
             contribs[i] = hv_plus - hv_selected
             max_contrib = max(contribs[i], max_contrib)
 
