@@ -1,4 +1,4 @@
-from typing import List
+from __future__ import annotations
 
 import numpy as np
 
@@ -21,28 +21,33 @@ def _solve_hssp(
     - `Greedy Hypervolume Subset Selection in Low Dimensions
        <https://doi.org/10.1162/EVCO_a_00188>`_
     """
-    selected_vecs: List[np.ndarray] = []
-    selected_indices: List[int] = []
-    contributions = [
-        optuna._hypervolume.WFG().compute(np.asarray([v]), reference_point)
-        for v in rank_i_loss_vals
-    ]
-    hv_selected = 0.0
-    while len(selected_indices) < subset_size:
-        max_index = int(np.argmax(contributions))
-        contributions[max_index] = -1  # mark as selected
-        selected_index = rank_i_indices[max_index]
-        selected_vec = rank_i_loss_vals[max_index]
-        for j, v in enumerate(rank_i_loss_vals):
-            if contributions[j] == -1:
-                continue
-            p = np.max([selected_vec, v], axis=0)
-            contributions[j] -= (
-                optuna._hypervolume.WFG().compute(np.asarray(selected_vecs + [p]), reference_point)
-                - hv_selected
-            )
-        selected_vecs += [selected_vec]
-        selected_indices += [selected_index]
-        hv_selected = optuna._hypervolume.WFG().compute(np.asarray(selected_vecs), reference_point)
+    n_objectives = reference_point.size
+    contribs = np.prod(reference_point - rank_i_loss_vals, axis=-1)
+    selected_indices = np.zeros(subset_size, dtype=int)
+    selected_vecs = np.empty((subset_size, n_objectives))
+    indices = np.arange(rank_i_indices.size, dtype=int)
+    for k in range(subset_size):
+        max_index = int(np.argmax(contribs))
+        selected_indices[k] = indices[max_index]
+        selected_vecs[k] = rank_i_loss_vals[indices[max_index]].copy()
+        keep = contribs >= 0.0
+        contribs = contribs[keep]
+        indices = indices[keep]
+        if k == subset_size - 1:
+            break
 
-    return np.asarray(selected_indices, dtype=int)
+        hv_selected = optuna._hypervolume.WFG().compute(selected_vecs[:k + 1], reference_point)
+        max_contrib = 0.0
+        index_from_larger_contrib = np.argsort(-contribs)
+        for i in index_from_larger_contrib:
+            if contribs[i] < max_contrib:
+                # Lazy evaluation to reduce HV calculations.
+                # If contribs[i] will not be the maximum next, it is unnecessary to compute it.
+                continue
+
+            selected_vecs[k + 1] = rank_i_loss_vals[indices[i]].copy()
+            hv_plus = optuna._hypervolume.WFG().compute(selected_vecs[:k + 2], reference_point)
+            contribs[i] = hv_plus - hv_selected
+            max_contrib = max(contribs[i], max_contrib)
+
+    return rank_i_indices[selected_indices]
