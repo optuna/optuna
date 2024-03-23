@@ -21,6 +21,7 @@ def _solve_hssp(
     - `Greedy Hypervolume Subset Selection in Low Dimensions
        <https://doi.org/10.1162/EVCO_a_00188>`_
     """
+    assert np.all(reference_point - rank_i_loss_vals >= 0)
     n_objectives = reference_point.size
     contribs = np.prod(reference_point - rank_i_loss_vals, axis=-1)
     selected_indices = np.zeros(subset_size, dtype=int)
@@ -39,8 +40,13 @@ def _solve_hssp(
 
         hv_selected = optuna._hypervolume.WFG().compute(selected_vecs[: k + 1], reference_point)
         max_contrib = 0.0
-        index_from_larger_contrib = np.argsort(-contribs)
-        for i in index_from_larger_contrib:
+        # S = selected_indices \ {indices[max_index]}, T = selected_indices.
+        # We update from contribs[i] = HV(S v {i}) - HV(S) to contribs[i] = HV(T v {i}) - HV(T).
+        # However, as we skip the update time to time, contribs[i] = HV(S' v {i}) - HV(S') where
+        # S' is a subset of S, so HV(S' v {i}) - HV(S') >= HV(T v {i}) - HV(T) holds
+        # from submodularity. We start from i with a larger upper bound HV(S' v {i}) - HV(S').
+        index_from_larger_upper_bound_contrib = np.argsort(-contribs)
+        for i in index_from_larger_upper_bound_contrib:
             if contribs[i] < max_contrib:
                 # Lazy evaluation to reduce HV calculations.
                 # If contribs[i] will not be the maximum next, it is unnecessary to compute it.
