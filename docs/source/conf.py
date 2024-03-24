@@ -12,10 +12,10 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import sys
 
+# sys.path.insert(0, os.path.abspath('.'))
 import warnings
 
 import plotly.io as pio
@@ -23,7 +23,6 @@ from sklearn.exceptions import ConvergenceWarning
 from sphinx_gallery.sorting import FileNameSortKey
 
 import optuna
-
 
 # -- Project information -----------------------------------------------------
 
@@ -45,7 +44,9 @@ release = optuna.version.__version__
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
+sys.path.append(os.path.abspath("./_ext"))
 extensions = [
+    "optunacli.ext",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.doctest",
