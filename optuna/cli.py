@@ -1029,7 +1029,10 @@ def _add_commands(
     for command_name, command_type in _COMMANDS.items():
         command = command_type()
         subparser = subparsers.add_parser(
-            command_name, parents=[parent_parser], help=inspect.getdoc(command_type)
+            command_name,
+            parents=[parent_parser],
+            help=inspect.getdoc(command_type),
+            description=inspect.getdoc(command_type),
         )
         command.add_arguments(subparser)
         subparser.set_defaults(handler=command.take_action)
