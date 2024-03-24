@@ -1044,7 +1044,9 @@ def _add_commands(
     return command_name_to_subparser
 
 
-def _get_parser(description: str = "") -> Tuple[ArgumentParser, Dict[str, ArgumentParser]]:
+def _get_parser(
+    description: str = "",
+) -> Tuple[ArgumentParser, ArgumentParser, Dict[str, ArgumentParser]]:
     # Use `parent_parser` is necessary to avoid namespace conflict for -h/--help
     # between `main_parser` and `subparser`.
     parent_parser = ArgumentParser(add_help=False)
@@ -1055,7 +1057,8 @@ def _get_parser(description: str = "") -> Tuple[ArgumentParser, Dict[str, Argume
         "--version", action="version", version="{0} {1}".format("optuna", optuna.__version__)
     )
     command_name_to_subparser = _add_commands(main_parser, parent_parser)
-    return main_parser, command_name_to_subparser
+    # Return parent_parser only for documenting purpose.
+    return main_parser, parent_parser, command_name_to_subparser
 
 
 def _preprocess_argv(argv: List[str]) -> List[str]:
@@ -1107,7 +1110,7 @@ def _set_log_file(args: Namespace) -> None:
 
 
 def main() -> int:
-    main_parser, command_name_to_subparser = _get_parser()
+    main_parser, _, command_name_to_subparser = _get_parser()
 
     argv = sys.argv
     preprocessed_argv = _preprocess_argv(argv)
