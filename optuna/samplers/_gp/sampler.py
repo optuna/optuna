@@ -54,8 +54,8 @@ class GPSampler(BaseSampler):
         - Quasi-Monte Carlo (QMC) sampling to optimize the acquisition function.
 
     .. note::
-        This sampler requires ``scipy`` and ``pytorch``.
-        You can install these dependencies with ``pip install scipy pytorch``.
+        This sampler requires ``scipy`` and ``torch``.
+        You can install these dependencies with ``pip install scipy torch``.
 
     Args:
         seed:
