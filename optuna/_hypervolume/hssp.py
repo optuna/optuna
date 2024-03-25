@@ -13,7 +13,7 @@ def _lazy_contribs_update(
 ) -> np.ndarray:
     """Lazy update the hypervolume contributions.
 
-    S=selected_indices \ {indices[max_index]}, T=selected_indices, and S' is a subset of S.
+    S=selected_indices - {indices[max_index]}, T=selected_indices, and S' is a subset of S.
     As we would like to know argmax H(T v {i}) in the next iteration, we can skip HV
     calculations for j if H(T v {i}) - H(T) > H(S' v {j}) - H(S') >= H(T v {j}) - H(T).
     We used the submodularity for the inequality above. As the upper bound of contribs[i] is
