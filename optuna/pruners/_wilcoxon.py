@@ -154,6 +154,11 @@ class WilcoxonPruner(BasePruner):
             return False
 
         if len(best_trial.intermediate_values) == 0:
+            warnings.warn(
+                "The best trial has no intermediate values so WilcoxonPruner cannot prune trials."
+                "If you have added the best trial with Study.add_trial, please consider setting "
+                "intermediate_values argument."
+            )
             return False
 
         best_steps, best_step_values = np.array(list(best_trial.intermediate_values.items())).T
