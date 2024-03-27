@@ -298,13 +298,16 @@ def optimize_acqf_mixed(
     probs = np.exp(f_vals - f_vals[max_i])
     probs[max_i] = 0.0  # We already picked the best param, so remove it from roulette.
     probs /= probs.sum()
-    chosen_idxs = rng.choice(
-        len(sampled_xs),
-        size=n_local_search - len(warmstart_normalized_params_array) - 1,
-        replace=False,
-        p=probs,
+    # n_additional_warmstart becomes smaller when study starts to converge.
+    n_additional_warmstart = min(
+        n_local_search - len(warmstart_normalized_params_array) - 1, np.count_nonzero(probs > 0.0)
     )
-    chosen_idxs = np.append(max_i, chosen_idxs)
+    chosen_idxs = np.array([max_i])
+    if n_additional_warmstart > 0:
+        additional_idxs = rng.choice(
+            len(sampled_xs), size=n_additional_warmstart, replace=False, p=probs
+        )
+        chosen_idxs = np.append(chosen_idxs, additional_idxs)
 
     best_x = sampled_xs[max_i, :]
     best_f = float(f_vals[max_i])
