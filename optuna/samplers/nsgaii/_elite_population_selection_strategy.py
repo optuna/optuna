@@ -10,7 +10,7 @@ from optuna.samplers.nsgaii._constraints_evaluation import _evaluate_penalty
 from optuna.samplers.nsgaii._constraints_evaluation import _validate_constraints
 from optuna.study import Study
 from optuna.study import StudyDirection
-from optuna.study._multi_objective import _fast_non_dominated_sort
+from optuna.study._multi_objective import _fast_non_domination_rank
 from optuna.trial import FrozenTrial
 
 
@@ -125,7 +125,7 @@ def _rank_population(
     )
     penalty = _evaluate_penalty(population) if is_constrained else None
 
-    domination_ranks = _fast_non_dominated_sort(objective_values, penalty=penalty)
+    domination_ranks = _fast_non_domination_rank(objective_values, penalty=penalty)
     population_per_rank: list[list[FrozenTrial]] = [[] for _ in range(max(domination_ranks) + 1)]
     for trial, rank in zip(population, domination_ranks):
         if rank == -1:
