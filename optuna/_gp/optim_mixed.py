@@ -298,6 +298,7 @@ def optimize_acqf_mixed(
     probs = np.exp(f_vals - f_vals[max_i])
     probs[max_i] = 0.0  # We already picked the best param, so remove it from roulette.
     probs /= probs.sum()
+<<<<<<< HEAD
     n_non_zero_probs_improvement = np.count_nonzero(probs > 0.0)
     # n_additional_warmstart becomes smaller when study starts to converge.
     n_additional_warmstart = min(
@@ -305,6 +306,12 @@ def optimize_acqf_mixed(
     )
     if n_additional_warmstart == n_non_zero_probs_improvement:
         _logger.warning("Study already converged, so we reduce the number of local search.")
+=======
+    # n_additional_warmstart becomes smaller when study starts to converge.
+    n_additional_warmstart = min(
+        n_local_search - len(warmstart_normalized_params_array) - 1, np.count_nonzero(probs > 0.0)
+    )
+>>>>>>> upstream/master
     chosen_idxs = np.array([max_i])
     if n_additional_warmstart > 0:
         additional_idxs = rng.choice(
