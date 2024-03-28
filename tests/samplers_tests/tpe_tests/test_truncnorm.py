@@ -12,6 +12,7 @@ with try_import() as _imports:
     from scipy.stats._continuous_distns import _log_gauss_mass as _log_gauss_mass_scipy
 
 
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 @pytest.mark.skipif(
     sys.version_info < (3, 8, 0), reason="SciPy 1.9.2 is not supported in Python 3.7"
 )
@@ -28,6 +29,7 @@ def test_ppf(a: float, b: float) -> None:
         ), f"ppf(x={x}, a={a}, b={b})"
 
 
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 @pytest.mark.skipif(
     sys.version_info < (3, 8, 0), reason="SciPy 1.9.2 is not supported in Python 3.7"
 )

@@ -296,6 +296,7 @@ def test_suggest_low_equals_high(storage_mode: str) -> None:
         assert mock_object.call_count == 9
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 @pytest.mark.parametrize(
     "range_config",
@@ -708,6 +709,7 @@ def test_lazy_trial_system_attrs(storage_mode: str) -> None:
         assert set(system_attrs.items()) == {("int", 0), ("str", "A")}
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("positional_args_names", [[], ["step"], ["step", "log"]])
 def test_suggest_int_positional_args(positional_args_names: list[str]) -> None:
     # If log is specified as positional, step must also be provided as positional.

@@ -417,6 +417,7 @@ def test_create_trial_distribution_conversion_noop() -> None:
     assert trial.distributions == fixed_distributions
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("positional_args_names", [[], ["step"], ["step", "log"]])
 def test_suggest_int_positional_args(positional_args_names: list[str]) -> None:
     # If log is specified as positional, step must also be provided as positional.

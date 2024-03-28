@@ -81,6 +81,7 @@ def test_max_depth_of_tree_based_evaluator(
     assert param_importance != param_importance_different_max_depth
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 @parametrize_evaluator
 @pytest.mark.parametrize("inf_value", [float("inf"), -float("inf")])
 @pytest.mark.parametrize("target_idx", [0, 1, None])
