@@ -17,7 +17,7 @@ from optuna.visualization._utils import _filter_nonfinite
 from optuna.visualization._utils import _is_log_scale
 from optuna.visualization._utils import _is_numerical
 from optuna.visualization._utils import _is_reverse_scale
-
+import numpy as np
 
 if _imports.is_successful():
     from optuna.visualization._plotly_imports import Contour
@@ -218,12 +218,12 @@ def _get_contour_subplot(
                 infeasible.x.append(x_value)
                 infeasible.y.append(y_value)
 
-    z_values = [
-        [float("nan") for _ in range(len(info.xaxis.indices))]
-        for _ in range(len(info.yaxis.indices))
-    ]
-    for (x_i, y_i), z_value in info.z_values.items():
-        z_values[y_i][x_i] = z_value
+    z_values = np.full((len(info.xaxis.indices), len(info.yaxis.indices)), np.nan)
+
+    xys = np.array(list(info.z_values.keys()))
+    zs = np.array(list(info.z_values.values()))
+
+    z_values[xys[:, 0], xys[:, 1]] = zs
 
     if len(x_indices) < 2 or len(y_indices) < 2:
         return go.Contour(), go.Scatter(), go.Scatter()
