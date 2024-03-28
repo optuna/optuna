@@ -453,9 +453,6 @@ def test_validate_constraints() -> None:
 def test_rank_population_missing_constraint_values(
     values_and_constraints: list[tuple[list[float], list[float]]]
 ) -> None:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-
     values_dim = len(values_and_constraints[0][0])
     for directions in itertools.product(
         [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE], repeat=values_dim
