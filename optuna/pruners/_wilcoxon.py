@@ -198,10 +198,14 @@ class WilcoxonPruner(BasePruner):
 
         if study.direction == StudyDirection.MAXIMIZE:
             alt = "less"
-            average_is_best = sum(best_step_values) / len(best_step_values) <= sum(step_values) / len(step_values)
+            average_is_best = sum(best_step_values) / len(best_step_values) <= sum(
+                step_values
+            ) / len(step_values)
         else:
             alt = "greater"
-            average_is_best = sum(best_step_values) / len(best_step_values) >= sum(step_values) / len(step_values)
+            average_is_best = sum(best_step_values) / len(best_step_values) >= sum(
+                step_values
+            ) / len(step_values)
 
         # We use zsplit to avoid the problem when all values are zero.
         p = ss.wilcoxon(diff_values, alternative=alt, zero_method="zsplit").pvalue
