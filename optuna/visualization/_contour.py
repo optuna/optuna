@@ -220,7 +220,7 @@ def _get_contour_subplot(
                 infeasible.x.append(x_value)
                 infeasible.y.append(y_value)
 
-    z_values = np.full((len(info.xaxis.indices), len(info.yaxis.indices)), np.nan)
+    z_values = np.full((len(y_indices), len(x_indices)), np.nan)
 
     xys = np.array(list(info.z_values.keys()))
     zs = np.array(list(info.z_values.values()))
