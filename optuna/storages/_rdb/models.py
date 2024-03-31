@@ -206,6 +206,7 @@ class TrialModel(BaseModel):
                     )
                 ),
                 desc(TrialValueModel.value),
+                desc(cls.trial_id),
             )
             .limit(1)
             .one_or_none()
@@ -232,6 +233,7 @@ class TrialModel(BaseModel):
                     )
                 ),
                 asc(TrialValueModel.value),
+                desc(cls.trial_id),
             )
             .limit(1)
             .one_or_none()
