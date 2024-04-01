@@ -58,26 +58,30 @@ def _solve_hssp(
         return rank_i_indices
 
     assert not np.any(reference_point - rank_i_loss_vals <= 0)
+    # Take unique to avoid a duplication error in case rank_i_loss_vals has `inf`or `-inf`.
+    rank_i_unique_loss_vals, indices_of_unique_loss_vals = np.unique(
+        rank_i_loss_vals, return_index=True, axis=0
+    )
     n_objectives = reference_point.size
-    contribs = np.prod(reference_point - rank_i_loss_vals, axis=-1)
+    contribs = np.prod(reference_point - rank_i_unique_loss_vals, axis=-1)
     selected_indices = np.zeros(subset_size, dtype=int)
     selected_vecs = np.empty((subset_size, n_objectives))
-    indices = np.arange(rank_i_indices.size, dtype=int)
+    indices = np.arange(rank_i_unique_loss_vals.shape[0], dtype=int)
     for k in range(subset_size):
         max_index = int(np.argmax(contribs))
         selected_indices[k] = indices[max_index]
-        selected_vecs[k] = rank_i_loss_vals[max_index].copy()
+        selected_vecs[k] = rank_i_unique_loss_vals[max_index].copy()
         keep = np.ones(contribs.size, dtype=bool)
         keep[max_index] = False
         contribs = contribs[keep]
         indices = indices[keep]
-        rank_i_loss_vals = rank_i_loss_vals[keep]
+        rank_i_unique_loss_vals = rank_i_unique_loss_vals[keep]
         if k == subset_size - 1:
             # We do not need to update contribs at the last iteration.
             break
 
         contribs = _lazy_contribs_update(
-            contribs, rank_i_loss_vals, selected_vecs[: k + 2], reference_point
+            contribs, rank_i_unique_loss_vals, selected_vecs[: k + 2], reference_point
         )
 
-    return rank_i_indices[selected_indices]
+    return rank_i_indices[indices_of_unique_loss_vals[selected_indices]]
