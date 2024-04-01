@@ -57,7 +57,7 @@ def _solve_hssp(
     if subset_size == rank_i_indices.size:
         return rank_i_indices
 
-    assert not np.any(reference_point - rank_i_loss_vals < 0)
+    assert not np.any(reference_point - rank_i_loss_vals <= 0)
     n_objectives = reference_point.size
     contribs = np.prod(reference_point - rank_i_loss_vals, axis=-1)
     selected_indices = np.zeros(subset_size, dtype=int)
@@ -73,6 +73,7 @@ def _solve_hssp(
         indices = indices[keep]
         rank_i_loss_vals = rank_i_loss_vals[keep]
         if k == subset_size - 1:
+            # We do not need to update contribs at the last iteration.
             break
 
         contribs = _lazy_contribs_update(
