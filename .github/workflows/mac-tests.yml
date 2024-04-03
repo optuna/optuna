@@ -1,7 +1,7 @@
 # Run tests on Mac, which are triggered by each master push.
 # Currently, Python3.8 is only used as an environment.
 # This is mainly for the sake of speed.
-name: mac-tests
+name: Mac tests
 
 on:
   push:
