@@ -38,26 +38,14 @@ def _lazy_contribs_update(
     return contribs
 
 
-def _solve_hssp(
+def _solve_hssp_on_unique_loss_vals(
     rank_i_loss_vals: np.ndarray,
     rank_i_indices: np.ndarray,
     subset_size: int,
     reference_point: np.ndarray,
 ) -> np.ndarray:
-    """Solve a hypervolume subset selection problem (HSSP) via a greedy algorithm.
-
-    This method is a 1-1/e approximation algorithm to solve HSSP.
-
-    For further information about algorithms to solve HSSP, please refer to the following
-    paper:
-
-    - `Greedy Hypervolume Subset Selection in Low Dimensions
-       <https://doi.org/10.1162/EVCO_a_00188>`_
-    """
-    if subset_size == rank_i_indices.size:
-        return rank_i_indices
-
     assert not np.any(reference_point - rank_i_loss_vals <= 0)
+    assert subset_size < rank_i_indices.size
     n_objectives = reference_point.size
     contribs = np.prod(reference_point - rank_i_loss_vals, axis=-1)
     selected_indices = np.zeros(subset_size, dtype=int)
@@ -81,3 +69,39 @@ def _solve_hssp(
         )
 
     return rank_i_indices[selected_indices]
+
+
+def _solve_hssp(
+    rank_i_loss_vals: np.ndarray,
+    rank_i_indices: np.ndarray,
+    subset_size: int,
+    reference_point: np.ndarray,
+) -> np.ndarray:
+    """Solve a hypervolume subset selection problem (HSSP) via a greedy algorithm.
+
+    This method is a 1-1/e approximation algorithm to solve HSSP.
+
+    For further information about algorithms to solve HSSP, please refer to the following
+    paper:
+
+    - `Greedy Hypervolume Subset Selection in Low Dimensions
+       <https://doi.org/10.1162/EVCO_a_00188>`_
+    """
+    if subset_size == rank_i_indices.size:
+        return rank_i_indices
+
+    rank_i_unique_loss_vals, indices_of_unique_loss_vals = np.unique(
+        rank_i_loss_vals, return_index=True, axis=0
+    )
+    n_unique = indices_of_unique_loss_vals.size
+    if n_unique < subset_size:
+        chosen = np.zeros(rank_i_indices.size, dtype=bool)
+        chosen[indices_of_unique_loss_vals] = True
+        duplicated_indices = np.arange(rank_i_indices.size)[~chosen]
+        chosen[duplicated_indices[: subset_size - n_unique]] = True
+        return rank_i_indices[chosen]
+
+    subset_indices_of_unique_loss_vals = _solve_hssp_on_unique_loss_vals(
+        rank_i_unique_loss_vals, indices_of_unique_loss_vals, subset_size, reference_point
+    )
+    return rank_i_indices[subset_indices_of_unique_loss_vals]
