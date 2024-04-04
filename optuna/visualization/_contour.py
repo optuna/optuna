@@ -5,6 +5,8 @@ from typing import Any
 from typing import Callable
 from typing import NamedTuple
 
+import numpy as np
+
 from optuna.logging import get_logger
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study import Study
@@ -218,12 +220,12 @@ def _get_contour_subplot(
                 infeasible.x.append(x_value)
                 infeasible.y.append(y_value)
 
-    z_values = [
-        [float("nan") for _ in range(len(info.xaxis.indices))]
-        for _ in range(len(info.yaxis.indices))
-    ]
-    for (x_i, y_i), z_value in info.z_values.items():
-        z_values[y_i][x_i] = z_value
+    z_values = np.full((len(y_indices), len(x_indices)), np.nan)
+
+    xys = np.array(list(info.z_values.keys()))
+    zs = np.array(list(info.z_values.values()))
+
+    z_values[xys[:, 1], xys[:, 0]] = zs
 
     if len(x_indices) < 2 or len(y_indices) < 2:
         return go.Contour(), go.Scatter(), go.Scatter()
