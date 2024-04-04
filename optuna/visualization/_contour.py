@@ -225,7 +225,7 @@ def _get_contour_subplot(
     xys = np.array(list(info.z_values.keys()))
     zs = np.array(list(info.z_values.values()))
 
-    z_values[xys[:, 0], xys[:, 1]] = zs
+    z_values[xys[:, 1], xys[:, 0]] = zs
 
     if len(x_indices) < 2 or len(y_indices) < 2:
         return go.Contour(), go.Scatter(), go.Scatter()
