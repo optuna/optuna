@@ -45,7 +45,7 @@ def _solve_hssp_on_unique_loss_vals(
     reference_point: np.ndarray,
 ) -> np.ndarray:
     assert not np.any(reference_point - rank_i_loss_vals <= 0)
-    assert subset_size < rank_i_indices.size
+    assert subset_size <= rank_i_indices.size
     n_objectives = reference_point.size
     contribs = np.prod(reference_point - rank_i_loss_vals, axis=-1)
     selected_indices = np.zeros(subset_size, dtype=int)
