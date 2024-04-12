@@ -304,7 +304,7 @@ def optimize_acqf_mixed(
         n_local_search - len(warmstart_normalized_params_array) - 1, n_non_zero_probs_improvement
     )
     if n_additional_warmstart == n_non_zero_probs_improvement:
-        _logger.warning("Study already converged, so we reduce the number of local search.")
+        _logger.warning("Study already converged, so the number of local search is reduced.")
     chosen_idxs = np.array([max_i])
     if n_additional_warmstart > 0:
         additional_idxs = rng.choice(
