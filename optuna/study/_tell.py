@@ -2,15 +2,19 @@ import copy
 import math
 from typing import Optional
 from typing import Sequence
+from typing import TYPE_CHECKING
 from typing import Union
 import warnings
 
 import optuna
 from optuna import logging
 from optuna import pruners
-from optuna import trial as trial_module
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+if TYPE_CHECKING:
+    from optuna import Trial
 
 
 # This is used for propagating warning message to Study.optimize.
@@ -20,8 +24,8 @@ STUDY_TELL_WARNING_KEY = "STUDY_TELL_WARNING"
 _logger = logging.get_logger(__name__)
 
 
-def _get_frozen_trial(study: "optuna.Study", trial: Union[trial_module.Trial, int]) -> FrozenTrial:
-    if isinstance(trial, trial_module.Trial):
+def _get_frozen_trial(study: "optuna.Study", trial: Union["Trial", int]) -> FrozenTrial:
+    if isinstance(trial, optuna.Trial):
         trial_id = trial._trial_id
     elif isinstance(trial, int):
         trial_number = trial
@@ -81,7 +85,7 @@ def _check_values_are_feasible(study: "optuna.Study", values: Sequence[float]) -
 
 def _tell_with_warning(
     study: "optuna.Study",
-    trial: Union[trial_module.Trial, int],
+    trial: Union["Trial", int],
     value_or_values: Optional[Union[float, Sequence[float]]] = None,
     state: Optional[TrialState] = None,
     skip_if_finished: bool = False,
