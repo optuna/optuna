@@ -1,10 +1,14 @@
 from typing import Optional
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from optuna._experimental import experimental_class
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
-from optuna.study import Study
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 @experimental_class("3.0.0")
@@ -35,7 +39,7 @@ class SBXCrossover(BaseCrossover):
         self,
         parents_params: np.ndarray,
         rng: np.random.RandomState,
-        study: Study,
+        study: "Study",
         search_space_bounds: np.ndarray,
     ) -> np.ndarray:
         # https://www.researchgate.net/profile/M-M-Raghuwanshi/publication/267198495_Simulated_Binary_Crossover_with_Lognormal_Distribution/links/5576c78408ae7536375205d7/Simulated-Binary-Crossover-with-Lognormal-Distribution.pdf

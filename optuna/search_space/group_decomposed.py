@@ -3,10 +3,14 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import TYPE_CHECKING
 
 from optuna.distributions import BaseDistribution
-from optuna.study import Study
 from optuna.trial import TrialState
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 class _SearchSpaceGroup:
@@ -41,7 +45,7 @@ class _GroupDecomposedSearchSpace:
         self._study_id: Optional[int] = None
         self._include_pruned = include_pruned
 
-    def calculate(self, study: Study) -> _SearchSpaceGroup:
+    def calculate(self, study: "Study") -> _SearchSpaceGroup:
         if self._study_id is None:
             self._study_id = study._study_id
         else:

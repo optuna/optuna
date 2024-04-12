@@ -6,6 +6,7 @@ from typing import List
 from typing import Mapping
 from typing import Optional
 from typing import Sequence
+from typing import TYPE_CHECKING
 from typing import Union
 import warnings
 
@@ -15,9 +16,12 @@ from optuna.distributions import BaseDistribution
 from optuna.logging import get_logger
 from optuna.samplers import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
-from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 GridValueType = Union[str, float, int, bool, None]
@@ -122,7 +126,7 @@ class GridSampler(BaseSampler):
     def reseed_rng(self) -> None:
         self._rng.rng.seed()
 
-    def before_trial(self, study: Study, trial: FrozenTrial) -> None:
+    def before_trial(self, study: "Study", trial: FrozenTrial) -> None:
         # Instead of returning param values, GridSampler puts the target grid id as a system attr,
         # and the values are returned from `sample_independent`. This is because the distribution
         # object is hard to get at the beginning of trial, while we need the access to the object
@@ -164,18 +168,18 @@ class GridSampler(BaseSampler):
         study._storage.set_trial_system_attr(trial._trial_id, "grid_id", grid_id)
 
     def infer_relative_search_space(
-        self, study: Study, trial: FrozenTrial
+        self, study: "Study", trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
         return {}
 
     def sample_relative(
-        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+        self, study: "Study", trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
         return {}
 
     def sample_independent(
         self,
-        study: Study,
+        study: "Study",
         trial: FrozenTrial,
         param_name: str,
         param_distribution: BaseDistribution,
@@ -204,7 +208,7 @@ class GridSampler(BaseSampler):
 
     def after_trial(
         self,
-        study: Study,
+        study: "Study",
         trial: FrozenTrial,
         state: TrialState,
         values: Optional[Sequence[float]],
@@ -230,7 +234,7 @@ class GridSampler(BaseSampler):
         )
         warnings.warn(message)
 
-    def _get_unvisited_grid_ids(self, study: Study) -> List[int]:
+    def _get_unvisited_grid_ids(self, study: "Study") -> List[int]:
         # List up unvisited grids based on already finished ones.
         visited_grids = []
         running_grids = []
@@ -278,7 +282,7 @@ class GridSampler(BaseSampler):
 
         return True
 
-    def is_exhausted(self, study: Study) -> bool:
+    def is_exhausted(self, study: "Study") -> bool:
         """
         Return True if all the possible params are evaluated, otherwise return False.
         """

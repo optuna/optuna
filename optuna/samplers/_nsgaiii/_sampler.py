@@ -5,6 +5,7 @@ from collections.abc import Callable
 from collections.abc import Sequence
 import hashlib
 from typing import Any
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -22,9 +23,12 @@ from optuna.samplers.nsgaii._child_generation_strategy import NSGAIIChildGenerat
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.samplers.nsgaii._crossovers._uniform import UniformCrossover
 from optuna.search_space import IntersectionSearchSpace
-from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 # Define key names of `Trial.system_attrs`.
@@ -84,14 +88,14 @@ class NSGAIIISampler(BaseSampler):
         reference_points: np.ndarray | None = None,
         dividing_parameter: int = 3,
         elite_population_selection_strategy: (
-            Callable[[Study, list[FrozenTrial]], list[FrozenTrial]] | None
+            Callable[["Study", list[FrozenTrial]], list[FrozenTrial]] | None
         ) = None,
         child_generation_strategy: (
-            Callable[[Study, dict[str, BaseDistribution], list[FrozenTrial]], dict[str, Any]]
+            Callable[["Study", dict[str, BaseDistribution], list[FrozenTrial]], dict[str, Any]]
             | None
         ) = None,
         after_trial_strategy: (
-            Callable[[Study, FrozenTrial, TrialState, Sequence[float] | None], None] | None
+            Callable[["Study", FrozenTrial, TrialState, Sequence[float] | None], None] | None
         ) = None,
     ) -> None:
         # TODO(ohta): Reconsider the default value of each parameter.
@@ -152,7 +156,7 @@ class NSGAIIISampler(BaseSampler):
         self._rng.rng.seed()
 
     def infer_relative_search_space(
-        self, study: Study, trial: FrozenTrial
+        self, study: "Study", trial: FrozenTrial
     ) -> dict[str, BaseDistribution]:
         search_space: dict[str, BaseDistribution] = {}
         for name, distribution in self._search_space.calculate(study).items():
@@ -167,7 +171,7 @@ class NSGAIIISampler(BaseSampler):
 
     def sample_relative(
         self,
-        study: Study,
+        study: "Study",
         trial: FrozenTrial,
         search_space: dict[str, BaseDistribution],
     ) -> dict[str, Any]:
@@ -183,7 +187,7 @@ class NSGAIIISampler(BaseSampler):
 
     def sample_independent(
         self,
-        study: Study,
+        study: "Study",
         trial: FrozenTrial,
         param_name: str,
         param_distribution: BaseDistribution,
@@ -197,7 +201,7 @@ class NSGAIIISampler(BaseSampler):
             study, trial, param_name, param_distribution
         )
 
-    def _collect_parent_population(self, study: Study) -> tuple[int, list[FrozenTrial]]:
+    def _collect_parent_population(self, study: "Study") -> tuple[int, list[FrozenTrial]]:
         trials = study.get_trials(deepcopy=False)
 
         generation_to_runnings = defaultdict(list)
@@ -272,12 +276,12 @@ class NSGAIIISampler(BaseSampler):
 
         return parent_generation, parent_population
 
-    def before_trial(self, study: Study, trial: FrozenTrial) -> None:
+    def before_trial(self, study: "Study", trial: FrozenTrial) -> None:
         self._random_sampler.before_trial(study, trial)
 
     def after_trial(
         self,
-        study: Study,
+        study: "Study",
         trial: FrozenTrial,
         state: TrialState,
         values: Sequence[float] | None,

@@ -1,10 +1,14 @@
 from typing import Optional
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from optuna._experimental import experimental_class
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
-from optuna.study import Study
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 @experimental_class("3.0.0")
@@ -35,7 +39,7 @@ class SPXCrossover(BaseCrossover):
         self,
         parents_params: np.ndarray,
         rng: np.random.RandomState,
-        study: Study,
+        study: "Study",
         search_space_bounds: np.ndarray,
     ) -> np.ndarray:
         # https://www.researchgate.net/publication/2388486_Progress_Toward_Linkage_Learning_in_Real-Coded_GAs_with_Simplex_Crossover

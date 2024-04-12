@@ -14,7 +14,6 @@ from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
-from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -28,6 +27,7 @@ if TYPE_CHECKING:
     import optuna._gp.optim_mixed as optim_mixed
     import optuna._gp.prior as prior
     import optuna._gp.search_space as gp_search_space
+    from optuna.study import Study
 else:
     from optuna._imports import _LazyImport
 
@@ -103,7 +103,7 @@ class GPSampler(BaseSampler):
         self._independent_sampler.reseed_rng()
 
     def infer_relative_search_space(
-        self, study: Study, trial: FrozenTrial
+        self, study: "Study", trial: FrozenTrial
     ) -> dict[str, BaseDistribution]:
         search_space = {}
         for name, distribution in self._intersection_search_space.calculate(study).items():
@@ -132,7 +132,7 @@ class GPSampler(BaseSampler):
         return normalized_params
 
     def sample_relative(
-        self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
+        self, study: "Study", trial: FrozenTrial, search_space: dict[str, BaseDistribution]
     ) -> dict[str, Any]:
         self._raise_error_if_multi_objective(study)
 
@@ -201,7 +201,7 @@ class GPSampler(BaseSampler):
 
     def sample_independent(
         self,
-        study: Study,
+        study: "Study",
         trial: FrozenTrial,
         param_name: str,
         param_distribution: BaseDistribution,
@@ -210,12 +210,12 @@ class GPSampler(BaseSampler):
             study, trial, param_name, param_distribution
         )
 
-    def before_trial(self, study: Study, trial: FrozenTrial) -> None:
+    def before_trial(self, study: "Study", trial: FrozenTrial) -> None:
         self._independent_sampler.before_trial(study, trial)
 
     def after_trial(
         self,
-        study: Study,
+        study: "Study",
         trial: FrozenTrial,
         state: TrialState,
         values: Sequence[float] | None,

@@ -7,6 +7,7 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -17,10 +18,13 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.samplers import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
-from optuna.study import Study
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 @dataclass
@@ -134,12 +138,12 @@ class BruteForceSampler(BaseSampler):
         self._rng = LazyRandomState(seed)
 
     def infer_relative_search_space(
-        self, study: Study, trial: FrozenTrial
+        self, study: "Study", trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
         return {}
 
     def sample_relative(
-        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+        self, study: "Study", trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
         return {}
 
@@ -177,7 +181,7 @@ class BruteForceSampler(BaseSampler):
 
     def sample_independent(
         self,
-        study: Study,
+        study: "Study",
         trial: FrozenTrial,
         param_name: str,
         param_distribution: BaseDistribution,
@@ -205,7 +209,7 @@ class BruteForceSampler(BaseSampler):
 
     def after_trial(
         self,
-        study: Study,
+        study: "Study",
         trial: FrozenTrial,
         state: TrialState,
         values: Optional[Sequence[float]],

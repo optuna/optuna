@@ -3,15 +3,19 @@ from __future__ import annotations
 from collections import defaultdict
 from collections.abc import Callable
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from optuna.samplers.nsgaii._constraints_evaluation import _evaluate_penalty
 from optuna.samplers.nsgaii._constraints_evaluation import _validate_constraints
-from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.study._multi_objective import _fast_non_dominated_sort
 from optuna.trial import FrozenTrial
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 class NSGAIIElitePopulationSelectionStrategy:
@@ -27,7 +31,7 @@ class NSGAIIElitePopulationSelectionStrategy:
         self._population_size = population_size
         self._constraints_func = constraints_func
 
-    def __call__(self, study: Study, population: list[FrozenTrial]) -> list[FrozenTrial]:
+    def __call__(self, study: "Study", population: list[FrozenTrial]) -> list[FrozenTrial]:
         """Select elite population from the given trials by NSGA-II algorithm.
 
         Args:

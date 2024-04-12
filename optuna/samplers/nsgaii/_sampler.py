@@ -5,6 +5,7 @@ from collections.abc import Callable
 from collections.abc import Sequence
 import hashlib
 from typing import Any
+from typing import TYPE_CHECKING
 import warnings
 
 import optuna
@@ -21,9 +22,12 @@ from optuna.samplers.nsgaii._elite_population_selection_strategy import (
     NSGAIIElitePopulationSelectionStrategy,
 )
 from optuna.search_space import IntersectionSearchSpace
-from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 # Define key names of `Trial.system_attrs`.
@@ -141,14 +145,14 @@ class NSGAIISampler(BaseSampler):
         seed: int | None = None,
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
         elite_population_selection_strategy: (
-            Callable[[Study, list[FrozenTrial]], list[FrozenTrial]] | None
+            Callable[["Study", list[FrozenTrial]], list[FrozenTrial]] | None
         ) = None,
         child_generation_strategy: (
-            Callable[[Study, dict[str, BaseDistribution], list[FrozenTrial]], dict[str, Any]]
+            Callable[["Study", dict[str, BaseDistribution], list[FrozenTrial]], dict[str, Any]]
             | None
         ) = None,
         after_trial_strategy: (
-            Callable[[Study, FrozenTrial, TrialState, Sequence[float] | None], None] | None
+            Callable[["Study", FrozenTrial, TrialState, Sequence[float] | None], None] | None
         ) = None,
     ) -> None:
         # TODO(ohta): Reconsider the default value of each parameter.
@@ -232,7 +236,7 @@ class NSGAIISampler(BaseSampler):
         self._rng.rng.seed()
 
     def infer_relative_search_space(
-        self, study: Study, trial: FrozenTrial
+        self, study: "Study", trial: FrozenTrial
     ) -> dict[str, BaseDistribution]:
         search_space: dict[str, BaseDistribution] = {}
         for name, distribution in self._search_space.calculate(study).items():
@@ -247,7 +251,7 @@ class NSGAIISampler(BaseSampler):
 
     def sample_relative(
         self,
-        study: Study,
+        study: "Study",
         trial: FrozenTrial,
         search_space: dict[str, BaseDistribution],
     ) -> dict[str, Any]:
@@ -263,7 +267,7 @@ class NSGAIISampler(BaseSampler):
 
     def sample_independent(
         self,
-        study: Study,
+        study: "Study",
         trial: FrozenTrial,
         param_name: str,
         param_distribution: BaseDistribution,
@@ -277,7 +281,7 @@ class NSGAIISampler(BaseSampler):
             study, trial, param_name, param_distribution
         )
 
-    def _collect_parent_population(self, study: Study) -> tuple[int, list[FrozenTrial]]:
+    def _collect_parent_population(self, study: "Study") -> tuple[int, list[FrozenTrial]]:
         trials = study._get_trials(deepcopy=False, use_cache=True)
 
         generation_to_runnings = defaultdict(list)
@@ -352,12 +356,12 @@ class NSGAIISampler(BaseSampler):
 
         return parent_generation, parent_population
 
-    def before_trial(self, study: Study, trial: FrozenTrial) -> None:
+    def before_trial(self, study: "Study", trial: FrozenTrial) -> None:
         self._random_sampler.before_trial(study, trial)
 
     def after_trial(
         self,
-        study: Study,
+        study: "Study",
         trial: FrozenTrial,
         state: TrialState,
         values: Sequence[float] | None,

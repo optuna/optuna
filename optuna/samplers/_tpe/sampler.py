@@ -7,6 +7,7 @@ from typing import cast
 from typing import Dict
 from typing import Optional
 from typing import Sequence
+from typing import TYPE_CHECKING
 import warnings
 
 import numpy as np
@@ -27,11 +28,14 @@ from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 from optuna.search_space import IntersectionSearchSpace
 from optuna.search_space.group_decomposed import _GroupDecomposedSearchSpace
 from optuna.search_space.group_decomposed import _SearchSpaceGroup
-from optuna.study import Study
 from optuna.study._multi_objective import _fast_non_dominated_sort
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 EPS = 1e-12
@@ -360,7 +364,7 @@ class TPESampler(BaseSampler):
         self._random_sampler.reseed_rng()
 
     def infer_relative_search_space(
-        self, study: Study, trial: FrozenTrial
+        self, study: "Study", trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
         if not self._multivariate:
             return {}
@@ -386,7 +390,7 @@ class TPESampler(BaseSampler):
         return search_space
 
     def sample_relative(
-        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+        self, study: "Study", trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
         if self._group:
             assert self._search_space_group is not None
@@ -403,7 +407,7 @@ class TPESampler(BaseSampler):
             return self._sample_relative(study, trial, search_space)
 
     def _sample_relative(
-        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+        self, study: "Study", trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
         if search_space == {}:
             return {}
@@ -418,7 +422,7 @@ class TPESampler(BaseSampler):
 
     def sample_independent(
         self,
-        study: Study,
+        study: "Study",
         trial: FrozenTrial,
         param_name: str,
         param_distribution: BaseDistribution,
@@ -459,7 +463,7 @@ class TPESampler(BaseSampler):
         return {k: np.asarray(v) for k, v in values.items()}
 
     def _sample(
-        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+        self, study: "Study", trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
         if self._constant_liar:
             states = [TrialState.COMPLETE, TrialState.PRUNED, TrialState.RUNNING]
@@ -495,7 +499,7 @@ class TPESampler(BaseSampler):
 
     def _build_parzen_estimator(
         self,
-        study: Study,
+        study: "Study",
         search_space: dict[str, BaseDistribution],
         trials: list[FrozenTrial],
         handle_below: bool,
@@ -592,12 +596,12 @@ class TPESampler(BaseSampler):
             "weights": default_weights,
         }
 
-    def before_trial(self, study: Study, trial: FrozenTrial) -> None:
+    def before_trial(self, study: "Study", trial: FrozenTrial) -> None:
         self._random_sampler.before_trial(study, trial)
 
     def after_trial(
         self,
-        study: Study,
+        study: "Study",
         trial: FrozenTrial,
         state: TrialState,
         values: Optional[Sequence[float]],
@@ -609,7 +613,7 @@ class TPESampler(BaseSampler):
 
 
 def _split_trials(
-    study: Study,
+    study: "Study",
     trials: list[FrozenTrial],
     n_below: int,
     constraints_enabled: bool,
@@ -651,7 +655,7 @@ def _split_trials(
 
 
 def _split_complete_trials(
-    trials: Sequence[FrozenTrial], study: Study, n_below: int
+    trials: Sequence[FrozenTrial], study: "Study", n_below: int
 ) -> tuple[list[FrozenTrial], list[FrozenTrial]]:
     n_below = min(n_below, len(trials))
     if len(study.directions) <= 1:
@@ -662,7 +666,7 @@ def _split_complete_trials(
 
 def _split_complete_trials_single_objective(
     trials: Sequence[FrozenTrial],
-    study: Study,
+    study: "Study",
     n_below: int,
 ) -> tuple[list[FrozenTrial], list[FrozenTrial]]:
     if study.direction == StudyDirection.MINIMIZE:
@@ -674,7 +678,7 @@ def _split_complete_trials_single_objective(
 
 def _split_complete_trials_multi_objective(
     trials: Sequence[FrozenTrial],
-    study: Study,
+    study: "Study",
     n_below: int,
 ) -> tuple[list[FrozenTrial], list[FrozenTrial]]:
     if n_below == 0:
@@ -721,7 +725,7 @@ def _split_complete_trials_multi_objective(
     return below_trials, above_trials
 
 
-def _get_pruned_trial_score(trial: FrozenTrial, study: Study) -> tuple[float, float]:
+def _get_pruned_trial_score(trial: FrozenTrial, study: "Study") -> tuple[float, float]:
     if len(trial.intermediate_values) > 0:
         step, intermediate_value = max(trial.intermediate_values.items())
         if math.isnan(intermediate_value):
@@ -736,7 +740,7 @@ def _get_pruned_trial_score(trial: FrozenTrial, study: Study) -> tuple[float, fl
 
 def _split_pruned_trials(
     trials: Sequence[FrozenTrial],
-    study: Study,
+    study: "Study",
     n_below: int,
 ) -> tuple[list[FrozenTrial], list[FrozenTrial]]:
     n_below = min(n_below, len(trials))
@@ -766,7 +770,7 @@ def _split_infeasible_trials(
 
 
 def _calculate_weights_below_for_multi_objective(
-    study: Study,
+    study: "Study",
     below_trials: list[FrozenTrial],
     constraints_func: Callable[[FrozenTrial], Sequence[float]] | None,
 ) -> np.ndarray:

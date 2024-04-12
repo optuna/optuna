@@ -2,6 +2,7 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Sequence
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -13,9 +14,12 @@ from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.samplers import BaseSampler
-from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 _logger = logging.get_logger(__name__)
@@ -179,7 +183,7 @@ class QMCSampler(BaseSampler):
         self._independent_sampler.reseed_rng()
 
     def infer_relative_search_space(
-        self, study: Study, trial: FrozenTrial
+        self, study: "Study", trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
         if self._initial_search_space is not None:
             return self._initial_search_space
@@ -225,7 +229,7 @@ class QMCSampler(BaseSampler):
 
     def sample_independent(
         self,
-        study: Study,
+        study: "Study",
         trial: FrozenTrial,
         param_name: str,
         param_distribution: BaseDistribution,
@@ -239,7 +243,7 @@ class QMCSampler(BaseSampler):
         )
 
     def sample_relative(
-        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+        self, study: "Study", trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
         if search_space == {}:
             return {}
@@ -249,19 +253,19 @@ class QMCSampler(BaseSampler):
         sample = trans.bounds[:, 0] + sample * (trans.bounds[:, 1] - trans.bounds[:, 0])
         return trans.untransform(sample[0, :])
 
-    def before_trial(self, study: Study, trial: FrozenTrial) -> None:
+    def before_trial(self, study: "Study", trial: FrozenTrial) -> None:
         self._independent_sampler.before_trial(study, trial)
 
     def after_trial(
         self,
-        study: "optuna.Study",
+        study: "Study",
         trial: "optuna.trial.FrozenTrial",
         state: TrialState,
         values: Optional[Sequence[float]],
     ) -> None:
         self._independent_sampler.after_trial(study, trial, state, values)
 
-    def _sample_qmc(self, study: Study, search_space: Dict[str, BaseDistribution]) -> np.ndarray:
+    def _sample_qmc(self, study: "Study", search_space: Dict[str, BaseDistribution]) -> np.ndarray:
         # Lazy import because the `scipy.stats.qmc` is slow to import.
         qmc_module = _LazyImport("scipy.stats.qmc")
 
@@ -284,7 +288,7 @@ class QMCSampler(BaseSampler):
 
         return sample
 
-    def _find_sample_id(self, study: Study) -> int:
+    def _find_sample_id(self, study: "Study") -> int:
         qmc_id = ""
         qmc_id += self._qmc_type
         # Sobol/Halton sequences without scrambling do not use seed.
