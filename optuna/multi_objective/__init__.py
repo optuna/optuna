@@ -6,8 +6,6 @@ from optuna.multi_objective.study import create_study
 from optuna.multi_objective.study import load_study
 
 
-visualization = _LazyImport("optuna.multi_objective.visualization")
-
 __all__ = [
     "samplers",
     "study",
