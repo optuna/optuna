@@ -22,7 +22,6 @@ from optuna import logging
 from optuna import pruners
 from optuna import samplers
 from optuna import storages
-from optuna import trial as trial_module
 from optuna._convert_positional_args import convert_positional_args
 from optuna._deprecated import deprecated_func
 from optuna._experimental import experimental_func
@@ -43,9 +42,9 @@ from optuna.trial import TrialState
 _dataframe = _LazyImport("optuna.study._dataframe")
 
 if TYPE_CHECKING:
-    from optuna.trial import FrozenTrial
     from optuna import Trial
     from optuna.study._dataframe import pd
+    from optuna.trial import FrozenTrial
 
 
 ObjectiveFuncType = Callable[["Trial"], Union[float, Sequence[float]]]
@@ -462,9 +461,7 @@ class Study:
             show_progress_bar=show_progress_bar,
         )
 
-    def ask(
-        self, fixed_distributions: dict[str, BaseDistribution] | None = None
-    ) -> "Trial":
+    def ask(self, fixed_distributions: dict[str, BaseDistribution] | None = None) -> "Trial":
         """Create a new trial from which hyperparameters can be suggested.
 
         This method is part of an alternative to :func:`~optuna.study.Study.optimize` that allows
@@ -1083,9 +1080,7 @@ class Study:
         return self.ask()
 
     @deprecated_func("2.5.0", "4.0.0")
-    def _tell(
-        self, trial: "Trial", state: TrialState, values: list[float] | None
-    ) -> None:
+    def _tell(self, trial: "Trial", state: TrialState, values: list[float] | None) -> None:
         self.tell(trial, values, state)
 
     def _log_completed_trial(self, trial: "FrozenTrial") -> None:
