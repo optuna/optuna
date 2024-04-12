@@ -1,18 +1,15 @@
 from __future__ import annotations
 
 from _pytest.logging import LogCaptureFixture
-
 import numpy as np
 
 import optuna
-import optuna._gp.search_space as gp_search_space
 import optuna._gp.acqf as acqf
 import optuna._gp.optim_mixed as optim_mixed
+import optuna._gp.search_space as gp_search_space
 
 
 def test_after_convergence(caplog: LogCaptureFixture) -> None:
-    sampler = optuna.samplers.GPSampler(seed=0)
-    study = optuna.create_study(sampler=sampler)
     # A large `optimal_trials` causes the instability in the kernel inversion, leading to
     # instability in the variance calculation.
     X_uniform = [(i + 1) / 10 for i in range(10)]
