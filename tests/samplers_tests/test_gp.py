@@ -6,6 +6,7 @@ import numpy as np
 import optuna
 import optuna._gp.acqf as acqf
 import optuna._gp.optim_mixed as optim_mixed
+import optuna._gp.prior as prior
 import optuna._gp.search_space as gp_search_space
 
 
@@ -26,8 +27,8 @@ def test_after_convergence(caplog: LogCaptureFixture) -> None:
         X=X[:, np.newaxis],
         Y=score_vals,
         is_categorical=np.array([False]),
-        log_prior=optuna._gp.prior.default_log_prior,
-        minimum_noise=optuna._gp.prior.DEFAULT_MINIMUM_NOISE_VAR,
+        log_prior=prior.default_log_prior,
+        minimum_noise=prior.DEFAULT_MINIMUM_NOISE_VAR,
         deterministic_objective=False,
     )
     acqf_params = acqf.create_acqf_params(
