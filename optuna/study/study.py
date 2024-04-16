@@ -439,10 +439,9 @@ class Study:
                     :ref:`out-of-memory-gc-collect`
 
             show_progress_bar:
-                Flag to show progress bars or not. To disable progress bar, set this :obj:`False`.
-                Currently, progress bar is experimental feature and disabled
-                when ``n_trials`` is :obj:`None`, ``timeout`` is not :obj:`None`, and
-                ``n_jobs`` :math:`\\ne 1`.
+                Flag to show progress bars or not. To show progress bar, set this :obj:`True`.
+                Note that it is disabled when ``n_trials`` is :obj:`None`,
+                ``timeout`` is not :obj:`None`, and ``n_jobs`` :math:`\\ne 1`.
 
         Raises:
             RuntimeError:
