@@ -80,7 +80,7 @@ class IntersectionSearchSpace:
 
         self._include_pruned = include_pruned
 
-    def calculate(self, study: "Study") -> Dict[str, BaseDistribution]:
+    def calculate(self, study: Study) -> Dict[str, BaseDistribution]:
         """Returns the intersection search space of the :class:`~optuna.study.Study`.
 
         Args:

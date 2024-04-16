@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Optional
 from typing import TYPE_CHECKING
 
@@ -39,7 +41,7 @@ class SPXCrossover(BaseCrossover):
         self,
         parents_params: np.ndarray,
         rng: np.random.RandomState,
-        study: "Study",
+        study: Study,
         search_space_bounds: np.ndarray,
     ) -> np.ndarray:
         # https://www.researchgate.net/publication/2388486_Progress_Toward_Linkage_Learning_in_Real-Coded_GAs_with_Simplex_Crossover

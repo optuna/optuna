@@ -42,7 +42,7 @@ class NSGAIIIElitePopulationSelectionStrategy:
         self._dividing_parameter = dividing_parameter
         self._rng = rng
 
-    def __call__(self, study: "Study", population: list[FrozenTrial]) -> list[FrozenTrial]:
+    def __call__(self, study: Study, population: list[FrozenTrial]) -> list[FrozenTrial]:
         """Select elite population from the given trials by NSGA-III algorithm.
 
         Args:

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any
 from typing import Dict
 from typing import Optional
@@ -48,18 +50,18 @@ class RandomSampler(BaseSampler):
         self._rng.rng.seed()
 
     def infer_relative_search_space(
-        self, study: "Study", trial: FrozenTrial
+        self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
         return {}
 
     def sample_relative(
-        self, study: "Study", trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
         return {}
 
     def sample_independent(
         self,
-        study: "Study",
+        study: Study,
         trial: FrozenTrial,
         param_name: str,
         param_distribution: distributions.BaseDistribution,

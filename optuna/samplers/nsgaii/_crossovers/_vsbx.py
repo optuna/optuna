@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Optional
 from typing import TYPE_CHECKING
 
@@ -40,7 +42,7 @@ class VSBXCrossover(BaseCrossover):
         self,
         parents_params: np.ndarray,
         rng: np.random.RandomState,
-        study: "Study",
+        study: Study,
         search_space_bounds: np.ndarray,
     ) -> np.ndarray:
         # https://doi.org/10.1007/3-540-45105-6_86

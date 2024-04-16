@@ -42,9 +42,9 @@ from optuna.trial import TrialState
 _dataframe = _LazyImport("optuna.study._dataframe")
 
 if TYPE_CHECKING:
-    from optuna import Trial
     from optuna.study._dataframe import pd
     from optuna.trial import FrozenTrial
+    from optuna.trial import Trial
 
 
 ObjectiveFuncType = Callable[["Trial"], Union[float, Sequence[float]]]
@@ -56,7 +56,7 @@ _logger = logging.get_logger(__name__)
 
 class _ThreadLocalStudyAttribute(threading.local):
     in_optimize_loop: bool = False
-    cached_all_trials: list["FrozenTrial"] | None = None
+    cached_all_trials: list[FrozenTrial] | None = None
 
 
 class Study:
@@ -132,7 +132,7 @@ class Study:
         return best_value
 
     @property
-    def best_trial(self) -> "FrozenTrial":
+    def best_trial(self) -> FrozenTrial:
         """Return the best trial in the study.
 
         .. note::
@@ -158,7 +158,7 @@ class Study:
         return copy.deepcopy(self._storage.get_best_trial(self._study_id))
 
     @property
-    def best_trials(self) -> list["FrozenTrial"]:
+    def best_trials(self) -> list[FrozenTrial]:
         """Return trials located at the Pareto front in the study.
 
         A trial is located at the Pareto front if there are no trials that dominate the trial.
@@ -205,7 +205,7 @@ class Study:
         return self._directions
 
     @property
-    def trials(self) -> list["FrozenTrial"]:
+    def trials(self) -> list[FrozenTrial]:
         """Return all trials in the study.
 
         The returned trials are ordered by trial number.
@@ -226,7 +226,7 @@ class Study:
         self,
         deepcopy: bool = True,
         states: Container[TrialState] | None = None,
-    ) -> list["FrozenTrial"]:
+    ) -> list[FrozenTrial]:
         """Return all trials in the study.
 
         The returned trials are ordered by trial number.
@@ -269,7 +269,7 @@ class Study:
         deepcopy: bool = True,
         states: Container[TrialState] | None = None,
         use_cache: bool = False,
-    ) -> list["FrozenTrial"]:
+    ) -> list[FrozenTrial]:
         if use_cache:
             if self._thread_local.cached_all_trials is None:
                 self._thread_local.cached_all_trials = self._storage.get_all_trials(
@@ -353,7 +353,7 @@ class Study:
         timeout: float | None = None,
         n_jobs: int = 1,
         catch: Iterable[type[Exception]] | type[Exception] = (),
-        callbacks: list[Callable[["Study", "FrozenTrial"], None]] | None = None,
+        callbacks: list[Callable[[Study, FrozenTrial], None]] | None = None,
         gc_after_trial: bool = False,
         show_progress_bar: bool = False,
     ) -> None:
@@ -461,7 +461,7 @@ class Study:
             show_progress_bar=show_progress_bar,
         )
 
-    def ask(self, fixed_distributions: dict[str, BaseDistribution] | None = None) -> "Trial":
+    def ask(self, fixed_distributions: dict[str, BaseDistribution] | None = None) -> Trial:
         """Create a new trial from which hyperparameters can be suggested.
 
         This method is part of an alternative to :func:`~optuna.study.Study.optimize` that allows
@@ -549,11 +549,11 @@ class Study:
 
     def tell(
         self,
-        trial: "Trial" | int,
+        trial: Trial | int,
         values: float | Sequence[float] | None = None,
         state: TrialState | None = None,
         skip_if_finished: bool = False,
-    ) -> "FrozenTrial":
+    ) -> FrozenTrial:
         """Finish a trial created with :func:`~optuna.study.Study.ask`.
 
         .. seealso::
@@ -868,7 +868,7 @@ class Study:
             )
         )
 
-    def add_trial(self, trial: "FrozenTrial") -> None:
+    def add_trial(self, trial: FrozenTrial) -> None:
         """Add trial to study.
 
         The trial is validated before being added.
@@ -940,7 +940,7 @@ class Study:
 
         self._storage.create_new_trial(self._study_id, template_trial=trial)
 
-    def add_trials(self, trials: Iterable["FrozenTrial"]) -> None:
+    def add_trials(self, trials: Iterable[FrozenTrial]) -> None:
         """Add trials to study.
 
         The trials are validated before being added.
@@ -1076,14 +1076,14 @@ class Study:
         return False
 
     @deprecated_func("2.5.0", "4.0.0")
-    def _ask(self) -> "Trial":
+    def _ask(self) -> Trial:
         return self.ask()
 
     @deprecated_func("2.5.0", "4.0.0")
-    def _tell(self, trial: "Trial", state: TrialState, values: list[float] | None) -> None:
+    def _tell(self, trial: Trial, state: TrialState, values: list[float] | None) -> None:
         self.tell(trial, values, state)
 
-    def _log_completed_trial(self, trial: "FrozenTrial") -> None:
+    def _log_completed_trial(self, trial: FrozenTrial) -> None:
         if not _logger.isEnabledFor(logging.INFO):
             return
 

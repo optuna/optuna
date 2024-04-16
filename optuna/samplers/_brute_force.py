@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 import decimal
 from typing import Any
@@ -138,12 +140,12 @@ class BruteForceSampler(BaseSampler):
         self._rng = LazyRandomState(seed)
 
     def infer_relative_search_space(
-        self, study: "Study", trial: FrozenTrial
+        self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
         return {}
 
     def sample_relative(
-        self, study: "Study", trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
         return {}
 
@@ -181,7 +183,7 @@ class BruteForceSampler(BaseSampler):
 
     def sample_independent(
         self,
-        study: "Study",
+        study: Study,
         trial: FrozenTrial,
         param_name: str,
         param_distribution: BaseDistribution,
@@ -209,7 +211,7 @@ class BruteForceSampler(BaseSampler):
 
     def after_trial(
         self,
-        study: "Study",
+        study: Study,
         trial: FrozenTrial,
         state: TrialState,
         values: Optional[Sequence[float]],

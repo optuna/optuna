@@ -56,7 +56,7 @@ class NSGAIIChildGenerationStrategy:
 
     def __call__(
         self,
-        study: "Study",
+        study: Study,
         search_space: dict[str, BaseDistribution],
         parent_population: list[FrozenTrial],
     ) -> dict[str, Any]:

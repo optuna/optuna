@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any
 from typing import Dict
 from typing import Optional
@@ -63,7 +65,7 @@ class PartialFixedSampler(BaseSampler):
         self._base_sampler.reseed_rng()
 
     def infer_relative_search_space(
-        self, study: "Study", trial: FrozenTrial
+        self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
         search_space = self._base_sampler.infer_relative_search_space(study, trial)
 
@@ -76,7 +78,7 @@ class PartialFixedSampler(BaseSampler):
 
     def sample_relative(
         self,
-        study: "Study",
+        study: Study,
         trial: FrozenTrial,
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
@@ -85,7 +87,7 @@ class PartialFixedSampler(BaseSampler):
 
     def sample_independent(
         self,
-        study: "Study",
+        study: Study,
         trial: FrozenTrial,
         param_name: str,
         param_distribution: BaseDistribution,
@@ -110,12 +112,12 @@ class PartialFixedSampler(BaseSampler):
                 )
             return param_value
 
-    def before_trial(self, study: "Study", trial: FrozenTrial) -> None:
+    def before_trial(self, study: Study, trial: FrozenTrial) -> None:
         self._base_sampler.before_trial(study, trial)
 
     def after_trial(
         self,
-        study: "Study",
+        study: Study,
         trial: FrozenTrial,
         state: TrialState,
         values: Optional[Sequence[float]],

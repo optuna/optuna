@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -36,7 +38,7 @@ class UniformCrossover(BaseCrossover):
         self,
         parents_params: np.ndarray,
         rng: np.random.RandomState,
-        study: "Study",
+        study: Study,
         search_space_bounds: np.ndarray,
     ) -> np.ndarray:
         # https://www.researchgate.net/publication/201976488_Uniform_Crossover_in_Genetic_Algorithms

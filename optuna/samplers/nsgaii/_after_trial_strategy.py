@@ -21,7 +21,7 @@ class NSGAIIAfterTrialStrategy:
 
     def __call__(
         self,
-        study: "Study",
+        study: Study,
         trial: FrozenTrial,
         state: TrialState,
         values: Sequence[float] | None = None,

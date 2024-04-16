@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 from typing import Dict
 from typing import Optional
@@ -44,7 +46,7 @@ class IntersectionSearchSpace:
 
         self._include_pruned = include_pruned
 
-    def calculate(self, study: "Study", ordered_dict: bool = False) -> Dict[str, BaseDistribution]:
+    def calculate(self, study: Study, ordered_dict: bool = False) -> Dict[str, BaseDistribution]:
         """Returns the intersection search space of the :class:`~optuna.study.Study`.
 
         Args:
@@ -116,7 +118,7 @@ class IntersectionSearchSpace:
     text="Please use optuna.search_space.intersection_search_space instead.",
 )
 def intersection_search_space(
-    study: "Study", ordered_dict: bool = False, include_pruned: bool = False
+    study: Study, ordered_dict: bool = False, include_pruned: bool = False
 ) -> Dict[str, BaseDistribution]:
     """Return the intersection search space of the :class:`~optuna.study.Study`.
 

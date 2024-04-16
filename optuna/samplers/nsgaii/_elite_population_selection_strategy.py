@@ -31,7 +31,7 @@ class NSGAIIElitePopulationSelectionStrategy:
         self._population_size = population_size
         self._constraints_func = constraints_func
 
-    def __call__(self, study: "Study", population: list[FrozenTrial]) -> list[FrozenTrial]:
+    def __call__(self, study: Study, population: list[FrozenTrial]) -> list[FrozenTrial]:
         """Select elite population from the given trials by NSGA-II algorithm.
 
         Args:

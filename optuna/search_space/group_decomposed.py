@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 from typing import Dict
 from typing import List
@@ -45,7 +47,7 @@ class _GroupDecomposedSearchSpace:
         self._study_id: Optional[int] = None
         self._include_pruned = include_pruned
 
-    def calculate(self, study: "Study") -> _SearchSpaceGroup:
+    def calculate(self, study: Study) -> _SearchSpaceGroup:
         if self._study_id is None:
             self._study_id = study._study_id
         else:

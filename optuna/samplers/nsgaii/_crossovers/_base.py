@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import abc
 from typing import TYPE_CHECKING
 
@@ -35,7 +37,7 @@ class BaseCrossover(abc.ABC):
         self,
         parents_params: np.ndarray,
         rng: np.random.RandomState,
-        study: "Study",
+        study: Study,
         search_space_bounds: np.ndarray,
     ) -> np.ndarray:
         """Perform crossover of selected parent individuals.

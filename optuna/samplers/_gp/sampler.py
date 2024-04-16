@@ -103,7 +103,7 @@ class GPSampler(BaseSampler):
         self._independent_sampler.reseed_rng()
 
     def infer_relative_search_space(
-        self, study: "Study", trial: FrozenTrial
+        self, study: Study, trial: FrozenTrial
     ) -> dict[str, BaseDistribution]:
         search_space = {}
         for name, distribution in self._intersection_search_space.calculate(study).items():
@@ -132,7 +132,7 @@ class GPSampler(BaseSampler):
         return normalized_params
 
     def sample_relative(
-        self, study: "Study", trial: FrozenTrial, search_space: dict[str, BaseDistribution]
+        self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
     ) -> dict[str, Any]:
         self._raise_error_if_multi_objective(study)
 
@@ -201,7 +201,7 @@ class GPSampler(BaseSampler):
 
     def sample_independent(
         self,
-        study: "Study",
+        study: Study,
         trial: FrozenTrial,
         param_name: str,
         param_distribution: BaseDistribution,
@@ -210,12 +210,12 @@ class GPSampler(BaseSampler):
             study, trial, param_name, param_distribution
         )
 
-    def before_trial(self, study: "Study", trial: FrozenTrial) -> None:
+    def before_trial(self, study: Study, trial: FrozenTrial) -> None:
         self._independent_sampler.before_trial(study, trial)
 
     def after_trial(
         self,
-        study: "Study",
+        study: Study,
         trial: FrozenTrial,
         state: TrialState,
         values: Sequence[float] | None,

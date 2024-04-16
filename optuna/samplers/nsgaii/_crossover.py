@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -30,7 +32,7 @@ _NUMERICAL_DISTRIBUTIONS = (
 def _try_crossover(
     parents: List[FrozenTrial],
     crossover: BaseCrossover,
-    study: "Study",
+    study: Study,
     rng: np.random.RandomState,
     swapping_prob: float,
     categorical_search_space: Dict[str, BaseDistribution],
@@ -83,7 +85,7 @@ def _try_crossover(
 
 def perform_crossover(
     crossover: BaseCrossover,
-    study: "Study",
+    study: Study,
     parent_population: Sequence[FrozenTrial],
     search_space: Dict[str, BaseDistribution],
     rng: np.random.RandomState,
@@ -123,7 +125,7 @@ def perform_crossover(
 
 def _select_parents(
     crossover: BaseCrossover,
-    study: "Study",
+    study: Study,
     parent_population: Sequence[FrozenTrial],
     rng: np.random.RandomState,
     dominates: Callable[[FrozenTrial, FrozenTrial, Sequence[StudyDirection]], bool],
@@ -139,7 +141,7 @@ def _select_parents(
 
 
 def _select_parent(
-    study: "Study",
+    study: Study,
     parent_population: Sequence[FrozenTrial],
     rng: np.random.RandomState,
     dominates: Callable[[FrozenTrial, FrozenTrial, Sequence[StudyDirection]], bool],
