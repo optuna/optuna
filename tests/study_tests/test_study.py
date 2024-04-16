@@ -33,6 +33,7 @@ from optuna import TrialPruned
 from optuna.exceptions import DuplicatedStudyError
 from optuna.exceptions import ExperimentalWarning
 from optuna.study import StudyDirection
+from optuna.study.study import _CONSTRAINTS_KEY
 from optuna.study.study import _SYSTEM_ATTR_METRIC_NAMES
 from optuna.testing.objectives import fail_objective
 from optuna.testing.storages import STORAGE_MODES
@@ -1166,12 +1167,71 @@ def test_optimize_with_multi_objectives(n_objectives: int) -> None:
         assert len(trial.values) == n_objectives
 
 
+@pytest.mark.parametrize("direction", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
+def test_best_trial_constrained_optimization(direction: StudyDirection) -> None:
+    study = create_study(direction=direction)
+    storage = study._storage
+
+    with pytest.raises(ValueError):
+        # No trials.
+        study.best_trial
+
+    trial = study.ask()
+    storage.set_trial_system_attr(trial._trial_id, _CONSTRAINTS_KEY, [1])
+    study.tell(trial, 0)
+    with pytest.raises(ValueError):
+        # No feasible trials.
+        study.best_trial
+
+    trial = study.ask()
+    storage.set_trial_system_attr(trial._trial_id, _CONSTRAINTS_KEY, [0])
+    study.tell(trial, 0)
+    assert study.best_trial.number == 1
+
+    trial = study.ask()
+    storage.set_trial_system_attr(trial._trial_id, _CONSTRAINTS_KEY, [1])
+    study.tell(trial, -1 if direction == StudyDirection.MINIMIZE else 1)
+    assert study.best_trial.number == 1
+
+    trial = study.ask()
+    storage.set_trial_system_attr(trial._trial_id, _CONSTRAINTS_KEY, [0])
+    study.tell(trial, -1 if direction == StudyDirection.MINIMIZE else 1)
+    assert study.best_trial.number == 3
+
+
 def test_best_trials() -> None:
     study = create_study(directions=["minimize", "maximize"])
     study.optimize(lambda t: [2, 2], n_trials=1)
     study.optimize(lambda t: [1, 1], n_trials=1)
     study.optimize(lambda t: [3, 1], n_trials=1)
     assert {tuple(t.values) for t in study.best_trials} == {(1, 1), (2, 2)}
+
+
+def test_best_trials_constrained_optimization() -> None:
+    study = create_study(directions=["minimize", "maximize"])
+    storage = study._storage
+
+    assert study.best_trials == []
+
+    trial = study.ask()
+    storage.set_trial_system_attr(trial._trial_id, _CONSTRAINTS_KEY, [1])
+    study.tell(trial, [0, 0])
+    assert study.best_trials == []
+
+    trial = study.ask()
+    storage.set_trial_system_attr(trial._trial_id, _CONSTRAINTS_KEY, [0])
+    study.tell(trial, [0, 0])
+    assert study.best_trials == [study.trials[1]]
+
+    trial = study.ask()
+    storage.set_trial_system_attr(trial._trial_id, _CONSTRAINTS_KEY, [1])
+    study.tell(trial, [-1, 1])
+    assert study.best_trials == [study.trials[1]]
+
+    trial = study.ask()
+    storage.set_trial_system_attr(trial._trial_id, _CONSTRAINTS_KEY, [0])
+    study.tell(trial, [1, 1])
+    assert {t.number for t in study.best_trials} == {1, 3}
 
 
 def test_wrong_n_objectives() -> None:

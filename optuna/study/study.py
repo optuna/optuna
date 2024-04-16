@@ -48,6 +48,7 @@ if TYPE_CHECKING:
 
 ObjectiveFuncType = Callable[[trial_module.Trial], Union[float, Sequence[float]]]
 _SYSTEM_ATTR_METRIC_NAMES = "study:metric_names"
+_CONSTRAINTS_KEY = "constraints"
 
 
 _logger = logging.get_logger(__name__)
@@ -56,6 +57,15 @@ _logger = logging.get_logger(__name__)
 class _ThreadLocalStudyAttribute(threading.local):
     in_optimize_loop: bool = False
     cached_all_trials: list["FrozenTrial"] | None = None
+
+
+def _get_feasible_trials(trials: Sequence[FrozenTrial]) -> list[FrozenTrial]:
+    feasible_trials = []
+    for trial in trials:
+        constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
+        if constraints is None or all([x <= 0.0 for x in constraints]):
+            feasible_trials.append(trial)
+    return feasible_trials
 
 
 class Study:
@@ -154,7 +164,20 @@ class Study:
                 "using Study.best_trials to retrieve a list containing the best trials."
             )
 
-        return copy.deepcopy(self._storage.get_best_trial(self._study_id))
+        best_trial = self._storage.get_best_trial(self._study_id)
+
+        constraints = best_trial.system_attrs.get(_CONSTRAINTS_KEY)
+        if constraints is not None and any([x > 0.0 for x in constraints]):
+            complete_trials = self.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
+            feasible_trials = _get_feasible_trials(complete_trials)
+            if len(feasible_trials) == 0:
+                raise ValueError("No feasible trials are completed yet.")
+            if self.direction == StudyDirection.MAXIMIZE:
+                best_trial = max(feasible_trials, key=lambda t: cast(float, t.value))
+            else:
+                best_trial = min(feasible_trials, key=lambda t: cast(float, t.value))
+
+        return copy.deepcopy(best_trial)
 
     @property
     def best_trials(self) -> list[FrozenTrial]:
@@ -169,7 +192,7 @@ class Study:
             A list of :class:`~optuna.trial.FrozenTrial` objects.
         """
 
-        return _get_pareto_front_trials(self)
+        return _get_pareto_front_trials(self, consider_constraint=True)
 
     @property
     def direction(self) -> StudyDirection:
