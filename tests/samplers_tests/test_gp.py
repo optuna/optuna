@@ -42,4 +42,4 @@ def test_after_convergence(caplog: LogCaptureFixture) -> None:
     optuna.logging.enable_propagation()
     optim_mixed.optimize_acqf_mixed(acqf_params, rng=np.random.RandomState(42))
     # len(caplog.text) > 0 means the optimization has already converged.
-    assert len(caplog.text) > 0, "To the PR author, did you change the kernel implementation?"
+    assert len(caplog.text) > 0, "Did you change the kernel implementation?"
