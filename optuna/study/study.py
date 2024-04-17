@@ -46,8 +46,9 @@ if TYPE_CHECKING:
     from optuna.trial import FrozenTrial
     from optuna.trial import Trial
 
+    ObjectiveFuncType = Callable[[Trial], Union[float, Sequence[float]]]
 
-ObjectiveFuncType = Callable[["Trial"], Union[float, Sequence[float]]]
+
 _SYSTEM_ATTR_METRIC_NAMES = "study:metric_names"
 
 
