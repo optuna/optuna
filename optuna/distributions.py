@@ -524,11 +524,15 @@ class CategoricalDistribution(BaseDistribution):
                 warnings.warn(message)
 
         self.choices = tuple(choices)
+        self._choice_to_index = {c: i for i, c in enumerate(choices)}
 
     def to_external_repr(self, param_value_in_internal_repr: float) -> CategoricalChoiceType:
         return self.choices[int(param_value_in_internal_repr)]
 
     def to_internal_repr(self, param_value_in_external_repr: CategoricalChoiceType) -> float:
+        if param_value_in_external_repr in self._choice_to_index:
+            return self._choice_to_index[param_value_in_external_repr]
+
         for index, choice in enumerate(self.choices):
             if _categorical_choice_equal(param_value_in_external_repr, choice):
                 return index
