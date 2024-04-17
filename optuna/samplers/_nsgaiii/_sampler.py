@@ -5,6 +5,7 @@ from collections.abc import Callable
 from collections.abc import Sequence
 import hashlib
 from typing import Any
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -22,9 +23,12 @@ from optuna.samplers.nsgaii._child_generation_strategy import NSGAIIChildGenerat
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.samplers.nsgaii._crossovers._uniform import UniformCrossover
 from optuna.search_space import IntersectionSearchSpace
-from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 # Define key names of `Trial.system_attrs`.

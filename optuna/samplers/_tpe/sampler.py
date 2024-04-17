@@ -7,6 +7,7 @@ from typing import cast
 from typing import Dict
 from typing import Optional
 from typing import Sequence
+from typing import TYPE_CHECKING
 import warnings
 
 import numpy as np
@@ -27,11 +28,14 @@ from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 from optuna.search_space import IntersectionSearchSpace
 from optuna.search_space.group_decomposed import _GroupDecomposedSearchSpace
 from optuna.search_space.group_decomposed import _SearchSpaceGroup
-from optuna.study import Study
 from optuna.study._multi_objective import _fast_non_dominated_sort
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 EPS = 1e-12
