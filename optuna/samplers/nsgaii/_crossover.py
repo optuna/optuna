@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -12,9 +15,12 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
-from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 _NUMERICAL_DISTRIBUTIONS = (
