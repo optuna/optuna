@@ -1075,14 +1075,6 @@ class Study:
 
         return False
 
-    @deprecated_func("2.5.0", "4.0.0")
-    def _ask(self) -> Trial:
-        return self.ask()
-
-    @deprecated_func("2.5.0", "4.0.0")
-    def _tell(self, trial: Trial, state: TrialState, values: list[float] | None) -> None:
-        self.tell(trial, values, state)
-
     def _log_completed_trial(self, trial: FrozenTrial) -> None:
         if not _logger.isEnabledFor(logging.INFO):
             return
