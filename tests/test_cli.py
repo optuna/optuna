@@ -1195,8 +1195,7 @@ def test_storage_upgrade_command_with_invalid_url() -> None:
             subprocess.check_call(command)
 
 
-@pytest.mark.skip_coverage
-@pytest.mark.parametrize(
+parametrize_for_ask = pytest.mark.parametrize(
     "sampler,sampler_kwargs,output_format",
     [
         (None, None, None),
@@ -1206,6 +1205,10 @@ def test_storage_upgrade_command_with_invalid_url() -> None:
         (None, None, "yaml"),
     ],
 )
+
+
+@pytest.mark.skip_coverage
+@parametrize_for_ask
 def test_ask(
     sampler: Optional[str],
     sampler_kwargs: Optional[str],
@@ -1257,16 +1260,7 @@ def test_ask(
 
 
 @pytest.mark.skip_coverage
-@pytest.mark.parametrize(
-    "sampler,sampler_kwargs,output_format",
-    [
-        (None, None, None),
-        ("RandomSampler", None, None),
-        ("TPESampler", '{"multivariate": true}', None),
-        (None, None, "json"),
-        (None, None, "yaml"),
-    ],
-)
+@parametrize_for_ask
 def test_ask_flatten(
     sampler: Optional[str],
     sampler_kwargs: Optional[str],
