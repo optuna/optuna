@@ -181,23 +181,17 @@ class _ParzenEstimator:
 
     @staticmethod
     def _calculate_categorical_weights_by_categorical_distance(
-        param_name: str,
-        weights: np.ndarray,
-        observed_indices: np.ndarray,
+        dist_func: Callable[[CategoricalChoiceType, CategoricalChoiceType], float],
+        used_indices: np.ndarray,
         choices: Sequence[CategoricalChoiceType],
-        parameters: _ParzenEstimatorParameters,
+        coef: float,
     ) -> np.ndarray:
-        n_kernels, n_choices = weights.shape
-        assert parameters.prior_weight is not None
+        # NOTE(nabenabe0928): This method allows users to customize cat_dist easily.
         # TODO(nabenabe0928): Think about how to handle combinatorial explosion.
         # The time complexity is O(n_choices * used_indices.size), so n_choices cannot be huge.
-        used_indices, rev_indices = np.unique(observed_indices, return_inverse=True)
-        dist_func = parameters.categorical_distance_func[param_name]
         dists = np.array([[dist_func(choices[i], c) for c in choices] for i in used_indices])
-        coef = np.log(n_kernels / parameters.prior_weight) * np.log(n_choices) / np.log(6)
         cat_weights = np.exp(-((dists / np.max(dists, axis=1)[:, np.newaxis]) ** 2) * coef)
-        weights[: len(observed_indices)] = cat_weights[rev_indices]
-        return weights
+        return cat_weights
 
     def _calculate_categorical_distributions(
         self,
@@ -221,13 +215,14 @@ class _ParzenEstimator:
         )
         observed_indices = observations.astype(int)
         if param_name in parameters.categorical_distance_func:
-            weights = self._calculate_categorical_weights_by_categorical_distance(
-                param_name=param_name,
-                weights=weights,
-                observed_indices=observed_indices,
+            used_indices, rev_indices = np.unique(observed_indices, return_inverse=True)
+            cat_weights = self._calculate_categorical_weights_by_categorical_distance(
+                dist_func=parameters.categorical_distance_func[param_name],
+                used_indices=used_indices,
                 choices=choices,
-                parameters=parameters,
+                coef=np.log(n_kernels / parameters.prior_weight) * np.log(n_choices) / np.log(6),
             )
+            weights[: len(observed_indices)] = cat_weights[rev_indices]
         else:
             weights[np.arange(len(observed_indices)), observed_indices] += 1
 
