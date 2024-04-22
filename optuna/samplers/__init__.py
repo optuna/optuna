@@ -35,7 +35,8 @@ __all__ = [
 class MOTPESampler:
     def __init__(self, *args, **kwargs):  # type: ignore[no-untyped-def]
         # TODO(nabenabe0928): Come up with any ways to remove this file.
-        raise ModuleNotFoundError(
-            "`MOTPESampler` was removed at v4.0. "
+        # NOTE(nabenabe0928): Discuss when to remove this class.
+        raise ImportError(
+            "`MOTPESampler` was removed at v4.0.0. "
             "Please use `TPESampler` instead or downgrade your Optuna version."
         )
