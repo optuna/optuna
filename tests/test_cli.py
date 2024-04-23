@@ -1223,6 +1223,9 @@ def test_ask(
     with NamedTemporaryFilePool() as tf:
         db_url = "sqlite:///{}".format(tf.name)
 
+        args = ["optuna", "create-study", "--storage", db_url, "--study-name", study_name]
+        subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
         args = [
             "optuna",
             "ask",
@@ -1275,6 +1278,9 @@ def test_ask_flatten(
     with NamedTemporaryFilePool() as tf:
         db_url = "sqlite:///{}".format(tf.name)
 
+        args = ["optuna", "create-study", "--storage", db_url, "--study-name", study_name]
+        subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
         args = [
             "optuna",
             "ask",
@@ -1318,6 +1324,9 @@ def test_ask_empty_search_space(output_format: str) -> None:
     with NamedTemporaryFilePool() as tf:
         db_url = "sqlite:///{}".format(tf.name)
 
+        args = ["optuna", "create-study", "--storage", db_url, "--study-name", study_name]
+        subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
         args = [
             "optuna",
             "ask",
@@ -1350,6 +1359,9 @@ def test_ask_empty_search_space_flatten(output_format: str) -> None:
 
     with NamedTemporaryFilePool() as tf:
         db_url = "sqlite:///{}".format(tf.name)
+
+        args = ["optuna", "create-study", "--storage", db_url, "--study-name", study_name]
+        subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         args = [
             "optuna",
@@ -1387,6 +1399,9 @@ def test_ask_sampler_kwargs_without_sampler() -> None:
 
     with NamedTemporaryFilePool() as tf:
         db_url = "sqlite:///{}".format(tf.name)
+
+        args = ["optuna", "create-study", "--storage", db_url, "--study-name", study_name]
+        subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         args = [
             "optuna",
@@ -1478,6 +1493,9 @@ def test_tell() -> None:
     with NamedTemporaryFilePool() as tf:
         db_url = "sqlite:///{}".format(tf.name)
 
+        args = ["optuna", "create-study", "--storage", db_url, "--study-name", study_name]
+        subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
         output: Any = subprocess.check_output(
             [
                 "optuna",
@@ -1554,6 +1572,9 @@ def test_tell_with_nan() -> None:
 
     with NamedTemporaryFilePool() as tf:
         db_url = "sqlite:///{}".format(tf.name)
+
+        args = ["optuna", "create-study", "--storage", db_url, "--study-name", study_name]
+        subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         output: Any = subprocess.check_output(
             [
