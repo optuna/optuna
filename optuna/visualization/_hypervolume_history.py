@@ -5,6 +5,7 @@ from typing import NamedTuple
 
 import numpy as np
 
+from optuna._experimental import experimental_func
 from optuna._hypervolume import WFG
 from optuna.logging import get_logger
 from optuna.samplers._base import _CONSTRAINTS_KEY
@@ -27,6 +28,7 @@ class _HypervolumeHistoryInfo(NamedTuple):
     values: list[float]
 
 
+@experimental_func("3.3.0")
 def plot_hypervolume_history(
     study: Study,
     reference_point: Sequence[float],
