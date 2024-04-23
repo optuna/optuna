@@ -5,14 +5,18 @@ from collections.abc import Callable
 from collections.abc import Sequence
 import itertools
 import math
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.samplers.nsgaii._constraints_evaluation import _validate_constraints
 from optuna.samplers.nsgaii._elite_population_selection_strategy import _rank_population
-from optuna.study import Study
 from optuna.trial import FrozenTrial
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 # Define a coefficient for scaling intervals, used in _filter_inf() to replace +-inf.
@@ -187,7 +191,8 @@ def _normalize_objective_values(objective_matrix: np.ndarray) -> np.ndarray:
     ):
         intercepts_inv = np.linalg.solve(extreme_points, np.ones(n_objectives))
     else:
-        intercepts_inv = 1 / np.max(objective_matrix, axis=0)
+        intercepts = np.max(objective_matrix, axis=0)
+        intercepts_inv = 1 / np.where(intercepts == 0, 1, intercepts)
     objective_matrix *= np.where(np.isfinite(intercepts_inv), intercepts_inv, 1)
 
     return objective_matrix

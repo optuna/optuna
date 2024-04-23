@@ -1,8 +1,13 @@
+from __future__ import annotations
+
 import abc
+from typing import TYPE_CHECKING
 
 import numpy as np
 
-from optuna.study import Study
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 class BaseCrossover(abc.ABC):

@@ -1,17 +1,23 @@
+from __future__ import annotations
+
 import abc
 from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import Optional
 from typing import Sequence
+from typing import TYPE_CHECKING
 import warnings
 
 import numpy as np
 
 from optuna.distributions import BaseDistribution
-from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 class BaseSampler(abc.ABC):

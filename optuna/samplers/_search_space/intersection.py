@@ -1,12 +1,18 @@
+from __future__ import annotations
+
 import copy
 from typing import Dict
 from typing import Optional
+from typing import TYPE_CHECKING
 
 import optuna
 from optuna._deprecated import deprecated_class
 from optuna._deprecated import deprecated_func
 from optuna.distributions import BaseDistribution
-from optuna.study import Study
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 @deprecated_class(

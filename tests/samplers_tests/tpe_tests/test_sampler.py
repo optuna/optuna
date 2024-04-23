@@ -1115,7 +1115,8 @@ def test_constant_liar_with_running_trial(multivariate: bool, multiobjective: bo
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = TPESampler(multivariate=multivariate, constant_liar=True, n_startup_trials=0)
 
-    study = optuna.create_study(sampler=sampler)
+    directions = ["minimize"] * 2 if multiobjective else ["minimize"]
+    study = optuna.create_study(sampler=sampler, directions=directions)
 
     # Add a complete trial.
     trial0 = study.ask()

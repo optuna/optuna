@@ -1,12 +1,18 @@
+from __future__ import annotations
+
 import copy
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import TYPE_CHECKING
 
 from optuna.distributions import BaseDistribution
-from optuna.study import Study
 from optuna.trial import TrialState
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 class _SearchSpaceGroup:
