@@ -2,11 +2,15 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from optuna.samplers._base import _process_constraints_after_trial
-from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 class NSGAIIAfterTrialStrategy:

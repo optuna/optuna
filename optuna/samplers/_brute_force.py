@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 import decimal
 from typing import Any
@@ -7,6 +9,7 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -17,10 +20,13 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.samplers import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
-from optuna.study import Study
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 @dataclass

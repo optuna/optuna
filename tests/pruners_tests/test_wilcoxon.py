@@ -31,6 +31,20 @@ def test_wilcoxon_pruner_first_trial() -> None:
     assert not trial.should_prune()
 
 
+def test_wilcoxon_pruner_when_best_trial_has_no_intermediate_value() -> None:
+    # A pruner is not activated at a first trial.
+    pruner = optuna.pruners.WilcoxonPruner()
+    study = optuna.study.create_study(pruner=pruner)
+    trial = study.ask()
+    study.tell(trial, 10)
+    trial = study.ask()
+    assert not trial.should_prune()
+    trial.report(1, 1)
+    assert not trial.should_prune()
+    trial.report(2, 2)
+    assert not trial.should_prune()
+
+
 @pytest.mark.parametrize(
     "p_threshold,step_values,expected_should_prune",
     [
