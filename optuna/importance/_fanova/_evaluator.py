@@ -3,7 +3,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
-import numpy
+import numpy as np
 
 from optuna._transform import _SearchSpaceTransform
 from optuna.importance._base import _get_distributions
@@ -113,8 +113,8 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
             non_single_distributions, transform_log=False, transform_step=False
         )
 
-        trans_params: numpy.ndarray = _get_trans_params(trials, trans)
-        target_values: numpy.ndarray = _get_target_values(trials, target)
+        trans_params: np.ndarray = _get_trans_params(trials, trans)
+        target_values: np.ndarray = _get_target_values(trials, target)
 
         evaluator = self._evaluator
         evaluator.fit(
@@ -123,11 +123,11 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
             search_spaces=trans.bounds,
             column_to_encoded_columns=trans.column_to_encoded_columns,
         )
-        param_importances = numpy.array(
+        param_importances = np.array(
             [evaluator.get_importance(i)[0] for i in range(len(non_single_distributions))]
         )
         # We normalize here to keep the backward compatibility.
-        param_importances /= numpy.sum(param_importances)
+        param_importances /= np.sum(param_importances)
 
         return _sort_dict_by_importance(
             {
