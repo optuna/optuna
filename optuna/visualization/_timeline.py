@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime
 from typing import NamedTuple
 
-from optuna._experimental import experimental_func
 from optuna.logging import get_logger
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study import Study
@@ -31,7 +30,6 @@ class _TimelineInfo(NamedTuple):
     bars: list[_TimelineBarInfo]
 
 
-@experimental_func("3.2.0")
 def plot_timeline(study: Study) -> "go.Figure":
     """Plot the timeline of a study.
 
