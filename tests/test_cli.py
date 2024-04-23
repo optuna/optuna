@@ -1045,62 +1045,6 @@ def test_create_study_command_with_skip_if_exists() -> None:
 
 
 @pytest.mark.skip_coverage
-def test_study_optimize_command() -> None:
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-        storage_url = str(storage.engine.url)
-
-        study_name = storage.get_study_name_from_id(
-            storage.create_new_study(directions=[StudyDirection.MINIMIZE])
-        )
-        command = [
-            "optuna",
-            "study",
-            "optimize",
-            "--study-name",
-            study_name,
-            "--n-trials",
-            "10",
-            __file__,
-            "objective_func",
-            "--storage",
-            storage_url,
-        ]
-        subprocess.check_call(command)
-
-        study = optuna.load_study(storage=storage_url, study_name=study_name)
-        assert len(study.trials) == 10
-        assert "x" in study.best_params
-
-        # Check if a default value of study_name is stored in the storage.
-        assert storage.get_study_name_from_id(study._study_id).startswith(
-            DEFAULT_STUDY_NAME_PREFIX
-        )
-
-
-@pytest.mark.skip_coverage
-def test_study_optimize_command_inconsistent_args() -> None:
-    with NamedTemporaryFilePool() as tf:
-        db_url = "sqlite:///{}".format(tf.name)
-
-        # --study-name argument is missing.
-        with pytest.raises(subprocess.CalledProcessError):
-            subprocess.check_call(
-                [
-                    "optuna",
-                    "study",
-                    "optimize",
-                    "--storage",
-                    db_url,
-                    "--n-trials",
-                    "10",
-                    __file__,
-                    "objective_func",
-                ]
-            )
-
-
-@pytest.mark.skip_coverage
 def test_empty_argv() -> None:
     command_empty = ["optuna"]
     command_empty_output = str(subprocess.check_output(command_empty))
