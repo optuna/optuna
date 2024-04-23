@@ -20,16 +20,16 @@ class BaseHypervolume(abc.ABC):
             import numpy as np
 
             import optuna
-            from optuna.multi_objective._hypervolume import WFG
+            from optuna._hypervolume import WFG
 
 
             def objective(trial):
                 return trial.suggest_float("x", 0, 1), trial.suggest_float("y", 0, 1)
 
 
-            study = optuna.multi_objective.create_study(["maximize", "minimize"])
+            study = optuna.create_study(["maximize", "minimize"])
             study.optimize(objective, n_trials=10)
-            trials = study.get_pareto_front_trials()
+            trials = study.best_trials
             solution_sets = np.array([list(t.values) for t in trials])
 
             # Normalize the solution set by negating.

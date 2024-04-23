@@ -1,7 +1,8 @@
+from __future__ import annotations
+
+from collections.abc import KeysView
 import functools
 import math
-from typing import KeysView
-from typing import List
 
 import numpy as np
 
@@ -21,7 +22,7 @@ def _get_best_intermediate_result_over_steps(
 
 
 def _get_percentile_intermediate_result_over_trials(
-    completed_trials: List["optuna.trial.FrozenTrial"],
+    completed_trials: list["optuna.trial.FrozenTrial"],
     direction: StudyDirection,
     step: int,
     percentile: float,

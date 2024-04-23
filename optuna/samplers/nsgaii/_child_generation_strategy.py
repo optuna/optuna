@@ -3,15 +3,19 @@ from __future__ import annotations
 from collections.abc import Callable
 from collections.abc import Sequence
 from typing import Any
+from typing import TYPE_CHECKING
 
 from optuna.distributions import BaseDistribution
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.samplers.nsgaii._constraints_evaluation import _constrained_dominates
 from optuna.samplers.nsgaii._crossover import perform_crossover
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
-from optuna.study import Study
 from optuna.study._multi_objective import _dominates
 from optuna.trial import FrozenTrial
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 class NSGAIIChildGenerationStrategy:

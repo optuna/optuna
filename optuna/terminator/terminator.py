@@ -109,10 +109,10 @@ class Terminator(BaseTerminator):
             raise ValueError("`min_n_trials` is expected to be a positive integer.")
 
         self._improvement_evaluator = improvement_evaluator or RegretBoundEvaluator()
-        self._error_evaluator = error_evaluator or self._initialize_error_evalutor()
+        self._error_evaluator = error_evaluator or self._initialize_error_evaluator()
         self._min_n_trials = min_n_trials
 
-    def _initialize_error_evalutor(self) -> BaseErrorEvaluator:
+    def _initialize_error_evaluator(self) -> BaseErrorEvaluator:
         if isinstance(self._improvement_evaluator, BestValueStagnationEvaluator):
             return StaticErrorEvaluator(constant=0)
         return CrossValidationErrorEvaluator()

@@ -10,7 +10,6 @@ from optuna.samplers._qmc import QMCSampler
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._search_space import intersection_search_space
 from optuna.samplers._search_space import IntersectionSearchSpace
-from optuna.samplers._tpe.multi_objective_sampler import MOTPESampler
 from optuna.samplers._tpe.sampler import TPESampler
 from optuna.samplers.nsgaii._sampler import NSGAIISampler
 
@@ -21,7 +20,6 @@ __all__ = [
     "CmaEsSampler",
     "GridSampler",
     "IntersectionSearchSpace",
-    "MOTPESampler",
     "NSGAIISampler",
     "NSGAIIISampler",
     "PartialFixedSampler",
@@ -32,3 +30,13 @@ __all__ = [
     "intersection_search_space",
     "nsgaii",
 ]
+
+
+class MOTPESampler:
+    def __init__(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+        # TODO(nabenabe0928): Come up with any ways to remove this file.
+        # NOTE(nabenabe0928): Discuss when to remove this class.
+        raise ImportError(
+            "`MOTPESampler` was removed at v4.0.0. "
+            "Please use `TPESampler` instead or downgrade your Optuna version."
+        )

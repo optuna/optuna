@@ -5,6 +5,7 @@ from collections.abc import Callable
 from collections.abc import Sequence
 import hashlib
 from typing import Any
+from typing import TYPE_CHECKING
 import warnings
 
 import optuna
@@ -21,9 +22,12 @@ from optuna.samplers.nsgaii._elite_population_selection_strategy import (
     NSGAIIElitePopulationSelectionStrategy,
 )
 from optuna.search_space import IntersectionSearchSpace
-from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 # Define key names of `Trial.system_attrs`.

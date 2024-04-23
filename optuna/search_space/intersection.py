@@ -3,10 +3,14 @@ from __future__ import annotations
 import copy
 from typing import Dict
 from typing import Tuple
+from typing import TYPE_CHECKING
 
 import optuna
 from optuna.distributions import BaseDistribution
-from optuna.study import Study
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 def _calculate(

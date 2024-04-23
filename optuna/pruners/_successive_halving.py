@@ -1,7 +1,6 @@
+from __future__ import annotations
+
 import math
-from typing import List
-from typing import Optional
-from typing import Union
 
 import optuna
 from optuna.pruners._base import BasePruner
@@ -115,7 +114,7 @@ class SuccessiveHalvingPruner(BasePruner):
 
     def __init__(
         self,
-        min_resource: Union[str, int] = "auto",
+        min_resource: str | int = "auto",
         reduction_factor: int = 4,
         min_early_stopping_rate: int = 0,
         bootstrap_count: int = 0,
@@ -156,7 +155,7 @@ class SuccessiveHalvingPruner(BasePruner):
                 "are mutually incompatible, bootstrap_count is {}".format(bootstrap_count)
             )
 
-        self._min_resource: Optional[int] = None
+        self._min_resource: int | None = None
         if isinstance(min_resource, int):
             self._min_resource = min_resource
         self._reduction_factor = reduction_factor
@@ -170,7 +169,7 @@ class SuccessiveHalvingPruner(BasePruner):
 
         rung = _get_current_rung(trial)
         value = trial.intermediate_values[step]
-        trials: Optional[List["optuna.trial.FrozenTrial"]] = None
+        trials: list["optuna.trial.FrozenTrial"] | None = None
 
         while True:
             if self._min_resource is None:
@@ -215,7 +214,7 @@ class SuccessiveHalvingPruner(BasePruner):
             rung += 1
 
 
-def _estimate_min_resource(trials: List["optuna.trial.FrozenTrial"]) -> Optional[int]:
+def _estimate_min_resource(trials: list["optuna.trial.FrozenTrial"]) -> int | None:
     n_steps = [
         t.last_step for t in trials if t.state == TrialState.COMPLETE and t.last_step is not None
     ]
@@ -241,8 +240,8 @@ def _completed_rung_key(rung: int) -> str:
 
 
 def _get_competing_values(
-    trials: List["optuna.trial.FrozenTrial"], value: float, rung_key: str
-) -> List[float]:
+    trials: list["optuna.trial.FrozenTrial"], value: float, rung_key: str
+) -> list[float]:
     competing_values = [t.system_attrs[rung_key] for t in trials if rung_key in t.system_attrs]
     competing_values.append(value)
     return competing_values
@@ -250,7 +249,7 @@ def _get_competing_values(
 
 def _is_trial_promotable_to_next_rung(
     value: float,
-    competing_values: List[float],
+    competing_values: list[float],
     reduction_factor: int,
     study_direction: StudyDirection,
 ) -> bool:

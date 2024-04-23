@@ -2,7 +2,6 @@ from optuna import distributions
 from optuna import exceptions
 from optuna import integration
 from optuna import logging
-from optuna import multi_objective
 from optuna import pruners
 from optuna import samplers
 from optuna import search_space
@@ -42,7 +41,6 @@ __all__ = [
     "integration",
     "load_study",
     "logging",
-    "multi_objective",
     "pruners",
     "samplers",
     "search_space",
