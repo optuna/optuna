@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 _import_structure = {
     "allennlp": ["AllenNLPExecutor", "AllenNLPPruningCallback"],
     "botorch": ["BoTorchSampler"],
-    "catalyst": ["CatalystPruningCallback"],
     "catboost": ["CatBoostPruningCallback"],
     "chainer": ["ChainerPruningExtension"],
     "chainermn": ["ChainerMNStudy"],
@@ -25,12 +24,10 @@ _import_structure = {
     "shap": ["ShapleyImportanceEvaluator"],
     "skorch": ["SkorchPruningCallback"],
     "mxnet": ["MXNetPruningCallback"],
-    "skopt": ["SkoptSampler"],
     "tensorboard": ["TensorBoardCallback"],
     "tensorflow": ["TensorFlowPruningHook"],
     "tfkeras": ["TFKerasPruningCallback"],
     "xgboost": ["XGBoostPruningCallback"],
-    "fastaiv1": ["FastAIV1PruningCallback"],
     "fastaiv2": ["FastAIV2PruningCallback", "FastAIPruningCallback"],
 }
 
@@ -39,7 +36,6 @@ __all__ = [
     "AllenNLPExecutor",
     "AllenNLPPruningCallback",
     "BoTorchSampler",
-    "CatalystPruningCallback",
     "CatBoostPruningCallback",
     "ChainerPruningExtension",
     "ChainerMNStudy",
@@ -59,12 +55,10 @@ __all__ = [
     "ShapleyImportanceEvaluator",
     "SkorchPruningCallback",
     "MXNetPruningCallback",
-    "SkoptSampler",
     "TensorBoardCallback",
     "TensorFlowPruningHook",
     "TFKerasPruningCallback",
     "XGBoostPruningCallback",
-    "FastAIV1PruningCallback",
     "FastAIV2PruningCallback",
     "FastAIPruningCallback",
 ]
@@ -74,14 +68,12 @@ if TYPE_CHECKING:
     from optuna.integration.allennlp import AllenNLPExecutor
     from optuna.integration.allennlp import AllenNLPPruningCallback
     from optuna.integration.botorch import BoTorchSampler
-    from optuna.integration.catalyst import CatalystPruningCallback
     from optuna.integration.catboost import CatBoostPruningCallback
     from optuna.integration.chainer import ChainerPruningExtension
     from optuna.integration.chainermn import ChainerMNStudy
     from optuna.integration.cma import CmaEsSampler
     from optuna.integration.cma import PyCmaSampler
     from optuna.integration.dask import DaskStorage
-    from optuna.integration.fastaiv1 import FastAIV1PruningCallback
     from optuna.integration.fastaiv2 import FastAIPruningCallback
     from optuna.integration.fastaiv2 import FastAIV2PruningCallback
     from optuna.integration.keras import KerasPruningCallback
@@ -95,7 +87,6 @@ if TYPE_CHECKING:
     from optuna.integration.pytorch_lightning import PyTorchLightningPruningCallback
     from optuna.integration.shap import ShapleyImportanceEvaluator
     from optuna.integration.sklearn import OptunaSearchCV
-    from optuna.integration.skopt import SkoptSampler
     from optuna.integration.skorch import SkorchPruningCallback
     from optuna.integration.tensorboard import TensorBoardCallback
     from optuna.integration.tensorflow import TensorFlowPruningHook
