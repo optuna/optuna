@@ -27,7 +27,6 @@ from optuna.storages import JournalFileStorage
 from optuna.storages import JournalRedisStorage
 from optuna.storages import JournalStorage
 from optuna.storages import RDBStorage
-from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.study import StudyDirection
 from optuna.testing.storages import StorageSupplier
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
