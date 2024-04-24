@@ -832,7 +832,7 @@ class _Ask(_BaseCommand):
 
         except KeyError:
             raise KeyError(
-                "Implicit study creation within the 'ask' command was dropped in Optuna v4.0."
+                "Implicit study creation within the 'ask' command was dropped in Optuna v4.0.0. "
                 "Please use the 'create-study' command beforehand."
             )
         trial = study.ask(fixed_distributions=search_space)
