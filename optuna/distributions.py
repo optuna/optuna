@@ -6,7 +6,6 @@ from numbers import Real
 from typing import Any
 from typing import cast
 from typing import Dict
-from typing import Hashable
 from typing import Sequence
 from typing import Union
 import warnings
@@ -86,7 +85,7 @@ class BaseDistribution(abc.ABC):
         raise NotImplementedError
 
     def _asdict(self) -> Dict:
-        return {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
+        return self.__dict__
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, BaseDistribution):
@@ -96,7 +95,7 @@ class BaseDistribution(abc.ABC):
         return self.__dict__ == other.__dict__
 
     def __hash__(self) -> int:
-        return hash((self.__class__,) + tuple(sorted(self._asdict().items())))
+        return hash((self.__class__,) + tuple(sorted(self.__dict__.items())))
 
     def __repr__(self) -> str:
         kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
@@ -525,18 +524,17 @@ class CategoricalDistribution(BaseDistribution):
                 warnings.warn(message)
 
         self.choices = tuple(choices)
-        self._choice_to_index = {c: i for i, c in enumerate(choices) if isinstance(c, Hashable)}
 
     def to_external_repr(self, param_value_in_internal_repr: float) -> CategoricalChoiceType:
         return self.choices[int(param_value_in_internal_repr)]
 
     def to_internal_repr(self, param_value_in_external_repr: CategoricalChoiceType) -> float:
-        if param_value_in_external_repr in self._choice_to_index:
-            return self._choice_to_index[param_value_in_external_repr]
-
-        for index, choice in enumerate(self.choices):
-            if _categorical_choice_equal(param_value_in_external_repr, choice):
-                return index
+        try:
+            return self.choices.index(param_value_in_external_repr)
+        except ValueError:
+            for index, choice in enumerate(self.choices):
+                if _categorical_choice_equal(param_value_in_external_repr, choice):
+                    return index
 
         raise ValueError(f"'{param_value_in_external_repr}' not in {self.choices}.")
 
@@ -555,27 +553,15 @@ class CategoricalDistribution(BaseDistribution):
         if self.__dict__.keys() != other.__dict__.keys():
             return False
         for key, value in self.__dict__.items():
-            cat_system_attr_key = "_choice_to_index"
             if key == "choices":
                 if len(value) != len(getattr(other, key)):
                     return False
                 for choice, other_choice in zip(value, getattr(other, key)):
                     if not _categorical_choice_equal(choice, other_choice):
                         return False
-            elif key == cat_system_attr_key:
-                if len(value) != len(getattr(other, key)):
-                    return False
-                other_choice_to_index = dict(getattr(other, key))
-                for choice, other_choice in zip(value, other_choice_to_index):
-                    if (
-                        not _categorical_choice_equal(choice, other_choice)
-                        or value[choice] != other_choice_to_index[other_choice]
-                    ):
-                        return False
             else:
                 if value != getattr(other, key):
                     return False
-
         return True
 
     __hash__ = BaseDistribution.__hash__
