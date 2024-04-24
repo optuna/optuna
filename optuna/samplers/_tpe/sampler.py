@@ -524,9 +524,9 @@ class TPESampler(BaseSampler):
                 observations, search_space, self._parzen_estimator_parameters
             )
 
-        assert isinstance(
-            mpe, _ParzenEstimator
-        ), "_parzen_estimator_cls must override _ParzenEstimator"
+        if not isinstance(mpe, _ParzenEstimator):
+            raise RuntimeError("_parzen_estimator_cls must override _ParzenEstimator.")
+
         return mpe
 
     def _compute_acquisition_func(
