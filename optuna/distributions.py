@@ -531,7 +531,7 @@ class CategoricalDistribution(BaseDistribution):
     def to_internal_repr(self, param_value_in_external_repr: CategoricalChoiceType) -> float:
         try:
             return self.choices.index(param_value_in_external_repr)
-        except ValueError:
+        except ValueError:  # ValueError: param_value_in_external_repr is not in choices.
             for index, choice in enumerate(self.choices):
                 if _categorical_choice_equal(param_value_in_external_repr, choice):
                     return index
