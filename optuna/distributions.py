@@ -532,6 +532,7 @@ class CategoricalDistribution(BaseDistribution):
         try:
             return self.choices.index(param_value_in_external_repr)
         except ValueError:  # ValueError: param_value_in_external_repr is not in choices.
+            # ValueError also happens if external_repr is nan or includes precision error in float.
             for index, choice in enumerate(self.choices):
                 if _categorical_choice_equal(param_value_in_external_repr, choice):
                     return index
