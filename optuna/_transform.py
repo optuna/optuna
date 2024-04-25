@@ -5,7 +5,7 @@ from typing import List
 from typing import Tuple
 from typing import Union
 
-import numpy
+import numpy as np
 
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
@@ -78,21 +78,21 @@ class _SearchSpaceTransform:
         self._transform_0_1 = transform_0_1
 
     @property
-    def bounds(self) -> numpy.ndarray:
+    def bounds(self) -> np.ndarray:
         if self._transform_0_1:
-            return numpy.array([[0.0, 1.0]] * self._raw_bounds.shape[0])
+            return np.array([[0.0, 1.0]] * self._raw_bounds.shape[0])
         else:
             return self._raw_bounds
 
     @property
-    def column_to_encoded_columns(self) -> List[numpy.ndarray]:
+    def column_to_encoded_columns(self) -> List[np.ndarray]:
         return self._column_to_encoded_columns
 
     @property
-    def encoded_column_to_column(self) -> numpy.ndarray:
+    def encoded_column_to_column(self) -> np.ndarray:
         return self._encoded_column_to_column
 
-    def transform(self, params: Dict[str, Any]) -> numpy.ndarray:
+    def transform(self, params: Dict[str, Any]) -> np.ndarray:
         """Transform a parameter configuration from actual values to continuous space.
 
         Args:
@@ -104,7 +104,7 @@ class _SearchSpaceTransform:
             configuration.
 
         """
-        trans_params = numpy.zeros(self._raw_bounds.shape[0], dtype=numpy.float64)
+        trans_params = np.zeros(self._raw_bounds.shape[0], dtype=np.float64)
 
         bound_idx = 0
         for name, distribution in self._search_space.items():
@@ -130,7 +130,7 @@ class _SearchSpaceTransform:
 
         return trans_params
 
-    def untransform(self, trans_params: numpy.ndarray) -> Dict[str, Any]:
+    def untransform(self, trans_params: np.ndarray) -> Dict[str, Any]:
         """Untransform a parameter configuration from continuous space to actual values.
 
         Args:
@@ -172,7 +172,7 @@ class _SearchSpaceTransform:
 
 def _transform_search_space(
     search_space: Dict[str, BaseDistribution], transform_log: bool, transform_step: bool
-) -> Tuple[numpy.ndarray, List[numpy.ndarray], numpy.ndarray]:
+) -> Tuple[np.ndarray, List[np.ndarray], np.ndarray]:
     assert len(search_space) > 0, "Cannot transform if no distributions are given."
 
     n_bounds = sum(
@@ -180,9 +180,9 @@ def _transform_search_space(
         for d in search_space.values()
     )
 
-    bounds = numpy.empty((n_bounds, 2), dtype=numpy.float64)
-    column_to_encoded_columns: List[numpy.ndarray] = []
-    encoded_column_to_column = numpy.empty(n_bounds, dtype=numpy.int64)
+    bounds = np.empty((n_bounds, 2), dtype=np.float64)
+    column_to_encoded_columns: List[np.ndarray] = []
+    encoded_column_to_column = np.empty(n_bounds, dtype=np.int64)
 
     bound_idx = 0
     for distribution in search_space.values():
@@ -190,7 +190,7 @@ def _transform_search_space(
         if isinstance(d, CategoricalDistribution):
             n_choices = len(d.choices)
             bounds[bound_idx : bound_idx + n_choices] = (0, 1)  # Broadcast across all choices.
-            encoded_columns = numpy.arange(bound_idx, bound_idx + n_choices)
+            encoded_columns = np.arange(bound_idx, bound_idx + n_choices)
             encoded_column_to_column[encoded_columns] = len(column_to_encoded_columns)
             column_to_encoded_columns.append(encoded_columns)
             bound_idx += n_choices
@@ -229,7 +229,7 @@ def _transform_search_space(
                 assert False, "Should not reach. Unexpected distribution."
 
             bounds[bound_idx] = bds
-            encoded_column = numpy.atleast_1d(bound_idx)
+            encoded_column = np.atleast_1d(bound_idx)
             encoded_column_to_column[encoded_column] = len(column_to_encoded_columns)
             column_to_encoded_columns.append(encoded_column)
             bound_idx += 1
@@ -277,29 +277,25 @@ def _untransform_numerical_param(
             if d.single():
                 pass
             else:
-                param = min(param, numpy.nextafter(d.high, d.high - 1))
+                param = min(param, np.nextafter(d.high, d.high - 1))
         elif d.step is not None:
             param = float(
-                numpy.clip(
-                    numpy.round((trans_param - d.low) / d.step) * d.step + d.low, d.low, d.high
-                )
+                np.clip(np.round((trans_param - d.low) / d.step) * d.step + d.low, d.low, d.high)
             )
         else:
             if d.single():
                 param = trans_param
             else:
-                param = min(trans_param, numpy.nextafter(d.high, d.high - 1))
+                param = min(trans_param, np.nextafter(d.high, d.high - 1))
     elif isinstance(d, IntDistribution):
         if d.log:
             if transform_log:
-                param = int(numpy.clip(numpy.round(math.exp(trans_param)), d.low, d.high))
+                param = int(np.clip(np.round(math.exp(trans_param)), d.low, d.high))
             else:
                 param = int(trans_param)
         else:
             param = int(
-                numpy.clip(
-                    numpy.round((trans_param - d.low) / d.step) * d.step + d.low, d.low, d.high
-                )
+                np.clip(np.round((trans_param - d.low) / d.step) * d.step + d.low, d.low, d.high)
             )
     else:
         assert False, "Should not reach. Unexpected distribution."

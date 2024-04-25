@@ -7,7 +7,7 @@ from typing import List
 from typing import Optional
 from typing import Union
 
-import numpy
+import numpy as np
 
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
@@ -147,27 +147,27 @@ def _get_filtered_trials(
         trial
         for trial in trials
         if set(params) <= set(trial.params)
-        and numpy.isfinite(target(trial) if target is not None else cast(float, trial.value))
+        and np.isfinite(target(trial) if target is not None else cast(float, trial.value))
     ]
 
 
 def _param_importances_to_dict(
-    params: Collection[str], param_importances: Union[numpy.ndarray, float]
+    params: Collection[str], param_importances: Union[np.ndarray, float]
 ) -> Dict[str, float]:
     return {
         name: value
-        for name, value in zip(params, numpy.broadcast_to(param_importances, (len(params),)))
+        for name, value in zip(params, np.broadcast_to(param_importances, (len(params),)))
     }
 
 
-def _get_trans_params(trials: List[FrozenTrial], trans: _SearchSpaceTransform) -> numpy.ndarray:
-    return numpy.array([trans.transform(trial.params) for trial in trials])
+def _get_trans_params(trials: List[FrozenTrial], trans: _SearchSpaceTransform) -> np.ndarray:
+    return np.array([trans.transform(trial.params) for trial in trials])
 
 
 def _get_target_values(
     trials: List[FrozenTrial], target: Optional[Callable[[FrozenTrial], float]]
-) -> numpy.ndarray:
-    return numpy.array([target(trial) if target is not None else trial.value for trial in trials])
+) -> np.ndarray:
+    return np.array([target(trial) if target is not None else trial.value for trial in trials])
 
 
 def _sort_dict_by_importance(param_importances: Dict[str, float]) -> Dict[str, float]:

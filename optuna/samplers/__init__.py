@@ -8,8 +8,6 @@ from optuna.samplers._nsgaiii._sampler import NSGAIIISampler
 from optuna.samplers._partial_fixed import PartialFixedSampler
 from optuna.samplers._qmc import QMCSampler
 from optuna.samplers._random import RandomSampler
-from optuna.samplers._search_space import intersection_search_space
-from optuna.samplers._search_space import IntersectionSearchSpace
 from optuna.samplers._tpe.sampler import TPESampler
 from optuna.samplers.nsgaii._sampler import NSGAIISampler
 
@@ -19,7 +17,6 @@ __all__ = [
     "BruteForceSampler",
     "CmaEsSampler",
     "GridSampler",
-    "IntersectionSearchSpace",
     "NSGAIISampler",
     "NSGAIIISampler",
     "PartialFixedSampler",
@@ -27,7 +24,6 @@ __all__ = [
     "RandomSampler",
     "TPESampler",
     "GPSampler",
-    "intersection_search_space",
     "nsgaii",
 ]
 
