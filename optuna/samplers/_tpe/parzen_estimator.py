@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 from typing import Callable
 from typing import Dict
 from typing import NamedTuple
@@ -179,20 +178,6 @@ class _ParzenEstimator:
                 transformed_observations, low, high, step, parameters
             )
 
-    @staticmethod
-    def _calculate_categorical_weights_by_categorical_distance(
-        dist_func: Callable[[CategoricalChoiceType, CategoricalChoiceType], float],
-        used_indices: np.ndarray,
-        choices: Sequence[CategoricalChoiceType],
-        coef: float,
-    ) -> np.ndarray:
-        # NOTE(nabenabe0928): This method allows users to customize cat_dist easily.
-        # TODO(nabenabe0928): Think about how to handle combinatorial explosion.
-        # The time complexity is O(n_choices * used_indices.size), so n_choices cannot be huge.
-        dists = np.array([[dist_func(choices[i], c) for c in choices] for i in used_indices])
-        cat_weights = np.exp(-((dists / np.max(dists, axis=1)[:, np.newaxis]) ** 2) * coef)
-        return cat_weights
-
     def _calculate_categorical_distributions(
         self,
         observations: np.ndarray,
@@ -215,13 +200,13 @@ class _ParzenEstimator:
         )
         observed_indices = observations.astype(int)
         if param_name in parameters.categorical_distance_func:
+            # TODO(nabenabe0928): Think about how to handle combinatorial explosion.
+            # The time complexity is O(n_choices * used_indices.size), so n_choices cannot be huge.
             used_indices, rev_indices = np.unique(observed_indices, return_inverse=True)
-            cat_weights = self._calculate_categorical_weights_by_categorical_distance(
-                dist_func=parameters.categorical_distance_func[param_name],
-                used_indices=used_indices,
-                choices=choices,
-                coef=np.log(n_kernels / parameters.prior_weight) * np.log(n_choices) / np.log(6),
-            )
+            dist_func = parameters.categorical_distance_func[param_name]
+            dists = np.array([[dist_func(choices[i], c) for c in choices] for i in used_indices])
+            coef = np.log(n_kernels / parameters.prior_weight) * np.log(n_choices) / np.log(6)
+            cat_weights = np.exp(-((dists / np.max(dists, axis=1)[:, np.newaxis]) ** 2) * coef)
             weights[: len(observed_indices)] = cat_weights[rev_indices]
         else:
             weights[np.arange(len(observed_indices)), observed_indices] += 1
