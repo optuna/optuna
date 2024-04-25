@@ -1422,6 +1422,36 @@ def test_ask_sampler_kwargs_without_sampler() -> None:
 
 
 @pytest.mark.skip_coverage
+def test_ask_without_create_study_beforehand() -> None:
+    study_name = "test_study"
+    search_space = (
+        '{"x": {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
+        '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
+    )
+
+    with NamedTemporaryFilePool() as tf:
+        db_url = "sqlite:///{}".format(tf.name)
+
+        args = [
+            "optuna",
+            "ask",
+            "--storage",
+            db_url,
+            "--study-name",
+            study_name,
+            "--search-space",
+            search_space,
+        ]
+
+        result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        error_message = result.stderr.decode()
+        assert (
+            "Implicit study creation within the 'ask' command was dropped in Optuna v4.0.0."
+            in error_message
+        )
+
+
+@pytest.mark.skip_coverage
 @pytest.mark.parametrize(
     "direction,directions,sampler,sampler_kwargs",
     [
