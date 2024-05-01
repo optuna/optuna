@@ -166,6 +166,9 @@ class Study:
 
         best_trial = self._storage.get_best_trial(self._study_id)
 
+        # If the trial with the best value is infeasible, select the best trial from all feasible
+        # trials. Note that the behavior is undefined when constrained optimization without the
+        # violation value in the best-valued trial.
         constraints = best_trial.system_attrs.get(_CONSTRAINTS_KEY)
         if constraints is not None and any([x > 0.0 for x in constraints]):
             complete_trials = self.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
