@@ -4,9 +4,15 @@ from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import Optional
-from typing import Protocol
 from typing import Sequence
 from typing import TYPE_CHECKING
+
+
+try:
+    from typing import Protocol
+except ImportError:
+    from typing_extensions import Protocol  # type: ignore
+
 import warnings
 
 import numpy as np
