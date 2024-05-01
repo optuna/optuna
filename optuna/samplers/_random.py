@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Any
 from typing import Dict
 from typing import Optional
-from typing import Sequence
 from typing import TYPE_CHECKING
 
 from optuna import distributions
@@ -12,7 +11,6 @@ from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.trial import FrozenTrial
-from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:

@@ -7,7 +7,6 @@ from multiprocessing.managers import DictProxy
 import os
 import pickle
 from typing import Any
-from typing import Optional
 from unittest.mock import patch
 import warnings
 
