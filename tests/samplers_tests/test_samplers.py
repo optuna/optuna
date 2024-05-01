@@ -104,30 +104,28 @@ parametrize_sampler_name_with_seed = pytest.mark.parametrize(
 
 
 @pytest.mark.parametrize(
-    "sampler_class,expected_has_rng,expected_has_another_sampler",
+    "sampler_class,expected_has_rng",
     [
-        (optuna.samplers.RandomSampler, True, False),
-        (lambda: optuna.samplers.TPESampler(n_startup_trials=0), True, True),
-        (lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True), True, True),
-        (lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0), True, True),
-        (optuna.samplers.NSGAIISampler, True, True),
-        (optuna.samplers.NSGAIIISampler, True, True),
+        (optuna.samplers.RandomSampler, True),
+        (lambda: optuna.samplers.TPESampler(n_startup_trials=0), True),
+        (lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True), True),
+        (lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0), True),
+        (optuna.samplers.NSGAIISampler, True),
+        (optuna.samplers.NSGAIIISampler, True),
         (
             lambda: optuna.samplers.PartialFixedSampler(
                 fixed_params={"x": 0}, base_sampler=optuna.samplers.RandomSampler()
             ),
             False,
-            True,
         ),
-        (lambda: optuna.samplers.GridSampler(search_space={"x": [0]}), True, False),
-        (lambda: optuna.samplers.QMCSampler(), False, True),
-        (lambda: get_gp_sampler(n_startup_trials=0), True, True),
+        (lambda: optuna.samplers.GridSampler(search_space={"x": [0]}), True),
+        (lambda: optuna.samplers.QMCSampler(), False),
+        (lambda: get_gp_sampler(n_startup_trials=0), True),
     ],
 )
 def test_sampler_reseed_rng(
     sampler_class: Callable[[], BaseSampler],
     expected_has_rng: bool,
-    expected_has_another_sampler: bool,
 ) -> None:
     def _extract_attr_name_from_sampler_by_cls(sampler: BaseSampler, cls: Any) -> str | None:
         for name, attr in sampler.__dict__.items():
@@ -151,28 +149,53 @@ def test_sampler_reseed_rng(
             # CmaEsSampler has a RandomState that is not reseed by its reseed_rng method.
             assert str(original_random_state) == str(random_state)
 
-    had_sampler_name = _extract_attr_name_from_sampler_by_cls(sampler, BaseSampler)
-    has_another_sampler = had_sampler_name is not None
-    assert expected_has_another_sampler == has_another_sampler
 
-    if has_another_sampler:
-        had_sampler_name = str(had_sampler_name)
-        had_sampler = sampler.__dict__[had_sampler_name]
-        had_sampler_rng_name = _extract_attr_name_from_sampler_by_cls(had_sampler, LazyRandomState)
-        original_had_sampler_random_state = had_sampler.__dict__[
-            had_sampler_rng_name
-        ].rng.get_state()
-        with patch.object(
-            had_sampler,
-            "reseed_rng",
-            wraps=had_sampler.reseed_rng,
-        ) as mock_object:
-            sampler.reseed_rng()
-            assert mock_object.call_count == 1
+@pytest.mark.parametrize(
+    "sampler_class,sampler_attr_name",
+    [
+        (lambda: optuna.samplers.TPESampler(n_startup_trials=0), "_random_sampler"),
+        (
+            lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
+            "_random_sampler",
+        ),
+        (lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0), "_independent_sampler"),
+        (optuna.samplers.NSGAIISampler, "_random_sampler"),
+        (optuna.samplers.NSGAIIISampler, "_random_sampler"),
+        (
+            lambda: optuna.samplers.PartialFixedSampler(
+                fixed_params={"x": 0}, base_sampler=optuna.samplers.RandomSampler()
+            ),
+            "_base_sampler",
+        ),
+        (lambda: optuna.samplers.QMCSampler(), "_independent_sampler"),
+        (lambda: get_gp_sampler(n_startup_trials=0), "_independent_sampler"),
+    ],
+)
+def test_sampler_reseed_rng_recursive(
+    sampler_class: Callable[[], BaseSampler],
+    sampler_attr_name: str,
+) -> None:
+    def _extract_attr_name_from_sampler_by_cls(sampler: BaseSampler, cls: Any) -> str | None:
+        for name, attr in sampler.__dict__.items():
+            if isinstance(attr, cls):
+                return name
+        return None
 
-        had_sampler = sampler.__dict__[had_sampler_name]
-        had_sampler_random_state = had_sampler.__dict__[had_sampler_rng_name].rng.get_state()
-        assert str(original_had_sampler_random_state) != str(had_sampler_random_state)
+    sampler = sampler_class()
+
+    had_sampler = sampler.__dict__[sampler_attr_name]
+    had_sampler_rng_name = _extract_attr_name_from_sampler_by_cls(had_sampler, LazyRandomState)
+    original_had_sampler_random_state = had_sampler.__dict__[had_sampler_rng_name].rng.get_state()
+    with patch.object(
+        had_sampler,
+        "reseed_rng",
+        wraps=had_sampler.reseed_rng,
+    ) as mock_object:
+        sampler.reseed_rng()
+        assert mock_object.call_count == 1
+
+    had_sampler_random_state = had_sampler.__dict__[had_sampler_rng_name].rng.get_state()
+    assert str(original_had_sampler_random_state) != str(had_sampler_random_state)
 
 
 def parametrize_suggest_method(name: str) -> MarkDecorator:
