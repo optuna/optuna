@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections import defaultdict
 from collections.abc import Sequence
 
 import numpy as np
@@ -23,75 +22,28 @@ def _get_feasible_trials(trials: Sequence[FrozenTrial]) -> list[FrozenTrial]:
     return feasible_trials
 
 
-def _get_pareto_front_trials_2d(
-    trials: Sequence[FrozenTrial],
-    directions: Sequence[StudyDirection],
-    consider_constraint: bool = False,
-) -> list[FrozenTrial]:
-    trials = [t for t in trials if t.state == TrialState.COMPLETE]
-    if consider_constraint:
-        trials = _get_feasible_trials(trials)
-
-    n_trials = len(trials)
-    if n_trials == 0:
-        return []
-
-    trials.sort(
-        key=lambda trial: (
-            _normalize_value(trial.values[0], directions[0]),
-            _normalize_value(trial.values[1], directions[1]),
-        ),
-    )
-
-    last_nondominated_trial = trials[0]
-    pareto_front = [last_nondominated_trial]
-    for i in range(1, n_trials):
-        trial = trials[i]
-        if _dominates(last_nondominated_trial, trial, directions):
-            continue
-        pareto_front.append(trial)
-        last_nondominated_trial = trial
-
-    pareto_front.sort(key=lambda trial: trial.number)
-    return pareto_front
-
-
-def _get_pareto_front_trials_nd(
-    trials: Sequence[FrozenTrial],
-    directions: Sequence[StudyDirection],
-    consider_constraint: bool = False,
-) -> list[FrozenTrial]:
-    pareto_front = []
-    trials = [t for t in trials if t.state == TrialState.COMPLETE]
-    if consider_constraint:
-        trials = _get_feasible_trials(trials)
-
-    # TODO(vincent): Optimize (use the fast non dominated sort defined in the NSGA-II paper).
-    for trial in trials:
-        dominated = False
-        for other in trials:
-            if _dominates(other, trial, directions):
-                dominated = True
-                break
-
-        if not dominated:
-            pareto_front.append(trial)
-
-    return pareto_front
-
-
 def _get_pareto_front_trials_by_trials(
     trials: Sequence[FrozenTrial],
     directions: Sequence[StudyDirection],
     consider_constraint: bool = False,
 ) -> list[FrozenTrial]:
-    if len(directions) == 2:
-        return _get_pareto_front_trials_2d(
-            trials, directions, consider_constraint
-        )  # Log-linear in number of trials.
-    return _get_pareto_front_trials_nd(
-        trials, directions, consider_constraint
-    )  # Quadratic in number of trials.
+    # NOTE(nabenabe0928): Vectorization relies on all the trials being complete.
+    trials = [t for t in trials if t.state == TrialState.COMPLETE]
+    if consider_constraint:
+        trials = _get_feasible_trials(trials)
+    if len(trials) == 0:
+        return []
+
+    if any(len(t.values) != len(directions) for t in trials):
+        raise ValueError(
+            "The number of the values and the number of the objectives must be identical."
+        )
+
+    loss_values = np.asarray(
+        [[_normalize_value(v, d) for v, d in zip(t.values, directions)] for t in trials]
+    )
+    on_front = _is_pareto_front(loss_values, assume_unique_lexsorted=False)
+    return [t for t, is_pareto in zip(trials, on_front) if is_pareto]
 
 
 def _get_pareto_front_trials(
@@ -100,13 +52,10 @@ def _get_pareto_front_trials(
     return _get_pareto_front_trials_by_trials(study.trials, study.directions, consider_constraint)
 
 
-def _fast_non_dominated_sort(
-    objective_values: np.ndarray,
-    *,
-    penalty: np.ndarray | None = None,
-    n_below: int | None = None,
+def _fast_non_domination_rank(
+    loss_values: np.ndarray, *, penalty: np.ndarray | None = None, n_below: int | None = None
 ) -> np.ndarray:
-    """Perform the fast non-dominated sort algorithm.
+    """Calculate non-domination rank based on the fast non-dominated sort algorithm.
 
     The fast non-dominated sort algorithm assigns a rank to each trial based on the dominance
     relationship of the trials, determined by the objective values and the penalty values. The
@@ -127,102 +76,139 @@ def _fast_non_dominated_sort(
     Plus, the algorithm terminates whenever the number of sorted trials reaches n_below.
 
     Args:
-        objective_values:
-            Objective values of each trials.
+        loss_values:
+            Objective values, which is better when it is lower, of each trials.
         penalty:
             Constraints values of each trials. Defaults to None.
         n_below: The minimum number of top trials required to be sorted. The algorithm will
             terminate when the number of sorted trials reaches n_below. Defaults to None.
 
     Returns:
-        An ndarray in the shape of (n_trials,), where each element is the non-dominated rank of
-        each trial. The rank is 0-indexed and rank -1 means that the algorithm terminated before
-        the trial was sorted.
+        An ndarray in the shape of (n_trials,), where each element is the non-domination rank of
+        each trial. The rank is 0-indexed. This function guarantees the correctness of the ranks
+        only up to the top-``n_below`` solutions. If a solution's rank is worse than the
+        top-``n_below`` solution, its rank will be guaranteed to be greater than the rank of
+        the top-``n_below`` solution.
     """
-    if penalty is None:
-        ranks, _ = _calculate_nondomination_rank(objective_values, n_below=n_below)
-        return ranks
+    if len(loss_values) == 0:
+        return np.array([], dtype=int)
 
-    if len(penalty) != len(objective_values):
+    n_below = n_below or len(loss_values)
+    assert n_below > 0, "n_below must be a positive integer."
+
+    if penalty is None:
+        return _calculate_nondomination_rank(loss_values, n_below=n_below)
+
+    if len(penalty) != len(loss_values):
         raise ValueError(
-            "The length of penalty and objective_values must be same, but got "
-            "len(penalty)={} and len(objective_values)={}.".format(
-                len(penalty), len(objective_values)
-            )
+            "The length of penalty and loss_values must be same, but got "
+            f"len(penalty)={len(penalty)} and len(loss_values)={len(loss_values)}."
         )
-    nondomination_rank = np.full(len(objective_values), -1)
+
+    ranks = np.full(len(loss_values), -1, dtype=int)
     is_penalty_nan = np.isnan(penalty)
-    n_below = n_below or len(objective_values)
+    is_feasible = np.logical_and(~is_penalty_nan, penalty <= 0)
+    is_infeasible = np.logical_and(~is_penalty_nan, penalty > 0)
 
     # First, we calculate the domination rank for feasible trials.
-    is_feasible = np.logical_and(~is_penalty_nan, penalty <= 0)
-    ranks, bottom_rank = _calculate_nondomination_rank(
-        objective_values[is_feasible], n_below=n_below
-    )
-    nondomination_rank[is_feasible] += 1 + ranks
+    ranks[is_feasible] = _calculate_nondomination_rank(loss_values[is_feasible], n_below=n_below)
     n_below -= np.count_nonzero(is_feasible)
 
     # Second, we calculate the domination rank for infeasible trials.
-    is_infeasible = np.logical_and(~is_penalty_nan, penalty > 0)
-    num_infeasible_trials = np.count_nonzero(is_infeasible)
-    if num_infeasible_trials > 0:
-        _, ranks = np.unique(penalty[is_infeasible], return_inverse=True)
-        ranks += 1
-        nondomination_rank[is_infeasible] += 1 + bottom_rank + ranks
-        bottom_rank += np.max(ranks)
-        n_below -= num_infeasible_trials
+    top_rank_infeasible = np.max(ranks[is_feasible], initial=-1) + 1
+    ranks[is_infeasible] = top_rank_infeasible + _calculate_nondomination_rank(
+        penalty[is_infeasible][:, np.newaxis], n_below=n_below
+    )
+    n_below -= np.count_nonzero(is_infeasible)
 
     # Third, we calculate the domination rank for trials with no penalty information.
-    ranks, _ = _calculate_nondomination_rank(
-        objective_values[is_penalty_nan], n_below=n_below, base_rank=bottom_rank + 1
+    top_rank_penalty_nan = np.max(ranks[~is_penalty_nan], initial=-1) + 1
+    ranks[is_penalty_nan] = top_rank_penalty_nan + _calculate_nondomination_rank(
+        loss_values[is_penalty_nan], n_below=n_below
     )
-    nondomination_rank[is_penalty_nan] += 1 + ranks
+    assert np.all(ranks != -1), "All the rank must be updated."
+    return ranks
 
-    return nondomination_rank
+
+def _is_pareto_front_nd(unique_lexsorted_loss_values: np.ndarray) -> np.ndarray:
+    # NOTE(nabenabe0928): I tried the Kung's algorithm below, but it was not really quick.
+    # https://github.com/optuna/optuna/pull/5302#issuecomment-1988665532
+    loss_values = unique_lexsorted_loss_values.copy()
+    n_trials = loss_values.shape[0]
+    on_front = np.zeros(n_trials, dtype=bool)
+    nondominated_indices = np.arange(n_trials)
+    while len(loss_values):
+        # The following judges `np.any(loss_values[i] < loss_values[0])` for each `i`.
+        nondominated_and_not_top = np.any(loss_values < loss_values[0], axis=1)
+        # NOTE: trials[j] cannot dominate trials[i] for i < j because of lexsort.
+        # Therefore, nondominated_indices[0] is always non-dominated.
+        on_front[nondominated_indices[0]] = True
+        loss_values = loss_values[nondominated_and_not_top]
+        nondominated_indices = nondominated_indices[nondominated_and_not_top]
+
+    return on_front
+
+
+def _is_pareto_front_2d(unique_lexsorted_loss_values: np.ndarray) -> np.ndarray:
+    n_trials = unique_lexsorted_loss_values.shape[0]
+    cummin_value1 = np.minimum.accumulate(unique_lexsorted_loss_values[:, 1])
+    on_front = np.ones(n_trials, dtype=bool)
+    on_front[1:] = cummin_value1[1:] < cummin_value1[:-1]  # True if cummin value1 is new minimum.
+    return on_front
+
+
+def _is_pareto_front_for_unique_sorted(unique_lexsorted_loss_values: np.ndarray) -> np.ndarray:
+    (n_trials, n_objectives) = unique_lexsorted_loss_values.shape
+    if n_objectives == 1:
+        on_front = np.zeros(len(unique_lexsorted_loss_values), dtype=bool)
+        on_front[0] = True  # Only the first element is Pareto optimal.
+        return on_front
+    elif n_objectives == 2:
+        return _is_pareto_front_2d(unique_lexsorted_loss_values)
+    else:
+        return _is_pareto_front_nd(unique_lexsorted_loss_values)
+
+
+def _is_pareto_front(loss_values: np.ndarray, assume_unique_lexsorted: bool = True) -> np.ndarray:
+    if assume_unique_lexsorted:
+        return _is_pareto_front_for_unique_sorted(loss_values)
+
+    unique_lexsorted_loss_values, order_inv = np.unique(loss_values, axis=0, return_inverse=True)
+    on_front = _is_pareto_front_for_unique_sorted(unique_lexsorted_loss_values)
+    return on_front[order_inv]
 
 
 def _calculate_nondomination_rank(
-    objective_values: np.ndarray,
-    *,
-    n_below: int | None = None,
-    base_rank: int = 0,
-) -> tuple[np.ndarray, int]:
-    if n_below is not None and n_below <= 0:
-        return np.full(len(objective_values), -1), base_rank
-    # Normalize n_below.
-    n_below = n_below or len(objective_values)
-    n_below = min(n_below, len(objective_values))
+    loss_values: np.ndarray, *, n_below: int | None = None
+) -> np.ndarray:
+    if len(loss_values) == 0 or (n_below is not None and n_below <= 0):
+        return np.zeros(len(loss_values), dtype=int)
 
-    # The ndarray `domination_mat` is a boolean 2d matrix where
-    # `domination_mat[i, j] == True` means that the j-th trial dominates the i-th trial in the
-    # given multi objective minimization problem.
-    domination_mat = np.all(
-        objective_values[:, np.newaxis, :] >= objective_values[np.newaxis, :, :], axis=2
-    ) & np.any(objective_values[:, np.newaxis, :] > objective_values[np.newaxis, :, :], axis=2)
+    (n_trials, n_objectives) = loss_values.shape
+    if n_objectives == 1:
+        _, ranks = np.unique(loss_values[:, 0], return_inverse=True)
+        return ranks
 
-    domination_list = np.nonzero(domination_mat)
-    domination_map = defaultdict(list)
-    for dominated_idx, dominating_idx in zip(*domination_list):
-        domination_map[dominating_idx].append(dominated_idx)
+    # It ensures that trials[j] will not dominate trials[i] for i < j.
+    # np.unique does lexsort.
+    unique_lexsorted_loss_values, order_inv = np.unique(loss_values, return_inverse=True, axis=0)
 
-    ranks = np.full(len(objective_values), -1)
-    dominated_count = np.sum(domination_mat, axis=1)
-
-    rank = base_rank - 1
-    ranked_idx_num = 0
-    while ranked_idx_num < n_below:
-        # Find the non-dominated trials and assign the rank.
-        (non_dominated_idxs,) = np.nonzero(dominated_count == 0)
-        ranked_idx_num += len(non_dominated_idxs)
+    n_unique = unique_lexsorted_loss_values.shape[0]
+    # Clip n_below.
+    n_below = min(n_below or len(unique_lexsorted_loss_values), len(unique_lexsorted_loss_values))
+    ranks = np.zeros(n_unique, dtype=int)
+    rank = 0
+    indices = np.arange(n_unique)
+    while n_unique - indices.size < n_below:
+        on_front = _is_pareto_front(unique_lexsorted_loss_values)
+        ranks[indices[on_front]] = rank
+        # Remove the recent Pareto solutions.
+        indices = indices[~on_front]
+        unique_lexsorted_loss_values = unique_lexsorted_loss_values[~on_front]
         rank += 1
-        ranks[non_dominated_idxs] = rank
 
-        # Update the dominated count.
-        dominated_count[non_dominated_idxs] = -1
-        for non_dominated_idx in non_dominated_idxs:
-            dominated_count[domination_map[non_dominated_idx]] -= 1
-
-    return ranks, rank
+    ranks[indices] = rank  # Rank worse than the top n_below is defined as the worst rank.
+    return ranks[order_inv]
 
 
 def _dominates(
@@ -257,7 +243,7 @@ def _dominates(
     return all(v0 <= v1 for v0, v1 in zip(normalized_values0, normalized_values1))
 
 
-def _normalize_value(value: None | float, direction: StudyDirection) -> float:
+def _normalize_value(value: float | None, direction: StudyDirection) -> float:
     if value is None:
         value = float("inf")
 
