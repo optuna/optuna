@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import numpy
+import numpy as np
 
 
 class LazyRandomState:
@@ -12,15 +12,15 @@ class LazyRandomState:
     """
 
     def __init__(self, seed: int | None = None) -> None:
-        self._rng: numpy.random.RandomState | None = None
+        self._rng: np.random.RandomState | None = None
         if seed is not None:
             self.rng.seed(seed=seed)
 
     def _set_rng(self) -> None:
-        self._rng = numpy.random.RandomState()
+        self._rng = np.random.RandomState()
 
     @property
-    def rng(self) -> numpy.random.RandomState:
+    def rng(self) -> np.random.RandomState:
         if self._rng is None:
             self._set_rng()
         assert self._rng is not None

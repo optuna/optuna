@@ -8,7 +8,6 @@ from typing import NamedTuple
 
 import numpy as np
 
-from optuna._experimental import experimental_func
 from optuna.logging import get_logger
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study import Study
@@ -64,7 +63,6 @@ class _RankPlotInfo(NamedTuple):
     has_custom_target: bool
 
 
-@experimental_func("3.2.0")
 def plot_rank(
     study: Study,
     params: list[str] | None = None,
