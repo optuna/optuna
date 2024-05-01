@@ -1166,6 +1166,21 @@ def test_optimize_with_multi_objectives(n_objectives: int) -> None:
         assert len(trial.values) == n_objectives
 
 
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_best_trial(storage_mode: str) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        with pytest.raises(ValueError):
+            study.best_trial
+        study.tell(study.ask(), 1)
+        assert study.best_trial.number == 0
+        study.tell(study.ask(), 0)
+        assert study.best_trial.number == 1
+        study.tell(study.ask(), 0)
+        # If the objective values are the same, the best trial will be the first trial executed.
+        assert study.best_trial.number == 1
+
+
 def test_best_trials() -> None:
     study = create_study(directions=["minimize", "maximize"])
     study.optimize(lambda t: [2, 2], n_trials=1)
