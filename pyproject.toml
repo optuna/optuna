@@ -39,6 +39,7 @@ dependencies = [
   "sqlalchemy>=1.3.0",
   "tqdm",
   "PyYAML",  # Only used in `optuna/cli.py`.
+  "typing_extensions; python_version<'3.8'",
 ]
 dynamic = ["version"]
 
