@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import abc
 from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import Optional
+from typing import Protocol
 from typing import Sequence
 from typing import TYPE_CHECKING
 import warnings
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from optuna.study import Study
 
 
-class BaseSampler(abc.ABC):
+class BaseSampler(Protocol):
     """Base class for samplers.
 
     Optuna combines two types of sampling strategies, which are called *relative sampling* and
@@ -56,7 +56,6 @@ class BaseSampler(abc.ABC):
     def __str__(self) -> str:
         return self.__class__.__name__
 
-    @abc.abstractmethod
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
@@ -81,10 +80,8 @@ class BaseSampler(abc.ABC):
             Please refer to :func:`~optuna.search_space.intersection_search_space` as an
             implementation of :func:`~optuna.samplers.BaseSampler.infer_relative_search_space`.
         """
+        ...
 
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
@@ -113,10 +110,8 @@ class BaseSampler(abc.ABC):
             A dictionary containing the parameter names and the values.
 
         """
+        ...
 
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def sample_independent(
         self,
         study: Study,
@@ -151,8 +146,7 @@ class BaseSampler(abc.ABC):
             A parameter value.
 
         """
-
-        raise NotImplementedError
+        ...
 
     def before_trial(self, study: Study, trial: FrozenTrial) -> None:
         """Trial pre-processing.
@@ -173,8 +167,7 @@ class BaseSampler(abc.ABC):
             trial:
                 Target trial object.
         """
-
-        pass
+        ...
 
     def after_trial(
         self,
@@ -204,8 +197,7 @@ class BaseSampler(abc.ABC):
                 Resulting trial values. Guaranteed to not be :obj:`None` if trial succeeded.
 
         """
-
-        pass
+        ...
 
     def reseed_rng(self) -> None:
         """Reseed sampler's random number generator.
@@ -216,15 +208,15 @@ class BaseSampler(abc.ABC):
         same values. To prevent this issue, this method assigns a different seed to each random
         number generator.
         """
+        ...
 
-        pass
 
-    def _raise_error_if_multi_objective(self, study: Study) -> None:
-        if study._is_multi_objective():
-            raise ValueError(
-                "If the study is being used for multi-objective optimization, "
-                f"{self.__class__.__name__} cannot be used."
-            )
+def _raise_error_if_multi_objective(sampler: BaseSampler, study: Study) -> None:
+    if study._is_multi_objective():
+        raise ValueError(
+            "If the study is being used for multi-objective optimization, "
+            f"{sampler.__class__.__name__} cannot be used."
+        )
 
 
 _CONSTRAINTS_KEY = "constraints"
