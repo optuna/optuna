@@ -3,21 +3,22 @@ from __future__ import annotations
 from typing import Any
 from typing import Dict
 from typing import Optional
+from typing import Sequence
 from typing import TYPE_CHECKING
 
 from optuna import distributions
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
-from optuna.samplers import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
     from optuna.study import Study
 
 
-class RandomSampler(BaseSampler):
+class RandomSampler:
     """Sampler using random sampling.
 
     This sampler is based on *independent sampling*.
@@ -71,3 +72,15 @@ class RandomSampler(BaseSampler):
         trans_params = self._rng.rng.uniform(trans.bounds[:, 0], trans.bounds[:, 1])
 
         return trans.untransform(trans_params)[param_name]
+
+    def before_trial(self, study: Study, trial: FrozenTrial) -> None:
+        pass
+
+    def after_trial(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        state: TrialState,
+        values: Optional[Sequence[float]],
+    ) -> None:
+        pass

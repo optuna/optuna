@@ -12,6 +12,7 @@ import numpy as np
 import optuna
 from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
+from optuna.samplers._base import _raise_error_if_multi_objective
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.study import StudyDirection
@@ -40,7 +41,7 @@ else:
 
 
 @experimental_class("3.6.0")
-class GPSampler(BaseSampler):
+class GPSampler:
     """Sampler using Gaussian process-based Bayesian optimization.
 
     This sampler fits a Gaussian process (GP) to the objective function and optimizes
@@ -134,7 +135,7 @@ class GPSampler(BaseSampler):
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
     ) -> dict[str, Any]:
-        self._raise_error_if_multi_objective(study)
+        _raise_error_if_multi_objective(self, study)
 
         if search_space == {}:
             return {}

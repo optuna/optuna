@@ -27,6 +27,7 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.samplers import BaseSampler
+from optuna.samplers._base import _raise_error_if_multi_objective
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.search_space import IntersectionSearchSpace
 from optuna.study._study_direction import StudyDirection
@@ -59,7 +60,7 @@ class _CmaEsAttrKeys(NamedTuple):
     large_n_eval: str
 
 
-class CmaEsSampler(BaseSampler):
+class CmaEsSampler:
     """A sampler using `cmaes <https://github.com/CyberAgentAILab/cmaes>`_ as the backend.
 
     Example:
@@ -385,7 +386,7 @@ class CmaEsSampler(BaseSampler):
         trial: "optuna.trial.FrozenTrial",
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
-        self._raise_error_if_multi_objective(study)
+        _raise_error_if_multi_objective(self, study)
 
         if len(search_space) == 0:
             return {}
@@ -730,7 +731,7 @@ class CmaEsSampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
-        self._raise_error_if_multi_objective(study)
+        _raise_error_if_multi_objective(self, study)
 
         if self._warn_independent_sampling:
             complete_trials = self._get_trials(study)

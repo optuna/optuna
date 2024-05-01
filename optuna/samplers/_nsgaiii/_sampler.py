@@ -12,7 +12,6 @@ import numpy as np
 import optuna
 from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
-from optuna.samplers._base import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.samplers._nsgaiii._elite_population_selection_strategy import (
     NSGAIIIElitePopulationSelectionStrategy,
@@ -37,7 +36,7 @@ _POPULATION_CACHE_KEY_PREFIX = "nsga3:population"
 
 
 @experimental_class("3.2.0")
-class NSGAIIISampler(BaseSampler):
+class NSGAIIISampler:
     """Multi-objective sampler using the NSGA-III algorithm.
 
     NSGA-III stands for "Nondominated Sorting Genetic Algorithm III",

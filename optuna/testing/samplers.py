@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from typing import Any
+from typing import Optional
+from typing import Sequence
 
 import optuna
 from optuna.distributions import BaseDistribution
 
 
-class DeterministicSampler(optuna.samplers.BaseSampler):
+class DeterministicSampler:
     def __init__(self, params: dict[str, Any]) -> None:
         self.params = params
 
@@ -33,6 +35,21 @@ class DeterministicSampler(optuna.samplers.BaseSampler):
         param_value = self.params[param_name]
         assert param_distribution._contains(param_distribution.to_internal_repr(param_value))
         return param_value
+
+    def before_trial(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> None:
+        pass
+
+    def after_trial(
+        self,
+        study: "optuna.study.Study",
+        trial: "optuna.trial.FrozenTrial",
+        state: "optuna.trial.TrialState",
+        values: Optional[Sequence[float]],
+    ) -> None:
+        pass
+
+    def reseed_rng(self) -> None:
+        pass
 
 
 class FirstTrialOnlyRandomSampler(optuna.samplers.RandomSampler):

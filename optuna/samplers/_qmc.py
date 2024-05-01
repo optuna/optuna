@@ -30,7 +30,7 @@ _SUGGESTED_STATES = (TrialState.COMPLETE, TrialState.PRUNED)
 
 
 @experimental_class("3.0.0")
-class QMCSampler(BaseSampler):
+class QMCSampler:
     """A Quasi Monte Carlo Sampler that generates low-discrepancy sequences.
 
     Quasi Monte Carlo (QMC) sequences are designed to have lower discrepancies than

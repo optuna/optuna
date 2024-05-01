@@ -44,7 +44,7 @@ import numpy as np
 import optuna
 
 
-class SimulatedAnnealingSampler(optuna.samplers.BaseSampler):
+class SimulatedAnnealingSampler:
     def __init__(self, temperature=100):
         self._rng = np.random.RandomState()
         self._temperature = temperature  # Current temperature.

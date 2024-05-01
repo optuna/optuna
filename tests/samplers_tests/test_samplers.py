@@ -7,6 +7,7 @@ from multiprocessing.managers import DictProxy
 import os
 import pickle
 from typing import Any
+from typing import Optional
 from unittest.mock import patch
 import warnings
 
@@ -478,7 +479,7 @@ def _create_new_trial(study: Study) -> FrozenTrial:
     return study._storage.get_trial(trial_id)
 
 
-class FixedSampler(BaseSampler):
+class FixedSampler:
     def __init__(
         self,
         relative_search_space: dict[str, BaseDistribution],
@@ -507,6 +508,21 @@ class FixedSampler(BaseSampler):
         param_distribution: BaseDistribution,
     ) -> Any:
         return self.unknown_param_value
+
+    def before_trial(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> None:
+        pass
+
+    def after_trial(
+        self,
+        study: "optuna.study.Study",
+        trial: "optuna.trial.FrozenTrial",
+        state: "optuna.trial.TrialState",
+        values: Optional[Sequence[float]],
+    ) -> None:
+        pass
+
+    def reseed_rng(self) -> None:
+        pass
 
 
 def test_sample_relative() -> None:

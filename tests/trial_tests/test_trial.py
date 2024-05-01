@@ -6,6 +6,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from unittest.mock import Mock
 from unittest.mock import patch
@@ -494,7 +495,7 @@ def test_should_prune() -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_relative_parameters(storage_mode: str) -> None:
-    class SamplerStubForTestRelativeParameters(samplers.BaseSampler):
+    class SamplerStubForTestRelativeParameters:
         def infer_relative_search_space(
             self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial"
         ) -> Dict[str, distributions.BaseDistribution]:
@@ -519,6 +520,23 @@ def test_relative_parameters(storage_mode: str) -> None:
             param_distribution: distributions.BaseDistribution,
         ) -> Any:
             return 5.0
+
+        def before_trial(
+            self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial"
+        ) -> None:
+            pass
+
+        def after_trial(
+            self,
+            study: "optuna.study.Study",
+            trial: "optuna.trial.FrozenTrial",
+            state: "optuna.trial.TrialState",
+            values: Optional[Sequence[float]],
+        ) -> None:
+            pass
+
+        def reseed_rng(self) -> None:
+            pass
 
     sampler = SamplerStubForTestRelativeParameters()
     with StorageSupplier(storage_mode) as storage:
