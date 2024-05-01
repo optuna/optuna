@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import abstractmethod
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -62,6 +63,7 @@ class BaseSampler(Protocol):
     def __str__(self) -> str:
         return self.__class__.__name__
 
+    @abstractmethod
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
@@ -88,6 +90,7 @@ class BaseSampler(Protocol):
         """
         ...
 
+    @abstractmethod
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
@@ -118,6 +121,7 @@ class BaseSampler(Protocol):
         """
         ...
 
+    @abstractmethod
     def sample_independent(
         self,
         study: Study,
@@ -173,7 +177,7 @@ class BaseSampler(Protocol):
             trial:
                 Target trial object.
         """
-        ...
+        return
 
     def after_trial(
         self,
@@ -203,7 +207,7 @@ class BaseSampler(Protocol):
                 Resulting trial values. Guaranteed to not be :obj:`None` if trial succeeded.
 
         """
-        ...
+        return
 
     def reseed_rng(self) -> None:
         """Reseed sampler's random number generator.
@@ -214,7 +218,7 @@ class BaseSampler(Protocol):
         same values. To prevent this issue, this method assigns a different seed to each random
         number generator.
         """
-        ...
+        return
 
 
 def _raise_error_if_multi_objective(sampler: BaseSampler, study: Study) -> None:

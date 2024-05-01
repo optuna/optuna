@@ -18,6 +18,7 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
+from optuna.samplers import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
@@ -93,7 +94,7 @@ class _TreeNode:
 
 
 @experimental_class("3.1.0")
-class BruteForceSampler:
+class BruteForceSampler(BaseSampler):
     """Sampler using brute force.
 
     This sampler performs exhaustive search on the defined search space.
@@ -207,12 +208,6 @@ class BruteForceSampler:
             return param_distribution.to_external_repr(self._rng.rng.choice(candidates))
         else:
             return param_distribution.to_external_repr(tree.sample_child(self._rng.rng))
-
-    def reseed_rng(self) -> None:
-        pass
-
-    def before_trial(self, study: Study, trial: FrozenTrial) -> None:
-        pass
 
     def after_trial(
         self,
