@@ -22,7 +22,7 @@ from typing import Optional
 from typing import Tuple
 from typing import Union
 
-import numpy
+import numpy as np
 
 from optuna._imports import try_import
 from optuna.importance._fanova._tree import _FanovaTree
@@ -51,15 +51,15 @@ class _Fanova:
             random_state=seed,
         )
         self._trees: Optional[List[_FanovaTree]] = None
-        self._variances: Optional[Dict[int, numpy.ndarray]] = None
-        self._column_to_encoded_columns: Optional[List[numpy.ndarray]] = None
+        self._variances: Optional[Dict[int, np.ndarray]] = None
+        self._column_to_encoded_columns: Optional[List[np.ndarray]] = None
 
     def fit(
         self,
-        X: numpy.ndarray,
-        y: numpy.ndarray,
-        search_spaces: numpy.ndarray,
-        column_to_encoded_columns: List[numpy.ndarray],
+        X: np.ndarray,
+        y: np.ndarray,
+        search_spaces: np.ndarray,
+        column_to_encoded_columns: List[np.ndarray],
     ) -> None:
         assert X.shape[0] == y.shape[0]
         assert X.shape[1] == search_spaces.shape[0]
@@ -83,15 +83,15 @@ class _Fanova:
 
         self._compute_variances(feature)
 
-        fractions: Union[List[float], numpy.ndarray] = []
+        fractions: Union[List[float], np.ndarray] = []
 
         for tree_index, tree in enumerate(self._trees):
             tree_variance = tree.variance
             if tree_variance > 0.0:
                 fraction = self._variances[feature][tree_index] / tree_variance
-                fractions = numpy.append(fractions, fraction)
+                fractions = np.append(fractions, fraction)
 
-        fractions = numpy.asarray(fractions)
+        fractions = np.asarray(fractions)
 
         return float(fractions.mean()), float(fractions.std())
 
@@ -104,9 +104,9 @@ class _Fanova:
             return
 
         raw_features = self._column_to_encoded_columns[feature]
-        variances = numpy.empty(len(self._trees), dtype=numpy.float64)
+        variances = np.empty(len(self._trees), dtype=np.float64)
 
         for tree_index, tree in enumerate(self._trees):
             marginal_variance = tree.get_marginal_variance(raw_features)
-            variances[tree_index] = numpy.clip(marginal_variance, 0.0, None)
+            variances[tree_index] = np.clip(marginal_variance, 0.0, None)
         self._variances[feature] = variances

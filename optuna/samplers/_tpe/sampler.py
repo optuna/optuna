@@ -318,6 +318,8 @@ class TPESampler(BaseSampler):
         self._search_space = IntersectionSearchSpace(include_pruned=True)
         self._constant_liar = constant_liar
         self._constraints_func = constraints_func
+        # NOTE(nabenabe0928): Users can overwrite _ParzenEstimator to customize the TPE behavior.
+        self._parzen_estimator_cls = _ParzenEstimator
 
         if multivariate:
             warnings.warn(
@@ -514,11 +516,16 @@ class TPESampler(BaseSampler):
             weights_below = _calculate_weights_below_for_multi_objective(
                 study, trials, self._constraints_func
             )[param_mask_below]
-            mpe = _ParzenEstimator(
+            mpe = self._parzen_estimator_cls(
                 observations, search_space, self._parzen_estimator_parameters, weights_below
             )
         else:
-            mpe = _ParzenEstimator(observations, search_space, self._parzen_estimator_parameters)
+            mpe = self._parzen_estimator_cls(
+                observations, search_space, self._parzen_estimator_parameters
+            )
+
+        if not isinstance(mpe, _ParzenEstimator):
+            raise RuntimeError("_parzen_estimator_cls must override _ParzenEstimator.")
 
         return mpe
 

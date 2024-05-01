@@ -87,9 +87,12 @@ def _fast_non_domination_rank(
         An ndarray in the shape of (n_trials,), where each element is the non-domination rank of
         each trial. The rank is 0-indexed. This function guarantees the correctness of the ranks
         only up to the top-``n_below`` solutions. If a solution's rank is worse than the
-        top-``n_below`` solution, its rank is not necessarily correct. If you would like to ensure
-        the correctness, use ``n_below=None``.
+        top-``n_below`` solution, its rank will be guaranteed to be greater than the rank of
+        the top-``n_below`` solution.
     """
+    if len(loss_values) == 0:
+        return np.array([], dtype=int)
+
     n_below = n_below or len(loss_values)
     assert n_below > 0, "n_below must be a positive integer."
 
