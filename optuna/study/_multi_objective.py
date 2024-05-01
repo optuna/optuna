@@ -259,7 +259,7 @@ def _dominates(
 
 def _normalize_value(value: None | float, direction: StudyDirection) -> float:
     if value is None:
-        value = float("inf")
+        return float("inf")
 
     if direction is StudyDirection.MAXIMIZE:
         value = -value
