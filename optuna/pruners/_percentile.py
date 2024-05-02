@@ -194,7 +194,7 @@ class PercentilePruner(BasePruner):
         ):
             return False
 
-        if len(study.directions) > 1:
+        if study._is_multi_objective():
             warnings.warn(
                 "Pruning for multi-objective optimization is experimental feature"
                 " added in v4.0.0. The interface can change in the future.",
