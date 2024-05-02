@@ -21,6 +21,7 @@ from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
+from optuna.exceptions import ExperimentalWarning
 from optuna.trial import FrozenTrial
 from optuna.trial._base import _SUGGEST_INT_POSITIONAL_ARGS
 from optuna.trial._base import BaseTrial
@@ -472,8 +473,10 @@ class Trial(BaseTrial):
         """
 
         if len(self.study.directions) > 1:
-            raise NotImplementedError(
-                "Trial.report is not supported for multi-objective optimization."
+            warnings.warn(
+                "Trial.report for multi-objective optimization is experimental feature"
+                " added in v4.0.0. The interface can change in the future.",
+                ExperimentalWarning,
             )
 
         try:
@@ -525,8 +528,10 @@ class Trial(BaseTrial):
         """
 
         if len(self.study.directions) > 1:
-            raise NotImplementedError(
-                "Trial.should_prune is not supported for multi-objective optimization."
+            warnings.warn(
+                "Trial.should_prune for multi-objective optimization is an experimental feature"
+                " added in v4.0.0. The interface can change in the future.",
+                ExperimentalWarning,
             )
 
         trial = self._get_latest_trial()
