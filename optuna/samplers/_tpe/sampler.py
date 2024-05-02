@@ -735,9 +735,10 @@ def _split_complete_trials_multi_objective(
 def _get_pruned_trial_score(trial: FrozenTrial, study: Study) -> tuple[float, float]:
     if len(trial.intermediate_values) > 0:
         step, intermediate_value = max(trial.intermediate_values.items())
+        direction = study.directions[0] if study._is_multi_objective() else study.direction
         if math.isnan(intermediate_value):
             return -step, float("inf")
-        elif study.direction == StudyDirection.MINIMIZE:
+        elif direction == StudyDirection.MINIMIZE:
             return -step, intermediate_value
         else:
             return -step, -intermediate_value
@@ -782,13 +783,16 @@ def _calculate_weights_below_for_multi_objective(
     constraints_func: Callable[[FrozenTrial], Sequence[float]] | None,
 ) -> np.ndarray:
     loss_vals = []
-    feasible_mask = np.ones(len(below_trials), dtype=bool)
+    feasible_complete_mask = np.ones(len(below_trials), dtype=bool)
     for i, trial in enumerate(below_trials):
-        # Hypervolume contributions are calculated only using feasible trials.
+        # Hypervolume contributions are calculated only using feasible and complete trials.
         if constraints_func is not None:
             if any(constraint > 0 for constraint in constraints_func(trial)):
-                feasible_mask[i] = False
+                feasible_complete_mask[i] = False
                 continue
+        if trial.state != TrialState.COMPLETE:
+            feasible_complete_mask[i] = False
+            continue
         values = []
         for value, direction in zip(trial.values, study.directions):
             if direction == StudyDirection.MINIMIZE:
@@ -819,5 +823,5 @@ def _calculate_weights_below_for_multi_objective(
 
     # For now, EPS weight is assigned to infeasible trials.
     weights_below_all = np.full(len(below_trials), EPS)
-    weights_below_all[feasible_mask] = weights_below
+    weights_below_all[feasible_complete_mask] = weights_below
     return weights_below_all
