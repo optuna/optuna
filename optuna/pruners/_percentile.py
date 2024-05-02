@@ -3,10 +3,12 @@ from __future__ import annotations
 from collections.abc import KeysView
 import functools
 import math
+import warnings
 
 import numpy as np
 
 import optuna
+from optuna.exceptions import ExperimentalWarning
 from optuna.pruners import BasePruner
 from optuna.study._study_direction import StudyDirection
 from optuna.trial._state import TrialState
@@ -192,7 +194,13 @@ class PercentilePruner(BasePruner):
         ):
             return False
 
-        direction = study.direction
+        if len(study.directions) > 1:
+            warnings.warn(
+                "Pruning for multi-objective optimization is experimental feature"
+                " added in v4.0.0. The interface can change in the future.",
+                ExperimentalWarning,
+            )
+        direction = study.directions[0] if study._is_multi_objective() else study.direction
         best_intermediate_result = _get_best_intermediate_result_over_steps(trial, direction)
         if math.isnan(best_intermediate_result):
             return True
