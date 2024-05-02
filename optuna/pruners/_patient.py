@@ -1,9 +1,11 @@
 from typing import Optional
+import warnings
 
 import numpy as np
 
 import optuna
 from optuna._experimental import experimental_class
+from optuna.exceptions import ExperimentalWarning
 from optuna.pruners import BasePruner
 from optuna.study._study_direction import StudyDirection
 
@@ -102,7 +104,13 @@ class PatientPruner(BasePruner):
             list(intermediate_values[step] for step in steps_after_patience)
         )
 
-        direction = study.direction
+        if study._is_multi_objective():
+            warnings.warn(
+                "Pruning for multi-objective optimization is experimental feature"
+                " added in v4.0.0. The interface can change in the future.",
+                ExperimentalWarning,
+            )
+        direction = study.directions[0] if study._is_multi_objective() else study.direction
         if direction == StudyDirection.MINIMIZE:
             maybe_prune = np.nanmin(scores_before_patience) + self._min_delta < np.nanmin(
                 scores_after_patience
