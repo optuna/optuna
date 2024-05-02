@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import math
 from typing import Any
+import warnings
 
 import optuna
+from optuna.exceptions import ExperimentalWarning
 from optuna.pruners import BasePruner
 from optuna.pruners._percentile import _is_first_in_interval_step
 
@@ -124,6 +126,13 @@ class ThresholdPruner(BasePruner):
             step, trial.intermediate_values.keys(), n_warmup_steps, self._interval_steps
         ):
             return False
+
+        if study._is_multi_objective():
+            warnings.warn(
+                "Pruning for multi-objective optimization is experimental feature"
+                " added in v4.0.0. The interface can change in the future.",
+                ExperimentalWarning,
+            )
 
         latest_value = trial.intermediate_values[step]
         if math.isnan(latest_value):
