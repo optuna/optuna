@@ -7,6 +7,7 @@ import numpy as np
 
 import optuna
 from optuna._experimental import experimental_class
+from optuna.exceptions import ExperimentalWarning
 from optuna.pruners import BasePruner
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -196,7 +197,14 @@ class WilcoxonPruner(BasePruner):
         if len(diff_values) < self._n_startup_steps:
             return False
 
-        if study.direction == StudyDirection.MAXIMIZE:
+        if study._is_multi_objective():
+            warnings.warn(
+                "Pruning for multi-objective optimization is experimental feature"
+                " added in v4.0.0. The interface can change in the future.",
+                ExperimentalWarning,
+            )
+        direction = study.directions[0] if study._is_multi_objective() else study.direction
+        if direction == StudyDirection.MAXIMIZE:
             alt = "less"
             average_is_best = sum(best_step_values) / len(best_step_values) <= sum(
                 step_values
