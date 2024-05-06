@@ -363,9 +363,6 @@ class _StudySetUserAttribute(_BaseCommand):
 
     def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
-            "--study", default=None, help="This argument is deprecated. Use --study-name instead."
-        )
-        parser.add_argument(
             "--study-name",
             default=None,
             help="The name of the study to set the user attribute to.",
@@ -376,16 +373,7 @@ class _StudySetUserAttribute(_BaseCommand):
     def take_action(self, parsed_args: Namespace) -> int:
         storage = _get_storage(parsed_args.storage, parsed_args.storage_class)
 
-        if parsed_args.study and parsed_args.study_name:
-            raise ValueError(
-                "Both `--study-name` and the deprecated `--study` was specified. "
-                "Please remove the `--study` flag."
-            )
-        elif parsed_args.study:
-            message = "The use of `--study` is deprecated. Please use `--study-name` instead."
-            warnings.warn(message, FutureWarning)
-            study = optuna.load_study(storage=storage, study_name=parsed_args.study)
-        elif parsed_args.study_name:
+        if parsed_args.study_name:
             study = optuna.load_study(storage=storage, study_name=parsed_args.study_name)
         else:
             raise ValueError("Missing study name. Please use `--study-name`.")
