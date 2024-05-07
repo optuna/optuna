@@ -364,7 +364,7 @@ class _StudySetUserAttribute(_BaseCommand):
     def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "--study-name",
-            default=None,
+            required=True,
             help="The name of the study to set the user attribute to.",
         )
         parser.add_argument("--key", "-k", required=True, help="Key of the user attribute.")
