@@ -373,10 +373,7 @@ class _StudySetUserAttribute(_BaseCommand):
     def take_action(self, parsed_args: Namespace) -> int:
         storage = _get_storage(parsed_args.storage, parsed_args.storage_class)
 
-        if parsed_args.study_name:
-            study = optuna.load_study(storage=storage, study_name=parsed_args.study_name)
-        else:
-            raise ValueError("Missing study name. Please use `--study-name`.")
+        study = optuna.load_study(storage=storage, study_name=parsed_args.study_name)
 
         study.set_user_attr(parsed_args.key, parsed_args.value)
 
