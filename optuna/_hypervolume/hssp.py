@@ -48,7 +48,7 @@ def _solve_hssp_on_unique_loss_vals(
         diff_of_loss_vals_and_ref_point = reference_point - rank_i_loss_vals
     assert subset_size <= rank_i_indices.size
     n_objectives = reference_point.size
-    contribs = np.prod(distance_from_reference_point, axis=-1)
+    contribs = np.prod(diff_of_loss_vals_and_ref_point, axis=-1)
     selected_indices = np.zeros(subset_size, dtype=int)
     selected_vecs = np.empty((subset_size, n_objectives))
     indices = np.arange(rank_i_loss_vals.shape[0], dtype=int)
