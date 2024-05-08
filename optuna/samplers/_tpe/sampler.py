@@ -516,8 +516,8 @@ class TPESampler(BaseSampler):
             weights_below = _calculate_weights_below_for_multi_objective(
                 study, trials, self._constraints_func
             )[param_mask_below]
-            if not np.isfinite(weights_below.sum()):
-                weights_below = np.ones_like(weights_below)
+            if not np.isfinite(weights_below).all():
+                weights_below = 1.0 - np.isfinite(weights_below)
             mpe = self._parzen_estimator_cls(
                 observations, search_space, self._parzen_estimator_parameters, weights_below
             )
@@ -816,8 +816,7 @@ def _calculate_weights_below_for_multi_objective(
         contributions = np.asarray(
             [hv - WFG().compute(lvals[indices_mat[i]], reference_point) for i in range(n_below)]
         )
-        contributions += EPS
-        weights_below = np.clip(contributions / np.max(contributions), 0, 1)
+        weights_below = np.clip(contributions / np.max(contributions), EPS, 1)
 
     # For now, EPS weight is assigned to infeasible trials.
     weights_below_all = np.full(len(below_trials), EPS)
