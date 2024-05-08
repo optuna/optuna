@@ -195,7 +195,11 @@ class Study:
             A list of :class:`~optuna.trial.FrozenTrial` objects.
         """
 
-        return _get_pareto_front_trials(self, consider_constraint=True)
+        # Check whether the study is constrained optimization.
+        trials = self.get_trials(deepcopy=False)
+        is_constrained = any((_CONSTRAINTS_KEY in trial.system_attrs) for trial in trials)
+
+        return _get_pareto_front_trials(self, consider_constraint=is_constrained)
 
     @property
     def direction(self) -> StudyDirection:
