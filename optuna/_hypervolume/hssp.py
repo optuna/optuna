@@ -44,6 +44,8 @@ def _solve_hssp_on_unique_loss_vals(
     subset_size: int,
     reference_point: np.ndarray,
 ) -> np.ndarray:
+    if not np.isfinite(reference_point).all():
+        return rank_i_indices[list(range(subset_size))]
     with np.errstate(invalid="ignore"):
         diff_of_loss_vals_and_ref_point = reference_point - rank_i_loss_vals
     assert subset_size <= rank_i_indices.size
