@@ -26,6 +26,14 @@ _EXPERIMENTAL_NOTE_TEMPLATE = """
 """
 
 
+def warn_experimental_option(option_name: str) -> None:
+    warnings.warn(
+        f"``{option_name}`` option is an experimental feature."
+        " The interface can change in the future.",
+        ExperimentalWarning,
+    )
+
+
 def _validate_version(version: str) -> None:
     if not isinstance(version, str) or len(version.split(".")) != 3:
         raise ValueError(

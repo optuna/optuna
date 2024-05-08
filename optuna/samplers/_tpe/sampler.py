@@ -12,6 +12,7 @@ import warnings
 
 import numpy as np
 
+from optuna._experimental import warn_experimental_option
 from optuna._hypervolume import WFG
 from optuna._hypervolume.hssp import _solve_hssp
 from optuna.distributions import BaseDistribution
@@ -322,44 +323,24 @@ class TPESampler(BaseSampler):
         self._parzen_estimator_cls = _ParzenEstimator
 
         if multivariate:
-            warnings.warn(
-                "``multivariate`` option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_option("multivariate")
 
         if group:
             if not multivariate:
                 raise ValueError(
                     "``group`` option can only be enabled when ``multivariate`` is enabled."
                 )
-            warnings.warn(
-                "``group`` option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_option("group")
             self._group_decomposed_search_space = _GroupDecomposedSearchSpace(True)
 
         if constant_liar:
-            warnings.warn(
-                "``constant_liar`` option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_option("constant_liar")
 
         if constraints_func is not None:
-            warnings.warn(
-                "The ``constraints_func`` option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_option("constraints_func")
 
         if categorical_distance_func is not None:
-            warnings.warn(
-                "The ``categorical_distance_func`` option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_option("categorical_distance_func")
 
     def reseed_rng(self) -> None:
         self._rng.rng.seed()

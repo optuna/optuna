@@ -4,6 +4,7 @@ from typing import List
 from typing import Optional
 import warnings
 
+from optuna._experimental import warn_experimental_option
 from optuna.exceptions import ExperimentalWarning
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova import FanovaImportanceEvaluator
@@ -119,9 +120,5 @@ def get_param_importances(
         else:
             return dict((param, value / s) for (param, value) in res.items())
     else:
-        warnings.warn(
-            "`normalize` option is an experimental feature."
-            " The interface can change in the future.",
-            ExperimentalWarning,
-        )
+        warn_experimental_option("normalize")
         return res
