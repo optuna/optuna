@@ -816,6 +816,7 @@ def _calculate_weights_below_for_multi_objective(
         contributions = np.asarray(
             [hv - WFG().compute(lvals[indices_mat[i]], reference_point) for i in range(n_below)]
         )
+        contributions = np.clip(contributions, EPS, None)
         weights_below = np.clip(contributions / np.max(contributions), EPS, 1)
 
     # For now, EPS weight is assigned to infeasible trials.
