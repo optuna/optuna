@@ -516,6 +516,8 @@ class TPESampler(BaseSampler):
             weights_below = _calculate_weights_below_for_multi_objective(
                 study, trials, self._constraints_func
             )[param_mask_below]
+            if not np.isfinite(weights_below.sum()):
+                weights_below = np.ones_like(weights_below)
             mpe = self._parzen_estimator_cls(
                 observations, search_space, self._parzen_estimator_parameters, weights_below
             )
