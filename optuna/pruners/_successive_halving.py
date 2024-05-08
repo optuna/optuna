@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import math
+import warnings
 
 import optuna
+from optuna.exceptions import ExperimentalWarning
 from optuna.pruners._base import BasePruner
 from optuna.study._study_direction import StudyDirection
 from optuna.trial._state import TrialState
@@ -118,6 +120,7 @@ class SuccessiveHalvingPruner(BasePruner):
         reduction_factor: int = 4,
         min_early_stopping_rate: int = 0,
         bootstrap_count: int = 0,
+        direction: str | StudyDirection | None = None,
     ) -> None:
         if isinstance(min_resource, str) and min_resource != "auto":
             raise ValueError(
@@ -154,6 +157,19 @@ class SuccessiveHalvingPruner(BasePruner):
                 "bootstrap_count > 0 and min_resource == 'auto' "
                 "are mutually incompatible, bootstrap_count is {}".format(bootstrap_count)
             )
+        if direction is not None:
+            if direction not in [
+                "minimize",
+                "maximize",
+                StudyDirection.MINIMIZE,
+                StudyDirection.MAXIMIZE,
+            ]:
+                raise ValueError(
+                    "Please set either 'minimize' or 'maximize' to direction. You can also set the "
+                    "corresponding `StudyDirection` member."
+                )
+            if not isinstance(direction, StudyDirection):
+                direction = StudyDirection[direction.upper()]
 
         self._min_resource: int | None = None
         if isinstance(min_resource, int):
@@ -161,6 +177,7 @@ class SuccessiveHalvingPruner(BasePruner):
         self._reduction_factor = reduction_factor
         self._min_early_stopping_rate = min_early_stopping_rate
         self._bootstrap_count = bootstrap_count
+        self._direction = direction
 
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
         step = trial.last_step
@@ -170,6 +187,23 @@ class SuccessiveHalvingPruner(BasePruner):
         rung = _get_current_rung(trial)
         value = trial.intermediate_values[step]
         trials: list["optuna.trial.FrozenTrial"] | None = None
+
+        if study._is_multi_objective():
+            if self._direction is None:
+                raise ValueError(
+                    "The direction of pruner must be set for multi-objective optimization."
+                )
+            warnings.warn(
+                "Pruning for multi-objective optimization is experimental feature"
+                " added in v4.0.0. The interface can change in the future.",
+                ExperimentalWarning,
+            )
+        elif self._direction is not None:
+            warnings.warn(
+                "The direction of pruner should not be set for single-objective optimization."
+                "The set value will be ignored."
+            )
+        direction = self._direction if study._is_multi_objective() else study.direction
 
         while True:
             if self._min_resource is None:
@@ -207,7 +241,7 @@ class SuccessiveHalvingPruner(BasePruner):
                 value,
                 competing,
                 self._reduction_factor,
-                study.direction,
+                direction,
             ):
                 return True
 
