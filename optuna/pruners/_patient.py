@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Optional
 import warnings
 
@@ -68,7 +70,11 @@ class PatientPruner(BasePruner):
     """
 
     def __init__(
-        self, wrapped_pruner: Optional[BasePruner], patience: int, min_delta: float = 0.0
+        self,
+        wrapped_pruner: Optional[BasePruner],
+        patience: int,
+        min_delta: float = 0.0,
+        direction: str | StudyDirection | None = None,
     ) -> None:
         if patience < 0:
             raise ValueError(f"patience cannot be negative but got {patience}.")
@@ -76,9 +82,24 @@ class PatientPruner(BasePruner):
         if min_delta < 0:
             raise ValueError(f"min_delta cannot be negative but got {min_delta}.")
 
+        if direction is not None:
+            if direction not in [
+                "minimize",
+                "maximize",
+                StudyDirection.MINIMIZE,
+                StudyDirection.MAXIMIZE,
+            ]:
+                raise ValueError(
+                    "Please set either 'minimize' or 'maximize' to direction. You can also set the "
+                    "corresponding `StudyDirection` member."
+                )
+            if not isinstance(direction, StudyDirection):
+                direction = StudyDirection[direction.upper()]
+
         self._wrapped_pruner = wrapped_pruner
         self._patience = patience
         self._min_delta = min_delta
+        self._direction = direction
 
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
         step = trial.last_step
@@ -105,12 +126,21 @@ class PatientPruner(BasePruner):
         )
 
         if study._is_multi_objective():
+            if self._direction is None:
+                raise ValueError(
+                    "The direction of pruner must be set for multi-objective optimization."
+                )
             warnings.warn(
                 "Pruning for multi-objective optimization is experimental feature"
                 " added in v4.0.0. The interface can change in the future.",
                 ExperimentalWarning,
             )
-        direction = study.directions[0] if study._is_multi_objective() else study.direction
+        elif self._direction is not None:
+            warnings.warn(
+                "The direction of pruner should not be set for single-objective optimization."
+                "The set value will be ignored."
+            )
+        direction = self._direction if study._is_multi_objective() else study.direction
         if direction == StudyDirection.MINIMIZE:
             maybe_prune = np.nanmin(scores_before_patience) + self._min_delta < np.nanmin(
                 scores_after_patience
