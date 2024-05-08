@@ -207,7 +207,7 @@ class GPSampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
-        self._raise_error_if_multi_objective(study)
+        _raise_error_if_multi_objective(self, study)
         return self._independent_sampler.sample_independent(
             study, trial, param_name, param_distribution
         )
