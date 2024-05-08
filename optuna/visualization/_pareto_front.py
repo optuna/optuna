@@ -8,7 +8,6 @@ import warnings
 
 import optuna
 from optuna._experimental import warn_experimental_option
-from optuna.exceptions import ExperimentalWarning
 from optuna.study import Study
 from optuna.study._multi_objective import _get_pareto_front_trials_by_trials
 from optuna.trial import FrozenTrial

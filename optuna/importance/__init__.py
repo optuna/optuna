@@ -2,10 +2,8 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
-import warnings
 
 from optuna._experimental import warn_experimental_option
-from optuna.exceptions import ExperimentalWarning
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova import FanovaImportanceEvaluator
 from optuna.importance._mean_decrease_impurity import MeanDecreaseImpurityImportanceEvaluator

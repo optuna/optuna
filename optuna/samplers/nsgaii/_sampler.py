@@ -6,12 +6,10 @@ from collections.abc import Sequence
 import hashlib
 from typing import Any
 from typing import TYPE_CHECKING
-import warnings
 
 import optuna
 from optuna._experimental import warn_experimental_option
 from optuna.distributions import BaseDistribution
-from optuna.exceptions import ExperimentalWarning
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.samplers._random import RandomSampler

@@ -14,7 +14,6 @@ from typing import Sequence
 from typing import Tuple
 from typing import TYPE_CHECKING
 from typing import Union
-import warnings
 
 import numpy as np
 
@@ -26,7 +25,6 @@ from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
-from optuna.exceptions import ExperimentalWarning
 from optuna.samplers import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.search_space import IntersectionSearchSpace
