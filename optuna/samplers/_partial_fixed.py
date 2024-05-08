@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 
 @experimental_class("2.4.0")
-class PartialFixedSampler:
+class PartialFixedSampler(BaseSampler):
     """Sampler with partially fixed parameters.
 
     Example:

@@ -11,6 +11,7 @@ import warnings
 import optuna
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
+from optuna.samplers._base import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.samplers._random import RandomSampler
 from optuna.samplers.nsgaii._after_trial_strategy import NSGAIIAfterTrialStrategy
@@ -34,7 +35,7 @@ _GENERATION_KEY = "nsga2:generation"
 _POPULATION_CACHE_KEY_PREFIX = "nsga2:population"
 
 
-class NSGAIISampler:
+class NSGAIISampler(BaseSampler):
     """Multi-objective sampler using the NSGA-II algorithm.
 
     NSGA-II stands for "Nondominated Sorting Genetic Algorithm II",

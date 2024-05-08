@@ -41,7 +41,7 @@ else:
 
 
 @experimental_class("3.6.0")
-class GPSampler:
+class GPSampler(BaseSampler):
     """Sampler using Gaussian process-based Bayesian optimization.
 
     This sampler fits a Gaussian process (GP) to the objective function and optimizes

@@ -16,6 +16,7 @@ import numpy as np
 
 from optuna.distributions import BaseDistribution
 from optuna.logging import get_logger
+from optuna.samplers._base import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -31,7 +32,7 @@ GridValueType = Union[str, float, int, bool, None]
 _logger = get_logger(__name__)
 
 
-class GridSampler:
+class GridSampler(BaseSampler):
     """Sampler using grid search.
 
     With :class:`~optuna.samplers.GridSampler`, the trials suggest all combinations of parameters

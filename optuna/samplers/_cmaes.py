@@ -60,7 +60,7 @@ class _CmaEsAttrKeys(NamedTuple):
     large_n_eval: str
 
 
-class CmaEsSampler:
+class CmaEsSampler(BaseSampler):
     """A sampler using `cmaes <https://github.com/CyberAgentAILab/cmaes>`_ as the backend.
 
     Example:
