@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from optuna.pruners._percentile import PercentilePruner
+from optuna.study._study_direction import StudyDirection
 
 
 class MedianPruner(PercentilePruner):
@@ -74,7 +77,13 @@ class MedianPruner(PercentilePruner):
         interval_steps: int = 1,
         *,
         n_min_trials: int = 1,
+        direction: str | StudyDirection | None = None,
     ) -> None:
         super().__init__(
-            50.0, n_startup_trials, n_warmup_steps, interval_steps, n_min_trials=n_min_trials
+            50.0,
+            n_startup_trials,
+            n_warmup_steps,
+            interval_steps,
+            n_min_trials=n_min_trials,
+            direction=direction,
         )
