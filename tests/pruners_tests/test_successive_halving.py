@@ -1,11 +1,8 @@
 from __future__ import annotations
 
-import warnings
-
 import pytest
 
 import optuna
-from optuna.exceptions import ExperimentalWarning
 from optuna.study import StudyDirection
 
 
