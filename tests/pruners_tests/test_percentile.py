@@ -6,6 +6,7 @@ import warnings
 import pytest
 
 import optuna
+from optuna.exceptions import ExperimentalWarning
 from optuna.pruners import _percentile
 from optuna.study import Study
 from optuna.study import StudyDirection
@@ -236,3 +237,60 @@ def test_get_percentile_intermediate_result_over_trials() -> None:
                 all_trials, direction, 2, 75, 2
             )
         )
+
+
+def test_percentile_pruner_direction() -> None:
+    optuna.pruners.PercentilePruner(25.0, direction="minimize")
+    optuna.pruners.PercentilePruner(25.0, direction="maximize")
+    optuna.pruners.PercentilePruner(25.0, direction=StudyDirection.MINIMIZE)
+    optuna.pruners.PercentilePruner(25.0, direction=StudyDirection.MAXIMIZE)
+    optuna.pruners.PercentilePruner(25.0, direction=None)
+
+    with pytest.raises(ValueError):
+        optuna.pruners.PercentilePruner(25.0, direction="1")
+
+
+def test_percentile_pruner_requires_direction_if_multi_objective() -> None:
+    pruner = optuna.pruners.PercentilePruner(25.0, n_startup_trials=0)
+    study = optuna.study.create_study(directions=["minimize", "minimize"], pruner=pruner)
+    trial = study.ask()
+    trial.report(1, 1)
+    study.tell(trial, (1, 1))
+    trial = study.ask()
+    trial.report(1, 1)
+
+    # The direction of pruner must be set for multi-objective optimization.
+    with pytest.raises(ValueError):
+        trial.should_prune()
+
+
+def test_percentile_pruner_ignores_direction_if_single_objective() -> None:
+    pruner = optuna.pruners.PercentilePruner(25.0, n_startup_trials=0, direction="minimize")
+    study = optuna.study.create_study(directions=["minimize"], pruner=pruner)
+    trial = study.ask()
+    trial.report(1, 1)
+    study.tell(trial, 1)
+    trial = study.ask()
+    trial.report(1, 1)
+
+    # The direction of pruner should not be set for single-objective optimization.
+    with pytest.warns(UserWarning):
+        trial.should_prune()
+
+
+@pytest.mark.parametrize("intermediate_expected", [(0, False), (2, True)])
+def test_percentile_pruner_works_if_multi_objective(
+    intermediate_expected: tuple[int, bool]
+) -> None:
+    pruner = optuna.pruners.PercentilePruner(25.0, n_startup_trials=0, direction="minimize")
+    study = optuna.study.create_study(directions=["minimize", "minimize"], pruner=pruner)
+    trial = study.ask()
+    trial.report(1, 1)
+    study.tell(trial, (1, 1))
+    trial = study.ask()
+    trial.report(intermediate_expected[0], 1)
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("ignore", ExperimentalWarning)
+        assert trial.should_prune() == intermediate_expected[1]
+        assert len(w) == 0
