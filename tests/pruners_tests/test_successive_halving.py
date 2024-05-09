@@ -1,12 +1,16 @@
-from typing import Tuple
+from __future__ import annotations
+
+import warnings
 
 import pytest
 
 import optuna
+from optuna.exceptions import ExperimentalWarning
+from optuna.study import StudyDirection
 
 
 @pytest.mark.parametrize("direction_value", [("minimize", 2), ("maximize", 0.5)])
-def test_successive_halving_pruner_intermediate_values(direction_value: Tuple[str, float]) -> None:
+def test_successive_halving_pruner_intermediate_values(direction_value: tuple[str, float]) -> None:
     direction, intermediate_value = direction_value
     pruner = optuna.pruners.SuccessiveHalvingPruner(
         min_resource=1, reduction_factor=2, min_early_stopping_rate=0
@@ -275,3 +279,65 @@ def test_successive_halving_pruner_bootstrap_parameter() -> None:
 
     trial2.report(1, step=1)
     assert not trial2.should_prune()
+
+
+def test_successive_halving_pruner_direction() -> None:
+    optuna.pruners.SuccessiveHalvingPruner(direction="minimize")
+    optuna.pruners.SuccessiveHalvingPruner(direction="maximize")
+    optuna.pruners.SuccessiveHalvingPruner(direction=StudyDirection.MINIMIZE)
+    optuna.pruners.SuccessiveHalvingPruner(direction=StudyDirection.MAXIMIZE)
+    optuna.pruners.SuccessiveHalvingPruner(direction=None)
+
+    with pytest.raises(ValueError):
+        optuna.pruners.SuccessiveHalvingPruner(direction="1")
+
+
+def test_successive_halving_pruner_requires_direction_if_multi_objective() -> None:
+    pruner = optuna.pruners.SuccessiveHalvingPruner()
+    study = optuna.study.create_study(directions=["minimize", "minimize"], pruner=pruner)
+    trial = study.ask()
+    trial.report(1, 1)
+    trial = study.ask()
+    trial.report(1, 1)
+
+    # The direction of pruner must be set for multi-objective optimization.
+    with pytest.raises(ValueError):
+        trial.should_prune()
+
+
+def test_successive_halving_pruner_ignores_direction_if_single_objective() -> None:
+    pruner = optuna.pruners.SuccessiveHalvingPruner(direction="minimize")
+    study = optuna.study.create_study(directions=["minimize"], pruner=pruner)
+    trial = study.ask()
+    trial.report(1, 1)
+    trial = study.ask()
+    trial.report(1, 1)
+
+    # The direction of pruner should not be set for single-objective optimization.
+    with pytest.warns(UserWarning):
+        trial.should_prune()
+
+
+@pytest.mark.parametrize("direction_value", [("minimize", 2), ("maximize", 0.5)])
+def test_successive_halving_pruner_works_if_multi_objective(
+    direction_value: tuple[str, float]
+) -> None:
+    direction, intermediate_value = direction_value
+    pruner = optuna.pruners.SuccessiveHalvingPruner(
+        min_resource=1, reduction_factor=2, min_early_stopping_rate=0, direction=direction
+    )
+    study = optuna.study.create_study(directions=["minimize", "minimize"], pruner=pruner)
+
+    trial = study.ask()
+    trial.report(1, 1)
+
+    # A pruner is not activated at a first trial.
+    assert not trial.should_prune()
+
+    trial = study.ask()
+    # A pruner is not activated if a trial has no intermediate values.
+    assert not trial.should_prune()
+
+    trial.report(intermediate_value, 1)
+    # A pruner is activated if a trial has an intermediate value.
+    assert trial.should_prune()
