@@ -165,7 +165,7 @@ class SuccessiveHalvingPruner(BasePruner):
                 StudyDirection.MAXIMIZE,
             ]:
                 raise ValueError(
-                    "Please set either 'minimize' or 'maximize' to direction. You can also set the "
+                    "Please set either 'minimize' or 'maximize' to direction. You can also set the"
                     "corresponding `StudyDirection` member."
                 )
             if not isinstance(direction, StudyDirection):
