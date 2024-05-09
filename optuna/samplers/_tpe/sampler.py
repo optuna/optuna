@@ -816,7 +816,7 @@ def _calculate_weights_below_for_multi_objective(
             [hv - WFG().compute(lvals[indices_mat[i]], reference_point) for i in range(n_below)]
         )
         contributions[np.isnan(contributions)] = np.inf
-        max_contribution = np.max(contributions)
+        max_contribution = np.maximum(np.max(contributions), EPS)
         if not np.isfinite(max_contribution):
             weights_below = np.ones_like(contributions, dtype=float)
             weights_below[np.isfinite(contributions)] = EPS
