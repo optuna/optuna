@@ -192,7 +192,6 @@ def _calculate_nondomination_rank(
     # It ensures that trials[j] will not dominate trials[i] for i < j.
     # np.unique does lexsort.
     unique_lexsorted_loss_values, order_inv = np.unique(loss_values, return_inverse=True, axis=0)
-
     n_unique = unique_lexsorted_loss_values.shape[0]
     # Clip n_below.
     n_below = min(n_below or len(unique_lexsorted_loss_values), len(unique_lexsorted_loss_values))
@@ -245,7 +244,7 @@ def _dominates(
 
 def _normalize_value(value: float | None, direction: StudyDirection) -> float:
     if value is None:
-        value = float("inf")
+        return float("inf")
 
     if direction is StudyDirection.MAXIMIZE:
         value = -value
