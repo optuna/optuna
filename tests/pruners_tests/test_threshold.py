@@ -112,3 +112,26 @@ def test_threshold_pruner_interval_steps() -> None:
 
     trial.report(1000.0, 4)
     assert trial.should_prune()
+
+
+def test_threshold_pruner_works_if_multi_objective() -> None:
+    pruner = optuna.pruners.ThresholdPruner(
+        lower=0.0, upper=1.0, n_warmup_steps=0, interval_steps=1
+    )
+    study = optuna.study.create_study(directions=["minimize", "minimize"], pruner=pruner)
+    trial = study.ask()
+
+    trial.report(-0.1, 1)
+    assert trial.should_prune()
+
+    trial.report(0.0, 2)
+    assert not trial.should_prune()
+
+    trial.report(0.4, 3)
+    assert not trial.should_prune()
+
+    trial.report(1.0, 4)
+    assert not trial.should_prune()
+
+    trial.report(1.1, 5)
+    assert trial.should_prune()
