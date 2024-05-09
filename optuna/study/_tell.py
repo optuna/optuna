@@ -148,6 +148,9 @@ def _tell_with_warning(
         if study._is_multi_objective():
             values = None
         else:
+            # TODO(takizawa): In the future, when multiple pruners can be used in a
+            # single-objective and intermediate_values can have multiple axis,
+            # the values of PRUNED trial must be None under such condition.
             last_step = frozen_trial.last_step
             if last_step is not None:
                 last_intermediate_value = frozen_trial.intermediate_values[last_step]
