@@ -7,7 +7,6 @@ import numpy as np
 
 import optuna
 from optuna._experimental import experimental_class
-from optuna.exceptions import ExperimentalWarning
 from optuna.pruners import BasePruner
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -137,28 +136,14 @@ class WilcoxonPruner(BasePruner):
         *,
         p_threshold: float = 0.1,
         n_startup_steps: int = 0,
-        direction: str | StudyDirection | None = None,
     ) -> None:
         if n_startup_steps < 0:
             raise ValueError(f"n_startup_steps must be nonnegative but got {n_startup_steps}.")
         if not 0.0 <= p_threshold <= 1.0:
             raise ValueError(f"p_threshold must be between 0 and 1 but got {p_threshold}.")
-        if direction is not None:
-            if direction not in [
-                "minimize",
-                "maximize",
-                StudyDirection.MINIMIZE,
-                StudyDirection.MAXIMIZE,
-            ]:
-                raise ValueError(
-                    "Please set either 'minimize' or 'maximize' to direction. You can also set the "
-                    "corresponding `StudyDirection` member."
-                )
-            if not isinstance(direction, StudyDirection):
-                direction = StudyDirection[direction.upper()]
+
         self._n_startup_steps = n_startup_steps
         self._p_threshold = p_threshold
-        self._direction = direction
 
     def prune(self, study: "optuna.study.Study", trial: FrozenTrial) -> bool:
         if len(trial.intermediate_values) == 0:
@@ -211,23 +196,7 @@ class WilcoxonPruner(BasePruner):
         if len(diff_values) < self._n_startup_steps:
             return False
 
-        if study._is_multi_objective():
-            if self._direction is None:
-                raise ValueError(
-                    "The direction of pruner must be set for multi-objective optimization."
-                )
-            warnings.warn(
-                "Pruning for multi-objective optimization is experimental feature"
-                " added in v4.0.0. The interface can change in the future.",
-                ExperimentalWarning,
-            )
-        elif self._direction is not None:
-            warnings.warn(
-                "The direction of pruner should not be set for single-objective optimization."
-                "The set value will be ignored."
-            )
-        direction = self._direction if study._is_multi_objective() else study.direction
-        if direction == StudyDirection.MAXIMIZE:
+        if study.direction == StudyDirection.MAXIMIZE:
             alt = "less"
             average_is_best = sum(best_step_values) / len(best_step_values) <= sum(
                 step_values
