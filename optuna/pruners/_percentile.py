@@ -225,12 +225,14 @@ class PercentilePruner(BasePruner):
                 "The set value will be ignored."
             )
         direction = self._direction if study._is_multi_objective() else study.direction
-        best_intermediate_result = _get_best_intermediate_result_over_steps(trial, direction)
+        best_intermediate_result = _get_best_intermediate_result_over_steps(
+            trial, direction  # type: ignore
+        )
         if math.isnan(best_intermediate_result):
             return True
 
         p = _get_percentile_intermediate_result_over_trials(
-            completed_trials, direction, step, self._percentile, self._n_min_trials
+            completed_trials, direction, step, self._percentile, self._n_min_trials  # type: ignore
         )
         if math.isnan(p):
             return False
