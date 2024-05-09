@@ -516,8 +516,7 @@ class TPESampler(BaseSampler):
             weights_below = _calculate_weights_below_for_multi_objective(
                 study, trials, self._constraints_func
             )[param_mask_below]
-            if not np.isfinite(weights_below).all():
-                weights_below = np.clip(1.0 - np.isfinite(weights_below), EPS, 1.0)
+            assert np.isfinite(weights_below).all()
             mpe = self._parzen_estimator_cls(
                 observations, search_space, self._parzen_estimator_parameters, weights_below
             )
