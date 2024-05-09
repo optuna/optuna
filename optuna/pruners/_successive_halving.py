@@ -241,7 +241,7 @@ class SuccessiveHalvingPruner(BasePruner):
                 value,
                 competing,
                 self._reduction_factor,
-                direction,
+                direction,  # type: ignore
             ):
                 return True
 
