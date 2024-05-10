@@ -819,6 +819,7 @@ def _calculate_weights_below_for_multi_objective(
         max_contribution = np.maximum(np.max(contributions), EPS)
         if not np.isfinite(max_contribution):
             weights_below = np.ones_like(contributions, dtype=float)
+            # TODO(nabenabe0928): Make the weights for non Pareto solutions to zero.
             weights_below[np.isfinite(contributions)] = EPS
         else:
             weights_below = np.clip(contributions / max_contribution, EPS, 1)
