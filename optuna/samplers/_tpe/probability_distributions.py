@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import NamedTuple
-from typing import Union
 
 import numpy as np
 
@@ -27,11 +26,11 @@ class _BatchedDiscreteTruncNormDistributions(NamedTuple):
     step: float
 
 
-_BatchedDistributions = Union[
+_BatchedDistributions = (
     _BatchedCategoricalDistributions,
     _BatchedTruncNormDistributions,
     _BatchedDiscreteTruncNormDistributions,
-]
+)
 
 
 class _MixtureOfProductDistribution(NamedTuple):
