@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
+from collections.abc import Sequence
 from dataclasses import dataclass
 import decimal
 from typing import Any
-from typing import Iterable
-from typing import Sequence
 from typing import TYPE_CHECKING
 
 import numpy as np
