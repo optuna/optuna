@@ -31,12 +31,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from __future__ import annotations
+
+from collections.abc import Callable
 import functools
 import math
 import sys
-from typing import Callable
-from typing import Optional
-from typing import Union
 
 import numpy as np
 
@@ -170,7 +170,7 @@ def _ndtri_exp(y: np.ndarray) -> np.ndarray:
     return np.frompyfunc(_ndtri_exp_single, 1, 1)(y).astype(float)
 
 
-def ppf(q: np.ndarray, a: Union[np.ndarray, float], b: Union[np.ndarray, float]) -> np.ndarray:
+def ppf(q: np.ndarray, a: np.ndarray | float, b: np.ndarray | float) -> np.ndarray:
     q, a, b = np.atleast_1d(q, a, b)
     q, a, b = np.broadcast_arrays(q, a, b)
 
@@ -205,9 +205,9 @@ def ppf(q: np.ndarray, a: Union[np.ndarray, float], b: Union[np.ndarray, float])
 def rvs(
     a: np.ndarray,
     b: np.ndarray,
-    loc: Union[np.ndarray, float] = 0,
-    scale: Union[np.ndarray, float] = 1,
-    random_state: Optional[np.random.RandomState] = None,
+    loc: np.ndarray | float = 0,
+    scale: np.ndarray | float = 1,
+    random_state: np.random.RandomState | None = None,
 ) -> np.ndarray:
     random_state = random_state or np.random.RandomState()
     size = np.broadcast(a, b, loc, scale).shape
@@ -217,10 +217,10 @@ def rvs(
 
 def logpdf(
     x: np.ndarray,
-    a: Union[np.ndarray, float],
-    b: Union[np.ndarray, float],
-    loc: Union[np.ndarray, float] = 0,
-    scale: Union[np.ndarray, float] = 1,
+    a: np.ndarray | float,
+    b: np.ndarray | float,
+    loc: np.ndarray | float = 0,
+    scale: np.ndarray | float = 1,
 ) -> np.ndarray:
     x = (x - loc) / scale
 

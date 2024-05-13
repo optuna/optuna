@@ -1,6 +1,6 @@
-from typing import List
-from typing import NamedTuple
-from typing import Union
+from __future__ import annotations
+
+from collections.abc import NamedTuple
 
 import numpy as np
 
@@ -35,7 +35,7 @@ _BatchedDistributions = Union[
 
 class _MixtureOfProductDistribution(NamedTuple):
     weights: np.ndarray
-    distributions: List[_BatchedDistributions]
+    distributions: list[_BatchedDistributions]
 
     def sample(self, rng: np.random.RandomState, batch_size: int) -> np.ndarray:
         active_indices = rng.choice(len(self.weights), p=self.weights, size=batch_size)
