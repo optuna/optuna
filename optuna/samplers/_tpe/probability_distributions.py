@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import NamedTuple
+from typing import NamedTuple
+from typing import Union
 
 import numpy as np
 
