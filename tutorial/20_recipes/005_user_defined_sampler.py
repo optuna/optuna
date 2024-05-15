@@ -19,11 +19,20 @@ Overview of Sampler
 A sampler has the responsibility to determine the parameter values to be evaluated in a trial.
 When a `suggest` API (e.g., :func:`~optuna.trial.Trial.suggest_float`) is called inside an objective function, the corresponding distribution object (e.g., :class:`~optuna.distributions.FloatDistribution`) is created internally. A sampler samples a parameter value from the distribution. The sampled value is returned to the caller of the `suggest` API and evaluated in the objective function.
 
-To create a new sampler, you need to define a class that inherits :class:`~optuna.samplers.BaseSampler`.
-The base class has three abstract methods;
+To create a new sampler, you have two options:
+
+1. Define a class that inherits :class:`~optuna.samplers.BaseSampler` and implements three abstract methods; 
 :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space`,
-:meth:`~optuna.samplers.BaseSampler.sample_relative`, and
-:meth:`~optuna.samplers.BaseSampler.sample_independent`.
+:meth:`~optuna.samplers.BaseSampler.sample_relative`,
+and :meth:`~optuna.samplers.BaseSampler.sample_independent`.
+2. Define a class that inplements all six methods of :class:`~optuna.samplers.BaseSampler`; 
+:meth:`~optuna.samplers.BaseSampler.infer_relative_search_space`,
+:meth:`~optuna.samplers.BaseSampler.sample_relative`,
+:meth:`~optuna.samplers.BaseSampler.sample_independent`,
+:meth:`~optuna.samplers.BaseSampler.before_trial`,
+:meth:`~optuna.samplers.BaseSampler.after_trial`,
+and :meth:`~optuna.samplers.BaseSampler.reseed_rng`.
+    - In this case, you do not need to inherit :class:`~optuna.samplers.BaseSampler`.
 
 As the method names imply, Optuna supports two types of sampling: one is **relative sampling** that can consider the correlation of the parameters in a trial, and the other is **independent sampling** that samples each parameter independently.
 
