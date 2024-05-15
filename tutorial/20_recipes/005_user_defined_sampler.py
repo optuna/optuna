@@ -25,7 +25,7 @@ To create a new sampler, you have two options:
 :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space`,
 :meth:`~optuna.samplers.BaseSampler.sample_relative`,
 and :meth:`~optuna.samplers.BaseSampler.sample_independent`.
-2. Define a class that inplements all six methods of :class:`~optuna.samplers.BaseSampler`; 
+2. Define a class that implements all six methods of :class:`~optuna.samplers.BaseSampler`; 
 :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space`,
 :meth:`~optuna.samplers.BaseSampler.sample_relative`,
 :meth:`~optuna.samplers.BaseSampler.sample_independent`,
