@@ -32,6 +32,7 @@ and :meth:`~optuna.samplers.BaseSampler.sample_independent`.
 :meth:`~optuna.samplers.BaseSampler.before_trial`,
 :meth:`~optuna.samplers.BaseSampler.after_trial`,
 and :meth:`~optuna.samplers.BaseSampler.reseed_rng`.
+
     - In this case, you do not need to inherit :class:`~optuna.samplers.BaseSampler`.
 
 As the method names imply, Optuna supports two types of sampling: one is **relative sampling** that can consider the correlation of the parameters in a trial, and the other is **independent sampling** that samples each parameter independently.
