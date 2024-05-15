@@ -8,7 +8,7 @@ from typing import Any
 from typing import TYPE_CHECKING
 
 import optuna
-from optuna._experimental import warn_experimental_option
+from optuna._experimental import warn_experimental_argument
 from optuna.distributions import BaseDistribution
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
@@ -160,15 +160,15 @@ class NSGAIISampler(BaseSampler):
             raise ValueError("`population_size` must be greater than or equal to 2.")
 
         if constraints_func is not None:
-            warn_experimental_option("constraints_func")
+            warn_experimental_argument("constraints_func")
         if after_trial_strategy is not None:
-            warn_experimental_option("after_trial_strategy")
+            warn_experimental_argument("after_trial_strategy")
 
         if child_generation_strategy is not None:
-            warn_experimental_option("child_generation_strategy")
+            warn_experimental_argument("child_generation_strategy")
 
         if elite_population_selection_strategy is not None:
-            warn_experimental_option("elite_population_selection_strategy")
+            warn_experimental_argument("elite_population_selection_strategy")
 
         if crossover is None:
             crossover = UniformCrossover(swapping_prob)

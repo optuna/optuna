@@ -7,7 +7,7 @@ from typing import NamedTuple
 import warnings
 
 import optuna
-from optuna._experimental import warn_experimental_option
+from optuna._experimental import warn_experimental_argument
 from optuna.study import Study
 from optuna.study._multi_objective import _get_pareto_front_trials_by_trials
 from optuna.trial import FrozenTrial
@@ -252,7 +252,7 @@ def _get_pareto_front_info(
         )
 
     if constraints_func is not None:
-        warn_experimental_option("constraints_func")
+        warn_experimental_argument("constraints_func")
         feasible_trials = []
         infeasible_trials = []
         for trial in study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)):

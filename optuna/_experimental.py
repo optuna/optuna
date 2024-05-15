@@ -26,9 +26,9 @@ _EXPERIMENTAL_NOTE_TEMPLATE = """
 """
 
 
-def warn_experimental_option(option_name: str) -> None:
+def warn_experimental_argument(option_name: str) -> None:
     warnings.warn(
-        f"``{option_name}`` option is an experimental feature."
+        f"Argument ``{option_name}`` is an experimental feature."
         " The interface can change in the future.",
         ExperimentalWarning,
     )

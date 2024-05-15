@@ -19,7 +19,7 @@ import numpy as np
 
 import optuna
 from optuna import logging
-from optuna._experimental import warn_experimental_option
+from optuna._experimental import warn_experimental_argument
 from optuna._imports import _LazyImport
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
@@ -281,22 +281,22 @@ class CmaEsSampler(BaseSampler):
         self._source_trials = source_trials
 
         if self._restart_strategy:
-            warn_experimental_option("restart_strategy")
+            warn_experimental_argument("restart_strategy")
 
         if self._consider_pruned_trials:
-            warn_experimental_option("consider_pruned_trials")
+            warn_experimental_argument("consider_pruned_trials")
 
         if self._use_separable_cma:
-            warn_experimental_option("use_separable_cma")
+            warn_experimental_argument("use_separable_cma")
 
         if self._source_trials is not None:
-            warn_experimental_option("source_trials")
+            warn_experimental_argument("source_trials")
 
         if self._with_margin:
-            warn_experimental_option("with_margin")
+            warn_experimental_argument("with_margin")
 
         if self._lr_adapt:
-            warn_experimental_option("lr_adapt")
+            warn_experimental_argument("lr_adapt")
 
         if source_trials is not None and (x0 is not None or sigma0 is not None):
             raise ValueError(

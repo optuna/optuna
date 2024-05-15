@@ -3,7 +3,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
-from optuna._experimental import warn_experimental_option
+from optuna._experimental import warn_experimental_argument
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova import FanovaImportanceEvaluator
 from optuna.importance._mean_decrease_impurity import MeanDecreaseImpurityImportanceEvaluator
@@ -118,5 +118,5 @@ def get_param_importances(
         else:
             return dict((param, value / s) for (param, value) in res.items())
     else:
-        warn_experimental_option("normalize")
+        warn_experimental_argument("normalize")
         return res
