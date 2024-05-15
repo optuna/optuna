@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import pathlib
+
 import pytest
 
 import optuna
-from optuna.artifacts._protocol import ArtifactStore
 from optuna.artifacts import FileSystemArtifactStore
 from optuna.artifacts._download import download_artifact
+from optuna.artifacts._protocol import ArtifactStore
 from optuna.artifacts._upload import upload_artifact
 
 
