@@ -21,19 +21,9 @@ When a `suggest` API (e.g., :func:`~optuna.trial.Trial.suggest_float`) is called
 
 To create a new sampler, you have two options:
 
-1. Define a class that inherits :class:`~optuna.samplers.BaseSampler` and implements three abstract methods; 
-:meth:`~optuna.samplers.BaseSampler.infer_relative_search_space`,
-:meth:`~optuna.samplers.BaseSampler.sample_relative`,
-and :meth:`~optuna.samplers.BaseSampler.sample_independent`.
-2. Define a class that implements all six methods of :class:`~optuna.samplers.BaseSampler`; 
-:meth:`~optuna.samplers.BaseSampler.infer_relative_search_space`,
-:meth:`~optuna.samplers.BaseSampler.sample_relative`,
-:meth:`~optuna.samplers.BaseSampler.sample_independent`,
-:meth:`~optuna.samplers.BaseSampler.before_trial`,
-:meth:`~optuna.samplers.BaseSampler.after_trial`,
-and :meth:`~optuna.samplers.BaseSampler.reseed_rng`.
+1. Define a class that inherits :class:`~optuna.samplers.BaseSampler` and implements three abstract methods; :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space`, :meth:`~optuna.samplers.BaseSampler.sample_relative`, and :meth:`~optuna.samplers.BaseSampler.sample_independent`.
 
-    - In this case, you do not need to inherit :class:`~optuna.samplers.BaseSampler`.
+2. Define a class that implements all six methods of :class:`~optuna.samplers.BaseSampler`; :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space`, :meth:`~optuna.samplers.BaseSampler.sample_relative`, :meth:`~optuna.samplers.BaseSampler.sample_independent`, :meth:`~optuna.samplers.BaseSampler.before_trial`, :meth:`~optuna.samplers.BaseSampler.after_trial`, and :meth:`~optuna.samplers.BaseSampler.reseed_rng`. In this case, you do not need to inherit :class:`~optuna.samplers.BaseSampler`.
 
 As the method names imply, Optuna supports two types of sampling: one is **relative sampling** that can consider the correlation of the parameters in a trial, and the other is **independent sampling** that samples each parameter independently.
 
