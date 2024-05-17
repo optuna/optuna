@@ -5,10 +5,10 @@ import pathlib
 import pytest
 
 import optuna
+from optuna.artifacts import download_artifact
 from optuna.artifacts import FileSystemArtifactStore
-from optuna.artifacts._download import download_artifact
+from optuna.artifacts import upload_artifact
 from optuna.artifacts._protocol import ArtifactStore
-from optuna.artifacts._upload import upload_artifact
 
 
 @pytest.fixture(params=["FileSystem"])
