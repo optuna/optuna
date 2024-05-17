@@ -4,6 +4,9 @@ from optuna._experimental import experimental_func
 from optuna.artifacts._protocol import ArtifactStore
 
 
+BUFFER_SIZE = 1024 * 1024  # 1MB
+
+
 @experimental_func("4.0.0")
 def download_artifact(
     artifact_store: ArtifactStore,
@@ -20,7 +23,9 @@ def download_artifact(
         file_path:
             A path to download the artifact to.
     """
-    with artifact_store.open_reader(artifact_id) as f:
-        content = f.read()
-    with open(file_path, "wb") as f:
-        f.write(content)
+    with artifact_store.open_reader(artifact_id) as reader, open(file_path, "wb") as writer:
+        while True:
+            chunk = reader.read(BUFFER_SIZE)
+            if not chunk:
+                break
+            writer.write(chunk)
