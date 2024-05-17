@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import abc
+from abc import abstractmethod
 from collections.abc import Container
 from collections.abc import Sequence
 from typing import Any
@@ -14,10 +14,15 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
+try:
+    from typing import Protocol
+except ImportError:
+    from typing_extensions import Protocol  # type: ignore
+
 DEFAULT_STUDY_NAME_PREFIX = "no-name-"
 
 
-class BaseStorage(abc.ABC):
+class BaseStorage(Protocol):
     """Base class for storages.
 
     This class is not supposed to be directly accessed by library users.
@@ -47,7 +52,7 @@ class BaseStorage(abc.ABC):
 
     # Basic study manipulation
 
-    @abc.abstractmethod
+    @abstractmethod
     def create_new_study(
         self, directions: Sequence[StudyDirection], study_name: str | None = None
     ) -> int:
@@ -72,9 +77,9 @@ class BaseStorage(abc.ABC):
                 If a study with the same ``study_name`` already exists.
         """
         # TODO(ytsmiling) Fix RDB storage implementation to ensure unique `study_id`.
-        raise NotImplementedError
+        ...
 
-    @abc.abstractmethod
+    @abstractmethod
     def delete_study(self, study_id: int) -> None:
         """Delete a study.
 
@@ -86,9 +91,9 @@ class BaseStorage(abc.ABC):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        raise NotImplementedError
+        ...
 
-    @abc.abstractmethod
+    @abstractmethod
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
         """Register a user-defined attribute to a study.
 
@@ -106,9 +111,9 @@ class BaseStorage(abc.ABC):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        raise NotImplementedError
+        ...
 
-    @abc.abstractmethod
+    @abstractmethod
     def set_study_system_attr(self, study_id: int, key: str, value: JSONSerializable) -> None:
         """Register an optuna-internal attribute to a study.
 
@@ -126,11 +131,11 @@ class BaseStorage(abc.ABC):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        raise NotImplementedError
+        ...
 
     # Basic study access
 
-    @abc.abstractmethod
+    @abstractmethod
     def get_study_id_from_name(self, study_name: str) -> int:
         """Read the ID of a study.
 
@@ -145,9 +150,9 @@ class BaseStorage(abc.ABC):
             :exc:`KeyError`:
                 If no study with the matching ``study_name`` exists.
         """
-        raise NotImplementedError
+        ...
 
-    @abc.abstractmethod
+    @abstractmethod
     def get_study_name_from_id(self, study_id: int) -> str:
         """Read the study name of a study.
 
@@ -162,9 +167,9 @@ class BaseStorage(abc.ABC):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        raise NotImplementedError
+        ...
 
-    @abc.abstractmethod
+    @abstractmethod
     def get_study_directions(self, study_id: int) -> list[StudyDirection]:
         """Read whether a study maximizes or minimizes an objective.
 
@@ -179,9 +184,9 @@ class BaseStorage(abc.ABC):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        raise NotImplementedError
+        ...
 
-    @abc.abstractmethod
+    @abstractmethod
     def get_study_user_attrs(self, study_id: int) -> dict[str, Any]:
         """Read the user-defined attributes of a study.
 
@@ -196,9 +201,9 @@ class BaseStorage(abc.ABC):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        raise NotImplementedError
+        ...
 
-    @abc.abstractmethod
+    @abstractmethod
     def get_study_system_attrs(self, study_id: int) -> dict[str, Any]:
         """Read the optuna-internal attributes of a study.
 
@@ -213,9 +218,9 @@ class BaseStorage(abc.ABC):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        raise NotImplementedError
+        ...
 
-    @abc.abstractmethod
+    @abstractmethod
     def get_all_studies(self) -> list[FrozenStudy]:
         """Read a list of :class:`~optuna.study.FrozenStudy` objects.
 
@@ -223,11 +228,11 @@ class BaseStorage(abc.ABC):
             A list of :class:`~optuna.study.FrozenStudy` objects, sorted by ``study_id``.
 
         """
-        raise NotImplementedError
+        ...
 
     # Basic trial manipulation
 
-    @abc.abstractmethod
+    @abstractmethod
     def create_new_trial(self, study_id: int, template_trial: FrozenTrial | None = None) -> int:
         """Create and add a new trial to a study.
 
@@ -247,9 +252,9 @@ class BaseStorage(abc.ABC):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        raise NotImplementedError
+        ...
 
-    @abc.abstractmethod
+    @abstractmethod
     def set_trial_param(
         self,
         trial_id: int,
@@ -275,7 +280,7 @@ class BaseStorage(abc.ABC):
             :exc:`RuntimeError`:
                 If the trial is already finished.
         """
-        raise NotImplementedError
+        ...
 
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
         """Read the trial ID of a trial.
@@ -342,7 +347,7 @@ class BaseStorage(abc.ABC):
         trial = self.get_trial(trial_id)
         return trial.distributions[param_name].to_internal_repr(trial.params[param_name])
 
-    @abc.abstractmethod
+    @abstractmethod
     def set_trial_state_values(
         self, trial_id: int, state: TrialState, values: Sequence[float] | None = None
     ) -> bool:
@@ -372,9 +377,9 @@ class BaseStorage(abc.ABC):
             :exc:`RuntimeError`:
                 If the trial is already finished.
         """
-        raise NotImplementedError
+        ...
 
-    @abc.abstractmethod
+    @abstractmethod
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
     ) -> None:
@@ -396,9 +401,9 @@ class BaseStorage(abc.ABC):
             :exc:`RuntimeError`:
                 If the trial is already finished.
         """
-        raise NotImplementedError
+        ...
 
-    @abc.abstractmethod
+    @abstractmethod
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
         """Set a user-defined attribute to a trial.
 
@@ -418,9 +423,9 @@ class BaseStorage(abc.ABC):
             :exc:`RuntimeError`:
                 If the trial is already finished.
         """
-        raise NotImplementedError
+        ...
 
-    @abc.abstractmethod
+    @abstractmethod
     def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
         """Set an optuna-internal attribute to a trial.
 
@@ -440,11 +445,11 @@ class BaseStorage(abc.ABC):
             :exc:`RuntimeError`:
                 If the trial is already finished.
         """
-        raise NotImplementedError
+        ...
 
     # Basic trial access
 
-    @abc.abstractmethod
+    @abstractmethod
     def get_trial(self, trial_id: int) -> FrozenTrial:
         """Read a trial.
 
@@ -459,9 +464,9 @@ class BaseStorage(abc.ABC):
             :exc:`KeyError`:
                 If no trial with the matching ``trial_id`` exists.
         """
-        raise NotImplementedError
+        ...
 
-    @abc.abstractmethod
+    @abstractmethod
     def get_all_trials(
         self,
         study_id: int,
@@ -486,7 +491,7 @@ class BaseStorage(abc.ABC):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        raise NotImplementedError
+        ...
 
     def get_n_trials(
         self, study_id: int, state: tuple[TrialState, ...] | TrialState | None = None
@@ -602,7 +607,7 @@ class BaseStorage(abc.ABC):
 
     def remove_session(self) -> None:
         """Clean up all connections to a database."""
-        pass
+        return
 
     def check_trial_is_updatable(self, trial_id: int, trial_state: TrialState) -> None:
         """Check whether a trial state is updatable.
