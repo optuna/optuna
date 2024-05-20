@@ -53,3 +53,13 @@ def test_solve_hssp_infinite_loss() -> None:
         truth, approx = _compute_hssp_truth_and_approx(test_case, subset_size)
         assert np.isinf(truth)
         assert np.isinf(approx)
+
+
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
+def test_solve_hssp_duplicated_infinite_loss() -> None:
+    test_case = np.array([[np.inf, 0, 0], [np.inf, 0, 0], [0, np.inf, 0], [0, 0, np.inf]])
+    r = np.full(3, np.inf)
+    res = optuna._hypervolume._solve_hssp(
+        rank_i_loss_vals=test_case, rank_i_indices=np.arange(4), subset_size=2, reference_point=r
+    )
+    assert (0 not in res) or (1 not in res)

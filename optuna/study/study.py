@@ -16,12 +16,12 @@ import warnings
 
 import numpy as np
 
+import optuna
 from optuna import exceptions
 from optuna import logging
 from optuna import pruners
 from optuna import samplers
 from optuna import storages
-from optuna import trial as trial_module
 from optuna._convert_positional_args import convert_positional_args
 from optuna._deprecated import deprecated_func
 from optuna._experimental import experimental_func
@@ -38,7 +38,6 @@ from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary  # NOQA
 from optuna.study._tell import _tell_with_warning
 from optuna.trial import create_trial
-from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
@@ -46,9 +45,13 @@ _dataframe = _LazyImport("optuna.study._dataframe")
 
 if TYPE_CHECKING:
     from optuna.study._dataframe import pd
+    from optuna.trial import FrozenTrial
+    from optuna.trial import Trial
 
 
-ObjectiveFuncType = Callable[[trial_module.Trial], Union[float, Sequence[float]]]
+ObjectiveFuncType = Callable[["Trial"], Union[float, Sequence[float]]]
+
+
 _SYSTEM_ATTR_METRIC_NAMES = "study:metric_names"
 
 
@@ -57,7 +60,7 @@ _logger = logging.get_logger(__name__)
 
 class _ThreadLocalStudyAttribute(threading.local):
     in_optimize_loop: bool = False
-    cached_all_trials: list["FrozenTrial"] | None = None
+    cached_all_trials: list[FrozenTrial] | None = None
 
 
 class Study:
@@ -374,7 +377,7 @@ class Study:
         timeout: float | None = None,
         n_jobs: int = 1,
         catch: Iterable[type[Exception]] | type[Exception] = (),
-        callbacks: list[Callable[["Study", FrozenTrial], None]] | None = None,
+        callbacks: list[Callable[[Study, FrozenTrial], None]] | None = None,
         gc_after_trial: bool = False,
         show_progress_bar: bool = False,
     ) -> None:
@@ -481,9 +484,7 @@ class Study:
             show_progress_bar=show_progress_bar,
         )
 
-    def ask(
-        self, fixed_distributions: dict[str, BaseDistribution] | None = None
-    ) -> trial_module.Trial:
+    def ask(self, fixed_distributions: dict[str, BaseDistribution] | None = None) -> Trial:
         """Create a new trial from which hyperparameters can be suggested.
 
         This method is part of an alternative to :func:`~optuna.study.Study.optimize` that allows
@@ -562,7 +563,7 @@ class Study:
         trial_id = self._pop_waiting_trial_id()
         if trial_id is None:
             trial_id = self._storage.create_new_trial(self._study_id)
-        trial = trial_module.Trial(self, trial_id)
+        trial = optuna.Trial(self, trial_id)
 
         for name, param in fixed_distributions.items():
             trial._suggest(name, param)
@@ -571,7 +572,7 @@ class Study:
 
     def tell(
         self,
-        trial: trial_module.Trial | int,
+        trial: Trial | int,
         values: float | Sequence[float] | None = None,
         state: TrialState | None = None,
         skip_if_finished: bool = False,
@@ -1097,17 +1098,7 @@ class Study:
 
         return False
 
-    @deprecated_func("2.5.0", "4.0.0")
-    def _ask(self) -> trial_module.Trial:
-        return self.ask()
-
-    @deprecated_func("2.5.0", "4.0.0")
-    def _tell(
-        self, trial: trial_module.Trial, state: TrialState, values: list[float] | None
-    ) -> None:
-        self.tell(trial, values, state)
-
-    def _log_completed_trial(self, trial: trial_module.FrozenTrial) -> None:
+    def _log_completed_trial(self, trial: FrozenTrial) -> None:
         if not _logger.isEnabledFor(logging.INFO):
             return
 

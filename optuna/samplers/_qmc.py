@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Sequence
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -13,9 +16,12 @@ from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.samplers import BaseSampler
-from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 _logger = logging.get_logger(__name__)
@@ -254,7 +260,7 @@ class QMCSampler(BaseSampler):
 
     def after_trial(
         self,
-        study: "optuna.Study",
+        study: Study,
         trial: "optuna.trial.FrozenTrial",
         state: TrialState,
         values: Optional[Sequence[float]],

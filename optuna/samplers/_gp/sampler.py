@@ -14,7 +14,6 @@ from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
-from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -28,6 +27,7 @@ if TYPE_CHECKING:
     import optuna._gp.optim_mixed as optim_mixed
     import optuna._gp.prior as prior
     import optuna._gp.search_space as gp_search_space
+    from optuna.study import Study
 else:
     from optuna._imports import _LazyImport
 
@@ -206,6 +206,7 @@ class GPSampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
+        self._raise_error_if_multi_objective(study)
         return self._independent_sampler.sample_independent(
             study, trial, param_name, param_distribution
         )

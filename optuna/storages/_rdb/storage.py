@@ -4,6 +4,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 import copy
 from datetime import datetime
+from datetime import timedelta
 import json
 import logging
 import os
@@ -1010,7 +1011,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                     continue
                 assert len(trial.heartbeats) == 1
                 heartbeat = trial.heartbeats[0].heartbeat
-                if (current_heartbeat - heartbeat).seconds > grace_period:
+                if current_heartbeat - heartbeat > timedelta(seconds=grace_period):
                     stale_trial_ids.append(trial.trial_id)
 
         return stale_trial_ids

@@ -27,7 +27,6 @@ from optuna.storages import JournalFileStorage
 from optuna.storages import JournalRedisStorage
 from optuna.storages import JournalStorage
 from optuna.storages import RDBStorage
-from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.study import StudyDirection
 from optuna.testing.storages import StorageSupplier
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
@@ -1045,62 +1044,6 @@ def test_create_study_command_with_skip_if_exists() -> None:
 
 
 @pytest.mark.skip_coverage
-def test_study_optimize_command() -> None:
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-        storage_url = str(storage.engine.url)
-
-        study_name = storage.get_study_name_from_id(
-            storage.create_new_study(directions=[StudyDirection.MINIMIZE])
-        )
-        command = [
-            "optuna",
-            "study",
-            "optimize",
-            "--study-name",
-            study_name,
-            "--n-trials",
-            "10",
-            __file__,
-            "objective_func",
-            "--storage",
-            storage_url,
-        ]
-        subprocess.check_call(command)
-
-        study = optuna.load_study(storage=storage_url, study_name=study_name)
-        assert len(study.trials) == 10
-        assert "x" in study.best_params
-
-        # Check if a default value of study_name is stored in the storage.
-        assert storage.get_study_name_from_id(study._study_id).startswith(
-            DEFAULT_STUDY_NAME_PREFIX
-        )
-
-
-@pytest.mark.skip_coverage
-def test_study_optimize_command_inconsistent_args() -> None:
-    with NamedTemporaryFilePool() as tf:
-        db_url = "sqlite:///{}".format(tf.name)
-
-        # --study-name argument is missing.
-        with pytest.raises(subprocess.CalledProcessError):
-            subprocess.check_call(
-                [
-                    "optuna",
-                    "study",
-                    "optimize",
-                    "--storage",
-                    db_url,
-                    "--n-trials",
-                    "10",
-                    __file__,
-                    "objective_func",
-                ]
-            )
-
-
-@pytest.mark.skip_coverage
 def test_empty_argv() -> None:
     command_empty = ["optuna"]
     command_empty_output = str(subprocess.check_output(command_empty))
@@ -1195,22 +1138,21 @@ def test_storage_upgrade_command_with_invalid_url() -> None:
             subprocess.check_call(command)
 
 
-@pytest.mark.skip_coverage
-@pytest.mark.parametrize(
-    "direction,directions,sampler,sampler_kwargs,output_format",
+parametrize_for_ask = pytest.mark.parametrize(
+    "sampler,sampler_kwargs,output_format",
     [
-        (None, None, None, None, None),
-        ("minimize", None, None, None, None),
-        (None, "minimize maximize", None, None, None),
-        (None, None, "RandomSampler", None, None),
-        (None, None, "TPESampler", '{"multivariate": true}', None),
-        (None, None, None, None, "json"),
-        (None, None, None, None, "yaml"),
+        (None, None, None),
+        ("RandomSampler", None, None),
+        ("TPESampler", '{"multivariate": true}', None),
+        (None, None, "json"),
+        (None, None, "yaml"),
     ],
 )
+
+
+@pytest.mark.skip_coverage
+@parametrize_for_ask
 def test_ask(
-    direction: Optional[str],
-    directions: Optional[str],
     sampler: Optional[str],
     sampler_kwargs: Optional[str],
     output_format: Optional[str],
@@ -1235,10 +1177,6 @@ def test_ask(
             search_space,
         ]
 
-        if direction is not None:
-            args += ["--direction", direction]
-        if directions is not None:
-            args += ["--directions"] + directions.split()
         if sampler is not None:
             args += ["--sampler", sampler]
         if sampler_kwargs is not None:
@@ -1263,27 +1201,10 @@ def test_ask(
             assert 0 <= trial["params"]["x"] <= 1
             assert trial["params"]["y"] == "foo"
 
-        if direction is not None or directions is not None:
-            warning_message = result.stderr.decode()
-            assert "FutureWarning" in warning_message
-
 
 @pytest.mark.skip_coverage
-@pytest.mark.parametrize(
-    "direction,directions,sampler,sampler_kwargs,output_format",
-    [
-        (None, None, None, None, None),
-        ("minimize", None, None, None, None),
-        (None, "minimize maximize", None, None, None),
-        (None, None, "RandomSampler", None, None),
-        (None, None, "TPESampler", '{"multivariate": true}', None),
-        (None, None, None, None, "json"),
-        (None, None, None, None, "yaml"),
-    ],
-)
+@parametrize_for_ask
 def test_ask_flatten(
-    direction: Optional[str],
-    directions: Optional[str],
     sampler: Optional[str],
     sampler_kwargs: Optional[str],
     output_format: Optional[str],
@@ -1309,10 +1230,6 @@ def test_ask_flatten(
             "--flatten",
         ]
 
-        if direction is not None:
-            args += ["--direction", direction]
-        if directions is not None:
-            args += ["--directions"] + directions.split()
         if sampler is not None:
             args += ["--sampler", sampler]
         if sampler_kwargs is not None:
@@ -1334,10 +1251,6 @@ def test_ask_flatten(
             assert trial["number"] == 0
             assert 0 <= trial["params_x"] <= 1
             assert trial["params_y"] == "foo"
-
-        if direction is not None or directions is not None:
-            warning_message = result.stderr.decode()
-            assert "FutureWarning" in warning_message
 
 
 @pytest.mark.skip_coverage
@@ -1499,108 +1412,6 @@ def test_create_study_and_ask(
         assert trial["number"] == 0
         assert 0 <= trial["params"]["x"] <= 1
         assert trial["params"]["y"] == "foo"
-
-
-@pytest.mark.skip_coverage
-@pytest.mark.parametrize(
-    "direction,directions,ask_direction,ask_directions",
-    [
-        (None, None, "maximize", None),
-        ("minimize", None, "maximize", None),
-        ("minimize", None, None, "minimize minimize"),
-        (None, "minimize maximize", None, "maximize minimize"),
-        (None, "minimize maximize", "minimize", None),
-    ],
-)
-def test_create_study_and_ask_with_inconsistent_directions(
-    direction: Optional[str],
-    directions: Optional[str],
-    ask_direction: Optional[str],
-    ask_directions: Optional[str],
-) -> None:
-    study_name = "test_study"
-    search_space = (
-        '{"x": {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
-        '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
-    )
-
-    with NamedTemporaryFilePool() as tf:
-        db_url = "sqlite:///{}".format(tf.name)
-
-        create_study_args = [
-            "optuna",
-            "create-study",
-            "--storage",
-            db_url,
-            "--study-name",
-            study_name,
-        ]
-
-        if direction is not None:
-            create_study_args += ["--direction", direction]
-        if directions is not None:
-            create_study_args += ["--directions"] + directions.split()
-        subprocess.check_call(create_study_args)
-
-        args = [
-            "optuna",
-            "ask",
-            "--storage",
-            db_url,
-            "--study-name",
-            study_name,
-            "--search-space",
-            search_space,
-        ]
-        if ask_direction is not None:
-            args += ["--direction", ask_direction]
-        if ask_directions is not None:
-            args += ["--directions"] + ask_directions.split()
-
-        result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        error_message = result.stderr.decode()
-        assert "Cannot overwrite study direction" in error_message
-
-
-@pytest.mark.skip_coverage
-def test_ask_with_both_direction_and_directions() -> None:
-    study_name = "test_study"
-    search_space = (
-        '{"x": {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
-        '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
-    )
-
-    with NamedTemporaryFilePool() as tf:
-        db_url = "sqlite:///{}".format(tf.name)
-
-        create_study_args = [
-            "optuna",
-            "create-study",
-            "--storage",
-            db_url,
-            "--study-name",
-            study_name,
-        ]
-        subprocess.check_call(create_study_args)
-
-        args = [
-            "optuna",
-            "ask",
-            "--storage",
-            db_url,
-            "--study-name",
-            study_name,
-            "--search-space",
-            search_space,
-            "--direction",
-            "minimize",
-            "--directions",
-            "minimize",
-        ]
-
-        result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        error_message = result.stderr.decode()
-        assert "Specify only one of `direction` and `directions`." in error_message
 
 
 @pytest.mark.skip_coverage

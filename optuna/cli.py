@@ -6,13 +6,11 @@ from argparse import ArgumentParser
 from argparse import Namespace
 import datetime
 from enum import Enum
-from importlib.machinery import SourceFileLoader
 import inspect
 import json
 import logging
 import os
 import sys
-import types
 from typing import Any
 from typing import Dict
 from typing import List
@@ -365,11 +363,8 @@ class _StudySetUserAttribute(_BaseCommand):
 
     def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
-            "--study", default=None, help="This argument is deprecated. Use --study-name instead."
-        )
-        parser.add_argument(
             "--study-name",
-            default=None,
+            required=True,
             help="The name of the study to set the user attribute to.",
         )
         parser.add_argument("--key", "-k", required=True, help="Key of the user attribute.")
@@ -378,19 +373,7 @@ class _StudySetUserAttribute(_BaseCommand):
     def take_action(self, parsed_args: Namespace) -> int:
         storage = _get_storage(parsed_args.storage, parsed_args.storage_class)
 
-        if parsed_args.study and parsed_args.study_name:
-            raise ValueError(
-                "Both `--study-name` and the deprecated `--study` was specified. "
-                "Please remove the `--study` flag."
-            )
-        elif parsed_args.study:
-            message = "The use of `--study` is deprecated. Please use `--study-name` instead."
-            warnings.warn(message, FutureWarning)
-            study = optuna.load_study(storage=storage, study_name=parsed_args.study)
-        elif parsed_args.study_name:
-            study = optuna.load_study(storage=storage, study_name=parsed_args.study_name)
-        else:
-            raise ValueError("Missing study name. Please use `--study-name`.")
+        study = optuna.load_study(storage=storage, study_name=parsed_args.study_name)
 
         study.set_user_attr(parsed_args.key, parsed_args.value)
 
@@ -632,93 +615,6 @@ class _BestTrials(_BaseCommand):
         return 0
 
 
-class _StudyOptimize(_BaseCommand):
-    """Start optimization of a study. Deprecated since version 2.0.0."""
-
-    def add_arguments(self, parser: ArgumentParser) -> None:
-        parser.add_argument(
-            "--n-trials",
-            type=int,
-            help="The number of trials. If this argument is not given, as many "
-            "trials run as possible.",
-        )
-        parser.add_argument(
-            "--timeout",
-            type=float,
-            help="Stop study after the given number of second(s). If this argument"
-            " is not given, as many trials run as possible.",
-        )
-        parser.add_argument(
-            "--n-jobs",
-            type=int,
-            default=1,
-            help="The number of parallel jobs. If this argument is set to -1, the "
-            "number is set to CPU counts.",
-        )
-        parser.add_argument(
-            "--study", default=None, help="This argument is deprecated. Use --study-name instead."
-        )
-        parser.add_argument(
-            "--study-name", default=None, help="The name of the study to start optimization on."
-        )
-        parser.add_argument(
-            "file",
-            help="Python script file where the objective function resides.",
-        )
-        parser.add_argument(
-            "method",
-            help="The method name of the objective function.",
-        )
-
-    def take_action(self, parsed_args: Namespace) -> int:
-        message = (
-            "The use of the `study optimize` command is deprecated. Please execute your Python "
-            "script directly instead."
-        )
-        warnings.warn(message, FutureWarning)
-
-        storage = _get_storage(parsed_args.storage, parsed_args.storage_class)
-
-        if parsed_args.study and parsed_args.study_name:
-            raise ValueError(
-                "Both `--study-name` and the deprecated `--study` was specified. "
-                "Please remove the `--study` flag."
-            )
-        elif parsed_args.study:
-            message = "The use of `--study` is deprecated. Please use `--study-name` instead."
-            warnings.warn(message, FutureWarning)
-            study = optuna.load_study(storage=storage, study_name=parsed_args.study)
-        elif parsed_args.study_name:
-            study = optuna.load_study(storage=storage, study_name=parsed_args.study_name)
-        else:
-            raise ValueError("Missing study name. Please use `--study-name`.")
-
-        # We force enabling the debug flag. As we are going to execute user codes, we want to show
-        # exception stack traces by default.
-        parsed_args.debug = True
-
-        module_name = "optuna_target_module"
-        target_module = types.ModuleType(module_name)
-        loader = SourceFileLoader(module_name, parsed_args.file)
-        loader.exec_module(target_module)
-
-        try:
-            target_method = getattr(target_module, parsed_args.method)
-        except AttributeError:
-            self.logger.error(
-                "Method {} not found in file {}.".format(parsed_args.method, parsed_args.file)
-            )
-            return 1
-
-        study.optimize(
-            target_method,
-            n_trials=parsed_args.n_trials,
-            timeout=parsed_args.timeout,
-            n_jobs=parsed_args.n_jobs,
-        )
-        return 0
-
-
 class _StorageUpgrade(_BaseCommand):
     """Upgrade the schema of an RDB storage."""
 
@@ -754,25 +650,6 @@ class _Ask(_BaseCommand):
 
     def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument("--study-name", type=str, help="Name of study.")
-        parser.add_argument(
-            "--direction",
-            type=str,
-            choices=("minimize", "maximize"),
-            help=(
-                "Direction of optimization. This argument is deprecated."
-                " Please create a study in advance."
-            ),
-        )
-        parser.add_argument(
-            "--directions",
-            type=str,
-            nargs="+",
-            choices=("minimize", "maximize"),
-            help=(
-                "Directions of optimization, if there are multiple objectives."
-                " This argument is deprecated. Please create a study in advance."
-            ),
-        )
         parser.add_argument("--sampler", type=str, help="Class name of sampler object to create.")
         parser.add_argument(
             "--sampler-kwargs",
@@ -813,18 +690,8 @@ class _Ask(_BaseCommand):
         create_study_kwargs = {
             "storage": storage,
             "study_name": parsed_args.study_name,
-            "direction": parsed_args.direction,
-            "directions": parsed_args.directions,
             "load_if_exists": True,
         }
-
-        if parsed_args.direction is not None or parsed_args.directions is not None:
-            message = (
-                "The `direction` and `directions` arguments of the `study ask` command are"
-                " deprecated because the command will no longer create a study when you specify"
-                " the arguments. Please create a study in advance."
-            )
-            warnings.warn(message, FutureWarning)
 
         if parsed_args.sampler is not None:
             if parsed_args.sampler_kwargs is not None:
@@ -858,25 +725,6 @@ class _Ask(_BaseCommand):
                 storage=create_study_kwargs["storage"],
                 sampler=create_study_kwargs.get("sampler"),
             )
-            directions = None
-            if (
-                create_study_kwargs["direction"] is not None
-                and create_study_kwargs["directions"] is not None
-            ):
-                raise ValueError("Specify only one of `direction` and `directions`.")
-            if create_study_kwargs["direction"] is not None:
-                directions = [
-                    optuna.study.StudyDirection[create_study_kwargs["direction"].upper()]
-                ]
-            if create_study_kwargs["directions"] is not None:
-                directions = [
-                    optuna.study.StudyDirection[d.upper()]
-                    for d in create_study_kwargs["directions"]
-                ]
-            if directions is not None and study.directions != directions:
-                raise ValueError(
-                    f"Cannot overwrite study direction from {study.directions} to {directions}."
-                )
 
         except KeyError:
             study = optuna.create_study(**create_study_kwargs)
@@ -962,7 +810,6 @@ _COMMANDS: Dict[str, Type[_BaseCommand]] = {
     "trials": _Trials,
     "best-trial": _BestTrial,
     "best-trials": _BestTrials,
-    "study optimize": _StudyOptimize,
     "storage upgrade": _StorageUpgrade,
     "ask": _Ask,
     "tell": _Tell,
@@ -1060,7 +907,7 @@ def _get_parser(description: str = "") -> Tuple[ArgumentParser, Dict[str, Argume
 
 def _preprocess_argv(argv: List[str]) -> List[str]:
     # Some preprocess is necessary for argv because some subcommand includes space
-    # (e.g. optuna study optimize, optuna storage upgrade, ...).
+    # (e.g. optuna storage upgrade).
     argv = argv[1:] if len(argv) > 1 else ["help"]
 
     for i in range(len(argv)):

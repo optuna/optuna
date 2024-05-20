@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import itertools
 from numbers import Real
 from typing import Any
@@ -6,6 +8,7 @@ from typing import List
 from typing import Mapping
 from typing import Optional
 from typing import Sequence
+from typing import TYPE_CHECKING
 from typing import Union
 import warnings
 
@@ -15,9 +18,12 @@ from optuna.distributions import BaseDistribution
 from optuna.logging import get_logger
 from optuna.samplers import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
-from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 GridValueType = Union[str, float, int, bool, None]
@@ -117,7 +123,7 @@ class GridSampler(BaseSampler):
         self._param_names = sorted(search_space.keys())
         self._n_min_trials = len(self._all_grids)
         self._rng = LazyRandomState(seed)
-        self._rng.rng.shuffle(self._all_grids)
+        self._rng.rng.shuffle(self._all_grids)  # type: ignore[arg-type]
 
     def reseed_rng(self) -> None:
         self._rng.rng.seed()

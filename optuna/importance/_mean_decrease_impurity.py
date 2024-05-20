@@ -3,7 +3,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
-import numpy
+import numpy as np
 
 from optuna._imports import try_import
 from optuna._transform import _SearchSpaceTransform
@@ -56,8 +56,8 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
             min_samples_leaf=1,
             random_state=seed,
         )
-        self._trans_params = numpy.empty(0)
-        self._trans_values = numpy.empty(0)
+        self._trans_params = np.empty(0)
+        self._trans_values = np.empty(0)
         self._param_names: List[str] = list()
 
     def evaluate(
@@ -83,8 +83,8 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
 
         trials: List[FrozenTrial] = _get_filtered_trials(study, params=params, target=target)
         trans = _SearchSpaceTransform(distributions, transform_log=False, transform_step=False)
-        trans_params: numpy.ndarray = _get_trans_params(trials, trans)
-        target_values: numpy.ndarray = _get_target_values(trials, target)
+        trans_params: np.ndarray = _get_trans_params(trials, trans)
+        target_values: np.ndarray = _get_target_values(trials, target)
 
         forest = self._forest
         forest.fit(X=trans_params, y=target_values)
@@ -92,7 +92,7 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
 
         # Untransform feature importances to param importances
         # by adding up relevant feature importances.
-        param_importances = numpy.zeros(len(params))
-        numpy.add.at(param_importances, trans.encoded_column_to_column, feature_importances)
+        param_importances = np.zeros(len(params))
+        np.add.at(param_importances, trans.encoded_column_to_column, feature_importances)
 
         return _sort_dict_by_importance(_param_importances_to_dict(params, param_importances))
