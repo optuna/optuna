@@ -33,7 +33,7 @@ from optuna import TrialPruned
 from optuna.exceptions import DuplicatedStudyError
 from optuna.exceptions import ExperimentalWarning
 from optuna.study import StudyDirection
-from optuna.study.study import _CONSTRAINTS_KEY
+from optuna.study._constrained_optimization import _CONSTRAINTS_KEY
 from optuna.study.study import _SYSTEM_ATTR_METRIC_NAMES
 from optuna.testing.objectives import fail_objective
 from optuna.testing.storages import STORAGE_MODES

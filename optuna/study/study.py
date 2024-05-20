@@ -30,6 +30,8 @@ from optuna._typing import JSONSerializable
 from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.distributions import BaseDistribution
 from optuna.storages._heartbeat import is_heartbeat_enabled
+from optuna.study._constrained_optimization import _CONSTRAINTS_KEY
+from optuna.study._constrained_optimization import _get_feasible_trials
 from optuna.study._multi_objective import _get_pareto_front_trials
 from optuna.study._optimize import _optimize
 from optuna.study._study_direction import StudyDirection
@@ -48,7 +50,6 @@ if TYPE_CHECKING:
 
 ObjectiveFuncType = Callable[[trial_module.Trial], Union[float, Sequence[float]]]
 _SYSTEM_ATTR_METRIC_NAMES = "study:metric_names"
-_CONSTRAINTS_KEY = "constraints"
 
 
 _logger = logging.get_logger(__name__)
@@ -57,15 +58,6 @@ _logger = logging.get_logger(__name__)
 class _ThreadLocalStudyAttribute(threading.local):
     in_optimize_loop: bool = False
     cached_all_trials: list["FrozenTrial"] | None = None
-
-
-def _get_feasible_trials(trials: Sequence[FrozenTrial]) -> list[FrozenTrial]:
-    feasible_trials = []
-    for trial in trials:
-        constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
-        if constraints is not None and all(x <= 0.0 for x in constraints):
-            feasible_trials.append(trial)
-    return feasible_trials
 
 
 class Study:
