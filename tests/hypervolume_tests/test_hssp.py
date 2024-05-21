@@ -34,7 +34,6 @@ def test_solve_hssp(dim: int) -> None:
         assert approx / truth > 0.6321  # 1 - 1/e
 
 
-@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 def test_solve_hssp_infinite_loss() -> None:
     rng = np.random.RandomState(128)
 
@@ -53,7 +52,6 @@ def test_solve_hssp_infinite_loss() -> None:
         assert np.isinf(approx)
 
 
-@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 def test_solve_hssp_duplicated_infinite_loss() -> None:
     test_case = np.array([[np.inf, 0, 0], [np.inf, 0, 0], [0, np.inf, 0], [0, 0, np.inf]])
     r = np.full(3, np.inf)
