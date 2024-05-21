@@ -14,6 +14,8 @@ def _compute_2d(solution_set: np.ndarray, reference_point: np.ndarray) -> float:
             The reference point to compute the hypervolume.
     """
     assert solution_set.shape[1] == 2 and reference_point.shape[0] == 2
+    if not np.isfinite(reference_point).all():
+        return float("inf")
 
     # Ascending order in the 1st objective, and descending order in the 2nd objective.
     sorted_solution_set = solution_set[np.lexsort((-solution_set[:, 1], solution_set[:, 0]))]

@@ -1,4 +1,5 @@
 import itertools
+import math
 from typing import Tuple
 
 import numpy as np
@@ -11,11 +12,14 @@ def _compute_hssp_truth_and_approx(test_case: np.ndarray, subset_size: int) -> T
     r = 1.1 * np.max(test_case, axis=0)
     truth = 0.0
     for subset in itertools.permutations(test_case, subset_size):
-        truth = max(truth, optuna._hypervolume.WFG().compute(np.asarray(subset), r))
+        hv = optuna._hypervolume.WFG().compute(np.asarray(subset), r)
+        assert not math.isnan(hv)
+        truth = max(truth, hv)
     indices = optuna._hypervolume.hssp._solve_hssp(
         test_case, np.arange(len(test_case)), subset_size, r
     )
     approx = optuna._hypervolume.WFG().compute(test_case[indices], r)
+    assert not math.isnan(approx)
     return truth, approx
 
 
@@ -30,24 +34,17 @@ def test_solve_hssp(dim: int) -> None:
         assert approx / truth > 0.6321  # 1 - 1/e
 
 
-@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 def test_solve_hssp_infinite_loss() -> None:
     rng = np.random.RandomState(128)
 
     subset_size = 4
-    test_case = rng.rand(9, 2)
-    test_case[-1].fill(float("inf"))
-    truth, approx = _compute_hssp_truth_and_approx(test_case, subset_size)
-    assert np.isinf(truth)
-    assert np.isinf(approx)
-
-    test_case = rng.rand(9, 3)
-    test_case[-1].fill(float("inf"))
-    truth, approx = _compute_hssp_truth_and_approx(test_case, subset_size)
-    assert truth == 0
-    assert np.isnan(approx)
-
     for dim in range(2, 4):
+        test_case = rng.rand(9, dim)
+        test_case[-1].fill(float("inf"))
+        truth, approx = _compute_hssp_truth_and_approx(test_case, subset_size)
+        assert np.isinf(truth)
+        assert np.isinf(approx)
+
         test_case = rng.rand(9, dim)
         test_case[-1].fill(-float("inf"))
         truth, approx = _compute_hssp_truth_and_approx(test_case, subset_size)
@@ -55,7 +52,6 @@ def test_solve_hssp_infinite_loss() -> None:
         assert np.isinf(approx)
 
 
-@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 def test_solve_hssp_duplicated_infinite_loss() -> None:
     test_case = np.array([[np.inf, 0, 0], [np.inf, 0, 0], [0, np.inf, 0], [0, 0, np.inf]])
     r = np.full(3, np.inf)
