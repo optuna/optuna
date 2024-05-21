@@ -5,21 +5,10 @@ from collections.abc import Sequence
 import numpy as np
 
 import optuna
+from optuna.study._constrained_optimization import _get_feasible_trials
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-
-
-_CONSTRAINTS_KEY = "constraints"
-
-
-def _get_feasible_trials(trials: Sequence[FrozenTrial]) -> list[FrozenTrial]:
-    feasible_trials = []
-    for trial in trials:
-        constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
-        if constraints is None or all([x <= 0.0 for x in constraints]):
-            feasible_trials.append(trial)
-    return feasible_trials
 
 
 def _get_pareto_front_trials_by_trials(
