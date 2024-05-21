@@ -3,7 +3,6 @@ from __future__ import annotations
 import enum
 import math
 from typing import Any
-from typing import Optional
 
 from sqlalchemy import asc
 from sqlalchemy import case
@@ -77,7 +76,7 @@ class StudyModel(BaseModel):
         return study
 
     @classmethod
-    def find_by_name(cls, study_name: str, session: orm.Session) -> Optional["StudyModel"]:
+    def find_by_name(cls, study_name: str, session: orm.Session) -> "StudyModel" | None:
         study = session.query(cls).filter(cls.study_name == study_name).one_or_none()
 
         return study
@@ -123,7 +122,7 @@ class StudyUserAttributeModel(BaseModel):
     @classmethod
     def find_by_study_and_key(
         cls, study: StudyModel, key: str, session: orm.Session
-    ) -> Optional["StudyUserAttributeModel"]:
+    ) -> "StudyUserAttributeModel" | None:
         attribute = (
             session.query(cls)
             .filter(cls.study_id == study.study_id)
@@ -155,7 +154,7 @@ class StudySystemAttributeModel(BaseModel):
     @classmethod
     def find_by_study_and_key(
         cls, study: StudyModel, key: str, session: orm.Session
-    ) -> Optional["StudySystemAttributeModel"]:
+    ) -> "StudySystemAttributeModel" | None:
         attribute = (
             session.query(cls)
             .filter(cls.study_id == study.study_id)
@@ -261,8 +260,8 @@ class TrialModel(BaseModel):
     def count(
         cls,
         session: orm.Session,
-        study: Optional[StudyModel] = None,
-        state: Optional[TrialState] = None,
+        study: StudyModel | None = None,
+        state: TrialState | None = None,
     ) -> int:
         trial_count = session.query(func.count(cls.trial_id))
         if study is not None:
@@ -294,7 +293,7 @@ class TrialUserAttributeModel(BaseModel):
     @classmethod
     def find_by_trial_and_key(
         cls, trial: TrialModel, key: str, session: orm.Session
-    ) -> Optional["TrialUserAttributeModel"]:
+    ) -> "TrialUserAttributeModel" | None:
         attribute = (
             session.query(cls)
             .filter(cls.trial_id == trial.trial_id)
@@ -326,7 +325,7 @@ class TrialSystemAttributeModel(BaseModel):
     @classmethod
     def find_by_trial_and_key(
         cls, trial: TrialModel, key: str, session: orm.Session
-    ) -> Optional["TrialSystemAttributeModel"]:
+    ) -> "TrialSystemAttributeModel" | None:
         attribute = (
             session.query(cls)
             .filter(cls.trial_id == trial.trial_id)
@@ -381,7 +380,7 @@ class TrialParamModel(BaseModel):
     @classmethod
     def find_by_trial_and_param_name(
         cls, trial: TrialModel, param_name: str, session: orm.Session
-    ) -> Optional["TrialParamModel"]:
+    ) -> "TrialParamModel" | None:
         param_distribution = (
             session.query(cls)
             .filter(cls.trial_id == trial.trial_id)
@@ -431,7 +430,7 @@ class TrialValueModel(BaseModel):
     def value_to_stored_repr(
         cls,
         value: float,
-    ) -> tuple[Optional[float], TrialValueType]:
+    ) -> tuple[float | None, TrialValueType]:
         if value == float("inf"):
             return (None, cls.TrialValueType.INF_POS)
         elif value == float("-inf"):
@@ -440,7 +439,7 @@ class TrialValueModel(BaseModel):
             return (value, cls.TrialValueType.FINITE)
 
     @classmethod
-    def stored_repr_to_value(cls, value: Optional[float], float_type: TrialValueType) -> float:
+    def stored_repr_to_value(cls, value: float | None, float_type: TrialValueType) -> float:
         if float_type == cls.TrialValueType.INF_POS:
             assert value is None
             return float("inf")
@@ -455,7 +454,7 @@ class TrialValueModel(BaseModel):
     @classmethod
     def find_by_trial_and_objective(
         cls, trial: TrialModel, objective: int, session: orm.Session
-    ) -> Optional["TrialValueModel"]:
+    ) -> "TrialValueModel" | None:
         trial_value = (
             session.query(cls)
             .filter(cls.trial_id == trial.trial_id)
@@ -497,7 +496,7 @@ class TrialIntermediateValueModel(BaseModel):
     def intermediate_value_to_stored_repr(
         cls,
         value: float,
-    ) -> tuple[Optional[float], TrialIntermediateValueType]:
+    ) -> tuple[float | None, TrialIntermediateValueType]:
         if math.isnan(value):
             return (None, cls.TrialIntermediateValueType.NAN)
         elif value == float("inf"):
@@ -509,7 +508,7 @@ class TrialIntermediateValueModel(BaseModel):
 
     @classmethod
     def stored_repr_to_intermediate_value(
-        cls, value: Optional[float], float_type: TrialIntermediateValueType
+        cls, value: float | None, float_type: TrialIntermediateValueType
     ) -> float:
         if float_type == cls.TrialIntermediateValueType.NAN:
             assert value is None
@@ -528,7 +527,7 @@ class TrialIntermediateValueModel(BaseModel):
     @classmethod
     def find_by_trial_and_step(
         cls, trial: TrialModel, step: int, session: orm.Session
-    ) -> Optional["TrialIntermediateValueModel"]:
+    ) -> "TrialIntermediateValueModel" | None:
         trial_intermediate_value = (
             session.query(cls)
             .filter(cls.trial_id == trial.trial_id)
@@ -559,9 +558,7 @@ class TrialHeartbeatModel(BaseModel):
     )
 
     @classmethod
-    def where_trial_id(
-        cls, trial_id: int, session: orm.Session
-    ) -> Optional["TrialHeartbeatModel"]:
+    def where_trial_id(cls, trial_id: int, session: orm.Session) -> "TrialHeartbeatModel" | None:
         return session.query(cls).filter(cls.trial_id == trial_id).one_or_none()
 
 
@@ -574,6 +571,6 @@ class VersionInfoModel(BaseModel):
     library_version = _Column(String(MAX_VERSION_LENGTH))
 
     @classmethod
-    def find(cls, session: orm.Session) -> Optional["VersionInfoModel"]:
+    def find(cls, session: orm.Session) -> "VersionInfoModel" | None:
         version_info = session.query(cls).one_or_none()
         return version_info
