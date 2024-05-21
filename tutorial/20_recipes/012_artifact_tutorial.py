@@ -183,13 +183,13 @@ read and write data transparently. Translating the above process into simple pse
         client=boto3.client(
             "s3",
             aws_access_key_id=os.environ[
-                "PFS2_AWS_ACCESS_KEY_ID"
+                "AWS_ACCESS_KEY_ID"
             ],  # Assume that these environment variables are set up properly. The same applies below.
-            aws_secret_access_key=os.environ["PFS2_AWS_SECRET_ACCESS_KEY"],
-            endpoint_url=os.environ["PFS2_S3_ENDPOINT"],
+            aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
+            endpoint_url=os.environ["S3_ENDPOINT"],
             config=Config(connect_timeout=30, read_timeout=30),
         ),
-        bucket_name=pfs2_bucket,
+        bucket_name="example_bucket",
     )
 
 
