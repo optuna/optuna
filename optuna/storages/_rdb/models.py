@@ -1,9 +1,9 @@
+from __future__ import annotations
+
 import enum
 import math
 from typing import Any
-from typing import List
 from typing import Optional
-from typing import Tuple
 
 from sqlalchemy import asc
 from sqlalchemy import case
@@ -104,7 +104,7 @@ class StudyDirectionModel(BaseModel):
     )
 
     @classmethod
-    def where_study_id(cls, study_id: int, session: orm.Session) -> List["StudyDirectionModel"]:
+    def where_study_id(cls, study_id: int, session: orm.Session) -> list["StudyDirectionModel"]:
         return session.query(cls).filter(cls.study_id == study_id).all()
 
 
@@ -136,7 +136,7 @@ class StudyUserAttributeModel(BaseModel):
     @classmethod
     def where_study_id(
         cls, study_id: int, session: orm.Session
-    ) -> List["StudyUserAttributeModel"]:
+    ) -> list["StudyUserAttributeModel"]:
         return session.query(cls).filter(cls.study_id == study_id).all()
 
 
@@ -168,7 +168,7 @@ class StudySystemAttributeModel(BaseModel):
     @classmethod
     def where_study_id(
         cls, study_id: int, session: orm.Session
-    ) -> List["StudySystemAttributeModel"]:
+    ) -> list["StudySystemAttributeModel"]:
         return session.query(cls).filter(cls.study_id == study_id).all()
 
 
@@ -307,7 +307,7 @@ class TrialUserAttributeModel(BaseModel):
     @classmethod
     def where_trial_id(
         cls, trial_id: int, session: orm.Session
-    ) -> List["TrialUserAttributeModel"]:
+    ) -> list["TrialUserAttributeModel"]:
         return session.query(cls).filter(cls.trial_id == trial_id).all()
 
 
@@ -339,7 +339,7 @@ class TrialSystemAttributeModel(BaseModel):
     @classmethod
     def where_trial_id(
         cls, trial_id: int, session: orm.Session
-    ) -> List["TrialSystemAttributeModel"]:
+    ) -> list["TrialSystemAttributeModel"]:
         return session.query(cls).filter(cls.trial_id == trial_id).all()
 
 
@@ -403,7 +403,7 @@ class TrialParamModel(BaseModel):
         return param_distribution
 
     @classmethod
-    def where_trial_id(cls, trial_id: int, session: orm.Session) -> List["TrialParamModel"]:
+    def where_trial_id(cls, trial_id: int, session: orm.Session) -> list["TrialParamModel"]:
         trial_params = session.query(cls).filter(cls.trial_id == trial_id).all()
 
         return trial_params
@@ -431,7 +431,7 @@ class TrialValueModel(BaseModel):
     def value_to_stored_repr(
         cls,
         value: float,
-    ) -> Tuple[Optional[float], TrialValueType]:
+    ) -> tuple[Optional[float], TrialValueType]:
         if value == float("inf"):
             return (None, cls.TrialValueType.INF_POS)
         elif value == float("-inf"):
@@ -466,7 +466,7 @@ class TrialValueModel(BaseModel):
         return trial_value
 
     @classmethod
-    def where_trial_id(cls, trial_id: int, session: orm.Session) -> List["TrialValueModel"]:
+    def where_trial_id(cls, trial_id: int, session: orm.Session) -> list["TrialValueModel"]:
         trial_values = (
             session.query(cls).filter(cls.trial_id == trial_id).order_by(asc(cls.objective)).all()
         )
@@ -497,7 +497,7 @@ class TrialIntermediateValueModel(BaseModel):
     def intermediate_value_to_stored_repr(
         cls,
         value: float,
-    ) -> Tuple[Optional[float], TrialIntermediateValueType]:
+    ) -> tuple[Optional[float], TrialIntermediateValueType]:
         if math.isnan(value):
             return (None, cls.TrialIntermediateValueType.NAN)
         elif value == float("inf"):
@@ -541,7 +541,7 @@ class TrialIntermediateValueModel(BaseModel):
     @classmethod
     def where_trial_id(
         cls, trial_id: int, session: orm.Session
-    ) -> List["TrialIntermediateValueModel"]:
+    ) -> list["TrialIntermediateValueModel"]:
         trial_intermediate_values = session.query(cls).filter(cls.trial_id == trial_id).all()
 
         return trial_intermediate_values
