@@ -10,11 +10,11 @@ import warnings
 
 import numpy as np
 
+from optuna._experimental import warn_experimental_argument
 from optuna._hypervolume import WFG
 from optuna._hypervolume.hssp import _solve_hssp
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
-from optuna.exceptions import ExperimentalWarning
 from optuna.logging import get_logger
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.samplers._base import _process_constraints_after_trial
@@ -320,44 +320,24 @@ class TPESampler(BaseSampler):
         self._parzen_estimator_cls = _ParzenEstimator
 
         if multivariate:
-            warnings.warn(
-                "``multivariate`` option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_argument("multivariate")
 
         if group:
             if not multivariate:
                 raise ValueError(
                     "``group`` option can only be enabled when ``multivariate`` is enabled."
                 )
-            warnings.warn(
-                "``group`` option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_argument("group")
             self._group_decomposed_search_space = _GroupDecomposedSearchSpace(True)
 
         if constant_liar:
-            warnings.warn(
-                "``constant_liar`` option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_argument("constant_liar")
 
         if constraints_func is not None:
-            warnings.warn(
-                "The ``constraints_func`` option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_argument("constraints_func")
 
         if categorical_distance_func is not None:
-            warnings.warn(
-                "The ``categorical_distance_func`` option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_argument("categorical_distance_func")
 
     def reseed_rng(self) -> None:
         self._rng.rng.seed()

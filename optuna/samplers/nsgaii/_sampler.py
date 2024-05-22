@@ -6,11 +6,10 @@ from collections.abc import Sequence
 import hashlib
 from typing import Any
 from typing import TYPE_CHECKING
-import warnings
 
 import optuna
+from optuna._experimental import warn_experimental_argument
 from optuna.distributions import BaseDistribution
-from optuna.exceptions import ExperimentalWarning
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.samplers._random import RandomSampler
@@ -161,31 +160,15 @@ class NSGAIISampler(BaseSampler):
             raise ValueError("`population_size` must be greater than or equal to 2.")
 
         if constraints_func is not None:
-            warnings.warn(
-                "The constraints_func option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_argument("constraints_func")
         if after_trial_strategy is not None:
-            warnings.warn(
-                "The after_trial_strategy option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_argument("after_trial_strategy")
 
         if child_generation_strategy is not None:
-            warnings.warn(
-                "The child_generation_strategy option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_argument("child_generation_strategy")
 
         if elite_population_selection_strategy is not None:
-            warnings.warn(
-                "The elite_population_selection_strategy option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_argument("elite_population_selection_strategy")
 
         if crossover is None:
             crossover = UniformCrossover(swapping_prob)

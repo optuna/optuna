@@ -14,18 +14,17 @@ from typing import Sequence
 from typing import Tuple
 from typing import TYPE_CHECKING
 from typing import Union
-import warnings
 
 import numpy as np
 
 import optuna
 from optuna import logging
+from optuna._experimental import warn_experimental_argument
 from optuna._imports import _LazyImport
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
-from optuna.exceptions import ExperimentalWarning
 from optuna.samplers import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.search_space import IntersectionSearchSpace
@@ -282,46 +281,22 @@ class CmaEsSampler(BaseSampler):
         self._source_trials = source_trials
 
         if self._restart_strategy:
-            warnings.warn(
-                "`restart_strategy` option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_argument("restart_strategy")
 
         if self._consider_pruned_trials:
-            warnings.warn(
-                "`consider_pruned_trials` option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_argument("consider_pruned_trials")
 
         if self._use_separable_cma:
-            warnings.warn(
-                "`use_separable_cma` option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_argument("use_separable_cma")
 
         if self._source_trials is not None:
-            warnings.warn(
-                "`source_trials` option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_argument("source_trials")
 
         if self._with_margin:
-            warnings.warn(
-                "`with_margin` option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_argument("with_margin")
 
         if self._lr_adapt:
-            warnings.warn(
-                "`lr_adapt` option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_argument("lr_adapt")
 
         if source_trials is not None and (x0 is not None or sigma0 is not None):
             raise ValueError(
