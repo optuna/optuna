@@ -258,10 +258,7 @@ class TrialModel(BaseModel):
 
     @classmethod
     def count(
-        cls,
-        session: orm.Session,
-        study: StudyModel | None = None,
-        state: TrialState | None = None,
+        cls, session: orm.Session, study: StudyModel | None = None, state: TrialState | None = None
     ) -> int:
         trial_count = session.query(func.count(cls.trial_id))
         if study is not None:
@@ -427,10 +424,7 @@ class TrialValueModel(BaseModel):
     )
 
     @classmethod
-    def value_to_stored_repr(
-        cls,
-        value: float,
-    ) -> tuple[float | None, TrialValueType]:
+    def value_to_stored_repr(cls, value: float) -> tuple[float | None, TrialValueType]:
         if value == float("inf"):
             return (None, cls.TrialValueType.INF_POS)
         elif value == float("-inf"):
@@ -494,8 +488,7 @@ class TrialIntermediateValueModel(BaseModel):
 
     @classmethod
     def intermediate_value_to_stored_repr(
-        cls,
-        value: float,
+        cls, value: float
     ) -> tuple[float | None, TrialIntermediateValueType]:
         if math.isnan(value):
             return (None, cls.TrialIntermediateValueType.NAN)
