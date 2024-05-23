@@ -654,6 +654,37 @@ def _split_complete_trials_single_objective(
     return sorted_trials[:n_below], sorted_trials[n_below:]
 
 
+def _solve_hssp_with_cache(
+    trials: Sequence[FrozenTrial],
+    study: Study,
+    loss_vals: np.ndarray,
+    indices: np.ndarray,
+    subset_size: int,
+    reference_point: np.ndarray,
+) -> np.ndarray:
+    hssp_cache = study.system_attrs.get("hssp_cache", None)
+    if hssp_cache is not None and (
+        loss_vals.shape == hssp_cache["loss_vals"].shape
+        and np.allclose(loss_vals, hssp_cache["loss_vals"])
+        and indices.shape == hssp_cache["indices"].shape
+        and np.all(indices == hssp_cache["indices"])
+        and subset_size == hssp_cache["subset_size"]
+        and np.allclose(reference_point, hssp_cache["reference_point"])
+    ):
+        return hssp_cache["selected_indices"]
+
+    selected_indices = _solve_hssp(loss_vals, indices, subset_size, reference_point)
+    hssp_cache = {
+        "loss_vals": loss_vals,
+        "indices": indices,
+        "subset_size": subset_size,
+        "reference_point": reference_point,
+        "selected_indices": selected_indices,
+    }
+    study.set_system_attr("hssp_cache", hssp_cache)
+    return selected_indices
+
+
 def _split_complete_trials_multi_objective(
     trials: Sequence[FrozenTrial], study: Study, n_below: int
 ) -> tuple[list[FrozenTrial], list[FrozenTrial]]:
@@ -688,7 +719,9 @@ def _split_complete_trials_multi_objective(
         worst_point = np.max(rank_i_lvals, axis=0)
         reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
         reference_point[reference_point == 0] = EPS
-        selected_indices = _solve_hssp(rank_i_lvals, rank_i_indices, subset_size, reference_point)
+        selected_indices = _solve_hssp_with_cache(
+            trials, study, rank_i_lvals, rank_i_indices, subset_size, reference_point
+        )
         indices_below[last_idx:] = selected_indices
 
     below_trials = []
