@@ -668,10 +668,10 @@ def _solve_hssp_with_cache(
         and np.allclose(loss_vals, hssp_cache["loss_vals"])
         and indices.shape == hssp_cache["indices"].shape
         and np.all(indices == hssp_cache["indices"])
-        and subset_size == hssp_cache["subset_size"]
         and np.allclose(reference_point, hssp_cache["reference_point"])
+        and subset_size == hssp_cache["subset_size"]
     ):
-        return hssp_cache["selected_indices"]
+        return hssp_cache["selected_indices"][:subset_size]
 
     selected_indices = _solve_hssp(loss_vals, indices, subset_size, reference_point)
     hssp_cache = {
