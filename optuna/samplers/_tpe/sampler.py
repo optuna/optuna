@@ -671,32 +671,31 @@ def _split_complete_trials_single_objective(
 
 
 def _solve_hssp_with_cache(
-    trials: Sequence[FrozenTrial],
     study: Study,
-    loss_vals: np.ndarray,
-    indices: np.ndarray,
+    rank_i_loss_vals: np.ndarray,
+    rank_i_indices: np.ndarray,
     subset_size: int,
     reference_point: np.ndarray,
 ) -> np.ndarray:
     hssp_cache = study._storage.get_study_system_attrs(study._study_id).get("hssp_cache", None)
     if hssp_cache is not None and (
-        loss_vals.shape == hssp_cache["loss_vals"].shape
-        and np.allclose(loss_vals, hssp_cache["loss_vals"])
-        and indices.shape == hssp_cache["indices"].shape
-        and np.all(indices == hssp_cache["indices"])
+        rank_i_loss_vals.shape == hssp_cache["rank_i_loss_vals"].shape
+        and np.allclose(rank_i_loss_vals, hssp_cache["rank_i_loss_vals"])
+        and rank_i_indices.shape == hssp_cache["rank_i_indices"].shape
+        and np.all(rank_i_indices == hssp_cache["rank_i_indices"])
         and np.allclose(reference_point, hssp_cache["reference_point"])
         and subset_size == hssp_cache["subset_size"]
     ):
-        return hssp_cache["selected_indices"][:subset_size]
+        return hssp_cache["selected_indices"]
 
-    selected_indices = _solve_hssp(loss_vals, indices, subset_size, reference_point)
     hssp_cache = {
-        "loss_vals": loss_vals,
-        "indices": indices,
+        "rank_i_loss_vals": rank_i_loss_vals.copy(),
+        "rank_i_indices": rank_i_indices.copy(),
         "subset_size": subset_size,
-        "reference_point": reference_point,
-        "selected_indices": selected_indices,
+        "reference_point": reference_point.copy(),
     }
+    selected_indices = _solve_hssp(rank_i_loss_vals, rank_i_indices, subset_size, reference_point)
+    hssp_cache["selected_indices"] = selected_indices
     study._storage.set_study_system_attr(study._study_id, key="hssp_cache", value=hssp_cache)
     return selected_indices
 
@@ -736,7 +735,7 @@ def _split_complete_trials_multi_objective(
         reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
         reference_point[reference_point == 0] = EPS
         selected_indices = _solve_hssp_with_cache(
-            trials, study, rank_i_lvals, rank_i_indices, subset_size, reference_point
+            study, rank_i_lvals, rank_i_indices, subset_size, reference_point
         )
         indices_below[last_idx:] = selected_indices
 
