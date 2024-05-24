@@ -314,6 +314,7 @@ class TPESampler(BaseSampler):
         self._group_decomposed_search_space: _GroupDecomposedSearchSpace | None = None
         self._search_space_group: _SearchSpaceGroup | None = None
         self._search_space = IntersectionSearchSpace(include_pruned=True)
+        self._split_cache: dict[int, dict[str, set[int]]] = {}
         self._constant_liar = constant_liar
         self._constraints_func = constraints_func
         # NOTE(nabenabe0928): Users can overwrite _ParzenEstimator to customize the TPE behavior.
@@ -442,25 +443,40 @@ class TPESampler(BaseSampler):
                     values[param_name].append(distribution.to_internal_repr(param))
         return {k: np.asarray(v) for k, v in values.items()}
 
-    def _sample(
-        self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
-    ) -> dict[str, Any]:
+    def _split_trials_with_cache(
+        self, study: Study, trial: FrozenTrial
+    ) -> tuple[list[FrozenTrial], list[FrozenTrial]]:
         if self._constant_liar:
             states = [TrialState.COMPLETE, TrialState.PRUNED, TrialState.RUNNING]
         else:
             states = [TrialState.COMPLETE, TrialState.PRUNED]
         use_cache = not self._constant_liar
         trials = study._get_trials(deepcopy=False, states=states, use_cache=use_cache)
+        if trial.number in self._split_cache:
+            split_cache = self._split_cache[trial.number]
+            below_trials = [t for t in trials if t.number in split_cache["below"]]
+            above_trials = [t for t in trials if t.number in split_cache["above"]]
+            return below_trials, above_trials
 
         # We divide data into below and above.
         n = sum(trial.state != TrialState.RUNNING for trial in trials)  # Ignore running trials.
         below_trials, above_trials = _split_trials(
-            study,
-            trials,
-            self._gamma(n),
-            self._constraints_func is not None,
+            study, trials, self._gamma(n), self._constraints_func is not None
         )
+        self._split_cache[trial.number] = {
+            "below": set([t.number for t in below_trials]),
+            "above": set([t.number for t in above_trials]),
+        }
+        if len(self._split_cache) > 128:
+            # Delete old cache.
+            self._split_cache.pop(min(trial_number for trial_number in self._split_cache))
 
+        return below_trials, above_trials
+
+    def _sample(
+        self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
+    ) -> dict[str, Any]:
+        below_trials, above_trials = self._split_trials_with_cache(study, trial)
         mpe_below = self._build_parzen_estimator(
             study, search_space, below_trials, handle_below=True
         )
