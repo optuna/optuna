@@ -92,7 +92,6 @@ optional = [
   # optuna/visualization/param_importances.py.
   "scipy",  # optuna/samplers/_gp
   "torch",  # optuna/samplers/_gp
-  "sortedcontainers",  # optuna/_hypervolume/utils.py
 ]
 test = [
   "coverage",

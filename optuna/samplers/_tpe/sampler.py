@@ -678,7 +678,7 @@ def _solve_hssp_with_cache(
     subset_size: int,
     reference_point: np.ndarray,
 ) -> np.ndarray:
-    hssp_cache = study.system_attrs.get("hssp_cache", None)
+    hssp_cache = study._storage.get_study_system_attrs(study._study_id).get("hssp_cache", None)
     if hssp_cache is not None and (
         loss_vals.shape == hssp_cache["loss_vals"].shape
         and np.allclose(loss_vals, hssp_cache["loss_vals"])
@@ -697,7 +697,7 @@ def _solve_hssp_with_cache(
         "reference_point": reference_point,
         "selected_indices": selected_indices,
     }
-    study.set_system_attr("hssp_cache", hssp_cache)
+    study._storage.set_study_system_attr(study._study_id, key="hssp_cache", value=hssp_cache)
     return selected_indices
 
 
