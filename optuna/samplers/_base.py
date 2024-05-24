@@ -1,12 +1,8 @@
 from __future__ import annotations
 
-<<<<<<< fix/replace-abc-with-protocol
 from abc import abstractmethod
-=======
-import abc
 from collections.abc import Callable
 from collections.abc import Sequence
->>>>>>> master
 from typing import Any
 from typing import TYPE_CHECKING
 
