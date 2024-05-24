@@ -8,11 +8,7 @@ BUFFER_SIZE = 1024 * 1024  # 1MB
 
 
 @experimental_func("4.0.0")
-def download_artifact(
-    artifact_store: ArtifactStore,
-    artifact_id: str,
-    file_path: str,
-) -> None:
+def download_artifact(artifact_store: ArtifactStore, artifact_id: str, file_path: str) -> None:
     """Download an artifact from the artifact store.
 
     Args:
@@ -21,7 +17,7 @@ def download_artifact(
         artifact_id:
             The identifier of the artifact to download.
         file_path:
-            A path to download the artifact to.
+            A path to save the downloaded artifact.
     """
     with artifact_store.open_reader(artifact_id) as reader, open(file_path, "wb") as writer:
         while True:
