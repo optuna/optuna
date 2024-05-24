@@ -139,6 +139,13 @@ The simple pseudocode for the above case  would look something like this:
 
     print(content)
 
+Also, you can easily download the artifact as a file using `download_artifact` function, instead of using the artifact module:
+
+.. code-block:: python
+
+    download_file_path = ... # Set the path to save the downloaded artifact.
+    download_artifact(artifact_store, best_artifact_id, download_file_path)
+
 Scenario 2: Remote MySQL RDB server + AWS S3 artifact store
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
