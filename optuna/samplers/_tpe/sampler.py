@@ -1,22 +1,20 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+from collections.abc import Sequence
 import math
 from typing import Any
-from typing import Callable
 from typing import cast
-from typing import Dict
-from typing import Optional
-from typing import Sequence
 from typing import TYPE_CHECKING
 import warnings
 
 import numpy as np
 
+from optuna._experimental import warn_experimental_argument
 from optuna._hypervolume import WFG
 from optuna._hypervolume.hssp import _solve_hssp
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
-from optuna.exceptions import ExperimentalWarning
 from optuna.logging import get_logger
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.samplers._base import _process_constraints_after_trial
@@ -283,16 +281,16 @@ class TPESampler(BaseSampler):
         n_ei_candidates: int = 24,
         gamma: Callable[[int], int] = default_gamma,
         weights: Callable[[int], np.ndarray] = default_weights,
-        seed: Optional[int] = None,
+        seed: int | None = None,
         *,
         multivariate: bool = False,
         group: bool = False,
         warn_independent_sampling: bool = True,
         constant_liar: bool = False,
-        constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
-        categorical_distance_func: Optional[
-            dict[str, Callable[[CategoricalChoiceType, CategoricalChoiceType], float]]
-        ] = None,
+        constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
+        categorical_distance_func: (
+            dict[str, Callable[[CategoricalChoiceType, CategoricalChoiceType], float]] | None
+        ) = None,
     ) -> None:
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
             consider_prior,
@@ -313,8 +311,8 @@ class TPESampler(BaseSampler):
 
         self._multivariate = multivariate
         self._group = group
-        self._group_decomposed_search_space: Optional[_GroupDecomposedSearchSpace] = None
-        self._search_space_group: Optional[_SearchSpaceGroup] = None
+        self._group_decomposed_search_space: _GroupDecomposedSearchSpace | None = None
+        self._search_space_group: _SearchSpaceGroup | None = None
         self._search_space = IntersectionSearchSpace(include_pruned=True)
         self._constant_liar = constant_liar
         self._constraints_func = constraints_func
@@ -322,44 +320,24 @@ class TPESampler(BaseSampler):
         self._parzen_estimator_cls = _ParzenEstimator
 
         if multivariate:
-            warnings.warn(
-                "``multivariate`` option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_argument("multivariate")
 
         if group:
             if not multivariate:
                 raise ValueError(
                     "``group`` option can only be enabled when ``multivariate`` is enabled."
                 )
-            warnings.warn(
-                "``group`` option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_argument("group")
             self._group_decomposed_search_space = _GroupDecomposedSearchSpace(True)
 
         if constant_liar:
-            warnings.warn(
-                "``constant_liar`` option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_argument("constant_liar")
 
         if constraints_func is not None:
-            warnings.warn(
-                "The ``constraints_func`` option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_argument("constraints_func")
 
         if categorical_distance_func is not None:
-            warnings.warn(
-                "The ``categorical_distance_func`` option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_argument("categorical_distance_func")
 
     def reseed_rng(self) -> None:
         self._rng.rng.seed()
@@ -367,11 +345,11 @@ class TPESampler(BaseSampler):
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
-    ) -> Dict[str, BaseDistribution]:
+    ) -> dict[str, BaseDistribution]:
         if not self._multivariate:
             return {}
 
-        search_space: Dict[str, BaseDistribution] = {}
+        search_space: dict[str, BaseDistribution] = {}
 
         if self._group:
             assert self._group_decomposed_search_space is not None
@@ -392,8 +370,8 @@ class TPESampler(BaseSampler):
         return search_space
 
     def sample_relative(
-        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
-    ) -> Dict[str, Any]:
+        self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
+    ) -> dict[str, Any]:
         if self._group:
             assert self._search_space_group is not None
             params = {}
@@ -409,8 +387,8 @@ class TPESampler(BaseSampler):
             return self._sample_relative(study, trial, search_space)
 
     def _sample_relative(
-        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
-    ) -> Dict[str, Any]:
+        self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
+    ) -> dict[str, Any]:
         if search_space == {}:
             return {}
 
@@ -465,8 +443,8 @@ class TPESampler(BaseSampler):
         return {k: np.asarray(v) for k, v in values.items()}
 
     def _sample(
-        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
-    ) -> Dict[str, Any]:
+        self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
+    ) -> dict[str, Any]:
         if self._constant_liar:
             states = [TrialState.COMPLETE, TrialState.PRUNED, TrialState.RUNNING]
         else:
@@ -542,9 +520,7 @@ class TPESampler(BaseSampler):
 
     @classmethod
     def _compare(
-        cls,
-        samples: Dict[str, np.ndarray],
-        acquisition_func_vals: np.ndarray,
+        cls, samples: dict[str, np.ndarray], acquisition_func_vals: np.ndarray
     ) -> dict[str, int | float]:
         sample_size = next(iter(samples.values())).size
         if sample_size == 0:
@@ -561,7 +537,7 @@ class TPESampler(BaseSampler):
         return {k: v[best_idx].item() for k, v in samples.items()}
 
     @staticmethod
-    def hyperopt_parameters() -> Dict[str, Any]:
+    def hyperopt_parameters() -> dict[str, Any]:
         """Return the the default parameters of hyperopt (v0.1.2).
 
         :class:`~optuna.samplers.TPESampler` can be instantiated with the parameters returned
@@ -611,7 +587,7 @@ class TPESampler(BaseSampler):
         study: Study,
         trial: FrozenTrial,
         state: TrialState,
-        values: Optional[Sequence[float]],
+        values: Sequence[float] | None,
     ) -> None:
         assert state in [TrialState.COMPLETE, TrialState.FAIL, TrialState.PRUNED]
         if self._constraints_func is not None:
@@ -620,10 +596,7 @@ class TPESampler(BaseSampler):
 
 
 def _split_trials(
-    study: Study,
-    trials: list[FrozenTrial],
-    n_below: int,
-    constraints_enabled: bool,
+    study: Study, trials: list[FrozenTrial], n_below: int, constraints_enabled: bool
 ) -> tuple[list[FrozenTrial], list[FrozenTrial]]:
     complete_trials = []
     pruned_trials = []
@@ -672,9 +645,7 @@ def _split_complete_trials(
 
 
 def _split_complete_trials_single_objective(
-    trials: Sequence[FrozenTrial],
-    study: Study,
-    n_below: int,
+    trials: Sequence[FrozenTrial], study: Study, n_below: int
 ) -> tuple[list[FrozenTrial], list[FrozenTrial]]:
     if study.direction == StudyDirection.MINIMIZE:
         sorted_trials = sorted(trials, key=lambda trial: cast(float, trial.value))
@@ -684,9 +655,7 @@ def _split_complete_trials_single_objective(
 
 
 def _split_complete_trials_multi_objective(
-    trials: Sequence[FrozenTrial],
-    study: Study,
-    n_below: int,
+    trials: Sequence[FrozenTrial], study: Study, n_below: int
 ) -> tuple[list[FrozenTrial], list[FrozenTrial]]:
     if n_below == 0:
         # The type of trials must be `list`, but not `Sequence`.
@@ -746,9 +715,7 @@ def _get_pruned_trial_score(trial: FrozenTrial, study: Study) -> tuple[float, fl
 
 
 def _split_pruned_trials(
-    trials: Sequence[FrozenTrial],
-    study: Study,
-    n_below: int,
+    trials: Sequence[FrozenTrial], study: Study, n_below: int
 ) -> tuple[list[FrozenTrial], list[FrozenTrial]]:
     n_below = min(n_below, len(trials))
     sorted_trials = sorted(trials, key=lambda trial: _get_pruned_trial_score(trial, study))

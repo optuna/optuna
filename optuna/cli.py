@@ -727,7 +727,10 @@ class _Ask(_BaseCommand):
             )
 
         except KeyError:
-            study = optuna.create_study(**create_study_kwargs)
+            raise KeyError(
+                "Implicit study creation within the 'ask' command was dropped in Optuna v4.0.0. "
+                "Please use the 'create-study' command beforehand."
+            )
         trial = study.ask(fixed_distributions=search_space)
 
         self.logger.info(f"Asked trial {trial.number} with parameters {trial.params}.")

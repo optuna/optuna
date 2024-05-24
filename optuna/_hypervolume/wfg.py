@@ -20,6 +20,8 @@ class WFG(BaseHypervolume):
         self._reference_point: np.ndarray | None = None
 
     def _compute(self, solution_set: np.ndarray, reference_point: np.ndarray) -> float:
+        if not np.isfinite(reference_point).all():
+            return float("inf")
         self._reference_point = reference_point.astype(np.float64)
         if self._reference_point.shape[0] == 2:
             return _compute_2d(solution_set, self._reference_point)
