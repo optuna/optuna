@@ -56,6 +56,20 @@ def create_study_2d() -> Study:
     return study
 
 
+def create_study_2d_with_constraints(
+    constraints_func: Callable[[FrozenTrial], Sequence[float]]
+) -> Study:
+    sampler = optuna.samplers.TPESampler(seed=0, constraints_func=constraints_func)
+    study = optuna.create_study(directions=["minimize", "minimize"], sampler=sampler)
+
+    study.enqueue_trial({"x": 1, "y": 2})
+    study.enqueue_trial({"x": 1, "y": 1})
+    study.enqueue_trial({"x": 0, "y": 2})
+    study.enqueue_trial({"x": 1, "y": 0})
+    study.optimize(lambda t: [t.suggest_int("x", 0, 2), t.suggest_int("y", 0, 2)], n_trials=4)
+    return study
+
+
 def create_study_3d() -> Study:
     study = optuna.create_study(directions=["minimize", "minimize", "minimize"])
 
@@ -109,7 +123,7 @@ def test_get_pareto_front_info_unconstrained(
         infeasible_trials_with_values=[],
         axis_order=axis_order or [0, 1],
         include_dominated_trials=include_dominated_trials,
-        has_constraints_func=False,
+        has_constraints=False,
     )
 
 
@@ -118,35 +132,50 @@ def test_get_pareto_front_info_unconstrained(
 @pytest.mark.parametrize("targets", [None, lambda t: (t.values[0], t.values[1])])
 @pytest.mark.parametrize("target_names", [None, ["Foo", "Bar"]])
 @pytest.mark.parametrize("metric_names", [None, ["v0", "v1"]])
+@pytest.mark.parametrize("use_study_with_constraints", [True, False])
 def test_get_pareto_front_info_constrained(
     include_dominated_trials: bool,
     axis_order: list[int] | None,
     targets: Callable[[FrozenTrial], Sequence[float]] | None,
     target_names: list[str] | None,
     metric_names: list[str] | None,
+    use_study_with_constraints: bool,
 ) -> None:
     if axis_order is not None and targets is not None:
         pytest.skip("skip using both axis_order and targets")
-
-    study = create_study_2d()
-    if metric_names is not None:
-        study.set_metric_names(metric_names)
-    trials = study.get_trials(deepcopy=False)
 
     # (x, y) = (1, 0) is infeasible; others are feasible.
     def constraints_func(t: FrozenTrial) -> Sequence[float]:
         return [1.0] if t.params["x"] == 1 and t.params["y"] == 0 else [-1.0]
 
+    if use_study_with_constraints:
+        study = create_study_2d_with_constraints(constraints_func=constraints_func)
+    else:
+        study = create_study_2d()
+
+    if metric_names is not None:
+        study.set_metric_names(metric_names)
+    trials = study.get_trials(deepcopy=False)
+
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=FutureWarning)
-        info = _get_pareto_front_info(
-            study=study,
-            include_dominated_trials=include_dominated_trials,
-            axis_order=axis_order,
-            targets=targets,
-            target_names=target_names,
-            constraints_func=constraints_func,
-        )
+        if use_study_with_constraints:
+            info = _get_pareto_front_info(
+                study=study,
+                include_dominated_trials=include_dominated_trials,
+                axis_order=axis_order,
+                targets=targets,
+                target_names=target_names,
+            )
+        else:
+            info = _get_pareto_front_info(
+                study=study,
+                include_dominated_trials=include_dominated_trials,
+                axis_order=axis_order,
+                targets=targets,
+                target_names=target_names,
+                constraints_func=constraints_func,
+            )
 
     assert info == _ParetoFrontInfo(
         n_targets=2,
@@ -156,7 +185,7 @@ def test_get_pareto_front_info_constrained(
         infeasible_trials_with_values=[(trials[3], [1, 0])],
         axis_order=axis_order or [0, 1],
         include_dominated_trials=include_dominated_trials,
-        has_constraints_func=True,
+        has_constraints=True,
     )
 
 
@@ -196,7 +225,7 @@ def test_get_pareto_front_info_3d(
         infeasible_trials_with_values=[],
         axis_order=axis_order or [0, 1, 2],
         include_dominated_trials=include_dominated_trials,
-        has_constraints_func=False,
+        has_constraints=False,
     )
 
 
@@ -206,6 +235,7 @@ def test_get_pareto_front_info_invalid_number_of_target_names() -> None:
         _get_pareto_front_info(study=study, target_names=["Foo"])
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("n_dims", [1, 4])
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
 @pytest.mark.parametrize("constraints_func", [None, lambda _: [-1.0]])
@@ -242,6 +272,7 @@ def test_get_pareto_front_info_invalid_axis_order(
         )
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
 @pytest.mark.parametrize("constraints_func", [None, lambda _: [-1.0]])
 def test_get_pareto_front_info_invalid_target_values(
@@ -277,10 +308,10 @@ def test_get_pareto_front_info_using_axis_order_and_targets(
         )
 
 
-def test_constraints_func_experimental_warning() -> None:
+def test_constraints_func_future_warning() -> None:
     study = optuna.create_study(directions=["minimize", "minimize"])
 
-    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+    with pytest.warns(FutureWarning):
         _get_pareto_front_info(
             study=study,
             constraints_func=lambda _: [1.0],
@@ -302,18 +333,18 @@ def test_constraints_func_experimental_warning() -> None:
     ],
 )
 @pytest.mark.parametrize("include_dominated_trials", [True, False])
-@pytest.mark.parametrize("has_constraints_func", [True, False])
+@pytest.mark.parametrize("has_constraints", [True, False])
 def test_get_pareto_front_plot(
     plotter: Callable[[_ParetoFrontInfo], Any],
     info_template: _ParetoFrontInfo,
     include_dominated_trials: bool,
-    has_constraints_func: bool,
+    has_constraints: bool,
 ) -> None:
     info = info_template
     if not include_dominated_trials:
         info = info._replace(include_dominated_trials=False, non_best_trials_with_values=[])
-    if not has_constraints_func:
-        info = info._replace(has_constraints_func=False, infeasible_trials_with_values=[])
+    if not has_constraints:
+        info = info._replace(has_constraints=False, infeasible_trials_with_values=[])
 
     figure = plotter(info)
     if isinstance(figure, go.Figure):
