@@ -12,7 +12,7 @@ import numpy as np
 
 from optuna._experimental import warn_experimental_argument
 from optuna._hypervolume import WFG
-from optuna._hypervolume.hssp import _solve_hssp
+from optuna._hypervolume.hssp import _solve_hssp_with_cache
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.logging import get_logger
@@ -453,6 +453,8 @@ class TPESampler(BaseSampler):
         use_cache = not self._constant_liar
         trials = study._get_trials(deepcopy=False, states=states, use_cache=use_cache)
         if trial.number in self._split_cache:
+            # NOTE(nabenabe0928): Split must be shared across all dimensions.
+            # https://github.com/optuna/optuna/pull/5454
             split_cache = self._split_cache[trial.number]
             below_trials = [t for t in trials if t.number in split_cache["below"]]
             above_trials = [t for t in trials if t.number in split_cache["above"]]
@@ -668,36 +670,6 @@ def _split_complete_trials_single_objective(
     else:
         sorted_trials = sorted(trials, key=lambda trial: cast(float, trial.value), reverse=True)
     return sorted_trials[:n_below], sorted_trials[n_below:]
-
-
-def _solve_hssp_with_cache(
-    study: Study,
-    rank_i_loss_vals: np.ndarray,
-    rank_i_indices: np.ndarray,
-    subset_size: int,
-    reference_point: np.ndarray,
-) -> np.ndarray:
-    hssp_cache = study._storage.get_study_system_attrs(study._study_id).get("hssp_cache", None)
-    if hssp_cache is not None and (
-        subset_size == hssp_cache["subset_size"]
-        and np.allclose(reference_point, hssp_cache["reference_point"])
-        and rank_i_indices.shape == hssp_cache["rank_i_indices"].shape
-        and np.all(rank_i_indices == hssp_cache["rank_i_indices"])
-        and rank_i_loss_vals.shape == hssp_cache["rank_i_loss_vals"].shape
-        and np.allclose(rank_i_loss_vals, hssp_cache["rank_i_loss_vals"])
-    ):
-        return hssp_cache["selected_indices"]
-
-    hssp_cache = {
-        "rank_i_loss_vals": rank_i_loss_vals.copy(),
-        "rank_i_indices": rank_i_indices.copy(),
-        "subset_size": subset_size,
-        "reference_point": reference_point.copy(),
-    }
-    selected_indices = _solve_hssp(rank_i_loss_vals, rank_i_indices, subset_size, reference_point)
-    hssp_cache["selected_indices"] = selected_indices
-    study._storage.set_study_system_attr(study._study_id, key="hssp_cache", value=hssp_cache)
-    return selected_indices
 
 
 def _split_complete_trials_multi_objective(
