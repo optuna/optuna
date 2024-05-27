@@ -494,6 +494,7 @@ class TPESampler(BaseSampler):
             weights_below = _calculate_weights_below_for_multi_objective(
                 study, trials, self._constraints_func
             )[param_mask_below]
+            assert np.isfinite(weights_below).all()
             mpe = self._parzen_estimator_cls(
                 observations, search_space, self._parzen_estimator_parameters, weights_below
             )
@@ -781,8 +782,14 @@ def _calculate_weights_below_for_multi_objective(
         contributions = np.asarray(
             [hv - WFG().compute(lvals[indices_mat[i]], reference_point) for i in range(n_below)]
         )
-        contributions += EPS
-        weights_below = np.clip(contributions / np.max(contributions), 0, 1)
+        contributions[np.isnan(contributions)] = np.inf
+        max_contribution = np.maximum(np.max(contributions), EPS)
+        if not np.isfinite(max_contribution):
+            weights_below = np.ones_like(contributions, dtype=float)
+            # TODO(nabenabe0928): Make the weights for non Pareto solutions to zero.
+            weights_below[np.isfinite(contributions)] = EPS
+        else:
+            weights_below = np.clip(contributions / max_contribution, EPS, 1)
 
     # For now, EPS weight is assigned to infeasible trials.
     weights_below_all = np.full(len(below_trials), EPS)
