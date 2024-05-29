@@ -19,8 +19,7 @@ def artifact_store(tmp_path: pathlib.PurePath, request: pytest.FixtureRequest) -
 
 
 def test_download_artifact(tmp_path: pathlib.PurePath, artifact_store: ArtifactStore) -> None:
-    storage = optuna.storages.InMemoryStorage()
-    study = optuna.create_study(storage=storage)
+    study = optuna.create_study()
     artifact_ids: list[str] = []
 
     def objective(trial: optuna.Trial) -> float:
