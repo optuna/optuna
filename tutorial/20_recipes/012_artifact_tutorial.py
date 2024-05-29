@@ -139,7 +139,7 @@ The simple pseudocode for the above case  would look something like this:
 
     print(content)
 
-Also, you can easily download the artifact as a file using `download_artifact` function, instead of using the artifact module:
+Also, you can easily download the artifact as a file using :func:`~optuna.artifacts.download_artifact` function, instead of using the artifact module:
 
 .. code-block:: python
 
