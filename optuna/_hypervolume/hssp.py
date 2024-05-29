@@ -107,33 +107,3 @@ def _solve_hssp(
         rank_i_unique_loss_vals, indices_of_unique_loss_vals, subset_size, reference_point
     )
     return rank_i_indices[subset_indices_of_unique_loss_vals]
-
-
-def _solve_hssp_with_cache(
-    study: optuna.Study,
-    rank_i_loss_vals: np.ndarray,
-    rank_i_indices: np.ndarray,
-    subset_size: int,
-    reference_point: np.ndarray,
-) -> np.ndarray:
-    hssp_cache = study._storage.get_study_system_attrs(study._study_id).get("hssp_cache", None)
-    if hssp_cache is not None and (
-        subset_size == hssp_cache["subset_size"]
-        and np.allclose(reference_point, hssp_cache["reference_point"])
-        and rank_i_indices.shape == hssp_cache["rank_i_indices"].shape
-        and np.all(rank_i_indices == hssp_cache["rank_i_indices"])
-        and rank_i_loss_vals.shape == hssp_cache["rank_i_loss_vals"].shape
-        and np.allclose(rank_i_loss_vals, hssp_cache["rank_i_loss_vals"])
-    ):
-        return hssp_cache["selected_indices"]
-
-    hssp_cache = {
-        "rank_i_loss_vals": rank_i_loss_vals.copy(),
-        "rank_i_indices": rank_i_indices.copy(),
-        "subset_size": subset_size,
-        "reference_point": reference_point.copy(),
-    }
-    selected_indices = _solve_hssp(rank_i_loss_vals, rank_i_indices, subset_size, reference_point)
-    hssp_cache["selected_indices"] = selected_indices
-    study._storage.set_study_system_attr(study._study_id, key="hssp_cache", value=hssp_cache)
-    return selected_indices

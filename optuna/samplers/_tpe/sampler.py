@@ -12,7 +12,7 @@ import numpy as np
 
 from optuna._experimental import warn_experimental_argument
 from optuna._hypervolume import WFG
-from optuna._hypervolume.hssp import _solve_hssp_with_cache
+from optuna._hypervolume.hssp import _solve_hssp
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.logging import get_logger
@@ -706,9 +706,7 @@ def _split_complete_trials_multi_objective(
         worst_point = np.max(rank_i_lvals, axis=0)
         reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
         reference_point[reference_point == 0] = EPS
-        selected_indices = _solve_hssp_with_cache(
-            study, rank_i_lvals, rank_i_indices, subset_size, reference_point
-        )
+        selected_indices = _solve_hssp(rank_i_lvals, rank_i_indices, subset_size, reference_point)
         indices_below[last_idx:] = selected_indices
 
     below_trials = []
