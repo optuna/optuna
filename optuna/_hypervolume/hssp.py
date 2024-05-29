@@ -116,24 +116,29 @@ def _solve_hssp_with_cache(
     subset_size: int,
     reference_point: np.ndarray,
 ) -> np.ndarray:
-    hssp_cache = study._storage.get_study_system_attrs(study._study_id).get("hssp_cache", None)
-    if hssp_cache is not None and (
-        subset_size == hssp_cache["subset_size"]
-        and np.allclose(reference_point, hssp_cache["reference_point"])
-        and rank_i_indices.shape == hssp_cache["rank_i_indices"].shape
-        and np.all(rank_i_indices == hssp_cache["rank_i_indices"])
-        and rank_i_loss_vals.shape == hssp_cache["rank_i_loss_vals"].shape
-        and np.allclose(rank_i_loss_vals, hssp_cache["rank_i_loss_vals"])
+    hssp_cache = study._storage.get_study_system_attrs(study._study_id).get("hssp_cache", {})
+    cached_subset_size = hssp_cache.get("subset_size")
+    cached_ref_point = np.array(hssp_cache.get("reference_point", np.zeros_like(reference_point)))
+    cached_indices = np.array(hssp_cache.get("rank_i_indices", []))
+    cached_loss_vals = np.array(hssp_cache.get("rank_i_loss_vals", []))
+
+    if (
+        subset_size == cached_subset_size
+        and "selected_indices" in hssp_cache
+        and np.allclose(cached_ref_point, reference_point)
+        and np.array_equal(cached_indices, rank_i_indices)
+        and cached_loss_vals.shape == rank_i_loss_vals.shape
+        and np.allclose(cached_loss_vals, rank_i_loss_vals)
     ):
-        return hssp_cache["selected_indices"]
+        return np.asarray(hssp_cache["selected_indices"])
 
     hssp_cache = {
-        "rank_i_loss_vals": rank_i_loss_vals.copy(),
-        "rank_i_indices": rank_i_indices.copy(),
+        "rank_i_loss_vals": rank_i_loss_vals.tolist(),
+        "rank_i_indices": rank_i_indices.tolist(),
         "subset_size": subset_size,
-        "reference_point": reference_point.copy(),
+        "reference_point": reference_point.tolist(),
     }
     selected_indices = _solve_hssp(rank_i_loss_vals, rank_i_indices, subset_size, reference_point)
-    hssp_cache["selected_indices"] = selected_indices
+    hssp_cache["selected_indices"] = selected_indices.tolist()
     study._storage.set_study_system_attr(study._study_id, key="hssp_cache", value=hssp_cache)
     return selected_indices
