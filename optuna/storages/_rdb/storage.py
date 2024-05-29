@@ -8,6 +8,8 @@ from datetime import timedelta
 import json
 import logging
 import os
+import random
+import time
 from typing import Any
 from typing import Callable
 from typing import Container
@@ -446,8 +448,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         # Retry a couple of times. Deadlocks may occur in distributed environments.
         n_retries = 0
-        with _create_scoped_session(self.scoped_session) as session:
-            while True:
+        MAX_RETRIES = 3
+        while n_retries <= MAX_RETRIES:
+            with _create_scoped_session(self.scoped_session) as session:
                 try:
                     # Ensure that that study exists.
                     #
@@ -459,8 +462,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                     trial = self._get_prepared_new_trial(study_id, template_trial, session)
                     break  # Successfully created trial.
                 except sqlalchemy_exc.OperationalError:
-                    if n_retries > 2:
+                    if n_retries >= MAX_RETRIES:
                         raise
+                    time.sleep((2 ** n_retries) + random.random())
 
                 n_retries += 1
 
@@ -486,6 +490,8 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 )
 
             return frozen
+        assert False
+        return FrozenTrial()
 
     def _get_prepared_new_trial(
         self,
