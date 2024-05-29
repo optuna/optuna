@@ -190,6 +190,73 @@ def test_get_pareto_front_info_constrained(
 
 
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
+@pytest.mark.parametrize("axis_order", [None, [0, 1], [1, 0]])
+@pytest.mark.parametrize("targets", [None, lambda t: (t.values[0], t.values[1])])
+@pytest.mark.parametrize("target_names", [None, ["Foo", "Bar"]])
+@pytest.mark.parametrize("metric_names", [None, ["v0", "v1"]])
+@pytest.mark.parametrize("use_study_with_constraints", [True, False])
+def test_get_pareto_front_info_all_infeasible(
+    include_dominated_trials: bool,
+    axis_order: list[int] | None,
+    targets: Callable[[FrozenTrial], Sequence[float]] | None,
+    target_names: list[str] | None,
+    metric_names: list[str] | None,
+    use_study_with_constraints: bool,
+) -> None:
+    if axis_order is not None and targets is not None:
+        pytest.skip("skip using both axis_order and targets")
+
+    # all trials are infeasible.
+    def constraints_func(t: FrozenTrial) -> Sequence[float]:
+        return [1.0]
+
+    if use_study_with_constraints:
+        study = create_study_2d_with_constraints(constraints_func=constraints_func)
+    else:
+        study = create_study_2d()
+
+    if metric_names is not None:
+        study.set_metric_names(metric_names)
+    trials = study.get_trials(deepcopy=False)
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=FutureWarning)
+        if use_study_with_constraints:
+            info = _get_pareto_front_info(
+                study=study,
+                include_dominated_trials=include_dominated_trials,
+                axis_order=axis_order,
+                targets=targets,
+                target_names=target_names,
+            )
+        else:
+            info = _get_pareto_front_info(
+                study=study,
+                include_dominated_trials=include_dominated_trials,
+                axis_order=axis_order,
+                targets=targets,
+                target_names=target_names,
+                constraints_func=constraints_func,
+            )
+
+    assert info == _ParetoFrontInfo(
+        n_targets=2,
+        target_names=target_names or metric_names or ["Objective 0", "Objective 1"],
+        best_trials_with_values=[],
+        non_best_trials_with_values=[],
+        infeasible_trials_with_values=[
+            (trials[0], [1, 2]),
+            (trials[1], [1, 1]),
+            (trials[2], [0, 2]),
+            (trials[3], [1, 0]),
+        ],
+        axis_order=axis_order or [0, 1],
+        include_dominated_trials=include_dominated_trials,
+        has_constraints=True,
+    )
+
+
+@pytest.mark.parametrize("include_dominated_trials", [False, True])
 @pytest.mark.parametrize("axis_order", [None, [0, 1, 2], [2, 1, 0]])
 @pytest.mark.parametrize("targets", [None, lambda t: (t.values[0], t.values[1], t.values[2])])
 @pytest.mark.parametrize("target_names", [None, ["Foo", "Bar", "Baz"]])
