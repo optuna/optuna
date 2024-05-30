@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from optuna._experimental import experimental_func
 from optuna.artifacts._upload import ARTIFACTS_ATTR_PREFIX
 from optuna.study import Study
@@ -24,10 +26,11 @@ def list_stored_artifact_info(study_or_trial: Trial | FrozenTrial | Study) -> li
     """
     system_attrs = study_or_trial.system_attrs
     artifact_info_list: list[dict[str, str]] = []
-    for attr_key, attr_content in system_attrs.items():
+    for attr_key, attr_json_string in system_attrs.items():
         if not attr_key.startswith(ARTIFACTS_ATTR_PREFIX):
             continue
 
+        attr_content = json.loads(attr_json_string)
         artifact_info = {
             "artifact_id": attr_content["artifact_id"],
             "original_file_path": attr_content["file_path"],
