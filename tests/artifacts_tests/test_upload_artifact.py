@@ -51,6 +51,7 @@ def test_upload_trial_artifact(tmp_path: pathlib.PurePath, artifact_store: Artif
     assert artifact_items[0].filename == "dummy.txt"
     assert artifact_items[0].mimetype == "text/plain"
     assert artifact_items[0].encoding is None
+    assert artifact_items[0].file_path == file_path
 
 
 def test_upload_study_artifact(tmp_path: pathlib.PurePath, artifact_store: ArtifactStore) -> None:
@@ -75,6 +76,7 @@ def test_upload_study_artifact(tmp_path: pathlib.PurePath, artifact_store: Artif
     assert artifact_items[0].filename == "dummy.txt"
     assert artifact_items[0].mimetype == "text/plain"
     assert artifact_items[0].encoding is None
+    assert artifact_items[0].file_path == file_path
 
 
 def test_upload_artifact_with_mimetype(
@@ -110,3 +112,4 @@ def test_upload_artifact_with_mimetype(
     assert artifact_items[0].filename == "dummy.obj"
     assert artifact_items[0].mimetype == "model/obj"
     assert artifact_items[0].encoding == "utf-8"
+    assert artifact_items[0].file_path == file_path

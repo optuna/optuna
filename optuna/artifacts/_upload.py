@@ -25,6 +25,7 @@ class ArtifactMeta:
     filename: str
     mimetype: str
     encoding: str | None
+    file_path: str
 
 
 @experimental_func("3.3.0")
@@ -78,6 +79,7 @@ def upload_artifact(
         filename=filename,
         mimetype=mimetype or guess_mimetype or DEFAULT_MIME_TYPE,
         encoding=encoding or guess_encoding,
+        file_path=file_path,
     )
     attr_key = ARTIFACTS_ATTR_PREFIX + artifact_id
     if isinstance(study_or_trial, (Trial, FrozenTrial)):
