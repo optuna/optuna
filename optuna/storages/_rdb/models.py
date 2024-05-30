@@ -553,7 +553,7 @@ class TrialHeartbeatModel(BaseModel):
     @classmethod
     def where_trial_id(
         cls, trial_id: int, session: orm.Session, for_update: bool = False
-        ) -> "TrialHeartbeatModel" | None:
+    ) -> "TrialHeartbeatModel" | None:
 
         query = session.query(cls).filter(cls.trial_id == trial_id)
 
