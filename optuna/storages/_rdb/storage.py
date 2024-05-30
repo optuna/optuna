@@ -464,7 +464,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 except sqlalchemy_exc.OperationalError:
                     if n_retries >= MAX_RETRIES:
                         raise
-                    time.sleep((2 ** n_retries) + random.random())
+                    time.sleep((2**n_retries) + random.random())
 
                 n_retries += 1
 
