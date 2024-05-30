@@ -69,6 +69,7 @@ _logger = optuna.logging.get_logger(__name__)
 def _create_scoped_session(
     scoped_session: "sqlalchemy_orm.scoped_session",
     ignore_integrity_error: bool = False,
+    ignore_timeout_error: bool = False,
 ) -> Generator["sqlalchemy_orm.Session", None, None]:
     session = scoped_session()
     try:
@@ -91,6 +92,15 @@ def _create_scoped_session(
             "e.g. exceeding max length. "
         )
         raise optuna.exceptions.StorageInternalError(message) from e
+    except sqlalchemy_exc.OperationalError as e:
+        session.rollback()
+        if ignore_timeout_error and "timeout" in str(e.orig):
+            _logger.debug(
+                "Ignoring {}. This happens due to a timeout. No exception is propagated here"
+                "because expecting a retry to be made by the calling function.".format(repr(e))
+            )
+        else:
+            raise
     except Exception:
         session.rollback()
         raise
@@ -452,7 +462,8 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         while n_retries <= MAX_RETRIES:
             if n_retries != 0:
                 time.sleep((2**n_retries) * (1.0 + random.random()))
-            with _create_scoped_session(self.scoped_session) as session:
+            n_retries += 1
+            with _create_scoped_session(self.scoped_session, ignore_timeout_error=True) as session:
                 try:
                     # Ensure that that study exists.
                     #
@@ -483,7 +494,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                         )
                     break  # Successfully created trial.
                 except sqlalchemy_exc.OperationalError:
-                    n_retries += 1
                     raise
 
         assert n_retries <= MAX_RETRIES, "The _create_new_trial was repeatedly failed."
