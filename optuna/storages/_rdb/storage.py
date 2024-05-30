@@ -988,6 +988,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 session.add(heartbeat)
             else:
                 heartbeat = models.TrialHeartbeatModel.where_trial_id(trial_id, session, True)
+                assert heartbeat is not None
                 heartbeat.heartbeat = session.execute(sqlalchemy.func.now()).scalar()
 
     def _get_stale_trial_ids(self, study_id: int) -> List[int]:
