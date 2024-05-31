@@ -94,7 +94,8 @@ def _create_scoped_session(
         raise optuna.exceptions.StorageInternalError(message) from e
     except sqlalchemy_exc.OperationalError as e:
         session.rollback()
-        if ignore_timeout_error and "timeout" in str(e.orig):
+        error_keystrings = ("1205", "Lock wait timeout exceeded; try restarting transaction")
+        if ignore_timeout_error and all([s in str(e.orig) for s in error_keystrings]):
             _logger.debug(
                 "Ignoring {}. This happens due to a timeout. No exception is propagated here"
                 "because expecting a retry to be made by the calling function.".format(repr(e))
@@ -460,6 +461,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         n_retries = 0
         MAX_RETRIES = 5
         while n_retries <= MAX_RETRIES:
+            # TODO(takizawa): Ponder if this exponential backoff is useful.
             if n_retries != 0:
                 time.sleep((2**n_retries) * (1.0 + random.random()))
             n_retries += 1
