@@ -1116,12 +1116,6 @@ class Study:
                 )
             )
         elif len(trial.values) == 1:
-            try:
-                best_trial = self.best_trial
-            except ValueError:
-                # If no feasible trials are completed yet, study.best_trial raises ValueError.
-                best_trial = None
-
             trial_value: float | dict[str, float]
             if metric_names is None:
                 trial_value = trial.values[0]
@@ -1132,8 +1126,12 @@ class Study:
                 f"Trial {trial.number} finished with value: {trial_value} and parameters: "
                 f"{trial.params}."
             )
-            if best_trial is not None:
+            try:
+                best_trial = self.best_trial
                 message += f" Best is trial {best_trial.number} with value: {best_trial.value}."
+            except ValueError:
+                # If no feasible trials are completed yet, study.best_trial raises ValueError.
+                pass
             _logger.info(message)
         else:
             assert False, "Should not reach."
