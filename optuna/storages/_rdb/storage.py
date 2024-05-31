@@ -94,7 +94,11 @@ def _create_scoped_session(
         raise optuna.exceptions.StorageInternalError(message) from e
     except sqlalchemy_exc.OperationalError as e:
         session.rollback()
+
+        # The following keystrings depend on the backend DB.
+        # If another issue about another DB is raised, the keystrings will be updated.
         error_keystrings = ("1205", "Lock wait timeout exceeded; try restarting transaction")
+
         if ignore_timeout_error and all([s in str(e.orig) for s in error_keystrings]):
             _logger.debug(
                 "Ignoring {}. This happens due to a timeout. No exception is propagated here"
