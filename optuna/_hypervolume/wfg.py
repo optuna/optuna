@@ -26,8 +26,8 @@ class WFG(BaseHypervolume):
             return float("inf")
 
         if not assume_pareto:
-            unique_sols = np.unique(solution_set, axis=0)
-            sorted_pareto_sols = unique_sols[_is_pareto_front(unique_sols)]
+            unique_lexsorted_sols = np.unique(solution_set, axis=0)
+            sorted_pareto_sols = unique_lexsorted_sols[_is_pareto_front(unique_lexsorted_sols)]
         else:
             sorted_pareto_sols = solution_set[solution_set[:, 0].argsort()]
 
