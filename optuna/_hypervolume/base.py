@@ -42,7 +42,9 @@ class BaseHypervolume(abc.ABC):
             print("Hypervolume of the Pareto solutions is {}.".format(hypervolume))
     """
 
-    def compute(self, solution_set: np.ndarray, reference_point: np.ndarray) -> float:
+    def compute(
+        self, solution_set: np.ndarray, reference_point: np.ndarray, assume_pareto: bool = False
+    ) -> float:
         """Compute the hypervolume for the given solution set and reference point.
 
         .. note::
@@ -55,10 +57,12 @@ class BaseHypervolume(abc.ABC):
                 The solution set which we want to compute the hypervolume.
             reference_point:
                 The reference point to compute the hypervolume.
+            assume_pareto:
+                Whether to assume the solution set is Pareto optimal.
         """
 
         self._validate(solution_set, reference_point)
-        return self._compute(solution_set, reference_point)
+        return self._compute(solution_set, reference_point, assume_pareto)
 
     @staticmethod
     def _validate(solution_set: np.ndarray, reference_point: np.ndarray) -> None:
@@ -71,5 +75,7 @@ class BaseHypervolume(abc.ABC):
             )
 
     @abc.abstractmethod
-    def _compute(self, solution_set: np.ndarray, reference_point: np.ndarray) -> float:
+    def _compute(
+        self, solution_set: np.ndarray, reference_point: np.ndarray, assume_pareto: bool
+    ) -> float:
         raise NotImplementedError

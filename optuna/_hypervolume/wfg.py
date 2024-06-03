@@ -19,14 +19,23 @@ class WFG(BaseHypervolume):
     def __init__(self) -> None:
         self._reference_point: np.ndarray | None = None
 
-    def _compute(self, solution_set: np.ndarray, reference_point: np.ndarray) -> float:
+    def _compute(
+        self, solution_set: np.ndarray, reference_point: np.ndarray, assume_pareto: bool
+    ) -> float:
         if not np.isfinite(reference_point).all():
             return float("inf")
+
+        if not assume_pareto:
+            unique_sols = np.unique(solution_set, axis=0)
+            sorted_pareto_sols = unique_sols[_is_pareto_front(unique_sols)]
+        else:
+            sorted_pareto_sols = solution_set[solution_set[:, 0].argsort()]
+
         self._reference_point = reference_point.astype(np.float64)
         if self._reference_point.shape[0] == 2:
-            return _compute_2d(solution_set, self._reference_point)
+            return _compute_2d(sorted_pareto_sols, self._reference_point)
 
-        return self._compute_hv(solution_set[solution_set[:, 0].argsort()].astype(np.float64))
+        return self._compute_hv(sorted_pareto_sols)
 
     def _compute_hv(self, sorted_sols: np.ndarray) -> float:
         assert self._reference_point is not None
