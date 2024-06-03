@@ -11,6 +11,7 @@ def _solve_hssp_2d(
     subset_size: int,
     reference_point: np.ndarray,
 ) -> np.ndarray:
+    # This function can be used for non-unique rank_i_loss_vals as well.
     # The time complexity is O(subset_size * rank_i_loss_vals.shape[0]).
     assert rank_i_loss_vals.shape[-1] == 2 and subset_size <= rank_i_loss_vals.shape[0]
     n_trials = rank_i_loss_vals.shape[0]
@@ -79,6 +80,12 @@ def _solve_hssp_on_unique_loss_vals(
 ) -> np.ndarray:
     if not np.isfinite(reference_point).all():
         return rank_i_indices[:subset_size]
+    if rank_i_indices.size == subset_size:
+        return rank_i_indices
+    if rank_i_loss_vals.shape[-1] == 2:
+        return _solve_hssp_2d(rank_i_loss_vals, rank_i_indices, subset_size, reference_point)
+
+    # The following logic can be used for non-unique rank_i_loss_vals as well.
     diff_of_loss_vals_and_ref_point = reference_point - rank_i_loss_vals
     assert subset_size <= rank_i_indices.size
     n_objectives = reference_point.size
@@ -124,9 +131,6 @@ def _solve_hssp(
     """
     if subset_size == rank_i_indices.size:
         return rank_i_indices
-
-    if rank_i_loss_vals.shape[-1] == 2:
-        return _solve_hssp_2d(rank_i_loss_vals, rank_i_indices, subset_size, reference_point)
 
     rank_i_unique_loss_vals, indices_of_unique_loss_vals = np.unique(
         rank_i_loss_vals, return_index=True, axis=0
