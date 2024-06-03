@@ -30,6 +30,8 @@ from optuna._typing import JSONSerializable
 from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.distributions import BaseDistribution
 from optuna.storages._heartbeat import is_heartbeat_enabled
+from optuna.study._constrained_optimization import _CONSTRAINTS_KEY
+from optuna.study._constrained_optimization import _get_feasible_trials
 from optuna.study._multi_objective import _get_pareto_front_trials
 from optuna.study._optimize import _optimize
 from optuna.study._study_direction import StudyDirection
@@ -157,7 +159,23 @@ class Study:
                 "using Study.best_trials to retrieve a list containing the best trials."
             )
 
-        return copy.deepcopy(self._storage.get_best_trial(self._study_id))
+        best_trial = self._storage.get_best_trial(self._study_id)
+
+        # If the trial with the best value is infeasible, select the best trial from all feasible
+        # trials. Note that the behavior is undefined when constrained optimization without the
+        # violation value in the best-valued trial.
+        constraints = best_trial.system_attrs.get(_CONSTRAINTS_KEY)
+        if constraints is not None and any([x > 0.0 for x in constraints]):
+            complete_trials = self.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
+            feasible_trials = _get_feasible_trials(complete_trials)
+            if len(feasible_trials) == 0:
+                raise ValueError("No feasible trials are completed yet.")
+            if self.direction == StudyDirection.MAXIMIZE:
+                best_trial = max(feasible_trials, key=lambda t: cast(float, t.value))
+            else:
+                best_trial = min(feasible_trials, key=lambda t: cast(float, t.value))
+
+        return copy.deepcopy(best_trial)
 
     @property
     def best_trials(self) -> list[FrozenTrial]:
@@ -172,7 +190,11 @@ class Study:
             A list of :class:`~optuna.trial.FrozenTrial` objects.
         """
 
-        return _get_pareto_front_trials(self)
+        # Check whether the study is constrained optimization.
+        trials = self.get_trials(deepcopy=False)
+        is_constrained = any((_CONSTRAINTS_KEY in trial.system_attrs) for trial in trials)
+
+        return _get_pareto_front_trials(self, consider_constraint=is_constrained)
 
     @property
     def direction(self) -> StudyDirection:
@@ -1089,27 +1111,28 @@ class Study:
             else:
                 trial_values = {name: value for name, value in zip(metric_names, trial.values)}
             _logger.info(
-                "Trial {} finished with values: {} and parameters: {}. ".format(
+                "Trial {} finished with values: {} and parameters: {}.".format(
                     trial.number, trial_values, trial.params
                 )
             )
         elif len(trial.values) == 1:
-            best_trial = self.best_trial
             trial_value: float | dict[str, float]
             if metric_names is None:
                 trial_value = trial.values[0]
             else:
                 trial_value = {metric_names[0]: trial.values[0]}
-            _logger.info(
-                "Trial {} finished with value: {} and parameters: {}. "
-                "Best is trial {} with value: {}.".format(
-                    trial.number,
-                    trial_value,
-                    trial.params,
-                    best_trial.number,
-                    best_trial.value,
-                )
+
+            message = (
+                f"Trial {trial.number} finished with value: {trial_value} and parameters: "
+                f"{trial.params}."
             )
+            try:
+                best_trial = self.best_trial
+                message += f" Best is trial {best_trial.number} with value: {best_trial.value}."
+            except ValueError:
+                # If no feasible trials are completed yet, study.best_trial raises ValueError.
+                pass
+            _logger.info(message)
         else:
             assert False, "Should not reach."
 

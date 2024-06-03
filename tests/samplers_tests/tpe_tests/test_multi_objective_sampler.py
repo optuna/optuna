@@ -442,7 +442,8 @@ def test_calculate_weights_below_for_multi_objective() -> None:
         None,
     )
     assert len(weights_below) == 3
-    assert all([np.isnan(w) for w in weights_below])
+    assert not any([np.isnan(w) for w in weights_below])
+    assert sum(weights_below) > 0
 
     # Three samples with two infeasible trials.
     study = optuna.create_study(directions=["minimize", "minimize"])
