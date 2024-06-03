@@ -65,7 +65,7 @@ def _solve_hssp_and_check_cache(
     study: optuna.Study,
     pareto_sols: np.ndarray,
     pareto_indices: np.ndarray,
-    subset_size: int, 
+    subset_size: int,
     ref_point: np.ndarray,
 ) -> np.ndarray:
     selected_indices = optuna._hypervolume._solve_hssp_with_cache(
@@ -79,9 +79,12 @@ def _solve_hssp_and_check_cache(
     return selected_indices
 
 
-@pytest.mark.parametrize("storage", (optuna.storages.RDBStorage("sqlite:///:memory:"), optuna.storages.InMemoryStorage()))
+@pytest.mark.parametrize(
+    "storage",
+    (optuna.storages.RDBStorage("sqlite:///:memory:"), optuna.storages.InMemoryStorage()),
+)
 def test_solve_hssp_with_cache(storage: optuna.storages.BaseStorage) -> None:
-    study = optuna.create_study(directions=["minimize"]*2, storage=storage)
+    study = optuna.create_study(directions=["minimize"] * 2, storage=storage)
     n_trials = 100
     n_objectives = 3
     rng = np.random.RandomState(42)
@@ -99,13 +102,18 @@ def test_solve_hssp_with_cache(storage: optuna.storages.BaseStorage) -> None:
     rank_2_loss_vals = loss_vals[~on_front][is_rank2]
     rank_2_indices = indices[~on_front][is_rank2]
     subset_size = min(rank_2_indices.size, pareto_indices.size) // 2
-    for i in range(2):
+    selected_indices_list = []
+    for _ in range(2):
         selected_indices_for_pareto = _solve_hssp_and_check_cache(
             study, pareto_sols, pareto_indices, subset_size, ref_point
         )
+        selected_indices_list.append(selected_indices_for_pareto.copy())
 
     selected_indices_for_rank_2 = _solve_hssp_and_check_cache(
         study, rank_2_loss_vals, rank_2_indices, subset_size, ref_point
     )
+    selected_indices_list.append(selected_indices_for_rank_2.copy())
+    # The result should be identical.
+    assert np.all(np.sort(selected_indices_list[0]) == np.sort(selected_indices_list[1]))
     # Cache should be deleted, meaning that the following condition must be satisfied.
-    assert np.all(np.sort(selected_indices_for_pareto) != np.sort(selected_indices_for_rank_2))
+    assert np.all(np.sort(selected_indices_list[0]) != np.sort(selected_indices_list[-1]))
