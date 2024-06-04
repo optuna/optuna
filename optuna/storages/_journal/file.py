@@ -152,16 +152,18 @@ class JournalFileStorage(BaseJournalLogStorage):
     is broken on many NFS implementations. In such scenarios, this backend provides
     several workarounds for locking files. For more details, refer to the `Medium blog post`_.
 
-    .. _Medium blog post: https://medium.com/optuna/distributed-optimization-via-nfs-using-optunas-new-operation-based-logging-storage-9815f9c3f932
+    .. _Medium blog post: https://medium.com/optuna/distributed-optimization-via-nfs\
+    -using-optunas-new-operation-based-logging-storage-9815f9c3f932
 
-    It's important to note that, similar to SQLite3, this class doesn't support a high 
-    level of write concurrency, as outlined in the `SQLAlchemy documentation`_. However, 
-    in typical situations where the objective function is computationally expensive, Optuna 
-    users don't need to be concerned about this limitation. The reason being, the write 
-    operations are not the bottleneck as long as the objective function doesn't invoke 
-    :ref:`~optuna.trial.Trial.report` and :ref:`~optuna.trial.Trial.set_user_attr` excessively.
+    It's important to note that, similar to SQLite3, this class doesn't support a high
+    level of write concurrency, as outlined in the `SQLAlchemy documentation`_. However,
+    in typical situations where the objective function is computationally expensive, Optuna
+    users don't need to be concerned about this limitation. The reason being, the write
+    operations are not the bottleneck as long as the objective function doesn't invoke
+    :meth:`~optuna.trial.Trial.report` and :meth:`~optuna.trial.Trial.set_user_attr` excessively.
 
-    .. _SQLAlchemy documentation: https://docs.sqlalchemy.org/en/20/dialects/sqlite.html#database-locking-behavior-concurrency
+    .. _SQLAlchemy documentation: https://docs.sqlalchemy.org/en/20/dialects/sqlite.html\
+    #database-locking-behavior-concurrency
 
     Args:
         file_path:
