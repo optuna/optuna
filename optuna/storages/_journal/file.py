@@ -145,13 +145,30 @@ def get_lock_file(lock_obj: JournalFileBaseLock) -> Iterator[None]:
 class JournalFileStorage(BaseJournalLogStorage):
     """File storage class for Journal log backend.
 
+    Compared to SQLite3, the benefit of this backend is that it is more suitable for
+    environments where the file system does not support ``fcntl()`` file locking.
+    For example, as written in the `SQLite3 FAQ <https://www.sqlite.org/faq.html#q5>`_,
+    SQLite3 might not work on NFS (Network File System) since ``fcntl()`` file locking
+    is broken on many NFS implementations. In such scenarios, this backend provides
+    several workarounds for locking files. For more details, refer to the `Medium blog post`_.
+
+    .. _Medium blog post: https://medium.com/optuna/distributed-optimization-via-nfs-using-optunas-new-operation-based-logging-storage-9815f9c3f932
+
+    It's important to note that, similar to SQLite3, this class doesn't support a high 
+    level of write concurrency, as outlined in the `SQLAlchemy documentation`_. However, 
+    in typical situations where the objective function is computationally expensive, Optuna 
+    users don't need to be concerned about this limitation. The reason being, the write 
+    operations are not the bottleneck as long as the objective function doesn't invoke 
+    :ref:`~optuna.trial.Trial.report` and :ref:`~optuna.trial.Trial.set_user_attr` excessively.
+
+    .. _SQLAlchemy documentation: https://docs.sqlalchemy.org/en/20/dialects/sqlite.html#database-locking-behavior-concurrency
+
     Args:
         file_path:
             Path of file to persist the log to.
 
         lock_obj:
             Lock object for process exclusivity.
-
     """
 
     def __init__(self, file_path: str, lock_obj: Optional[JournalFileBaseLock] = None) -> None:
