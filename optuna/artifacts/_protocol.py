@@ -16,6 +16,8 @@ if TYPE_CHECKING:
 class ArtifactStore(Protocol):
     """A protocol defining the interface for an artifact backend.
 
+    Methods defined in this protocol are not supposed to be directly intended by library users.
+
     An artifact backend is responsible for managing the storage and retrieval
     of artifact data. The backend should provide methods for opening, writing
     and removing artifacts.
