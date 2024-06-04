@@ -823,6 +823,7 @@ def test_split_trials(direction: str, constant_liar: bool, constraints: bool) ->
 )
 def test_split_trials_for_multiobjective_constant_liar(directions: list[str]) -> None:
     study = optuna.create_study(directions=directions)
+    # 16 Trials (#0 -- #15) that should be sorted by non-dominated sort and HSSP.
     for obj1 in [-float("inf"), 0, 1, float("inf")]:
         val1 = obj1 if directions[0] == "minimize" else -obj1
         for obj2 in [-float("inf"), 0, 1, float("inf")]:
@@ -836,7 +837,9 @@ def test_split_trials_for_multiobjective_constant_liar(directions: list[str]) ->
                 )
             )
 
-    for _ in range(5):
+    # 5 Trials (#16 -- # 20) that should come at the end of the sorting.
+    n_running_trials = 5
+    for _ in range(n_running_trials):
         study.add_trial(
             optuna.create_trial(
                 state=optuna.trial.TrialState.RUNNING,
@@ -845,13 +848,22 @@ def test_split_trials_for_multiobjective_constant_liar(directions: list[str]) ->
             )
         )
 
+    # 2 Trials (#21, #22) that should be ignored in the sorting.
     study.add_trial(optuna.create_trial(state=optuna.trial.TrialState.FAIL))
     study.add_trial(optuna.create_trial(state=optuna.trial.TrialState.WAITING))
 
     states = [optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.RUNNING]
     trials = study.get_trials(states=states)
     finished_trials = study.get_trials(states=(optuna.trial.TrialState.COMPLETE,))
-    ground_truth = [0, 1, 4, 2, 8, 5, 3, 12, 6, 9, 7, 13, 10, 11, 14, 15, 16, 17, 18, 19, 20]
+    # Below is the relation of `non-domination rank: trial_numbers`.
+    # 0: [0], 1: [1,4], 2: [2,5,8], 3: [3,6,9,12], 4: [7,10,13], 5: [11,14], 6: [15]
+    # NOTE(nabenabe0928): As each `values` includes `inf`, ref_point also includes `inf`,
+    # leading to an arbitrary hypervolume contribution to be `inf`. That is why HSSP starts to pick
+    # an earlier trial number in each non-domination rank.
+    ground_truth = [0, 1, 4, 2, 8, 5, 3, 6, 9, 12, 7, 10, 13, 11, 14, 15]
+    n_completed_trials = len(ground_truth)
+    # NOTE(nabenabe0928): Running trials (#16 -- #20) must come at the end.
+    ground_truth += [n_completed_trials + i for i in range(n_running_trials)]
     for n_below in range(1, len(finished_trials) + 1):
         below_trials, above_trials = _tpe.sampler._split_trials(
             study, trials, n_below, constraints_enabled=False
