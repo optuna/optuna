@@ -97,7 +97,7 @@ def test_get_pareto_front_info_unconstrained(
     metric_names: list[str] | None,
 ) -> None:
     if axis_order is not None and targets is not None:
-        pytest.skip("skip using both axis_order and targets")
+        pytest.skip("skip using both axis_order and targets because they cannot be used at the same time.")
 
     study = create_study_2d()
     if metric_names is not None:
@@ -142,7 +142,7 @@ def test_get_pareto_front_info_constrained(
     use_study_with_constraints: bool,
 ) -> None:
     if axis_order is not None and targets is not None:
-        pytest.skip("skip using both axis_order and targets")
+        pytest.skip("skip using both axis_order and targets because they cannot be used at the same time.")
 
     # (x, y) = (1, 0) is infeasible; others are feasible.
     def constraints_func(t: FrozenTrial) -> Sequence[float]:
@@ -159,23 +159,14 @@ def test_get_pareto_front_info_constrained(
 
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=FutureWarning)
-        if use_study_with_constraints:
-            info = _get_pareto_front_info(
-                study=study,
-                include_dominated_trials=include_dominated_trials,
-                axis_order=axis_order,
-                targets=targets,
-                target_names=target_names,
-            )
-        else:
-            info = _get_pareto_front_info(
-                study=study,
-                include_dominated_trials=include_dominated_trials,
-                axis_order=axis_order,
-                targets=targets,
-                target_names=target_names,
-                constraints_func=constraints_func,
-            )
+        info = _get_pareto_front_info(
+            study=study,
+            include_dominated_trials=include_dominated_trials,
+            axis_order=axis_order,
+            targets=targets,
+            target_names=target_names,
+            constraints_func=None if use_study_with_constraints else constraints_func,
+        )
 
     assert info == _ParetoFrontInfo(
         n_targets=2,
@@ -204,7 +195,7 @@ def test_get_pareto_front_info_all_infeasible(
     use_study_with_constraints: bool,
 ) -> None:
     if axis_order is not None and targets is not None:
-        pytest.skip("skip using both axis_order and targets")
+        pytest.skip("skip using both axis_order and targets because they cannot be used at the same time.")
 
     # all trials are infeasible.
     def constraints_func(t: FrozenTrial) -> Sequence[float]:
@@ -221,23 +212,14 @@ def test_get_pareto_front_info_all_infeasible(
 
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=FutureWarning)
-        if use_study_with_constraints:
-            info = _get_pareto_front_info(
-                study=study,
-                include_dominated_trials=include_dominated_trials,
-                axis_order=axis_order,
-                targets=targets,
-                target_names=target_names,
-            )
-        else:
-            info = _get_pareto_front_info(
-                study=study,
-                include_dominated_trials=include_dominated_trials,
-                axis_order=axis_order,
-                targets=targets,
-                target_names=target_names,
-                constraints_func=constraints_func,
-            )
+        info = _get_pareto_front_info(
+            study=study,
+            include_dominated_trials=include_dominated_trials,
+            axis_order=axis_order,
+            targets=targets,
+            target_names=target_names,
+            constraints_func=None if use_study_with_constraints else constraints_func,
+        )
 
     assert info == _ParetoFrontInfo(
         n_targets=2,
@@ -267,7 +249,7 @@ def test_get_pareto_front_info_3d(
     target_names: list[str] | None,
 ) -> None:
     if axis_order is not None and targets is not None:
-        pytest.skip("skip using both axis_order and targets")
+        pytest.skip("skip using both axis_order and targets because they cannot be used at the same time.")
 
     study = create_study_3d()
     trials = study.get_trials(deepcopy=False)
