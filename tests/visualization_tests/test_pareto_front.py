@@ -58,6 +58,7 @@ def create_study_2d(
     study.optimize(lambda t: [t.suggest_int("x", 0, 2), t.suggest_int("y", 0, 2)], n_trials=4)
     return study
 
+
 def create_study_3d() -> Study:
     study = optuna.create_study(directions=["minimize", "minimize", "minimize"])
 
@@ -85,7 +86,9 @@ def test_get_pareto_front_info_unconstrained(
     metric_names: list[str] | None,
 ) -> None:
     if axis_order is not None and targets is not None:
-        pytest.skip("skip using both axis_order and targets because they cannot be used at the same time.")
+        pytest.skip(
+            "skip using both axis_order and targets because they cannot be used at the same time."
+        )
 
     study = create_study_2d()
     if metric_names is not None:
@@ -130,7 +133,9 @@ def test_get_pareto_front_info_constrained(
     use_study_with_constraints: bool,
 ) -> None:
     if axis_order is not None and targets is not None:
-        pytest.skip("skip using both axis_order and targets because they cannot be used at the same time.")
+        pytest.skip(
+            "skip using both axis_order and targets because they cannot be used at the same time."
+        )
 
     # (x, y) = (1, 0) is infeasible; others are feasible.
     def constraints_func(t: FrozenTrial) -> Sequence[float]:
@@ -183,7 +188,9 @@ def test_get_pareto_front_info_all_infeasible(
     use_study_with_constraints: bool,
 ) -> None:
     if axis_order is not None and targets is not None:
-        pytest.skip("skip using both axis_order and targets because they cannot be used at the same time.")
+        pytest.skip(
+            "skip using both axis_order and targets because they cannot be used at the same time."
+        )
 
     # all trials are infeasible.
     def constraints_func(t: FrozenTrial) -> Sequence[float]:
@@ -237,7 +244,9 @@ def test_get_pareto_front_info_3d(
     target_names: list[str] | None,
 ) -> None:
     if axis_order is not None and targets is not None:
-        pytest.skip("skip using both axis_order and targets because they cannot be used at the same time.")
+        pytest.skip(
+            "skip using both axis_order and targets because they cannot be used at the same time."
+        )
 
     study = create_study_3d()
     trials = study.get_trials(deepcopy=False)
