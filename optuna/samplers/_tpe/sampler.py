@@ -469,8 +469,8 @@ class TPESampler(BaseSampler):
             "below": set([t.number for t in below_trials]),
             "above": set([t.number for t in above_trials]),
         }
-        if len(self._split_cache) > 128:
-            # Delete old cache.
+        if len(self._split_cache) > 64:
+            # Delete the oldest cache.
             self._split_cache.pop(min(trial_number for trial_number in self._split_cache))
 
         return below_trials, above_trials
