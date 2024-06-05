@@ -7,6 +7,7 @@ from typing import NamedTuple
 import warnings
 
 import optuna
+from optuna import _deprecated
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study import Study
 from optuna.study._multi_objective import _get_pareto_front_trials_by_trials
@@ -238,12 +239,20 @@ def _get_pareto_front_info(
     targets: Callable[[FrozenTrial], Sequence[float]] | None = None,
 ) -> _ParetoFrontInfo:
     if axis_order is not None:
-        warnings.warn(
-            "`axis_order` has been deprecated in v3.0.0. "
-            "This feature will be removed in v5.0.0. "
-            "See https://github.com/optuna/optuna/releases/tag/v3.0.0.",
-            FutureWarning,
+        msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
+            name="`axis_order`",
+            d_ver="3.0.0",
+            r_ver="5.0.0",
         )
+        warnings.warn(msg, FutureWarning)
+
+    if constraints_func is not None:
+        msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
+            name="`constraints_func`",
+            d_ver="4.0.0",
+            r_ver="6.0.0",
+        )
+        warnings.warn(msg, FutureWarning)
 
     if targets is not None and axis_order is not None:
         raise ValueError(
@@ -255,12 +264,6 @@ def _get_pareto_front_info(
     infeasible_trials = []
     has_constraints = False
     if constraints_func is not None:
-        warnings.warn(
-            "`constraints_func` has been deprecated in v4.0.0. "
-            "This feature will be removed in v6.0.0. "
-            "See https://github.com/optuna/optuna/releases/tag/v4.0.0.",
-            FutureWarning,
-        )
         for trial in study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)):
             if all(map(lambda x: x <= 0.0, constraints_func(trial))):
                 feasible_trials.append(trial)
@@ -286,12 +289,8 @@ def _get_pareto_front_info(
         non_best_trials = []
 
     if len(best_trials) == 0:
-        _logger.warning(
-            (
-                "Your study does not have any completed"
-                f"{' and feasible' if has_constraints else ''} trials."
-            )
-        )
+        what_trial = "completed" if has_constraints else "completed and feasible"
+        _logger.warning(f"Your study does not have any {what_trial} trials. ")
 
     _targets = targets
     if _targets is None:
