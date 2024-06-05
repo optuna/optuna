@@ -45,19 +45,8 @@ def test_get_pareto_front_info_infer_n_targets() -> None:
         _get_pareto_front_info(study, targets=lambda _: [0.0, 1.0])
 
 
-def create_study_2d() -> Study:
-    study = optuna.create_study(directions=["minimize", "minimize"])
-
-    study.enqueue_trial({"x": 1, "y": 2})
-    study.enqueue_trial({"x": 1, "y": 1})
-    study.enqueue_trial({"x": 0, "y": 2})
-    study.enqueue_trial({"x": 1, "y": 0})
-    study.optimize(lambda t: [t.suggest_int("x", 0, 2), t.suggest_int("y", 0, 2)], n_trials=4)
-    return study
-
-
-def create_study_2d_with_constraints(
-    constraints_func: Callable[[FrozenTrial], Sequence[float]]
+def create_study_2d(
+    constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None
 ) -> Study:
     sampler = optuna.samplers.TPESampler(seed=0, constraints_func=constraints_func)
     study = optuna.create_study(directions=["minimize", "minimize"], sampler=sampler)
@@ -68,7 +57,6 @@ def create_study_2d_with_constraints(
     study.enqueue_trial({"x": 1, "y": 0})
     study.optimize(lambda t: [t.suggest_int("x", 0, 2), t.suggest_int("y", 0, 2)], n_trials=4)
     return study
-
 
 def create_study_3d() -> Study:
     study = optuna.create_study(directions=["minimize", "minimize", "minimize"])
@@ -149,7 +137,7 @@ def test_get_pareto_front_info_constrained(
         return [1.0] if t.params["x"] == 1 and t.params["y"] == 0 else [-1.0]
 
     if use_study_with_constraints:
-        study = create_study_2d_with_constraints(constraints_func=constraints_func)
+        study = create_study_2d(constraints_func=constraints_func)
     else:
         study = create_study_2d()
 
@@ -202,7 +190,7 @@ def test_get_pareto_front_info_all_infeasible(
         return [1.0]
 
     if use_study_with_constraints:
-        study = create_study_2d_with_constraints(constraints_func=constraints_func)
+        study = create_study_2d(constraints_func=constraints_func)
     else:
         study = create_study_2d()
 
