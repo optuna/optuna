@@ -263,24 +263,22 @@ def _get_pareto_front_info(
     feasible_trials = []
     infeasible_trials = []
     has_constraints = False
-    if constraints_func is not None:
-        for trial in study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)):
+    for trial in study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)):
+        if constraints_func is not None:
+            # NOTE(nabenabe0928): This part is deprecated.
+            has_constraints = True
             if all(map(lambda x: x <= 0.0, constraints_func(trial))):
                 feasible_trials.append(trial)
             else:
                 infeasible_trials.append(trial)
-        has_constraints = True
-    else:
-        for trial in study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)):
-            constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
+            continue
 
-            if constraints is not None:
-                has_constraints = True
-
-            if constraints is None or all([x <= 0.0 for x in constraints]):
-                feasible_trials.append(trial)
-            else:
-                infeasible_trials.append(trial)
+        constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
+        has_constraints |= constraints is not None
+        if constraints is None or all([x <= 0.0 for x in constraints]):
+            feasible_trials.append(trial)
+        else:
+            infeasible_trials.append(trial)
 
     best_trials = _get_pareto_front_trials_by_trials(feasible_trials, study.directions)
     if include_dominated_trials:
