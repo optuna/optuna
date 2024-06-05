@@ -454,7 +454,7 @@ class TPESampler(BaseSampler):
         trials = study._get_trials(deepcopy=False, states=states, use_cache=use_cache)
         if trial.number in self._split_cache:
             # NOTE(nabenabe0928): Split must be shared across all dimensions.
-            # https://github.com/optuna/optuna/pull/5454
+            # https://github.com/optuna/optuna/pull/1166
             split_cache = self._split_cache[trial.number]
             below_trials = [t for t in trials if t.number in split_cache["below"]]
             above_trials = [t for t in trials if t.number in split_cache["above"]]
