@@ -24,7 +24,7 @@ def artifact_store(tmp_path: pathlib.PurePath, request: pytest.FixtureRequest) -
 
 def _check_artifact_meta(
     artifact_store: ArtifactStore,
-    study_or_trial: Trial | Study,
+    study_or_trial: Trial | FrozenTrial | Study,
     file_path: str,
     mimetype: str | None,
     encoding: str | None,
@@ -52,10 +52,9 @@ def _check_artifact_meta(
     assert artifact_meta_list[0].encoding == encoding
 
 
-@pytest.mark.parametrize("filename,mimetype,encoding", [
-    ("dummy.txt", None, None),
-    ("dummy.obj", "model/obj", "utf-8")
-])
+@pytest.mark.parametrize(
+    "filename,mimetype,encoding", [("dummy.txt", None, None), ("dummy.obj", "model/obj", "utf-8")]
+)
 def test_get_all_artifact_meta(
     tmp_path: pathlib.PurePath,
     artifact_store: ArtifactStore,
@@ -73,6 +72,7 @@ def test_get_all_artifact_meta(
     trial = study.ask()
     frozen_trial = study._storage.get_trial(trial._trial_id)
     for study_or_trial in [study, trial, frozen_trial]:
+        assert isinstance(study_or_trial, (Study, Trial, FrozenTrial))  # MyPy redefinition.
         _check_artifact_meta(
             artifact_store,
             study_or_trial,

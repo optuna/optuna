@@ -26,7 +26,7 @@ def get_all_artifact_meta(study_or_trial: Trial | FrozenTrial | Study) -> list[A
         artifacts uploaded to ``study``, but not to all the trials in the study.
     """
     system_attrs = study_or_trial.system_attrs
-    artifact_meta_list: list[dict[str, str]] = []
+    artifact_meta_list: list[ArtifactMeta] = []
     for attr_key, attr_json_string in system_attrs.items():
         if not attr_key.startswith(ARTIFACTS_ATTR_PREFIX):
             continue
