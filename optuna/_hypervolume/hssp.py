@@ -19,11 +19,11 @@ def _solve_hssp_2d(
     sorted_loss_vals = rank_i_loss_vals[order]
     # The diagonal points for each rectangular to calculate the hypervolume contributions.
     rect_diags = np.repeat(reference_point[np.newaxis, :], n_trials, axis=0)
-    subset_indices = np.zeros(subset_size, dtype=int)
+    selected_indices = np.zeros(subset_size, dtype=int)
     for i in range(subset_size):
         contribs = np.prod(rect_diags - sorted_loss_vals, axis=-1)
         max_index = np.argmax(contribs)
-        subset_indices[i] = rank_i_indices[order[max_index]]
+        selected_indices[i] = rank_i_indices[order[max_index]]
         loss_vals = sorted_loss_vals[max_index].copy()
 
         keep = np.ones(n_trials - i, dtype=bool)
@@ -36,7 +36,7 @@ def _solve_hssp_2d(
         rect_diags[:max_index, 0] = np.minimum(loss_vals[0], rect_diags[:max_index, 0])
         rect_diags[max_index:, 1] = np.minimum(loss_vals[1], rect_diags[max_index:, 1])
 
-    return subset_indices
+    return selected_indices
 
 
 def _lazy_contribs_update(
@@ -143,7 +143,7 @@ def _solve_hssp(
         chosen[duplicated_indices[: subset_size - n_unique]] = True
         return rank_i_indices[chosen]
 
-    subset_indices_of_unique_loss_vals = _solve_hssp_on_unique_loss_vals(
+    selected_indices_of_unique_loss_vals = _solve_hssp_on_unique_loss_vals(
         rank_i_unique_loss_vals, indices_of_unique_loss_vals, subset_size, reference_point
     )
-    return rank_i_indices[subset_indices_of_unique_loss_vals]
+    return rank_i_indices[selected_indices_of_unique_loss_vals]
