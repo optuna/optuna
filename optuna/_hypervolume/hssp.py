@@ -15,6 +15,7 @@ def _solve_hssp_2d(
     # The time complexity is O(subset_size * rank_i_loss_vals.shape[0]).
     assert rank_i_loss_vals.shape[-1] == 2 and subset_size <= rank_i_loss_vals.shape[0]
     n_trials = rank_i_loss_vals.shape[0]
+    # rank_i_loss_vals is unique-lexsorted in solve_hssp.
     sorted_indices = np.arange(rank_i_loss_vals.shape[0])
     sorted_loss_vals = rank_i_loss_vals.copy()
     # The diagonal points for each rectangular to calculate the hypervolume contributions.
