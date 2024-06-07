@@ -26,6 +26,7 @@ def _check_artifact_meta(
     artifact_store: ArtifactStore,
     study_or_trial: Trial | FrozenTrial | Study,
     file_path: str,
+    filename: str,
     mimetype: str | None,
     encoding: str | None,
     storage: BaseStorage | None,
@@ -47,7 +48,7 @@ def _check_artifact_meta(
 
     assert len(artifact_meta_list) == 1
     assert artifact_meta_list[0].artifact_id == artifact_id
-    assert artifact_meta_list[0].filename == file_path.split("/")[-1]
+    assert artifact_meta_list[0].filename == filename
     assert artifact_meta_list[0].mimetype == mimetype
     assert artifact_meta_list[0].encoding == encoding
 
@@ -77,6 +78,7 @@ def test_get_all_artifact_meta(
             artifact_store,
             study_or_trial,
             file_path,
+            filename,
             mimetype=mimetype,
             encoding=encoding,
             storage=storage,
