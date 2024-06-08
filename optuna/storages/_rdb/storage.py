@@ -468,7 +468,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             # TODO(takizawa): Ponder if this exponential backoff is useful.
             if n_retries != 0:
                 time.sleep((2**n_retries) * (1.0 + random.random()))
-            n_retries += 1
             with _create_scoped_session(self.scoped_session, ignore_timeout_error=True) as session:
                 try:
                     # Ensure that that study exists.
@@ -501,6 +500,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                     break  # Successfully created trial.
                 except sqlalchemy_exc.OperationalError:
                     raise
+            n_retries += 1
 
         assert n_retries <= MAX_RETRIES, "The _create_new_trial was repeatedly failed."
 
