@@ -18,3 +18,5 @@ The :mod:`~optuna.artifacts` module provides the way to manage artifacts (output
    :no-members:
 
 .. autofunction:: optuna.artifacts.upload_artifact
+
+.. autofunction:: optuna.artifacts.get_all_artifact_meta
