@@ -48,8 +48,8 @@ def upload_artifact(
         artifact_store:
             An artifact store.
         storage:
-            A storage object. If trial is not a :class:`~optuna.trial.Trial` object, this argument
-            is required.
+            A storage object. This argument is required only if ``study_or_trial`` is
+            :class:`~optuna.trial.FrozenTrial`.
         mimetype:
             A MIME type of the artifact. If not specified, the MIME type is guessed from the file
             extension.

@@ -30,6 +30,7 @@ def _check_artifact_meta(
     mimetype: str | None,
     encoding: str | None,
     storage: BaseStorage | None,
+    n_linked_artifact_meta: int,
 ) -> None:
     artifact_id = upload_artifact(
         study_or_trial,
@@ -40,17 +41,16 @@ def _check_artifact_meta(
         encoding=encoding,
     )
     mimetype = "text/plain" if mimetype is None else mimetype
-    artifact_meta_list = get_all_artifact_meta(study_or_trial)
     if isinstance(study_or_trial, FrozenTrial):
-        assert len(artifact_meta_list) == 0
-        # Only storage will be modified for FrozenTrial, so artifact_meta_list will also be empty.
-        return
+        artifact_meta_list = get_all_artifact_meta(study_or_trial, storage=storage)
+    else:
+        artifact_meta_list = get_all_artifact_meta(study_or_trial)
 
-    assert len(artifact_meta_list) == 1
-    assert artifact_meta_list[0].artifact_id == artifact_id
-    assert artifact_meta_list[0].filename == filename
-    assert artifact_meta_list[0].mimetype == mimetype
-    assert artifact_meta_list[0].encoding == encoding
+    assert len(artifact_meta_list) == n_linked_artifact_meta
+    assert artifact_meta_list[-1].artifact_id == artifact_id
+    assert artifact_meta_list[-1].filename == filename
+    assert artifact_meta_list[-1].mimetype == mimetype
+    assert artifact_meta_list[-1].encoding == encoding
 
 
 @pytest.mark.parametrize(
@@ -72,7 +72,7 @@ def test_get_all_artifact_meta(
     study = optuna.create_study(storage=storage)
     trial = study.ask()
     frozen_trial = study._storage.get_trial(trial._trial_id)
-    for study_or_trial in [study, trial, frozen_trial]:
+    for study_or_trial, n_linked_artifact_meta in zip([study, trial, frozen_trial], [1, 1, 2]):
         assert isinstance(study_or_trial, (Study, Trial, FrozenTrial))  # MyPy redefinition.
         _check_artifact_meta(
             artifact_store,
@@ -82,4 +82,5 @@ def test_get_all_artifact_meta(
             mimetype=mimetype,
             encoding=encoding,
             storage=storage,
+            n_linked_artifact_meta=n_linked_artifact_meta,
         )
