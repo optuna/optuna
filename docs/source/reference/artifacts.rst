@@ -4,6 +4,7 @@ optuna.artifacts
 ================
 
 The :mod:`~optuna.artifacts` module provides the way to manage artifacts (output files) in Optuna.
+Please note that methods defined in each ArtifactStore are not intended to be directly accessed by library users.
 
 .. autoclass:: optuna.artifacts.FileSystemArtifactStore
    :no-members:
