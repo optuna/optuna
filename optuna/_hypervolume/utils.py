@@ -17,6 +17,9 @@ def _compute_2d(sorted_pareto_sols: np.ndarray, reference_point: np.ndarray) -> 
             The reference point to compute the hypervolume.
     """
     assert sorted_pareto_sols.shape[1] == 2 and reference_point.shape[0] == 2
+    if not np.all(np.isfinite(reference_point)):
+        return float("inf")
+
     rect_diag_y = np.append(reference_point[1], sorted_pareto_sols[:-1, 1])
     edge_length_x = reference_point[0] - sorted_pareto_sols[:, 0]
     edge_length_y = rect_diag_y - sorted_pareto_sols[:, 1]
