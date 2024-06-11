@@ -485,6 +485,14 @@ class Trial(BaseTrial):
             )
             raise TypeError(message) from None
 
+        try:
+            step = int(step)
+        except (TypeError, ValueError):
+            message = "The `step` argument is of type '{}' but supposed to be an int.".format(
+                type(step).__name__
+            )
+            raise TypeError(message) from None
+
         if step < 0:
             raise ValueError("The `step` argument is {} but cannot be negative.".format(step))
 
