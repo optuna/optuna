@@ -1,3 +1,7 @@
+"""This script generates assets for testing backward compatibility of `JournalStorage`.
+
+"""
+
 from argparse import ArgumentParser
 import os
 
@@ -27,7 +31,7 @@ if __name__ == "__main__":
     study.set_user_attr("b", 2)
     study.set_user_attr("c", 3)
 
-    # set study system attributes
+    # Set study system attributes
     study = optuna.create_study(storage=storage, study_name="single_system_attr")
     study.set_system_attr("A", 1)
     study.set_system_attr("B", 2)
