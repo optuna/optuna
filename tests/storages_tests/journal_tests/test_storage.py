@@ -5,21 +5,12 @@ import pytest
 import optuna
 
 
-all_versions = [
-    "4.0.0.dev",
-]
+all_journal_files = [f"{os.path.dirname(__file__)}/assets/4.0.0.dev.log"]
 
 
-def test_init() -> None:
-    for version in all_versions:
-        assert os.path.exists(f"{os.path.dirname(__file__)}/assets/{version}.log")
-
-
-@pytest.mark.parametrize("version", all_versions)
-def test_create_and_delete_study(version: str) -> None:
-    storage = optuna.storages.JournalStorage(
-        optuna.storages.JournalFileStorage(f"{os.path.dirname(__file__)}/assets/{version}.log")
-    )
+@pytest.mark.parametrize("journal_file", all_journal_files)
+def test_create_and_delete_study(journal_file: str) -> None:
+    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileStorage(journal_file))
 
     assert len(storage.get_all_studies()) == 4
     assert storage.get_study_id_from_name("single_empty") is not None
@@ -27,11 +18,9 @@ def test_create_and_delete_study(version: str) -> None:
         storage.get_study_id_from_name("single_to_be_deleted")
 
 
-@pytest.mark.parametrize("version", all_versions)
-def test_set_study_user_and_system_attrs(version: str) -> None:
-    storage = optuna.storages.JournalStorage(
-        optuna.storages.JournalFileStorage(f"{os.path.dirname(__file__)}/assets/{version}.log")
-    )
+@pytest.mark.parametrize("journal_file", all_journal_files)
+def test_set_study_user_and_system_attrs(journal_file: str) -> None:
+    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileStorage(journal_file))
 
     study_id = storage.get_study_id_from_name("single_user_attr")
     user_attrs = storage.get_study_user_attrs(study_id)
@@ -44,22 +33,18 @@ def test_set_study_user_and_system_attrs(version: str) -> None:
     assert len(system_attrs) == 3
 
 
-@pytest.mark.parametrize("version", all_versions)
-def test_create_trial(version: str) -> None:
-    storage = optuna.storages.JournalStorage(
-        optuna.storages.JournalFileStorage(f"{os.path.dirname(__file__)}/assets/{version}.log")
-    )
+@pytest.mark.parametrize("journal_file", all_journal_files)
+def test_create_trial(journal_file: str) -> None:
+    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileStorage(journal_file))
 
     study_id = storage.get_study_id_from_name("single_optimization")
     trials = storage.get_all_trials(study_id)
     assert len(trials) == 10
 
 
-@pytest.mark.parametrize("version", all_versions)
-def test_set_trial_param(version: str) -> None:
-    storage = optuna.storages.JournalStorage(
-        optuna.storages.JournalFileStorage(f"{os.path.dirname(__file__)}/assets/{version}.log")
-    )
+@pytest.mark.parametrize("journal_file", all_journal_files)
+def test_set_trial_param(journal_file: str) -> None:
+    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileStorage(journal_file))
 
     study_id = storage.get_study_id_from_name("single_optimization")
     trials = storage.get_all_trials(study_id)
@@ -70,11 +55,9 @@ def test_set_trial_param(version: str) -> None:
         assert trial.params["z"] in [-5, 0, 5]
 
 
-@pytest.mark.parametrize("version", all_versions)
-def test_set_trial_state_values(version: str) -> None:
-    storage = optuna.storages.JournalStorage(
-        optuna.storages.JournalFileStorage(f"{os.path.dirname(__file__)}/assets/{version}.log")
-    )
+@pytest.mark.parametrize("journal_file", all_journal_files)
+def test_set_trial_state_values(journal_file: str) -> None:
+    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileStorage(journal_file))
 
     study_id = storage.get_study_id_from_name("single_optimization")
     trials = storage.get_all_trials(study_id)
@@ -84,11 +67,9 @@ def test_set_trial_state_values(version: str) -> None:
         assert trial.value is not None and 0 <= trial.value <= 150
 
 
-@pytest.mark.parametrize("version", all_versions)
-def test_set_trial_intermediate_value(version: str) -> None:
-    storage = optuna.storages.JournalStorage(
-        optuna.storages.JournalFileStorage(f"{os.path.dirname(__file__)}/assets/{version}.log")
-    )
+@pytest.mark.parametrize("journal_file", all_journal_files)
+def test_set_trial_intermediate_value(journal_file: str) -> None:
+    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileStorage(journal_file))
 
     study_id = storage.get_study_id_from_name("single_optimization")
     trials = storage.get_all_trials(study_id)
@@ -98,11 +79,9 @@ def test_set_trial_intermediate_value(version: str) -> None:
         assert trial.intermediate_values[0] == 0.5
 
 
-@pytest.mark.parametrize("version", all_versions)
-def test_set_trial_user_and_system_attrs(version: str) -> None:
-    storage = optuna.storages.JournalStorage(
-        optuna.storages.JournalFileStorage(f"{os.path.dirname(__file__)}/assets/{version}.log")
-    )
+@pytest.mark.parametrize("journal_file", all_journal_files)
+def test_set_trial_user_and_system_attrs(journal_file: str) -> None:
+    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileStorage(journal_file))
 
     study_id = storage.get_study_id_from_name("single_optimization")
     trials = storage.get_all_trials(study_id)
