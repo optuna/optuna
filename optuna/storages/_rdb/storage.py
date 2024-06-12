@@ -504,6 +504,8 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                         )
                     break  # Successfully created trial.
                 except sqlalchemy_exc.OperationalError:
+                    # If this is a timeout error, `_create_scoped_session` will catch it
+                    # and the outer `while` will retry this transaction after backoff.
                     raise
             n_retries += 1
 
