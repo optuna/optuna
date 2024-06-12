@@ -19,3 +19,5 @@ Please note that methods defined in each ArtifactStore are not intended to be di
    :no-members:
 
 .. autofunction:: optuna.artifacts.upload_artifact
+
+.. autofunction:: optuna.artifacts.download_artifact
