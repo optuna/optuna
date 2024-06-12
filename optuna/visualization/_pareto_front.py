@@ -240,17 +240,13 @@ def _get_pareto_front_info(
 ) -> _ParetoFrontInfo:
     if axis_order is not None:
         msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
-            name="`axis_order`",
-            d_ver="3.0.0",
-            r_ver="5.0.0",
+            name="`axis_order`", d_ver="3.0.0", r_ver="5.0.0"
         )
         warnings.warn(msg, FutureWarning)
 
     if constraints_func is not None:
         msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
-            name="`constraints_func`",
-            d_ver="4.0.0",
-            r_ver="6.0.0",
+            name="`constraints_func`", d_ver="4.0.0", r_ver="6.0.0"
         )
         warnings.warn(msg, FutureWarning)
 
