@@ -271,7 +271,7 @@ def _get_pareto_front_info(
 
         constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
         has_constraints |= constraints is not None
-        if constraints is None or all([x <= 0.0 for x in constraints]):
+        if constraints is None or all(x <= 0.0 for x in constraints):
             feasible_trials.append(trial)
         else:
             infeasible_trials.append(trial)
