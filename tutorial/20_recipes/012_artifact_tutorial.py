@@ -138,6 +138,9 @@ The simple pseudocode for the above case  would look something like this:
     best_artifact_id = study.best_trial.user_attrs.get("artifact_id")
     download_file_path = ...  # Set the path to save the downloaded artifact.
     download_artifact(artifact_store, best_artifact_id, download_file_path)
+    with open(download_file_path, "rb") as f:
+        content = f.read().decode("utf-8")
+    print(content)
 
 Scenario 2: Remote MySQL RDB server + AWS S3 artifact store
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -219,6 +222,9 @@ read and write data transparently. Translating the above process into simple pse
     best_artifact_id = study.best_trial.user_attrs.get("artifact_id")
     download_file_path = ...  # Set the path to save the downloaded artifact.
     download_artifact(artifact_store, best_artifact_id, download_file_path)
+    with open(download_file_path, "rb") as f:
+        content = f.read().decode("utf-8")
+    print(content)
 
 Example: Optimization of Chemical Structures
 --------------------------------------------
@@ -387,11 +393,11 @@ def main():
     best_artifact_id = study.best_trial.user_attrs["structure"]
 
     with tempfile.TemporaryDirectory() as tmpdir_name:
-        download_file_path = f"{tmpdir_name}/{best_artifact_id}.json"
+        download_file_path = os.path.join(tmpdir_name, f"{best_artifact_id}.json")
         download_artifact(artifact_store, best_artifact_id, download_file_path)
 
-        with open(download_file_path) as f:
-            content = f.read()
+        with open(download_file_path, "rb") as f:
+            content = f.read().decode("utf-8")
         best_atoms = json_to_atoms(content)
         print(best_atoms)
         write("best_atoms.png", best_atoms, rotation=("315x,0y,0z"))
