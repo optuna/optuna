@@ -102,10 +102,13 @@ class GridSampler(BaseSampler):
             A dictionary whose key and value are a parameter name and the corresponding candidates
             of values, respectively.
         seed:
-            A seed to fix the order of trials as the grid is randomly shuffled. Please note that
-            it is not recommended using this option in distributed optimization settings since
-            this option cannot ensure the order of trials and may increase the number of duplicate
-            suggestions during distributed optimization.
+            A seed to fix the order of trials as the grid is randomly shuffled. This shuffle is
+            beneficial when the number of grids is larger than ``n_trials`` in
+            :meth:`~optuna.Study.optimize` not to suggest similar grids. Please note that it is
+            recommended using the same ``seed`` or :obj:`None` in distributed optimization
+            settings because internally each grid is assigned to an integer after shuffling grids.
+            Otherwise, this sampler may increase the number of duplicate suggestions during
+            distributed optimization.
     """
 
     def __init__(
