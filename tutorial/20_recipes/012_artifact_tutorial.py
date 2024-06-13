@@ -108,6 +108,7 @@ The simple pseudocode for the above case  would look something like this:
     import optuna
     from optuna.artifacts import FileSystemArtifactStore
     from optuna.artifacts import upload_artifact
+    from optuna.artifacts import download_artifact
 
 
     base_path = "./artifacts"
@@ -132,11 +133,13 @@ The simple pseudocode for the above case  would look something like this:
 
     study = optuna.create_study(study_name="test_study", storage="sqlite:///example.db")
     study.optimize(objective, n_trials=100)
-    # Loading and displaying artifacts associated with the best trial.
-    best_artifact_id = study.best_trial.user_attrs.get("artifact_id")
-    with artifact_store.open_reader(best_artifact_id) as f:
-        content = f.read().decode("utf-8")
 
+    # Downloading artifacts associated with the best trial.
+    best_artifact_id = study.best_trial.user_attrs.get("artifact_id")
+    download_file_path = ...  # Set the path to save the downloaded artifact.
+    download_artifact(artifact_store, best_artifact_id, download_file_path)
+    with open(download_file_path, "rb") as f:
+        content = f.read().decode("utf-8")
     print(content)
 
 Scenario 2: Remote MySQL RDB server + AWS S3 artifact store
@@ -176,6 +179,7 @@ read and write data transparently. Translating the above process into simple pse
     from botocore.config import Config
     import optuna
     from optuna.artifact import upload_artifact
+    from optuna.artifact import download_artifact
     from optuna.artifact.boto3 import Boto3ArtifactStore
 
 
@@ -213,11 +217,13 @@ read and write data transparently. Translating the above process into simple pse
         storage="mysql://USER:PASS@localhost:3306/test",  # Set the appropriate URL.
     )
     study.optimize(objective, n_trials=100)
-    # Loading and displaying artifacts associated with the best trial.
-    best_artifact_id = study.best_trial.user_attrs.get("artifact_id")
-    with artifact_store.open_reader(best_artifact_id) as f:
-        content = f.read().decode("utf-8")
 
+    # Downloading artifacts associated with the best trial.
+    best_artifact_id = study.best_trial.user_attrs.get("artifact_id")
+    download_file_path = ...  # Set the path to save the downloaded artifact.
+    download_artifact(artifact_store, best_artifact_id, download_file_path)
+    with open(download_file_path, "rb") as f:
+        content = f.read().decode("utf-8")
     print(content)
 
 Example: Optimization of Chemical Structures
@@ -242,7 +248,7 @@ import io
 import logging
 import os
 import sys
-import uuid
+import tempfile
 
 from ase import Atoms
 from ase.build import bulk, fcc111, molecule, add_adsorbate
@@ -252,6 +258,7 @@ from ase.optimize import LBFGS
 import numpy as np
 from optuna.artifacts import FileSystemArtifactStore
 from optuna.artifacts import upload_artifact
+from optuna.artifacts import download_artifact
 from optuna.logging import get_logger
 from optuna import create_study
 from optuna import Trial
@@ -384,11 +391,16 @@ def main():
     )
 
     best_artifact_id = study.best_trial.user_attrs["structure"]
-    with artifact_store.open_reader(best_artifact_id) as f:
-        content = f.read().decode("utf-8")
-    best_atoms = json_to_atoms(content)
-    print(best_atoms)
-    write("best_atoms.png", best_atoms, rotation=("315x,0y,0z"))
+
+    with tempfile.TemporaryDirectory() as tmpdir_name:
+        download_file_path = os.path.join(tmpdir_name, f"{best_artifact_id}.json")
+        download_artifact(artifact_store, best_artifact_id, download_file_path)
+
+        with open(download_file_path, "rb") as f:
+            content = f.read().decode("utf-8")
+        best_atoms = json_to_atoms(content)
+        print(best_atoms)
+        write("best_atoms.png", best_atoms, rotation=("315x,0y,0z"))
 
 
 if __name__ == "__main__":

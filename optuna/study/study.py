@@ -1111,27 +1111,28 @@ class Study:
             else:
                 trial_values = {name: value for name, value in zip(metric_names, trial.values)}
             _logger.info(
-                "Trial {} finished with values: {} and parameters: {}. ".format(
+                "Trial {} finished with values: {} and parameters: {}.".format(
                     trial.number, trial_values, trial.params
                 )
             )
         elif len(trial.values) == 1:
-            best_trial = self.best_trial
             trial_value: float | dict[str, float]
             if metric_names is None:
                 trial_value = trial.values[0]
             else:
                 trial_value = {metric_names[0]: trial.values[0]}
-            _logger.info(
-                "Trial {} finished with value: {} and parameters: {}. "
-                "Best is trial {} with value: {}.".format(
-                    trial.number,
-                    trial_value,
-                    trial.params,
-                    best_trial.number,
-                    best_trial.value,
-                )
+
+            message = (
+                f"Trial {trial.number} finished with value: {trial_value} and parameters: "
+                f"{trial.params}."
             )
+            try:
+                best_trial = self.best_trial
+                message += f" Best is trial {best_trial.number} with value: {best_trial.value}."
+            except ValueError:
+                # If no feasible trials are completed yet, study.best_trial raises ValueError.
+                pass
+            _logger.info(message)
         else:
             assert False, "Should not reach."
 

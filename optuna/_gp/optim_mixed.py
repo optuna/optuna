@@ -112,7 +112,7 @@ def _discrete_line_search(
         return i - 1 if abs(x - grids[i - 1]) < abs(x - grids[i]) else i
 
     current_choice_i = find_nearest_index(initial_params[param_idx])
-    assert initial_params[param_idx] == grids[current_choice_i]
+    assert np.isclose(initial_params[param_idx], grids[current_choice_i])
 
     negative_fval_cache = {current_choice_i: -initial_fval}
 
