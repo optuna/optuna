@@ -20,4 +20,6 @@ Please note that methods defined in each ArtifactStore are not intended to be di
 
 .. autofunction:: optuna.artifacts.upload_artifact
 
+.. autofunction:: optuna.artifacts.get_all_artifact_meta
+
 .. autofunction:: optuna.artifacts.download_artifact
