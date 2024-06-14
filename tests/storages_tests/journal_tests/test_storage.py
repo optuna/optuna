@@ -9,6 +9,17 @@ all_journal_files = [f"{os.path.dirname(__file__)}/assets/4.0.0.dev.log"]
 
 
 @pytest.mark.parametrize("journal_file", all_journal_files)
+def test_empty_study(journal_file: str) -> None:
+    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileStorage(journal_file))
+
+    study = optuna.load_study(study_name="single_empty", storage=storage)
+
+    assert study.directions == [optuna.study.StudyDirection.MINIMIZE]
+    assert len(study.user_attrs) == 0
+    assert len(study.trials) == 0
+
+
+@pytest.mark.parametrize("journal_file", all_journal_files)
 def test_create_and_delete_study(journal_file: str) -> None:
     storage = optuna.storages.JournalStorage(optuna.storages.JournalFileStorage(journal_file))
 
