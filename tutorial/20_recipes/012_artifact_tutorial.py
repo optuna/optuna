@@ -306,6 +306,10 @@ def json_to_atoms(atoms_str: str) -> Atoms:
     return read(io.StringIO(atoms_str), format="json")
 
 
+def file_to_atoms(file_path: str) -> Atoms:
+    return read(file_path, format="json")
+
+
 ###################################################################################################
 # Each function is as follows.
 #
@@ -314,6 +318,7 @@ def json_to_atoms(atoms_str: str) -> Atoms:
 # - `create_mol`: Constructs the molecule being adsorbed.
 # - `atoms_to_json`: Converts the chemical structure to a string.
 # - `json_to_atoms`: Converts the string to a chemical structure.
+# - `file_to_atoms`: Reads the string from a file and converts it to a chemical structure.
 #
 # Using these functions, the code to search for adsorption structures using Optuna is as follows. The objective function is defined
 # as class `Objective` in order to carry the artifact store. In its `__call__` method, it retrieves the substance being adsorbed
@@ -396,9 +401,7 @@ def main():
         download_file_path = os.path.join(tmpdir_name, f"{best_artifact_id}.json")
         download_artifact(artifact_store, best_artifact_id, download_file_path)
 
-        with open(download_file_path, "rb") as f:
-            content = f.read().decode("utf-8")
-        best_atoms = json_to_atoms(content)
+        best_atoms = file_to_atoms(download_file_path)
         print(best_atoms)
         write("best_atoms.png", best_atoms, rotation=("315x,0y,0z"))
 
