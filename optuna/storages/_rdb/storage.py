@@ -448,7 +448,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         n_retries = 0
         error_obj = None
         MAX_RETRIES = 5
-        for n_retries in range(MAX_RETRIES):
+        while n_retries < MAX_RETRIES:
             with _create_scoped_session(self.scoped_session) as session:
                 try:
                     # Ensure that that study exists.
@@ -480,11 +480,17 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                             intermediate_values={},
                             trial_id=trial.trial_id,
                         )
-    
+
                     return frozen
+                except sqlalchemy_exc.OperationalError as e:
+                    error_obj = e
+                    n_retries += 1
+                    raise
                 except Exception as e:
                     error_obj = e
+                    n_retries = MAX_RETRIES + 1
                     raise
+        assert error_obj is not None
         raise error_obj
 
     def _get_prepared_new_trial(
