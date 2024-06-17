@@ -63,6 +63,7 @@ checking = [
   "typing_extensions>=3.10.0.0",
 ]
 document = [
+  "tenacity<8.4.0",  # TODO(takizawa): Remove a version constraint after stabilized.
   "ase",
   "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
   "fvcore",
