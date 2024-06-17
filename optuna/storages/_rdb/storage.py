@@ -69,7 +69,7 @@ _logger = optuna.logging.get_logger(__name__)
 def _create_scoped_session(
     scoped_session: "sqlalchemy_orm.scoped_session",
     ignore_integrity_error: bool = False,
-    ignore_timeout_error: bool = False,
+    ignore_operational_error: bool = False,
 ) -> Generator["sqlalchemy_orm.Session", None, None]:
     session = scoped_session()
     try:
@@ -87,14 +87,13 @@ def _create_scoped_session(
     except sqlalchemy_exc.OperationalError as e:
         session.rollback()
 
-        # The following keystrings depend on the backend DB.
-        # If another issue about another DB is raised, the keystrings will be updated.
-        error_keystrings = ("1205", "Lock wait timeout exceeded; try restarting transaction")
-
-        if ignore_timeout_error and all([s in str(e.orig) for s in error_keystrings]):
+        if ignore_operational_error:
+            # Arbitrary OperationalError is catched and ignored here.
+            # External code should retry the query using `while`.
             _logger.debug(
-                "Ignoring {}. This happens due to a timeout. No exception is propagated here"
-                "because expecting a retry to be made by the calling function.".format(repr(e))
+                f"Ignoring {repr(e)}, which is operational error."
+                "No exception is propagated here"
+                "because expecting a retry to be made by the calling function."
             )
         else:
             message = (
@@ -108,7 +107,7 @@ def _create_scoped_session(
         message = (
             "An exception is raised during the commit. "
             "This typically happens due to invalid data in the commit, "
-            "e.g. exceeding max length. "
+            "e.g., exceeding max length. "
         )
         raise optuna.exceptions.StorageInternalError(message) from e
     except Exception:
@@ -469,10 +468,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         # Retry a couple of times. Deadlocks may occur in distributed environments.
         n_retries = 0
         MAX_RETRIES = 5
-        while n_retries <= MAX_RETRIES:
-            # TODO(takizawa): Ponder if this exponential backoff is useful.
+        for n_retries in range(MAX_RETRIES):
             if n_retries != 0:
-                time.sleep((2**n_retries) * (1.0 + random.random()))
+                time.sleep((2**n_retries) * 0.001 * (1.0 + random.random()))
             with _create_scoped_session(self.scoped_session, ignore_timeout_error=True) as session:
                 try:
                     # Ensure that that study exists.
@@ -502,16 +500,13 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                             intermediate_values={},
                             trial_id=trial.trial_id,
                         )
-                    break  # Successfully created trial.
+                    return frozen  # Successfully created trial.
                 except sqlalchemy_exc.OperationalError:
                     # If this is a timeout error, `_create_scoped_session` will catch it
                     # and the outer `while` will retry this transaction after backoff.
                     raise
-            n_retries += 1
-
-        assert n_retries <= MAX_RETRIES, "The _create_new_trial was repeatedly failed."
-
-        return frozen
+        else:  # If the `for` statement is left out by `break`, this clause is not called.
+            raise sqlalchemy_exc.OperationalError  # "The _create_new_trial was repeatedly failed."
 
     def _get_prepared_new_trial(
         self,
