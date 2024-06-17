@@ -8,6 +8,8 @@ from datetime import timedelta
 import json
 import logging
 import os
+import random
+import time
 from typing import Any
 from typing import Callable
 from typing import Container
@@ -445,51 +447,67 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         """
 
         # Retry a couple of times. Deadlocks may occur in distributed environments.
-        n_retries = 0
         error_obj: Exception | None = None
         MAX_RETRIES = 5
-        while n_retries < MAX_RETRIES:
-            with _create_scoped_session(self.scoped_session) as session:
-                try:
-                    # Ensure that that study exists.
-                    #
-                    # Locking within a study is necessary since the creation of a trial is not an
-                    # atomic operation. More precisely, the trial number computed in
-                    # `_get_prepared_new_trial` is prone to race conditions without this lock.
-                    models.StudyModel.find_or_raise_by_id(study_id, session, for_update=True)
+        for n_retries in range(MAX_RETRIES):
+            if n_retries != 0:
+                # This backoff is to solve retries caused by deadlock.
+                # This is not an EXPONENTIAL backoff that reduces DB server congestion,
+                # but it is intentional.
+                # Optuna's philosophy is that it is better for the DB administrator to detect
+                # such saturation and augment the server than for Optuna itself to detect
+                # DB congestion and slow it down.
+                time.sleep(random.random() * 2.0)
+            try:
+                with _create_scoped_session(self.scoped_session) as session:
+                    try:
+                        # Ensure that that study exists.
+                        #
+                        # Locking within a study is necessary since the creation of a trial is not
+                        # an atomic operation. More precisely, the trial number computed in
+                        # `_get_prepared_new_trial` is prone to race conditions without this lock.
+                        models.StudyModel.find_or_raise_by_id(study_id, session, for_update=True)
 
-                    trial = self._get_prepared_new_trial(study_id, template_trial, session)
+                        trial = self._get_prepared_new_trial(study_id, template_trial, session)
 
-                    if template_trial:
-                        frozen = copy.deepcopy(template_trial)
-                        frozen.number = trial.number
-                        frozen.datetime_start = trial.datetime_start
-                        frozen._trial_id = trial.trial_id
-                    else:
-                        frozen = FrozenTrial(
-                            number=trial.number,
-                            state=trial.state,
-                            value=None,
-                            values=None,
-                            datetime_start=trial.datetime_start,
-                            datetime_complete=None,
-                            params={},
-                            distributions={},
-                            user_attrs={},
-                            system_attrs={},
-                            intermediate_values={},
-                            trial_id=trial.trial_id,
-                        )
+                        if template_trial:
+                            frozen = copy.deepcopy(template_trial)
+                            frozen.number = trial.number
+                            frozen.datetime_start = trial.datetime_start
+                            frozen._trial_id = trial.trial_id
+                        else:
+                            frozen = FrozenTrial(
+                                number=trial.number,
+                                state=trial.state,
+                                value=None,
+                                values=None,
+                                datetime_start=trial.datetime_start,
+                                datetime_complete=None,
+                                params={},
+                                distributions={},
+                                user_attrs={},
+                                system_attrs={},
+                                intermediate_values={},
+                                trial_id=trial.trial_id,
+                            )
 
-                    return frozen
-                except sqlalchemy_exc.OperationalError as e:
-                    error_obj = e
-                    n_retries += 1
-                    raise
-                except Exception as e:
-                    error_obj = e
-                    n_retries = MAX_RETRIES + 1
-                    raise
+                        return frozen
+                    except sqlalchemy_exc.OperationalError as e:
+                        error_obj = e
+                        raise  # It is caught within the function.
+                    except Exception as e:
+                        error_obj = e
+                        raise  # The exception is immediately propagated to the caller.
+            except sqlalchemy_exc.OperationalError:
+                # Note: According to SQLAlchemy specifications,
+                # `sqlalchemy_exc.OperationalError` can be raised in situations where
+                # retries are not effective (e.g., input string is too long).
+                #
+                # It is assumed here that such bugs do not exist and retries are effective.
+                # Should such bugs be present, the content of the `OperationalError` will be
+                # propagated at the end of this function, and details will be recorded in
+                # the error log.
+                pass
         assert error_obj is not None
         raise error_obj
 
