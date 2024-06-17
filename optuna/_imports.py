@@ -55,9 +55,9 @@ class _DeferredImportExceptionContextManager:
         """
         if isinstance(exc_value, (ImportError, SyntaxError)):
             if isinstance(exc_value, ImportError):
-                assert traceback is not None  # MyPy redefinition.
                 is_import_error_from_integration = (
-                    "optuna_integration/" in traceback.tb_frame.f_code.co_filename
+                    traceback is not None
+                    and "optuna_integration/" in traceback.tb_frame.f_code.co_filename
                 )
                 message = f"Tried to import '{exc_value.name}' but failed. "
                 if is_import_error_from_integration:
