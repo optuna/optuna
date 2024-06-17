@@ -74,7 +74,7 @@ jobs:
         pip uninstall -y alembic cmaes packaging sqlalchemy plotly scikit-learn
         pip install alembic==1.5.0 cmaes==0.10.0 packaging==20.0 sqlalchemy==1.3.0 numpy==1.20.3 tqdm==4.27.0 colorlog==0.3 PyYAML==5.1
         pip install plotly==5.0.0 scikit-learn==0.24.2  # optional extras
-        pip install --upgrade numpy==1.26.4
+        pip install --upgrade "numpy<=1.26.4"
 
     - name: Output installed packages
       run: |
