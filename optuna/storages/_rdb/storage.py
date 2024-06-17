@@ -446,8 +446,10 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         # Retry a couple of times. Deadlocks may occur in distributed environments.
         n_retries = 0
-        with _create_scoped_session(self.scoped_session) as session:
-            while True:
+        error_obj = None
+        MAX_RETRIES = 5
+        for n_retries in range(MAX_RETRIES):
+            with _create_scoped_session(self.scoped_session) as session:
                 try:
                     # Ensure that that study exists.
                     #
@@ -457,35 +459,33 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                     models.StudyModel.find_or_raise_by_id(study_id, session, for_update=True)
 
                     trial = self._get_prepared_new_trial(study_id, template_trial, session)
-                    break  # Successfully created trial.
-                except sqlalchemy_exc.OperationalError:
-                    if n_retries > 2:
-                        raise
 
-                n_retries += 1
-
-            if template_trial:
-                frozen = copy.deepcopy(template_trial)
-                frozen.number = trial.number
-                frozen.datetime_start = trial.datetime_start
-                frozen._trial_id = trial.trial_id
-            else:
-                frozen = FrozenTrial(
-                    number=trial.number,
-                    state=trial.state,
-                    value=None,
-                    values=None,
-                    datetime_start=trial.datetime_start,
-                    datetime_complete=None,
-                    params={},
-                    distributions={},
-                    user_attrs={},
-                    system_attrs={},
-                    intermediate_values={},
-                    trial_id=trial.trial_id,
-                )
-
-            return frozen
+                    if template_trial:
+                        frozen = copy.deepcopy(template_trial)
+                        frozen.number = trial.number
+                        frozen.datetime_start = trial.datetime_start
+                        frozen._trial_id = trial.trial_id
+                    else:
+                        frozen = FrozenTrial(
+                            number=trial.number,
+                            state=trial.state,
+                            value=None,
+                            values=None,
+                            datetime_start=trial.datetime_start,
+                            datetime_complete=None,
+                            params={},
+                            distributions={},
+                            user_attrs={},
+                            system_attrs={},
+                            intermediate_values={},
+                            trial_id=trial.trial_id,
+                        )
+    
+                    return frozen
+                except Exception as e:
+                    error_obj = e
+                    raise
+        raise error_obj
 
     def _get_prepared_new_trial(
         self,
