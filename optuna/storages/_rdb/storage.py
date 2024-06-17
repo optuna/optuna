@@ -446,7 +446,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         # Retry a couple of times. Deadlocks may occur in distributed environments.
         n_retries = 0
-        error_obj = None
+        error_obj: Exception | None = None
         MAX_RETRIES = 5
         while n_retries < MAX_RETRIES:
             with _create_scoped_session(self.scoped_session) as session:
