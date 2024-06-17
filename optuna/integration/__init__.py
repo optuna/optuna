@@ -129,12 +129,12 @@ else:
             try:
                 return importlib.import_module("." + module_name, self.__name__)
             except ModuleNotFoundError:
+                is_module_deprecated = module_name in ("allennlp", "chainer", "chainermn")
+                pip_cmd = "pip install optuna-integration"
+                pip_cmd += "" if is_module_deprecated else f"[{module_name}]"
                 raise ModuleNotFoundError(
-                    "Optuna's integration modules for third-party libraries have started "
-                    "migrating from Optuna itself to a package called `optuna-integration`. "
-                    "The module you are trying to use has already been migrated to "
-                    "`optuna-integration`. Please install the package by running "
-                    "`pip install optuna-integration`."
+                    "Optuna integration modules for third-party libraries have been migrated to "
+                    f"`optuna-integration`. Please run `{pip_cmd}`."
                 )
 
     sys.modules[__name__] = _IntegrationModule(__name__)
