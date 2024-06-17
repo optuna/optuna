@@ -100,7 +100,7 @@ def _create_scoped_session(
             message = (
                 "An exception is raised during the commit. "
                 "This typically happens due to invalid data in the commit, "
-                "e.g. exceeding max length. "
+                "e.g., exceeding max length. "
             )
             raise optuna.exceptions.StorageInternalError(message) from e
     except sqlalchemy_exc.SQLAlchemyError as e:
