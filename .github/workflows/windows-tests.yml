@@ -52,6 +52,8 @@ jobs:
         pip install --progress-bar off .[test] --extra-index-url https://download.pytorch.org/whl/cpu
         pip install --progress-bar off .[optional] --extra-index-url https://download.pytorch.org/whl/cpu
         pip install PyQt6 # Install PyQT for using QtAgg as matplotlib backend.
+        # TODO(HideakiImamura): Remove this after fixing https://github.com/plotly/Kaleido/issues/110
+        pip install "kaleido<=0.1.0post1"
 
     - name: Output installed packages
       run: |
