@@ -446,10 +446,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         """
 
-        # Retry a couple of times. Deadlocks may occur in distributed environments.
+        # Retry maximum five times. Deadlocks may occur in distributed environments.
         error_obj: Exception | None = None
-        MAX_RETRIES = 5
-        for n_retries in range(MAX_RETRIES):
+        for n_retries in range(5):
             if n_retries != 0:
                 # This backoff is to solve retries caused by deadlock.
                 # This is not an EXPONENTIAL backoff that reduces DB server congestion,
@@ -492,12 +491,11 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                             )
 
                         return frozen
-                    except sqlalchemy_exc.OperationalError as e:
-                        error_obj = e
-                        raise  # It is caught within the function.
                     except Exception as e:
+                        # `sqlalchemy_exc.OperationalError` will be caught within the function.
+                        # The others will be immediately propagated to the caller.
                         error_obj = e
-                        raise  # The exception is immediately propagated to the caller.
+                        raise
             except sqlalchemy_exc.OperationalError:
                 # Note: According to SQLAlchemy specifications,
                 # `sqlalchemy_exc.OperationalError` can be raised in situations where
