@@ -714,3 +714,99 @@ Optuna may sometimes suggest parameters evaluated in the past and if you would l
 
     study = optuna.create_study()
     study.optimize(objective, n_trials=100)
+
+How can I delete all the artifacts uploaded to a study?
+-------------------------------------------------------
+
+Optuna supports `artifacts <https://optuna.readthedocs.io/en/stable/reference/artifacts.html>`_ for large data storage during an optimization.
+After you conduct enormous amount of experiments, you may want to remove the artifacts stored during optimizations.
+
+We explain several tips to remove the artifacts.
+
+1. Separate artifacts for each study in a different directory or bucket
+2. Remove artifacts using Python API
+
+It is advisable to manage the artifact locations of each study by name.
+However, users can also delete artifacts from Python API as shown below:
+
+.. note::
+
+    When you use :func:`~optuna.study.Study.add_trial` or :meth:`~optuna.study.copy_study`, please make sure **NOT** to delete the artifacts from the source study or trial.
+    Failing to do so may lead to unexpected behaviors as Optuna does not guarantee expected behaviors when users call :meth:`remove` externally.
+    Due to the Optuna software design, it is hard to officially support the delete feature and we are not planning to support this feature in the future either. 
+
+.. code-block:: python
+
+    import os
+
+    import numpy as np
+
+    import pandas as pd
+
+    import optuna
+    from optuna.artifacts import FileSystemArtifactStore
+    from optuna.artifacts import get_all_artifact_meta
+    from optuna.artifacts import upload_artifact
+
+
+    def create_dataset(dataset_path):
+        rng = np.random.RandomState(42)
+        a_true, b_true = 2, -3
+        X = rng.random(100) * 5
+        Y = a_true * X ** 2 + b_true + rng.normal(size=100)
+        pd.DataFrame({"X": X, "Y": Y}).to_json(dataset_path)
+
+
+    def objective(trial, df, artifact_store):
+        a = trial.suggest_float("a", -10, 10)
+        b = trial.suggest_float("b", -10, 10)
+        X, Y = df["X"].to_numpy(), df["Y"].to_numpy()
+        pred = a * X ** 2 + b
+
+        result_dir_path = "./results"
+        os.makedirs(result_dir_path, exist_ok=True)
+        result_file_path = os.path.join(result_dir_path, f"pred-trial{trial.number}.json")
+        # Save the results in your local file storage.
+        pd.DataFrame({"pred": pred}).to_json(result_file_path)
+        # Upload the result file to the artifact store.
+        upload_artifact(trial, result_file_path, artifact_store)
+        return np.mean((pred - Y) ** 2)
+
+
+    def run_study_with_artifact():
+        dataset_path = "demo-dataset.json"
+        # Create a dataset at `dataset_path`.
+        create_dataset(dataset_path)
+
+        study_name = "demo"
+        base_path = os.path.join("./artifacts", study_name)
+        os.makedirs(base_path, exist_ok=True)
+        artifact_store = FileSystemArtifactStore(base_path=base_path)
+
+        study = optuna.create_study(study_name=study_name, storage="sqlite:///artifact-demo.db")
+        # Upload the dataset file to the artifact store.
+        upload_artifact(study, dataset_path, artifact_store)
+
+        df = pd.read_json(dataset_path)
+        study.optimize(lambda trial: objective(trial, df, artifact_store), n_trials=100)
+
+        return study, artifact_store
+
+
+    def remove_artifacts(study, artifact_store):
+        # NOTE: `artifact_store.remove` is discourged to use.
+        storage = study._storage
+        for trial in study.trials:
+            for artifact_meta in get_all_artifact_meta(trial, storage=storage):
+                # For each trial, remove the artifacts uploaded to `base_path`.
+                artifact_store.remove(artifact_meta.artifact_id)
+
+        for artifact_meta in get_all_artifact_meta(study):
+            # Remove the artifacts uploaded to `base_path`.
+            artifact_store.remove(artifact_meta.artifact_id)
+
+
+    study, artifact_store = run_study_with_artifact()
+    remove_artifacts(study, artifact_store)
+    # We can delete the  study after removign all the uploaded artifacts.
+    optuna.delete_study(study_name=study.study_name, storage=study._storage)
