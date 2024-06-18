@@ -8,7 +8,7 @@ from typing import Type
 
 
 _INTEGRATION_IMPORT_ERROR_TEMPLATE = (
-    "Could not find `optuna-integration` for `{0}`. Please run `pip optuna-integration[{0}]`."
+    "\nCould not find `optuna-integration` for `{0}`.\nPlease run `pip optuna-integration[{0}]`."
 )
 
 
@@ -55,23 +55,10 @@ class _DeferredImportExceptionContextManager:
         """
         if isinstance(exc_value, (ImportError, SyntaxError)):
             if isinstance(exc_value, ImportError):
-                is_import_error_from_integration = (
-                    traceback is not None
-                    and "optuna_integration/" in traceback.tb_frame.f_code.co_filename
-                )
-                message = f"Tried to import '{exc_value.name}' but failed. "
-                if is_import_error_from_integration:
-                    integration_installation_url = (
-                        "https://optuna.readthedocs.io/en/stable/installation.html"
-                    )
-                    message += (
-                        f"Please check {integration_installation_url} to install the dependencies "
-                        "required for the integration module."
-                    )
-                else:
-                    message += f"Please manually install {exc_value.name}."
-
-                message += f" Actual error: {exc_value}."
+                message = (
+                    "Tried to import '{}' but failed. Please make sure that the package is "
+                    "installed correctly to use this feature. Actual error: {}."
+                ).format(exc_value.name, exc_value)
             elif isinstance(exc_value, SyntaxError):
                 message = (
                     "Tried to import a package but failed due to a syntax error in {}. Please "

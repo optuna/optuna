@@ -4,6 +4,8 @@ from types import ModuleType
 from typing import Any
 from typing import TYPE_CHECKING
 
+from optuna._imports import _INTEGRATION_IMPORT_ERROR_TEMPLATE
+
 
 _import_structure = {
     "allennlp": ["AllenNLPExecutor", "AllenNLPPruningCallback"],
@@ -130,11 +132,14 @@ else:
                 return importlib.import_module("." + module_name, self.__name__)
             except ModuleNotFoundError:
                 is_module_deprecated = module_name in ("allennlp", "chainer", "chainermn")
-                pip_cmd = "pip install optuna-integration"
-                pip_cmd += "" if is_module_deprecated else f"[{module_name}]"
-                raise ModuleNotFoundError(
-                    "Optuna integration modules for third-party libraries have been migrated to "
-                    f"`optuna-integration`. Please run `{pip_cmd}`."
-                )
+                if is_module_deprecated:
+                    msg = (
+                        "\nCould not find `optuna-integration`."
+                        "\nPlease run `pip install optuna-integration`."
+                    )
+                else:
+                    msg = _INTEGRATION_IMPORT_ERROR_TEMPLATE.format(module_name)
+
+                raise ModuleNotFoundError(msg)
 
     sys.modules[__name__] = _IntegrationModule(__name__)
