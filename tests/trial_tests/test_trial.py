@@ -609,7 +609,6 @@ def test_report_step() -> None:
 
     # Report values whose steps can be cast to `int` (OK).
     trial.report(value, 0)
-
     trial.report(value, 1.0)  # type: ignore
     trial.report(value, np.int64(2))  # type: ignore
 
@@ -618,7 +617,7 @@ def test_report_step() -> None:
         trial.report(value, None)  # type: ignore
 
     with pytest.raises(TypeError):
-        trial.report(value, "foot")  # type: ignore
+        trial.report(value, "foo")  # type: ignore
 
     with pytest.raises(TypeError):
         trial.report(value, [1, 2, 3])  # type: ignore
