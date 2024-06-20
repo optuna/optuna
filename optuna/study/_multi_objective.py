@@ -164,7 +164,7 @@ def _is_pareto_front(loss_values: np.ndarray, assume_unique_lexsorted: bool = Tr
 
     unique_lexsorted_loss_values, order_inv = np.unique(loss_values, axis=0, return_inverse=True)
     on_front = _is_pareto_front_for_unique_sorted(unique_lexsorted_loss_values)
-    return on_front[order_inv]
+    return on_front[order_inv.reshape(-1)]
 
 
 def _calculate_nondomination_rank(
@@ -196,7 +196,7 @@ def _calculate_nondomination_rank(
         rank += 1
 
     ranks[indices] = rank  # Rank worse than the top n_below is defined as the worst rank.
-    return ranks[order_inv]
+    return ranks[order_inv.reshape(-1)]
 
 
 def _dominates(
