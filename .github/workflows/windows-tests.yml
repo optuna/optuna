@@ -52,15 +52,11 @@ jobs:
         pip install --progress-bar off .[test] --extra-index-url https://download.pytorch.org/whl/cpu
         pip install --progress-bar off .[optional] --extra-index-url https://download.pytorch.org/whl/cpu
         pip install PyQt6 # Install PyQT for using QtAgg as matplotlib backend.
-<<<<<<< hotfix/adapt-mo-to-numpy-v2.0.0
-        pip install "kaleido<=0.1.0post1"  # TODO(HideakiImamura): Remove this after fixing https://github.com/plotly/Kaleido/issues/110
+        # TODO(HideakiImamura): Remove this after fixing https://github.com/plotly/Kaleido/issues/110
+        pip install "kaleido<=0.1.0post1"
         # TODO(nabe): Remove the version constraint once Torch supports NumPy v2.0.0 for Windows.
         pip uninstall numpy
         pip install --progress-bar off 'numpy<2.0.0'
-=======
-        # TODO(HideakiImamura): Remove this after fixing https://github.com/plotly/Kaleido/issues/110
-        pip install "kaleido<=0.1.0post1"
->>>>>>> master
 
     - name: Output installed packages
       run: |
