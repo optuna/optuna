@@ -551,8 +551,16 @@ class TrialHeartbeatModel(BaseModel):
     )
 
     @classmethod
-    def where_trial_id(cls, trial_id: int, session: orm.Session) -> "TrialHeartbeatModel" | None:
-        return session.query(cls).filter(cls.trial_id == trial_id).one_or_none()
+    def where_trial_id(
+        cls, trial_id: int, session: orm.Session, for_update: bool = False
+    ) -> "TrialHeartbeatModel" | None:
+
+        query = session.query(cls).filter(cls.trial_id == trial_id)
+
+        if for_update:
+            query = query.with_for_update()
+
+        return query.one_or_none()
 
 
 class VersionInfoModel(BaseModel):

@@ -976,11 +976,15 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
     def record_heartbeat(self, trial_id: int) -> None:
         with _create_scoped_session(self.scoped_session, True) as session:
+            # Fetch heartbeat with read-only.
             heartbeat = models.TrialHeartbeatModel.where_trial_id(trial_id, session)
-            if heartbeat is None:
+            if heartbeat is None:  # heartbeat record does not exist.
                 heartbeat = models.TrialHeartbeatModel(trial_id=trial_id)
                 session.add(heartbeat)
             else:
+                # Re-fetch the existing heartbeat with the write authorization.
+                heartbeat = models.TrialHeartbeatModel.where_trial_id(trial_id, session, True)
+                assert heartbeat is not None
                 heartbeat.heartbeat = session.execute(sqlalchemy.func.now()).scalar()
 
     def _get_stale_trial_ids(self, study_id: int) -> List[int]:
