@@ -486,14 +486,7 @@ class Trial(BaseTrial):
             raise TypeError(message) from None
 
         try:
-            if not isinstance(step, int):
-                warnings.warn(
-                    "The reported step is going to cast to int because `step`s type is {}.".format(
-                        type(step).__name__
-                    )
-                )
-                step = int(step)
-
+            step = int(step)
         except (TypeError, ValueError):
             message = "The `step` argument is of type '{}' but supposed to be an int.".format(
                 type(step).__name__
