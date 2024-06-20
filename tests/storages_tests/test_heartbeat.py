@@ -24,9 +24,13 @@ from optuna.trial import TrialState
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES_HEARTBEAT)
 def test_repeatedly_called_record_heartbeat(storage_mode: str) -> None:
-    with StorageSupplier(storage_mode) as storage:
-        if not is_heartbeat_enabled(storage):
-            return
+    heartbeat_interval = 1
+    grace_period = 2
+
+    with StorageSupplier(
+        storage_mode, heartbeat_interval=heartbeat_interval, grace_period=grace_period
+    ) as storage:
+        assert is_heartbeat_enabled(storage)
         assert isinstance(storage, BaseHeartbeat)
 
         study1 = optuna.create_study(storage=storage)
