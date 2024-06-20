@@ -36,6 +36,24 @@ def test_wfg_nd(n_objs: int, assume_pareto: bool) -> None:
     assert optuna._hypervolume.WFG().compute(s, r, assume_pareto) == 10**n_objs - 1
 
 
+@pytest.mark.parametrize("n_objs", list(range(2, 10)))
+def test_wfg_with_inf(n_objs: int) -> None:
+    s = np.ones((1, n_objs), dtype=float)
+    s[0, n_objs // 2] = np.inf
+    r = 1.1 * s
+    assert optuna._hypervolume.WFG().compute(s, r) == np.inf
+
+
+@pytest.mark.parametrize("n_objs", list(range(2, 10)))
+def test_wfg_with_nan(n_objs: int) -> None:
+    s = np.ones((1, n_objs), dtype=float)
+    s[0, n_objs // 2] = np.inf
+    r = 1.1 * s
+    r[-1] = np.nan
+    with pytest.raises(ValueError):
+        optuna._hypervolume.WFG().compute(s, r)
+
+
 @pytest.mark.parametrize("assume_pareto", (True, False))
 def test_wfg_duplicate_points(assume_pareto: bool) -> None:
     rng = np.random.RandomState(42)

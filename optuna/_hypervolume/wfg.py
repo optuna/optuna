@@ -22,7 +22,8 @@ class WFG(BaseHypervolume):
     def _compute(
         self, solution_set: np.ndarray, reference_point: np.ndarray, assume_pareto: bool
     ) -> float:
-        if not np.isfinite(reference_point).all():
+        if not np.all(np.isfinite(reference_point)):
+            # reference_point does not have nan, because BaseHypervolume._validate will filter out.
             return float("inf")
 
         if not assume_pareto:
