@@ -25,12 +25,6 @@ class WFG:
         edge_length_y = rect_diag_y - sorted_pareto_sols[:, 1]
         return edge_length_x @ edge_length_y
 
-    def _compute(
-        self, solution_set: np.ndarray, reference_point: np.ndarray, assume_pareto: bool
-    ) -> float:
-        # TODO: Remove this method in followup.
-        raise NotImplemented
-
     def compute(
         self, solution_set: np.ndarray, reference_point: np.ndarray, assume_pareto: bool = False
     ) -> float:
