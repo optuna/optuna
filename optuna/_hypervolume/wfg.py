@@ -2,12 +2,10 @@ from __future__ import annotations
 
 import numpy as np
 
-from optuna._hypervolume import _compute_2d
-from optuna._hypervolume import BaseHypervolume
 from optuna.study._multi_objective import _is_pareto_front
 
 
-class WFG(BaseHypervolume):
+class WFG:
     """Hypervolume calculator for any dimension.
 
     This class exactly calculates the hypervolume for any dimension by using the WFG algorithm.
@@ -19,9 +17,29 @@ class WFG(BaseHypervolume):
     def __init__(self) -> None:
         self._reference_point: np.ndarray | None = None
 
+    @staticmethod
+    def _compute_2d(sorted_pareto_sols: np.ndarray, reference_point: np.ndarray) -> float:
+        assert sorted_pareto_sols.shape[1] == 2 and reference_point.shape[0] == 2
+        rect_diag_y = np.append(reference_point[1], sorted_pareto_sols[:-1, 1])
+        edge_length_x = reference_point[0] - sorted_pareto_sols[:, 0]
+        edge_length_y = rect_diag_y - sorted_pareto_sols[:, 1]
+        return edge_length_x @ edge_length_y
+
     def _compute(
         self, solution_set: np.ndarray, reference_point: np.ndarray, assume_pareto: bool
     ) -> float:
+        # TODO: Remove this method in followup.
+        raise NotImplemented
+
+    def compute(
+        self, solution_set: np.ndarray, reference_point: np.ndarray, assume_pareto: bool = False
+    ) -> float:
+        if not np.all(solution_set <= reference_point):
+            raise ValueError(
+                "All points must dominate or equal the reference point. "
+                "That is, for all points in the solution_set and the coordinate `i`, "
+                "`solution_set[i] <= reference_point[i]`."
+            )
         if not np.all(np.isfinite(reference_point)):
             # reference_point does not have nan, because BaseHypervolume._validate will filter out.
             return float("inf")
@@ -34,7 +52,7 @@ class WFG(BaseHypervolume):
 
         self._reference_point = reference_point.astype(np.float64)
         if self._reference_point.shape[0] == 2:
-            return _compute_2d(sorted_pareto_sols, self._reference_point)
+            return self._compute_2d(sorted_pareto_sols, self._reference_point)
 
         return self._compute_hv(sorted_pareto_sols)
 
