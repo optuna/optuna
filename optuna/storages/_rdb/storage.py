@@ -500,10 +500,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 # Should unavoidable exceptions be raised, the last exception is propagated
                 # after five retries.
                 error_obj = e
-                pass
-            except Exception as e:
-                error_obj = e
-                raise
         assert error_obj is not None
         raise error_obj
 
