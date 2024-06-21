@@ -8,10 +8,18 @@ from optuna.study._multi_objective import _is_pareto_front
 class WFG:
     """Hypervolume calculator for any dimension.
 
-    This class exactly calculates the hypervolume for any dimension by using the WFG algorithm.
-    For detail, see `While, Lyndon, Lucas Bradstreet, and Luigi Barone. "A fast way of
-    calculating exact hypervolumes." Evolutionary Computation, IEEE Transactions on 16.1 (2012)
-    : 86-95.`.
+    This class exactly calculates the hypervolume for any dimension.
+    For 3 dimensions or higher, the WFG algorithm will be used.
+    Please refer to ``A fast way of calculating exact hypervolumes`` for the WFG algorithm.
+
+    .. note::
+        This class is used for computing the hypervolumes of points in multi-objective space.
+        Each coordinate of each point represents a ``values`` of the multi-objective function.
+
+    .. note::
+        We check that each objective is to be minimized. Transform objective values that are
+        to be maximized before calling this class's ``compute`` method.
+
     """
 
     def __init__(self) -> None:
