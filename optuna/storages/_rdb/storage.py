@@ -446,6 +446,30 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         """
 
+        def _create_frozen_trial(
+            trial: "models.TrialModel", template_trial: FrozenTrial | None
+        ) -> FrozenTrial:
+            if template_trial:
+                frozen = copy.deepcopy(template_trial)
+                frozen.number = trial.number
+                frozen.datetime_start = trial.datetime_start
+                frozen._trial_id = trial.trial_id
+                return frozen
+            return FrozenTrial(
+                number=trial.number,
+                state=trial.state,
+                value=None,
+                values=None,
+                datetime_start=trial.datetime_start,
+                datetime_complete=None,
+                params={},
+                distributions={},
+                user_attrs={},
+                system_attrs={},
+                intermediate_values={},
+                trial_id=trial.trial_id,
+            )
+
         # Retry maximum five times. Deadlocks may occur in distributed environments.
         error_obj: Exception | None = None
         for n_retries in range(5):
@@ -459,53 +483,27 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 time.sleep(random.random() * 2.0)
             try:
                 with _create_scoped_session(self.scoped_session) as session:
-                    try:
-                        # Ensure that that study exists.
-                        #
-                        # Locking within a study is necessary since the creation of a trial is not
-                        # an atomic operation. More precisely, the trial number computed in
-                        # `_get_prepared_new_trial` is prone to race conditions without this lock.
-                        models.StudyModel.find_or_raise_by_id(study_id, session, for_update=True)
-
-                        trial = self._get_prepared_new_trial(study_id, template_trial, session)
-
-                        if template_trial:
-                            frozen = copy.deepcopy(template_trial)
-                            frozen.number = trial.number
-                            frozen.datetime_start = trial.datetime_start
-                            frozen._trial_id = trial.trial_id
-                        else:
-                            frozen = FrozenTrial(
-                                number=trial.number,
-                                state=trial.state,
-                                value=None,
-                                values=None,
-                                datetime_start=trial.datetime_start,
-                                datetime_complete=None,
-                                params={},
-                                distributions={},
-                                user_attrs={},
-                                system_attrs={},
-                                intermediate_values={},
-                                trial_id=trial.trial_id,
-                            )
-
-                        return frozen
-                    except Exception as e:
-                        # `sqlalchemy_exc.OperationalError` will be caught within the function.
-                        # The others will be immediately propagated to the caller.
-                        error_obj = e
-                        raise
+                    # Ensure that that study exists.
+                    #
+                    # Locking within a study is necessary since the creation of a trial is not
+                    # an atomic operation. More precisely, the trial number computed in
+                    # `_get_prepared_new_trial` is prone to race conditions without this lock.
+                    models.StudyModel.find_or_raise_by_id(study_id, session, for_update=True)
+                    trial = self._get_prepared_new_trial(study_id, template_trial, session)
+                    return _create_frozen_trial(trial, template_trial)
             except sqlalchemy_exc.OperationalError:
                 # Note: According to SQLAlchemy specifications,
                 # `sqlalchemy_exc.OperationalError` can be raised in situations where
                 # retries are not effective (e.g., input string is too long).
                 #
-                # It is assumed here that such bugs do not exist and retries are effective.
-                # Should such bugs be present, the content of the `OperationalError` will be
-                # propagated at the end of this function, and details will be recorded in
-                # the error log.
+                # It is assumed here that exceptions are avoidable and retries are effective.
+                # Should unavoidable exceptions be raised, the last exception is propagated
+                # after five retries.
+                error_obj = e
                 pass
+            except Exception as e:
+                error_obj = e
+                raise
         assert error_obj is not None
         raise error_obj
 
