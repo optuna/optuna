@@ -301,7 +301,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         return study_name
 
-    def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
+    def set_study_user_attr(
+        self, study_id: int, key: str, value: Any, set_only_if_key_is_absent: bool = False
+    ) -> None:
         with _create_scoped_session(self.scoped_session, True) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
             attribute = models.StudyUserAttributeModel.find_by_study_and_key(study, key, session)
@@ -310,10 +312,16 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                     study_id=study_id, key=key, value_json=json.dumps(value)
                 )
                 session.add(attribute)
-            else:
+            elif not set_only_if_key_is_absent:
                 attribute.value_json = json.dumps(value)
 
-    def set_study_system_attr(self, study_id: int, key: str, value: JSONSerializable) -> None:
+    def set_study_system_attr(
+        self,
+        study_id: int,
+        key: str,
+        value: JSONSerializable,
+        set_only_if_key_is_absent: bool = False,
+    ) -> None:
         with _create_scoped_session(self.scoped_session, True) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
             attribute = models.StudySystemAttributeModel.find_by_study_and_key(study, key, session)
@@ -322,7 +330,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                     study_id=study_id, key=key, value_json=json.dumps(value)
                 )
                 session.add(attribute)
-            else:
+            elif not set_only_if_key_is_absent:
                 attribute.value_json = json.dumps(value)
 
     def get_study_id_from_name(self, study_name: str) -> int:
@@ -716,12 +724,21 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             trial_intermediate_value.intermediate_value = stored_value
             trial_intermediate_value.intermediate_value_type = value_type
 
-    def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
+    def set_trial_user_attr(
+        self, trial_id: int, key: str, value: Any, set_only_if_key_is_absent: bool = False
+    ) -> None:
         with _create_scoped_session(self.scoped_session, True) as session:
-            self._set_trial_user_attr_without_commit(session, trial_id, key, value)
+            self._set_trial_user_attr_without_commit(
+                session, trial_id, key, value, set_only_if_key_is_absent
+            )
 
     def _set_trial_user_attr_without_commit(
-        self, session: "sqlalchemy_orm.Session", trial_id: int, key: str, value: Any
+        self,
+        session: "sqlalchemy_orm.Session",
+        trial_id: int,
+        key: str,
+        value: Any,
+        set_only_if_key_is_absent: bool = False,
     ) -> None:
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
@@ -732,15 +749,28 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 trial_id=trial_id, key=key, value_json=json.dumps(value)
             )
             session.add(attribute)
-        else:
+        elif not set_only_if_key_is_absent:
             attribute.value_json = json.dumps(value)
 
-    def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
+    def set_trial_system_attr(
+        self,
+        trial_id: int,
+        key: str,
+        value: JSONSerializable,
+        set_only_if_key_is_absent: bool = False,
+    ) -> None:
         with _create_scoped_session(self.scoped_session, True) as session:
-            self._set_trial_system_attr_without_commit(session, trial_id, key, value)
+            self._set_trial_system_attr_without_commit(
+                session, trial_id, key, value, set_only_if_key_is_absent
+            )
 
     def _set_trial_system_attr_without_commit(
-        self, session: "sqlalchemy_orm.Session", trial_id: int, key: str, value: JSONSerializable
+        self,
+        session: "sqlalchemy_orm.Session",
+        trial_id: int,
+        key: str,
+        value: JSONSerializable,
+        set_only_if_key_is_absent: bool = False,
     ) -> None:
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
@@ -751,7 +781,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 trial_id=trial_id, key=key, value_json=json.dumps(value)
             )
             session.add(attribute)
-        else:
+        elif not set_only_if_key_is_absent:
             attribute.value_json = json.dumps(value)
 
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
