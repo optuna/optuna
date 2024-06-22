@@ -81,16 +81,28 @@ class InMemoryStorage(BaseStorage):
             del self._study_name_to_id[study_name]
             del self._studies[study_id]
 
-    def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
+    def set_study_user_attr(
+        self, study_id: int, key: str, value: Any, set_only_if_key_is_absent: bool = False
+    ) -> None:
         with self._lock:
             self._check_study_id(study_id)
 
+            if set_only_if_key_is_absent and key in self._studies[study_id].user_attrs:
+                return
             self._studies[study_id].user_attrs[key] = value
 
-    def set_study_system_attr(self, study_id: int, key: str, value: JSONSerializable) -> None:
+    def set_study_system_attr(
+        self,
+        study_id: int,
+        key: str,
+        value: JSONSerializable,
+        set_only_if_key_is_absent: bool = False,
+    ) -> None:
         with self._lock:
             self._check_study_id(study_id)
 
+            if set_only_if_key_is_absent and key in self._studies[study_id].system_attrs:
+                return
             self._studies[study_id].system_attrs[key] = value
 
     def get_study_id_from_name(self, study_name: str) -> int:
@@ -317,7 +329,9 @@ class InMemoryStorage(BaseStorage):
             trial.intermediate_values[step] = intermediate_value
             self._set_trial(trial_id, trial)
 
-    def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
+    def set_trial_user_attr(
+        self, trial_id: int, key: str, value: Any, set_only_if_key_is_absent: bool = False
+    ) -> None:
         with self._lock:
             self._check_trial_id(trial_id)
             trial = self._get_trial(trial_id)
@@ -325,16 +339,26 @@ class InMemoryStorage(BaseStorage):
 
             trial = copy.copy(trial)
             trial.user_attrs = copy.copy(trial.user_attrs)
+            if set_only_if_key_is_absent and key in trial.user_attrs:
+                return
             trial.user_attrs[key] = value
             self._set_trial(trial_id, trial)
 
-    def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
+    def set_trial_system_attr(
+        self,
+        trial_id: int,
+        key: str,
+        value: JSONSerializable,
+        set_only_if_key_is_absent: bool = False,
+    ) -> None:
         with self._lock:
             trial = self._get_trial(trial_id)
             self.check_trial_is_updatable(trial_id, trial.state)
 
             trial = copy.copy(trial)
             trial.system_attrs = copy.copy(trial.system_attrs)
+            if set_only_if_key_is_absent and key in trial.system_attrs:
+                return
             trial.system_attrs[key] = value
             self._set_trial(trial_id, trial)
 
