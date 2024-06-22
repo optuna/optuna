@@ -214,6 +214,21 @@ def test_set_and_get_study_user_attrs(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_set_and_get_study_user_attrs_set_only_if_key_is_absent(storage_mode: str) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+
+        # Test setting value.
+        key, old_value, new_value = "dataset", "MNIST", "ImageNet"
+        storage.set_study_user_attr(study_id, key, old_value, True)
+        assert storage.get_study_user_attrs(study_id) == {key: old_value}
+        storage.set_study_user_attr(study_id, key, new_value, True)
+        assert storage.get_study_user_attrs(study_id) == {key: old_value}
+        storage.set_study_user_attr(study_id, key, new_value)
+        assert storage.get_study_user_attrs(study_id) == {key: new_value}
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_and_get_study_system_attrs(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
@@ -238,6 +253,21 @@ def test_set_and_get_study_system_attrs(storage_mode: str) -> None:
         # Non-existent study id.
         with pytest.raises(KeyError):
             storage.set_study_system_attr(non_existent_study_id, "key", "value")
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_set_and_get_study_system_attrs_set_only_if_key_is_absent(storage_mode: str) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+
+        # Test setting value.
+        key, old_value, new_value = "dataset", "MNIST", "ImageNet"
+        storage.set_study_system_attr(study_id, key, old_value, True)
+        assert storage.get_study_system_attrs(study_id) == {key: old_value}
+        storage.set_study_system_attr(study_id, key, new_value, True)
+        assert storage.get_study_system_attrs(study_id) == {key: old_value}
+        storage.set_study_system_attr(study_id, key, new_value)
+        assert storage.get_study_system_attrs(study_id) == {key: new_value}
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -673,6 +703,23 @@ def test_set_trial_user_attr(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_set_trial_user_attr_set_only_if_key_is_absent(storage_mode: str) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        trial_id_1 = storage.create_new_trial(
+            storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+        )
+
+        # Test setting value.
+        key, old_value, new_value = "dataset", "MNIST", "ImageNet"
+        storage.set_trial_user_attr(trial_id_1, key, old_value, True)
+        assert storage.get_trial(trial_id_1).user_attrs == {key: old_value}
+        storage.set_trial_user_attr(trial_id_1, key, new_value, True)
+        assert storage.get_trial(trial_id_1).user_attrs == {key: old_value}
+        storage.set_trial_user_attr(trial_id_1, key, new_value)
+        assert storage.get_trial(trial_id_1).user_attrs == {key: new_value}
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_trial_system_attrs(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         _, study_to_trials = _setup_studies(storage, n_study=2, n_trial=5, seed=10)
@@ -721,6 +768,23 @@ def test_set_trial_system_attr(storage_mode: str) -> None:
         storage.set_trial_state_values(trial_id_1, state=TrialState.COMPLETE)
         with pytest.raises(RuntimeError):
             storage.set_trial_system_attr(trial_id_1, "key", "value")
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_set_trial_system_attr_set_only_if_key_is_absent(storage_mode: str) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        trial_id_1 = storage.create_new_trial(
+            storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+        )
+
+        # Test setting value.
+        key, old_value, new_value = "dataset", "MNIST", "ImageNet"
+        storage.set_trial_system_attr(trial_id_1, key, old_value, True)
+        assert storage.get_trial(trial_id_1).system_attrs == {key: old_value}
+        storage.set_trial_system_attr(trial_id_1, key, new_value, True)
+        assert storage.get_trial(trial_id_1).system_attrs == {key: old_value}
+        storage.set_trial_system_attr(trial_id_1, key, new_value)
+        assert storage.get_trial(trial_id_1).system_attrs == {key: new_value}
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
