@@ -89,10 +89,10 @@ class BaseStorage(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
+    def set_study_user_attr(
+        self, study_id: int, key: str, value: Any, set_only_if_key_is_absent: bool = False
+    ) -> None:
         """Register a user-defined attribute to a study.
-
-        This method overwrites any existing attribute.
 
         Args:
             study_id:
@@ -101,6 +101,9 @@ class BaseStorage(abc.ABC):
                 Attribute key.
             value:
                 Attribute value. It should be JSON serializable.
+            set_only_if_key_is_absent:
+                if :obj:`False`, this method overwrites any existing attribute.
+                if :obj:`True`, this method never overwrites it.
 
         Raises:
             :exc:`KeyError`:
@@ -109,10 +112,14 @@ class BaseStorage(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_study_system_attr(self, study_id: int, key: str, value: JSONSerializable) -> None:
+    def set_study_system_attr(
+        self,
+        study_id: int,
+        key: str,
+        value: JSONSerializable,
+        set_only_if_key_is_absent: bool = False,
+    ) -> None:
         """Register an optuna-internal attribute to a study.
-
-        This method overwrites any existing attribute.
 
         Args:
             study_id:
@@ -121,6 +128,9 @@ class BaseStorage(abc.ABC):
                 Attribute key.
             value:
                 Attribute value. It should be JSON serializable.
+            set_only_if_key_is_absent:
+                if :obj:`False`, this method overwrites any existing attribute.
+                if :obj:`True`, this method never overwrites it.
 
         Raises:
             :exc:`KeyError`:
@@ -399,10 +409,10 @@ class BaseStorage(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
+    def set_trial_user_attr(
+        self, trial_id: int, key: str, value: Any, set_only_if_key_is_absent: bool = False
+    ) -> None:
         """Set a user-defined attribute to a trial.
-
-        This method overwrites any existing attribute.
 
         Args:
             trial_id:
@@ -411,6 +421,9 @@ class BaseStorage(abc.ABC):
                 Attribute key.
             value:
                 Attribute value. It should be JSON serializable.
+            set_only_if_key_is_absent:
+                if :obj:`False`, this method overwrites any existing attribute.
+                if :obj:`True`, this method never overwrites it.
 
         Raises:
             :exc:`KeyError`:
@@ -421,10 +434,14 @@ class BaseStorage(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
+    def set_trial_system_attr(
+        self,
+        trial_id: int,
+        key: str,
+        value: JSONSerializable,
+        set_only_if_key_is_absent: bool = False,
+    ) -> None:
         """Set an optuna-internal attribute to a trial.
-
-        This method overwrites any existing attribute.
 
         Args:
             trial_id:
@@ -433,6 +450,9 @@ class BaseStorage(abc.ABC):
                 Attribute key.
             value:
                 Attribute value. It should be JSON serializable.
+            set_only_if_key_is_absent:
+                if :obj:`False`, this method overwrites any existing attribute.
+                if :obj:`True`, this method never overwrites it.
 
         Raises:
             :exc:`KeyError`:
