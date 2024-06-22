@@ -101,11 +101,19 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
 
         self._backend.delete_study(study_id)
 
-    def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
-        self._backend.set_study_user_attr(study_id, key, value)
+    def set_study_user_attr(
+        self, study_id: int, key: str, value: Any, set_only_if_key_is_absent: bool = False
+    ) -> None:
+        self._backend.set_study_user_attr(study_id, key, value, set_only_if_key_is_absent)
 
-    def set_study_system_attr(self, study_id: int, key: str, value: JSONSerializable) -> None:
-        self._backend.set_study_system_attr(study_id, key, value)
+    def set_study_system_attr(
+        self,
+        study_id: int,
+        key: str,
+        value: JSONSerializable,
+        set_only_if_key_is_absent: bool = False,
+    ) -> None:
+        self._backend.set_study_system_attr(study_id, key, value, set_only_if_key_is_absent)
 
     def get_study_id_from_name(self, study_name: str) -> int:
         return self._backend.get_study_id_from_name(study_name)
@@ -191,11 +199,23 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
     ) -> None:
         self._backend.set_trial_intermediate_value(trial_id, step, intermediate_value)
 
-    def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
-        self._backend.set_trial_user_attr(trial_id, key=key, value=value)
+    def set_trial_user_attr(
+        self, trial_id: int, key: str, value: Any, set_only_if_key_is_absent: bool = False
+    ) -> None:
+        self._backend.set_trial_user_attr(
+            trial_id, key=key, value=value, set_only_if_key_is_absent=set_only_if_key_is_absent
+        )
 
-    def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
-        self._backend.set_trial_system_attr(trial_id, key=key, value=value)
+    def set_trial_system_attr(
+        self,
+        trial_id: int,
+        key: str,
+        value: JSONSerializable,
+        set_only_if_key_is_absent: bool = False,
+    ) -> None:
+        self._backend.set_trial_system_attr(
+            trial_id, key=key, value=value, set_only_if_key_is_absent=set_only_if_key_is_absent
+        )
 
     def _get_cached_trial(self, trial_id: int) -> Optional[FrozenTrial]:
         if trial_id not in self._trial_id_to_study_id_and_number:
