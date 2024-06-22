@@ -182,15 +182,31 @@ class JournalStorage(BaseStorage):
             self._write_log(JournalOperation.DELETE_STUDY, {"study_id": study_id})
             self._sync_with_backend()
 
-    def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
+    def set_study_user_attr(
+        self, study_id: int, key: str, value: Any, set_only_if_key_is_absent: bool = False
+    ) -> None:
         log: Dict[str, Any] = {"study_id": study_id, "user_attr": {key: value}}
         with self._thread_lock:
+            if set_only_if_key_is_absent:
+                current_attrs = self._get_study_user_attrs_without_lock(study_id)
+                if key in current_attrs:
+                    return
             self._write_log(JournalOperation.SET_STUDY_USER_ATTR, log)
             self._sync_with_backend()
 
-    def set_study_system_attr(self, study_id: int, key: str, value: JSONSerializable) -> None:
+    def set_study_system_attr(
+        self,
+        study_id: int,
+        key: str,
+        value: JSONSerializable,
+        set_only_if_key_is_absent: bool = False,
+    ) -> None:
         log: Dict[str, Any] = {"study_id": study_id, "system_attr": {key: value}}
         with self._thread_lock:
+            if set_only_if_key_is_absent:
+                current_attrs = self._get_study_system_attrs_without_lock(study_id)
+                if key in current_attrs:
+                    return
             self._write_log(JournalOperation.SET_STUDY_SYSTEM_ATTR, log)
             self._sync_with_backend()
 
@@ -214,13 +230,19 @@ class JournalStorage(BaseStorage):
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
         with self._thread_lock:
-            self._sync_with_backend()
-            return self._replay_result.get_study(study_id).user_attrs
+            return self._get_study_user_attrs_without_lock(study_id)
+
+    def _get_study_user_attrs_without_lock(self, study_id: int) -> Dict[str, Any]:
+        self._sync_with_backend()
+        return self._replay_result.get_study(study_id).user_attrs
 
     def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
         with self._thread_lock:
-            self._sync_with_backend()
-            return self._replay_result.get_study(study_id).system_attrs
+            return self._get_study_system_attrs_without_lock(study_id)
+
+    def _get_study_system_attrs_without_lock(self, study_id: int) -> Dict[str, Any]:
+        self._sync_with_backend()
+        return self._replay_result.get_study(study_id).system_attrs
 
     def get_all_studies(self) -> List[FrozenStudy]:
         with self._thread_lock:
@@ -343,30 +365,49 @@ class JournalStorage(BaseStorage):
             self._write_log(JournalOperation.SET_TRIAL_INTERMEDIATE_VALUE, log)
             self._sync_with_backend()
 
-    def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
+    def set_trial_user_attr(
+        self, trial_id: int, key: str, value: Any, set_only_if_key_is_absent: bool = False
+    ) -> None:
         log: Dict[str, Any] = {
             "trial_id": trial_id,
             "user_attr": {key: value},
         }
 
         with self._thread_lock:
+            if set_only_if_key_is_absent:
+                frozen_trial = self._get_trial_without_lock(trial_id)
+                if key in frozen_trial.user_attrs:
+                    return
             self._write_log(JournalOperation.SET_TRIAL_USER_ATTR, log)
             self._sync_with_backend()
 
-    def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
+    def set_trial_system_attr(
+        self,
+        trial_id: int,
+        key: str,
+        value: JSONSerializable,
+        set_only_if_key_is_absent: bool = False,
+    ) -> None:
         log: Dict[str, Any] = {
             "trial_id": trial_id,
             "system_attr": {key: value},
         }
 
         with self._thread_lock:
+            if set_only_if_key_is_absent:
+                frozen_trial = self._get_trial_without_lock(trial_id)
+                if key in frozen_trial.system_attrs:
+                    return
             self._write_log(JournalOperation.SET_TRIAL_SYSTEM_ATTR, log)
             self._sync_with_backend()
 
     def get_trial(self, trial_id: int) -> FrozenTrial:
         with self._thread_lock:
-            self._sync_with_backend()
-            return self._replay_result.get_trial(trial_id)
+            return self._get_trial_without_lock(trial_id)
+
+    def _get_trial_without_lock(self, trial_id: int) -> FrozenTrial:
+        self._sync_with_backend()
+        return self._replay_result.get_trial(trial_id)
 
     def get_all_trials(
         self,
