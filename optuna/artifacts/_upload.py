@@ -21,6 +21,21 @@ DEFAULT_MIME_TYPE = "application/octet-stream"
 
 @dataclass
 class ArtifactMeta:
+    """Meta information for an artifact.
+
+    Args:
+        artifact_id:
+            The identifier of the artifact.
+        filename:
+            The artifact file name used for the upload.
+        mimetype:
+            A MIME type of the artifact.
+            If not specified, the MIME type is guessed from the file extension.
+        encoding:
+            An encoding of the artifact, which is suitable for use as a Content-Encoding header,
+            e.g., gzip. If not specified, the encoding is guessed from the file extension.
+    """
+
     artifact_id: str
     filename: str
     mimetype: str

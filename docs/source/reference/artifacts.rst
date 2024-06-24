@@ -18,6 +18,9 @@ Please note that methods defined in each ArtifactStore are not intended to be di
 .. autoclass:: optuna.artifacts.Backoff
    :no-members:
 
+.. autoclass:: optuna.artifacts.ArtifactMeta
+   :no-members:
+
 .. autofunction:: optuna.artifacts.upload_artifact
 
 .. autofunction:: optuna.artifacts.get_all_artifact_meta
