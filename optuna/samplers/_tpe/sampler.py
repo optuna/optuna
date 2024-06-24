@@ -154,8 +154,8 @@ class TPESampler(BaseSampler):
         weights:
             A function that takes the number of finished trials and returns a weight for them.
             See `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
-            Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`__
-            for more details.
+            Dimensions for Vision Architectures
+            <http://proceedings.mlr.press/v28/bergstra13.pdf>`__ for more details.
 
             .. note::
                 In the multi-objective case, this argument is only used to compute the weights of
