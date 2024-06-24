@@ -377,7 +377,7 @@ class Study:
         timeout: float | None = None,
         n_jobs: int = 1,
         catch: Iterable[type[Exception]] | type[Exception] = (),
-        callbacks: list[Callable[[Study, FrozenTrial], None]] | None = None,
+        callbacks: Iterable[Callable[[Study, FrozenTrial], None]] | None = None,
         gc_after_trial: bool = False,
         show_progress_bar: bool = False,
     ) -> None:
