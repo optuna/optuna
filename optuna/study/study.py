@@ -434,7 +434,7 @@ class Study:
 
                 .. note::
                     ``n_jobs`` allows parallelization using :obj:`threading` and may suffer from
-                    `Python's GIL <https://wiki.python.org/moin/GlobalInterpreterLock>`_.
+                    `Python's GIL <https://wiki.python.org/moin/GlobalInterpreterLock>`__.
                     It is recommended to use :ref:`process-based parallelization<distributed>`
                     if ``func`` is CPU bound.
 

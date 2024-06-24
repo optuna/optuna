@@ -20,7 +20,7 @@ class UniformCrossover(BaseCrossover):
     - `Gilbert Syswerda. 1989. Uniform Crossover in Genetic Algorithms.
       In Proceedings of the 3rd International Conference on Genetic Algorithms.
       Morgan Kaufmann Publishers Inc., San Francisco, CA, USA, 2-9.
-      <https://www.researchgate.net/publication/201976488_Uniform_Crossover_in_Genetic_Algorithms>`_
+      <https://www.researchgate.net/publication/201976488_Uniform_Crossover_in_Genetic_Algorithms>`__
 
     Args:
         swapping_prob:

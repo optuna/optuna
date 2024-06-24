@@ -11,7 +11,7 @@ In this section, let's try simple examples running on a local environment with S
 
 .. note::
     You can also utilize other RDB backends, e.g., PostgreSQL or MySQL, by setting the storage argument to the DB's URL.
-    Please refer to `SQLAlchemy's document <https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_ for how to set up the URL.
+    Please refer to `SQLAlchemy's document <https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`__ for how to set up the URL.
 
 
 New Study

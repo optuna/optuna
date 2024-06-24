@@ -147,7 +147,7 @@ class JournalFileStorage(BaseJournalLogStorage):
 
     Compared to SQLite3, the benefit of this backend is that it is more suitable for
     environments where the file system does not support ``fcntl()`` file locking.
-    For example, as written in the `SQLite3 FAQ <https://www.sqlite.org/faq.html#q5>`_,
+    For example, as written in the `SQLite3 FAQ <https://www.sqlite.org/faq.html#q5>`__,
     SQLite3 might not work on NFS (Network File System) since ``fcntl()`` file locking
     is broken on many NFS implementations. In such scenarios, this backend provides
     several workarounds for locking files. For more details, refer to the `Medium blog post`_.
