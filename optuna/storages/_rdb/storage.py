@@ -483,7 +483,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             except sqlalchemy_exc.OperationalError as e:
                 # ``OperationalError`` happens either by (1) invalid inputs, e.g., too long string,
                 # or (2) timeout error, which relates to deadlock. Although Error (1) is not
-                # supposed to be caught here, it must be fixed anyways by users to use RDB.
+                # intended to be caught here, it must be fixed to use RDBStorage anyways.
                 if n_retries == MAX_RETRIES:
                     raise e
 
