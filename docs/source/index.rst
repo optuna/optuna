@@ -97,7 +97,7 @@ Feature requests and bug reports are welcome!
 
 .. TIP::
 
-   Please check out the `getting started <https://optuna-dashboard.readthedocs.io/en/latest/getting-started.html>`__ section of Optuna Dashboard's official documentation.
+   Please check out the `getting started <https://optuna-dashboard.readthedocs.io/en/stable/getting-started.html>`__ section of Optuna Dashboard's official documentation.
 
 Communication
 -------------

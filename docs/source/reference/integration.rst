@@ -8,7 +8,7 @@ The :mod:`~optuna.integration` module contains classes used to integrate Optuna 
 .. note::
    Optuna's integration modules for third-party libraries have started migrating from Optuna itself to a package called
    `optuna-integration`. Please check the `repository <https://github.com/optuna/optuna-integration>`__ and
-   the `documentation <https://optuna-integration.readthedocs.io/en/latest/index.html>`__.
+   the `documentation <https://optuna-integration.readthedocs.io/en/stable/index.html>`__.
 
 For most of the ML frameworks supported by Optuna, the corresponding Optuna integration class serves only to implement a callback object and functions, compliant with the framework's specific callback API, to be called with each intermediate step in the model training. The functionality implemented in these callbacks across the different ML frameworks includes:
 
