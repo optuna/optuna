@@ -738,7 +738,7 @@ However, if it is necessary to remove artifacts from a Python script, users can 
 
 
     def remove_artifacts(study, artifact_store):
-        # NOTE: `artifact_store.remove` is discourged to use.
+        # NOTE: `artifact_store.remove` is discouraged to use.
         storage = study._storage
         for trial in study.trials:
             for artifact_meta in get_all_artifact_meta(trial, storage=storage):
