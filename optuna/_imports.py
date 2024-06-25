@@ -8,7 +8,8 @@ from typing import Type
 
 
 _INTEGRATION_IMPORT_ERROR_TEMPLATE = (
-    "\nCould not find `optuna-integration` for `{0}`.\nPlease run `pip optuna-integration[{0}]`."
+    "\nCould not find `optuna-integration` for `{0}`.\n"
+    "Please run `pip install optuna-integration[{0}]`."
 )
 
 
