@@ -21,7 +21,7 @@ class HyperbandPruner(BasePruner):
     :math:`n` as its hyperparameter.  For a given finite budget :math:`B`,
     all the configurations have the resources of :math:`B \\over n` on average.
     As you can see, there will be a trade-off of :math:`B` and :math:`B \\over n`.
-    `Hyperband <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_ attacks this trade-off
+    `Hyperband <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`__ attacks this trade-off
     by trying different :math:`n` values for a fixed budget.
 
     .. note::
@@ -29,7 +29,7 @@ class HyperbandPruner(BasePruner):
           is used.
         * Optuna uses :class:`~optuna.samplers.TPESampler` by default.
         * `The benchmark result
-          <https://github.com/optuna/optuna/pull/828#issuecomment-575457360>`_
+          <https://github.com/optuna/optuna/pull/828#issuecomment-575457360>`__
           shows that :class:`optuna.pruners.HyperbandPruner` supports both samplers.
 
     .. note::
@@ -58,7 +58,7 @@ class HyperbandPruner(BasePruner):
         (\\frac{\\texttt{max}\\_\\texttt{resource}}{\\texttt{min}\\_\\texttt{resource}})) + 1`.
         Please set ``reduction_factor`` so that the number of brackets is not too large (about 4 –
         6 in most use cases). Please see Section 3.6 of the `original paper
-        <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_ for the detail.
+        <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`__ for the detail.
 
     Example:
 
@@ -235,7 +235,7 @@ class HyperbandPruner(BasePruner):
         """Compute the index of bracket for a trial of ``trial_number``.
 
         The index of a bracket is noted as :math:`s` in
-        `Hyperband paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_.
+        `Hyperband paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`__.
         """
 
         if len(self._pruners) == 0:

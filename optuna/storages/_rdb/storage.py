@@ -183,7 +183,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         mechanism. Set ``heartbeat_interval``, ``grace_period``, and ``failed_trial_callback``
         appropriately according to your use case. For more details, please refer to the
         :ref:`tutorial <heartbeat_monitoring>` and `Example page
-        <https://github.com/optuna/optuna-examples/blob/main/pytorch/pytorch_checkpoint.py>`_.
+        <https://github.com/optuna/optuna-examples/blob/main/pytorch/pytorch_checkpoint.py>`__.
 
     .. seealso::
         You can use :class:`~optuna.storages.RetryFailedTrialCallback` to automatically retry

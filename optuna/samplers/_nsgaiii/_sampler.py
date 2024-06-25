@@ -47,11 +47,11 @@ class NSGAIIISampler(BaseSampler):
 
     - `An Evolutionary Many-Objective Optimization Algorithm Using Reference-Point-Based
       Nondominated Sorting Approach, Part I: Solving Problems With Box Constraints
-      <https://doi.org/10.1109/TEVC.2013.2281535>`_
+      <https://doi.org/10.1109/TEVC.2013.2281535>`__
     - `An Evolutionary Many-Objective Optimization Algorithm Using Reference-Point-Based
       Nondominated Sorting Approach, Part II: Handling Constraints and Extending to an Adaptive
       Approach
-      <https://doi.org/10.1109/TEVC.2013.2281534>`_
+      <https://doi.org/10.1109/TEVC.2013.2281534>`__
 
     Args:
         reference_points:

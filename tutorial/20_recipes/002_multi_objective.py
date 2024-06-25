@@ -7,7 +7,7 @@ Multi-objective Optimization with Optuna
 This tutorial showcases Optuna's multi-objective optimization feature by
 optimizing the validation accuracy of Fashion MNIST dataset and the FLOPS of the model implemented in PyTorch.
 
-We use `fvcore <https://github.com/facebookresearch/fvcore>`_ to measure FLOPS.
+We use `fvcore <https://github.com/facebookresearch/fvcore>`__ to measure FLOPS.
 """
 
 import torch

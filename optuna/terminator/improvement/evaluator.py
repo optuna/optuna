@@ -42,7 +42,7 @@ def _get_beta(n_params: int, n_trials: int, delta: float = 0.1) -> float:
 
     # The following div is according to the original paper: "We then further scale it down
     # by a factor of 5 as defined in the experiments in
-    # `Srinivas et al. (2010) <https://dl.acm.org/doi/10.5555/3104322.3104451>`_"
+    # `Srinivas et al. (2010) <https://dl.acm.org/doi/10.5555/3104322.3104451>`__"
     beta /= 5
 
     return beta
@@ -85,7 +85,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
 
     For further information about this evaluator, please refer to the following paper:
 
-    - `Automatic Termination for Hyperparameter Optimization <https://proceedings.mlr.press/v188/makarova22a.html>`_
+    - `Automatic Termination for Hyperparameter Optimization <https://proceedings.mlr.press/v188/makarova22a.html>`__
     """  # NOQA: E501
 
     def __init__(

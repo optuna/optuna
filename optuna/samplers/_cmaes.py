@@ -59,7 +59,7 @@ class _CmaEsAttrKeys(NamedTuple):
 
 
 class CmaEsSampler(BaseSampler):
-    """A sampler using `cmaes <https://github.com/CyberAgentAILab/cmaes>`_ as the backend.
+    """A sampler using `cmaes <https://github.com/CyberAgentAILab/cmaes>`__ as the backend.
 
     Example:
 
@@ -95,27 +95,27 @@ class CmaEsSampler(BaseSampler):
     For further information about CMA-ES algorithm, please refer to the following papers:
 
     - `N. Hansen, The CMA Evolution Strategy: A Tutorial. arXiv:1604.00772, 2016.
-      <https://arxiv.org/abs/1604.00772>`_
+      <https://arxiv.org/abs/1604.00772>`__
     - `A. Auger and N. Hansen. A restart CMA evolution strategy with increasing population
       size. In Proceedings of the IEEE Congress on Evolutionary Computation (CEC 2005),
-      pages 1769–1776. IEEE Press, 2005. <https://doi.org/10.1109/CEC.2005.1554902>`_
+      pages 1769–1776. IEEE Press, 2005. <https://doi.org/10.1109/CEC.2005.1554902>`__
     - `N. Hansen. Benchmarking a BI-Population CMA-ES on the BBOB-2009 Function Testbed.
-      GECCO Workshop, 2009. <https://doi.org/10.1145/1570256.1570333>`_
+      GECCO Workshop, 2009. <https://doi.org/10.1145/1570256.1570333>`__
     - `Raymond Ros, Nikolaus Hansen. A Simple Modification in CMA-ES Achieving Linear Time and
       Space Complexity. 10th International Conference on Parallel Problem Solving From Nature,
-      Sep 2008, Dortmund, Germany. inria-00287367. <https://doi.org/10.1007/978-3-540-87700-4_30>`_
+      Sep 2008, Dortmund, Germany. inria-00287367. <https://doi.org/10.1007/978-3-540-87700-4_30>`__
     - `Masahiro Nomura, Shuhei Watanabe, Youhei Akimoto, Yoshihiko Ozaki, Masaki Onishi.
       Warm Starting CMA-ES for Hyperparameter Optimization, AAAI. 2021.
-      <https://doi.org/10.1609/aaai.v35i10.17109>`_
+      <https://doi.org/10.1609/aaai.v35i10.17109>`__
     - `R. Hamano, S. Saito, M. Nomura, S. Shirakawa. CMA-ES with Margin: Lower-Bounding Marginal
       Probability for Mixed-Integer Black-Box Optimization, GECCO. 2022.
-      <https://doi.org/10.1145/3512290.3528827>`_
+      <https://doi.org/10.1145/3512290.3528827>`__
     - `M. Nomura, Y. Akimoto, I. Ono. CMA-ES with Learning Rate Adaptation: Can CMA-ES with
       Default Population Size Solve Multimodal and Noisy Problems?, GECCO. 2023.
-      <https://doi.org/10.1145/3583131.3590358>`_
+      <https://doi.org/10.1145/3583131.3590358>`__
 
     .. seealso::
-        You can also use `optuna_integration.PyCmaSampler <https://optuna-integration.readthedocs.io/en/stable/reference/generated/optuna_integration.PyCmaSampler.html#optuna_integration.PyCmaSampler>`_ which is a sampler using cma
+        You can also use `optuna_integration.PyCmaSampler <https://optuna-integration.readthedocs.io/en/stable/reference/generated/optuna_integration.PyCmaSampler.html#optuna_integration.PyCmaSampler>`__ which is a sampler using cma
         library as the backend.
 
     Args:
@@ -196,7 +196,7 @@ class CmaEsSampler(BaseSampler):
                 :class:`~optuna.pruners.MedianPruner` is used. On the other hand, it is suggested
                 to set this flag :obj:`True` when the :class:`~optuna.pruners.HyperbandPruner` is
                 used. Please see `the benchmark result
-                <https://github.com/optuna/optuna/pull/1229>`_ for the details.
+                <https://github.com/optuna/optuna/pull/1229>`__ for the details.
 
         use_separable_cma:
             If this is :obj:`True`, the covariance matrix is constrained to be diagonal.

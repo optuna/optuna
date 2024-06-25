@@ -42,11 +42,11 @@ class QMCSampler(BaseSampler):
 
     - `Bergstra, James, and Yoshua Bengio. Random search for hyper-parameter optimization.
       Journal of machine learning research 13.2, 2012.
-      <https://jmlr.org/papers/v13/bergstra12a.html>`_
+      <https://jmlr.org/papers/v13/bergstra12a.html>`__
 
     We use the QMC implementations in Scipy. For the details of the QMC algorithm,
     see the Scipy API references on `scipy.stats.qmc
-    <https://scipy.github.io/devdocs/reference/stats.qmc.html>`_.
+    <https://scipy.github.io/devdocs/reference/stats.qmc.html>`__.
 
     .. note:
         If your search space contains categorical parameters, it samples the categorical
