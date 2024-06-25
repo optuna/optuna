@@ -720,7 +720,7 @@ Optuna may sometimes suggest parameters evaluated in the past and if you would l
 How can I delete all the artifacts uploaded to a study?
 -------------------------------------------------------
 
-Optuna supports `artifacts <https://optuna.readthedocs.io/en/stable/reference/artifacts.html>`_ for large data storage during an optimization.
+Optuna supports :mod:`~optuna.artifacts` for large data storage during an optimization.
 After you conduct enormous amount of experiments, you may want to remove the artifacts stored during optimizations.
 
 We strongly recommend to create a new directory or bucket for each study so that all the artifacts linked to a study can be entirely removed by deleting the directory or the bucket.

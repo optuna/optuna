@@ -10,7 +10,7 @@ The :mod:`~optuna.artifacts` module provides the way to manage artifacts (output
    The methods defined in each ``ArtifactStore`` are not intended to be directly accessed by library users.
 
 .. note::
-   As ``ArtifactStore`` does not officially provide user API for artifact removal, please refer to :ref:`FAQ<remove_for_artifact_store>` for the hack.
+   As ``ArtifactStore`` does not officially provide user API for artifact removal, please refer to :ref:`FAQ<remove for artifact store>` for the hack.
 
 .. autoclass:: optuna.artifacts.FileSystemArtifactStore
    :no-members:
