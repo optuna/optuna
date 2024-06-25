@@ -715,6 +715,8 @@ Optuna may sometimes suggest parameters evaluated in the past and if you would l
     study = optuna.create_study()
     study.optimize(objective, n_trials=100)
 
+.. _remove_for_artifact_store:
+
 How can I delete all the artifacts uploaded to a study?
 -------------------------------------------------------
 

@@ -4,13 +4,13 @@ optuna.artifacts
 ================
 
 The :mod:`~optuna.artifacts` module provides the way to manage artifacts (output files) in Optuna.
-`The tutorial <https://optuna.readthedocs.io/en/stable/tutorial/20_recipes/012_artifact_tutorial.html>`__ is also available.
+:ref:`The tutorial<artifact_tutorial>` is also available.
 
 .. note::
    The methods defined in each ``ArtifactStore`` are not intended to be directly accessed by library users.
 
 .. note::
-   As ``ArtifactStore`` does not officially provide user API for artifact removal, please refer to `FAQ <https://optuna.readthedocs.io/en/stable/faq.html#how-can-i-delete-all-the-artifacts-uploaded-to-a-study>`__ for the hack.
+   As ``ArtifactStore`` does not officially provide user API for artifact removal, please refer to :ref:`FAQ<remove_for_artifact_store>` for the hack.
 
 .. autoclass:: optuna.artifacts.FileSystemArtifactStore
    :no-members:
