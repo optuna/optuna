@@ -82,9 +82,9 @@ optimization *studies*.
 Web Dashboard
 -------------
 
-`Optuna Dashboard <https://github.com/optuna/optuna-dashboard>`_ is a real-time web dashboard for Optuna.
+`Optuna Dashboard <https://github.com/optuna/optuna-dashboard>`__ is a real-time web dashboard for Optuna.
 You can check the optimization history, hyperparameter importance, etc. in graphs and tables.
-You don't need to create a Python script to call `Optuna's visualization <https://optuna.readthedocs.io/en/stable/reference/visualization/index.html>`_ functions.
+You don't need to create a Python script to call `Optuna's visualization <https://optuna.readthedocs.io/en/stable/reference/visualization/index.html>`__ functions.
 Feature requests and bug reports are welcome!
 
 .. image:: https://user-images.githubusercontent.com/5564044/204975098-95c2cb8c-0fb5-4388-abc4-da32f56cb4e5.gif
@@ -97,7 +97,7 @@ Feature requests and bug reports are welcome!
 
 .. TIP::
 
-   Please check out the `getting started <https://optuna-dashboard.readthedocs.io/en/latest/getting-started.html>`_ section of Optuna Dashboard's official documentation.
+   Please check out the `getting started <https://optuna-dashboard.readthedocs.io/en/latest/getting-started.html>`__ section of Optuna Dashboard's official documentation.
 
 Communication
 -------------

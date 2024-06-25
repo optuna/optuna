@@ -22,7 +22,7 @@ else:
 
 @experimental_class("3.6.0")
 class WilcoxonPruner(BasePruner):
-    """Pruner based on the `Wilcoxon signed-rank test <https://en.wikipedia.org/w/index.php?title=Wilcoxon_signed-rank_test&oldid=1195011212>`_.
+    """Pruner based on the `Wilcoxon signed-rank test <https://en.wikipedia.org/w/index.php?title=Wilcoxon_signed-rank_test&oldid=1195011212>`__.
 
     This pruner performs the Wilcoxon signed-rank test between the current trial and the current best trial,
     and stops whenever the pruner is sure up to a given p-value that the current trial is worse than the best one.

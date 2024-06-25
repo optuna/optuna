@@ -51,10 +51,12 @@ jobs:
         optuna --version
         pip install --progress-bar off .[test] --extra-index-url https://download.pytorch.org/whl/cpu
         pip install --progress-bar off .[optional] --extra-index-url https://download.pytorch.org/whl/cpu
-        # TODO(c-bata): Remove a version constraint after releasing https://github.com/cunla/fakeredis-py/pull/303
-        pip install --progress-bar off 'fakeredis[lua]<2.21.2'
         pip install PyQt6 # Install PyQT for using QtAgg as matplotlib backend.
-        pip install "kaleido<=0.1.0post1"  # TODO(HideakiImamura): Remove this after fixing https://github.com/plotly/Kaleido/issues/110
+        # TODO(HideakiImamura): Remove this after fixing https://github.com/plotly/Kaleido/issues/110
+        pip install "kaleido<=0.1.0post1"
+        # TODO(nabe): Remove the version constraint once Torch supports NumPy v2.0.0 for Windows.
+        pip uninstall numpy
+        pip install --progress-bar off 'numpy<2.0.0'
 
     - name: Output installed packages
       run: |

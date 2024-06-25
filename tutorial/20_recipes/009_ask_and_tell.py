@@ -64,7 +64,7 @@ study.optimize(objective, n_trials=10)
 # This interface is not flexible enough.
 # For example, if ``objective`` requires additional arguments other than ``trial``,
 # you need to define a class as in
-# `How to define objective functions that have own arguments? <../../faq.html#how-to-define-objective-functions-that-have-own-arguments>`_.
+# `How to define objective functions that have own arguments? <../../faq.html#how-to-define-objective-functions-that-have-own-arguments>`__.
 # The ask-and-tell interface provides a more flexible syntax to optimize hyperparameters.
 # The following example is equivalent to the previous code block.
 

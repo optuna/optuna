@@ -49,7 +49,7 @@ def _fast_non_domination_rank(
     The fast non-dominated sort algorithm assigns a rank to each trial based on the dominance
     relationship of the trials, determined by the objective values and the penalty values. The
     algorithm is based on `the constrained NSGA-II algorithm
-    <https://doi.org/10.1109/4235.99601>`_, but the handling of the case when penalty
+    <https://doi.org/10.1109/4235.99601>`__, but the handling of the case when penalty
     values are None is different. The algorithm assigns the rank according to the following
     rules:
 
@@ -164,7 +164,7 @@ def _is_pareto_front(loss_values: np.ndarray, assume_unique_lexsorted: bool = Tr
 
     unique_lexsorted_loss_values, order_inv = np.unique(loss_values, axis=0, return_inverse=True)
     on_front = _is_pareto_front_for_unique_sorted(unique_lexsorted_loss_values)
-    return on_front[order_inv]
+    return on_front[order_inv.reshape(-1)]
 
 
 def _calculate_nondomination_rank(
@@ -196,7 +196,7 @@ def _calculate_nondomination_rank(
         rank += 1
 
     ranks[indices] = rank  # Rank worse than the top n_below is defined as the worst rank.
-    return ranks[order_inv]
+    return ranks[order_inv.reshape(-1)]
 
 
 def _dominates(

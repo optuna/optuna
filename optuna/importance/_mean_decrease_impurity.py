@@ -31,9 +31,9 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
 
     .. note::
 
-        This evaluator requires the `sklearn <https://scikit-learn.org/stable/>`_ Python package
+        This evaluator requires the `sklearn <https://scikit-learn.org/stable/>`__ Python package
         and is based on `sklearn.ensemble.RandomForestClassifier.feature_importances_
-        <https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html#sklearn.ensemble.RandomForestClassifier.feature_importances_>`_.
+        <https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html#sklearn.ensemble.RandomForestClassifier.feature_importances_>`__.
 
     Args:
         n_trees:
