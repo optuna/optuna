@@ -480,6 +480,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 # Optuna's philosophy is that it is better for the DB administrator to detect
                 # such saturation and augment the server than for Optuna itself to detect
                 # DB congestion and slow it down.
+                print("slept")
                 time.sleep(random.random() * 2.0)
             try:
                 with _create_scoped_session(self.scoped_session) as session:
@@ -491,7 +492,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                     models.StudyModel.find_or_raise_by_id(study_id, session, for_update=True)
                     trial = self._get_prepared_new_trial(study_id, template_trial, session)
                     return _create_frozen_trial(trial, template_trial)
-            except sqlalchemy_exc.OperationalError as e:
+            except optuna.exceptions.StorageInternalError as e:
                 # Note: According to SQLAlchemy specifications,
                 # `sqlalchemy_exc.OperationalError` can be raised in situations where
                 # retries are not effective (e.g., input string is too long).

@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import platform
 import shutil
@@ -6,11 +7,14 @@ import tempfile
 from typing import Any
 from typing import Dict
 from typing import Optional
+from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
 
 import pytest
+import sqlalchemy.exc as sqlalchemy_exc
 from sqlalchemy.exc import IntegrityError
+import sqlalchemy.orm as sqlalchemy_orm
 
 import optuna
 from optuna import create_study
@@ -19,10 +23,14 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.storages import RDBStorage
+from optuna.storages._rdb import models
 from optuna.storages._rdb.models import SCHEMA_VERSION
 from optuna.storages._rdb.models import VersionInfoModel
 from optuna.storages._rdb.storage import _create_scoped_session
+from optuna.study import StudyDirection
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
+from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 
 from .create_db import mo_objective_test_upgrade
 from .create_db import objective_test_upgrade
@@ -312,3 +320,43 @@ def test_upgrade_distributions(optuna_version: str) -> None:
             new_study.optimize(objective_test_upgrade_distributions, n_trials=1)
 
         storage.engine.dispose()  # Be sure to disconnect db
+
+
+def test_create_new_trial_with_retries() -> None:
+    storage = RDBStorage("sqlite:///:memory:")
+    study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+
+    n_retries = 0
+
+    def mock_func(
+        study_id: int,
+        template_trial: FrozenTrial,
+        session: "sqlalchemy_orm.Session",
+    ) -> FrozenTrial:
+        nonlocal n_retries
+        n_retries += 1
+        trial = models.TrialModel(
+            study_id=study_id,
+            number=None,
+            state=TrialState.RUNNING,
+            datetime_start=datetime.now(),
+        )
+        session.add(trial)
+        session.flush()
+        trial.number = trial.count_past_trials(session)
+        session.add(trial)
+
+        if n_retries == 3:
+            return trial
+        raise sqlalchemy_exc.OperationalError("xxx", "yyy", Exception())
+
+    with patch(
+        "optuna.storages._rdb.storage.RDBStorage._get_prepared_new_trial",
+        new=Mock(side_effect=mock_func),
+    ):
+        _ = storage.create_new_trial(study_id)
+
+    # Assert only one trial was created.
+    # The added trials in the session were rollbacked.
+    trials = storage.get_all_trials(study_id)
+    assert len(trials) == 1
