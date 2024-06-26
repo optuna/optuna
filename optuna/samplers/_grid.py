@@ -125,9 +125,10 @@ class GridSampler(BaseSampler):
         self._all_grids = list(itertools.product(*self._search_space.values()))
         self._param_names = sorted(search_space.keys())
         self._n_min_trials = len(self._all_grids)
-        self._rng = LazyRandomState(seed or 0)
-        if seed is not None:
-            self._rng.rng.shuffle(self._all_grids)  # type: ignore[arg-type]
+        if seed is None:
+            seed = 0
+        self._rng = LazyRandomState(seed)
+        self._rng.rng.shuffle(self._all_grids)  # type: ignore[arg-type]
 
     def reseed_rng(self) -> None:
         self._rng.rng.seed()
