@@ -714,3 +714,39 @@ Optuna may sometimes suggest parameters evaluated in the past and if you would l
 
     study = optuna.create_study()
     study.optimize(objective, n_trials=100)
+
+.. _remove_for_artifact_store:
+
+How can I delete all the artifacts uploaded to a study?
+-------------------------------------------------------
+
+Optuna supports :mod:`~optuna.artifacts` for large data storage during an optimization.
+After you conduct enormous amount of experiments, you may want to remove the artifacts stored during optimizations.
+
+We strongly recommend to create a new directory or bucket for each study so that all the artifacts linked to a study can be entirely removed by deleting the directory or the bucket.
+
+However, if it is necessary to remove artifacts from a Python script, users can use the following code:
+
+.. warning::
+
+    :func:`~optuna.study.Study.add_trial` and :meth:`~optuna.study.copy_study` do not copy artifact files linked to :class:`~optuna.study.Study` or :class:`~optuna.trial.Trial`.
+    Please make sure **NOT** to delete the artifacts from the source study or trial.
+    Failing to do so may lead to unexpected behaviors as Optuna does not guarantee expected behaviors when users call :meth:`remove` externally.
+    Due to the Optuna software design, it is hard to officially support the delete feature and we are not planning to support this feature in the future either. 
+
+.. code-block:: python
+
+    from optuna.artifacts import get_all_artifact_meta
+
+
+    def remove_artifacts(study, artifact_store):
+        # NOTE: ``artifact_store.remove`` is discouraged to use because it is an internal feature.
+        storage = study._storage
+        for trial in study.trials:
+            for artifact_meta in get_all_artifact_meta(trial, storage=storage):
+                # For each trial, remove the artifacts uploaded to ``base_path``.
+                artifact_store.remove(artifact_meta.artifact_id)
+
+        for artifact_meta in get_all_artifact_meta(study):
+            # Remove the artifacts uploaded to ``base_path``.
+            artifact_store.remove(artifact_meta.artifact_id)
