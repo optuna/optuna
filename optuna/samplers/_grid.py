@@ -104,10 +104,9 @@ class GridSampler(BaseSampler):
         seed:
             A seed to fix the order of trials as the grid is randomly shuffled. This shuffle is
             beneficial when the number of grids is larger than ``n_trials`` in
-            :meth:`~optuna.Study.optimize` to suppress suggesting similar grids. If ``seed`` is
-            :obj:`None`, the shuffle does not happen. Please note that fixing ``seed`` for each
-            process is strongly recommended in distributed optimization to avoid duplicated
-            suggestions.
+            :meth:`~optuna.Study.optimize` to suppress suggesting similar grids. Please note
+            that fixing ``seed`` for each process is strongly recommended in distributed
+            optimization to avoid duplicated suggestions.
     """
 
     def __init__(
