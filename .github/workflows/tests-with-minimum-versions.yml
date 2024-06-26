@@ -77,7 +77,7 @@ jobs:
         elif [ "${{ matrix.python-version }}" = "3.8" ]; then
           pip install matplotlib==3.7.5 pandas==2.0.3 scipy==1.10.1 numpy==1.20.3
         elif [ "${{ matrix.python-version }}" = "3.9" ]; then
-          pip install matplotlib==3.8.3 pandas==2.2.1 scipy==1.12.0 numpy==1.26.4
+          pip install matplotlib==3.8.4 pandas==2.2.2 scipy==1.13.0 numpy==1.26.4
         fi
         pip install plotly==5.0.0 scikit-learn==0.24.2  # optional extras
 
