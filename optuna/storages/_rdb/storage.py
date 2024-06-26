@@ -480,7 +480,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 # Optuna's philosophy is that it is better for the DB administrator to detect
                 # such saturation and augment the server than for Optuna itself to detect
                 # DB congestion and slow it down.
-                print("slept")
                 time.sleep(random.random() * 2.0)
             try:
                 with _create_scoped_session(self.scoped_session) as session:
