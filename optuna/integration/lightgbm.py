@@ -37,7 +37,6 @@ class _LightGBMModule(ModuleType):
     __path__ = [os.path.dirname(__file__)]
 
     def __getattr__(self, name: str) -> Any:
-        print(lgb.__dict__)
         return lgb.__dict__[name]
 
 
