@@ -29,7 +29,7 @@ def get_all_artifact_meta(
         An example where this function is useful:
 
         .. code::
-            
+
             import os
 
             import optuna
@@ -51,7 +51,7 @@ def get_all_artifact_meta(
 
             # Fetch all the artifact meta connected to the best trial.
             artifact_metas = optuna.artifacts.get_all_artifact_meta(best_trial, storage=storage)
-                        
+
             download_dir_path = "./best_trial_artifacts/"
             os.makedirs(download_dir_path, exist_ok=True)
 
