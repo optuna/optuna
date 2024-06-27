@@ -18,6 +18,11 @@ def download_artifact(artifact_store: ArtifactStore, artifact_id: str, file_path
             The identifier of the artifact to download.
         file_path:
             A path to save the downloaded artifact.
+    
+    .. note:
+        Optuna does not provide any API to save artifact store information linked to each artifact,
+        so we kindly ask users to save the artifact store information individually.
+
     """
     if os.path.exists(file_path):
         raise FileExistsError(f"File already exists: {file_path}")
