@@ -35,6 +35,6 @@ def test_download_artifact(tmp_path: pathlib.PurePath, artifact_store: ArtifactS
 
     for i, artifact_id in enumerate(artifact_ids):
         dummy_downloaded_file = str(tmp_path / f"dummy_downloaded_{i}.txt")
-        download_artifact(artifact_store, artifact_id, dummy_downloaded_file)
+        download_artifact(dummy_downloaded_file, artifact_store, artifact_id)
         with open(dummy_downloaded_file, "r") as f:
             assert f.read() == f"{study.trials[i].params['x']} {study.trials[i].params['y']}"
