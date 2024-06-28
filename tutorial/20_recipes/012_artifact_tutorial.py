@@ -137,7 +137,9 @@ The simple pseudocode for the above case  would look something like this:
     # Downloading artifacts associated with the best trial.
     best_artifact_id = study.best_trial.user_attrs.get("artifact_id")
     download_file_path = ...  # Set the path to save the downloaded artifact.
-    download_artifact(download_file_path, artifact_store, best_artifact_id)
+    download_artifact(
+        artifact_store=artifact_store, file_path=download_file_path, artifact_id=best_artifact_id
+    )
     with open(download_file_path, "rb") as f:
         content = f.read().decode("utf-8")
     print(content)
@@ -221,7 +223,9 @@ read and write data transparently. Translating the above process into simple pse
     # Downloading artifacts associated with the best trial.
     best_artifact_id = study.best_trial.user_attrs.get("artifact_id")
     download_file_path = ...  # Set the path to save the downloaded artifact.
-    download_artifact(download_file_path, artifact_store, best_artifact_id)
+    download_artifact(
+        artifact_store=artifact_store, file_path=download_file_path, artifact_id=best_artifact_id
+    )
     with open(download_file_path, "rb") as f:
         content = f.read().decode("utf-8")
     print(content)
@@ -403,7 +407,11 @@ def main():
 
     with tempfile.TemporaryDirectory() as tmpdir_name:
         download_file_path = os.path.join(tmpdir_name, f"{best_artifact_id}.json")
-        download_artifact(download_file_path, artifact_store, best_artifact_id)
+        download_artifact(
+            artifact_store=artifact_store,
+            file_path=download_file_path,
+            artifact_id=best_artifact_id,
+        )
 
         best_atoms = file_to_atoms(download_file_path)
         print(best_atoms)
