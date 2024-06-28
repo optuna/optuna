@@ -42,14 +42,7 @@ def compute_hypervolume(
         # reference_point does not have nan, because BaseHypervolume._validate will filter out.
         return float("inf")
 
-    if not assume_pareto:
-        unique_lexsorted_sols = np.unique(solution_set, axis=0)
-        sorted_pareto_sols = unique_lexsorted_sols[_is_pareto_front(unique_lexsorted_sols)]
-    else:
-        sorted_pareto_sols = solution_set[solution_set[:, 0].argsort()]
-
     def _compute_hv(sorted_sols: np.ndarray) -> float:
-        assert reference_point is not None
         inclusive_hvs = np.prod(reference_point - sorted_sols, axis=-1)
         if inclusive_hvs.shape[0] == 1:
             return float(inclusive_hvs[0])
@@ -70,6 +63,12 @@ def compute_hypervolume(
 
         on_front = _is_pareto_front(limited_sols, assume_unique_lexsorted=False)
         return inclusive_hv - _compute_hv(limited_sols[on_front])
+
+    if not assume_pareto:
+        unique_lexsorted_sols = np.unique(solution_set, axis=0)
+        sorted_pareto_sols = unique_lexsorted_sols[_is_pareto_front(unique_lexsorted_sols)]
+    else:
+        sorted_pareto_sols = solution_set[solution_set[:, 0].argsort()]
 
     if reference_point.shape[0] == 2:
         return _compute_2d(sorted_pareto_sols, reference_point)
