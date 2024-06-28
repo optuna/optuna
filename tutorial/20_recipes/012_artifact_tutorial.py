@@ -122,7 +122,7 @@ The simple pseudocode for the above case  would look something like this:
         # Creating and writing an artifact.
         file_path = generate_example(...)  # This function returns some kind of file.
         artifact_id = upload_artifact(
-            trial, file_path, artifact_store
+            artifact_store=artifact_store, file_path=file_path, study_or_trial=trial,
         )  # The return value is the artifact ID.
         trial.set_user_attr(
             "artifact_id", artifact_id
@@ -203,7 +203,7 @@ read and write data transparently. Translating the above process into simple pse
         # Creating and writing an artifact.
         file_path = generate_example(...)  # This function returns some kind of file.
         artifact_id = upload_artifact(
-            trial, file_path, artifact_store
+            artifact_store=artifact_store, file_path=file_path, study_or_trial=trial,
         )  # The return value is the artifact ID.
         trial.set_user_attr(
             "artifact_id", artifact_id
@@ -356,7 +356,11 @@ class Objective:
         E_slab_mol = get_opt_energy(slab, fmax=1e-2)
 
         write(f"./tmp/{trial.number}.json", slab, format="json")
-        artifact_id = upload_artifact(trial, f"./tmp/{trial.number}.json", self._artifact_store)
+        artifact_id = upload_artifact(
+            artifact_store=self._artifact_store,
+            file_path=f"./tmp/{trial.number}.json",
+            study_or_trial=trial,
+        )
         trial.set_user_attr("structure", artifact_id)
 
         return E_slab_mol - E_slab - E_mol
