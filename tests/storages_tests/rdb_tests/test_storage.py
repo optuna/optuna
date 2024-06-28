@@ -360,3 +360,4 @@ def test_create_new_trial_with_retries() -> None:
     # The added trials in the session were rollbacked.
     trials = storage.get_all_trials(study_id)
     assert len(trials) == 1
+    assert trials[0].number == 0

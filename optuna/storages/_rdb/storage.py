@@ -491,6 +491,8 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                     models.StudyModel.find_or_raise_by_id(study_id, session, for_update=True)
                     trial = self._get_prepared_new_trial(study_id, template_trial, session)
                     return _create_frozen_trial(trial, template_trial)
+            
+            # sqlalchemy_exc.OperationalError is converted to optuna.exceptions.StorageInternalError.
             except optuna.exceptions.StorageInternalError as e:
                 # Note: According to SQLAlchemy specifications,
                 # `sqlalchemy_exc.OperationalError` can be raised in situations where
