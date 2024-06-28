@@ -19,7 +19,7 @@ def download_artifact(artifact_store: ArtifactStore, artifact_id: str, file_path
         file_path:
             A path to save the downloaded artifact.
 
-    .. note:
+    .. note::
         Optuna does not provide any API to save artifact store information linked to each artifact,
         so we kindly ask users to save the artifact store information individually.
 
