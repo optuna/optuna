@@ -30,14 +30,21 @@ def test_upload_trial_artifact(tmp_path: pathlib.PurePath, artifact_store: Artif
 
     trial = study.ask()
 
-    upload_artifact(trial, file_path, artifact_store)
+    upload_artifact(study_or_trial=trial, file_path=file_path, artifact_store=artifact_store)
 
     frozen_trial = study._storage.get_trial(trial._trial_id)
 
     with pytest.raises(ValueError):
-        upload_artifact(frozen_trial, file_path, artifact_store)
+        upload_artifact(
+            study_or_trial=frozen_trial, file_path=file_path, artifact_store=artifact_store
+        )
 
-    upload_artifact(frozen_trial, file_path, artifact_store, storage=trial.study._storage)
+    upload_artifact(
+        study_or_trial=frozen_trial,
+        file_path=file_path,
+        artifact_store=artifact_store,
+        storage=trial.study._storage,
+    )
 
     system_attrs = storage.get_trial_system_attrs(frozen_trial._trial_id)
     artifact_items = [
@@ -61,7 +68,9 @@ def test_upload_study_artifact(tmp_path: pathlib.PurePath, artifact_store: Artif
 
     storage = optuna.storages.InMemoryStorage()
     study = optuna.create_study(storage=storage)
-    artifact_id = upload_artifact(study, file_path, artifact_store)
+    artifact_id = upload_artifact(
+        study_or_trial=study, file_path=file_path, artifact_store=artifact_store
+    )
 
     system_attrs = storage.get_study_system_attrs(study._study_id)
     artifact_items = [
@@ -89,14 +98,27 @@ def test_upload_artifact_with_mimetype(
 
     trial = study.ask()
 
-    upload_artifact(trial, file_path, artifact_store, mimetype="model/obj", encoding="utf-8")
+    upload_artifact(
+        study_or_trial=trial,
+        file_path=file_path,
+        artifact_store=artifact_store,
+        mimetype="model/obj",
+        encoding="utf-8",
+    )
 
     frozen_trial = study._storage.get_trial(trial._trial_id)
 
     with pytest.raises(ValueError):
-        upload_artifact(frozen_trial, file_path, artifact_store)
+        upload_artifact(
+            study_or_trial=frozen_trial, file_path=file_path, artifact_store=artifact_store
+        )
 
-    upload_artifact(frozen_trial, file_path, artifact_store, storage=trial.study._storage)
+    upload_artifact(
+        study_or_trial=frozen_trial,
+        file_path=file_path,
+        artifact_store=artifact_store,
+        storage=trial.study._storage,
+    )
 
     system_attrs = trial.study._storage.get_trial(frozen_trial._trial_id).system_attrs
     artifact_items = [

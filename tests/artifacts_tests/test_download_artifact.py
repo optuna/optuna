@@ -28,13 +28,19 @@ def test_download_artifact(tmp_path: pathlib.PurePath, artifact_store: ArtifactS
         dummy_file = str(tmp_path / f"dummy_{trial.number}.txt")
         with open(dummy_file, "w") as f:
             f.write(f"{x} {y}")
-        artifact_ids.append(upload_artifact(trial, dummy_file, artifact_store))
+        artifact_ids.append(
+            upload_artifact(
+                study_or_trial=trial, file_path=dummy_file, artifact_store=artifact_store
+            )
+        )
         return x**2 + y**2
 
     study.optimize(objective, n_trials=5)
 
     for i, artifact_id in enumerate(artifact_ids):
         dummy_downloaded_file = str(tmp_path / f"dummy_downloaded_{i}.txt")
-        download_artifact(dummy_downloaded_file, artifact_store, artifact_id)
+        download_artifact(
+            file_path=dummy_downloaded_file, artifact_store=artifact_store, artifact_id=artifact_id
+        )
         with open(dummy_downloaded_file, "r") as f:
             assert f.read() == f"{study.trials[i].params['x']} {study.trials[i].params['y']}"

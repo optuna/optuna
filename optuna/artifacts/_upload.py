@@ -7,6 +7,7 @@ import mimetypes
 import os
 import uuid
 
+from optuna._convert_positional_args import convert_positional_args
 from optuna._experimental import experimental_func
 from optuna.artifacts._protocol import ArtifactStore
 from optuna.storages import BaseStorage
