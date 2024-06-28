@@ -471,40 +471,28 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             )
 
         # Retry maximum five times. Deadlocks may occur in distributed environments.
-        error_obj: Exception | None = None
-        for n_retries in range(5):
-            if n_retries != 0:
-                # This backoff is to solve retries caused by deadlock.
-                # This is not an EXPONENTIAL backoff that reduces DB server congestion,
-                # but it is intentional.
-                # Optuna's philosophy is that it is better for the DB administrator to detect
-                # such saturation and augment the server than for Optuna itself to detect
-                # DB congestion and slow it down.
-                time.sleep(random.random() * 2.0)
+        MAX_RETRIES = 5
+        for n_retries in range(1, MAX_RETRIES + 1):
             try:
                 with _create_scoped_session(self.scoped_session) as session:
-                    # Ensure that that study exists.
-                    #
-                    # Locking within a study is necessary since the creation of a trial is not
-                    # an atomic operation. More precisely, the trial number computed in
-                    # `_get_prepared_new_trial` is prone to race conditions without this lock.
+                    # This lock is necessary because the trial creation is not an atomic operation
+                    # and the calculation of trial.number is prone to race conditions.
                     models.StudyModel.find_or_raise_by_id(study_id, session, for_update=True)
                     trial = self._get_prepared_new_trial(study_id, template_trial, session)
                     return _create_frozen_trial(trial, template_trial)
-
-            # sqlalchemy_exc.OperationalError is converted to
-            # optuna.exceptions.StorageInternalError.
+            # sqlalchemy_exc.OperationalError is converted to ``StorageInternalError``.
             except optuna.exceptions.StorageInternalError as e:
-                # Note: According to SQLAlchemy specifications,
-                # `sqlalchemy_exc.OperationalError` can be raised in situations where
-                # retries are not effective (e.g., input string is too long).
-                #
-                # It is assumed here that exceptions are avoidable and retries are effective.
-                # Should unavoidable exceptions be raised, the last exception is propagated
-                # after five retries.
-                error_obj = e
-        assert error_obj is not None
-        raise error_obj
+                # ``OperationalError`` happens either by (1) invalid inputs, e.g., too long string,
+                # or (2) timeout error, which relates to deadlock. Although Error (1) is not
+                # intended to be caught here, it must be fixed to use RDBStorage anyways.
+                if n_retries == MAX_RETRIES:
+                    raise e
+
+                # Optuna defers to the DB administrator to reduce DB server congestion, hence
+                # Optuna simply uses non-exponential backoff here for retries caused by deadlock.
+                time.sleep(random.random() * 2.0)
+
+        assert False, "Should not be reached."
 
     def _get_prepared_new_trial(
         self,
