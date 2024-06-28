@@ -25,7 +25,7 @@ class SPXCrossover(BaseCrossover):
       David E. Goldberg and Kumara Sastry and Kumara Sastry
       Progress Toward Linkage Learning in Real-Coded GAs with Simplex Crossover.
       IlliGAL Report. 2000.
-      <https://www.researchgate.net/publication/2388486_Progress_Toward_Linkage_Learning_in_Real-Coded_GAs_with_Simplex_Crossover>`_
+      <https://www.researchgate.net/publication/2388486_Progress_Toward_Linkage_Learning_in_Real-Coded_GAs_with_Simplex_Crossover>`__
 
     Args:
         epsilon:

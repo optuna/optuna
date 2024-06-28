@@ -49,7 +49,7 @@ def _fast_non_domination_rank(
     The fast non-dominated sort algorithm assigns a rank to each trial based on the dominance
     relationship of the trials, determined by the objective values and the penalty values. The
     algorithm is based on `the constrained NSGA-II algorithm
-    <https://doi.org/10.1109/4235.99601>`_, but the handling of the case when penalty
+    <https://doi.org/10.1109/4235.99601>`__, but the handling of the case when penalty
     values are None is different. The algorithm assigns the rank according to the following
     rules:
 

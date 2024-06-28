@@ -12,7 +12,7 @@ For visualizing multi-objective optimization (i.e., the usage of :func:`optuna.v
 please refer to the tutorial of :ref:`multi_objective`.
 
 .. note::
-   By using `Optuna Dashboard <https://github.com/optuna/optuna-dashboard>`_, you can also check the optimization history,
+   By using `Optuna Dashboard <https://github.com/optuna/optuna-dashboard>`__, you can also check the optimization history,
    hyperparameter importances, hyperparameter relationships, etc. in graphs and tables.
    Please make your study persistent using :ref:`RDB backend <rdb>` and execute following commands to run Optuna Dashboard.
 
@@ -21,7 +21,7 @@ please refer to the tutorial of :ref:`multi_objective`.
       $ pip install optuna-dashboard
       $ optuna-dashboard sqlite:///example-study.db
 
-   Please check out `the GitHub repository <https://github.com/optuna/optuna-dashboard>`_ for more details.
+   Please check out `the GitHub repository <https://github.com/optuna/optuna-dashboard>`__ for more details.
 
    .. list-table::
       :header-rows: 1

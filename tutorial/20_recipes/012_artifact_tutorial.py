@@ -11,7 +11,7 @@ The artifact module of Optuna is a module designed for saving comparatively larg
 as files. Introduced from Optuna v3.3, this module finds a broad range of applications, such as utilizing snapshots of large size 
 models for hyperparameter tuning, optimizing massive chemical structures, and even human-in-the-loop optimization employing images 
 or sounds. Use of Optuna's artifact module allows you to handle data that would be too large to store in a database. Furthermore, 
-by integrating with `optuna-dashboard <https://github.com/optuna/optuna-dashboard>`_, saved artifacts can be automatically visualized 
+by integrating with `optuna-dashboard <https://github.com/optuna/optuna-dashboard>`__, saved artifacts can be automatically visualized 
 with the web UI, which significantly reduces the effort of experiment management.
 
 TL;DR
@@ -42,7 +42,7 @@ are not suitable for storing large data. With Optuna's artifact module, users ca
 chemical structures, image and audio data, etc.) for each trial.
 
 Also, while this tutorial does not touch upon it, it's possible to manage artifacts associated not only with trials but also with 
-studies. Please refer to the `official documentation <https://optuna.readthedocs.io/en/stable/reference/generated/optuna.artifacts.upload_artifact.html>`_ 
+studies. Please refer to the `official documentation <https://optuna.readthedocs.io/en/stable/reference/generated/optuna.artifacts.upload_artifact.html>`__ 
 if you are interested in.
 
 Situations where artifacts are useful
@@ -92,7 +92,7 @@ method using SQLite, a lightweight RDB management system, as the backend. With S
 parameters were, when each trial started and ended, etc. This file is in the SQLite format, and it is not suitable for storing 
 large data. Writing large data entries may cause performance degradation. Note that SQLite is not suitable for distributed parallel 
 optimization. If you want to perform that, please use MySQL as we will explain later, or JournalStorage 
-(`example <https://optuna.readthedocs.io/en/stable/reference/generated/optuna.storages.JournalStorage.html#optuna.storages.JournalStorage>`_).
+(`example <https://optuna.readthedocs.io/en/stable/reference/generated/optuna.storages.JournalStorage.html#optuna.storages.JournalStorage>`__).
 
 So, let's use the artifact module to save large data in a different format. Suppose the data is generated for each trial and you 
 want to save it in some format (e.g., png format if it's an image). The specific destination for saving the artifacts can be any 
@@ -156,7 +156,7 @@ Next, we explain the case where data is read and written remotely.
 As the scale of optimization increases, it becomes difficult to complete all calculations locally. Optuna's storage objects can 
 persist data remotely by specifying a URL, enabling distributed optimization. Here, we will use MySQL as a remote relational 
 database server. MySQL is an open-source relational database management system and a well-known software used for various purposes. 
-For using MySQL with Optuna, the `tutorial <https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/004_distributed.html>`_
+For using MySQL with Optuna, the `tutorial <https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/004_distributed.html>`__
 can be a good reference. However, it is also not appropriate to read and write large data in a relational database like MySQL.
 
 In Optuna, it is common to use the artifact module when you want to read and write such data for each trial. Unlike Scenario 1, 

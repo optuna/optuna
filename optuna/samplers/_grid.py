@@ -102,10 +102,11 @@ class GridSampler(BaseSampler):
             A dictionary whose key and value are a parameter name and the corresponding candidates
             of values, respectively.
         seed:
-            A seed to fix the order of trials as the grid is randomly shuffled. Please note that
-            it is not recommended using this option in distributed optimization settings since
-            this option cannot ensure the order of trials and may increase the number of duplicate
-            suggestions during distributed optimization.
+            A seed to fix the order of trials as the grid is randomly shuffled. This shuffle is
+            beneficial when the number of grids is larger than ``n_trials`` in
+            :meth:`~optuna.Study.optimize` to suppress suggesting similar grids. Please note
+            that fixing ``seed`` for each process is strongly recommended in distributed
+            optimization to avoid duplicated suggestions.
     """
 
     def __init__(
@@ -122,7 +123,7 @@ class GridSampler(BaseSampler):
         self._all_grids = list(itertools.product(*self._search_space.values()))
         self._param_names = sorted(search_space.keys())
         self._n_min_trials = len(self._all_grids)
-        self._rng = LazyRandomState(seed)
+        self._rng = LazyRandomState(seed or 0)
         self._rng.rng.shuffle(self._all_grids)  # type: ignore[arg-type]
 
     def reseed_rng(self) -> None:
@@ -194,9 +195,6 @@ class GridSampler(BaseSampler):
             message = "The parameter name, {}, is not found in the given grid.".format(param_name)
             raise ValueError(message)
 
-        # TODO(c-bata): Reduce the number of duplicated evaluations on multiple workers.
-        # Current selection logic may evaluate the same parameters multiple times.
-        # See https://gist.github.com/c-bata/f759f64becb24eea2040f4b2e3afce8f for details.
         grid_id = trial.system_attrs["grid_id"]
         param_value = self._all_grids[grid_id][self._param_names.index(param_name)]
         contains = param_distribution._contains(param_distribution.to_internal_repr(param_value))

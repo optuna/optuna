@@ -183,7 +183,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         mechanism. Set ``heartbeat_interval``, ``grace_period``, and ``failed_trial_callback``
         appropriately according to your use case. For more details, please refer to the
         :ref:`tutorial <heartbeat_monitoring>` and `Example page
-        <https://github.com/optuna/optuna-examples/blob/main/pytorch/pytorch_checkpoint.py>`_.
+        <https://github.com/optuna/optuna-examples/blob/main/pytorch/pytorch_checkpoint.py>`__.
 
     .. seealso::
         You can use :class:`~optuna.storages.RetryFailedTrialCallback` to automatically retry
@@ -480,7 +480,8 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                     models.StudyModel.find_or_raise_by_id(study_id, session, for_update=True)
                     trial = self._get_prepared_new_trial(study_id, template_trial, session)
                     return _create_frozen_trial(trial, template_trial)
-            except sqlalchemy_exc.OperationalError as e:
+            # sqlalchemy_exc.OperationalError is converted to ``StorageInternalError``.
+            except optuna.exceptions.StorageInternalError as e:
                 # ``OperationalError`` happens either by (1) invalid inputs, e.g., too long string,
                 # or (2) timeout error, which relates to deadlock. Although Error (1) is not
                 # intended to be caught here, it must be fixed to use RDBStorage anyways.

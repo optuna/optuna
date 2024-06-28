@@ -132,7 +132,7 @@ def _solve_hssp(
     paper:
 
     - `Greedy Hypervolume Subset Selection in Low Dimensions
-       <https://doi.org/10.1162/EVCO_a_00188>`_
+       <https://doi.org/10.1162/EVCO_a_00188>`__
     """
     if subset_size == rank_i_indices.size:
         return rank_i_indices
