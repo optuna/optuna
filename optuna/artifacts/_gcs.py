@@ -41,7 +41,9 @@ class GCSArtifactStore:
                 ... = trial.suggest_float("x", -10, 10)
                 file_path = generate_example(...)
                 upload_artifact(
-                    artifact_store=artifact_store, file_path=file_path, study_or_trial=trial,
+                    artifact_store=artifact_store,
+                    file_path=file_path,
+                    study_or_trial=trial,
                 )
                 return ...
 

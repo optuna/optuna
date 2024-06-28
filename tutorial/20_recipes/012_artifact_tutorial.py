@@ -122,7 +122,9 @@ The simple pseudocode for the above case  would look something like this:
         # Creating and writing an artifact.
         file_path = generate_example(...)  # This function returns some kind of file.
         artifact_id = upload_artifact(
-            artifact_store=artifact_store, file_path=file_path, study_or_trial=trial,
+            artifact_store=artifact_store,
+            file_path=file_path,
+            study_or_trial=trial,
         )  # The return value is the artifact ID.
         trial.set_user_attr(
             "artifact_id", artifact_id
@@ -205,7 +207,9 @@ read and write data transparently. Translating the above process into simple pse
         # Creating and writing an artifact.
         file_path = generate_example(...)  # This function returns some kind of file.
         artifact_id = upload_artifact(
-            artifact_store=artifact_store, file_path=file_path, study_or_trial=trial,
+            artifact_store=artifact_store,
+            file_path=file_path,
+            study_or_trial=trial,
         )  # The return value is the artifact ID.
         trial.set_user_attr(
             "artifact_id", artifact_id
