@@ -3,12 +3,13 @@ from __future__ import annotations
 import os
 import shutil
 
+from optuna._convert_positional_args import convert_positional_args
 from optuna._experimental import experimental_func
 from optuna.artifacts._protocol import ArtifactStore
 
 
 @experimental_func("4.0.0")
-def download_artifact(file_path: str, artifact_store: ArtifactStore, artifact_id: str) -> None:
+def download_artifact(*, file_path: str, artifact_store: ArtifactStore, artifact_id: str) -> None:
     """Download an artifact from the artifact store.
 
     Args:
