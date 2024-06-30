@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import abc
-from typing import Dict
-from typing import List
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -55,7 +53,7 @@ class BaseImprovementEvaluator(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def evaluate(
         self,
-        trials: List[FrozenTrial],
+        trials: list[FrozenTrial],
         study_direction: StudyDirection,
     ) -> float:
         pass
@@ -165,7 +163,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
 
     def evaluate(
         self,
-        trials: List[FrozenTrial],
+        trials: list[FrozenTrial],
         study_direction: StudyDirection,
     ) -> float:
         optuna_search_space = intersection_search_space(trials)
@@ -206,7 +204,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
 
     @classmethod
     def _validate_input(
-        cls, trials: List[FrozenTrial], search_space: Dict[str, BaseDistribution]
+        cls, trials: list[FrozenTrial], search_space: dict[str, BaseDistribution]
     ) -> None:
         if len([t for t in trials if t.state == TrialState.COMPLETE]) == 0:
             raise ValueError(
@@ -244,7 +242,7 @@ class BestValueStagnationEvaluator(BaseImprovementEvaluator):
 
     def evaluate(
         self,
-        trials: List[FrozenTrial],
+        trials: list[FrozenTrial],
         study_direction: StudyDirection,
     ) -> float:
         self._validate_input(trials)
@@ -268,7 +266,7 @@ class BestValueStagnationEvaluator(BaseImprovementEvaluator):
     @classmethod
     def _validate_input(
         cls,
-        trials: List[FrozenTrial],
+        trials: list[FrozenTrial],
     ) -> None:
         if len([t for t in trials if t.state == TrialState.COMPLETE]) == 0:
             raise ValueError(
