@@ -4,7 +4,7 @@
 Early-stopping independent evaluations by Wilcoxon pruner
 ============================================================
 
-This tutorial showcases Optuna's `WilcoxonPruner <https://optuna.readthedocs.io/en/stable/reference/generated/optuna.pruners.WilcoxonPruner.html>`__.
+This tutorial showcases Optuna's :class:`~optuna.pruners.WilcoxonPruner`.
 This pruner is effective for objective functions that averages multiple evaluations.
 
 We solve `Traveling Salesman Problem (TSP) <https://en.wikipedia.org/w/index.php?title=Travelling_salesman_problem&oldid=1211575788>`__
