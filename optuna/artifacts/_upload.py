@@ -23,6 +23,10 @@ DEFAULT_MIME_TYPE = "application/octet-stream"
 class ArtifactMeta:
     """Meta information for an artifact.
 
+    .. note::
+        Artifact meta connected to each study and trial can be listed by
+        :func:`~optuna.artifacts.get_all_artifact_meta`.
+
     Args:
         artifact_id:
             The identifier of the artifact.
