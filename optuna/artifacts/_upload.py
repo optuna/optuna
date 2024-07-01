@@ -24,8 +24,9 @@ class ArtifactMeta:
     """Meta information for an artifact.
 
     .. note::
-        Artifact meta connected to each study and trial can be listed by
+        All the artifact meta linked to a study or trial can be listed by
         :func:`~optuna.artifacts.get_all_artifact_meta`.
+        The artifact meta can be used for :func:`~optuna.artifacts.download_artifact`.
 
     Args:
         artifact_id:
