@@ -62,10 +62,7 @@ class TerminatorCallback:
         the terminator mechanism.
     """
 
-    def __init__(
-        self,
-        terminator: BaseTerminator | None = None,
-    ) -> None:
+    def __init__(self, terminator: BaseTerminator | None = None) -> None:
         self._terminator = terminator or Terminator()
 
     def __call__(self, study: Study, trial: FrozenTrial) -> None:
