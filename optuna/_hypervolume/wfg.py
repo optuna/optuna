@@ -66,7 +66,8 @@ def compute_hypervolume(
 
     if not assume_pareto:
         unique_lexsorted_sols = np.unique(solution_set, axis=0)
-        sorted_pareto_sols = unique_lexsorted_sols[_is_pareto_front(unique_lexsorted_sols)]
+        on_front = _is_pareto_front(unique_lexsorted_sols, assume_unique_lexsorted=True)
+        sorted_pareto_sols = unique_lexsorted_sols[on_front]
     else:
         sorted_pareto_sols = solution_set[solution_set[:, 0].argsort()]
 

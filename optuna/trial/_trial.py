@@ -248,7 +248,7 @@ class Trial(BaseTrial):
         Example:
 
             Suggest the number of trees in `RandomForestClassifier <https://scikit-learn.org/
-            stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html>`_.
+            stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html>`__.
 
             .. testcode::
 
@@ -357,7 +357,7 @@ class Trial(BaseTrial):
         Example:
 
             Suggest a kernel function of `SVC <https://scikit-learn.org/stable/modules/generated/
-            sklearn.svm.SVC.html>`_.
+            sklearn.svm.SVC.html>`__.
 
             .. testcode::
 
@@ -429,7 +429,7 @@ class Trial(BaseTrial):
         Example:
 
             Report intermediate scores of `SGDClassifier <https://scikit-learn.org/stable/modules/
-            generated/sklearn.linear_model.SGDClassifier.html>`_ training.
+            generated/sklearn.linear_model.SGDClassifier.html>`__ training.
 
             .. testcode::
 

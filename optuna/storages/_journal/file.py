@@ -147,7 +147,7 @@ class JournalFileStorage(BaseJournalLogStorage):
 
     Compared to SQLite3, the benefit of this backend is that it is more suitable for
     environments where the file system does not support ``fcntl()`` file locking.
-    For example, as written in the `SQLite3 FAQ <https://www.sqlite.org/faq.html#q5>`_,
+    For example, as written in the `SQLite3 FAQ <https://www.sqlite.org/faq.html#q5>`__,
     SQLite3 might not work on NFS (Network File System) since ``fcntl()`` file locking
     is broken on many NFS implementations. In such scenarios, this backend provides
     several workarounds for locking files. For more details, refer to the `Medium blog post`_.
@@ -221,7 +221,9 @@ class JournalFileStorage(BaseJournalLogStorage):
 
     def append_logs(self, logs: List[Dict[str, Any]]) -> None:
         with get_lock_file(self._lock):
-            what_to_write = "\n".join([json.dumps(log) for log in logs]) + "\n"
+            what_to_write = (
+                "\n".join([json.dumps(log, separators=(",", ":")) for log in logs]) + "\n"
+            )
             with open(self._file_path, "ab") as f:
                 f.write(what_to_write.encode("utf-8"))
                 f.flush()
