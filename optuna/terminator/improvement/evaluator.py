@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import abc
-from typing import Dict
-from typing import List
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -53,11 +51,7 @@ class BaseImprovementEvaluator(metaclass=abc.ABCMeta):
     """Base class for improvement evaluators."""
 
     @abc.abstractmethod
-    def evaluate(
-        self,
-        trials: List[FrozenTrial],
-        study_direction: StudyDirection,
-    ) -> float:
+    def evaluate(self, trials: list[FrozenTrial], study_direction: StudyDirection) -> float:
         pass
 
 
@@ -163,11 +157,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         # max(UCB) - max(LCB). (Original: min(UCB) - min(LCB). See Change 3 above.)
         return standardized_ucb_value - standardized_lcb_value  # standardized regret bound
 
-    def evaluate(
-        self,
-        trials: List[FrozenTrial],
-        study_direction: StudyDirection,
-    ) -> float:
+    def evaluate(self, trials: list[FrozenTrial], study_direction: StudyDirection) -> float:
         optuna_search_space = intersection_search_space(trials)
         self._validate_input(trials, optuna_search_space)
 
@@ -206,7 +196,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
 
     @classmethod
     def _validate_input(
-        cls, trials: List[FrozenTrial], search_space: Dict[str, BaseDistribution]
+        cls, trials: list[FrozenTrial], search_space: dict[str, BaseDistribution]
     ) -> None:
         if len([t for t in trials if t.state == TrialState.COMPLETE]) == 0:
             raise ValueError(
@@ -234,19 +224,12 @@ class BestValueStagnationEvaluator(BaseImprovementEvaluator):
             The maximum number of trials allowed for stagnation.
     """
 
-    def __init__(
-        self,
-        max_stagnation_trials: int = 30,
-    ) -> None:
+    def __init__(self, max_stagnation_trials: int = 30) -> None:
         if max_stagnation_trials < 0:
             raise ValueError("The maximum number of stagnant trials must not be negative.")
         self._max_stagnation_trials = max_stagnation_trials
 
-    def evaluate(
-        self,
-        trials: List[FrozenTrial],
-        study_direction: StudyDirection,
-    ) -> float:
+    def evaluate(self, trials: list[FrozenTrial], study_direction: StudyDirection) -> float:
         self._validate_input(trials)
         is_maximize_direction = True if (study_direction == StudyDirection.MAXIMIZE) else False
         trials = [t for t in trials if t.state == TrialState.COMPLETE]
@@ -266,10 +249,7 @@ class BestValueStagnationEvaluator(BaseImprovementEvaluator):
         return self._max_stagnation_trials - (current_step - best_step)
 
     @classmethod
-    def _validate_input(
-        cls,
-        trials: List[FrozenTrial],
-    ) -> None:
+    def _validate_input(cls, trials: list[FrozenTrial]) -> None:
         if len([t for t in trials if t.state == TrialState.COMPLETE]) == 0:
             raise ValueError(
                 "Because no trial has been completed yet, the improvement cannot be evaluated."

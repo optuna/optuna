@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from optuna._experimental import experimental_class
 from optuna.logging import get_logger
 from optuna.study.study import Study
@@ -64,10 +62,7 @@ class TerminatorCallback:
         the terminator mechanism.
     """
 
-    def __init__(
-        self,
-        terminator: Optional[BaseTerminator] = None,
-    ) -> None:
+    def __init__(self, terminator: BaseTerminator | None = None) -> None:
         self._terminator = terminator or Terminator()
 
     def __call__(self, study: Study, trial: FrozenTrial) -> None:
