@@ -55,12 +55,12 @@ class JournalLogStorageSupplier:
                 return optuna.storages.JournalFileBackend(self.tempfile.name, lock)
         elif self.storage_type.startswith("redis"):
             use_cluster = self.storage_type == "redis_with_use_cluster"
-            if self.deprecated_classname:
-                journal_redis_storage = optuna.storages.JournalRedisStorage(
+            if not self.deprecated_classname:
+                journal_redis_storage = optuna.storages.JournalRedisBackend(
                     "redis://localhost", use_cluster
                 )
             else:
-                journal_redis_storage = optuna.storages.JournalRedisBackend(
+                journal_redis_storage = optuna.storages.JournalRedisStorage(
                     "redis://localhost", use_cluster
                 )
             journal_redis_storage._redis = FakeStrictRedis()  # type: ignore[no-untyped-call]
@@ -117,10 +117,10 @@ def test_concurrent_append_logs_for_multi_threads(
 def pop_waiting_trial(
     file_path: str, study_name: str, deprecated_classname: bool
 ) -> Optional[int]:
-    if deprecated_classname:
-        file_storage = optuna.storages.JournalFileStorage(file_path)
-    else:
+    if not deprecated_classname:
         file_storage = optuna.storages.JournalFileBackend(file_path)
+    else:
+        file_storage = optuna.storages.JournalFileStorage(file_path)
     storage = optuna.storages.JournalStorage(file_storage)
     study = optuna.load_study(storage=storage, study_name=study_name)
     return study._pop_waiting_trial_id()
@@ -130,10 +130,10 @@ def pop_waiting_trial(
 @pytest.mark.filterwarnings("ignore::FutureWarning")
 def test_pop_waiting_trial_multiprocess_safe(deprecated_classname: bool) -> None:
     with NamedTemporaryFilePool() as file:
-        if deprecated_classname:
-            file_storage = optuna.storages.JournalFileStorage(file.name)
-        else:
+        if not deprecated_classname:
             file_storage = optuna.storages.JournalFileBackend(file.name)
+        else:
+            file_storage = optuna.storages.JournalFileStorage(file.name)
         storage = optuna.storages.JournalStorage(file_storage)
         study = optuna.create_study(storage=storage)
         num_enqueued = 10
