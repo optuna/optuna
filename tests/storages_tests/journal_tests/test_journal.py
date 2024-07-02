@@ -34,9 +34,10 @@ JOURNAL_STORAGE_SUPPORTING_SNAPSHOT = ["journal_redis"]
 
 
 class JournalLogStorageSupplier:
-    def __init__(self, storage_type: str) -> None:
+    def __init__(self, storage_type: str, deprecated_classname: bool = False) -> None:
         self.storage_type = storage_type
         self.tempfile: Optional[IO[Any]] = None
+        self.deprecated_classname = deprecated_classname
 
     def __enter__(self) -> optuna.storages.BaseJournalLogStorage:
         if self.storage_type.startswith("file"):
@@ -48,12 +49,20 @@ class JournalLogStorageSupplier:
                 lock = optuna.storages.JournalFileSymlinkLock(self.tempfile.name)
             else:
                 raise Exception("Must not reach here")
-            return optuna.storages.JournalFileBackend(self.tempfile.name, lock)
+            if self.deprecated_classname:
+                return optuna.storages.JournalFileStorage(self.tempfile.name, lock)
+            else:
+                return optuna.storages.JournalFileBackend(self.tempfile.name, lock)
         elif self.storage_type.startswith("redis"):
             use_cluster = self.storage_type == "redis_with_use_cluster"
-            journal_redis_storage = optuna.storages.JournalRedisBackend(
-                "redis://localhost", use_cluster
-            )
+            if self.deprecated_classname:
+                journal_redis_storage = optuna.storages.JournalRedisStorage(
+                    "redis://localhost", use_cluster
+                )
+            else:
+                journal_redis_storage = optuna.storages.JournalRedisBackend(
+                    "redis://localhost", use_cluster
+                )
             journal_redis_storage._redis = FakeStrictRedis()  # type: ignore[no-untyped-call]
             return journal_redis_storage
         else:
@@ -67,7 +76,11 @@ class JournalLogStorageSupplier:
 
 
 @pytest.mark.parametrize("log_storage_type", LOG_STORAGE)
-def test_concurrent_append_logs_for_multi_processes(log_storage_type: str) -> None:
+@pytest.mark.parametrize("deprecated_classname", [True, False])
+@pytest.mark.filterwarnings("ignore::FutureWarning")
+def test_concurrent_append_logs_for_multi_processes(
+    log_storage_type: str, deprecated_classname: bool
+) -> None:
     if log_storage_type.startswith("redis"):
         pytest.skip("The `fakeredis` does not support multi process environments.")
 
@@ -75,7 +88,7 @@ def test_concurrent_append_logs_for_multi_processes(log_storage_type: str) -> No
     num_records = 200
     record = {"key": "value"}
 
-    with JournalLogStorageSupplier(log_storage_type) as storage:
+    with JournalLogStorageSupplier(log_storage_type, deprecated_classname) as storage:
         with ProcessPoolExecutor(num_executors) as pool:
             pool.map(storage.append_logs, [[record] for _ in range(num_records)], timeout=20)
 
@@ -84,12 +97,16 @@ def test_concurrent_append_logs_for_multi_processes(log_storage_type: str) -> No
 
 
 @pytest.mark.parametrize("log_storage_type", LOG_STORAGE)
-def test_concurrent_append_logs_for_multi_threads(log_storage_type: str) -> None:
+@pytest.mark.parametrize("deprecated_classname", [True, False])
+@pytest.mark.filterwarnings("ignore::FutureWarning")
+def test_concurrent_append_logs_for_multi_threads(
+    log_storage_type: str, deprecated_classname: bool
+) -> None:
     num_executors = 10
     num_records = 200
     record = {"key": "value"}
 
-    with JournalLogStorageSupplier(log_storage_type) as storage:
+    with JournalLogStorageSupplier(log_storage_type, deprecated_classname) as storage:
         with ThreadPoolExecutor(num_executors) as pool:
             pool.map(storage.append_logs, [[record] for _ in range(num_records)], timeout=20)
 
@@ -97,16 +114,26 @@ def test_concurrent_append_logs_for_multi_threads(log_storage_type: str) -> None
         assert all(record == r for r in storage.read_logs(0))
 
 
-def pop_waiting_trial(file_path: str, study_name: str) -> Optional[int]:
-    file_storage = optuna.storages.JournalFileBackend(file_path)
+def pop_waiting_trial(
+    file_path: str, study_name: str, deprecated_classname: bool
+) -> Optional[int]:
+    if deprecated_classname:
+        file_storage = optuna.storages.JournalFileStorage(file_path)
+    else:
+        file_storage = optuna.storages.JournalFileBackend(file_path)
     storage = optuna.storages.JournalStorage(file_storage)
     study = optuna.load_study(storage=storage, study_name=study_name)
     return study._pop_waiting_trial_id()
 
 
-def test_pop_waiting_trial_multiprocess_safe() -> None:
+@pytest.mark.parametrize("deprecated_classname", [True, False])
+@pytest.mark.filterwarnings("ignore::FutureWarning")
+def test_pop_waiting_trial_multiprocess_safe(deprecated_classname: bool) -> None:
     with NamedTemporaryFilePool() as file:
-        file_storage = optuna.storages.JournalFileBackend(file.name)
+        if deprecated_classname:
+            file_storage = optuna.storages.JournalFileStorage(file.name)
+        else:
+            file_storage = optuna.storages.JournalFileBackend(file.name)
         storage = optuna.storages.JournalStorage(file_storage)
         study = optuna.create_study(storage=storage)
         num_enqueued = 10
@@ -117,7 +144,9 @@ def test_pop_waiting_trial_multiprocess_safe() -> None:
         with ProcessPoolExecutor(10) as pool:
             futures = []
             for i in range(num_enqueued):
-                future = pool.submit(pop_waiting_trial, file.name, study.study_name)
+                future = pool.submit(
+                    pop_waiting_trial, file.name, study.study_name, deprecated_classname
+                )
                 futures.append(future)
 
             for future in as_completed(futures):
@@ -198,3 +227,12 @@ def test_snapshot_given(storage_mode: str, capsys: _pytest.capture.CaptureFixtur
         storage.restore_replay_result(pickle.dumps("hoge"))
         _, err = capsys.readouterr()
         assert err
+
+
+def test_if_future_warning_occurs() -> None:
+    with NamedTemporaryFilePool() as file:
+        with pytest.warns(FutureWarning):
+            optuna.storages.JournalFileStorage(file.name)
+
+    with pytest.warns(FutureWarning):
+        optuna.storages.JournalRedisStorage("redis://localhost")
