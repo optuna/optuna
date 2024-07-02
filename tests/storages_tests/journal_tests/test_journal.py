@@ -51,7 +51,7 @@ class JournalLogStorageSupplier:
             return optuna.storages.JournalFileBackend(self.tempfile.name, lock)
         elif self.storage_type.startswith("redis"):
             use_cluster = self.storage_type == "redis_with_use_cluster"
-            journal_redis_storage = optuna.storages.JournalRedisStorage(
+            journal_redis_storage = optuna.storages.JournalRedisBackend(
                 "redis://localhost", use_cluster
             )
             journal_redis_storage._redis = FakeStrictRedis()  # type: ignore[no-untyped-call]

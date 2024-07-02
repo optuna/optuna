@@ -9,7 +9,7 @@ from optuna.storages._journal.base import BaseJournalLogStorage
 from optuna.storages._journal.file import JournalFileOpenLock
 from optuna.storages._journal.file import JournalFileBackend
 from optuna.storages._journal.file import JournalFileSymlinkLock
-from optuna.storages._journal.redis import JournalRedisStorage
+from optuna.storages._journal.redis import JournalRedisBackend
 from optuna.storages._journal.storage import JournalStorage
 from optuna.storages._rdb.storage import RDBStorage
 
@@ -23,7 +23,7 @@ __all__ = [
     "JournalFileSymlinkLock",
     "JournalFileOpenLock",
     "JournalFileBackend",
-    "JournalRedisStorage",
+    "JournalRedisBackend",
     "RetryFailedTrialCallback",
     "_CachedStorage",
     "fail_stale_trials",
@@ -38,7 +38,7 @@ def get_storage(storage: Union[None, str, BaseStorage]) -> BaseStorage:
     if isinstance(storage, str):
         if storage.startswith("redis"):
             raise ValueError(
-                "RedisStorage is removed at Optuna v3.1.0. Please use JournalRedisStorage instead."
+                "RedisStorage is removed at Optuna v3.1.0. Please use JournalRedisBackend instead."
             )
         return _CachedStorage(RDBStorage(storage))
     elif isinstance(storage, RDBStorage):

@@ -16,7 +16,7 @@ with try_import() as _imports:
 
 
 @experimental_class("3.1.0")
-class JournalRedisStorage(BaseJournalLogStorage, BaseJournalLogSnapshot):
+class JournalRedisBackend(BaseJournalLogStorage, BaseJournalLogSnapshot):
     """Redis storage class for Journal log backend.
 
     Args:

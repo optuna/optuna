@@ -29,7 +29,7 @@ from optuna.exceptions import CLIUsageError
 from optuna.exceptions import ExperimentalWarning
 from optuna.storages import BaseStorage
 from optuna.storages import JournalFileBackend
-from optuna.storages import JournalRedisStorage
+from optuna.storages import JournalRedisBackend
 from optuna.storages import JournalStorage
 from optuna.storages import RDBStorage
 from optuna.trial import TrialState
@@ -58,8 +58,8 @@ def _check_storage_url(storage_url: Optional[str]) -> str:
 def _get_storage(storage_url: Optional[str], storage_class: Optional[str]) -> BaseStorage:
     storage_url = _check_storage_url(storage_url)
     if storage_class:
-        if storage_class == JournalRedisStorage.__name__:
-            return JournalStorage(JournalRedisStorage(storage_url))
+        if storage_class == JournalRedisBackend.__name__:
+            return JournalStorage(JournalRedisBackend(storage_url))
         if storage_class == JournalFileBackend.__name__:
             return JournalStorage(JournalFileBackend(storage_url))
         if storage_class == RDBStorage.__name__:
@@ -67,7 +67,7 @@ def _get_storage(storage_url: Optional[str], storage_class: Optional[str]) -> Ba
         raise CLIUsageError("Unsupported storage class")
 
     if storage_url.startswith("redis"):
-        return JournalStorage(JournalRedisStorage(storage_url))
+        return JournalStorage(JournalRedisBackend(storage_url))
     if os.path.isfile(storage_url):
         return JournalStorage(JournalFileBackend(storage_url))
     try:
@@ -835,7 +835,7 @@ def _add_common_arguments(parser: ArgumentParser) -> ArgumentParser:
         choices=[
             RDBStorage.__name__,
             JournalFileBackend.__name__,
-            JournalRedisStorage.__name__,
+            JournalRedisBackend.__name__,
         ],
     )
     verbose_group = parser.add_mutually_exclusive_group()
