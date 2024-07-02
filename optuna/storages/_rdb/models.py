@@ -188,11 +188,10 @@ class TrialModel(BaseModel):
     )
 
     @classmethod
-    def find_max_value_trial(
-        cls, study_id: int, objective: int, session: orm.Session
-    ) -> "TrialModel":
+    def find_max_value_trial_id(cls, study_id: int, objective: int, session: orm.Session) -> int:
         trial = (
             session.query(cls)
+            .with_entities(cls.trial_id)
             .filter(cls.study_id == study_id)
             .filter(cls.state == TrialState.COMPLETE)
             .join(TrialValueModel)
@@ -211,14 +210,13 @@ class TrialModel(BaseModel):
         )
         if trial is None:
             raise ValueError(NOT_FOUND_MSG)
-        return trial
+        return trial[0]
 
     @classmethod
-    def find_min_value_trial(
-        cls, study_id: int, objective: int, session: orm.Session
-    ) -> "TrialModel":
+    def find_min_value_trial_id(cls, study_id: int, objective: int, session: orm.Session) -> int:
         trial = (
             session.query(cls)
+            .with_entities(cls.trial_id)
             .filter(cls.study_id == study_id)
             .filter(cls.state == TrialState.COMPLETE)
             .join(TrialValueModel)
@@ -237,7 +235,7 @@ class TrialModel(BaseModel):
         )
         if trial is None:
             raise ValueError(NOT_FOUND_MSG)
-        return trial
+        return trial[0]
 
     @classmethod
     def find_or_raise_by_id(
