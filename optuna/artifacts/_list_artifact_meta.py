@@ -25,6 +25,45 @@ def get_all_artifact_meta(
             A storage object. This argument is required only if ``study_or_trial`` is
             :class:`~optuna.trial.FrozenTrial`.
 
+    Example:
+        An example where this function is useful:
+
+        .. code::
+
+            import os
+
+            import optuna
+
+
+            # Get the storage that contains the study of interest.
+            storage = optuna.storages.get_storage(storage=...)
+
+            # Instantiate the artifact store used for the study.
+            # Optuna does not provide the API that stores the used artifact store information, so
+            # please manage the information in the user side.
+            artifact_store = ...
+
+            # Load study that contains the artifacts of interest.
+            study = optuna.load_study(study_name=..., storage=storage)
+
+            # Fetch the best trial.
+            best_trial = study.best_trial
+
+            # Fetch all the artifact meta connected to the best trial.
+            artifact_metas = optuna.artifacts.get_all_artifact_meta(best_trial, storage=storage)
+
+            download_dir_path = "./best_trial_artifacts/"
+            os.makedirs(download_dir_path, exist_ok=True)
+
+            for artifact_meta in artifact_metas:
+                download_file_path = os.path.join(download_dir_path, artifact_meta.filename)
+                # Download the artifacts to ``download_file_path``.
+                optuna.artifacts.download_artifact(
+                    artifact_store=artifact_store,
+                    artifact_id=artifact_meta.artifact_id,
+                    file_path=download_file_path,
+                )
+
     Returns:
         The list of artifact meta in the trial or study.
         Each artifact meta includes ``artifact_id``, ``filename``, ``mimetype``, and ``encoding``.

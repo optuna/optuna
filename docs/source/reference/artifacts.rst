@@ -24,6 +24,9 @@ Please check :ref:`artifact_tutorial` for the instruction.
 .. autoclass:: optuna.artifacts.Backoff
    :no-members:
 
+.. autoclass:: optuna.artifacts.ArtifactMeta
+   :no-members:
+
 .. autofunction:: optuna.artifacts.upload_artifact
 
 .. autofunction:: optuna.artifacts.get_all_artifact_meta
