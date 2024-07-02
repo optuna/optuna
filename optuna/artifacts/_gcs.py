@@ -40,7 +40,11 @@ class GCSArtifactStore:
             def objective(trial: optuna.Trial) -> float:
                 ... = trial.suggest_float("x", -10, 10)
                 file_path = generate_example(...)
-                upload_artifact(trial, file_path, artifact_backend)
+                upload_artifact(
+                    artifact_store=artifact_store,
+                    file_path=file_path,
+                    study_or_trial=trial,
+                )
                 return ...
 
         Before running this code, you will have to install `gcloud` and run

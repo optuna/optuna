@@ -8,16 +8,16 @@ from optuna.artifacts._protocol import ArtifactStore
 
 
 @experimental_func("4.0.0")
-def download_artifact(artifact_store: ArtifactStore, artifact_id: str, file_path: str) -> None:
+def download_artifact(*, artifact_store: ArtifactStore, file_path: str, artifact_id: str) -> None:
     """Download an artifact from the artifact store.
 
     Args:
         artifact_store:
             An artifact store.
-        artifact_id:
-            The identifier of the artifact to download.
         file_path:
             A path to save the downloaded artifact.
+        artifact_id:
+            The identifier of the artifact to download.
     """
     if os.path.exists(file_path):
         raise FileExistsError(f"File already exists: {file_path}")

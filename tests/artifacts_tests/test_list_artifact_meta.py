@@ -39,9 +39,9 @@ def _check_uploaded_artifact_meta(
     encoding: str | None,
 ) -> None:
     artifact_id = upload_artifact(
-        study_or_trial,
-        file_path,
-        artifact_store,
+        study_or_trial=study_or_trial,
+        file_path=file_path,
+        artifact_store=artifact_store,
         storage=storage,
         mimetype=mimetype,
         encoding=encoding,
