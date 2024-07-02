@@ -5,6 +5,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
+from optuna._deprecated import deprecated_class
 from optuna._experimental import experimental_class
 from optuna._imports import try_import
 from optuna.storages._journal.base import BaseJournalLogSnapshot
@@ -98,3 +99,29 @@ class JournalRedisBackend(BaseJournalLogStorage, BaseJournalLogSnapshot):
 
     def _key_log_id(self, log_number: int) -> str:
         return f"{self._prefix}:log:{log_number}"
+
+
+@deprecated_class(
+    "4.0.0", "7.0.0", text="Use :class:`~optuna.storages.JournalRedisBackend` instead."
+)
+class JournalRedisStorage(JournalRedisBackend):
+    """Redis storage class for Journal log backend.
+
+    Args:
+        url:
+            URL of the redis storage, password and db are optional.
+            (ie: ``redis://localhost:6379``)
+        use_cluster:
+            Flag whether you use the Redis cluster. If this is :obj:`False`, it is assumed that
+            you use the standalone Redis server and ensured that a write operation is atomic. This
+            provides the consistency of the preserved logs. If this is :obj:`True`, it is assumed
+            that you use the Redis cluster and not ensured that a write operation is atomic. This
+            means the preserved logs can be inconsistent due to network errors, and may
+            cause errors.
+        prefix:
+            Prefix of the preserved key of logs. This is useful when multiple users work on one
+            Redis server.
+    """
+
+    def __init__(self, url: str, use_cluster: bool = False, prefix: str = "") -> None:
+        super().__init__(url=url, use_cluster=use_cluster, prefix=prefix)
