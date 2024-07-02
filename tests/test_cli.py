@@ -23,8 +23,8 @@ import optuna
 import optuna.cli
 from optuna.exceptions import CLIUsageError
 from optuna.exceptions import ExperimentalWarning
-from optuna.storages import JournalFileStorage
-from optuna.storages import JournalRedisStorage
+from optuna.storages import JournalFileBackend
+from optuna.storages import JournalRedisBackend
 from optuna.storages import JournalStorage
 from optuna.storages import RDBStorage
 from optuna.study import StudyDirection
@@ -1076,12 +1076,12 @@ def test_get_storage_without_storage_class(mock_redis: MagicMock) -> None:
     with tempfile.NamedTemporaryFile(suffix=".log") as fp:
         storage = optuna.cli._get_storage(fp.name, storage_class=None)
         assert isinstance(storage, JournalStorage)
-        assert isinstance(storage._backend, JournalFileStorage)
+        assert isinstance(storage._backend, JournalFileBackend)
 
     mock_redis.Redis = fakeredis.FakeRedis
     storage = optuna.cli._get_storage("redis://localhost:6379", storage_class=None)
     assert isinstance(storage, JournalStorage)
-    assert isinstance(storage._backend, JournalRedisStorage)
+    assert isinstance(storage._backend, JournalRedisBackend)
 
     with pytest.raises(CLIUsageError):
         optuna.cli._get_storage("./file-not-found.log", storage_class=None)
@@ -1095,16 +1095,16 @@ def test_get_storage_with_storage_class(mock_redis: MagicMock) -> None:
         assert isinstance(storage, RDBStorage)
 
     with tempfile.NamedTemporaryFile(suffix=".log") as fp:
-        storage = optuna.cli._get_storage(fp.name, storage_class="JournalFileStorage")
+        storage = optuna.cli._get_storage(fp.name, storage_class="JournalFileBackend")
         assert isinstance(storage, JournalStorage)
-        assert isinstance(storage._backend, JournalFileStorage)
+        assert isinstance(storage._backend, JournalFileBackend)
 
     mock_redis.Redis = fakeredis.FakeRedis
     storage = optuna.cli._get_storage(
-        "redis:///localhost:6379", storage_class="JournalRedisStorage"
+        "redis:///localhost:6379", storage_class="JournalRedisBackend"
     )
     assert isinstance(storage, JournalStorage)
-    assert isinstance(storage._backend, JournalRedisStorage)
+    assert isinstance(storage._backend, JournalRedisBackend)
 
     with pytest.raises(CLIUsageError):
         with tempfile.NamedTemporaryFile(suffix=".db") as fp:

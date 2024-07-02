@@ -2,6 +2,7 @@
 If you want to add a new command, you also need to update the constant `_COMMANDS`
 """
 
+import argparse
 from argparse import ArgumentParser
 from argparse import Namespace
 import datetime
@@ -28,7 +29,9 @@ from optuna._imports import _LazyImport
 from optuna.exceptions import CLIUsageError
 from optuna.exceptions import ExperimentalWarning
 from optuna.storages import BaseStorage
+from optuna.storages import JournalFileBackend
 from optuna.storages import JournalFileStorage
+from optuna.storages import JournalRedisBackend
 from optuna.storages import JournalRedisStorage
 from optuna.storages import JournalStorage
 from optuna.storages import RDBStorage
@@ -58,8 +61,12 @@ def _check_storage_url(storage_url: Optional[str]) -> str:
 def _get_storage(storage_url: Optional[str], storage_class: Optional[str]) -> BaseStorage:
     storage_url = _check_storage_url(storage_url)
     if storage_class:
+        if storage_class == JournalRedisBackend.__name__:
+            return JournalStorage(JournalRedisBackend(storage_url))
         if storage_class == JournalRedisStorage.__name__:
             return JournalStorage(JournalRedisStorage(storage_url))
+        if storage_class == JournalFileBackend.__name__:
+            return JournalStorage(JournalFileBackend(storage_url))
         if storage_class == JournalFileStorage.__name__:
             return JournalStorage(JournalFileStorage(storage_url))
         if storage_class == RDBStorage.__name__:
@@ -67,9 +74,9 @@ def _get_storage(storage_url: Optional[str], storage_class: Optional[str]) -> Ba
         raise CLIUsageError("Unsupported storage class")
 
     if storage_url.startswith("redis"):
-        return JournalStorage(JournalRedisStorage(storage_url))
+        return JournalStorage(JournalRedisBackend(storage_url))
     if os.path.isfile(storage_url):
-        return JournalStorage(JournalFileStorage(storage_url))
+        return JournalStorage(JournalFileBackend(storage_url))
     try:
         return RDBStorage(storage_url)
     except sqlalchemy.exc.ArgumentError:
@@ -819,6 +826,23 @@ _COMMANDS: Dict[str, Type[_BaseCommand]] = {
 }
 
 
+def _parse_storage_class_without_suggesting_deprecated_choices(value: str) -> str:
+    choices = [
+        RDBStorage.__name__,
+        JournalFileBackend.__name__,
+        JournalRedisBackend.__name__,
+    ]
+    deprecated_choices = [
+        JournalFileStorage.__name__,
+        JournalRedisStorage.__name__,
+    ]
+    if value in choices + deprecated_choices:
+        return value
+    raise argparse.ArgumentTypeError(
+        f"Invalid choice: {value}  (choose from {str(choices)[1:-1]})"
+    )
+
+
 def _add_common_arguments(parser: ArgumentParser) -> ArgumentParser:
     parser.add_argument(
         "--storage",
@@ -830,13 +854,9 @@ def _add_common_arguments(parser: ArgumentParser) -> ArgumentParser:
     )
     parser.add_argument(
         "--storage-class",
-        help="Storage class hint (e.g. JournalFileStorage)",
+        help="Storage class hint (e.g. JournalFileBackend)",
         default=None,
-        choices=[
-            RDBStorage.__name__,
-            JournalFileStorage.__name__,
-            JournalRedisStorage.__name__,
-        ],
+        type=_parse_storage_class_without_suggesting_deprecated_choices,
     )
     verbose_group = parser.add_mutually_exclusive_group()
     verbose_group.add_argument(
