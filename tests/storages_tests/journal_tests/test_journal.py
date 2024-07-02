@@ -48,7 +48,7 @@ class JournalLogStorageSupplier:
                 lock = optuna.storages.JournalFileSymlinkLock(self.tempfile.name)
             else:
                 raise Exception("Must not reach here")
-            return optuna.storages.JournalFileStorage(self.tempfile.name, lock)
+            return optuna.storages.JournalFileBackend(self.tempfile.name, lock)
         elif self.storage_type.startswith("redis"):
             use_cluster = self.storage_type == "redis_with_use_cluster"
             journal_redis_storage = optuna.storages.JournalRedisStorage(
@@ -98,7 +98,7 @@ def test_concurrent_append_logs_for_multi_threads(log_storage_type: str) -> None
 
 
 def pop_waiting_trial(file_path: str, study_name: str) -> Optional[int]:
-    file_storage = optuna.storages.JournalFileStorage(file_path)
+    file_storage = optuna.storages.JournalFileBackend(file_path)
     storage = optuna.storages.JournalStorage(file_storage)
     study = optuna.load_study(storage=storage, study_name=study_name)
     return study._pop_waiting_trial_id()
@@ -106,7 +106,7 @@ def pop_waiting_trial(file_path: str, study_name: str) -> Optional[int]:
 
 def test_pop_waiting_trial_multiprocess_safe() -> None:
     with NamedTemporaryFilePool() as file:
-        file_storage = optuna.storages.JournalFileStorage(file.name)
+        file_storage = optuna.storages.JournalFileBackend(file.name)
         storage = optuna.storages.JournalStorage(file_storage)
         study = optuna.create_study(storage=storage)
         num_enqueued = 10

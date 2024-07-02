@@ -23,7 +23,7 @@ import optuna
 import optuna.cli
 from optuna.exceptions import CLIUsageError
 from optuna.exceptions import ExperimentalWarning
-from optuna.storages import JournalFileStorage
+from optuna.storages import JournalFileBackend
 from optuna.storages import JournalRedisStorage
 from optuna.storages import JournalStorage
 from optuna.storages import RDBStorage
@@ -1076,7 +1076,7 @@ def test_get_storage_without_storage_class(mock_redis: MagicMock) -> None:
     with tempfile.NamedTemporaryFile(suffix=".log") as fp:
         storage = optuna.cli._get_storage(fp.name, storage_class=None)
         assert isinstance(storage, JournalStorage)
-        assert isinstance(storage._backend, JournalFileStorage)
+        assert isinstance(storage._backend, JournalFileBackend)
 
     mock_redis.Redis = fakeredis.FakeRedis
     storage = optuna.cli._get_storage("redis://localhost:6379", storage_class=None)
@@ -1095,9 +1095,9 @@ def test_get_storage_with_storage_class(mock_redis: MagicMock) -> None:
         assert isinstance(storage, RDBStorage)
 
     with tempfile.NamedTemporaryFile(suffix=".log") as fp:
-        storage = optuna.cli._get_storage(fp.name, storage_class="JournalFileStorage")
+        storage = optuna.cli._get_storage(fp.name, storage_class="JournalFileBackend")
         assert isinstance(storage, JournalStorage)
-        assert isinstance(storage._backend, JournalFileStorage)
+        assert isinstance(storage._backend, JournalFileBackend)
 
     mock_redis.Redis = fakeredis.FakeRedis
     storage = optuna.cli._get_storage(

@@ -28,7 +28,7 @@ from optuna._imports import _LazyImport
 from optuna.exceptions import CLIUsageError
 from optuna.exceptions import ExperimentalWarning
 from optuna.storages import BaseStorage
-from optuna.storages import JournalFileStorage
+from optuna.storages import JournalFileBackend
 from optuna.storages import JournalRedisStorage
 from optuna.storages import JournalStorage
 from optuna.storages import RDBStorage
@@ -60,8 +60,8 @@ def _get_storage(storage_url: Optional[str], storage_class: Optional[str]) -> Ba
     if storage_class:
         if storage_class == JournalRedisStorage.__name__:
             return JournalStorage(JournalRedisStorage(storage_url))
-        if storage_class == JournalFileStorage.__name__:
-            return JournalStorage(JournalFileStorage(storage_url))
+        if storage_class == JournalFileBackend.__name__:
+            return JournalStorage(JournalFileBackend(storage_url))
         if storage_class == RDBStorage.__name__:
             return RDBStorage(storage_url)
         raise CLIUsageError("Unsupported storage class")
@@ -69,7 +69,7 @@ def _get_storage(storage_url: Optional[str], storage_class: Optional[str]) -> Ba
     if storage_url.startswith("redis"):
         return JournalStorage(JournalRedisStorage(storage_url))
     if os.path.isfile(storage_url):
-        return JournalStorage(JournalFileStorage(storage_url))
+        return JournalStorage(JournalFileBackend(storage_url))
     try:
         return RDBStorage(storage_url)
     except sqlalchemy.exc.ArgumentError:
@@ -830,11 +830,11 @@ def _add_common_arguments(parser: ArgumentParser) -> ArgumentParser:
     )
     parser.add_argument(
         "--storage-class",
-        help="Storage class hint (e.g. JournalFileStorage)",
+        help="Storage class hint (e.g. JournalFileBackend)",
         default=None,
         choices=[
             RDBStorage.__name__,
-            JournalFileStorage.__name__,
+            JournalFileBackend.__name__,
             JournalRedisStorage.__name__,
         ],
     )

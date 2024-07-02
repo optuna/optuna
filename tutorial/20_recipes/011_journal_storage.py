@@ -20,7 +20,7 @@ import optuna
 optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
 study_name = "example-study"  # Unique identifier of the study.
 storage = optuna.storages.JournalStorage(
-    optuna.storages.JournalFileStorage("./journal.log"),  # NFS path for distributed optimization
+    optuna.storages.JournalFileBackend("./journal.log"),  # NFS path for distributed optimization
 )
 
 study = optuna.create_study(study_name=study_name, storage=storage)

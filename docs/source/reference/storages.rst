@@ -13,7 +13,7 @@ The :mod:`~optuna.storages` module defines a :class:`~optuna.storages.BaseStorag
    optuna.storages.RetryFailedTrialCallback
    optuna.storages.fail_stale_trials
    optuna.storages.JournalStorage
-   optuna.storages.JournalFileStorage
+   optuna.storages.JournalFileBackend
    optuna.storages.JournalFileSymlinkLock
    optuna.storages.JournalFileOpenLock
    optuna.storages.JournalRedisStorage

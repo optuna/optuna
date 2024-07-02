@@ -10,7 +10,7 @@ all_journal_files = [f"{os.path.dirname(__file__)}/assets/4.0.0.dev.log"]
 
 @pytest.mark.parametrize("journal_file", all_journal_files)
 def test_empty_study(journal_file: str) -> None:
-    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileStorage(journal_file))
+    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileBackend(journal_file))
 
     study = optuna.load_study(study_name="single_empty", storage=storage)
 
@@ -21,7 +21,7 @@ def test_empty_study(journal_file: str) -> None:
 
 @pytest.mark.parametrize("journal_file", all_journal_files)
 def test_create_and_delete_study(journal_file: str) -> None:
-    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileStorage(journal_file))
+    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileBackend(journal_file))
 
     assert len(storage.get_all_studies()) == 4
     assert storage.get_study_id_from_name("single_empty") is not None
@@ -31,7 +31,7 @@ def test_create_and_delete_study(journal_file: str) -> None:
 
 @pytest.mark.parametrize("journal_file", all_journal_files)
 def test_set_study_user_and_system_attrs(journal_file: str) -> None:
-    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileStorage(journal_file))
+    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileBackend(journal_file))
 
     study_id = storage.get_study_id_from_name("single_user_attr")
     user_attrs = storage.get_study_user_attrs(study_id)
@@ -46,7 +46,7 @@ def test_set_study_user_and_system_attrs(journal_file: str) -> None:
 
 @pytest.mark.parametrize("journal_file", all_journal_files)
 def test_create_trial(journal_file: str) -> None:
-    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileStorage(journal_file))
+    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileBackend(journal_file))
 
     study_id = storage.get_study_id_from_name("single_optimization")
     trials = storage.get_all_trials(study_id)
@@ -55,7 +55,7 @@ def test_create_trial(journal_file: str) -> None:
 
 @pytest.mark.parametrize("journal_file", all_journal_files)
 def test_set_trial_param(journal_file: str) -> None:
-    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileStorage(journal_file))
+    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileBackend(journal_file))
 
     study_id = storage.get_study_id_from_name("single_optimization")
     trials = storage.get_all_trials(study_id)
@@ -68,7 +68,7 @@ def test_set_trial_param(journal_file: str) -> None:
 
 @pytest.mark.parametrize("journal_file", all_journal_files)
 def test_set_trial_state_values(journal_file: str) -> None:
-    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileStorage(journal_file))
+    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileBackend(journal_file))
 
     study_id = storage.get_study_id_from_name("single_optimization")
     trials = storage.get_all_trials(study_id)
@@ -80,7 +80,7 @@ def test_set_trial_state_values(journal_file: str) -> None:
 
 @pytest.mark.parametrize("journal_file", all_journal_files)
 def test_set_trial_intermediate_value(journal_file: str) -> None:
-    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileStorage(journal_file))
+    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileBackend(journal_file))
 
     study_id = storage.get_study_id_from_name("single_optimization")
     trials = storage.get_all_trials(study_id)
@@ -92,7 +92,7 @@ def test_set_trial_intermediate_value(journal_file: str) -> None:
 
 @pytest.mark.parametrize("journal_file", all_journal_files)
 def test_set_trial_user_and_system_attrs(journal_file: str) -> None:
-    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileStorage(journal_file))
+    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileBackend(journal_file))
 
     study_id = storage.get_study_id_from_name("single_optimization")
     trials = storage.get_all_trials(study_id)

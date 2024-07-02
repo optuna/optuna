@@ -7,7 +7,7 @@ from optuna.storages._heartbeat import fail_stale_trials
 from optuna.storages._in_memory import InMemoryStorage
 from optuna.storages._journal.base import BaseJournalLogStorage
 from optuna.storages._journal.file import JournalFileOpenLock
-from optuna.storages._journal.file import JournalFileStorage
+from optuna.storages._journal.file import JournalFileBackend
 from optuna.storages._journal.file import JournalFileSymlinkLock
 from optuna.storages._journal.redis import JournalRedisStorage
 from optuna.storages._journal.storage import JournalStorage
@@ -22,7 +22,7 @@ __all__ = [
     "JournalStorage",
     "JournalFileSymlinkLock",
     "JournalFileOpenLock",
-    "JournalFileStorage",
+    "JournalFileBackend",
     "JournalRedisStorage",
     "RetryFailedTrialCallback",
     "_CachedStorage",

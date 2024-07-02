@@ -16,7 +16,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileStorage(args.storage_url))
+    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileBackend(args.storage_url))
 
     # Empty study
     optuna.create_study(storage=storage, study_name="single_empty")

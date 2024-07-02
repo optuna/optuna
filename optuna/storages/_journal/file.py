@@ -142,7 +142,7 @@ def get_lock_file(lock_obj: JournalFileBaseLock) -> Iterator[None]:
         lock_obj.release()
 
 
-class JournalFileStorage(BaseJournalLogStorage):
+class JournalFileBackend(BaseJournalLogStorage):
     """File storage class for Journal log backend.
 
     Compared to SQLite3, the benefit of this backend is that it is more suitable for
