@@ -4,6 +4,8 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
+from optuna._deprecated import deprecated_class
+
 
 class BaseJournalBackend(abc.ABC):
     """Base class for Journal storages.
@@ -68,3 +70,31 @@ class BaseJournalSnapshot(abc.ABC):
             A serialized snapshot (bytes) if found, otherwise :obj:`None`.
         """
         raise NotImplementedError
+
+
+@deprecated_class(
+    "4.0.0", "7.0.0", text="Use :class:`~optuna.storages.BaseJournalBackend` instead."
+)
+class BaseJournalLogStorage(BaseJournalBackend):
+    """Base class for Journal storages.
+
+    Storage classes implementing this base class must guarantee process safety. This means,
+    multiple processes might concurrently call ``read_logs`` and ``append_logs``. If the
+    backend storage does not internally support mutual exclusion mechanisms, such as locks,
+    you might want to use :class:`~optuna.storages.JournalFileSymlinkLock` or
+    :class:`~optuna.storages.JournalFileOpenLock` for creating a critical section.
+
+    """
+
+
+@deprecated_class(
+    "4.0.0", "7.0.0", text="Use :class:`~optuna.storages.BaseJournalSnapshot` instead."
+)
+class BaseJournalLogSnapshot(BaseJournalSnapshot):
+    """Optional base class for Journal storages.
+
+    Storage classes implementing this base class may work faster when
+    constructing the internal state from the large amount of logs.
+    """
+
+    # Note: As of v4.0.0, this base class is NOT exposed to users.

@@ -29,6 +29,14 @@ class BaseJournalFileLock(abc.ABC):
         raise NotImplementedError
 
 
+@deprecated_class(
+    "4.0.0", "7.0.0", text="Use :class:`~optuna.storages.BaseJournalFileLock` instead."
+)
+class JournalFileBaseLock(BaseJournalFileLock):
+    # Note: As of v4.0.0, this base class is NOT exposed to users.
+    pass
+
+
 class JournalFileSymlinkLock(BaseJournalFileLock):
     """Lock class for synchronizing processes for NFSv2 or later.
 

@@ -15,6 +15,7 @@ import pytest
 
 import optuna
 from optuna import create_study
+from optuna.storages import BaseJournalLogStorage
 from optuna.storages import JournalStorage
 from optuna.storages._journal.base import BaseJournalSnapshot
 from optuna.storages._journal.file import BaseJournalFileLock
@@ -229,6 +230,14 @@ def test_snapshot_given(storage_mode: str, capsys: _pytest.capture.CaptureFixtur
         assert err
 
 
+class CustomJournalBackend(BaseJournalLogStorage):
+    def read_logs(self, log_number_from: int) -> list[dict[str, Any]]:
+        return [{"": ""}]
+
+    def append_logs(self, logs: list[dict[str, Any]]) -> None:
+        return
+
+
 def test_if_future_warning_occurs() -> None:
     with NamedTemporaryFilePool() as file:
         with pytest.warns(FutureWarning):
@@ -236,3 +245,6 @@ def test_if_future_warning_occurs() -> None:
 
     with pytest.warns(FutureWarning):
         optuna.storages.JournalRedisStorage("redis://localhost")
+
+    with pytest.warns(FutureWarning):
+        _ = CustomJournalBackend()
