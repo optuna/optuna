@@ -73,29 +73,25 @@ def _is_log_scale(trials: list[FrozenTrial], param: str) -> bool:
     for trial in trials:
         if param in trial.params:
             dist = trial.distributions[param]
-
-            if isinstance(dist, (FloatDistribution, IntDistribution)):
-                if dist.log:
-                    return True
-
+            if isinstance(dist, (FloatDistribution, IntDistribution)) and dist.log:
+                return True
     return False
 
 
 def _is_categorical(trials: list[FrozenTrial], param: str) -> bool:
     return any(
-        isinstance(t.distributions[param], CategoricalDistribution)
+        param in t.params and isinstance(t.distributions[param], CategoricalDistribution)
         for t in trials
-        if param in t.params
     )
 
 
 def _is_numerical(trials: list[FrozenTrial], param: str) -> bool:
-    return all(
-        (isinstance(t.params[param], int) or isinstance(t.params[param], float))
-        and not isinstance(t.params[param], bool)
-        for t in trials
-        if param in t.params
-    )
+    for trial in trials:
+        if param in trial.params:
+            value = trial.params[param]
+            if not isinstance(value, (int, float)) or isinstance(value, bool):
+                return False
+    return True
 
 
 def _get_param_values(trials: list[FrozenTrial], p_name: str) -> list[Any]:
