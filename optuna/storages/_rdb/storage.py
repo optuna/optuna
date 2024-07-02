@@ -918,10 +918,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             direction = _directions[0]
 
             if direction == StudyDirection.MAXIMIZE:
-                trial = models.TrialModel.find_max_value_trial(study_id, 0, session)
+                trial_id = models.TrialModel.find_max_value_trial_id(study_id, 0, session)
             else:
-                trial = models.TrialModel.find_min_value_trial(study_id, 0, session)
-            trial_id = trial.trial_id
+                trial_id = models.TrialModel.find_min_value_trial_id(study_id, 0, session)
 
         return self.get_trial(trial_id)
 
