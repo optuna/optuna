@@ -21,8 +21,8 @@ from optuna.distributions import json_to_distribution
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
-from optuna.storages._journal.base import BaseJournalLogSnapshot
-from optuna.storages._journal.base import BaseJournalLogStorage
+from optuna.storages._journal.base import BaseJournalSnapshot
+from optuna.storages._journal.base import BaseJournalBackend
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -98,14 +98,14 @@ class JournalStorage(BaseStorage):
         )
     """
 
-    def __init__(self, log_storage: BaseJournalLogStorage) -> None:
+    def __init__(self, log_storage: BaseJournalBackend) -> None:
         self._worker_id_prefix = str(uuid.uuid4()) + "-"
         self._backend = log_storage
         self._thread_lock = threading.Lock()
         self._replay_result = JournalStorageReplayResult(self._worker_id_prefix)
 
         with self._thread_lock:
-            if isinstance(self._backend, BaseJournalLogSnapshot):
+            if isinstance(self._backend, BaseJournalSnapshot):
                 snapshot = self._backend.load_snapshot()
                 if snapshot is not None:
                     self.restore_replay_result(snapshot)
@@ -168,7 +168,7 @@ class JournalStorage(BaseStorage):
 
                 # Dump snapshot here.
                 if (
-                    isinstance(self._backend, BaseJournalLogSnapshot)
+                    isinstance(self._backend, BaseJournalSnapshot)
                     and study_id != 0
                     and study_id % SNAPSHOT_INTERVAL == 0
                 ):
@@ -271,7 +271,7 @@ class JournalStorage(BaseStorage):
 
         # Dump snapshot here.
         if (
-            isinstance(self._backend, BaseJournalLogSnapshot)
+            isinstance(self._backend, BaseJournalSnapshot)
             and trial_id != 0
             and trial_id % SNAPSHOT_INTERVAL == 0
         ):

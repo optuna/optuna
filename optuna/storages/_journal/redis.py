@@ -8,8 +8,8 @@ from typing import Optional
 from optuna._deprecated import deprecated_class
 from optuna._experimental import experimental_class
 from optuna._imports import try_import
-from optuna.storages._journal.base import BaseJournalLogSnapshot
-from optuna.storages._journal.base import BaseJournalLogStorage
+from optuna.storages._journal.base import BaseJournalSnapshot
+from optuna.storages._journal.base import BaseJournalBackend
 
 
 with try_import() as _imports:
@@ -17,7 +17,7 @@ with try_import() as _imports:
 
 
 @experimental_class("3.1.0")
-class JournalRedisBackend(BaseJournalLogStorage, BaseJournalLogSnapshot):
+class JournalRedisBackend(BaseJournalBackend, BaseJournalSnapshot):
     """Redis storage class for Journal log backend.
 
     Args:

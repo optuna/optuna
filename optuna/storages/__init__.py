@@ -5,7 +5,7 @@ from optuna.storages._base import BaseStorage
 from optuna.storages._cached_storage import _CachedStorage
 from optuna.storages._heartbeat import fail_stale_trials
 from optuna.storages._in_memory import InMemoryStorage
-from optuna.storages._journal.base import BaseJournalLogStorage
+from optuna.storages._journal.base import BaseJournalBackend
 from optuna.storages._journal.file import JournalFileBackend
 from optuna.storages._journal.file import JournalFileOpenLock
 from optuna.storages._journal.file import JournalFileStorage
@@ -18,7 +18,7 @@ from optuna.storages._rdb.storage import RDBStorage
 
 __all__ = [
     "BaseStorage",
-    "BaseJournalLogStorage",
+    "BaseJournalBackend",
     "InMemoryStorage",
     "RDBStorage",
     "JournalStorage",

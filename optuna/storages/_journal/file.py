@@ -12,14 +12,14 @@ from typing import Optional
 import uuid
 
 from optuna._deprecated import deprecated_class
-from optuna.storages._journal.base import BaseJournalLogStorage
+from optuna.storages._journal.base import BaseJournalBackend
 
 
 LOCK_FILE_SUFFIX = ".lock"
 RENAME_FILE_SUFFIX = ".rename"
 
 
-class JournalFileBaseLock(abc.ABC):
+class BaseJournalFileLock(abc.ABC):
     @abc.abstractmethod
     def acquire(self) -> bool:
         raise NotImplementedError
@@ -29,7 +29,7 @@ class JournalFileBaseLock(abc.ABC):
         raise NotImplementedError
 
 
-class JournalFileSymlinkLock(JournalFileBaseLock):
+class JournalFileSymlinkLock(BaseJournalFileLock):
     """Lock class for synchronizing processes for NFSv2 or later.
 
     On acquiring the lock, link system call is called to create an exclusive file. The file is
@@ -81,7 +81,7 @@ class JournalFileSymlinkLock(JournalFileBaseLock):
             raise
 
 
-class JournalFileOpenLock(JournalFileBaseLock):
+class JournalFileOpenLock(BaseJournalFileLock):
     """Lock class for synchronizing processes for NFSv3 or later.
 
     On acquiring the lock, open system call is called with the O_EXCL option to create an exclusive
@@ -135,7 +135,7 @@ class JournalFileOpenLock(JournalFileBaseLock):
 
 
 @contextmanager
-def get_lock_file(lock_obj: JournalFileBaseLock) -> Iterator[None]:
+def get_lock_file(lock_obj: BaseJournalFileLock) -> Iterator[None]:
     lock_obj.acquire()
     try:
         yield
@@ -143,7 +143,7 @@ def get_lock_file(lock_obj: JournalFileBaseLock) -> Iterator[None]:
         lock_obj.release()
 
 
-class JournalFileBackend(BaseJournalLogStorage):
+class JournalFileBackend(BaseJournalBackend):
     """File storage class for Journal log backend.
 
     Compared to SQLite3, the benefit of this backend is that it is more suitable for
@@ -174,7 +174,7 @@ class JournalFileBackend(BaseJournalLogStorage):
             Lock object for process exclusivity.
     """
 
-    def __init__(self, file_path: str, lock_obj: Optional[JournalFileBaseLock] = None) -> None:
+    def __init__(self, file_path: str, lock_obj: Optional[BaseJournalFileLock] = None) -> None:
         self._file_path: str = file_path
         self._lock = lock_obj or JournalFileSymlinkLock(self._file_path)
         if not os.path.exists(self._file_path):
@@ -265,5 +265,5 @@ class JournalFileStorage(JournalFileBackend):
             Lock object for process exclusivity.
     """
 
-    def __init__(self, file_path: str, lock_obj: Optional[JournalFileBaseLock] = None) -> None:
+    def __init__(self, file_path: str, lock_obj: Optional[BaseJournalFileLock] = None) -> None:
         super().__init__(file_path=file_path, lock_obj=lock_obj)

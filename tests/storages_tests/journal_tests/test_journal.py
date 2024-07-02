@@ -16,8 +16,8 @@ import pytest
 import optuna
 from optuna import create_study
 from optuna.storages import JournalStorage
-from optuna.storages._journal.base import BaseJournalLogSnapshot
-from optuna.storages._journal.file import JournalFileBaseLock
+from optuna.storages._journal.base import BaseJournalSnapshot
+from optuna.storages._journal.file import BaseJournalFileLock
 from optuna.storages._journal.storage import JournalStorageReplayResult
 from optuna.testing.storages import StorageSupplier
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
@@ -39,10 +39,10 @@ class JournalLogStorageSupplier:
         self.tempfile: Optional[IO[Any]] = None
         self.deprecated_classname = deprecated_classname
 
-    def __enter__(self) -> optuna.storages.BaseJournalLogStorage:
+    def __enter__(self) -> optuna.storages.BaseJournalBackend:
         if self.storage_type.startswith("file"):
             self.tempfile = NamedTemporaryFilePool().tempfile()
-            lock: JournalFileBaseLock
+            lock: BaseJournalFileLock
             if self.storage_type == "file_with_open_lock":
                 lock = optuna.storages.JournalFileOpenLock(self.tempfile.name)
             elif self.storage_type == "file_with_link_lock":
@@ -165,7 +165,7 @@ def test_save_snapshot_per_each_trial(storage_mode: str) -> None:
         assert isinstance(storage, JournalStorage)
         study = create_study(storage=storage)
         journal_log_storage = storage._backend
-        assert isinstance(journal_log_storage, BaseJournalLogSnapshot)
+        assert isinstance(journal_log_storage, BaseJournalSnapshot)
 
         assert journal_log_storage.load_snapshot() is None
 
@@ -180,7 +180,7 @@ def test_save_snapshot_per_each_study(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         assert isinstance(storage, JournalStorage)
         journal_log_storage = storage._backend
-        assert isinstance(journal_log_storage, BaseJournalLogSnapshot)
+        assert isinstance(journal_log_storage, BaseJournalSnapshot)
 
         assert journal_log_storage.load_snapshot() is None
 

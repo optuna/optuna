@@ -5,7 +5,7 @@ from typing import List
 from typing import Optional
 
 
-class BaseJournalLogStorage(abc.ABC):
+class BaseJournalBackend(abc.ABC):
     """Base class for Journal storages.
 
     Storage classes implementing this base class must guarantee process safety. This means,
@@ -44,7 +44,7 @@ class BaseJournalLogStorage(abc.ABC):
         raise NotImplementedError
 
 
-class BaseJournalLogSnapshot(abc.ABC):
+class BaseJournalSnapshot(abc.ABC):
     """Optional base class for Journal storages.
 
     Storage classes implementing this base class may work faster when
