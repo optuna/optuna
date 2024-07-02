@@ -120,11 +120,14 @@ def test_upload_artifact_with_positional_args(
     with open(file_path, "w") as f:
         f.write("foo")
 
-    artifact_id = upload_artifact(trial, file_path, artifact_store)  # type: ignore
-    _validate(artifact_id=artifact_id)
-    artifact_id = upload_artifact(trial, file_path, artifact_store=artifact_store)  # type: ignore
-    _validate(artifact_id=artifact_id)
-    artifact_id = upload_artifact(
-        trial, file_path=file_path, artifact_store=artifact_store  # type: ignore
-    )
-    _validate(artifact_id=artifact_id)
+    with pytest.warns(FutureWarning):
+        artifact_id = upload_artifact(trial, file_path, artifact_store)  # type: ignore
+        _validate(artifact_id=artifact_id)
+        artifact_id = upload_artifact(
+            trial, file_path, artifact_store=artifact_store  # type: ignore
+        )
+        _validate(artifact_id=artifact_id)
+        artifact_id = upload_artifact(
+            trial, file_path=file_path, artifact_store=artifact_store  # type: ignore
+        )
+        _validate(artifact_id=artifact_id)
