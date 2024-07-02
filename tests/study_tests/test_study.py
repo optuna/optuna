@@ -1683,3 +1683,15 @@ def test_get_metric_names() -> None:
     assert study.metric_names == ["v0"]
     study.set_metric_names(["v1"])
     assert study.metric_names == ["v1"]
+    
+
+def test_optimize_with_tuple_callbacks():
+    study = optuna.create_study()
+    def objective(trial):
+        x = trial.suggest_float("x", -1, 1)
+        return x**2
+    def callback(study, trial):
+        pass
+    callbacks = (callback,)
+    study.optimize(objective, n_trials=3, callbacks=callbacks)
+    assert len(study.trials) == 3
