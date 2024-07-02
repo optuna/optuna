@@ -6,7 +6,7 @@ from typing import NamedTuple
 import numpy as np
 
 from optuna._experimental import experimental_func
-from optuna._hypervolume import WFG
+from optuna._hypervolume import compute_hypervolume
 from optuna.logging import get_logger
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study import Study
@@ -155,7 +155,7 @@ def _get_hypervolume_history_info(
             )
         )
         if solution_set.size > 0:
-            hypervolume = WFG().compute(solution_set, minimization_reference_point)
+            hypervolume = compute_hypervolume(solution_set, minimization_reference_point)
         values.append(hypervolume)
 
     if len(best_trials) == 0:

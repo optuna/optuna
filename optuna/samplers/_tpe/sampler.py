@@ -11,7 +11,7 @@ import warnings
 import numpy as np
 
 from optuna._experimental import warn_experimental_argument
-from optuna._hypervolume import WFG
+from optuna._hypervolume import compute_hypervolume
 from optuna._hypervolume.hssp import _solve_hssp
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
@@ -777,10 +777,13 @@ def _calculate_weights_below_for_multi_objective(
         worst_point = np.max(lvals, axis=0)
         reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
         reference_point[reference_point == 0] = EPS
-        hv = WFG().compute(lvals, reference_point)
+        hv = compute_hypervolume(lvals, reference_point)
         indices_mat = ~np.eye(n_below).astype(bool)
         contributions = np.asarray(
-            [hv - WFG().compute(lvals[indices_mat[i]], reference_point) for i in range(n_below)]
+            [
+                hv - compute_hypervolume(lvals[indices_mat[i]], reference_point)
+                for i in range(n_below)
+            ]
         )
         contributions[np.isnan(contributions)] = np.inf
         max_contribution = np.maximum(np.max(contributions), EPS)

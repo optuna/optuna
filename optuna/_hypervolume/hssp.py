@@ -55,7 +55,7 @@ def _lazy_contribs_update(
     H(S' v {j}) - H(S'), we start to update from i with a higher upper bound so that we can
     skip more HV calculations.
     """
-    hv_selected = optuna._hypervolume.WFG().compute(
+    hv_selected = optuna._hypervolume.compute_hypervolume(
         selected_vecs[:-1], reference_point, assume_pareto=True
     )
     max_contrib = 0.0
@@ -67,7 +67,7 @@ def _lazy_contribs_update(
             continue
 
         selected_vecs[-1] = pareto_loss_values[i].copy()
-        hv_plus = optuna._hypervolume.WFG().compute(
+        hv_plus = optuna._hypervolume.compute_hypervolume(
             selected_vecs, reference_point, assume_pareto=True
         )
         # inf - inf in the contribution calculation is always inf.
