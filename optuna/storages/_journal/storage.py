@@ -78,7 +78,7 @@ class JournalStorage(BaseStorage):
 
 
             storage = optuna.storages.JournalStorage(
-                optuna.storages.JournalFileStorage("./journal.log"),
+                optuna.storages.JournalFileStorage("./journal_file_storage_jsonl.log"),
             )
 
             study = optuna.create_study(storage=storage)
@@ -90,7 +90,7 @@ class JournalStorage(BaseStorage):
 
     .. code::
 
-        file_path = "./journal.log"
+        file_path = "./journal_file_storage_jsonl.log"
         lock_obj = optuna.storages.JournalFileOpenLock(file_path)
 
         storage = optuna.storages.JournalStorage(
