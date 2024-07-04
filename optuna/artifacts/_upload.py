@@ -7,6 +7,7 @@ import mimetypes
 import os
 import uuid
 
+from optuna._convert_positional_args import convert_positional_args
 from optuna._experimental import experimental_func
 from optuna.artifacts._protocol import ArtifactStore
 from optuna.storages import BaseStorage
@@ -48,11 +49,14 @@ class ArtifactMeta:
 
 
 @experimental_func("3.3.0")
+@convert_positional_args(
+    previous_positional_arg_names=["study_or_trial", "file_path", "artifact_store"]
+)
 def upload_artifact(
-    study_or_trial: Trial | FrozenTrial | Study,
-    file_path: str,
-    artifact_store: ArtifactStore,
     *,
+    artifact_store: ArtifactStore,
+    file_path: str,
+    study_or_trial: Trial | FrozenTrial | Study,
     storage: BaseStorage | None = None,
     mimetype: str | None = None,
     encoding: str | None = None,
@@ -60,13 +64,13 @@ def upload_artifact(
     """Upload an artifact to the artifact store.
 
     Args:
+        artifact_store:
+            An artifact store.
+        file_path:
+            A path to the file to be uploaded.
         study_or_trial:
             A :class:`~optuna.trial.Trial` object, a :class:`~optuna.trial.FrozenTrial`, or
             a :class:`~optuna.study.Study` object.
-        file_path:
-            A path to the file to be uploaded.
-        artifact_store:
-            An artifact store.
         storage:
             A storage object. This argument is required only if ``study_or_trial`` is
             :class:`~optuna.trial.FrozenTrial`.
