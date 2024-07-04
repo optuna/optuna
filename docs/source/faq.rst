@@ -520,7 +520,7 @@ For more information about 1., see APIReference_.
 2. Multi-processing parallelization with single node
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This can be achieved by using :class:`~optuna.storages.JournalFileStorage` or client/server RDBs (such as PostgreSQL and MySQL).
+This can be achieved by using :class:`~optuna.storages.JournalFileBackend` or client/server RDBs (such as PostgreSQL and MySQL).
 
 For more information about 2., see TutorialEasyParallelization_.
 
@@ -548,14 +548,15 @@ We would never recommend SQLite3 for parallel optimization in the following reas
   You can increase the default `timeout <https://docs.python.org/3/library/sqlite3.html#sqlite3.connect>`__ value like `optuna.storages.RDBStorage("sqlite:///example.db", engine_kwargs={"connect_args": {"timeout": 20.0}})` though.
 - For distributed optimization via NFS, SQLite3 does not work as described at `FAQ section of sqlite.org <https://www.sqlite.org/faq.html#q5>`__.
 
-If you want to use a file-based Optuna storage for these scenarios, please consider using :class:`~optuna.storages.JournalFileStorage` instead.
+If you want to use a file-based Optuna storage for these scenarios, please consider using :class:`~optuna.storages.JournalFileBackend` instead.
 
 .. code-block:: python
 
    import optuna
-   from optuna.storages import JournalStorage, JournalFileStorage
+   from optuna.storages import JournalStorage, JournalFileBackend
 
    storage = JournalStorage(JournalFileStorage("journal_file_storage_jsonl.log"))
+
    study = optuna.create_study(storage=storage)
    ...
 

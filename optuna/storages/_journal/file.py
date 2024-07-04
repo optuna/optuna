@@ -11,14 +11,15 @@ from typing import List
 from typing import Optional
 import uuid
 
-from optuna.storages._journal.base import BaseJournalLogStorage
+from optuna._deprecated import deprecated_class
+from optuna.storages._journal.base import BaseJournalBackend
 
 
 LOCK_FILE_SUFFIX = ".lock"
 RENAME_FILE_SUFFIX = ".rename"
 
 
-class JournalFileBaseLock(abc.ABC):
+class BaseJournalFileLock(abc.ABC):
     @abc.abstractmethod
     def acquire(self) -> bool:
         raise NotImplementedError
@@ -28,7 +29,15 @@ class JournalFileBaseLock(abc.ABC):
         raise NotImplementedError
 
 
-class JournalFileSymlinkLock(JournalFileBaseLock):
+@deprecated_class(
+    "4.0.0", "7.0.0", text="Use :class:`~optuna.storages.BaseJournalFileLock` instead."
+)
+class JournalFileBaseLock(BaseJournalFileLock):
+    # Note: As of v4.0.0, this base class is NOT exposed to users.
+    pass
+
+
+class JournalFileSymlinkLock(BaseJournalFileLock):
     """Lock class for synchronizing processes for NFSv2 or later.
 
     On acquiring the lock, link system call is called to create an exclusive file. The file is
@@ -80,7 +89,7 @@ class JournalFileSymlinkLock(JournalFileBaseLock):
             raise
 
 
-class JournalFileOpenLock(JournalFileBaseLock):
+class JournalFileOpenLock(BaseJournalFileLock):
     """Lock class for synchronizing processes for NFSv3 or later.
 
     On acquiring the lock, open system call is called with the O_EXCL option to create an exclusive
@@ -134,7 +143,7 @@ class JournalFileOpenLock(JournalFileBaseLock):
 
 
 @contextmanager
-def get_lock_file(lock_obj: JournalFileBaseLock) -> Iterator[None]:
+def get_lock_file(lock_obj: BaseJournalFileLock) -> Iterator[None]:
     lock_obj.acquire()
     try:
         yield
@@ -142,7 +151,7 @@ def get_lock_file(lock_obj: JournalFileBaseLock) -> Iterator[None]:
         lock_obj.release()
 
 
-class JournalFileStorage(BaseJournalLogStorage):
+class JournalFileBackend(BaseJournalBackend):
     """File storage class for Journal log backend.
 
     Compared to SQLite3, the benefit of this backend is that it is more suitable for
@@ -175,7 +184,7 @@ class JournalFileStorage(BaseJournalLogStorage):
             :class:`~optuna.storages.JournalFileOpenLock` can be passed.
     """
 
-    def __init__(self, file_path: str, lock_obj: Optional[JournalFileBaseLock] = None) -> None:
+    def __init__(self, file_path: str, lock_obj: Optional[BaseJournalFileLock] = None) -> None:
         self._file_path: str = file_path
         self._lock = lock_obj or JournalFileSymlinkLock(self._file_path)
         if not os.path.exists(self._file_path):
@@ -230,3 +239,41 @@ class JournalFileStorage(BaseJournalLogStorage):
                 f.write(what_to_write.encode("utf-8"))
                 f.flush()
                 os.fsync(f.fileno())
+
+
+@deprecated_class(
+    "4.0.0", "7.0.0", text="Use :class:`~optuna.storages.JournalFileBackend` instead."
+)
+class JournalFileStorage(JournalFileBackend):
+    """File storage class for Journal log backend.
+
+    Compared to SQLite3, the benefit of this backend is that it is more suitable for
+    environments where the file system does not support ``fcntl()`` file locking.
+    For example, as written in the `SQLite3 FAQ <https://www.sqlite.org/faq.html#q5>`__,
+    SQLite3 might not work on NFS (Network File System) since ``fcntl()`` file locking
+    is broken on many NFS implementations. In such scenarios, this backend provides
+    several workarounds for locking files. For more details, refer to the `Medium blog post`_.
+
+    .. _Medium blog post: https://medium.com/optuna/distributed-optimization-via-nfs\
+    -using-optunas-new-operation-based-logging-storage-9815f9c3f932
+
+    It's important to note that, similar to SQLite3, this class doesn't support a high
+    level of write concurrency, as outlined in the `SQLAlchemy documentation`_. However,
+    in typical situations where the objective function is computationally expensive, Optuna
+    users don't need to be concerned about this limitation. The reason being, the write
+    operations are not the bottleneck as long as the objective function doesn't invoke
+    :meth:`~optuna.trial.Trial.report` and :meth:`~optuna.trial.Trial.set_user_attr` excessively.
+
+    .. _SQLAlchemy documentation: https://docs.sqlalchemy.org/en/20/dialects/sqlite.html\
+    #database-locking-behavior-concurrency
+
+    Args:
+        file_path:
+            Path of file to persist the log to.
+
+        lock_obj:
+            Lock object for process exclusivity.
+    """
+
+    def __init__(self, file_path: str, lock_obj: Optional[BaseJournalFileLock] = None) -> None:
+        super().__init__(file_path=file_path, lock_obj=lock_obj)

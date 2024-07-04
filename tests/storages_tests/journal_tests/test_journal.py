@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from concurrent.futures import as_completed
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
@@ -15,9 +17,10 @@ import pytest
 
 import optuna
 from optuna import create_study
+from optuna.storages import BaseJournalLogStorage
 from optuna.storages import JournalStorage
-from optuna.storages._journal.base import BaseJournalLogSnapshot
-from optuna.storages._journal.file import JournalFileBaseLock
+from optuna.storages._journal.base import BaseJournalSnapshot
+from optuna.storages._journal.file import BaseJournalFileLock
 from optuna.storages._journal.storage import JournalStorageReplayResult
 from optuna.testing.storages import StorageSupplier
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
@@ -38,20 +41,20 @@ class JournalLogStorageSupplier:
         self.storage_type = storage_type
         self.tempfile: Optional[IO[Any]] = None
 
-    def __enter__(self) -> optuna.storages.BaseJournalLogStorage:
+    def __enter__(self) -> optuna.storages.BaseJournalBackend:
         if self.storage_type.startswith("file"):
             self.tempfile = NamedTemporaryFilePool().tempfile()
-            lock: JournalFileBaseLock
+            lock: BaseJournalFileLock
             if self.storage_type == "file_with_open_lock":
                 lock = optuna.storages.JournalFileOpenLock(self.tempfile.name)
             elif self.storage_type == "file_with_link_lock":
                 lock = optuna.storages.JournalFileSymlinkLock(self.tempfile.name)
             else:
                 raise Exception("Must not reach here")
-            return optuna.storages.JournalFileStorage(self.tempfile.name, lock)
+            return optuna.storages.JournalFileBackend(self.tempfile.name, lock)
         elif self.storage_type.startswith("redis"):
             use_cluster = self.storage_type == "redis_with_use_cluster"
-            journal_redis_storage = optuna.storages.JournalRedisStorage(
+            journal_redis_storage = optuna.storages.JournalRedisBackend(
                 "redis://localhost", use_cluster
             )
             journal_redis_storage._redis = FakeStrictRedis()  # type: ignore[no-untyped-call]
@@ -98,7 +101,7 @@ def test_concurrent_append_logs_for_multi_threads(log_storage_type: str) -> None
 
 
 def pop_waiting_trial(file_path: str, study_name: str) -> Optional[int]:
-    file_storage = optuna.storages.JournalFileStorage(file_path)
+    file_storage = optuna.storages.JournalFileBackend(file_path)
     storage = optuna.storages.JournalStorage(file_storage)
     study = optuna.load_study(storage=storage, study_name=study_name)
     return study._pop_waiting_trial_id()
@@ -106,7 +109,7 @@ def pop_waiting_trial(file_path: str, study_name: str) -> Optional[int]:
 
 def test_pop_waiting_trial_multiprocess_safe() -> None:
     with NamedTemporaryFilePool() as file:
-        file_storage = optuna.storages.JournalFileStorage(file.name)
+        file_storage = optuna.storages.JournalFileBackend(file.name)
         storage = optuna.storages.JournalStorage(file_storage)
         study = optuna.create_study(storage=storage)
         num_enqueued = 10
@@ -136,7 +139,7 @@ def test_save_snapshot_per_each_trial(storage_mode: str) -> None:
         assert isinstance(storage, JournalStorage)
         study = create_study(storage=storage)
         journal_log_storage = storage._backend
-        assert isinstance(journal_log_storage, BaseJournalLogSnapshot)
+        assert isinstance(journal_log_storage, BaseJournalSnapshot)
 
         assert journal_log_storage.load_snapshot() is None
 
@@ -151,7 +154,7 @@ def test_save_snapshot_per_each_study(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         assert isinstance(storage, JournalStorage)
         journal_log_storage = storage._backend
-        assert isinstance(journal_log_storage, BaseJournalLogSnapshot)
+        assert isinstance(journal_log_storage, BaseJournalSnapshot)
 
         assert journal_log_storage.load_snapshot() is None
 
@@ -198,3 +201,22 @@ def test_snapshot_given(storage_mode: str, capsys: _pytest.capture.CaptureFixtur
         storage.restore_replay_result(pickle.dumps("hoge"))
         _, err = capsys.readouterr()
         assert err
+
+
+def test_if_future_warning_occurs() -> None:
+    with NamedTemporaryFilePool() as file:
+        with pytest.warns(FutureWarning):
+            optuna.storages.JournalFileStorage(file.name)
+
+    with pytest.warns(FutureWarning):
+        optuna.storages.JournalRedisStorage("redis://localhost")
+
+    class _CustomJournalBackendInheritingDeprecatedClass(BaseJournalLogStorage):
+        def read_logs(self, log_number_from: int) -> list[dict[str, Any]]:
+            return [{"": ""}]
+
+        def append_logs(self, logs: list[dict[str, Any]]) -> None:
+            return
+
+    with pytest.warns(FutureWarning):
+        _ = _CustomJournalBackendInheritingDeprecatedClass()
