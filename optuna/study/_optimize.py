@@ -125,7 +125,7 @@ def _optimize_sequential(
     n_trials: int | None,
     timeout: float | None,
     catch: tuple[type[Exception], ...],
-    callbacks: list[Callable[["optuna.Study", FrozenTrial], None]] | None,
+    callbacks: Iterable[Callable[["optuna.Study", FrozenTrial], None]] | None,
     gc_after_trial: bool,
     reseed_sampler_rng: bool,
     time_start: datetime.datetime | None,
