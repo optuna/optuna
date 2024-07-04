@@ -12,13 +12,13 @@ def _compute_hssp_truth_and_approx(test_case: np.ndarray, subset_size: int) -> T
     r = 1.1 * np.max(test_case, axis=0)
     truth = 0.0
     for subset in itertools.permutations(test_case, subset_size):
-        hv = optuna._hypervolume.WFG().compute(np.asarray(subset), r)
+        hv = optuna._hypervolume.compute_hypervolume(np.asarray(subset), r)
         assert not math.isnan(hv)
         truth = max(truth, hv)
     indices = optuna._hypervolume.hssp._solve_hssp(
         test_case, np.arange(len(test_case)), subset_size, r
     )
-    approx = optuna._hypervolume.WFG().compute(test_case[indices], r)
+    approx = optuna._hypervolume.compute_hypervolume(test_case[indices], r)
     assert not math.isnan(approx)
     return truth, approx
 

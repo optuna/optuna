@@ -179,7 +179,9 @@ class JournalFileBackend(BaseJournalBackend):
             Path of file to persist the log to.
 
         lock_obj:
-            Lock object for process exclusivity.
+            Lock object for process exclusivity. An instance of
+            :class:`~optuna.storages.JournalFileSymlinkLock` and
+            :class:`~optuna.storages.JournalFileOpenLock` can be passed.
     """
 
     def __init__(self, file_path: str, lock_obj: Optional[BaseJournalFileLock] = None) -> None:

@@ -7,6 +7,12 @@ from typing import Tuple
 from typing import Type
 
 
+_INTEGRATION_IMPORT_ERROR_TEMPLATE = (
+    "\nCould not find `optuna-integration` for `{0}`.\n"
+    "Please run `pip install optuna-integration[{0}]`."
+)
+
+
 class _DeferredImportExceptionContextManager:
     """Context manager to defer exceptions from imports.
 
