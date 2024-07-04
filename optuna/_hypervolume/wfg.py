@@ -13,16 +13,17 @@ def _compute_2d(sorted_pareto_sols: np.ndarray, reference_point: np.ndarray) -> 
     return edge_length_x @ edge_length_y
 
 
-def _compute_hv(sorted_sols: np.ndarray, reference_point: np.ndarray) -> float:
-    inclusive_hvs = np.prod(reference_point - sorted_sols, axis=-1)
+def _compute_hv(sorted_loss_vals: np.ndarray, reference_point: np.ndarray) -> float:
+    inclusive_hvs = np.prod(reference_point - sorted_loss_vals, axis=-1)
     if inclusive_hvs.shape[0] == 1:
         return float(inclusive_hvs[0])
     elif inclusive_hvs.shape[0] == 2:
         # S(A v B) = S(A) + S(B) - S(A ^ B).
-        intersec = np.prod(reference_point - np.maximum(sorted_sols[0], sorted_sols[1]))
+        intersec = np.prod(reference_point - np.maximum(sorted_loss_vals[0], sorted_loss_vals[1]))
         return np.sum(inclusive_hvs) - intersec
 
-    limited_sols_array = np.maximum(sorted_sols[:, np.newaxis], sorted_sols)
+    # c.f. Eqs. (6) and (7) of ``A Fast Way of Calculating Exact Hypervolumes``.
+    limited_sols_array = np.maximum(sorted_loss_vals[:, np.newaxis], sorted_loss_vals)
     return sum(
         _compute_exclusive_hv(limited_sols_array[i, i + 1 :], inclusive_hv, reference_point)
         for i, inclusive_hv in enumerate(inclusive_hvs)
@@ -40,13 +41,13 @@ def _compute_exclusive_hv(
 
 
 def compute_hypervolume(
-    solution_set: np.ndarray, reference_point: np.ndarray, assume_pareto: bool = False
+    loss_vals: np.ndarray, reference_point: np.ndarray, assume_pareto: bool = False
 ) -> float:
     """Hypervolume calculator for any dimension.
 
     This class exactly calculates the hypervolume for any dimension.
     For 3 dimensions or higher, the WFG algorithm will be used.
-    Please refer to ``A fast way of calculating exact hypervolumes`` for the WFG algorithm.
+    Please refer to ``A Fast Way of Calculating Exact Hypervolumes`` for the WFG algorithm.
 
     .. note::
         This class is used for computing the hypervolumes of points in multi-objective space.
@@ -56,24 +57,37 @@ def compute_hypervolume(
         We check that each objective is to be minimized. Transform objective values that are
         to be maximized before calling this class's ``compute`` method.
 
+    Args:
+        loss_vals:
+            An array of loss value vectors to calculate the hypervolume.
+        reference_point:
+            The reference point used to calculate the hypervolume.
+        assume_pareto:
+            Whether to assume the Pareto optimality to ``loss_vals``.
+            In other words, if ``True``, none of loss vectors are dominated by another.
+
+    Returns:
+        hypervolume:
+            The hypervolume of the given arguments.
+
     """
 
-    if not np.all(solution_set <= reference_point):
+    if not np.all(loss_vals <= reference_point):
         raise ValueError(
             "All points must dominate or equal the reference point. "
-            "That is, for all points in the solution_set and the coordinate `i`, "
-            "`solution_set[i] <= reference_point[i]`."
+            "That is, for all points in the loss_vals and the coordinate `i`, "
+            "`loss_vals[i] <= reference_point[i]`."
         )
     if not np.all(np.isfinite(reference_point)):
-        # reference_point does not have nan, because BaseHypervolume._validate will filter out.
+        # reference_point does not have nan, thanks to the verification above.
         return float("inf")
 
     if not assume_pareto:
-        unique_lexsorted_sols = np.unique(solution_set, axis=0)
-        on_front = _is_pareto_front(unique_lexsorted_sols, assume_unique_lexsorted=True)
-        sorted_pareto_sols = unique_lexsorted_sols[on_front]
+        unique_lexsorted_loss_vals = np.unique(loss_vals, axis=0)
+        on_front = _is_pareto_front(unique_lexsorted_loss_vals, assume_unique_lexsorted=True)
+        sorted_pareto_sols = unique_lexsorted_loss_vals[on_front]
     else:
-        sorted_pareto_sols = solution_set[solution_set[:, 0].argsort()]
+        sorted_pareto_sols = loss_vals[loss_vals[:, 0].argsort()]
 
     if reference_point.shape[0] == 2:
         return _compute_2d(sorted_pareto_sols, reference_point)

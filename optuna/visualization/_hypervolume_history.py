@@ -146,7 +146,7 @@ def _get_hypervolume_history_info(
             filter(lambda t: not _dominates(trial, t, study.directions), best_trials)
         ) + [trial]
 
-        solution_set = np.asarray(
+        loss_vals = np.asarray(
             list(
                 filter(
                     lambda v: (v <= minimization_reference_point).all(),
@@ -154,8 +154,8 @@ def _get_hypervolume_history_info(
                 )
             )
         )
-        if solution_set.size > 0:
-            hypervolume = compute_hypervolume(solution_set, minimization_reference_point)
+        if loss_vals.size > 0:
+            hypervolume = compute_hypervolume(loss_vals, minimization_reference_point)
         values.append(hypervolume)
 
     if len(best_trials) == 0:
