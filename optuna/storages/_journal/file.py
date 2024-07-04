@@ -172,7 +172,7 @@ class JournalFileStorage(BaseJournalLogStorage):
         lock_obj:
             Lock object for process exclusivity.
 
-    A instance of :class:`~optuna.storages.JournalFileSymlinkLock` and
+    An instance of :class:`~optuna.storages.JournalFileSymlinkLock` and
     :class:`~optuna.storages.JournalFileOpenLock` can be passed as argument ``lock_obj``.
     """
 
