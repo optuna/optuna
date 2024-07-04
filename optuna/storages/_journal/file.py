@@ -171,6 +171,9 @@ class JournalFileStorage(BaseJournalLogStorage):
 
         lock_obj:
             Lock object for process exclusivity.
+
+    A instance of :class:`~optuna.storages.JournalFileSymlinkLock` and
+    :class:`~optuna.storages.JournalFileOpenLock` can be passed as argument ``lock_obj``.
     """
 
     def __init__(self, file_path: str, lock_obj: Optional[JournalFileBaseLock] = None) -> None:
