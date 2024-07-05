@@ -7,7 +7,7 @@ import time
 from typing import Iterator
 import uuid
 
-from optuna.storages._journal.base import BaseJournalFileLock
+from optuna.storages.journal._base import BaseJournalFileLock
 
 
 LOCK_FILE_SUFFIX = ".lock"

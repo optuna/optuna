@@ -5,16 +5,16 @@ from optuna.storages._base import BaseStorage
 from optuna.storages._cached_storage import _CachedStorage
 from optuna.storages._heartbeat import fail_stale_trials
 from optuna.storages._in_memory import InMemoryStorage
-from optuna.storages._journal.backend import JournalFileBackend
-from optuna.storages._journal.backend import JournalFileStorage
-from optuna.storages._journal.base import BaseJournalBackend
-from optuna.storages._journal.base import BaseJournalLogStorage
-from optuna.storages._journal.file_lock import JournalFileOpenLock
-from optuna.storages._journal.file_lock import JournalFileSymlinkLock
-from optuna.storages._journal.redis import JournalRedisBackend
-from optuna.storages._journal.redis import JournalRedisStorage
-from optuna.storages._journal.storage import JournalStorage
 from optuna.storages._rdb.storage import RDBStorage
+from optuna.storages.journal._backend import JournalFileBackend
+from optuna.storages.journal._backend import JournalFileStorage
+from optuna.storages.journal._base import BaseJournalBackend
+from optuna.storages.journal._base import BaseJournalLogStorage
+from optuna.storages.journal._file_lock import JournalFileOpenLock
+from optuna.storages.journal._file_lock import JournalFileSymlinkLock
+from optuna.storages.journal._redis import JournalRedisBackend
+from optuna.storages.journal._redis import JournalRedisStorage
+from optuna.storages.journal._storage import JournalStorage
 
 
 __all__ = [

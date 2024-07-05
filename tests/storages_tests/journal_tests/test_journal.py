@@ -19,9 +19,9 @@ import optuna
 from optuna import create_study
 from optuna.storages import BaseJournalLogStorage
 from optuna.storages import JournalStorage
-from optuna.storages._journal.base import BaseJournalFileLock
-from optuna.storages._journal.base import BaseJournalSnapshot
-from optuna.storages._journal.storage import JournalStorageReplayResult
+from optuna.storages.journal._base import BaseJournalFileLock
+from optuna.storages.journal._base import BaseJournalSnapshot
+from optuna.storages.journal._storage import JournalStorageReplayResult
 from optuna.testing.storages import StorageSupplier
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 
@@ -143,7 +143,7 @@ def test_save_snapshot_per_each_trial(storage_mode: str) -> None:
 
         assert journal_log_storage.load_snapshot() is None
 
-        with mock.patch("optuna.storages._journal.storage.SNAPSHOT_INTERVAL", 1, create=True):
+        with mock.patch("optuna.storages.journal._storage.SNAPSHOT_INTERVAL", 1, create=True):
             study.optimize(objective, n_trials=2)
 
         assert isinstance(journal_log_storage.load_snapshot(), bytes)
@@ -158,7 +158,7 @@ def test_save_snapshot_per_each_study(storage_mode: str) -> None:
 
         assert journal_log_storage.load_snapshot() is None
 
-        with mock.patch("optuna.storages._journal.storage.SNAPSHOT_INTERVAL", 1, create=True):
+        with mock.patch("optuna.storages.journal._storage.SNAPSHOT_INTERVAL", 1, create=True):
             for _ in range(2):
                 create_study(storage=storage)
 
@@ -168,7 +168,7 @@ def test_save_snapshot_per_each_study(storage_mode: str) -> None:
 @pytest.mark.parametrize("storage_mode", JOURNAL_STORAGE_SUPPORTING_SNAPSHOT)
 def test_check_replay_result_restored_from_snapshot(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage1:
-        with mock.patch("optuna.storages._journal.storage.SNAPSHOT_INTERVAL", 1, create=True):
+        with mock.patch("optuna.storages.journal._storage.SNAPSHOT_INTERVAL", 1, create=True):
             for _ in range(2):
                 create_study(storage=storage1)
 

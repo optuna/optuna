@@ -8,8 +8,8 @@ from typing import Optional
 from optuna._deprecated import deprecated_class
 from optuna._experimental import experimental_class
 from optuna._imports import try_import
-from optuna.storages._journal.base import BaseJournalBackend
-from optuna.storages._journal.base import BaseJournalSnapshot
+from optuna.storages.journal._base import BaseJournalBackend
+from optuna.storages.journal._base import BaseJournalSnapshot
 
 
 with try_import() as _imports:

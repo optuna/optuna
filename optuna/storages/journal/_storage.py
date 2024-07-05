@@ -21,8 +21,8 @@ from optuna.distributions import json_to_distribution
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
-from optuna.storages._journal.base import BaseJournalBackend
-from optuna.storages._journal.base import BaseJournalSnapshot
+from optuna.storages.journal._base import BaseJournalBackend
+from optuna.storages.journal._base import BaseJournalSnapshot
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial

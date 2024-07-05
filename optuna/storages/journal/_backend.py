@@ -5,10 +5,10 @@ import os
 from typing import Any
 
 from optuna._deprecated import deprecated_class
-from optuna.storages._journal.base import BaseJournalBackend
-from optuna.storages._journal.base import BaseJournalFileLock
-from optuna.storages._journal.file_lock import get_lock_file
-from optuna.storages._journal.file_lock import JournalFileSymlinkLock
+from optuna.storages.journal._base import BaseJournalBackend
+from optuna.storages.journal._base import BaseJournalFileLock
+from optuna.storages.journal._file_lock import get_lock_file
+from optuna.storages.journal._file_lock import JournalFileSymlinkLock
 
 
 class JournalFileBackend(BaseJournalBackend):
