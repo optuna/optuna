@@ -67,8 +67,7 @@ def compute_hypervolume(
             In other words, if ``True``, none of loss vectors are dominated by another.
 
     Returns:
-        hypervolume:
-            The hypervolume of the given arguments.
+        The hypervolume of the given arguments.
 
     """
 
