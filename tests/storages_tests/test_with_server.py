@@ -9,6 +9,7 @@ import pytest
 
 import optuna
 from optuna.storages import BaseStorage
+from optuna.storages.journal import JournalRedisBackend
 from optuna.study import StudyDirection
 from optuna.trial import TrialState
 
@@ -39,7 +40,7 @@ def get_storage() -> BaseStorage:
     if storage_mode == "":
         storage = optuna.storages.RDBStorage(url=storage_url)
     elif storage_mode == "journal-redis":
-        journal_redis_storage = optuna.storages.JournalRedisBackend(storage_url)
+        journal_redis_storage = JournalRedisBackend(storage_url)
         storage = optuna.storages.JournalStorage(journal_redis_storage)
     else:
         assert False, f"The mode {storage_mode} is not supported."

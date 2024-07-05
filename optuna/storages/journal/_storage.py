@@ -21,8 +21,8 @@ from optuna.distributions import json_to_distribution
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
-from optuna.storages._journal.base import BaseJournalBackend
-from optuna.storages._journal.base import BaseJournalSnapshot
+from optuna.storages.journal._base import BaseJournalBackend
+from optuna.storages.journal._base import BaseJournalSnapshot
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -78,7 +78,7 @@ class JournalStorage(BaseStorage):
 
 
             storage = optuna.storages.JournalStorage(
-                optuna.storages.JournalFileBackend("./journal_file_storage_jsonl.log")
+                optuna.storages.journal.JournalFileBackend("./journal_file_storage_jsonl.log")
             )
 
             study = optuna.create_study(storage=storage)
@@ -94,7 +94,7 @@ class JournalStorage(BaseStorage):
         lock_obj = optuna.storages.JournalFileOpenLock(file_path)
 
         storage = optuna.storages.JournalStorage(
-            optuna.storages.JournalFileBackend(file_path, lock_obj=lock_obj),
+            optuna.storages.journal.JournalFileBackend(file_path, lock_obj=lock_obj),
         )
     """
 

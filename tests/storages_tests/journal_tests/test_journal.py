@@ -19,9 +19,9 @@ import optuna
 from optuna import create_study
 from optuna.storages import BaseJournalLogStorage
 from optuna.storages import JournalStorage
-from optuna.storages._journal.base import BaseJournalSnapshot
-from optuna.storages._journal.file import BaseJournalFileLock
-from optuna.storages._journal.storage import JournalStorageReplayResult
+from optuna.storages.journal._base import BaseJournalFileLock
+from optuna.storages.journal._base import BaseJournalSnapshot
+from optuna.storages.journal._storage import JournalStorageReplayResult
 from optuna.testing.storages import StorageSupplier
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 
@@ -41,7 +41,7 @@ class JournalLogStorageSupplier:
         self.storage_type = storage_type
         self.tempfile: Optional[IO[Any]] = None
 
-    def __enter__(self) -> optuna.storages.BaseJournalBackend:
+    def __enter__(self) -> optuna.storages.journal.BaseJournalBackend:
         if self.storage_type.startswith("file"):
             self.tempfile = NamedTemporaryFilePool().tempfile()
             lock: BaseJournalFileLock
@@ -51,10 +51,10 @@ class JournalLogStorageSupplier:
                 lock = optuna.storages.JournalFileSymlinkLock(self.tempfile.name)
             else:
                 raise Exception("Must not reach here")
-            return optuna.storages.JournalFileBackend(self.tempfile.name, lock)
+            return optuna.storages.journal.JournalFileBackend(self.tempfile.name, lock)
         elif self.storage_type.startswith("redis"):
             use_cluster = self.storage_type == "redis_with_use_cluster"
-            journal_redis_storage = optuna.storages.JournalRedisBackend(
+            journal_redis_storage = optuna.storages.journal.JournalRedisBackend(
                 "redis://localhost", use_cluster
             )
             journal_redis_storage._redis = FakeStrictRedis()  # type: ignore[no-untyped-call]
@@ -101,7 +101,7 @@ def test_concurrent_append_logs_for_multi_threads(log_storage_type: str) -> None
 
 
 def pop_waiting_trial(file_path: str, study_name: str) -> Optional[int]:
-    file_storage = optuna.storages.JournalFileBackend(file_path)
+    file_storage = optuna.storages.journal.JournalFileBackend(file_path)
     storage = optuna.storages.JournalStorage(file_storage)
     study = optuna.load_study(storage=storage, study_name=study_name)
     return study._pop_waiting_trial_id()
@@ -109,7 +109,7 @@ def pop_waiting_trial(file_path: str, study_name: str) -> Optional[int]:
 
 def test_pop_waiting_trial_multiprocess_safe() -> None:
     with NamedTemporaryFilePool() as file:
-        file_storage = optuna.storages.JournalFileBackend(file.name)
+        file_storage = optuna.storages.journal.JournalFileBackend(file.name)
         storage = optuna.storages.JournalStorage(file_storage)
         study = optuna.create_study(storage=storage)
         num_enqueued = 10
@@ -143,7 +143,7 @@ def test_save_snapshot_per_each_trial(storage_mode: str) -> None:
 
         assert journal_log_storage.load_snapshot() is None
 
-        with mock.patch("optuna.storages._journal.storage.SNAPSHOT_INTERVAL", 1, create=True):
+        with mock.patch("optuna.storages.journal._storage.SNAPSHOT_INTERVAL", 1, create=True):
             study.optimize(objective, n_trials=2)
 
         assert isinstance(journal_log_storage.load_snapshot(), bytes)
@@ -158,7 +158,7 @@ def test_save_snapshot_per_each_study(storage_mode: str) -> None:
 
         assert journal_log_storage.load_snapshot() is None
 
-        with mock.patch("optuna.storages._journal.storage.SNAPSHOT_INTERVAL", 1, create=True):
+        with mock.patch("optuna.storages.journal._storage.SNAPSHOT_INTERVAL", 1, create=True):
             for _ in range(2):
                 create_study(storage=storage)
 
@@ -168,7 +168,7 @@ def test_save_snapshot_per_each_study(storage_mode: str) -> None:
 @pytest.mark.parametrize("storage_mode", JOURNAL_STORAGE_SUPPORTING_SNAPSHOT)
 def test_check_replay_result_restored_from_snapshot(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage1:
-        with mock.patch("optuna.storages._journal.storage.SNAPSHOT_INTERVAL", 1, create=True):
+        with mock.patch("optuna.storages.journal._storage.SNAPSHOT_INTERVAL", 1, create=True):
             for _ in range(2):
                 create_study(storage=storage1)
 

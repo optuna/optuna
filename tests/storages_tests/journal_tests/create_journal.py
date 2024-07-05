@@ -6,6 +6,7 @@ from argparse import ArgumentParser
 import os
 
 import optuna
+from optuna.storages.journal import JournalFileBackend
 
 
 if __name__ == "__main__":
@@ -16,7 +17,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    storage = optuna.storages.JournalStorage(optuna.storages.JournalFileBackend(args.storage_url))
+    storage = optuna.storages.JournalStorage(JournalFileBackend(args.storage_url))
 
     # Empty study
     optuna.create_study(storage=storage, study_name="single_empty")
