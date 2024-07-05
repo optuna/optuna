@@ -91,8 +91,9 @@ def _is_categorical(trials: list[FrozenTrial], param: str) -> bool:
 def _is_numerical(trials: list[FrozenTrial], param: str) -> bool:
     for trial in trials:
         if param in trial.params:
-            if isinstance(trial.distributions[param], CategoricalDistribution):
-                choices = trial.distributions[param].choices
+            target_distribution = trial.distributions[param]
+            if isinstance(target_distribution, CategoricalDistribution):
+                choices = target_distribution.choices
                 return all(
                     (isinstance(v, int) or isinstance(v, float)) and not isinstance(v, bool)
                     for v in choices
