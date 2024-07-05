@@ -14,6 +14,9 @@ The :mod:`~optuna.storages` module defines a :class:`~optuna.storages.BaseStorag
    optuna.storages.fail_stale_trials
    optuna.storages.JournalStorage
 
+optuna.storages.journal
+=======================
+
 :class:`~optuna.storages.JournalStorage` requires its backend specification and here is the list of the supported backends:
 
 .. note::
@@ -26,7 +29,7 @@ The :mod:`~optuna.storages` module defines a :class:`~optuna.storages.BaseStorag
    optuna.storages.journal.JournalFileBackend
    optuna.storages.journal.JournalRedisBackend
 
-Users can flexibly choose a lock object for backends and here is the list of supported lock objects:
+Users can flexibly choose a lock object for :class:`~optuna.storages.journal.JournalFileBackend` and here is the list of supported lock objects:
 
 .. autosummary::
    :toctree: generated/
@@ -34,6 +37,9 @@ Users can flexibly choose a lock object for backends and here is the list of sup
 
    optuna.storages.journal.JournalFileSymlinkLock
    optuna.storages.journal.JournalFileOpenLock
+
+Deprecated Modules
+==================
 
 .. note::
    The following modules are deprecated at v4.0.0 and will be removed in the future.
