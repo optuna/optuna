@@ -29,12 +29,12 @@ from optuna._imports import _LazyImport
 from optuna.exceptions import CLIUsageError
 from optuna.exceptions import ExperimentalWarning
 from optuna.storages import BaseStorage
-from optuna.storages import JournalFileBackend
 from optuna.storages import JournalFileStorage
-from optuna.storages import JournalRedisBackend
 from optuna.storages import JournalRedisStorage
 from optuna.storages import JournalStorage
 from optuna.storages import RDBStorage
+from optuna.storages.journal import JournalFileBackend
+from optuna.storages.journal import JournalRedisBackend
 from optuna.trial import TrialState
 
 

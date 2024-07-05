@@ -23,10 +23,10 @@ import optuna
 import optuna.cli
 from optuna.exceptions import CLIUsageError
 from optuna.exceptions import ExperimentalWarning
-from optuna.storages import JournalFileBackend
-from optuna.storages import JournalRedisBackend
 from optuna.storages import JournalStorage
 from optuna.storages import RDBStorage
+from optuna.storages.journal import JournalFileBackend
+from optuna.storages.journal import JournalRedisBackend
 from optuna.study import StudyDirection
 from optuna.testing.storages import StorageSupplier
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool

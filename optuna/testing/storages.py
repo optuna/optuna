@@ -7,7 +7,7 @@ from typing import IO
 import fakeredis
 
 import optuna
-from optuna.storages import JournalFileBackend
+from optuna.storages.journal import JournalFileBackend
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 
 
@@ -60,7 +60,9 @@ class StorageSupplier:
                 else rdb_storage
             )
         elif self.storage_specifier == "journal_redis":
-            journal_redis_storage = optuna.storages.JournalRedisBackend("redis://localhost")
+            journal_redis_storage = optuna.storages.journal.JournalRedisBackend(
+                "redis://localhost"
+            )
             journal_redis_storage._redis = self.extra_args.get(
                 "redis", fakeredis.FakeStrictRedis()  # type: ignore[no-untyped-call]
             )
