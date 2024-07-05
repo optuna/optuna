@@ -6,6 +6,7 @@ from optuna.storages.journal._redis import JournalRedisBackend
 from optuna.storages.journal._storage import JournalStorage
 
 
+# NOTE(nabenabe0928): Do not add objects deprecated at v4.0.0 here, e.g., JournalFileStorage.
 __all__ = [
     "JournalFileBackend",
     "BaseJournalBackend",
