@@ -1014,7 +1014,7 @@ def test_callbacks_with_iterables() -> None:
         x = trial.suggest_int("x", -10, 10)
         y = trial.suggest_int("y", -10, 10)
         return x**2 + y**2
-    
+
     # Test with lists
     study = create_study()
     study.optimize(objective, n_trials=10, callbacks=[callback])
