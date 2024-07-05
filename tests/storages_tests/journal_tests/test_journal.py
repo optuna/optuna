@@ -19,8 +19,8 @@ import optuna
 from optuna import create_study
 from optuna.storages import BaseJournalLogStorage
 from optuna.storages import JournalStorage
+from optuna.storages._journal.base import BaseJournalFileLock
 from optuna.storages._journal.base import BaseJournalSnapshot
-from optuna.storages._journal.file_lock import BaseJournalFileLock
 from optuna.storages._journal.storage import JournalStorageReplayResult
 from optuna.testing.storages import StorageSupplier
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
