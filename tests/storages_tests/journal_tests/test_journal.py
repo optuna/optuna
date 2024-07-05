@@ -19,8 +19,11 @@ import optuna
 from optuna import create_study
 from optuna.storages import BaseJournalLogStorage
 from optuna.storages import JournalStorage
+from optuna.storages import JournalFileOpenLock as DeprecatedJournalFileOpenLock
+from optuna.storages import JournalFileSymlinkLock as DeprecatedJournalFileSymlinkLock
 from optuna.storages.journal._base import BaseJournalFileLock
 from optuna.storages.journal._base import BaseJournalSnapshot
+from optuna.storages.journal._file_lock import BaseJournalFileLock
 from optuna.storages.journal._storage import JournalStorageReplayResult
 from optuna.testing.storages import StorageSupplier
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
@@ -220,3 +223,12 @@ def test_if_future_warning_occurs() -> None:
 
     with pytest.warns(FutureWarning):
         _ = _CustomJournalBackendInheritingDeprecatedClass()
+
+
+@pytest.mark.parametrize(
+    "lock_obj", (DeprecatedJournalFileOpenLock, DeprecatedJournalFileSymlinkLock)
+)
+def test_future_warning_of_deprecated_file_lock_obj_paths(lock_obj: BaseJournalFileLock) -> None:
+    with pytest.warns(FutureWarning):
+        dummy_file_path = "dummy"
+        lock_obj(filepath=dummy_file_path)
