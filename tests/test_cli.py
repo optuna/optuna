@@ -1067,7 +1067,7 @@ def test_check_storage_url() -> None:
 
 
 @pytest.mark.skipif(platform.system() == "Windows", reason="Skip on Windows")
-@patch("optuna.storages.journal.redis.redis")
+@patch("optuna.storages.journal._redis.redis")
 def test_get_storage_without_storage_class(mock_redis: MagicMock) -> None:
     with tempfile.NamedTemporaryFile(suffix=".db") as fp:
         storage = optuna.cli._get_storage(f"sqlite:///{fp.name}", storage_class=None)
@@ -1088,7 +1088,7 @@ def test_get_storage_without_storage_class(mock_redis: MagicMock) -> None:
 
 
 @pytest.mark.skipif(platform.system() == "Windows", reason="Skip on Windows")
-@patch("optuna.storages.journal.redis.redis")
+@patch("optuna.storages.journal._redis.redis")
 def test_get_storage_with_storage_class(mock_redis: MagicMock) -> None:
     with tempfile.NamedTemporaryFile(suffix=".db") as fp:
         storage = optuna.cli._get_storage(f"sqlite:///{fp.name}", storage_class=None)
