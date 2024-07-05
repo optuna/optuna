@@ -102,7 +102,7 @@ class JournalRedisBackend(BaseJournalBackend, BaseJournalSnapshot):
 
 
 @deprecated_class(
-    "4.0.0", "7.0.0", text="Use :class:`~optuna.storages.JournalRedisBackend` instead."
+    "4.0.0", "7.0.0", text="Use :class:`~optuna.storages.journal.JournalRedisBackend` instead."
 )
 class JournalRedisStorage(JournalRedisBackend):
     """Redis storage class for Journal log backend.
