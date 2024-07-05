@@ -46,9 +46,9 @@ class JournalLogStorageSupplier:
             self.tempfile = NamedTemporaryFilePool().tempfile()
             lock: BaseJournalFileLock
             if self.storage_type == "file_with_open_lock":
-                lock = optuna.storages.JournalFileOpenLock(self.tempfile.name)
+                lock = optuna.storages.journal.JournalFileOpenLock(self.tempfile.name)
             elif self.storage_type == "file_with_link_lock":
-                lock = optuna.storages.JournalFileSymlinkLock(self.tempfile.name)
+                lock = optuna.storages.journal.JournalFileSymlinkLock(self.tempfile.name)
             else:
                 raise Exception("Must not reach here")
             return optuna.storages.journal.JournalFileBackend(self.tempfile.name, lock)
