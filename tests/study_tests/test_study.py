@@ -1004,6 +1004,28 @@ def test_callbacks(n_jobs: int) -> None:
     assert states == []
 
 
+def test_callbacks_with_iterables() -> None:
+
+    def callback(study: Study, trial: FrozenTrial) -> None:
+        if trial.number >= 4:
+            study.stop()
+
+    def objective(trial: Trial) -> float:
+        x = trial.suggest_int("x", -10, 10)
+        y = trial.suggest_int("y", -10, 10)
+        return x**2 + y**2
+    
+    # Test with lists
+    study = create_study()
+    study.optimize(objective, n_trials=10, callbacks=[callback])
+    assert len(study.trials) == 5
+
+    # Test with tuples
+    study = create_study()
+    study.optimize(objective, n_trials=10, callbacks=(callback,))
+    assert len(study.trials) == 5
+
+
 def test_optimize_infinite_budget_progbar() -> None:
     def terminate_study(study: Study, trial: FrozenTrial) -> None:
         study.stop()
