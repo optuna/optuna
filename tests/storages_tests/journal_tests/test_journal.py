@@ -252,4 +252,4 @@ def test_invalid_journal_related_non_storage_class_import() -> None:
         set(journal.__all__) & set(optuna.storages.__all__)
     )
     assert len(journal_related_modules_in_storages_init) == 1
-    assert journal_related_modules_in_storages_init[0] == "JournalStorage"
+    assert journal_related_modules_in_storages_init[0] == JournalStorage.__name__
