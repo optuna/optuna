@@ -236,7 +236,7 @@ def test_future_warning_of_deprecated_file_lock_obj_paths(
         lock_obj(filepath=dummy_file_path)
 
 
-def test_invalid_imports_from_journal() -> None:
+def test_raise_error_for_deprecated_class_import_from_journal() -> None:
     # TODO(nabenabe0928): Remove this test once deprecated objects, e.g., JournalFileStorage,
     # are removed.
     from optuna.storages import journal
@@ -249,7 +249,7 @@ def test_invalid_imports_from_journal() -> None:
         journal.BaseJournalLogStorage  # type: ignore[attr-defined]
 
 
-def test_invalid_journal_module_imports() -> None:
+def test_invalid_journal_related_non_storage_class_import() -> None:
     storages_module = importlib.import_module("optuna.storages")
     # TODO(nabenabe0928): Remove ``deprecated_objects`` once deprecated objects,
     # e.g., JournalFileStorage, are removed.
