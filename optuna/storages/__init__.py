@@ -16,7 +16,10 @@ from optuna.storages.journal._storage import JournalStorage
 
 
 @deprecated_class(
-    "4.0.0", "6.0.0", text="Use :class:`~optuna.storages.journal.JournalFileOpenLock` instead."
+    deprecated_version="4.0.0",
+    removed_version="6.0.0",
+    name="The import path :class:`~optuna.storages.JournalFileOpenLock`",
+    text="Use :class:`~optuna.storages.journal.JournalFileOpenLock` instead.",
 )
 class JournalFileOpenLock(_JournalFileOpenLock):
     """Lock class for synchronizing processes for NFSv3 or later.
@@ -42,7 +45,10 @@ class JournalFileOpenLock(_JournalFileOpenLock):
 
 
 @deprecated_class(
-    "4.0.0", "6.0.0", text="Use :class:`~optuna.storages.journal.JournalFileSymlinkLock` instead."
+    deprecated_version="4.0.0",
+    removed_version="6.0.0",
+    name="The import path :class:`~optuna.storages.JournalFileSymlinkLock`",
+    text="Use :class:`~optuna.storages.journal.JournalFileSymlinkLock` instead.",
 )
 class JournalFileSymlinkLock(_JournalFileSymlinkLock):
     """Lock class for synchronizing processes for NFSv2 or later.
