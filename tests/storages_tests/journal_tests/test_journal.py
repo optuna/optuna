@@ -236,15 +236,17 @@ def test_future_warning_of_deprecated_file_lock_obj_paths(
         lock_obj(filepath=dummy_file_path)
 
 
-@pytest.mark.parametrize(
-    "obj_name", ("JournalFileStorage", "JournalRedisStorage", "BaseJournalLogStorage")
-)
-def test_invalid_imports_from_journal(obj_name: str) -> None:
+def test_invalid_imports_from_journal() -> None:
     # TODO(nabenabe0928): Remove this test once deprecated objects, e.g., JournalFileStorage,
     # are removed.
-    journal = importlib.import_module("optuna.storages.journal")
-    with pytest.raises(AttributeError):  # Meaning that the object cannot be imported from journal.
-        getattr(journal, obj_name)
+    from optuna.storages import journal
+
+    with pytest.raises(AttributeError):
+        journal.JournalFileStorage  # type: ignore[attr-defined]
+    with pytest.raises(AttributeError):
+        journal.JournalRedisStorage  # type: ignore[attr-defined]
+    with pytest.raises(AttributeError):
+        journal.BaseJournalLogStorage  # type: ignore[attr-defined]
 
 
 def test_invalid_journal_module_imports() -> None:
