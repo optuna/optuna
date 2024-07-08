@@ -3,7 +3,6 @@ from __future__ import annotations
 from concurrent.futures import as_completed
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
-import importlib
 import pickle
 from types import TracebackType
 from typing import Any
@@ -19,10 +18,10 @@ import pytest
 import optuna
 from optuna import create_study
 from optuna.storages import BaseJournalLogStorage
+from optuna.storages import journal
 from optuna.storages import JournalFileOpenLock as DeprecatedJournalFileOpenLock
 from optuna.storages import JournalFileSymlinkLock as DeprecatedJournalFileSymlinkLock
 from optuna.storages import JournalStorage
-from optuna.storages import journal
 from optuna.storages.journal._base import BaseJournalFileLock
 from optuna.storages.journal._base import BaseJournalSnapshot
 from optuna.storages.journal._storage import JournalStorageReplayResult
