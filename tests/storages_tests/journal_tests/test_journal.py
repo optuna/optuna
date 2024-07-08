@@ -22,6 +22,7 @@ from optuna.storages import BaseJournalLogStorage
 from optuna.storages import JournalFileOpenLock as DeprecatedJournalFileOpenLock
 from optuna.storages import JournalFileSymlinkLock as DeprecatedJournalFileSymlinkLock
 from optuna.storages import JournalStorage
+from optuna.storages import journal
 from optuna.storages.journal._base import BaseJournalFileLock
 from optuna.storages.journal._base import BaseJournalSnapshot
 from optuna.storages.journal._storage import JournalStorageReplayResult
@@ -239,8 +240,6 @@ def test_future_warning_of_deprecated_file_lock_obj_paths(
 def test_raise_error_for_deprecated_class_import_from_journal() -> None:
     # TODO(nabenabe0928): Remove this test once deprecated objects, e.g., JournalFileStorage,
     # are removed.
-    from optuna.storages import journal
-
     with pytest.raises(AttributeError):
         journal.JournalFileStorage  # type: ignore[attr-defined]
     with pytest.raises(AttributeError):
@@ -250,25 +249,8 @@ def test_raise_error_for_deprecated_class_import_from_journal() -> None:
 
 
 def test_invalid_journal_related_non_storage_class_import() -> None:
-    storages_module = importlib.import_module("optuna.storages")
-    # TODO(nabenabe0928): Remove ``deprecated_objects`` once deprecated objects,
-    # e.g., JournalFileStorage, are removed.
-    deprecated_objects = [
-        "JournalFileStorage",
-        "BaseJournalLogStorage",
-        "JournalFileOpenLock",
-        "JournalFileSymlinkLock",
-    ]
-    for name in storages_module.__all__:
-        if name in deprecated_objects:
-            # deprecated journal-related objects can be imported from ``optuna.storages``.
-            continue
-
-        if "Journal" not in name or "Storage" in name:
-            # Storage or non journal-related objects can be imported from ``optuna.storages``.
-            continue
-
-        raise ImportError(
-            "Any journal-related non-storage modules are not allowed to configure "
-            f"in ``optuna.storages``, but got ``{name}`` in optuna.storages.__init__.py."
-        )
+    journal_related_modules_in_storages_init = list(
+        set(journal.__all__) & set(optuna.storages.__all__)
+    )
+    assert len(journal_related_modules_in_storages_init) == 1
+    assert journal_related_modules_in_storages_init[0] == "JournalStorage"
