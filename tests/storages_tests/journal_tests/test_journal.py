@@ -3,6 +3,7 @@ from __future__ import annotations
 from concurrent.futures import as_completed
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
+import importlib
 import pickle
 from types import TracebackType
 from typing import Any
@@ -233,3 +234,39 @@ def test_future_warning_of_deprecated_file_lock_obj_paths(
     with pytest.warns(FutureWarning):
         dummy_file_path = "dummy"
         lock_obj(filepath=dummy_file_path)
+
+
+@pytest.mark.parametrize(
+    "obj_name", ("JournalFileStorage", "JournalRedisStorage", "BaseJournalLogStorage")
+)
+def test_invalid_imports_from_journal(obj_name: str) -> None:
+    # TODO(nabenabe0928): Remove this test once deprecated objects, e.g., JournalFileStorage,
+    # are removed.
+    journal = importlib.import_module("optuna.storages.journal")
+    with pytest.raises(AttributeError):  # Meaning that the object cannot be imported from journal.
+        getattr(journal, obj_name)
+
+
+def test_invalid_journal_module_imports() -> None:
+    storages_module = importlib.import_module("optuna.storages")
+    # TODO(nabenabe0928): Remove ``deprecated_objects`` once deprecated objects,
+    # e.g., JournalFileStorage, are removed.
+    deprecated_objects = [
+        "JournalFileStorage",
+        "BaseJournalLogStorage",
+        "JournalFileOpenLock",
+        "JournalFileSymlinkLock",
+    ]
+    for name in storages_module.__all__:
+        if name in deprecated_objects:
+            # deprecated journal-related objects can be imported from ``optuna.storages``.
+            continue
+
+        if "Journal" not in name or "Storage" in name:
+            # Storage or non journal-related objects can be imported from ``optuna.storages``.
+            continue
+
+        raise ImportError(
+            "Any journal-related non-storage modules are not allowed to configure "
+            f"in ``optuna.storages``, but got ``{name}`` in optuna.storages.__init__.py."
+        )
