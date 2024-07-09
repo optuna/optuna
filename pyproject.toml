@@ -66,6 +66,7 @@ document = [
   "ase",
   "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
   "fvcore",
+  "kaleido",
   "lightgbm",
   "matplotlib!=3.6.0",
   "pandas",
@@ -75,7 +76,6 @@ document = [
   "sphinx",
   "sphinx-copybutton",
   "sphinx-gallery",
-  "sphinx-plotly-directive",
   "sphinx_rtd_theme>=1.2.0",
   "torch",
   "torchvision",
