@@ -102,7 +102,7 @@ class JournalFileBackend(BaseJournalBackend):
 
 
 @deprecated_class(
-    "4.0.0", "7.0.0", text="Use :class:`~optuna.storages.JournalFileBackend` instead."
+    "4.0.0", "6.0.0", text="Use :class:`~optuna.storages.JournalFileBackend` instead."
 )
 class JournalFileStorage(JournalFileBackend):
     """File storage class for Journal log backend.
