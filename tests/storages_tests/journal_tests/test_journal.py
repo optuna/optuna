@@ -23,7 +23,7 @@ from optuna.storages import journal
 from optuna.storages import JournalFileOpenLock as DeprecatedJournalFileOpenLock
 from optuna.storages import JournalFileSymlinkLock as DeprecatedJournalFileSymlinkLock
 from optuna.storages import JournalStorage
-from optuna.storages.journal._base import BaseJournalFileLock
+from optuna.storages.journal._file import BaseJournalFileLock
 from optuna.storages.journal._base import BaseJournalSnapshot
 from optuna.storages.journal._storage import JournalStorageReplayResult
 from optuna.testing.storages import StorageSupplier
