@@ -7,10 +7,7 @@ import json
 import os
 import time
 from typing import Any
-from typing import Dict
 from typing import Iterator
-from typing import List
-from typing import Optional
 import uuid
 
 from optuna._deprecated import deprecated_class

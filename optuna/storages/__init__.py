@@ -1,7 +1,6 @@
 from typing import Union
 
 from optuna._callbacks import RetryFailedTrialCallback
-from optuna._deprecated import deprecated_class
 from optuna.storages._base import BaseStorage
 from optuna.storages._cached_storage import _CachedStorage
 from optuna.storages._heartbeat import fail_stale_trials
@@ -10,10 +9,8 @@ from optuna.storages._rdb.storage import RDBStorage
 from optuna.storages.journal._base import BaseJournalLogStorage
 from optuna.storages.journal._file import (
     DeprecatedJournalFileSymlinkLock as JournalFileSymlinkLock,
-)  # NOQA
-from optuna.storages.journal._file import (
-    DeprecatedJournalFileOpenLock as JournalFileOpenLock,
-)  # NOQA
+)
+from optuna.storages.journal._file import DeprecatedJournalFileOpenLock as JournalFileOpenLock
 from optuna.storages.journal._file import JournalFileStorage
 from optuna.storages.journal._redis import JournalRedisStorage
 from optuna.storages.journal._storage import JournalStorage
@@ -27,6 +24,8 @@ __all__ = [
     "JournalStorage",
     "JournalFileStorage",
     "JournalRedisStorage",
+    "JournalFileSymlinkLock",
+    "JournalFileOpenLock",
     "RetryFailedTrialCallback",
     "_CachedStorage",
     "fail_stale_trials",
