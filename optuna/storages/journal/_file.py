@@ -240,14 +240,6 @@ class JournalFileStorage(JournalFileBackend):
 
 
 @deprecated_class(
-    "4.0.0", "6.0.0", text="Use :class:`~optuna.storages.BaseJournalFileLock` instead."
-)
-class JournalFileBaseLock(BaseJournalFileLock):
-    # Note: As of v4.0.0, this base class is NOT exposed to users.
-    pass
-
-
-@deprecated_class(
     deprecated_version="4.0.0",
     removed_version="6.0.0",
     name="The import path :class:`~optuna.storages.JournalFileOpenLock`",
