@@ -111,44 +111,6 @@ class JournalFileBackend(BaseJournalBackend):
                 os.fsync(f.fileno())
 
 
-@deprecated_class(
-    "4.0.0", "6.0.0", text="Use :class:`~optuna.storages.JournalFileBackend` instead."
-)
-class JournalFileStorage(JournalFileBackend):
-    """File storage class for Journal log backend.
-
-    Compared to SQLite3, the benefit of this backend is that it is more suitable for
-    environments where the file system does not support ``fcntl()`` file locking.
-    For example, as written in the `SQLite3 FAQ <https://www.sqlite.org/faq.html#q5>`__,
-    SQLite3 might not work on NFS (Network File System) since ``fcntl()`` file locking
-    is broken on many NFS implementations. In such scenarios, this backend provides
-    several workarounds for locking files. For more details, refer to the `Medium blog post`_.
-
-    .. _Medium blog post: https://medium.com/optuna/distributed-optimization-via-nfs\
-    -using-optunas-new-operation-based-logging-storage-9815f9c3f932
-
-    It's important to note that, similar to SQLite3, this class doesn't support a high
-    level of write concurrency, as outlined in the `SQLAlchemy documentation`_. However,
-    in typical situations where the objective function is computationally expensive, Optuna
-    users don't need to be concerned about this limitation. The reason being, the write
-    operations are not the bottleneck as long as the objective function doesn't invoke
-    :meth:`~optuna.trial.Trial.report` and :meth:`~optuna.trial.Trial.set_user_attr` excessively.
-
-    .. _SQLAlchemy documentation: https://docs.sqlalchemy.org/en/20/dialects/sqlite.html\
-    #database-locking-behavior-concurrency
-
-    Args:
-        file_path:
-            Path of file to persist the log to.
-
-        lock_obj:
-            Lock object for process exclusivity.
-    """
-
-    def __init__(self, file_path: str, lock_obj: BaseJournalFileLock | None = None) -> None:
-        super().__init__(file_path=file_path, lock_obj=lock_obj)
-
-
 class BaseJournalFileLock(abc.ABC):
     @abc.abstractmethod
     def acquire(self) -> bool:
@@ -157,14 +119,6 @@ class BaseJournalFileLock(abc.ABC):
     @abc.abstractmethod
     def release(self) -> None:
         raise NotImplementedError
-
-
-@deprecated_class(
-    "4.0.0", "6.0.0", text="Use :class:`~optuna.storages.BaseJournalFileLock` instead."
-)
-class JournalFileBaseLock(BaseJournalFileLock):
-    # Note: As of v4.0.0, this base class is NOT exposed to users.
-    pass
 
 
 class JournalFileSymlinkLock(BaseJournalFileLock):
@@ -279,3 +233,38 @@ def get_lock_file(lock_obj: BaseJournalFileLock) -> Iterator[None]:
         yield
     finally:
         lock_obj.release()
+
+
+@deprecated_class(
+    "4.0.0", "6.0.0", text="Use :class:`~optuna.storages.JournalFileBackend` instead."
+)
+class JournalFileStorage(JournalFileBackend):
+    pass
+
+
+@deprecated_class(
+    "4.0.0", "6.0.0", text="Use :class:`~optuna.storages.BaseJournalFileLock` instead."
+)
+class JournalFileBaseLock(BaseJournalFileLock):
+    # Note: As of v4.0.0, this base class is NOT exposed to users.
+    pass
+
+
+@deprecated_class(
+    deprecated_version="4.0.0",
+    removed_version="6.0.0",
+    name="The import path :class:`~optuna.storages.JournalFileOpenLock`",
+    text="Use :class:`~optuna.storages.journal.JournalFileOpenLock` instead.",
+)
+class DeprecatedJournalFileOpenLock(JournalFileOpenLock):
+    pass
+
+
+@deprecated_class(
+    deprecated_version="4.0.0",
+    removed_version="6.0.0",
+    name="The import path :class:`~optuna.storages.JournalFileSymlinkLock`",
+    text="Use :class:`~optuna.storages.journal.JournalFileSymlinkLock` instead.",
+)
+class DeprecatedJournalFileSymlinkLock(JournalFileSymlinkLock):
+    pass
