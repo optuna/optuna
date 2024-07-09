@@ -229,11 +229,11 @@ def test_if_future_warning_occurs() -> None:
     "lock_obj", (DeprecatedJournalFileOpenLock, DeprecatedJournalFileSymlinkLock)
 )
 def test_future_warning_of_deprecated_file_lock_obj_paths(
+    tmp_path: pathlib.PurePath,
     lock_obj: type[DeprecatedJournalFileOpenLock | DeprecatedJournalFileSymlinkLock],
 ) -> None:
     with pytest.warns(FutureWarning):
-        dummy_file_path = "dummy"
-        lock_obj(filepath=dummy_file_path)
+        lock_obj(filepath=tmp_path)
 
 
 def test_raise_error_for_deprecated_class_import_from_journal() -> None:
