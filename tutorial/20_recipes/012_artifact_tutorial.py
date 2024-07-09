@@ -11,7 +11,7 @@ The artifact module of Optuna is a module designed for saving comparatively larg
 as files. Introduced from Optuna v3.3, this module finds a broad range of applications, such as utilizing snapshots of large size 
 models for hyperparameter tuning, optimizing massive chemical structures, and even human-in-the-loop optimization employing images 
 or sounds. Use of Optuna's artifact module allows you to handle data that would be too large to store in a database. Furthermore, 
-by integrating with `optuna-dashboard <https://github.com/optuna/optuna-dashboard>`_, saved artifacts can be automatically visualized 
+by integrating with `optuna-dashboard <https://github.com/optuna/optuna-dashboard>`__, saved artifacts can be automatically visualized 
 with the web UI, which significantly reduces the effort of experiment management.
 
 TL;DR
@@ -42,7 +42,7 @@ are not suitable for storing large data. With Optuna's artifact module, users ca
 chemical structures, image and audio data, etc.) for each trial.
 
 Also, while this tutorial does not touch upon it, it's possible to manage artifacts associated not only with trials but also with 
-studies. Please refer to the `official documentation <https://optuna.readthedocs.io/en/stable/reference/generated/optuna.artifacts.upload_artifact.html>`_ 
+studies. Please refer to the `official documentation <https://optuna.readthedocs.io/en/stable/reference/generated/optuna.artifacts.upload_artifact.html>`__ 
 if you are interested in.
 
 Situations where artifacts are useful
@@ -92,7 +92,7 @@ method using SQLite, a lightweight RDB management system, as the backend. With S
 parameters were, when each trial started and ended, etc. This file is in the SQLite format, and it is not suitable for storing 
 large data. Writing large data entries may cause performance degradation. Note that SQLite is not suitable for distributed parallel 
 optimization. If you want to perform that, please use MySQL as we will explain later, or JournalStorage 
-(`example <https://optuna.readthedocs.io/en/stable/reference/generated/optuna.storages.JournalStorage.html#optuna.storages.JournalStorage>`_).
+(`example <https://optuna.readthedocs.io/en/stable/reference/generated/optuna.storages.JournalStorage.html#optuna.storages.JournalStorage>`__).
 
 So, let's use the artifact module to save large data in a different format. Suppose the data is generated for each trial and you 
 want to save it in some format (e.g., png format if it's an image). The specific destination for saving the artifacts can be any 
@@ -122,7 +122,9 @@ The simple pseudocode for the above case  would look something like this:
         # Creating and writing an artifact.
         file_path = generate_example(...)  # This function returns some kind of file.
         artifact_id = upload_artifact(
-            trial, file_path, artifact_store
+            artifact_store=artifact_store,
+            file_path=file_path,
+            study_or_trial=trial,
         )  # The return value is the artifact ID.
         trial.set_user_attr(
             "artifact_id", artifact_id
@@ -137,7 +139,9 @@ The simple pseudocode for the above case  would look something like this:
     # Downloading artifacts associated with the best trial.
     best_artifact_id = study.best_trial.user_attrs.get("artifact_id")
     download_file_path = ...  # Set the path to save the downloaded artifact.
-    download_artifact(artifact_store, best_artifact_id, download_file_path)
+    download_artifact(
+        artifact_store=artifact_store, file_path=download_file_path, artifact_id=best_artifact_id
+    )
     with open(download_file_path, "rb") as f:
         content = f.read().decode("utf-8")
     print(content)
@@ -156,7 +160,7 @@ Next, we explain the case where data is read and written remotely.
 As the scale of optimization increases, it becomes difficult to complete all calculations locally. Optuna's storage objects can 
 persist data remotely by specifying a URL, enabling distributed optimization. Here, we will use MySQL as a remote relational 
 database server. MySQL is an open-source relational database management system and a well-known software used for various purposes. 
-For using MySQL with Optuna, the `tutorial <https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/004_distributed.html>`_
+For using MySQL with Optuna, the `tutorial <https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/004_distributed.html>`__
 can be a good reference. However, it is also not appropriate to read and write large data in a relational database like MySQL.
 
 In Optuna, it is common to use the artifact module when you want to read and write such data for each trial. Unlike Scenario 1, 
@@ -203,7 +207,9 @@ read and write data transparently. Translating the above process into simple pse
         # Creating and writing an artifact.
         file_path = generate_example(...)  # This function returns some kind of file.
         artifact_id = upload_artifact(
-            trial, file_path, artifact_store
+            artifact_store=artifact_store,
+            file_path=file_path,
+            study_or_trial=trial,
         )  # The return value is the artifact ID.
         trial.set_user_attr(
             "artifact_id", artifact_id
@@ -221,7 +227,9 @@ read and write data transparently. Translating the above process into simple pse
     # Downloading artifacts associated with the best trial.
     best_artifact_id = study.best_trial.user_attrs.get("artifact_id")
     download_file_path = ...  # Set the path to save the downloaded artifact.
-    download_artifact(artifact_store, best_artifact_id, download_file_path)
+    download_artifact(
+        artifact_store=artifact_store, file_path=download_file_path, artifact_id=best_artifact_id
+    )
     with open(download_file_path, "rb") as f:
         content = f.read().decode("utf-8")
     print(content)
@@ -306,6 +314,10 @@ def json_to_atoms(atoms_str: str) -> Atoms:
     return read(io.StringIO(atoms_str), format="json")
 
 
+def file_to_atoms(file_path: str) -> Atoms:
+    return read(file_path, format="json")
+
+
 ###################################################################################################
 # Each function is as follows.
 #
@@ -314,6 +326,7 @@ def json_to_atoms(atoms_str: str) -> Atoms:
 # - `create_mol`: Constructs the molecule being adsorbed.
 # - `atoms_to_json`: Converts the chemical structure to a string.
 # - `json_to_atoms`: Converts the string to a chemical structure.
+# - `file_to_atoms`: Reads the string from a file and converts it to a chemical structure.
 #
 # Using these functions, the code to search for adsorption structures using Optuna is as follows. The objective function is defined
 # as class `Objective` in order to carry the artifact store. In its `__call__` method, it retrieves the substance being adsorbed
@@ -351,7 +364,11 @@ class Objective:
         E_slab_mol = get_opt_energy(slab, fmax=1e-2)
 
         write(f"./tmp/{trial.number}.json", slab, format="json")
-        artifact_id = upload_artifact(trial, f"./tmp/{trial.number}.json", self._artifact_store)
+        artifact_id = upload_artifact(
+            artifact_store=self._artifact_store,
+            file_path=f"./tmp/{trial.number}.json",
+            study_or_trial=trial,
+        )
         trial.set_user_attr("structure", artifact_id)
 
         return E_slab_mol - E_slab - E_mol
@@ -394,11 +411,13 @@ def main():
 
     with tempfile.TemporaryDirectory() as tmpdir_name:
         download_file_path = os.path.join(tmpdir_name, f"{best_artifact_id}.json")
-        download_artifact(artifact_store, best_artifact_id, download_file_path)
+        download_artifact(
+            artifact_store=artifact_store,
+            file_path=download_file_path,
+            artifact_id=best_artifact_id,
+        )
 
-        with open(download_file_path, "rb") as f:
-            content = f.read().decode("utf-8")
-        best_atoms = json_to_atoms(content)
+        best_atoms = file_to_atoms(download_file_path)
         print(best_atoms)
         write("best_atoms.png", best_atoms, rotation=("315x,0y,0z"))
 

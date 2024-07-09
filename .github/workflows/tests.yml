@@ -76,8 +76,6 @@ jobs:
 
         pip install --progress-bar off .[test] --extra-index-url https://download.pytorch.org/whl/cpu
         pip install --progress-bar off .[optional] --extra-index-url https://download.pytorch.org/whl/cpu
-        # TODO(c-bata): Remove a version constraint after releasing https://github.com/cunla/fakeredis-py/pull/303
-        pip install --progress-bar off 'fakeredis[lua]<2.21.2'
 
     - name: Output installed packages
       run: |
@@ -96,15 +94,6 @@ jobs:
           target="not slow"
         fi
 
-        if [ "${{ matrix.python-version }}" = "3.12" ] ; then
-          # TODO(not522): Remove ignores when BoTorch/Torch supports Python 3.12
-          ignore_option="--ignore tests/terminator_tests/ \
-          --ignore tests/terminator_tests/improvement_tests/ \
-          --ignore tests/visualization_tests/test_terminator_improvement.py"
-        else
-          ignore_option=""
-        fi
-
-        pytest tests -m "$target" $ignore_option
+        pytest tests -m "$target"
       env:
         SQLALCHEMY_WARN_20: 1

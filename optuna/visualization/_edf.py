@@ -50,7 +50,7 @@ def plot_edf(
         EDF is useful to analyze and improve search spaces.
         For instance, you can see a practical use case of EDF in the paper
         `Designing Network Design Spaces
-        <https://doi.ieeecomputersociety.org/10.1109/CVPR42600.2020.01044>`_.
+        <https://doi.ieeecomputersociety.org/10.1109/CVPR42600.2020.01044>`__.
 
     .. note::
 

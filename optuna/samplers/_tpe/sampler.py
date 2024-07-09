@@ -11,7 +11,7 @@ import warnings
 import numpy as np
 
 from optuna._experimental import warn_experimental_argument
-from optuna._hypervolume import WFG
+from optuna._hypervolume import compute_hypervolume
 from optuna._hypervolume.hssp import _solve_hssp
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
@@ -73,17 +73,17 @@ class TPESampler(BaseSampler):
     For further information about TPE algorithm, please refer to the following papers:
 
     - `Algorithms for Hyper-Parameter Optimization
-      <https://papers.nips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf>`_
+      <https://papers.nips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf>`__
     - `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
-      Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`_
+      Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`__
     - `Tree-Structured Parzen Estimator: Understanding Its Algorithm Components and Their Roles for
-      Better Empirical Performance <https://arxiv.org/abs/2304.11127>`_
+      Better Empirical Performance <https://arxiv.org/abs/2304.11127>`__
 
     For multi-objective TPE (MOTPE), please refer to the following papers:
 
     - `Multiobjective Tree-Structured Parzen Estimator for Computationally Expensive Optimization
-      Problems <https://doi.org/10.1145/3377930.3389817>`_
-    - `Multiobjective Tree-Structured Parzen Estimator <https://doi.org/10.1613/jair.1.13188>`_
+      Problems <https://doi.org/10.1145/3377930.3389817>`__
+    - `Multiobjective Tree-Structured Parzen Estimator <https://doi.org/10.1613/jair.1.13188>`__
 
     Example:
         An example of a single-objective optimization is as follows:
@@ -154,23 +154,23 @@ class TPESampler(BaseSampler):
         weights:
             A function that takes the number of finished trials and returns a weight for them.
             See `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
-            Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`_
-            for more details.
+            Dimensions for Vision Architectures
+            <http://proceedings.mlr.press/v28/bergstra13.pdf>`__ for more details.
 
             .. note::
                 In the multi-objective case, this argument is only used to compute the weights of
                 bad trials, i.e., trials to construct `g(x)` in the `paper
-                <https://papers.nips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf>`_
+                <https://papers.nips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf>`__
                 ). The weights of good trials, i.e., trials to construct `l(x)`, are computed by a
                 rule based on the hypervolume contribution proposed in the `paper of MOTPE
-                <https://doi.org/10.1613/jair.1.13188>`_.
+                <https://doi.org/10.1613/jair.1.13188>`__.
         seed:
             Seed for random number generator.
         multivariate:
             If this is :obj:`True`, the multivariate TPE is used when suggesting parameters.
             The multivariate TPE is reported to outperform the independent TPE. See `BOHB: Robust
             and Efficient Hyperparameter Optimization at Scale
-            <http://proceedings.mlr.press/v80/falkner18a.html>`_ for more details.
+            <http://proceedings.mlr.press/v80/falkner18a.html>`__ for more details.
 
             .. note::
                 Added in v2.2.0 as an experimental feature. The interface may change in newer
@@ -547,7 +547,7 @@ class TPESampler(BaseSampler):
         Example:
 
             Create a :class:`~optuna.samplers.TPESampler` instance with the default
-            parameters of `hyperopt <https://github.com/hyperopt/hyperopt/tree/0.1.2>`_.
+            parameters of `hyperopt <https://github.com/hyperopt/hyperopt/tree/0.1.2>`__.
 
             .. testcode::
 
@@ -777,10 +777,13 @@ def _calculate_weights_below_for_multi_objective(
         worst_point = np.max(lvals, axis=0)
         reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
         reference_point[reference_point == 0] = EPS
-        hv = WFG().compute(lvals, reference_point)
+        hv = compute_hypervolume(lvals, reference_point)
         indices_mat = ~np.eye(n_below).astype(bool)
         contributions = np.asarray(
-            [hv - WFG().compute(lvals[indices_mat[i]], reference_point) for i in range(n_below)]
+            [
+                hv - compute_hypervolume(lvals[indices_mat[i]], reference_point)
+                for i in range(n_below)
+            ]
         )
         contributions[np.isnan(contributions)] = np.inf
         max_contribution = np.maximum(np.max(contributions), EPS)

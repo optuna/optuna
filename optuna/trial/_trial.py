@@ -248,7 +248,7 @@ class Trial(BaseTrial):
         Example:
 
             Suggest the number of trees in `RandomForestClassifier <https://scikit-learn.org/
-            stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html>`_.
+            stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html>`__.
 
             .. testcode::
 
@@ -357,7 +357,7 @@ class Trial(BaseTrial):
         Example:
 
             Suggest a kernel function of `SVC <https://scikit-learn.org/stable/modules/generated/
-            sklearn.svm.SVC.html>`_.
+            sklearn.svm.SVC.html>`__.
 
             .. testcode::
 
@@ -429,7 +429,7 @@ class Trial(BaseTrial):
         Example:
 
             Report intermediate scores of `SGDClassifier <https://scikit-learn.org/stable/modules/
-            generated/sklearn.linear_model.SGDClassifier.html>`_ training.
+            generated/sklearn.linear_model.SGDClassifier.html>`__ training.
 
             .. testcode::
 
@@ -480,20 +480,24 @@ class Trial(BaseTrial):
             # For convenience, we allow users to report a value that can be cast to `float`.
             value = float(value)
         except (TypeError, ValueError):
-            message = "The `value` argument is of type '{}' but supposed to be a float.".format(
-                type(value).__name__
+            message = (
+                f"The `value` argument is of type '{type(value)}' but supposed to be a float."
             )
             raise TypeError(message) from None
 
+        try:
+            step = int(step)
+        except (TypeError, ValueError):
+            message = f"The `step` argument is of type '{type(step)}' but supposed to be an int."
+            raise TypeError(message) from None
+
         if step < 0:
-            raise ValueError("The `step` argument is {} but cannot be negative.".format(step))
+            raise ValueError(f"The `step` argument is {step} but cannot be negative.")
 
         if step in self._cached_frozen_trial.intermediate_values:
             # Do nothing if already reported.
             warnings.warn(
-                "The reported value is ignored because this `step` {} is already reported.".format(
-                    step
-                )
+                f"The reported value is ignored because this `step` {step} is already reported."
             )
             return
 

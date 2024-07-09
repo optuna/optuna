@@ -377,7 +377,7 @@ class Study:
         timeout: float | None = None,
         n_jobs: int = 1,
         catch: Iterable[type[Exception]] | type[Exception] = (),
-        callbacks: list[Callable[[Study, FrozenTrial], None]] | None = None,
+        callbacks: Iterable[Callable[[Study, FrozenTrial], None]] | None = None,
         gc_after_trial: bool = False,
         show_progress_bar: bool = False,
     ) -> None:
@@ -434,7 +434,7 @@ class Study:
 
                 .. note::
                     ``n_jobs`` allows parallelization using :obj:`threading` and may suffer from
-                    `Python's GIL <https://wiki.python.org/moin/GlobalInterpreterLock>`_.
+                    `Python's GIL <https://wiki.python.org/moin/GlobalInterpreterLock>`__.
                     It is recommended to use :ref:`process-based parallelization<distributed>`
                     if ``func`` is CPU bound.
 
@@ -1345,6 +1345,9 @@ def load_study(
             A pruner object that decides early stopping of unpromising trials.
             If :obj:`None` is specified, :class:`~optuna.pruners.MedianPruner` is used
             as the default. See also :class:`~optuna.pruners`.
+
+    Returns:
+        A :class:`~optuna.study.Study` object.
 
     See also:
         :func:`optuna.load_study` is an alias of :func:`optuna.study.load_study`.

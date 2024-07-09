@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from collections.abc import Sequence
 from concurrent.futures import FIRST_COMPLETED
 from concurrent.futures import Future
@@ -37,7 +38,7 @@ def _optimize(
     timeout: float | None = None,
     n_jobs: int = 1,
     catch: tuple[type[Exception], ...] = (),
-    callbacks: list[Callable[["optuna.Study", FrozenTrial], None]] | None = None,
+    callbacks: Iterable[Callable[["optuna.Study", FrozenTrial], None]] | None = None,
     gc_after_trial: bool = False,
     show_progress_bar: bool = False,
 ) -> None:
@@ -124,7 +125,7 @@ def _optimize_sequential(
     n_trials: int | None,
     timeout: float | None,
     catch: tuple[type[Exception], ...],
-    callbacks: list[Callable[["optuna.Study", FrozenTrial], None]] | None,
+    callbacks: Iterable[Callable[["optuna.Study", FrozenTrial], None]] | None,
     gc_after_trial: bool,
     reseed_sampler_rng: bool,
     time_start: datetime.datetime | None,

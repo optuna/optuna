@@ -188,11 +188,10 @@ class TrialModel(BaseModel):
     )
 
     @classmethod
-    def find_max_value_trial(
-        cls, study_id: int, objective: int, session: orm.Session
-    ) -> "TrialModel":
+    def find_max_value_trial_id(cls, study_id: int, objective: int, session: orm.Session) -> int:
         trial = (
             session.query(cls)
+            .with_entities(cls.trial_id)
             .filter(cls.study_id == study_id)
             .filter(cls.state == TrialState.COMPLETE)
             .join(TrialValueModel)
@@ -211,14 +210,13 @@ class TrialModel(BaseModel):
         )
         if trial is None:
             raise ValueError(NOT_FOUND_MSG)
-        return trial
+        return trial[0]
 
     @classmethod
-    def find_min_value_trial(
-        cls, study_id: int, objective: int, session: orm.Session
-    ) -> "TrialModel":
+    def find_min_value_trial_id(cls, study_id: int, objective: int, session: orm.Session) -> int:
         trial = (
             session.query(cls)
+            .with_entities(cls.trial_id)
             .filter(cls.study_id == study_id)
             .filter(cls.state == TrialState.COMPLETE)
             .join(TrialValueModel)
@@ -237,7 +235,7 @@ class TrialModel(BaseModel):
         )
         if trial is None:
             raise ValueError(NOT_FOUND_MSG)
-        return trial
+        return trial[0]
 
     @classmethod
     def find_or_raise_by_id(
@@ -551,8 +549,16 @@ class TrialHeartbeatModel(BaseModel):
     )
 
     @classmethod
-    def where_trial_id(cls, trial_id: int, session: orm.Session) -> "TrialHeartbeatModel" | None:
-        return session.query(cls).filter(cls.trial_id == trial_id).one_or_none()
+    def where_trial_id(
+        cls, trial_id: int, session: orm.Session, for_update: bool = False
+    ) -> "TrialHeartbeatModel" | None:
+
+        query = session.query(cls).filter(cls.trial_id == trial_id)
+
+        if for_update:
+            query = query.with_for_update()
+
+        return query.one_or_none()
 
 
 class VersionInfoModel(BaseModel):

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import abc
-from typing import Optional
 
 from optuna._experimental import experimental_class
 from optuna.study.study import Study
@@ -34,7 +33,7 @@ class Terminator(BaseTerminator):
     For further information about the algorithm, please refer to the following paper:
 
     - `A. Makarova et al. Automatic termination for hyperparameter optimization.
-      <https://proceedings.mlr.press/v188/makarova22a.html>`_
+      <https://proceedings.mlr.press/v188/makarova22a.html>`__
 
     Args:
         improvement_evaluator:
@@ -101,8 +100,8 @@ class Terminator(BaseTerminator):
 
     def __init__(
         self,
-        improvement_evaluator: Optional[BaseImprovementEvaluator] = None,
-        error_evaluator: Optional[BaseErrorEvaluator] = None,
+        improvement_evaluator: BaseImprovementEvaluator | None = None,
+        error_evaluator: BaseErrorEvaluator | None = None,
         min_n_trials: int = DEFAULT_MIN_N_TRIALS,
     ) -> None:
         if min_n_trials <= 0:

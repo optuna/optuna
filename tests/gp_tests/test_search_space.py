@@ -71,20 +71,23 @@ def test_normalize_unnormalize_one_param(
             (np.log(1.8) - np.log(0.5)) / (np.log(10.5) - np.log(0.5)),
             (np.log(2.0) - np.log(0.5)) / (np.log(10.5) - np.log(0.5)),
         ),
+        (ScaleType.LINEAR, (-1, 1), 0.5, 0.0, 0.1),
+        (ScaleType.LINEAR, (-1, 1), 0.5, 1.0, 0.9),
+        (ScaleType.LINEAR, (-0.1, 0.7), 0.4, -0.1, 1 / 6),
+        (ScaleType.LINEAR, (-0.1, 0.7), 0.4, 0.7, 5 / 6),
     ],
 )
 def test_round_one_normalized_param(
     scale_type: ScaleType, bounds: tuple[float, float], step: float, value: float, expected: float
 ) -> None:
-    assert np.isclose(
-        round_one_normalized_param(
-            np.array(value),
-            scale_type,
-            bounds,
-            step,
-        ),
-        expected,
+    res = round_one_normalized_param(
+        np.array(value),
+        scale_type,
+        bounds,
+        step,
     )
+    assert np.isclose(res, expected)
+    assert 0.0 <= res <= 1.0
 
 
 def test_sample_normalized_params() -> None:

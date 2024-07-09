@@ -5,10 +5,11 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
+from optuna._deprecated import deprecated_class
 from optuna._experimental import experimental_class
 from optuna._imports import try_import
-from optuna.storages._journal.base import BaseJournalLogSnapshot
-from optuna.storages._journal.base import BaseJournalLogStorage
+from optuna.storages.journal._base import BaseJournalBackend
+from optuna.storages.journal._base import BaseJournalSnapshot
 
 
 with try_import() as _imports:
@@ -16,7 +17,7 @@ with try_import() as _imports:
 
 
 @experimental_class("3.1.0")
-class JournalRedisStorage(BaseJournalLogStorage, BaseJournalLogSnapshot):
+class JournalRedisBackend(BaseJournalBackend, BaseJournalSnapshot):
     """Redis storage class for Journal log backend.
 
     Args:
@@ -98,3 +99,10 @@ class JournalRedisStorage(BaseJournalLogStorage, BaseJournalLogSnapshot):
 
     def _key_log_id(self, log_number: int) -> str:
         return f"{self._prefix}:log:{log_number}"
+
+
+@deprecated_class(
+    "4.0.0", "6.0.0", text="Use :class:`~optuna.storages.journal.JournalRedisBackend` instead."
+)
+class JournalRedisStorage(JournalRedisBackend):
+    pass

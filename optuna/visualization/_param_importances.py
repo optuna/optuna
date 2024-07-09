@@ -136,7 +136,7 @@ def plot_param_importances(
             .. note::
                 :class:`~optuna.importance.FanovaImportanceEvaluator` takes over 1 minute
                 when given a study that contains 1000+ trials. We published
-                `optuna-fast-fanova <https://github.com/optuna/optuna-fast-fanova>`_ library,
+                `optuna-fast-fanova <https://github.com/optuna/optuna-fast-fanova>`__ library,
                 that is a Cython accelerated fANOVA implementation.
                 By using it, you can get hyperparameter importances within a few seconds.
 

@@ -32,6 +32,7 @@ clean:
 	rm -rf source/tutorial/10_key_features
 	rm -rf source/tutorial/20_recipes
 	rm -f ../tutorial/**/*.db
+	rm -f ../tutorial/**/*.log
 	rm -rf ../tutorial/20_recipes/artifacts
 	rm -f ../tutorial/20_recipes/journal.log
 	rm -rf ../tutorial/20_recipes/tmp

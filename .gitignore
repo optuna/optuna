@@ -64,6 +64,7 @@ coverage.xml
 
 # Django stuff:
 *.log
+!tests/storages_tests/journal_tests/assets/*.log
 local_settings.py
 
 # Flask stuff:
