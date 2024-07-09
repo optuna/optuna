@@ -15,7 +15,7 @@ The :mod:`~optuna.storages` module defines a :class:`~optuna.storages.BaseStorag
    optuna.storages.JournalStorage
 
 optuna.storages.journal
-=======================
+-----------------------
 
 :class:`~optuna.storages.JournalStorage` requires its backend specification and here is the list of the supported backends:
 
@@ -39,7 +39,7 @@ Users can flexibly choose a lock object for :class:`~optuna.storages.journal.Jou
    optuna.storages.journal.JournalFileOpenLock
 
 Deprecated Modules
-==================
+------------------
 
 .. note::
    The following modules are deprecated at v4.0.0 and will be removed in the future.
