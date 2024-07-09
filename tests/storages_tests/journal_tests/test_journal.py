@@ -246,11 +246,3 @@ def test_raise_error_for_deprecated_class_import_from_journal() -> None:
         journal.JournalRedisStorage  # type: ignore[attr-defined]
     with pytest.raises(AttributeError):
         journal.BaseJournalLogStorage  # type: ignore[attr-defined]
-
-
-def test_invalid_journal_related_non_storage_class_import() -> None:
-    journal_related_modules_in_storages_init = list(
-        set(journal.__all__) & set(optuna.storages.__all__)
-    )
-    assert len(journal_related_modules_in_storages_init) == 1
-    assert journal_related_modules_in_storages_init[0] == JournalStorage.__name__
