@@ -1346,6 +1346,9 @@ def load_study(
             If :obj:`None` is specified, :class:`~optuna.pruners.MedianPruner` is used
             as the default. See also :class:`~optuna.pruners`.
 
+    Returns:
+        A :class:`~optuna.study.Study` object.
+
     See also:
         :func:`optuna.load_study` is an alias of :func:`optuna.study.load_study`.
 
