@@ -19,7 +19,7 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
 
     On acquiring the lock, link system call is called to create an exclusive file. The file is
     deleted when the lock is released. In NFS environments prior to NFSv3, use this instead of
-    :class:`~optuna.storages.JournalFileOpenLock`
+    :class:`~optuna.storages.journal.JournalFileOpenLock`.
 
     Args:
         filepath:
@@ -72,7 +72,7 @@ class JournalFileOpenLock(BaseJournalFileLock):
     On acquiring the lock, open system call is called with the O_EXCL option to create an exclusive
     file. The file is deleted when the lock is released. This class is only supported when using
     NFSv3 or later on kernel 2.6 or later. In prior NFS environments, use
-    :class:`~optuna.storages.JournalFileSymlinkLock`.
+    :class:`~optuna.storages.journal.JournalFileSymlinkLock`.
 
     Args:
         filepath:
