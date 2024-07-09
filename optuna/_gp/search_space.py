@@ -75,7 +75,11 @@ def round_one_normalized_param(
         return param_value
 
     param_value = unnormalize_one_param(param_value, scale_type, bounds, step)
-    param_value = (param_value - bounds[0] + 0.5 * step) // step * step + bounds[0]
+    param_value = np.clip(
+        (param_value - bounds[0] + 0.5 * step) // step * step + bounds[0],
+        bounds[0],
+        bounds[1],
+    )
     param_value = normalize_one_param(param_value, scale_type, bounds, step)
     return param_value
 
