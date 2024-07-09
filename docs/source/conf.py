@@ -21,6 +21,7 @@ import warnings
 import plotly.io as pio
 from sklearn.exceptions import ConvergenceWarning
 from sphinx_gallery.sorting import FileNameSortKey
+from plotly.io._sg_scraper import plotly_sg_scraper
 
 import optuna
 
@@ -37,6 +38,8 @@ version = optuna.version.__version__
 release = optuna.version.__version__
 
 # -- General configuration ---------------------------------------------------
+
+pio.renderers.default = "sphinx_gallery"
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
@@ -192,20 +195,28 @@ autodoc_default_options = {
 copybutton_prompt_text = "$ "
 
 # Sphinx Gallery
-pio.renderers.default = "sphinx_gallery"
+pio.renderers.default = "sphinx_gallery_png"
 
 sphinx_gallery_conf = {
+    "doc_module": ("sphinx_gallery"),
     "examples_dirs": [
         "../../tutorial/10_key_features",
         "../../tutorial/20_recipes",
+        "../visualization_matplotlib_examples",
+        "../visualization_examples",
     ],
     "gallery_dirs": [
         "tutorial/10_key_features",
         "tutorial/20_recipes",
+        "auto_visualization_matplotlib_examples",
+        "auto_visualization_examples",
     ],
+    "compress_images": ("images", "thumbnails"),
+    "thumbnail_size": (400, 280),
     "within_subsection_order": FileNameSortKey,
     "filename_pattern": r"/*\.py",
     "first_notebook_cell": None,
+    "image_scrapers": ("matplotlib", plotly_sg_scraper),
 }
 
 # matplotlib plot directive
