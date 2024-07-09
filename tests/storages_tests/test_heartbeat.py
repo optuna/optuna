@@ -11,8 +11,8 @@ import pytest
 
 import optuna
 from optuna import Study
-from optuna._callbacks import RetryFailedTrialCallback
 from optuna.storages import RDBStorage
+from optuna.storages._callbacks import RetryFailedTrialCallback
 from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.storages._heartbeat import is_heartbeat_enabled
 from optuna.testing.storages import STORAGE_MODES_HEARTBEAT
