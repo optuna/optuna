@@ -3,6 +3,7 @@ from __future__ import annotations
 from concurrent.futures import as_completed
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
+import pathlib
 import pickle
 from types import TracebackType
 from typing import Any
@@ -233,7 +234,7 @@ def test_future_warning_of_deprecated_file_lock_obj_paths(
     lock_obj: type[DeprecatedJournalFileOpenLock | DeprecatedJournalFileSymlinkLock],
 ) -> None:
     with pytest.warns(FutureWarning):
-        lock_obj(filepath=tmp_path)
+        lock_obj(filepath=str(tmp_path))
 
 
 def test_raise_error_for_deprecated_class_import_from_journal() -> None:
