@@ -73,7 +73,7 @@ class BaseJournalSnapshot(abc.ABC):
 
 
 @deprecated_class(
-    "4.0.0", "6.0.0", text="Use :class:`~optuna.storages.BaseJournalBackend` instead."
+    "4.0.0", "6.0.0", text="Use :class:`~optuna.storages.journal.BaseJournalBackend` instead."
 )
 class BaseJournalLogStorage(BaseJournalBackend):
     """Base class for Journal storages.
@@ -88,7 +88,7 @@ class BaseJournalLogStorage(BaseJournalBackend):
 
 
 @deprecated_class(
-    "4.0.0", "6.0.0", text="Use :class:`~optuna.storages.BaseJournalSnapshot` instead."
+    "4.0.0", "6.0.0", text="Use :class:`~optuna.storages.journal.BaseJournalSnapshot` instead."
 )
 class BaseJournalLogSnapshot(BaseJournalSnapshot):
     """Optional base class for Journal storages.
