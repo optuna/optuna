@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 
-from optuna._experimental import experimental_func
 from optuna.artifacts._upload import ArtifactMeta
 from optuna.artifacts._upload import ARTIFACTS_ATTR_PREFIX
 from optuna.storages import BaseStorage
@@ -11,7 +10,6 @@ from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 
 
-@experimental_func("4.0.0")
 def get_all_artifact_meta(
     study_or_trial: Trial | FrozenTrial | Study, *, storage: BaseStorage | None = None
 ) -> list[ArtifactMeta]:
