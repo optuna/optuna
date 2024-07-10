@@ -63,8 +63,8 @@ class _DeferredImportExceptionContextManager:
                     message = (
                         f"\nTried to import optuna-integration for '{integration_dependency}' but "
                         "failed.\nPlease install the dependencies via:\n"
-                        f"\t$ pip install optuna-integration[{integration_dependency}]\nto use "
-                        f"this feature. Actual error: {exc_value}."
+                        f"\t$ pip install --upgrade optuna-integration[{integration_dependency}]\n"
+                        f"to use this feature. Actual error: {exc_value}."
                     )
                 else:
                     message = (
