@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import importlib
 import types
 from types import TracebackType
@@ -11,6 +13,21 @@ _INTEGRATION_IMPORT_ERROR_TEMPLATE = (
     "\nCould not find `optuna-integration` for `{0}`.\n"
     "Please run `pip install optuna-integration[{0}]`."
 )
+
+
+def _get_exception_source_module(traceback: TracebackType | None) -> str | None:
+    if traceback is None:
+        return None
+
+    if not hasattr(traceback, "tb_frame"):
+        return None
+
+    traceback_frame = traceback.tb_frame
+    if not hasattr(traceback_frame, "f_locals"):
+        return None
+
+    traceback_frame_local_name = traceback.tb_frame.f_locals
+    return traceback_frame_local_name.get("__name__")
 
 
 class _DeferredImportExceptionContextManager:
@@ -56,8 +73,11 @@ class _DeferredImportExceptionContextManager:
         """
         if isinstance(exc_value, (ImportError, SyntaxError)):
             if isinstance(exc_value, ImportError):
-                traceback_source_module = traceback.tb_frame.f_locals["__name__"]
-                if "optuna_integration." in traceback_source_module:
+                traceback_source_module = _get_exception_source_module(traceback)
+                if (
+                    traceback_source_module is not None
+                    and "optuna_integration." in traceback_source_module
+                ):
                     integration_submodule = traceback_source_module.split("optuna_integration.")[1]
                     integration_dependency = integration_submodule.split(".")[0]
                     message = (
