@@ -19,7 +19,7 @@ import optuna
 # Add stream handler of stdout to show the messages
 optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
 study_name = "example-study"  # Unique identifier of the study.
-file_path = "./journal_file_storage_jsonl.log"
+file_path = "./optuna_journal_storage.log"
 storage = optuna.storages.JournalStorage(
     optuna.storages.journal.JournalFileBackend(file_path),  # NFS path for distributed optimization
 )
