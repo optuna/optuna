@@ -78,6 +78,7 @@ class _DeferredImportExceptionContextManager:
                 and "optuna_integration." in traceback_source_module
             )
             if is_traceback_from_integration and isinstance(exc_value, ImportError):
+                assert traceback_source_module is not None, "MyPy Redefinition"
                 integration_submodule = traceback_source_module.split("optuna_integration.")[1]
                 integration_dependency = integration_submodule.split(".")[0]
                 message = (
