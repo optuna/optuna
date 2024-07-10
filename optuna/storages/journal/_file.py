@@ -47,8 +47,8 @@ class JournalFileBackend(BaseJournalBackend):
 
         lock_obj:
             Lock object for process exclusivity. An instance of
-            :class:`~optuna.storages.JournalFileSymlinkLock` and
-            :class:`~optuna.storages.JournalFileOpenLock` can be passed.
+            :class:`~optuna.storages.journal.JournalFileSymlinkLock` and
+            :class:`~optuna.storages.journal.JournalFileOpenLock` can be passed.
     """
 
     def __init__(self, file_path: str, lock_obj: BaseJournalFileLock | None = None) -> None:
@@ -233,7 +233,7 @@ def get_lock_file(lock_obj: BaseJournalFileLock) -> Iterator[None]:
 
 
 @deprecated_class(
-    "4.0.0", "6.0.0", text="Use :class:`~optuna.storages.JournalFileBackend` instead."
+    "4.0.0", "6.0.0", text="Use :class:`~optuna.storages.journal.JournalFileBackend` instead."
 )
 class JournalFileStorage(JournalFileBackend):
     pass
