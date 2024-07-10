@@ -72,25 +72,25 @@ class _DeferredImportExceptionContextManager:
 
         """
         if isinstance(exc_value, (ImportError, SyntaxError)):
-            if isinstance(exc_value, ImportError):
-                traceback_source_module = _get_exception_source_module(traceback)
-                if (
-                    traceback_source_module is not None
-                    and "optuna_integration." in traceback_source_module
-                ):
-                    integration_submodule = traceback_source_module.split("optuna_integration.")[1]
-                    integration_dependency = integration_submodule.split(".")[0]
-                    message = (
-                        f"\nTried to import optuna-integration for '{integration_dependency}' but "
-                        "failed.\nPlease install the dependencies via:\n"
-                        f"\t$ pip install --upgrade optuna-integration[{integration_dependency}]\n"
-                        f"to use this feature. Actual error: {exc_value}."
-                    )
-                else:
-                    message = (
-                        "Tried to import '{}' but failed. Please make sure that the package is "
-                        "installed correctly to use this feature. Actual error: {}."
-                    ).format(exc_value.name, exc_value)
+            traceback_source_module = _get_exception_source_module(traceback)
+            is_traceback_from_integration = (
+                traceback_source_module is not None
+                and "optuna_integration." in traceback_source_module
+            )
+            if is_traceback_from_integration and isinstance(exc_value, ImportError):
+                integration_submodule = traceback_source_module.split("optuna_integration.")[1]
+                integration_dependency = integration_submodule.split(".")[0]
+                message = (
+                    f"\nTried to import optuna-integration for '{integration_dependency}' but "
+                    "failed.\nPlease install the dependencies via:\n"
+                    f"\t$ pip install --upgrade optuna-integration[{integration_dependency}]\n"
+                    f"to use this feature. Actual error: {exc_value}."
+                )
+            elif isinstance(exc_value, ImportError):
+                message = (
+                    "Tried to import '{}' but failed. Please make sure that the package is "
+                    "installed correctly to use this feature. Actual error: {}."
+                ).format(exc_value.name, exc_value)
             elif isinstance(exc_value, SyntaxError):
                 message = (
                     "Tried to import a package but failed due to a syntax error in {}. Please "
