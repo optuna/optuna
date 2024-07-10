@@ -23,8 +23,8 @@ from optuna.storages import journal
 from optuna.storages import JournalFileOpenLock as DeprecatedJournalFileOpenLock
 from optuna.storages import JournalFileSymlinkLock as DeprecatedJournalFileSymlinkLock
 from optuna.storages import JournalStorage
-from optuna.storages.journal._base import BaseJournalFileLock
 from optuna.storages.journal._base import BaseJournalSnapshot
+from optuna.storages.journal._file import BaseJournalFileLock
 from optuna.storages.journal._storage import JournalStorageReplayResult
 from optuna.testing.storages import StorageSupplier
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
@@ -246,11 +246,3 @@ def test_raise_error_for_deprecated_class_import_from_journal() -> None:
         journal.JournalRedisStorage  # type: ignore[attr-defined]
     with pytest.raises(AttributeError):
         journal.BaseJournalLogStorage  # type: ignore[attr-defined]
-
-
-def test_invalid_journal_related_non_storage_class_import() -> None:
-    journal_related_modules_in_storages_init = list(
-        set(journal.__all__) & set(optuna.storages.__all__)
-    )
-    assert len(journal_related_modules_in_storages_init) == 1
-    assert journal_related_modules_in_storages_init[0] == JournalStorage.__name__

@@ -7,24 +7,6 @@ from typing import Optional
 from optuna._deprecated import deprecated_class
 
 
-class BaseJournalFileLock(abc.ABC):
-    @abc.abstractmethod
-    def acquire(self) -> bool:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def release(self) -> None:
-        raise NotImplementedError
-
-
-@deprecated_class(
-    "4.0.0", "6.0.0", text="Use :class:`~optuna.storages.BaseJournalFileLock` instead."
-)
-class JournalFileBaseLock(BaseJournalFileLock):
-    # Note: As of v4.0.0, this base class is NOT exposed to users.
-    pass
-
-
 class BaseJournalBackend(abc.ABC):
     """Base class for Journal storages.
 
@@ -103,16 +85,3 @@ class BaseJournalLogStorage(BaseJournalBackend):
     :class:`~optuna.storages.JournalFileOpenLock` for creating a critical section.
 
     """
-
-
-@deprecated_class(
-    "4.0.0", "6.0.0", text="Use :class:`~optuna.storages.BaseJournalSnapshot` instead."
-)
-class BaseJournalLogSnapshot(BaseJournalSnapshot):
-    """Optional base class for Journal storages.
-
-    Storage classes implementing this base class may work faster when
-    constructing the internal state from the large amount of logs.
-    """
-
-    # Note: As of v4.0.0, this base class is NOT exposed to users.
