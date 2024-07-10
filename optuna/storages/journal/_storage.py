@@ -86,12 +86,12 @@ class JournalStorage(BaseStorage):
 
     In a Windows environment, an error message "A required privilege is not held by the
     client" may appear. In this case, you can solve the problem with creating storage
-    by specifying :class:`~optuna.storages.JournalFileOpenLock` as follows.
+    by specifying :class:`~optuna.storages.journal.JournalFileOpenLock` as follows.
 
     .. code::
 
         file_path = "./optuna_journal_storage.log"
-        lock_obj = optuna.storages.JournalFileOpenLock(file_path)
+        lock_obj = optuna.storages.journal.JournalFileOpenLock(file_path)
 
         storage = optuna.storages.JournalStorage(
             optuna.storages.journal.JournalFileBackend(file_path, lock_obj=lock_obj),

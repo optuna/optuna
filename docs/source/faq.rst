@@ -556,7 +556,7 @@ If you want to use a file-based Optuna storage for these scenarios, please consi
    from optuna.storages import JournalStorage
    from optuna.storages.journal import JournalFileBackend
 
-   storage = JournalStorage(JournalFileStorage("optuna_journal_storage.log"))
+   storage = JournalStorage(JournalFileBackend("optuna_journal_storage.log"))
 
    study = optuna.create_study(storage=storage)
    ...

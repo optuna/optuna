@@ -43,5 +43,5 @@ study.optimize(objective, n_trials=3)
 # .. note::
 #     In a Windows environment, an error message "A required privilege is not held by the client"
 #     may appear. In this case, you can solve the problem with creating storage by specifying
-#     :class:`~optuna.storages.JournalFileOpenLock`. See the reference of
+#     :class:`~optuna.storages.journal.JournalFileOpenLock`. See the reference of
 #     :class:`~optuna.storages.JournalStorage` for any details.
