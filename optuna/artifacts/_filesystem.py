@@ -5,7 +5,6 @@ from pathlib import Path
 import shutil
 from typing import TYPE_CHECKING
 
-from optuna._experimental import experimental_class
 from optuna.artifacts.exceptions import ArtifactNotFound
 
 
@@ -13,7 +12,6 @@ if TYPE_CHECKING:
     from typing import BinaryIO
 
 
-@experimental_class("3.3.0")
 class FileSystemArtifactStore:
     """An artifact store for file systems.
 
