@@ -12,7 +12,6 @@ from typing import Sequence
 import uuid
 
 import optuna
-from optuna._experimental import experimental_class
 from optuna._typing import JSONSerializable
 from optuna.distributions import BaseDistribution
 from optuna.distributions import check_distribution_compatibility
@@ -49,7 +48,6 @@ class JournalOperation(enum.IntEnum):
     SET_TRIAL_SYSTEM_ATTR = 9
 
 
-@experimental_class("3.1.0")
 class JournalStorage(BaseStorage):
     """Storage class for Journal storage backend.
 
