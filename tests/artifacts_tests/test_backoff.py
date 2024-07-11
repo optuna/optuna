@@ -2,7 +2,6 @@ import io
 import uuid
 
 from optuna.artifacts import Backoff
-
 from tests.artifacts_tests.stubs import FailArtifactStore
 from tests.artifacts_tests.stubs import InMemoryArtifactStore
 

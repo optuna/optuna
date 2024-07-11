@@ -31,7 +31,6 @@ from optuna.study import StudyDirection
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-
 from tests.storages_tests.rdb_tests.create_db import mo_objective_test_upgrade
 from tests.storages_tests.rdb_tests.create_db import objective_test_upgrade
 from tests.storages_tests.rdb_tests.create_db import objective_test_upgrade_distributions
