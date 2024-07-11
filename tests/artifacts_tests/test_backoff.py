@@ -3,8 +3,9 @@ import uuid
 
 from optuna.artifacts import Backoff
 
-from .stubs import FailArtifactStore
-from .stubs import InMemoryArtifactStore
+from tests.artifacts_tests.stubs import FailArtifactStore
+from tests.artifacts_tests.stubs import InMemoryArtifactStore
+
 
 
 def test_backoff_time() -> None:

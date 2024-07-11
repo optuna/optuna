@@ -32,9 +32,9 @@ from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
-from .create_db import mo_objective_test_upgrade
-from .create_db import objective_test_upgrade
-from .create_db import objective_test_upgrade_distributions
+from tests.storages_tests.rdb_tests.create_db import mo_objective_test_upgrade
+from tests.storages_tests.rdb_tests.create_db import objective_test_upgrade
+from tests.storages_tests.rdb_tests.create_db import objective_test_upgrade_distributions
 
 
 def test_init() -> None:
