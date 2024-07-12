@@ -180,7 +180,9 @@ class _FanovaTree:
 
         return statistics
 
-    def _precompute_split_midpoints_and_sizes(self,) -> tuple[list[np.ndarray], list[np.ndarray]]:
+    def _precompute_split_midpoints_and_sizes(
+        self,
+    ) -> tuple[list[np.ndarray], list[np.ndarray]]:
         midpoints = []
         sizes = []
 
