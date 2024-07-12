@@ -112,6 +112,6 @@ class Backoff:
 if TYPE_CHECKING:
     # A mypy-runtime assertion to ensure that the Backoff middleware implements
     # all abstract methods in ArtifactStore.
-    from optuna.artifacts._filesystem import FileSystemArtifactStore
+    from optuna.artifacts import FileSystemArtifactStore
 
     _: ArtifactStore = Backoff(FileSystemArtifactStore("."))
