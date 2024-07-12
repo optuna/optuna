@@ -73,6 +73,11 @@ class Trial(BaseTrial):
             self._relative_params = self.study.sampler.sample_relative(
                 study, self._cached_frozen_trial, self.relative_search_space
             )
+        if not isinstance(self._relative_params, dict):
+            _relative_params_type = type(self._relative_params).__name__
+            raise TypeError(
+                f"sample_relative must returned a dict instead of a {_relative_params_type}"
+            )
         return self._relative_params
 
     def suggest_float(
@@ -328,24 +333,30 @@ class Trial(BaseTrial):
         return suggested_value
 
     @overload
-    def suggest_categorical(self, name: str, choices: Sequence[None]) -> None: ...
+    def suggest_categorical(self, name: str, choices: Sequence[None]) -> None:
+        ...
 
     @overload
-    def suggest_categorical(self, name: str, choices: Sequence[bool]) -> bool: ...
+    def suggest_categorical(self, name: str, choices: Sequence[bool]) -> bool:
+        ...
 
     @overload
-    def suggest_categorical(self, name: str, choices: Sequence[int]) -> int: ...
+    def suggest_categorical(self, name: str, choices: Sequence[int]) -> int:
+        ...
 
     @overload
-    def suggest_categorical(self, name: str, choices: Sequence[float]) -> float: ...
+    def suggest_categorical(self, name: str, choices: Sequence[float]) -> float:
+        ...
 
     @overload
-    def suggest_categorical(self, name: str, choices: Sequence[str]) -> str: ...
+    def suggest_categorical(self, name: str, choices: Sequence[str]) -> str:
+        ...
 
     @overload
     def suggest_categorical(
         self, name: str, choices: Sequence[CategoricalChoiceType]
-    ) -> CategoricalChoiceType: ...
+    ) -> CategoricalChoiceType:
+        ...
 
     def suggest_categorical(
         self, name: str, choices: Sequence[CategoricalChoiceType]
