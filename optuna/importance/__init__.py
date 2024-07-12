@@ -1,7 +1,6 @@
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
+from __future__ import annotations
+
+from collections.abc import Callable
 
 from optuna._experimental import warn_experimental_argument
 from optuna.importance._base import BaseImportanceEvaluator
@@ -24,11 +23,11 @@ __all__ = [
 def get_param_importances(
     study: Study,
     *,
-    evaluator: Optional[BaseImportanceEvaluator] = None,
-    params: Optional[List[str]] = None,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
+    evaluator: BaseImportanceEvaluator | None = None,
+    params: list[str] | None = None,
+    target: Callable[[FrozenTrial], float] | None = None,
     normalize: bool = True,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Evaluate parameter importances based on completed trials in the given study.
 
     The parameter importances are returned as a dictionary where the keys consist of parameter
