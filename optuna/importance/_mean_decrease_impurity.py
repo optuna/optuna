@@ -1,7 +1,6 @@
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
+from __future__ import annotations
+
+from collections.abc import Callable
 
 import numpy as np
 
@@ -44,9 +43,7 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
             Seed for the random forest.
     """
 
-    def __init__(
-        self, *, n_trees: int = 64, max_depth: int = 64, seed: Optional[int] = None
-    ) -> None:
+    def __init__(self, *, n_trees: int = 64, max_depth: int = 64, seed: int | None = None) -> None:
         _imports.check()
 
         self._forest = RandomForestRegressor(
@@ -58,15 +55,15 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
         )
         self._trans_params = np.empty(0)
         self._trans_values = np.empty(0)
-        self._param_names: List[str] = list()
+        self._param_names: list[str] = list()
 
     def evaluate(
         self,
         study: Study,
-        params: Optional[List[str]] = None,
+        params: list[str] | None = None,
         *,
-        target: Optional[Callable[[FrozenTrial], float]] = None,
-    ) -> Dict[str, float]:
+        target: Callable[[FrozenTrial], float] | None = None,
+    ) -> dict[str, float]:
         if target is None and study._is_multi_objective():
             raise ValueError(
                 "If the `study` is being used for multi-objective optimization, "
@@ -81,7 +78,7 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
         if len(params) == 0:
             return {}
 
-        trials: List[FrozenTrial] = _get_filtered_trials(study, params=params, target=target)
+        trials: list[FrozenTrial] = _get_filtered_trials(study, params=params, target=target)
         trans = _SearchSpaceTransform(distributions, transform_log=False, transform_step=False)
         trans_params: np.ndarray = _get_trans_params(trials, trans)
         target_values: np.ndarray = _get_target_values(trials, target)
