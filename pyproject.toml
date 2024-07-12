@@ -148,7 +148,13 @@ exclude = '''
 [tool.isort]
 profile = 'black'
 src_paths = ['optuna', 'tests', 'docs', 'benchmarks']
-skip_glob = ['docs/source/conf.py', '**/alembic/versions/*.py', 'tutorial/**/*.py']
+skip_glob = [
+  'docs/source/conf.py',
+  '**/alembic/versions/*.py',
+  'tutorial/**/*.py',
+  'docs/visualization_examples/*.py',
+  'docs/visualization_matplotlib_examples/*.py',
+]
 line_length = 99
 lines_after_imports = 2
 force_single_line = 'True'
