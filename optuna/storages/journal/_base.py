@@ -13,8 +13,8 @@ class BaseJournalBackend(abc.ABC):
     Storage classes implementing this base class must guarantee process safety. This means,
     multiple processes might concurrently call ``read_logs`` and ``append_logs``. If the
     backend storage does not internally support mutual exclusion mechanisms, such as locks,
-    you might want to use :class:`~optuna.storages.JournalFileSymlinkLock` or
-    :class:`~optuna.storages.JournalFileOpenLock` for creating a critical section.
+    you might want to use :class:`~optuna.storages.journal.JournalFileSymlinkLock` or
+    :class:`~optuna.storages.journal.JournalFileOpenLock` for creating a critical section.
 
     """
 
@@ -73,7 +73,7 @@ class BaseJournalSnapshot(abc.ABC):
 
 
 @deprecated_class(
-    "4.0.0", "6.0.0", text="Use :class:`~optuna.storages.BaseJournalBackend` instead."
+    "4.0.0", "6.0.0", text="Use :class:`~optuna.storages.journal.BaseJournalBackend` instead."
 )
 class BaseJournalLogStorage(BaseJournalBackend):
     """Base class for Journal storages.
@@ -81,20 +81,7 @@ class BaseJournalLogStorage(BaseJournalBackend):
     Storage classes implementing this base class must guarantee process safety. This means,
     multiple processes might concurrently call ``read_logs`` and ``append_logs``. If the
     backend storage does not internally support mutual exclusion mechanisms, such as locks,
-    you might want to use :class:`~optuna.storages.JournalFileSymlinkLock` or
-    :class:`~optuna.storages.JournalFileOpenLock` for creating a critical section.
+    you might want to use :class:`~optuna.storages.journal.JournalFileSymlinkLock` or
+    :class:`~optuna.storages.journal.JournalFileOpenLock` for creating a critical section.
 
     """
-
-
-@deprecated_class(
-    "4.0.0", "6.0.0", text="Use :class:`~optuna.storages.BaseJournalSnapshot` instead."
-)
-class BaseJournalLogSnapshot(BaseJournalSnapshot):
-    """Optional base class for Journal storages.
-
-    Storage classes implementing this base class may work faster when
-    constructing the internal state from the large amount of logs.
-    """
-
-    # Note: As of v4.0.0, this base class is NOT exposed to users.

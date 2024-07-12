@@ -3,11 +3,9 @@ from __future__ import annotations
 import os
 import shutil
 
-from optuna._experimental import experimental_func
 from optuna.artifacts._protocol import ArtifactStore
 
 
-@experimental_func("4.0.0")
 def download_artifact(*, artifact_store: ArtifactStore, file_path: str, artifact_id: str) -> None:
     """Download an artifact from the artifact store.
 

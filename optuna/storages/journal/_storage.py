@@ -12,7 +12,6 @@ from typing import Sequence
 import uuid
 
 import optuna
-from optuna._experimental import experimental_class
 from optuna._typing import JSONSerializable
 from optuna.distributions import BaseDistribution
 from optuna.distributions import check_distribution_compatibility
@@ -49,7 +48,6 @@ class JournalOperation(enum.IntEnum):
     SET_TRIAL_SYSTEM_ATTR = 9
 
 
-@experimental_class("3.1.0")
 class JournalStorage(BaseStorage):
     """Storage class for Journal storage backend.
 
@@ -78,7 +76,7 @@ class JournalStorage(BaseStorage):
 
 
             storage = optuna.storages.JournalStorage(
-                optuna.storages.journal.JournalFileBackend("./journal_file_storage_jsonl.log")
+                optuna.storages.journal.JournalFileBackend("./optuna_journal_storage.log")
             )
 
             study = optuna.create_study(storage=storage)
@@ -86,12 +84,12 @@ class JournalStorage(BaseStorage):
 
     In a Windows environment, an error message "A required privilege is not held by the
     client" may appear. In this case, you can solve the problem with creating storage
-    by specifying :class:`~optuna.storages.JournalFileOpenLock` as follows.
+    by specifying :class:`~optuna.storages.journal.JournalFileOpenLock` as follows.
 
     .. code::
 
-        file_path = "./journal_file_storage_jsonl.log"
-        lock_obj = optuna.storages.JournalFileOpenLock(file_path)
+        file_path = "./optuna_journal_storage.log"
+        lock_obj = optuna.storages.journal.JournalFileOpenLock(file_path)
 
         storage = optuna.storages.JournalStorage(
             optuna.storages.journal.JournalFileBackend(file_path, lock_obj=lock_obj),

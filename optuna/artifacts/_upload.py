@@ -8,7 +8,6 @@ import os
 import uuid
 
 from optuna._convert_positional_args import convert_positional_args
-from optuna._experimental import experimental_func
 from optuna.artifacts._protocol import ArtifactStore
 from optuna.storages import BaseStorage
 from optuna.study import Study
@@ -48,7 +47,6 @@ class ArtifactMeta:
     encoding: str | None
 
 
-@experimental_func("3.3.0")
 @convert_positional_args(
     previous_positional_arg_names=["study_or_trial", "file_path", "artifact_store"]
 )
