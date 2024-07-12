@@ -44,6 +44,6 @@ jobs:
     - name: isort
       run: isort . --check --diff
     - name: mypy
-      run: mypy .
+      run: mypy --follow-imports=normal .
     - name: blackdoc
       run: blackdoc . --check --diff
