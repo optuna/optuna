@@ -22,7 +22,13 @@ class BaseTrial(abc.ABC):
 
     @abc.abstractmethod
     def suggest_float(
-        self, name: str, low: float, high: float, *, step: float | None = None, log: bool = False,
+        self,
+        name: str,
+        low: float,
+        high: float,
+        *,
+        step: float | None = None,
+        log: bool = False,
     ) -> float:
         raise NotImplementedError
 
