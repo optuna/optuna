@@ -75,6 +75,6 @@ class FileSystemArtifactStore:
 if TYPE_CHECKING:
     # A mypy-runtime assertion to ensure that LocalArtifactBackend
     # implements all abstract methods in ArtifactBackendProtocol.
-    from ._protocol import ArtifactStore
+    from optuna.artifacts._protocol import ArtifactStore
 
     _: ArtifactStore = FileSystemArtifactStore("")
