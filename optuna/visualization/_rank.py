@@ -212,7 +212,7 @@ def _get_rank_subplot_info(
 
     xs: list[Any] = []
     ys: list[Any] = []
-    zs  = []
+    zs = []
     filtered_trials: list[FrozenTrial] = []
     filtered_colors = []
 
@@ -230,7 +230,7 @@ def _get_rank_subplot_info(
 
     filtered_colors = np.array(filtered_colors)
     if filtered_colors.ndim == 1:
-        filtered_colors = filtered_colors.reshape(-1,1)
+        filtered_colors = filtered_colors.reshape(-1, 1)
 
     return _RankSubplotInfo(
         xaxis=xaxis,
