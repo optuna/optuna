@@ -214,7 +214,7 @@ def _get_rank_subplot_info(
     ys: list[Any] = []
     zs = []
     filtered_trials: list[FrozenTrial] = []
-    filtered_colors = []
+    _filtered_colors = []
 
     for idx, trial in enumerate(trials):
         constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
@@ -226,9 +226,9 @@ def _get_rank_subplot_info(
             ys.append(trial.params[y_param])
             zs.append(target_values[idx])
             filtered_trials.append(trial)
-            filtered_colors.append(colors[idx])
+            _filtered_colors.append(colors[idx])
 
-    filtered_colors = np.array(filtered_colors)
+    filtered_colors: np.ndarray = np.array(_filtered_colors)
     if filtered_colors.ndim == 1:
         filtered_colors = filtered_colors.reshape(-1, 1)
 
