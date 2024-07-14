@@ -282,10 +282,12 @@ def _calculate_griddata(
     )
 
 
-def _generate_contour_subplot(info: _SubContourInfo, ax: "Axes", cmap: "Colormap") -> "ContourSet":
+def _generate_contour_subplot(
+    info: _SubContourInfo, ax: "Axes", cmap: "Colormap"
+) -> "ContourSet" | None:
     if len(info.xaxis.indices) < 2 or len(info.yaxis.indices) < 2:
         ax.label_outer()
-        return ax
+        return None
 
     ax.set(xlabel=info.xaxis.name, ylabel=info.yaxis.name)
     ax.set_xlim(info.xaxis.range[0], info.xaxis.range[1])
@@ -293,7 +295,7 @@ def _generate_contour_subplot(info: _SubContourInfo, ax: "Axes", cmap: "Colormap
 
     if info.xaxis.name == info.yaxis.name:
         ax.label_outer()
-        return ax
+        return None
 
     (
         xi,
@@ -316,6 +318,7 @@ def _generate_contour_subplot(info: _SubContourInfo, ax: "Axes", cmap: "Colormap
             # Contour the gridded data.
             ax.contour(xi, yi, zi, 15, linewidths=0.5, colors="k")
             cs = ax.contourf(xi, yi, zi, 15, cmap=cmap.reversed())
+            assert isinstance(cs, ContourSet)
             # Plot data points.
             ax.scatter(
                 feasible_plot_values.x,
