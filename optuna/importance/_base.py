@@ -1,11 +1,9 @@
+from __future__ import annotations
+
 import abc
-from typing import Callable
+from collections.abc import Callable
+from collections.abc import Collection
 from typing import cast
-from typing import Collection
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Union
 
 import numpy as np
 
@@ -24,10 +22,10 @@ class BaseImportanceEvaluator(abc.ABC):
     def evaluate(
         self,
         study: Study,
-        params: Optional[List[str]] = None,
+        params: list[str] | None = None,
         *,
-        target: Optional[Callable[[FrozenTrial], float]] = None,
-    ) -> Dict[str, float]:
+        target: Callable[[FrozenTrial], float] | None = None,
+    ) -> dict[str, float]:
         """Evaluate parameter importances based on completed trials in the given study.
 
         .. note::
@@ -66,7 +64,7 @@ class BaseImportanceEvaluator(abc.ABC):
         raise NotImplementedError
 
 
-def _get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, BaseDistribution]:
+def _get_distributions(study: Study, params: list[str] | None) -> dict[str, BaseDistribution]:
     completed_trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
     _check_evaluate_args(completed_trials, params)
 
@@ -109,7 +107,7 @@ def _get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, B
     return distributions
 
 
-def _check_evaluate_args(completed_trials: List[FrozenTrial], params: Optional[List[str]]) -> None:
+def _check_evaluate_args(completed_trials: list[FrozenTrial], params: list[str] | None) -> None:
     if len(completed_trials) == 0:
         raise ValueError("Cannot evaluate parameter importances without completed trials.")
     if len(completed_trials) == 1:
@@ -140,8 +138,8 @@ def _check_evaluate_args(completed_trials: List[FrozenTrial], params: Optional[L
 
 
 def _get_filtered_trials(
-    study: Study, params: Collection[str], target: Optional[Callable[[FrozenTrial], float]]
-) -> List[FrozenTrial]:
+    study: Study, params: Collection[str], target: Callable[[FrozenTrial], float] | None
+) -> list[FrozenTrial]:
     trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
     return [
         trial
@@ -152,25 +150,25 @@ def _get_filtered_trials(
 
 
 def _param_importances_to_dict(
-    params: Collection[str], param_importances: Union[np.ndarray, float]
-) -> Dict[str, float]:
+    params: Collection[str], param_importances: np.ndarray | float
+) -> dict[str, float]:
     return {
         name: value
         for name, value in zip(params, np.broadcast_to(param_importances, (len(params),)))
     }
 
 
-def _get_trans_params(trials: List[FrozenTrial], trans: _SearchSpaceTransform) -> np.ndarray:
+def _get_trans_params(trials: list[FrozenTrial], trans: _SearchSpaceTransform) -> np.ndarray:
     return np.array([trans.transform(trial.params) for trial in trials])
 
 
 def _get_target_values(
-    trials: List[FrozenTrial], target: Optional[Callable[[FrozenTrial], float]]
+    trials: list[FrozenTrial], target: Callable[[FrozenTrial], float] | None
 ) -> np.ndarray:
     return np.array([target(trial) if target is not None else trial.value for trial in trials])
 
 
-def _sort_dict_by_importance(param_importances: Dict[str, float]) -> Dict[str, float]:
+def _sort_dict_by_importance(param_importances: dict[str, float]) -> dict[str, float]:
     return dict(
         reversed(
             sorted(

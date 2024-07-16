@@ -2,11 +2,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 import itertools
-from typing import List
-from typing import Set
-from typing import Tuple
 from typing import TYPE_CHECKING
-from typing import Union
 
 import numpy as np
 
@@ -61,8 +57,8 @@ class _FanovaTree:
 
         sample = np.full(self._n_features, fill_value=np.nan, dtype=np.float64)
 
-        values: Union[List[float], np.ndarray] = []
-        weights: Union[List[float], np.ndarray] = []
+        values: list[float] | np.ndarray = []
+        weights: list[float] | np.ndarray = []
 
         for midpoints, sizes in zip(product_midpoints, product_sizes):
             sample[features] = np.array(midpoints)
@@ -81,7 +77,7 @@ class _FanovaTree:
         assert variance >= 0.0
         return variance
 
-    def _get_marginalized_statistics(self, feature_vector: np.ndarray) -> Tuple[float, float]:
+    def _get_marginalized_statistics(self, feature_vector: np.ndarray) -> tuple[float, float]:
         assert feature_vector.size == self._n_features
 
         marginalized_features = np.isnan(feature_vector)
@@ -186,7 +182,7 @@ class _FanovaTree:
 
     def _precompute_split_midpoints_and_sizes(
         self,
-    ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
+    ) -> tuple[list[np.ndarray], list[np.ndarray]]:
         midpoints = []
         sizes = []
 
@@ -207,8 +203,8 @@ class _FanovaTree:
 
         return midpoints, sizes
 
-    def _compute_features_split_values(self) -> List[np.ndarray]:
-        all_split_values: List[Set[float]] = [set() for _ in range(self._n_features)]
+    def _compute_features_split_values(self) -> list[np.ndarray]:
+        all_split_values: list[set[float]] = [set() for _ in range(self._n_features)]
 
         for node_index in range(self._n_nodes):
             feature = self._get_node_split_feature(node_index)
@@ -216,7 +212,7 @@ class _FanovaTree:
                 threshold = self._get_node_split_threshold(node_index)
                 all_split_values[feature].add(threshold)
 
-        sorted_all_split_values: List[np.ndarray] = []
+        sorted_all_split_values: list[np.ndarray] = []
 
         for split_values in all_split_values:
             split_values_array = np.array(list(split_values), dtype=np.float64)
@@ -260,7 +256,7 @@ class _FanovaTree:
         return self._tree.children_right[node_index]
 
     @lru_cache(maxsize=None)
-    def _get_node_children(self, node_index: int) -> Tuple[int, int]:
+    def _get_node_children(self, node_index: int) -> tuple[int, int]:
         return self._get_node_left_child(node_index), self._get_node_right_child(node_index)
 
     @lru_cache(maxsize=None)
@@ -299,7 +295,7 @@ class _FanovaTree:
 
     def _get_node_children_subspaces(
         self, node_index: int, search_spaces: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         return (
             self._get_node_left_child_subspaces(node_index, search_spaces),
             self._get_node_right_child_subspaces(node_index, search_spaces),

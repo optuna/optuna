@@ -89,6 +89,6 @@ class GCSArtifactStore:
 if TYPE_CHECKING:
     # A mypy-runtime assertion to ensure that GCS3ArtifactStore implements all abstract methods
     # in ArtifactStore.
-    from ._protocol import ArtifactStore
+    from optuna.artifacts._protocol import ArtifactStore
 
     _: ArtifactStore = GCSArtifactStore("")
