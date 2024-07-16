@@ -1,19 +1,14 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+from collections.abc import Sequence
 import copy
 import math
 import pickle
 from typing import Any
-from typing import Callable
 from typing import cast
-from typing import Dict
-from typing import List
 from typing import NamedTuple
-from typing import Optional
-from typing import Sequence
-from typing import Tuple
 from typing import TYPE_CHECKING
-from typing import Union
 
 import numpy as np
 
@@ -36,7 +31,7 @@ from optuna.trial import TrialState
 if TYPE_CHECKING:
     import cmaes
 
-    CmaClass = Union[cmaes.CMA, cmaes.SepCMA, cmaes.CMAwM]
+    CmaClass = cmaes.CMA | cmaes.SepCMA | cmaes.CMAwM
 else:
     cmaes = _LazyImport("cmaes")
 
@@ -248,21 +243,21 @@ class CmaEsSampler(BaseSampler):
 
     def __init__(
         self,
-        x0: Optional[Dict[str, Any]] = None,
-        sigma0: Optional[float] = None,
+        x0: dict[str, Any] | None = None,
+        sigma0: float | None = None,
         n_startup_trials: int = 1,
-        independent_sampler: Optional[BaseSampler] = None,
+        independent_sampler: BaseSampler | None = None,
         warn_independent_sampling: bool = True,
-        seed: Optional[int] = None,
+        seed: int | None = None,
         *,
         consider_pruned_trials: bool = False,
-        restart_strategy: Optional[str] = None,
-        popsize: Optional[int] = None,
+        restart_strategy: str | None = None,
+        popsize: int | None = None,
         inc_popsize: int = 2,
         use_separable_cma: bool = False,
         with_margin: bool = False,
         lr_adapt: bool = False,
-        source_trials: Optional[List[FrozenTrial]] = None,
+        source_trials: list[FrozenTrial] | None = None,
     ) -> None:
         self._x0 = x0
         self._sigma0 = sigma0
@@ -338,8 +333,8 @@ class CmaEsSampler(BaseSampler):
 
     def infer_relative_search_space(
         self, study: "optuna.Study", trial: "optuna.trial.FrozenTrial"
-    ) -> Dict[str, BaseDistribution]:
-        search_space: Dict[str, BaseDistribution] = {}
+    ) -> dict[str, BaseDistribution]:
+        search_space: dict[str, BaseDistribution] = {}
         for name, distribution in self._search_space.calculate(study).items():
             if distribution.single():
                 # `cma` cannot handle distributions that contain just a single value, so we skip
@@ -358,8 +353,8 @@ class CmaEsSampler(BaseSampler):
         self,
         study: "optuna.Study",
         trial: "optuna.trial.FrozenTrial",
-        search_space: Dict[str, BaseDistribution],
-    ) -> Dict[str, Any]:
+        search_space: dict[str, BaseDistribution],
+    ) -> dict[str, Any]:
         self._raise_error_if_multi_objective(study)
 
         if len(search_space) == 0:
@@ -436,7 +431,7 @@ class CmaEsSampler(BaseSampler):
         )
 
         if len(solution_trials) >= popsize:
-            solutions: List[Tuple[np.ndarray, float]] = []
+            solutions: list[tuple[np.ndarray, float]] = []
             for t in solution_trials[:popsize]:
                 assert t.value is not None, "completed trials must have a value"
                 if isinstance(optimizer, cmaes.CMAwM):
@@ -568,13 +563,13 @@ class CmaEsSampler(BaseSampler):
             attr_prefix + "large_n_eval",
         )
 
-    def _concat_optimizer_attrs(self, optimizer_attrs: Dict[str, str], n_restarts: int = 0) -> str:
+    def _concat_optimizer_attrs(self, optimizer_attrs: dict[str, str], n_restarts: int = 0) -> str:
         return "".join(
             optimizer_attrs["{}:{}".format(self._attr_keys.optimizer(n_restarts), i)]
             for i in range(len(optimizer_attrs))
         )
 
-    def _split_optimizer_str(self, optimizer_str: str, n_restarts: int = 0) -> Dict[str, str]:
+    def _split_optimizer_str(self, optimizer_str: str, n_restarts: int = 0) -> dict[str, str]:
         optimizer_len = len(optimizer_str)
         attrs = {}
         for i in range(math.ceil(optimizer_len / _SYSTEM_ATTR_MAX_LENGTH)):
@@ -587,9 +582,9 @@ class CmaEsSampler(BaseSampler):
 
     def _restore_optimizer(
         self,
-        completed_trials: "List[optuna.trial.FrozenTrial]",
+        completed_trials: "list[optuna.trial.FrozenTrial]",
         n_restarts: int = 0,
-    ) -> Optional["CmaClass"]:
+    ) -> "CmaClass" | None:
         # Restore a previous CMA object.
         for trial in reversed(completed_trials):
             optimizer_attrs = {
@@ -608,7 +603,7 @@ class CmaEsSampler(BaseSampler):
         self,
         trans: _SearchSpaceTransform,
         direction: StudyDirection,
-        population_size: Optional[int] = None,
+        population_size: int | None = None,
         randomize_start_point: bool = False,
     ) -> "CmaClass":
         lower_bounds = trans.bounds[:, 0]
@@ -729,7 +724,7 @@ class CmaEsSampler(BaseSampler):
             )
         )
 
-    def _get_trials(self, study: "optuna.Study") -> List[FrozenTrial]:
+    def _get_trials(self, study: "optuna.Study") -> list[FrozenTrial]:
         complete_trials = []
         for t in study._get_trials(deepcopy=False, use_cache=True):
             if t.state == TrialState.COMPLETE:
@@ -749,8 +744,8 @@ class CmaEsSampler(BaseSampler):
         return complete_trials
 
     def _get_solution_trials(
-        self, trials: List[FrozenTrial], generation: int, n_restarts: int
-    ) -> List[FrozenTrial]:
+        self, trials: list[FrozenTrial], generation: int, n_restarts: int
+    ) -> list[FrozenTrial]:
         generation_attr_key = self._attr_keys.generation(n_restarts)
         return [t for t in trials if generation == t.system_attrs.get(generation_attr_key, -1)]
 
@@ -762,13 +757,13 @@ class CmaEsSampler(BaseSampler):
         study: "optuna.Study",
         trial: "optuna.trial.FrozenTrial",
         state: TrialState,
-        values: Optional[Sequence[float]],
+        values: Sequence[float] | None,
     ) -> None:
         self._independent_sampler.after_trial(study, trial, state, values)
 
 
 def _is_compatible_search_space(
-    trans: _SearchSpaceTransform, search_space: Dict[str, BaseDistribution]
+    trans: _SearchSpaceTransform, search_space: dict[str, BaseDistribution]
 ) -> bool:
     intersection_size = len(set(trans._search_space.keys()).intersection(search_space.keys()))
     return intersection_size == len(trans._search_space) == len(search_space)
