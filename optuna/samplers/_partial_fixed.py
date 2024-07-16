@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import Any
 from collections.abc import Sequence
+from typing import Any
 from typing import TYPE_CHECKING
 import warnings
 
