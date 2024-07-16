@@ -43,9 +43,7 @@ def test_lr_adapt_experimental_warning() -> None:
     [(False, "optuna.samplers._cmaes.cmaes.CMA"), (True, "optuna.samplers._cmaes.cmaes.SepCMA")],
 )
 @pytest.mark.parametrize("popsize", [None, 8])
-def test_init_cmaes_opts(
-    use_separable_cma: bool, cma_class_str: str, popsize: int | None
-) -> None:
+def test_init_cmaes_opts(use_separable_cma: bool, cma_class_str: str, popsize: int | None) -> None:
     sampler = optuna.samplers.CmaEsSampler(
         x0={"x": 0, "y": 0},
         sigma0=0.1,
