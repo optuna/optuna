@@ -210,27 +210,22 @@ def _get_rank_subplot_info(
     xaxis = _get_axis_info(trials, x_param)
     yaxis = _get_axis_info(trials, y_param)
 
-    xs: list[Any] = []
-    ys: list[Any] = []
-    zs = []
-    filtered_trials: list[FrozenTrial] = []
-    _filtered_colors = []
-
+    infeasible_trial_ids = []
+    filtered_ids = []
     for idx, trial in enumerate(trials):
-        constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
+        constraints = trial.system_attrs.get("constraints")
         if constraints is not None and any([x > 0.0 for x in constraints]):
-            colors[idx] = (204, 204, 204)  # equal to "#CCCCCC"
-
+            infeasible_trial_ids.append(idx)
         if x_param in trial.params and y_param in trial.params:
-            xs.append(trial.params[x_param])
-            ys.append(trial.params[y_param])
-            zs.append(target_values[idx])
-            filtered_trials.append(trial)
-            _filtered_colors.append(colors[idx])
+            filtered_ids.append(idx)
 
-    filtered_colors: np.ndarray = np.array(_filtered_colors)
-    if filtered_colors.ndim == 1:
-        filtered_colors = filtered_colors.reshape(-1, 1)
+    filtered_trials = [trials[i] for i in filtered_ids]
+    xs = [trial.params[x_param] for trial in filtered_trials]
+    ys = [trial.params[y_param] for trial in filtered_trials]
+    zs = target_values[filtered_ids]
+
+    colors[infeasible_trial_ids] = (204, 204, 204)
+    colors = colors[filtered_ids]
 
     return _RankSubplotInfo(
         xaxis=xaxis,
@@ -239,7 +234,7 @@ def _get_rank_subplot_info(
         ys=ys,
         trials=filtered_trials,
         zs=np.array(zs),
-        colors=filtered_colors,
+        colors=colors,
     )
 
 
