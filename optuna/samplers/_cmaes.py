@@ -9,6 +9,7 @@ from typing import Any
 from typing import cast
 from typing import NamedTuple
 from typing import TYPE_CHECKING
+from typing import Union
 
 import numpy as np
 
@@ -30,6 +31,8 @@ from optuna.trial import TrialState
 
 if TYPE_CHECKING:
     import cmaes
+
+    CmaClass = Union[cmaes.CMA, cmaes.SepCMA, cmaes.CMAwM]
 else:
     cmaes = _LazyImport("cmaes")
 
@@ -582,7 +585,7 @@ class CmaEsSampler(BaseSampler):
         self,
         completed_trials: "list[optuna.trial.FrozenTrial]",
         n_restarts: int = 0,
-    ) -> cmaes.CMA | cmaes.SepCMA | cmaes.CMAwM | None:
+    ) -> "CmaClass" | None:
         # Restore a previous CMA object.
         for trial in reversed(completed_trials):
             optimizer_attrs = {
@@ -603,7 +606,7 @@ class CmaEsSampler(BaseSampler):
         direction: StudyDirection,
         population_size: int | None = None,
         randomize_start_point: bool = False,
-    ) -> cmaes.CMA | cmaes.SepCMA | cmaes.CMAwM:
+    ) -> "CmaClass":
         lower_bounds = trans.bounds[:, 0]
         upper_bounds = trans.bounds[:, 1]
         n_dimension = len(trans.bounds)
