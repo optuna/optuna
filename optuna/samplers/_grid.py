@@ -1,13 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
+from collections.abc import Sequence
 import itertools
 from numbers import Real
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Mapping
-from typing import Optional
-from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import Union
 import warnings
@@ -110,7 +107,7 @@ class GridSampler(BaseSampler):
     """
 
     def __init__(
-        self, search_space: Mapping[str, Sequence[GridValueType]], seed: Optional[int] = None
+        self, search_space: Mapping[str, Sequence[GridValueType]], seed: int | None = None
     ) -> None:
         for param_name, param_values in search_space.items():
             for value in param_values:
@@ -172,12 +169,12 @@ class GridSampler(BaseSampler):
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
-    ) -> Dict[str, BaseDistribution]:
+    ) -> dict[str, BaseDistribution]:
         return {}
 
     def sample_relative(
-        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
-    ) -> Dict[str, Any]:
+        self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
+    ) -> dict[str, Any]:
         return {}
 
     def sample_independent(
@@ -211,7 +208,7 @@ class GridSampler(BaseSampler):
         study: Study,
         trial: FrozenTrial,
         state: TrialState,
-        values: Optional[Sequence[float]],
+        values: Sequence[float] | None,
     ) -> None:
         target_grids = self._get_unvisited_grid_ids(study)
 
@@ -234,7 +231,7 @@ class GridSampler(BaseSampler):
         )
         warnings.warn(message)
 
-    def _get_unvisited_grid_ids(self, study: Study) -> List[int]:
+    def _get_unvisited_grid_ids(self, study: Study) -> list[int]:
         # List up unvisited grids based on already finished ones.
         visited_grids = []
         running_grids = []
