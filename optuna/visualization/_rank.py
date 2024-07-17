@@ -213,7 +213,7 @@ def _get_rank_subplot_info(
     infeasible_trial_ids = []
     filtered_ids = []
     for idx, trial in enumerate(trials):
-        constraints = trial.system_attrs.get("constraints")
+        constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
         if constraints is not None and any([x > 0.0 for x in constraints]):
             infeasible_trial_ids.append(idx)
         if x_param in trial.params and y_param in trial.params:
@@ -226,7 +226,6 @@ def _get_rank_subplot_info(
 
     colors[infeasible_trial_ids] = (204, 204, 204)
     colors = colors[filtered_ids]
-
     return _RankSubplotInfo(
         xaxis=xaxis,
         yaxis=yaxis,
