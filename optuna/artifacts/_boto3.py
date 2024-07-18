@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
     from mypy_boto3_s3 import S3Client
 
-with try_import():
+with try_import() as _imports:
     import boto3
     from botocore.exceptions import ClientError
 
@@ -59,6 +59,7 @@ class Boto3ArtifactStore:
     def __init__(
         self, bucket_name: str, client: S3Client | None = None, *, avoid_buf_copy: bool = False
     ) -> None:
+        _imports.check()
         self.bucket = bucket_name
         self.client = client or boto3.client("s3")
         # This flag is added to avoid that upload_fileobj() method of Boto3 client may close the

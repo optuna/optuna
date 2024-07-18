@@ -25,6 +25,12 @@ def test_try_import_not_successful() -> None:
     with pytest.raises(ImportError):
         imports.check()
 
+    with try_import(module_to_package_name={"dummy_module": "dummy"}) as imports:
+        raise ImportError
+    assert not imports.is_successful()
+    with pytest.raises(ImportError):
+        imports.check()
+
     with try_import() as imports:
         raise SyntaxError
     assert not imports.is_successful()
