@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 from collections import UserDict
+from collections.abc import Sequence
 import copy
 import datetime
 from typing import Any
-from typing import Dict
-from typing import Optional
 from typing import overload
-from typing import Sequence
 import warnings
 
 import optuna
@@ -63,11 +61,11 @@ class Trial(BaseTrial):
         self.relative_search_space = self.study.sampler.infer_relative_search_space(
             study, self._cached_frozen_trial
         )
-        self._relative_params: Optional[Dict[str, Any]] = None
+        self._relative_params: dict[str, Any] | None = None
         self._fixed_params = self._cached_frozen_trial.system_attrs.get("fixed_params", {})
 
     @property
-    def relative_params(self) -> Dict[str, Any]:
+    def relative_params(self) -> dict[str, Any]:
         if self._relative_params is None:
             study = pruners._filter_study(self.study, self._cached_frozen_trial)
             self._relative_params = self.study.sampler.sample_relative(
@@ -81,7 +79,7 @@ class Trial(BaseTrial):
         low: float,
         high: float,
         *,
-        step: Optional[float] = None,
+        step: float | None = None,
         log: bool = False,
     ) -> float:
         """Suggest a value for the floating point parameter.
@@ -697,7 +695,7 @@ class Trial(BaseTrial):
         return latest_trial
 
     @property
-    def params(self) -> Dict[str, Any]:
+    def params(self) -> dict[str, Any]:
         """Return parameters to be optimized.
 
         Returns:
@@ -707,7 +705,7 @@ class Trial(BaseTrial):
         return copy.deepcopy(self._cached_frozen_trial.params)
 
     @property
-    def distributions(self) -> Dict[str, BaseDistribution]:
+    def distributions(self) -> dict[str, BaseDistribution]:
         """Return distributions of parameters to be optimized.
 
         Returns:
@@ -717,7 +715,7 @@ class Trial(BaseTrial):
         return copy.deepcopy(self._cached_frozen_trial.distributions)
 
     @property
-    def user_attrs(self) -> Dict[str, Any]:
+    def user_attrs(self) -> dict[str, Any]:
         """Return user attributes.
 
         Returns:
@@ -728,7 +726,7 @@ class Trial(BaseTrial):
 
     @property
     @deprecated_func("3.1.0", "5.0.0")
-    def system_attrs(self) -> Dict[str, Any]:
+    def system_attrs(self) -> dict[str, Any]:
         """Return system attributes.
 
         Returns:
@@ -738,7 +736,7 @@ class Trial(BaseTrial):
         return copy.deepcopy(self.storage.get_trial_system_attrs(self._trial_id))
 
     @property
-    def datetime_start(self) -> Optional[datetime.datetime]:
+    def datetime_start(self) -> datetime.datetime | None:
         """Return start datetime.
 
         Returns:

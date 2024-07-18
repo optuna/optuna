@@ -1,9 +1,9 @@
+from __future__ import annotations
+
+from collections.abc import Sequence
 import datetime
 from typing import Any
-from typing import Dict
-from typing import Optional
 from typing import overload
-from typing import Sequence
 import warnings
 
 from optuna import distributions
@@ -59,12 +59,12 @@ class FixedTrial(BaseTrial):
 
     """
 
-    def __init__(self, params: Dict[str, Any], number: int = 0) -> None:
+    def __init__(self, params: dict[str, Any], number: int = 0) -> None:
         self._params = params
-        self._suggested_params: Dict[str, Any] = {}
-        self._distributions: Dict[str, BaseDistribution] = {}
-        self._user_attrs: Dict[str, Any] = {}
-        self._system_attrs: Dict[str, Any] = {}
+        self._suggested_params: dict[str, Any] = {}
+        self._distributions: dict[str, BaseDistribution] = {}
+        self._user_attrs: dict[str, Any] = {}
+        self._system_attrs: dict[str, Any] = {}
         self._datetime_start = datetime.datetime.now()
         self._number = number
 
@@ -74,7 +74,7 @@ class FixedTrial(BaseTrial):
         low: float,
         high: float,
         *,
-        step: Optional[float] = None,
+        step: float | None = None,
         log: bool = False,
     ) -> float:
         return self._suggest(name, FloatDistribution(low, high, log=log, step=step))
@@ -159,23 +159,23 @@ class FixedTrial(BaseTrial):
         return value
 
     @property
-    def params(self) -> Dict[str, Any]:
+    def params(self) -> dict[str, Any]:
         return self._suggested_params
 
     @property
-    def distributions(self) -> Dict[str, BaseDistribution]:
+    def distributions(self) -> dict[str, BaseDistribution]:
         return self._distributions
 
     @property
-    def user_attrs(self) -> Dict[str, Any]:
+    def user_attrs(self) -> dict[str, Any]:
         return self._user_attrs
 
     @property
-    def system_attrs(self) -> Dict[str, Any]:
+    def system_attrs(self) -> dict[str, Any]:
         return self._system_attrs
 
     @property
-    def datetime_start(self) -> Optional[datetime.datetime]:
+    def datetime_start(self) -> datetime.datetime | None:
         return self._datetime_start
 
     @property
