@@ -16,6 +16,7 @@ Join Us!
 If you feel like giving a hand, here are some ways:
 - Implement a feature
     - If you have some cool idea, please open an issue first to discuss design to make your idea in a better shape.
+    - We also welcome PRs for [optunahub-registry](https://github.com/optuna/optunahub-registry). [OptunaHub](https://hub.optuna.org/) is a feature-sharing platform for Optuna.
 - Send a patch
     - Dirty your hands by tackling [issues with `contribution-welcome` label](https://github.com/optuna/optuna/issues?q=is%3Aissue+is%3Aopen+label%3Acontribution-welcome)
 - Report a bug
