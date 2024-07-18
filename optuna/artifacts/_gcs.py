@@ -11,7 +11,12 @@ from optuna.artifacts.exceptions import ArtifactNotFound
 if TYPE_CHECKING:
     from typing import BinaryIO
 
-with try_import(module_to_package_name={"google": "google-cloud-storage"}) as _imports:
+with try_import(
+    module_to_package_name={
+        "google": "google-cloud-storage",
+        "google.cloud.storage": "google-cloud-storage",
+    }
+) as _imports:
     import google.cloud.storage
 
 

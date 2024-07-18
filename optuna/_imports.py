@@ -66,6 +66,7 @@ class _DeferredImportExceptionContextManager:
         """
         if isinstance(exc_value, (ImportError, SyntaxError)):
             if isinstance(exc_value, ImportError):
+                print(exc_value.name)
                 package_name = self._module_to_package_name.get(str(exc_value.name))
                 package_info = (
                     f"'{exc_value.name}'"
