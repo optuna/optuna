@@ -44,6 +44,6 @@ jobs:
     - name: isort
       run: isort . --check --diff
     - name: mypy
-      run: mypy --follow-imports=normal .
+      run: awk '/\[mypy-torch\.\*\]/{exit} {print}' setup.cfg | mypy --config-file=/dev/stdin .
     - name: blackdoc
       run: blackdoc . --check --diff
