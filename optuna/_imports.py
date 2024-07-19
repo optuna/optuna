@@ -15,21 +15,6 @@ _INTEGRATION_IMPORT_ERROR_TEMPLATE = (
 )
 
 
-def _get_exception_source_module(traceback: TracebackType | None) -> str | None:
-    if traceback is None:
-        return None
-
-    if not hasattr(traceback, "tb_frame"):
-        return None
-
-    traceback_frame = traceback.tb_frame
-    if not hasattr(traceback_frame, "f_locals"):
-        return None
-
-    traceback_frame_local_name = traceback.tb_frame.f_locals
-    return traceback_frame_local_name.get("__name__")
-
-
 class _DeferredImportExceptionContextManager:
     """Context manager to defer exceptions from imports.
 
@@ -72,32 +57,25 @@ class _DeferredImportExceptionContextManager:
 
         """
         if isinstance(exc_value, (ImportError, SyntaxError)):
-            traceback_source_module = _get_exception_source_module(traceback)
-            is_traceback_from_integration = (
-                traceback_source_module is not None
-                and "optuna_integration." in traceback_source_module
-            )
-            if is_traceback_from_integration and isinstance(exc_value, ImportError):
-                assert traceback_source_module is not None, "MyPy Redefinition"
-                integration_submodule = traceback_source_module.split("optuna_integration.")[1]
-                integration_dependency = integration_submodule.split(".")[0]
-                message = (
-                    f"\nTried to import optuna-integration for '{integration_dependency}' but "
-                    "failed.\nPlease install the dependencies via:\n"
-                    f"\t$ pip install --upgrade optuna-integration[{integration_dependency}]\n"
-                    f"to use this feature. Actual error: {exc_value}."
+            if isinstance(exc_value, ImportError):
+                # TODO(nabenabe0928): Replace the doc with the stable after the v4.0 release.
+                integration_installation_doc_url = (
+                    "https://optuna-integration.readthedocs.io/en/latest/installation.html"
                 )
-            elif isinstance(exc_value, ImportError):
                 message = (
-                    "Tried to import '{}' but failed. Please make sure that the package is "
-                    "installed correctly to use this feature. Actual error: {}."
-                ).format(exc_value.name, exc_value)
+                    f"\nTried to import '{exc_value.name}' but failed."
+                    "\nPlease make sure that the package is installed correctly."
+                    "\nIf the error relates to optuna-integration, please refer to:"
+                    f"\n\t{integration_installation_doc_url}"
+                    f"\nActual error: {exc_value}."
+                )
             elif isinstance(exc_value, SyntaxError):
                 message = (
-                    "Tried to import a package but failed due to a syntax error in {}. Please "
-                    "make sure that the Python version is correct to use this feature. Actual "
-                    "error: {}."
-                ).format(exc_value.filename, exc_value)
+                    "\nTried to import a package "
+                    f"but failed due to a syntax error in {exc_value.filename}."
+                    "\nPlease make sure that the Python version is correct."
+                    f"\nActual error: {exc_value}."
+                )
             else:
                 assert False
 
