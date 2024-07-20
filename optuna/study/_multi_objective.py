@@ -122,7 +122,8 @@ def _fast_non_domination_rank(
 def _is_pareto_front_nd(unique_lexsorted_loss_values: np.ndarray) -> np.ndarray:
     # NOTE(nabenabe0928): I tried the Kung's algorithm below, but it was not really quick.
     # https://github.com/optuna/optuna/pull/5302#issuecomment-1988665532
-    loss_values = unique_lexsorted_loss_values.copy()
+    # As unique_lexsorted_loss_values[:, 0] is sorted, we do not need it to judge dominance.
+    loss_values = unique_lexsorted_loss_values[:, 1:]
     n_trials = loss_values.shape[0]
     on_front = np.zeros(n_trials, dtype=bool)
     nondominated_indices = np.arange(n_trials)
@@ -159,6 +160,10 @@ def _is_pareto_front_for_unique_sorted(unique_lexsorted_loss_values: np.ndarray)
 
 
 def _is_pareto_front(loss_values: np.ndarray, assume_unique_lexsorted: bool) -> np.ndarray:
+    # NOTE(nabenabe): If assume_unique_lexsorted=True, but loss_values is not a unique array,
+    # Duplicated Pareto solutions will be filtered out except for the earliest occurrences.
+    # If assume_unique_lexsorted=True and loss_vals[:, 0] is not sorted, then the result will be
+    # incorrect.
     if assume_unique_lexsorted:
         return _is_pareto_front_for_unique_sorted(loss_values)
 
