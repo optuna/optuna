@@ -38,7 +38,7 @@ def _compute_exclusive_hv(
 
     # NOTE(nabenabe): For hypervolume calculation, duplicated Pareto solutions can be ignored. As
     # limited_sols[:, 0] is sorted, all the Pareto solutions necessary for hypervolume calculation
-    # will be filtered out with assume_unique_lexsorted=True.
+    # will be eliminated with assume_unique_lexsorted=True.
     on_front = _is_pareto_front(limited_sols, assume_unique_lexsorted=True)
     return inclusive_hv - _compute_hv(limited_sols[on_front], reference_point)
 
