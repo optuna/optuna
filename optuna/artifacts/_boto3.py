@@ -31,8 +31,8 @@ class Boto3ArtifactStore:
 
         avoid_buf_copy:
             If True, skip procedure to copy the content of the source file object to a buffer
-            before uploading it to S3 ins. This is default to False because using upload_fileobj()
-            method of Boto3 client might close the source file object.
+            before uploading it to S3 ins. This is default to False because using
+            ``upload_fileobj()`` method of Boto3 client might close the source file object.
 
     Example:
         .. code-block:: python

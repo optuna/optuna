@@ -24,8 +24,8 @@ class GCSArtifactStore:
             The name of the bucket to store artifacts.
 
         client:
-            A google-cloud-storage `Client` to use for storage operations. If not specified, a new
-            client will be created with default settings.
+            A google-cloud-storage ``Client`` to use for storage operations. If not specified, a
+            new client will be created with default settings.
 
     Example:
         .. code-block:: python
@@ -47,7 +47,7 @@ class GCSArtifactStore:
                 )
                 return ...
 
-        Before running this code, you will have to install `gcloud` and run
+        Before running this code, you will have to install ``gcloud`` and run
 
         .. code-block:: bash
 
