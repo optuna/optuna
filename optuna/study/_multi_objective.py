@@ -162,7 +162,7 @@ def _is_pareto_front_for_unique_sorted(unique_lexsorted_loss_values: np.ndarray)
 def _is_pareto_front(loss_values: np.ndarray, assume_unique_lexsorted: bool) -> np.ndarray:
     # NOTE(nabenabe): If assume_unique_lexsorted=True, but loss_values is not a unique array,
     # Duplicated Pareto solutions will be filtered out except for the earliest occurrences.
-    # If assume_unique_lexsorted=True and loss_vals[:, 0] is not sorted, then the result will be
+    # If assume_unique_lexsorted=True and loss_values[:, 0] is not sorted, then the result will be
     # incorrect.
     if assume_unique_lexsorted:
         return _is_pareto_front_for_unique_sorted(loss_values)
