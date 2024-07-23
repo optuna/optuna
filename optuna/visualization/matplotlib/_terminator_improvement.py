@@ -41,6 +41,9 @@ def plot_terminator_improvement(
     Note that this function may take some time to compute
     the improvement potentials.
 
+    .. seealso::
+        Please refer to :func:`optuna.visualization.plot_terminator_improvement`.
+
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their improvement.

@@ -29,6 +29,16 @@ def plot_edf(
 
     Note that only the complete trials are considered when plotting the EDF.
 
+    .. seealso::
+        Please refer to :func:`optuna.visualization.plot_edf` for an example,
+        where this function can be replaced with it.
+
+    .. note::
+
+        Please refer to `matplotlib.pyplot.legend
+        <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html>`_
+        to adjust the style of the generated legend.
+
     Args:
         study:
             A target :class:`~optuna.study.Study` object.

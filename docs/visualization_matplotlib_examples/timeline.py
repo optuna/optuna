@@ -27,7 +27,3 @@ study = optuna.create_study(direction="minimize")
 study.optimize(objective, n_trials=50, n_jobs=2, catch=(ValueError,))
 
 optuna.visualization.matplotlib.plot_timeline(study)
-
-# %%
-# .. seealso::
-#     Please refer to :func:`optuna.visualization.plot_timeline` for an example.

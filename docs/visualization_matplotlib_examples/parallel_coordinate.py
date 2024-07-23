@@ -23,7 +23,3 @@ study = optuna.create_study(sampler=sampler)
 study.optimize(objective, n_trials=10)
 
 optuna.visualization.matplotlib.plot_parallel_coordinate(study, params=["x", "y"])
-
-# %%
-# .. seealso::
-#   Please refer to :func:`optuna.visualization.plot_parallel_coordinate` for an example.

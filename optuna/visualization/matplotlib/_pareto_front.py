@@ -28,6 +28,9 @@ def plot_pareto_front(
 ) -> "Axes":
     """Plot the Pareto front of a study.
 
+    .. seealso::
+        Please refer to :func:`optuna.visualization.plot_pareto_front` for an example.
+
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their objective

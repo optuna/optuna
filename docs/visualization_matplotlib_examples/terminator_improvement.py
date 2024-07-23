@@ -39,7 +39,3 @@ study = optuna.create_study()
 study.optimize(objective, n_trials=30)
 
 plot_terminator_improvement(study, plot_error=True)
-
-# %%
-# .. seealso::
-#     Please refer to :func:`optuna.visualization.plot_terminator_improvement`.

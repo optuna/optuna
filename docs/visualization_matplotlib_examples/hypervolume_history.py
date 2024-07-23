@@ -28,8 +28,3 @@ study.optimize(objective, n_trials=50)
 reference_point=[100, 50]
 optuna.visualization.matplotlib.plot_hypervolume_history(study, reference_point)
 plt.tight_layout()
-
-# %%
-# .. note::
-#     You need to adjust the size of the plot by yourself using ``plt.tight_layout()`` or
-#     ``plt.savefig(IMAGE_NAME, bbox_inches='tight')``.

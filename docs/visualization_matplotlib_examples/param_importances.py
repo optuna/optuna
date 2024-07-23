@@ -24,7 +24,3 @@ study = optuna.create_study(sampler=sampler)
 study.optimize(objective, n_trials=100)
 
 optuna.visualization.matplotlib.plot_param_importances(study)
-
-# %%
-# .. seealso::
-#     Please refer to :func:`optuna.visualization.plot_param_importances` for an example.

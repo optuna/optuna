@@ -30,6 +30,9 @@ def plot_parallel_coordinate(
 
     Note that, if a parameter contains missing values, a trial with missing values is not plotted.
 
+    .. seealso::
+        Please refer to :func:`optuna.visualization.plot_parallel_coordinate` for an example.
+
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their target values.

@@ -34,6 +34,9 @@ def plot_rank(
 
     Note that trials missing the specified parameters will not be plotted.
 
+    .. seealso::
+        Please refer to :func:`optuna.visualization.plot_rank` for an example.
+
     Warnings:
         Output figures of this Matplotlib-based
         :func:`~optuna.visualization.matplotlib.plot_rank` function would be different from

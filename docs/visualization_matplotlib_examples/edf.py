@@ -41,14 +41,3 @@ study2 = optuna.create_study(study_name="x=[1,3), y=[1,3)", sampler=sampler)
 study2.optimize(lambda t: objective(t, 1, 3), n_trials=500)
 
 optuna.visualization.matplotlib.plot_edf([study0, study1, study2])
-
-# %%
-# .. seealso::
-#     Please refer to :func:`optuna.visualization.plot_edf` for an example,
-#     where this function can be replaced with it.
-#
-# .. note::
-#
-#     Please refer to `matplotlib.pyplot.legend
-#     <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html>`_
-#     to adjust the style of the generated legend.

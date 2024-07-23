@@ -25,11 +25,3 @@ study.optimize(objective, n_trials=10)
 
 optuna.visualization.matplotlib.plot_optimization_history(study)
 plt.tight_layout()
-
-# %%
-# .. note::
-#     You need to adjust the size of the plot by yourself using ``plt.tight_layout()`` or
-#     ``plt.savefig(IMAGE_NAME, bbox_inches='tight')``.
-#
-# .. seealso::
-#     Please refer to :func:`optuna.visualization.plot_optimization_history` for an example.

@@ -42,12 +42,3 @@ study = optuna.create_study(sampler=sampler)
 study.optimize(objective, n_trials=16)
 
 optuna.visualization.matplotlib.plot_intermediate_values(study)
-
-# %%
-# .. note::
-#     Please refer to `matplotlib.pyplot.legend
-#     <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html>`_
-#     to adjust the style of the generated legend.
-#
-# .. seealso::
-#     Please refer to :func:`optuna.visualization.plot_intermediate_values` for an example.

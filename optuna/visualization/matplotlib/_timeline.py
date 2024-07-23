@@ -20,6 +20,9 @@ _INFEASIBLE_KEY = "INFEASIBLE"
 def plot_timeline(study: Study) -> "Axes":
     """Plot the timeline of a study.
 
+    .. seealso::
+        Please refer to :func:`optuna.visualization.plot_timeline` for an example.
+
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted with

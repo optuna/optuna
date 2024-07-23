@@ -31,7 +31,3 @@ study = optuna.create_study(sampler=sampler)
 study.optimize(objective, n_trials=30)
 
 optuna.visualization.matplotlib.plot_rank(study, params=["x", "y"])
-
-# %%
-# .. seealso::
-#     Please refer to :func:`optuna.visualization.plot_rank` for an example.

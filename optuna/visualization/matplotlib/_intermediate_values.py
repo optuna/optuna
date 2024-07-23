@@ -17,6 +17,14 @@ _logger = get_logger(__name__)
 def plot_intermediate_values(study: Study) -> "Axes":
     """Plot intermediate values of all trials in a study with Matplotlib.
 
+    .. seealso::
+        Please refer to :func:`optuna.visualization.plot_intermediate_values` for an example.
+
+    .. note::
+        Please refer to `matplotlib.pyplot.legend
+        <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html>`__
+        to adjust the style of the generated legend.
+
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their intermediate

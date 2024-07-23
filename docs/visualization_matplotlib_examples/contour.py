@@ -23,7 +23,3 @@ study = optuna.create_study(sampler=sampler)
 study.optimize(objective, n_trials=30)
 
 optuna.visualization.matplotlib.plot_contour(study, params=["x", "y"])
-
-# %%
-# .. seealso::
-#     Please refer to :func:`optuna.visualization.plot_contour` for an example.

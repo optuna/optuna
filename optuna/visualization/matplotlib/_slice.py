@@ -33,6 +33,9 @@ def plot_slice(
 ) -> "Axes":
     """Plot the parameter relationship as slice plot in a study with Matplotlib.
 
+    .. seealso::
+        Please refer to :func:`optuna.visualization.plot_slice` for an example.
+
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their target values.

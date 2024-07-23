@@ -35,6 +35,10 @@ def plot_optimization_history(
     .. seealso::
         Please refer to :func:`optuna.visualization.plot_optimization_history` for an example.
 
+    .. note::
+        You need to adjust the size of the plot by yourself using ``plt.tight_layout()`` or
+        ``plt.savefig(IMAGE_NAME, bbox_inches='tight')``.
+
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their target values.

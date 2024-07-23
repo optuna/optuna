@@ -25,7 +25,3 @@ study = optuna.create_study(directions=["minimize", "minimize"])
 study.optimize(objective, n_trials=50)
 
 optuna.visualization.matplotlib.plot_pareto_front(study)
-
-# %%
-# .. seealso::
-#     Please refer to :func:`optuna.visualization.plot_pareto_front` for an example.
