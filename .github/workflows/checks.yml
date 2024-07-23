@@ -44,6 +44,6 @@ jobs:
     - name: isort
       run: isort . --check --diff
     - name: mypy
-      run: awk '/\[mypy-torch\.\*\]/{exit} {print}' setup.cfg | mypy --config-file=/dev/stdin .
+      run: sed '/# IGNORE MYPY TORCH START/,/# IGNORE MYPY TORCH END/d' setup.cfg | mypy --config-file=/dev/stdin .
     - name: blackdoc
       run: blackdoc . --check --diff
