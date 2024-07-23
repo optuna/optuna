@@ -36,7 +36,10 @@ def _compute_exclusive_hv(
     if limited_sols.shape[0] == 0:
         return inclusive_hv
 
-    on_front = _is_pareto_front(limited_sols, assume_unique_lexsorted=False)
+    # NOTE(nabenabe): For hypervolume calculation, duplicated Pareto solutions can be ignored. As
+    # limited_sols[:, 0] is sorted, all the Pareto solutions necessary for hypervolume calculation
+    # will be eliminated with assume_unique_lexsorted=True.
+    on_front = _is_pareto_front(limited_sols, assume_unique_lexsorted=True)
     return inclusive_hv - _compute_hv(limited_sols[on_front], reference_point)
 
 
@@ -65,6 +68,9 @@ def compute_hypervolume(
         assume_pareto:
             Whether to assume the Pareto optimality to ``loss_vals``.
             In other words, if ``True``, none of loss vectors are dominated by another.
+            ``assume_pareto`` is used only for speedup and it does not change the result even if
+            this argument is wrongly given. If there are many non-Pareto solutions in
+            ``loss_vals``, ``assume_pareto=True`` will speed up the calculation.
 
     Returns:
         The hypervolume of the given arguments.
