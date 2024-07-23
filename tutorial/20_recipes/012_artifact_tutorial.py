@@ -91,7 +91,7 @@ method using SQLite, a lightweight RDB management system, as the backend. With S
 ``./example.db``). The optimization history comprises what parameters were sampled in each trial, what the evaluation values for those
 parameters were, when each trial started and ended, etc. This file is in the SQLite format, and it is not suitable for storing
 large data. Writing large data entries may cause performance degradation. Note that SQLite is not suitable for distributed parallel
-optimization. If you want to perform that, please use MySQL as we will explain later, or ``JournalStorage``
+optimization. If you want to perform that, please use MySQL as we will explain later, or :class:`~optuna.storages.JournalStorage`
 (`example <https://optuna.readthedocs.io/en/stable/reference/generated/optuna.storages.JournalStorage.html#optuna.storages.JournalStorage>`__).
 
 So, let's use the artifact module to save large data in a different format. Suppose the data is generated for each trial and you
