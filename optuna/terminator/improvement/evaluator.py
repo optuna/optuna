@@ -108,7 +108,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
     def _compute_standardized_regret_bound(
         self,
         kernel_params: gp.KernelParamsTensor,
-        gp_search_space: search_space.SearchSpace,
+        considered_search_space: search_space.SearchSpace,
         normalized_top_n_params: np.ndarray,
         standarized_top_n_values: np.ndarray,
     ) -> float:
@@ -127,7 +127,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         ucb_acqf_params = acqf.create_acqf_params(
             acqf_type=acqf.AcquisitionFunctionType.UCB,
             kernel_params=kernel_params,
-            search_space=gp_search_space,
+            search_space=considered_search_space,
             X=normalized_top_n_params,
             Y=standarized_top_n_values,
             beta=beta,
@@ -144,7 +144,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         lcb_acqf_params = acqf.create_acqf_params(
             acqf_type=acqf.AcquisitionFunctionType.LCB,
             kernel_params=kernel_params,
-            search_space=gp_search_space,
+            search_space=considered_search_space,
             X=normalized_top_n_params,
             Y=standarized_top_n_values,
             beta=beta,
@@ -166,8 +166,10 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         # _gp module assumes that optimization direction is maximization
         sign = -1 if study_direction == StudyDirection.MINIMIZE else 1
         values = np.array([t.value for t in complete_trials]) * sign
-        gp_search_space, normalized_params = search_space.get_search_space_and_normalized_params(
-            complete_trials, optuna_search_space
+        considered_search_space, normalized_params = (
+            search_space.get_search_space_and_normalized_params(
+                complete_trials, optuna_search_space
+            )
         )
         normalized_top_n_params, top_n_values = self._get_top_n(normalized_params, values)
         top_n_values_mean = top_n_values.mean()
@@ -177,7 +179,9 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         kernel_params = gp.fit_kernel_params(
             X=normalized_top_n_params,
             Y=standarized_top_n_values,
-            is_categorical=(gp_search_space.scale_types == search_space.ScaleType.CATEGORICAL),
+            is_categorical=(
+                considered_search_space.scale_types == search_space.ScaleType.CATEGORICAL
+            ),
             log_prior=self._log_prior,
             minimum_noise=self._minimum_noise,
             # TODO(contramundum53): Add option to specify this.
@@ -188,7 +192,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
 
         standardized_regret_bound = self._compute_standardized_regret_bound(
             kernel_params,
-            gp_search_space,
+            considered_search_space,
             normalized_top_n_params,
             standarized_top_n_values,
         )
