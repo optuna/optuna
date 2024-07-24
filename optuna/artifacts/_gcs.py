@@ -11,7 +11,7 @@ from optuna.artifacts.exceptions import ArtifactNotFound
 if TYPE_CHECKING:
     from typing import BinaryIO
 
-with try_import():
+with try_import() as _imports:
     import google.cloud.storage
 
 
@@ -61,6 +61,7 @@ class GCSArtifactStore:
         bucket_name: str,
         client: google.cloud.storage.Client | None = None,
     ) -> None:
+        _imports.check()
         self.bucket_name = bucket_name
         self.client = client or google.cloud.storage.Client()
         self.bucket_obj = self.client.bucket(bucket_name)
