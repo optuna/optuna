@@ -7,11 +7,11 @@ Optuna Artifacts Tutorial
 .. contents:: Table of Contents
     :depth: 2
 
-The artifact module of Optuna is a module designed for saving comparatively large attributes on a trial-by-trial basis in forms such 
-as files. Introduced from Optuna v3.3, this module finds a broad range of applications, such as utilizing snapshots of large size 
-models for hyperparameter tuning, optimizing massive chemical structures, and even human-in-the-loop optimization employing images 
-or sounds. Use of Optuna's artifact module allows you to handle data that would be too large to store in a database. Furthermore, 
-by integrating with `optuna-dashboard <https://github.com/optuna/optuna-dashboard>`__, saved artifacts can be automatically visualized 
+The artifact module of Optuna is a module designed for saving comparatively large attributes on a trial-by-trial basis in forms such
+as files. Introduced from Optuna v3.3, this module finds a broad range of applications, such as utilizing snapshots of large size
+models for hyperparameter tuning, optimizing massive chemical structures, and even human-in-the-loop optimization employing images
+or sounds. Use of Optuna's artifact module allows you to handle data that would be too large to store in a database. Furthermore,
+by integrating with `optuna-dashboard <https://github.com/optuna/optuna-dashboard>`__, saved artifacts can be automatically visualized
 with the web UI, which significantly reduces the effort of experiment management.
 
 TL;DR
@@ -34,37 +34,37 @@ Concepts
     * - Fig 1. Concepts of the "artifact".
     * - .. image:: https://github.com/optuna/optuna/assets/38826298/112e0b75-9d22-474b-85ea-9f3e0d75fa8d
 
-An "artifact" is associated with an Optuna trial. In Optuna, the objective function is evaluated sequentially to search for the 
-maximum (or minimum) value. Each evaluation of the sequentially repeated objective function is called a trial. Normally, trials and 
-their associated attributes are saved via storage objects to files or RDBs, etc. For experiment management, you can also save and 
-use `user_attrs` for each trial. However, these attributes are assumed to be integers, short strings, or other small data, which 
-are not suitable for storing large data. With Optuna's artifact module, users can save large data (such as model snapshots, 
+An "artifact" is associated with an Optuna trial. In Optuna, the objective function is evaluated sequentially to search for the
+maximum (or minimum) value. Each evaluation of the sequentially repeated objective function is called a trial. Normally, trials and
+their associated attributes are saved via storage objects to files or RDBs, etc. For experiment management, you can also save and
+use :attr:`optuna.trial.Trial.user_attrs` for each trial. However, these attributes are assumed to be integers, short strings, or other small data, which
+are not suitable for storing large data. With Optuna's artifact module, users can save large data (such as model snapshots,
 chemical structures, image and audio data, etc.) for each trial.
 
-Also, while this tutorial does not touch upon it, it's possible to manage artifacts associated not only with trials but also with 
-studies. Please refer to the `official documentation <https://optuna.readthedocs.io/en/stable/reference/generated/optuna.artifacts.upload_artifact.html>`__ 
+Also, while this tutorial does not touch upon it, it's possible to manage artifacts associated not only with trials but also with
+studies. Please refer to the `official documentation <https://optuna.readthedocs.io/en/stable/reference/generated/optuna.artifacts.upload_artifact.html>`__
 if you are interested in.
 
 Situations where artifacts are useful
 -------------------------------------
 
-Artifacts are useful when you want to save data that is too large to be stored in RDB for each trial. For example, the artifact 
+Artifacts are useful when you want to save data that is too large to be stored in RDB for each trial. For example, the artifact
 module would be handy in situations like the following:
 
-- Saving snapshots of machine learning models: Suppose you are tuning hyperparameters for a large-scale machine learning model like 
-  an LLM. The model is very large, and each round of learning (which corresponds to one trial in Optuna) takes time. To prepare for 
-  unexpected incidents during training (such as blackouts at the data center or a preemption of computation jobs by the scheduler), 
-  you may want to save snapshots of the model in the middle of training for each trial. These snapshots often tend to be large and 
+- Saving snapshots of machine learning models: Suppose you are tuning hyperparameters for a large-scale machine learning model like
+  an LLM. The model is very large, and each round of learning (which corresponds to one trial in Optuna) takes time. To prepare for
+  unexpected incidents during training (such as blackouts at the data center or a preemption of computation jobs by the scheduler),
+  you may want to save snapshots of the model in the middle of training for each trial. These snapshots often tend to be large and
   are more suitable to be saved as some kinds of files than to be stored in RDB. In such cases, the artifact module is useful.
 
-- Optimizing chemical structures: Suppose you are formulating and exploring a problem of finding stable chemical structures as a 
-  black-box optimization problem. Evaluating one chemical structure corresponds to one trial in Optuna, and that chemical structure 
-  is a complex and large one. It is not appropriate to store such chemical structure data in RDB. It is conceivable to save the 
+- Optimizing chemical structures: Suppose you are formulating and exploring a problem of finding stable chemical structures as a
+  black-box optimization problem. Evaluating one chemical structure corresponds to one trial in Optuna, and that chemical structure
+  is a complex and large one. It is not appropriate to store such chemical structure data in RDB. It is conceivable to save the
   chemical structure data in a specific file format, and in such a case, the artifact module is useful.
 
-- Human-in-the-loop optimization of images: Suppose you are optimizing prompts for a generative model that outputs images. You 
-  sample the prompts using Optuna, output images using the generative model, and let humans rate the images for a Human-in-the-loop 
-  optimization process. Since the output images are large data, it is not appropriate to use RDB to store them, and in such cases, 
+- Human-in-the-loop optimization of images: Suppose you are optimizing prompts for a generative model that outputs images. You
+  sample the prompts using Optuna, output images using the generative model, and let humans rate the images for a Human-in-the-loop
+  optimization process. Since the output images are large data, it is not appropriate to use RDB to store them, and in such cases,
   using the artifact module is well suited.
 
 How Trials and Artifacts are Recorded
@@ -86,17 +86,16 @@ Scenario 1: SQLite + file system-based artifact store
 
 First, we explain a simple case where the optimization is completed locally.
 
-Normally, Optuna's optimization history is persisted into some kind of a database via storage objects. Here, let's consider a 
-method using SQLite, a lightweight RDB management system, as the backend. With SQLite, data is stored in a single file (e.g., 
-./example.db). The optimization history comprises what parameters were sampled in each trial, what the evaluation values for those 
-parameters were, when each trial started and ended, etc. This file is in the SQLite format, and it is not suitable for storing 
-large data. Writing large data entries may cause performance degradation. Note that SQLite is not suitable for distributed parallel 
-optimization. If you want to perform that, please use MySQL as we will explain later, or JournalStorage 
-(`example <https://optuna.readthedocs.io/en/stable/reference/generated/optuna.storages.JournalStorage.html#optuna.storages.JournalStorage>`__).
+Normally, Optuna's optimization history is persisted into some kind of a database via storage objects. Here, let's consider a
+method using SQLite, a lightweight RDB management system, as the backend. With SQLite, data is stored in a single file (e.g.,
+``./example.db``). The optimization history comprises what parameters were sampled in each trial, what the evaluation values for those
+parameters were, when each trial started and ended, etc. This file is in the SQLite format, and it is not suitable for storing
+large data. Writing large data entries may cause performance degradation. Note that SQLite is not suitable for distributed parallel
+optimization. If you want to perform that, please use MySQL as we will explain later, or :class:`~optuna.storages.JournalStorage`.
 
-So, let's use the artifact module to save large data in a different format. Suppose the data is generated for each trial and you 
-want to save it in some format (e.g., png format if it's an image). The specific destination for saving the artifacts can be any 
-directory on the local file system (e.g., the ./artifacts directory). When defining the objective function, you only need to save 
+So, let's use the artifact module to save large data in a different format. Suppose the data is generated for each trial and you
+want to save it in some format (e.g., png format if it's an image). The specific destination for saving the artifacts can be any
+directory on the local file system (e.g., the ``./artifacts`` directory). When defining the objective function, you only need to save
 and reference the data using the artifact module.
 
 The simple pseudocode for the above case  would look something like this:
@@ -157,22 +156,22 @@ Scenario 2: Remote MySQL RDB server + AWS S3 artifact store
 
 Next, we explain the case where data is read and written remotely.
 
-As the scale of optimization increases, it becomes difficult to complete all calculations locally. Optuna's storage objects can 
-persist data remotely by specifying a URL, enabling distributed optimization. Here, we will use MySQL as a remote relational 
-database server. MySQL is an open-source relational database management system and a well-known software used for various purposes. 
+As the scale of optimization increases, it becomes difficult to complete all calculations locally. Optuna's storage objects can
+persist data remotely by specifying a URL, enabling distributed optimization. Here, we will use MySQL as a remote relational
+database server. MySQL is an open-source relational database management system and a well-known software used for various purposes.
 For using MySQL with Optuna, the `tutorial <https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/004_distributed.html>`__
 can be a good reference. However, it is also not appropriate to read and write large data in a relational database like MySQL.
 
-In Optuna, it is common to use the artifact module when you want to read and write such data for each trial. Unlike Scenario 1, 
-we distribute the optimization across computation nodes, so  local file system-based backends will not work. Instead, we will use 
-AWS S3, an online cloud storage service, and Boto3, a framework for interacting with it from Python. As of v3.3, Optuna has a 
+In Optuna, it is common to use the artifact module when you want to read and write such data for each trial. Unlike Scenario 1,
+we distribute the optimization across computation nodes, so local file system-based backends will not work. Instead, we will use
+AWS S3, an online cloud storage service, and Boto3, a framework for interacting with it from Python. As of v3.3, Optuna has a
 built-in artifact store with this Boto3 backend.
 
-The flow of data is shown in Figure 3. The information calculated in each trial, which corresponds to the optimization history 
-(excluding artifact information), is written to the MySQL server. On the other hand, the artifact information is written to AWS S3. 
-All workers conducting distributed optimization can read and write in parallel to each, and issues such as race conditions are 
-automatically resolved by Optuna's storage module and artifact module. As a result, although the actual data location changes 
-between artifact information and non-artifact information (the former is in AWS S3, the latter is in the MySQL RDB), users can 
+The flow of data is shown in Figure 3. The information calculated in each trial, which corresponds to the optimization history
+(excluding artifact information), is written to the MySQL server. On the other hand, the artifact information is written to AWS S3.
+All workers conducting distributed optimization can read and write in parallel to each, and issues such as race conditions are
+automatically resolved by Optuna's storage module and artifact module. As a result, although the actual data location changes
+between artifact information and non-artifact information (the former is in AWS S3, the latter is in the MySQL RDB), users can
 read and write data transparently. Translating the above process into simple pseudocode would look something like this:
 
 .. code-block:: python
@@ -237,16 +236,16 @@ read and write data transparently. Translating the above process into simple pse
 Example: Optimization of Chemical Structures
 --------------------------------------------
 
-In this section, we introduce an example of optimizing chemical structure using Optuna by utilizing the artifact module. We will 
+In this section, we introduce an example of optimizing chemical structure using Optuna by utilizing the artifact module. We will
 target relatively small structures, but the approach remains the same even for complex structures.
 
-Consider the process of a specific molecule adsorbing onto another substance. In this process, the ease of adsorption reaction 
-changes depending on the position of the adsorbing molecule to the substance it is adsorbed onto. The ease of adsorption reaction 
-can be evaluated by the adsorption energy (the difference between the energy of the system after adsorption and before). By 
-formulating the problem as a minimization problem of an objective function that takes the positional relationship of the adsorbing 
+Consider the process of a specific molecule adsorbing onto another substance. In this process, the ease of adsorption reaction
+changes depending on the position of the adsorbing molecule to the substance it is adsorbed onto. The ease of adsorption reaction
+can be evaluated by the adsorption energy (the difference between the energy of the system after adsorption and before). By
+formulating the problem as a minimization problem of an objective function that takes the positional relationship of the adsorbing
 molecule as input and outputs the adsorption energy, this problem is solved as a black-box optimization problem.
 
-First, let's import the necessary modules and define some helper functions. You need to install the ASE library for handling 
+First, let's import the necessary modules and define some helper functions. You need to install the ASE library for handling
 chemical structures in addition to Optuna, so please install it with `pip install ase`.
 """
 
@@ -321,23 +320,23 @@ def file_to_atoms(file_path: str) -> Atoms:
 ###################################################################################################
 # Each function is as follows.
 #
-# - `get_opt_energy`: Takes a chemical structure, transitions it to a locally stable structure, and returns the energy after the transition.
-# - `create_slab`: Constructs the substance being adsorbed.
-# - `create_mol`: Constructs the molecule being adsorbed.
-# - `atoms_to_json`: Converts the chemical structure to a string.
-# - `json_to_atoms`: Converts the string to a chemical structure.
-# - `file_to_atoms`: Reads the string from a file and converts it to a chemical structure.
+# - ``get_opt_energy``: Takes a chemical structure, transitions it to a locally stable structure, and returns the energy after the transition.
+# - ``create_slab``: Constructs the substance being adsorbed.
+# - ``create_mol``: Constructs the molecule being adsorbed.
+# - ``atoms_to_json``: Converts the chemical structure to a string.
+# - ``json_to_atoms``: Converts the string to a chemical structure.
+# - ``file_to_atoms``: Reads the string from a file and converts it to a chemical structure.
 #
 # Using these functions, the code to search for adsorption structures using Optuna is as follows. The objective function is defined
-# as class `Objective` in order to carry the artifact store. In its `__call__` method, it retrieves the substance being adsorbed
-# (`slab`) and the molecule being adsorbed (`mol`), then after sampling their positional relationship using Optuna (multiple
-# `trial.suggest_xxx` methods), it triggers an adsorption reaction with the `add_adsorbate` function, transitions to a locally
+# as class ``Objective`` in order to carry the artifact store. In its ``__call__`` method, it retrieves the substance being adsorbed
+# (``slab``) and the molecule being adsorbed (``mol``), then after sampling their positional relationship using Optuna (multiple
+# ``trial.suggest_xxx`` methods), it triggers an adsorption reaction with the ``add_adsorbate`` function, transitions to a locally
 # stable structure, then saves the structure in the artifact store and returns the adsorption energy.
 #
-# The `main` function contains the code to create a `Study` and execute optimization. When creating a `Study`, a storage is
+# The ``main`` function contains the code to create a ``Study`` and execute optimization. When creating a ``Study``, a storage is
 # specified using SQLite, and a back end using the local file system is used for the artifact store. In other words, it corresponds
 # to Scenario 1 explained in the previous section. After performing 100 trials of optimization, it displays the information for the
-# best trial, and finally saves the chemical structure as `best_atoms.png`. The obtained `best_atoms.png` is shown in Figure 4.
+# best trial, and finally saves the chemical structure as ``best_atoms.png``. The obtained ``best_atoms.png``` is shown in Figure 4.
 
 
 class Objective:
@@ -429,8 +428,8 @@ if __name__ == "__main__":
 # .. list-table::
 #     :header-rows: 1
 #
-#    * - Fig 4. The chemical structure obtained by the above code.
-#    * - .. image:: https://github.com/optuna/optuna/assets/38826298/c6bd62fd-599a-424e-8c2c-ca88af85cc63
+#     * - Fig 4. The chemical structure obtained by the above code.
+#     * - .. image:: https://github.com/optuna/optuna/assets/38826298/c6bd62fd-599a-424e-8c2c-ca88af85cc63
 #
 # As shown above, it is convenient to use the artifact module when performing the optimization of chemical structures with Optuna.
 # In the case of small structures or fewer trial numbers, it's fine to convert it to a string and save it directly in the RDB.

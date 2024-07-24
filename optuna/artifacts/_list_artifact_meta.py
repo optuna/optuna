@@ -65,7 +65,7 @@ def get_all_artifact_meta(
     Returns:
         The list of artifact meta in the trial or study.
         Each artifact meta includes ``artifact_id``, ``filename``, ``mimetype``, and ``encoding``.
-        Note that If :class:`~optuna.study.Study` is provided, we return the information of the
+        Note that if :class:`~optuna.study.Study` is provided, we return the information of the
         artifacts uploaded to ``study``, but not to all the trials in the study.
     """
     if isinstance(study_or_trial, Trial) and storage is None:
