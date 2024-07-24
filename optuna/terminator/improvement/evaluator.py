@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from optuna._gp import gp
     from optuna._gp import optim_sample
     from optuna._gp import prior
-    from optuna._gp import search_space
+    from optuna._gp import search_space as gp_search_space
 else:
     from optuna._imports import _LazyImport
 
@@ -27,7 +27,7 @@ else:
     optim_sample = _LazyImport("optuna._gp.optim_sample")
     acqf = _LazyImport("optuna._gp.acqf")
     prior = _LazyImport("optuna._gp.prior")
-    search_space = _LazyImport("optuna._gp.search_space")
+    gp_search_space = _LazyImport("optuna._gp.search_space")
 
 DEFAULT_TOP_TRIALS_RATIO = 0.5
 DEFAULT_MIN_N_TRIALS = 20
@@ -108,7 +108,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
     def _compute_standardized_regret_bound(
         self,
         kernel_params: gp.KernelParamsTensor,
-        considered_search_space: search_space.SearchSpace,
+        considered_search_space: gp_search_space.SearchSpace,
         normalized_top_n_params: np.ndarray,
         standarized_top_n_values: np.ndarray,
     ) -> float:
@@ -167,7 +167,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         sign = -1 if study_direction == StudyDirection.MINIMIZE else 1
         values = np.array([t.value for t in complete_trials]) * sign
         considered_search_space, normalized_params = (
-            search_space.get_search_space_and_normalized_params(
+            gp_search_space.get_search_space_and_normalized_params(
                 complete_trials, optuna_search_space
             )
         )
@@ -180,7 +180,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             X=normalized_top_n_params,
             Y=standarized_top_n_values,
             is_categorical=(
-                considered_search_space.scale_types == search_space.ScaleType.CATEGORICAL
+                considered_search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
             ),
             log_prior=self._log_prior,
             minimum_noise=self._minimum_noise,
