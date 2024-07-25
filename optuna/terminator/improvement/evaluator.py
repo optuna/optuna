@@ -166,10 +166,8 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         # _gp module assumes that optimization direction is maximization
         sign = -1 if study_direction == StudyDirection.MINIMIZE else 1
         values = np.array([t.value for t in complete_trials]) * sign
-        search_space, normalized_params = (
-            gp_search_space.get_search_space_and_normalized_params(
-                complete_trials, optuna_search_space
-            )
+        search_space, normalized_params = gp_search_space.get_search_space_and_normalized_params(
+            complete_trials, optuna_search_space
         )
         normalized_top_n_params, top_n_values = self._get_top_n(normalized_params, values)
         top_n_values_mean = top_n_values.mean()
@@ -179,9 +177,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         kernel_params = gp.fit_kernel_params(
             X=normalized_top_n_params,
             Y=standarized_top_n_values,
-            is_categorical=(
-                search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
-            ),
+            is_categorical=(search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL),
             log_prior=self._log_prior,
             minimum_noise=self._minimum_noise,
             # TODO(contramundum53): Add option to specify this.
