@@ -151,14 +151,15 @@ def _log_gauss_mass(a: np.ndarray, b: np.ndarray) -> np.ndarray:
 def _bisect(f: Callable[[float], float], a: float, b: float, c: float) -> float:
     if f(a) > c:
         a, b = b, a
-    # TODO(amylase): Justify this constant
-    for _ in range(100):
+    # In the algorithm, it is assumed that all of (a + b), (a * 2), and (b * 2) are finite.
+    while True:
         m = (a + b) / 2
+        if a == m or b == m:
+            return m
         if f(m) < c:
             a = m
         else:
             b = m
-    return m
 
 
 def _ndtri_exp_single(y: float) -> float:
