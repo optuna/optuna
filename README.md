@@ -184,6 +184,51 @@ Hit Ctrl-C to quit.
 </details>
 
 
+## OptunaHub
+
+[OptunaHub](https://hub.optuna.org/) is a feature-sharing platform for Optuna.
+You can use the registered features and publish your packages.
+
+![OptunaHub](https://github.com/user-attachments/assets/cc48e8e9-7307-47e7-8083-4dc6a695995e)
+
+### Use registered features
+
+`optunahub` can be installed via pip:
+
+```shell
+$ pip install optunahub
+```
+
+You can load registered module with `optunahub.load_module`.
+
+```python
+import optunahub
+import optuna
+
+
+def objective(trial: optuna.Trial) -> float:
+    x = trial.suggest_float("x", 0, 1)
+
+    return x
+
+
+if __name__ == "__main__":
+    mod = optunahub.load_module("samplers/simulated_annealing")
+
+    sampler = mod.SimulatedAnnealingSampler()
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(objective, n_trials=20)
+
+    print(study.best_trial.value, study.best_trial.params)
+
+```
+
+### Publish your packages
+
+You can publish your package via [optunahub-registry](https://github.com/optuna/optunahub-registry).
+See the [OptunaHub tutorial](https://optuna.github.io/optunahub-registry/index.html).
+
+
 ## Communication
 
 - [GitHub Discussions] for questions.
