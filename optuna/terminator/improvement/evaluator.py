@@ -15,6 +15,7 @@ from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
+
     from optuna._gp import acqf
     from optuna._gp import gp
     from optuna._gp import optim_sample
@@ -31,19 +32,6 @@ else:
 
 DEFAULT_TOP_TRIALS_RATIO = 0.5
 DEFAULT_MIN_N_TRIALS = 20
-
-
-def _get_beta(n_params: int, n_trials: int, delta: float = 0.1) -> float:
-    # TODO(nabenabe0928): Check the original implementation to verify.
-    # Especially, |D| seems to be the domain size, but not the dimension based on Theorem 1.
-    beta = 2 * np.log(n_params * n_trials**2 * np.pi**2 / 6 / delta)
-
-    # The following div is according to the original paper: "We then further scale it down
-    # by a factor of 5 as defined in the experiments in
-    # `Srinivas et al. (2010) <https://dl.acm.org/doi/10.5555/3104322.3104451>`__"
-    beta /= 5
-
-    return beta
 
 
 @experimental_class("3.2.0")
@@ -105,12 +93,28 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         top_n_mask = values >= top_n_val
         return normalized_params[top_n_mask], values[top_n_mask]
 
+    @staticmethod
+    def _get_beta(n_params: int, n_trials: int, delta: float = 0.1) -> float:
+        # TODO(nabenabe0928): Check the original implementation to verify.
+        # Especially, |D| seems to be the domain size, but not the dimension based on Theorem 1.
+        beta = 2 * np.log(n_params * n_trials**2 * np.pi**2 / 6 / delta)
+
+        # The following div is according to the original paper: "We then further scale it down
+        # by a factor of 5 as defined in the experiments in
+        # `Srinivas et al. (2010) <https://dl.acm.org/doi/10.5555/3104322.3104451>`__"
+        beta /= 5
+
+        return beta
+
+    @staticmethod
     def _compute_standardized_regret_bound(
-        self,
         kernel_params: gp.KernelParamsTensor,
         search_space: gp_search_space.SearchSpace,
         normalized_top_n_params: np.ndarray,
         standarized_top_n_values: np.ndarray,
+        delta: float = 0.1,
+        optimize_n_samples: int = 2048,
+        rng: np.random.RandomState | None = None,
     ) -> float:
         """
         In the original paper, f(x) was intended to be minimized, but here we would like to
@@ -123,7 +127,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         n_trials, n_params = normalized_top_n_params.shape
 
         # calculate max_ucb
-        beta = _get_beta(n_params, n_trials)
+        beta = RegretBoundEvaluator._get_beta(n_params, n_trials, delta)
         ucb_acqf_params = acqf.create_acqf_params(
             acqf_type=acqf.AcquisitionFunctionType.UCB,
             kernel_params=kernel_params,
@@ -136,7 +140,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         standardized_ucb_value = max(
             acqf.eval_acqf_no_grad(ucb_acqf_params, normalized_top_n_params).max(),
             optim_sample.optimize_acqf_sample(
-                ucb_acqf_params, n_samples=self._optimize_n_samples, rng=self._rng.rng
+                ucb_acqf_params, n_samples=optimize_n_samples, rng=rng
             )[1],
         )
 
@@ -186,11 +190,12 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             initial_kernel_params=None,
         )
 
-        standardized_regret_bound = self._compute_standardized_regret_bound(
+        standardized_regret_bound = RegretBoundEvaluator._compute_standardized_regret_bound(
             kernel_params,
             search_space,
             normalized_top_n_params,
             standarized_top_n_values,
+            rng=self._rng.rng,
         )
         return standardized_regret_bound * top_n_values_std  # regret bound
 
