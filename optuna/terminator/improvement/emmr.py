@@ -60,6 +60,38 @@ class EMMREvaluator(BaseImprovementEvaluator):
             A float number related to the criterion for termination. Default to 0.1.
         min_n_trials:
             A minimum number of complete trials to compute the criterion. Default to 3.
+
+    Example:
+
+        .. testcode::
+
+            import optuna
+            from optuna.terminator import EMMREvaluator, MedianErrorEvaluator, Terminator
+
+            sampler = optuna.samplers.TPESampler(seed=0)
+            study = optuna.create_study(sampler=sampler, direction="minimize")
+            emmr_improvement_valuator = EMMREvaluator()
+            median_error_evaluator = MedianErrorEvaluator(emmr_improvement_valuator)
+            terminator = Terminator(
+                improvement_evaluator=emmr_improvement_valuator,
+                error_evaluator=median_error_evaluator,
+            )
+
+
+            for i in range(1000):
+                trial = study.ask()
+
+                ys = [trial.suggest_float(f"x{i}", -10.0, 10.0) for i in range(5)]
+                value = sum(ys[i] ** 2 for i in range(5))
+                print(f"Trial #{trial.number} finished with value {value}.")
+
+                study.tell(trial, value)
+
+                if terminator.should_terminate(study):
+                    print("Terminated by Optuna Terminator!")
+                    exit()
+            print("Not terminated.")
+
     """
 
     def __init__(
