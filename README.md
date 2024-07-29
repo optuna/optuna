@@ -202,8 +202,8 @@ $ pip install optunahub
 You can load registered module with `optunahub.load_module`.
 
 ```python
-import optunahub
 import optuna
+import optunahub
 
 
 def objective(trial: optuna.Trial) -> float:
@@ -212,14 +212,12 @@ def objective(trial: optuna.Trial) -> float:
     return x
 
 
-if __name__ == "__main__":
-    mod = optunahub.load_module("samplers/simulated_annealing")
+mod = optunahub.load_module("samplers/simulated_annealing")
 
-    sampler = mod.SimulatedAnnealingSampler()
-    study = optuna.create_study(sampler=sampler)
-    study.optimize(objective, n_trials=20)
+study = optuna.create_study(sampler=mod.SimulatedAnnealingSampler())
+study.optimize(objective, n_trials=20)
 
-    print(study.best_trial.value, study.best_trial.params)
+print(study.best_trial.value, study.best_trial.params)
 ```
 
 For more details, please refer to [the optunahub documentation](https://optuna.github.io/optunahub/).
