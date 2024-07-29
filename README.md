@@ -220,8 +220,9 @@ if __name__ == "__main__":
     study.optimize(objective, n_trials=20)
 
     print(study.best_trial.value, study.best_trial.params)
-
 ```
+
+For more details, please refer to [the optunahub documentation](https://optuna.github.io/optunahub/).
 
 ### Publish your packages
 
