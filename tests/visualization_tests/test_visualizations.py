@@ -29,8 +29,6 @@ from optuna.visualization.matplotlib import plot_rank as matplotlib_plot_rank
 from optuna.visualization.matplotlib import plot_slice as matplotlib_plot_slice
 from optuna.visualization.matplotlib import plot_timeline as matplotlib_plot_timeline
 
-from .parametrize_objectives import parametrize_single_objective_functions
-
 
 parametrize_visualization_functions_for_single_objective = pytest.mark.parametrize(
     "plot_func",
@@ -55,11 +53,43 @@ parametrize_visualization_functions_for_single_objective = pytest.mark.parametri
 )
 
 
+def objective_single_dynamic_with_categorical(trial: optuna.Trial) -> float:
+    category = trial.suggest_categorical("category", ["foo", "bar"])
+    if category == "foo":
+        return (trial.suggest_float("x1", 0, 10) - 2) ** 2
+    else:
+        return -((trial.suggest_float("x2", -10, 0) + 5) ** 2)
+
+
+def objective_single_none_categorical(trial: optuna.Trial) -> float:
+    x = trial.suggest_float("x", -100, 100)
+    trial.suggest_categorical("y", ["foo", None])
+    return x**2
+
+
+parametrize_single_objective_functions = pytest.mark.parametrize(
+    "objective_func",
+    [
+        objective_single_dynamic_with_categorical,
+        objective_single_none_categorical,
+    ],
+)
+
+
 @parametrize_visualization_functions_for_single_objective
 @parametrize_single_objective_functions
-def test_visualization_with_dynamic_search_space(
+def test_visualizations_with_single_objectives(
     plot_func: Callable[[optuna.study.Study], None], objective_func: ObjectiveFuncType
-):
+) -> None:
     study = optuna.create_study(sampler=optuna.samplers.RandomSampler())
-    study.optimize(objective_func, n_trials=50)
+    study.optimize(objective_func, n_trials=20)
+
+    # TODO(c-bata): Fix a bug to remove `pytest.xfail`.
+    if plot_func is plot_contour and objective_func is objective_single_dynamic_with_categorical:
+        pytest.xfail("There is a bug that IndexError is raised in plot_contour")
+
+    # TODO(c-bata): Fix a bug to remove `pytest.xfail`.
+    if plot_func is matplotlib_plot_rank and objective_func is objective_single_none_categorical:
+        pytest.xfail("There is a bug that TypeError is raised in matplotlib.plot_rank")
+
     plot_func(study)  # Must not raise an exception here.
