@@ -189,8 +189,6 @@ Hit Ctrl-C to quit.
 [OptunaHub](https://hub.optuna.org/) is a feature-sharing platform for Optuna.
 You can use the registered features and publish your packages.
 
-![OptunaHub](https://github.com/user-attachments/assets/cc48e8e9-7307-47e7-8083-4dc6a695995e)
-
 ### Use registered features
 
 `optunahub` can be installed via pip:
