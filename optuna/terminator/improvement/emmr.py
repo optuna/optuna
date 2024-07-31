@@ -68,6 +68,8 @@ class EMMREvaluator(BaseImprovementEvaluator):
 
         .. testcode::
 
+            import logging
+
             import optuna
             from optuna.terminator import EMMREvaluator, MedianErrorEvaluator, Terminator
 
@@ -86,15 +88,15 @@ class EMMREvaluator(BaseImprovementEvaluator):
 
                 ys = [trial.suggest_float(f"x{i}", -10.0, 10.0) for i in range(5)]
                 value = sum(ys[i] ** 2 for i in range(5))
-                print(f"Trial #{trial.number} finished with value {value}.")
+                logging.info(f"Trial #{trial.number} finished with value {value}.")
 
                 study.tell(trial, value)
 
                 if terminator.should_terminate(study):
-                    print("Terminated by Optuna Terminator!")
+                    logging.info("Terminated by Optuna Terminator!")
                     break
             else:
-                print("Not terminated.")
+                logging.info("Not terminated.")
 
     """
 
