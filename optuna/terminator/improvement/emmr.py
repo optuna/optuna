@@ -12,8 +12,8 @@ from optuna._experimental import experimental_class
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.search_space import intersection_search_space
 from optuna.study import StudyDirection
+from optuna.terminator.improvement.evaluator import _compute_standardized_regret_bound
 from optuna.terminator.improvement.evaluator import BaseImprovementEvaluator
-from optuna.terminator.improvement.evaluator import RegretBoundEvaluator
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -225,7 +225,7 @@ class EMMREvaluator(BaseImprovementEvaluator):
         )
 
         y_t = standarized_score_vals[-1]
-        kappa_t1 = RegretBoundEvaluator.compute_standardized_regret_bound(
+        kappa_t1 = _compute_standardized_regret_bound(
             kernel_params_t1,
             search_space,
             normalized_params[:-1, :],
