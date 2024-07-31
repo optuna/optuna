@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from typing import Callable
 
+from matplotlib.axes._axes import Axes
+import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 import pytest
 
 import optuna
@@ -79,7 +82,7 @@ parametrize_single_objective_functions = pytest.mark.parametrize(
 @parametrize_visualization_functions_for_single_objective
 @parametrize_single_objective_functions
 def test_visualizations_with_single_objectives(
-    plot_func: Callable[[optuna.study.Study], None], objective_func: ObjectiveFuncType
+    plot_func: Callable[[optuna.study.Study], go.Figure | Axes], objective_func: ObjectiveFuncType
 ) -> None:
     study = optuna.create_study(sampler=optuna.samplers.RandomSampler())
     study.optimize(objective_func, n_trials=20)
@@ -92,4 +95,6 @@ def test_visualizations_with_single_objectives(
     if plot_func is matplotlib_plot_rank and objective_func is objective_single_none_categorical:
         pytest.xfail("There is a bug that TypeError is raised in matplotlib.plot_rank")
 
-    plot_func(study)  # Must not raise an exception here.
+    fig = plot_func(study)  # Must not raise an exception here.
+    if isinstance(fig, Axes):
+        plt.close()
