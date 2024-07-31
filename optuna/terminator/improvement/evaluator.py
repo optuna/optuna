@@ -94,7 +94,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         return normalized_params[top_n_mask], values[top_n_mask]
 
     @staticmethod
-    def _get_beta(n_params: int, n_trials: int, delta: float = 0.1) -> float:
+    def get_beta(n_params: int, n_trials: int, delta: float = 0.1) -> float:
         # TODO(nabenabe0928): Check the original implementation to verify.
         # Especially, |D| seems to be the domain size, but not the dimension based on Theorem 1.
         beta = 2 * np.log(n_params * n_trials**2 * np.pi**2 / 6 / delta)
@@ -107,7 +107,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         return beta
 
     @staticmethod
-    def _compute_standardized_regret_bound(
+    def compute_standardized_regret_bound(
         kernel_params: gp.KernelParamsTensor,
         search_space: gp_search_space.SearchSpace,
         normalized_top_n_params: np.ndarray,
@@ -127,7 +127,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         n_trials, n_params = normalized_top_n_params.shape
 
         # calculate max_ucb
-        beta = RegretBoundEvaluator._get_beta(n_params, n_trials, delta)
+        beta = RegretBoundEvaluator.get_beta(n_params, n_trials, delta)
         ucb_acqf_params = acqf.create_acqf_params(
             acqf_type=acqf.AcquisitionFunctionType.UCB,
             kernel_params=kernel_params,
@@ -190,7 +190,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             initial_kernel_params=None,
         )
 
-        standardized_regret_bound = RegretBoundEvaluator._compute_standardized_regret_bound(
+        standardized_regret_bound = RegretBoundEvaluator.compute_standardized_regret_bound(
             kernel_params,
             search_space,
             normalized_top_n_params,
