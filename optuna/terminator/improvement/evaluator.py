@@ -116,13 +116,11 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         optimize_n_samples: int = 2048,
         rng: np.random.RandomState | None = None,
     ) -> float:
-        """
-        In the original paper, f(x) was intended to be minimized, but here we would like to
-        maximize f(x). Hence, the following changes happen:
-            1. min(ucb) over top trials becomes max(lcb) over top trials, and
-            2. min(lcb) over the search space becomes max(ucb) over the search space, and
-            3. Regret bound becomes max(ucb) over the search space minus max(lcb) over top trials.
-        """
+        # In the original paper, f(x) was intended to be minimized, but here we would like to
+        # maximize f(x). Hence, the following changes happen:
+        # 1. min(ucb) over top trials becomes max(lcb) over top trials, and
+        # 2. min(lcb) over the search space becomes max(ucb) over the search space, and
+        # 3. Regret bound becomes max(ucb) over the search space minus max(lcb) over top trials.
 
         n_trials, n_params = normalized_top_n_params.shape
 
