@@ -29,13 +29,13 @@ def test_emmr_evaluate() -> None:
 
 def test_emmr_evaluate_with_invalid_argument() -> None:
     with pytest.raises(ValueError):
-        EMMREvaluator(min_n_trials=2)
+        EMMREvaluator(min_n_trials=1)
 
 
 def test_emmr_evaluate_with_insufficient_trials() -> None:
     evaluator = EMMREvaluator()
     trials: list[FrozenTrial] = []
-    for _ in range(3):
+    for _ in range(2):
         criterion = evaluator.evaluate(trials=trials, study_direction=StudyDirection.MAXIMIZE)
         assert criterion == sys.float_info.max
         trials.append(create_trial(value=0, distributions={}, params={}))
@@ -43,7 +43,7 @@ def test_emmr_evaluate_with_insufficient_trials() -> None:
 
 def test_emmr_evaluate_with_empty_intersection_search_space() -> None:
     evaluator = EMMREvaluator()
-    trials = [create_trial(value=0, distributions={}, params={}) for _ in range(4)]
+    trials = [create_trial(value=0, distributions={}, params={}) for _ in range(3)]
     with pytest.warns(UserWarning):
         criterion = evaluator.evaluate(trials=trials, study_direction=StudyDirection.MAXIMIZE)
     assert criterion == sys.float_info.max
