@@ -92,8 +92,9 @@ class EMMREvaluator(BaseImprovementEvaluator):
 
                 if terminator.should_terminate(study):
                     print("Terminated by Optuna Terminator!")
-                    exit()
-            print("Not terminated.")
+                    break
+            else:
+                print("Not terminated.")
 
     """
 
