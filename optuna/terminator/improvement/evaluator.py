@@ -34,6 +34,74 @@ DEFAULT_TOP_TRIALS_RATIO = 0.5
 DEFAULT_MIN_N_TRIALS = 20
 
 
+def _get_beta(n_params: int, n_trials: int, delta: float = 0.1) -> float:
+    # TODO(nabenabe0928): Check the original implementation to verify.
+    # Especially, |D| seems to be the domain size, but not the dimension based on Theorem 1.
+    beta = 2 * np.log(n_params * n_trials**2 * np.pi**2 / 6 / delta)
+
+    # The following div is according to the original paper: "We then further scale it down
+    # by a factor of 5 as defined in the experiments in
+    # `Srinivas et al. (2010) <https://dl.acm.org/doi/10.5555/3104322.3104451>`__"
+    beta /= 5
+
+    return beta
+
+
+def _compute_standardized_regret_bound(
+    kernel_params: gp.KernelParamsTensor,
+    search_space: gp_search_space.SearchSpace,
+    normalized_top_n_params: np.ndarray,
+    standarized_top_n_values: np.ndarray,
+    delta: float = 0.1,
+    optimize_n_samples: int = 2048,
+    rng: np.random.RandomState | None = None,
+) -> float:
+    """
+    # In the original paper, f(x) was intended to be minimized, but here we would like to
+    # maximize f(x). Hence, the following changes happen:
+    #     1. min(ucb) over top trials becomes max(lcb) over top trials, and
+    #     2. min(lcb) over the search space becomes max(ucb) over the search space, and
+    #     3. Regret bound becomes max(ucb) over the search space minus max(lcb) over top trials.
+    """
+
+    n_trials, n_params = normalized_top_n_params.shape
+
+    # calculate max_ucb
+    beta = _get_beta(n_params, n_trials, delta)
+    ucb_acqf_params = acqf.create_acqf_params(
+        acqf_type=acqf.AcquisitionFunctionType.UCB,
+        kernel_params=kernel_params,
+        search_space=search_space,
+        X=normalized_top_n_params,
+        Y=standarized_top_n_values,
+        beta=beta,
+    )
+    # UCB over the search space. (Original: LCB over the search space. See Change 1 above.)
+    standardized_ucb_value = max(
+        acqf.eval_acqf_no_grad(ucb_acqf_params, normalized_top_n_params).max(),
+        optim_sample.optimize_acqf_sample(ucb_acqf_params, n_samples=optimize_n_samples, rng=rng)[
+            1
+        ],
+    )
+
+    # calculate min_lcb
+    lcb_acqf_params = acqf.create_acqf_params(
+        acqf_type=acqf.AcquisitionFunctionType.LCB,
+        kernel_params=kernel_params,
+        search_space=search_space,
+        X=normalized_top_n_params,
+        Y=standarized_top_n_values,
+        beta=beta,
+    )
+    # LCB over the top trials. (Original: UCB over the top trials. See Change 2 above.)
+    standardized_lcb_value = np.max(
+        acqf.eval_acqf_no_grad(lcb_acqf_params, normalized_top_n_params)
+    )
+
+    # max(UCB) - max(LCB). (Original: min(UCB) - min(LCB). See Change 3 above.)
+    return standardized_ucb_value - standardized_lcb_value  # standardized regret bound
+
+
 @experimental_class("3.2.0")
 class BaseImprovementEvaluator(metaclass=abc.ABCMeta):
     """Base class for improvement evaluators."""
@@ -93,72 +161,6 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         top_n_mask = values >= top_n_val
         return normalized_params[top_n_mask], values[top_n_mask]
 
-    @staticmethod
-    def get_beta(n_params: int, n_trials: int, delta: float = 0.1) -> float:
-        # TODO(nabenabe0928): Check the original implementation to verify.
-        # Especially, |D| seems to be the domain size, but not the dimension based on Theorem 1.
-        beta = 2 * np.log(n_params * n_trials**2 * np.pi**2 / 6 / delta)
-
-        # The following div is according to the original paper: "We then further scale it down
-        # by a factor of 5 as defined in the experiments in
-        # `Srinivas et al. (2010) <https://dl.acm.org/doi/10.5555/3104322.3104451>`__"
-        beta /= 5
-
-        return beta
-
-    @staticmethod
-    def compute_standardized_regret_bound(
-        kernel_params: gp.KernelParamsTensor,
-        search_space: gp_search_space.SearchSpace,
-        normalized_top_n_params: np.ndarray,
-        standarized_top_n_values: np.ndarray,
-        delta: float = 0.1,
-        optimize_n_samples: int = 2048,
-        rng: np.random.RandomState | None = None,
-    ) -> float:
-        # In the original paper, f(x) was intended to be minimized, but here we would like to
-        # maximize f(x). Hence, the following changes happen:
-        # 1. min(ucb) over top trials becomes max(lcb) over top trials, and
-        # 2. min(lcb) over the search space becomes max(ucb) over the search space, and
-        # 3. Regret bound becomes max(ucb) over the search space minus max(lcb) over top trials.
-
-        n_trials, n_params = normalized_top_n_params.shape
-
-        # calculate max_ucb
-        beta = RegretBoundEvaluator.get_beta(n_params, n_trials, delta)
-        ucb_acqf_params = acqf.create_acqf_params(
-            acqf_type=acqf.AcquisitionFunctionType.UCB,
-            kernel_params=kernel_params,
-            search_space=search_space,
-            X=normalized_top_n_params,
-            Y=standarized_top_n_values,
-            beta=beta,
-        )
-        # UCB over the search space. (Original: LCB over the search space. See Change 1 above.)
-        standardized_ucb_value = max(
-            acqf.eval_acqf_no_grad(ucb_acqf_params, normalized_top_n_params).max(),
-            optim_sample.optimize_acqf_sample(
-                ucb_acqf_params, n_samples=optimize_n_samples, rng=rng
-            )[1],
-        )
-
-        # calculate min_lcb
-        lcb_acqf_params = acqf.create_acqf_params(
-            acqf_type=acqf.AcquisitionFunctionType.LCB,
-            kernel_params=kernel_params,
-            search_space=search_space,
-            X=normalized_top_n_params,
-            Y=standarized_top_n_values,
-            beta=beta,
-        )
-        # LCB over the top trials. (Original: UCB over the top trials. See Change 2 above.)
-        standardized_lcb_value = np.max(
-            acqf.eval_acqf_no_grad(lcb_acqf_params, normalized_top_n_params)
-        )
-
-        # max(UCB) - max(LCB). (Original: min(UCB) - min(LCB). See Change 3 above.)
-        return standardized_ucb_value - standardized_lcb_value  # standardized regret bound
-
     def evaluate(self, trials: list[FrozenTrial], study_direction: StudyDirection) -> float:
         optuna_search_space = intersection_search_space(trials)
         self._validate_input(trials, optuna_search_space)
@@ -188,7 +190,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             initial_kernel_params=None,
         )
 
-        standardized_regret_bound = RegretBoundEvaluator.compute_standardized_regret_bound(
+        standardized_regret_bound = _compute_standardized_regret_bound(
             kernel_params,
             search_space,
             normalized_top_n_params,
