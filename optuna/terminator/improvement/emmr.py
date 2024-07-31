@@ -272,7 +272,7 @@ class EMMREvaluator(BaseImprovementEvaluator):
             alg1_delta_r_tilde_t_term1
             + alg1_delta_r_tilde_t_term2
             + alg1_delta_r_tilde_t_term3
-            + alg1_delta_r_tilde_t_term4
+            + alg1_delta_r_tilde_t_term4,
         )
 
 
