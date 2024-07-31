@@ -16,6 +16,10 @@ from optuna.trial._state import TrialState
 class MedianErrorEvaluator(BaseErrorEvaluator):
     """An error evaluator that returns the ratio to initial median.
 
+    This error evaluator is introduced as a heuristics in the following paper:
+
+    - `A stopping criterion for Bayesian optimization by the gap of expected minimum simple
+      regrets <https://proceedings.mlr.press/v206/ishibashi23a.html>`__
 
     Args:
         paired_improvement_evaluator:
@@ -25,7 +29,7 @@ class MedianErrorEvaluator(BaseErrorEvaluator):
             the calculation of median. Default to 10.
         n_initial_trials:
             A parameter specifies the number of initial trials considered in the calculation of
-            median. Default to 20.
+            median after `warm_up_trials`. Default to 20.
         threshold_ratio:
             A parameter specifies the ratio between the threshold and initial median.
             Default to 0.01.
@@ -65,14 +69,14 @@ class MedianErrorEvaluator(BaseErrorEvaluator):
             return -sys.float_info.max  # Do not terminate.
         trials.sort(key=lambda trial: trial.number)
         criteria = []
-        for i in range(self._warm_up_trials, self._warm_up_trials + self._n_initial_trials):
+        for i in range(1, self._n_initial_trials + 1):
             criteria.append(
                 self._paired_improvement_evaluator.evaluate(
-                    trials[self._warm_up_trials : self._warm_up_trials + i + 1], study_direction
+                    trials[self._warm_up_trials : self._warm_up_trials + i], study_direction
                 )
             )
         criteria.sort()
         self._threshold = criteria[len(criteria) // 2]
-        self._threshold *= self._threshold_ratio
         assert self._threshold is not None
+        self._threshold = min(sys.float_info.max, self._threshold * self._threshold_ratio)
         return self._threshold
