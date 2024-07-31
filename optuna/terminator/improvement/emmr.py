@@ -58,8 +58,11 @@ class EMMREvaluator(BaseImprovementEvaluator):
             Default is :obj:`False`.
         delta:
             A float number related to the criterion for termination. Default to 0.1.
+            For further information about this parameter, please see the aforementioned paper.
         min_n_trials:
-            A minimum number of complete trials to compute the criterion. Default to 3.
+            A minimum number of complete trials to compute the criterion. Default to 2.
+        seed:
+            A random seed for EMMREvaluator.
 
     Example:
 
@@ -98,11 +101,11 @@ class EMMREvaluator(BaseImprovementEvaluator):
         self,
         deterministic_objective: bool = False,
         delta: float = 0.1,
-        min_n_trials: int = 3,
+        min_n_trials: int = 2,
         seed: int | None = None,
     ) -> None:
-        if min_n_trials <= 2 or not np.isfinite(min_n_trials):
-            raise ValueError("`min_n_trials` is expected to be a finite integer more than two.")
+        if min_n_trials <= 1 or not np.isfinite(min_n_trials):
+            raise ValueError("`min_n_trials` is expected to be a finite integer more than one.")
 
         self._deterministic = deterministic_objective
         self._delta = delta
@@ -153,23 +156,13 @@ class EMMREvaluator(BaseImprovementEvaluator):
 
         assert len(standarized_score_vals) == len(normalized_params)
 
-        kernel_params_t2 = gp.fit_kernel_params(  # Fit kernel with up to (t-2)-th observation
-            X=normalized_params[..., :-2, :],
-            Y=standarized_score_vals[:-2],
-            is_categorical=(search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL),
-            log_prior=prior.default_log_prior,
-            minimum_noise=prior.DEFAULT_MINIMUM_NOISE_VAR,
-            initial_kernel_params=None,
-            deterministic_objective=self._deterministic,
-        )
-
         kernel_params_t1 = gp.fit_kernel_params(  # Fit kernel with up to (t-1)-th observation
             X=normalized_params[..., :-1, :],
             Y=standarized_score_vals[:-1],
             is_categorical=(search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL),
             log_prior=prior.default_log_prior,
             minimum_noise=prior.DEFAULT_MINIMUM_NOISE_VAR,
-            initial_kernel_params=kernel_params_t2,
+            initial_kernel_params=None,
             deterministic_objective=self._deterministic,
         )
 
@@ -187,7 +180,8 @@ class EMMREvaluator(BaseImprovementEvaluator):
         theta_t1_star_index = int(np.argmax(standarized_score_vals[:-1]))
         theta_t_star = normalized_params[theta_t_star_index, :]
         theta_t1_star = normalized_params[theta_t1_star_index, :]
-        covariance_theta_t_star_theta_t1_star = _compute_gp_posterior_cov_two_thetas(
+
+        cov_t_between_theta_t_star_and_theta_t1_star = _compute_gp_posterior_cov_two_thetas(
             search_space,
             normalized_params,
             standarized_score_vals,
@@ -196,29 +190,24 @@ class EMMREvaluator(BaseImprovementEvaluator):
             theta_t1_star_index,
         )
 
-        mu_t1_theta_t, sigma_t1_theta_t = _compute_gp_posterior(
+        mu_t1_theta_t_with_nu_t, sigma_t1_theta_t_with_nu_t = _compute_gp_posterior(
             search_space,
             normalized_params[:-1, :],
             standarized_score_vals[:-1],
             normalized_params[-1, :],
-            kernel_params_t1,
+            kernel_params_t,
+            # Use kernel_params_t instead of kernel_params_t1.
+            # Use "t" under the assumption that "t" and "t1" are approximately the same.
+            # This is because kernel should same when computing KLD.
+            # For detailed information, please see section 4.4 of the paper:
+            # https://proceedings.mlr.press/v206/ishibashi23a/ishibashi23a.pdf
         )
-        mu_t1_theta_t_star, sigma_t1_theta_t_star = _compute_gp_posterior(
+        _, sigma_t_theta_t1_star = _compute_gp_posterior(
             search_space,
-            normalized_params[:-1, :],
-            standarized_score_vals[:-1],
-            theta_t_star,
-            kernel_params_t1,
-        )
-        mu_t2_theta_t1_star, _ = _compute_gp_posterior(
-            search_space,
-            normalized_params[:-1, :],
-            standarized_score_vals[:-1],
-            theta_t_star,
-            kernel_params_t1,
-            # Use kernel_params_t1 instead of t2.
-            # Use t1 under the assumption that t1 and t2 are approximately the same.
-            # This is because kernel should same when comparing difference of mus.
+            normalized_params,
+            standarized_score_vals,
+            theta_t1_star,
+            kernel_params_t,
         )
         mu_t_theta_t_star, sigma_t_theta_t_star = _compute_gp_posterior(
             search_space,
@@ -234,13 +223,9 @@ class EMMREvaluator(BaseImprovementEvaluator):
             theta_t1_star,
             kernel_params_t1,
         )
-        sigma_t1_theta_t_squared = sigma_t1_theta_t**2
-
-        sigma_t1_theta_t_star_squared = sigma_t1_theta_t_star**2
-        sigma_t_theta_t_star_squared = sigma_t_theta_t_star**2
 
         y_t = standarized_score_vals[-1]
-        kappa_t1 = RegretBoundEvaluator._compute_standardized_regret_bound(
+        kappa_t1 = RegretBoundEvaluator.compute_standardized_regret_bound(
             kernel_params_t1,
             search_space,
             normalized_params[:-1, :],
@@ -249,16 +234,16 @@ class EMMREvaluator(BaseImprovementEvaluator):
             rng=self._rng.rng,
         )
 
-        theorem1_delta_mu_t_star = mu_t2_theta_t1_star - mu_t1_theta_t_star
+        theorem1_delta_mu_t_star = mu_t1_theta_t1_star - mu_t_theta_t_star
 
         alg1_delta_r_tilde_t_term1 = theorem1_delta_mu_t_star
 
         theorem1_v = math.sqrt(
             max(
-                sys.float_info.min,
-                sigma_t_theta_t_star_squared
-                - 2.0 * covariance_theta_t_star_theta_t1_star
-                + sigma_t1_theta_t_star_squared,
+                1e-100,  # Note: sys.float_info.min can cause overflow in scipy_stats.
+                sigma_t_theta_t_star**2
+                - 2.0 * cov_t_between_theta_t_star_and_theta_t1_star
+                + sigma_t_theta_t1_star**2,
             )
         )
         theorem1_g = (mu_t_theta_t_star - mu_t1_theta_t1_star) / theorem1_v
@@ -266,21 +251,24 @@ class EMMREvaluator(BaseImprovementEvaluator):
         alg1_delta_r_tilde_t_term2 = theorem1_v * scipy_stats.norm.pdf(theorem1_g)
         alg1_delta_r_tilde_t_term3 = theorem1_v * theorem1_g * scipy_stats.norm.cdf(theorem1_g)
 
-        _lambda = prior.DEFAULT_MINIMUM_NOISE_VAR
-        eq4_rhs_term1 = 0.5 * math.log(1.0 + _lambda * sigma_t1_theta_t_squared)
-        eq4_rhs_term2 = 0.5 * sigma_t1_theta_t_squared / (sigma_t1_theta_t_squared + _lambda**-1)
+        _lambda = prior.DEFAULT_MINIMUM_NOISE_VAR**-1
+        eq4_rhs_term1 = 0.5 * math.log(1.0 + _lambda * sigma_t1_theta_t_with_nu_t**2)
+        eq4_rhs_term2 = (
+            -0.5 * sigma_t1_theta_t_with_nu_t**2 / (sigma_t1_theta_t_with_nu_t**2 + _lambda**-1)
+        )
         eq4_rhs_term3 = (
             0.5
-            * sigma_t1_theta_t_squared
-            * (y_t - mu_t1_theta_t) ** 2
-            / (sigma_t1_theta_t_squared + _lambda**-1) ** 2
+            * sigma_t1_theta_t_with_nu_t**2
+            * (y_t - mu_t1_theta_t_with_nu_t) ** 2
+            / (sigma_t1_theta_t_with_nu_t**2 + _lambda**-1) ** 2
         )
 
         alg1_delta_r_tilde_t_term4 = kappa_t1 * math.sqrt(
             0.5 * (eq4_rhs_term1 + eq4_rhs_term2 + eq4_rhs_term3)
         )
 
-        return (
+        return min(
+            sys.float_info.max,
             alg1_delta_r_tilde_t_term1
             + alg1_delta_r_tilde_t_term2
             + alg1_delta_r_tilde_t_term3
