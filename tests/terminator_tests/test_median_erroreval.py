@@ -6,10 +6,11 @@ import numpy as np
 import pytest
 
 from optuna.distributions import FloatDistribution
-from optuna.study.study import create_study
+from optuna.study import StudyDirection
 from optuna.terminator import EMMREvaluator
 from optuna.terminator import MedianErrorEvaluator
 from optuna.trial import create_trial
+from optuna.trial import FrozenTrial
 
 
 def test_validation_ratio_to_initial_median_evaluator() -> None:
@@ -23,11 +24,11 @@ def test_validation_ratio_to_initial_median_evaluator() -> None:
         MedianErrorEvaluator(paired_improvement_evaluator=EMMREvaluator(), threshold_ratio=0.0)
 
 
-@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+@pytest.mark.parametrize("direction", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
 def test_ratio_to_initial_median_evaluator(
-    direction: str,
+    direction: StudyDirection,
 ) -> None:
-    study = create_study(direction=direction)
+    trials: list[FrozenTrial] = []
     evaluator = MedianErrorEvaluator(
         paired_improvement_evaluator=EMMREvaluator(min_n_trials=3),
         warm_up_trials=1,
@@ -35,40 +36,40 @@ def test_ratio_to_initial_median_evaluator(
         threshold_ratio=2.0,
     )
 
-    study.add_trial(
+    trials.append(
         create_trial(
             value=1.0,
             distributions={"a": FloatDistribution(-1.0, 10000.0)},
             params={"a": 1.0},
         )
     )
-    criterion = evaluator.evaluate(study.trials, study.direction)
+    criterion = evaluator.evaluate(trials, direction)
     assert criterion == -sys.float_info.max
-    study.add_trial(
+    trials.append(
         create_trial(
             value=22.0,
             distributions={"a": FloatDistribution(-1.0, 10000.0)},
             params={"a": 22.0},
         )
     )
-    criterion = evaluator.evaluate(study.trials, study.direction)
+    criterion = evaluator.evaluate(trials, direction)
     assert criterion == -sys.float_info.max
-    study.add_trial(
+    trials.append(
         create_trial(
             value=333.0,
             distributions={"a": FloatDistribution(-1.0, 10000.0)},
             params={"a": 333.0},
         )
     )
-    criterion = evaluator.evaluate(study.trials, study.direction)
+    criterion = evaluator.evaluate(trials, direction)
     assert criterion == -sys.float_info.max
-    study.add_trial(
+    trials.append(
         create_trial(
             value=4444.0,
             distributions={"a": FloatDistribution(-1.0, 10000.0)},
             params={"a": 4444.0},
         )
     )
-    criterion = evaluator.evaluate(study.trials, study.direction)
+    criterion = evaluator.evaluate(trials, direction)
     assert np.isfinite(criterion)
     assert -sys.float_info.max < criterion
