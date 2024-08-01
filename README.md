@@ -263,3 +263,10 @@ If you use Optuna in one of your research projects, please cite [our KDD paper](
 }
 ```
 </details>
+
+
+## License
+
+MIT License (see [LICENSE](./LICENSE)).
+
+Optuna uses the codes from SciPy and fdlibm projects (see [LICENSE_THIRD_PARTY](./LICENSE_THIRD_PARTY)).
