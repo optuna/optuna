@@ -88,7 +88,6 @@ class EMMREvaluator(BaseImprovementEvaluator):
 
                 ys = [trial.suggest_float(f"x{i}", -10.0, 10.0) for i in range(5)]
                 value = sum(ys[i] ** 2 for i in range(5))
-                logging.info(f"Trial #{trial.number} finished with value {value}.")
 
                 study.tell(trial, value)
 
