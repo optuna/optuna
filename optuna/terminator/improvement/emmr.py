@@ -137,7 +137,7 @@ class EMMREvaluator(BaseImprovementEvaluator):
         len_params = len(search_space.scale_types)
         assert normalized_params.shape == (len_trials, len_params)
 
-        # _gp module assumes that optimization direction is maximization
+        # _gp module assumes that optimization direction is maximization.
         sign = -1 if study_direction == StudyDirection.MINIMIZE else 1
         score_vals = np.array([cast(float, t.value) for t in complete_trials]) * sign
 
