@@ -68,10 +68,10 @@ class EMMREvaluator(BaseImprovementEvaluator):
 
         .. testcode::
 
-            import logging
-
             import optuna
-            from optuna.terminator import EMMREvaluator, MedianErrorEvaluator, Terminator
+            from optuna.terminator import EMMREvaluator
+            from optuna.terminator import MedianErrorEvaluator
+            from optuna.terminator import Terminator
 
             sampler = optuna.samplers.TPESampler(seed=0)
             study = optuna.create_study(sampler=sampler, direction="minimize")
@@ -93,10 +93,8 @@ class EMMREvaluator(BaseImprovementEvaluator):
                 study.tell(trial, value)
 
                 if terminator.should_terminate(study):
-                    logging.info("Terminated by Optuna Terminator!")
+                    # Terminated by Optuna Terminator!
                     break
-            else:
-                logging.info("Not terminated.")
 
     """
 
