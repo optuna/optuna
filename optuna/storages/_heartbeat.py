@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import abc
-import copy
 from collections.abc import Callable
-
+import copy
 from threading import Event
 from threading import Thread
 from types import TracebackType

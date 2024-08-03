@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import copy
 from collections.abc import Container
 from collections.abc import Sequence
+import copy
 from datetime import datetime
 import threading
 from typing import Any
@@ -133,7 +133,7 @@ class InMemoryStorage(BaseStorage):
             study_id=study_id,
         )
 
-    def create_new_trial(self, study_id: int, template_trial: FrozenTrial | None  = None) -> int:
+    def create_new_trial(self, study_id: int, template_trial: FrozenTrial | None = None) -> int:
         with self._lock:
             self._check_study_id(study_id)
 
@@ -244,7 +244,7 @@ class InMemoryStorage(BaseStorage):
             return distribution.to_internal_repr(trial.params[param_name])
 
     def set_trial_state_values(
-        self, trial_id: int, state: TrialState, values: Sequence[float] | None  = None
+        self, trial_id: int, state: TrialState, values: Sequence[float] | None = None
     ) -> bool:
         with self._lock:
             trial = copy.copy(self._get_trial(trial_id))
@@ -353,7 +353,7 @@ class InMemoryStorage(BaseStorage):
         self,
         study_id: int,
         deepcopy: bool = True,
-        states: Container[TrialState] | None  = None,
+        states: Container[TrialState] | None = None,
     ) -> list[FrozenTrial]:
         with self._lock:
             self._check_study_id(study_id)
@@ -387,4 +387,4 @@ class _StudyInfo:
         self.system_attrs: dict[str, Any] = {}
         self.name: str = name
         self.directions: list[StudyDirection] = directions
-        self.best_trial_id: int | None  = None
+        self.best_trial_id: int | None = None
