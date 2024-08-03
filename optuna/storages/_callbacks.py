@@ -1,7 +1,6 @@
+from __future__ import annotations
+
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
 
 import optuna
 from optuna._experimental import experimental_class
@@ -58,13 +57,13 @@ class RetryFailedTrialCallback:
     """
 
     def __init__(
-        self, max_retry: Optional[int] = None, inherit_intermediate_values: bool = False
+        self, max_retry: int | None = None, inherit_intermediate_values: bool = False
     ) -> None:
         self._max_retry = max_retry
         self._inherit_intermediate_values = inherit_intermediate_values
 
     def __call__(self, study: "optuna.study.Study", trial: FrozenTrial) -> None:
-        system_attrs: Dict[str, Any] = {
+        system_attrs: dict[str, Any] = {
             "failed_trial": trial.number,
             "retry_history": [],
             **trial.system_attrs,
@@ -89,7 +88,7 @@ class RetryFailedTrialCallback:
 
     @staticmethod
     @experimental_func("2.8.0")
-    def retried_trial_number(trial: FrozenTrial) -> Optional[int]:
+    def retried_trial_number(trial: FrozenTrial) -> int | None:
         """Return the number of the original trial being retried.
 
         Args:
@@ -105,7 +104,7 @@ class RetryFailedTrialCallback:
 
     @staticmethod
     @experimental_func("3.0.0")
-    def retry_history(trial: FrozenTrial) -> List[int]:
+    def retry_history(trial: FrozenTrial) -> list[int]:
         """Return the list of retried trial numbers with respect to the specified trial.
 
         Args:
