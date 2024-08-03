@@ -1,11 +1,12 @@
+from __future__ import annotations
+
 import abc
 import copy
+from collections.abc import Callable
+
 from threading import Event
 from threading import Thread
 from types import TracebackType
-from typing import Callable
-from typing import List
-from typing import Optional
 from typing import Type
 
 import optuna
@@ -41,7 +42,7 @@ class BaseHeartbeat(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _get_stale_trial_ids(self, study_id: int) -> List[int]:
+    def _get_stale_trial_ids(self, study_id: int) -> list[int]:
         """Get the stale trial ids of the study.
 
         Args:
@@ -53,7 +54,7 @@ class BaseHeartbeat(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_heartbeat_interval(self) -> Optional[int]:
+    def get_heartbeat_interval(self) -> int | None:
         """Get the heartbeat interval if it is set.
 
         Returns:
@@ -62,7 +63,7 @@ class BaseHeartbeat(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_failed_trial_callback(self) -> Optional[Callable[["optuna.Study", FrozenTrial], None]]:
+    def get_failed_trial_callback(self) -> Callable[["optuna.Study", FrozenTrial], None] | None:
         """Get the failed trial callback function.
 
         Returns:
@@ -77,9 +78,9 @@ class BaseHeartbeatThread(metaclass=abc.ABCMeta):
 
     def __exit__(
         self,
-        exc_type: Optional[Type[Exception]],
-        exc_value: Optional[Exception],
-        traceback: Optional[TracebackType],
+        exc_type: Type[Exception] | None,
+        exc_value: Exception | None,
+        traceback: TracebackType | None,
     ) -> None:
         self.join()
 
@@ -107,8 +108,8 @@ class HeartbeatThread(BaseHeartbeatThread):
     def __init__(self, trial_id: int, heartbeat: BaseHeartbeat) -> None:
         self._trial_id = trial_id
         self._heartbeat = heartbeat
-        self._thread: Optional[Thread] = None
-        self._stop_event: Optional[Event] = None
+        self._thread: Thread | None = None
+        self._stop_event: Event | None = None
 
     def start(self) -> None:
         self._stop_event = Event()
