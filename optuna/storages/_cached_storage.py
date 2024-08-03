@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Callable
 from collections.abc import Container
 from collections.abc import Sequence
-from collections.abc import Set
 import copy
 import threading
 from typing import Any
@@ -25,7 +24,7 @@ class _StudyInfo:
         # Trial number to corresponding FrozenTrial.
         self.trials: dict[int, FrozenTrial] = {}
         # A list of trials which do not require storage access to read latest attributes.
-        self.finished_trial_ids: Set[int] = set()
+        self.finished_trial_ids: set[int] = set()
         # Cache distributions to avoid storage access on distribution consistency check.
         self.param_distribution: dict[str, distributions.BaseDistribution] = {}
         self.directions: list[StudyDirection] | None = None
