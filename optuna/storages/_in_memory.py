@@ -1,13 +1,11 @@
+from __future__ import annotations
+
+from collections.abc import Container
+from collections.abc import Sequence
 import copy
 from datetime import datetime
 import threading
 from typing import Any
-from typing import Container
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Sequence
-from typing import Tuple
 import uuid
 
 import optuna
@@ -32,26 +30,26 @@ class InMemoryStorage(BaseStorage):
     """
 
     def __init__(self) -> None:
-        self._trial_id_to_study_id_and_number: Dict[int, Tuple[int, int]] = {}
-        self._study_name_to_id: Dict[str, int] = {}
-        self._studies: Dict[int, _StudyInfo] = {}
+        self._trial_id_to_study_id_and_number: dict[int, tuple[int, int]] = {}
+        self._study_name_to_id: dict[str, int] = {}
+        self._studies: dict[int, _StudyInfo] = {}
 
         self._max_study_id = -1
         self._max_trial_id = -1
 
         self._lock = threading.RLock()
 
-    def __getstate__(self) -> Dict[Any, Any]:
+    def __getstate__(self) -> dict[Any, Any]:
         state = self.__dict__.copy()
         del state["_lock"]
         return state
 
-    def __setstate__(self, state: Dict[Any, Any]) -> None:
+    def __setstate__(self, state: dict[Any, Any]) -> None:
         self.__dict__.update(state)
         self._lock = threading.RLock()
 
     def create_new_study(
-        self, directions: Sequence[StudyDirection], study_name: Optional[str] = None
+        self, directions: Sequence[StudyDirection], study_name: str | None = None
     ) -> int:
         with self._lock:
             study_id = self._max_study_id + 1
@@ -105,22 +103,22 @@ class InMemoryStorage(BaseStorage):
             self._check_study_id(study_id)
             return self._studies[study_id].name
 
-    def get_study_directions(self, study_id: int) -> List[StudyDirection]:
+    def get_study_directions(self, study_id: int) -> list[StudyDirection]:
         with self._lock:
             self._check_study_id(study_id)
             return self._studies[study_id].directions
 
-    def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
+    def get_study_user_attrs(self, study_id: int) -> dict[str, Any]:
         with self._lock:
             self._check_study_id(study_id)
             return self._studies[study_id].user_attrs
 
-    def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
+    def get_study_system_attrs(self, study_id: int) -> dict[str, Any]:
         with self._lock:
             self._check_study_id(study_id)
             return self._studies[study_id].system_attrs
 
-    def get_all_studies(self) -> List[FrozenStudy]:
+    def get_all_studies(self) -> list[FrozenStudy]:
         with self._lock:
             return [self._build_frozen_study(study_id) for study_id in self._studies]
 
@@ -135,7 +133,7 @@ class InMemoryStorage(BaseStorage):
             study_id=study_id,
         )
 
-    def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
+    def create_new_trial(self, study_id: int, template_trial: FrozenTrial | None = None) -> int:
         with self._lock:
             self._check_study_id(study_id)
 
@@ -246,7 +244,7 @@ class InMemoryStorage(BaseStorage):
             return distribution.to_internal_repr(trial.params[param_name])
 
     def set_trial_state_values(
-        self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
+        self, trial_id: int, state: TrialState, values: Sequence[float] | None = None
     ) -> bool:
         with self._lock:
             trial = copy.copy(self._get_trial(trial_id))
@@ -355,8 +353,8 @@ class InMemoryStorage(BaseStorage):
         self,
         study_id: int,
         deepcopy: bool = True,
-        states: Optional[Container[TrialState]] = None,
-    ) -> List[FrozenTrial]:
+        states: Container[TrialState] | None = None,
+    ) -> list[FrozenTrial]:
         with self._lock:
             self._check_study_id(study_id)
 
@@ -382,11 +380,11 @@ class InMemoryStorage(BaseStorage):
 
 
 class _StudyInfo:
-    def __init__(self, name: str, directions: List[StudyDirection]) -> None:
-        self.trials: List[FrozenTrial] = []
-        self.param_distribution: Dict[str, distributions.BaseDistribution] = {}
-        self.user_attrs: Dict[str, Any] = {}
-        self.system_attrs: Dict[str, Any] = {}
+    def __init__(self, name: str, directions: list[StudyDirection]) -> None:
+        self.trials: list[FrozenTrial] = []
+        self.param_distribution: dict[str, distributions.BaseDistribution] = {}
+        self.user_attrs: dict[str, Any] = {}
+        self.system_attrs: dict[str, Any] = {}
         self.name: str = name
-        self.directions: List[StudyDirection] = directions
-        self.best_trial_id: Optional[int] = None
+        self.directions: list[StudyDirection] = directions
+        self.best_trial_id: int | None = None
