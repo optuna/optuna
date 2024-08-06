@@ -1,4 +1,4 @@
-from typing import Union
+from __future__ import annotations
 
 from optuna.storages._base import BaseStorage
 from optuna.storages._cached_storage import _CachedStorage
@@ -32,7 +32,7 @@ __all__ = [
 ]
 
 
-def get_storage(storage: Union[None, str, BaseStorage]) -> BaseStorage:
+def get_storage(storage: None | str | BaseStorage) -> BaseStorage:
     """Only for internal usage. It might be deprecated in the future."""
 
     if storage is None:
