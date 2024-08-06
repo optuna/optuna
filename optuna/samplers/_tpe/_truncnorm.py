@@ -152,7 +152,7 @@ def _bisect(f: Callable[[float], float], a: float, b: float, c: float) -> float:
     if f(a) > c:
         a, b = b, a
     # In the algorithm, it is assumed that all of (a + b), (a * 2), and (b * 2) are finite.
-    while True:
+    for _ in range(100):
         m = (a + b) / 2
         if a == m or b == m:
             return m
