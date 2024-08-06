@@ -160,6 +160,7 @@ def _bisect(f: Callable[[float], float], a: float, b: float, c: float) -> float:
             a = m
         else:
             b = m
+    return (a + b) / 2
 
 
 def _ndtri_exp_single(y: float) -> float:
