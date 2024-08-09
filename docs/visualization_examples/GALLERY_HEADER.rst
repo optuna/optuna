@@ -1,5 +1,3 @@
-.. module:: optuna.visualization
-
 optuna.visualization
 ====================
 
@@ -15,23 +13,10 @@ The :mod:`~optuna.visualization` module provides utility functions for plotting 
     .. _JupyterLab: https://github.com/jupyterlab/jupyterlab
     .. _installation guide: https://github.com/plotly/plotly.py#jupyterlab-support
 
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
+.. _visualization-examples-index:
 
-   optuna.visualization.plot_contour
-   optuna.visualization.plot_edf
-   optuna.visualization.plot_hypervolume_history
-   optuna.visualization.plot_intermediate_values
-   optuna.visualization.plot_optimization_history
-   optuna.visualization.plot_parallel_coordinate
-   optuna.visualization.plot_param_importances
-   optuna.visualization.plot_pareto_front
-   optuna.visualization.plot_rank
-   optuna.visualization.plot_slice
-   optuna.visualization.plot_terminator_improvement
-   optuna.visualization.plot_timeline
-   optuna.visualization.is_available
+.. _general_visualization_examples:
+
 
 .. note::
     The following :mod:`optuna.visualization.matplotlib` module uses Matplotlib as a backend.
@@ -39,7 +24,7 @@ The :mod:`~optuna.visualization` module provides utility functions for plotting 
 .. toctree::
     :maxdepth: 1
 
-    matplotlib
+    matplotlib/index
 
 .. seealso::
     The :ref:`visualization` tutorial provides use-cases with examples.
