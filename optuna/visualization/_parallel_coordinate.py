@@ -9,6 +9,7 @@ from typing import NamedTuple
 
 import numpy as np
 
+from optuna.distributions import CategoricalDistribution
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
@@ -17,7 +18,6 @@ from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _check_plot_args
 from optuna.visualization._utils import _filter_nonfinite
 from optuna.visualization._utils import _get_skipped_trial_numbers
-from optuna.visualization._utils import _is_categorical
 from optuna.visualization._utils import _is_log_scale
 from optuna.visualization._utils import _is_numerical
 from optuna.visualization._utils import _is_reverse_scale
@@ -203,13 +203,13 @@ def _get_parallel_coordinate_info(
     dims = []
     for dim_index, p_name in enumerate(sorted_params, start=1):
         values = []
+        is_categorical = False
         for t in trials:
             if t.number in skipped_trial_numbers:
                 continue
-
             if p_name in t.params:
                 values.append(t.params[p_name])
-
+                is_categorical |= isinstance(t.distributions[p_name], CategoricalDistribution)
         if _is_log_scale(trials, p_name):
             values = [math.log10(v) for v in values]
             min_value = min(values)
@@ -230,7 +230,7 @@ def _get_parallel_coordinate_info(
                 tickvals=tickvals,
                 ticktext=["{:.3g}".format(math.pow(10, x)) for x in tickvals],
             )
-        elif _is_categorical(trials, p_name):
+        elif is_categorical:
             vocab: defaultdict[int | str, int] = defaultdict(lambda: len(vocab))
 
             ticktext: list[str]
