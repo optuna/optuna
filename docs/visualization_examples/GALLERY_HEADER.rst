@@ -1,5 +1,3 @@
-.. module:: optuna.visualization
-
 optuna.visualization
 ====================
 
@@ -15,7 +13,10 @@ The :mod:`~optuna.visualization` module provides utility functions for plotting 
     .. _JupyterLab: https://github.com/jupyterlab/jupyterlab
     .. _installation guide: https://github.com/plotly/plotly.py#jupyterlab-support
 
-.. include:: ../../auto_visualization_examples/index.rst
+.. _visualization-examples-index:
+
+.. _general_visualization_examples:
+
 
 .. note::
     The following :mod:`optuna.visualization.matplotlib` module uses Matplotlib as a backend.
@@ -23,7 +24,7 @@ The :mod:`~optuna.visualization` module provides utility functions for plotting 
 .. toctree::
     :maxdepth: 1
 
-    matplotlib
+    matplotlib/index
 
 .. seealso::
     The :ref:`visualization` tutorial provides use-cases with examples.

@@ -123,8 +123,7 @@ docs/source/reference/visualization/generated/
 docs/source/reference/samplers/generated
 docs/source/sg_execution_times.rst
 docs/source/tutorial/**
-docs/source/auto_visualization_examples
-docs/source/auto_visualization_matplotlib_examples
+docs/source/reference/visualization
 !docs/source/tutorial/index.rst
 
 # asv

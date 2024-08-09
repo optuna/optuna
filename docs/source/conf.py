@@ -200,21 +200,22 @@ sphinx_gallery_conf = {
     "examples_dirs": [
         "../../tutorial/10_key_features",
         "../../tutorial/20_recipes",
-        "../visualization_matplotlib_examples",
         "../visualization_examples",
+        "../visualization_matplotlib_examples",
     ],
     "gallery_dirs": [
         "tutorial/10_key_features",
         "tutorial/20_recipes",
-        "auto_visualization_matplotlib_examples",
-        "auto_visualization_examples",
+        "reference/visualization",
+        "reference/visualization/matplotlib",
     ],
     "compress_images": ("images", "thumbnails"),
-    "thumbnail_size": (400, 280),
+    "thumbnail_size": (800, 560),
     "within_subsection_order": FileNameSortKey,
     "filename_pattern": r"/*\.py",
     "first_notebook_cell": None,
     "image_scrapers": ("matplotlib", plotly_sg_scraper),
+    "copyfile_regex": "index.rst",
 }
 
 # matplotlib plot directive
