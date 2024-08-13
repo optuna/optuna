@@ -36,6 +36,8 @@ else:
     gp_search_space = _LazyImport("optuna._gp.search_space")
     scipy_stats = _LazyImport("scipy.stats")
 
+MARGIN_FOR_NUMARICAL_STABILITY = 0.1
+
 
 @experimental_class("4.0.0")
 class EMMREvaluator(BaseImprovementEvaluator):
@@ -118,7 +120,7 @@ class EMMREvaluator(BaseImprovementEvaluator):
         complete_trials = [t for t in trials if t.state == TrialState.COMPLETE]
 
         if len(complete_trials) < self.min_n_trials:
-            return sys.float_info.max  # Do not terminate.
+            return sys.float_info.max * MARGIN_FOR_NUMARICAL_STABILITY  # Do not terminate.
 
         search_space, normalized_params = gp_search_space.get_search_space_and_normalized_params(
             complete_trials, optuna_search_space
@@ -128,13 +130,13 @@ class EMMREvaluator(BaseImprovementEvaluator):
                 f"{self.__class__.__name__} cannot consider any search space."
                 "Termination will never occur in this study."
             )
-            return sys.float_info.max  # Do not terminate.
+            return sys.float_info.max * MARGIN_FOR_NUMARICAL_STABILITY  # Do not terminate.
 
         len_trials = len(complete_trials)
         len_params = len(search_space.scale_types)
         assert normalized_params.shape == (len_trials, len_params)
 
-        # _gp module assumes that optimization direction is maximization.
+        # _gp module assumes that optimization direction is maximization
         sign = -1 if study_direction == StudyDirection.MINIMIZE else 1
         score_vals = np.array([cast(float, t.value) for t in complete_trials]) * sign
 
@@ -190,7 +192,7 @@ class EMMREvaluator(BaseImprovementEvaluator):
             theta_t1_star_index,
         )
 
-        mu_t1_theta_t_with_nu_t, sigma_t1_theta_t_with_nu_t = _compute_gp_posterior(
+        mu_t1_theta_t_with_nu_t, variance_t1_theta_t_with_nu_t = _compute_gp_posterior(
             search_space,
             normalized_params[:-1, :],
             standarized_score_vals[:-1],
@@ -202,14 +204,14 @@ class EMMREvaluator(BaseImprovementEvaluator):
             # For detailed information, please see section 4.4 of the paper:
             # https://proceedings.mlr.press/v206/ishibashi23a/ishibashi23a.pdf
         )
-        _, sigma_t_theta_t1_star = _compute_gp_posterior(
+        _, variance_t_theta_t1_star = _compute_gp_posterior(
             search_space,
             normalized_params,
             standarized_score_vals,
             theta_t1_star,
             kernel_params_t,
         )
-        mu_t_theta_t_star, sigma_t_theta_t_star = _compute_gp_posterior(
+        mu_t_theta_t_star, variance_t_theta_t_star = _compute_gp_posterior(
             search_space,
             normalized_params,
             standarized_score_vals,
@@ -240,10 +242,10 @@ class EMMREvaluator(BaseImprovementEvaluator):
 
         theorem1_v = math.sqrt(
             max(
-                1e-100,  # Note: sys.float_info.min can cause overflow in scipy_stats.
-                sigma_t_theta_t_star**2
+                1e-10,
+                variance_t_theta_t_star
                 - 2.0 * cov_t_between_theta_t_star_and_theta_t1_star
-                + sigma_t_theta_t1_star**2,
+                + variance_t_theta_t1_star,
             )
         )
         theorem1_g = (mu_t_theta_t_star - mu_t1_theta_t1_star) / theorem1_v
@@ -252,15 +254,15 @@ class EMMREvaluator(BaseImprovementEvaluator):
         alg1_delta_r_tilde_t_term3 = theorem1_v * theorem1_g * scipy_stats.norm.cdf(theorem1_g)
 
         _lambda = prior.DEFAULT_MINIMUM_NOISE_VAR**-1
-        eq4_rhs_term1 = 0.5 * math.log(1.0 + _lambda * sigma_t1_theta_t_with_nu_t**2)
+        eq4_rhs_term1 = 0.5 * math.log(1.0 + _lambda * variance_t1_theta_t_with_nu_t)
         eq4_rhs_term2 = (
-            -0.5 * sigma_t1_theta_t_with_nu_t**2 / (sigma_t1_theta_t_with_nu_t**2 + _lambda**-1)
+            -0.5 * variance_t1_theta_t_with_nu_t / (variance_t1_theta_t_with_nu_t + _lambda**-1)
         )
         eq4_rhs_term3 = (
             0.5
-            * sigma_t1_theta_t_with_nu_t**2
+            * variance_t1_theta_t_with_nu_t
             * (y_t - mu_t1_theta_t_with_nu_t) ** 2
-            / (sigma_t1_theta_t_with_nu_t**2 + _lambda**-1) ** 2
+            / (variance_t1_theta_t_with_nu_t + _lambda**-1) ** 2
         )
 
         alg1_delta_r_tilde_t_term4 = kappa_t1 * math.sqrt(
@@ -268,7 +270,7 @@ class EMMREvaluator(BaseImprovementEvaluator):
         )
 
         return min(
-            sys.float_info.max,
+            sys.float_info.max * 0.5,
             alg1_delta_r_tilde_t_term1
             + alg1_delta_r_tilde_t_term2
             + alg1_delta_r_tilde_t_term3
