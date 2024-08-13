@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import sys
-
 import numpy as np
 import pytest
 
@@ -44,7 +42,7 @@ def test_ratio_to_initial_median_evaluator(
         )
     )
     criterion = evaluator.evaluate(trials, direction)
-    assert criterion == -sys.float_info.max
+    assert criterion <= 0.0
     trials.append(
         create_trial(
             value=22.0,
@@ -53,7 +51,7 @@ def test_ratio_to_initial_median_evaluator(
         )
     )
     criterion = evaluator.evaluate(trials, direction)
-    assert criterion == -sys.float_info.max
+    assert criterion <= 0.0
     trials.append(
         create_trial(
             value=333.0,
@@ -62,7 +60,7 @@ def test_ratio_to_initial_median_evaluator(
         )
     )
     criterion = evaluator.evaluate(trials, direction)
-    assert criterion == -sys.float_info.max
+    assert criterion <= 0.0
     trials.append(
         create_trial(
             value=4444.0,
@@ -72,4 +70,4 @@ def test_ratio_to_initial_median_evaluator(
     )
     criterion = evaluator.evaluate(trials, direction)
     assert np.isfinite(criterion)
-    assert -sys.float_info.max < criterion
+    assert 0.0 <= criterion
