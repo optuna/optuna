@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import sys
 
 import numpy as np
@@ -8,6 +9,7 @@ import pytest
 from optuna.distributions import FloatDistribution
 from optuna.study import StudyDirection
 from optuna.terminator import EMMREvaluator
+from optuna.terminator.improvement.emmr import MARGIN_FOR_NUMARICAL_STABILITY
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 
@@ -37,7 +39,7 @@ def test_emmr_evaluate_with_insufficient_trials() -> None:
     trials: list[FrozenTrial] = []
     for _ in range(2):
         criterion = evaluator.evaluate(trials=trials, study_direction=StudyDirection.MAXIMIZE)
-        assert criterion == sys.float_info.max
+        assert math.isclose(criterion, sys.float_info.max * MARGIN_FOR_NUMARICAL_STABILITY)
         trials.append(create_trial(value=0, distributions={}, params={}))
 
 
@@ -46,4 +48,4 @@ def test_emmr_evaluate_with_empty_intersection_search_space() -> None:
     trials = [create_trial(value=0, distributions={}, params={}) for _ in range(3)]
     with pytest.warns(UserWarning):
         criterion = evaluator.evaluate(trials=trials, study_direction=StudyDirection.MAXIMIZE)
-    assert criterion == sys.float_info.max
+    assert math.isclose(criterion, sys.float_info.max * MARGIN_FOR_NUMARICAL_STABILITY)
