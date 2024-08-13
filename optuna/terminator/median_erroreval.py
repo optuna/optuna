@@ -27,6 +27,8 @@ class MedianErrorEvaluator(BaseErrorEvaluator):
         warm_up_trials:
             A parameter specifies the number of initial trials to be discarded before
             the calculation of median. Default to 10.
+            In optuna, the first 10 trials are often random sampling.
+            The ``warm_up_trials`` can exclude them from the calculation.
         n_initial_trials:
             A parameter specifies the number of initial trials considered in the calculation of
             median after `warm_up_trials`. Default to 20.
@@ -66,7 +68,9 @@ class MedianErrorEvaluator(BaseErrorEvaluator):
 
         trials = [trial for trial in trials if trial.state == TrialState.COMPLETE]
         if len(trials) < (self._warm_up_trials + self._n_initial_trials):
-            return -sys.float_info.max  # Do not terminate.
+            return (
+                -sys.float_info.min
+            )  # Do not terminate. It assumes that improvement must non-negative.
         trials.sort(key=lambda trial: trial.number)
         criteria = []
         for i in range(1, self._n_initial_trials + 1):
