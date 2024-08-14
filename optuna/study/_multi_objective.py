@@ -171,6 +171,7 @@ def _is_pareto_front(loss_values: np.ndarray, assume_unique_lexsorted: bool) -> 
     on_front = _is_pareto_front_for_unique_sorted(unique_lexsorted_loss_values)
     # NOTE(nabenabe): We can remove `.reshape(-1)` if ``numpy==2.0.0`` is not used.
     # https://github.com/numpy/numpy/issues/26738
+    # TODO: Remove `.reshape(-1)` once `numpy==2.0.0` is obsolete.
     return on_front[order_inv.reshape(-1)]
 
 
