@@ -206,6 +206,7 @@ def _calculate_nondomination_rank(
     ranks[indices] = rank  # Rank worse than the top n_below is defined as the worst rank.
     # NOTE(nabenabe): We can remove `.reshape(-1)` if ``numpy==2.0.0`` is not used.
     # https://github.com/numpy/numpy/issues/26738
+    # TODO: Remove `.reshape(-1)` once `numpy==2.0.0` is obsolete.
     return ranks[order_inv.reshape(-1)]
 
 
