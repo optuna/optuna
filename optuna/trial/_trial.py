@@ -34,10 +34,13 @@ class Trial(BaseTrial):
     This object is passed to an objective function and provides interfaces to get parameter
     suggestion, manage the trial's state, and set/get user-defined attributes of the trial.
 
-    Note that the direct use of this constructor is not recommended.
-    This object is seamlessly instantiated and passed to the objective function behind
-    the :func:`optuna.study.Study.optimize()` method; hence library users do not care about
-    instantiation of this object.
+    NOTE: the direct use of this constructor is not recommended.
+    
+    When using the :func:`optuna.study.Study.optimize()` method,
+    this object is automatically instantiated and passed to the objective function.
+
+    Library users may care about this constructor if they build custom training loops,
+    which do not rely on :func:`optuna.study.Study.optimize()`.
 
     Args:
         study:
