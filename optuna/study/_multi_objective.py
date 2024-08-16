@@ -169,6 +169,9 @@ def _is_pareto_front(loss_values: np.ndarray, assume_unique_lexsorted: bool) -> 
 
     unique_lexsorted_loss_values, order_inv = np.unique(loss_values, axis=0, return_inverse=True)
     on_front = _is_pareto_front_for_unique_sorted(unique_lexsorted_loss_values)
+    # NOTE(nabenabe): We can remove `.reshape(-1)` if ``numpy==2.0.0`` is not used.
+    # https://github.com/numpy/numpy/issues/26738
+    # TODO: Remove `.reshape(-1)` once `numpy==2.0.0` is obsolete.
     return on_front[order_inv.reshape(-1)]
 
 
@@ -201,6 +204,9 @@ def _calculate_nondomination_rank(
         rank += 1
 
     ranks[indices] = rank  # Rank worse than the top n_below is defined as the worst rank.
+    # NOTE(nabenabe): We can remove `.reshape(-1)` if ``numpy==2.0.0`` is not used.
+    # https://github.com/numpy/numpy/issues/26738
+    # TODO: Remove `.reshape(-1)` once `numpy==2.0.0` is obsolete.
     return ranks[order_inv.reshape(-1)]
 
 
