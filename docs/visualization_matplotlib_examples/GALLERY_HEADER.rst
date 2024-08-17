@@ -1,7 +1,7 @@
 .. module:: optuna.visualization.matplotlib
 
-optuna.visualization.matplotlib
-===============================
+matplotlib
+==========
 
 .. note::
     The following functions use Matplotlib as a backend.

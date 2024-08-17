@@ -37,5 +37,5 @@ clean:
 	rm -f ../tutorial/20_recipes/journal.log
 	rm -rf ../tutorial/20_recipes/tmp
 	rm -f ../tutorial/20_recipes/best_atoms.png
-	rm -rf ./source/reference/visualization
-	rm -rf ./source/reference/visualization/matplotlib
+	rm -rf ./source/reference/visualization/generated
+	rm -rf ./source/reference/visualization/matplotlib/generated

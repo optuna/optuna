@@ -10,6 +10,7 @@ The following code snippet shows how to plot the high-dimensional parameter rela
 """
 
 import optuna
+from plotly.io import show
 
 
 def objective(trial):
@@ -23,4 +24,4 @@ study = optuna.create_study(sampler=sampler)
 study.optimize(objective, n_trials=10)
 
 fig = optuna.visualization.plot_parallel_coordinate(study, params=["x", "y"])
-fig.show()
+show(fig)

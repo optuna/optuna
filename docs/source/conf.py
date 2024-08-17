@@ -77,7 +77,10 @@ master_doc = "index"
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = []
+exclude_patterns = [
+    "reference/visualization/generated/index.rst",
+    "reference/visualization/matplotlib/generated/index.rst",
+]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
@@ -206,16 +209,15 @@ sphinx_gallery_conf = {
     "gallery_dirs": [
         "tutorial/10_key_features",
         "tutorial/20_recipes",
-        "reference/visualization",
-        "reference/visualization/matplotlib",
+        "reference/visualization/generated",
+        "reference/visualization/matplotlib/generated",
     ],
     "compress_images": ("images", "thumbnails"),
-    "thumbnail_size": (800, 560),
+    "thumbnail_size": (400, 280),
     "within_subsection_order": FileNameSortKey,
     "filename_pattern": r"/*\.py",
     "first_notebook_cell": None,
     "image_scrapers": ("matplotlib", plotly_sg_scraper),
-    "copyfile_regex": "index.rst",
 }
 
 # matplotlib plot directive
