@@ -120,10 +120,10 @@ docs/_build/
 docs/source/reference/generated/
 docs/source/reference/multi_objective/generated/
 docs/source/reference/visualization/generated/
+docs/source/reference/visualization/matplotlib/generated/
 docs/source/reference/samplers/generated
 docs/source/sg_execution_times.rst
 docs/source/tutorial/**
-docs/source/reference/visualization
 !docs/source/tutorial/index.rst
 
 # asv
