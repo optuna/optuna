@@ -131,7 +131,7 @@ optuna.visualization.plot_pareto_front(study, target_names=["FLOPS", "accuracy"]
 print(f"Number of trials on the Pareto front: {len(study.best_trials)}")
 
 trial_with_highest_accuracy = max(study.best_trials, key=lambda t: t.values[1])
-print(f"Trial with highest accuracy: ")
+print("Trial with highest accuracy: ")
 print(f"\tnumber: {trial_with_highest_accuracy.number}")
 print(f"\tparams: {trial_with_highest_accuracy.params}")
 print(f"\tvalues: {trial_with_highest_accuracy.values}")
