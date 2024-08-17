@@ -179,27 +179,3 @@ a:hover {
 .rst-content .admonition {
   background: #f1f3f4;
 }
-
-.sphx-glr-thumbnails {
-  width: 100%;
-  margin: 0px 0px 20px 0px;
-
-  justify-content: space-between;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 15px;
-}
-.sphx-glr-thumbcontainer {
-    min-height: 200px !important;
-    min-width: 200px !important;
-    margin: 20px !important;
-}
-.sphx-glr-thumbcontainer img {
-  display: inline;
-  max-height: 200px;
-  max-width: 200px;
-}
-.sphx-glr-footer {
-  height: 0px;
-  visibility: hidden;
-}
