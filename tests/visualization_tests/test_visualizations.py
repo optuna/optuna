@@ -88,10 +88,6 @@ def test_visualizations_with_single_objectives(
     study.optimize(objective_func, n_trials=20)
 
     # TODO(c-bata): Fix a bug to remove `pytest.xfail`.
-    if plot_func is plot_contour and objective_func is objective_single_dynamic_with_categorical:
-        pytest.xfail("There is a bug that IndexError is raised in plot_contour")
-
-    # TODO(c-bata): Fix a bug to remove `pytest.xfail`.
     if plot_func is matplotlib_plot_rank and objective_func is objective_single_none_categorical:
         pytest.xfail("There is a bug that TypeError is raised in matplotlib.plot_rank")
 

@@ -4,6 +4,7 @@ import math
 from typing import Any
 from typing import Callable
 from typing import NamedTuple
+import warnings
 
 import numpy as np
 
@@ -208,6 +209,15 @@ def _get_contour_subplot(
     x_indices = info.xaxis.indices
     y_indices = info.yaxis.indices
 
+    if len(x_indices) < 2 or len(y_indices) < 2:
+        return go.Contour(), go.Scatter(), go.Scatter()
+    if len(info.z_values) == 0:
+        warnings.warn(
+            f"Contour plot will not be displayed because `{info.xaxis.name}` and "
+            f"`{info.yaxis.name}` cannot co-exist in `trial.params`."
+        )
+        return go.Contour(), go.Scatter(), go.Scatter()
+
     feasible = _PlotValues([], [])
     infeasible = _PlotValues([], [])
 
@@ -226,9 +236,6 @@ def _get_contour_subplot(
     zs = np.array(list(info.z_values.values()))
 
     z_values[xys[:, 1], xys[:, 0]] = zs
-
-    if len(x_indices) < 2 or len(y_indices) < 2:
-        return go.Contour(), go.Scatter(), go.Scatter()
 
     contour = go.Contour(
         x=x_indices,
