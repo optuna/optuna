@@ -32,9 +32,14 @@ class Trial(BaseTrial):
     """A trial is a process to evaluate an objective function.
 
     This mutable Trial object provides interfaces to:
-        - suggest parameters
-        - manage trial state
-        - set/get user-defined attributes
+        - suggest_float(name: str, low: float, high: float, *, step: float | None = None)
+        - suggest_int(name: str, low: int, high: int, *, step: int = 1) -> int
+        - suggest_categorical(name: str, choices: Sequence[Choice]) -> Choice
+            - where Choice = None | bool | int | float | str
+        - report objective values
+        - should_prune to suggest pruning this trial or not
+        - set_user_attr to set user-defined trial attributes
+        - user_attrs is a dict of user-defined attributes
 
     Automatic Optimization
     ----------------------
