@@ -208,6 +208,9 @@ def _get_contour_subplot(
     x_indices = info.xaxis.indices
     y_indices = info.yaxis.indices
 
+    if len(x_indices) < 2 or len(y_indices) < 2 or len(info.z_values) == 0:
+        return go.Contour(), go.Scatter(), go.Scatter()
+
     feasible = _PlotValues([], [])
     infeasible = _PlotValues([], [])
 
@@ -226,9 +229,6 @@ def _get_contour_subplot(
     zs = np.array(list(info.z_values.values()))
 
     z_values[xys[:, 1], xys[:, 0]] = zs
-
-    if len(x_indices) < 2 or len(y_indices) < 2:
-        return go.Contour(), go.Scatter(), go.Scatter()
 
     contour = go.Contour(
         x=x_indices,
