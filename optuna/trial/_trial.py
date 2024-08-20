@@ -29,18 +29,35 @@ _suggest_deprecated_msg = "Use suggest_float{args} instead."
 
 
 class Trial(BaseTrial):
-    """A trial is a process of evaluating an objective function.
+    """A trial is a process to evaluate an objective function.
 
-    This object is passed to an objective function and provides interfaces to get parameter
-    suggestion, manage the trial's state, and set/get user-defined attributes of the trial.
+    This mutable Trial object provides interfaces to:
+        - suggest parameters
+        - manage trial state
+        - set/get user-defined attributes
 
-    NOTE: the direct use of this constructor is not recommended.
-    
-    When using the :func:`optuna.study.Study.optimize()` method,
-    this object is automatically instantiated and passed to the objective function.
+    Automatic Optimization
+    ----------------------
+        - The :func:`Study.optimize()` method:
+            - creates trials
+            - passes them to objective functions
+            - records objective results
 
-    Library users may care about this constructor if they build custom training loops,
-    which do not rely on :func:`optuna.study.Study.optimize()`.
+    Custom Optimization
+    -------------------
+
+        - Create Trials:
+            - :func:`Study.ask()` creates trials in custom optimization loops.
+
+        - List Trials:
+            - :func:`Study.get_trials()` lists FrozenTrial per trial.
+            - :func:`Study.trials_dataframe()` of FrozenTrials
+
+        - Read Trials:
+            - :func:`Storage.get_trial()` reads a FrozenTrial from a trial_id
+
+        - Update Trials:
+            - :func:`Study.tell()` sets trial state and reports objective values.
 
     Args:
         study:
