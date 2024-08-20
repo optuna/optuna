@@ -33,8 +33,8 @@ class Trial(BaseTrial):
 
     This mutable Trial object provides interfaces to:
         - suggest_float(name: str, low: float, high: float, *, step: float | None = None)
-        - suggest_int(name: str, low: int, high: int, *, step: int = 1) -> int
-        - suggest_categorical(name: str, choices: Sequence[Choice]) -> Choice
+        - suggest_int(name: str, low: int, high: int, *, step: int = 1)
+        - suggest_categorical(name: str, choices: Sequence[Choice])
             - where Choice = None | bool | int | float | str
         - report objective values
         - should_prune to suggest pruning this trial or not
