@@ -114,7 +114,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             study = optuna.create_study()
             study.optimize(objective, n_trials=100)
             evaluator = PedAnovaImportanceEvaluator()
-            evaluator.evaluate(study)
+            importance = optuna.importance.get_param_importances(study, evaluator=evaluator)
 
     """
 
