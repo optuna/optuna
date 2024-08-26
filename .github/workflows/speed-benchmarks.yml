@@ -1,6 +1,7 @@
 name: Speed benchmarks
 
 on:
+  pull_request: {}
   schedule:
     - cron: '0 23 * * SUN-THU'
 
@@ -9,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     # Not intended for forks.
-    if: github.repository == 'optuna/optuna' || (github.event_name != 'schedule')
+    if: github.repository == 'optuna/optuna'
 
     steps:
     - name: Checkout
