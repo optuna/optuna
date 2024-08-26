@@ -21,6 +21,7 @@ import warnings
 import plotly.io as pio
 from sklearn.exceptions import ConvergenceWarning
 from sphinx_gallery.sorting import FileNameSortKey
+from plotly.io._sg_scraper import plotly_sg_scraper
 
 import optuna
 
@@ -37,6 +38,8 @@ version = optuna.version.__version__
 release = optuna.version.__version__
 
 # -- General configuration ---------------------------------------------------
+
+pio.renderers.default = "sphinx_gallery"
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
@@ -56,9 +59,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
     "sphinx_copybutton",
-    "sphinx_gallery.gen_gallery",
-    "matplotlib.sphinxext.plot_directive",
-    "sphinx_plotly_directive",
+    "sphinx_gallery.gen_gallery"
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -76,7 +77,10 @@ master_doc = "index"
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = []
+exclude_patterns = [
+    "reference/visualization/generated/index.rst",
+    "reference/visualization/matplotlib/generated/index.rst",
+]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
@@ -192,20 +196,28 @@ autodoc_default_options = {
 copybutton_prompt_text = "$ "
 
 # Sphinx Gallery
-pio.renderers.default = "sphinx_gallery"
+pio.renderers.default = "sphinx_gallery_png"
 
 sphinx_gallery_conf = {
+    "doc_module": ("sphinx_gallery"),
     "examples_dirs": [
         "../../tutorial/10_key_features",
         "../../tutorial/20_recipes",
+        "../visualization_examples",
+        "../visualization_matplotlib_examples",
     ],
     "gallery_dirs": [
         "tutorial/10_key_features",
         "tutorial/20_recipes",
+        "reference/visualization/generated",
+        "reference/visualization/matplotlib/generated",
     ],
+    "compress_images": ("images", "thumbnails"),
+    "thumbnail_size": (400, 280),
     "within_subsection_order": FileNameSortKey,
     "filename_pattern": r"/*\.py",
     "first_notebook_cell": None,
+    "image_scrapers": ("matplotlib", plotly_sg_scraper),
 }
 
 # matplotlib plot directive

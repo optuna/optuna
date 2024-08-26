@@ -34,5 +34,8 @@ clean:
 	rm -f ../tutorial/**/*.db
 	rm -f ../tutorial/**/*.log
 	rm -rf ../tutorial/20_recipes/artifacts
+	rm -f ../tutorial/20_recipes/journal.log
 	rm -rf ../tutorial/20_recipes/tmp
-	rm -rf ../tutorial/20_recipes/best_atoms.png
+	rm -f ../tutorial/20_recipes/best_atoms.png
+	rm -rf ./source/reference/visualization/generated
+	rm -rf ./source/reference/visualization/matplotlib/generated
