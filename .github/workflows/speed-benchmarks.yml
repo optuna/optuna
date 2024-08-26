@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     # Not intended for forks.
-    if: github.repository == 'optuna/optuna'
+    if: github.repository == 'optuna/optuna' || (github.event_name != 'schedule')
 
     steps:
     - name: Checkout
