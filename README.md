@@ -23,7 +23,7 @@ Optuna can dynamically construct the search spaces for the hyperparameters.
 ## :loudspeaker: News
 
 * **Aug 20, 2024**: We posted [an article](https://medium.com/optuna/file-management-during-llm-large-language-model-trainings-by-optuna-v4-0-0-artifact-store-5bdd5112f3c7) about [`ArtifactStore`](https://optuna.readthedocs.io/en/stable/reference/artifacts.html) officially supported from Optuna 4.0.
-* **Aug 15, 2024**: We posted [an article about `CatCMA`](https://medium.com/optuna/introduction-to-catcma-in-optunahub-ffa316309cb8), a sampler newly supported in [OptunaHub](https://hub.optuna.org/).
+* **Aug 15, 2024**: We posted [an article about `CatCMA`](https://medium.com/optuna/introduction-to-catcma-in-optunahub-ffa316309cb8), a sampler newly supported in [OptunaHub](https://hub.optuna.org/samplers/catcma/).
 * **Aug 7, 2024**: We posted [an article](https://medium.com/optuna/significant-speed-up-of-multi-objective-tpesampler-in-optuna-v4-0-0-2bacdcd1d99b) about the significant (300x) speed up of multi-objective [`TPESampler`](https://optuna.readthedocs.io/en/stable/reference/samplers/generated/optuna.samplers.TPESampler.html) in Optuna 4.0.
 * **Jul 16, 2024**: The beta version of [OptunaHub](https://hub.optuna.org/), a feature-sharing platform for Optuna is available! Please check the detail in [our article](https://medium.com/optuna/announcing-optunahub-0-1-0-%CE%B2-69b35bb3e95e).
 * **Jul 12, 2024**: The beta version of Optuna 4.0 is available!  You can install the beta version by `pip install -U --pre optuna`. Find the latest [here](https://github.com/optuna/optuna/releases).
