@@ -85,7 +85,7 @@ class TPESampler(BaseSampler):
       Problems <https://doi.org/10.1145/3377930.3389817>`__
     - `Multiobjective Tree-Structured Parzen Estimator <https://doi.org/10.1613/jair.1.13188>`__
 
-    Please also check our our articles:
+    Please also check our articles:
 
     - `Significant Speed Up of Multi-Objective TPESampler in Optuna v4.0.0
       <https://medium.com/optuna/significant-speed-up-of-multi-objective-tpesampler-in-optuna-v4-0-0-2bacdcd1d99b>`__
