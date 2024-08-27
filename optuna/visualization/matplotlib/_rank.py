@@ -161,8 +161,8 @@ def _add_rank_subplot(
         ax.set_yscale("log")
 
     return ax.scatter(
-        x=[str(x) for x in info.xs],
-        y=[str(y) for y in info.ys],
+        x=[str(x) for x in info.xs] if info.xaxis.is_cat else info.xs,
+        y=[str(y) for y in info.ys] if info.yaxis.is_cat else info.ys,
         c=info.colors / 255,
         edgecolors="grey",
     )
