@@ -85,6 +85,13 @@ class TPESampler(BaseSampler):
       Problems <https://doi.org/10.1145/3377930.3389817>`__
     - `Multiobjective Tree-Structured Parzen Estimator <https://doi.org/10.1613/jair.1.13188>`__
 
+    Please also check our our articles:
+
+    - `Significant Speed Up of Multi-Objective TPESampler in Optuna v4.0.0
+      <https://medium.com/optuna/significant-speed-up-of-multi-objective-tpesampler-in-optuna-v4-0-0-2bacdcd1d99b>`__
+    - `Multivariate TPE Makes Optuna Even More Powerful
+      <https://medium.com/optuna/multivariate-tpe-makes-optuna-even-more-powerful-63c4bfbaebe2>`__
+
     Example:
         An example of a single-objective optimization is as follows:
 
@@ -103,8 +110,9 @@ class TPESampler(BaseSampler):
             study.optimize(objective, n_trials=10)
 
     .. note::
-        :class:`~optuna.samplers.TPESampler` can handle a multi-objective task as well and
-        the following shows an example:
+        :class:`~optuna.samplers.TPESampler`, which became much faster in v4.0.0, c.f. `our article
+        <https://medium.com/optuna/significant-speed-up-of-multi-objective-tpesampler-in-optuna-v4-0-0-2bacdcd1d99b>`__,
+        can handle a multi-objective task as well and the following shows an example:
 
         .. testcode::
 
@@ -123,6 +131,9 @@ class TPESampler(BaseSampler):
             sampler = optuna.samplers.TPESampler()
             study = optuna.create_study(directions=["minimize", "maximize"], sampler=sampler)
             study.optimize(objective, n_trials=100)
+
+        Please note that :class:`~optuna.samplers.NSGAIISampler` will be used by default for
+        multi-objective optimization.
 
     Args:
         consider_prior:
@@ -170,7 +181,9 @@ class TPESampler(BaseSampler):
             If this is :obj:`True`, the multivariate TPE is used when suggesting parameters.
             The multivariate TPE is reported to outperform the independent TPE. See `BOHB: Robust
             and Efficient Hyperparameter Optimization at Scale
-            <http://proceedings.mlr.press/v80/falkner18a.html>`__ for more details.
+            <http://proceedings.mlr.press/v80/falkner18a.html>`__ and `our article
+            <https://medium.com/optuna/multivariate-tpe-makes-optuna-even-more-powerful-63c4bfbaebe2>`__
+            for more details.
 
             .. note::
                 Added in v2.2.0 as an experimental feature. The interface may change in newer
