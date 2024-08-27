@@ -62,9 +62,6 @@ def default_weights(x: int) -> np.ndarray:
 class TPESampler(BaseSampler):
     """Sampler using TPE (Tree-structured Parzen Estimator) algorithm.
 
-    This sampler is based on *independent sampling*.
-    See also :class:`~optuna.samplers.BaseSampler` for more details of 'independent sampling'.
-
     On each trial, for each parameter, TPE fits one Gaussian Mixture Model (GMM) ``l(x)`` to
     the set of parameter values associated with the best objective values, and another GMM
     ``g(x)`` to the remaining parameter values. It chooses the parameter value ``x`` that
