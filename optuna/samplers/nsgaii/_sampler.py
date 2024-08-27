@@ -47,7 +47,7 @@ class NSGAIISampler(BaseSampler):
 
     .. note::
         :class:`~optuna.samplers.TPESampler` became much faster in v4.0.0 and supports several
-        features that are not supported by ``NSGAIISampler`` such as handling of dynamic search
+        features not supported by ``NSGAIISampler`` such as handling of dynamic search
         space and categorical distance. To use :class:`~optuna.samplers.TPESampler`, you need to
         explicitly specify the sampler as follows:
 
