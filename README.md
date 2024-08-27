@@ -20,7 +20,7 @@ for machine learning. It features an imperative, *define-by-run* style user API.
 *define-by-run* API, the code written with Optuna enjoys high modularity, and the user of
 Optuna can dynamically construct the search spaces for the hyperparameters.
 
-## News
+## :loudspeaker: News
 
 * **Aug 20, 2024**: We posted [an article](https://medium.com/optuna/file-management-during-llm-large-language-model-trainings-by-optuna-v4-0-0-artifact-store-5bdd5112f3c7) about [`ArtifactStore`](https://optuna.readthedocs.io/en/stable/reference/artifacts.html) officially supported from Optuna 4.0.
 * **Aug 15, 2024**: We posted [an article about `CatCMA`](https://medium.com/optuna/introduction-to-catcma-in-optunahub-ffa316309cb8), a sampler newly supported in [OptunaHub](https://hub.optuna.org/).
