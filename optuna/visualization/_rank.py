@@ -299,8 +299,8 @@ def _get_rank_subplot(
         return "<br>".join(lines)
 
     scatter = go.Scatter(
-        x=["None" if x is None else x for x in info.xs],
-        y=["None" if y is None else y for y in info.ys],
+        x=[str(x) for x in info.xs],
+        y=[str(y) for y in info.ys],
         marker={
             "color": list(map(plotly.colors.label_rgb, info.colors)),
             "line": {"width": 0.5, "color": "Grey"},
