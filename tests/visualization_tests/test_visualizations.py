@@ -87,10 +87,6 @@ def test_visualizations_with_single_objectives(
     study = optuna.create_study(sampler=optuna.samplers.RandomSampler())
     study.optimize(objective_func, n_trials=20)
 
-    # TODO(c-bata): Fix a bug to remove `pytest.xfail`.
-    if plot_func is matplotlib_plot_rank and objective_func is objective_single_none_categorical:
-        pytest.xfail("There is a bug that TypeError is raised in matplotlib.plot_rank")
-
     fig = plot_func(study)  # Must not raise an exception here.
     if isinstance(fig, Axes):
         plt.close()
