@@ -62,9 +62,6 @@ def default_weights(x: int) -> np.ndarray:
 class TPESampler(BaseSampler):
     """Sampler using TPE (Tree-structured Parzen Estimator) algorithm.
 
-    This sampler is based on *independent sampling*.
-    See also :class:`~optuna.samplers.BaseSampler` for more details of 'independent sampling'.
-
     On each trial, for each parameter, TPE fits one Gaussian Mixture Model (GMM) ``l(x)`` to
     the set of parameter values associated with the best objective values, and another GMM
     ``g(x)`` to the remaining parameter values. It chooses the parameter value ``x`` that
@@ -85,6 +82,13 @@ class TPESampler(BaseSampler):
       Problems <https://doi.org/10.1145/3377930.3389817>`__
     - `Multiobjective Tree-Structured Parzen Estimator <https://doi.org/10.1613/jair.1.13188>`__
 
+    Please also check our articles:
+
+    - `Significant Speed Up of Multi-Objective TPESampler in Optuna v4.0.0
+      <https://medium.com/optuna/significant-speed-up-of-multi-objective-tpesampler-in-optuna-v4-0-0-2bacdcd1d99b>`__
+    - `Multivariate TPE Makes Optuna Even More Powerful
+      <https://medium.com/optuna/multivariate-tpe-makes-optuna-even-more-powerful-63c4bfbaebe2>`__
+
     Example:
         An example of a single-objective optimization is as follows:
 
@@ -103,26 +107,13 @@ class TPESampler(BaseSampler):
             study.optimize(objective, n_trials=10)
 
     .. note::
-        :class:`~optuna.samplers.TPESampler` can handle a multi-objective task as well and
-        the following shows an example:
-
-        .. testcode::
-
-            import optuna
-
-
-            def objective(trial):
-                x = trial.suggest_float("x", -100, 100)
-                y = trial.suggest_categorical("y", [-1, 0, 1])
-                f1 = x**2 + y
-                f2 = -((x - 2) ** 2 + y)
-                return f1, f2
-
-
-            # We minimize the first objective and maximize the second objective.
-            sampler = optuna.samplers.TPESampler()
-            study = optuna.create_study(directions=["minimize", "maximize"], sampler=sampler)
-            study.optimize(objective, n_trials=100)
+        :class:`~optuna.samplers.TPESampler`, which became much faster in v4.0.0, c.f. `our article
+        <https://medium.com/optuna/significant-speed-up-of-multi-objective-tpesampler-in-optuna-v4-0-0-2bacdcd1d99b>`__,
+        can handle multi-objective optimization with many trials as well.
+        Please note that :class:`~optuna.samplers.NSGAIISampler` will be used by default for
+        multi-objective optimization, so if users would like to use
+        :class:`~optuna.samplers.TPESampler` for multi-objective optimization, ``sampler`` must be
+        explicitly specified when study is created.
 
     Args:
         consider_prior:
@@ -170,7 +161,9 @@ class TPESampler(BaseSampler):
             If this is :obj:`True`, the multivariate TPE is used when suggesting parameters.
             The multivariate TPE is reported to outperform the independent TPE. See `BOHB: Robust
             and Efficient Hyperparameter Optimization at Scale
-            <http://proceedings.mlr.press/v80/falkner18a.html>`__ for more details.
+            <http://proceedings.mlr.press/v80/falkner18a.html>`__ and `our article
+            <https://medium.com/optuna/multivariate-tpe-makes-optuna-even-more-powerful-63c4bfbaebe2>`__
+            for more details.
 
             .. note::
                 Added in v2.2.0 as an experimental feature. The interface may change in newer
