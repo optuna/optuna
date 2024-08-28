@@ -109,28 +109,11 @@ class TPESampler(BaseSampler):
     .. note::
         :class:`~optuna.samplers.TPESampler`, which became much faster in v4.0.0, c.f. `our article
         <https://medium.com/optuna/significant-speed-up-of-multi-objective-tpesampler-in-optuna-v4-0-0-2bacdcd1d99b>`__,
-        can handle a multi-objective task as well and the following shows an example:
-
-        .. testcode::
-
-            import optuna
-
-
-            def objective(trial):
-                x = trial.suggest_float("x", -100, 100)
-                y = trial.suggest_categorical("y", [-1, 0, 1])
-                f1 = x**2 + y
-                f2 = -((x - 2) ** 2 + y)
-                return f1, f2
-
-
-            # We minimize the first objective and maximize the second objective.
-            sampler = optuna.samplers.TPESampler()
-            study = optuna.create_study(directions=["minimize", "maximize"], sampler=sampler)
-            study.optimize(objective, n_trials=100)
-
+        can handle multi-objective optimization with many trials as well.
         Please note that :class:`~optuna.samplers.NSGAIISampler` will be used by default for
-        multi-objective optimization.
+        multi-objective optimization, so if users would like to use
+        :class:`~optuna.samplers.TPESampler` for multi-objective optimization, ``sampler`` must be
+        explicitly specified when study is created.
 
     Args:
         consider_prior:
