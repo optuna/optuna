@@ -90,7 +90,7 @@ class BaseDistribution(abc.ABC):
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, BaseDistribution):
             return NotImplemented
-        if not type(self) is type(other):
+        if type(self) is not type(other):
             return False
         return self.__dict__ == other.__dict__
 

@@ -79,7 +79,7 @@ def test_check_distribution_suggest_uniform(storage_mode: str) -> None:
             trial.suggest_uniform("x", 10, 30)
 
         # we expect exactly one warning (not counting ones caused by deprecation)
-        assert len([r for r in record if r.category != FutureWarning]) == 1
+        assert len([r for r in record if r.category is not FutureWarning]) == 1
 
         with pytest.raises(ValueError):
             trial.suggest_int("x", 10, 20)
@@ -102,8 +102,8 @@ def test_check_distribution_suggest_loguniform(storage_mode: str) -> None:
             trial.suggest_loguniform("x", 10, 20)
             trial.suggest_loguniform("x", 10, 30)
 
-        # we expect exactly one warning (not counting ones caused by deprecation)
-        assert len([r for r in record if r.category != FutureWarning]) == 1
+        # We expect exactly one warning (not counting ones caused by deprecation).
+        assert len([r for r in record if r.category is not FutureWarning]) == 1
 
         with pytest.raises(ValueError):
             trial.suggest_int("x", 10, 20)
@@ -126,8 +126,8 @@ def test_check_distribution_suggest_discrete_uniform(storage_mode: str) -> None:
             trial.suggest_discrete_uniform("x", 10, 20, 2)
             trial.suggest_discrete_uniform("x", 10, 22, 2)
 
-        # we expect exactly one warning (not counting ones caused by deprecation)
-        assert len([r for r in record if r.category != FutureWarning]) == 1
+        # We expect exactly one warning (not counting ones caused by deprecation).
+        assert len([r for r in record if r.category is not FutureWarning]) == 1
 
         with pytest.raises(ValueError):
             trial.suggest_int("x", 10, 20, step=2)
@@ -151,7 +151,7 @@ def test_check_distribution_suggest_int(storage_mode: str, enable_log: bool) -> 
             trial.suggest_int("x", 10, 22, log=enable_log)
 
         # We expect exactly one warning (not counting ones caused by deprecation).
-        assert len([r for r in record if r.category != FutureWarning]) == 1
+        assert len([r for r in record if r.category is not FutureWarning]) == 1
 
         with pytest.raises(ValueError):
             trial.suggest_float("x", 10, 20, log=enable_log)
