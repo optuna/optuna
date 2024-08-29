@@ -98,7 +98,7 @@ study.optimize(objective, n_trials=100)  # Invoke optimization of the objective 
 > [!NOTE]
 > More examples can be found in [optuna/optuna-examples](https://github.com/optuna/optuna-examples).
 >
-> The examples cover diverse problem setups such as multi-objective optimization, constrained optimization, pruning, and distributed optimization. 
+> The examples cover diverse problem setups such as multi-objective optimization, constrained optimization, pruning, and distributed optimization.
 
 ## Installation
 
@@ -132,7 +132,6 @@ Optuna has integration features with various third-party libraries. Integrations
 * [Keras](https://github.com/optuna/optuna-examples/tree/main/keras/keras_integration.py)
 * [LightGBM](https://github.com/optuna/optuna-examples/tree/main/lightgbm/lightgbm_integration.py)
 * [MLflow](https://github.com/optuna/optuna-examples/tree/main/mlflow/keras_mlflow.py)
-* [MXNet](https://github.com/optuna/optuna-examples/tree/main/mxnet/mxnet_integration.py)
 * [PyTorch](https://github.com/optuna/optuna-examples/tree/main/pytorch/pytorch_simple.py)
 * [PyTorch Ignite](https://github.com/optuna/optuna-examples/tree/main/pytorch/pytorch_ignite_simple.py)
 * [PyTorch Lightning](https://github.com/optuna/optuna-examples/tree/main/pytorch/pytorch_lightning_simple.py)
