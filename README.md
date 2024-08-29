@@ -25,7 +25,7 @@ Optuna can dynamically construct the search spaces for the hyperparameters.
 
 ## :loudspeaker: News
 
-* **Aug 28, 2024**: We posted [an article about `INGO`](https://medium.com/optuna/a-natural-gradient-based-optimization-algorithm-registered-on-optunahub-0dbe17cb0f7d), a sampler newly supported in [OptunaHub](https://hub.optuna.org/samplers/implicit_natural_gradient/).
+* **Aug 28, 2024**: We posted [an article](https://medium.com/optuna/a-natural-gradient-based-optimization-algorithm-registered-on-optunahub-0dbe17cb0f7d) about [implicit natural gradient optimization (`INGO`)](https://hub.optuna.org/samplers/implicit_natural_gradient/), a sampler newly supported in [OptunaHub](https://hub.optuna.org/).
 * **Aug 20, 2024**: We posted [an article](https://medium.com/optuna/file-management-during-llm-large-language-model-trainings-by-optuna-v4-0-0-artifact-store-5bdd5112f3c7) about [`ArtifactStore`](https://optuna.readthedocs.io/en/stable/reference/artifacts.html) officially supported from Optuna 4.0.
 * **Aug 15, 2024**: We posted [an article about `CatCMA`](https://medium.com/optuna/introduction-to-catcma-in-optunahub-ffa316309cb8), a sampler newly supported in [OptunaHub](https://hub.optuna.org/samplers/catcma/).
 * **Aug 7, 2024**: We posted [an article](https://medium.com/optuna/significant-speed-up-of-multi-objective-tpesampler-in-optuna-v4-0-0-2bacdcd1d99b) about the significant (300x) speed up of multi-objective [`TPESampler`](https://optuna.readthedocs.io/en/stable/reference/samplers/generated/optuna.samplers.TPESampler.html) in Optuna 4.0.
