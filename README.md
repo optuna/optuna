@@ -14,6 +14,9 @@
 | :gear: [**Install Guide**](https://optuna.readthedocs.io/en/stable/installation.html)
 | :pencil: [**Tutorial**](https://optuna.readthedocs.io/en/stable/tutorial/index.html)
 | :bulb: [**Examples**](https://github.com/optuna/optuna-examples)
+| [**Twitter**](https://twitter.com/OptunaAutoML)
+| [**LinkedIn**](https://www.linkedin.com/showcase/optuna/)
+| [**Medium**](https://medium.com/optuna)
 
 *Optuna* is an automatic hyperparameter optimization software framework, particularly designed
 for machine learning. It features an imperative, *define-by-run* style user API. Thanks to our
