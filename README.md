@@ -31,7 +31,7 @@ Optuna can dynamically construct the search spaces for the hyperparameters.
 * **Jul 16, 2024**: The beta version of [OptunaHub](https://hub.optuna.org/), a feature-sharing platform for Optuna is available! Please check the detail in [our article](https://medium.com/optuna/announcing-optunahub-0-1-0-%CE%B2-69b35bb3e95e).
 * **Jul 12, 2024**: The beta version of Optuna 4.0 is available!  You can install the beta version by `pip install -U --pre optuna`. Find the latest [here](https://github.com/optuna/optuna/releases).
 
-> [!TIPS]
+> [!TIP]
 > Please visit [our Medium page](https://medium.com/optuna) to view our past articles.
 
 ## :fire: Key Features
