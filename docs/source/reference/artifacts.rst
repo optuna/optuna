@@ -4,7 +4,7 @@ optuna.artifacts
 ================
 
 The :mod:`~optuna.artifacts` module provides the way to manage artifacts (output files) in Optuna.
-Please check :ref:`artifact_tutorial` for the instruction.
+Please also check :ref:`artifact_tutorial` and `our article <https://medium.com/optuna/file-management-during-llm-large-language-model-trainings-by-optuna-v4-0-0-artifact-store-5bdd5112f3c7>`__.
 The storages covered by :mod:`~optuna.artifacts` are the following:
 
 +-------------------------+----------------------------------------+

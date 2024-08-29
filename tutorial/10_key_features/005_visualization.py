@@ -6,6 +6,21 @@ Quick Visualization for Hyperparameter Optimization Analysis
 
 Optuna provides various visualization features in :mod:`optuna.visualization` to analyze optimization results visually.
 
+Note that this tutorial requires `Plotly <https://plotly.com/python>`__ to be installed:
+
+.. code-block:: console
+
+      $ pip install plotly
+
+      # Required if you are running this tutorial in Jupyter Notebook.
+      $ pip install nbformat
+
+If you prefer to use `Matplotlib <https://matplotlib.org/>`__ instead of Plotly, please run the following command:
+
+.. code-block:: console
+
+    $ pip install matplotlib
+
 This tutorial walks you through this module by visualizing the optimization results of PyTorch model for FashionMNIST dataset.
 
 For visualizing multi-objective optimization (i.e., the usage of :func:`optuna.visualization.plot_pareto_front`),

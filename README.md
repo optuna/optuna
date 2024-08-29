@@ -14,11 +14,23 @@
 | :gear: [**Install Guide**](https://optuna.readthedocs.io/en/stable/installation.html)
 | :pencil: [**Tutorial**](https://optuna.readthedocs.io/en/stable/tutorial/index.html)
 | :bulb: [**Examples**](https://github.com/optuna/optuna-examples)
+| [**Twitter**](https://twitter.com/OptunaAutoML)
+| [**LinkedIn**](https://www.linkedin.com/showcase/optuna/)
+| [**Medium**](https://medium.com/optuna)
 
 *Optuna* is an automatic hyperparameter optimization software framework, particularly designed
 for machine learning. It features an imperative, *define-by-run* style user API. Thanks to our
 *define-by-run* API, the code written with Optuna enjoys high modularity, and the user of
 Optuna can dynamically construct the search spaces for the hyperparameters.
+
+## :loudspeaker: News
+
+* **Aug 20, 2024**: We posted [an article](https://medium.com/optuna/file-management-during-llm-large-language-model-trainings-by-optuna-v4-0-0-artifact-store-5bdd5112f3c7) about [`ArtifactStore`](https://optuna.readthedocs.io/en/stable/reference/artifacts.html) officially supported from Optuna 4.0.
+* **Aug 15, 2024**: We posted [an article about `CatCMA`](https://medium.com/optuna/introduction-to-catcma-in-optunahub-ffa316309cb8), a sampler newly supported in [OptunaHub](https://hub.optuna.org/samplers/catcma/).
+* **Aug 7, 2024**: We posted [an article](https://medium.com/optuna/significant-speed-up-of-multi-objective-tpesampler-in-optuna-v4-0-0-2bacdcd1d99b) about the significant (300x) speed up of multi-objective [`TPESampler`](https://optuna.readthedocs.io/en/stable/reference/samplers/generated/optuna.samplers.TPESampler.html) in Optuna 4.0.
+* **Jul 16, 2024**: The beta version of [OptunaHub](https://hub.optuna.org/), a feature-sharing platform for Optuna is available! Please check the detail in [our article](https://medium.com/optuna/announcing-optunahub-0-1-0-%CE%B2-69b35bb3e95e).
+* **Jul 12, 2024**: The beta version of Optuna 4.0 is available!  You can install the beta version by `pip install -U --pre optuna`. Find the latest [here](https://github.com/optuna/optuna/releases).
+
 
 ## :fire: Key Features
 
@@ -86,7 +98,7 @@ study.optimize(objective, n_trials=100)  # Invoke optimization of the objective 
 > [!NOTE]
 > More examples can be found in [optuna/optuna-examples](https://github.com/optuna/optuna-examples).
 >
-> The examples cover diverse problem setups such as multi-objective optimization, constrained optimization, pruning, and distributed optimization. 
+> The examples cover diverse problem setups such as multi-objective optimization, constrained optimization, pruning, and distributed optimization.
 
 ## Installation
 
@@ -120,7 +132,6 @@ Optuna has integration features with various third-party libraries. Integrations
 * [Keras](https://github.com/optuna/optuna-examples/tree/main/keras/keras_integration.py)
 * [LightGBM](https://github.com/optuna/optuna-examples/tree/main/lightgbm/lightgbm_integration.py)
 * [MLflow](https://github.com/optuna/optuna-examples/tree/main/mlflow/keras_mlflow.py)
-* [MXNet](https://github.com/optuna/optuna-examples/tree/main/mxnet/mxnet_integration.py)
 * [PyTorch](https://github.com/optuna/optuna-examples/tree/main/pytorch/pytorch_simple.py)
 * [PyTorch Ignite](https://github.com/optuna/optuna-examples/tree/main/pytorch/pytorch_ignite_simple.py)
 * [PyTorch Lightning](https://github.com/optuna/optuna-examples/tree/main/pytorch/pytorch_lightning_simple.py)

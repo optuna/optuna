@@ -74,28 +74,6 @@ def plot_contour(
 
     Note that, if a parameter contains missing values, a trial with missing values is not plotted.
 
-    Example:
-
-        The following code snippet shows how to plot the parameter relationship as contour plot.
-
-        .. plotly::
-
-            import optuna
-
-
-            def objective(trial):
-                x = trial.suggest_float("x", -100, 100)
-                y = trial.suggest_categorical("y", [-1, 0, 1])
-                return x ** 2 + y
-
-
-            sampler = optuna.samplers.TPESampler(seed=10)
-            study = optuna.create_study(sampler=sampler)
-            study.optimize(objective, n_trials=30)
-
-            fig = optuna.visualization.plot_contour(study, params=["x", "y"])
-            fig.show()
-
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their target values.
