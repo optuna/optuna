@@ -15,7 +15,7 @@ Note that this tutorial requires `Plotly <https://plotly.com/python>`__ to be in
       # Required if you are running this tutorial in Jupyter Notebook.
       $ pip install nbformat
 
-If you prefer to use `Matplotlib <https://matplotlib.org/>`__ instead of Plotly:
+If you prefer to use `Matplotlib <https://matplotlib.org/>`__ instead of Plotly, please run the following command:
 
 .. code-block:: console
 
