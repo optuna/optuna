@@ -25,6 +25,7 @@ Optuna can dynamically construct the search spaces for the hyperparameters.
 
 ## :loudspeaker: News
 
+* **Aug 30, 2024**: We posted [an article](https://medium.com/optuna/optunahub-a-feature-sharing-platform-for-optuna-now-available-in-official-release-4b99efe9934d) about the official release of [OptunaHub](https://hub.optuna.org/).
 * **Aug 28, 2024**: We posted [an article](https://medium.com/optuna/a-natural-gradient-based-optimization-algorithm-registered-on-optunahub-0dbe17cb0f7d) about [implicit natural gradient optimization (`INGO`)](https://hub.optuna.org/samplers/implicit_natural_gradient/), a sampler newly supported in [OptunaHub](https://hub.optuna.org/).
 * **Aug 20, 2024**: We posted [an article](https://medium.com/optuna/file-management-during-llm-large-language-model-trainings-by-optuna-v4-0-0-artifact-store-5bdd5112f3c7) about [`ArtifactStore`](https://optuna.readthedocs.io/en/stable/reference/artifacts.html) officially supported from Optuna 4.0.
 * **Aug 15, 2024**: We posted [an article](https://medium.com/optuna/introduction-to-catcma-in-optunahub-ffa316309cb8) about [`CatCMA`](https://hub.optuna.org/samplers/catcma/), a sampler newly supported in [OptunaHub](https://hub.optuna.org/).
