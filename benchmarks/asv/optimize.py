@@ -67,16 +67,30 @@ class OptimizeSuite:
         n_objectives = cast(int, n_objectives)
         self.optimize(storage_mode, sampler_mode, n_trials, n_objectives)
 
-    params = ["inmemory, random, 10000, 1"]
-    storage_modes = ["inmemory", "sqlite", "journal"]
-    sampler_modes = ["random", "tpe", "cmaes"]
-    for storage_mode, sampler_mode in itertools.product(*(storage_modes, sampler_modes)):
-        params.append(f"{storage_mode}, {sampler_mode}, 1000, 1")
-
-    sampler_modes = ["tpe", "nsgaii"]
-    for storage_mode, sampler_mode in itertools.product(*(storage_modes, sampler_modes)):
-        params.append(f"{storage_mode}, {sampler_mode}, 1000, 2")
-        params.append(f"{storage_mode}, {sampler_mode}, 300, 3")
+    params = (
+        "inmemory, random, 1000, 1",
+        "inmemory, random, 10000, 1",
+        "inmemory, tpe, 1000, 1",
+        "inmemory, cmaes, 1000, 1",
+        "sqlite, random, 1000, 1",
+        "sqlite, tpe, 1000, 1",
+        "sqlite, cmaes, 1000, 1",
+        "journal, random, 1000, 1",
+        "journal, tpe, 1000, 1",
+        "journal, cmaes, 1000, 1",
+        "inmemory, tpe, 1000, 2",
+        "inmemory, nsgaii, 1000, 2",
+        "sqlite, tpe, 1000, 2",
+        "sqlite, nsgaii, 1000, 2",
+        "journal, tpe, 1000, 2",
+        "journal, nsgaii, 1000, 2",
+        "inmemory, tpe, 1000, 3",
+        "inmemory, nsgaii, 1000, 3",
+        "sqlite, tpe, 1000, 3",
+        "sqlite, nsgaii, 1000, 3",
+        "journal, tpe, 1000, 3",
+        "journal, nsgaii, 1000, 3",
+    )
 
     param_names = ["storage, sampler, n_trials, n_objectives"]
     timeout = 600
