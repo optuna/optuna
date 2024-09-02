@@ -24,15 +24,13 @@ for machine learning. It features an imperative, *define-by-run* style user API.
 Optuna can dynamically construct the search spaces for the hyperparameters.
 
 ## :loudspeaker: News
-
+<!-- TODO: when you add a new line, please delete the oldest line -->
+* **Sep 2, 2024**: Optuna 4.0 is available!  You can install it by `pip install -U optuna`. Find the latest [here](https://github.com/optuna/optuna/releases) and check [our article](https://medium.com/optuna/optuna-4-0-whats-new-in-the-major-release-3325a8420d10).
 * **Aug 30, 2024**: We posted [an article](https://medium.com/optuna/optunahub-a-feature-sharing-platform-for-optuna-now-available-in-official-release-4b99efe9934d) about the official release of [OptunaHub](https://hub.optuna.org/).
 * **Aug 28, 2024**: We posted [an article](https://medium.com/optuna/a-natural-gradient-based-optimization-algorithm-registered-on-optunahub-0dbe17cb0f7d) about [implicit natural gradient optimization (`INGO`)](https://hub.optuna.org/samplers/implicit_natural_gradient/), a sampler newly supported in [OptunaHub](https://hub.optuna.org/).
 * **Aug 20, 2024**: We posted [an article](https://medium.com/optuna/file-management-during-llm-large-language-model-trainings-by-optuna-v4-0-0-artifact-store-5bdd5112f3c7) about [`ArtifactStore`](https://optuna.readthedocs.io/en/stable/reference/artifacts.html) officially supported from Optuna 4.0.
 * **Aug 15, 2024**: We posted [an article](https://medium.com/optuna/introduction-to-catcma-in-optunahub-ffa316309cb8) about [`CatCMA`](https://hub.optuna.org/samplers/catcma/), a sampler newly supported in [OptunaHub](https://hub.optuna.org/).
 * **Aug 7, 2024**: We posted [an article](https://medium.com/optuna/significant-speed-up-of-multi-objective-tpesampler-in-optuna-v4-0-0-2bacdcd1d99b) about the significant (300x) speed up of multi-objective [`TPESampler`](https://optuna.readthedocs.io/en/stable/reference/samplers/generated/optuna.samplers.TPESampler.html) in Optuna 4.0.
-* **Jul 16, 2024**: The beta version of [OptunaHub](https://hub.optuna.org/), a feature-sharing platform for Optuna is available! Please check the detail in [our article](https://medium.com/optuna/announcing-optunahub-0-1-0-%CE%B2-69b35bb3e95e).
-* **Jul 12, 2024**: The beta version of Optuna 4.0 is available!  You can install the beta version by `pip install -U --pre optuna`. Find the latest [here](https://github.com/optuna/optuna/releases).
-
 
 ## :fire: Key Features
 
