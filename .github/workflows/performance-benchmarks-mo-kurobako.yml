@@ -127,7 +127,7 @@ jobs:
           out/report.md
           out/**/*.png
 
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4.1.7
       with:
         name: benchmark-report
         path: |
