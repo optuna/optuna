@@ -42,21 +42,38 @@ def create_sampler(sampler_mode: str) -> BaseSampler:
 
 
 class OptimizeSuite:
-    def objective(self, trial: optuna.Trial, n_objectives: int) -> list[float]:
+    def single_objective(self, trial: optuna.Trial) -> float:
         x = trial.suggest_float("x", -100, 100)
         y = trial.suggest_int("y", -100, 100)
-        objective_values = [x**2 + y**2, (x - 2) ** 2 + (y - 2) ** 2, (x + 2) ** 2 + (y + 2) ** 2]
-        return objective_values[:n_objectives]
+        return x**2 + y**2
+
+    def bi_objective(self, trial: optuna.Trial) -> tuple[float, float]:
+        x = trial.suggest_float("x", -100, 100)
+        y = trial.suggest_int("y", -100, 100)
+        return x**2 + y**2, (x - 2) ** 2 + (y - 2) ** 2
+
+    def tri_objective(self, trial: optuna.Trial) -> tuple[float, float, float]:
+        x = trial.suggest_float("x", -100, 100)
+        y = trial.suggest_int("y", -100, 100)
+        return x**2 + y**2, (x - 2) ** 2 + (y - 2) ** 2, (x + 2) ** 2 + (y + 2) ** 2
 
     def optimize(
         self, storage_mode: str, sampler_mode: str, n_trials: int, n_objectives: int
     ) -> None:
         with StorageSupplier(storage_mode) as storage:
             sampler = create_sampler(sampler_mode)
-            assert n_objectives in [1, 2, 3]
             directions = ["minimize"] * n_objectives
             study = optuna.create_study(storage=storage, sampler=sampler, directions=directions)
-            study.optimize(lambda trial: self.objective(trial, n_objectives), n_trials=n_trials)
+            if n_objectives == 1:
+                objective = self.single_objective
+            elif n_objectives == 2:
+                objective = self.bi_objective
+            elif n_objectives == 3:
+                objective = self.tri_objective
+            else:
+                assert "Should not be reached."
+
+            study.optimize(objective, n_trials=n_trials)
 
     def time_optimize(self, args: str) -> None:
         storage_mode, sampler_mode, n_trials, n_objectives = parse_args(args)
