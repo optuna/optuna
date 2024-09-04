@@ -65,15 +65,13 @@ class OptimizeSuite:
             directions = ["minimize"] * n_objectives
             study = optuna.create_study(storage=storage, sampler=sampler, directions=directions)
             if n_objectives == 1:
-                objective = self.single_objective
+                study.optimize(self.single_objective, n_trials=n_trials)
             elif n_objectives == 2:
-                objective = self.bi_objective
+                study.optimize(self.bi_objective, n_trials=n_trials)
             elif n_objectives == 3:
-                objective = self.tri_objective
+                study.optimize(self.tri_objective, n_trials=n_trials)
             else:
                 assert False, "Should not be reached."
-
-            study.optimize(objective, n_trials=n_trials)
 
     def time_optimize(self, args: str) -> None:
         storage_mode, sampler_mode, n_trials, n_objectives = parse_args(args)
