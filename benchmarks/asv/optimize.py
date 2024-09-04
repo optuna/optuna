@@ -71,7 +71,7 @@ class OptimizeSuite:
             elif n_objectives == 3:
                 objective = self.tri_objective
             else:
-                assert "Should not be reached."
+                assert False, "Should not be reached."
 
             study.optimize(objective, n_trials=n_trials)
 
