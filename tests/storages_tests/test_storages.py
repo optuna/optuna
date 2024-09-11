@@ -673,6 +673,39 @@ def test_set_trial_user_attr(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_set_trial_user_attrs(storage_mode: str) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        trial_id_1 = storage.create_new_trial(
+            storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+        )
+
+        # Test setting value.
+        storage.set_trial_user_attrs(trial_id_1, EXAMPLE_ATTRS)
+        assert storage.get_trial(trial_id_1).user_attrs == EXAMPLE_ATTRS
+
+        # Test overwriting value.
+        storage.set_trial_user_attrs(trial_id_1, {"dataset": "ImageNet"})
+        assert storage.get_trial(trial_id_1).user_attrs == EXAMPLE_ATTRS | {"dataset": "ImageNet"}
+
+        # Test upserting value.
+        storage.set_trial_user_attrs(trial_id_1, {"dataset": "MNIST", "new_attr": 0.1})
+        assert storage.get_trial(trial_id_1).user_attrs == EXAMPLE_ATTRS | {
+            "dataset": "MNIST",
+            "new_attr": 0.1,
+        }
+
+        # Cannot set attributes of non-existent trials.
+        non_existent_trial_id = trial_id_1 + 1
+        with pytest.raises(KeyError):
+            storage.set_trial_user_attrs(non_existent_trial_id, EXAMPLE_ATTRS)
+
+        # Cannot set attributes of finished trials.
+        storage.set_trial_state_values(trial_id_1, state=TrialState.COMPLETE)
+        with pytest.raises(RuntimeError):
+            storage.set_trial_user_attrs(trial_id_1, EXAMPLE_ATTRS)
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_trial_system_attrs(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         _, study_to_trials = _setup_studies(storage, n_study=2, n_trial=5, seed=10)

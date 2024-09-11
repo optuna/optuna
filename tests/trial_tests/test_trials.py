@@ -191,10 +191,19 @@ def test_not_contained_param(
 
 
 @parametrize_trial_type
-def test_set_user_attrs(trial_type: type) -> None:
+def test_set_user_attr(trial_type: type) -> None:
     trial = _create_trial(trial_type)
     trial.set_user_attr("data", "MNIST")
     assert trial.user_attrs["data"] == "MNIST"
+
+
+@parametrize_trial_type
+def test_set_user_attrs(trial_type: type) -> None:
+    trial = _create_trial(trial_type)
+    trial.set_user_attrs({"data": "MNIST", "score": 0.99})
+    assert len(trial.user_attrs) == 2
+    assert trial.user_attrs["data"] == "MNIST"
+    assert trial.user_attrs["score"] == 0.99
 
 
 @parametrize_trial_type
