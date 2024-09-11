@@ -43,6 +43,7 @@ if TYPE_CHECKING:
     import alembic.migration as alembic_migration
     import alembic.script as alembic_script
     import sqlalchemy
+    from sqlalchemy.dialects.mysql import insert as mysql_insert
     import sqlalchemy.exc as sqlalchemy_exc
     import sqlalchemy.orm as sqlalchemy_orm
     import sqlalchemy.sql.functions as sqlalchemy_sql_functions
@@ -58,6 +59,7 @@ else:
     sqlalchemy_exc = _LazyImport("sqlalchemy.exc")
     sqlalchemy_orm = _LazyImport("sqlalchemy.orm")
     sqlalchemy_sql_functions = _LazyImport("sqlalchemy.sql.functions")
+    mysql_insert = _LazyImport("sqlalchemy.dialects.mysql.insert")
 
     models = _LazyImport("optuna.storages._rdb.models")
 
@@ -741,6 +743,42 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             session.add(attribute)
         else:
             attribute.value_json = json.dumps(value)
+
+    def set_trial_user_attrs(self, trial_id: int, attrs: Dict[str, Any]) -> None:
+        with _create_scoped_session(self.scoped_session, True) as session:
+            self._set_trial_user_attrs_without_commit(session, trial_id, attrs)
+
+    def _set_trial_user_attrs_without_commit(
+        self, session: "sqlalchemy_orm.Session", trial_id: int, attrs: Dict[str, Any]
+    ) -> None:
+        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+        self.check_trial_is_updatable(trial_id, trial.state)
+
+        if self.engine.name == "mysql":
+            insert_stmt = mysql_insert(models.TrialUserAttributeModel).values(
+                [
+                    {"trial_id": trial_id, "key": key, "value_json": json.dumps(value)}
+                    for key, value in attrs.items()
+                ]
+            )
+            upsert_stmt = insert_stmt.on_duplicate_key_update(
+                value_json=insert_stmt.inserted.value_json
+            )
+            session.execute(upsert_stmt)
+        else:
+            for key, value in attrs.items():
+                attribute = models.TrialUserAttributeModel.find_by_trial_and_key(
+                    trial,
+                    key,
+                    session,
+                )
+                if attribute is None:
+                    attribute = models.TrialUserAttributeModel(
+                        trial_id=trial_id, key=key, value_json=json.dumps(value)
+                    )
+                    session.add(attribute)
+                else:
+                    attribute.value_json = json.dumps(value)
 
     def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
         with _create_scoped_session(self.scoped_session, True) as session:
