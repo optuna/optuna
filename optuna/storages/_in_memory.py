@@ -326,6 +326,17 @@ class InMemoryStorage(BaseStorage):
             trial.user_attrs[key] = value
             self._set_trial(trial_id, trial)
 
+    def set_trial_user_attrs(self, trial_id: int, attrs: dict[str, Any]) -> None:
+        with self._lock:
+            self._check_trial_id(trial_id)
+            trial = self._get_trial(trial_id)
+            self.check_trial_is_updatable(trial_id, trial.state)
+
+            trial = copy.copy(trial)
+            trial.user_attrs = copy.copy(trial.user_attrs)
+            trial.user_attrs.update(attrs)
+            self._set_trial(trial_id, trial)
+
     def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
         with self._lock:
             trial = self._get_trial(trial_id)
