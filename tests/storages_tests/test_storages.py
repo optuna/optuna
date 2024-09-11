@@ -685,14 +685,15 @@ def test_set_trial_user_attrs(storage_mode: str) -> None:
 
         # Test overwriting value.
         storage.set_trial_user_attrs(trial_id_1, {"dataset": "ImageNet"})
-        assert storage.get_trial(trial_id_1).user_attrs == EXAMPLE_ATTRS | {"dataset": "ImageNet"}
+        assert storage.get_trial(trial_id_1).user_attrs == dict(EXAMPLE_ATTRS, dataset="ImageNet")
 
         # Test upserting value.
         storage.set_trial_user_attrs(trial_id_1, {"dataset": "MNIST", "new_attr": 0.1})
-        assert storage.get_trial(trial_id_1).user_attrs == EXAMPLE_ATTRS | {
-            "dataset": "MNIST",
-            "new_attr": 0.1,
-        }
+        assert storage.get_trial(trial_id_1).user_attrs == dict(
+            EXAMPLE_ATTRS,
+            dataset="MNIST",
+            new_attr=0.1,
+        )
 
         # Cannot set attributes of non-existent trials.
         non_existent_trial_id = trial_id_1 + 1
