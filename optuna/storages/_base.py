@@ -420,6 +420,27 @@ class BaseStorage(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def set_trial_user_attrs(self, trial_id: int, attrs: dict[str, Any]) -> None:
+        """Set user-defined attributes to a trial.
+
+        This method overwrites any existing attribute.
+
+        Args:
+            trial_id:
+                ID of the trial.
+            attrs:
+                Dictionary of attributes. Keys are attribute keys and values are attribute values.
+                Each attribute value should be JSON serializable.
+
+        Raises:
+            :exc:`KeyError`:
+                If no trial with the matching ``trial_id`` exists.
+            :exc:`RuntimeError`:
+                If the trial is already finished.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
         """Set an optuna-internal attribute to a trial.
 
