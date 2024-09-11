@@ -190,6 +190,9 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
         self._backend.set_trial_user_attr(trial_id, key=key, value=value)
 
+    def set_trial_user_attrs(self, trial_id: int, attrs: dict[str, Any]) -> None:
+        self._backend.set_trial_user_attrs(trial_id, attrs)
+
     def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
         self._backend.set_trial_system_attr(trial_id, key=key, value=value)
 
