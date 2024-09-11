@@ -43,7 +43,7 @@ if TYPE_CHECKING:
     import alembic.migration as alembic_migration
     import alembic.script as alembic_script
     import sqlalchemy
-    from sqlalchemy.dialects.mysql import insert as mysql_insert
+    import sqlalchemy.dialects.mysql as sqlalchemy_dialects_mysql
     import sqlalchemy.exc as sqlalchemy_exc
     import sqlalchemy.orm as sqlalchemy_orm
     import sqlalchemy.sql.functions as sqlalchemy_sql_functions
@@ -56,10 +56,10 @@ else:
     alembic_script = _LazyImport("alembic.script")
 
     sqlalchemy = _LazyImport("sqlalchemy")
+    sqlalchemy_dialects_mysql = _LazyImport("sqlalchemy.dialects.mysql")
     sqlalchemy_exc = _LazyImport("sqlalchemy.exc")
     sqlalchemy_orm = _LazyImport("sqlalchemy.orm")
     sqlalchemy_sql_functions = _LazyImport("sqlalchemy.sql.functions")
-    mysql_insert = _LazyImport("sqlalchemy.dialects.mysql.insert")
 
     models = _LazyImport("optuna.storages._rdb.models")
 
@@ -755,7 +755,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         self.check_trial_is_updatable(trial_id, trial.state)
 
         if self.engine.name == "mysql":
-            insert_stmt = mysql_insert(models.TrialUserAttributeModel).values(
+            insert_stmt = sqlalchemy_dialects_mysql.insert(models.TrialUserAttributeModel).values(
                 [
                     {"trial_id": trial_id, "key": key, "value_json": json.dumps(value)}
                     for key, value in attrs.items()
