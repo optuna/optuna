@@ -42,60 +42,69 @@ def create_sampler(sampler_mode: str) -> BaseSampler:
 
 
 class OptimizeSuite:
-    def objective(self, trial: optuna.Trial) -> float:
+    def single_objective(self, trial: optuna.Trial) -> float:
         x = trial.suggest_float("x", -100, 100)
         y = trial.suggest_int("y", -100, 100)
         return x**2 + y**2
 
-    def multi_objective(self, trial: optuna.Trial) -> tuple[float, float]:
+    def bi_objective(self, trial: optuna.Trial) -> tuple[float, float]:
         x = trial.suggest_float("x", -100, 100)
         y = trial.suggest_int("y", -100, 100)
-        return (x**2 + y**2, (x - 2) ** 2 + (y - 2) ** 2)
+        return x**2 + y**2, (x - 2) ** 2 + (y - 2) ** 2
+
+    def tri_objective(self, trial: optuna.Trial) -> tuple[float, float, float]:
+        x = trial.suggest_float("x", -100, 100)
+        y = trial.suggest_int("y", -100, 100)
+        return x**2 + y**2, (x - 2) ** 2 + (y - 2) ** 2, (x + 2) ** 2 + (y + 2) ** 2
 
     def optimize(
-        self, storage_mode: str, sampler_mode: str, n_trials: int, objective_type: str
+        self, storage_mode: str, sampler_mode: str, n_trials: int, n_objectives: int
     ) -> None:
         with StorageSupplier(storage_mode) as storage:
             sampler = create_sampler(sampler_mode)
-            if objective_type == "single":
-                directions = ["minimize"]
-            elif objective_type == "multi":
-                directions = ["minimize", "minimize"]
-            else:
-                assert False
+            directions = ["minimize"] * n_objectives
             study = optuna.create_study(storage=storage, sampler=sampler, directions=directions)
-            if objective_type == "single":
-                study.optimize(self.objective, n_trials=n_trials)
-            elif objective_type == "multi":
-                study.optimize(self.multi_objective, n_trials=n_trials)
+            if n_objectives == 1:
+                study.optimize(self.single_objective, n_trials=n_trials)
+            elif n_objectives == 2:
+                study.optimize(self.bi_objective, n_trials=n_trials)
+            elif n_objectives == 3:
+                study.optimize(self.tri_objective, n_trials=n_trials)
             else:
-                assert False
+                assert False, "Should not be reached."
 
     def time_optimize(self, args: str) -> None:
-        storage_mode, sampler_mode, n_trials, objective_type = parse_args(args)
+        storage_mode, sampler_mode, n_trials, n_objectives = parse_args(args)
         storage_mode = cast(str, storage_mode)
         sampler_mode = cast(str, sampler_mode)
         n_trials = cast(int, n_trials)
-        objective_type = cast(str, objective_type)
-        self.optimize(storage_mode, sampler_mode, n_trials, objective_type)
+        n_objectives = cast(int, n_objectives)
+        self.optimize(storage_mode, sampler_mode, n_trials, n_objectives)
 
     params = (
-        "inmemory, random, 1000, single",
-        "inmemory, random, 10000, single",
-        "inmemory, tpe, 1000, single",
-        "inmemory, cmaes, 1000, single",
-        "sqlite, random, 1000, single",
-        "sqlite, tpe, 1000, single",
-        "sqlite, cmaes, 1000, single",
-        "journal, random, 1000, single",
-        "journal, tpe, 1000, single",
-        "journal, cmaes, 1000, single",
-        "inmemory, tpe, 1000, multi",
-        "inmemory, nsgaii, 1000, multi",
-        "sqlite, tpe, 1000, multi",
-        "sqlite, nsgaii, 1000, multi",
-        "journal, tpe, 1000, multi",
-        "journal, nsgaii, 1000, multi",
+        "inmemory, random, 1000, 1",
+        "inmemory, random, 10000, 1",
+        "inmemory, tpe, 1000, 1",
+        "inmemory, cmaes, 1000, 1",
+        "sqlite, random, 1000, 1",
+        "sqlite, tpe, 1000, 1",
+        "sqlite, cmaes, 1000, 1",
+        "journal, random, 1000, 1",
+        "journal, tpe, 1000, 1",
+        "journal, cmaes, 1000, 1",
+        "inmemory, tpe, 1000, 2",
+        "inmemory, nsgaii, 1000, 2",
+        "sqlite, tpe, 1000, 2",
+        "sqlite, nsgaii, 1000, 2",
+        "journal, tpe, 1000, 2",
+        "journal, nsgaii, 1000, 2",
+        "inmemory, tpe, 1000, 3",
+        "inmemory, nsgaii, 1000, 3",
+        "sqlite, tpe, 1000, 3",
+        "sqlite, nsgaii, 1000, 3",
+        "journal, tpe, 1000, 3",
+        "journal, nsgaii, 1000, 3",
     )
-    param_names = ["storage, sampler, n_trials, objective_type"]
+
+    param_names = ["storage, sampler, n_trials, n_objectives"]
     timeout = 600
