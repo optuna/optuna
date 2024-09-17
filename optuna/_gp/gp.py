@@ -175,22 +175,23 @@ def _fit_kernel_params(
     def loss_func(raw_params: np.ndarray) -> tuple[float, np.ndarray]:
         raw_params_tensor = torch.from_numpy(raw_params)
         raw_params_tensor.requires_grad_(True)
-        params = KernelParamsTensor(
-            inverse_squared_lengthscales=torch.exp(raw_params_tensor[:n_params]),
-            kernel_scale=torch.exp(raw_params_tensor[n_params]),
-            noise_var=(
-                torch.tensor(minimum_noise, dtype=torch.float64)
-                if deterministic_objective
-                else torch.exp(raw_params_tensor[n_params + 1]) + minimum_noise
-            ),
-        )
-        loss = -marginal_log_likelihood(
-            torch.from_numpy(X), torch.from_numpy(Y), torch.from_numpy(is_categorical), params
-        ) - log_prior(params)
-        loss.backward()  # type: ignore
-        # scipy.minimize requires all the gradients to be zero for termination.
-        raw_noise_var_grad = raw_params_tensor.grad[n_params + 1]  # type: ignore
-        assert not deterministic_objective or raw_noise_var_grad == 0
+        with torch.enable_grad():
+            params = KernelParamsTensor(
+                inverse_squared_lengthscales=torch.exp(raw_params_tensor[:n_params]),
+                kernel_scale=torch.exp(raw_params_tensor[n_params]),
+                noise_var=(
+                    torch.tensor(minimum_noise, dtype=torch.float64)
+                    if deterministic_objective
+                    else torch.exp(raw_params_tensor[n_params + 1]) + minimum_noise
+                ),
+            )
+            loss = -marginal_log_likelihood(
+                torch.from_numpy(X), torch.from_numpy(Y), torch.from_numpy(is_categorical), params
+            ) - log_prior(params)
+            loss.backward()  # type: ignore
+            # scipy.minimize requires all the gradients to be zero for termination.
+            raw_noise_var_grad = raw_params_tensor.grad[n_params + 1]  # type: ignore
+            assert not deterministic_objective or raw_noise_var_grad == 0
         return loss.item(), raw_params_tensor.grad.detach().numpy()  # type: ignore
 
     # jac=True means loss_func returns the gradient for gradient descent.
