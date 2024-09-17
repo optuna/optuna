@@ -1176,7 +1176,7 @@ def create_study(
 
     Args:
         storage:
-            Database URL. If this argument is set to None, in-memory storage is used, and the
+            Database URL. If this argument is set to None, :class:`~optuna.storages.BaseStorage` is used, and the
             :class:`~optuna.study.Study` will not be persistent.
 
             .. note::
