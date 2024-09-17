@@ -1176,8 +1176,8 @@ def create_study(
 
     Args:
         storage:
-            Database URL. If this argument is set to None, :class:`~optuna.storages.BaseStorage` is used, and the
-            :class:`~optuna.study.Study` will not be persistent.
+            Database URL. If this argument is set to None, :class:`~optuna.storages.BaseStorage`
+            is used, and the :class:`~optuna.study.Study` will not be persistent.
 
             .. note::
                 When a database URL is passed, Optuna internally uses `SQLAlchemy`_ to handle
