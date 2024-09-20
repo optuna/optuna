@@ -56,4 +56,12 @@ def test_fit_kernel_params(
             deterministic_objective=deterministic_objective,
             gtol=gtol,
         )
-        assert kernel_params != initial_kernel_params
+
+        assert (
+            (
+                kernel_params.inverse_squared_lengthscales
+                != initial_kernel_params.inverse_squared_lengthscales
+            ).sum()
+            + (kernel_params.kernel_scale != initial_kernel_params.kernel_scale).sum()
+            + (kernel_params.noise_var != initial_kernel_params.noise_var).sum()
+        )
