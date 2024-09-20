@@ -51,8 +51,10 @@ class _GroupDecomposedSearchSpace:
         if self._study_id is None:
             self._study_id = study._study_id
         else:
-            # Note that the check below is meaningless when :class:`~optuna.storages.InMemoryStorage` is used
-            # because :func:`~optuna.storages.InMemoryStorage.create_new_study` always returns the same study ID.
+            # Note that the check below is meaningless when
+            # :class:`~optuna.storages.InMemoryStorage` is used because
+            # :func:`~optuna.storages.InMemoryStorage.create_new_study`
+            # always returns the same study ID.
             if self._study_id != study._study_id:
                 raise ValueError("`_GroupDecomposedSearchSpace` cannot handle multiple studies.")
 

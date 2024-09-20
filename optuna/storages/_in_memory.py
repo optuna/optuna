@@ -39,6 +39,7 @@ class InMemoryStorage(BaseStorage):
                 x = trial.suggest_float("x", -100, 100)
                 return x**2
 
+
             storage = optuna.storages.InMemoryStorage()
 
             study = optuna.create_study(storage=storage)
