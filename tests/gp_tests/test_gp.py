@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Generator
-
 import numpy as np
 import pytest
 import torch
@@ -9,8 +7,6 @@ import torch
 from optuna._gp.gp import _fit_kernel_params
 from optuna._gp.gp import KernelParamsTensor
 import optuna._gp.prior as prior
-
-
 
 
 @pytest.mark.parametrize(
