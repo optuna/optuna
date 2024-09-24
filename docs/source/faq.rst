@@ -72,7 +72,7 @@ Can I use Optuna without remote RDB servers?
 
 Yes, it's possible.
 
-In the simplest form, Optuna works with in-memory storage:
+In the simplest form, Optuna works with :class:`~optuna.storages.InMemoryStorage`:
 
 .. code-block:: python
 
@@ -94,7 +94,7 @@ How can I save and resume studies?
 ----------------------------------------------------
 
 There are two ways of persisting studies, which depend if you are using
-in-memory storage (default) or remote databases (RDB). In-memory studies can be
+:class:`~optuna.storages.InMemoryStorage` (default) or remote databases (RDB). In-memory studies can be
 saved and loaded like usual Python objects using ``pickle`` or ``joblib``. For
 example, using ``joblib``:
 

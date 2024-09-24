@@ -26,7 +26,24 @@ _logger = optuna.logging.get_logger(__name__)
 class InMemoryStorage(BaseStorage):
     """Storage class that stores data in memory of the Python process.
 
-    This class is not supposed to be directly accessed by library users.
+    Example:
+
+        Create an :class:`~optuna.storages.InMemoryStorage` instance.
+
+        .. testcode::
+
+            import optuna
+
+
+            def objective(trial):
+                x = trial.suggest_float("x", -100, 100)
+                return x**2
+
+
+            storage = optuna.storages.InMemoryStorage()
+
+            study = optuna.create_study(storage=storage)
+            study.optimize(objective, n_trials=10)
     """
 
     def __init__(self) -> None:
