@@ -42,7 +42,7 @@ are not suitable for storing large data. With Optuna's artifact module, users ca
 chemical structures, image and audio data, etc.) for each trial.
 
 Also, while this tutorial does not touch upon it, it's possible to manage artifacts associated not only with trials but also with
-studies. Please refer to the `official documentation <https://optuna.readthedocs.io/en/stable/reference/generated/optuna.artifacts.upload_artifact.html>`__
+studies. Please refer to the `official documentation <https://optuna.readthedocs.io/en/stable/reference/artifacts.html#optuna.artifacts.upload_artifact>`__
 if you are interested in.
 
 Situations where artifacts are useful
