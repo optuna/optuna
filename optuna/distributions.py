@@ -530,6 +530,10 @@ class CategoricalDistribution(BaseDistribution):
 
     def to_internal_repr(self, param_value_in_external_repr: CategoricalChoiceType) -> float:
         try:
+            # NOTE(nabenabe): With this implementation, we cannot distinguish some values
+            # such as True and 1, or 1.0 and 1. For example, if choices=[True, 1] and external_repr
+            # is 1, this method wrongly returns 0 instead of 1. However, we decided to accept this
+            # bug for such exceptional choices for less complexity and faster processing.
             return self.choices.index(param_value_in_external_repr)
         except ValueError:  # ValueError: param_value_in_external_repr is not in choices.
             # ValueError also happens if external_repr is nan or includes precision error in float.
