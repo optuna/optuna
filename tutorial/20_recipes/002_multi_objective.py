@@ -119,6 +119,16 @@ print("Number of finished trials: ", len(study.trials))
 
 
 ###################################################################################################
+# Note that the following sections requires the installation of `Plotly <https://plotly.com/python>`__ for visualization
+# and `scikit-learn <https://scikit-learn.org/stable>`__ for hyperparameter importance calculation.
+#
+# .. code-block:: console
+#
+#     $ pip install plotly
+#     # Required if you are running this tutorial in Jupyter Notebook.
+#     $ pip install nbformat
+#     $ pip install scikit-learn
+#
 # Check trials on Pareto front visually.
 optuna.visualization.plot_pareto_front(study, target_names=["FLOPS", "accuracy"])
 
