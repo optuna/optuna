@@ -40,7 +40,7 @@ def _compute_exclusive_hv(
     # limited_sols[:, 0] is sorted, all the Pareto solutions necessary for hypervolume calculation
     # will be filtered out with assume_unique_lexsorted=True.
     # NOTE(nabenabe): This is a hack as described above. limited_sols is lexsorted, but can be a
-    # non-unique array. Without this hack, compute_hypervolume may become significantly slow when 
+    # non-unique array. Without this hack, compute_hypervolume may become significantly slow when
     # limited_sols have many duplicated Pareto solutions.
     on_front = _is_pareto_front(limited_sols, assume_unique_lexsorted=True)
     return inclusive_hv - _compute_hv(limited_sols[on_front], reference_point)
