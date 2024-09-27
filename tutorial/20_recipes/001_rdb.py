@@ -80,6 +80,7 @@ study.optimize(objective, n_trials=3)
 # Note that this section requires the installation of `Pandas <https://pandas.pydata.org/>`__:
 #
 # .. code-block:: bash
+#
 #     $ pip install pandas
 #
 # We can access histories of studies and trials via the :class:`~optuna.study.Study` class.
