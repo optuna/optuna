@@ -37,8 +37,9 @@ def _compute_exclusive_hv(
         return inclusive_hv
 
     # NOTE(nabenabe): As the following line is a hack for speedup, I will describe several
-    # important points to note. Even if we do not run _is_pareto_front below, the result of this
-    # function does not change, but this function simply becomes slower.
+    # important points to note. Even if we do not run _is_pareto_front below or use
+    # assume_unique_lexsorted=False instead, the result of this function does not change, but this
+    # function simply becomes slower.
     #
     # For simplicity, I call an array ``quasi-lexsorted`` if it is sorted by the first objective.
     #
@@ -48,20 +49,21 @@ def _compute_exclusive_hv(
     #   if the solution set contains many non Pareto solutions. By removing some obvious non Pareto
     #   solutions, the calculation becomes faster.
     #
-    # Reason why we run _is_pareto_front with assume_unique_lexsorted=True
+    # Reason why assume_unique_lexsorted must be True for _is_pareto_front
     #   assume_unique_lexsorted=True actually checks weak dominance and solutions will be weakly
     #   dominated if there are duplications, so we can remove duplicated solutions by this option.
     #   In other words, assume_unique_lexsorted=False may significantly slow down when limited_sols
-    #   has many duplicated Pareto solutions.
+    #   has many duplicated Pareto solutions because this function becomes an exponential algorithm
+    #   without duplication removal.
     #
     # NOTE(nabenabe): limited_sols can be non-unique and/or non-lexsorted, so I will describe why
     # it is fine.
     #
-    # Reason why it is fine to run _is_pareto_front with assume_unique_lexsorted=True.
-    #   All ``False`` in on_front will be correct even if limited_sols is not unique or not
-    #   lexsorted as long as limited_sols is quasi-lexsorted, which is guaranteed. As mentioned
-    #   earlier, if all ``False`` in on_front is correct, the result of this function does not
-    #   change.
+    # Reason why we can specify assume_unique_lexsorted=True even when limited_sols is not
+    #   All ``False`` in on_front will be correct (, but it may not be the case for ``True``) even
+    #   if limited_sols is not unique or not lexsorted as long as limited_sols is quasi-lexsorted,
+    #   which is guaranteed. As mentioned earlier, if all ``False`` in on_front is correct, the
+    #   result of this function does not change.
     on_front = _is_pareto_front(limited_sols, assume_unique_lexsorted=True)
     return inclusive_hv - _compute_hv(limited_sols[on_front], reference_point)
 
