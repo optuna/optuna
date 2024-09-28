@@ -36,12 +36,32 @@ def _compute_exclusive_hv(
     if limited_sols.shape[0] == 0:
         return inclusive_hv
 
-    # NOTE(nabenabe): For hypervolume calculation, duplicated Pareto solutions can be ignored. As
-    # limited_sols[:, 0] is sorted, all the Pareto solutions necessary for hypervolume calculation
-    # will be filtered out with assume_unique_lexsorted=True.
-    # NOTE(nabenabe): This is a hack as described above. limited_sols is lexsorted, but can be a
-    # non-unique array. Without this hack, compute_hypervolume may become significantly slow when
-    # limited_sols have many duplicated Pareto solutions.
+    # NOTE(nabenabe): As the following line is a hack for speedup, I will describe several
+    # important points to note. Even if we do not run _is_pareto_front below, the result of this
+    # function does not change, but this function simply becomes slower.
+    #
+    # For simplicity, I call an array ``quasi-lexsorted`` if it is sorted by the first objective.
+    #
+    # Reason why it will be faster with _is_pareto_front
+    #   Hypervolume of a given solution set and a reference point does not change even when we
+    #   remove non Pareto solutions from the solution set. However, the calculation becomes slower
+    #   if the solution set contains many non Pareto solutions. By removing some obvious non Pareto
+    #   solutions, the calculation becomes faster.
+    #
+    # Reason why we run _is_pareto_front with assume_unique_lexsorted=True
+    #   assume_unique_lexsorted=True actually checks weak dominance and solutions will be weakly
+    #   dominated if there are duplications, so we can remove duplicated solutions by this option.
+    #   In other words, assume_unique_lexsorted=False may significantly slow down when limited_sols
+    #   has many duplicated Pareto solutions.
+    #
+    # NOTE(nabenabe): limited_sols can be non-unique and/or non-lexsorted, so I will describe why
+    # it is fine.
+    #
+    # Reason why it is fine to run _is_pareto_front with assume_unique_lexsorted=True.
+    #   All ``False`` in on_front will be correct even if limited_sols is not unique or not
+    #   lexsorted as long as limited_sols is quasi-lexsorted, which is guaranteed. As mentioned
+    #   earlier, if all ``False`` in on_front is correct, the result of this function does not
+    #   change.
     on_front = _is_pareto_front(limited_sols, assume_unique_lexsorted=True)
     return inclusive_hv - _compute_hv(limited_sols[on_front], reference_point)
 
@@ -95,6 +115,10 @@ def compute_hypervolume(
         on_front = _is_pareto_front(unique_lexsorted_loss_vals, assume_unique_lexsorted=True)
         sorted_pareto_sols = unique_lexsorted_loss_vals[on_front]
     else:
+        # NOTE(nabenabe): The result of this function does not change both by
+        # np.argsort(loss_vals[:, 0]) and np.unique(loss_vals, axis=0).
+        # But many duplications in loss_vals significantly slows down the function.
+        # TODO(nabenabe): Make an option to use np.unique.
         sorted_pareto_sols = loss_vals[loss_vals[:, 0].argsort()]
 
     if reference_point.shape[0] == 2:
