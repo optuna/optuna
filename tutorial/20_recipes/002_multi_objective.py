@@ -126,8 +126,7 @@ print("Number of finished trials: ", len(study.trials))
 #
 #     $ pip install plotly
 #     $ pip install scikit-learn
-#     # Required if you are running this tutorial in Jupyter Notebook.
-#     $ pip install nbformat
+#     $ pip install nbformat  # Required if you are running this tutorial in Jupyter Notebook.
 #
 # Check trials on Pareto front visually.
 optuna.visualization.plot_pareto_front(study, target_names=["FLOPS", "accuracy"])
