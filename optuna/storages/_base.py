@@ -1,17 +1,14 @@
 from __future__ import annotations
 
 import abc
-from collections.abc import Container
-from collections.abc import Sequence
-from typing import Any
-from typing import cast
+from collections.abc import Container, Sequence
+from typing import Any, cast
 
 from optuna._typing import JSONSerializable
 from optuna.distributions import BaseDistribution
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
-from optuna.trial import FrozenTrial
-from optuna.trial import TrialState
+from optuna.trial import FrozenTrial, TrialState
 
 
 DEFAULT_STUDY_NAME_PREFIX = "no-name-"
@@ -295,9 +292,7 @@ class BaseStorage(abc.ABC):
         trials = self.get_all_trials(study_id, deepcopy=False)
         if len(trials) <= trial_number:
             raise KeyError(
-                "No trial with trial number {} exists in study with study_id {}.".format(
-                    trial_number, study_id
-                )
+                f"No trial with trial number {trial_number} exists in study with study_id {study_id}."
             )
         return trials[trial_number]._trial_id
 
@@ -336,70 +331,64 @@ class BaseStorage(abc.ABC):
         Raises:
             :exc:`KeyError`:
                 If no trial with the matching ``trial_id`` exists.
-                If no such parameter exists.
         """
-        trial = self.get_trial(trial_id)
-        return trial.distributions[param_name].to_internal_repr(trial.params[param_name])
+        return cast(float, self.get_trial(trial_id).params[param_name])
 
     @abc.abstractmethod
-    def set_trial_state_values(
-        self, trial_id: int, state: TrialState, values: Sequence[float] | None = None
-    ) -> bool:
-        """Update the state and values of a trial.
-
-        Set return values of an objective function to values argument.
-        If values argument is not :obj:`None`, this method overwrites any existing trial values.
+    def set_trial_state(self, trial_id: int, state: TrialState) -> None:
+        """Set the state of a trial.
 
         Args:
             trial_id:
                 ID of the trial.
             state:
-                New state of the trial.
-            values:
-                Values of the objective function.
-
-        Returns:
-            :obj:`True` if the state is successfully updated.
-            :obj:`False` if the state is kept the same.
-            The latter happens when this method tries to update the state of
-            :obj:`~optuna.trial.TrialState.RUNNING` trial to
-            :obj:`~optuna.trial.TrialState.RUNNING`.
+                New state to set.
 
         Raises:
             :exc:`KeyError`:
                 If no trial with the matching ``trial_id`` exists.
-            :exc:`RuntimeError`:
-                If the trial is already finished.
         """
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_trial_intermediate_value(
-        self, trial_id: int, step: int, intermediate_value: float
-    ) -> None:
-        """Report an intermediate value of an objective function.
+    def set_trial_value(self, trial_id: int, value: float, state: TrialState) -> None:
+        """Set the value of a trial.
 
-        This method overwrites any existing intermediate value associated with the given step.
+        Args:
+            trial_id:
+                ID of the trial.
+            value:
+                Value of the trial.
+            state:
+                New state to set.
+
+        Raises:
+            :exc:`KeyError`:
+                If no trial with the matching ``trial_id`` exists.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def set_trial_intermediate_value(self, trial_id: int, step: int, value: float) -> None:
+        """Set the intermediate value of a trial.
 
         Args:
             trial_id:
                 ID of the trial.
             step:
-                Step of the trial (e.g., the epoch when training a neural network).
-            intermediate_value:
-                Intermediate value corresponding to the step.
+                Step of the intermediate value.
+            value:
+                Intermediate value of the trial.
 
         Raises:
             :exc:`KeyError`:
                 If no trial with the matching ``trial_id`` exists.
-            :exc:`RuntimeError`:
-                If the trial is already finished.
         """
         raise NotImplementedError
 
     @abc.abstractmethod
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
-        """Set a user-defined attribute to a trial.
+        """Register a user-defined attribute to a trial.
 
         This method overwrites any existing attribute.
 
@@ -414,14 +403,12 @@ class BaseStorage(abc.ABC):
         Raises:
             :exc:`KeyError`:
                 If no trial with the matching ``trial_id`` exists.
-            :exc:`RuntimeError`:
-                If the trial is already finished.
         """
         raise NotImplementedError
 
     @abc.abstractmethod
     def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
-        """Set an optuna-internal attribute to a trial.
+        """Register an optuna-internal attribute to a trial.
 
         This method overwrites any existing attribute.
 
@@ -436,23 +423,23 @@ class BaseStorage(abc.ABC):
         Raises:
             :exc:`KeyError`:
                 If no trial with the matching ``trial_id`` exists.
-            :exc:`RuntimeError`:
-                If the trial is already finished.
         """
         raise NotImplementedError
 
     # Basic trial access
 
     @abc.abstractmethod
-    def get_trial(self, trial_id: int) -> FrozenTrial:
-        """Read a trial.
+    def get_trial(self, trial_id: int, deepcopy: bool = True) -> FrozenTrial:
+        """Read the data of a trial.
 
         Args:
             trial_id:
                 ID of the trial.
+            deepcopy:
+                If True, return a deep copy of the trial. Otherwise, return a shallow copy.
 
         Returns:
-            Trial with a matching trial ID.
+            A :class:`~optuna.trial.FrozenTrial` object.
 
         Raises:
             :exc:`KeyError`:
@@ -461,25 +448,17 @@ class BaseStorage(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_all_trials(
-        self,
-        study_id: int,
-        deepcopy: bool = True,
-        states: Container[TrialState] | None = None,
-    ) -> list[FrozenTrial]:
-        """Read all trials in a study.
+    def get_all_trials(self, study_id: int, deepcopy: bool = True) -> list[FrozenTrial]:
+        """Read a list of trials.
 
         Args:
             study_id:
                 ID of the study.
             deepcopy:
-                Whether to copy the list of trials before returning.
-                Set to :obj:`True` if you intend to update the list or elements of the list.
-            states:
-                Trial states to filter on. If :obj:`None`, include all states.
+                If True, return a deep copy of the trial. Otherwise, return a shallow copy.
 
         Returns:
-            List of trials in the study, sorted by ``trial_id``.
+            A list of :class:`~optuna.trial.FrozenTrial` objects, sorted by ``trial_id``.
 
         Raises:
             :exc:`KeyError`:
@@ -487,138 +466,25 @@ class BaseStorage(abc.ABC):
         """
         raise NotImplementedError
 
-    def get_n_trials(
-        self, study_id: int, state: tuple[TrialState, ...] | TrialState | None = None
-    ) -> int:
-        """Count the number of trials in a study.
+    @abc.abstractmethod
+    def get_all_trials_by_states(
+        self, study_id: int, states: Sequence[TrialState], deepcopy: bool = True
+    ) -> list[FrozenTrial]:
+        """Read a list of trials by states.
 
         Args:
             study_id:
                 ID of the study.
-            state:
-                Trial states to filter on. If :obj:`None`, include all states.
+            states:
+                A sequence of states of trials to read.
+            deepcopy:
+                If True, return a deep copy of the trial. Otherwise, return a shallow copy.
 
         Returns:
-            Number of trials in the study.
+            A list of :class:`~optuna.trial.FrozenTrial` objects, sorted by ``trial_id``.
 
         Raises:
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        # TODO(hvy): Align the name and the behavior or the `state` parameter with
-        # `get_all_trials`'s `states`.
-        if isinstance(state, TrialState):
-            state = (state,)
-        return len(self.get_all_trials(study_id, deepcopy=False, states=state))
-
-    def get_best_trial(self, study_id: int) -> FrozenTrial:
-        """Return the trial with the best value in a study.
-
-        This method is valid only during single-objective optimization.
-
-        Args:
-            study_id:
-                ID of the study.
-
-        Returns:
-            The trial with the best objective value among all finished trials in the study.
-
-        Raises:
-            :exc:`KeyError`:
-                If no study with the matching ``study_id`` exists.
-            :exc:`RuntimeError`:
-                If the study has more than one direction.
-            :exc:`ValueError`:
-                If no trials have been completed.
-        """
-        all_trials = self.get_all_trials(study_id, deepcopy=False, states=[TrialState.COMPLETE])
-
-        if len(all_trials) == 0:
-            raise ValueError("No trials are completed yet.")
-
-        directions = self.get_study_directions(study_id)
-        if len(directions) > 1:
-            raise RuntimeError(
-                "Best trial can be obtained only for single-objective optimization."
-            )
-        direction = directions[0]
-
-        if direction == StudyDirection.MAXIMIZE:
-            best_trial = max(all_trials, key=lambda t: cast(float, t.value))
-        else:
-            best_trial = min(all_trials, key=lambda t: cast(float, t.value))
-
-        return best_trial
-
-    def get_trial_params(self, trial_id: int) -> dict[str, Any]:
-        """Read the parameter dictionary of a trial.
-
-        Args:
-            trial_id:
-                ID of the trial.
-
-        Returns:
-            Dictionary of a parameters. Keys are parameter names and values are internal
-            representations of the parameter values.
-
-        Raises:
-            :exc:`KeyError`:
-                If no trial with the matching ``trial_id`` exists.
-        """
-        return self.get_trial(trial_id).params
-
-    def get_trial_user_attrs(self, trial_id: int) -> dict[str, Any]:
-        """Read the user-defined attributes of a trial.
-
-        Args:
-            trial_id:
-                ID of the trial.
-
-        Returns:
-            Dictionary with the user-defined attributes of the trial.
-
-        Raises:
-            :exc:`KeyError`:
-                If no trial with the matching ``trial_id`` exists.
-        """
-        return self.get_trial(trial_id).user_attrs
-
-    def get_trial_system_attrs(self, trial_id: int) -> dict[str, Any]:
-        """Read the optuna-internal attributes of a trial.
-
-        Args:
-            trial_id:
-                ID of the trial.
-
-        Returns:
-            Dictionary with the optuna-internal attributes of the trial.
-
-        Raises:
-            :exc:`KeyError`:
-                If no trial with the matching ``trial_id`` exists.
-        """
-        return self.get_trial(trial_id).system_attrs
-
-    def remove_session(self) -> None:
-        """Clean up all connections to a database."""
-        pass
-
-    def check_trial_is_updatable(self, trial_id: int, trial_state: TrialState) -> None:
-        """Check whether a trial state is updatable.
-
-        Args:
-            trial_id:
-                ID of the trial.
-                Only used for an error message.
-            trial_state:
-                Trial state to check.
-
-        Raises:
-            :exc:`RuntimeError`:
-                If the trial is already finished.
-        """
-        if trial_state.is_finished():
-            trial = self.get_trial(trial_id)
-            raise RuntimeError(
-                "Trial#{} has already finished and can not be updated.".format(trial.number)
-            )
+        raise NotImplementedError
