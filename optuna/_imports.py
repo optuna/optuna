@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import importlib
 import types
 from types import TracebackType
 from typing import Any
-from typing import Optional
 from typing import Tuple
 from typing import Type
 
@@ -22,7 +23,7 @@ class _DeferredImportExceptionContextManager:
     """
 
     def __init__(self) -> None:
-        self._deferred: Optional[Tuple[Exception, str]] = None
+        self._deferred: Tuple[Exception, str] | None = None
 
     def __enter__(self) -> "_DeferredImportExceptionContextManager":
         """Enter the context manager.
@@ -35,10 +36,10 @@ class _DeferredImportExceptionContextManager:
 
     def __exit__(
         self,
-        exc_type: Optional[Type[Exception]],
-        exc_value: Optional[Exception],
-        traceback: Optional[TracebackType],
-    ) -> Optional[bool]:
+        exc_type: Type[Exception] | None,
+        exc_value: Exception | None,
+        traceback: TracebackType | None,
+    ) -> bool | None:
         """Exit the context manager.
 
         Args:
