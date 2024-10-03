@@ -4,7 +4,6 @@ import importlib
 import types
 from types import TracebackType
 from typing import Any
-from typing import Tuple
 from typing import Type
 
 
@@ -23,7 +22,7 @@ class _DeferredImportExceptionContextManager:
     """
 
     def __init__(self) -> None:
-        self._deferred: Tuple[Exception, str] | None = None
+        self._deferred: tuple[Exception, str] | None = None
 
     def __enter__(self) -> "_DeferredImportExceptionContextManager":
         """Enter the context manager.
