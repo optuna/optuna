@@ -792,7 +792,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         deepcopy: bool = True,
         states: Optional[Container[TrialState]] = None,
     ) -> List[FrozenTrial]:
-        trials = self._get_trials(study_id, states, None, -1)
+        trials = self._get_trials(study_id, states, set(), -1)
 
         return copy.deepcopy(trials) if deepcopy else trials
 
@@ -800,29 +800,17 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         self,
         study_id: int,
         states: Optional[Container[TrialState]],
-        included_trial_ids: Set[int] | None,
+        included_trial_ids: Set[int],
         trial_id_cursor: int,
     ) -> List[FrozenTrial]:
         print(len(included_trial_ids), trial_id_cursor)
         with _create_scoped_session(self.scoped_session) as session:
             # Ensure that the study exists.
             models.StudyModel.find_or_raise_by_id(study_id, session)
-            query = session.query(models.TrialModel.trial_id).filter(
-                models.TrialModel.study_id == study_id
-            )
-
-            if states is not None:
-                # This assertion is for type checkers, since `states` is required to be Container
-                # in the base class while `models.TrialModel.state.in_` requires Iterable.
-                assert isinstance(states, Iterable)
-                query = query.filter(models.TrialModel.state.in_(states))
-
-            trial_ids = query.all()
 
             print("Fixed version _get_trials called!")
-            trial_ids = set(trial_id_tuple[0] for trial_id_tuple in trial_ids) if included_trial_ids is None else included_trial_ids
             try:
-                trial_models = (
+                query = (
                     session.query(models.TrialModel)
                     .options(sqlalchemy_orm.selectinload(models.TrialModel.params))
                     .options(sqlalchemy_orm.selectinload(models.TrialModel.values))
@@ -830,7 +818,16 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                     .options(sqlalchemy_orm.selectinload(models.TrialModel.system_attributes))
                     .options(sqlalchemy_orm.selectinload(models.TrialModel.intermediate_values))
                     .filter(models.TrialModel.study_id == study_id)
-                    .filter(sqlalchemy.or_(models.TrialModel.trial_id.in_(trial_ids), models.TrialModel.trial_id > trial_id_cursor))
+                )
+
+                if states is not None:
+                    # This assertion is for type checkers, since `states` is required to be Container
+                    # in the base class while `models.TrialModel.state.in_` requires Iterable.
+                    assert isinstance(states, Iterable)
+                    query = query.filter(models.TrialModel.state.in_(states))
+
+                trial_models = (
+                    query.filter(sqlalchemy.or_(models.TrialModel.trial_id.in_(included_trial_ids), models.TrialModel.trial_id > trial_id_cursor))
                     .order_by(models.TrialModel.trial_id)
                     .all()
                 )
@@ -856,7 +853,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                     .order_by(models.TrialModel.trial_id)
                     .all()
                 )
-                trial_models = [t for t in trial_models if t.trial_id in trial_ids]
+                trial_models = [t for t in trial_models if t.trial_id in included_trial_ids or t.trial_id > trial_id_cursor]
 
             trials = [self._build_frozen_trial_from_trial_model(trial) for trial in trial_models]
 
