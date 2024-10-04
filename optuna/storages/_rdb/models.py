@@ -239,17 +239,28 @@ class TrialModel(BaseModel):
 
     @classmethod
     def find_or_raise_by_id(
-        cls, trial_id: int, session: orm.Session, for_update: bool = False
+        cls,
+        trial_id: int,
+        session: orm.Session,
+        for_update: bool = False,
+        include_trial_values: bool = False,
+        include_trial_params: bool = False,
+        include_trial_user_attributes: bool = False,
+        include_trial_system_attributes: bool = False,
+        include_trial_intermediate_values: bool = False,
     ) -> "TrialModel":
-        query = (
-            session.query(cls)
-            .options(orm.joinedload(cls.values))
-            .options(orm.joinedload(cls.params))
-            .options(orm.joinedload(cls.user_attributes))
-            .options(orm.joinedload(cls.system_attributes))
-            .options(orm.joinedload(cls.intermediate_values))
-            .filter(cls.trial_id == trial_id)
-        )
+        query = session.query(cls)
+        if include_trial_values:
+            query = query.options(orm.joinedload(cls.values))
+        if include_trial_params:
+            query = query.options(orm.joinedload(cls.params))
+        if include_trial_user_attributes:
+            query = query.options(orm.joinedload(cls.user_attributes))
+        if include_trial_system_attributes:
+            query = query.options(orm.joinedload(cls.system_attributes))
+        if include_trial_intermediate_values:
+            query = query.options(orm.joinedload(cls.intermediate_values))
+        query = query.filter(cls.trial_id == trial_id)
 
         # "FOR UPDATE" clause is used for row-level locking.
         # Please note that SQLite3 doesn't support this clause.
