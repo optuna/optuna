@@ -241,7 +241,15 @@ class TrialModel(BaseModel):
     def find_or_raise_by_id(
         cls, trial_id: int, session: orm.Session, for_update: bool = False
     ) -> "TrialModel":
-        query = session.query(cls).filter(cls.trial_id == trial_id)
+        query = (
+            session.query(cls)
+            .options(orm.joinedload(cls.values))
+            .options(orm.joinedload(cls.params))
+            .options(orm.joinedload(cls.user_attributes))
+            .options(orm.joinedload(cls.system_attributes))
+            .options(orm.joinedload(cls.intermediate_values))
+            .filter(cls.trial_id == trial_id)
+        )
 
         # "FOR UPDATE" clause is used for row-level locking.
         # Please note that SQLite3 doesn't support this clause.
