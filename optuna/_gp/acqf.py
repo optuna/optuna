@@ -52,6 +52,13 @@ def logei(mean: torch.Tensor, var: torch.Tensor, f0: float) -> torch.Tensor:
     val = torch.log(sigma) + st_val
     return val
 
+def logpi(mean: torch.Tensor, var: torch.Tensor, f0: float) -> torch.Tensor:
+    # Return the integral of N(mean, var) from -inf to f0
+    # This is identical to the integral of N(0, 1) from -inf to (f0-mean)/sigma
+    # Return E_{y ~ N(mean, var)}[bool(y <= f0)]
+    sigma = torch.sqrt(var)
+    return torch.special.log_ndtr((f0 - mean) / sigma)
+
 
 def ucb(mean: torch.Tensor, var: torch.Tensor, beta: float) -> torch.Tensor:
     return mean + torch.sqrt(beta * var)
