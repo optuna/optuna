@@ -5,10 +5,9 @@ from typing import Callable
 from typing import cast
 from typing import Sequence
 from typing import TYPE_CHECKING
-import warnings
 
 import numpy as np
-
+from optuna.samplers._base import _CONSTRAINTS_KEY
 import optuna
 from optuna._experimental import experimental_class, warn_experimental_argument
 from optuna.distributions import BaseDistribution
@@ -96,6 +95,7 @@ class GPSampler(BaseSampler):
         self._minimum_noise: float = prior.DEFAULT_MINIMUM_NOISE_VAR
         # We cache the kernel parameters for initial values of fitting the next time.
         self._kernel_params_cache: "gp.KernelParamsTensor | None" = None
+        self._constraints_kernel_params_cache: "list[gp.KernelParamsTensor] | None" = None
         self._optimize_n_samples: int = 2048
         self._deterministic = deterministic_objective
         self._constraints_func = constraints_func
@@ -158,30 +158,21 @@ class GPSampler(BaseSampler):
 
         _sign = -1.0 if study.direction == StudyDirection.MINIMIZE else 1.0
         score_vals = np.array([_sign * cast(float, trial.value) for trial in trials])
+        constraint_vals = trial.system_attrs.get(_CONSTRAINTS_KEY, ())
 
-        if np.any(~np.isfinite(score_vals)):
-            warnings.warn(
-                "GPSampler cannot handle infinite values. "
-                "We clamp those values to worst/best finite value."
-            )
-
-            finite_score_vals = score_vals[np.isfinite(score_vals)]
-            best_finite_score = np.max(finite_score_vals, initial=0.0)
-            worst_finite_score = np.min(finite_score_vals, initial=0.0)
-
-            score_vals = np.clip(score_vals, worst_finite_score, best_finite_score)
-
-        standarized_score_vals = (score_vals - score_vals.mean()) / max(1e-10, score_vals.std())
+        standardized_score_vals = gp.clip_and_standardize(score_vals)
+        standardized_constraint_vals = [gp.clip_and_standardize(c) for c in constraint_vals]
 
         if self._kernel_params_cache is not None and len(
             self._kernel_params_cache.inverse_squared_lengthscales
         ) != len(internal_search_space.scale_types):
             # Clear cache if the search space changes.
             self._kernel_params_cache = None
+            self._constraints_kernel_params_cache = None
 
-        kernel_params = gp.fit_kernel_params(
+        kernel_params, *constraints_kernel_params = [gp.fit_kernel_params(
             X=normalized_params,
-            Y=standarized_score_vals,
+            Y=standardized_vals,
             is_categorical=(
                 internal_search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
             ),
@@ -189,19 +180,20 @@ class GPSampler(BaseSampler):
             minimum_noise=self._minimum_noise,
             initial_kernel_params=self._kernel_params_cache,
             deterministic_objective=self._deterministic,
-        )
+        ) for standardized_vals in [standardized_score_vals, *standardized_constraint_vals]]
         self._kernel_params_cache = kernel_params
+        self._constraints_kernel_params_cache = constraints_kernel_params
 
         acqf_params = acqf.create_acqf_params(
             acqf_type=acqf.AcquisitionFunctionType.LOG_EI,
             kernel_params=kernel_params,
             search_space=internal_search_space,
             X=normalized_params,
-            Y=standarized_score_vals,
+            Y=standardized_score_vals,
         )
 
         normalized_param = self._optimize_acqf(
-            acqf_params, normalized_params[np.argmax(standarized_score_vals), :]
+            acqf_params, normalized_params[np.argmax(standardized_score_vals), :]
         )
         return gp_search_space.get_unnormalized_param(search_space, normalized_param)
 

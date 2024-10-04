@@ -6,6 +6,7 @@ import typing
 from typing import Callable
 from typing import TYPE_CHECKING
 
+import warnings
 import numpy as np
 
 from optuna.logging import get_logger
@@ -262,3 +263,19 @@ def fit_kernel_params(
         "The default initial kernel params will be used instead."
     )
     return default_initial_kernel_params
+
+
+def clip_and_standardize(values: np.ndarray) -> np.ndarray:
+    if np.any(~np.isfinite(values)):
+        warnings.warn(
+            "GPSampler cannot handle infinite values. "
+            "We clamp those values to worst/best finite value."
+        )
+
+        finite_vals = values[np.isfinite(values)]
+        best_finite_val = np.max(finite_vals, initial=0.0)
+        worst_finite_val = np.min(finite_vals, initial=0.0)
+
+        values = np.clip(values, worst_finite_val, best_finite_val)
+
+    return (values - values.mean()) / max(1e-10, values.std())
