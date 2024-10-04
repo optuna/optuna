@@ -187,6 +187,7 @@ def _local_search_discrete(
 def local_search_mixed(
     acqf_params: AcquisitionFunctionParams,
     initial_normalized_params: np.ndarray,
+    constraints_acqf_params: list[AcquisitionFunctionParams],
     *,
     tol: float = 1e-4,
     max_iter: int = 100,
@@ -268,6 +269,7 @@ def local_search_mixed(
 
 def optimize_acqf_mixed(
     acqf_params: AcquisitionFunctionParams,
+    constraints_acqf_params: list[AcquisitionFunctionParams],
     *,
     warmstart_normalized_params_array: np.ndarray | None = None,
     n_preliminary_samples: int = 2048,
@@ -289,7 +291,7 @@ def optimize_acqf_mixed(
     sampled_xs = sample_normalized_params(n_preliminary_samples, acqf_params.search_space, rng=rng)
 
     # Evaluate all values at initial samples
-    f_vals = eval_acqf_no_grad(acqf_params, sampled_xs)
+    f_vals = eval_acqf_no_grad(acqf_params, sampled_xs, constraints_acqf_params)
     assert isinstance(f_vals, np.ndarray)
 
     max_i = np.argmax(f_vals)
@@ -316,7 +318,7 @@ def optimize_acqf_mixed(
     best_f = float(f_vals[max_i])
 
     for x_warmstart in np.vstack([sampled_xs[chosen_idxs, :], warmstart_normalized_params_array]):
-        x, f = local_search_mixed(acqf_params, x_warmstart, tol=tol)
+        x, f = local_search_mixed(acqf_params, x_warmstart, constraints_acqf_params, tol=tol)
         if f > best_f:
             best_x = x
             best_f = f

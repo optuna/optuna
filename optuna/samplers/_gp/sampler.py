@@ -7,11 +7,14 @@ from typing import Sequence
 from typing import TYPE_CHECKING
 
 import numpy as np
-from optuna.samplers._base import _CONSTRAINTS_KEY
+
 import optuna
-from optuna._experimental import experimental_class, warn_experimental_argument
+from optuna._experimental import experimental_class
+from optuna._experimental import warn_experimental_argument
 from optuna.distributions import BaseDistribution
-from optuna.samplers._base import BaseSampler, _process_constraints_after_trial
+from optuna.samplers._base import _CONSTRAINTS_KEY
+from optuna.samplers._base import _process_constraints_after_trial
+from optuna.samplers._base import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
@@ -103,7 +106,6 @@ class GPSampler(BaseSampler):
         if constraints_func is not None:
             warn_experimental_argument("constraints_func")
 
-
     def reseed_rng(self) -> None:
         self._rng.rng.seed()
         self._independent_sampler.reseed_rng()
@@ -122,6 +124,7 @@ class GPSampler(BaseSampler):
     def _optimize_acqf(
         self,
         acqf_params: "acqf.AcquisitionFunctionParams",
+        constraints_acqf_params: list["acqf.AcquisitionFunctionParams"],
         best_params: np.ndarray,
     ) -> np.ndarray:
         # Advanced users can override this method to change the optimization algorithm.
@@ -129,6 +132,7 @@ class GPSampler(BaseSampler):
         # Particularly, we may remove this function in future refactoring.
         normalized_params, _acqf_val = optim_mixed.optimize_acqf_mixed(
             acqf_params,
+            constraints_acqf_params,
             warmstart_normalized_params_array=best_params[None, :],
             n_preliminary_samples=2048,
             n_local_search=10,
@@ -170,17 +174,20 @@ class GPSampler(BaseSampler):
             self._kernel_params_cache = None
             self._constraints_kernel_params_cache = None
 
-        kernel_params, *constraints_kernel_params = [gp.fit_kernel_params(
-            X=normalized_params,
-            Y=standardized_vals,
-            is_categorical=(
-                internal_search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
-            ),
-            log_prior=self._log_prior,
-            minimum_noise=self._minimum_noise,
-            initial_kernel_params=self._kernel_params_cache,
-            deterministic_objective=self._deterministic,
-        ) for standardized_vals in [standardized_score_vals, *standardized_constraint_vals]]
+        kernel_params, *constraints_kernel_params = [
+            gp.fit_kernel_params(
+                X=normalized_params,
+                Y=standardized_vals,
+                is_categorical=(
+                    internal_search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
+                ),
+                log_prior=self._log_prior,
+                minimum_noise=self._minimum_noise,
+                initial_kernel_params=self._kernel_params_cache,
+                deterministic_objective=self._deterministic,
+            )
+            for standardized_vals in [standardized_score_vals, *standardized_constraint_vals]
+        ]
         self._kernel_params_cache = kernel_params
         self._constraints_kernel_params_cache = constraints_kernel_params
 
@@ -191,9 +198,21 @@ class GPSampler(BaseSampler):
             X=normalized_params,
             Y=standardized_score_vals,
         )
+        constraints_acqf_params = [
+            acqf.create_acqf_params(
+                acqf_type=acqf.AcquisitionFunctionType.LOG_PI,
+                kernel_params=params,
+                search_space=internal_search_space,
+                X=normalized_params,
+                Y=vals,
+            )
+            for params, vals in zip(constraints_kernel_params, standardized_constraint_vals)
+        ]
 
         normalized_param = self._optimize_acqf(
-            acqf_params, normalized_params[np.argmax(standardized_score_vals), :]
+            acqf_params,
+            constraints_acqf_params,
+            normalized_params[np.argmax(standardized_score_vals), :],
         )
         return gp_search_space.get_unnormalized_param(search_space, normalized_param)
 

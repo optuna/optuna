@@ -6,6 +6,7 @@ import math
 from typing import TYPE_CHECKING
 
 import numpy as np
+from functools import reduce
 
 from optuna._gp.gp import kernel
 from optuna._gp.gp import KernelParamsTensor
@@ -72,8 +73,9 @@ def lcb(mean: torch.Tensor, var: torch.Tensor, beta: float) -> torch.Tensor:
 # NOTE: Acquisition function is not class on purpose to integrate numba in the future.
 class AcquisitionFunctionType(IntEnum):
     LOG_EI = 0
-    UCB = 1
-    LCB = 2
+    LOG_PI = 1
+    UCB = 2
+    LCB = 3
 
 
 @dataclass(frozen=True)
@@ -131,6 +133,8 @@ def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.
 
     if acqf_params.acqf_type == AcquisitionFunctionType.LOG_EI:
         return logei(mean=mean, var=var + acqf_params.acqf_stabilizing_noise, f0=acqf_params.max_Y)
+    elif acqf_params.acqf_type == AcquisitionFunctionType.LOG_PI:
+        return logpi(mean=mean, var=var + acqf_params.acqf_stabilizing_noise, f0=0.0)
     elif acqf_params.acqf_type == AcquisitionFunctionType.UCB:
         assert acqf_params.beta is not None, "beta must be given to UCB."
         return ucb(mean=mean, var=var, beta=acqf_params.beta)
@@ -140,18 +144,26 @@ def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.
     else:
         assert False, "Unknown acquisition function type."
 
+def eval_acqf_with_constraints(
+    acqf_params: AcquisitionFunctionParams,
+    constraints_acqf_params: list[AcquisitionFunctionParams],
+    x: torch.Tensor
+) -> torch.Tensor:
+    return reduce(lambda a, b: a * b, [
+        eval_acqf(params, x) for params in constraints_acqf_params
+    ]) * eval_acqf(acqf_params, x)
 
-def eval_acqf_no_grad(acqf_params: AcquisitionFunctionParams, x: np.ndarray) -> np.ndarray:
+def eval_acqf_no_grad(acqf_params: AcquisitionFunctionParams, x: np.ndarray, constraints_acqf_params: list[AcquisitionFunctionParams] = []) -> np.ndarray:
     with torch.no_grad():
-        return eval_acqf(acqf_params, torch.from_numpy(x)).detach().numpy()
+        return eval_acqf_with_constraints(acqf_params, constraints_acqf_params, torch.from_numpy(x)).detach().numpy()
 
 
 def eval_acqf_with_grad(
-    acqf_params: AcquisitionFunctionParams, x: np.ndarray
+    acqf_params: AcquisitionFunctionParams, x: np.ndarray, constraints_acqf_params: list[AcquisitionFunctionParams] = []
 ) -> tuple[float, np.ndarray]:
     assert x.ndim == 1
     x_tensor = torch.from_numpy(x)
     x_tensor.requires_grad_(True)
-    val = eval_acqf(acqf_params, x_tensor)
+    val = eval_acqf_with_constraints(acqf_params, constraints_acqf_params, x_tensor)
     val.backward()  # type: ignore
     return val.item(), x_tensor.grad.detach().numpy()  # type: ignore
