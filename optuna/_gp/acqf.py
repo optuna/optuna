@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import IntEnum
+from functools import reduce
 import math
 from typing import TYPE_CHECKING
 
 import numpy as np
-from functools import reduce
 
 from optuna._gp.gp import kernel
 from optuna._gp.gp import KernelParamsTensor
@@ -52,6 +52,7 @@ def logei(mean: torch.Tensor, var: torch.Tensor, f0: float) -> torch.Tensor:
     st_val = standard_logei((mean - f0) / sigma)
     val = torch.log(sigma) + st_val
     return val
+
 
 def logpi(mean: torch.Tensor, var: torch.Tensor, f0: float) -> torch.Tensor:
     # Return the integral of N(mean, var) from -inf to f0
@@ -144,22 +145,34 @@ def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.
     else:
         assert False, "Unknown acquisition function type."
 
+
 def eval_acqf_with_constraints(
     acqf_params: AcquisitionFunctionParams,
     constraints_acqf_params: list[AcquisitionFunctionParams],
-    x: torch.Tensor
+    x: torch.Tensor,
 ) -> torch.Tensor:
-    return reduce(lambda a, b: a * b, [
-        eval_acqf(params, x) for params in constraints_acqf_params
-    ]) * eval_acqf(acqf_params, x)
+    return reduce(
+        lambda a, b: a * b, [eval_acqf(params, x) for params in constraints_acqf_params]
+    ) * eval_acqf(acqf_params, x)
 
-def eval_acqf_no_grad(acqf_params: AcquisitionFunctionParams, x: np.ndarray, constraints_acqf_params: list[AcquisitionFunctionParams] = []) -> np.ndarray:
+
+def eval_acqf_no_grad(
+    acqf_params: AcquisitionFunctionParams,
+    x: np.ndarray,
+    constraints_acqf_params: list[AcquisitionFunctionParams] = [],
+) -> np.ndarray:
     with torch.no_grad():
-        return eval_acqf_with_constraints(acqf_params, constraints_acqf_params, torch.from_numpy(x)).detach().numpy()
+        return (
+            eval_acqf_with_constraints(acqf_params, constraints_acqf_params, torch.from_numpy(x))
+            .detach()
+            .numpy()
+        )
 
 
 def eval_acqf_with_grad(
-    acqf_params: AcquisitionFunctionParams, x: np.ndarray, constraints_acqf_params: list[AcquisitionFunctionParams] = []
+    acqf_params: AcquisitionFunctionParams,
+    x: np.ndarray,
+    constraints_acqf_params: list[AcquisitionFunctionParams] = [],
 ) -> tuple[float, np.ndarray]:
     assert x.ndim == 1
     x_tensor = torch.from_numpy(x)

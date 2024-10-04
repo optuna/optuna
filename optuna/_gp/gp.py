@@ -5,8 +5,8 @@ import math
 import typing
 from typing import Callable
 from typing import TYPE_CHECKING
-
 import warnings
+
 import numpy as np
 
 from optuna.logging import get_logger
