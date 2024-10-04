@@ -828,6 +828,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
                 trial_models = (
                     query.filter(sqlalchemy.or_(models.TrialModel.trial_id.in_(included_trial_ids), models.TrialModel.trial_id > trial_id_cursor))
+                    # query.filter(sqlalchemy.or_(models.TrialModel.trial_id.in_(set()), models.TrialModel.trial_id > trial_id_cursor))
                     .order_by(models.TrialModel.trial_id)
                     .all()
                 )
