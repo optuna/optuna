@@ -10,9 +10,9 @@ import warnings
 import numpy as np
 
 import optuna
-from optuna._experimental import experimental_class
+from optuna._experimental import experimental_class, warn_experimental_argument
 from optuna.distributions import BaseDistribution
-from optuna.samplers._base import BaseSampler
+from optuna.samplers._base import BaseSampler, _process_constraints_after_trial
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
@@ -84,6 +84,7 @@ class GPSampler(BaseSampler):
         independent_sampler: BaseSampler | None = None,
         n_startup_trials: int = 10,
         deterministic_objective: bool = False,
+        constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
     ) -> None:
         self._rng = LazyRandomState(seed)
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
@@ -97,6 +98,11 @@ class GPSampler(BaseSampler):
         self._kernel_params_cache: "gp.KernelParamsTensor | None" = None
         self._optimize_n_samples: int = 2048
         self._deterministic = deterministic_objective
+        self._constraints_func = constraints_func
+
+        if constraints_func is not None:
+            warn_experimental_argument("constraints_func")
+
 
     def reseed_rng(self) -> None:
         self._rng.rng.seed()
@@ -221,4 +227,6 @@ class GPSampler(BaseSampler):
         state: TrialState,
         values: Sequence[float] | None,
     ) -> None:
+        if self._constraints_func is not None:
+            _process_constraints_after_trial(self._constraints_func, study, trial, state)
         self._independent_sampler.after_trial(study, trial, state, values)
