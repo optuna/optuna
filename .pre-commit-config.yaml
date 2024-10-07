@@ -7,14 +7,15 @@ default_language_version:
 
 repos:
   - repo: https://github.com/psf/black
-    rev: 24.4.0
+    rev: 24.8.0
     hooks:
       - id: black
+        exclude: .eggs|.git|.hg|.mypy_cache|.venv|venv|_build|buck-out|build|dist|docs
   - repo: https://github.com/pycqa/flake8
-    rev: 7.0.0
+    rev: 7.1.1
     hooks:
       - id: flake8
-        exclude: .venv|venv|build|tutorial|.asv
+        exclude: .venv|venv|build|tutorial|.asv|docs/visualization_examples|docs/visualization_matplotlib_examples
         args: [
             "--max-line-length=99",
             "--ignore=E203,E704,W503",
@@ -25,7 +26,7 @@ repos:
     hooks:
       - id: isort
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.9.0
+    rev: v1.11.2
     hooks:
     - id: mypy
       additional_dependencies: [
@@ -48,5 +49,4 @@ repos:
         --extra-checks,
         --no-implicit-reexport,
         --ignore-missing-imports,
-        --allow-redefinition,
       ]
