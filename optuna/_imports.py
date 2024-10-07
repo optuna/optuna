@@ -1,10 +1,16 @@
+from __future__ import annotations
+
 import importlib
 import types
 from types import TracebackType
 from typing import Any
-from typing import Optional
-from typing import Tuple
 from typing import Type
+
+
+_INTEGRATION_IMPORT_ERROR_TEMPLATE = (
+    "\nCould not find `optuna-integration` for `{0}`.\n"
+    "Please run `pip install optuna-integration[{0}]`."
+)
 
 
 class _DeferredImportExceptionContextManager:
@@ -16,7 +22,7 @@ class _DeferredImportExceptionContextManager:
     """
 
     def __init__(self) -> None:
-        self._deferred: Optional[Tuple[Exception, str]] = None
+        self._deferred: tuple[Exception, str] | None = None
 
     def __enter__(self) -> "_DeferredImportExceptionContextManager":
         """Enter the context manager.
@@ -29,10 +35,10 @@ class _DeferredImportExceptionContextManager:
 
     def __exit__(
         self,
-        exc_type: Optional[Type[Exception]],
-        exc_value: Optional[Exception],
-        traceback: Optional[TracebackType],
-    ) -> Optional[bool]:
+        exc_type: Type[Exception] | None,
+        exc_value: Exception | None,
+        traceback: TracebackType | None,
+    ) -> bool | None:
         """Exit the context manager.
 
         Args:

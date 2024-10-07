@@ -72,7 +72,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     For further information about PED-ANOVA algorithm, please refer to the following paper:
 
     - `PED-ANOVA: Efficiently Quantifying Hyperparameter Importance in Arbitrary Subspaces
-      <https://arxiv.org/abs/2304.10255>`_
+      <https://arxiv.org/abs/2304.10255>`__
 
     .. note::
 
@@ -81,7 +81,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
 
     .. note::
 
-        Please refer to `the original work <https://github.com/nabenabe0928/local-anova>`_.
+        Please refer to `the original work <https://github.com/nabenabe0928/local-anova>`__.
 
     Args:
         baseline_quantile:
@@ -114,7 +114,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             study = optuna.create_study()
             study.optimize(objective, n_trials=100)
             evaluator = PedAnovaImportanceEvaluator()
-            evaluator.evaluate(study)
+            importance = optuna.importance.get_param_importances(study, evaluator=evaluator)
 
     """
 

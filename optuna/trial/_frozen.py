@@ -1,13 +1,13 @@
+from __future__ import annotations
+
+from collections.abc import Mapping
+from collections.abc import Sequence
 import datetime
 import math
 from typing import Any
 from typing import cast
 from typing import Dict
-from typing import List
-from typing import Mapping
-from typing import Optional
 from typing import overload
-from typing import Sequence
 import warnings
 
 from optuna import distributions
@@ -142,21 +142,21 @@ class FrozenTrial(BaseTrial):
         self,
         number: int,
         state: TrialState,
-        value: Optional[float],
-        datetime_start: Optional[datetime.datetime],
-        datetime_complete: Optional[datetime.datetime],
-        params: Dict[str, Any],
-        distributions: Dict[str, BaseDistribution],
-        user_attrs: Dict[str, Any],
-        system_attrs: Dict[str, Any],
-        intermediate_values: Dict[int, float],
+        value: float | None,
+        datetime_start: datetime.datetime | None,
+        datetime_complete: datetime.datetime | None,
+        params: dict[str, Any],
+        distributions: dict[str, BaseDistribution],
+        user_attrs: dict[str, Any],
+        system_attrs: dict[str, Any],
+        intermediate_values: dict[int, float],
         trial_id: int,
         *,
-        values: Optional[Sequence[float]] = None,
+        values: Sequence[float] | None = None,
     ) -> None:
         self._number = number
         self.state = state
-        self._values: Optional[List[float]] = None
+        self._values: list[float] | None = None
         if value is not None and values is not None:
             raise ValueError("Specify only one of `value` and `values`.")
         elif value is not None:
@@ -211,7 +211,7 @@ class FrozenTrial(BaseTrial):
         low: float,
         high: float,
         *,
-        step: Optional[float] = None,
+        step: float | None = None,
         log: bool = False,
     ) -> float:
         return self._suggest(name, FloatDistribution(low, high, log=log, step=step))
@@ -372,7 +372,7 @@ class FrozenTrial(BaseTrial):
         self._number = value
 
     @property
-    def value(self) -> Optional[float]:
+    def value(self) -> float | None:
         if self._values is not None:
             if len(self._values) > 1:
                 raise RuntimeError(
@@ -382,7 +382,7 @@ class FrozenTrial(BaseTrial):
         return None
 
     @value.setter
-    def value(self, v: Optional[float]) -> None:
+    def value(self, v: float | None) -> None:
         if self._values is not None:
             if len(self._values) > 1:
                 raise RuntimeError(
@@ -397,10 +397,10 @@ class FrozenTrial(BaseTrial):
     # These `_get_values`, `_set_values`, and `values = property(_get_values, _set_values)` are
     # defined to pass the mypy.
     # See https://github.com/python/mypy/issues/3004#issuecomment-726022329.
-    def _get_values(self) -> Optional[List[float]]:
+    def _get_values(self) -> list[float] | None:
         return self._values
 
-    def _set_values(self, v: Optional[Sequence[float]]) -> None:
+    def _set_values(self, v: Sequence[float] | None) -> None:
         if v is not None:
             self._values = list(v)
         else:
@@ -409,39 +409,39 @@ class FrozenTrial(BaseTrial):
     values = property(_get_values, _set_values)
 
     @property
-    def datetime_start(self) -> Optional[datetime.datetime]:
+    def datetime_start(self) -> datetime.datetime | None:
         return self._datetime_start
 
     @datetime_start.setter
-    def datetime_start(self, value: Optional[datetime.datetime]) -> None:
+    def datetime_start(self, value: datetime.datetime | None) -> None:
         self._datetime_start = value
 
     @property
-    def params(self) -> Dict[str, Any]:
+    def params(self) -> dict[str, Any]:
         return self._params
 
     @params.setter
-    def params(self, params: Dict[str, Any]) -> None:
+    def params(self, params: dict[str, Any]) -> None:
         self._params = params
 
     @property
-    def distributions(self) -> Dict[str, BaseDistribution]:
+    def distributions(self) -> dict[str, BaseDistribution]:
         return self._distributions
 
     @distributions.setter
-    def distributions(self, value: Dict[str, BaseDistribution]) -> None:
+    def distributions(self, value: dict[str, BaseDistribution]) -> None:
         self._distributions = value
 
     @property
-    def user_attrs(self) -> Dict[str, Any]:
+    def user_attrs(self) -> dict[str, Any]:
         return self._user_attrs
 
     @user_attrs.setter
-    def user_attrs(self, value: Dict[str, Any]) -> None:
+    def user_attrs(self, value: dict[str, Any]) -> None:
         self._user_attrs = value
 
     @property
-    def system_attrs(self) -> Dict[str, Any]:
+    def system_attrs(self) -> dict[str, Any]:
         return self._system_attrs
 
     @system_attrs.setter
@@ -449,7 +449,7 @@ class FrozenTrial(BaseTrial):
         self._system_attrs = cast(Dict[str, Any], value)
 
     @property
-    def last_step(self) -> Optional[int]:
+    def last_step(self) -> int | None:
         """Return the maximum step of :attr:`intermediate_values` in the trial.
 
         Returns:
@@ -462,7 +462,7 @@ class FrozenTrial(BaseTrial):
             return max(self.intermediate_values.keys())
 
     @property
-    def duration(self) -> Optional[datetime.timedelta]:
+    def duration(self) -> datetime.timedelta | None:
         """Return the elapsed time taken to complete the trial.
 
         Returns:
@@ -478,13 +478,13 @@ class FrozenTrial(BaseTrial):
 def create_trial(
     *,
     state: TrialState = TrialState.COMPLETE,
-    value: Optional[float] = None,
-    values: Optional[Sequence[float]] = None,
-    params: Optional[Dict[str, Any]] = None,
-    distributions: Optional[Dict[str, BaseDistribution]] = None,
-    user_attrs: Optional[Dict[str, Any]] = None,
-    system_attrs: Optional[Dict[str, Any]] = None,
-    intermediate_values: Optional[Dict[int, float]] = None,
+    value: float | None = None,
+    values: Sequence[float] | None = None,
+    params: dict[str, Any] | None = None,
+    distributions: dict[str, BaseDistribution] | None = None,
+    user_attrs: dict[str, Any] | None = None,
+    system_attrs: dict[str, Any] | None = None,
+    intermediate_values: dict[int, float] | None = None,
 ) -> FrozenTrial:
     """Create a new :class:`~optuna.trial.FrozenTrial`.
 
@@ -569,7 +569,7 @@ def create_trial(
         datetime_start = datetime.datetime.now()
 
     if state.is_finished():
-        datetime_complete: Optional[datetime.datetime] = datetime_start
+        datetime_complete: datetime.datetime | None = datetime_start
     else:
         datetime_complete = None
 

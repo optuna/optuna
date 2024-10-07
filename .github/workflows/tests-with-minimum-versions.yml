@@ -63,16 +63,23 @@ jobs:
         python -c 'import optuna'
         optuna --version
 
-        pip install --progress-bar off .[test]
+        pip install --progress-bar off .[test] --extra-index-url https://download.pytorch.org/whl/cpu
         pip install --progress-bar off .[optional] --extra-index-url https://download.pytorch.org/whl/cpu
-        # TODO(c-bata): Remove a version constraint after releasing https://github.com/cunla/fakeredis-py/pull/303
-        pip install --progress-bar off 'fakeredis[lua]<2.21.2'
 
     - name: Install dependencies with minimum versions
       run: |
         # Install dependencies with minimum versions.
-        pip uninstall -y alembic cmaes packaging sqlalchemy plotly scikit-learn
-        pip install alembic==1.5.0 cmaes==0.10.0 packaging==20.0 sqlalchemy==1.3.0 numpy==1.20.3 tqdm==4.27.0 colorlog==0.3 PyYAML==5.1
+        pip uninstall -y alembic cmaes packaging sqlalchemy plotly scikit-learn pillow
+        pip install alembic==1.5.0 cmaes==0.10.0 packaging==20.0 sqlalchemy==1.3.0 tqdm==4.27.0 colorlog==0.3 PyYAML==5.1 'pillow<10.4.0'
+        pip uninstall -y matplotlib pandas scipy
+        # Python v3.6 was dropped at NumPy v1.20.3.
+        if [ "${{ matrix.python-version }}" = "3.7" ]; then
+          pip install matplotlib==3.5.3 pandas==1.3.5 scipy==1.7.3 numpy==1.20.3
+        elif [ "${{ matrix.python-version }}" = "3.8" ]; then
+          pip install matplotlib==3.7.5 pandas==2.0.3 scipy==1.10.1 numpy==1.20.3
+        elif [ "${{ matrix.python-version }}" = "3.9" ]; then
+          pip install matplotlib==3.8.4 pandas==2.2.2 scipy==1.13.0 numpy==1.26.4
+        fi
         pip install plotly==5.0.0 scikit-learn==0.24.2  # optional extras
 
     - name: Output installed packages

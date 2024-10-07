@@ -6,11 +6,10 @@ from collections.abc import Sequence
 import hashlib
 from typing import Any
 from typing import TYPE_CHECKING
-import warnings
 
 import optuna
+from optuna._experimental import warn_experimental_argument
 from optuna.distributions import BaseDistribution
-from optuna.exceptions import ExperimentalWarning
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.samplers._random import RandomSampler
@@ -44,7 +43,35 @@ class NSGAIISampler(BaseSampler):
     For further information about NSGA-II, please refer to the following paper:
 
     - `A fast and elitist multiobjective genetic algorithm: NSGA-II
-      <https://doi.org/10.1109/4235.996017>`_
+      <https://doi.org/10.1109/4235.996017>`__
+
+    .. note::
+        :class:`~optuna.samplers.TPESampler` became much faster in v4.0.0 and supports several
+        features not supported by ``NSGAIISampler`` such as handling of dynamic search
+        space and categorical distance. To use :class:`~optuna.samplers.TPESampler`, you need to
+        explicitly specify the sampler as follows:
+
+        .. testcode::
+
+            import optuna
+
+
+            def objective(trial):
+                x = trial.suggest_float("x", -100, 100)
+                y = trial.suggest_categorical("y", [-1, 0, 1])
+                f1 = x**2 + y
+                f2 = -((x - 2) ** 2 + y)
+                return f1, f2
+
+
+            # We minimize the first objective and maximize the second objective.
+            sampler = optuna.samplers.TPESampler()
+            study = optuna.create_study(directions=["minimize", "maximize"], sampler=sampler)
+            study.optimize(objective, n_trials=100)
+
+        Please also check `our article
+        <https://medium.com/optuna/significant-speed-up-of-multi-objective-tpesampler-in-optuna-v4-0-0-2bacdcd1d99b>`__
+        for more details of the speedup in v4.0.0.
 
     Args:
         population_size:
@@ -161,31 +188,15 @@ class NSGAIISampler(BaseSampler):
             raise ValueError("`population_size` must be greater than or equal to 2.")
 
         if constraints_func is not None:
-            warnings.warn(
-                "The constraints_func option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_argument("constraints_func")
         if after_trial_strategy is not None:
-            warnings.warn(
-                "The after_trial_strategy option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_argument("after_trial_strategy")
 
         if child_generation_strategy is not None:
-            warnings.warn(
-                "The child_generation_strategy option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_argument("child_generation_strategy")
 
         if elite_population_selection_strategy is not None:
-            warnings.warn(
-                "The elite_population_selection_strategy option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
+            warn_experimental_argument("elite_population_selection_strategy")
 
         if crossover is None:
             crossover = UniformCrossover(swapping_prob)

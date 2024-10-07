@@ -23,7 +23,7 @@ class SBXCrossover(BaseCrossover):
     - `Deb, K. and R. Agrawal.
       “Simulated Binary Crossover for Continuous Search Space.”
       Complex Syst. 9 (1995): n. pag.
-      <https://www.complex-systems.com/abstracts/v09_i02_a02/>`_
+      <https://www.complex-systems.com/abstracts/v09_i02_a02/>`__
 
     Args:
         eta:

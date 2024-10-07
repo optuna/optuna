@@ -5,7 +5,8 @@ import pytest
 
 from optuna.study import StudyDirection
 from optuna.study._multi_objective import _dominates
-from optuna.study._multi_objective import _fast_non_dominated_sort
+from optuna.study._multi_objective import _fast_non_domination_rank
+from optuna.study._multi_objective import _normalize_value
 from optuna.trial import create_trial
 from optuna.trial import TrialState
 
@@ -151,13 +152,20 @@ def test_dominates_complete_vs_incomplete(t1_state: TrialState) -> None:
         ),  # Three objectives with duplicate values are included.
     ],
 )
-def test_fast_non_dominated_sort(trial_values: list[float], trial_ranks: list[int]) -> None:
-    ranks = list(_fast_non_dominated_sort(np.array(trial_values)))
+def test_fast_non_domination_rank(trial_values: list[float], trial_ranks: list[int]) -> None:
+    ranks = list(_fast_non_domination_rank(np.array(trial_values)))
     assert np.array_equal(ranks, trial_ranks)
 
 
-def test_fast_non_dominated_sort_invalid() -> None:
+def test_fast_non_domination_rank_invalid() -> None:
     with pytest.raises(ValueError):
-        _fast_non_dominated_sort(
+        _fast_non_domination_rank(
             np.array([[1.0, 2.0], [3.0, 4.0]]), penalty=np.array([1.0, 2.0, 3.0])
         )
+
+
+def test_normalize_value() -> None:
+    assert _normalize_value(1.0, StudyDirection.MINIMIZE) == 1.0
+    assert _normalize_value(1.0, StudyDirection.MAXIMIZE) == -1.0
+    assert _normalize_value(None, StudyDirection.MINIMIZE) == float("inf")
+    assert _normalize_value(None, StudyDirection.MAXIMIZE) == float("inf")

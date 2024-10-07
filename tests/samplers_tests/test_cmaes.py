@@ -1,8 +1,7 @@
+from __future__ import annotations
+
 import math
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
 from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
@@ -44,9 +43,7 @@ def test_lr_adapt_experimental_warning() -> None:
     [(False, "optuna.samplers._cmaes.cmaes.CMA"), (True, "optuna.samplers._cmaes.cmaes.SepCMA")],
 )
 @pytest.mark.parametrize("popsize", [None, 8])
-def test_init_cmaes_opts(
-    use_separable_cma: bool, cma_class_str: str, popsize: Optional[int]
-) -> None:
+def test_init_cmaes_opts(use_separable_cma: bool, cma_class_str: str, popsize: int | None) -> None:
     sampler = optuna.samplers.CmaEsSampler(
         x0={"x": 0, "y": 0},
         sigma0=0.1,
@@ -80,7 +77,7 @@ def test_init_cmaes_opts(
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 @pytest.mark.parametrize("popsize", [None, 8])
-def test_init_cmaes_opts_with_margin(popsize: Optional[int]) -> None:
+def test_init_cmaes_opts_with_margin(popsize: int | None) -> None:
     sampler = optuna.samplers.CmaEsSampler(
         x0={"x": 0, "y": 0},
         sigma0=0.1,
@@ -115,7 +112,7 @@ def test_init_cmaes_opts_with_margin(popsize: Optional[int]) -> None:
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 @pytest.mark.parametrize("popsize", [None, 8])
-def test_init_cmaes_opts_lr_adapt(popsize: Optional[int]) -> None:
+def test_init_cmaes_opts_lr_adapt(popsize: int | None) -> None:
     sampler = optuna.samplers.CmaEsSampler(
         x0={"x": 0, "y": 0},
         sigma0=0.1,
@@ -319,7 +316,7 @@ def test_get_trials() -> None:
         assert trials[1].value == 2.0
 
 
-def _create_trials() -> List[FrozenTrial]:
+def _create_trials() -> list[FrozenTrial]:
     trials = []
     trials.append(
         FrozenTrial(
@@ -362,7 +359,7 @@ def _create_trials() -> List[FrozenTrial]:
         ({"with_margin": False, "use_separable_cma": True}, "sepcma:"),
     ],
 )
-def test_sampler_attr_key(options: Dict[str, bool], key: str) -> None:
+def test_sampler_attr_key(options: dict[str, bool], key: str) -> None:
     # Test sampler attr_key property.
     sampler = optuna.samplers.CmaEsSampler(
         with_margin=options["with_margin"], use_separable_cma=options["use_separable_cma"]
@@ -385,7 +382,7 @@ def test_sampler_attr_key(options: Dict[str, bool], key: str) -> None:
 
 
 @pytest.mark.parametrize("popsize", [None, 16])
-def test_population_size_is_multiplied_when_enable_ipop(popsize: Optional[int]) -> None:
+def test_population_size_is_multiplied_when_enable_ipop(popsize: int | None) -> None:
     inc_popsize = 2
     sampler = optuna.samplers.CmaEsSampler(
         x0={"x": 0, "y": 0},
@@ -429,7 +426,7 @@ def test_population_size_is_multiplied_when_enable_ipop(popsize: Optional[int]) 
 
 
 @pytest.mark.parametrize("sampler_opts", [{}, {"use_separable_cma": True}, {"with_margin": True}])
-def test_restore_optimizer_from_substrings(sampler_opts: Dict[str, Any]) -> None:
+def test_restore_optimizer_from_substrings(sampler_opts: dict[str, Any]) -> None:
     popsize = 8
     sampler = optuna.samplers.CmaEsSampler(popsize=popsize, **sampler_opts)
     optimizer = sampler._restore_optimizer([])
@@ -465,7 +462,7 @@ def test_restore_optimizer_from_substrings(sampler_opts: Dict[str, Any]) -> None
         {"restart_strategy": "bipop", "with_margin": True},
     ],
 )
-def test_restore_optimizer_after_restart(sampler_opts: Dict[str, Any]) -> None:
+def test_restore_optimizer_after_restart(sampler_opts: dict[str, Any]) -> None:
     def objective(trial: optuna.Trial) -> float:
         x1 = trial.suggest_float("x1", -10, 10, step=1)
         x2 = trial.suggest_float("x2", -10, 10)
@@ -498,7 +495,7 @@ def test_restore_optimizer_after_restart(sampler_opts: Dict[str, Any]) -> None:
     ],
 )
 def test_restore_optimizer_with_other_option(
-    sampler_opts: Dict[str, Any], restart_strategy: str
+    sampler_opts: dict[str, Any], restart_strategy: str
 ) -> None:
     def objective(trial: optuna.Trial) -> float:
         x1 = trial.suggest_float("x1", -10, 10, step=1)
@@ -528,7 +525,7 @@ def test_restore_optimizer_with_other_option(
         {"restart_strategy": "bipop", "with_margin": True},
     ],
 )
-def test_get_solution_trials(sampler_opts: Dict[str, Any]) -> None:
+def test_get_solution_trials(sampler_opts: dict[str, Any]) -> None:
     def objective(trial: optuna.Trial) -> float:
         x1 = trial.suggest_float("x1", -10, 10, step=1)
         x2 = trial.suggest_float("x2", -10, 10)
@@ -556,7 +553,7 @@ def test_get_solution_trials(sampler_opts: Dict[str, Any]) -> None:
     ],
 )
 def test_get_solution_trials_with_other_options(
-    sampler_opts: Dict[str, Any], restart_strategy: str
+    sampler_opts: dict[str, Any], restart_strategy: str
 ) -> None:
     def objective(trial: optuna.Trial) -> float:
         x1 = trial.suggest_float("x1", -10, 10, step=1)
@@ -583,7 +580,7 @@ def test_get_solution_trials_with_other_options(
         {"restart_strategy": "bipop", "with_margin": True},
     ],
 )
-def test_get_solution_trials_after_restart(sampler_opts: Dict[str, Any]) -> None:
+def test_get_solution_trials_after_restart(sampler_opts: dict[str, Any]) -> None:
     def objective(trial: optuna.Trial) -> float:
         x1 = trial.suggest_float("x1", -10, 10, step=1)
         x2 = trial.suggest_float("x2", -10, 10)

@@ -13,7 +13,7 @@ _logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from typing import BinaryIO
 
-    from ._protocol import ArtifactStore
+    from optuna.artifacts._protocol import ArtifactStore
 
 
 class Backoff:
@@ -34,7 +34,11 @@ class Backoff:
            def objective(trial: optuna.Trial) -> float:
                ... = trial.suggest_float("x", -10, 10)
                file_path = generate_example(...)
-               upload_artifact(trial, file_path, artifact_store)
+               upload_artifact(
+                   artifact_store=artifact_store,
+                   file_path=file_path,
+                   study_or_trial=trial,
+               )
                return ...
     """
 
@@ -108,6 +112,6 @@ class Backoff:
 if TYPE_CHECKING:
     # A mypy-runtime assertion to ensure that the Backoff middleware implements
     # all abstract methods in ArtifactStore.
-    from . import FileSystemArtifactStore
+    from optuna.artifacts import FileSystemArtifactStore
 
     _: ArtifactStore = Backoff(FileSystemArtifactStore("."))

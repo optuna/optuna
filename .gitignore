@@ -64,6 +64,7 @@ coverage.xml
 
 # Django stuff:
 *.log
+!tests/storages_tests/journal_tests/assets/*.log
 local_settings.py
 
 # Flask stuff:
@@ -119,6 +120,7 @@ docs/_build/
 docs/source/reference/generated/
 docs/source/reference/multi_objective/generated/
 docs/source/reference/visualization/generated/
+docs/source/reference/visualization/matplotlib/generated/
 docs/source/reference/samplers/generated
 docs/source/sg_execution_times.rst
 docs/source/tutorial/**

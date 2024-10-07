@@ -191,7 +191,8 @@ def _normalize_objective_values(objective_matrix: np.ndarray) -> np.ndarray:
     ):
         intercepts_inv = np.linalg.solve(extreme_points, np.ones(n_objectives))
     else:
-        intercepts_inv = 1 / np.max(objective_matrix, axis=0)
+        intercepts = np.max(objective_matrix, axis=0)
+        intercepts_inv = 1 / np.where(intercepts == 0, 1, intercepts)
     objective_matrix *= np.where(np.isfinite(intercepts_inv), intercepts_inv, 1)
 
     return objective_matrix

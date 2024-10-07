@@ -4,6 +4,7 @@ import math
 from typing import Any
 from typing import Callable
 from typing import NamedTuple
+import warnings
 
 import numpy as np
 
@@ -72,28 +73,6 @@ def plot_contour(
     """Plot the parameter relationship as contour plot in a study.
 
     Note that, if a parameter contains missing values, a trial with missing values is not plotted.
-
-    Example:
-
-        The following code snippet shows how to plot the parameter relationship as contour plot.
-
-        .. plotly::
-
-            import optuna
-
-
-            def objective(trial):
-                x = trial.suggest_float("x", -100, 100)
-                y = trial.suggest_categorical("y", [-1, 0, 1])
-                return x ** 2 + y
-
-
-            sampler = optuna.samplers.TPESampler(seed=10)
-            study = optuna.create_study(sampler=sampler)
-            study.optimize(objective, n_trials=30)
-
-            fig = optuna.visualization.plot_contour(study, params=["x", "y"])
-            fig.show()
 
     Args:
         study:
@@ -208,6 +187,15 @@ def _get_contour_subplot(
     x_indices = info.xaxis.indices
     y_indices = info.yaxis.indices
 
+    if len(x_indices) < 2 or len(y_indices) < 2:
+        return go.Contour(), go.Scatter(), go.Scatter()
+    if len(info.z_values) == 0:
+        warnings.warn(
+            f"Contour plot will not be displayed because `{info.xaxis.name}` and "
+            f"`{info.yaxis.name}` cannot co-exist in `trial.params`."
+        )
+        return go.Contour(), go.Scatter(), go.Scatter()
+
     feasible = _PlotValues([], [])
     infeasible = _PlotValues([], [])
 
@@ -226,9 +214,6 @@ def _get_contour_subplot(
     zs = np.array(list(info.z_values.values()))
 
     z_values[xys[:, 1], xys[:, 0]] = zs
-
-    if len(x_indices) < 2 or len(y_indices) < 2:
-        return go.Contour(), go.Scatter(), go.Scatter()
 
     contour = go.Contour(
         x=x_indices,

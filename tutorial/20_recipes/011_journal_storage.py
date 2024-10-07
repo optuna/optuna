@@ -19,8 +19,9 @@ import optuna
 # Add stream handler of stdout to show the messages
 optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
 study_name = "example-study"  # Unique identifier of the study.
+file_path = "./optuna_journal_storage.log"
 storage = optuna.storages.JournalStorage(
-    optuna.storages.JournalFileStorage("./journal.log"),  # NFS path for distributed optimization
+    optuna.storages.journal.JournalFileBackend(file_path),  # NFS path for distributed optimization
 )
 
 study = optuna.create_study(study_name=study_name, storage=storage)
@@ -42,5 +43,5 @@ study.optimize(objective, n_trials=3)
 # .. note::
 #     In a Windows environment, an error message "A required privilege is not held by the client"
 #     may appear. In this case, you can solve the problem with creating storage by specifying
-#     :class:`~optuna.storages.JournalFileOpenLock`. See the reference of
+#     :class:`~optuna.storages.journal.JournalFileOpenLock`. See the reference of
 #     :class:`~optuna.storages.JournalStorage` for any details.

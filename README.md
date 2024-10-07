@@ -14,11 +14,23 @@
 | :gear: [**Install Guide**](https://optuna.readthedocs.io/en/stable/installation.html)
 | :pencil: [**Tutorial**](https://optuna.readthedocs.io/en/stable/tutorial/index.html)
 | :bulb: [**Examples**](https://github.com/optuna/optuna-examples)
+| [**Twitter**](https://twitter.com/OptunaAutoML)
+| [**LinkedIn**](https://www.linkedin.com/showcase/optuna/)
+| [**Medium**](https://medium.com/optuna)
 
 *Optuna* is an automatic hyperparameter optimization software framework, particularly designed
 for machine learning. It features an imperative, *define-by-run* style user API. Thanks to our
 *define-by-run* API, the code written with Optuna enjoys high modularity, and the user of
 Optuna can dynamically construct the search spaces for the hyperparameters.
+
+## :loudspeaker: News
+<!-- TODO: when you add a new line, please delete the oldest line -->
+* **Sep 18, 2024**: We posted [an article](https://medium.com/optuna/introducing-the-stabilized-journalstorage-in-optuna-4-0-from-mechanism-to-use-case-e320795ffb61) about `JournalStorage`, which is stabilized in Optuna 4.0.
+* **Sep 2, 2024**: Optuna 4.0 is available!  You can install it by `pip install -U optuna`. Find the latest [here](https://github.com/optuna/optuna/releases) and check [our article](https://medium.com/optuna/optuna-4-0-whats-new-in-the-major-release-3325a8420d10).
+* **Aug 30, 2024**: We posted [an article](https://medium.com/optuna/optunahub-a-feature-sharing-platform-for-optuna-now-available-in-official-release-4b99efe9934d) about the official release of [OptunaHub](https://hub.optuna.org/).
+* **Aug 28, 2024**: We posted [an article](https://medium.com/optuna/a-natural-gradient-based-optimization-algorithm-registered-on-optunahub-0dbe17cb0f7d) about [implicit natural gradient optimization (`INGO`)](https://hub.optuna.org/samplers/implicit_natural_gradient/), a sampler newly supported in [OptunaHub](https://hub.optuna.org/).
+* **Aug 20, 2024**: We posted [an article](https://medium.com/optuna/file-management-during-llm-large-language-model-trainings-by-optuna-v4-0-0-artifact-store-5bdd5112f3c7) about [`ArtifactStore`](https://optuna.readthedocs.io/en/stable/reference/artifacts.html) officially supported from Optuna 4.0.
+* **Aug 15, 2024**: We posted [an article](https://medium.com/optuna/introduction-to-catcma-in-optunahub-ffa316309cb8) about [`CatCMA`](https://hub.optuna.org/samplers/catcma/), a sampler newly supported in [OptunaHub](https://hub.optuna.org/).
 
 ## :fire: Key Features
 
@@ -86,7 +98,7 @@ study.optimize(objective, n_trials=100)  # Invoke optimization of the objective 
 > [!NOTE]
 > More examples can be found in [optuna/optuna-examples](https://github.com/optuna/optuna-examples).
 >
-> The examples cover diverse problem setups such as multi-objective optimization, constrained optimization, pruning, and distributed optimization. 
+> The examples cover diverse problem setups such as multi-objective optimization, constrained optimization, pruning, and distributed optimization.
 
 ## Installation
 
@@ -114,14 +126,12 @@ Optuna has integration features with various third-party libraries. Integrations
 <details>
 <summary>Supported integration libraries</summary>
 
-* [Catalyst](https://github.com/optuna/optuna-examples/tree/main/pytorch/catalyst_simple.py)
 * [Catboost](https://github.com/optuna/optuna-examples/tree/main/catboost/catboost_pruning.py)
 * [Dask](https://github.com/optuna/optuna-examples/tree/main/dask/dask_simple.py)
-* [fastai (v2)](https://github.com/optuna/optuna-examples/tree/main/fastai/fastaiv2_simple.py)
+* [fastai](https://github.com/optuna/optuna-examples/tree/main/fastai/fastai_simple.py)
 * [Keras](https://github.com/optuna/optuna-examples/tree/main/keras/keras_integration.py)
 * [LightGBM](https://github.com/optuna/optuna-examples/tree/main/lightgbm/lightgbm_integration.py)
 * [MLflow](https://github.com/optuna/optuna-examples/tree/main/mlflow/keras_mlflow.py)
-* [MXNet](https://github.com/optuna/optuna-examples/tree/main/mxnet/mxnet_integration.py)
 * [PyTorch](https://github.com/optuna/optuna-examples/tree/main/pytorch/pytorch_simple.py)
 * [PyTorch Ignite](https://github.com/optuna/optuna-examples/tree/main/pytorch/pytorch_ignite_simple.py)
 * [PyTorch Lightning](https://github.com/optuna/optuna-examples/tree/main/pytorch/pytorch_lightning_simple.py)
@@ -185,6 +195,48 @@ Hit Ctrl-C to quit.
 </details>
 
 
+## OptunaHub
+
+[OptunaHub](https://hub.optuna.org/) is a feature-sharing platform for Optuna.
+You can use the registered features and publish your packages.
+
+### Use registered features
+
+`optunahub` can be installed via pip:
+
+```shell
+$ pip install optunahub
+```
+
+You can load registered module with `optunahub.load_module`.
+
+```python
+import optuna
+import optunahub
+
+
+def objective(trial: optuna.Trial) -> float:
+    x = trial.suggest_float("x", 0, 1)
+
+    return x
+
+
+mod = optunahub.load_module("samplers/simulated_annealing")
+
+study = optuna.create_study(sampler=mod.SimulatedAnnealingSampler())
+study.optimize(objective, n_trials=20)
+
+print(study.best_trial.value, study.best_trial.params)
+```
+
+For more details, please refer to [the optunahub documentation](https://optuna.github.io/optunahub/).
+
+### Publish your packages
+
+You can publish your package via [optunahub-registry](https://github.com/optuna/optunahub-registry).
+See the [OptunaHub tutorial](https://optuna.github.io/optunahub-registry/index.html).
+
+
 ## Communication
 
 - [GitHub Discussions] for questions.
@@ -222,3 +274,10 @@ If you use Optuna in one of your research projects, please cite [our KDD paper](
 }
 ```
 </details>
+
+
+## License
+
+MIT License (see [LICENSE](./LICENSE)).
+
+Optuna uses the codes from SciPy and fdlibm projects (see [LICENSE_THIRD_PARTY](./LICENSE_THIRD_PARTY)).

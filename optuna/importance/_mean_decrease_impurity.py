@@ -1,9 +1,8 @@
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
+from __future__ import annotations
 
-import numpy
+from collections.abc import Callable
+
+import numpy as np
 
 from optuna._imports import try_import
 from optuna._transform import _SearchSpaceTransform
@@ -31,9 +30,9 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
 
     .. note::
 
-        This evaluator requires the `sklearn <https://scikit-learn.org/stable/>`_ Python package
+        This evaluator requires the `sklearn <https://scikit-learn.org/stable/>`__ Python package
         and is based on `sklearn.ensemble.RandomForestClassifier.feature_importances_
-        <https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html#sklearn.ensemble.RandomForestClassifier.feature_importances_>`_.
+        <https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html#sklearn.ensemble.RandomForestClassifier.feature_importances_>`__.
 
     Args:
         n_trees:
@@ -44,9 +43,7 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
             Seed for the random forest.
     """
 
-    def __init__(
-        self, *, n_trees: int = 64, max_depth: int = 64, seed: Optional[int] = None
-    ) -> None:
+    def __init__(self, *, n_trees: int = 64, max_depth: int = 64, seed: int | None = None) -> None:
         _imports.check()
 
         self._forest = RandomForestRegressor(
@@ -56,17 +53,17 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
             min_samples_leaf=1,
             random_state=seed,
         )
-        self._trans_params = numpy.empty(0)
-        self._trans_values = numpy.empty(0)
-        self._param_names: List[str] = list()
+        self._trans_params = np.empty(0)
+        self._trans_values = np.empty(0)
+        self._param_names: list[str] = list()
 
     def evaluate(
         self,
         study: Study,
-        params: Optional[List[str]] = None,
+        params: list[str] | None = None,
         *,
-        target: Optional[Callable[[FrozenTrial], float]] = None,
-    ) -> Dict[str, float]:
+        target: Callable[[FrozenTrial], float] | None = None,
+    ) -> dict[str, float]:
         if target is None and study._is_multi_objective():
             raise ValueError(
                 "If the `study` is being used for multi-objective optimization, "
@@ -81,10 +78,10 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
         if len(params) == 0:
             return {}
 
-        trials: List[FrozenTrial] = _get_filtered_trials(study, params=params, target=target)
+        trials: list[FrozenTrial] = _get_filtered_trials(study, params=params, target=target)
         trans = _SearchSpaceTransform(distributions, transform_log=False, transform_step=False)
-        trans_params: numpy.ndarray = _get_trans_params(trials, trans)
-        target_values: numpy.ndarray = _get_target_values(trials, target)
+        trans_params: np.ndarray = _get_trans_params(trials, trans)
+        target_values: np.ndarray = _get_target_values(trials, target)
 
         forest = self._forest
         forest.fit(X=trans_params, y=target_values)
@@ -92,7 +89,7 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
 
         # Untransform feature importances to param importances
         # by adding up relevant feature importances.
-        param_importances = numpy.zeros(len(params))
-        numpy.add.at(param_importances, trans.encoded_column_to_column, feature_importances)
+        param_importances = np.zeros(len(params))
+        np.add.at(param_importances, trans.encoded_column_to_column, feature_importances)
 
         return _sort_dict_by_importance(_param_importances_to_dict(params, param_importances))

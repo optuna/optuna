@@ -6,7 +6,7 @@ from typing import NamedTuple
 import numpy as np
 
 from optuna._experimental import experimental_func
-from optuna._hypervolume import WFG
+from optuna._hypervolume import compute_hypervolume
 from optuna.logging import get_logger
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study import Study
@@ -34,31 +34,6 @@ def plot_hypervolume_history(
     reference_point: Sequence[float],
 ) -> "go.Figure":
     """Plot hypervolume history of all trials in a study.
-
-    Example:
-
-        The following code snippet shows how to plot optimization history.
-
-        .. plotly::
-
-            import optuna
-
-
-            def objective(trial):
-                x = trial.suggest_float("x", 0, 5)
-                y = trial.suggest_float("y", 0, 3)
-
-                v0 = 4 * x ** 2 + 4 * y ** 2
-                v1 = (x - 5) ** 2 + (y - 5) ** 2
-                return v0, v1
-
-
-            study = optuna.create_study(directions=["minimize", "minimize"])
-            study.optimize(objective, n_trials=50)
-
-            reference_point=[100., 50.]
-            fig = optuna.visualization.plot_hypervolume_history(study, reference_point)
-            fig.show()
 
     Args:
         study:
@@ -146,7 +121,7 @@ def _get_hypervolume_history_info(
             filter(lambda t: not _dominates(trial, t, study.directions), best_trials)
         ) + [trial]
 
-        solution_set = np.asarray(
+        loss_vals = np.asarray(
             list(
                 filter(
                     lambda v: (v <= minimization_reference_point).all(),
@@ -154,8 +129,8 @@ def _get_hypervolume_history_info(
                 )
             )
         )
-        if solution_set.size > 0:
-            hypervolume = WFG().compute(solution_set, minimization_reference_point)
+        if loss_vals.size > 0:
+            hypervolume = compute_hypervolume(loss_vals, minimization_reference_point)
         values.append(hypervolume)
 
     if len(best_trials) == 0:

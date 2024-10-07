@@ -8,7 +8,6 @@ from typing import NamedTuple
 
 import numpy as np
 
-from optuna._experimental import experimental_func
 from optuna.logging import get_logger
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study import Study
@@ -64,7 +63,6 @@ class _RankPlotInfo(NamedTuple):
     has_custom_target: bool
 
 
-@experimental_func("3.2.0")
 def plot_rank(
     study: Study,
     params: list[str] | None = None,
@@ -75,36 +73,6 @@ def plot_rank(
     """Plot parameter relations as scatter plots with colors indicating ranks of target value.
 
     Note that trials missing the specified parameters will not be plotted.
-
-    Example:
-
-        The following code snippet shows how to plot the parameter relationship as a rank plot.
-
-        .. plotly::
-
-            import optuna
-
-
-            def objective(trial):
-                x = trial.suggest_float("x", -100, 100)
-                y = trial.suggest_categorical("y", [-1, 0, 1])
-
-                c0 = 400 - (x + y)**2
-                trial.set_user_attr("constraint", [c0])
-
-                return x ** 2 + y
-
-
-            def constraints(trial):
-                return trial.user_attrs["constraint"]
-
-
-            sampler = optuna.samplers.TPESampler(seed=10, constraints_func=constraints)
-            study = optuna.create_study(sampler=sampler)
-            study.optimize(objective, n_trials=30)
-
-            fig = optuna.visualization.plot_rank(study, params=["x", "y"])
-            fig.show()
 
     Args:
         study:
@@ -213,22 +181,20 @@ def _get_rank_subplot_info(
     yaxis = _get_axis_info(trials, y_param)
 
     infeasible_trial_ids = []
-    for i in range(len(trials)):
-        constraints = trials[i].system_attrs.get(_CONSTRAINTS_KEY)
+    filtered_ids = []
+    for idx, trial in enumerate(trials):
+        constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
         if constraints is not None and any([x > 0.0 for x in constraints]):
-            infeasible_trial_ids.append(i)
+            infeasible_trial_ids.append(idx)
+        if x_param in trial.params and y_param in trial.params:
+            filtered_ids.append(idx)
 
-    colors[infeasible_trial_ids] = (204, 204, 204)  # equal to "#CCCCCC"
-
-    filtered_ids = [
-        i
-        for i in range(len(trials))
-        if x_param in trials[i].params and y_param in trials[i].params
-    ]
     filtered_trials = [trials[i] for i in filtered_ids]
     xs = [trial.params[x_param] for trial in filtered_trials]
     ys = [trial.params[y_param] for trial in filtered_trials]
     zs = target_values[filtered_ids]
+
+    colors[infeasible_trial_ids] = (204, 204, 204)
     colors = colors[filtered_ids]
     return _RankSubplotInfo(
         xaxis=xaxis,
@@ -303,8 +269,8 @@ def _get_rank_subplot(
         return "<br>".join(lines)
 
     scatter = go.Scatter(
-        x=info.xs,
-        y=info.ys,
+        x=[str(x) for x in info.xs] if info.xaxis.is_cat else info.xs,
+        y=[str(y) for y in info.ys] if info.yaxis.is_cat else info.ys,
         marker={
             "color": list(map(plotly.colors.label_rgb, info.colors)),
             "line": {"width": 0.5, "color": "Grey"},

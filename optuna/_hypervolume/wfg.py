@@ -1,94 +1,129 @@
-from typing import Optional
+from __future__ import annotations
 
 import numpy as np
 
-from optuna._hypervolume import _compute_2d
-from optuna._hypervolume import _compute_2points_volume
-from optuna._hypervolume import BaseHypervolume
+from optuna.study._multi_objective import _is_pareto_front
 
 
-class WFG(BaseHypervolume):
+def _compute_2d(sorted_pareto_sols: np.ndarray, reference_point: np.ndarray) -> float:
+    assert sorted_pareto_sols.shape[1] == 2 and reference_point.shape[0] == 2
+    rect_diag_y = np.append(reference_point[1], sorted_pareto_sols[:-1, 1])
+    edge_length_x = reference_point[0] - sorted_pareto_sols[:, 0]
+    edge_length_y = rect_diag_y - sorted_pareto_sols[:, 1]
+    return edge_length_x @ edge_length_y
+
+
+def _compute_hv(sorted_loss_vals: np.ndarray, reference_point: np.ndarray) -> float:
+    inclusive_hvs = np.prod(reference_point - sorted_loss_vals, axis=-1)
+    if inclusive_hvs.shape[0] == 1:
+        return float(inclusive_hvs[0])
+    elif inclusive_hvs.shape[0] == 2:
+        # S(A v B) = S(A) + S(B) - S(A ^ B).
+        intersec = np.prod(reference_point - np.maximum(sorted_loss_vals[0], sorted_loss_vals[1]))
+        return np.sum(inclusive_hvs) - intersec
+
+    # c.f. Eqs. (6) and (7) of ``A Fast Way of Calculating Exact Hypervolumes``.
+    limited_sols_array = np.maximum(sorted_loss_vals[:, np.newaxis], sorted_loss_vals)
+    return sum(
+        _compute_exclusive_hv(limited_sols_array[i, i + 1 :], inclusive_hv, reference_point)
+        for i, inclusive_hv in enumerate(inclusive_hvs)
+    )
+
+
+def _compute_exclusive_hv(
+    limited_sols: np.ndarray, inclusive_hv: float, reference_point: np.ndarray
+) -> float:
+    if limited_sols.shape[0] == 0:
+        return inclusive_hv
+
+    # NOTE(nabenabe): As the following line is a hack for speedup, I will describe several
+    # important points to note. Even if we do not run _is_pareto_front below or use
+    # assume_unique_lexsorted=False instead, the result of this function does not change, but this
+    # function simply becomes slower.
+    #
+    # For simplicity, I call an array ``quasi-lexsorted`` if it is sorted by the first objective.
+    #
+    # Reason why it will be faster with _is_pareto_front
+    #   Hypervolume of a given solution set and a reference point does not change even when we
+    #   remove non Pareto solutions from the solution set. However, the calculation becomes slower
+    #   if the solution set contains many non Pareto solutions. By removing some obvious non Pareto
+    #   solutions, the calculation becomes faster.
+    #
+    # Reason why assume_unique_lexsorted must be True for _is_pareto_front
+    #   assume_unique_lexsorted=True actually checks weak dominance and solutions will be weakly
+    #   dominated if there are duplications, so we can remove duplicated solutions by this option.
+    #   In other words, assume_unique_lexsorted=False may significantly slow down when limited_sols
+    #   has many duplicated Pareto solutions because this function becomes an exponential algorithm
+    #   without duplication removal.
+    #
+    # NOTE(nabenabe): limited_sols can be non-unique and/or non-lexsorted, so I will describe why
+    # it is fine.
+    #
+    # Reason why we can specify assume_unique_lexsorted=True even when limited_sols is not
+    #   All ``False`` in on_front will be correct (, but it may not be the case for ``True``) even
+    #   if limited_sols is not unique or not lexsorted as long as limited_sols is quasi-lexsorted,
+    #   which is guaranteed. As mentioned earlier, if all ``False`` in on_front is correct, the
+    #   result of this function does not change.
+    on_front = _is_pareto_front(limited_sols, assume_unique_lexsorted=True)
+    return inclusive_hv - _compute_hv(limited_sols[on_front], reference_point)
+
+
+def compute_hypervolume(
+    loss_vals: np.ndarray, reference_point: np.ndarray, assume_pareto: bool = False
+) -> float:
     """Hypervolume calculator for any dimension.
 
-    This class exactly calculates the hypervolume for any dimension by using the WFG algorithm.
-    For detail, see `While, Lyndon, Lucas Bradstreet, and Luigi Barone. "A fast way of
-    calculating exact hypervolumes." Evolutionary Computation, IEEE Transactions on 16.1 (2012)
-    : 86-95.`.
+    This class exactly calculates the hypervolume for any dimension.
+    For 3 dimensions or higher, the WFG algorithm will be used.
+    Please refer to ``A Fast Way of Calculating Exact Hypervolumes`` for the WFG algorithm.
+
+    .. note::
+        This class is used for computing the hypervolumes of points in multi-objective space.
+        Each coordinate of each point represents a ``values`` of the multi-objective function.
+
+    .. note::
+        We check that each objective is to be minimized. Transform objective values that are
+        to be maximized before calling this class's ``compute`` method.
+
+    Args:
+        loss_vals:
+            An array of loss value vectors to calculate the hypervolume.
+        reference_point:
+            The reference point used to calculate the hypervolume.
+        assume_pareto:
+            Whether to assume the Pareto optimality to ``loss_vals``.
+            In other words, if ``True``, none of loss vectors are dominated by another.
+            ``assume_pareto`` is used only for speedup and it does not change the result even if
+            this argument is wrongly given. If there are many non-Pareto solutions in
+            ``loss_vals``, ``assume_pareto=True`` will speed up the calculation.
+
+    Returns:
+        The hypervolume of the given arguments.
+
     """
 
-    def __init__(self) -> None:
-        self._reference_point: Optional[np.ndarray] = None
+    if not np.all(loss_vals <= reference_point):
+        raise ValueError(
+            "All points must dominate or equal the reference point. "
+            "That is, for all points in the loss_vals and the coordinate `i`, "
+            "`loss_vals[i] <= reference_point[i]`."
+        )
+    if not np.all(np.isfinite(reference_point)):
+        # reference_point does not have nan, thanks to the verification above.
+        return float("inf")
 
-    def _compute(self, solution_set: np.ndarray, reference_point: np.ndarray) -> float:
-        self._reference_point = reference_point.astype(np.float64)
-        return self._compute_rec(solution_set.astype(np.float64))
+    if not assume_pareto:
+        unique_lexsorted_loss_vals = np.unique(loss_vals, axis=0)
+        on_front = _is_pareto_front(unique_lexsorted_loss_vals, assume_unique_lexsorted=True)
+        sorted_pareto_sols = unique_lexsorted_loss_vals[on_front]
+    else:
+        # NOTE(nabenabe): The result of this function does not change both by
+        # np.argsort(loss_vals[:, 0]) and np.unique(loss_vals, axis=0).
+        # But many duplications in loss_vals significantly slows down the function.
+        # TODO(nabenabe): Make an option to use np.unique.
+        sorted_pareto_sols = loss_vals[loss_vals[:, 0].argsort()]
 
-    def _compute_rec(self, solution_set: np.ndarray) -> float:
-        assert self._reference_point is not None
-        n_points = solution_set.shape[0]
+    if reference_point.shape[0] == 2:
+        return _compute_2d(sorted_pareto_sols, reference_point)
 
-        if self._reference_point.shape[0] == 2:
-            return _compute_2d(solution_set, self._reference_point)
-
-        if n_points == 1:
-            return _compute_2points_volume(solution_set[0], self._reference_point)
-        elif n_points == 2:
-            volume = 0.0
-            volume += _compute_2points_volume(solution_set[0], self._reference_point)
-            volume += _compute_2points_volume(solution_set[1], self._reference_point)
-            intersection = self._reference_point - np.maximum(solution_set[0], solution_set[1])
-            volume -= np.prod(intersection)
-
-            return volume
-
-        solution_set = solution_set[solution_set[:, 0].argsort()]
-
-        # n_points >= 3
-        volume = 0.0
-        for i in range(n_points):
-            volume += self._compute_exclusive_hv(solution_set[i], solution_set[i + 1 :])
-        return volume
-
-    def _compute_exclusive_hv(self, point: np.ndarray, solution_set: np.ndarray) -> float:
-        assert self._reference_point is not None
-        volume = _compute_2points_volume(point, self._reference_point)
-        limited_solution_set = self._limit(point, solution_set)
-        n_points_of_s = limited_solution_set.shape[0]
-        if n_points_of_s == 1:
-            volume -= _compute_2points_volume(limited_solution_set[0], self._reference_point)
-        elif n_points_of_s > 1:
-            volume -= self._compute_rec(limited_solution_set)
-        return volume
-
-    @staticmethod
-    def _limit(point: np.ndarray, solution_set: np.ndarray) -> np.ndarray:
-        """Limit the points in the solution set for the given point.
-
-        Let `S := solution set`, `p := point` and `d := dim(p)`.
-        The returned solution set `S'` is
-        `S' = Pareto({s' | for all i in [d], exists s in S, s'_i = max(s_i, p_i)})`,
-        where `Pareto(T) = the points in T which are Pareto optimal`.
-        """
-        n_points_of_s = solution_set.shape[0]
-
-        limited_solution_set = np.maximum(solution_set, point)
-
-        # Return almost Pareto optimal points for computational efficiency.
-        # If the points in the solution set are completely sorted along all coordinates,
-        # the following procedures return the complete Pareto optimal points.
-        # For the computational efficiency, we do not completely sort the points,
-        # but just sort the points according to its 0-th dimension.
-        if n_points_of_s <= 1:
-            return limited_solution_set
-        else:
-            # Assume limited_solution_set is sorted by its 0th dimension.
-            # Therefore, we can simply scan the limited solution set from left to right.
-            returned_limited_solution_set = [limited_solution_set[0]]
-            left = 0
-            right = 1
-            while right < n_points_of_s:
-                if (limited_solution_set[left] > limited_solution_set[right]).any():
-                    left = right
-                    returned_limited_solution_set.append(limited_solution_set[left])
-                right += 1
-            return np.asarray(returned_limited_solution_set)
+    return _compute_hv(sorted_pareto_sols, reference_point)

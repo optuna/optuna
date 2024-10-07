@@ -5,7 +5,6 @@ from pathlib import Path
 import shutil
 from typing import TYPE_CHECKING
 
-from optuna._experimental import experimental_class
 from optuna.artifacts.exceptions import ArtifactNotFound
 
 
@@ -13,7 +12,6 @@ if TYPE_CHECKING:
     from typing import BinaryIO
 
 
-@experimental_class("3.3.0")
 class FileSystemArtifactStore:
     """An artifact store for file systems.
 
@@ -39,7 +37,11 @@ class FileSystemArtifactStore:
             def objective(trial: optuna.Trial) -> float:
                 ... = trial.suggest_float("x", -10, 10)
                 file_path = generate_example(...)
-                upload_artifact(trial, file_path, artifact_store)
+                upload_artifact(
+                    artifact_store=artifact_store,
+                    file_path=file_path,
+                    study_or_trial=trial,
+                )
                 return ...
     """
 
@@ -73,6 +75,6 @@ class FileSystemArtifactStore:
 if TYPE_CHECKING:
     # A mypy-runtime assertion to ensure that LocalArtifactBackend
     # implements all abstract methods in ArtifactBackendProtocol.
-    from ._protocol import ArtifactStore
+    from optuna.artifacts._protocol import ArtifactStore
 
     _: ArtifactStore = FileSystemArtifactStore("")

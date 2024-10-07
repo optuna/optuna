@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import abc
-from typing import Dict
-from typing import List
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -17,11 +15,12 @@ from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
+
     from optuna._gp import acqf
     from optuna._gp import gp
     from optuna._gp import optim_sample
     from optuna._gp import prior
-    from optuna._gp import search_space
+    from optuna._gp import search_space as gp_search_space
 else:
     from optuna._imports import _LazyImport
 
@@ -29,7 +28,7 @@ else:
     optim_sample = _LazyImport("optuna._gp.optim_sample")
     acqf = _LazyImport("optuna._gp.acqf")
     prior = _LazyImport("optuna._gp.prior")
-    search_space = _LazyImport("optuna._gp.search_space")
+    gp_search_space = _LazyImport("optuna._gp.search_space")
 
 DEFAULT_TOP_TRIALS_RATIO = 0.5
 DEFAULT_MIN_N_TRIALS = 20
@@ -42,10 +41,65 @@ def _get_beta(n_params: int, n_trials: int, delta: float = 0.1) -> float:
 
     # The following div is according to the original paper: "We then further scale it down
     # by a factor of 5 as defined in the experiments in
-    # `Srinivas et al. (2010) <https://dl.acm.org/doi/10.5555/3104322.3104451>`_"
+    # `Srinivas et al. (2010) <https://dl.acm.org/doi/10.5555/3104322.3104451>`__"
     beta /= 5
 
     return beta
+
+
+def _compute_standardized_regret_bound(
+    kernel_params: gp.KernelParamsTensor,
+    search_space: gp_search_space.SearchSpace,
+    normalized_top_n_params: np.ndarray,
+    standarized_top_n_values: np.ndarray,
+    delta: float = 0.1,
+    optimize_n_samples: int = 2048,
+    rng: np.random.RandomState | None = None,
+) -> float:
+    """
+    # In the original paper, f(x) was intended to be minimized, but here we would like to
+    # maximize f(x). Hence, the following changes happen:
+    #     1. min(ucb) over top trials becomes max(lcb) over top trials, and
+    #     2. min(lcb) over the search space becomes max(ucb) over the search space, and
+    #     3. Regret bound becomes max(ucb) over the search space minus max(lcb) over top trials.
+    """
+
+    n_trials, n_params = normalized_top_n_params.shape
+
+    # calculate max_ucb
+    beta = _get_beta(n_params, n_trials, delta)
+    ucb_acqf_params = acqf.create_acqf_params(
+        acqf_type=acqf.AcquisitionFunctionType.UCB,
+        kernel_params=kernel_params,
+        search_space=search_space,
+        X=normalized_top_n_params,
+        Y=standarized_top_n_values,
+        beta=beta,
+    )
+    # UCB over the search space. (Original: LCB over the search space. See Change 1 above.)
+    standardized_ucb_value = max(
+        acqf.eval_acqf_no_grad(ucb_acqf_params, normalized_top_n_params).max(),
+        optim_sample.optimize_acqf_sample(ucb_acqf_params, n_samples=optimize_n_samples, rng=rng)[
+            1
+        ],
+    )
+
+    # calculate min_lcb
+    lcb_acqf_params = acqf.create_acqf_params(
+        acqf_type=acqf.AcquisitionFunctionType.LCB,
+        kernel_params=kernel_params,
+        search_space=search_space,
+        X=normalized_top_n_params,
+        Y=standarized_top_n_values,
+        beta=beta,
+    )
+    # LCB over the top trials. (Original: UCB over the top trials. See Change 2 above.)
+    standardized_lcb_value = np.max(
+        acqf.eval_acqf_no_grad(lcb_acqf_params, normalized_top_n_params)
+    )
+
+    # max(UCB) - max(LCB). (Original: min(UCB) - min(LCB). See Change 3 above.)
+    return standardized_ucb_value - standardized_lcb_value  # standardized regret bound
 
 
 @experimental_class("3.2.0")
@@ -53,11 +107,7 @@ class BaseImprovementEvaluator(metaclass=abc.ABCMeta):
     """Base class for improvement evaluators."""
 
     @abc.abstractmethod
-    def evaluate(
-        self,
-        trials: List[FrozenTrial],
-        study_direction: StudyDirection,
-    ) -> float:
+    def evaluate(self, trials: list[FrozenTrial], study_direction: StudyDirection) -> float:
         pass
 
 
@@ -85,7 +135,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
 
     For further information about this evaluator, please refer to the following paper:
 
-    - `Automatic Termination for Hyperparameter Optimization <https://proceedings.mlr.press/v188/makarova22a.html>`_
+    - `Automatic Termination for Hyperparameter Optimization <https://proceedings.mlr.press/v188/makarova22a.html>`__
     """  # NOQA: E501
 
     def __init__(
@@ -111,63 +161,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         top_n_mask = values >= top_n_val
         return normalized_params[top_n_mask], values[top_n_mask]
 
-    def _compute_standardized_regret_bound(
-        self,
-        kernel_params: gp.KernelParamsTensor,
-        gp_search_space: search_space.SearchSpace,
-        normalized_top_n_params: np.ndarray,
-        standarized_top_n_values: np.ndarray,
-    ) -> float:
-        """
-        In the original paper, f(x) was intended to be minimized, but here we would like to
-        maximize f(x). Hence, the following changes happen:
-            1. min(ucb) over top trials becomes max(lcb) over top trials, and
-            2. min(lcb) over the search space becomes max(ucb) over the search space, and
-            3. Regret bound becomes max(ucb) over the search space minus max(lcb) over top trials.
-        """
-
-        n_trials, n_params = normalized_top_n_params.shape
-
-        # calculate max_ucb
-        beta = _get_beta(n_params, n_trials)
-        ucb_acqf_params = acqf.create_acqf_params(
-            acqf_type=acqf.AcquisitionFunctionType.UCB,
-            kernel_params=kernel_params,
-            search_space=gp_search_space,
-            X=normalized_top_n_params,
-            Y=standarized_top_n_values,
-            beta=beta,
-        )
-        # UCB over the search space. (Original: LCB over the search space. See Change 1 above.)
-        standardized_ucb_value = max(
-            acqf.eval_acqf_no_grad(ucb_acqf_params, normalized_top_n_params).max(),
-            optim_sample.optimize_acqf_sample(
-                ucb_acqf_params, n_samples=self._optimize_n_samples, rng=self._rng.rng
-            )[1],
-        )
-
-        # calculate min_lcb
-        lcb_acqf_params = acqf.create_acqf_params(
-            acqf_type=acqf.AcquisitionFunctionType.LCB,
-            kernel_params=kernel_params,
-            search_space=gp_search_space,
-            X=normalized_top_n_params,
-            Y=standarized_top_n_values,
-            beta=beta,
-        )
-        # LCB over the top trials. (Original: UCB over the top trials. See Change 2 above.)
-        standardized_lcb_value = np.max(
-            acqf.eval_acqf_no_grad(lcb_acqf_params, normalized_top_n_params)
-        )
-
-        # max(UCB) - max(LCB). (Original: min(UCB) - min(LCB). See Change 3 above.)
-        return standardized_ucb_value - standardized_lcb_value  # standardized regret bound
-
-    def evaluate(
-        self,
-        trials: List[FrozenTrial],
-        study_direction: StudyDirection,
-    ) -> float:
+    def evaluate(self, trials: list[FrozenTrial], study_direction: StudyDirection) -> float:
         optuna_search_space = intersection_search_space(trials)
         self._validate_input(trials, optuna_search_space)
 
@@ -176,7 +170,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         # _gp module assumes that optimization direction is maximization
         sign = -1 if study_direction == StudyDirection.MINIMIZE else 1
         values = np.array([t.value for t in complete_trials]) * sign
-        gp_search_space, normalized_params = search_space.get_search_space_and_normalized_params(
+        search_space, normalized_params = gp_search_space.get_search_space_and_normalized_params(
             complete_trials, optuna_search_space
         )
         normalized_top_n_params, top_n_values = self._get_top_n(normalized_params, values)
@@ -187,7 +181,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         kernel_params = gp.fit_kernel_params(
             X=normalized_top_n_params,
             Y=standarized_top_n_values,
-            is_categorical=(gp_search_space.scale_types == search_space.ScaleType.CATEGORICAL),
+            is_categorical=(search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL),
             log_prior=self._log_prior,
             minimum_noise=self._minimum_noise,
             # TODO(contramundum53): Add option to specify this.
@@ -196,17 +190,18 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             initial_kernel_params=None,
         )
 
-        standardized_regret_bound = self._compute_standardized_regret_bound(
+        standardized_regret_bound = _compute_standardized_regret_bound(
             kernel_params,
-            gp_search_space,
+            search_space,
             normalized_top_n_params,
             standarized_top_n_values,
+            rng=self._rng.rng,
         )
         return standardized_regret_bound * top_n_values_std  # regret bound
 
     @classmethod
     def _validate_input(
-        cls, trials: List[FrozenTrial], search_space: Dict[str, BaseDistribution]
+        cls, trials: list[FrozenTrial], search_space: dict[str, BaseDistribution]
     ) -> None:
         if len([t for t in trials if t.state == TrialState.COMPLETE]) == 0:
             raise ValueError(
@@ -234,19 +229,12 @@ class BestValueStagnationEvaluator(BaseImprovementEvaluator):
             The maximum number of trials allowed for stagnation.
     """
 
-    def __init__(
-        self,
-        max_stagnation_trials: int = 30,
-    ) -> None:
+    def __init__(self, max_stagnation_trials: int = 30) -> None:
         if max_stagnation_trials < 0:
             raise ValueError("The maximum number of stagnant trials must not be negative.")
         self._max_stagnation_trials = max_stagnation_trials
 
-    def evaluate(
-        self,
-        trials: List[FrozenTrial],
-        study_direction: StudyDirection,
-    ) -> float:
+    def evaluate(self, trials: list[FrozenTrial], study_direction: StudyDirection) -> float:
         self._validate_input(trials)
         is_maximize_direction = True if (study_direction == StudyDirection.MAXIMIZE) else False
         trials = [t for t in trials if t.state == TrialState.COMPLETE]
@@ -266,10 +254,7 @@ class BestValueStagnationEvaluator(BaseImprovementEvaluator):
         return self._max_stagnation_trials - (current_step - best_step)
 
     @classmethod
-    def _validate_input(
-        cls,
-        trials: List[FrozenTrial],
-    ) -> None:
+    def _validate_input(cls, trials: list[FrozenTrial]) -> None:
         if len([t for t in trials if t.state == TrialState.COMPLETE]) == 0:
             raise ValueError(
                 "Because no trial has been completed yet, the improvement cannot be evaluated."

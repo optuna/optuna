@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from typing import Callable
-from typing import Dict
+from collections.abc import Callable
 from typing import NamedTuple
-from typing import Optional
 
 import numpy as np
 
@@ -37,10 +35,10 @@ class _ParzenEstimatorParameters(NamedTuple):
 class _ParzenEstimator:
     def __init__(
         self,
-        observations: Dict[str, np.ndarray],
-        search_space: Dict[str, BaseDistribution],
+        observations: dict[str, np.ndarray],
+        search_space: dict[str, BaseDistribution],
         parameters: _ParzenEstimatorParameters,
-        predetermined_weights: Optional[np.ndarray] = None,
+        predetermined_weights: np.ndarray | None = None,
     ) -> None:
         if parameters.consider_prior:
             if parameters.prior_weight is None:
@@ -77,11 +75,11 @@ class _ParzenEstimator:
             ],
         )
 
-    def sample(self, rng: np.random.RandomState, size: int) -> Dict[str, np.ndarray]:
+    def sample(self, rng: np.random.RandomState, size: int) -> dict[str, np.ndarray]:
         sampled = self._mixture_distribution.sample(rng, size)
         return self._untransform(sampled)
 
-    def log_pdf(self, samples_dict: Dict[str, np.ndarray]) -> np.ndarray:
+    def log_pdf(self, samples_dict: dict[str, np.ndarray]) -> np.ndarray:
         transformed_samples = self._transform(samples_dict)
         return self._mixture_distribution.log_pdf(transformed_samples)
 
@@ -112,7 +110,7 @@ class _ParzenEstimator:
     def _is_log(dist: BaseDistribution) -> bool:
         return isinstance(dist, (FloatDistribution, IntDistribution)) and dist.log
 
-    def _transform(self, samples_dict: Dict[str, np.ndarray]) -> np.ndarray:
+    def _transform(self, samples_dict: dict[str, np.ndarray]) -> np.ndarray:
         return np.array(
             [
                 (
@@ -124,7 +122,7 @@ class _ParzenEstimator:
             ]
         ).T
 
-    def _untransform(self, samples_array: np.ndarray) -> Dict[str, np.ndarray]:
+    def _untransform(self, samples_array: np.ndarray) -> dict[str, np.ndarray]:
         res = {
             param: (
                 np.exp(samples_array[:, i])
@@ -219,7 +217,7 @@ class _ParzenEstimator:
         observations: np.ndarray,
         low: float,
         high: float,
-        step: Optional[float],
+        step: float | None,
         parameters: _ParzenEstimatorParameters,
     ) -> _BatchedDistributions:
         step_or_0 = step or 0

@@ -79,7 +79,7 @@ def test_check_distribution_suggest_uniform(storage_mode: str) -> None:
             trial.suggest_uniform("x", 10, 30)
 
         # we expect exactly one warning (not counting ones caused by deprecation)
-        assert len([r for r in record if r.category != FutureWarning]) == 1
+        assert len([r for r in record if r.category is not FutureWarning]) == 1
 
         with pytest.raises(ValueError):
             trial.suggest_int("x", 10, 20)
@@ -102,8 +102,8 @@ def test_check_distribution_suggest_loguniform(storage_mode: str) -> None:
             trial.suggest_loguniform("x", 10, 20)
             trial.suggest_loguniform("x", 10, 30)
 
-        # we expect exactly one warning (not counting ones caused by deprecation)
-        assert len([r for r in record if r.category != FutureWarning]) == 1
+        # We expect exactly one warning (not counting ones caused by deprecation).
+        assert len([r for r in record if r.category is not FutureWarning]) == 1
 
         with pytest.raises(ValueError):
             trial.suggest_int("x", 10, 20)
@@ -126,8 +126,8 @@ def test_check_distribution_suggest_discrete_uniform(storage_mode: str) -> None:
             trial.suggest_discrete_uniform("x", 10, 20, 2)
             trial.suggest_discrete_uniform("x", 10, 22, 2)
 
-        # we expect exactly one warning (not counting ones caused by deprecation)
-        assert len([r for r in record if r.category != FutureWarning]) == 1
+        # We expect exactly one warning (not counting ones caused by deprecation).
+        assert len([r for r in record if r.category is not FutureWarning]) == 1
 
         with pytest.raises(ValueError):
             trial.suggest_int("x", 10, 20, step=2)
@@ -151,7 +151,7 @@ def test_check_distribution_suggest_int(storage_mode: str, enable_log: bool) -> 
             trial.suggest_int("x", 10, 22, log=enable_log)
 
         # We expect exactly one warning (not counting ones caused by deprecation).
-        assert len([r for r in record if r.category != FutureWarning]) == 1
+        assert len([r for r in record if r.category is not FutureWarning]) == 1
 
         with pytest.raises(ValueError):
             trial.suggest_float("x", 10, 20, log=enable_log)
@@ -576,7 +576,7 @@ def test_datetime_start(storage_mode: str) -> None:
         assert study.trials[0].datetime_start == trial_datetime_start[0]
 
 
-def test_report() -> None:
+def test_report_value() -> None:
     study = create_study()
     trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
@@ -588,7 +588,7 @@ def test_report() -> None:
     trial.report(1, 5)
     trial.report(np.array([1], dtype=np.float32)[0], 6)
 
-    # Report values that cannot be cast to `float` or steps that are negative (Error).
+    # Report values that cannot be cast to `float`.
     with pytest.raises(TypeError):
         trial.report(None, 7)  # type: ignore
 
@@ -601,8 +601,30 @@ def test_report() -> None:
     with pytest.raises(TypeError):
         trial.report("foo", -1)  # type: ignore
 
+
+def test_report_step() -> None:
+    study = create_study()
+    trial = study.ask()
+    value = 1.0
+
+    # Report values whose steps can be cast to `int` (OK).
+    trial.report(value, 0)
+    trial.report(value, 1.0)  # type: ignore
+    trial.report(value, np.int64(2))  # type: ignore
+
+    # Report values whose steps cannot be cast to `int` (Error).
+    with pytest.raises(TypeError):
+        trial.report(value, None)  # type: ignore
+
+    with pytest.raises(TypeError):
+        trial.report(value, "foo")  # type: ignore
+
+    with pytest.raises(TypeError):
+        trial.report(value, [1, 2, 3])  # type: ignore
+
+    # Report a value whose step is negative (Error).
     with pytest.raises(ValueError):
-        trial.report(1.23, -1)
+        trial.report(value, -1)
 
 
 def test_report_warning() -> None:

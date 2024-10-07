@@ -7,7 +7,8 @@ from typing import NamedTuple
 import warnings
 
 import optuna
-from optuna.exceptions import ExperimentalWarning
+from optuna import _deprecated
+from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study import Study
 from optuna.study._multi_objective import _get_pareto_front_trials_by_trials
 from optuna.trial import FrozenTrial
@@ -30,7 +31,7 @@ class _ParetoFrontInfo(NamedTuple):
     infeasible_trials_with_values: list[tuple[FrozenTrial, list[float]]]
     axis_order: list[int]
     include_dominated_trials: bool
-    has_constraints_func: bool
+    has_constraints: bool
 
 
 def plot_pareto_front(
@@ -46,62 +47,6 @@ def plot_pareto_front(
 
     .. seealso::
         Please refer to :ref:`multi_objective` for the tutorial of the Pareto front visualization.
-
-    Example:
-
-        The following code snippet shows how to plot the Pareto front of a study.
-
-        .. plotly::
-
-            import optuna
-
-
-            def objective(trial):
-                x = trial.suggest_float("x", 0, 5)
-                y = trial.suggest_float("y", 0, 3)
-
-                v0 = 4 * x ** 2 + 4 * y ** 2
-                v1 = (x - 5) ** 2 + (y - 5) ** 2
-                return v0, v1
-
-
-            study = optuna.create_study(directions=["minimize", "minimize"])
-            study.optimize(objective, n_trials=50)
-
-            fig = optuna.visualization.plot_pareto_front(study)
-            fig.show()
-
-    Example:
-
-        The following code snippet shows how to plot a 2-dimensional Pareto front
-        of a 3-dimensional study.
-        This example is scalable, e.g., for plotting a 2- or 3-dimensional Pareto front
-        of a 4-dimensional study and so on.
-
-        .. plotly::
-
-            import optuna
-
-            def objective(trial):
-                x = trial.suggest_float("x", 0, 5)
-                y = trial.suggest_float("y", 0, 3)
-                v0 = 5 * x ** 2 + 3 * y ** 2
-                v1 = (x - 10) ** 2 + (y - 10) ** 2
-                v2 = x + y
-
-                return v0, v1, v2
-
-            study = optuna.create_study(directions=["minimize", "minimize", "minimize"])
-
-            study.optimize(objective, n_trials=100)
-
-            fig = optuna.visualization.plot_pareto_front(
-                study,
-                targets=lambda t: (t.values[0], t.values[1]),
-                target_names=["Objective 0", "Objective 1"],
-            )
-
-            fig.show()
 
     Args:
         study:
@@ -134,10 +79,10 @@ def plot_pareto_front(
             non-best, and infeasible. Categories are shown in different colors. Here, whether a
             trial is best (on Pareto front) or not is determined ignoring all infeasible trials.
 
-            .. note::
-                Added in v3.0.0 as an experimental feature. The interface may change in newer
-                versions without prior notice.
-                See https://github.com/optuna/optuna/releases/tag/v3.0.0.
+            .. warning::
+                Deprecated in v4.0.0. This feature will be removed in the future. The removal of
+                this feature is currently scheduled for v6.0.0, but this schedule is subject to
+                change. See https://github.com/optuna/optuna/releases/tag/v4.0.0.
         targets:
             A function that returns targets values to display.
             The argument to this function is :class:`~optuna.trial.FrozenTrial`.
@@ -163,8 +108,8 @@ def plot_pareto_front(
 
 def _get_pareto_front_plot(info: _ParetoFrontInfo) -> "go.Figure":
     include_dominated_trials = info.include_dominated_trials
-    has_constraints_func = info.has_constraints_func
-    if not has_constraints_func:
+    has_constraints = info.has_constraints
+    if not has_constraints:
         data = [
             _make_scatter_object(
                 info.n_targets,
@@ -238,12 +183,16 @@ def _get_pareto_front_info(
     targets: Callable[[FrozenTrial], Sequence[float]] | None = None,
 ) -> _ParetoFrontInfo:
     if axis_order is not None:
-        warnings.warn(
-            "`axis_order` has been deprecated in v3.0.0. "
-            "This feature will be removed in v5.0.0. "
-            "See https://github.com/optuna/optuna/releases/tag/v3.0.0.",
-            FutureWarning,
+        msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
+            name="`axis_order`", d_ver="3.0.0", r_ver="5.0.0"
         )
+        warnings.warn(msg, FutureWarning)
+
+    if constraints_func is not None:
+        msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
+            name="`constraints_func`", d_ver="4.0.0", r_ver="6.0.0"
+        )
+        warnings.warn(msg, FutureWarning)
 
     if targets is not None and axis_order is not None:
         raise ValueError(
@@ -251,38 +200,35 @@ def _get_pareto_front_info(
             "Use either `targets` or `axis_order`."
         )
 
-    if constraints_func is not None:
-        warnings.warn(
-            "``constraints_func`` argument is an experimental feature."
-            " The interface can change in the future.",
-            ExperimentalWarning,
-        )
-        feasible_trials = []
-        infeasible_trials = []
-        for trial in study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)):
+    feasible_trials = []
+    infeasible_trials = []
+    has_constraints = False
+    for trial in study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)):
+        if constraints_func is not None:
+            # NOTE(nabenabe0928): This part is deprecated.
+            has_constraints = True
             if all(map(lambda x: x <= 0.0, constraints_func(trial))):
                 feasible_trials.append(trial)
             else:
                 infeasible_trials.append(trial)
-        best_trials = _get_pareto_front_trials_by_trials(feasible_trials, study.directions)
-        if include_dominated_trials:
-            non_best_trials = _get_non_pareto_front_trials(feasible_trials, best_trials)
-        else:
-            non_best_trials = []
+            continue
 
-        if len(best_trials) == 0:
-            _logger.warning("Your study does not have any completed and feasible trials.")
+        constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
+        has_constraints |= constraints is not None
+        if constraints is None or all(x <= 0.0 for x in constraints):
+            feasible_trials.append(trial)
+        else:
+            infeasible_trials.append(trial)
+
+    best_trials = _get_pareto_front_trials_by_trials(feasible_trials, study.directions)
+    if include_dominated_trials:
+        non_best_trials = _get_non_pareto_front_trials(feasible_trials, best_trials)
     else:
-        all_trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
-        best_trials = _get_pareto_front_trials_by_trials(all_trials, study.directions)
-        if len(best_trials) == 0:
-            _logger.warning("Your study does not have any completed trials.")
+        non_best_trials = []
 
-        if include_dominated_trials:
-            non_best_trials = _get_non_pareto_front_trials(all_trials, best_trials)
-        else:
-            non_best_trials = []
-        infeasible_trials = []
+    if len(best_trials) == 0:
+        what_trial = "completed" if has_constraints else "completed and feasible"
+        _logger.warning(f"Your study does not have any {what_trial} trials. ")
 
     _targets = targets
     if _targets is None:
@@ -378,7 +324,7 @@ def _get_pareto_front_info(
         infeasible_trials_with_values=infeasible_trials_with_values,
         axis_order=axis_order,
         include_dominated_trials=include_dominated_trials,
-        has_constraints_func=constraints_func is not None,
+        has_constraints=has_constraints,
     )
 
 

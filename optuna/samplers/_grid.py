@@ -1,13 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
+from collections.abc import Sequence
 import itertools
 from numbers import Real
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Mapping
-from typing import Optional
-from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import Union
 import warnings
@@ -102,14 +99,15 @@ class GridSampler(BaseSampler):
             A dictionary whose key and value are a parameter name and the corresponding candidates
             of values, respectively.
         seed:
-            A seed to fix the order of trials as the grid is randomly shuffled. Please note that
-            it is not recommended using this option in distributed optimization settings since
-            this option cannot ensure the order of trials and may increase the number of duplicate
-            suggestions during distributed optimization.
+            A seed to fix the order of trials as the grid is randomly shuffled. This shuffle is
+            beneficial when the number of grids is larger than ``n_trials`` in
+            :meth:`~optuna.Study.optimize` to suppress suggesting similar grids. Please note
+            that fixing ``seed`` for each process is strongly recommended in distributed
+            optimization to avoid duplicated suggestions.
     """
 
     def __init__(
-        self, search_space: Mapping[str, Sequence[GridValueType]], seed: Optional[int] = None
+        self, search_space: Mapping[str, Sequence[GridValueType]], seed: int | None = None
     ) -> None:
         for param_name, param_values in search_space.items():
             for value in param_values:
@@ -122,8 +120,8 @@ class GridSampler(BaseSampler):
         self._all_grids = list(itertools.product(*self._search_space.values()))
         self._param_names = sorted(search_space.keys())
         self._n_min_trials = len(self._all_grids)
-        self._rng = LazyRandomState(seed)
-        self._rng.rng.shuffle(self._all_grids)
+        self._rng = LazyRandomState(seed or 0)
+        self._rng.rng.shuffle(self._all_grids)  # type: ignore[arg-type]
 
     def reseed_rng(self) -> None:
         self._rng.rng.seed()
@@ -171,12 +169,12 @@ class GridSampler(BaseSampler):
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
-    ) -> Dict[str, BaseDistribution]:
+    ) -> dict[str, BaseDistribution]:
         return {}
 
     def sample_relative(
-        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
-    ) -> Dict[str, Any]:
+        self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
+    ) -> dict[str, Any]:
         return {}
 
     def sample_independent(
@@ -194,9 +192,6 @@ class GridSampler(BaseSampler):
             message = "The parameter name, {}, is not found in the given grid.".format(param_name)
             raise ValueError(message)
 
-        # TODO(c-bata): Reduce the number of duplicated evaluations on multiple workers.
-        # Current selection logic may evaluate the same parameters multiple times.
-        # See https://gist.github.com/c-bata/f759f64becb24eea2040f4b2e3afce8f for details.
         grid_id = trial.system_attrs["grid_id"]
         param_value = self._all_grids[grid_id][self._param_names.index(param_name)]
         contains = param_distribution._contains(param_distribution.to_internal_repr(param_value))
@@ -213,7 +208,7 @@ class GridSampler(BaseSampler):
         study: Study,
         trial: FrozenTrial,
         state: TrialState,
-        values: Optional[Sequence[float]],
+        values: Sequence[float] | None,
     ) -> None:
         target_grids = self._get_unvisited_grid_ids(study)
 
@@ -236,7 +231,7 @@ class GridSampler(BaseSampler):
         )
         warnings.warn(message)
 
-    def _get_unvisited_grid_ids(self, study: Study) -> List[int]:
+    def _get_unvisited_grid_ids(self, study: Study) -> list[int]:
         # List up unvisited grids based on already finished ones.
         visited_grids = []
         running_grids = []

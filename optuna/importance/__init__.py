@@ -1,10 +1,8 @@
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
-import warnings
+from __future__ import annotations
 
-from optuna.exceptions import ExperimentalWarning
+from collections.abc import Callable
+
+from optuna._experimental import warn_experimental_argument
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova import FanovaImportanceEvaluator
 from optuna.importance._mean_decrease_impurity import MeanDecreaseImpurityImportanceEvaluator
@@ -25,11 +23,11 @@ __all__ = [
 def get_param_importances(
     study: Study,
     *,
-    evaluator: Optional[BaseImportanceEvaluator] = None,
-    params: Optional[List[str]] = None,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
+    evaluator: BaseImportanceEvaluator | None = None,
+    params: list[str] | None = None,
+    target: Callable[[FrozenTrial], float] | None = None,
     normalize: bool = True,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Evaluate parameter importances based on completed trials in the given study.
 
     The parameter importances are returned as a dictionary where the keys consist of parameter
@@ -69,7 +67,7 @@ def get_param_importances(
             .. note::
                 :class:`~optuna.importance.FanovaImportanceEvaluator` takes over 1 minute
                 when given a study that contains 1000+ trials. We published
-                `optuna-fast-fanova <https://github.com/optuna/optuna-fast-fanova>`_ library,
+                `optuna-fast-fanova <https://github.com/optuna/optuna-fast-fanova>`__ library,
                 that is a Cython accelerated fANOVA implementation.
                 By using it, you can get hyperparameter importances within a few seconds.
                 If ``n_trials`` is more than 10000, the Cython implementation takes more than
@@ -119,9 +117,5 @@ def get_param_importances(
         else:
             return dict((param, value / s) for (param, value) in res.items())
     else:
-        warnings.warn(
-            "`normalize` option is an experimental feature."
-            " The interface can change in the future.",
-            ExperimentalWarning,
-        )
+        warn_experimental_argument("normalize")
         return res

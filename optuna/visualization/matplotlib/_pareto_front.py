@@ -31,29 +31,6 @@ def plot_pareto_front(
     .. seealso::
         Please refer to :func:`optuna.visualization.plot_pareto_front` for an example.
 
-    Example:
-
-        The following code snippet shows how to plot the Pareto front of a study.
-
-        .. plot::
-
-            import optuna
-
-
-            def objective(trial):
-                x = trial.suggest_float("x", 0, 5)
-                y = trial.suggest_float("y", 0, 3)
-
-                v0 = 4 * x ** 2 + 4 * y ** 2
-                v1 = (x - 5) ** 2 + (y - 5) ** 2
-                return v0, v1
-
-
-            study = optuna.create_study(directions=["minimize", "minimize"])
-            study.optimize(objective, n_trials=50)
-
-            optuna.visualization.matplotlib.plot_pareto_front(study)
-
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their objective
@@ -84,6 +61,11 @@ def plot_pareto_front(
             If given, trials are classified into three categories: feasible and best, feasible but
             non-best, and infeasible. Categories are shown in different colors. Here, whether a
             trial is best (on Pareto front) or not is determined ignoring all infeasible trials.
+
+            .. warning::
+                Deprecated in v4.0.0. This feature will be removed in the future. The removal of
+                this feature is currently scheduled for v6.0.0, but this schedule is subject to
+                change. See https://github.com/optuna/optuna/releases/tag/v4.0.0.
         targets:
             A function that returns a tuple of target values to display.
             The argument to this function is :class:`~optuna.trial.FrozenTrial`.

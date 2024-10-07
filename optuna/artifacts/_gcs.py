@@ -11,7 +11,7 @@ from optuna.artifacts.exceptions import ArtifactNotFound
 if TYPE_CHECKING:
     from typing import BinaryIO
 
-with try_import():
+with try_import() as _imports:
     import google.cloud.storage
 
 
@@ -24,8 +24,8 @@ class GCSArtifactStore:
             The name of the bucket to store artifacts.
 
         client:
-            A google-cloud-storage `Client` to use for storage operations. If not specified, a new
-            client will be created with default settings.
+            A google-cloud-storage ``Client`` to use for storage operations. If not specified, a
+            new client will be created with default settings.
 
     Example:
         .. code-block:: python
@@ -40,10 +40,14 @@ class GCSArtifactStore:
             def objective(trial: optuna.Trial) -> float:
                 ... = trial.suggest_float("x", -10, 10)
                 file_path = generate_example(...)
-                upload_artifact(trial, file_path, artifact_backend)
+                upload_artifact(
+                    artifact_store=artifact_store,
+                    file_path=file_path,
+                    study_or_trial=trial,
+                )
                 return ...
 
-        Before running this code, you will have to install `gcloud` and run
+        Before running this code, you will have to install ``gcloud`` and run
 
         .. code-block:: bash
 
@@ -57,6 +61,7 @@ class GCSArtifactStore:
         bucket_name: str,
         client: google.cloud.storage.Client | None = None,
     ) -> None:
+        _imports.check()
         self.bucket_name = bucket_name
         self.client = client or google.cloud.storage.Client()
         self.bucket_obj = self.client.bucket(bucket_name)
@@ -85,6 +90,6 @@ class GCSArtifactStore:
 if TYPE_CHECKING:
     # A mypy-runtime assertion to ensure that GCS3ArtifactStore implements all abstract methods
     # in ArtifactStore.
-    from ._protocol import ArtifactStore
+    from optuna.artifacts._protocol import ArtifactStore
 
     _: ArtifactStore = GCSArtifactStore("")

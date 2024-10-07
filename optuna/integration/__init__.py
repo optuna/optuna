@@ -4,15 +4,16 @@ from types import ModuleType
 from typing import Any
 from typing import TYPE_CHECKING
 
+from optuna._imports import _INTEGRATION_IMPORT_ERROR_TEMPLATE
+
 
 _import_structure = {
     "allennlp": ["AllenNLPExecutor", "AllenNLPPruningCallback"],
     "botorch": ["BoTorchSampler"],
-    "catalyst": ["CatalystPruningCallback"],
     "catboost": ["CatBoostPruningCallback"],
     "chainer": ["ChainerPruningExtension"],
     "chainermn": ["ChainerMNStudy"],
-    "cma": ["CmaEsSampler", "PyCmaSampler"],
+    "cma": ["PyCmaSampler"],
     "dask": ["DaskStorage"],
     "mlflow": ["MLflowCallback"],
     "wandb": ["WeightsAndBiasesCallback"],
@@ -25,12 +26,10 @@ _import_structure = {
     "shap": ["ShapleyImportanceEvaluator"],
     "skorch": ["SkorchPruningCallback"],
     "mxnet": ["MXNetPruningCallback"],
-    "skopt": ["SkoptSampler"],
     "tensorboard": ["TensorBoardCallback"],
     "tensorflow": ["TensorFlowPruningHook"],
     "tfkeras": ["TFKerasPruningCallback"],
     "xgboost": ["XGBoostPruningCallback"],
-    "fastaiv1": ["FastAIV1PruningCallback"],
     "fastaiv2": ["FastAIV2PruningCallback", "FastAIPruningCallback"],
 }
 
@@ -39,11 +38,9 @@ __all__ = [
     "AllenNLPExecutor",
     "AllenNLPPruningCallback",
     "BoTorchSampler",
-    "CatalystPruningCallback",
     "CatBoostPruningCallback",
     "ChainerPruningExtension",
     "ChainerMNStudy",
-    "CmaEsSampler",
     "PyCmaSampler",
     "DaskStorage",
     "MLflowCallback",
@@ -59,12 +56,10 @@ __all__ = [
     "ShapleyImportanceEvaluator",
     "SkorchPruningCallback",
     "MXNetPruningCallback",
-    "SkoptSampler",
     "TensorBoardCallback",
     "TensorFlowPruningHook",
     "TFKerasPruningCallback",
     "XGBoostPruningCallback",
-    "FastAIV1PruningCallback",
     "FastAIV2PruningCallback",
     "FastAIPruningCallback",
 ]
@@ -74,14 +69,11 @@ if TYPE_CHECKING:
     from optuna.integration.allennlp import AllenNLPExecutor
     from optuna.integration.allennlp import AllenNLPPruningCallback
     from optuna.integration.botorch import BoTorchSampler
-    from optuna.integration.catalyst import CatalystPruningCallback
     from optuna.integration.catboost import CatBoostPruningCallback
     from optuna.integration.chainer import ChainerPruningExtension
     from optuna.integration.chainermn import ChainerMNStudy
-    from optuna.integration.cma import CmaEsSampler
     from optuna.integration.cma import PyCmaSampler
     from optuna.integration.dask import DaskStorage
-    from optuna.integration.fastaiv1 import FastAIV1PruningCallback
     from optuna.integration.fastaiv2 import FastAIPruningCallback
     from optuna.integration.fastaiv2 import FastAIV2PruningCallback
     from optuna.integration.keras import KerasPruningCallback
@@ -95,7 +87,6 @@ if TYPE_CHECKING:
     from optuna.integration.pytorch_lightning import PyTorchLightningPruningCallback
     from optuna.integration.shap import ShapleyImportanceEvaluator
     from optuna.integration.sklearn import OptunaSearchCV
-    from optuna.integration.skopt import SkoptSampler
     from optuna.integration.skorch import SkorchPruningCallback
     from optuna.integration.tensorboard import TensorBoardCallback
     from optuna.integration.tensorflow import TensorFlowPruningHook
@@ -140,12 +131,6 @@ else:
             try:
                 return importlib.import_module("." + module_name, self.__name__)
             except ModuleNotFoundError:
-                raise ModuleNotFoundError(
-                    "Optuna's integration modules for third-party libraries have started "
-                    "migrating from Optuna itself to a package called `optuna-integration`. "
-                    "The module you are trying to use has already been migrated to "
-                    "`optuna-integration`. Please install the package by running "
-                    "`pip install optuna-integration`."
-                )
+                raise ModuleNotFoundError(_INTEGRATION_IMPORT_ERROR_TEMPLATE.format(module_name))
 
     sys.modules[__name__] = _IntegrationModule(__name__)

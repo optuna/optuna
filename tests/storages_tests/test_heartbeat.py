@@ -11,8 +11,8 @@ import pytest
 
 import optuna
 from optuna import Study
-from optuna._callbacks import RetryFailedTrialCallback
 from optuna.storages import RDBStorage
+from optuna.storages._callbacks import RetryFailedTrialCallback
 from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.storages._heartbeat import is_heartbeat_enabled
 from optuna.testing.storages import STORAGE_MODES_HEARTBEAT
@@ -20,6 +20,25 @@ from optuna.testing.storages import StorageSupplier
 from optuna.testing.threading import _TestableThread
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES_HEARTBEAT)
+def test_repeatedly_called_record_heartbeat(storage_mode: str) -> None:
+    heartbeat_interval = 1
+    grace_period = 2
+
+    with StorageSupplier(
+        storage_mode, heartbeat_interval=heartbeat_interval, grace_period=grace_period
+    ) as storage:
+        assert is_heartbeat_enabled(storage)
+        assert isinstance(storage, BaseHeartbeat)
+
+        study1 = optuna.create_study(storage=storage)
+
+        with pytest.warns(UserWarning):
+            trial1 = study1.ask()
+        storage.record_heartbeat(trial1._trial_id)
+        storage.record_heartbeat(trial1._trial_id)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES_HEARTBEAT)

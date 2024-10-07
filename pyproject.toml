@@ -6,7 +6,6 @@ build-backend = "setuptools.build_meta"
 name = "optuna"
 description = "A hyperparameter optimization framework"
 readme = "README.md"
-license = {file = "LICENSE"}
 authors = [
   {name = "Takuya Akiba"}
 ]
@@ -45,7 +44,6 @@ dynamic = ["version"]
 [project.optional-dependencies]
 benchmark = [
   "asv>=0.5.0",
-  "botorch",
   "cma",
   "virtualenv"
 ]
@@ -66,6 +64,7 @@ document = [
   "ase",
   "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
   "fvcore",
+  "kaleido",
   "lightgbm",
   "matplotlib!=3.6.0",
   "pandas",
@@ -75,7 +74,6 @@ document = [
   "sphinx",
   "sphinx-copybutton",
   "sphinx-gallery",
-  "sphinx-plotly-directive",
   "sphinx_rtd_theme>=1.2.0",
   "torch",
   "torchvision",
@@ -148,7 +146,13 @@ exclude = '''
 [tool.isort]
 profile = 'black'
 src_paths = ['optuna', 'tests', 'docs', 'benchmarks']
-skip_glob = ['docs/source/conf.py', '**/alembic/versions/*.py', 'tutorial/**/*.py']
+skip_glob = [
+  'docs/source/conf.py',
+  '**/alembic/versions/*.py',
+  'tutorial/**/*.py',
+  'docs/visualization_examples/*.py',
+  'docs/visualization_matplotlib_examples/*.py',
+]
 line_length = 99
 lines_after_imports = 2
 force_single_line = 'True'

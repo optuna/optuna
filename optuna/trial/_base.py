@@ -1,10 +1,10 @@
+from __future__ import annotations
+
 import abc
+from collections.abc import Sequence
 import datetime
 from typing import Any
-from typing import Dict
-from typing import Optional
 from typing import overload
-from typing import Sequence
 
 from optuna._deprecated import deprecated_func
 from optuna.distributions import BaseDistribution
@@ -27,7 +27,7 @@ class BaseTrial(abc.ABC):
         low: float,
         high: float,
         *,
-        step: Optional[float] = None,
+        step: float | None = None,
         log: bool = False,
     ) -> float:
         raise NotImplementedError
@@ -104,27 +104,27 @@ class BaseTrial(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def params(self) -> Dict[str, Any]:
+    def params(self) -> dict[str, Any]:
         raise NotImplementedError
 
     @property
     @abc.abstractmethod
-    def distributions(self) -> Dict[str, BaseDistribution]:
+    def distributions(self) -> dict[str, BaseDistribution]:
         raise NotImplementedError
 
     @property
     @abc.abstractmethod
-    def user_attrs(self) -> Dict[str, Any]:
+    def user_attrs(self) -> dict[str, Any]:
         raise NotImplementedError
 
     @property
     @abc.abstractmethod
-    def system_attrs(self) -> Dict[str, Any]:
+    def system_attrs(self) -> dict[str, Any]:
         raise NotImplementedError
 
     @property
     @abc.abstractmethod
-    def datetime_start(self) -> Optional[datetime.datetime]:
+    def datetime_start(self) -> datetime.datetime | None:
         raise NotImplementedError
 
     @property

@@ -1,9 +1,8 @@
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
+from __future__ import annotations
 
-import numpy
+from collections.abc import Callable
+
+import numpy as np
 
 from optuna._transform import _SearchSpaceTransform
 from optuna.importance._base import _get_distributions
@@ -23,7 +22,7 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
 
     Implements the fANOVA hyperparameter importance evaluation algorithm in
     `An Efficient Approach for Assessing Hyperparameter Importance
-    <http://proceedings.mlr.press/v32/hutter14.html>`_.
+    <http://proceedings.mlr.press/v32/hutter14.html>`__.
 
     fANOVA fits a random forest regression model that predicts the objective values
     of :class:`~optuna.trial.TrialState.COMPLETE` trials given their parameter configurations.
@@ -33,13 +32,13 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
     .. note::
 
         This class takes over 1 minute when given a study that contains 1000+ trials.
-        We published `optuna-fast-fanova <https://github.com/optuna/optuna-fast-fanova>`_ library,
+        We published `optuna-fast-fanova <https://github.com/optuna/optuna-fast-fanova>`__ library,
         that is a Cython accelerated fANOVA implementation. By using it, you can get hyperparameter
         importances within a few seconds.
 
     .. note::
 
-        Requires the `sklearn <https://github.com/scikit-learn/scikit-learn>`_ Python package.
+        Requires the `sklearn <https://github.com/scikit-learn/scikit-learn>`__ Python package.
 
     .. note::
 
@@ -64,9 +63,7 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
 
     """
 
-    def __init__(
-        self, *, n_trees: int = 64, max_depth: int = 64, seed: Optional[int] = None
-    ) -> None:
+    def __init__(self, *, n_trees: int = 64, max_depth: int = 64, seed: int | None = None) -> None:
         self._evaluator = _Fanova(
             n_trees=n_trees,
             max_depth=max_depth,
@@ -78,10 +75,10 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
     def evaluate(
         self,
         study: Study,
-        params: Optional[List[str]] = None,
+        params: list[str] | None = None,
         *,
-        target: Optional[Callable[[FrozenTrial], float]] = None,
-    ) -> Dict[str, float]:
+        target: Callable[[FrozenTrial], float] | None = None,
+    ) -> dict[str, float]:
         if target is None and study._is_multi_objective():
             raise ValueError(
                 "If the `study` is being used for multi-objective optimization, "
@@ -107,14 +104,14 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
         if len(non_single_distributions) == 0:
             return {}
 
-        trials: List[FrozenTrial] = _get_filtered_trials(study, params=params, target=target)
+        trials: list[FrozenTrial] = _get_filtered_trials(study, params=params, target=target)
 
         trans = _SearchSpaceTransform(
             non_single_distributions, transform_log=False, transform_step=False
         )
 
-        trans_params: numpy.ndarray = _get_trans_params(trials, trans)
-        target_values: numpy.ndarray = _get_target_values(trials, target)
+        trans_params: np.ndarray = _get_trans_params(trials, trans)
+        target_values: np.ndarray = _get_target_values(trials, target)
 
         evaluator = self._evaluator
         evaluator.fit(
@@ -123,11 +120,9 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
             search_spaces=trans.bounds,
             column_to_encoded_columns=trans.column_to_encoded_columns,
         )
-        param_importances = numpy.array(
+        param_importances = np.array(
             [evaluator.get_importance(i)[0] for i in range(len(non_single_distributions))]
         )
-        # We normalize here to keep the backward compatibility.
-        param_importances /= numpy.sum(param_importances)
 
         return _sort_dict_by_importance(
             {

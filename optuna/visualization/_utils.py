@@ -71,31 +71,28 @@ def _check_plot_args(
 
 def _is_log_scale(trials: list[FrozenTrial], param: str) -> bool:
     for trial in trials:
-        if param in trial.params:
-            dist = trial.distributions[param]
-
-            if isinstance(dist, (FloatDistribution, IntDistribution)):
-                if dist.log:
-                    return True
-
+        if param not in trial.params:
+            continue
+        dist = trial.distributions[param]
+        return isinstance(dist, (FloatDistribution, IntDistribution)) and dist.log
     return False
 
 
-def _is_categorical(trials: list[FrozenTrial], param: str) -> bool:
-    return any(
-        isinstance(t.distributions[param], CategoricalDistribution)
-        for t in trials
-        if param in t.params
-    )
-
-
 def _is_numerical(trials: list[FrozenTrial], param: str) -> bool:
-    return all(
-        (isinstance(t.params[param], int) or isinstance(t.params[param], float))
-        and not isinstance(t.params[param], bool)
-        for t in trials
-        if param in t.params
-    )
+    for trial in trials:
+        if param not in trial.params:
+            continue
+        dist = trial.distributions[param]
+        if isinstance(dist, (IntDistribution, FloatDistribution)):
+            return True
+        elif isinstance(dist, CategoricalDistribution):
+            # NOTE: Although it is a bit odd to do so, we keep it as is only for visualization.
+            return all(
+                isinstance(v, (int, float)) and not isinstance(v, bool) for v in dist.choices
+            )
+        else:
+            assert False, "Should not reach."
+    return True
 
 
 def _get_param_values(trials: list[FrozenTrial], p_name: str) -> list[Any]:

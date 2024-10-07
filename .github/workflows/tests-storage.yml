@@ -36,7 +36,7 @@ jobs:
 
     services:
       mysql:
-        image: mysql:5.7
+        image: mysql:8
         ports:
           - 3306:3306
         env:
@@ -50,7 +50,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       postgres:
-        image: postgres:10.1-alpine
+        image: postgres:latest
         ports:
           - 5432:5432
         env:
@@ -101,7 +101,7 @@ jobs:
         python -c 'import optuna'
         optuna --version
 
-        pip install --progress-bar off .[test]
+        pip install --progress-bar off .[test] --extra-index-url https://download.pytorch.org/whl/cpu
         pip install --progress-bar off .[optional] --extra-index-url https://download.pytorch.org/whl/cpu
 
     - name: Install DB bindings

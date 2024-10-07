@@ -154,7 +154,15 @@ def test_get_timeline_plot_with_killed_running_trials(
     plot_timeline: Callable[..., Any], waiting_time: float
 ) -> None:
     def _objective_with_sleep(trial: optuna.Trial) -> float:
-        time.sleep(0.1)
+        sleep_start_datetime = datetime.datetime.now()
+        # Spin waiting is used here because high accuracy is necessary even in weak VM.
+        # Please check the motivation of the bugfix in https://github.com/optuna/optuna/pull/5549/
+        while datetime.datetime.now() - sleep_start_datetime < datetime.timedelta(seconds=0.1):
+            # `sleep(0.1)` is only guaranteed to rest for more than 0.1 second; the actual time
+            # depends on the OS. spin waiting is used here to rest for 0.1 second as precisely as
+            # possible without voluntarily releasing the context.
+            pass
+        assert datetime.datetime.now() - sleep_start_datetime < datetime.timedelta(seconds=0.19)
         trial.suggest_float("x", -1.0, 1.0)
         return 1.0
 

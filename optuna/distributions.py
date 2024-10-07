@@ -90,7 +90,7 @@ class BaseDistribution(abc.ABC):
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, BaseDistribution):
             return NotImplemented
-        if not type(self) is type(other):
+        if type(self) is not type(other):
             return False
         return self.__dict__ == other.__dict__
 
@@ -529,9 +529,17 @@ class CategoricalDistribution(BaseDistribution):
         return self.choices[int(param_value_in_internal_repr)]
 
     def to_internal_repr(self, param_value_in_external_repr: CategoricalChoiceType) -> float:
-        for index, choice in enumerate(self.choices):
-            if _categorical_choice_equal(param_value_in_external_repr, choice):
-                return index
+        try:
+            # NOTE(nabenabe): With this implementation, we cannot distinguish some values
+            # such as True and 1, or 1.0 and 1. For example, if choices=[True, 1] and external_repr
+            # is 1, this method wrongly returns 0 instead of 1. However, we decided to accept this
+            # bug for such exceptional choices for less complexity and faster processing.
+            return self.choices.index(param_value_in_external_repr)
+        except ValueError:  # ValueError: param_value_in_external_repr is not in choices.
+            # ValueError also happens if external_repr is nan or includes precision error in float.
+            for index, choice in enumerate(self.choices):
+                if _categorical_choice_equal(param_value_in_external_repr, choice):
+                    return index
 
         raise ValueError(f"'{param_value_in_external_repr}' not in {self.choices}.")
 

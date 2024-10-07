@@ -76,7 +76,7 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
 
     For distributed optimization, see :ref:`distributed` tutorial. Note that the ``constant_liar`` option of :class:`~optuna.samplers.TPESampler` allows :class:`~optuna.samplers.TPESampler` to handle the distributed optimization.
 
-    For constrained optimization, see an `example <https://github.com/optuna/optuna-examples/blob/main/multi_objective/botorch_simple.py>`_.
+    For constrained optimization, see an `example <https://github.com/optuna/optuna-examples/blob/main/multi_objective/botorch_simple.py>`__.
 
 .. autosummary::
     :toctree: generated/
@@ -93,8 +93,6 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
     optuna.samplers.NSGAIIISampler
     optuna.samplers.QMCSampler
     optuna.samplers.BruteForceSampler
-    optuna.samplers.IntersectionSearchSpace
-    optuna.samplers.intersection_search_space
 
 .. note::
     The following :mod:`optuna.samplers.nsgaii` module defines crossover operations used by :class:`~optuna.samplers.NSGAIISampler`.

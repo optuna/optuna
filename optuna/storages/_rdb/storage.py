@@ -4,9 +4,12 @@ from collections import defaultdict
 from contextlib import contextmanager
 import copy
 from datetime import datetime
+from datetime import timedelta
 import json
 import logging
 import os
+import random
+import time
 from typing import Any
 from typing import Callable
 from typing import Container
@@ -180,7 +183,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         mechanism. Set ``heartbeat_interval``, ``grace_period``, and ``failed_trial_callback``
         appropriately according to your use case. For more details, please refer to the
         :ref:`tutorial <heartbeat_monitoring>` and `Example page
-        <https://github.com/optuna/optuna-examples/blob/main/pytorch/pytorch_checkpoint.py>`_.
+        <https://github.com/optuna/optuna-examples/blob/main/pytorch/pytorch_checkpoint.py>`__.
 
     .. seealso::
         You can use :class:`~optuna.storages.RetryFailedTrialCallback` to automatically retry
@@ -443,48 +446,53 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         """
 
-        # Retry a couple of times. Deadlocks may occur in distributed environments.
-        n_retries = 0
-        with _create_scoped_session(self.scoped_session) as session:
-            while True:
-                try:
-                    # Ensure that that study exists.
-                    #
-                    # Locking within a study is necessary since the creation of a trial is not an
-                    # atomic operation. More precisely, the trial number computed in
-                    # `_get_prepared_new_trial` is prone to race conditions without this lock.
-                    models.StudyModel.find_or_raise_by_id(study_id, session, for_update=True)
-
-                    trial = self._get_prepared_new_trial(study_id, template_trial, session)
-                    break  # Successfully created trial.
-                except sqlalchemy_exc.OperationalError:
-                    if n_retries > 2:
-                        raise
-
-                n_retries += 1
-
+        def _create_frozen_trial(
+            trial: "models.TrialModel", template_trial: FrozenTrial | None
+        ) -> FrozenTrial:
             if template_trial:
                 frozen = copy.deepcopy(template_trial)
                 frozen.number = trial.number
                 frozen.datetime_start = trial.datetime_start
                 frozen._trial_id = trial.trial_id
-            else:
-                frozen = FrozenTrial(
-                    number=trial.number,
-                    state=trial.state,
-                    value=None,
-                    values=None,
-                    datetime_start=trial.datetime_start,
-                    datetime_complete=None,
-                    params={},
-                    distributions={},
-                    user_attrs={},
-                    system_attrs={},
-                    intermediate_values={},
-                    trial_id=trial.trial_id,
-                )
+                return frozen
+            return FrozenTrial(
+                number=trial.number,
+                state=trial.state,
+                value=None,
+                values=None,
+                datetime_start=trial.datetime_start,
+                datetime_complete=None,
+                params={},
+                distributions={},
+                user_attrs={},
+                system_attrs={},
+                intermediate_values={},
+                trial_id=trial.trial_id,
+            )
 
-            return frozen
+        # Retry maximum five times. Deadlocks may occur in distributed environments.
+        MAX_RETRIES = 5
+        for n_retries in range(1, MAX_RETRIES + 1):
+            try:
+                with _create_scoped_session(self.scoped_session) as session:
+                    # This lock is necessary because the trial creation is not an atomic operation
+                    # and the calculation of trial.number is prone to race conditions.
+                    models.StudyModel.find_or_raise_by_id(study_id, session, for_update=True)
+                    trial = self._get_prepared_new_trial(study_id, template_trial, session)
+                    return _create_frozen_trial(trial, template_trial)
+            # sqlalchemy_exc.OperationalError is converted to ``StorageInternalError``.
+            except optuna.exceptions.StorageInternalError as e:
+                # ``OperationalError`` happens either by (1) invalid inputs, e.g., too long string,
+                # or (2) timeout error, which relates to deadlock. Although Error (1) is not
+                # intended to be caught here, it must be fixed to use RDBStorage anyways.
+                if n_retries == MAX_RETRIES:
+                    raise e
+
+                # Optuna defers to the DB administrator to reduce DB server congestion, hence
+                # Optuna simply uses non-exponential backoff here for retries caused by deadlock.
+                time.sleep(random.random() * 2.0)
+
+        assert False, "Should not be reached."
 
     def _get_prepared_new_trial(
         self,
@@ -910,10 +918,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             direction = _directions[0]
 
             if direction == StudyDirection.MAXIMIZE:
-                trial = models.TrialModel.find_max_value_trial(study_id, 0, session)
+                trial_id = models.TrialModel.find_max_value_trial_id(study_id, 0, session)
             else:
-                trial = models.TrialModel.find_min_value_trial(study_id, 0, session)
-            trial_id = trial.trial_id
+                trial_id = models.TrialModel.find_min_value_trial_id(study_id, 0, session)
 
         return self.get_trial(trial_id)
 
@@ -975,11 +982,15 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
     def record_heartbeat(self, trial_id: int) -> None:
         with _create_scoped_session(self.scoped_session, True) as session:
+            # Fetch heartbeat with read-only.
             heartbeat = models.TrialHeartbeatModel.where_trial_id(trial_id, session)
-            if heartbeat is None:
+            if heartbeat is None:  # heartbeat record does not exist.
                 heartbeat = models.TrialHeartbeatModel(trial_id=trial_id)
                 session.add(heartbeat)
             else:
+                # Re-fetch the existing heartbeat with the write authorization.
+                heartbeat = models.TrialHeartbeatModel.where_trial_id(trial_id, session, True)
+                assert heartbeat is not None
                 heartbeat.heartbeat = session.execute(sqlalchemy.func.now()).scalar()
 
     def _get_stale_trial_ids(self, study_id: int) -> List[int]:
@@ -1010,7 +1021,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                     continue
                 assert len(trial.heartbeats) == 1
                 heartbeat = trial.heartbeats[0].heartbeat
-                if (current_heartbeat - heartbeat).seconds > grace_period:
+                if current_heartbeat - heartbeat > timedelta(seconds=grace_period):
                     stale_trial_ids.append(trial.trial_id)
 
         return stale_trial_ids
