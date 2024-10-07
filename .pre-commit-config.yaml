@@ -1,4 +1,4 @@
-# If you want use pre-commit, you need to install pre-commit package.
+# pre-commit package installation is necessary to use pre-commit.
 # $ pip install pre-commit
 # $ pre-commit install
 
@@ -6,6 +6,7 @@ default_language_version:
   python: python3
 
 repos:
+  # Args are based on setup.cfg.
   - repo: https://github.com/psf/black
     rev: 24.8.0
     hooks:
@@ -30,6 +31,7 @@ repos:
     hooks:
     - id: mypy
       additional_dependencies: [
+        "mypy_boto3_s3",
         "types-PyYAML",
         "types-redis",
         "types-setuptools",

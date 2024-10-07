@@ -66,16 +66,15 @@ Coding style is checked with [flake8](http://flake8.pycqa.org) and [isort](https
 and additional conventions are described in the [Wiki](https://github.com/optuna/optuna/wiki/Coding-Style-Conventions).
 Type hints, [PEP484](https://www.python.org/dev/peps/pep-0484/), are checked with [mypy](http://mypy-lang.org/).
 
-You can check the format, coding style, and type hints at the same time just by executing a script `formats.sh`.
-If your environment is missing some dependencies such as black, blackdoc, flake8, isort or mypy,
-you will be asked to install them.
+You can use `pre-commit` to automatically check the format, coding style, and type hints before committing.
 The following commands automatically fix format errors by auto-formatters.
 
 ```bash
-# Install auto-formatters.
-$ pip install ".[checking]"
+# Install `pre-commit`.
+$ pip install pre-commit
 
-$ ./formats.sh
+$ pre-commit install
+$ pre-commit run --all-files
 ```
 
 ### Documentation
