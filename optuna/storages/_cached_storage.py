@@ -23,7 +23,8 @@ class _StudyInfo:
     def __init__(self) -> None:
         # Trial number to corresponding FrozenTrial.
         self.trials: dict[int, FrozenTrial] = {}
-        # A list of trials and the last trial number which require storage access to read latest attributes.
+        # A list of trials and the last trial number which require storage access to read latest
+        # attributes.
         self.unfinished_trial_ids: set[int] = set()
         self.last_finished_trial_id: int = -1
         # Cache distributions to avoid storage access on distribution consistency check.
@@ -155,11 +156,9 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
             # Since finished trials will not be modified by any worker, we do not
             # need storage access for them.
             if frozen_trial.state.is_finished():
-                study.last_finished_trial_id = max(
-                    study.last_finished_trial_id, trial._trial_id
-                )
+                study.last_finished_trial_id = max(study.last_finished_trial_id, trial_id)
             else:
-                study.unfinished_trial_ids.add(frozen_trial._trial_id)
+                study.unfinished_trial_ids.add(trial_id)
         return trial_id
 
     def set_trial_param(
@@ -241,7 +240,7 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
                 self._studies[study_id] = _StudyInfo()
             study = self._studies[study_id]
             trials = self._backend._get_trials(
-                study_id, 
+                study_id,
                 states=None,
                 included_trial_ids=study.unfinished_trial_ids,
                 trial_id_cursor=study.last_finished_trial_id,

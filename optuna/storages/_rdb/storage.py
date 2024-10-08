@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from contextlib import contextmanager
 import copy
+from dataclasses import dataclass
 from datetime import datetime
 from datetime import timedelta
 import json
@@ -15,7 +16,6 @@ from typing import Callable
 from typing import Container
 from typing import Dict
 from typing import Generator
-from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -96,6 +96,22 @@ def _create_scoped_session(
         raise
     finally:
         session.close()
+
+
+@dataclass
+class _FrozenTrial:
+    number: int
+    trial_id: int
+    state: TrialState
+    datetime_start: Optional[datetime]
+    datetime_complete: Optional[datetime]
+    value: Optional[float]
+    values: Optional[List[float]] = None
+    params: Dict[str, Any] | None = None
+    distributions: Dict[str, distributions.BaseDistribution] | None = None
+    user_attrs: Dict[str, Any] | None = None
+    system_attrs: Dict[str, Any] | None = None
+    intermediate_values: Dict[int, float] | None = None
 
 
 class RDBStorage(BaseStorage, BaseHeartbeat):
@@ -808,29 +824,44 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             # Ensure that the study exists.
             models.StudyModel.find_or_raise_by_id(study_id, session)
 
-            print("Fixed version _get_trials called!!!")
-            try:
-                query = (
-                    session.query(models.TrialModel)
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.params))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.values))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.user_attributes))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.system_attributes))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.intermediate_values))
-                    .filter(models.TrialModel.study_id == study_id)
-                )
+            n_objectives = len(models.StudyDirectionModel.where_study_id(study_id, session))
 
+            def _construct_query(query: "sqlalchemy_orm.Query") -> "sqlalchemy_orm.Query":
+                query = query.filter(models.TrialModel.study_id == study_id)
                 if states is not None:
-                    # This assertion is for type checkers, since `states` is required to be Container
-                    # in the base class while `models.TrialModel.state.in_` requires Iterable.
-                    assert isinstance(states, Iterable)
                     query = query.filter(models.TrialModel.state.in_(states))
-
-                trial_models = (
-                    query.filter(sqlalchemy.or_(models.TrialModel.trial_id.in_(included_trial_ids), models.TrialModel.trial_id > trial_id_cursor))
-                    .order_by(models.TrialModel.trial_id)
-                    .all()
+                query = query.filter(
+                    sqlalchemy.or_(
+                        models.TrialModel.trial_id.in_(included_trial_ids),
+                        models.TrialModel.trial_id > trial_id_cursor,
+                    )
                 )
+                query = query.order_by(models.TrialModel.trial_id)
+                return query
+
+            def _construct_slow_query(
+                query: "sqlalchemy_orm.Query",
+            ) -> "sqlalchemy_orm.Query":
+                query = query.filter(models.TrialModel.study_id == study_id)
+                if states is not None:
+                    query = query.filter(models.TrialModel.state.in_(states))
+                query = query.order_by(models.TrialModel.trial_id)
+                return query
+
+            query = _construct_query(session.query(models.TrialModel))
+            try:
+                trials = {
+                    t.trial_id: _FrozenTrial(
+                        number=t.number,
+                        trial_id=t.trial_id,
+                        state=t.state,
+                        datetime_start=t.datetime_start,
+                        datetime_complete=t.datetime_complete,
+                        value=None,
+                    )
+                    for t in query.all()
+                }
+
             except sqlalchemy_exc.OperationalError as e:
                 # Likely exceeding the number of maximum allowed variables using IN.
                 # This number differ between database dialects. For SQLite for instance, see
@@ -842,22 +873,115 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                     "".format(str(e))
                 )
 
-                trial_models = (
-                    session.query(models.TrialModel)
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.params))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.values))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.user_attributes))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.system_attributes))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.intermediate_values))
-                    .filter(models.TrialModel.study_id == study_id)
-                    .order_by(models.TrialModel.trial_id)
-                    .all()
+                query = _construct_slow_query(session.query(models.TrialModel))
+                trials = {
+                    t.trial_id: _FrozenTrial(
+                        number=t.number,
+                        trial_id=t.trial_id,
+                        state=t.state,
+                        datetime_start=t.datetime_start,
+                        datetime_complete=t.datetime_complete,
+                        value=None,
+                    )
+                    for t in query.all()
+                    if t.trial_id in included_trial_ids or t.trial_id > trial_id_cursor
+                }
+
+            for attribute in [
+                "params",
+                "values",
+                "user_attributes",
+                "system_attributes",
+                "intermediate_values",
+            ]:
+                query = _construct_query(
+                    session.query(models.TrialModel).options(
+                        sqlalchemy_orm.joinedload(getattr(models.TrialModel, attribute))
+                    )
                 )
-                trial_models = [t for t in trial_models if t.trial_id in included_trial_ids or t.trial_id > trial_id_cursor]
+                try:
+                    joined_trials = query.all()
+                except sqlalchemy_exc.OperationalError as e:
+                    _logger.warning(
+                        "Caught an error from sqlalchemy: {}. Falling back to a slower "
+                        "alternative. ".format(str(e))
+                    )
 
-            trials = [self._build_frozen_trial_from_trial_model(trial) for trial in trial_models]
+                    joined_trials = _construct_slow_query(
+                        session.query(models.TrialModel).options(
+                            sqlalchemy_orm.joinedload(getattr(models.TrialModel, attribute))
+                        )
+                    ).all()
+                    joined_trials = [
+                        t
+                        for t in joined_trials
+                        if t.trial_id in included_trial_ids or t.trial_id > trial_id_cursor
+                    ]
 
-        return trials
+                for trial in joined_trials:
+                    if attribute == "params":
+                        params = sorted(trial.params, key=lambda p: p.param_id)
+                        trials[trial.trial_id].params = {
+                            p.param_name: distributions.json_to_distribution(
+                                p.distribution_json
+                            ).to_external_repr(p.param_value)
+                            for p in params
+                        }
+                        trials[trial.trial_id].distributions = {
+                            p.param_name: distributions.json_to_distribution(p.distribution_json)
+                            for p in params
+                        }
+                    elif attribute == "values":
+                        if trial.values:
+                            trials[trial.trial_id].values = [0 for _ in range(n_objectives)]
+                            for value in trial.values:
+                                trials[trial.trial_id].values[value.objective] = (  # type: ignore
+                                    models.TrialValueModel.stored_repr_to_value(
+                                        value.value, value.value_type
+                                    )
+                                )
+                        else:
+                            trials[trial.trial_id].values = None
+                    elif attribute == "user_attributes":
+                        trials[trial.trial_id].user_attrs = {
+                            attr.key: json.loads(attr.value_json) for attr in trial.user_attributes
+                        }
+                    elif attribute == "system_attributes":
+                        trials[trial.trial_id].system_attrs = {
+                            attr.key: json.loads(attr.value_json)
+                            for attr in trial.system_attributes
+                        }
+                    elif attribute == "intermediate_values":
+                        trials[trial.trial_id].intermediate_values = {
+                            v.step: models.TrialIntermediateValueModel.stored_repr_to_intermediate_value(  # noqa: E501
+                                v.intermediate_value, v.intermediate_value_type
+                            )
+                            for v in trial.intermediate_values
+                        }
+
+        frozen_trials = []
+        for t in trials.values():
+            assert t.params is not None
+            assert t.distributions is not None
+            assert t.user_attrs is not None
+            assert t.system_attrs is not None
+            assert t.intermediate_values is not None
+            frozen_trial = FrozenTrial(
+                number=t.number,
+                state=t.state,
+                value=t.value,
+                values=t.values,
+                datetime_start=t.datetime_start,
+                datetime_complete=t.datetime_complete,
+                params=t.params,
+                distributions=t.distributions,
+                user_attrs=t.user_attrs,
+                system_attrs=t.system_attrs,
+                intermediate_values=t.intermediate_values,
+                trial_id=t.trial_id,
+            )
+            frozen_trials.append(frozen_trial)
+        return frozen_trials
 
     def _build_frozen_trial_from_trial_model(self, trial: "models.TrialModel") -> FrozenTrial:
         values: Optional[List[float]]
