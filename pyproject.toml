@@ -89,7 +89,7 @@ optional = [
   "scikit-learn>=0.24.2",
   # optuna/visualization/param_importances.py.
   "scipy",  # optuna/samplers/_gp
-  "torch",  # optuna/samplers/_gp
+  "torch; python_version<='3.12'", # TODO(gen740): Remove this line after torch supports Python 3.13
 ]
 test = [
   "coverage",
@@ -98,7 +98,7 @@ test = [
   "moto",
   "pytest",
   "scipy>=1.9.2; python_version>='3.8'",
-  "torch",
+  "torch; python_version<='3.12'", # TODO(gen740): Remove this line after torch supports Python 3.13
 ]
 
 [project.urls]

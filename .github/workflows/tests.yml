@@ -20,7 +20,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12', '3.13.0-rc.2']
         test-trigger-type:
           - ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'Scheduled' || '' }}
         exclude:
@@ -94,6 +94,19 @@ jobs:
           target="not slow"
         fi
 
-        pytest tests -m "$target"
+        if [ "${{ matrix.python-version }}" = "3.13.0-rc.2" ] ; then
+          pytest tests -m "$target" \
+            --ignore=tests/gp_tests/ \
+            --ignore=tests/samplers_tests/test_gp.py \
+            --ignore=tests/terminator_tests/improvement_tests/test_evaluator.py \
+            --ignore=tests/terminator_tests/improvement_tests/test_evaluator.py \
+            --ignore=tests/samplers_tests/test_samplers.py \
+            --ignore=tests/terminator_tests/improvement_tests/test_emmr_evaluator.py \
+            --ignore=tests/terminator_tests/test_median_erroreval.py \
+            --ignore=tests/terminator_tests/test_terminator.py \
+            --ignore=tests/visualization_tests/test_terminator_improvement.py
+        else
+          pytest tests -m "$target"
+        fi
       env:
         SQLALCHEMY_WARN_20: 1
