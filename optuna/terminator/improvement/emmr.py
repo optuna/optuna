@@ -77,10 +77,10 @@ class EMMREvaluator(BaseImprovementEvaluator):
 
             sampler = optuna.samplers.TPESampler(seed=0)
             study = optuna.create_study(sampler=sampler, direction="minimize")
-            emmr_improvement_valuator = EMMREvaluator()
-            median_error_evaluator = MedianErrorEvaluator(emmr_improvement_valuator)
+            emmr_improvement_evaluator = EMMREvaluator()
+            median_error_evaluator = MedianErrorEvaluator(emmr_improvement_evaluator)
             terminator = Terminator(
-                improvement_evaluator=emmr_improvement_valuator,
+                improvement_evaluator=emmr_improvement_evaluator,
                 error_evaluator=median_error_evaluator,
             )
 
