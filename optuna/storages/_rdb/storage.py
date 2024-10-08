@@ -819,7 +819,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         included_trial_ids: Set[int],
         trial_id_cursor: int,
     ) -> List[FrozenTrial]:
-        print(len(included_trial_ids), trial_id_cursor)
         with _create_scoped_session(self.scoped_session) as session:
             # Ensure that the study exists.
             models.StudyModel.find_or_raise_by_id(study_id, session)
