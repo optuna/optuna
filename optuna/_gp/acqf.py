@@ -91,6 +91,30 @@ class AcquisitionFunctionParams:
     acqf_stabilizing_noise: float
 
 
+@dataclass(frozen=True)
+class AcquisitionFunctionParamsWithConstraints(AcquisitionFunctionParams):
+    acqf_params_for_constraints: list[AcquisitionFunctionParams]
+
+    @classmethod
+    def from_acqf_params(
+        cls,
+        acqf_params: AcquisitionFunctionParams,
+        constraints_acqf_params: list[AcquisitionFunctionParams],
+    ) -> AcquisitionFunctionParamsWithConstraints:
+        return cls(
+            acqf_type=acqf_params.acqf_type,
+            kernel_params=acqf_params.kernel_params,
+            X=acqf_params.X,
+            search_space=acqf_params.search_space,
+            cov_Y_Y_inv=acqf_params.cov_Y_Y_inv,
+            cov_Y_Y_inv_Y=acqf_params.cov_Y_Y_inv_Y,
+            max_Y=acqf_params.max_Y,
+            beta=acqf_params.beta,
+            acqf_stabilizing_noise=acqf_params.acqf_stabilizing_noise,
+            acqf_params_for_constraints=constraints_acqf_params,
+        )
+
+
 def create_acqf_params(
     acqf_type: AcquisitionFunctionType,
     kernel_params: KernelParamsTensor,
@@ -121,7 +145,7 @@ def create_acqf_params(
     )
 
 
-def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.Tensor:
+def eval_acqf(acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParamsWithConstraints,x: torch.Tensor) -> torch.Tensor:
     mean, var = posterior(
         acqf_params.kernel_params,
         torch.from_numpy(acqf_params.X),
@@ -132,52 +156,38 @@ def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.
     )
 
     if acqf_params.acqf_type == AcquisitionFunctionType.LOG_EI:
-        return logei(mean=mean, var=var + acqf_params.acqf_stabilizing_noise, f0=acqf_params.max_Y)
+        f_val =  logei(mean=mean, var=var + acqf_params.acqf_stabilizing_noise, f0=acqf_params.max_Y)
     elif acqf_params.acqf_type == AcquisitionFunctionType.LOG_PI:
-        return logpi(mean=mean, var=var + acqf_params.acqf_stabilizing_noise, f0=0.0)
+        f_val = logpi(mean=mean, var=var + acqf_params.acqf_stabilizing_noise, f0=0.0)
     elif acqf_params.acqf_type == AcquisitionFunctionType.UCB:
         assert acqf_params.beta is not None, "beta must be given to UCB."
-        return ucb(mean=mean, var=var, beta=acqf_params.beta)
+        f_val = ucb(mean=mean, var=var, beta=acqf_params.beta)
     elif acqf_params.acqf_type == AcquisitionFunctionType.LCB:
         assert acqf_params.beta is not None, "beta must be given to LCB."
-        return lcb(mean=mean, var=var, beta=acqf_params.beta)
+        f_val = lcb(mean=mean, var=var, beta=acqf_params.beta)
     else:
         assert False, "Unknown acquisition function type."
 
+    if isinstance(acqf_params, AcquisitionFunctionParamsWithConstraints):
+        c_val = sum([eval_acqf(params, x) for params in acqf_params.acqf_params_for_constraints])
+        return f_val + c_val
+    else:
+        return f_val
 
-def _eval_acqf_with_constraints(
-    acqf_params: AcquisitionFunctionParams,
-    constraints_acqf_params: list[AcquisitionFunctionParams],
-    x: torch.Tensor,
-) -> torch.Tensor:
-    return sum([eval_acqf(params, x) for params in constraints_acqf_params]) * eval_acqf(
-        acqf_params, x
-    )
-
-def eval_acqf_with_constraints_no_grad(
-    acqf_params: AcquisitionFunctionParams,
-    constraints_acqf_params: list[AcquisitionFunctionParams],
-    x: np.ndarray,
-) -> np.ndarray:
-    with torch.no_grad():
-        return _eval_acqf_with_constraints(
-            acqf_params, constraints_acqf_params, torch.from_numpy(x)
-        ).detach().numpy()
-
-def eval_acqf_with_constraints_grad(
-    acqf_params: AcquisitionFunctionParams,
-    constraints_acqf_params: list[AcquisitionFunctionParams],
+def eval_acqf_with_grad(
+    acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParamsWithConstraints,
     x: np.ndarray,
 ) -> torch.Tensor:
     assert x.ndim == 1
     x_tensor = torch.from_numpy(x)
     x_tensor.requires_grad_(True)
-    val = _eval_acqf_with_constraints(acqf_params, constraints_acqf_params, x_tensor)
+    val = eval_acqf(acqf_params, x_tensor)
     val.backward()  # type: ignore
     return val.item(), x_tensor.grad.detach().numpy()  # type: ignore
 
+
 def eval_acqf_no_grad(
-    acqf_params: AcquisitionFunctionParams,
+    acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParamsWithConstraints,
     x: np.ndarray,
 ) -> np.ndarray:
     with torch.no_grad():

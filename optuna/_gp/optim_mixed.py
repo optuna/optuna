@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from optuna._gp.acqf import AcquisitionFunctionParams
+from optuna._gp.acqf import AcquisitionFunctionParams, AcquisitionFunctionParamsWithConstraints
 from optuna._gp.acqf import eval_acqf_no_grad
 from optuna._gp.acqf import eval_acqf_with_grad
 from optuna._gp.search_space import normalize_one_param
@@ -25,7 +25,7 @@ _logger = get_logger(__name__)
 
 
 def _gradient_ascent(
-    acqf_params: AcquisitionFunctionParams,
+    acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParamsWithConstraints,
     initial_params: np.ndarray,
     initial_fval: float,
     continuous_indices: np.ndarray,
@@ -76,7 +76,7 @@ def _gradient_ascent(
 
 
 def _exhaustive_search(
-    acqf_params: AcquisitionFunctionParams,
+    acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParamsWithConstraints,
     initial_params: np.ndarray,
     initial_fval: float,
     param_idx: int,
@@ -96,7 +96,7 @@ def _exhaustive_search(
 
 
 def _discrete_line_search(
-    acqf_params: AcquisitionFunctionParams,
+    acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParamsWithConstraints,
     initial_params: np.ndarray,
     initial_fval: float,
     param_idx: int,
@@ -163,7 +163,7 @@ def _discrete_line_search(
 
 
 def _local_search_discrete(
-    acqf_params: AcquisitionFunctionParams,
+    acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParamsWithConstraints,
     initial_params: np.ndarray,
     initial_fval: float,
     param_idx: int,
@@ -185,9 +185,8 @@ def _local_search_discrete(
 
 
 def local_search_mixed(
-    acqf_params: AcquisitionFunctionParams,
+    acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParamsWithConstraints,
     initial_normalized_params: np.ndarray,
-    constraints_acqf_params: list[AcquisitionFunctionParams],
     *,
     tol: float = 1e-4,
     max_iter: int = 100,
@@ -268,8 +267,7 @@ def local_search_mixed(
 
 
 def optimize_acqf_mixed(
-    acqf_params: AcquisitionFunctionParams,
-    constraints_acqf_params: list[AcquisitionFunctionParams],
+    acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParamsWithConstraints,
     *,
     warmstart_normalized_params_array: np.ndarray | None = None,
     n_preliminary_samples: int = 2048,
@@ -291,7 +289,7 @@ def optimize_acqf_mixed(
     sampled_xs = sample_normalized_params(n_preliminary_samples, acqf_params.search_space, rng=rng)
 
     # Evaluate all values at initial samples
-    f_vals = eval_acqf_no_grad(acqf_params, sampled_xs, constraints_acqf_params)
+    f_vals = eval_acqf_no_grad(acqf_params, sampled_xs)
     assert isinstance(f_vals, np.ndarray)
 
     max_i = np.argmax(f_vals)
@@ -318,7 +316,7 @@ def optimize_acqf_mixed(
     best_f = float(f_vals[max_i])
 
     for x_warmstart in np.vstack([sampled_xs[chosen_idxs, :], warmstart_normalized_params_array]):
-        x, f = local_search_mixed(acqf_params, x_warmstart, constraints_acqf_params, tol=tol)
+        x, f = local_search_mixed(acqf_params, x_warmstart, tol=tol)
         if f > best_f:
             best_x = x
             best_f = f

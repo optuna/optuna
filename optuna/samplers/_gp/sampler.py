@@ -123,8 +123,7 @@ class GPSampler(BaseSampler):
 
     def _optimize_acqf(
         self,
-        acqf_params: "acqf.AcquisitionFunctionParams",
-        constraints_acqf_params: list["acqf.AcquisitionFunctionParams"],
+        acqf_params: "acqf.AcquisitionFunctionParams" | "acqf.AcquisitionFunctionParamsWithConstraints",
         best_params: np.ndarray,
     ) -> np.ndarray:
         # Advanced users can override this method to change the optimization algorithm.
@@ -132,7 +131,6 @@ class GPSampler(BaseSampler):
         # Particularly, we may remove this function in future refactoring.
         normalized_params, _acqf_val = optim_mixed.optimize_acqf_mixed(
             acqf_params,
-            constraints_acqf_params,
             warmstart_normalized_params_array=best_params[None, :],
             n_preliminary_samples=2048,
             n_local_search=10,
@@ -209,9 +207,12 @@ class GPSampler(BaseSampler):
             for params, vals in zip(constraints_kernel_params, standardized_constraint_vals)
         ]
 
+        acqf_params_with_constraints = acqf.AcquisitionFunctionParamsWithConstraints.from_acqf_params(
+            acqf_params, constraints_acqf_params
+        )
+
         normalized_param = self._optimize_acqf(
-            acqf_params,
-            constraints_acqf_params,
+            acqf_params_with_constraints,
             normalized_params[np.argmax(standardized_score_vals), :],
         )
         return gp_search_space.get_unnormalized_param(search_space, normalized_param)
