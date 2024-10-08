@@ -178,6 +178,12 @@ def eval_acqf(
         return f_val + c_val
     else:
         return f_val
+def eval_acqf_no_grad(
+    acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParamsWithConstraints,
+    x: np.ndarray,
+) -> np.ndarray:
+    with torch.no_grad():
+        return eval_acqf(acqf_params, torch.from_numpy(x)).detach().numpy()
 
 
 def eval_acqf_with_grad(
@@ -192,9 +198,3 @@ def eval_acqf_with_grad(
     return val.item(), x_tensor.grad.detach().numpy()  # type: ignore
 
 
-def eval_acqf_no_grad(
-    acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParamsWithConstraints,
-    x: np.ndarray,
-) -> np.ndarray:
-    with torch.no_grad():
-        return eval_acqf(acqf_params, torch.from_numpy(x)).detach().numpy()
