@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import IntEnum
-from functools import reduce
 import math
 from typing import TYPE_CHECKING
 
@@ -146,37 +145,40 @@ def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.
         assert False, "Unknown acquisition function type."
 
 
-def eval_acqf_with_constraints(
+def _eval_acqf_with_constraints(
     acqf_params: AcquisitionFunctionParams,
     constraints_acqf_params: list[AcquisitionFunctionParams],
     x: torch.Tensor,
 ) -> torch.Tensor:
-    return reduce(
-        lambda a, b: a * b, [eval_acqf(params, x) for params in constraints_acqf_params]
-    ) * eval_acqf(acqf_params, x)
+    return sum([eval_acqf(params, x) for params in constraints_acqf_params]) * eval_acqf(
+        acqf_params, x
+    )
 
+def eval_acqf_with_constraints_no_grad(
+    acqf_params: AcquisitionFunctionParams,
+    constraints_acqf_params: list[AcquisitionFunctionParams],
+    x: np.ndarray,
+) -> np.ndarray:
+    with torch.no_grad():
+        return _eval_acqf_with_constraints(
+            acqf_params, constraints_acqf_params, torch.from_numpy(x)
+        ).detach().numpy()
+
+def eval_acqf_with_constraints_grad(
+    acqf_params: AcquisitionFunctionParams,
+    constraints_acqf_params: list[AcquisitionFunctionParams],
+    x: np.ndarray,
+) -> torch.Tensor:
+    assert x.ndim == 1
+    x_tensor = torch.from_numpy(x)
+    x_tensor.requires_grad_(True)
+    val = _eval_acqf_with_constraints(acqf_params, constraints_acqf_params, x_tensor)
+    val.backward()  # type: ignore
+    return val.item(), x_tensor.grad.detach().numpy()  # type: ignore
 
 def eval_acqf_no_grad(
     acqf_params: AcquisitionFunctionParams,
     x: np.ndarray,
-    constraints_acqf_params: list[AcquisitionFunctionParams] = [],
 ) -> np.ndarray:
     with torch.no_grad():
-        return (
-            eval_acqf_with_constraints(acqf_params, constraints_acqf_params, torch.from_numpy(x))
-            .detach()
-            .numpy()
-        )
-
-
-def eval_acqf_with_grad(
-    acqf_params: AcquisitionFunctionParams,
-    x: np.ndarray,
-    constraints_acqf_params: list[AcquisitionFunctionParams] = [],
-) -> tuple[float, np.ndarray]:
-    assert x.ndim == 1
-    x_tensor = torch.from_numpy(x)
-    x_tensor.requires_grad_(True)
-    val = eval_acqf_with_constraints(acqf_params, constraints_acqf_params, x_tensor)
-    val.backward()  # type: ignore
-    return val.item(), x_tensor.grad.detach().numpy()  # type: ignore
+        return eval_acqf(acqf_params, torch.from_numpy(x)).detach().numpy()
