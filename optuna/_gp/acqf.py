@@ -145,7 +145,10 @@ def create_acqf_params(
     )
 
 
-def eval_acqf(acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParamsWithConstraints,x: torch.Tensor) -> torch.Tensor:
+def eval_acqf(
+    acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParamsWithConstraints,
+    x: torch.Tensor,
+) -> torch.Tensor:
     mean, var = posterior(
         acqf_params.kernel_params,
         torch.from_numpy(acqf_params.X),
@@ -156,7 +159,9 @@ def eval_acqf(acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParams
     )
 
     if acqf_params.acqf_type == AcquisitionFunctionType.LOG_EI:
-        f_val =  logei(mean=mean, var=var + acqf_params.acqf_stabilizing_noise, f0=acqf_params.max_Y)
+        f_val = logei(
+            mean=mean, var=var + acqf_params.acqf_stabilizing_noise, f0=acqf_params.max_Y
+        )
     elif acqf_params.acqf_type == AcquisitionFunctionType.LOG_PI:
         f_val = logpi(mean=mean, var=var + acqf_params.acqf_stabilizing_noise, f0=0.0)
     elif acqf_params.acqf_type == AcquisitionFunctionType.UCB:
@@ -173,6 +178,7 @@ def eval_acqf(acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParams
         return f_val + c_val
     else:
         return f_val
+
 
 def eval_acqf_with_grad(
     acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParamsWithConstraints,

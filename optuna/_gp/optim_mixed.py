@@ -5,7 +5,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from optuna._gp.acqf import AcquisitionFunctionParams, AcquisitionFunctionParamsWithConstraints
+from optuna._gp.acqf import AcquisitionFunctionParams
+from optuna._gp.acqf import AcquisitionFunctionParamsWithConstraints
 from optuna._gp.acqf import eval_acqf_no_grad
 from optuna._gp.acqf import eval_acqf_with_grad
 from optuna._gp.search_space import normalize_one_param
