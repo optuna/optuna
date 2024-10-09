@@ -4,7 +4,9 @@ import json
 from typing import Any
 from typing import Callable
 from typing import cast
+from typing import List
 from typing import Sequence
+from typing import TypedDict
 import warnings
 
 import numpy as np
@@ -95,10 +97,17 @@ def _is_numerical(trials: list[FrozenTrial], param: str) -> bool:
     return True
 
 
+class ParallelCoordinateTrialParams(TypedDict):
+    values: List[Any]
+    is_log_scale: bool
+    is_numerical: bool
+    is_categorical: bool
+
+
 def _preprocess_trial_data(
     trials: list[FrozenTrial], sorted_params: list[str], skipped_trial_numbers: set[int]
-):
-    param_info = {
+) -> dict[str, ParallelCoordinateTrialParams]:
+    param_info: dict[str, ParallelCoordinateTrialParams] = {
         p_name: {
             "values": [],
             "is_log_scale": False,
