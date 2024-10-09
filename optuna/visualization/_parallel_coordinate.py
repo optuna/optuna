@@ -175,17 +175,16 @@ def _get_parallel_coordinate_info(
             reverse_scale=reverse_scale,
             target_name=target_name,
         )
-    
-    param_info = _preprocess_trial_data(trials, sorted_params, skipped_trial_numbers)
 
+    param_info = _preprocess_trial_data(trials, sorted_params, skipped_trial_numbers)
 
     numeric_cat_params_indices: list[int] = []
     dims = []
     for dim_index, p_name in enumerate(sorted_params, start=1):
-        values = param_info[p_name]['values']
-        is_log_scale = param_info[p_name]['is_log_scale']
-        is_categorical = param_info[p_name]['is_categorical']
-        is_numerical = param_info[p_name]['is_numerical']
+        values = param_info[p_name]["values"]
+        is_log_scale = param_info[p_name]["is_log_scale"]
+        is_categorical = param_info[p_name]["is_categorical"]
+        is_numerical = param_info[p_name]["is_numerical"]
 
         if is_log_scale:
             values = [math.log10(v) for v in values]

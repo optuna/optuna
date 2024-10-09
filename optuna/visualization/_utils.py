@@ -94,9 +94,20 @@ def _is_numerical(trials: list[FrozenTrial], param: str) -> bool:
             assert False, "Should not reach."
     return True
 
-def _preprocess_trial_data(trials: list[FrozenTrial], sorted_params: list[str], skipped_trial_numbers: set[int]):
-    param_info = {p_name: {'values': [], 'is_log_scale': False, 'is_numerical': False, 'is_categorical': False} for p_name in sorted_params}
-    
+
+def _preprocess_trial_data(
+    trials: list[FrozenTrial], sorted_params: list[str], skipped_trial_numbers: set[int]
+):
+    param_info = {
+        p_name: {
+            "values": [],
+            "is_log_scale": False,
+            "is_numerical": False,
+            "is_categorical": False,
+        }
+        for p_name in sorted_params
+    }
+
     for t in trials:
         if t.number in skipped_trial_numbers:
             continue
@@ -105,17 +116,18 @@ def _preprocess_trial_data(trials: list[FrozenTrial], sorted_params: list[str], 
                 value = t.params[p_name]
                 dist = t.distributions.get(p_name)
 
-                param_info[p_name]['values'].append(value)
+                param_info[p_name]["values"].append(value)
 
                 if isinstance(dist, (FloatDistribution, IntDistribution)) and dist.log:
-                    param_info[p_name]['is_log_scale'] = True
+                    param_info[p_name]["is_log_scale"] = True
 
                 if isinstance(dist, (IntDistribution, FloatDistribution)):
-                    param_info[p_name]['is_numerical'] = True
+                    param_info[p_name]["is_numerical"] = True
                 elif isinstance(dist, CategoricalDistribution):
-                    param_info[p_name]['is_categorical'] = True
-                    param_info[p_name]['is_numerical'] = all(
-                        isinstance(v, (int, float)) and not isinstance(v, bool) for v in dist.choices
+                    param_info[p_name]["is_categorical"] = True
+                    param_info[p_name]["is_numerical"] = all(
+                        isinstance(v, (int, float)) and not isinstance(v, bool)
+                        for v in dist.choices
                     )
 
     return param_info
