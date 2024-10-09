@@ -107,11 +107,9 @@ def _preprocess_trial_data(trials: list[FrozenTrial], sorted_params: list[str], 
 
                 param_info[p_name]['values'].append(value)
 
-                # Determine if log scale
                 if isinstance(dist, (FloatDistribution, IntDistribution)) and dist.log:
                     param_info[p_name]['is_log_scale'] = True
 
-                # Determine if numerical or categorical
                 if isinstance(dist, (IntDistribution, FloatDistribution)):
                     param_info[p_name]['is_numerical'] = True
                 elif isinstance(dist, CategoricalDistribution):
