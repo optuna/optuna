@@ -4,9 +4,8 @@ import json
 from typing import Any
 from typing import Callable
 from typing import cast
-from typing import List
+from typing import Dict
 from typing import Sequence
-from typing import TypedDict
 import warnings
 
 import numpy as np
@@ -97,22 +96,15 @@ def _is_numerical(trials: list[FrozenTrial], param: str) -> bool:
     return True
 
 
-class ParallelCoordinateTrialParams(TypedDict):
-    values: List[Any]
-    is_log_scale: bool
-    is_numerical: bool
-    is_categorical: bool
-
-
 def _preprocess_trial_data(
     trials: list[FrozenTrial], sorted_params: list[str], skipped_trial_numbers: set[int]
-) -> dict[str, ParallelCoordinateTrialParams]:
-    param_info: dict[str, ParallelCoordinateTrialParams] = {
+) -> Dict[str, Dict[str, Any]]:
+    param_info: Dict[str, Dict[str, Any]] = {
         p_name: {
-            "values": [],
-            "is_log_scale": False,
-            "is_numerical": False,
-            "is_categorical": False,
+            "values": [],  # List to store parameter values
+            "is_log": False,  # Boolean for log scale
+            "is_numerical": False,  # Boolean for numerical
+            "is_categorical": False,  # Boolean for categorical
         }
         for p_name in sorted_params
     }
@@ -125,11 +117,14 @@ def _preprocess_trial_data(
                 value = t.params[p_name]
                 dist = t.distributions.get(p_name)
 
+                # We know 'values' is a list, so we can safely append
                 param_info[p_name]["values"].append(value)
 
+                # Determine if log scale
                 if isinstance(dist, (FloatDistribution, IntDistribution)) and dist.log:
-                    param_info[p_name]["is_log_scale"] = True
+                    param_info[p_name]["is_log"] = True
 
+                # Determine if numerical or categorical
                 if isinstance(dist, (IntDistribution, FloatDistribution)):
                     param_info[p_name]["is_numerical"] = True
                 elif isinstance(dist, CategoricalDistribution):
