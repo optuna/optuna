@@ -9,7 +9,6 @@ from typing import NamedTuple
 
 import numpy as np
 
-from optuna.distributions import CategoricalDistribution
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
