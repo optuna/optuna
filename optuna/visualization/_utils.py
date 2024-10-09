@@ -101,10 +101,10 @@ def _preprocess_trial_data(
 ) -> Dict[str, Dict[str, Any]]:
     param_info: Dict[str, Dict[str, Any]] = {
         p_name: {
-            "values": [],  # List to store parameter values
-            "is_log": False,  # Boolean for log scale
-            "is_numerical": False,  # Boolean for numerical
-            "is_categorical": False,  # Boolean for categorical
+            "values": [],
+            "is_log_scale": False,
+            "is_numerical": False,
+            "is_categorical": False,
         }
         for p_name in sorted_params
     }
@@ -117,14 +117,11 @@ def _preprocess_trial_data(
                 value = t.params[p_name]
                 dist = t.distributions.get(p_name)
 
-                # We know 'values' is a list, so we can safely append
                 param_info[p_name]["values"].append(value)
 
-                # Determine if log scale
                 if isinstance(dist, (FloatDistribution, IntDistribution)) and dist.log:
-                    param_info[p_name]["is_log"] = True
+                    param_info[p_name]["is_log_scale"] = True
 
-                # Determine if numerical or categorical
                 if isinstance(dist, (IntDistribution, FloatDistribution)):
                     param_info[p_name]["is_numerical"] = True
                 elif isinstance(dist, CategoricalDistribution):
