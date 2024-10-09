@@ -11,12 +11,11 @@ repos:
     rev: 24.8.0
     hooks:
       - id: black
-        exclude: .eggs|.git|.hg|.mypy_cache|.venv|venv|_build|buck-out|build|dist|docs
   - repo: https://github.com/pycqa/flake8
     rev: 7.1.1
     hooks:
       - id: flake8
-        exclude: .venv|venv|build|tutorial|.asv|docs/visualization_examples|docs/visualization_matplotlib_examples
+        exclude: build|tutorial|docs/visualization_examples|docs/visualization_matplotlib_examples
         args: [
             "--max-line-length=99",
             "--ignore=E203,E704,W503",
@@ -38,7 +37,7 @@ repos:
         "types-tqdm",
         "typing_extensions>=3.10.0.0",
       ]
-      exclude: .venv|venv|build|docs|tutorial|optuna/storages/_rdb/alembic
+      exclude: docs|tutorial|optuna/storages/_rdb/alembic
       args: [
         --warn-unused-configs,
         --disallow-untyped-calls,
