@@ -535,7 +535,7 @@ class Trial(BaseTrial):
         return self.study.pruner.prune(self.study, trial)
 
     def set_user_attr(self, key: str, value: Any) -> None:
-        """Set user attributes to the trial.
+        """Set a user attribute to the trial.
 
         The user attributes in the trial can be access via :func:`optuna.trial.Trial.user_attrs`.
 
@@ -590,6 +590,23 @@ class Trial(BaseTrial):
 
         self.storage.set_trial_user_attr(self._trial_id, key, value)
         self._cached_frozen_trial.user_attrs[key] = value
+
+    def set_user_attrs(self, attrs: dict[str, Any]) -> None:
+        """Set user attributes to the trial.
+
+        The user attributes in the trial can be access via :func:`optuna.trial.Trial.user_attrs`.
+
+        .. seealso::
+
+            See the recipe on :ref:`attributes`.
+
+        Args:
+            attrs:
+                A dictionary containing the attributes. The keys are attribute names (str) and
+                values are attribute values. The values should be JSON serializable.
+        """
+        self.storage.set_trial_user_attrs(self._trial_id, attrs)
+        self._cached_frozen_trial.user_attrs.update(attrs)
 
     @deprecated_func("3.1.0", "5.0.0")
     def set_system_attr(self, key: str, value: Any) -> None:
