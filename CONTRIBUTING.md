@@ -71,9 +71,10 @@ If your environment is missing some dependencies such as black, blackdoc, flake8
 you will be asked to install them.
 The following commands automatically fix format errors by auto-formatters.
 
-```bash	
+```bash
 # Install auto-formatters.
 $ pip install ".[checking]"
+
 $ ./formats.sh
 ```
 
