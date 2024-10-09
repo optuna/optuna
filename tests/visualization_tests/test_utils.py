@@ -8,7 +8,9 @@ import pytest
 from pytest import LogCaptureFixture
 
 import optuna
+from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
@@ -19,6 +21,7 @@ from optuna.visualization._utils import _check_plot_args
 from optuna.visualization._utils import _filter_nonfinite
 from optuna.visualization._utils import _is_log_scale
 from optuna.visualization._utils import _make_hovertext
+from optuna.visualization._utils import _preprocess_trial_data
 
 
 def test_is_log_scale() -> None:
@@ -42,6 +45,94 @@ def test_is_log_scale() -> None:
     )
     assert _is_log_scale(study.trials, "param_log")
     assert not _is_log_scale(study.trials, "param_linear")
+
+
+def test_preprocess_trial_data() -> None:
+    study = create_study()
+
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"x": 1.0},
+            distributions={"x": FloatDistribution(0.0, 2.0)},
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=1.0,
+            params={"x": 2.0, "y": 0.1},
+            distributions={
+                "x": FloatDistribution(0.0, 2.0),
+                "y": FloatDistribution(0.1, 1.0, log=True),
+            },
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=2.0,
+            params={"x": 1.5, "z": 3},
+            distributions={
+                "x": FloatDistribution(0.0, 2.0),
+                "z": IntDistribution(1, 5),
+            },
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=3.0,
+            params={"cat_param": "a"},
+            distributions={"cat_param": CategoricalDistribution(choices=["a", "b", "c"])},
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=4.0,
+            params={"num_cat_param": 10},
+            distributions={"num_cat_param": CategoricalDistribution(choices=[10, 20, 30])},
+        )
+    )
+
+    sorted_params = ["x", "y", "z", "cat_param", "num_cat_param"]
+    skipped_trial_numbers = {1}
+
+    trials = study.trials
+
+    param_info = _preprocess_trial_data(trials, sorted_params, skipped_trial_numbers)
+
+    expected_param_info = {
+        "x": {
+            "values": [1.0, 1.5],
+            "is_log_scale": False,
+            "is_numerical": True,
+            "is_categorical": False,
+        },
+        "y": {
+            "values": [],
+            "is_log_scale": False,
+            "is_numerical": False,
+            "is_categorical": False,
+        },
+        "z": {
+            "values": [3],
+            "is_log_scale": False,
+            "is_numerical": True,
+            "is_categorical": False,
+        },
+        "cat_param": {
+            "values": ["a"],
+            "is_log_scale": False,
+            "is_numerical": False,
+            "is_categorical": True,
+        },
+        "num_cat_param": {
+            "values": [10],
+            "is_log_scale": False,
+            "is_numerical": True,
+            "is_categorical": True,
+        },
+    }
+
+    assert param_info == expected_param_info
 
 
 def _is_plotly_available() -> bool:
