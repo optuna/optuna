@@ -18,8 +18,6 @@ from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _check_plot_args
 from optuna.visualization._utils import _filter_nonfinite
 from optuna.visualization._utils import _get_skipped_trial_numbers
-from optuna.visualization._utils import _is_log_scale
-from optuna.visualization._utils import _is_numerical
 from optuna.visualization._utils import _is_reverse_scale
 
 
