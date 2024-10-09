@@ -94,6 +94,34 @@ def _is_numerical(trials: list[FrozenTrial], param: str) -> bool:
             assert False, "Should not reach."
     return True
 
+def _preprocess_trial_data(trials: list[FrozenTrial], sorted_params: list[str], skipped_trial_numbers: set[int]):
+    param_info = {p_name: {'values': [], 'is_log_scale': False, 'is_numerical': False, 'is_categorical': False} for p_name in sorted_params}
+    
+    for t in trials:
+        if t.number in skipped_trial_numbers:
+            continue
+        for p_name in sorted_params:
+            if p_name in t.params:
+                value = t.params[p_name]
+                dist = t.distributions.get(p_name)
+
+                param_info[p_name]['values'].append(value)
+
+                # Determine if log scale
+                if isinstance(dist, (FloatDistribution, IntDistribution)) and dist.log:
+                    param_info[p_name]['is_log_scale'] = True
+
+                # Determine if numerical or categorical
+                if isinstance(dist, (IntDistribution, FloatDistribution)):
+                    param_info[p_name]['is_numerical'] = True
+                elif isinstance(dist, CategoricalDistribution):
+                    param_info[p_name]['is_categorical'] = True
+                    param_info[p_name]['is_numerical'] = all(
+                        isinstance(v, (int, float)) and not isinstance(v, bool) for v in dist.choices
+                    )
+
+    return param_info
+
 
 def _get_param_values(trials: list[FrozenTrial], p_name: str) -> list[Any]:
     values = [t.params[p_name] for t in trials if p_name in t.params]

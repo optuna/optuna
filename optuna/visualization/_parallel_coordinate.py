@@ -176,19 +176,19 @@ def _get_parallel_coordinate_info(
             reverse_scale=reverse_scale,
             target_name=target_name,
         )
+    
+    param_info = _preprocess_trial_data(trials, sorted_params, skipped_trial_numbers)
+
 
     numeric_cat_params_indices: list[int] = []
     dims = []
     for dim_index, p_name in enumerate(sorted_params, start=1):
-        values = []
-        is_categorical = False
-        for t in trials:
-            if t.number in skipped_trial_numbers:
-                continue
-            if p_name in t.params:
-                values.append(t.params[p_name])
-                is_categorical |= isinstance(t.distributions[p_name], CategoricalDistribution)
-        if _is_log_scale(trials, p_name):
+        values = param_info[p_name]['values']
+        is_log_scale = param_info[p_name]['is_log_scale']
+        is_categorical = param_info[p_name]['is_categorical']
+        is_numerical = param_info[p_name]['is_numerical']
+
+        if is_log_scale:
             values = [math.log10(v) for v in values]
             min_value = min(values)
             max_value = max(values)
@@ -212,7 +212,7 @@ def _get_parallel_coordinate_info(
             vocab: defaultdict[int | str, int] = defaultdict(lambda: len(vocab))
 
             ticktext: list[str]
-            if _is_numerical(trials, p_name):
+            if is_numerical:
                 _ = [vocab[v] for v in sorted(values)]
                 values = [vocab[v] for v in values]
                 ticktext = [str(v) for v in list(sorted(vocab.keys()))]
