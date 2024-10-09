@@ -78,6 +78,17 @@ $ pip install ".[checking]"
 $ ./formats.sh
 ```
 
+You can use `pre-commit` to automatically check the format, coding style, and type hints before committing.
+The following commands automatically fix format errors by auto-formatters.
+
+```bash
+# Install `pre-commit`.
+$ pip install pre-commit
+
+$ pre-commit install
+$ pre-commit run --all-files
+```
+
 ### Documentation
 
 When adding a new feature to the framework, you also need to document it in the reference.
