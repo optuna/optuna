@@ -918,6 +918,8 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                     ]
 
                 for trial in joined_trials:
+                    if trial.trial_id not in trials:
+                        continue
                     if attribute == "params":
                         params = sorted(trial.params, key=lambda p: p.param_id)
                         trials[trial.trial_id].params = {
