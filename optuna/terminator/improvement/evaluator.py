@@ -122,16 +122,12 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
     high probability under the Gaussian process model assumption.
 
     Args:
-        gp:
-            A Gaussian process model on which evaluation base. If not specified, the default
-            Gaussian process model is used.
         top_trials_ratio:
             A ratio of top trials to be considered when estimating the regret. Default to 0.5.
         min_n_trials:
             A minimum number of complete trials to estimate the regret. Default to 20.
-        min_lcb_n_additional_samples:
-            A minimum number of additional samples to estimate the lower confidence bound.
-            Default to 2000.
+        seed:
+            Seed for random number generator.
 
     For further information about this evaluator, please refer to the following paper:
 
