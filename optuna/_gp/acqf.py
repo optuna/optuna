@@ -180,10 +180,7 @@ def eval_acqf(
         return f_val
 
 
-def eval_acqf_no_grad(
-    acqf_params: AcquisitionFunctionParams,
-    x: np.ndarray
-) -> np.ndarray:
+def eval_acqf_no_grad(acqf_params: AcquisitionFunctionParams, x: np.ndarray) -> np.ndarray:
     with torch.no_grad():
         return eval_acqf(acqf_params, torch.from_numpy(x)).detach().numpy()
 
