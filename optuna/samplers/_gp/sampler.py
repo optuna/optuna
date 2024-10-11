@@ -160,18 +160,24 @@ class GPSampler(BaseSampler):
 
         _sign = -1.0 if study.direction == StudyDirection.MINIMIZE else 1.0
         score_vals = np.array([_sign * cast(float, trial.value) for trial in trials])
-        constraint_vals = trial.system_attrs.get(_CONSTRAINTS_KEY, ())
+        _constraint_vals = [
+            study._storage.get_trial_system_attrs(trial._trial_id).get(_CONSTRAINTS_KEY, ())
+            for trial in trials
+        ]
+        if any(len(_constraint_vals[0]) != len(c) for c in _constraint_vals):
+            raise ValueError("The number of constraints must be the same for all trials.")
+        constraint_vals = np.array(_constraint_vals)
 
         score_vals_mean, score_vals_std = gp.get_mean_and_std(score_vals)
+        assert isinstance(score_vals_mean, float) and isinstance(score_vals_std, float)
         standardized_score_vals = (score_vals - score_vals_mean) / max(1e-10, score_vals_std)
-        constraint_vals_mean_std = [gp.get_mean_and_std(vals) for vals in constraint_vals]
-        standardized_constraint_vals = [
-            (vals - mean) / max(1e-10, std)
-            for vals, (mean, std) in zip(
-                constraint_vals,
-                constraint_vals_mean_std,
-            )
-        ]
+        constraint_vals_mean, constraint_vals_std = gp.get_mean_and_std(constraint_vals)
+        assert isinstance(constraint_vals_mean, np.ndarray) and isinstance(
+            constraint_vals_std, np.ndarray
+        )
+        standardized_constraint_vals = (constraint_vals - constraint_vals_mean) / np.maximum(
+            1e-10, constraint_vals_std
+        )
 
         if self._kernel_params_cache is not None and len(
             self._kernel_params_cache.inverse_squared_lengthscales
@@ -180,20 +186,39 @@ class GPSampler(BaseSampler):
             self._kernel_params_cache = None
             self._constraints_kernel_params_cache = None
 
-        kernel_params, *constraints_kernel_params = [
+        kernel_params = gp.fit_kernel_params(
+            X=normalized_params,
+            Y=standardized_score_vals,
+            is_categorical=(
+                internal_search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
+            ),
+            log_prior=self._log_prior,
+            minimum_noise=self._minimum_noise,
+            initial_kernel_params=self._kernel_params_cache,
+            deterministic_objective=self._deterministic,
+        )
+        constraints_kernel_params = [
             gp.fit_kernel_params(
                 X=normalized_params,
-                Y=standardized_vals,
+                Y=vals,
                 is_categorical=(
                     internal_search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
                 ),
                 log_prior=self._log_prior,
                 minimum_noise=self._minimum_noise,
-                initial_kernel_params=self._kernel_params_cache,
+                initial_kernel_params=cache,
                 deterministic_objective=self._deterministic,
             )
-            for standardized_vals in [standardized_score_vals, *standardized_constraint_vals]
+            for vals, cache in zip(
+                standardized_constraint_vals.T,
+                (
+                    cast(list[gp.KernelParamsTensor | None], self._constraints_kernel_params_cache)
+                    if self._constraints_kernel_params_cache is not None
+                    else [None] * constraint_vals.shape[1]
+                ),
+            )
         ]
+
         self._kernel_params_cache = kernel_params
         self._constraints_kernel_params_cache = constraints_kernel_params
 
@@ -203,7 +228,7 @@ class GPSampler(BaseSampler):
             search_space=internal_search_space,
             X=normalized_params,
             Y=standardized_score_vals,
-            max_Y=np.max(standardized_score_vals[np.array(constraint_vals) < 0])
+            max_Y=np.max(standardized_score_vals[np.all(constraint_vals <= 0, axis=1)]),
         )
         constraints_acqf_params = [
             acqf.create_acqf_params(
@@ -212,10 +237,14 @@ class GPSampler(BaseSampler):
                 search_space=internal_search_space,
                 X=normalized_params,
                 Y=vals,
+                # Since 0 is the threshold value, we use the normalized value of 0.
                 max_Y=-mean / max(1e-10, std),
             )
-            for params, vals, (mean, std) in zip(
-                constraints_kernel_params, standardized_constraint_vals, constraint_vals_mean_std
+            for params, vals, mean, std in zip(
+                constraints_kernel_params,
+                standardized_constraint_vals.T,
+                constraint_vals_mean,
+                constraint_vals_std,
             )
         ]
 
@@ -227,7 +256,9 @@ class GPSampler(BaseSampler):
 
         normalized_param = self._optimize_acqf(
             acqf_params_with_constraints,
-            normalized_params[np.argmax(standardized_score_vals), :],
+            normalized_params[
+                np.argmax(standardized_score_vals[np.all(constraint_vals <= 0, axis=1)]), :
+            ],
         )
         return gp_search_space.get_unnormalized_param(search_space, normalized_param)
 
