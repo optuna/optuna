@@ -792,7 +792,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         deepcopy: bool = True,
         states: Optional[Container[TrialState]] = None,
     ) -> List[FrozenTrial]:
-        trials = self._get_trials(study_id, states, set())
+        trials = self._get_trials(study_id, states, set(), -1)
 
         return copy.deepcopy(trials) if deepcopy else trials
 
@@ -800,13 +800,22 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         self,
         study_id: int,
         states: Optional[Container[TrialState]],
-        excluded_trial_ids: Set[int],
+        included_trial_ids: Set[int],
+        trial_id_cursor: int,
     ) -> List[FrozenTrial]:
         with _create_scoped_session(self.scoped_session) as session:
             # Ensure that the study exists.
             models.StudyModel.find_or_raise_by_id(study_id, session)
-            query = session.query(models.TrialModel.trial_id).filter(
-                models.TrialModel.study_id == study_id
+            query = (
+                session.query(models.TrialModel)
+                .options(sqlalchemy_orm.selectinload(models.TrialModel.params))
+                .options(sqlalchemy_orm.selectinload(models.TrialModel.values))
+                .options(sqlalchemy_orm.selectinload(models.TrialModel.user_attributes))
+                .options(sqlalchemy_orm.selectinload(models.TrialModel.system_attributes))
+                .options(sqlalchemy_orm.selectinload(models.TrialModel.intermediate_values))
+                .filter(
+                    models.TrialModel.study_id == study_id,
+                )
             )
 
             if states is not None:
@@ -815,24 +824,13 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 assert isinstance(states, Iterable)
                 query = query.filter(models.TrialModel.state.in_(states))
 
-            trial_ids = query.all()
-
-            trial_ids = set(
-                trial_id_tuple[0]
-                for trial_id_tuple in trial_ids
-                if trial_id_tuple[0] not in excluded_trial_ids
-            )
             try:
                 trial_models = (
-                    session.query(models.TrialModel)
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.params))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.values))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.user_attributes))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.system_attributes))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.intermediate_values))
-                    .filter(
-                        models.TrialModel.trial_id.in_(trial_ids),
-                        models.TrialModel.study_id == study_id,
+                    query.filter(
+                        sqlalchemy.or_(
+                            models.TrialModel.trial_id.in_(included_trial_ids),
+                            models.TrialModel.trial_id > trial_id_cursor,
+                        )
                     )
                     .order_by(models.TrialModel.trial_id)
                     .all()
@@ -848,18 +846,12 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                     "".format(str(e))
                 )
 
-                trial_models = (
-                    session.query(models.TrialModel)
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.params))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.values))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.user_attributes))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.system_attributes))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.intermediate_values))
-                    .filter(models.TrialModel.study_id == study_id)
-                    .order_by(models.TrialModel.trial_id)
-                    .all()
-                )
-                trial_models = [t for t in trial_models if t.trial_id in trial_ids]
+                trial_models = query.order_by(models.TrialModel.trial_id).all()
+                trial_models = [
+                    t
+                    for t in trial_models
+                    if t.trial_id in included_trial_ids or t.trial_id > trial_id_cursor
+                ]
 
             trials = [self._build_frozen_trial_from_trial_model(trial) for trial in trial_models]
 
