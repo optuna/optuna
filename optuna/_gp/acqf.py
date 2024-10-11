@@ -146,7 +146,7 @@ def create_acqf_params(
 
 
 def eval_acqf(
-    acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParamsWithConstraints,
+    acqf_params: AcquisitionFunctionParams,
     x: torch.Tensor,
 ) -> torch.Tensor:
     mean, var = posterior(
@@ -181,7 +181,7 @@ def eval_acqf(
 
 
 def eval_acqf_no_grad(
-    acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParamsWithConstraints,
+    acqf_params: AcquisitionFunctionParams,
     x: np.ndarray,
 ) -> np.ndarray:
     with torch.no_grad():
@@ -189,7 +189,7 @@ def eval_acqf_no_grad(
 
 
 def eval_acqf_with_grad(
-    acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParamsWithConstraints,
+    acqf_params: AcquisitionFunctionParams,
     x: np.ndarray,
 ) -> torch.Tensor:
     assert x.ndim == 1
