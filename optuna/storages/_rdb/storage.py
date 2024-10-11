@@ -44,6 +44,7 @@ if TYPE_CHECKING:
     import alembic.script as alembic_script
     import sqlalchemy
     import sqlalchemy.dialects.mysql as sqlalchemy_dialects_mysql
+    import sqlalchemy.dialects.sqlite as sqlalchemy_dialects_sqlite
     import sqlalchemy.exc as sqlalchemy_exc
     import sqlalchemy.orm as sqlalchemy_orm
     import sqlalchemy.sql.functions as sqlalchemy_sql_functions
@@ -57,6 +58,7 @@ else:
 
     sqlalchemy = _LazyImport("sqlalchemy")
     sqlalchemy_dialects_mysql = _LazyImport("sqlalchemy.dialects.mysql")
+    sqlalchemy_dialects_sqlite = _LazyImport("sqlalchemy.dialects.sqlite")
     sqlalchemy_exc = _LazyImport("sqlalchemy.exc")
     sqlalchemy_orm = _LazyImport("sqlalchemy.orm")
     sqlalchemy_sql_functions = _LazyImport("sqlalchemy.sql.functions")
@@ -741,6 +743,18 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             )
             upsert_stmt = insert_stmt.on_duplicate_key_update(
                 value_json=insert_stmt.inserted.value_json
+            )
+            session.execute(upsert_stmt)
+        elif self.engine.name == "sqlite":
+            insert_stmt = sqlalchemy_dialects_sqlite.insert(models.TrialUserAttributeModel).values(
+                trial_id=trial_id, key=key, value_json=json.dumps(value)
+            )
+            upsert_stmt = insert_stmt.on_conflict_do_update(
+                index_elements=[
+                    models.TrialUserAttributeModel.trial_id,
+                    models.TrialUserAttributeModel.key,
+                ],
+                set_=dict(value_json=insert_stmt.excluded.value_json),
             )
             session.execute(upsert_stmt)
         else:
