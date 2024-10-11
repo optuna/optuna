@@ -73,9 +73,9 @@ def lcb(mean: torch.Tensor, var: torch.Tensor, beta: float) -> torch.Tensor:
 # NOTE: Acquisition function is not class on purpose to integrate numba in the future.
 class AcquisitionFunctionType(IntEnum):
     LOG_EI = 0
-    LOG_PI = 1
-    UCB = 2
-    LCB = 3
+    UCB = 1
+    LCB = 2
+    LOG_PI = 3
 
 
 @dataclass(frozen=True)
@@ -163,7 +163,9 @@ def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.
             mean=mean, var=var + acqf_params.acqf_stabilizing_noise, f0=acqf_params.max_Y
         )
     elif acqf_params.acqf_type == AcquisitionFunctionType.LOG_PI:
-        f_val = logpi(mean=mean, var=var + acqf_params.acqf_stabilizing_noise, f0=acqf_params.max_Y)
+        f_val = logpi(
+            mean=mean, var=var + acqf_params.acqf_stabilizing_noise, f0=acqf_params.max_Y
+        )
     elif acqf_params.acqf_type == AcquisitionFunctionType.UCB:
         assert acqf_params.beta is not None, "beta must be given to UCB."
         f_val = ucb(mean=mean, var=var, beta=acqf_params.beta)
@@ -174,7 +176,7 @@ def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.
         assert False, "Unknown acquisition function type."
 
     if isinstance(acqf_params, AcquisitionFunctionParamsWithConstraints):
-        c_val = sum([eval_acqf(params, x) for params in acqf_params.acqf_params_for_constraints])
+        c_val = sum(eval_acqf(params, x) for params in acqf_params.acqf_params_for_constraints)
         return f_val + c_val
     else:
         return f_val
