@@ -43,6 +43,7 @@ if TYPE_CHECKING:
     import alembic.migration as alembic_migration
     import alembic.script as alembic_script
     import sqlalchemy
+    import sqlalchemy.dialects.mysql as sqlalchemy_dialects_mysql
     import sqlalchemy.exc as sqlalchemy_exc
     import sqlalchemy.orm as sqlalchemy_orm
     import sqlalchemy.sql.functions as sqlalchemy_sql_functions
@@ -55,6 +56,7 @@ else:
     alembic_script = _LazyImport("alembic.script")
 
     sqlalchemy = _LazyImport("sqlalchemy")
+    sqlalchemy_dialects_mysql = _LazyImport("sqlalchemy.dialects.mysql")
     sqlalchemy_exc = _LazyImport("sqlalchemy.exc")
     sqlalchemy_orm = _LazyImport("sqlalchemy.orm")
     sqlalchemy_sql_functions = _LazyImport("sqlalchemy.sql.functions")
@@ -733,14 +735,23 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        attribute = models.TrialUserAttributeModel.find_by_trial_and_key(trial, key, session)
-        if attribute is None:
-            attribute = models.TrialUserAttributeModel(
+        if self.engine.name == "mysql":
+            insert_stmt = sqlalchemy_dialects_mysql.insert(models.TrialUserAttributeModel).values(
                 trial_id=trial_id, key=key, value_json=json.dumps(value)
             )
-            session.add(attribute)
+            upsert_stmt = insert_stmt.on_duplicate_key_update(
+                value_json=insert_stmt.inserted.value_json
+            )
+            session.execute(upsert_stmt)
         else:
-            attribute.value_json = json.dumps(value)
+            attribute = models.TrialUserAttributeModel.find_by_trial_and_key(trial, key, session)
+            if attribute is None:
+                attribute = models.TrialUserAttributeModel(
+                    trial_id=trial_id, key=key, value_json=json.dumps(value)
+                )
+                session.add(attribute)
+            else:
+                attribute.value_json = json.dumps(value)
 
     def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
         with _create_scoped_session(self.scoped_session, True) as session:
