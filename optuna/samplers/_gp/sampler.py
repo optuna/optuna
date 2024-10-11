@@ -123,9 +123,7 @@ class GPSampler(BaseSampler):
 
     def _optimize_acqf(
         self,
-        acqf_params: (
-            "acqf.AcquisitionFunctionParams" | "acqf.AcquisitionFunctionParamsWithConstraints"
-        ),
+        acqf_params: "acqf.AcquisitionFunctionParams",
         best_params: np.ndarray,
     ) -> np.ndarray:
         # Advanced users can override this method to change the optimization algorithm.
