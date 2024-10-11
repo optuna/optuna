@@ -250,7 +250,7 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
                 for trial in trials:
                     if trial.state.is_finished():
                         study.last_finished_trial_id = max(
-                            study.last_finished_trial_id, trial.number
+                            study.last_finished_trial_id, trial._trial_id
                         )
                         if trial._trial_id in study.unfinished_trial_ids:
                             study.unfinished_trial_ids.remove(trial._trial_id)
