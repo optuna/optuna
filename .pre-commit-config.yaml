@@ -15,7 +15,7 @@ repos:
     rev: 7.1.1
     hooks:
       - id: flake8
-        exclude: build|tutorial|docs/visualization_examples|docs/visualization_matplotlib_examples
+        exclude: tutorial|docs/visualization_examples|docs/visualization_matplotlib_examples
         args: [
             "--max-line-length=99",
             "--ignore=E203,E704,W503",
