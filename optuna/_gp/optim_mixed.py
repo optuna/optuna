@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from optuna._gp.acqf import AcquisitionFunctionParams
-from optuna._gp.acqf import AcquisitionFunctionParamsWithConstraints
 from optuna._gp.acqf import eval_acqf_no_grad
 from optuna._gp.acqf import eval_acqf_with_grad
 from optuna._gp.search_space import normalize_one_param
@@ -26,7 +25,7 @@ _logger = get_logger(__name__)
 
 
 def _gradient_ascent(
-    acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParamsWithConstraints,
+    acqf_params: AcquisitionFunctionParams,
     initial_params: np.ndarray,
     initial_fval: float,
     continuous_indices: np.ndarray,
@@ -77,7 +76,7 @@ def _gradient_ascent(
 
 
 def _exhaustive_search(
-    acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParamsWithConstraints,
+    acqf_params: AcquisitionFunctionParams,
     initial_params: np.ndarray,
     initial_fval: float,
     param_idx: int,
@@ -97,7 +96,7 @@ def _exhaustive_search(
 
 
 def _discrete_line_search(
-    acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParamsWithConstraints,
+    acqf_params: AcquisitionFunctionParams,
     initial_params: np.ndarray,
     initial_fval: float,
     param_idx: int,
@@ -164,7 +163,7 @@ def _discrete_line_search(
 
 
 def _local_search_discrete(
-    acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParamsWithConstraints,
+    acqf_params: AcquisitionFunctionParams,
     initial_params: np.ndarray,
     initial_fval: float,
     param_idx: int,
@@ -186,7 +185,7 @@ def _local_search_discrete(
 
 
 def local_search_mixed(
-    acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParamsWithConstraints,
+    acqf_params: AcquisitionFunctionParams,
     initial_normalized_params: np.ndarray,
     *,
     tol: float = 1e-4,
@@ -271,7 +270,7 @@ def local_search_mixed(
 
 
 def optimize_acqf_mixed(
-    acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParamsWithConstraints,
+    acqf_params: AcquisitionFunctionParams,
     *,
     warmstart_normalized_params_array: np.ndarray | None = None,
     n_preliminary_samples: int = 2048,
