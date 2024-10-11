@@ -20,7 +20,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12', '3.13.0-rc.2']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
         test-trigger-type:
           - ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'Scheduled' || '' }}
         exclude:
@@ -94,7 +94,7 @@ jobs:
           target="not slow"
         fi
 
-        if [ "${{ matrix.python-version }}" = "3.13.0-rc.2" ] ; then
+        if [ "${{ matrix.python-version }}" = "3.13" ] ; then
           pytest tests -m "$target" \
             --ignore=tests/gp_tests/ \
             --ignore=tests/samplers_tests/test_gp.py \
