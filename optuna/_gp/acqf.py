@@ -178,6 +178,8 @@ def eval_acqf(
         return f_val + c_val
     else:
         return f_val
+
+
 def eval_acqf_no_grad(
     acqf_params: AcquisitionFunctionParams | AcquisitionFunctionParamsWithConstraints,
     x: np.ndarray,
@@ -196,5 +198,3 @@ def eval_acqf_with_grad(
     val = eval_acqf(acqf_params, x_tensor)
     val.backward()  # type: ignore
     return val.item(), x_tensor.grad.detach().numpy()  # type: ignore
-
-
