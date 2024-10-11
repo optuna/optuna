@@ -16,6 +16,7 @@ from typing import Callable
 from typing import Container
 from typing import Dict
 from typing import Generator
+from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -828,6 +829,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             def _construct_query(query: "sqlalchemy_orm.Query") -> "sqlalchemy_orm.Query":
                 query = query.filter(models.TrialModel.study_id == study_id)
                 if states is not None:
+                    assert isinstance(states, Iterable)
                     query = query.filter(models.TrialModel.state.in_(states))
                 query = query.filter(
                     sqlalchemy.or_(
@@ -843,6 +845,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             ) -> "sqlalchemy_orm.Query":
                 query = query.filter(models.TrialModel.study_id == study_id)
                 if states is not None:
+                    assert isinstance(states, Iterable)
                     query = query.filter(models.TrialModel.state.in_(states))
                 query = query.order_by(models.TrialModel.trial_id)
                 return query
