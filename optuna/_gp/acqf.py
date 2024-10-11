@@ -145,10 +145,7 @@ def create_acqf_params(
     )
 
 
-def eval_acqf(
-    acqf_params: AcquisitionFunctionParams,
-    x: torch.Tensor,
-) -> torch.Tensor:
+def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.Tensor:
     mean, var = posterior(
         acqf_params.kernel_params,
         torch.from_numpy(acqf_params.X),
