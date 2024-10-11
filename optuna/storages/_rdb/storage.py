@@ -607,7 +607,8 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 param_value=param_value_internal,
                 distribution_json=distributions.distribution_to_json(distribution),
             )
-            session.add(trial_param)
+
+            trial_param.check_and_add(session)
 
     def _check_and_set_param_distribution(
         self,
