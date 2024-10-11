@@ -758,6 +758,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             )
             session.execute(upsert_stmt)
         else:
+            # TODO(porink0424): Add support for other databases, e.g., PostgreSQL.
             attribute = models.TrialUserAttributeModel.find_by_trial_and_key(trial, key, session)
             if attribute is None:
                 attribute = models.TrialUserAttributeModel(
