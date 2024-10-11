@@ -738,25 +738,25 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         self.check_trial_is_updatable(trial_id, trial.state)
 
         if self.engine.name == "mysql":
-            insert_stmt = sqlalchemy_dialects_mysql.insert(models.TrialUserAttributeModel).values(
-                trial_id=trial_id, key=key, value_json=json.dumps(value)
+            mysql_insert_stmt = sqlalchemy_dialects_mysql.insert(
+                models.TrialUserAttributeModel
+            ).values(trial_id=trial_id, key=key, value_json=json.dumps(value))
+            mysql_upsert_stmt = mysql_insert_stmt.on_duplicate_key_update(
+                value_json=mysql_insert_stmt.inserted.value_json
             )
-            upsert_stmt = insert_stmt.on_duplicate_key_update(
-                value_json=insert_stmt.inserted.value_json
-            )
-            session.execute(upsert_stmt)
+            session.execute(mysql_upsert_stmt)
         elif self.engine.name == "sqlite":
-            insert_stmt = sqlalchemy_dialects_sqlite.insert(models.TrialUserAttributeModel).values(
-                trial_id=trial_id, key=key, value_json=json.dumps(value)
-            )
-            upsert_stmt = insert_stmt.on_conflict_do_update(
+            sqlite_insert_stmt = sqlalchemy_dialects_sqlite.insert(
+                models.TrialUserAttributeModel
+            ).values(trial_id=trial_id, key=key, value_json=json.dumps(value))
+            sqlite_upsert_stmt = sqlite_insert_stmt.on_conflict_do_update(
                 index_elements=[
                     models.TrialUserAttributeModel.trial_id,
                     models.TrialUserAttributeModel.key,
                 ],
-                set_=dict(value_json=insert_stmt.excluded.value_json),
+                set_=dict(value_json=sqlite_insert_stmt.excluded.value_json),
             )
-            session.execute(upsert_stmt)
+            session.execute(sqlite_upsert_stmt)
         else:
             # TODO(porink0424): Add support for other databases, e.g., PostgreSQL.
             attribute = models.TrialUserAttributeModel.find_by_trial_and_key(trial, key, session)
