@@ -30,6 +30,13 @@ repos:
     hooks:
     - id: mypy
       additional_dependencies: [
+        "alembic>=1.5.0",
+        "colorlog",
+        "numpy",
+        "packaging>=20.0",
+        "sqlalchemy>=1.3.0",
+        "tqdm",
+        "PyYAML",
         "mypy_boto3_s3",
         "types-PyYAML",
         "types-redis",
