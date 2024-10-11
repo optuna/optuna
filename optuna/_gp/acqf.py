@@ -86,6 +86,8 @@ class AcquisitionFunctionParams:
     search_space: SearchSpace
     cov_Y_Y_inv: np.ndarray
     cov_Y_Y_inv_Y: np.ndarray
+    # TODO: Want to change the name to a generic name like threshold,
+    # since it is not actually in operation as max_Y
     max_Y: float
     beta: float | None
     acqf_stabilizing_noise: float
@@ -121,6 +123,7 @@ def create_acqf_params(
     search_space: SearchSpace,
     X: np.ndarray,
     Y: np.ndarray,
+    max_Y: float | None = None,
     beta: float | None = None,
     acqf_stabilizing_noise: float = 1e-12,
 ) -> AcquisitionFunctionParams:
@@ -139,7 +142,7 @@ def create_acqf_params(
         search_space=search_space,
         cov_Y_Y_inv=cov_Y_Y_inv,
         cov_Y_Y_inv_Y=cov_Y_Y_inv @ Y,
-        max_Y=np.max(Y),
+        max_Y=max_Y if max_Y is not None else np.max(Y),
         beta=beta,
         acqf_stabilizing_noise=acqf_stabilizing_noise,
     )
@@ -160,7 +163,7 @@ def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.
             mean=mean, var=var + acqf_params.acqf_stabilizing_noise, f0=acqf_params.max_Y
         )
     elif acqf_params.acqf_type == AcquisitionFunctionType.LOG_PI:
-        f_val = logpi(mean=mean, var=var + acqf_params.acqf_stabilizing_noise, f0=0.0)
+        f_val = logpi(mean=mean, var=var + acqf_params.acqf_stabilizing_noise, f0=acqf_params.max_Y)
     elif acqf_params.acqf_type == AcquisitionFunctionType.UCB:
         assert acqf_params.beta is not None, "beta must be given to UCB."
         f_val = ucb(mean=mean, var=var, beta=acqf_params.beta)

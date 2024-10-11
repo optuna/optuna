@@ -162,8 +162,16 @@ class GPSampler(BaseSampler):
         score_vals = np.array([_sign * cast(float, trial.value) for trial in trials])
         constraint_vals = trial.system_attrs.get(_CONSTRAINTS_KEY, ())
 
-        standardized_score_vals = gp.clip_and_standardize(score_vals)
-        standardized_constraint_vals = [gp.clip_and_standardize(c) for c in constraint_vals]
+        score_vals_mean, score_vals_std = gp.get_mean_and_std(score_vals)
+        standardized_score_vals = (score_vals - score_vals_mean) / max(1e-10, score_vals_std)
+        constraint_vals_mean_std = [gp.get_mean_and_std(vals) for vals in constraint_vals]
+        standardized_constraint_vals = [
+            (vals - mean) / max(1e-10, std)
+            for vals, (mean, std) in zip(
+                constraint_vals,
+                constraint_vals_mean_std,
+            )
+        ]
 
         if self._kernel_params_cache is not None and len(
             self._kernel_params_cache.inverse_squared_lengthscales
@@ -195,6 +203,7 @@ class GPSampler(BaseSampler):
             search_space=internal_search_space,
             X=normalized_params,
             Y=standardized_score_vals,
+            max_Y=np.max(standardized_score_vals[np.array(constraint_vals) < 0])
         )
         constraints_acqf_params = [
             acqf.create_acqf_params(
@@ -203,8 +212,11 @@ class GPSampler(BaseSampler):
                 search_space=internal_search_space,
                 X=normalized_params,
                 Y=vals,
+                max_Y=-mean / max(1e-10, std),
             )
-            for params, vals in zip(constraints_kernel_params, standardized_constraint_vals)
+            for params, vals, (mean, std) in zip(
+                constraints_kernel_params, standardized_constraint_vals, constraint_vals_mean_std
+            )
         ]
 
         acqf_params_with_constraints = (

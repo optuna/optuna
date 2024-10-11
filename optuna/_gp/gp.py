@@ -265,7 +265,7 @@ def fit_kernel_params(
     return default_initial_kernel_params
 
 
-def clip_and_standardize(values: np.ndarray) -> np.ndarray:
+def get_mean_and_std(values: np.ndarray, target: float | None = None) -> tuple[float, float]:
     if np.any(~np.isfinite(values)):
         warnings.warn(
             "GPSampler cannot handle infinite values. "
@@ -278,4 +278,4 @@ def clip_and_standardize(values: np.ndarray) -> np.ndarray:
 
         values = np.clip(values, worst_finite_val, best_finite_val)
 
-    return (values - values.mean()) / max(1e-10, values.std())
+    return np.mean(values), np.std(values)
