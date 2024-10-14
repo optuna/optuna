@@ -973,6 +973,26 @@ def test_get_trials_included_trial_ids() -> None:
         assert len(trials) == 1
 
 
+def test_get_trials_trial_id_cursor() -> None:
+    storage_mode = "sqlite"
+
+    with StorageSupplier(storage_mode) as storage:
+        assert isinstance(storage, RDBStorage)
+        study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+
+        storage.create_new_trial(study_id)
+
+        trials = storage._get_trials(
+            study_id, states=None, included_trial_ids=set(), trial_id_cursor=-1
+        )
+        assert len(trials) == 1
+
+        trials = storage._get_trials(
+            study_id, states=None, included_trial_ids=set(), trial_id_cursor=500001
+        )
+        assert len(trials) == 0
+
+
 def _setup_studies(
     storage: BaseStorage,
     n_study: int,
