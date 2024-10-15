@@ -1091,6 +1091,7 @@ class Study:
                     if isinstance(param_value, Real)
                     else param_value == existing_param
                 )
+                assert isinstance(is_repeated, bool)
                 repeated_params.append(is_repeated)
 
             if all(repeated_params):
