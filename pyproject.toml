@@ -35,7 +35,7 @@ dependencies = [
   "colorlog",
   "numpy",
   "packaging>=20.0",
-  "sqlalchemy>=1.4.0",
+  "sqlalchemy>=1.4.2",
   "tqdm",
   "PyYAML",  # Only used in `optuna/cli.py`.
 ]
