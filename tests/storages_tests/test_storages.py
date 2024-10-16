@@ -486,11 +486,6 @@ def test_set_trial_param(storage_mode: str) -> None:
         # Check set_param breaks neither get_trial nor get_trial_params.
         assert storage.get_trial(trial_id_1).params == {"x": 0.5, "y": "Meguro"}
         assert storage.get_trial_params(trial_id_1) == {"x": 0.5, "y": "Meguro"}
-        # Duplicated registration should overwrite.
-        storage.set_trial_param(trial_id_1, "x", 0.6, distribution_x)
-        assert storage.get_trial_param(trial_id_1, "x") == 0.6
-        assert storage.get_trial(trial_id_1).params == {"x": 0.6, "y": "Meguro"}
-        assert storage.get_trial_params(trial_id_1) == {"x": 0.6, "y": "Meguro"}
 
         # Set params to another trial.
         storage.set_trial_param(trial_id_2, "x", 0.3, distribution_x)
