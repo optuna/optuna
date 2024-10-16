@@ -608,7 +608,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 distribution_json=distributions.distribution_to_json(distribution),
             )
 
-            trial_param.check_and_add(session)
+            trial_param.check_and_add(session, trial.study_id)
 
     def _check_and_set_param_distribution(
         self,
@@ -629,7 +629,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 param_name=param_name,
                 param_value=param_value_internal,
                 distribution_json=distributions.distribution_to_json(distribution),
-            ).check_and_add(session)
+            ).check_and_add(session, study_id)
 
     def get_trial_param(self, trial_id: int, param_name: str) -> float:
         with _create_scoped_session(self.scoped_session) as session:
