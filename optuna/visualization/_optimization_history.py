@@ -17,8 +17,8 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _check_plot_args
-
-
+import plotly.graph_objects as go
+import pandas as pd
 if _imports.is_successful():
     from optuna.visualization._plotly_imports import go
 
@@ -206,6 +206,7 @@ def plot_optimization_history(
 def _get_optimization_history_plot(
     info_list: list[_OptimizationHistoryInfo],
     target_name: str,
+    window_size: int = 5     # window size for rolling median
 ) -> "go.Figure":
     layout = go.Layout(
         title="Optimization History Plot",
@@ -214,6 +215,10 @@ def _get_optimization_history_plot(
     )
 
     traces = []
+
+    # to store all feasible values across all trials
+    all_feasible_values = []
+    
     for trial_numbers, values_info, best_values_info in info_list:
         infeasible_trial_numbers = [
             n for n, s in zip(trial_numbers, values_info.states) if s == _ValueState.Infeasible
@@ -245,6 +250,9 @@ def _get_optimization_history_plot(
             feasible_trial_numbers = trial_numbers
             feasible_trial_values = values_info.values
             infeasible_trial_values = []
+
+        # Store feasible values for the rolling median calculation
+        all_feasible_values.extend(feasible_trial_values)
         traces.append(
             go.Scatter(
                 x=feasible_trial_numbers,
@@ -294,6 +302,19 @@ def _get_optimization_history_plot(
                 name="Infeasible Trial",
                 marker={"color": "#cccccc"},
                 showlegend=False,
+            )
+        )
+    # Calculate rolling median for the trend line
+    if all_feasible_values:
+        rolling_median = pd.Series(all_feasible_values).rolling(window=window_size).median()
+        trial_range = list(range(1, len(rolling_median) + 1))    # X-axis for rolling median
+        traces.append(
+            go.Scatter(
+                x=trial_range,
+                y=rolling_median,
+                mode = "lines",
+                name = "Optimization Trend (Rolling Median)",
+                line = dict(color="blue", dash="dash"),
             )
         )
     return go.Figure(data=traces, layout=layout)
