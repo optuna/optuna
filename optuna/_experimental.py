@@ -3,6 +3,8 @@ from __future__ import annotations
 import functools
 import textwrap
 from typing import Any
+from typing import Callable
+from typing import Optional
 from typing import TYPE_CHECKING
 import warnings
 
