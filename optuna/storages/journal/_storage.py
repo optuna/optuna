@@ -351,6 +351,10 @@ class JournalStorage(BaseStorage):
             self._write_log(JournalOperation.SET_TRIAL_USER_ATTR, log)
             self._sync_with_backend()
 
+    def set_trial_user_attrs(self, trial_id: int, attrs: Dict[str, Any]) -> None:
+        for key, value in attrs.items():
+            self.set_trial_user_attr(trial_id, key, value)
+
     def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
         log: Dict[str, Any] = {
             "trial_id": trial_id,

@@ -131,6 +131,9 @@ class FixedTrial(BaseTrial):
     def set_user_attr(self, key: str, value: Any) -> None:
         self._user_attrs[key] = value
 
+    def set_user_attrs(self, attrs: dict[str, Any]) -> None:
+        self._user_attrs.update(attrs)
+
     @deprecated_func("3.1.0", "5.0.0")
     def set_system_attr(self, key: str, value: Any) -> None:
         self._system_attrs[key] = value
