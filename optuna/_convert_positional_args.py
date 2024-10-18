@@ -80,7 +80,7 @@ def convert_positional_args(
 
             kwargs.update(inferred_kwargs)
 
-            return func(**kwargs)
+            return func(**kwargs)  # type: ignore[call-arg]
 
         return converter_wrapper
 

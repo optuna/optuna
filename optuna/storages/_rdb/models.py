@@ -36,8 +36,7 @@ try:
     _Column = mapped_column
 except ImportError:
     # TODO(Shinichi): Remove this after dropping support for SQLAlchemy<2.0.
-    from sqlalchemy import Column as _Column  # type: ignore[assignment]
-
+    from sqlalchemy import Column as _Column  # type: ignore[assignment, no-redef]
 
 # Don't modify this version number anymore.
 # The schema management functionality has been moved to alembic.

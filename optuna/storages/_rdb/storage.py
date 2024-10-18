@@ -588,27 +588,14 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        trial_param = models.TrialParamModel.find_by_trial_and_param_name(
-            trial, param_name, session
+        trial_param = models.TrialParamModel(
+            trial_id=trial_id,
+            param_name=param_name,
+            param_value=param_value_internal,
+            distribution_json=distributions.distribution_to_json(distribution),
         )
 
-        if trial_param is not None:
-            # Raise error in case distribution is incompatible.
-            distributions.check_distribution_compatibility(
-                distributions.json_to_distribution(trial_param.distribution_json), distribution
-            )
-
-            trial_param.param_value = param_value_internal
-            trial_param.distribution_json = distributions.distribution_to_json(distribution)
-        else:
-            trial_param = models.TrialParamModel(
-                trial_id=trial_id,
-                param_name=param_name,
-                param_value=param_value_internal,
-                distribution_json=distributions.distribution_to_json(distribution),
-            )
-
-            trial_param.check_and_add(session)
+        trial_param.check_and_add(session)
 
     def _check_and_set_param_distribution(
         self,
