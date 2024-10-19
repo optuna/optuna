@@ -142,33 +142,43 @@ Please refer to :class:`optuna.logging` for further details.
 How to save machine learning models trained in objective functions?
 -------------------------------------------------------------------
 
-Optuna saves hyperparameter values with its corresponding objective value to storage,
-but it discards intermediate objects such as machine learning models and neural network weights.
-To save models or weights, please use features of the machine learning library you used.
+Optuna saves hyperparameter values with their corresponding objective values to storage, but it discards intermediate objects such as machine learning models and neural network weights. To save models or weights, please use features of the machine learning library you used.
 
-We recommend saving :obj:`optuna.trial.Trial.number` with a model in order to identify its corresponding trial.
-For example, you can save SVM models trained in the objective function as follows:
+We recommend utilizing Optuna's built-in `ArtifactStore`, specifically the `FileSystemArtifactStore`, to provide a more robust and flexible solution for storing and retrieving models instead of using trial numbers in file names.
+
+To save your model, use the `upload_artifact` method as follows:
 
 .. code-block:: python
+
+    import optuna
+    import joblib
+    import sklearn.svm
 
     def objective(trial):
         svc_c = trial.suggest_float("svc_c", 1e-10, 1e10, log=True)
         clf = sklearn.svm.SVC(C=svc_c)
         clf.fit(X_train, y_train)
 
-        # Save a trained model to a file.
-        with open("{}.pickle".format(trial.number), "wb") as fout:
-            pickle.dump(clf, fout)
+        # Save the model using the ArtifactStore
+        trial.study.storage.upload_artifact("model.joblib", clf)
         return 1.0 - accuracy_score(y_valid, clf.predict(X_valid))
 
+study = optuna.create_study()
+study.optimize(objective, n_trials=100)
 
-    study = optuna.create_study()
-    study.optimize(objective, n_trials=100)
+To retrieve model artifacts, you can list and download them using `get_all_artifact_meta` and `download_artifact` as shown below:
 
-    # Load the best model.
-    with open("{}.pickle".format(study.best_trial.number), "rb") as fin:
-        best_clf = pickle.load(fin)
-    print(accuracy_score(y_valid, best_clf.predict(X_valid)))
+.. code-block:: python
+
+    # List all artifacts
+    artifact_meta = trial.study.storage.get_all_artifact_meta()
+    for artifact in artifact_meta:
+        print(artifact)
+
+    # Download a specific artifact
+    trial.study.storage.download_artifact("model.joblib")
+
+For a more comprehensive guide, refer to the `ArtifactStore tutorial <https://optuna.readthedocs.io/en/stable/tutorial/index.html#artifacts>`_.
 
 
 How can I obtain reproducible optimization results?
