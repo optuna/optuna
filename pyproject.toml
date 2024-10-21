@@ -127,7 +127,7 @@ version = {attr = "optuna.version.__version__"}
 [tool.black]
 line-length = 99
 target-version = ['py38']
-exclude = '''
+force-exclude = '''
 /(
   \.eggs
   | \.git

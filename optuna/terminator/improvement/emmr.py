@@ -54,6 +54,12 @@ class EMMREvaluator(BaseImprovementEvaluator):
     - `A stopping criterion for Bayesian optimization by the gap of expected minimum simple
       regrets <https://proceedings.mlr.press/v206/ishibashi23a.html>`__
 
+    Also, there is our blog post explaining this evaluator:
+
+    - `Introducing A New Terminator: Early Termination of Black-box Optimization Based on
+      Expected Minimum Model Regret
+      <https://medium.com/optuna/introducing-a-new-terminator-early-termination-of-black-box-optimization-based-on-expected-9a660774fcdb>`__
+
     Args:
         deterministic_objective:
             A boolean value which indicates whether the objective function is deterministic.
