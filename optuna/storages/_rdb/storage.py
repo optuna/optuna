@@ -788,7 +788,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         study_id: int,
         states: Optional[Container[TrialState]],
         included_trial_ids: Set[int],
-        trial_id_cursor: int,
+        trial_id_greater_than: int,
     ) -> List[FrozenTrial]:
         with _create_scoped_session(self.scoped_session) as session:
             # Ensure that the study exists.
@@ -812,16 +812,16 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 query = query.filter(models.TrialModel.state.in_(states))
 
             try:
-                trial_models = (
-                    query.filter(
+                if len(included_trial_ids) > 0:
+                    query = query.filter(
                         sqlalchemy.or_(
                             models.TrialModel.trial_id.in_(included_trial_ids),
-                            models.TrialModel.trial_id > trial_id_cursor,
+                            models.TrialModel.trial_id > trial_id_greater_than,
                         )
                     )
-                    .order_by(models.TrialModel.trial_id)
-                    .all()
-                )
+                else:
+                    query = query.filter(models.TrialModel.trial_id > trial_id_greater_than)
+                trial_models = query.order_by(models.TrialModel.trial_id).all()
             except sqlalchemy_exc.OperationalError as e:
                 # Likely exceeding the number of maximum allowed variables using IN.
                 # This number differ between database dialects. For SQLite for instance, see
@@ -837,7 +837,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 trial_models = [
                     t
                     for t in trial_models
-                    if t.trial_id in included_trial_ids or t.trial_id > trial_id_cursor
+                    if t.trial_id in included_trial_ids or t.trial_id > trial_id_greater_than
                 ]
 
             trials = [self._build_frozen_trial_from_trial_model(trial) for trial in trial_models]

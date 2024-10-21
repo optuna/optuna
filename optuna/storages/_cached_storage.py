@@ -243,19 +243,20 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
                 study_id,
                 states=None,
                 included_trial_ids=study.unfinished_trial_ids,
-                trial_id_cursor=study.last_finished_trial_id,
+                trial_id_greater_than=study.last_finished_trial_id,
             )
-            if trials:
-                self._add_trials_to_cache(study_id, trials)
-                for trial in trials:
-                    if trial.state.is_finished():
-                        study.last_finished_trial_id = max(
-                            study.last_finished_trial_id, trial._trial_id
-                        )
-                        if trial._trial_id in study.unfinished_trial_ids:
-                            study.unfinished_trial_ids.remove(trial._trial_id)
-                    else:
-                        study.unfinished_trial_ids.add(trial._trial_id)
+            if not trials:
+                return
+
+            self._add_trials_to_cache(study_id, trials)
+            for trial in trials:
+                if not trial.state.is_finished():
+                    study.unfinished_trial_ids.add(trial._trial_id)
+                    continue
+
+                study.last_finished_trial_id = max(study.last_finished_trial_id, trial._trial_id)
+                if trial._trial_id in study.unfinished_trial_ids:
+                    study.unfinished_trial_ids.remove(trial._trial_id)
 
     def _add_trials_to_cache(self, study_id: int, trials: list[FrozenTrial]) -> None:
         study = self._studies[study_id]

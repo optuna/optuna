@@ -956,19 +956,22 @@ def test_get_trials_included_trial_ids() -> None:
         storage.create_new_trial(study_id)
 
         trials = storage._get_trials(
-            study_id, states=None, included_trial_ids=set(), trial_id_cursor=500001
+            study_id, states=None, included_trial_ids=set(), trial_id_greater_than=500001
         )
         assert len(trials) == 0
 
         # A large exclusion list used to raise errors. Check that it is not an issue.
         # See https://github.com/optuna/optuna/issues/1457.
         trials = storage._get_trials(
-            study_id, states=None, included_trial_ids=set(range(500000)), trial_id_cursor=500001
+            study_id,
+            states=None,
+            included_trial_ids=set(range(500000)),
+            trial_id_greater_than=500001,
         )
         assert len(trials) == 1
 
 
-def test_get_trials_trial_id_cursor() -> None:
+def test_get_trials_trial_id_greater_than() -> None:
     storage_mode = "sqlite"
 
     with StorageSupplier(storage_mode) as storage:
@@ -978,12 +981,12 @@ def test_get_trials_trial_id_cursor() -> None:
         storage.create_new_trial(study_id)
 
         trials = storage._get_trials(
-            study_id, states=None, included_trial_ids=set(), trial_id_cursor=-1
+            study_id, states=None, included_trial_ids=set(), trial_id_greater_than=-1
         )
         assert len(trials) == 1
 
         trials = storage._get_trials(
-            study_id, states=None, included_trial_ids=set(), trial_id_cursor=500001
+            study_id, states=None, included_trial_ids=set(), trial_id_greater_than=500001
         )
         assert len(trials) == 0
 
