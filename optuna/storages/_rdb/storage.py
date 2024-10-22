@@ -812,15 +812,19 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 query = query.filter(models.TrialModel.state.in_(states))
 
             try:
-                if len(included_trial_ids) > 0:
+                if len(included_trial_ids) > 0 and trial_id_greater_than > -1:
                     _query = query.filter(
                         sqlalchemy.or_(
                             models.TrialModel.trial_id.in_(included_trial_ids),
                             models.TrialModel.trial_id > trial_id_greater_than,
                         )
                     )
-                else:
+                elif trial_id_greater_than > -1:
                     _query = query.filter(models.TrialModel.trial_id > trial_id_greater_than)
+                elif len(included_trial_ids) > 0:
+                    _query = query.filter(models.TrialModel.trial_id.in_(included_trial_ids))
+                else:
+                    _query = query
                 trial_models = _query.order_by(models.TrialModel.trial_id).all()
             except sqlalchemy_exc.OperationalError as e:
                 # Likely exceeding the number of maximum allowed variables using IN.
