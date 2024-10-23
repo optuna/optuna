@@ -170,6 +170,7 @@ For example, you can use the :func:`~optuna.artifacts.upload_artifact` as follow
     study.optimize(objective, n_trials=100)
 
 To retrieve models or weights, you can list and download them using :func:`~optuna.artifacts.get_all_artifact_meta` and :func:`~optuna.artifacts.download_artifact` as shown below:
+
 .. code-block:: python
     # List all models
     for artifact_meta in get_all_artifact_meta(study_or_trial=study):
