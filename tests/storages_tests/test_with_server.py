@@ -27,6 +27,8 @@ def objective(trial: optuna.Trial) -> float:
     trial.report(x, 0)
     trial.report(y, 1)
     trial.set_user_attr("x", x)
+    trial.set_user_attr("overwritten_x", x)
+    trial.set_user_attrs({"y": y, "overwritten_x": 2 * x})
     return f(x, y)
 
 
@@ -81,6 +83,20 @@ def _check_trials(trials: Sequence[optuna.trial.FrozenTrial]) -> None:
         np.isclose(
             [trial.user_attrs["x"] for trial in trials],
             [trial.params["x"] for trial in trials],
+            atol=1e-4,
+        ).tolist()
+    )
+    assert all(
+        np.isclose(
+            [trial.user_attrs["y"] for trial in trials],
+            [trial.params["y"] for trial in trials],
+            atol=1e-4,
+        ).tolist()
+    )
+    assert all(
+        np.isclose(
+            [trial.user_attrs["overwritten_x"] for trial in trials],
+            [2 * trial.params["x"] for trial in trials],
             atol=1e-4,
         ).tolist()
     )
