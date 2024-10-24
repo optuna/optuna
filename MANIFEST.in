@@ -1,2 +1,2 @@
-include LICENSE
-include LICENSE_THIRD_PARTY
+graft tests
+global-exclude *~ *.py[cod] *.so
