@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import functools
 import textwrap
 from typing import Any
 from typing import Callable
-from typing import Optional
 from typing import TYPE_CHECKING
 from typing import TypeVar
 import warnings
@@ -49,8 +50,8 @@ def _get_docstring_indent(docstring: str) -> str:
 
 def experimental_func(
     version: str,
-    name: Optional[str] = None,
-) -> "Callable[[Callable[FP, FT]], Callable[FP, FT]]":
+    name: str | None = None,
+) -> Callable[[Callable[FP, FT]], Callable[FP, FT]]:
     """Decorate function as experimental.
 
     Args:
@@ -60,7 +61,7 @@ def experimental_func(
 
     _validate_version(version)
 
-    def decorator(func: "Callable[FP, FT]") -> "Callable[FP, FT]":
+    def decorator(func: Callable[FP, FT]) -> Callable[FP, FT]:
         if func.__doc__ is None:
             func.__doc__ = ""
 
@@ -69,7 +70,7 @@ def experimental_func(
         func.__doc__ = func.__doc__.strip() + textwrap.indent(note, indent) + indent
 
         @functools.wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> "FT":
+        def wrapper(*args: Any, **kwargs: Any) -> FT:
             warnings.warn(
                 "{} is experimental (supported from v{}). "
                 "The interface can change in the future.".format(
@@ -88,8 +89,8 @@ def experimental_func(
 
 def experimental_class(
     version: str,
-    name: Optional[str] = None,
-) -> "Callable[[CT], CT]":
+    name: str | None = None,
+) -> Callable[[CT], CT]:
     """Decorate class as experimental.
 
     Args:
@@ -99,8 +100,8 @@ def experimental_class(
 
     _validate_version(version)
 
-    def decorator(cls: "CT") -> "CT":
-        def wrapper(cls: "CT") -> "CT":
+    def decorator(cls: CT) -> CT:
+        def wrapper(cls: CT) -> CT:
             """Decorates a class as experimental.
 
             This decorator is supposed to be applied to the experimental class.
