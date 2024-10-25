@@ -67,33 +67,41 @@ def _check_plot_args(
         warnings.warn(
             "`target` is specified, but `target_name` is the default value, 'Objective Value'."
         )
-
-
-def _is_log_scale(trials: list[FrozenTrial], param: str) -> bool:
+def _preprocess_trial_params(trials: list[FrozenTrial]) -> Tuple[Dict[str, bool], Dict[str, bool]]:
+    """Pre-process parameters in trials to check log-scale and numerical properties in one pass.
+    Args:
+        trials: List of `FrozenTrial`s.
+    Returns:
+        Two dictionaries: 
+        - is_log_scale: Maps parameter names to a bool indicating if they are log-scaled.
+        - is_numerical: Maps parameter names to a bool indicating if they are numerical.
+    """
+    is_log_scale = {}
+    is_numerical = {}
     for trial in trials:
-        if param not in trial.params:
-            continue
-        dist = trial.distributions[param]
-        return isinstance(dist, (FloatDistribution, IntDistribution)) and dist.log
-    return False
+        for param, dist in trial.distributions.items():
+            # Check and set log-scale
+            if param not in is_log_scale:
+                is_log_scale[param] = isinstance(dist, (FloatDistribution, IntDistribution)) and dist.log
 
+            # Check and set if numerical
+            if param not in is_numerical:
+                if isinstance(dist, (IntDistribution, FloatDistribution)):
+                    is_numerical[param] = True
+                elif isinstance(dist, CategoricalDistribution):
+                    is_numerical[param] = all(
+                        isinstance(v, (int, float)) and not isinstance(v, bool) for v in dist.choices
+                    )
+                else:
+                    assert False, "Unexpected distribution type in trial parameter."
+                    
+    return is_log_scale, is_numerical
 
-def _is_numerical(trials: list[FrozenTrial], param: str) -> bool:
-    for trial in trials:
-        if param not in trial.params:
-            continue
-        dist = trial.distributions[param]
-        if isinstance(dist, (IntDistribution, FloatDistribution)):
-            return True
-        elif isinstance(dist, CategoricalDistribution):
-            # NOTE: Although it is a bit odd to do so, we keep it as is only for visualization.
-            return all(
-                isinstance(v, (int, float)) and not isinstance(v, bool) for v in dist.choices
-            )
-        else:
-            assert False, "Should not reach."
-    return True
+def _is_log_scale(trials: list[FrozenTrial], param: str, is_log_scale: Dict[str, bool]) -> bool:
+    return is_log_scale.get(param, False)
 
+def _is_numerical(trials: list[FrozenTrial], param: str, is_numerical: Dict[str, bool]) -> bool:
+    return is_numerical.get(param, False)
 
 def _get_param_values(trials: list[FrozenTrial], p_name: str) -> list[Any]:
     values = [t.params[p_name] for t in trials if p_name in t.params]
