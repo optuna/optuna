@@ -150,6 +150,10 @@ For example, you can use the :func:`~optuna.artifacts.upload_artifact` as follow
 
 .. code-block:: python
 
+    base_path = "./artifacts"
+    os.makedirs(base_path, exist_ok=True)
+    artifact_store = optuna.artifacts.FileSystemArtifactStore(base_path=base_path)
+    
     def objective(trial):
         svc_c = trial.suggest_float("svc_c", 1e-10, 1e10, log=True)
         clf = sklearn.svm.SVC(C=svc_c)
@@ -158,10 +162,10 @@ For example, you can use the :func:`~optuna.artifacts.upload_artifact` as follow
         # Save the model using ArtifactStore
         with open("model.pickle", "wb") as fout:
             pickle.dump(clf, fout)
-        upload_artifact(
+        artifact_id = optuna.artifacts.upload_artifact(
             artifact_store=artifact_store,
             file_path="model.pickle",
-            study_or_trial=study
+            study_or_trial=trial.study,
         )
         trial.set_user_attr("artifact_id", artifact_id)
         return 1.0 - accuracy_score(y_valid, clf.predict(X_valid))
@@ -174,12 +178,12 @@ To retrieve models or weights, you can list and download them using :func:`~optu
 .. code-block:: python
     
     # List all models
-    for artifact_meta in get_all_artifact_meta(study_or_trial=study):
+    for artifact_meta in optuna.artifacts.get_all_artifact_meta(study_or_trial=study):
         print(artifact_meta)
     # Download the best model
     trial = study.best_trial
     best_artifact_id = trial.user_attrs["artifact_id"]
-    download_artifact(
+    optuna.artifacts.download_artifact(
         artifact_store=artifact_store,
         file_path='best_model.pickle',
         artifact_id=best_artifact_id,
