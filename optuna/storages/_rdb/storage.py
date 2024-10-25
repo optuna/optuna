@@ -790,6 +790,10 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         included_trial_ids: Set[int],
         trial_id_greater_than: int,
     ) -> List[FrozenTrial]:
+        included_trial_ids = set(
+            trial_id for trial_id in included_trial_ids if trial_id <= trial_id_greater_than
+        )
+
         with _create_scoped_session(self.scoped_session) as session:
             # Ensure that the study exists.
             models.StudyModel.find_or_raise_by_id(study_id, session)
