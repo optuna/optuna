@@ -9,6 +9,7 @@ import json
 import logging
 import os
 import random
+import sqlite3
 import time
 from typing import Any
 from typing import Callable
@@ -745,7 +746,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 value_json=mysql_insert_stmt.inserted.value_json
             )
             session.execute(mysql_upsert_stmt)
-        elif self.engine.name == "sqlite":
+        elif self.engine.name == "sqlite" and sqlite3.sqlite_version_info >= (3, 24, 0):
             sqlite_insert_stmt = sqlalchemy_dialects_sqlite.insert(
                 models.TrialUserAttributeModel
             ).values(trial_id=trial_id, key=key, value_json=json.dumps(value))
