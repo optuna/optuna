@@ -159,8 +159,11 @@ def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.
     )
 
     if acqf_params.acqf_type == AcquisitionFunctionType.LOG_EI:
-        f_val = logei(
-            mean=mean, var=var + acqf_params.acqf_stabilizing_noise, f0=acqf_params.max_Y
+        # TODO: Write reason for neginf
+        f_val = (
+            logei(mean=mean, var=var + acqf_params.acqf_stabilizing_noise, f0=acqf_params.max_Y)
+            if not np.isneginf(acqf_params.max_Y)
+            else 0.0
         )
     elif acqf_params.acqf_type == AcquisitionFunctionType.LOG_PI:
         f_val = logpi(
