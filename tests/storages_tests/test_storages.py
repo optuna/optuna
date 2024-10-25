@@ -953,10 +953,14 @@ def test_get_trials_included_trial_ids() -> None:
         assert isinstance(storage, RDBStorage)
         study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
 
-        storage.create_new_trial(study_id)
+        trial_id = storage.create_new_trial(study_id)
+        trial_id_greater_than = trial_id + 500000
 
         trials = storage._get_trials(
-            study_id, states=None, included_trial_ids=set(), trial_id_greater_than=500001
+            study_id,
+            states=None,
+            included_trial_ids=set(),
+            trial_id_greater_than=trial_id_greater_than,
         )
         assert len(trials) == 0
 
@@ -966,7 +970,7 @@ def test_get_trials_included_trial_ids() -> None:
             study_id,
             states=None,
             included_trial_ids=set(range(500000)),
-            trial_id_greater_than=500001,
+            trial_id_greater_than=trial_id_greater_than,
         )
         assert len(trials) == 1
 

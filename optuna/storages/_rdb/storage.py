@@ -821,8 +821,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                     )
                 elif trial_id_greater_than > -1:
                     _query = query.filter(models.TrialModel.trial_id > trial_id_greater_than)
-                elif len(included_trial_ids) > 0:
-                    _query = query.filter(models.TrialModel.trial_id.in_(included_trial_ids))
                 else:
                     _query = query
                 trial_models = _query.order_by(models.TrialModel.trial_id).all()
