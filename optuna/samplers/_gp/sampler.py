@@ -124,14 +124,16 @@ class GPSampler(BaseSampler):
     def _optimize_acqf(
         self,
         acqf_params: "acqf.AcquisitionFunctionParams",
-        best_params: np.ndarray,
+        best_params: np.ndarray | None,
     ) -> np.ndarray:
         # Advanced users can override this method to change the optimization algorithm.
         # However, we do not make any effort to keep backward compatibility between versions.
         # Particularly, we may remove this function in future refactoring.
         normalized_params, _acqf_val = optim_mixed.optimize_acqf_mixed(
             acqf_params,
-            warmstart_normalized_params_array=best_params[None, :],
+            warmstart_normalized_params_array=(
+                None if best_params is None else best_params[None, :]
+            ),
             n_preliminary_samples=2048,
             n_local_search=10,
             tol=1e-4,
@@ -222,13 +224,15 @@ class GPSampler(BaseSampler):
         self._kernel_params_cache = kernel_params
         self._constraints_kernel_params_cache = constraints_kernel_params
 
+        is_feasible = np.all(constraint_vals <= 0, axis=1)
+        is_all_infeasible = not np.any(is_feasible)
         acqf_params = acqf.create_acqf_params(
             acqf_type=acqf.AcquisitionFunctionType.LOG_EI,
             kernel_params=kernel_params,
             search_space=internal_search_space,
             X=normalized_params,
             Y=standardized_score_vals,
-            max_Y=np.max(standardized_score_vals[np.all(constraint_vals <= 0, axis=1)]),
+            max_Y=-np.inf if is_all_infeasible else np.max(standardized_score_vals[is_feasible]),
         )
         constraints_acqf_params = [
             acqf.create_acqf_params(
@@ -256,9 +260,11 @@ class GPSampler(BaseSampler):
 
         normalized_param = self._optimize_acqf(
             acqf_params_with_constraints,
-            normalized_params[
-                np.argmax(standardized_score_vals[np.all(constraint_vals <= 0, axis=1)]), :
-            ],
+            (
+                None
+                if is_all_infeasible
+                else normalized_params[np.argmax(standardized_score_vals[is_feasible]), :]
+            ),
         )
         return gp_search_space.get_unnormalized_param(search_space, normalized_param)
 
