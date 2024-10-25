@@ -20,12 +20,10 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
         test-trigger-type:
           - ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'Scheduled' || '' }}
         exclude:
-          - test-trigger-type: ""
-            python-version: "3.8"
           - test-trigger-type: ""
             python-version: "3.9"
           - test-trigger-type: ""
@@ -76,8 +74,6 @@ jobs:
 
         pip install --progress-bar off .[test] --extra-index-url https://download.pytorch.org/whl/cpu
         pip install --progress-bar off .[optional] --extra-index-url https://download.pytorch.org/whl/cpu
-        # TODO(c-bata): Remove the version constraint after dropping Python 3.7
-        pip install --progress-bar off "fakeredis<2.26.0"
 
         # TODO(gen740): Remove this after pytorch supports Python 3.13
         if [ "${{ matrix.python-version }}" = "3.13" ] ; then

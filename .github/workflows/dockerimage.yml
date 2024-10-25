@@ -29,11 +29,8 @@ jobs:
 
     strategy:
       matrix:
-        python_version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        python_version: ['3.8', '3.9', '3.10', '3.11']
         build_type: ['', 'dev']  # "dev" installs all the dependencies including pytest.
-        exclude:
-        - python_version: '3.7'
-          build_type: 'dev'
 
     # This action cannot be executed in the forked repository.
     if: github.repository == 'optuna/optuna'
