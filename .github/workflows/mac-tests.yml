@@ -1,5 +1,5 @@
 # Run tests on Mac, which are triggered by each master push.
-# Currently, Python3.8 is only used as an environment.
+# Currently, Python3.12 is only used as an environment.
 # This is mainly for the sake of speed.
 name: Mac tests
 
@@ -26,10 +26,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Setup Python3.8
+    - name: Setup Python 3.12
       uses: actions/setup-python@v5
       with:
-        python-version: 3.8
+        python-version: 3.12
 
     - name: Setup cache
       uses: actions/cache@v3
