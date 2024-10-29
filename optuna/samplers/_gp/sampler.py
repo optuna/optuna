@@ -199,27 +199,25 @@ class GPSampler(BaseSampler):
             initial_kernel_params=self._kernel_params_cache,
             deterministic_objective=self._deterministic,
         )
-        constraints_kernel_params = [
-            gp.fit_kernel_params(
-                X=normalized_params,
-                Y=vals,
-                is_categorical=(
-                    internal_search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
-                ),
-                log_prior=self._log_prior,
-                minimum_noise=self._minimum_noise,
-                initial_kernel_params=cache,
-                deterministic_objective=self._deterministic,
+        constraints_kernel_params = []
+        for i, vals in enumerate(standardized_constraint_vals.T):
+            cache = (
+                self._constraints_kernel_params_cache and self._constraints_kernel_params_cache[i]
             )
-            for vals, cache in zip(
-                standardized_constraint_vals.T,
-                (
-                    cast(list[gp.KernelParamsTensor | None], self._constraints_kernel_params_cache)
-                    if self._constraints_kernel_params_cache is not None
-                    else [None] * constraint_vals.shape[1]
-                ),
+            assert isinstance(cache, (gp.KernelParamsTensor, type(None)))
+            constraints_kernel_params.append(
+                gp.fit_kernel_params(
+                    X=normalized_params,
+                    Y=vals,
+                    is_categorical=(
+                        internal_search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
+                    ),
+                    log_prior=self._log_prior,
+                    minimum_noise=self._minimum_noise,
+                    initial_kernel_params=cache,
+                    deterministic_objective=self._deterministic,
+                )
             )
-        ]
 
         self._kernel_params_cache = kernel_params
         self._constraints_kernel_params_cache = constraints_kernel_params
