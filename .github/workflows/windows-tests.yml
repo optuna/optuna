@@ -37,9 +37,9 @@ jobs:
         cache-name: windows-test
       with:
         path: ~\\AppData\\Local\\pip\\Cache
-        key: ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
+        key: ${{ runner.os }}-3.12-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
         restore-keys: |
-          ${{ runner.os }}-3.9-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
+          ${{ runner.os }}-3.12-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
 
     - name: Install
       run: |

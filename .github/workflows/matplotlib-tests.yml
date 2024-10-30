@@ -32,9 +32,9 @@ jobs:
         cache-name: test-matplotlib
       with:
         path:  ~/.cache/pip
-        key: ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
+        key: ${{ runner.os }}-3.12-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
         restore-keys: |
-          ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
+          ${{ runner.os }}-3.12-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
 
     - name: Install
       run: |
