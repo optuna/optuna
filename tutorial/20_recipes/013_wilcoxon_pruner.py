@@ -27,8 +27,8 @@ SA starts with an initial solution (it can be constructed by a simpler heuristic
 like greedy method), and it randomly checks the neighborhood (defined later)
 of the solution. If a neighbor is better, the solution is updated to the neighbor.
 If the neighbor is worse, SA still updates the solution to the neighbor with
-probability :math:`e^{-\Delta c / T}`, where
-:math:`\Delta c (> 0)` is the difference of
+probability :math:`e^{-\\Delta c / T}`, where
+:math:`\\Delta c (> 0)` is the difference of
 the cost (sum of the distance) between the new solution and the old one and
 :math:`T` is a parameter called "temperature". The temperature controls
 how much worsening of the solution is tolerated to escape from the local minimum
