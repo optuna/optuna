@@ -23,16 +23,18 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
         test-trigger-type:
           - ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'Scheduled' || '' }}
         exclude:
           - test-trigger-type: ""
-            python-version: "3.8"
-          - test-trigger-type: ""
             python-version: "3.9"
           - test-trigger-type: ""
             python-version: "3.10"
+          - test-trigger-type: ""
+            python-version: "3.11"
+          - test-trigger-type: ""
+            python-version: "3.12"
 
     services:
       mysql:

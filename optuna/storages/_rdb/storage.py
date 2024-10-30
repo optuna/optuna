@@ -9,6 +9,7 @@ import json
 import logging
 import os
 import random
+import sqlite3
 import time
 from typing import Any
 from typing import Callable
@@ -43,6 +44,8 @@ if TYPE_CHECKING:
     import alembic.migration as alembic_migration
     import alembic.script as alembic_script
     import sqlalchemy
+    import sqlalchemy.dialects.mysql as sqlalchemy_dialects_mysql
+    import sqlalchemy.dialects.sqlite as sqlalchemy_dialects_sqlite
     import sqlalchemy.exc as sqlalchemy_exc
     import sqlalchemy.orm as sqlalchemy_orm
     import sqlalchemy.sql.functions as sqlalchemy_sql_functions
@@ -55,6 +58,8 @@ else:
     alembic_script = _LazyImport("alembic.script")
 
     sqlalchemy = _LazyImport("sqlalchemy")
+    sqlalchemy_dialects_mysql = _LazyImport("sqlalchemy.dialects.mysql")
+    sqlalchemy_dialects_sqlite = _LazyImport("sqlalchemy.dialects.sqlite")
     sqlalchemy_exc = _LazyImport("sqlalchemy.exc")
     sqlalchemy_orm = _LazyImport("sqlalchemy.orm")
     sqlalchemy_sql_functions = _LazyImport("sqlalchemy.sql.functions")
@@ -595,7 +600,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             distribution_json=distributions.distribution_to_json(distribution),
         )
 
-        trial_param.check_and_add(session)
+        trial_param.check_and_add(session, trial.study_id)
 
     def _check_and_set_param_distribution(
         self,
@@ -616,7 +621,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 param_name=param_name,
                 param_value=param_value_internal,
                 distribution_json=distributions.distribution_to_json(distribution),
-            ).check_and_add(session)
+            ).check_and_add(session, study_id)
 
     def get_trial_param(self, trial_id: int, param_name: str) -> float:
         with _create_scoped_session(self.scoped_session) as session:
@@ -720,14 +725,36 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        attribute = models.TrialUserAttributeModel.find_by_trial_and_key(trial, key, session)
-        if attribute is None:
-            attribute = models.TrialUserAttributeModel(
-                trial_id=trial_id, key=key, value_json=json.dumps(value)
+        if self.engine.name == "mysql":
+            mysql_insert_stmt = sqlalchemy_dialects_mysql.insert(
+                models.TrialUserAttributeModel
+            ).values(trial_id=trial_id, key=key, value_json=json.dumps(value))
+            mysql_upsert_stmt = mysql_insert_stmt.on_duplicate_key_update(
+                value_json=mysql_insert_stmt.inserted.value_json
             )
-            session.add(attribute)
+            session.execute(mysql_upsert_stmt)
+        elif self.engine.name == "sqlite" and sqlite3.sqlite_version_info >= (3, 24, 0):
+            sqlite_insert_stmt = sqlalchemy_dialects_sqlite.insert(
+                models.TrialUserAttributeModel
+            ).values(trial_id=trial_id, key=key, value_json=json.dumps(value))
+            sqlite_upsert_stmt = sqlite_insert_stmt.on_conflict_do_update(
+                index_elements=[
+                    models.TrialUserAttributeModel.trial_id,
+                    models.TrialUserAttributeModel.key,
+                ],
+                set_=dict(value_json=sqlite_insert_stmt.excluded.value_json),
+            )
+            session.execute(sqlite_upsert_stmt)
         else:
-            attribute.value_json = json.dumps(value)
+            # TODO(porink0424): Add support for other databases, e.g., PostgreSQL.
+            attribute = models.TrialUserAttributeModel.find_by_trial_and_key(trial, key, session)
+            if attribute is None:
+                attribute = models.TrialUserAttributeModel(
+                    trial_id=trial_id, key=key, value_json=json.dumps(value)
+                )
+                session.add(attribute)
+            else:
+                attribute.value_json = json.dumps(value)
 
     def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
         with _create_scoped_session(self.scoped_session, True) as session:
@@ -779,7 +806,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         deepcopy: bool = True,
         states: Optional[Container[TrialState]] = None,
     ) -> List[FrozenTrial]:
-        trials = self._get_trials(study_id, states, set())
+        trials = self._get_trials(study_id, states, set(), -1)
 
         return copy.deepcopy(trials) if deepcopy else trials
 
@@ -787,13 +814,26 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         self,
         study_id: int,
         states: Optional[Container[TrialState]],
-        excluded_trial_ids: Set[int],
+        included_trial_ids: Set[int],
+        trial_id_greater_than: int,
     ) -> List[FrozenTrial]:
+        included_trial_ids = set(
+            trial_id for trial_id in included_trial_ids if trial_id <= trial_id_greater_than
+        )
+
         with _create_scoped_session(self.scoped_session) as session:
             # Ensure that the study exists.
             models.StudyModel.find_or_raise_by_id(study_id, session)
-            query = session.query(models.TrialModel.trial_id).filter(
-                models.TrialModel.study_id == study_id
+            query = (
+                session.query(models.TrialModel)
+                .options(sqlalchemy_orm.selectinload(models.TrialModel.params))
+                .options(sqlalchemy_orm.selectinload(models.TrialModel.values))
+                .options(sqlalchemy_orm.selectinload(models.TrialModel.user_attributes))
+                .options(sqlalchemy_orm.selectinload(models.TrialModel.system_attributes))
+                .options(sqlalchemy_orm.selectinload(models.TrialModel.intermediate_values))
+                .filter(
+                    models.TrialModel.study_id == study_id,
+                )
             )
 
             if states is not None:
@@ -802,28 +842,19 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 assert isinstance(states, Iterable)
                 query = query.filter(models.TrialModel.state.in_(states))
 
-            trial_ids = query.all()
-
-            trial_ids = set(
-                trial_id_tuple[0]
-                for trial_id_tuple in trial_ids
-                if trial_id_tuple[0] not in excluded_trial_ids
-            )
             try:
-                trial_models = (
-                    session.query(models.TrialModel)
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.params))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.values))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.user_attributes))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.system_attributes))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.intermediate_values))
-                    .filter(
-                        models.TrialModel.trial_id.in_(trial_ids),
-                        models.TrialModel.study_id == study_id,
+                if len(included_trial_ids) > 0 and trial_id_greater_than > -1:
+                    _query = query.filter(
+                        sqlalchemy.or_(
+                            models.TrialModel.trial_id.in_(included_trial_ids),
+                            models.TrialModel.trial_id > trial_id_greater_than,
+                        )
                     )
-                    .order_by(models.TrialModel.trial_id)
-                    .all()
-                )
+                elif trial_id_greater_than > -1:
+                    _query = query.filter(models.TrialModel.trial_id > trial_id_greater_than)
+                else:
+                    _query = query
+                trial_models = _query.order_by(models.TrialModel.trial_id).all()
             except sqlalchemy_exc.OperationalError as e:
                 # Likely exceeding the number of maximum allowed variables using IN.
                 # This number differ between database dialects. For SQLite for instance, see
@@ -835,18 +866,12 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                     "".format(str(e))
                 )
 
-                trial_models = (
-                    session.query(models.TrialModel)
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.params))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.values))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.user_attributes))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.system_attributes))
-                    .options(sqlalchemy_orm.selectinload(models.TrialModel.intermediate_values))
-                    .filter(models.TrialModel.study_id == study_id)
-                    .order_by(models.TrialModel.trial_id)
-                    .all()
-                )
-                trial_models = [t for t in trial_models if t.trial_id in trial_ids]
+                trial_models = query.order_by(models.TrialModel.trial_id).all()
+                trial_models = [
+                    t
+                    for t in trial_models
+                    if t.trial_id in included_trial_ids or t.trial_id > trial_id_greater_than
+                ]
 
             trials = [self._build_frozen_trial_from_trial_model(trial) for trial in trial_models]
 
