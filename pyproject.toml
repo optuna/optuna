@@ -97,7 +97,7 @@ test = [
   "kaleido",
   "moto",
   "pytest",
-  "scipy>=1.9.2; python_version>='3.8'",
+  "scipy>=1.9.2",
   "torch; python_version<='3.12'", # TODO(gen740): Remove this line when 'torch', a dependency of 'optuna/_gp', supports Python 3.13
 ]
 
