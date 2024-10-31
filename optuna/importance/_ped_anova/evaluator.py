@@ -44,9 +44,15 @@ class _QuantileFilter:
         err_msg = "len(trials) must be larger than or equal to min_n_top_trials"
         assert min_n_top_trials <= loss_values.size, err_msg
 
+        def _quantile(v: np.ndarray, q: float) -> float:
+            cutoff_index = int(np.ceil(q * loss_values.size)) - 1
+            return float(np.partition(loss_values, cutoff_index)[cutoff_index])
+
         cutoff_val = max(
             np.partition(loss_values, min_n_top_trials - 1)[min_n_top_trials - 1],
-            np.quantile(loss_values, self._quantile, method="inverted_cdf"),
+            # TODO(nabenabe0928): After dropping Python3.10, replace below with
+            # np.quantile(loss_values, self._quantile, method="inverted_cdf").
+            _quantile(loss_values, self._quantile),
         )
         should_keep_trials = loss_values <= cutoff_val
         return [t for t, should_keep in zip(trials, should_keep_trials) if should_keep]
