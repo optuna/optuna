@@ -7,7 +7,6 @@ from multiprocessing.managers import DictProxy
 import os
 import pickle
 from typing import Any
-from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
 
@@ -1054,15 +1053,15 @@ def test_cache_is_invalidated(
         assert study._thread_local.cached_all_trials is None
         original_before_trial(study, trial)
 
-    sampler.before_trial = Mock(side_effect=mock_before_trial)
-    study = optuna.study.create_study(sampler=sampler)
+    with patch.object(sampler, "before_trial", side_effect=mock_before_trial):
+        study = optuna.study.create_study(sampler=sampler)
 
-    def objective(trial: Trial) -> float:
-        assert trial._relative_params is None
+        def objective(trial: Trial) -> float:
+            assert trial._relative_params is None
 
-        trial.suggest_float("x", -10, 10)
-        trial.suggest_float("y", -10, 10)
-        assert trial._relative_params is not None
-        return -1
+            trial.suggest_float("x", -10, 10)
+            trial.suggest_float("y", -10, 10)
+            assert trial._relative_params is not None
+            return -1
 
-    study.optimize(objective, n_trials=10, n_jobs=n_jobs)
+        study.optimize(objective, n_trials=10, n_jobs=n_jobs)
