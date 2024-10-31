@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import IntEnum
 import math
+import threading
 from typing import Any
 from typing import TYPE_CHECKING
 
@@ -21,6 +22,9 @@ else:
     from optuna._imports import _LazyImport
 
     qmc = _LazyImport("scipy.stats.qmc")
+
+
+_threading_lock = threading.Lock()
 
 
 class ScaleType(IntEnum):
@@ -92,8 +96,14 @@ def sample_normalized_params(
     scale_types = search_space.scale_types
     bounds = search_space.bounds
     steps = search_space.steps
-    qmc_engine = qmc.Sobol(dim, scramble=True, seed=rng.randint(np.iinfo(np.int32).max))
-    param_values = qmc_engine.random(n)
+
+    # Sobol engine likely shares its internal state among threads.
+    # Without threading.Lock, ValueError exceptions are raised in Sobol engine as discussed in
+    # https://github.com/optuna/optunahub-registry/pull/168#pullrequestreview-2404054969
+    with _threading_lock:
+        qmc_engine = qmc.Sobol(dim, scramble=True, seed=rng.randint(np.iinfo(np.int32).max))
+        param_values = qmc_engine.random(n)
+
     for i in range(dim):
         if scale_types[i] == ScaleType.CATEGORICAL:
             param_values[:, i] = np.floor(param_values[:, i] * bounds[i, 1])
