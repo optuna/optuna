@@ -204,7 +204,7 @@ class GPSampler(BaseSampler):
             cache = (
                 self._constraints_kernel_params_cache and self._constraints_kernel_params_cache[i]
             )
-            assert isinstance(cache, (gp.KernelParamsTensor, type(None)))
+            assert isinstance(cache, (gp.KernelParamsTensor)) or cache is None
             constraints_kernel_params.append(
                 gp.fit_kernel_params(
                     X=normalized_params,
