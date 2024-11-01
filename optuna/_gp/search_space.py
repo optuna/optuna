@@ -102,7 +102,7 @@ def sample_normalized_params(
     # https://github.com/optuna/optunahub-registry/pull/168#pullrequestreview-2404054969
     with _threading_lock:
         qmc_engine = qmc.Sobol(dim, scramble=True, seed=rng.randint(np.iinfo(np.int32).max))
-        param_values = qmc_engine.random(n)
+    param_values = qmc_engine.random(n)
 
     for i in range(dim):
         if scale_types[i] == ScaleType.CATEGORICAL:
