@@ -170,10 +170,12 @@ class GPSampler(BaseSampler):
             raise ValueError("The number of constraints must be the same for all trials.")
         constraint_vals = np.array(_constraint_vals)
 
-        score_vals_mean, score_vals_std = gp.get_mean_and_std(score_vals)
+        score_vals, score_vals_mean, score_vals_std = gp.clip_and_get_mean_and_std(score_vals)
         assert isinstance(score_vals_mean, float) and isinstance(score_vals_std, float)
         standardized_score_vals = (score_vals - score_vals_mean) / max(1e-10, score_vals_std)
-        constraint_vals_mean, constraint_vals_std = gp.get_mean_and_std(constraint_vals)
+        constraint_vals, constraint_vals_mean, constraint_vals_std = gp.clip_and_get_mean_and_std(
+            constraint_vals
+        )
         assert isinstance(constraint_vals_mean, np.ndarray) and isinstance(
             constraint_vals_std, np.ndarray
         )
@@ -250,10 +252,8 @@ class GPSampler(BaseSampler):
             )
         ]
 
-        acqf_params_with_constraints = (
-            acqf.ConstrainedAcquisitionFunctionParams.from_acqf_params(
-                acqf_params, constraints_acqf_params
-            )
+        acqf_params_with_constraints = acqf.ConstrainedAcquisitionFunctionParams.from_acqf_params(
+            acqf_params, constraints_acqf_params
         )
 
         normalized_param = self._optimize_acqf(
