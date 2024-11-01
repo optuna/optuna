@@ -4,8 +4,8 @@ import numpy as np
 import pytest
 import torch
 
-from optuna._gp.acqf import ConstrainedAcquisitionFunctionParams
 from optuna._gp.acqf import AcquisitionFunctionType
+from optuna._gp.acqf import ConstrainedAcquisitionFunctionParams
 from optuna._gp.acqf import create_acqf_params
 from optuna._gp.acqf import eval_acqf
 from optuna._gp.gp import KernelParamsTensor
