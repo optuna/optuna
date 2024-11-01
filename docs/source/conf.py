@@ -186,7 +186,7 @@ autosummary_generate = True
 autodoc_typehints = "description"
 autodoc_default_options = {
     "members": True,
-    "inherited-members": True,
+    "inherited-members": "int",
     "exclude-members": "with_traceback",
 }
 
