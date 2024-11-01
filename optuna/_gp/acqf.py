@@ -86,7 +86,7 @@ class AcquisitionFunctionParams:
     search_space: SearchSpace
     cov_Y_Y_inv: np.ndarray
     cov_Y_Y_inv_Y: np.ndarray
-    # TODO: Want to change the name to a generic name like threshold,
+    # TODO(kAIto47802): Want to change the name to a generic name like threshold,
     # since it is not actually in operation as max_Y
     max_Y: float
     beta: float | None
@@ -159,7 +159,7 @@ def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.
     )
 
     if acqf_params.acqf_type == AcquisitionFunctionType.LOG_EI:
-        # TODO: Write reason for neginf
+        # If none of the constraint functions are satisfied, max_Y is set to -np.inf.
         f_val = (
             logei(mean=mean, var=var + acqf_params.acqf_stabilizing_noise, f0=acqf_params.max_Y)
             if not np.isneginf(acqf_params.max_Y)
