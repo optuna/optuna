@@ -553,10 +553,14 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 )
 
             for key, value in template_trial.user_attrs.items():
-                self._set_trial_user_attr_without_commit(session, trial.trial_id, key, value)
+                self._set_trial_attr_without_commit(
+                    session, models.TrialUserAttributeModel, trial.trial_id, key, value
+                )
 
             for key, value in template_trial.system_attrs.items():
-                self._set_trial_system_attr_without_commit(session, trial.trial_id, key, value)
+                self._set_trial_attr_without_commit(
+                    session, models.TrialSystemAttributeModel, trial.trial_id, key, value
+                )
 
             for step, intermediate_value in template_trial.intermediate_values.items():
                 self._set_trial_intermediate_value_without_commit(
@@ -717,63 +721,63 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
         with _create_scoped_session(self.scoped_session, True) as session:
-            self._set_trial_user_attr_without_commit(session, trial_id, key, value)
+            self._set_trial_attr_without_commit(
+                session,
+                models.TrialUserAttributeModel,
+                trial_id,
+                key,
+                value,
+            )
 
-    def _set_trial_user_attr_without_commit(
-        self, session: "sqlalchemy_orm.Session", trial_id: int, key: str, value: Any
+    def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
+        with _create_scoped_session(self.scoped_session, True) as session:
+            self._set_trial_attr_without_commit(
+                session,
+                models.TrialSystemAttributeModel,
+                trial_id,
+                key,
+                value,
+            )
+
+    def _set_trial_attr_without_commit(
+        self,
+        session: "sqlalchemy_orm.Session",
+        model_cls: type[models.TrialUserAttributeModel | models.TrialSystemAttributeModel],
+        trial_id: int,
+        key: str,
+        value: Any,
     ) -> None:
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
         if self.engine.name == "mysql":
-            mysql_insert_stmt = sqlalchemy_dialects_mysql.insert(
-                models.TrialUserAttributeModel
-            ).values(trial_id=trial_id, key=key, value_json=json.dumps(value))
+            mysql_insert_stmt = sqlalchemy_dialects_mysql.insert(model_cls).values(
+                trial_id=trial_id, key=key, value_json=json.dumps(value)
+            )
             mysql_upsert_stmt = mysql_insert_stmt.on_duplicate_key_update(
                 value_json=mysql_insert_stmt.inserted.value_json
             )
             session.execute(mysql_upsert_stmt)
         elif self.engine.name == "sqlite" and sqlite3.sqlite_version_info >= (3, 24, 0):
-            sqlite_insert_stmt = sqlalchemy_dialects_sqlite.insert(
-                models.TrialUserAttributeModel
-            ).values(trial_id=trial_id, key=key, value_json=json.dumps(value))
+            sqlite_insert_stmt = sqlalchemy_dialects_sqlite.insert(model_cls).values(
+                trial_id=trial_id, key=key, value_json=json.dumps(value)
+            )
             sqlite_upsert_stmt = sqlite_insert_stmt.on_conflict_do_update(
                 index_elements=[
-                    models.TrialUserAttributeModel.trial_id,
-                    models.TrialUserAttributeModel.key,
+                    model_cls.trial_id,
+                    model_cls.key,
                 ],
                 set_=dict(value_json=sqlite_insert_stmt.excluded.value_json),
             )
             session.execute(sqlite_upsert_stmt)
         else:
             # TODO(porink0424): Add support for other databases, e.g., PostgreSQL.
-            attribute = models.TrialUserAttributeModel.find_by_trial_and_key(trial, key, session)
+            attribute = model_cls.find_by_trial_and_key(trial, key, session)
             if attribute is None:
-                attribute = models.TrialUserAttributeModel(
-                    trial_id=trial_id, key=key, value_json=json.dumps(value)
-                )
+                attribute = model_cls(trial_id=trial_id, key=key, value_json=json.dumps(value))
                 session.add(attribute)
             else:
                 attribute.value_json = json.dumps(value)
-
-    def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
-        with _create_scoped_session(self.scoped_session, True) as session:
-            self._set_trial_system_attr_without_commit(session, trial_id, key, value)
-
-    def _set_trial_system_attr_without_commit(
-        self, session: "sqlalchemy_orm.Session", trial_id: int, key: str, value: JSONSerializable
-    ) -> None:
-        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-        self.check_trial_is_updatable(trial_id, trial.state)
-
-        attribute = models.TrialSystemAttributeModel.find_by_trial_and_key(trial, key, session)
-        if attribute is None:
-            attribute = models.TrialSystemAttributeModel(
-                trial_id=trial_id, key=key, value_json=json.dumps(value)
-            )
-            session.add(attribute)
-        else:
-            attribute.value_json = json.dumps(value)
 
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
         with _create_scoped_session(self.scoped_session) as session:
