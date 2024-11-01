@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import torch
 
-from optuna._gp.acqf import AcquisitionFunctionParamsWithConstraints
+from optuna._gp.acqf import ConstrainedAcquisitionFunctionParams
 from optuna._gp.acqf import AcquisitionFunctionType
 from optuna._gp.acqf import create_acqf_params
 from optuna._gp.acqf import eval_acqf
@@ -112,7 +112,7 @@ def test_eval_acqf_with_constraints(x: np.ndarray, c: list[np.ndarray]) -> None:
         )
         for vals in c
     ]
-    acqf_params_with_constraints = AcquisitionFunctionParamsWithConstraints.from_acqf_params(
+    acqf_params_with_constraints = ConstrainedAcquisitionFunctionParams.from_acqf_params(
         acqf_params, constraints_acqf_params
     )
 

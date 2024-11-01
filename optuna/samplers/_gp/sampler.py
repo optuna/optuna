@@ -251,7 +251,7 @@ class GPSampler(BaseSampler):
         ]
 
         acqf_params_with_constraints = (
-            acqf.AcquisitionFunctionParamsWithConstraints.from_acqf_params(
+            acqf.ConstrainedAcquisitionFunctionParams.from_acqf_params(
                 acqf_params, constraints_acqf_params
             )
         )

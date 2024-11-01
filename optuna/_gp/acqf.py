@@ -94,7 +94,7 @@ class AcquisitionFunctionParams:
 
 
 @dataclass(frozen=True)
-class AcquisitionFunctionParamsWithConstraints(AcquisitionFunctionParams):
+class ConstrainedAcquisitionFunctionParams(AcquisitionFunctionParams):
     acqf_params_for_constraints: list[AcquisitionFunctionParams]
 
     @classmethod
@@ -102,7 +102,7 @@ class AcquisitionFunctionParamsWithConstraints(AcquisitionFunctionParams):
         cls,
         acqf_params: AcquisitionFunctionParams,
         constraints_acqf_params: list[AcquisitionFunctionParams],
-    ) -> AcquisitionFunctionParamsWithConstraints:
+    ) -> ConstrainedAcquisitionFunctionParams:
         return cls(
             acqf_type=acqf_params.acqf_type,
             kernel_params=acqf_params.kernel_params,
@@ -178,7 +178,7 @@ def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.
     else:
         assert False, "Unknown acquisition function type."
 
-    if isinstance(acqf_params, AcquisitionFunctionParamsWithConstraints):
+    if isinstance(acqf_params, ConstrainedAcquisitionFunctionParams):
         c_val = sum(eval_acqf(params, x) for params in acqf_params.acqf_params_for_constraints)
         return f_val + c_val
     else:
