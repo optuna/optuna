@@ -10,9 +10,9 @@ The :mod:`~optuna.logging` module implements logging using the Python ``logging`
    :toctree: generated/
    :nosignatures:
 
-   optuna.logging.get_verbosity
-   optuna.logging.set_verbosity
-   optuna.logging.disable_default_handler
-   optuna.logging.enable_default_handler
-   optuna.logging.disable_propagation
-   optuna.logging.enable_propagation
+   get_verbosity
+   set_verbosity
+   disable_default_handler
+   enable_default_handler
+   disable_propagation
+   enable_propagation

@@ -82,17 +82,17 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
     :toctree: generated/
     :nosignatures:
 
-    optuna.samplers.BaseSampler
-    optuna.samplers.GridSampler
-    optuna.samplers.RandomSampler
-    optuna.samplers.TPESampler
-    optuna.samplers.CmaEsSampler
-    optuna.samplers.GPSampler
-    optuna.samplers.PartialFixedSampler
-    optuna.samplers.NSGAIISampler
-    optuna.samplers.NSGAIIISampler
-    optuna.samplers.QMCSampler
-    optuna.samplers.BruteForceSampler
+    BaseSampler
+    GridSampler
+    RandomSampler
+    TPESampler
+    CmaEsSampler
+    GPSampler
+    PartialFixedSampler
+    NSGAIISampler
+    NSGAIIISampler
+    QMCSampler
+    BruteForceSampler
 
 .. note::
     The following :mod:`optuna.samplers.nsgaii` module defines crossover operations used by :class:`~optuna.samplers.NSGAIISampler`.

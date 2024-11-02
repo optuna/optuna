@@ -12,13 +12,13 @@ The :mod:`~optuna.importance` module provides functionality for evaluating hyper
    that is a Cython accelerated fANOVA implementation. By using it, you can get hyperparameter
    importances within a few seconds.
    If ``n_trials`` is more than 10000, the Cython implementation takes more than a minute, so you can use :class:`~optuna.importance.PedAnovaImportanceEvaluator` instead, enabling the evaluation to finish in a second.
-    
+
 
 .. autosummary::
    :toctree: generated/
    :nosignatures:
 
-   optuna.importance.get_param_importances
-   optuna.importance.FanovaImportanceEvaluator
-   optuna.importance.MeanDecreaseImpurityImportanceEvaluator
-   optuna.importance.PedAnovaImportanceEvaluator
+   get_param_importances
+   FanovaImportanceEvaluator
+   MeanDecreaseImpurityImportanceEvaluator
+   PedAnovaImportanceEvaluator

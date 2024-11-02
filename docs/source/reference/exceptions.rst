@@ -9,8 +9,8 @@ The :mod:`~optuna.exceptions` module defines Optuna-specific exceptions deriving
    :toctree: generated/
    :nosignatures:
 
-   optuna.exceptions.OptunaError
-   optuna.exceptions.TrialPruned
-   optuna.exceptions.CLIUsageError
-   optuna.exceptions.StorageInternalError
-   optuna.exceptions.DuplicatedStudyError
+   OptunaError
+   TrialPruned
+   CLIUsageError
+   StorageInternalError
+   DuplicatedStudyError
