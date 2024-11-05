@@ -20,8 +20,6 @@ import warnings
 
 import plotly.io as pio
 from sklearn.exceptions import ConvergenceWarning
-from sphinx_gallery.sorting import FileNameSortKey
-from plotly.io._sg_scraper import plotly_sg_scraper
 
 import optuna
 
@@ -214,10 +212,10 @@ sphinx_gallery_conf = {
     ],
     "compress_images": ("images", "thumbnails"),
     "thumbnail_size": (400, 280),
-    "within_subsection_order": FileNameSortKey,
+    "within_subsection_order": "FileNameSortKey",
     "filename_pattern": r"/*\.py",
     "first_notebook_cell": None,
-    "image_scrapers": ("matplotlib", plotly_sg_scraper),
+    "image_scrapers": ("matplotlib", "plotly.io._sg_scraper.plotly_sg_scraper"),
 }
 
 # matplotlib plot directive
